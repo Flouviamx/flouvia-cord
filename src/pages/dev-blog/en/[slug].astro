@@ -1,0 +1,10 @@
+---
+// Wrapper EN — ver el comentario en dev-blog/en/index.astro. Ruta real:
+// dev.cordhq.app/dev-blog/en/<slug>. El slug lo captura ESTA ruta (no la ES),
+// así que se pasa explícito por prop junto con lang="en".
+import SlugTemplate from '../[slug].astro';
+
+const { slug } = Astro.params;
+---
+
+<SlugTemplate slug={slug} lang="en" />

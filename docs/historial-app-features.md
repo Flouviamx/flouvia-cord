@@ -6,6 +6,84 @@
 
 ---
 
+✅ **PostHog — auditoría completa + endurecimiento para escalar (ago 2026)** — André
+   pidió analítica "nivel Apple/Stripe/ElevenLabs" para tomar decisiones de
+   crecimiento. Una auditoría de código encontró que PostHog estaba solo a
+   medias cableado desde la entrada de jul 2026 (abajo) — varios bugs reales,
+   no solo huecos cosméticos:
+   • **Bug crítico de CSP corregido:** `.env.example` documenta
+     `PUBLIC_POSTHOG_HOST=https://us.i.posthog.com` como default, pero el CSP
+     de `src/middleware.ts` solo permitía `https://us.posthog.com` (sin
+     `.i.`) — si la variable de entorno real usaba el default documentado, el
+     navegador bloqueaba EN SILENCIO todo el tracking del lado cliente (sin
+     error visible salvo en devtools). Se blindó `script-src`/`connect-src`
+     con los tres hosts (`us.posthog.com`, `us.i.posthog.com`,
+     `us-assets.i.posthog.com`).
+   • **`sign_up_completed` estaba roto:** la entrada original de abajo decía
+     "eventos iniciales: sign_up_completed" pero el código real
+     (`posthog-events.ts`) era 100% muerto — cero call-sites, perdido en la
+     migración de Clerk a auth propio. Reescrito server-side, atado a
+     momentos reales de cuenta nueva (nunca a cada login): en
+     `verify-email/confirm.ts` (email, token de un solo uso) y dentro de la
+     rama `insert into users` de `google/callback.ts`/`apple/callback.ts`
+     (OAuth, nunca en login/link de una cuenta ya existente).
+   • **`posthog-events.ts` eliminado** (código muerto — las 7 llamadas reales
+     vivían como `posthog.capture()` crudo inline en `.astro`, nunca usaban
+     esos wrappers tipados).
+   • **Contaminación sandbox/demo cerrada:** cero call-sites (cliente o
+     servidor) filtraban la org sandbox del "Entorno de prueba" ni la org
+     demo permanente — toda esa actividad ficticia se mezclaba con datos
+     reales de clientes en PostHog. Columna nueva `orgs.is_demo` (backfill
+     `true` para la fila `rfc='FERR010203XYZ'`, antes solo detectable por ese
+     RFC mágico). Nuevo helper global `window.cordTrack(event, props)`
+     (definido en `AppLayout.astro`/`Layout.astro`) que etiqueta
+     `is_sandbox`/`is_demo` en TODO capture — reemplazó las 7 llamadas
+     `posthog.capture()` crudas de `q/[token].astro`,
+     `cotizaciones/[id].astro` y `cotizaciones/nueva.astro`. Lado servidor:
+     `trackPaymentReceived` (`posthog-server.ts`) gana los mismos 2 params,
+     poblados en los 4 call-sites de `stripe/webhook.ts` desde un select
+     barato de `orgs.sandbox_of`/`is_demo`.
+   • **`identify()`/`group()` enriquecidos:** antes solo `company_name`; ahora
+     `AppLayout.astro` manda `plan` (de `orgs.plan`), `role` (de
+     `org_members.rol`), y `group('company', ...)` gana `plan`/`created_at`
+     (columna `orgs.created_at` ya existía, solo faltaba exponerla en
+     `getOrg()`) — sin esto ningún dashboard podía segmentar retención/
+     activación por plan de pago. ⚠️ Group Analytics es un **add-on de pago**
+     de PostHog — sin contratarlo, `group()` sigue siendo un no-op inofensivo.
+   • **10 eventos nuevos de alto valor** (helper genérico `trackServer()` en
+     `posthog-server.ts`, mismo contrato de identidad/tagging que
+     `trackPaymentReceived`): `subscription_upgraded`/`downgraded` y
+     `subscription_canceled` (con `tenure_days`) en `syncSubscription`/
+     `downgradeToFree`; `payment_failed` en `setStatusByCustomer` (plan de
+     Cord) y `recurringInvoiceFailed` (iguala); `stripe_connect_activated`
+     en `updateAccountStatus` (flip `false→true` de `charges_enabled`, no
+     cada reconfirmación); `cfdi_first_timbrado` en `PATCH
+     /api/cotizaciones/[id]` (solo el primer timbrado exitoso de la org,
+     contado ANTES de emitir); `team_member_invited`/`accepted` en
+     `api/equipo.ts`/`api/equipo/join.ts`; `api_key_created` en
+     `api/keys.ts`; `cobranza_ia_activated` en `api/agentes.ts` (solo al
+     ACTIVAR, no al desactivar); `checkout_started` en
+     `api/q/[token]/payment-intent.ts` (cierra el hueco entre "vista" y
+     "pagada" del funnel público); `kit_used` en el editor
+     (`cotizaciones/nueva.astro`, al insertar un kit).
+   • **Bug real encontrado y corregido de paso (no relacionado a PostHog, en
+     el mismo archivo/línea que se tocaba):** en `cotizaciones/nueva.astro`,
+     el bloque de captura de `quote_created` para creación NUEVA (no
+     borrador) referenciaba `payload.base_currency`, pero `payload` nunca se
+     declaraba en esa rama (`else`) — `ReferenceError` en silencio, atrapado
+     por el `catch` del handler, que cancelaba el `setTimeout` del redirect a
+     la cotización recién creada. Cualquier usuario creando una cotización
+     nueva (no editando un borrador) se quedaba viendo el toast de éxito sin
+     ser redirigido. Corregido guardando `buildPayload(send)` en `payload`
+     también en esa rama.
+   ⚠️ **Pendiente (requiere acceso en vivo a PostHog vía su MCP, fuera del
+     repo):** la suite de 4-6 dashboards (Growth & Activation, Revenue, Core
+     Funnel Cotización→Cobro, Account Health & Retention, Feature Adoption,
+     Acquisition) — diseñada y documentada en el plan de la sesión, pendiente
+     de construirse en vivo una vez André conecte el conector MCP de
+     PostHog. Roadmap futuro (alertas, session replay, feature flags,
+     digest semanal) documentado ahí también, no repetido aquí.
+
 ✅ **PostHog Analytics (jul 2026):** Analítica de producto en `Layout.astro` (landing) y `AppLayout.astro` (app + identidad). Eventos iniciales: `sign_up_completed` (onboarding/workspace) y `quote_created` (nueva.astro + [id].astro duplicate). Coexiste con Vercel Analytics (web vitals vs. product analytics).
 
 ✅ **Workbench v3.1 — atajos reales, UTC en todas las pestañas, y desbloqueo de 2FA (jul 2026)** —

@@ -715,6 +715,9 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 : tpl(T.kitInsertadoTpl, { nombre: kit.nombre, n: kit.items.length, lineaLabel: kit.items.length === 1 ? T.linea : T.lineas });
             window.cordToast(msg, 'ok');
         }
+        if (typeof window.cordTrack === 'function') {
+            window.cordTrack('kit_used', { kit_id: btn.dataset.kidAdd, item_count: kit.items.length, multiplier: mult });
+        }
         closeKitDrop();
     });
 
@@ -954,19 +957,20 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 setTimeout(() => { window.location.href = `/app/cotizaciones/${draftQuote.id}`; }, 1100);
             } else {
                 // Normal creation
+                const payload = buildPayload(send);
                 const res = await fetch('/api/cotizaciones', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(buildPayload(send)),
+                    body: JSON.stringify(payload),
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || T.errorGuardar);
                 if (data.needsApproval) showToast(tpl(T.aprobacionSolicitadaTpl, { folio: data.folio }));
                 else showToast(send ? tpl(T.enviadaFolioTpl, { folio: data.folio }) : tpl(T.borradorFolioGuardadoTpl, { folio: data.folio }));
                 // Posthog: track quote creation (only new quotes, not draft updates)
-                if (typeof posthog !== 'undefined') {
+                if (typeof window.cordTrack === 'function') {
                     // Solo el trigger "manual" de nueva cotización.
-                    posthog.capture('quote_created', {
+                    window.cordTrack('quote_created', {
                         has_items: lines.length > 0,
                         item_count: lines.length,
                         currency: payload.base_currency || 'MXN',
@@ -1160,8 +1164,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || T.noSePudoArmar);
                 
-                if (typeof posthog !== 'undefined') {
-                    posthog.capture('ai_draft_used', { has_file: !!pendingFile, has_text: !!text, item_count: data.items?.length || 0 });
+                if (typeof window.cordTrack === 'function') {
+                    window.cordTrack('ai_draft_used', { has_file: !!pendingFile, has_text: !!text, item_count: data.items?.length || 0 });
                 }
                 
                 lines.length = 0;

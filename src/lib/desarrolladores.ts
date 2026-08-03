@@ -333,7 +333,7 @@ export function Cotizacion({ token }) {
         titulo: 'Cotiza en USD, cobra en MXN.',
         sub: 'Conéctate a nuestra API de tipos de cambio en tiempo real (Banxico/FIX o interbancario) para mantener tus listas de precios estables en dólares, pero cotizar y cobrar siempre en moneda local exacta.',
         metaTitle: 'API de multi-divisa y cobertura cambiaria (FX) — Cord',
-        metaDescription: 'Cotiza en USD o EUR con tasa de cambio protegida por 30 días (FX lock) y factura en pesos con CFDI 4.0. Fix de Banxico incluido en todos los planes; tasa interbancaria en vivo desde el plan Profesional.',
+        metaDescription: 'Cotiza en USD o EUR con tasa de cambio protegida por 30 días (FX lock) y factura en tu moneda local — CFDI 4.0 en pesos para negocios en México. Fix de Banxico (aplica a México) incluido en todos los planes; tasa interbancaria en vivo desde el plan Profesional.',
         plan: 'Gratis en todos los planes. Fix de Banxico sin costo extra; tipos interbancarios en vivo en plan Profesional.',
         stats: [
             { valor: '3', countup: 3, label: 'fuentes de FX (Banxico, FIX, Interbancario real-time)' },

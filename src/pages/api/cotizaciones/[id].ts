@@ -15,6 +15,7 @@ import { emitFiscalDocument } from '../../../lib/fiscal/emit';
 import { MAX_ITEMS } from '../../../lib/cotizaciones';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
 import { sanitizeItem } from '../../../../packages/elements/src/engine';
+import { trackServer } from '../../../lib/posthog-server';
 
 // Evento interno (eventos.tipo) → evento público de webhook.
 const WH_MAP: Record<string, WebhookEvent> = {
@@ -184,9 +185,17 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     // en documentos_fiscales incluso cuando falla (status 'error').
     let fiscal: Awaited<ReturnType<typeof emitFiscalDocument>> | undefined;
     if (action.to === 'invoiced') {
+        // Cuenta ANTES de timbrar — para detectar si este va a ser el PRIMER
+        // CFDI real de la org ("aha moment" fiscal, distinto del genérico de cotizar).
+        const [priorCount] = await sql`select count(*)::int as n from documentos_fiscales where org_id = ${orgId} and status = 'issued'`;
         fiscal = await emitFiscalDocument(orgId, id);
         if (!fiscal.emitted) {
             return json({ error: fiscal.error || 'No se pudo timbrar el CFDI', fiscal }, 502);
+        }
+        if ((priorCount?.n ?? 0) === 0) {
+            const [orgFlags] = await sql`select created_at, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`;
+            const timeSince = orgFlags?.created_at ? Math.max(0, Math.round((Date.now() - new Date(orgFlags.created_at as string).getTime()) / 86400000)) : null;
+            await trackServer('cfdi_first_timbrado', orgId, { time_since_org_created_days: timeSince }, !!orgFlags?.is_sandbox, !!orgFlags?.is_demo);
         }
     }
 

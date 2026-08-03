@@ -9,6 +9,11 @@ interface Props {
     image?: string;
     noindex?: boolean;
     ogType?: string;
+    // Origen real a usar para canonical/og:url/hreflang en vez del dominio apex
+    // global (Astro.site). Solo lo pasan los layouts que sirven contenido en un
+    // SUBDOMINIO (docs.cordhq.app) — sin este prop el comportamiento es idéntico
+    // al de siempre (landing/blog/producto/soluciones siguen en cordhq.app).
+    canonicalOrigin?: string;
 }
 
 import Analytics from '@vercel/analytics/astro';
@@ -17,12 +22,13 @@ import { getLangFromUrl, altLangUrls } from '../i18n/utils';
 const {
     title,
     description = 'Cord — la plataforma que transforma propuestas y acuerdos en transacciones pagadas al instante. Centraliza en un solo link interactivo la negociación, firmas legales, inteligencia de margen y cobros automatizados. Para cualquier negocio, en cualquier país.',
-    image = '/og-cord.png',
+    image = '/og-cord.jpg',
     noindex = false,
     ogType = 'website',
+    canonicalOrigin,
 } = Astro.props;
 
-const SITE      = Astro.site ?? new URL('https://cordhq.app');
+const SITE      = canonicalOrigin ? new URL(canonicalOrigin) : (Astro.site ?? new URL('https://cordhq.app'));
 const canonical = new URL(Astro.url.pathname, SITE).href;
 const ogImage   = new URL(image, SITE).href;
 
@@ -97,6 +103,16 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
 
         <!-- PostHog Analytics -->
         <script is:inline define:vars={{ phToken: import.meta.env.PUBLIC_POSTHOG_KEY || process.env.PUBLIC_POSTHOG_KEY || '', phHost: import.meta.env.PUBLIC_POSTHOG_HOST || process.env.PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com' }}>
+            // window.cordTrack: wrapper único de captura, mismo contrato que el de
+            // AppLayout.astro. Por default no hay contexto de org (landing pública) →
+            // is_sandbox/is_demo=false. Páginas con contexto de org (ej. el link
+            // público /q/[token], que reusa este layout) pueden pisar
+            // window.__cordFlags ANTES de capturar para etiquetar su propia org.
+            window.__cordFlags = window.__cordFlags || { is_sandbox: false, is_demo: false };
+            window.cordTrack = function (event, props) {
+                if (typeof posthog === 'undefined') return;
+                posthog.capture(event, Object.assign({}, window.__cordFlags, props || {}));
+            };
             if (phToken) {
                 !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
                 posthog.init(phToken, {

@@ -1,6 +1,7 @@
-// src/lib/posthog.ts — PostHog client-side initialization and identity helpers.
+// src/lib/posthog.ts — PostHog client-side identity helpers for React islands.
 // Uses the CDN-loaded global `posthog` object (loaded via <script> in layouts).
-// All tracking code should import helpers from here or from posthog-events.ts.
+// Plain `.astro` <script> blocks should use window.cordTrack instead (it also
+// tags is_sandbox/is_demo — see AppLayout.astro/Layout.astro).
 
 declare global {
   interface Window {
@@ -40,8 +41,10 @@ export function resetUser(): void {
 }
 
 /**
- * Generic event tracker with type safety.
- * Prefer the typed wrappers in posthog-events.ts for known events.
+ * Generic event tracker for React islands (outside the Astro <script> world,
+ * where `window.cordTrack` — defined in AppLayout.astro/Layout.astro — is the
+ * standard). Does NOT tag is_sandbox/is_demo the way cordTrack does; prefer
+ * cordTrack from plain `.astro` scripts.
  */
 export function trackEvent(eventName: string, properties?: Record<string, any>): void {
   const ph = getPostHog();

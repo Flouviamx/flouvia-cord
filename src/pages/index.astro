@@ -59,9 +59,9 @@ const howToSchema = {
             '@type': 'HowToStep',
             position: '3',
             name: isEn ? 'Close and invoice' : 'Cierra y factura',
-            text: isEn 
-                ? 'The client approves with one click and pays online, or the quote stays on credit based on defined terms. The quote automatically turns into an order and the CFDI 4.0 is stamped with the SAT with no data re-entry needed.'
-                : 'El cliente aprueba con un clic y paga en línea, o la cotización queda a crédito según los términos definidos. La cotización se convierte automáticamente en pedido y el CFDI 4.0 se timbra ante el SAT sin necesidad de recapturar datos en otro portal.',
+            text: isEn
+                ? 'The client approves with one click and pays online, or the quote stays on credit based on defined terms. The quote automatically turns into an order — and for businesses in Mexico, the corresponding CFDI 4.0 is stamped with the SAT automatically, with no data re-entry needed.'
+                : 'El cliente aprueba con un clic y paga en línea, o la cotización queda a crédito según los términos definidos. La cotización se convierte automáticamente en pedido y, para negocios en México, el CFDI 4.0 correspondiente se timbra ante el SAT automáticamente, sin necesidad de recapturar datos en otro portal.',
             url: isEn ? 'https://cordhq.app/en/producto/cfdi' : 'https://cordhq.app/producto/cfdi',
         },
     ],
@@ -123,9 +123,11 @@ const softwareSchema = {
     creator: { '@id': 'https://flouvia.com/#organization' },
     provider: { '@id': 'https://flouvia.com/#organization' },
     offers: {
+        // Sin priceCurrency a propósito: es un plan $0 (no hay precio real que
+        // convertir), y atar la moneda al idioma (MXN=ES / USD=EN) era una señal
+        // implícita de "ES = México" que contradice el posicionamiento universal.
         '@type': 'Offer',
         price: '0',
-        priceCurrency: isEn ? 'USD' : 'MXN',
         description: isEn ? 'Free plan, forever — no credit card required.' : 'Plan gratis para siempre — sin tarjeta de crédito.',
     },
     featureList: isEn 

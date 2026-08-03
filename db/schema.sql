@@ -1337,3 +1337,13 @@ create table if not exists ops_sessions (
 -- tablas es a nivel de aplicación (cada query filtra por el user_id ya
 -- resuelto de la sesión validada) — igual que el resto del código ya asume
 -- para orgs/org_members.
+
+-- ── PostHog: marca explícita de la org demo (ago 2026) ───────────────────────
+-- Antes la única forma de detectar la org demo permanente ("Materiales del
+-- Valle" / demoOrgId() en db.ts) era comparar rfc = 'FERR010203XYZ' a mano en
+-- cada sitio — frágil (se rompe si alguien edita el RFC) y no exportable a
+-- analítica. Con esta columna, cualquier evento de PostHog puede etiquetarse
+-- is_demo=true y filtrarse en los dashboards sin tocar la org sandbox
+-- espejo (sandbox_of), que es un mecanismo aparte.
+alter table orgs add column if not exists is_demo boolean not null default false;
+update orgs set is_demo = true where rfc = 'FERR010203XYZ' and is_demo is distinct from true;

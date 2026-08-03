@@ -7,6 +7,7 @@ import { sql } from '../../../../lib/db';
 import { createSession, sessionCookieOptions, SESSION_COOKIE, createTwoFactorChallenge } from '../../../../lib/auth';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
+import { posthogServer } from '../../../../lib/posthog-server';
 
 export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
   const ip = trustedIp(request);
@@ -89,6 +90,7 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
       limit 1
     `;
 
+    let isNewUser = false;
     if (oauthRows.length > 0) {
       userId = oauthRows[0].user_id as string;
     } else {
@@ -109,6 +111,7 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
           returning id
         `;
         userId = newUser.id as string;
+        isNewUser = true;
       }
 
       // Vincular cuenta OAuth
@@ -119,6 +122,16 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
       `;
       // Un correo verificado por Google certifica el correo del usuario en Cord también.
       await sql`update users set email_verified_at = coalesce(email_verified_at, now()) where id = ${userId}`;
+    }
+
+    // Solo cuenta nueva de verdad — nunca en un login/link de una cuenta ya existente.
+    if (isNewUser && posthogServer) {
+      posthogServer.capture({
+        distinctId: userId!,
+        event: 'sign_up_completed',
+        properties: { sign_up_method: 'google' },
+      });
+      await posthogServer.flush();
     }
 
     // Si la cuenta tiene 2FA activo, el SSO también lo respeta.

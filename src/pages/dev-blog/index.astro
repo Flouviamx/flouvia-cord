@@ -5,7 +5,16 @@ import PixelDevs from "../../components/dev-blog/PixelDevs.jsx";
 import PixelIcon from "../../components/dev-blog/PixelIcon.jsx";
 
 const devBase = "/dev-blog"; // prefijo fijo → paths matchean ruta → status 200 (ver DevBlogLayout)
-const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
+// 'lang' viene del prop cuando este componente se monta vía el wrapper EN
+// (src/pages/dev-blog/en/index.astro); montado como ruta propia (ES, el caso
+// normal) Astro.props está vacío → default 'es'. El viejo ?lang=en (bookmarks/
+// links externos) se respeta con un redirect 302 a la URL real /dev-blog/en/,
+// para no dejar rotos los links que ya circulan.
+const { lang: langProp } = Astro.props as { lang?: 'es' | 'en' };
+const lang = langProp ?? 'es';
+if (!langProp && Astro.url.searchParams.get('lang') === 'en') {
+  return Astro.redirect(`${devBase}/en/`);
+}
 
 const allDevBlogs = await getCollection('devBlog', ({ id }) => {
   return id.startsWith(`${lang}/`);
@@ -15,7 +24,7 @@ const articles = allDevBlogs
   .map(post => {
     const slug = post.id.split('/')[1];
     return {
-      url: `${devBase}/${slug}`,
+      url: lang === 'en' ? `${devBase}/en/${slug}` : `${devBase}/${slug}`,
       date: post.data.date,
       title: post.data.title,
       type: post.data.type,
@@ -106,7 +115,7 @@ const searchMatrix = [
 ];
 ---
 
-<DevBlogLayout title={lang === 'en' ? 'Cord Developer Blog' : 'Blog de Desarrolladores Cord'}>
+<DevBlogLayout title={lang === 'en' ? 'Cord Developer Blog' : 'Blog de Desarrolladores Cord'} lang={lang}>
   <!-- Hero Section -->
   <header class="dev-hero">
     <h1 class="dev-title">

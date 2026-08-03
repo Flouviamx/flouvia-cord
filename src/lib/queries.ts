@@ -129,6 +129,11 @@ export async function getOrg() {
         bancoNombre: (o.banco_nombre as string) || '',
         bancoClabe: (o.banco_clabe as string) || '',
         bancoBeneficiario: (o.banco_beneficiario as string) || '',
+        // Para analítica (PostHog identify/group) e integridad de datos — no
+        // se muestran en ninguna UI todavía.
+        createdAt: o.created_at ? new Date(o.created_at as string).toISOString() : null,
+        isDemo: !!o.is_demo,
+        sandboxOf: (o.sandbox_of as string) || null,
     };
 }
 
@@ -1082,6 +1087,7 @@ export async function getCotizacionByToken(token: string) {
                o.portal_mostrar_chat as org_portal_chat, o.portal_powered as org_portal_powered,
                o.country_code as org_country_code,
                (o.sandbox_of is not null) as org_es_prueba,
+               o.is_demo as org_es_demo,
                o.stripe_account_id as org_stripe_account_id,
                o.stripe_charges_enabled as org_stripe_charges_enabled,
                o.acepta_tarjeta as org_acepta_tarjeta,
@@ -1226,6 +1232,8 @@ export async function getCotizacionByToken(token: string) {
             // Entorno de PRUEBA: la página pública marca la cotización como de
             // prueba (cinta ámbar) — nadie debe confundirla con una real.
             esPrueba: (rows[0].org_es_prueba as boolean) ?? false,
+            // Para etiquetar eventos de PostHog del link público (org demo permanente).
+            esDemo: (rows[0].org_es_demo as boolean) ?? false,
             stripeAccountId: (rows[0].org_stripe_account_id as string) || null,
             stripeChargesEnabled: !!rows[0].org_stripe_charges_enabled,
             aceptaTarjeta: rows[0].org_acepta_tarjeta !== false,
@@ -2060,15 +2068,13 @@ export async function getSetupProgress() {
     const [o] = await sql`select logo_url, email_contacto, telefono, rfc, color_marca,
         pdf_mensaje, pdf_condiciones, portal_bienvenida, stripe_charges_enabled from orgs where id = ${orgId}`;
     // Señales de avance en un solo batch (mismas tablas multi-tenant → seguras bajo RLS).
-    const [[{ np }], [{ nc }], [{ nq }], [{ nsent }], [{ ncobro }], [{ nmem }], [{ ncedula }], [{ nanalisis }]] = await withOrgTx(orgId,
+    const [[{ np }], [{ nc }], [{ nq }], [{ nsent }], [{ ncobro }], [{ nmem }]] = await withOrgTx(orgId,
         sql`select count(*)::int as np from productos where org_id = ${orgId}`,
         sql`select count(*)::int as nc from clientes where org_id = ${orgId}`,
         sql`select count(*)::int as nq from cotizaciones where org_id = ${orgId}`,
         sql`select count(*)::int as nsent from cotizaciones where org_id = ${orgId} and status <> 'draft'`,
         sql`select count(*)::int as ncobro from cotizaciones where org_id = ${orgId} and status in ('paid','invoiced')`,
         sql`select count(*)::int as nmem from org_members where org_id = ${orgId} and estado in ('activo','invitado')`,
-        sql`select count(*)::int as ncedula from cedulas where org_id = ${orgId}`,
-        sql`select count(*)::int as nanalisis from analisis where org_id = ${orgId}`,
     );
     // Onboarding tipo Stripe: SECCIONES (grupos) con sub-pasos anidados. Cada
     // grupo representa una etapa del ciclo (preparar → catálogo → vender → cobrar

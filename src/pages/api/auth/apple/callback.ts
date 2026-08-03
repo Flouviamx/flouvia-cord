@@ -16,6 +16,7 @@ import { createSession, sessionCookieOptions, SESSION_COOKIE, createTwoFactorCha
 import { exchangeAppleCode, verifyAppleIdToken, AppleTokenVerificationError } from '../../../../lib/auth-apple';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
+import { posthogServer } from '../../../../lib/posthog-server';
 
 export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
     const ip = trustedIp(request);
@@ -84,6 +85,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
             limit 1
         `;
 
+        let isNewUser = false;
         if (oauthRows.length > 0) {
             userId = oauthRows[0].user_id as string;
         } else {
@@ -97,6 +99,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
                     returning id
                 `;
                 userId = newUser.id as string;
+                isNewUser = true;
             }
             await sql`
                 insert into oauth_accounts (user_id, provider, provider_user_id, email)
@@ -105,6 +108,16 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
             `;
             // Un correo verificado por Apple certifica el correo del usuario en Cord también.
             await sql`update users set email_verified_at = coalesce(email_verified_at, now()) where id = ${userId}`;
+        }
+
+        // Solo cuenta nueva de verdad — nunca en un login/link de una cuenta ya existente.
+        if (isNewUser && posthogServer) {
+            posthogServer.capture({
+                distinctId: userId!,
+                event: 'sign_up_completed',
+                properties: { sign_up_method: 'apple' },
+            });
+            await posthogServer.flush();
         }
 
         // Si la cuenta tiene 2FA activo, ni el SSO se lo salta.

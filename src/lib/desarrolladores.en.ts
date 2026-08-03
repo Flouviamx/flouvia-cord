@@ -279,7 +279,7 @@ export function Cotizacion({ token }) {
         titulo: 'Quote in USD, charge in MXN.',
         sub: 'Connect to our real-time exchange rate API (Banxico/FIX or interbank) to keep your price lists stable in dollars, but always quote and charge in exact local currency.',
         metaTitle: 'Multi-currency & FX hedging API — Cord Developers',
-        metaDescription: 'Quote in USD or EUR with a 30-day rate lock (FX lock) and invoice in pesos with CFDI 4.0. Banxico FIX rate included on every plan; live interbank rate from the Professional plan up.',
+        metaDescription: 'Quote in USD or EUR with a 30-day rate lock (FX lock) and invoice in your local currency — CFDI 4.0 in pesos for businesses in Mexico. Banxico FIX rate (Mexico-specific) included on every plan; live interbank rate from the Professional plan up.',
         plan: 'Free on all plans. Banxico FIX at no extra cost; live interbank rates on the Professional plan.',
         stats: [
             { valor: '3', countup: 3, label: 'FX sources (Banxico, FIX, real-time Interbank)' },

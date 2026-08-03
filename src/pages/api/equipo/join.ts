@@ -10,6 +10,7 @@ import { reportUsage } from '../../../lib/billing';
 import { sha256Hex } from '../../../lib/auth';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { trustedIp } from '../../../lib/ip';
+import { trackServer } from '../../../lib/posthog-server';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -29,7 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
     // El token se guarda hasheado (sha256) — ver equipo.ts. Buscar por el hash
     // del token recibido, nunca por el valor crudo.
     const tokenHash = sha256Hex(token);
-    const rows = await sql`select id, org_id, user_id, estado, email, token_expires_at from org_members where token = ${tokenHash}`;
+    const rows = await sql`select id, org_id, user_id, estado, email, token_expires_at, rol from org_members where token = ${tokenHash}`;
     if (!rows.length) return json({ error: 'Invitación no válida' }, 404);
     const inv = rows[0];
     if (inv.estado === 'revocado') return json({ error: 'Esta invitación fue cancelada' }, 410);
@@ -63,5 +64,7 @@ export const POST: APIRoute = async ({ request }) => {
     await logAudit(orgId, { accion: 'equipo.union', entidad: 'miembro', entidad_id: inv.id, detalle: 'Aceptó la invitación', ip: reqIp(request), userAgent: request.headers.get('user-agent') });
     // Un miembro activo más cuenta como usuario del sistema (excedente vía Stripe).
     await reportUsage(orgId, 'usuario', 1);
+    const [orgFlags] = await sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`;
+    await trackServer('team_member_accepted', orgId, { role: inv.rol }, !!orgFlags?.is_sandbox, !!orgFlags?.is_demo);
     return json({ ok: true, orgId });
 };

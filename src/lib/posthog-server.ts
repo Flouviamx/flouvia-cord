@@ -20,6 +20,8 @@ export async function trackPaymentReceived(
     paymentMethod: string,
     isRecurring: boolean,
     quoteId?: string,
+    isSandbox = false,
+    isDemo = false,
 ): Promise<void> {
     if (!posthogServer) return;
     posthogServer.capture({
@@ -35,8 +37,38 @@ export async function trackPaymentReceived(
             is_recurring: isRecurring,
             source: 'stripe_webhook',
             quote_id: quoteId,
+            // Nunca dejar que actividad del "Entorno de prueba" (org sandbox espejo)
+            // ni de la org demo permanente se cuele como ingreso real en dashboards.
+            is_sandbox: isSandbox,
+            is_demo: isDemo,
             $process_person_profile: false,
         }
+    });
+    await posthogServer.flush();
+}
+
+// Tracker genérico server-side para eventos a nivel ORG (activación/adopción/
+// expansión — nunca dinero real, para eso usar trackPaymentReceived). Mismo
+// contrato de identidad (persona sintética `organization:<id>`, grupo `company`)
+// y mismo tagging obligatorio de is_sandbox/is_demo que trackPaymentReceived.
+export async function trackServer(
+    event: string,
+    orgId: string,
+    properties?: Record<string, unknown>,
+    isSandbox = false,
+    isDemo = false,
+): Promise<void> {
+    if (!posthogServer) return;
+    posthogServer.capture({
+        distinctId: `organization:${orgId}`,
+        event,
+        groups: { company: orgId },
+        properties: {
+            ...properties,
+            is_sandbox: isSandbox,
+            is_demo: isDemo,
+            $process_person_profile: false,
+        },
     });
     await posthogServer.flush();
 }

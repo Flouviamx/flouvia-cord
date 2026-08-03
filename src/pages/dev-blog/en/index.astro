@@ -1,0 +1,9 @@
+---
+// Wrapper EN — mismo patrón que src/pages/en/producto/[slug].astro y
+// src/pages/en/blog/[slug].astro: reusa el template ES (ya prop-first) forzando
+// lang="en", en vez de duplicar el markup. Ruta real: dev.cordhq.app/dev-blog/en
+// (arranca con /dev-blog → el middleware de subdominios la deja pasar tal cual).
+import IndexTemplate from '../index.astro';
+---
+
+<IndexTemplate lang="en" />

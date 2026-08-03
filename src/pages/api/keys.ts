@@ -9,6 +9,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 import { apiKeyLimit, planLabel } from '../../lib/permissions';
+import { trackServer } from '../../lib/posthog-server';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -29,7 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Límite por plan de claves ACTIVAS (no revocadas). Todos los planes (incluido
     // free) pueden generar claves de prueba Y en vivo, pero la cantidad está
     // limitada — free = prueba real (poquito); el consumo se mide por uso aparte.
-    const [[planResult]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, (sandbox_of is not null) as is_sandbox from orgs where id = ${orgId}`);
+    const [[planResult]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
     const plan = planResult?.plan;
     // En el ENTORNO DE PRUEBA (org sandbox) solo se generan llaves sk_test_:
     // una llave "live" nacida en la sandbox sería un estado inválido.
@@ -61,6 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     await logAudit(orgId, { accion: 'apikey.creada', entidad: 'api_key', entidad_id: row.id as string, detalle: `Creó la API key "${nombre}" (${mode})`, ip: reqIp(request) });
+    await trackServer('api_key_created', orgId, { key_scope: scope, mode, type }, !!planResult?.is_sandbox, !!planResult?.is_demo);
     return json({ ok: true, id: row.id, secret });
 };
 

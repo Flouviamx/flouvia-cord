@@ -14,6 +14,7 @@ import { sha256Hex } from '../../lib/auth';
 import { sendTeamInviteEmail } from '../../lib/auth-email';
 import { randomBytes } from 'node:crypto';
 import { rateLimit, tooMany } from '../../lib/ratelimit';
+import { trackServer } from '../../lib/posthog-server';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -36,7 +37,7 @@ export const POST: APIRoute = async (context) => {
     const rl = await rateLimit(`invite-create:${orgId}`, 30, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
 
-    const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, invite_domains, nombre from orgs where id = ${orgId}`);
+    const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, invite_domains, nombre, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
     if (!planTieneEquipo(org.plan as string)) {
         return json({ error: 'Invitar a tu equipo requiere el plan Negocio.' }, 402);
     }
@@ -76,6 +77,7 @@ export const POST: APIRoute = async (context) => {
         returning id`);
 
     await logAudit(orgId, { accion: 'equipo.invitado', entidad: 'miembro', entidad_id: row.id, detalle: email ?? 'invitación por link', ip: reqIp(request), userAgent: request.headers.get('user-agent') });
+    await trackServer('team_member_invited', orgId, { role_assigned: rol }, !!org.is_sandbox, !!org.is_demo);
     const link = `${new URL(request.url).origin}/unirse/${token}`;
 
     let emailed = false;

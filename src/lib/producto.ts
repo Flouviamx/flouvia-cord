@@ -915,11 +915,11 @@ export const FEATURES: Feature[] = [
     },
     {
         slug: 'negociacion',
-        nav: 'Negociación B2B',
+        nav: 'Negociación',
         eyebrow: 'NEGOCIACIÓN Y APROBACIONES',
         titulo: 'Acuerdos blindados, línea por línea.',
         sub: 'Tus clientes pueden revisar, ajustar cantidades o proponer un nuevo precio en productos específicos. Cada cambio genera una versión inmutable firmada criptográficamente — adiós a los malentendidos.',
-        metaTitle: 'Negociación de cotizaciones B2B con firma digital — Cord',
+        metaTitle: 'Negociación de cotizaciones con firma digital — Cord',
         metaDescription: 'Permite a tus clientes aprobar o contraofertar línea por línea. Cada versión es inmutable y se firma con SHA-256 para total transparencia.',
         plan: 'Disponible desde el plan Pro',
         stats: [

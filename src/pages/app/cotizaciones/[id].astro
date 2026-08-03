@@ -834,12 +834,12 @@ const dotColor = (tipo: string) =>
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || I.i18nNoPudoAplicar);
                     
-                    if (typeof posthog !== 'undefined') {
-                        if (action === 'send') posthog.capture('quote_sent', { quote_id: qid });
-                        if (action === 'approve') posthog.capture('quote_approved', { quote_id: qid, source: 'manual' });
+                    if (typeof window.cordTrack === 'function') {
+                        if (action === 'send') window.cordTrack('quote_sent', { quote_id: qid });
+                        if (action === 'approve') window.cordTrack('quote_approved', { quote_id: qid, source: 'manual' });
                         // `payment_received` is emitted only by Stripe, the source
                         // of truth. This records the operator's manual status change.
-                        if (action === 'paid') posthog.capture('quote_marked_paid', { quote_id: qid, source: 'manual' });
+                        if (action === 'paid') window.cordTrack('quote_marked_paid', { quote_id: qid, source: 'manual' });
                     }
                     
                     location.reload();
@@ -969,8 +969,8 @@ const dotColor = (tipo: string) =>
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || I.i18nNoPudoDuplicar);
                 // PostHog: track duplicated quote creation
-                if (typeof posthog !== 'undefined') {
-                    posthog.capture('quote_created', { source: 'duplicate' });
+                if (typeof window.cordTrack === 'function') {
+                    window.cordTrack('quote_created', { source: 'duplicate' });
                 }
                 location.href = `/app/cotizaciones/${data.id}`;
             } catch (err: any) {

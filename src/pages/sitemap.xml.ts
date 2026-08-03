@@ -12,6 +12,8 @@ import { DEV_PAGES } from '../lib/desarrolladores';
 import { roadmapData } from '../lib/roadmap-data';
 
 const SITE = 'https://cordhq.app';
+const DEV_SITE = 'https://dev.cordhq.app';
+const DOCS_SITE = 'https://docs.cordhq.app';
 
 const STATIC_PATHS = [
     { path: '/', priority: '1.0', changefreq: 'weekly' },
@@ -80,11 +82,55 @@ export async function GET() {
         .map((slug) => pairEntry(`${SITE}/soporte/${slug}`, `${SITE}/en/support/${slug}`, '0.4', 'monthly'))
         .join('\n');
 
+    // dev.cordhq.app — EN vive en /dev-blog/en/* (rutas reales, ver
+    // src/pages/dev-blog/en/*.astro), así que se empareja hreflang igual que
+    // blog/soporte. Todo post tiene ambos idiomas hoy (verificado: mismos
+    // nombres de archivo en content/dev-blog/es y /en); si algún día no fuera
+    // 1:1, aquí se rompería silenciosamente — mismo riesgo que blog/soporte.
+    const devHome = pairEntry(`${DEV_SITE}/dev-blog`, `${DEV_SITE}/dev-blog/en`, '0.6', 'weekly');
+    const devBlogListing = pairEntry(`${DEV_SITE}/dev-blog/blog`, `${DEV_SITE}/dev-blog/en/blog`, '0.5', 'weekly');
+    const devBlogEntries = await getCollection('devBlog');
+    const devBlogSlugs = [...new Set(devBlogEntries.map((e) => e.id.replace(/^(es|en)\//, '')))];
+    const devBlogXml = devBlogSlugs
+        .map((slug) => pairEntry(`${DEV_SITE}/dev-blog/${slug}`, `${DEV_SITE}/dev-blog/en/${slug}`, '0.5', 'monthly'))
+        .join('\n');
+
+    // docs.cordhq.app — a diferencia de blog/soporte, ES y EN NO son 1:1 (hay páginas
+    // ES sin contraparte EN todavía). Solo se empareja hreflang cuando el par EN
+    // realmente existe; si no, se emite una sola entrada ES (sin alternate "en" roto).
+    const docsEntries = await getCollection('docs');
+    const docsEnPaths = new Set(
+        docsEntries.filter((e) => e.id.startsWith('en/')).map((e) => e.id.replace(/^en\//, ''))
+    );
+    const docsEsPaths = [...new Set(
+        docsEntries.filter((e) => e.id.startsWith('es/')).map((e) => e.id.replace(/^es\//, ''))
+    )];
+    const docsXml = docsEsPaths
+        .map((path) => {
+            const es = `${DOCS_SITE}/docs/${path}`;
+            if (docsEnPaths.has(path)) {
+                const en = `${DOCS_SITE}/en/docs/${path}`;
+                return pairEntry(es, en, '0.4', 'monthly');
+            }
+            return `  <url>
+    <loc>${es}</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="${es}" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="${es}" />
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>`;
+        })
+        .join('\n');
+
     const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${ALL_PATHS.map((p) => urlEntry(p.path, p.priority, p.changefreq)).join('\n')}
 ${blogXml}
 ${supportXml}
+${devHome}
+${devBlogListing}
+${devBlogXml}
+${docsXml}
 </urlset>
 `;
     return new Response(body, {

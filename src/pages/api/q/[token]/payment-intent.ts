@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { sql } from '../../../../lib/db';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { dueDateFor, isoDay, venceDia, materializeAnticipoCobros } from '../../../../lib/cobros';
+import { trackServer } from '../../../../lib/posthog-server';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -22,11 +23,11 @@ export const POST: APIRoute = async ({ params, request }) => {
     } catch { /* sin body = pagar el siguiente cobro pendiente */ }
 
     const rows = await sql`
-        select c.id, c.folio, c.total, c.status, c.anticipo_pct,
+        select c.id, c.org_id, c.folio, c.total, c.status, c.anticipo_pct,
                coalesce(c.terminos, cl.terminos_default) as terminos,
                coalesce(c.approved_at, c.created_at) as base_date,
                o.sandbox_of, o.stripe_account_id, o.stripe_charges_enabled,
-               o.acepta_tarjeta, o.cobro_spei_auto, o.nombre as org_nombre
+               o.acepta_tarjeta, o.cobro_spei_auto, o.nombre as org_nombre, o.is_demo
         from cotizaciones c
         left join clientes cl on cl.id = c.cliente_id
         join orgs o on o.id = c.org_id
@@ -141,6 +142,12 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     const amount = Math.round(Number(cobro.monto) * 100); // centavos
     if (!(amount > 0)) return json({ error: 'Monto de cobro inválido' }, 500);
+
+    // El pago en línea ya está bloqueado (409, ver arriba) para orgs sandbox —
+    // is_sandbox aquí es defensivo, no debería llegar true en la práctica.
+    await trackServer('checkout_started', c.org_id as string, {
+        quote_id: c.id, amount: amount / 100, cobro_tipo: cobro.tipo,
+    }, !!c.sandbox_of, !!c.is_demo);
     const pubKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
     // Los payment_method_types según la config vigente del vendedor. Se calculan

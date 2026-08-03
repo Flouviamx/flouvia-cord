@@ -4,6 +4,10 @@ interface Props {
   description?: string;
   articleDate?: string;
   articleAuthors?: string[];
+  // 'es' (default) o 'en' — lo decide la página que monta el layout (index/blog/
+  // [slug].astro), nunca se re-deriva de la URL aquí, para que layout y página
+  // nunca puedan divergir sobre en qué idioma están.
+  lang?: 'es' | 'en';
 }
 
 import DevConsole from "../components/dev-blog/DevConsole.jsx";
@@ -54,7 +58,7 @@ const tkMatrix = [
   [0,0,0,0,1,1,1,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0,0]
 ];
-const { title, description = "Blog tecnico de Cord: articulos de ingenieria sobre arquitectura multi-tenant, pagos B2B, webhooks financieros y la API de cotizaciones para Mexico.", articleDate, articleAuthors } = Astro.props;
+const { title, description = "Blog técnico de Cord: artículos de ingeniería sobre arquitectura multi-tenant, pagos, webhooks financieros y la API de cotizaciones, para cualquier negocio en cualquier país.", articleDate, articleAuthors, lang = 'es' } = Astro.props;
 // Los links del dev-blog usan SIEMPRE el prefijo /dev-blog (dev y prod). En el
 // subdominio dev.cordhq.app, el middleware sirve el árbol /dev-blog; que los links
 // apunten a /dev-blog/* hace que el navegador pida un path que SÍ matchea una ruta
@@ -64,25 +68,41 @@ const { title, description = "Blog tecnico de Cord: articulos de ingenieria sobr
 // patrón que docs (links /docs/*). La raíz dev.cordhq.app/ igual muestra el home
 // (el middleware reescribe / → /dev-blog, y / matchea index → 200).
 const devBase = "/dev-blog";
-const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
 const currentPath = Astro.url.pathname;
 const isBlog = currentPath.includes('/blog');
 const isHome = !isBlog;
 
-const SITE = 'https://cordhq.app';
-const canonical = `${SITE}${currentPath}`;
-const esUrl = `${SITE}${currentPath}${currentPath.includes('?') ? '&' : '?'}lang=es`;
-const enUrl = `${SITE}${currentPath}${currentPath.includes('?') ? '&' : '?'}lang=en`;
-const locale = lang === 'es' ? 'es_MX' : 'en_US';
-const ogImage = `${SITE}/og-cord.png`;
+// EN vive en /dev-blog/en/* (nunca /en/dev-blog/*): así el path SIEMPRE arranca
+// con /dev-blog y el middleware de subdominios lo deja pasar tal cual — igual que
+// ya hacía el ES. El "tail" es lo que sigue después del prefijo de idioma (ej. '',
+// '/blog', '/algun-slug'); de ahí se derivan las dos URLs hermanas sin importar en
+// cuál de las dos estemos parados ahora mismo.
+const tail = currentPath.startsWith('/dev-blog/en')
+  ? currentPath.slice('/dev-blog/en'.length)
+  : currentPath.slice('/dev-blog'.length);
+const esPath = `/dev-blog${tail}` || '/dev-blog';
+const enPath = `/dev-blog/en${tail}`;
 
+// El dev-blog vive en dev.cordhq.app (rewrite en src/middleware.ts) — canonical/OG/
+// JSON-LD deben apuntar ahí, no al dominio apex (que 301-redirige a este mismo
+// subdominio; con el hardcode viejo el canonical apuntaba a una URL que redirige
+// de vuelta a sí misma). Astro.url.origin refleja el host real de la request.
+const SITE = Astro.url.origin;
+const canonical = `${SITE}${currentPath}`;
+const esUrl = `${SITE}${esPath}`;
+const enUrl = `${SITE}${enPath}`;
+const locale = lang === 'es' ? 'es_MX' : 'en_US';
+const ogImage = `${SITE}/og-cord.jpg`;
+
+// La entidad Organization SÍ se queda anclada al dominio de marca (cordhq.app) —
+// es la misma marca sin importar en qué subdominio se lea el JSON-LD.
 const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  "@id": `${SITE}/#organization`,
+  "@id": "https://cordhq.app/#organization",
   "name": "Cord",
-  "url": SITE,
-  "logo": { "@type": "ImageObject", "url": `${SITE}/imgs/logo-cord-navy.png` }
+  "url": "https://cordhq.app",
+  "logo": { "@type": "ImageObject", "url": "https://cordhq.app/imgs/logo-cord-navy.png" }
 };
 ---
 
@@ -130,12 +150,12 @@ const orgJsonLd = {
     <!-- Minimalist Dev Navbar -->
     <nav class="dev-nav">
       <div class="dev-nav-left">
-        <a href={devBase || '/'} class="dev-logo-mark">CORD<span class="cmd-blink">_</span></a>
+        <a href={lang === 'en' ? `${devBase}/en` : devBase} class="dev-logo-mark">CORD<span class="cmd-blink">_</span></a>
         <div class="dev-nav-links">
-          <a href={`${devBase}/?lang=${lang}`} class={`dev-nav-btn ${isHome ? 'active' : ''}`}>
+          <a href={lang === 'en' ? `${devBase}/en` : devBase} class={`dev-nav-btn ${isHome ? 'active' : ''}`}>
             <kbd class="dev-kbd">H</kbd> <span class="btn-text">{lang === 'en' ? 'HOME' : 'INICIO'}</span>
           </a>
-          <a href={`${devBase}/blog?lang=${lang}`} class={`dev-nav-btn ${isBlog ? 'active' : ''}`}>
+          <a href={lang === 'en' ? `${devBase}/en/blog` : `${devBase}/blog`} class={`dev-nav-btn ${isBlog ? 'active' : ''}`}>
             <kbd class="dev-kbd">B</kbd> <span class="btn-text">BLOG</span>
           </a>
           <a href="https://docs.cordhq.app" class="dev-nav-btn" target="_blank" rel="noopener noreferrer">
@@ -145,8 +165,8 @@ const orgJsonLd = {
       </div>
       <div class="dev-nav-right">
         <div class="dev-nav-links">
-          <a href="?lang=es" class={`dev-nav-btn ${lang === 'es' ? 'active' : ''}`}>ES</a>
-          <a href="?lang=en" class={`dev-nav-btn ${lang === 'en' ? 'active' : ''}`}>EN</a>
+          <a href={esPath} class={`dev-nav-btn ${lang === 'es' ? 'active' : ''}`}>ES</a>
+          <a href={enPath} class={`dev-nav-btn ${lang === 'en' ? 'active' : ''}`}>EN</a>
         </div>
         <div class="dev-nav-links" id="console-trigger-container">
           <a href="#" class="dev-nav-btn">

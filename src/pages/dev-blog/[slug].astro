@@ -63,8 +63,15 @@ const inMatrix = [
   [0,0,0,0,0,0,0,0,0,0,0,0]
 ];
 
-const slug = Astro.params.slug;
-const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
+// 'slug'/'lang' vienen por prop cuando este componente se monta vía el wrapper EN
+// (src/pages/dev-blog/en/[slug].astro); montado como ruta propia (ES) se leen de
+// los params reales de la URL. Redirect 302 para el viejo ?lang=en (bookmarks).
+const { slug: slugProp, lang: langProp } = Astro.props as { slug?: string; lang?: 'es' | 'en' };
+const slug = slugProp ?? Astro.params.slug;
+const lang = langProp ?? 'es';
+if (!langProp && Astro.url.searchParams.get('lang') === 'en') {
+  return Astro.redirect(`/dev-blog/en/${slug}`);
+}
 
 let entry = await getEntry('devBlog', `${lang}/${slug}`);
 
@@ -103,14 +110,17 @@ const articleJsonLd = {
   },
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": `https://cordhq.app/dev-blog/${slug}`
+    // La página real vive en dev.cordhq.app, no en el dominio apex (que
+    // 301-redirige aquí) — usar el origin real de la request. La versión EN
+    // vive en /dev-blog/en/<slug>, nunca /en/dev-blog/<slug>.
+    "@id": `${Astro.url.origin}/dev-blog${lang === 'en' ? '/en' : ''}/${slug}`
   },
   "inLanguage": lang === "es" ? "es-MX" : "en-US",
-  "image": "https://cordhq.app/og-cord.png"
+  "image": "https://cordhq.app/og-cord.jpg"
 };
 ---
 
-<DevBlogLayout title={title} description={articleDescription} articleDate={isoDate} articleAuthors={authors}>
+<DevBlogLayout title={title} description={articleDescription} articleDate={isoDate} articleAuthors={authors} lang={lang}>
   <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
   
   <!-- Article Hero -->

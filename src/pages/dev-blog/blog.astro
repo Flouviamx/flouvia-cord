@@ -5,7 +5,13 @@ import PixelBlog from "../../components/dev-blog/PixelBlog.jsx";
 import PixelIcon from "../../components/dev-blog/PixelIcon.jsx";
 
 const devBase = "/dev-blog"; // prefijo fijo → paths matchean ruta → status 200 (ver DevBlogLayout)
-const lang = Astro.url.searchParams.get("lang") === "en" ? "en" : "es";
+// Ver el mismo comentario en index.astro: lang viene por prop desde el wrapper
+// EN; ruta ES propia → default 'es'. Redirect 302 para el ?lang=en viejo.
+const { lang: langProp } = Astro.props as { lang?: 'es' | 'en' };
+const lang = langProp ?? 'es';
+if (!langProp && Astro.url.searchParams.get('lang') === 'en') {
+  return Astro.redirect(`${devBase}/en/blog`);
+}
 
 const allDevBlogs = await getCollection('devBlog', ({ id }) => {
   return id.startsWith(`${lang}/`);
@@ -15,7 +21,7 @@ const articles = allDevBlogs
   .map(post => {
     const slug = post.id.split('/')[1];
     return {
-      url: `${devBase}/${slug}`,
+      url: lang === 'en' ? `${devBase}/en/${slug}` : `${devBase}/${slug}`,
       date: post.data.date,
       title: post.data.title,
       type: post.data.type,
@@ -84,7 +90,7 @@ const checkboxFilled = [
 ];
 ---
 
-<DevBlogLayout title={lang === 'en' ? 'Cord Developer Blog' : 'Blog de Desarrolladores Cord'}>
+<DevBlogLayout title={lang === 'en' ? 'Cord Developer Blog' : 'Blog de Desarrolladores Cord'} lang={lang}>
   <!-- Hero Section -->
   <header class="dev-hero">
     <h1 class="dev-title">

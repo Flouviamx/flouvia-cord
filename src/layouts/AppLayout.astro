@@ -69,7 +69,15 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
         <meta name="apple-mobile-web-app-title" content="Cord" />
 
         <!-- PostHog Analytics -->
-        <script is:inline define:vars={{ phToken: import.meta.env.PUBLIC_POSTHOG_KEY || process.env.PUBLIC_POSTHOG_KEY || '', phHost: import.meta.env.PUBLIC_POSTHOG_HOST || process.env.PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com', phUserId: currentUserId() || '', phOrgName: ORG.nombre || '', phOrgId: ORG.id || '' }}>
+        <script is:inline define:vars={{ phToken: import.meta.env.PUBLIC_POSTHOG_KEY || process.env.PUBLIC_POSTHOG_KEY || '', phHost: import.meta.env.PUBLIC_POSTHOG_HOST || process.env.PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com', phUserId: currentUserId() || '', phOrgName: ORG.nombre || '', phOrgId: ORG.id || '', phPlan: ORG.plan_raw || 'free', phRole: ME.rol || '', phOrgCreatedAt: ORG.createdAt || null, phIsSandbox: !!ORG.sandboxOf, phIsDemo: !!ORG.isDemo }}>
+            // window.cordTrack: wrapper único de captura para toda la app — SIEMPRE
+            // etiqueta is_sandbox/is_demo (org sandbox del "Entorno de prueba" / org
+            // demo permanente) para que ningún dashboard mezcle datos ficticios con
+            // actividad real de clientes sin que el filtro sea explícito y a propósito.
+            window.cordTrack = function (event, props) {
+                if (typeof posthog === 'undefined') return;
+                posthog.capture(event, Object.assign({ is_sandbox: phIsSandbox, is_demo: phIsDemo }, props || {}));
+            };
             if (phToken) {
                 !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
                 posthog.init(phToken, {
@@ -78,10 +86,22 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                     loaded: (posthog) => {
                         if (location.hostname === 'localhost') posthog.debug();
                         if (phUserId) {
-                            posthog.identify(phUserId, { company_name: phOrgName });
+                            posthog.identify(phUserId, {
+                                company_name: phOrgName,
+                                plan: phPlan,
+                                role: phRole,
+                                is_sandbox: phIsSandbox,
+                                is_demo: phIsDemo,
+                            });
                             posthog.register({ platform: 'web' });
                             if (phOrgId) {
-                                posthog.group('company', phOrgId, { name: phOrgName });
+                                posthog.group('company', phOrgId, {
+                                    name: phOrgName,
+                                    plan: phPlan,
+                                    created_at: phOrgCreatedAt,
+                                    is_sandbox: phIsSandbox,
+                                    is_demo: phIsDemo,
+                                });
                             }
                         }
                     }

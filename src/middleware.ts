@@ -69,10 +69,16 @@ function allow(ip: string, scope: string, limit: number): boolean {
 // (ver index.astro): las prerender se sirven estáticas y saltan el middleware. Las
 // páginas de /dev-blog y /docs ya son SSR. Los assets estáticos (/_astro, /imgs, /fonts)
 // se sirven directo por Vercel sin pasar por aquí, así que la reescritura no los toca.
+// 'prefixes' (plural) — casi siempre solo el prefijo ES/default. docs.cordhq.app es
+// la excepción: la versión EN vive en una ruta física INDEPENDIENTE en el árbol de
+// páginas (src/pages/en/docs/[...slug].astro, ya existente desde antes de tocar
+// subdominios) en vez de anidar bajo /docs/en/* como hace dev-blog — así que
+// "/en/docs" necesita su PROPIA entrada en la whitelist o el guard de abajo la
+// trata como una ruta cualquiera y la reescribe mal (ver bug documentado abajo).
 const SUBDOMAINS = [
-    { host: "dev.cordhq.app", prefix: "/dev-blog" },
-    { host: "docs.cordhq.app", prefix: "/docs" },
-    { host: "ops.cordhq.app", prefix: "/ops" },
+    { host: "dev.cordhq.app", prefixes: ["/dev-blog"] },
+    { host: "docs.cordhq.app", prefixes: ["/docs", "/en/docs"] },
+    { host: "ops.cordhq.app", prefixes: ["/ops"] },
 ];
 
 const subdomainRewrite = async (context: any, next: any) => {
@@ -81,48 +87,62 @@ const subdomainRewrite = async (context: any, next: any) => {
 
     const sub = SUBDOMAINS.find((s) => host.includes(s.host));
     if (sub) {
-        // Idempotente + a prueba de bucles: si el path YA vive bajo el prefijo (porque
-        // context.rewrite re-ejecuta el middleware, o porque los links internos ya lo
-        // incluyen — p.ej. DocsLayout usa /docs/*), se sirve tal cual. Nunca se
-        // re-reescribe (evita /dev-blog/dev-blog/... y ping-pong de redirecciones).
-        // También se dejan pasar los endpoints internos de Astro (/_image, /_server-islands,
-        // /_actions) y el 404 (el [slug] del dev-blog redirige a /404 en slug inexistente;
-        // sin esta salida se generaría un bucle /404 → /dev-blog/404 → /404).
-        if (
-            path === sub.prefix ||
-            path.startsWith(sub.prefix + "/") ||
-            path.startsWith("/_") ||
-            path === "/404"
-        ) {
+        // Idempotente + a prueba de bucles: si el path YA vive bajo alguno de los
+        // prefijos (porque context.rewrite re-ejecuta el middleware, o porque los
+        // links internos ya lo incluyen — p.ej. DocsLayout usa /docs/* y /en/docs/*),
+        // se sirve tal cual. Nunca se re-reescribe (evita /dev-blog/dev-blog/... y
+        // ping-pong de redirecciones). También se dejan pasar los endpoints internos
+        // de Astro (/_image, /_server-islands, /_actions) y el 404 (el [slug] del
+        // dev-blog redirige a /404 en slug inexistente; sin esta salida se generaría
+        // un bucle /404 → /dev-blog/404 → /404).
+        //
+        // ⚠️ BUG REAL corregido (ago 2026): antes solo existía "/docs" en la
+        // whitelist de docs.cordhq.app. Una visita a docs.cordhq.app/en/docs/<slug>
+        // NO empezaba con "/docs" (empieza con "/en") → caía al rewrite de abajo →
+        // se servía como /docs + "/en/docs/<slug>" = "/docs/en/docs/<slug>", que el
+        // catch-all [...slug] de /docs interpreta como slug="en/docs/<slug>" (nunca
+        // existe) → 302 silencioso de vuelta a /docs. Es decir: TODA página de docs
+        // en inglés rebotaba a la portada en español en vez de mostrar su contenido.
+        // Con "/en/docs" en la whitelist, ese path pasa tal cual y llega a la ruta
+        // real src/pages/en/docs/[...slug].astro.
+        const matchedPrefix = sub.prefixes.find((p) => path === p || path.startsWith(p + "/"));
+        if (matchedPrefix || path.startsWith("/_") || path === "/404") {
             return next();
         }
         // Reescritura INTERNA: la URL del navegador no cambia; se sirve el árbol del
-        // prefijo bajo el subdominio. Sirve sobre todo para la RAÍZ del subdominio
-        // (dev.cordhq.app/ → /dev-blog, docs.cordhq.app/ → /docs): la raíz "/" matchea
-        // la ruta index → status 200 correcto.
+        // prefijo por DEFAULT (siempre prefixes[0], el idioma default/ES) bajo el
+        // subdominio. Sirve sobre todo para la RAÍZ del subdominio (dev.cordhq.app/ →
+        // /dev-blog, docs.cordhq.app/ → /docs): la raíz "/" matchea la ruta index →
+        // status 200 correcto.
         //
         // ⚠️ El resto de páginas del dev-blog/docs enlazan con su prefijo (/dev-blog/*,
-        // /docs/*), así que el navegador pide directo un path que matchea ruta → 200 vía
-        // el guard de arriba, SIN pasar por este rewrite. Esto es a propósito: Astro fija
-        // el status HTTP según si el path ORIGINAL matchea una ruta, en una capa por
-        // ENCIMA del middleware — un path raíz-limpio (/<slug>) que no matchea ninguna
-        // ruta se sirve con 404 aunque el contenido renderice, y no se puede corregir
-        // desde aquí. Por eso los links llevan el prefijo (ver DevBlogLayout).
-        return context.rewrite(sub.prefix + (path === "/" ? "" : path));
+        // /docs/*, /en/docs/*), así que el navegador pide directo un path que matchea
+        // ruta → 200 vía el guard de arriba, SIN pasar por este rewrite. Esto es a
+        // propósito: Astro fija el status HTTP según si el path ORIGINAL matchea una
+        // ruta, en una capa por ENCIMA del middleware — un path raíz-limpio (/<slug>)
+        // que no matchea ninguna ruta se sirve con 404 aunque el contenido renderice,
+        // y no se puede corregir desde aquí. Por eso los links llevan el prefijo (ver
+        // DevBlogLayout/DocsLayout).
+        return context.rewrite(sub.prefixes[0] + (path === "/" ? "" : path));
     }
 
     // Dominio principal (cordhq.app): en prod, el contenido de los subdominios no debe
-    // vivir también en cordhq.app/dev-blog|/docs (evita contenido duplicado / SEO split).
-    // Estas rutas son SSR, así que este middleware sí corre para ellas.
+    // vivir también en cordhq.app/dev-blog|/docs|/en/docs (evita contenido duplicado /
+    // SEO split — y evita que la versión EN de docs, que vive en una ruta física propia
+    // del árbol de páginas, quede indexable en DOS dominios a la vez). Estas rutas son
+    // SSR, así que este middleware sí corre para ellas.
     if (import.meta.env.PROD) {
         for (const s of SUBDOMAINS) {
-            if (path === s.prefix || path.startsWith(s.prefix + "/")) {
-                // ⚠️ Se PRESERVA el prefijo en el destino (no se recorta). Un deep link
-                // como cordhq.app/docs/pagos/resumen debe caer en
-                // docs.cordhq.app/docs/pagos/resumen (matchea ruta → 200). Si se recortara
-                // a docs.cordhq.app/pagos/resumen, el contenido renderiza pero con status
-                // 404 (Astro fija el status por match de la ruta ORIGINAL — ver arriba).
-                return context.redirect(`https://${s.host}${path}`, 301);
+            for (const p of s.prefixes) {
+                if (path === p || path.startsWith(p + "/")) {
+                    // ⚠️ Se PRESERVA el prefijo en el destino (no se recorta). Un deep
+                    // link como cordhq.app/docs/pagos/resumen debe caer en
+                    // docs.cordhq.app/docs/pagos/resumen (matchea ruta → 200). Si se
+                    // recortara a docs.cordhq.app/pagos/resumen, el contenido renderiza
+                    // pero con status 404 (Astro fija el status por match de la ruta
+                    // ORIGINAL — ver arriba).
+                    return context.redirect(`https://${s.host}${path}`, 301);
+                }
             }
         }
     }
@@ -289,11 +309,16 @@ const mainHandler = async (context: any, next: any) => {
         // documentado como pendiente). 'unsafe-eval' SÍ se quita — nada en
         // el bundle lo necesita y es la directiva que de verdad habilita
         // ejecución de código arbitrario vía eval/Function.
+        // ⚠️ PostHog: .env.example documenta PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+        // como default, pero el host de ingesta y el de assets estáticos son
+        // subdominios DISTINTOS entre sí y de us.posthog.com — si falta cualquiera
+        // de los tres aquí, el navegador bloquea el script/las llamadas de captura
+        // en silencio (sin error visible salvo en la consola de devtools).
         secureRes.headers.set(
             "Content-Security-Policy",
             "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline' https://us.posthog.com https://accounts.google.com https://appleid.apple.com https://js.stripe.com; " +
-            "connect-src 'self' https://us.posthog.com https://vitals.vercel-insights.com https://api.stripe.com; " +
+            "script-src 'self' 'unsafe-inline' https://us.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://accounts.google.com https://appleid.apple.com https://js.stripe.com; " +
+            "connect-src 'self' https://us.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://vitals.vercel-insights.com https://api.stripe.com; " +
             "img-src 'self' data: https:; " +
             "style-src 'self' 'unsafe-inline'; " +
             "frame-src 'self' https://accounts.google.com https://appleid.apple.com https://js.stripe.com https://hooks.stripe.com; " +

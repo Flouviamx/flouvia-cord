@@ -13,6 +13,7 @@ import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 import { runARAgent } from '../../lib/agents/ar-agent';
 import { sendEmail } from '../../lib/email';
+import { trackServer } from '../../lib/posthog-server';
 import {
   listMcpServers, addMcpServer, deleteMcpServer, setServerActivo, setServerPermitido,
 } from '../../lib/agents/governance';
@@ -124,6 +125,10 @@ export const POST: APIRoute = async ({ request }) => {
       const value = Boolean(body.value);
       await withOrgTx(orgId, sql`update orgs set ai_cobranza_activa = ${value} where id = ${orgId}`);
       await logAudit(orgId, { accion: 'agente.cobranza_autonoma', entidad: 'org', entidad_id: orgId, detalle: value ? 'activada' : 'desactivada', ip });
+      if (value) {
+        const [[flags]] = await withOrgTx(orgId, sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
+        await trackServer('cobranza_ia_activated', orgId, {}, !!flags?.is_sandbox, !!flags?.is_demo);
+      }
       return json({ ok: true });
     }
     case 'run_cobranza': {

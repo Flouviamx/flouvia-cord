@@ -158,14 +158,19 @@ de Vercel de Cord (auto-inyecta `DATABASE_URL` en todos los environments).
 
 ## Roadmap & TODOs (Analytics & Growth)
 
-Implementación en PostHog para escalar el análisis de Growth y activación:
+Implementación en PostHog para escalar el análisis de Growth y activación. Ver
+`docs/historial-app-features.md` (entrada "PostHog — auditoría completa y
+endurecimiento", ago 2026) para el detalle completo de la auditoría/fixes.
 
 - [x] **`quote_sent`:** Rastrear cuando el usuario da click a "Enviar" o copia el link. Clave para medir el TTV (Time-to-Value).
 - [x] **`quote_viewed` / `quote_approved`:** Medir la tasa de éxito (conversión) de las cotizaciones.
 - [x] **`payment_received`:** Backend tracking (Stripe Webhook → PostHog) para medir ingresos y caída en el checkout.
 - [x] **`ai_draft_used`:** Rastrear el uso del botón "Armar con IA" para confirmar si es el *Aha Moment* que correlaciona con upgrades.
-- [x] **Group Analytics (B2B):** Vincular los eventos al `org_id` de Clerk para analizar el uso a nivel Empresa/Workspace, no solo individual.
-- [ ] **Atribución UTM:** Capturar parámetros de URL en el registro para saber qué canales de marketing traen usuarios de paga.
+- [x] **`sign_up_completed`:** (ago 2026) server-side, atado a cuenta nueva real (verificación de correo / primer OAuth), nunca a cada login.
+- [x] **Group Analytics (B2B):** `group('company', org_id, {plan, created_at, ...})` — el `org_id` es el propio de Cord (auth custom, no Clerk). ⚠️ Es un add-on de pago de PostHog — confirmar que esté contratado antes de esperar que los insights por-cuenta poblen datos.
+- [x] **Atribución UTM:** verificado (ago 2026) que no hace falta código nuevo — el SDK de PostHog autocaptura `utm_*` en `$pageview` y los persiste en `$initial_utm_*` tras el primer `identify()`; el flujo landing→registro→verificación no pasa por ningún redirect de dominio que resetee el `distinct_id` anónimo.
+- [x] **Eventos de activación/expansión (ago 2026):** `subscription_upgraded`/`downgraded`/`canceled`, `payment_failed`, `stripe_connect_activated`, `cfdi_first_timbrado`, `team_member_invited`/`accepted`, `api_key_created`, `cobranza_ia_activated`, `checkout_started`, `kit_used` — ver la entrada de historial para dónde dispara cada uno.
+- [ ] **Suite de dashboards en PostHog** (Growth & Activation, Revenue, Core Funnel, Account Health & Retention, Feature Adoption, Acquisition) — diseñada, pendiente de construirse en vivo vía el MCP de PostHog una vez conectado.
 
 ---
 

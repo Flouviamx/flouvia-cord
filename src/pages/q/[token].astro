@@ -145,10 +145,15 @@ const color = ORG.colorMarca || '#0a192f';
             puedePagar={puedePagar}
             standalone={true}
         />
-        <script is:inline define:vars={{ qId: q.id, qTotal: q.total, orgId: ORG.id, currency: q.baseCurrency || 'MXN' }}>
+        <script is:inline define:vars={{ qId: q.id, qTotal: q.total, orgId: ORG.id, currency: q.baseCurrency || 'MXN', qIsSandbox: !!ORG.esPrueba, qIsDemo: !!ORG.esDemo }}>
+            // Pisa los flags de sandbox/demo del layout base ANTES de capturar —
+            // window.cordTrack (definido en Layout.astro) los mezcla en cada evento.
+            window.__cordFlags = { is_sandbox: qIsSandbox, is_demo: qIsDemo };
             if (typeof posthog !== 'undefined') {
                 posthog.group('company', orgId);
-                posthog.capture('quote_viewed', {
+            }
+            if (typeof window.cordTrack === 'function') {
+                window.cordTrack('quote_viewed', {
                     quote_id: qId,
                     total: qTotal,
                     currency: currency,
@@ -157,8 +162,8 @@ const color = ORG.colorMarca || '#0a192f';
             }
 
             window.addEventListener('cord:approved', (e) => {
-                if (typeof posthog !== 'undefined') {
-                    posthog.capture('quote_approved', {
+                if (typeof window.cordTrack === 'function') {
+                    window.cordTrack('quote_approved', {
                         quote_id: qId,
                         total: qTotal,
                         currency: currency,

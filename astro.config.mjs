@@ -3,7 +3,6 @@ import { defineConfig } from 'astro/config';
 import vercel from '@astrojs/vercel';
 import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
-import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   site: 'https://cordhq.app',
@@ -28,7 +27,10 @@ export default defineConfig({
     '/desarrolladores/elements': '/elements',
     '/en/desarrolladores/elements': '/en/elements',
   },
-  integrations: [react(), mdx(), sitemap()],
+  // El sitemap NO usa @astrojs/sitemap (auto-genera /sitemap-index.xml con TODAS las
+  // rutas SSR, incluidas las privadas de /app/*) — usamos el curado a mano en
+  // src/pages/sitemap.xml.ts, que cubre solo lo público con hreflang ES/EN correcto.
+  integrations: [react(), mdx()],
   adapter: vercel(),
 
   vite: {

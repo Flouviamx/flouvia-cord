@@ -13,7 +13,7 @@ import crypto from 'node:crypto';
 import { sql, logAudit } from '../../../lib/db';
 import { dispatchQuoteEvent, dispatchPaymentPartial } from '../../../lib/webhooks';
 import { PRICE_TO_PLAN, isPaidPlan, stripe } from '../../../lib/billing';
-import { trackPaymentReceived } from '../../../lib/posthog-server';
+import { trackPaymentReceived, trackServer } from '../../../lib/posthog-server';
 import { after } from '../../../lib/after';
 
 const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
@@ -129,7 +129,11 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
         if (ps && ps !== 'paid' && ps !== 'no_payment_required') return;
     }
 
-    const rows = await sql`select id, org_id, status, (select stripe_account_id from orgs where id = c.org_id) as acct from cotizaciones c where c.id = ${cid}`;
+    const rows = await sql`select id, org_id, status,
+        (select stripe_account_id from orgs where id = c.org_id) as acct,
+        (select sandbox_of is not null from orgs where id = c.org_id) as is_sandbox,
+        (select is_demo from orgs where id = c.org_id) as is_demo
+        from cotizaciones c where c.id = ${cid}`;
     // Defensa en profundidad: el evento debe provenir de la cuenta conectada de la
     // org dueña de la cotización (o de la plataforma, si aún no hay Connect).
     if (rows.length && account && rows[0].acct && rows[0].acct !== account) return;
@@ -225,7 +229,7 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                           values (${orgId}, ${cid}, 'paid', 'Pago recibido vía Stripe — cotización saldada')`;
                 await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea (Stripe)' });
-                await trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid);
+                await trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid, !!rows[0].is_sandbox, !!rows[0].is_demo);
                 after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
             } else if (marked.length) {
                 // Pago PARCIAL: evento informativo, sin quote.paid (avisar a las
@@ -241,7 +245,7 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                           values (${orgId}, ${cid}, 'paid', ${`${label} de ${monto} pagado vía Stripe${sufijo}`})`;
                 await logAudit(orgId, { accion: 'cotizacion.cobro_pagado', entidad: 'cotizacion', entidad_id: cid, detalle: `${label} pagado en línea (Stripe)` });
-                await trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid);
+                await trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid, !!rows[0].is_sandbox, !!rows[0].is_demo);
                 // payment.partial: antes NINGÚN webhook avisaba que cayó un
                 // anticipo/saldo/cuota — una integración solo se enteraba hasta
                 // que el TOTAL quedaba cubierto (quote.paid). `sums` ya refleja
@@ -266,7 +270,7 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
             
             const amountPaid = Number(sessionOrIntent?.amount ?? 0) / 100;
             const currency = (sessionOrIntent?.currency ?? 'MXN').toUpperCase();
-            await trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid);
+            await trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid, !!rows[0].is_sandbox, !!rows[0].is_demo);
 
             // No demorar el 200 a Stripe con nuestro webhook saliente, pero SIN perderlo:
             // after()/waitUntil mantiene viva la invocación hasta que termine, a
@@ -299,6 +303,10 @@ function planOf(sub: any): string {
     return 'free';
 }
 
+// Ranking de planes para distinguir upgrade vs downgrade en PostHog — orden
+// real de negocio (ver docs/negocio-billing.md), no alfabético.
+const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, scale: 3, developer: 4 };
+
 // Sincroniza plan / estado / fin de ciclo. ESTE es el "cambio de plan en vivo".
 async function syncSubscription(sub: any) {
     const plan = planOf(sub);
@@ -310,10 +318,16 @@ async function syncSubscription(sub: any) {
     const rawPeriodEnd = sub.current_period_end ?? sub?.items?.data?.[0]?.current_period_end;
     const periodEnd = rawPeriodEnd ? Number(rawPeriodEnd) : null;
 
-    // Localiza la org por subscription_id o por customer_id.
-    const rows = await sql`select id from orgs where stripe_subscription_id = ${sub.id} or stripe_customer_id = ${sub.customer} limit 1`;
+    // Localiza la org por subscription_id o por customer_id. De paso trae el
+    // plan/flags ACTUALES (antes del UPDATE) para poder distinguir upgrade de
+    // downgrade en PostHog sin una segunda query.
+    const rows = await sql`select id, plan as prev_plan, (sandbox_of is not null) as is_sandbox, is_demo
+        from orgs where stripe_subscription_id = ${sub.id} or stripe_customer_id = ${sub.customer} limit 1`;
     if (!rows.length) return;
     const orgId = rows[0].id as string;
+    const prevPlan = (rows[0].prev_plan as string) || 'free';
+    const isSandbox = !!rows[0].is_sandbox;
+    const isDemo = !!rows[0].is_demo;
 
     // El plan SOLO se otorga cuando la suscripción está pagada/vigente. Con el
     // Payment Element la suscripción nace `incomplete` (antes de pagar): en ese
@@ -340,20 +354,42 @@ async function syncSubscription(sub: any) {
                   where id = ${orgId}`;
     }
     await logAudit(orgId, { accion: 'billing.plan_sync', entidad: 'org', entidad_id: orgId, detalle: `Plan ${grantsPlan ? plan : '(sin cambio)'} (${status})` });
+
+    // Solo dispara cuando el plan efectivo REALMENTE cambió (no en cada renovación
+    // mensual que reconfirma el mismo plan).
+    if (grantsPlan && plan !== prevPlan) {
+        const upgraded = (PLAN_RANK[plan] ?? 0) > (PLAN_RANK[prevPlan] ?? 0);
+        await trackServer(upgraded ? 'subscription_upgraded' : 'subscription_downgraded', orgId, {
+            from_plan: prevPlan,
+            to_plan: plan,
+            cycle,
+        }, isSandbox, isDemo);
+    }
 }
 
 // Cancelación → vuelve a Gratis.
 async function downgradeToFree(sub: any) {
-    const rows = await sql`select id from orgs where stripe_subscription_id = ${sub.id} or stripe_customer_id = ${sub.customer} limit 1`;
+    const rows = await sql`select id, plan, created_at, (sandbox_of is not null) as is_sandbox, is_demo
+        from orgs where stripe_subscription_id = ${sub.id} or stripe_customer_id = ${sub.customer} limit 1`;
     if (!rows.length) return;
     const orgId = rows[0].id as string;
+    const prevPlan = (rows[0].plan as string) || 'free';
     await sql`update orgs set plan = 'free', subscription_status = 'canceled', stripe_subscription_id = null where id = ${orgId}`;
     await logAudit(orgId, { accion: 'billing.canceled', entidad: 'org', entidad_id: orgId, detalle: 'Suscripción cancelada → Gratis' });
+    const tenureDays = rows[0].created_at ? Math.max(0, Math.round((Date.now() - new Date(rows[0].created_at as string).getTime()) / 86400000)) : null;
+    await trackServer('subscription_canceled', orgId, {
+        plan: prevPlan,
+        tenure_days: tenureDays,
+    }, !!rows[0].is_sandbox, !!rows[0].is_demo);
 }
 
 async function setStatusByCustomer(customer: string | undefined, status: string) {
     if (!customer) return;
+    const rows = await sql`select id, (sandbox_of is not null) as is_sandbox, is_demo from orgs where stripe_customer_id = ${customer} limit 1`;
     await sql`update orgs set subscription_status = ${status} where stripe_customer_id = ${customer}`;
+    if (status === 'past_due' && rows.length) {
+        await trackServer('payment_failed', rows[0].id as string, { context: 'subscription' }, !!rows[0].is_sandbox, !!rows[0].is_demo);
+    }
 }
 
 async function updateAccountStatus(account: any) {
@@ -363,13 +399,25 @@ async function updateAccountStatus(account: any) {
     const detailsSubmitted = !!account.details_submitted;
     const disabledReason = account.requirements?.disabled_reason || null;
     const requirements = JSON.stringify(account.requirements || {});
-    await sql`update orgs set 
+    // Estado ANTES del update — para detectar el flip false→true (primera vez
+    // que la org puede cobrar de verdad), no cada re-confirmación del webhook.
+    const before = await sql`select id, created_at, stripe_charges_enabled, (sandbox_of is not null) as is_sandbox, is_demo
+        from orgs where stripe_account_id = ${account.id} limit 1`;
+    await sql`update orgs set
         stripe_charges_enabled = ${chargesEnabled},
         stripe_payouts_enabled = ${payoutsEnabled},
         stripe_details_submitted = ${detailsSubmitted},
         stripe_disabled_reason = ${disabledReason},
         stripe_requirements = ${requirements}
         where stripe_account_id = ${account.id}`;
+
+    if (before.length && chargesEnabled && !before[0].stripe_charges_enabled) {
+        const orgId = before[0].id as string;
+        const timeSinceCreated = before[0].created_at ? Math.max(0, Math.round((Date.now() - new Date(before[0].created_at as string).getTime()) / 86400000)) : null;
+        await trackServer('stripe_connect_activated', orgId, {
+            time_since_org_created_days: timeSinceCreated,
+        }, !!before[0].is_sandbox, !!before[0].is_demo);
+    }
 }
 
 // ── Igualas recurrentes (Subscriptions sobre cuentas CONECTADAS) ─────────────
@@ -432,7 +480,8 @@ async function recurringInvoicePaid(invoice: any, account: string) {
     await logAudit(row.org_id as string, { accion: 'cotizacion.iguala_cobrada', entidad: 'cotizacion', entidad_id: row.cotizacion_id as string, detalle: `Cobro recurrente ${monto} (Stripe)` });
     
     const currency = (invoice?.currency ?? 'MXN').toUpperCase();
-    await trackPaymentReceived(row.org_id as string, montoNum, currency, 'tarjeta', true, row.cotizacion_id as string);
+    const [orgFlags] = await sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${row.org_id}`;
+    await trackPaymentReceived(row.org_id as string, montoNum, currency, 'tarjeta', true, row.cotizacion_id as string, !!orgFlags?.is_sandbox, !!orgFlags?.is_demo);
     
     // Cada cobro mensual exitoso es un "Pago recibido" real para las integraciones.
     // after()/waitUntil — no perderlo si Vercel congela la invocación tras el 200.
@@ -449,6 +498,8 @@ async function recurringInvoiceFailed(invoice: any, account: string) {
     // Antes esto no avisaba a NINGUNA integración — un ERP conectado nunca se
     // enteraba de que la iguala dejó de cobrarse hasta que alguien lo notara a mano.
     after(dispatchQuoteEvent(row.org_id as string, row.cotizacion_id as string, 'payment.failed'));
+    const [orgFlags] = await sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${row.org_id}`;
+    await trackServer('payment_failed', row.org_id as string, { context: 'iguala', cotizacion_id: row.cotizacion_id }, !!orgFlags?.is_sandbox, !!orgFlags?.is_demo);
 }
 
 // customer.subscription.updated/created → sincroniza estado y fin de ciclo.
