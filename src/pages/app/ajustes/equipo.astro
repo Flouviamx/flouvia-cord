@@ -1,7 +1,7 @@
 ---
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg, getMembers, getMyMembership } from '../../../lib/queries';
-import { memberCan } from '../../../lib/permissions';
+import { memberCan, PERMISOS, PRESETS } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -25,6 +25,16 @@ const ROL_LABEL: Record<string, string> = {
     vendedor: t(L, 'set.eq.rol.vendedor'),
     lectura: t(L, 'set.eq.rol.lectura'),
 };
+
+// Descripciones del segmented control de presets + el texto de "Personalizado",
+// precalculadas server-side (i18n) y pasadas al cliente como JSON — el script
+// del picker de permisos no es is:inline y podría importar `t()` (es puro),
+// pero no `currentLocale()` (depende del contexto de request); más simple pasar
+// el resultado ya traducido vía data-attribute.
+const PRESET_DESC_MAP = JSON.stringify({
+    ...Object.fromEntries(Object.keys(PRESETS).map((key) => [key, t(L, `set.eq.preset.${key}.desc` as any)])),
+    __custom: t(L, 'set.eq.personalizado_desc'),
+});
 
 const getAvatarColor = (name: string) => {
     const colors = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'];
@@ -98,11 +108,11 @@ const getAvatarColor = (name: string) => {
                     <div class="tm-col tm-col-action">
                         {canEdit && !m.esYo && m.rol !== 'owner' && (
                             <div class="tm-menu-wrap">
-                                <button class="tm-btn-more" aria-label={t(L, 'set.eq.opciones')} data-id={m.id} data-rol={m.rol}>
+                                <button class="tm-btn-more" aria-label={t(L, 'set.eq.opciones')} data-id={m.id}>
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
                                 </button>
                                 <div class="tm-dropdown" hidden>
-                                    <button class="tm-dd-item act-edit" data-id={m.id} data-rol={m.rol}>{t(L, 'set.eq.editar_funciones')}</button>
+                                    <button class="tm-dd-item act-edit" data-id={m.id} data-permisos={JSON.stringify(m.permisos ?? {})}>{t(L, 'set.eq.editar_funciones')}</button>
                                     {m.tieneInvitePendiente && (
                                         <button class="tm-dd-item act-resend" data-id={m.id}>{t(L, 'set.eq.reenviar_invitacion')}</button>
                                     )}
@@ -141,13 +151,31 @@ const getAvatarColor = (name: string) => {
                     <label for="invEmail">{t(L, 'set.eq.correo_electronico')}</label>
                     <input type="email" id="invEmail" class="form-control" required placeholder="ejemplo@empresa.com" />
                 </div>
-                <div class="form-group">
-                    <label for="invRole">{t(L, 'set.eq.funciones_rol')}</label>
-                    <select id="invRole" class="form-control" required>
-                        <option value="vendedor">{t(L, 'set.eq.rol_vendedor_desc')}</option>
-                        <option value="admin">{t(L, 'set.eq.rol_admin_desc')}</option>
-                        <option value="lectura">{t(L, 'set.eq.rol_lectura')}</option>
-                    </select>
+                <div class="perm-field" data-prefix="inv" data-desc-map={PRESET_DESC_MAP}>
+                    <div class="perm-seg-row">
+                        <span class="perm-seg-label">{t(L, 'set.eq.punto_partida')}</span>
+                        <div class="perm-seg">
+                            {Object.entries(PRESETS).map(([key]) => (
+                                <button type="button" class="perm-seg-btn" data-preset={key}>{t(L, `set.eq.preset.${key}.label` as any)}</button>
+                            ))}
+                        </div>
+                    </div>
+                    <p class="perm-seg-desc" data-seg-desc></p>
+                    <p class="perm-list-title">{t(L, 'set.eq.permisos_titulo')}</p>
+                    <div class="perm-list">
+                        {PERMISOS.map(p => (
+                            <div class="perm-row">
+                                <span class="perm-row-text">
+                                    <span class="perm-row-label">{t(L, `set.eq.perm.${p.key}.label` as any)}</span>
+                                    <span class="perm-row-desc">{t(L, `set.eq.perm.${p.key}.desc` as any)}</span>
+                                </span>
+                                <label class="s-toggle">
+                                    <input type="checkbox" class="perm-chk" data-key={p.key} />
+                                    <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                                </label>
+                            </div>
+                        ))}
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" data-close="modInvite">{t(L, 'set.eq.cancelar')}</button>
@@ -168,13 +196,31 @@ const getAvatarColor = (name: string) => {
         <div class="modal-body">
             <form id="frmEdit">
                 <input type="hidden" id="editId" />
-                <div class="form-group">
-                    <label for="editRole">{t(L, 'set.eq.nuevo_rol')}</label>
-                    <select id="editRole" class="form-control" required>
-                        <option value="vendedor">{t(L, 'set.eq.rol_vendedor')}</option>
-                        <option value="admin">{t(L, 'set.eq.rol_admin')}</option>
-                        <option value="lectura">{t(L, 'set.eq.rol_lectura')}</option>
-                    </select>
+                <div class="perm-field" data-prefix="edit" data-desc-map={PRESET_DESC_MAP}>
+                    <div class="perm-seg-row">
+                        <span class="perm-seg-label">{t(L, 'set.eq.punto_partida')}</span>
+                        <div class="perm-seg">
+                            {Object.entries(PRESETS).map(([key]) => (
+                                <button type="button" class="perm-seg-btn" data-preset={key}>{t(L, `set.eq.preset.${key}.label` as any)}</button>
+                            ))}
+                        </div>
+                    </div>
+                    <p class="perm-seg-desc" data-seg-desc></p>
+                    <p class="perm-list-title">{t(L, 'set.eq.permisos_titulo')}</p>
+                    <div class="perm-list">
+                        {PERMISOS.map(p => (
+                            <div class="perm-row">
+                                <span class="perm-row-text">
+                                    <span class="perm-row-label">{t(L, `set.eq.perm.${p.key}.label` as any)}</span>
+                                    <span class="perm-row-desc">{t(L, `set.eq.perm.${p.key}.desc` as any)}</span>
+                                </span>
+                                <label class="s-toggle">
+                                    <input type="checkbox" class="perm-chk" data-key={p.key} />
+                                    <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                                </label>
+                            </div>
+                        ))}
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" data-close="modEdit">{t(L, 'set.eq.cancelar')}</button>
@@ -254,28 +300,39 @@ const getAvatarColor = (name: string) => {
     .btn-secondary svg { width: 15px; height: 15px; opacity: 0.7; }
 
     /* ── Lista "inset grouped" estilo Apple Settings: una sola tarjeta,
-       filas separadas por hairline (no cards flotantes por fila) ── */
+       filas separadas por hairline (no cards flotantes por fila) ──
+       ⚠️ SIN overflow:hidden aquí a propósito: el menú "···" de cada fila
+       es un dropdown absolute que necesita poder salir de esta caja (antes
+       quedaba recortado/oculto). El redondeo de esquinas se logra aplicando
+       border-radius directo a las piezas con fondo propio (thead arriba,
+       última fila en hover abajo) en vez de recortar todo el contenedor. */
     .tm-table-wrap {
         border: 1px solid var(--color-border); border-radius: 20px;
-        background: var(--surface); overflow: hidden;
+        background: var(--surface);
     }
 
     .tm-thead {
         display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 44px;
         padding: 13px 20px; background: var(--color-bg-soft);
         border-bottom: 1px solid var(--color-border);
+        border-radius: 20px 20px 0 0;
     }
     .tm-th { font-size: 0.66rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
 
-    .tm-tbody { display: flex; flex-direction: column; }
+    .tm-tbody { display: flex; flex-direction: column; border-radius: 0 0 20px 20px; }
     .tm-row {
         display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 44px;
         padding: 13px 20px; align-items: center; position: relative;
         border-bottom: 1px solid var(--color-border);
         transition: background 0.2s;
     }
-    .tm-row:last-child { border-bottom: none; }
+    .tm-row:last-child { border-bottom: none; border-radius: 0 0 20px 20px; }
     .tm-row:hover { background: var(--color-bg-soft); z-index: 2; }
+    /* La fila con el menú "···" abierto sube por encima de cualquier otra
+       fila que el usuario esté sobrepasando con el cursor (z-index:2 en
+       :hover) — sin esto el dropdown podía quedar tapado por la fila de
+       abajo al pasar el mouse sobre ella. */
+    .tm-row.has-menu-open { z-index: 6; }
     .tm-row.hidden { display: none; }
 
     .tm-col { font-size: 0.88rem; color: var(--color-text); }
@@ -351,20 +408,20 @@ const getAvatarColor = (name: string) => {
     }
     .modal-overlay[hidden] { display: none; }
     .modal-card {
-        background: var(--surface); width: 100%; max-width: 440px; border-radius: 24px;
+        background: var(--surface); width: 100%; max-width: 480px; border-radius: 24px;
         box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 32px 64px -20px rgba(10,25,47,0.28), inset 0 1px 0 rgba(255,255,255,0.5);
-        overflow: hidden;
+        overflow: hidden; max-height: min(88vh, 760px); display: flex; flex-direction: column;
         animation: modIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
     html[data-theme="dark"] .modal-card { box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 32px 64px -20px rgba(0,0,0,0.5); }
     @keyframes modIn { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
-    .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 1.4rem 1.6rem; border-bottom: 1px solid var(--color-border); }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 1.4rem 1.6rem; border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
     .modal-title { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--color-text); letter-spacing: -0.3px; }
     .modal-close { background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: 6px; border-radius: 8px; transition: background 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center; }
     .modal-close:hover { background: var(--color-bg-soft); color: var(--color-text); }
     .modal-close svg { width: 18px; height: 18px; }
-    .modal-body { padding: 1.6rem; }
+    .modal-body { padding: 1.6rem; overflow-y: auto; }
 
     .form-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 1.3rem; }
     .form-group label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
@@ -375,7 +432,48 @@ const getAvatarColor = (name: string) => {
     }
     .form-control:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); }
 
-    .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.6rem; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.6rem; flex-shrink: 0; }
+
+    /* ── Selector de permisos: segmented control de presets (mismo lenguaje
+       que `.tm-tabs`/`.tm-tab` arriba) + lista hairline con toggles iOS
+       (reusa el componente global `.s-toggle` de AppLayout, el mismo que
+       usan el resto de páginas de Ajustes). Los 3 presets son solo un punto
+       de partida — tocar cualquier toggle después de elegir uno apaga la
+       selección del segmented control ("Personalizado" / rol='miembro'
+       server-side), calculado 100% en cliente comparando contra PRESETS.
+       ⚠️ Nota deliberada: NO se usa la clase `.form-group` para envolver
+       este bloque (se usa `.perm-field` en su lugar) — `.form-group label`
+       más abajo pone TODO `<label>` descendiente en mayúsculas trackeadas
+       para las etiquetas de campo, y el `<label class="s-toggle">` de cada
+       fila es justo eso: un `<label>`. Si se reutiliza `.form-group` aquí
+       otra vez, los títulos de la lista vuelven a salir en mayúsculas. ── */
+    .perm-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.3rem; }
+
+    .perm-seg-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .perm-seg-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .perm-seg { display: flex; gap: 2px; background: var(--color-bg-soft); padding: 3px; border-radius: 999px; border: 1px solid var(--color-border); }
+    .perm-seg-btn {
+        padding: 6px 13px; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted);
+        cursor: pointer; border-radius: 100px; border: none; background: none; font-family: inherit;
+        transition: color 0.22s var(--ease-ios), background 0.22s var(--ease-ios);
+    }
+    .perm-seg-btn:hover { color: var(--color-text); }
+    .perm-seg-btn.active { background: var(--color-blue-deep); color: #fff; }
+    .perm-seg-desc { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.45; margin: 0; min-height: 1.2em; }
+
+    .perm-list-title { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; margin: 6px 0 0; }
+    .perm-list {
+        display: flex; flex-direction: column; background: var(--color-bg-soft);
+        border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden;
+    }
+    .perm-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        padding: 12px 14px; border-bottom: 1px solid var(--color-border);
+    }
+    .perm-row:last-child { border-bottom: none; }
+    .perm-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .perm-row-label { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
+    .perm-row-desc { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.4; }
 
     .btn-danger {
         position: relative; overflow: hidden;
@@ -389,9 +487,70 @@ const getAvatarColor = (name: string) => {
 </style>
 
 <script>
+    import { PRESETS, ALL_PERM_KEYS, type PermKey } from '../../../lib/permissions';
+
     function toast(msg: string, type: 'ok' | 'error' = 'ok') {
         (window as any).cordToast?.(msg, type);
     }
+
+    // ── Selector de permisos (segmented control de presets + lista de toggles) ──
+    // Cada modal (invitar/editar) tiene su propio `.perm-field[data-prefix]`.
+    // Los 3 botones del segmented control son solo un punto de partida — tocar
+    // cualquier toggle apaga la selección y el estado pasa a "Personalizado";
+    // volver a tocar un botón reaplica ese preset de golpe.
+    function pickerRoot(prefix: string): HTMLElement | null {
+        return document.querySelector(`.perm-field[data-prefix="${prefix}"]`);
+    }
+    function checksOf(root: HTMLElement): HTMLInputElement[] {
+        return Array.from(root.querySelectorAll('.perm-chk'));
+    }
+    function collectPermisos(prefix: string): Record<string, boolean> {
+        const root = pickerRoot(prefix);
+        const out: Record<string, boolean> = {};
+        if (!root) return out;
+        checksOf(root).forEach(cb => { out[cb.dataset.key as string] = cb.checked; });
+        return out;
+    }
+    function setPermisos(prefix: string, permisos: Record<string, boolean> | null | undefined) {
+        const root = pickerRoot(prefix);
+        if (!root) return;
+        checksOf(root).forEach(cb => { cb.checked = !!(permisos && permisos[cb.dataset.key as string]); });
+    }
+    function matchPreset(permisos: Record<string, boolean>): string | null {
+        for (const key of Object.keys(PRESETS)) {
+            const presetPermisos = PRESETS[key].permisos as Record<string, boolean>;
+            const same = (ALL_PERM_KEYS as PermKey[]).every(k => !!permisos[k] === !!presetPermisos[k]);
+            if (same) return key;
+        }
+        return null;
+    }
+    function refreshPickerState(prefix: string) {
+        const root = pickerRoot(prefix);
+        if (!root) return;
+        const matched = matchPreset(collectPermisos(prefix));
+        root.querySelectorAll('.perm-seg-btn').forEach(btn => {
+            btn.classList.toggle('active', (btn as HTMLElement).dataset.preset === matched);
+        });
+        const descEl = root.querySelector('[data-seg-desc]') as HTMLElement | null;
+        if (descEl) {
+            let descMap: Record<string, string> = {};
+            try { descMap = JSON.parse(root.dataset.descMap || '{}'); } catch { /* ignora */ }
+            descEl.textContent = descMap[matched ?? '__custom'] ?? '';
+        }
+    }
+    function applyPreset(prefix: string, key: string) {
+        setPermisos(prefix, PRESETS[key]?.permisos as Record<string, boolean>);
+        refreshPickerState(prefix);
+    }
+    document.querySelectorAll('.perm-field').forEach(root => {
+        const prefix = (root as HTMLElement).dataset.prefix as string;
+        root.querySelectorAll('.perm-seg-btn').forEach(btn => {
+            btn.addEventListener('click', () => applyPreset(prefix, (btn as HTMLElement).dataset.preset as string));
+        });
+        checksOf(root as HTMLElement).forEach(cb => {
+            cb.addEventListener('change', () => refreshPickerState(prefix));
+        });
+    });
 
     const tabs = document.querySelectorAll('.tm-tab');
     const rows = document.querySelectorAll('.tm-row');
@@ -429,6 +588,7 @@ const getAvatarColor = (name: string) => {
     if (btnInvite) {
         btnInvite.addEventListener('click', () => {
             (document.getElementById('frmInvite') as HTMLFormElement).reset();
+            applyPreset('inv', 'vendedor');
             modInvite!.hidden = false;
         });
     }
@@ -436,16 +596,18 @@ const getAvatarColor = (name: string) => {
     document.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
         const btnMore = target.closest('.tm-btn-more');
-        
+
         document.querySelectorAll('.tm-dropdown').forEach(dd => {
             if (!btnMore || dd !== btnMore.nextElementSibling) {
                 (dd as HTMLElement).hidden = true;
+                dd.closest('.tm-row')?.classList.remove('has-menu-open');
             }
         });
 
         if (btnMore) {
             const dd = btnMore.nextElementSibling as HTMLElement;
             dd.hidden = !dd.hidden;
+            dd.closest('.tm-row')?.classList.toggle('has-menu-open', !dd.hidden);
         }
 
         if (target.matches('.act-resend')) {
@@ -472,9 +634,11 @@ const getAvatarColor = (name: string) => {
         }
         if (target.matches('.act-edit')) {
             const id = target.dataset.id;
-            const rol = target.dataset.rol;
             (document.getElementById('editId') as HTMLInputElement).value = id || '';
-            (document.getElementById('editRole') as HTMLSelectElement).value = rol || 'vendedor';
+            let permisos: Record<string, boolean> = {};
+            try { permisos = JSON.parse(target.dataset.permisos || '{}'); } catch { /* ignora jsonb malformado */ }
+            setPermisos('edit', permisos);
+            refreshPickerState('edit');
             modEdit!.hidden = false;
         }
         if (target.matches('.act-revoke')) {
@@ -492,13 +656,19 @@ const getAvatarColor = (name: string) => {
             btn.disabled = true; btn.textContent = 'Enviando...';
             
             const email = (document.getElementById('invEmail') as HTMLInputElement).value;
-            const preset = (document.getElementById('invRole') as HTMLSelectElement).value;
+            const permisos = collectPermisos('inv');
+            const matched = matchPreset(permisos);
+            // Si el checklist calza exacto con un preset, mandamos el preset
+            // (el servidor arma sus permisos limpios); si no, mandamos los
+            // permisos tal cual con preset:'miembro' — ningún preset real se
+            // llama así, así que el servidor cae al rol 'miembro' (Personalizado).
+            const body = matched ? { email, preset: matched } : { email, preset: 'miembro', permisos };
 
             try {
                 const res = await fetch('/api/equipo', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, preset })
+                    body: JSON.stringify(body)
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Error al invitar');
@@ -524,13 +694,19 @@ const getAvatarColor = (name: string) => {
             btn.disabled = true; btn.textContent = 'Guardando...';
             
             const id = (document.getElementById('editId') as HTMLInputElement).value;
-            const rol = (document.getElementById('editRole') as HTMLSelectElement).value;
+            const permisos = collectPermisos('edit');
+            const matched = matchPreset(permisos);
+            // Mismo contrato que el invite: preset exacto → { id, rol }
+            // (el servidor resetea permisos a los defaults del preset);
+            // si no calza con ninguno → { id, permisos } (el servidor fuerza
+            // rol='miembro' = Personalizado).
+            const body = matched ? { id, rol: matched } : { id, permisos };
 
             try {
                 const res = await fetch('/api/equipo', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, rol })
+                    body: JSON.stringify(body)
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Error al actualizar');

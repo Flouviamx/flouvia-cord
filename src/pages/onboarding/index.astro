@@ -329,7 +329,11 @@ const T = isEn
         flex-direction: column;
     }
 
-    .ob-logo { display: block; margin-bottom: 2.25rem; opacity: 0.92; }
+    /* .ob-shell es flex-column: sin align-self, el default align-items:stretch
+       estira este <img> al ancho completo del formulario (572px) mientras el
+       atributo height="22" lo deja aplastado — el bug real detrás del logo
+       "gigante". width:auto + align-self ancla el logo a su tamaño natural. */
+    .ob-logo { display: block; width: auto; height: 22px; align-self: flex-start; margin-bottom: 2.25rem; opacity: 0.92; }
 
     .ob-step-ctr {
         font-size: 0.78rem;
