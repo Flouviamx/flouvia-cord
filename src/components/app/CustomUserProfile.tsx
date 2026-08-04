@@ -283,6 +283,45 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
   const appleConn = user.connections.find((c) => c.provider === 'apple');
   const email = user.emailAddresses?.[0]?.emailAddress || '';
 
+  // ── Zona de peligro: eliminar cuenta personal ──────────────────────────
+  // Distinto de "eliminar organización" (Ajustes › Datos) — esto borra al
+  // USUARIO. Mismo patrón hasPassword/código que ya usa el flujo de 2FA.
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteCred, setDeleteCred] = useState('');
+  const [deleteShowPass, setDeleteShowPass] = useState(false);
+  const [deleteEmailConfirm, setDeleteEmailConfirm] = useState('');
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteBlockingOrgs, setDeleteBlockingOrgs] = useState<{ id: string; nombre: string }[] | null>(null);
+  const [deleteErr, setDeleteErr] = useState('');
+
+  const openDeleteAccount = () => {
+    setDeleteCred(''); setDeleteEmailConfirm(''); setDeleteErr(''); setDeleteBlockingOrgs(null);
+    setDeleteOpen(true);
+  };
+
+  const submitDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeleteBusy(true);
+    setDeleteErr('');
+    const payload: Record<string, string> = { confirmEmail: deleteEmailConfirm };
+    if (user.hasPassword) payload.password = deleteCred; else payload.code = deleteCred;
+    try {
+      const res = await fetch('/api/account', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) { window.location.href = data.redirect || '/'; return; }
+      if (data.error === 'blocking_orgs') setDeleteBlockingOrgs(data.orgs || []);
+      else if (data.error === 'confirmation_required') setDeleteErr(locale === 'en' ? "We couldn't confirm your identity." : 'No pudimos confirmar tu identidad.');
+      else if (data.error === 'email_mismatch') setDeleteErr(locale === 'en' ? "The email doesn't match." : 'El correo no coincide.');
+      else setDeleteErr(locale === 'en' ? 'Something went wrong. Please try again.' : 'Algo salió mal. Intenta de nuevo.');
+    } catch {
+      setDeleteErr(locale === 'en' ? 'Something went wrong. Please try again.' : 'Algo salió mal. Intenta de nuevo.');
+    }
+    setDeleteBusy(false);
+  };
+
+  const deleteCredOk = deleteCred.trim().length > 0;
+  const deleteEmailOk = deleteEmailConfirm.trim().toLowerCase() === email.toLowerCase();
+
   return (
     <div className="cup-wrapper">
       {/* ── Perfil ── */}
@@ -514,6 +553,86 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
               {appleConn ? <button className="cup-btn-danger-text" onClick={() => disconnectProvider('apple')}>Desconectar</button> : <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Conecta desde /sign-in</span>}
             </li>
           </ul>
+        </div>
+      </section>
+
+      {/* ── Zona de peligro: eliminar cuenta ── */}
+      <section className="cup-section">
+        <div className="cup-section-header">
+          <h3 className="cup-section-title" style={{ color: 'var(--color-danger)' }}>{locale === 'en' ? 'Danger zone' : 'Zona de peligro'}</h3>
+          <p className="cup-section-desc">{locale === 'en' ? 'Permanently delete your personal account.' : 'Elimina tu cuenta personal de forma permanente.'}</p>
+        </div>
+        <div className="cup-section-body">
+          {!deleteOpen ? (
+            <div className="cup-actions">
+              <button className="cup-btn-danger" onClick={openDeleteAccount}>{locale === 'en' ? 'Delete my account' : 'Eliminar mi cuenta'}</button>
+            </div>
+          ) : deleteBlockingOrgs ? (
+            <div className="cup-danger-block">
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text)', margin: '0 0 0.75rem' }}>
+                {locale === 'en'
+                  ? "You're the sole owner of these organizations, and they have other active members. Transfer ownership or delete them before deleting your account:"
+                  : 'Eres el único dueño de estas organizaciones y tienen otros miembros activos. Transfiere la propiedad o elimínalas antes de borrar tu cuenta:'}
+              </p>
+              <ul className="cup-list">
+                {deleteBlockingOrgs.map((o) => (
+                  <li key={o.id} className="cup-list-item"><div className="cup-account-info">{o.nombre}</div></li>
+                ))}
+              </ul>
+              <div className="cup-actions" style={{ justifyContent: 'flex-start', gap: '0.75rem', marginTop: '0.9rem' }}>
+                <a href="/app/ajustes/equipo" className="cup-btn-secondary">{locale === 'en' ? 'Go to Team settings' : 'Ir a Ajustes › Equipo'}</a>
+                <button type="button" className="cup-btn-secondary" onClick={() => setDeleteOpen(false)}>{locale === 'en' ? 'Cancel' : 'Cancelar'}</button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={submitDeleteAccount} className="cup-danger-block">
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text)', margin: '0 0 1rem' }}>
+                {locale === 'en'
+                  ? 'This permanently deletes your account, sessions, passkeys, and connected accounts. Organizations you solely own are deleted too.'
+                  : 'Esto borra tu cuenta, sesiones, claves de acceso y cuentas conectadas de forma permanente. Las organizaciones donde eres único dueño también se eliminan.'}
+              </p>
+              <div className="cup-group" style={{ marginBottom: '0.85rem' }}>
+                <label>{user.hasPassword ? (locale === 'en' ? 'Your password' : 'Tu contraseña') : (locale === 'en' ? 'Authenticator code' : 'Código de tu app de autenticación')}</label>
+                {user.hasPassword ? (
+                  <div className="cup-pw-wrap">
+                    <input className="s-input" type={deleteShowPass ? 'text' : 'password'} value={deleteCred} onChange={(e) => setDeleteCred(e.target.value)} autoComplete="current-password" />
+                    <button
+                      type="button"
+                      className="cup-pw-toggle"
+                      onClick={() => setDeleteShowPass((s) => !s)}
+                      aria-label={deleteShowPass ? (locale === 'en' ? 'Hide password' : 'Ocultar contraseña') : (locale === 'en' ? 'Show password' : 'Mostrar contraseña')}
+                      aria-pressed={deleteShowPass}
+                    >
+                      {deleteShowPass ? (
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M2 12s3.5-7 10-7c2.02 0 3.68.57 5.02 1.35M22 12s-1.06 2.14-3.02 3.85M9.9 9.9a3 3 0 0 0 4.2 4.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                          <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.12" />
+                          <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.18" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <input className="s-input" type="text" inputMode="numeric" maxLength={10} value={deleteCred} onChange={(e) => setDeleteCred(e.target.value)} autoComplete="one-time-code" />
+                )}
+              </div>
+              <div className="cup-group" style={{ marginBottom: '0.85rem' }}>
+                <label>{locale === 'en' ? `Type "${email}" to confirm` : `Escribe "${email}" para confirmar`}</label>
+                <input className="s-input" type="text" value={deleteEmailConfirm} onChange={(e) => setDeleteEmailConfirm(e.target.value)} autoComplete="off" />
+              </div>
+              {deleteErr && <div className="cup-err" style={{ marginBottom: '0.85rem' }}>{deleteErr}</div>}
+              <div className="cup-actions" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
+                <button type="button" className="cup-btn-secondary" onClick={() => setDeleteOpen(false)}>{locale === 'en' ? 'Cancel' : 'Cancelar'}</button>
+                <button type="submit" className="cup-btn-danger-solid" disabled={deleteBusy || !deleteCredOk || !deleteEmailOk}>
+                  {deleteBusy ? (locale === 'en' ? 'Deleting…' : 'Eliminando…') : (locale === 'en' ? 'Delete forever' : 'Eliminar para siempre')}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </section>
     </div>

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import PasswordField from './PasswordField';
+import PasswordStrength from './PasswordStrength';
 // Mensajes en español para los errores de registro
 const ERROR_ES: Record<string, string> = {
   missing_fields: 'Ingresa tu correo y contraseña.',
@@ -29,6 +31,10 @@ export default function CustomSignUp() {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [isEn, setIsEn] = useState(false);
+  // Igual que en CustomSignIn — se muestra tras cualquier 409 email_exists,
+  // que el propio servidor ya revela hoy (register.ts:33), así que no añade
+  // ninguna señal nueva.
+  const [suggestSignin, setSuggestSignin] = useState(false);
 
   const getErrorMsg = (code: string) => {
     const dict = isEn ? ERROR_EN : ERROR_ES;
@@ -59,6 +65,7 @@ export default function CustomSignUp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuggestSignin(false);
     setLoading(true);
 
     try {
@@ -83,6 +90,7 @@ export default function CustomSignUp() {
         return;
       }
       setError(getErrorMsg(data.error || 'default'));
+      if (data.error === 'email_exists') setSuggestSignin(true);
     } catch (err: any) {
       setError(getErrorMsg('internal_error'));
     } finally {
@@ -91,11 +99,17 @@ export default function CustomSignUp() {
   };
 
   const handleGoogleSSO = () => {
-    window.location.href = '/api/auth/google';
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('redirect_url');
+    const dest = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
+    window.location.href = dest ? `/api/auth/google?redirect_url=${encodeURIComponent(dest)}` : '/api/auth/google';
   };
 
   const handleAppleSSO = () => {
-    window.location.href = '/api/auth/apple';
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('redirect_url');
+    const dest = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
+    window.location.href = dest ? `/api/auth/apple?redirect_url=${encodeURIComponent(dest)}` : '/api/auth/apple';
   };
 
   return (
@@ -145,20 +159,37 @@ export default function CustomSignUp() {
 
         <div className="form-group">
           <label htmlFor="password">Contraseña segura</label>
-          <input
+          <PasswordField
             id="password"
-            type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={setPassword}
             required
             minLength={8}
             autoComplete="new-password"
-            className="form-input"
+            isEn={isEn}
           />
+          <PasswordStrength password={password} isEn={isEn} />
         </div>
 
         {notice && !error && <div className="auth-notice">{notice}</div>}
         {error && <div className="auth-error">{error}</div>}
+        {suggestSignin && (
+          <a
+            className="auth-suggest"
+            href={`/sign-in?email=${encodeURIComponent(email)}&desde=registro`}
+          >
+            <span className="auth-suggest-text">
+              {isEn ? (
+                <>Already have an account? <b>Sign in instead</b></>
+              ) : (
+                <>¿Ya tienes cuenta? <b>Inicia sesión</b></>
+              )}
+            </span>
+            <svg className="auth-suggest-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </a>
+        )}
 
         <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '1rem' }}>
           {loading ? 'Creando cuenta...' : 'Crear cuenta'}

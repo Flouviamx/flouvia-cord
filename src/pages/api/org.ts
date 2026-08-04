@@ -6,8 +6,14 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { z } from 'zod';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
+import { currentUserId } from '../../lib/context';
+import { reauthenticate } from '../../lib/auth';
+import { parseJsonBody } from '../../lib/validation';
+import { rateLimit, tooMany } from '../../lib/ratelimit';
+import { deleteOrgCascade } from '../../lib/org-delete';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
@@ -150,6 +156,71 @@ export const PATCH: APIRoute = async ({ request }) => {
             banco_nombre = ${bancoNombre}, banco_clabe = ${bancoClabe}, banco_beneficiario = ${bancoBen}
         where id = ${orgId}`);
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: 'Se actualizaron los ajustes del negocio', ip: reqIp(request) });
+    return json({ ok: true });
+};
+
+const deleteSchema = z.object({
+    confirmName: z.string().trim().max(200),
+    password: z.string().max(256).optional(),
+    code: z.string().trim().max(64).optional(),
+});
+
+// DELETE /api/org { confirmName, password?, code? } — borra la organización
+// ACTIVA y TODOS sus datos. Solo el dueño, con re-autenticación (contraseña
+// o código TOTP/respaldo) y type-to-confirm del nombre exacto de la org
+// (patrón GitHub/Stripe — evita un borrado accidental por un clic de más).
+// Las ~33 tablas hijas ya tienen `on delete cascade` (ver db/schema.sql), así
+// que un solo DELETE limpia cotizaciones, clientes, catálogo, CFDI, equipo,
+// llaves API, webhooks, kits, cobros, etc. Solo `orgs.parent_org_id` es
+// `set null` (las sub-cuentas hijas sobreviven, huérfanas — correcto).
+export const DELETE: APIRoute = async ({ request }) => {
+    const userId = currentUserId();
+    if (!userId) return json({ error: 'No autenticado' }, 401);
+
+    const rl = await rateLimit(`org-delete:${userId}`, 5, 300);
+    if (!rl.ok) return tooMany(rl.retryAfter);
+
+    const parsed = await parseJsonBody(request, deleteSchema);
+    if (!parsed.ok) return json({ error: parsed.error }, parsed.status);
+
+    const orgId = await getActiveOrgId();
+    const [[org]] = await withOrgTx(orgId, sql`select nombre, owner_id, sandbox_of, stripe_subscription_id, stripe_account_id from orgs where id = ${orgId}`);
+    if (!org) return json({ error: 'No encontrada' }, 404);
+
+    if (org.owner_id !== userId) {
+        return json({ error: 'Solo el dueño puede eliminar la organización' }, 403);
+    }
+    if (org.sandbox_of) {
+        // El entorno de prueba se vacía con /api/test-mode/reset, no aquí.
+        return json({ error: 'No se puede eliminar un entorno de prueba por esta vía' }, 409);
+    }
+
+    const confirmed = await reauthenticate(userId, { password: parsed.data.password, code: parsed.data.code });
+    if (!confirmed) return json({ error: 'confirmation_required' }, 401);
+
+    if (parsed.data.confirmName !== org.nombre) {
+        return json({ error: 'name_mismatch' }, 400);
+    }
+
+    // Paso de auditoría ANTES de borrar — si algo falla a medio camino, queda
+    // rastro mientras la org todavía existe (una vez borrada, audit_log
+    // cascadea con ella: no hay forma de que un log atado a esta org
+    // sobreviva a su propio borrado).
+    await logAudit(orgId, {
+        accion: 'org.eliminacion_iniciada',
+        entidad: 'org',
+        entidad_id: orgId,
+        detalle: `Eliminación solicitada por el dueño: ${org.nombre}`,
+        ip: reqIp(request),
+    });
+
+    await deleteOrgCascade({
+        id: orgId,
+        nombre: org.nombre as string,
+        stripe_subscription_id: org.stripe_subscription_id as string | null,
+        stripe_account_id: org.stripe_account_id as string | null,
+    });
+
     return json({ ok: true });
 };
 

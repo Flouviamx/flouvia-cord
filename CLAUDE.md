@@ -62,7 +62,7 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS,
 | Emails | Resend (transaccionales: cotización vista, aprobada, etc.) |
 | CFDI | **Facturapi** (facturapi.io) — timbrado CFDI 4.0 vía `MexicoSatProvider` |
 | Animaciones | GSAP 3 — **solo en landing/login**; dentro de la app, CSS animations |
-| Analytics | **PostHog** (Product analytics, CDN SDK + Node) + **Vercel Analytics** (`@vercel/analytics`) para web vitals |
+| Analytics | **PostHog** (Product analytics, CDN SDK + Node) + **Vercel Analytics** (`@vercel/analytics`) para web vitals. PostHog inicia con `opt_out_capturing_by_default: true` — no captura nada hasta que el visitante acepta el aviso de cookies (`src/components/CookieConsent.astro`, montado en `Layout.astro` y `AppLayout.astro`); Vercel Analytics no se gatea (no usa cookies, no identifica a nadie). |
 | Tipografía | **Inter única** (las serif se ELIMINARON jun 2026 a petición de André) — montos con clase `.editorial` = Inter 600, tracking −0.03em, `tabular-nums` |
 
 ✅ **Auth Custom ACTIVO** (jul 2026): Clerk ha sido desinstalado completamente. Autenticación con email/password (hashes Argon2id), SSO de Google nativo (`/api/auth/google`), Passkeys (`/api/auth/passkeys/*`) y Reset de Password custom (`/api/auth/reset-password/*`). Middleware (`src/middleware.ts`) lee `cord_session` para proteger rutas internas y API. Los componentes de UI (`CustomOrgSwitcher`, `CustomUserProfile`) consumen la data nativa vía BD (tabla `users` y `org_members`). La migración invisible corrió mapeando UUIDs viejos de Clerk a la nueva tabla `users`.
@@ -172,6 +172,13 @@ endurecimiento", ago 2026) para el detalle completo de la auditoría/fixes.
 - [x] **Eventos de activación/expansión (ago 2026):** `subscription_upgraded`/`downgraded`/`canceled`, `payment_failed`, `stripe_connect_activated`, `cfdi_first_timbrado`, `team_member_invited`/`accepted`, `api_key_created`, `cobranza_ia_activated`, `checkout_started`, `kit_used` — ver la entrada de historial para dónde dispara cada uno.
 - [x] **Suite de dashboards en PostHog** (ago 2026): construida en vivo vía el MCP de PostHog (proyecto "Cord", id 535370) — 6 dashboards, 17 insights, todos filtrando por default `is_sandbox=false AND is_demo=false` y usando `payment_received` (nunca `quote_marked_paid`) como única fuente de ingreso real. Ver la entrada "Suite de dashboards de PostHog — construida en vivo vía MCP" en `docs/historial-app-features.md` para el detalle completo (queries exactas, decisiones de diseño, y el hallazgo crítico: el proyecto conectado solo tenía 5 eventos `$pageview` totales al momento de construir — cero eventos de negocio reales — así que todo insight quedó verificado como "corre correctamente, sin datos aún" en vez de "con datos reales". Repoblarán solos en cuanto el tráfico real de producción llegue a ese proyecto de PostHog; si no repueblan, sospechar primero de que `PUBLIC_POSTHOG_KEY`/`PUBLIC_POSTHOG_HOST` en Vercel no apunten a ese mismo proyecto).
   - [Growth & Activation](https://us.posthog.com/project/535370/dashboard/1944817) · [Revenue](https://us.posthog.com/project/535370/dashboard/1944818) · [Core Funnel: Cotización → Cobro](https://us.posthog.com/project/535370/dashboard/1944819) · [Account Health & Retention](https://us.posthog.com/project/535370/dashboard/1944820) · [Feature Adoption](https://us.posthog.com/project/535370/dashboard/1944821) · [Acquisition](https://us.posthog.com/project/535370/dashboard/1944822)
+- [x] **Aviso de consentimiento de cookies** (ago 2026): banner estilo Apple, responsive
+  (bottom-sheet en móvil), gatea la captura de PostHog vía `opt_in_capturing()`/
+  `opt_out_capturing()` (decisión en `localStorage['cord_cookie_consent']`, compartida
+  entre landing y app). `privacidad.astro` (ES+EN) actualizado: PostHog y Resend
+  agregados a la tabla de subencargados, política de cookies separada en 3 categorías
+  precisas. Ver la entrada "Aviso de consentimiento de cookies + PostHog/Resend
+  agregados al aviso de privacidad" en `docs/historial-app-features.md`.
 
 ---
 

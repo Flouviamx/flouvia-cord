@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-
-// Países soportados. México es el único con facturación (CFDI 4.0) 100% activa hoy;
-// el resto se captura para la expansión / facturación internacional que viene.
-// Las banderas son la excepción de emoji aprobada (selector de país/divisa).
-export const COUNTRIES = [
-  { code: 'MX', flag: '\u{1F1F2}\u{1F1FD}', name: 'México', tag: 'CFDI 4.0' },
-  { code: 'US', flag: '\u{1F1FA}\u{1F1F8}', name: 'Estados Unidos', tag: '' },
-  { code: 'CO', flag: '\u{1F1E8}\u{1F1F4}', name: 'Colombia', tag: '' },
-  { code: 'AR', flag: '\u{1F1E6}\u{1F1F7}', name: 'Argentina', tag: '' },
-  { code: 'CL', flag: '\u{1F1E8}\u{1F1F1}', name: 'Chile', tag: '' },
-  { code: 'PE', flag: '\u{1F1F5}\u{1F1EA}', name: 'Perú', tag: '' },
-  { code: 'ES', flag: '\u{1F1EA}\u{1F1F8}', name: 'España', tag: '' },
-] as const;
+import { COUNTRIES } from '../../lib/countries';
+import { flagSrc } from '../../lib/flags';
+import FlagSelect from '../ui/FlagSelect';
 
 type Country = (typeof COUNTRIES)[number]['code'];
 
@@ -21,6 +11,8 @@ export interface CreateWorkspaceSubmit {
   name: string;
   country: Country;
 }
+
+const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ code: c.code, label: c.name }));
 
 export default function CreateWorkspaceModal({
   isOpen,
@@ -59,6 +51,7 @@ export default function CreateWorkspaceModal({
   }, [isOpen, canNest]);
 
   const parentName = parentOrg?.name || 'Tu organización';
+  const parentInitial = parentName.charAt(0).toUpperCase();
 
   const handleSubmit = async () => {
     if (!accountName.trim() || isSubmitting) return;
@@ -75,6 +68,8 @@ export default function CreateWorkspaceModal({
   // Árbol de preview (derecha del paso 2) — refleja dónde caerá la cuenta nueva.
   const previewName = accountName.trim() || 'Cuenta nueva';
   const showNested = canNest && selectedType === 'nested';
+  const visibleSiblings = siblings.slice(0, 2);
+  const extraSiblings = Math.max(0, siblings.length - 2);
 
   if (!isOpen || !mounted) return null;
 
@@ -118,24 +113,38 @@ export default function CreateWorkspaceModal({
               <span className="cm-choice-check" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
               </span>
+
               <span className="cm-graphic">
-                <span className="cg-node cg-parent">
-                  <HomeIcon />
-                  <span className="cg-node-txt">{parentName}</span>
-                </span>
-                <span className="cg-branch">
-                  <span className="cg-line" />
-                  <span className="cg-kids">
-                    <span className="cg-node cg-new">
-                      <PlusIcon />
-                      <span className="cg-node-txt">Cuenta nueva</span>
-                    </span>
-                    <span className="cg-node cg-ghost">
-                      <span className="cg-node-txt">… otras cuentas</span>
+                <span className="cm-mock-window">
+                  <span className="cm-mock-eyebrow">Espacio de trabajo</span>
+
+                  <span className="cm-mock-row cm-mock-row-active">
+                    <span className="cm-mock-avatar">{parentInitial}</span>
+                    <span className="cm-mock-name">{parentName}</span>
+                    <CheckBadge />
+                  </span>
+
+                  <span className="cm-mock-branch">
+                    <span className="cm-mock-connector" aria-hidden="true" />
+                    <span className="cm-mock-kids">
+                      <span className="cm-mock-row cm-mock-row-new">
+                        <span className="cm-mock-icon-dashed"><PlusIcon /></span>
+                        <span className="cm-mock-name">Cuenta nueva</span>
+                      </span>
+                      {visibleSiblings.map((s, i) => (
+                        <span key={i} className="cm-mock-row cm-mock-row-dim">
+                          <span className="cm-mock-avatar cm-mock-avatar-sm">{s.charAt(0).toUpperCase()}</span>
+                          <span className="cm-mock-name">{s}</span>
+                        </span>
+                      ))}
+                      {extraSiblings > 0 && (
+                        <span className="cm-mock-row cm-mock-row-more">+ {extraSiblings} más</span>
+                      )}
                     </span>
                   </span>
                 </span>
               </span>
+
               <span className="cm-choice-title">Agrupar bajo {parentName}</span>
               <span className="cm-choice-desc">
                 Aparece anidada bajo <strong>{parentName}</strong> en tu selector de cuentas para tenerlo todo organizado. Cada cuenta conserva sus propios datos, equipo y reportes.
@@ -150,16 +159,24 @@ export default function CreateWorkspaceModal({
               <span className="cm-choice-check" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
               </span>
-              <span className="cm-graphic cm-graphic--row">
-                <span className="cg-node">
-                  <HomeIcon />
-                  <span className="cg-node-txt">{parentName}</span>
-                </span>
-                <span className="cg-node cg-new">
-                  <PlusIcon />
-                  <span className="cg-node-txt">Cuenta nueva</span>
+
+              <span className="cm-graphic">
+                <span className="cm-mock-window">
+                  <span className="cm-mock-eyebrow">Espacios de trabajo</span>
+
+                  <span className="cm-mock-row cm-mock-row-active">
+                    <span className="cm-mock-avatar">{parentInitial}</span>
+                    <span className="cm-mock-name">{parentName}</span>
+                    <CheckBadge />
+                  </span>
+
+                  <span className="cm-mock-row cm-mock-row-new">
+                    <span className="cm-mock-icon-dashed"><PlusIcon /></span>
+                    <span className="cm-mock-name">Cuenta nueva</span>
+                  </span>
                 </span>
               </span>
+
               <span className="cm-choice-title">Cuenta independiente</span>
               <span className="cm-choice-desc">
                 Una cuenta completamente aparte, sin agrupar bajo <strong>{parentName}</strong> en tu selector.
@@ -187,22 +204,13 @@ export default function CreateWorkspaceModal({
               </div>
 
               <div className="cm-field">
-                <label className="cm-label" htmlFor="cm-country">País donde operas</label>
-                <div className="cm-select-wrap">
-                  <select
-                    id="cm-country"
-                    className="cm-select"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value as Country)}
-                  >
-                    {COUNTRIES.map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.flag}  {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  <svg className="cm-select-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
-                </div>
+                <label className="cm-label" id="cm-country-label">País donde operas</label>
+                <FlagSelect
+                  ariaLabel="País donde operas"
+                  options={COUNTRY_OPTIONS}
+                  value={country}
+                  onChange={(code) => setCountry(code as Country)}
+                />
                 <p className="cm-hint">
                   Define tu moneda y tus documentos fiscales.{' '}
                   {country === 'MX'
@@ -223,7 +231,7 @@ export default function CreateWorkspaceModal({
                     </div>
                     <div className="cm-tree-children">
                       <div className="cm-tree-node cm-tree-hl">
-                        <span className="cm-tree-flag">{COUNTRIES.find((c) => c.code === country)?.flag}</span>
+                        <span className="cm-tree-flag"><img src={flagSrc(country)} alt="" width={16} height={16} /></span>
                         <span className="cm-tree-txt">{previewName}</span>
                         <span className="cm-tree-badge">Nueva</span>
                       </div>
@@ -239,7 +247,7 @@ export default function CreateWorkspaceModal({
                   </>
                 ) : (
                   <div className="cm-tree-node cm-tree-root cm-tree-hl">
-                    <span className="cm-tree-flag">{COUNTRIES.find((c) => c.code === country)?.flag}</span>
+                    <span className="cm-tree-flag"><img src={flagSrc(country)} alt="" width={16} height={16} /></span>
                     <span className="cm-tree-txt">{previewName}</span>
                     <span className="cm-tree-badge">Nueva</span>
                   </div>
@@ -284,21 +292,21 @@ export default function CreateWorkspaceModal({
           position: relative;
           background: var(--sb-menu-solid-bg, #fff);
           border: 1px solid var(--sb-menu-border, rgba(10,25,47,0.08));
-          border-radius: 24px;
-          width: 100%; max-width: 620px;
+          border-radius: 26px;
+          width: 100%; max-width: 780px;
           box-shadow:
             0 2px 6px rgba(10,25,47,0.05),
-            0 40px 80px -24px rgba(10,25,47,0.32),
+            0 48px 96px -28px rgba(10,25,47,0.34),
             inset 0 1px 0 rgba(255,255,255,0.6);
           display: flex; flex-direction: column;
           animation: cmZoom 0.28s cubic-bezier(0.16, 1, 0.3, 1);
           overflow: hidden;
         }
-        .cm-dialog--wide { max-width: 720px; }
-        html[data-theme="dark"] .cm-dialog { box-shadow: 0 40px 80px -24px rgba(0,0,0,0.6); }
+        .cm-dialog--wide { max-width: 860px; }
+        html[data-theme="dark"] .cm-dialog { box-shadow: 0 48px 96px -28px rgba(0,0,0,0.6); }
 
         .cm-close {
-          position: absolute; top: 18px; right: 18px; z-index: 2;
+          position: absolute; top: 20px; right: 20px; z-index: 2;
           width: 30px; height: 30px;
           display: flex; align-items: center; justify-content: center;
           background: transparent; border: none; cursor: pointer;
@@ -307,8 +315,8 @@ export default function CreateWorkspaceModal({
         }
         .cm-close:hover { background: var(--sb-hover-bg); color: var(--sb-text-strong); }
 
-        .cm-header { padding: 30px 32px 0; }
-        .cm-steps { display: flex; gap: 6px; margin-bottom: 18px; }
+        .cm-header { padding: 34px 36px 0; }
+        .cm-steps { display: flex; gap: 6px; margin-bottom: 20px; }
         .cm-step {
           width: 26px; height: 4px; border-radius: 99px;
           background: var(--sb-divider);
@@ -317,24 +325,24 @@ export default function CreateWorkspaceModal({
         .cm-step.on { background: var(--color-blue-deep, #0a192f); }
 
         .cm-title {
-          font-size: 1.45rem; font-weight: 600; line-height: 1.15;
+          font-size: 1.55rem; font-weight: 600; line-height: 1.15;
           letter-spacing: -0.02em; color: var(--sb-text-strong);
           margin: 0 0 8px;
         }
         .cm-subtitle {
-          font-size: 0.9rem; line-height: 1.5; color: var(--sb-menu-muted);
-          margin: 0; max-width: 90%;
+          font-size: 0.92rem; line-height: 1.5; color: var(--sb-menu-muted);
+          margin: 0; max-width: 92%;
         }
 
-        .cm-body { padding: 24px 32px 28px; }
+        .cm-body { padding: 26px 36px 32px; }
 
         /* ── Paso 1: tarjetas de elección ── */
-        .cm-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .cm-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
         .cm-choice {
           position: relative;
           border: 1.5px solid var(--sb-divider);
-          border-radius: 18px;
-          padding: 18px;
+          border-radius: 20px;
+          padding: 20px;
           cursor: pointer; text-align: left;
           background: transparent;
           display: flex; flex-direction: column;
@@ -347,7 +355,7 @@ export default function CreateWorkspaceModal({
           background: var(--sb-hover-bg);
         }
         .cm-choice-check {
-          position: absolute; top: 14px; right: 14px;
+          position: absolute; top: 16px; right: 16px;
           width: 20px; height: 20px; border-radius: 50%;
           display: flex; align-items: center; justify-content: center;
           background: var(--color-blue-deep, #0a192f); color: #fff;
@@ -356,48 +364,99 @@ export default function CreateWorkspaceModal({
         }
         .cm-choice.selected .cm-choice-check { opacity: 1; transform: scale(1); }
 
+        /* ── Mockup del paso 1: calca del selector de cuentas real ── */
         .cm-graphic {
           background: var(--app-canvas, #f5f5f7);
-          border-radius: 12px;
-          padding: 20px 16px; margin-bottom: 16px;
-          min-height: 132px;
-          display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+          border-radius: 14px;
+          padding: 16px; margin-bottom: 18px;
+          min-height: 200px;
+          display: flex; align-items: center; justify-content: center;
         }
         html[data-theme="dark"] .cm-graphic { background: rgba(0,0,0,0.22); }
-        .cm-graphic--row { flex-direction: row; gap: 10px; }
 
-        .cg-node {
-          display: flex; align-items: center; gap: 7px;
+        .cm-mock-window {
+          width: 100%;
           background: var(--sb-menu-solid-bg, #fff);
-          border: 1px solid var(--sb-divider);
-          border-radius: 9px; padding: 8px 11px;
-          font-size: 0.72rem; font-weight: 600; color: var(--sb-text-strong);
-          box-shadow: 0 2px 6px rgba(10,25,47,0.06);
-          max-width: 150px; min-width: 0;
+          border: 1px solid var(--sb-menu-border, rgba(10,25,47,0.07));
+          border-radius: 14px;
+          padding: 12px;
+          display: flex; flex-direction: column; gap: 5px;
+          box-shadow:
+            0 1px 2px rgba(10,25,47,0.04),
+            0 20px 40px -18px rgba(10,25,47,0.20),
+            inset 0 1px 0 rgba(255,255,255,0.5);
+          transition: transform 0.24s var(--ease-spring, cubic-bezier(0.22,1,0.36,1));
         }
-        html[data-theme="dark"] .cg-node { background: #1c2430; }
-        .cg-node svg { flex-shrink: 0; color: var(--sb-menu-muted); }
-        .cg-node-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cg-parent { align-self: stretch; }
-        .cg-branch { display: flex; gap: 10px; align-self: stretch; padding-left: 12px; }
-        .cg-line { width: 1.5px; background: var(--sb-divider); border-radius: 2px; flex-shrink: 0; }
-        .cg-kids { display: flex; flex-direction: column; gap: 7px; flex: 1; min-width: 0; }
-        .cg-new { border-style: dashed; border-color: var(--color-blue-deep, #0a192f); color: var(--color-blue-deep, #0a192f); box-shadow: none; background: transparent; }
-        .cg-new svg { color: var(--color-blue-deep, #0a192f); }
-        .cg-ghost { opacity: 0.5; box-shadow: none; border-style: dashed; background: transparent; }
+        html[data-theme="dark"] .cm-mock-window {
+          background: #1c2430;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 20px 40px -18px rgba(0,0,0,0.5);
+        }
+        .cm-choice.selected .cm-mock-window { transform: translateY(-2px); }
+
+        .cm-mock-eyebrow {
+          font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.06em; color: var(--sb-menu-muted);
+          padding: 2px 6px 6px;
+        }
+
+        .cm-mock-row {
+          display: flex; align-items: center; gap: 8px;
+          padding: 6px 7px; border-radius: 8px;
+          font-size: 0.72rem; font-weight: 500; color: var(--sb-text-strong);
+          min-width: 0;
+        }
+        .cm-mock-row-active { background: var(--sb-hover-bg, rgba(10,25,47,0.04)); font-weight: 600; }
+        .cm-mock-row-dim { opacity: 0.55; }
+        .cm-mock-row-more {
+          justify-content: center; opacity: 0.55; font-size: 0.66rem;
+          padding: 4px 0;
+        }
+        .cm-mock-row-new {
+          border: 1.3px dashed var(--color-blue-deep, #0a192f);
+          color: var(--color-blue-deep, #0a192f);
+        }
+        html[data-theme="dark"] .cm-mock-row-new { border-color: rgba(255,255,255,0.4); color: #fff; }
+
+        .cm-mock-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .cm-mock-avatar {
+          flex-shrink: 0; width: 20px; height: 20px; border-radius: 6px;
+          background: var(--color-blue-deep, #0a192f); color: #fff;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 0.6rem; font-weight: 700;
+        }
+        .cm-mock-avatar-sm { width: 16px; height: 16px; font-size: 0.52rem; border-radius: 5px; background: var(--sb-menu-muted); }
+
+        .cm-mock-icon-dashed {
+          flex-shrink: 0; width: 20px; height: 20px; border-radius: 6px;
+          display: flex; align-items: center; justify-content: center;
+          color: var(--color-blue-deep, #0a192f);
+        }
+        html[data-theme="dark"] .cm-mock-icon-dashed { color: #fff; }
+
+        .cm-mock-check {
+          flex-shrink: 0; width: 15px; height: 15px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          background: var(--color-blue-deep, #0a192f); color: #fff;
+        }
+        html[data-theme="dark"] .cm-mock-check { background: #fff; color: #0b1018; }
+
+        .cm-mock-branch { display: flex; gap: 8px; padding-left: 10px; margin-top: 2px; }
+        .cm-mock-connector { width: 1.5px; background: var(--sb-divider); border-radius: 2px; flex-shrink: 0; align-self: stretch; margin-bottom: 6px; }
+        .cm-mock-kids { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
 
         .cm-choice-title {
-          font-size: 0.95rem; font-weight: 600; color: var(--sb-text-strong);
+          font-size: 0.97rem; font-weight: 600; color: var(--sb-text-strong);
           margin-bottom: 5px; letter-spacing: -0.01em;
         }
-        .cm-choice-desc { font-size: 0.8rem; line-height: 1.45; color: var(--sb-menu-muted); }
+        .cm-choice-desc { font-size: 0.81rem; line-height: 1.45; color: var(--sb-menu-muted); }
 
         /* ── Paso 2: formulario + preview ── */
-        .cm-form { display: grid; grid-template-columns: 1fr 0.82fr; gap: 24px; align-items: start; }
-        .cm-form-fields { display: flex; flex-direction: column; gap: 20px; }
+        .cm-form { display: grid; grid-template-columns: 1fr 0.82fr; gap: 26px; align-items: start; }
+        .cm-form-fields { display: flex; flex-direction: column; gap: 22px; }
         .cm-field { display: flex; flex-direction: column; }
         .cm-label { font-size: 0.82rem; font-weight: 600; color: var(--sb-text-strong); margin-bottom: 8px; }
-        .cm-input, .cm-select {
+        .cm-input {
           width: 100%; box-sizing: border-box;
           padding: 12px 14px; border-radius: 12px;
           border: 1.5px solid transparent;
@@ -406,23 +465,20 @@ export default function CreateWorkspaceModal({
           font-family: inherit;
           transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
         }
-        html[data-theme="dark"] .cm-input, html[data-theme="dark"] .cm-select { background: rgba(255,255,255,0.05); }
+        html[data-theme="dark"] .cm-input { background: rgba(255,255,255,0.05); }
         .cm-input::placeholder { color: var(--sb-menu-muted); }
-        .cm-input:focus, .cm-select:focus {
+        .cm-input:focus {
           outline: none;
           background: var(--sb-menu-solid-bg, #fff);
           border-color: var(--color-blue-deep, #0a192f);
           box-shadow: 0 0 0 4px rgba(10,25,47,0.08);
         }
-        html[data-theme="dark"] .cm-input:focus, html[data-theme="dark"] .cm-select:focus { box-shadow: 0 0 0 4px rgba(107,155,242,0.18); }
-        .cm-select-wrap { position: relative; }
-        .cm-select { appearance: none; -webkit-appearance: none; padding-right: 40px; cursor: pointer; }
-        .cm-select-caret { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--sb-menu-muted); }
+        html[data-theme="dark"] .cm-input:focus { box-shadow: 0 0 0 4px rgba(107,155,242,0.18); }
         .cm-hint { font-size: 0.76rem; line-height: 1.45; color: var(--sb-menu-muted); margin: 8px 0 0; }
 
         .cm-preview {
           background: var(--app-canvas, #f5f5f7);
-          border-radius: 16px; padding: 16px 16px 18px;
+          border-radius: 18px; padding: 18px 18px 20px;
           align-self: stretch;
         }
         html[data-theme="dark"] .cm-preview { background: rgba(255,255,255,0.03); }
@@ -442,7 +498,8 @@ export default function CreateWorkspaceModal({
         html[data-theme="dark"] .cm-tree-node { background: #1c2430; }
         .cm-tree-node svg { flex-shrink: 0; color: var(--sb-menu-muted); }
         .cm-tree-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
-        .cm-tree-flag { font-size: 0.9rem; flex-shrink: 0; line-height: 1; }
+        .cm-tree-flag { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; overflow: hidden; display: flex; line-height: 0; box-shadow: 0 0 0 1px rgba(10,25,47,0.08); }
+        .cm-tree-flag img { width: 100%; height: 100%; display: block; object-fit: cover; }
         .cm-tree-children {
           display: flex; flex-direction: column; gap: 6px;
           margin: 6px 0 0 12px; padding-left: 12px;
@@ -464,7 +521,7 @@ export default function CreateWorkspaceModal({
 
         /* ── Footer ── */
         .cm-footer {
-          padding: 16px 32px 24px;
+          padding: 18px 36px 26px;
           display: flex; justify-content: flex-end; align-items: center; gap: 10px;
         }
         .cm-btn {
@@ -490,14 +547,15 @@ export default function CreateWorkspaceModal({
           .cm-choices { grid-template-columns: 1fr; }
           .cm-form { grid-template-columns: 1fr; }
           .cm-preview { order: -1; }
-          .cm-header { padding: 26px 22px 0; }
-          .cm-body { padding: 20px 22px 24px; }
-          .cm-footer { padding: 14px 22px 22px; }
+          .cm-header { padding: 28px 22px 0; }
+          .cm-body { padding: 22px 22px 26px; }
+          .cm-footer { padding: 16px 22px 22px; }
         }
 
         @media (prefers-reduced-motion: reduce) {
           .cm-overlay, .cm-dialog { animation: none; }
           .cm-btn:active { transform: none; }
+          .cm-mock-window { transition: none; }
         }
       `}</style>
     </div>,
@@ -512,6 +570,13 @@ function HomeIcon() {
 }
 function PlusIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+  );
+}
+function CheckBadge() {
+  return (
+    <span className="cm-mock-check" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+    </span>
   );
 }

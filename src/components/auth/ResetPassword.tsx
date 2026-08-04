@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import PasswordField from './PasswordField';
+import PasswordStrength from './PasswordStrength';
 
 export default function ResetPassword({ token }: { token: string }) {
   const [password, setPassword] = useState('');
@@ -68,16 +70,15 @@ export default function ResetPassword({ token }: { token: string }) {
       <form onSubmit={handleSubmit} className="auth-form" style={{ textAlign: 'left' }}>
         <div className="form-group">
           <label htmlFor="password">Nueva contraseña</label>
-          <input
+          <PasswordField
             id="password"
-            type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={setPassword}
             required
             autoComplete="new-password"
-            className="form-input"
             placeholder="••••••••"
           />
+          <PasswordStrength password={password} />
         </div>
 
         {error && <div className="auth-error">{error}</div>}

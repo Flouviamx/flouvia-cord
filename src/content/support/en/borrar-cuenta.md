@@ -1,15 +1,34 @@
 ---
-title: "Delete Cord Account"
-description: "Process for closing and final data export."
+title: "Delete your Cord account"
+description: "How to delete your organization or your personal account from Settings, and what gets deleted in each case."
 category: "Account & Team"
 ---
 
-We understand that businesses change. If you wish to cancel your Cord account, the process must be handled with caution, as it involves the retention of tax data required by law.
+Cord has two distinct deletions, both self-service from Settings — you don't need to email support.
 
-### Closure Procedure
+### Deleting your organization (the business)
 
-1. **Settle pending invoices:** Ensure there are no invoices in `PPD` status pending a Payment Receipt Supplement (REP).
-2. **Download your information:** Export your clients, quotes, and XML files. Once the account is deleted, you will lose access to the web interface.
-3. Send an email to `support@flouvia.com` from the main Administrator's email requesting the cancellation.
+In **Settings › Data & privacy**, under "Danger zone", the organization's owner can delete it completely. This permanently and immediately deletes:
 
-**Tax Data Retention:** In compliance with anti-money laundering laws and the tax infrastructure in Mexico (CFF), even if we close your platform access, Cord is required to maintain the history of your stamped tax receipts for 5 years. Deletion does not erase the record of CFDI issued to the SAT.
+- All quotes, clients, and product catalog.
+- The tax documents (invoices) stamped by that organization.
+- API keys, webhooks, templates, kits, and the audit log.
+- The team and its permissions.
+
+> **Download your invoices before deleting.** This is a real deletion — Cord doesn't keep a copy of your tax receipts after deleting the organization. Use "Export everything (JSON)" on the same page before continuing. The confirmation dialog asks you to explicitly acknowledge you've already downloaded them.
+
+To confirm you'll need: your password (or a code from your authenticator app if you only sign in with Google/Apple), and to type the organization's exact name.
+
+### Deleting your personal account
+
+In **Settings › Your account**, under "Danger zone", you can delete your user. This:
+
+- Deletes your sessions, passkeys, and connected accounts (Google/Apple).
+- Also deletes any organization where you're the **sole** owner (no one else on the team) — same effect as above.
+- If you own an organization that **does** have other active members, Cord blocks the account deletion: transfer ownership or remove those members first from Settings › Team.
+
+To confirm you'll need your password (or authenticator code) and to type your exact email.
+
+### Both actions are permanent
+
+Neither can be undone. Export your data first from Settings › Data & privacy ("Export everything" and the catalog/client CSVs).

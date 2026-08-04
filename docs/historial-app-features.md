@@ -6,6 +6,67 @@
 
 ---
 
+✅ **Aviso de consentimiento de cookies + PostHog/Resend agregados al aviso de privacidad
+   (ago 2026)** — André preguntó si tras el trabajo de dashboards de PostHog había que
+   actualizar legales. Auditoría rápida de `privacidad.astro` encontró que la Política de
+   Cookies (§05) solo mencionaba **Vercel Analytics**, y la tabla de Subencargados (§06)
+   no listaba **PostHog** ni **Resend** — un hueco real, ya que PostHog identifica usuarios
+   (email, plan, rol) y coloca un identificador persistente.
+   • **`src/components/CookieConsent.astro`** (nuevo) — banner de consentimiento estilo
+     Apple: tarjeta flotante squircle (`border-radius:26px`, sombras compuestas
+     multicapa) abajo-izquierda en desktop, **bottom-sheet a todo lo ancho en móvil**
+     (`env(safe-area-inset-bottom)`, `border-radius` solo arriba, CTAs apiladas). Entrada/
+     salida con `translateY + scale` y `var(--ease-spring)`, `prefers-reduced-motion`
+     respetado. Botones pill 999px (`all:unset` + reset explícito, mismo patrón que
+     `.tb-icon`/`.pr-name-wrap` documentado en el proyecto). Tema oscuro vía
+     `html[data-theme="dark"]` (no-op en la landing, donde ese atributo nunca se setea;
+     activo dentro de la app).
+   • **Gating real de PostHog, no solo aviso cosmético:** los dos `posthog.init(...)` del
+     proyecto (`Layout.astro` y `AppLayout.astro`) ganaron `opt_out_capturing_by_default:
+     true` — sin decisión del usuario, PostHog **no captura nada** (ni el pageview
+     automático, ni `identify()`). `CookieConsent` es el ÚNICO que llama
+     `posthog.opt_in_capturing()`/`opt_out_capturing()`, según `localStorage
+     ['cord_cookie_consent']` (`'accepted'|'rejected'`) — compartido entre `/` y `/app`
+     porque son el mismo origen, así que la decisión no se vuelve a preguntar al cruzar
+     entre la landing y la app. Vercel Analytics NO se gatea (no usa cookies, no
+     identifica a nadie — ver §05 del aviso), sigue siempre activo.
+   • **Montado site-wide:** `<CookieConsent lang={...}>` se agregó al `<body>` de
+     `Layout.astro` (landing, legales, y `/q/[token]` que reutiliza este layout) y de
+     `AppLayout.astro` (app autenticada) — **NO** en `EmbedLayout.astro` (el cotizador
+     embebible de Cord Elements en el iframe de un tercero; un banner ahí sería una
+     intrusión absurda dentro de un widget incrustado, y ese layout de hecho no inicializa
+     PostHog en absoluto).
+   • **Reabrir preferencias:** `window.cordOpenCookiePrefs()` (expuesto por el componente)
+     + botón "Administrar preferencias de cookies" agregado a la sección de Cookies de
+     `/privacidad` (ES+EN) para que un usuario que ya decidió pueda cambiar de opinión sin
+     borrar `localStorage` a mano.
+   • **`privacidad.astro` (ES+EN) actualizado:** la Política de Cookies (§05) ahora separa
+     3 categorías con precisión (antes 2, y la segunda mezclaba dos productos con
+     comportamiento distinto): Estrictamente Necesarias (siempre activas), **Cookies de
+     Analítica de Comportamiento (PostHog)** — nueva, explícita sobre el identificador
+     persistente y que solo se activa tras aceptar — y **Medición sin Cookies (Vercel
+     Analytics)** — reescrita para aclarar que es agregada/anónima por diseño y por eso NO
+     depende del aviso. Tabla de Subencargados (§06) ganó 2 filas: **PostHog** y
+     **Resend**; la fila `PAC (SAT)` se renombró a `PAC (SAT) — Facturapi` para nombrar al
+     proveedor real (antes genérico). Fecha de "última actualización" bumpeada.
+   ⚠️ **Fuera de alcance a propósito:** un banner de consentimiento GRANULAR (categoría por
+     categoría, tipo OneTrust) no se construyó — con un solo proveedor de analítica
+     gateable (PostHog) y uno que nunca necesita gate (Vercel Analytics), un selector
+     binario Aceptar/Solo necesarias cubre el caso real sin la complejidad de un centro de
+     preferencias completo. Si se agregan más herramientas de tracking a futuro, revisar
+     si sigue siendo suficiente.
+   • Verificado: `npm run build` limpio; HTML del build inspeccionado confirmando que el
+     banner se monta en la landing (`/como-funciona`) y en `/privacidad`, que las 2 filas
+     nuevas de la tabla (PostHog/Resend) y el botón de reabrir preferencias llegaron al
+     HTML generado. ⚠️ `/en/privacidad` y `/en/terminos` (los wrappers de
+     `src/pages/en/`) son SSR, no prerender (el `export const prerender = true` vive en el
+     archivo ES, no se hereda al re-exportarlo desde el wrapper) — por diseño no aparecen
+     como HTML estático en `.vercel/output/static/en/`, pero sirven correctamente en
+     runtime; no es una regresión de esta sesión, es el comportamiento preexistente de
+     ambos wrappers.
+
+---
+
 ✅ **Suite de dashboards de PostHog — construida en vivo vía MCP (ago 2026)** — continuación
    directa de la entrada "PostHog — auditoría completa y endurecimiento" de abajo: con el
    MCP oficial de PostHog ya conectado (proyecto "Cord", id `535370`, org `Cord`), se

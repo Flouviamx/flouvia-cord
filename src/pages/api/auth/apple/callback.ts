@@ -17,6 +17,7 @@ import { exchangeAppleCode, verifyAppleIdToken, AppleTokenVerificationError } fr
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
 import { posthogServer } from '../../../../lib/posthog-server';
+import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 
 export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
     const ip = trustedIp(request);
@@ -39,6 +40,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
     const savedNonce = cookies.get('cord_apple_nonce')?.value;
     cookies.delete('cord_apple_state', { path: '/' });
     cookies.delete('cord_apple_nonce', { path: '/' });
+    const dest = safeRelativeRedirect(cookies.get('cord_apple_redirect')?.value) || '/app';
+    cookies.delete('cord_apple_redirect', { path: '/' });
 
     if (!state || !savedState || state !== savedState || !code || !savedNonce) {
         return redirect('/sign-in?sso_error=1');
@@ -127,12 +130,12 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
             cookies.set('cord_2fa_challenge', challenge, {
                 path: '/', httpOnly: true, secure: import.meta.env.PROD, sameSite: 'lax', maxAge: 300,
             });
-            return redirect('/verify-2fa');
+            return redirect(`/verify-2fa?redirect_url=${encodeURIComponent(dest)}`);
         }
 
         const sessionToken = await createSession(userId!, 'Apple Sign In', ip);
         cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions());
-        return redirect('/app');
+        return redirect(dest);
     } catch (err) {
         console.error('[apple/callback] Error:', err);
         return redirect('/sign-in?sso_error=1');

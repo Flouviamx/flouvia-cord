@@ -18,6 +18,7 @@ interface Props {
 
 import Analytics from '@vercel/analytics/astro';
 import { getLangFromUrl, altLangUrls } from '../i18n/utils';
+import CookieConsent from '../components/CookieConsent.astro';
 
 const {
     title,
@@ -118,6 +119,10 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
                 posthog.init(phToken, {
                     api_host: phHost,
                     person_profiles: 'identified_only',
+                    // Sin consentimiento explícito no se captura NADA (ni el pageview
+                    // automático) — <CookieConsent> es el único que llama
+                    // opt_in_capturing()/opt_out_capturing() según la decisión guardada.
+                    opt_out_capturing_by_default: true,
                     loaded: (posthog) => {
                         if (location.hostname === 'localhost') posthog.debug();
                     }
@@ -128,6 +133,7 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
     <body>
         <slot />
         <Analytics />
+        <CookieConsent lang={lang} />
     </body>
 </html>
 

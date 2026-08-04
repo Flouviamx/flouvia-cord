@@ -19,10 +19,11 @@ sobre gustos personales fuera de lo documentado en CLAUDE.md.
 
 ## Las 9 reglas core (checklist obligatorio, en este orden)
 
-1. **CERO emojis** — en código, texto, UI o commits. Grep por rangos Unicode de
-   emoji en los archivos tocados. Excepción única y aprobada: las banderas
-   🇲🇽🇺🇸🇪🇺 en selectores de país/divisa (contexto de identificación de moneda,
-   no decorativo).
+1. **CERO emojis** — en código, texto, UI o commits, sin excepción. Las banderas de
+   país/divisa YA NO son emoji (bandera emoji rota la excepción que existía antes) —
+   son SVG circulares de `circle-flags` vía `FlagSelect`/`src/lib/flags.ts`. Grep por
+   rangos Unicode de emoji en los archivos tocados debe salir en cero, incluidas
+   banderas.
 2. **Sin `<br/>` incrustado en strings de título/texto.** Los saltos de línea
    deben venir de CSS (`max-width`, `text-wrap:balance`), nunca hardcodeados en
    el contenido.

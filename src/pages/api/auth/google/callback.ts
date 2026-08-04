@@ -8,6 +8,7 @@ import { createSession, sessionCookieOptions, SESSION_COOKIE, createTwoFactorCha
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
 import { posthogServer } from '../../../../lib/posthog-server';
+import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 
 export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
   const ip = trustedIp(request);
@@ -33,6 +34,8 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
   // Limpiar cookies temporales
   cookies.delete('cord_oauth_state', { path: '/' });
   cookies.delete('cord_oauth_verifier', { path: '/' });
+  const dest = safeRelativeRedirect(cookies.get('cord_oauth_redirect')?.value) || '/app';
+  cookies.delete('cord_oauth_redirect', { path: '/' });
 
   const clientId = import.meta.env.GOOGLE_CLIENT_ID;
   const clientSecret = import.meta.env.GOOGLE_CLIENT_SECRET;
@@ -141,13 +144,13 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
       cookies.set('cord_2fa_challenge', challenge, {
         path: '/', httpOnly: true, secure: import.meta.env.PROD, sameSite: 'lax', maxAge: 300,
       });
-      return redirect('/verify-2fa');
+      return redirect(`/verify-2fa?redirect_url=${encodeURIComponent(dest)}`);
     }
 
     const sessionToken = await createSession(userId!, 'Google OAuth', ip);
     cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions());
 
-    return redirect('/app');
+    return redirect(dest);
   } catch (err) {
     console.error('[google/callback] Error:', err);
     return redirect('/sign-in?sso_error=1');

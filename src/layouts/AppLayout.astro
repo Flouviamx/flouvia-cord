@@ -13,6 +13,7 @@ import Analytics from '@vercel/analytics/astro';
 import { memberCan } from '../lib/permissions';
 import { currentLocale, currentUserId } from '../lib/context';
 import { t, getAppRuntimeI18n } from '../i18n/app';
+import CookieConsent from '../components/CookieConsent.astro';
 
 
 const L = currentLocale();
@@ -83,6 +84,10 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                 posthog.init(phToken, {
                     api_host: phHost,
                     person_profiles: 'identified_only',
+                    // Sin consentimiento explícito no se captura NADA (ni identify) —
+                    // <CookieConsent> es el único que llama opt_in/opt_out_capturing()
+                    // según la decisión guardada en localStorage (compartida con la landing).
+                    opt_out_capturing_by_default: true,
                     loaded: (posthog) => {
                         if (location.hostname === 'localhost') posthog.debug();
                         if (phUserId) {
@@ -452,6 +457,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         {canDev && <DevWorkbench locale={L} />}
 
         <Analytics />
+        <CookieConsent lang={L} />
     </body>
 </html>
 

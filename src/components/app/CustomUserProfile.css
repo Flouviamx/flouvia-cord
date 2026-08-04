@@ -277,6 +277,60 @@ html[data-theme="dark"] .cup-btn-primary {
   text-decoration: underline;
 }
 
+/* Botón sólido para la acción destructiva final (submit), distinto del
+   outline de .cup-btn-danger (usado para abrir el flujo/disparar 2FA). */
+.cup-btn-danger-solid {
+  background: var(--color-danger, #ef4444);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.cup-btn-danger-solid:hover:not(:disabled) { opacity: 0.88; }
+.cup-btn-danger-solid:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.cup-danger-block {
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.03);
+  padding: 1.1rem 1.2rem;
+}
+
+.cup-err {
+  font-size: 0.8rem;
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.08);
+  padding: 0.65rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.cup-pw-wrap { position: relative; display: flex; }
+.cup-pw-wrap .s-input { padding-right: 2.6rem; }
+.cup-pw-toggle {
+  all: unset;
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.cup-pw-toggle:hover { color: var(--color-text); background: var(--color-bg-soft); }
+.cup-pw-toggle svg { display: block; width: 17px; height: 17px; }
+
 /* Status Messages */
 .cup-status {
   margin-top: 1.25rem;

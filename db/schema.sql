@@ -1347,3 +1347,28 @@ create table if not exists ops_sessions (
 -- espejo (sandbox_of), que es un mecanismo aparte.
 alter table orgs add column if not exists is_demo boolean not null default false;
 update orgs set is_demo = true where rfc = 'FERR010203XYZ' and is_demo is distinct from true;
+
+-- ── Onboarding de pantalla completa (ago 2026) ────────────────────────────────
+-- Antes una cuenta nueva verificaba su correo y aterrizaba en /app con una org
+-- creada EN SILENCIO llamada literalmente "Mi negocio" (ver resolveOrgId() en
+-- db.ts) — nunca se le preguntaba nada. Estas columnas alimentan el wizard de
+-- 4 pasos en /onboarding (nombre real, rol de quien registra, giro/tamaño,
+-- para qué van a usar Cord) y el gate de middleware que lo dispara.
+alter table orgs  add column if not exists industria     text;        -- distribucion|manufactura|construccion|servicios|tecnologia|comercio|otro
+alter table orgs  add column if not exists tamano_equipo text;        -- solo|2-10|11-50|51-200|200+
+alter table orgs  add column if not exists casos_uso     jsonb not null default '[]'::jsonb;
+alter table orgs  add column if not exists onboarded_at  timestamptz;
+alter table users add column if not exists puesto        text;        -- dueno|ventas|finanzas|operaciones|otro
+
+-- Backfill: toda org que YA EXISTÍA antes de este cambio se marca como
+-- onboardeada, para que ningún usuario real en producción sea rebotado al
+-- wizard retroactivamente. ⚠️ El corte es un TIMESTAMP FIJO (no "where
+-- onboarded_at is null" a secas, y NO una fecha de calendario tipo '2026-08-04'
+-- — se probó contra Neon real y una org creada el mismo día del deploy pero
+-- DESPUÉS de correr esta migración se re-marcaba como onboardeada en la
+-- siguiente `npm run db:migrate`, exactamente el bug que esto evita). El
+-- valor es el `now()` real de Neon al momento de escribir esta migración —
+-- cualquier org creada a partir de aquí SIEMPRE tendrá `created_at` posterior
+-- a este literal, así que jamás puede volver a calificar en un re-run futuro.
+update orgs set onboarded_at = coalesce(created_at, now())
+ where onboarded_at is null and created_at < timestamptz '2026-08-03T17:14:24.230Z';

@@ -1,10 +1,13 @@
 ---
 // Ajustes › Avanzado › Datos y privacidad — exportar todo + zona de peligro.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import { getOrg } from '../../../lib/queries';
+import { getOrg, getUserProfile, getMyMembership } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
+const ME = await getMyMembership();
+const PROFILE = await getUserProfile();
+const HAS_PASSWORD = PROFILE?.hasPassword ?? true;
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
     let s = t(L, key as any);
@@ -52,11 +55,68 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
                     <span class="datos-title">{tf('set.datos.eliminar_cuenta_titulo', { org: ORG.nombre })}</span>
                     <span class="datos-desc" set:html={t(L, 'set.datos.eliminar_cuenta_desc')} />
                 </span>
-                <button class="danger-btn" id="delOrg" data-i18n-alert={t(L, 'set.datos.eliminar_alert')}>{t(L, 'set.datos.eliminar_cuenta')}</button>
+                {ME.esOwner ? (
+                    <button type="button" class="danger-btn" id="delOrgBtn">{t(L, 'set.datos.eliminar_cuenta')}</button>
+                ) : (
+                    <span class="datos-owner-note">{t(L, 'set.datos.eliminar_solo_owner')}</span>
+                )}
             </div>
         </div>
     </div>
 </SettingsShell>
+
+{ME.esOwner && (
+    <dialog id="delOrgDlg" class="dz-dlg"
+        data-org-name={ORG.nombre}
+        data-err-generico={t(L, 'set.datos.dlg_err_generico')}
+        data-err-confirmacion={t(L, 'set.datos.dlg_err_confirmacion')}
+        data-err-nombre={t(L, 'set.datos.dlg_err_nombre')}
+        data-label-confirmar={t(L, 'set.datos.dlg_confirmar')}
+        data-label-eliminando={t(L, 'set.datos.dlg_eliminando')}>
+        <div class="dz-dlg-inner">
+            <h4>{tf('set.datos.dlg_titulo', { org: ORG.nombre })}</h4>
+            <p class="dz-dlg-intro">{t(L, 'set.datos.dlg_intro')}</p>
+
+            {HAS_PASSWORD ? (
+                <div class="s-field" style="margin-bottom:1rem">
+                    <label for="dzPass">{t(L, 'set.datos.dlg_pass_label')}</label>
+                    <div class="dz-pw-wrap">
+                        <input class="s-input" id="dzPass" type="password" autocomplete="current-password" />
+                        <button type="button" class="dz-pw-toggle" id="dzPwToggle" aria-label={t(L, 'set.datos.dlg_mostrar_pw')} aria-pressed="false">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.12" />
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity="0.18" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div class="s-field" style="margin-bottom:1rem">
+                    <label for="dzCode">{t(L, 'set.datos.dlg_code_label')}</label>
+                    <input class="s-input" id="dzCode" type="text" inputmode="numeric" maxlength="10" autocomplete="one-time-code" />
+                </div>
+            )}
+
+            <div class="s-field" style="margin-bottom:1rem">
+                <label for="dzConfirmName">{tf('set.datos.dlg_confirm_label', { org: ORG.nombre })}</label>
+                <input class="s-input" id="dzConfirmName" type="text" autocomplete="off" />
+            </div>
+
+            <label class="s-toggle" style="margin-bottom:0.3rem">
+                <input type="checkbox" id="dzCfdiCheck" />
+                <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                <span class="s-toggle-text">{t(L, 'set.datos.dlg_cfdi_check')}</span>
+            </label>
+
+            <div id="dzErr" class="dz-err" style="display:none"></div>
+
+            <div class="wh-dlg-actions">
+                <button type="button" class="api-btn-ghost" id="dzCancel">{t(L, 'set.datos.dlg_cancelar')}</button>
+                <button type="button" class="dz-btn-danger" id="dzConfirm" disabled>{t(L, 'set.datos.dlg_confirmar')}</button>
+            </div>
+        </div>
+    </dialog>
+)}
 
 <style>
     .datos-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0.3rem; border-bottom: 1px solid var(--color-border); }
@@ -71,17 +131,113 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
     .datos-btn.ghost:hover { background: var(--color-border); }
     .datos-note { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.6; margin: 0; }
     .datos-note b { color: var(--color-text); font-weight: 600; }
+    .datos-owner-note { font-size: 0.78rem; color: var(--color-text-muted); flex-shrink: 0; text-align: right; max-width: 220px; }
 
     .s-block.danger > h3 { color: var(--color-danger); border-color: rgba(239,68,68,0.25); }
     .danger-box { border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; background: rgba(239,68,68,0.03); padding: 0 1rem; }
     .danger-box .datos-row { border-bottom: none; }
     .danger-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-danger); background: none; border: 1px solid rgba(239,68,68,0.4); border-radius: 9px; padding: 9px 18px; cursor: pointer; white-space: nowrap; transition: background 0.25s, color 0.25s; }
     .danger-btn:hover { background: var(--color-danger); color: #fff; border-color: var(--color-danger); }
+
+    /* ── Modal de eliminar organización ── */
+    .dz-dlg { border: none; border-radius: 16px; padding: 0; max-width: 460px; width: 92vw; background: var(--surface); color: var(--color-text); box-shadow: 0 40px 90px -30px rgba(10,25,47,0.5); }
+    .dz-dlg::backdrop { background: rgba(10,25,47,0.45); backdrop-filter: blur(3px); }
+    .dz-dlg-inner { padding: 1.6rem; }
+    .dz-dlg-inner h4 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.6rem; color: var(--color-danger); }
+    .dz-dlg-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.5; margin: 0 0 1.25rem; }
+
+    .dz-pw-wrap { position: relative; display: flex; }
+    .dz-pw-wrap .s-input { padding-right: 2.6rem; width: 100%; }
+    .dz-pw-toggle { all: unset; position: absolute; top: 50%; right: 0.5rem; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; color: var(--color-text-muted); cursor: pointer; transition: color 0.15s, background 0.15s; }
+    .dz-pw-toggle:hover { color: var(--color-text); background: var(--color-bg-soft); }
+    .dz-pw-toggle svg { display: block; width: 17px; height: 17px; }
+
+    .dz-err { font-size: 0.8rem; color: #dc2626; background: #fef2f2; padding: 0.65rem 0.8rem; border-radius: 8px; border: 1px solid #fecaca; margin-top: 0.5rem; }
+
+    .dz-btn-danger { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: #fff; background: var(--color-danger); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; transition: opacity 0.15s; }
+    .dz-btn-danger:hover:not(:disabled) { opacity: 0.88; }
+    .dz-btn-danger:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .wh-dlg-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.4rem; }
+    .api-btn-ghost { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
 </style>
 
 <script>
-    const delBtn = document.getElementById('delOrg');
-    delBtn?.addEventListener('click', () => {
-        alert((delBtn as HTMLElement).dataset.i18nAlert || 'Eliminar la cuenta es permanente. Por seguridad, esta acción se habilita escribiendo a soporte@flouvia.com mientras conectamos el flujo de baja con verificación. Mientras tanto, puedes exportar todos tus datos arriba.');
-    });
+    const delBtn = document.getElementById('delOrgBtn');
+    const dlg = document.getElementById('delOrgDlg') as HTMLDialogElement | null;
+    if (delBtn && dlg) {
+        const orgName = dlg.dataset.orgName || '';
+        const passInput = document.getElementById('dzPass') as HTMLInputElement | null;
+        const codeInput = document.getElementById('dzCode') as HTMLInputElement | null;
+        const confirmName = document.getElementById('dzConfirmName') as HTMLInputElement | null;
+        const cfdiCheck = document.getElementById('dzCfdiCheck') as HTMLInputElement | null;
+        const confirmBtn = document.getElementById('dzConfirm') as HTMLButtonElement | null;
+        const cancelBtn = document.getElementById('dzCancel');
+        const errBox = document.getElementById('dzErr');
+        const pwToggle = document.getElementById('dzPwToggle');
+
+        function resetDialog() {
+            if (passInput) passInput.value = '';
+            if (codeInput) codeInput.value = '';
+            if (confirmName) confirmName.value = '';
+            if (cfdiCheck) cfdiCheck.checked = false;
+            if (errBox) { errBox.style.display = 'none'; errBox.textContent = ''; }
+            updateConfirmState();
+        }
+
+        function updateConfirmState() {
+            if (!confirmBtn) return;
+            const credOk = passInput ? passInput.value.length > 0 : !!(codeInput && codeInput.value.trim().length > 0);
+            const nameOk = confirmName?.value === orgName;
+            const cfdiOk = !!cfdiCheck?.checked;
+            confirmBtn.disabled = !(credOk && nameOk && cfdiOk);
+        }
+
+        [passInput, codeInput, confirmName].forEach((el) => el?.addEventListener('input', updateConfirmState));
+        cfdiCheck?.addEventListener('change', updateConfirmState);
+
+        pwToggle?.addEventListener('click', () => {
+            if (!passInput) return;
+            const showing = passInput.type === 'text';
+            passInput.type = showing ? 'password' : 'text';
+            pwToggle.setAttribute('aria-pressed', String(!showing));
+        });
+
+        delBtn.addEventListener('click', () => { resetDialog(); dlg.showModal(); });
+        cancelBtn?.addEventListener('click', () => dlg.close());
+        dlg.addEventListener('close', resetDialog);
+
+        confirmBtn?.addEventListener('click', async () => {
+            if (!confirmBtn || confirmBtn.disabled) return;
+            const label = confirmBtn.textContent;
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = dlg.dataset.labelEliminando || 'Eliminando…';
+            if (errBox) errBox.style.display = 'none';
+
+            const payload: Record<string, string> = { confirmName: confirmName?.value || '' };
+            if (passInput) payload.password = passInput.value;
+            if (codeInput) payload.code = codeInput.value;
+
+            try {
+                const res = await fetch('/api/org', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    window.location.href = '/app';
+                    return;
+                }
+                const msg = data.error === 'confirmation_required'
+                    ? (dlg.dataset.errConfirmacion || 'No pudimos confirmar tu identidad.')
+                    : data.error === 'name_mismatch'
+                        ? (dlg.dataset.errNombre || 'El nombre no coincide.')
+                        : (dlg.dataset.errGenerico || 'Algo salió mal. Intenta de nuevo.');
+                if (errBox) { errBox.textContent = msg; errBox.style.display = 'block'; }
+            } catch {
+                if (errBox) { errBox.textContent = dlg.dataset.errGenerico || 'Algo salió mal. Intenta de nuevo.'; errBox.style.display = 'block'; }
+            }
+
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = dlg.dataset.labelConfirmar || label || 'Eliminar para siempre';
+            updateConfirmState();
+        });
+    }
 </script>

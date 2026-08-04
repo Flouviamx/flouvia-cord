@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { startAuthentication } from '@simplewebauthn/browser';
+import PasswordField from './PasswordField';
 
 // Mensajes en español para los errores de inicio de sesión
 const ERROR_ES: Record<string, string> = {
@@ -39,6 +40,9 @@ export default function CustomSignIn() {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [isEn, setIsEn] = useState(false);
+  // Se muestra tras CUALQUIER fallo de credenciales — igual si la cuenta
+  // existe o no, así que no delata nada que el servidor ya no delate.
+  const [suggestSignup, setSuggestSignup] = useState(false);
 
   const getErrorMsg = (code: string) => {
     const dict = isEn ? ERROR_EN : ERROR_ES;
@@ -68,6 +72,7 @@ export default function CustomSignIn() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuggestSignup(false);
     setLoading(true);
 
     try {
@@ -95,6 +100,13 @@ export default function CustomSignIn() {
         return;
       }
       setError(getErrorMsg(data.error || 'default'));
+      // Sin importar si la causa real fue "no existe" o "contraseña
+      // incorrecta" — ambas caen aquí con el MISMO mensaje del servidor
+      // (login.ts nunca distingue). Mostrar siempre la sugerencia no añade
+      // ninguna señal nueva de enumeración.
+      if (data.error !== 'account_locked' && data.error !== 'rate_limited') {
+        setSuggestSignup(true);
+      }
     } catch (err: any) {
       setError(getErrorMsg('internal_error'));
     } finally {
@@ -145,11 +157,15 @@ export default function CustomSignIn() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = '/api/auth/google';
+    const params = new URLSearchParams(window.location.search);
+    const dest = safeRedirect(params.get('redirect_url'));
+    window.location.href = dest ? `/api/auth/google?redirect_url=${encodeURIComponent(dest)}` : '/api/auth/google';
   };
 
   const handleAppleSSO = () => {
-    window.location.href = '/api/auth/apple';
+    const params = new URLSearchParams(window.location.search);
+    const dest = safeRedirect(params.get('redirect_url'));
+    window.location.href = dest ? `/api/auth/apple?redirect_url=${encodeURIComponent(dest)}` : '/api/auth/apple';
   };
 
   return (
@@ -177,19 +193,35 @@ export default function CustomSignIn() {
             <label htmlFor="password">Contraseña</label>
             <a href="/forgot-password" className="forgot-link">¿No recuerdas la contraseña?</a>
           </div>
-          <input
+          <PasswordField
             id="password"
-            type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={setPassword}
             required
             autoComplete="current-password"
-            className="form-input"
+            isEn={isEn}
           />
         </div>
 
         {notice && !error && <div className="auth-notice">{notice}</div>}
         {error && <div className="auth-error">{error}</div>}
+        {suggestSignup && (
+          <a
+            className="auth-suggest"
+            href={`/sign-up?email=${encodeURIComponent(identifier)}&desde=login`}
+          >
+            <span className="auth-suggest-text">
+              {isEn ? (
+                <>Don't have an account? <b>Create one with {identifier || 'this email'}</b></>
+              ) : (
+                <>¿No tienes cuenta? <b>Créala con {identifier || 'este correo'}</b></>
+              )}
+            </span>
+            <svg className="auth-suggest-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </a>
+        )}
 
         <button type="submit" disabled={loading} className="btn-primary">
           {loading ? 'Iniciando...' : 'Iniciar sesión'}

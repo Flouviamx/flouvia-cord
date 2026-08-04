@@ -22,7 +22,7 @@ const isEn = lang === 'en';
         {isEn ? <Fragment>Privacy<br>Policy</Fragment> : <Fragment>Aviso de<br>Privacidad</Fragment>}
       </h1>
       <div class="reveal">
-        <p class="last-updated">{isEn ? 'Last updated: June 15, 2026' : 'Última actualización: 15 de Junio de 2026'}</p>
+        <p class="last-updated">{isEn ? 'Last updated: August 3, 2026' : 'Última actualización: 3 de Agosto de 2026'}</p>
       </div>
     </div>
 
@@ -94,9 +94,17 @@ const isEn = lang === 'en';
         <h2 id="cookies" class="editorial"><span class="num">05</span> {isEn ? 'Cookie Policy' : 'Política de Utilización de Cookies'}</h2>
         {isEn ? <p>CORD uses cookies and tracking technologies in a minimalist and non-invasive manner. We do not sell your browsing data to third-party advertising networks.</p> : <p>CORD utiliza cookies y tecnologías de seguimiento de manera minimalista y no invasiva. No vendemos sus datos de navegación a redes publicitarias de terceros.</p>}
         <ul>
-          <li>{isEn ? <Fragment><strong>Strictly Necessary Cookies:</strong> Used to keep your session active, authenticate your identity, and prevent Cross-Site Request Forgery (CSRF) attacks. Without these cookies, the application cannot function securely.</Fragment> : <Fragment><strong>Cookies Estrictamente Necesarias:</strong> Utilizadas para mantener su sesión activa, autenticar su identidad y prevenir ataques de falsificación de solicitudes (CSRF). Sin estas cookies, la aplicación no puede funcionar de manera segura.</Fragment>}</li>
-          <li>{isEn ? <Fragment><strong>Performance and Analytics Cookies:</strong> Used via <em>Vercel Analytics</em> to measure page load times, UI errors, and feature adoption. This data is aggregated and completely anonymized.</Fragment> : <Fragment><strong>Cookies de Rendimiento y Analítica:</strong> Utilizadas a través de <em>Vercel Analytics</em> para medir tiempos de carga de la página, errores en la interfaz y adopción de funcionalidades. Estos datos son agregados y totalmente anonimizados.</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Strictly Necessary Cookies:</strong> Used to keep your session active, authenticate your identity, and prevent Cross-Site Request Forgery (CSRF) attacks. Without these cookies, the application cannot function securely. These are always on and cannot be disabled from the cookie banner.</Fragment> : <Fragment><strong>Cookies Estrictamente Necesarias:</strong> Utilizadas para mantener su sesión activa, autenticar su identidad y prevenir ataques de falsificación de solicitudes (CSRF). Sin estas cookies, la aplicación no puede funcionar de manera segura. Siempre están activas y no pueden desactivarse desde el aviso de cookies.</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Behavioral Analytics Cookies (PostHog):</strong> Set a persistent identifier to understand how you navigate and use the product (page views, feature adoption, conversion funnels). If you are signed in, this identifier is linked to your account (email, organization, plan) so Flouvia can improve the product; it is never sold or shared with advertising networks. <strong>These only load after you accept them in the cookie banner</strong> — declining keeps them off.</Fragment> : <Fragment><strong>Cookies de Analítica de Comportamiento (PostHog):</strong> Colocan un identificador persistente para entender cómo navega y usa el producto (vistas de página, adopción de funciones, embudos de conversión). Si tiene sesión iniciada, ese identificador se vincula a su cuenta (correo, organización, plan) para que Flouvia pueda mejorar el producto; nunca se vende ni se comparte con redes publicitarias. <strong>Solo se cargan después de que las acepta en el aviso de cookies</strong> — si las rechaza, permanecen desactivadas.</Fragment>}</li>
+          <li>{isEn ? <Fragment><strong>Cookieless Performance Measurement (Vercel Analytics):</strong> Measures page load times, UI errors, and traffic without setting any cookie or identifying you individually — the data is aggregated and anonymized by design, so it is not gated by the cookie banner.</Fragment> : <Fragment><strong>Medición de Rendimiento sin Cookies (Vercel Analytics):</strong> Mide tiempos de carga, errores de interfaz y tráfico sin colocar ninguna cookie ni identificarle individualmente — los datos son agregados y anónimos por diseño, por lo que no depende del aviso de cookies.</Fragment>}</li>
         </ul>
+        <p>
+          {isEn ? 'You can change your analytics cookie preference at any time.' : 'Puede cambiar su preferencia de cookies de analítica en cualquier momento.'}
+          {' '}
+          <button type="button" id="cc-reopen" class="cc-reopen-link">
+            {isEn ? 'Manage cookie preferences' : 'Administrar preferencias de cookies'}
+          </button>
+        </p>
 
         <h2 id="dpa" class="editorial"><span class="num">06</span> {isEn ? 'DPA and Sub-processors' : 'DPA y Subencargados'}</h2>
         {isEn ? <p>By using CORD, you and Flouvia enter into a Data Processing Agreement. You authorize us to process your clients' information using third-party infrastructure. Below is our <strong>Official List of Service Providers (Sub-processors)</strong>, selected under strict global regulatory standards (SOC 2, PCI-DSS):</p> : <p>Al utilizar CORD, usted y Flouvia celebran un Acuerdo de Procesamiento de Datos (Data Processing Agreement). Usted nos autoriza a procesar la información de sus clientes utilizando infraestructura de terceros. A continuación, presentamos nuestra <strong>Lista Oficial de Proveedores de Servicios (Sub-processors)</strong>, seleccionados bajo estrictos estándares normativos globales (SOC 2, PCI-DSS):</p>}
@@ -122,8 +130,16 @@ const isEn = lang === 'en';
                 <td>{isEn ? 'Exclusive algorithmic processing for AI.' : 'Procesamiento algorítmico exclusivo para IA.'}</td>
               </tr>
               <tr>
-                <td><strong>PAC (SAT)</strong></td>
+                <td><strong>PAC (SAT) — Facturapi</strong></td>
                 <td>{isEn ? 'Certification (stamping) of electronic invoices.' : 'Certificación (timbrado) de comprobantes fiscales.'}</td>
+              </tr>
+              <tr>
+                <td><strong>PostHog</strong></td>
+                <td>{isEn ? 'Product analytics: page views, feature usage and conversion funnels. Only active after you accept analytics cookies.' : 'Analítica de producto: vistas de página, uso de funciones y embudos de conversión. Solo activo tras aceptar las cookies de analítica.'}</td>
+              </tr>
+              <tr>
+                <td><strong>Resend</strong></td>
+                <td>{isEn ? 'Delivery of transactional emails (quote sent, payment reminders, team invites).' : 'Envío de correos transaccionales (cotización enviada, recordatorios de cobro, invitaciones de equipo).'}</td>
               </tr>
             </tbody>
           </table>
@@ -193,6 +209,14 @@ const isEn = lang === 'en';
 
     // Observamos cada sección
     sections.forEach(section => observer.observe(section));
+
+    // Reabrir el aviso de cookies (montado por <CookieConsent> en Layout.astro)
+    const reopenBtn = document.getElementById('cc-reopen');
+    if (reopenBtn) {
+      reopenBtn.addEventListener('click', () => {
+        if (typeof window.cordOpenCookiePrefs === 'function') window.cordOpenCookiePrefs();
+      });
+    }
   });
 </script>
 
@@ -243,6 +267,19 @@ const isEn = lang === 'en';
     color: var(--color-text-muted);
     margin-bottom: 4rem;
   }
+
+  .cc-reopen-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 600;
+    color: var(--color-blue-deep);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .cc-reopen-link:hover { opacity: 0.75; }
 
   /* Grid Layout */
   .legal-grid {

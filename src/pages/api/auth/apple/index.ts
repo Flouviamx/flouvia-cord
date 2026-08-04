@@ -5,6 +5,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { randomBytes } from 'node:crypto';
 import { createAppleClientSecret } from '../../../../lib/auth-apple';
+import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 
 function base64url(buf: Buffer): string {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -29,6 +30,11 @@ export const GET: APIRoute = async ({ cookies, redirect, url }) => {
   };
   cookies.set('cord_apple_state', state, cookieOpts);
   cookies.set('cord_apple_nonce', nonce, cookieOpts);
+
+  // Ver comentario equivalente en google/index.ts — Apple usa form_post, así
+  // que un query param tampoco sobreviviría el roundtrip sin esta cookie.
+  const dest = safeRelativeRedirect(url.searchParams.get('redirect_url'));
+  if (dest) cookies.set('cord_apple_redirect', dest, cookieOpts);
 
   // ⚠️ Debe ser EXACTAMENTE el mismo origin que usa apple/callback.ts para
   // exchangeAppleCode() — Apple rechaza el intercambio si el redirect_uri no

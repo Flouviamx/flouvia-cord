@@ -150,17 +150,29 @@ const subdomainRewrite = async (context: any, next: any) => {
     return next();
 };
 
-import { validateSession } from './lib/auth';
+import { validateSession, SESSION_COOKIE, sessionCookieOptions } from './lib/auth';
 import { trustedIp } from './lib/ip';
-import { requiresTwoFactorSetup } from './lib/db';
+import { getAppGates } from './lib/db';
 
 const mainHandler = async (context: any, next: any) => {
     // Leer sesión desde la cookie 'cord_session' (Fase 3 - Custom Auth)
-    const sessionId = context.cookies.get('cord_session')?.value;
+    const sessionId = context.cookies.get(SESSION_COOKIE)?.value;
     let userId = null;
     if (sessionId) {
         const session = await validateSession(sessionId);
         userId = session?.userId || null;
+        // La sesión se desliza en BD en cada visita (validateSession), pero el
+        // Max-Age de la cookie del navegador se fijaba una sola vez al hacer
+        // login — sin esto, el navegador borraba la cookie a los 30 días
+        // exactos del login aunque el usuario entrara todos los días. Cuando
+        // `slid` viene true (throttle de 5 min ya cumplido) se re-emite la
+        // MISMA cookie (mismo token crudo, ya en la mano) con un Max-Age
+        // renovado — `context.cookies.set(...)` se adjunta a la respuesta que
+        // sea que este handler termine devolviendo (attachCookiesToResponse
+        // de Astro tagea el jar completo sobre el Response final).
+        if (session?.slid) {
+            context.cookies.set(SESSION_COOKIE, sessionId, sessionCookieOptions());
+        }
     }
     const orgId = context.cookies.get('cord_active_org')?.value || null; // Fase 3: Active Org picker
 
@@ -244,8 +256,10 @@ const mainHandler = async (context: any, next: any) => {
     }
 
     // Proteger la app: sin sesión → a /sign-in (evita ver datos / la UI sin auth).
+    // Se preserva el path original en redirect_url para que un deep link
+    // (ej. /app/cotizaciones/x) no se pierda tras iniciar sesión.
     if (isApp && !userId) {
-        return context.redirect("/sign-in");
+        return context.redirect(`/sign-in?redirect_url=${encodeURIComponent(path)}`);
     }
     // Proteger las APIs internas (operan sobre la org del usuario). Las públicas pasan.
     if (isApi && !isPublicApi && !userId) {
@@ -273,18 +287,33 @@ const mainHandler = async (context: any, next: any) => {
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
     const response = await reqContext.run({ userId: userId ?? null, activeOrgId: orgId ?? null, testMode, locale }, async () => {
-        // Gate de 2FA obligatorio (jul 2026: el toggle "Exigir 2FA al equipo"
-        // en Ajustes › Seguridad se podía prender y no hacía NADA — quedaba
-        // guardado en BD sin ningún enforcement). Si la org activa lo exige y
-        // el usuario no tiene TOTP, se confina a las dos páginas que le
-        // permiten salir de ese estado: activar 2FA, o (si es el dueño)
-        // apagar el requisito. Nunca bloquea las APIs internas —
-        // ajustes/cuenta y ajustes/seguridad dependen de ellas para operar.
+        // Gates de entrada a /app, resueltos en una sola query (getAppGates).
         if (isApp && userId) {
             const gatePaths = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];
             const onGatePath = gatePaths.some((p) => path === p || path.startsWith(p + '/'));
-            if (!onGatePath && (await requiresTwoFactorSetup(userId))) {
+
+            // 1) Gate de 2FA obligatorio (jul 2026: el toggle "Exigir 2FA al
+            // equipo" en Ajustes › Seguridad se podía prender y no hacía NADA
+            // — quedaba guardado en BD sin ningún enforcement). Si la org
+            // activa lo exige y el usuario no tiene TOTP, se confina a las
+            // dos páginas que le permiten salir de ese estado: activar 2FA, o
+            // (si es el dueño) apagar el requisito. Nunca bloquea las APIs
+            // internas — ajustes/cuenta y ajustes/seguridad dependen de ellas
+            // para operar. Tiene prioridad sobre el gate de onboarding: si
+            // faltan ambos, primero se resuelve seguridad.
+            const gates = await getAppGates(userId);
+            if (!onGatePath && gates.needs2fa) {
                 return context.redirect('/app/ajustes/cuenta?require2fa=1');
+            }
+
+            // 2) Gate de onboarding (ago 2026): el dueño de una org que nunca
+            // completó el wizard de /onboarding (nombre real de la empresa,
+            // rol, giro, para qué usará Cord) se confina ahí. Solo aplica al
+            // DUEÑO — un miembro invitado no debe terminar configurando el
+            // negocio de otra persona. /onboarding y /api/** viven fuera de
+            // isApp, así que nunca se auto-redirige en loop.
+            if (!onGatePath && !gates.needs2fa && gates.needsOnboarding) {
+                return context.redirect('/onboarding');
             }
         }
         return next();

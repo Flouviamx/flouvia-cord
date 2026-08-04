@@ -76,25 +76,37 @@ export async function getActiveOrgId(): Promise<string> {
 }
 
 /**
- * ¿Debe el middleware BLOQUEAR el acceso a /app por falta de 2FA? true =
- * la org activa exige 2FA (`orgs.require_2fa`) y el usuario no tiene TOTP
- * activo. `orgs.require_2fa` es configurable desde Ajustes › Seguridad desde
- * jul 2026 pero, hasta esta función, nada lo hacía cumplir — se podía prender
- * el toggle y no cambiaba nada.
+ * Los dos gates de entrada a /app que el middleware puede necesitar aplicar,
+ * resueltos en UNA sola query (antes eran dos selects separados si se
+ * hubiera agregado el de onboarding aparte del de 2FA).
+ *
+ * - `needs2fa`: la org activa exige 2FA (`orgs.require_2fa`, configurable
+ *   desde Ajustes › Seguridad desde jul 2026) y el usuario no tiene TOTP
+ *   activo. Bloquea a CUALQUIER miembro de la org, no solo al dueño.
+ * - `needsOnboarding`: la org todavía no tiene `onboarded_at` (nunca pasó
+ *   por el wizard de /onboarding) — y SOLO se exige al dueño
+ *   (`orgs.owner_id`). Un miembro invitado a una org ajena sin
+ *   `onboarded_at` no debe terminar configurando el negocio de otra
+ *   persona; el dueño es quien completa el wizard.
  */
-export async function requiresTwoFactorSetup(userId: string): Promise<boolean> {
+export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; needsOnboarding: boolean }> {
+    const NONE = { needs2fa: false, needsOnboarding: false };
     try {
         const orgId = await getActiveOrgId();
         const rows = await sql`
-            select o.require_2fa, u.totp_enabled
+            select o.require_2fa, o.onboarded_at, o.owner_id, u.totp_enabled
             from orgs o cross join users u
             where o.id = ${orgId} and u.id = ${userId}
             limit 1`;
-        if (!rows.length) return false;
-        return !!rows[0].require_2fa && !rows[0].totp_enabled;
+        if (!rows.length) return NONE;
+        const r = rows[0] as any;
+        return {
+            needs2fa: !!r.require_2fa && !r.totp_enabled,
+            needsOnboarding: r.owner_id === userId && !r.onboarded_at,
+        };
     } catch {
         // Nunca bloquear /app por un fallo de esta verificación best-effort.
-        return false;
+        return NONE;
     }
 }
 

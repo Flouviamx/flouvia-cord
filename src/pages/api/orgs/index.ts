@@ -16,6 +16,7 @@ import type { APIRoute } from 'astro';
 import { sql, logAudit, reqIp } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
+import { COUNTRY_CODES } from '../../../lib/countries';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -23,7 +24,9 @@ const json = (data: unknown, status = 200) =>
 // El alta en cualquier país está abierta (cotizar/cobrar/CRM funcionan igual
 // en todos) — lo que SÍ está limitado a México por ahora es la FACTURACIÓN
 // fiscal real (ver FiscalFactory: solo MexicoSatProvider timbra de verdad).
-const SUPPORTED_COUNTRIES = new Set(['MX', 'US', 'CO', 'AR', 'CL', 'PE', 'ES']);
+// Fuente única: countries.ts (antes este Set vivía duplicado a mano aquí y
+// podía desincronizarse si se agregaba un país nuevo en un solo lugar).
+const SUPPORTED_COUNTRIES = new Set(COUNTRY_CODES);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const POST: APIRoute = async ({ request }) => {

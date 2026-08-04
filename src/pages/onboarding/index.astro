@@ -1,0 +1,722 @@
+---
+// /onboarding — wizard de 4 pasos a pantalla completa (tipo Stripe/Typeform),
+// disparado por el gate de middleware.ts (getAppGates().needsOnboarding) la
+// primera vez que el DUEÑO de una org entra a /app sin haber completado este
+// flujo. Antes, una cuenta nueva quedaba en silencio con una org llamada
+// literalmente "Mi negocio" (ver resolveOrgId() en db.ts) — este wizard es lo
+// que la renombra y captura quién es el negocio de verdad.
+//
+// i18n: se resuelve server-side con currentLocale() (mismo mecanismo que el
+// resto de /app, vía Accept-Language) — NO por prefijo de URL (/en/...) como
+// ventas.astro, porque esta ruta no tiene un espejo /en/onboarding. El
+// <script> del cliente es puramente mecánico (chips/slides/validación),
+// nunca decide idioma.
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/auth.css';
+import { currentLocale } from '../../lib/context';
+import { COUNTRIES } from '../../lib/countries';
+import FlagSelect from '../../components/ui/FlagSelect';
+
+const L = currentLocale();
+const isEn = L === 'en';
+const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ code: c.code, label: c.name }));
+
+const T = isEn
+    ? {
+        pageTitle: 'Set up your workspace - Cord',
+        step: (n: number) => `Step ${n} of 4`,
+        s1: {
+            title: 'What\'s your company called?',
+            sub: 'This is how your clients will see it on every quote.',
+            nameLabel: 'Company name',
+            namePh: 'e.g. Acme Distribution',
+            countryLabel: 'Country you operate in',
+        },
+        s2: {
+            title: 'What\'s your role?',
+            sub: 'So we know what to show you first.',
+            chips: [
+                { v: 'dueno', l: 'Owner or director' },
+                { v: 'ventas', l: 'Sales' },
+                { v: 'finanzas', l: 'Finance / Admin' },
+                { v: 'operaciones', l: 'Operations' },
+                { v: 'otro', l: 'Other' },
+            ],
+        },
+        s3: {
+            title: 'What does your business do?',
+            sub: 'And roughly how big is your team.',
+            industryLabel: 'Industry',
+            industryChips: [
+                { v: 'distribucion', l: 'Distribution' },
+                { v: 'manufactura', l: 'Manufacturing' },
+                { v: 'construccion', l: 'Construction' },
+                { v: 'servicios', l: 'Agency / Services' },
+                { v: 'tecnologia', l: 'SaaS / Technology' },
+                { v: 'comercio', l: 'Retail' },
+                { v: 'otro', l: 'Other' },
+            ],
+            sizeLabel: 'Team size',
+            sizeChips: [
+                { v: 'solo', l: 'Just me' },
+                { v: '2-10', l: '2–10' },
+                { v: '11-50', l: '11–50' },
+                { v: '51-200', l: '51–200' },
+                { v: '200+', l: '200+' },
+            ],
+        },
+        s4: {
+            title: 'What will you use Cord for?',
+            sub: 'Select all that apply.',
+            chips: [
+                { v: 'cotizar', l: 'Quote faster' },
+                { v: 'cobrar', l: 'Collect payments online' },
+                { v: 'facturar', l: 'Issue invoices' },
+                { v: 'seguimiento', l: 'Follow up on quotes' },
+                { v: 'margenes', l: 'Control margins' },
+                { v: 'cobranza_ia', l: 'Automate collections' },
+            ],
+        },
+        back: '← Back',
+        cont: 'Continue',
+        finish: 'Finish',
+        successTitle: 'You\'re all set',
+        successSub: 'Taking you to your dashboard…',
+        errGeneric: 'Something went wrong. Please try again.',
+    }
+    : {
+        pageTitle: 'Configura tu espacio - Cord',
+        step: (n: number) => `Paso ${n} de 4`,
+        s1: {
+            title: '¿Cómo se llama tu empresa?',
+            sub: 'Así la verán tus clientes en cada cotización.',
+            nameLabel: 'Nombre de tu empresa',
+            namePh: 'Ej. Distribuidora El Zarco',
+            countryLabel: 'País donde operas',
+        },
+        s2: {
+            title: '¿Cuál es tu rol?',
+            sub: 'Así sabemos qué mostrarte primero.',
+            chips: [
+                { v: 'dueno', l: 'Dueño o director' },
+                { v: 'ventas', l: 'Ventas' },
+                { v: 'finanzas', l: 'Finanzas / Administración' },
+                { v: 'operaciones', l: 'Operaciones' },
+                { v: 'otro', l: 'Otro' },
+            ],
+        },
+        s3: {
+            title: '¿A qué se dedica tu negocio?',
+            sub: 'Y qué tan grande es tu equipo.',
+            industryLabel: 'Giro',
+            industryChips: [
+                { v: 'distribucion', l: 'Distribución' },
+                { v: 'manufactura', l: 'Manufactura' },
+                { v: 'construccion', l: 'Construcción' },
+                { v: 'servicios', l: 'Agencia / Servicios' },
+                { v: 'tecnologia', l: 'SaaS / Tecnología' },
+                { v: 'comercio', l: 'Comercio' },
+                { v: 'otro', l: 'Otro' },
+            ],
+            sizeLabel: 'Tamaño del equipo',
+            sizeChips: [
+                { v: 'solo', l: 'Solo yo' },
+                { v: '2-10', l: '2–10' },
+                { v: '11-50', l: '11–50' },
+                { v: '51-200', l: '51–200' },
+                { v: '200+', l: '200+' },
+            ],
+        },
+        s4: {
+            title: '¿Para qué vas a usar Cord?',
+            sub: 'Selecciona todas las que apliquen.',
+            chips: [
+                { v: 'cotizar', l: 'Cotizar más rápido' },
+                { v: 'cobrar', l: 'Cobrar en línea' },
+                { v: 'facturar', l: 'Facturar CFDI' },
+                { v: 'seguimiento', l: 'Dar seguimiento' },
+                { v: 'margenes', l: 'Controlar márgenes' },
+                { v: 'cobranza_ia', l: 'Automatizar cobranza' },
+            ],
+        },
+        back: '← Atrás',
+        cont: 'Continuar',
+        finish: 'Terminar',
+        successTitle: 'Listo, tu espacio está configurado',
+        successSub: 'Te llevamos a tu panel…',
+        errGeneric: 'Algo salió mal. Intenta de nuevo.',
+    };
+---
+
+<Layout title={T.pageTitle} noindex>
+    <div class="ob-page">
+        <div class="ob-progress-track"><div class="ob-progress-fill" id="obProgFill"></div></div>
+
+        <div class="ob-shell">
+            <img class="ob-logo" src="/imgs/logo-cord-navy.png" alt="Cord" height="22" />
+            <p class="ob-step-ctr" id="obStepCtr">{T.step(1)}</p>
+
+            <form id="obForm" novalidate>
+                <div class="ob-slides" id="obSlides">
+
+                    <!-- ── Paso 1: nombre + país ── -->
+                    <div class="ob-slide" data-step="0" style="display:block">
+                        <h1 class="ob-title">{T.s1.title}</h1>
+                        <p class="ob-sub">{T.s1.sub}</p>
+
+                        <div class="ob-fields">
+                            <div class="ob-fgroup">
+                                <label class="ob-lbl" for="obNombre">{T.s1.nameLabel}</label>
+                                <input id="obNombre" name="nombre" type="text" class="ob-input ob-input-hero" placeholder={T.s1.namePh} required maxlength="120" autofocus />
+                            </div>
+                            <div class="ob-fgroup">
+                                <label class="ob-lbl" id="obPaisLbl">{T.s1.countryLabel}</label>
+                                <FlagSelect
+                                    client:load
+                                    id="obPaisTrigger"
+                                    ariaLabel={T.s1.countryLabel}
+                                    options={COUNTRY_OPTIONS}
+                                    defaultValue="MX"
+                                    nativeId="obPais"
+                                    nativeName="countryCode"
+                                    className="ob-flagselect"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="ob-actions ob-actions-end">
+                            <button type="button" class="ob-btn-next" data-next="1">
+                                {T.cont}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Paso 2: rol ── -->
+                    <div class="ob-slide" data-step="1" style="display:none">
+                        <h1 class="ob-title">{T.s2.title}</h1>
+                        <p class="ob-sub">{T.s2.sub}</p>
+
+                        <div class="ob-fields">
+                            <div class="ob-chips" data-name="puesto" data-type="single">
+                                {T.s2.chips.map((c) => (
+                                    <button type="button" class="ob-chip" data-value={c.v}>{c.l}</button>
+                                ))}
+                            </div>
+                            <input type="hidden" name="puesto" class="ob-chip-val" data-req="true" />
+                        </div>
+
+                        <div class="ob-actions">
+                            <button type="button" class="ob-btn-back" data-prev="0">{T.back}</button>
+                            <button type="button" class="ob-btn-next" data-next="2">
+                                {T.cont}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Paso 3: giro + tamaño ── -->
+                    <div class="ob-slide" data-step="2" style="display:none">
+                        <h1 class="ob-title">{T.s3.title}</h1>
+                        <p class="ob-sub">{T.s3.sub}</p>
+
+                        <div class="ob-fields">
+                            <div class="ob-fgroup">
+                                <label class="ob-lbl">{T.s3.industryLabel}</label>
+                                <div class="ob-chips" data-name="industria" data-type="single">
+                                    {T.s3.industryChips.map((c) => (
+                                        <button type="button" class="ob-chip" data-value={c.v}>{c.l}</button>
+                                    ))}
+                                </div>
+                                <input type="hidden" name="industria" class="ob-chip-val" data-req="true" />
+                            </div>
+                            <div class="ob-fgroup">
+                                <label class="ob-lbl">{T.s3.sizeLabel}</label>
+                                <div class="ob-chips" data-name="tamano" data-type="single">
+                                    {T.s3.sizeChips.map((c) => (
+                                        <button type="button" class="ob-chip" data-value={c.v}>{c.l}</button>
+                                    ))}
+                                </div>
+                                <input type="hidden" name="tamano" class="ob-chip-val" data-req="true" />
+                            </div>
+                        </div>
+
+                        <div class="ob-actions">
+                            <button type="button" class="ob-btn-back" data-prev="1">{T.back}</button>
+                            <button type="button" class="ob-btn-next" data-next="3">
+                                {T.cont}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Paso 4: casos de uso (multi) ── -->
+                    <div class="ob-slide" data-step="3" style="display:none">
+                        <h1 class="ob-title">{T.s4.title}</h1>
+                        <p class="ob-sub">{T.s4.sub}</p>
+
+                        <div class="ob-fields">
+                            <div class="ob-chips" data-name="casosUso" data-type="multi">
+                                {T.s4.chips.map((c) => (
+                                    <button type="button" class="ob-chip" data-value={c.v}>{c.l}</button>
+                                ))}
+                            </div>
+                            <input type="hidden" name="casosUso" class="ob-chip-val" data-req="true" />
+                        </div>
+
+                        <div id="obErr" class="ob-error" style="display:none"></div>
+
+                        <div class="ob-actions">
+                            <button type="button" class="ob-btn-back" data-prev="2">{T.back}</button>
+                            <button type="submit" class="ob-btn-submit" id="obSubmitBtn">
+                                {T.finish}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Éxito ── -->
+                    <div class="ob-slide ob-success-slide" data-step="success" style="display:none">
+                        <div class="ob-success-icon" aria-hidden="true">
+                            <svg class="ob-check-svg" viewBox="0 0 64 64" fill="none">
+                                <circle class="ob-check-circle" cx="32" cy="32" r="28" stroke="#0a192f" stroke-width="2" stroke-linecap="round"/>
+                                <polyline class="ob-check-mark" points="20 32 28 40 44 24" stroke="#0a192f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <h1 class="ob-title">{T.successTitle}</h1>
+                        <p class="ob-sub">{T.successSub}</p>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+</Layout>
+
+<style is:global>
+    body:has(.ob-page) #navbar,
+    body:has(.ob-page) footer { display: none !important; }
+
+    .ob-page {
+        min-height: 100vh;
+        background: #ffffff;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+
+    .ob-progress-track {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: rgba(0,0,0,0.06);
+        z-index: 100;
+    }
+    .ob-progress-fill {
+        height: 100%;
+        width: 25%;
+        background: #0a192f;
+        transition: width 0.5s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    .ob-shell {
+        max-width: 620px;
+        margin: 0 auto;
+        padding: 6.5rem 1.5rem 5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ob-logo { display: block; margin-bottom: 2.25rem; opacity: 0.92; }
+
+    .ob-step-ctr {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: #86868b;
+        margin: 0 0 2.75rem 0;
+    }
+
+    .ob-slide { animation: ob-fadein 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+    @keyframes ob-fadein { from { opacity: 0; } to { opacity: 1; } }
+
+    .ob-title {
+        font-size: clamp(2rem, 4vw, 2.8rem);
+        font-weight: 600;
+        color: #050505;
+        letter-spacing: -0.04em;
+        line-height: 1.1;
+        margin: 0 0 0.75rem;
+    }
+    .ob-sub {
+        font-size: 1.02rem;
+        color: #6b7686;
+        margin: 0 0 2.75rem;
+        line-height: 1.5;
+    }
+
+    .ob-fields { display: flex; flex-direction: column; gap: 1.75rem; }
+    .ob-fgroup { display: flex; flex-direction: column; gap: 0.7rem; }
+    .ob-lbl { font-size: 0.85rem; font-weight: 600; color: #3d3d3d; letter-spacing: 0.01em; }
+
+    .ob-input {
+        width: 100%;
+        padding: 14px 18px;
+        background: #f5f5f7;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.975rem;
+        color: #1d1d1f;
+        font-family: inherit;
+        transition: background 0.18s ease, box-shadow 0.18s ease;
+        outline: none;
+        box-sizing: border-box;
+        -webkit-appearance: none;
+    }
+    .ob-input-hero { font-size: 1.3rem; padding: 18px 22px; border-radius: 14px; letter-spacing: -0.01em; }
+    .ob-input::placeholder { color: #aeaeb2; }
+    .ob-input:hover { background: #e8e8ed; }
+    .ob-input:focus { background: #ffffff; box-shadow: 0 0 0 3.5px rgba(10,25,47,0.13), 0 1px 4px rgba(0,0,0,0.05); }
+    .ob-input.ob-invalid { background: #fff0f0; box-shadow: 0 0 0 3px rgba(239,68,68,0.18); }
+
+    /* El FlagSelect del país hereda las mismas proporciones que .ob-input
+       para que ambos campos del Paso 1 se vean como un solo formulario.
+       :global() completo (no solo en .fs-btn): el DOM de un island de React
+       nunca lleva el atributo data-astro-cid que el scoping de Astro necesita
+       — ni siquiera la clase que le pasamos por prop (.ob-flagselect) lo
+       lleva, porque la renderiza React en runtime, no el compilador de Astro. */
+    :global(.ob-flagselect .fs-btn) {
+        padding: 14px 18px;
+        border-radius: 12px;
+        font-size: 0.975rem;
+        color: #1d1d1f;
+    }
+    :global(.ob-flagselect .fs-btn:hover) { background: #e8e8ed; }
+    :global(.ob-flagselect .fs-btn:focus-visible),
+    :global(.ob-flagselect .fs-btn.is-open) {
+        background: #ffffff;
+        border-color: transparent;
+        box-shadow: 0 0 0 3.5px rgba(10,25,47,0.13), 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .ob-chips { display: flex; flex-wrap: wrap; gap: 9px; }
+    .ob-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        border-radius: 999px;
+        background: #f5f5f7;
+        border: 1.5px solid transparent;
+        color: #1d1d1f;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.18s cubic-bezier(0.16,1,0.3,1);
+        font-family: inherit;
+        white-space: nowrap;
+        line-height: 1;
+        user-select: none;
+    }
+    .ob-chip:hover { background: #e8e8ed; transform: translateY(-1px); }
+    .ob-chip:active { transform: scale(0.97); }
+    .ob-chip.ob-sel {
+        background: #ffffff;
+        border-color: #0a192f;
+        color: #0a192f;
+        font-weight: 600;
+        box-shadow: 0 2px 14px rgba(10,25,47,0.12), 0 0 0 0.5px #0a192f;
+    }
+    .ob-chip.ob-invalid-chip { border-color: rgba(239,68,68,0.4); }
+
+    .ob-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 3rem;
+        padding-top: 1.75rem;
+        border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    .ob-actions-end { justify-content: flex-end; }
+
+    .ob-btn-back {
+        background: none;
+        border: none;
+        color: #86868b;
+        font-size: 0.88rem;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 8px 4px;
+        transition: color 0.2s;
+        font-family: inherit;
+        letter-spacing: 0.01em;
+    }
+    .ob-btn-back:hover { color: #0a192f; }
+
+    .ob-btn-next, .ob-btn-submit {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        background: #0a192f;
+        color: #ffffff;
+        border: none;
+        border-radius: 999px;
+        padding: 14px 30px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.28s cubic-bezier(0.16,1,0.3,1);
+        box-shadow: 0 4px 18px rgba(10,25,47,0.22), 0 1px 3px rgba(10,25,47,0.1);
+        font-family: inherit;
+        letter-spacing: -0.01em;
+        position: relative;
+        overflow: hidden;
+    }
+    .ob-btn-next::after, .ob-btn-submit::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%);
+        transform: translateX(-110%);
+        transition: transform 0.55s ease;
+    }
+    .ob-btn-next:hover::after, .ob-btn-submit:hover::after { transform: translateX(110%); }
+    .ob-btn-next:hover, .ob-btn-submit:hover { background: #112240; box-shadow: 0 8px 28px rgba(10,25,47,0.28); transform: translateY(-1px); }
+    .ob-btn-next:active, .ob-btn-submit:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(10,25,47,0.2); }
+    .ob-btn-next:disabled, .ob-btn-submit:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+    .ob-btn-next svg, .ob-btn-submit svg { width: 15px; height: 15px; }
+
+    .ob-error {
+        font-size: 0.82rem;
+        color: #dc2626;
+        background: #fef2f2;
+        padding: 0.7rem 0.875rem;
+        border-radius: 8px;
+        border: 1px solid #fecaca;
+        margin-top: 1.5rem;
+    }
+
+    .ob-success-slide { display: flex; flex-direction: column; align-items: flex-start; padding-top: 1rem; }
+    .ob-success-icon { width: 64px; height: 64px; margin-bottom: 2rem; }
+    .ob-check-svg { width: 64px; height: 64px; }
+    .ob-check-circle { stroke-dasharray: 176; stroke-dashoffset: 176; }
+    .ob-check-mark { stroke-dasharray: 40; stroke-dashoffset: 40; }
+
+    @media (max-width: 600px) {
+        .ob-shell { padding: 5rem 1.25rem 3rem; }
+        .ob-actions { flex-wrap: wrap; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .ob-slide { animation: none; }
+    }
+</style>
+
+<script>
+import { gsap } from 'gsap';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ─── Chip logic (single/multi) ─────────────────────────
+    document.querySelectorAll<HTMLElement>('.ob-chips').forEach((group) => {
+        const type = group.dataset.type || 'single';
+        const name = group.dataset.name || '';
+        const hidden = document.querySelector<HTMLInputElement>(`input.ob-chip-val[name="${name}"]`);
+
+        group.querySelectorAll<HTMLButtonElement>('.ob-chip').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                if (type === 'single') {
+                    group.querySelectorAll('.ob-chip').forEach((c) => c.classList.remove('ob-sel'));
+                    chip.classList.add('ob-sel');
+                    if (hidden) hidden.value = chip.dataset.value || '';
+                } else {
+                    chip.classList.toggle('ob-sel');
+                    const selected = [...group.querySelectorAll('.ob-chip.ob-sel')]
+                        .map((c) => (c as HTMLButtonElement).dataset.value || '')
+                        .filter(Boolean);
+                    if (hidden) hidden.value = selected.join(',');
+                }
+            });
+        });
+    });
+
+    // ─── Slide management ───────────────────────────────────
+    const slides = document.querySelectorAll<HTMLElement>('.ob-slide');
+    const progFill = document.getElementById('obProgFill');
+    const stepCtr = document.getElementById('obStepCtr');
+    const progPct = [25, 50, 75, 100];
+    const stepLabels = Array.from({ length: 4 }, (_, i) => stepCtr?.textContent?.replace(/\d+/, String(i + 1)) || '');
+
+    let current = 0;
+
+    function updateProgress(step: number) {
+        if (progFill && step < progPct.length) progFill.style.width = `${progPct[step]}%`;
+        if (stepCtr && step < 4 && stepLabels[step]) stepCtr.textContent = stepLabels[step];
+        if (step === 4) {
+            const track = document.querySelector('.ob-progress-track') as HTMLElement | null;
+            const ctr = document.querySelector('.ob-step-ctr') as HTMLElement | null;
+            if (track) gsap.to(track, { opacity: 0, duration: 0.3, onComplete: () => { track.style.display = 'none'; } });
+            if (ctr) gsap.to(ctr, { opacity: 0, duration: 0.3, onComplete: () => { ctr.style.display = 'none'; } });
+        }
+    }
+
+    function goToSlide(from: number, to: number, dir: 'fwd' | 'bk') {
+        const fromEl = slides[from];
+        const toEl = slides[to];
+        if (!fromEl || !toEl) return;
+
+        const xOut = dir === 'fwd' ? -28 : 28;
+        const xIn = dir === 'fwd' ? 28 : -28;
+
+        if (reduced) {
+            fromEl.style.display = 'none';
+            toEl.style.display = 'block';
+            updateProgress(to);
+            return;
+        }
+
+        gsap.to(fromEl, {
+            x: xOut, opacity: 0, duration: 0.28, ease: 'power2.in',
+            onComplete: () => {
+                fromEl.style.display = 'none';
+                gsap.set(fromEl, { x: 0, opacity: 1 });
+                toEl.style.display = 'block';
+                gsap.fromTo(toEl, { x: xIn, opacity: 0 }, { x: 0, opacity: 1, duration: 0.38, ease: 'power3.out' });
+            },
+        });
+        updateProgress(to);
+    }
+
+    // ─── Validation ──────────────────────────────────────────
+    function validateSlide(idx: number): boolean {
+        const slide = slides[idx];
+        if (!slide) return true;
+        let ok = true;
+
+        slide.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input[required], select[required]').forEach((el) => {
+            if ((el as HTMLInputElement).type === 'hidden') return;
+            const valid = el.checkValidity() && String((el as HTMLInputElement).value || '').trim() !== '';
+            el.classList.toggle('ob-invalid', !valid);
+            if (!valid) ok = false;
+        });
+
+        slide.querySelectorAll<HTMLInputElement>('input.ob-chip-val[data-req="true"]').forEach((el) => {
+            if (el.value.trim()) return;
+            ok = false;
+            const groupName = el.name;
+            const group = slide.querySelector<HTMLElement>(`.ob-chips[data-name="${groupName}"]`);
+            if (group) {
+                gsap.fromTo(group, { x: -4 }, { x: 0, duration: 0.25, ease: 'power1.out', repeat: 3, yoyo: true });
+                group.querySelectorAll('.ob-chip').forEach((c) => c.classList.add('ob-invalid-chip'));
+                setTimeout(() => group.querySelectorAll('.ob-chip').forEach((c) => c.classList.remove('ob-invalid-chip')), 1200);
+            }
+        });
+
+        return ok;
+    }
+
+    document.querySelectorAll<HTMLButtonElement>('.ob-btn-next').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const next = parseInt(btn.dataset.next || '1', 10);
+            if (validateSlide(current)) {
+                (window as any).cordTrack?.('onboarding_step_completed', { step: current + 1 });
+                goToSlide(current, next, 'fwd');
+                current = next;
+            }
+        });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.ob-btn-back').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const prev = parseInt(btn.dataset.prev || '0', 10);
+            goToSlide(current, prev, 'bk');
+            current = prev;
+        });
+    });
+
+    // ─── Submit ──────────────────────────────────────────────
+    const form = document.getElementById('obForm') as HTMLFormElement | null;
+    const errBox = document.getElementById('obErr');
+
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!validateSlide(current)) return;
+
+            const submitBtn = document.getElementById('obSubmitBtn') as HTMLButtonElement | null;
+            if (submitBtn) submitBtn.disabled = true;
+            if (errBox) errBox.style.display = 'none';
+
+            const fd = new FormData(form);
+            const payload = {
+                nombre: String(fd.get('nombre') || '').trim(),
+                countryCode: String(fd.get('countryCode') || ''),
+                puesto: String(fd.get('puesto') || ''),
+                industria: String(fd.get('industria') || ''),
+                tamano: String(fd.get('tamano') || ''),
+                casosUso: String(fd.get('casosUso') || '').split(',').filter(Boolean),
+            };
+
+            try {
+                const res = await fetch('/api/onboarding/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error('bad_status');
+            } catch {
+                if (submitBtn) submitBtn.disabled = false;
+                if (errBox) errBox.style.display = 'block';
+                return;
+            }
+
+            (window as any).cordTrack?.('onboarding_completed', {});
+
+            const successSlide = slides[slides.length - 1];
+            const fromEl = slides[current];
+
+            if (!reduced) {
+                gsap.to(fromEl, {
+                    y: -20, opacity: 0, duration: 0.3, ease: 'power2.in',
+                    onComplete: () => {
+                        fromEl.style.display = 'none';
+                        successSlide.style.display = 'flex';
+                        gsap.from(successSlide, { y: 24, opacity: 0, duration: 0.5, ease: 'power3.out' });
+                        const circle = successSlide.querySelector<SVGCircleElement>('.ob-check-circle');
+                        const mark = successSlide.querySelector<SVGPolylineElement>('.ob-check-mark');
+                        if (circle) gsap.to(circle, { strokeDashoffset: 0, duration: 0.7, ease: 'power2.out', delay: 0.15 });
+                        if (mark) gsap.to(mark, { strokeDashoffset: 0, duration: 0.45, ease: 'power2.out', delay: 0.7 });
+                    },
+                });
+            } else {
+                fromEl.style.display = 'none';
+                successSlide.style.display = 'flex';
+                const circle = successSlide.querySelector<SVGCircleElement>('.ob-check-circle');
+                const mark = successSlide.querySelector<SVGPolylineElement>('.ob-check-mark');
+                if (circle) circle.style.strokeDashoffset = '0';
+                if (mark) mark.style.strokeDashoffset = '0';
+            }
+
+            updateProgress(4);
+            setTimeout(() => { window.location.href = '/app'; }, 1400);
+        });
+
+        form.addEventListener('keydown', (e: KeyboardEvent) => {
+            if (e.key !== 'Enter') return;
+            const tag = (e.target as HTMLElement).tagName;
+            if (tag === 'TEXTAREA') return;
+            e.preventDefault();
+            if (current === 3) {
+                form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            } else {
+                const nextBtn = slides[current]?.querySelector<HTMLButtonElement>('.ob-btn-next');
+                if (nextBtn) nextBtn.click();
+            }
+        });
+    }
+});
+</script>

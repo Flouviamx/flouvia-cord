@@ -5,6 +5,7 @@
 // cord_2fa_challenge — si no existe, Verify2fa.tsx rebota a /sign-in.
 import Layout from '../layouts/Layout.astro';
 import Verify2fa from '../components/auth/Verify2fa';
+import '../styles/auth.css';
 
 const hasChallenge = !!Astro.cookies.get('cord_2fa_challenge')?.value;
 if (!hasChallenge) {
@@ -24,98 +25,3 @@ if (!hasChallenge) {
     </div>
 </Layout>
 
-<style is:global>
-    body:has(.auth-page) #navbar,
-    body:has(.auth-page) footer { display: none !important; }
-
-    .auth-page {
-        min-height: 100vh;
-        background: #ffffff;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 2.25rem;
-        padding: 2.5rem 1.5rem;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    }
-
-    .auth-logo { display: block; opacity: 0.95; transition: opacity 0.2s ease; }
-    .auth-logo:hover { opacity: 1; }
-    .auth-logo img { display: block; }
-
-    .auth-page-footer {
-        font-size: 0.72rem;
-        color: #b4bcc7;
-        font-weight: 500;
-        letter-spacing: 0.02em;
-        margin: 0;
-    }
-
-    .auth-card {
-        width: 100%;
-        max-width: 380px;
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        padding: 0;
-        animation: auth-fadein 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-
-    .auth-header { text-align: center; margin-bottom: 2rem; }
-    .auth-title { font-size: 1.5rem; font-weight: 600; color: #0a192f; margin: 0 0 0.4rem; letter-spacing: -0.025em; }
-    .auth-subtitle { font-size: 0.9rem; color: #6b7686; margin: 0; font-weight: 400; line-height: 1.5; }
-
-    .auth-form { display: flex; flex-direction: column; gap: 0.9rem; }
-    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
-    .form-group label { font-size: 0.78rem; font-weight: 500; color: #4a5567; letter-spacing: 0.01em; }
-
-    .form-input {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 0.72rem 0.9rem;
-        border: 1px solid #e4e8ee;
-        border-radius: 10px;
-        font-size: 0.95rem;
-        color: #0a192f;
-        background: #ffffff;
-        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-        outline: none;
-    }
-    .form-input:hover { border-color: #cdd4dd; }
-    .form-input:focus { border-color: #0a192f; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
-
-    .btn-primary {
-        width: 100%;
-        margin-top: 0.6rem;
-        background: #0a192f;
-        color: #ffffff;
-        border: none;
-        padding: 0.78rem 1rem;
-        border-radius: 10px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        letter-spacing: -0.01em;
-        transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .btn-primary:hover:not(:disabled) { background: #112444; transform: translateY(-1px); box-shadow: 0 8px 22px -8px rgba(10,25,47,0.4); }
-    .btn-primary:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-    .auth-error {
-        font-size: 0.82rem;
-        color: #dc2626;
-        background: #fef2f2;
-        padding: 0.7rem 0.875rem;
-        border-radius: 8px;
-        border: 1px solid #fecaca;
-    }
-
-    .auth-footer { margin-top: 1.75rem; text-align: center; font-size: 0.85rem; color: #6b7686; }
-
-    @keyframes auth-fadein {
-        from { opacity: 0; transform: translateY(12px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-</style>

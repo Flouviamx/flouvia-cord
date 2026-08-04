@@ -7,6 +7,8 @@ import { getProductos, getClientes, getOrg, getCotizacion, getKitsForEditor, mon
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
 import { currentLocale } from '../../../lib/context';
 import { t, getEditorRuntimeI18n } from '../../../i18n/app';
+import FlagSelect from '../../../components/ui/FlagSelect';
+import { CURRENCY_FLAG } from '../../../lib/flags';
 
 const L = currentLocale();
 const ET = getEditorRuntimeI18n(L);
@@ -41,6 +43,15 @@ const termLabel = (code: string) => t(L, `ed.term_${code}` as any);
 // moneda default de la org (Ajustes → General). FIX jul 2026: antes MXN estaba
 // hardcodeado y el ajuste "moneda" era placebo.
 const DEFAULT_CURRENCY = ((draftQuote as any)?.baseCurrency ?? (draftQuote as any)?.base_currency ?? ORG.moneda ?? 'MXN') as string;
+// `flag` va como dato plano por opción (ISO del país de esa bandera) — NUNCA
+// como función mapeadora: este array cruza el límite de hidratación de un
+// island client:load, y Astro serializa las props a JSON (una función no
+// sobrevive ese cruce, ver el comentario de FlagOption en FlagSelect.tsx).
+const CURRENCY_OPTIONS = [
+    { code: 'MXN', label: t(L, 'ed.moneda_mxn'), flag: CURRENCY_FLAG.MXN },
+    { code: 'USD', label: t(L, 'ed.moneda_usd'), flag: CURRENCY_FLAG.USD },
+    { code: 'EUR', label: t(L, 'ed.moneda_eur'), flag: CURRENCY_FLAG.EUR },
+];
 // Vigencia pre-seleccionada: los días RESTANTES del borrador (vigenciaDias) o el
 // default de la org. Si el valor del borrador no es una opción estándar, se agrega.
 const DRAFT_VIG = draftQuote?.vigenciaDias ?? null;
@@ -217,12 +228,16 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 </div>
 
                 <div class="sum-field">
-                    <label>{t(L, 'ed.moneda_label')}</label>
-                    <select class="ed-select" id="fxBase">
-                        <option value="MXN" selected={DEFAULT_CURRENCY === 'MXN'}>{t(L, 'ed.moneda_mxn')}</option>
-                        <option value="USD" selected={DEFAULT_CURRENCY === 'USD'}>{t(L, 'ed.moneda_usd')}</option>
-                        <option value="EUR" selected={DEFAULT_CURRENCY === 'EUR'}>{t(L, 'ed.moneda_eur')}</option>
-                    </select>
+                    <label id="fxBaseLbl">{t(L, 'ed.moneda_label')}</label>
+                    <FlagSelect
+                        client:load
+                        id="fxBaseTrigger"
+                        ariaLabel={t(L, 'ed.moneda_label')}
+                        options={CURRENCY_OPTIONS}
+                        defaultValue={DEFAULT_CURRENCY}
+                        nativeId="fxBase"
+                        className="fx-flagselect"
+                    />
                 </div>
 
                 <div class="fx-cover" id="fxCover" hidden>
@@ -1766,6 +1781,12 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     .sum-field { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
     .sum-field label { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
     .sum-anticipo-note { font-size: 0.74rem; color: var(--color-text-muted); line-height: 1.5; margin: 0.35rem 0 0; }
+
+    /* El FlagSelect de moneda hereda las proporciones de .ed-select — el
+       island de React no lleva data-astro-cid, por eso va con :global(). */
+    :global(.fx-flagselect .fs-btn) {
+        font-size: 0.85rem; padding: 10px 14px; border-radius: 10px;
+    }
 
     .btn-send {
         display: flex; align-items: center; justify-content: center; gap: 8px;

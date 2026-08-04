@@ -4,6 +4,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { randomBytes, createHash } from 'node:crypto';
+import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 
 function base64url(buf: Buffer): string {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -28,6 +29,12 @@ export const GET: APIRoute = async ({ cookies, redirect, url }) => {
   const cookieOpts = { path: '/', httpOnly: true, secure: import.meta.env.PROD, sameSite: 'lax' as const, maxAge: 600 };
   cookies.set('cord_oauth_verifier', codeVerifier, cookieOpts);
   cookies.set('cord_oauth_state', state, cookieOpts);
+
+  // El botón de Google en /sign-in manda ?redirect_url= (ej. desde una
+  // invitación de equipo) — se guarda en cookie para que sobreviva el
+  // roundtrip completo a Google y de vuelta (un query param se perdería).
+  const dest = safeRelativeRedirect(url.searchParams.get('redirect_url'));
+  if (dest) cookies.set('cord_oauth_redirect', dest, cookieOpts);
 
   const params = new URLSearchParams({
     client_id: clientId,

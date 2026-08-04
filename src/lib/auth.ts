@@ -20,6 +20,7 @@
 import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import { scryptSync, randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { sql } from './db';
+import { verifyTotp, matchBackupCode } from './totp';
 
 // ── Parámetros de Argon2id (OWASP 2026) ─────────────────────────────────────
 // `Algorithm.Argon2id` (@node-rs/argon2) es un `const enum` — inaccesible con
@@ -94,6 +95,30 @@ export async function verifyAndMaybeUpgrade(userId: string, password: string, ha
     return ok;
 }
 
+/**
+ * Re-autenticación para acciones destructivas (eliminar cuenta personal,
+ * eliminar organización, desactivar 2FA) — exige la contraseña actual si la
+ * cuenta tiene una real, o un código TOTP/de respaldo vigente si es
+ * OAuth-only. Antes vivía duplicado inline en 2fa/disable.ts; ahora es la
+ * única fuente para que las tres acciones no puedan divergir.
+ */
+export async function reauthenticate(userId: string, creds: { password?: string; code?: string }): Promise<boolean> {
+    const [user] = await sql`select password_hash, totp_secret, totp_enabled, totp_backup_codes from users where id = ${userId} limit 1`;
+    if (!user) return false;
+
+    const hasRealPassword = !!user.password_hash && user.password_hash !== 'dummy_hash';
+    if (hasRealPassword && creds.password) {
+        return verifyPassword(creds.password, user.password_hash as string);
+    }
+    if (user.totp_enabled && creds.code) {
+        return (
+            verifyTotp(user.totp_secret as string, creds.code) ||
+            matchBackupCode((user.totp_backup_codes as string[]) || [], creds.code) !== -1
+        );
+    }
+    return false;
+}
+
 /** sha256 hex — usado para todos los tokens de un solo uso (sesión, reset, invitación, verificación). */
 export function sha256Hex(input: string): string {
     return createHash('sha256').update(input).digest('hex');
@@ -101,7 +126,7 @@ export function sha256Hex(input: string): string {
 
 // ── Sesiones ─────────────────────────────────────────────────────────────
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 días, deslizante
-const SESSION_ABSOLUTE_MS = 90 * 24 * 60 * 60 * 1000; // 90 días, tope duro
+const SESSION_ABSOLUTE_MS = 180 * 24 * 60 * 60 * 1000; // 180 días, tope duro (antes 90 — ver fix de cookie deslizante abajo)
 const SESSION_SLIDE_THROTTLE_MS = 5 * 60 * 1000; // no reescribir en cada request — cada 5 min basta
 
 /** Crea una sesión y devuelve el token CRUDO (va en la cookie; nunca se guarda). */
@@ -118,7 +143,7 @@ export async function createSession(userId: string, userAgent?: string, ip?: str
     return token;
 }
 
-export async function validateSession(token: string): Promise<{ userId: string; sessionId: string } | null> {
+export async function validateSession(token: string): Promise<{ userId: string; sessionId: string; slid: boolean } | null> {
     const tokenHash = sha256Hex(token);
     const rows = await sql`
         select user_id, expires_at, absolute_expires_at, revoked_at, last_used_at
@@ -133,12 +158,19 @@ export async function validateSession(token: string): Promise<{ userId: string; 
     }
     // Sliding expiry, con throttle: solo se reescribe si pasaron ≥5 min desde el
     // último uso — evita un UPDATE en cada request de una sesión activa.
+    // `slid` le dice al caller (middleware.ts) si debe re-emitir la cookie con
+    // un Max-Age renovado — antes la sesión se deslizaba en BD pero la cookie
+    // del navegador se quedaba con el maxAge fijo del login original, así que
+    // el navegador la borraba a los 30 días exactos aunque el usuario entrara
+    // todos los días.
+    let slid = false;
     const staleMs = now.getTime() - new Date(s.last_used_at).getTime();
     if (staleMs > SESSION_SLIDE_THROTTLE_MS) {
         const newExpires = new Date(Math.min(now.getTime() + SESSION_TTL_MS, new Date(s.absolute_expires_at).getTime()));
         await sql`update sessions set last_used_at = now(), expires_at = ${newExpires} where id = ${tokenHash}`;
+        slid = true;
     }
-    return { userId: s.user_id as string, sessionId: tokenHash };
+    return { userId: s.user_id as string, sessionId: tokenHash, slid };
 }
 
 export async function invalidateSession(token: string): Promise<void> {
