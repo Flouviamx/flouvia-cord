@@ -3,7 +3,10 @@ export const prerender = true;
 
 import Layout from '../../layouts/Layout.astro';
 import { getLangFromUrl } from '../../i18n/utils';
-import PriceAuroraBg from '../../components/landing/PriceAuroraBg.jsx';
+import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+
+// Shader estándar de Cord — azul eléctrico del panel de marca.
+const PANEL_PAL = { base: '#08152A', color1: '#38BDF8', color2: '#6670F4', color3: '#10B981' };
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -100,7 +103,7 @@ const timelineVals  = ['urgente','1_3meses','explorando'];
        LEFT — Brand & Trust
   ══════════════════════════════════════════════════ -->
   <aside class="vs-left" aria-hidden="true">
-    <PriceAuroraBg client:only="react" />
+    <CordDynamicBg client:only="react" colors={PANEL_PAL} grain={false} />
     <div class="vs-mesh"></div>
     <div class="vs-left-inner">
 

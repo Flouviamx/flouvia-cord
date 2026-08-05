@@ -7,7 +7,10 @@ import { getOrg, getSetupProgress, getMyMembership } from '../lib/queries';
 import OnboardingWidget from '../components/app/OnboardingWidget.astro';
 import DevWorkbench from '../components/app/DevWorkbench.astro';
 import Sidebar from '../components/app/Sidebar.astro';
-import SupportCoverBg from '../components/support/SupportCoverBg.jsx';
+import CordDynamicBg from '../components/CordDynamicBg.jsx';
+// Shader estándar de Cord — paleta oceánica del Centro de Ayuda
+// (navy casi negro + teal profundo + cobalto).
+const SUPPORT_PAL = { base: '#0A0F1C', color1: '#075E5A', color2: '#0D1E61', color3: '#0F3F7A' };
 // Autenticación propia (Custom Auth Fase 2+)
 import Analytics from '@vercel/analytics/astro';
 import { memberCan } from '../lib/permissions';
@@ -343,7 +346,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 <footer class="help-ai">
                     <div class="help-ai-box" id="helpAiBox" aria-disabled="false" onclick="window.openCordAi && window.openCordAi()">
                         <div class="help-ai-bg" aria-hidden="true">
-                            <SupportCoverBg client:only="react" />
+                            <CordDynamicBg client:only="react" colors={SUPPORT_PAL} grain={false} />
                             <div class="ai-flare"></div>
                         </div>
                         <div class="help-ai-content">

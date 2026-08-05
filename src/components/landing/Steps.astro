@@ -1,11 +1,23 @@
 ---
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
-import StepShaderBg from './StepShaderBg.jsx';
+import CordDynamicBg from '../CordDynamicBg.jsx';
+
+// Shader estándar de Cord — una paleta por tarjeta para que los 3 pasos y las
+// 2 CTA no se sientan clonados (misma familia azul, distinto carácter).
+const STEP_PALS = [
+    { base: '#0A1B3D', color1: '#123C86', color2: '#2563EB', color3: '#38BDF8' },
+    { base: '#08182F', color1: '#0E3B6B', color2: '#1D7FD1', color3: '#34D399' },
+    { base: '#0B1430', color1: '#1B2E7A', color2: '#3B5BDB', color3: '#7C8CF8' },
+];
+const CTA_PALS = [
+    { base: '#071A2E', color1: '#0E7C66', color2: '#1D5FBF', color3: '#34D399' },
+    { base: '#101033', color1: '#4338CA', color2: '#6366F1', color3: '#A78BFA' },
+];
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 // Cómo funciona — 3 pasos como tarjetas premium (fondo claro, igual al resto
-// de la landing) con un shader azul reactivo (mismo motor que BlogCover) como
+// de la landing) con el shader estándar de Cord (CordDynamicBg) como
 // visual de cada tarjeta.
 ---
 
@@ -21,7 +33,7 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
         <div class="steps-grid">
             <article class="step reveal">
                 <div class="step-shader">
-                    <StepShaderBg client:only="react" />
+                    <CordDynamicBg client:only="react" colors={STEP_PALS[0]} grain={false} />
                 </div>
                 <div class="step-scrim"></div>
                 <div class="step-content">
@@ -35,7 +47,7 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 
             <article class="step reveal">
                 <div class="step-shader">
-                    <StepShaderBg client:only="react" />
+                    <CordDynamicBg client:only="react" colors={STEP_PALS[1]} grain={false} />
                 </div>
                 <div class="step-scrim"></div>
                 <div class="step-content">
@@ -49,7 +61,7 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 
             <article class="step reveal">
                 <div class="step-shader">
-                    <StepShaderBg client:only="react" />
+                    <CordDynamicBg client:only="react" colors={STEP_PALS[2]} grain={false} />
                 </div>
                 <div class="step-scrim"></div>
                 <div class="step-content">
@@ -73,7 +85,7 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
                     </span>
                 </div>
                 <div class="cta-card-visual">
-                    <StepShaderBg client:only="react" />
+                    <CordDynamicBg client:only="react" colors={CTA_PALS[0]} grain={false} />
                 </div>
             </a>
 
@@ -87,7 +99,7 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
                     </span>
                 </div>
                 <div class="cta-card-visual">
-                    <StepShaderBg client:only="react" />
+                    <CordDynamicBg client:only="react" colors={CTA_PALS[1]} grain={false} />
                 </div>
             </a>
         </div>

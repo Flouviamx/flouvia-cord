@@ -24,6 +24,7 @@ import { sendVerificationEmail, sendNewDeviceAlertEmail } from '../../../lib/aut
 import { loginSchema, parseJsonBody } from '../../../lib/validation';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { trustedIp } from '../../../lib/ip';
+import { ssoRequirementFor } from '../../../lib/saml';
 
 const CHALLENGE_COOKIE = 'cord_2fa_challenge';
 
@@ -81,6 +82,16 @@ export const POST: APIRoute = async ({ request, cookies }) => {
             const token = await createEmailVerificationToken(user.id, email);
             await sendVerificationEmail(email, token).catch(() => null);
             return new Response(JSON.stringify({ error: 'email_not_verified' }), { status: 403 });
+        }
+
+        // Exigir SSO: se checa DESPUÉS de probar la contraseña (nunca antes —
+        // sería un oráculo de "esta cuenta existe y pertenece a una org con
+        // SSO" sin haber demostrado conocer el password) y ANTES del branch de
+        // 2FA — si la org exige SSO no tiene sentido pedir un segundo factor
+        // para un primer factor que de por sí no se va a aceptar.
+        const ssoReq = await ssoRequirementFor(user.id);
+        if (ssoReq.blocked) {
+            return new Response(JSON.stringify({ error: 'sso_required', connectionId: ssoReq.connectionId, orgNombre: ssoReq.orgNombre }), { status: 403 });
         }
 
         if (user.totp_enabled) {

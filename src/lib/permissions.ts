@@ -82,3 +82,11 @@ export const APIKEY_LIMITS: Record<string, number> = {
     free: 2, starter: 5, pro: 20, scale: 50, developer: 200, business: 20, negocio: 20,
 };
 export const apiKeyLimit = (plan: string): number => APIKEY_LIMITS[plan] ?? APIKEY_LIMITS.free;
+
+// SSO empresarial (SAML 2.0): tier alto — Scale y Developer. NO incluye los
+// alias legacy 'business'/'negocio' (mapean a cuentas Pro grandfathered).
+// Gatea SOLO la administración de conexiones (/api/sso/*); el camino de auth
+// (login/acs) NUNCA se gatea por plan — un cargo fallido que baje una org a
+// free no puede dejar fuera a toda una empresa a media mañana.
+export const SSO_PLANS = ['scale', 'developer'];
+export const planTieneSso = (plan: string) => SSO_PLANS.includes(plan);

@@ -4,6 +4,7 @@ import { sql } from '../../../../lib/db';
 import { createSession, sessionCookieOptions, SESSION_COOKIE } from '../../../../lib/auth';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
+import { ssoRequirementFor } from '../../../../lib/saml';
 
 export const prerender = false;
 
@@ -77,6 +78,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // biometría/PIN local) — no se apila un segundo factor TOTP encima, a
     // diferencia del login con password.
     const userId = passkey.user_id as string;
+
+    // Exigir SSO BLOQUEA passkeys a propósito (decisión de producto, no un
+    // descuido): la razón real por la que una empresa activa "Exigir SSO" es
+    // el desaprovisionamiento — al dar de baja a alguien en el IdP pierde
+    // acceso a todo. Una passkey registrada en el dispositivo sobrevive a ese
+    // apagado, así que dejarla como puerta alterna anularía la garantía que
+    // el cliente está comprando. Mismo criterio que Stripe/Vercel/Linear.
+    const ssoReq = await ssoRequirementFor(userId);
+    if (ssoReq.blocked) {
+      return new Response(JSON.stringify({ error: 'sso_required', connectionId: ssoReq.connectionId, orgNombre: ssoReq.orgNombre }), { status: 403 });
+    }
+
     const userAgent = request.headers.get('user-agent') || 'desconocido';
     const sessionToken = await createSession(userId, userAgent, ip);
 

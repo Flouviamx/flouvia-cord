@@ -199,7 +199,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
             { label: 'Roles and permissions per section', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Team invitations by email', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Organizations and workspace switching', free: false, starter: false, pro: true, scale: true, developer: true },
-            { label: 'SSO / SAML (enterprise)', free: false, starter: false, pro: false, scale: false, developer: true },
+            { label: 'SSO / SAML (enterprise)', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Immutable audit log (DB trace)', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Row Level Security (RLS) in the database', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Encryption in transit and at rest (TLS + AES-256)', free: true, starter: true, pro: true, scale: true, developer: true },

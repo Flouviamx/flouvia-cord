@@ -9,6 +9,7 @@ const ERROR_ES: Record<string, string> = {
   missing_fields: 'Ingresa tu correo y contraseña.',
   rate_limited: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
   internal_error: 'Ocurrió un error en el servidor. Intenta de nuevo más tarde.',
+  sso_required: 'Tu organización exige iniciar sesión con SSO.',
   default: 'Ocurrió un error al iniciar sesión.',
 };
 
@@ -19,6 +20,7 @@ const ERROR_EN: Record<string, string> = {
   missing_fields: 'Enter your email and password.',
   rate_limited: 'Too many attempts. Please wait a moment and try again.',
   internal_error: 'A server error occurred. Please try again later.',
+  sso_required: 'Your organization requires SSO to sign in.',
   default: 'An error occurred while signing in.',
 };
 
@@ -44,6 +46,14 @@ export default function CustomSignIn() {
   // existe o no, así que no delata nada que el servidor ya no delate.
   const [suggestSignup, setSuggestSignup] = useState(false);
 
+  // Discovery de SSO por dominio (jamás por correo completo — ver
+  // /api/auth/sso/discover): mientras el usuario escribe su correo, si el
+  // dominio tiene una conexión SSO activa se ofrece "Continuar con SSO" en
+  // vez (o además) de pedir contraseña.
+  const [ssoConnectionId, setSsoConnectionId] = useState<string | null>(null);
+  const [ssoRequired, setSsoRequired] = useState(false);
+  const [ssoOrgName, setSsoOrgName] = useState('');
+
   const getErrorMsg = (code: string) => {
     const dict = isEn ? ERROR_EN : ERROR_ES;
     return dict[code] || dict.default;
@@ -56,7 +66,12 @@ export default function CustomSignIn() {
       const params = new URLSearchParams(window.location.search);
       const em = params.get('email');
       if (em) setIdentifier(em);
-      if (params.get('sso_error')) setNotice(isEn ? "We couldn't complete sign-in. Try again." : 'No pudimos completar el acceso. Inténtalo de nuevo.');
+      const ssoErr = params.get('sso_error');
+      if (ssoErr === 'sso_required') {
+        setNotice(isEn ? 'Your organization requires SSO to sign in.' : 'Tu organización exige iniciar sesión con SSO.');
+      } else if (ssoErr) {
+        setNotice(isEn ? "We couldn't complete sign-in. Try again." : 'No pudimos completar el acceso. Inténtalo de nuevo.');
+      }
       if (params.get('desde') === 'registro') setNotice(isEn ? 'An account with that email already exists — sign in here.' : 'Ya existe una cuenta con ese correo — inicia sesión aquí.');
     }
   }, [isEn]);
@@ -68,6 +83,45 @@ export default function CustomSignIn() {
       }
     } catch (e) {}
   }, []);
+
+  // Debounce de 400ms sobre el dominio del correo — evita una llamada por
+  // tecla mientras el usuario escribe. Solo dispara con una forma de email
+  // completa (tiene un '@' y algo después).
+  useEffect(() => {
+    const at = identifier.indexOf('@');
+    const domain = at > 0 ? identifier.slice(at + 1).trim() : '';
+    if (!domain || !domain.includes('.')) {
+      setSsoConnectionId(null);
+      setSsoRequired(false);
+      return;
+    }
+    const handle = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/auth/sso/discover?domain=${encodeURIComponent(domain)}`);
+        const data = await res.json();
+        if (data.sso) {
+          setSsoConnectionId(data.connectionId);
+          setSsoRequired(!!data.required);
+          setSsoOrgName(data.orgName || '');
+        } else {
+          setSsoConnectionId(null);
+          setSsoRequired(false);
+        }
+      } catch {
+        setSsoConnectionId(null);
+        setSsoRequired(false);
+      }
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [identifier]);
+
+  const handleSsoLogin = () => {
+    if (!ssoConnectionId) return;
+    const params = new URLSearchParams(window.location.search);
+    const dest = safeRedirect(params.get('redirect_url'));
+    const url = `/api/auth/saml/${ssoConnectionId}/login` + (dest ? `?redirect_url=${encodeURIComponent(dest)}` : '');
+    window.location.href = url;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +151,14 @@ export default function CustomSignIn() {
       }
       if (res.status === 403 && data.error === 'email_not_verified') {
         window.location.href = `/verify-email?email=${encodeURIComponent(identifier)}`;
+        return;
+      }
+      if (res.status === 403 && data.error === 'sso_required' && data.connectionId) {
+        // Ya probó contraseña correcta y de todos modos está bloqueado por la
+        // política de su org — lo mandamos directo al flujo SSO en vez de
+        // solo mostrar el error, ya conocemos la conexión exacta.
+        const url = `/api/auth/saml/${data.connectionId}/login` + (dest !== '/app' ? `?redirect_url=${encodeURIComponent(dest)}` : '');
+        window.location.href = url;
         return;
       }
       setError(getErrorMsg(data.error || 'default'));
@@ -188,20 +250,28 @@ export default function CustomSignIn() {
           />
         </div>
 
-        <div className="form-group">
-          <div className="label-row">
-            <label htmlFor="password">Contraseña</label>
-            <a href="/forgot-password" className="forgot-link">¿No recuerdas la contraseña?</a>
+        {ssoConnectionId && ssoRequired ? (
+          <div className="auth-notice">
+            {isEn
+              ? <>{ssoOrgName || 'Your organization'} requires SSO to sign in.</>
+              : <>{ssoOrgName || 'Tu organización'} exige iniciar sesión con SSO.</>}
           </div>
-          <PasswordField
-            id="password"
-            value={password}
-            onChange={setPassword}
-            required
-            autoComplete="current-password"
-            isEn={isEn}
-          />
-        </div>
+        ) : (
+          <div className="form-group">
+            <div className="label-row">
+              <label htmlFor="password">Contraseña</label>
+              <a href="/forgot-password" className="forgot-link">¿No recuerdas la contraseña?</a>
+            </div>
+            <PasswordField
+              id="password"
+              value={password}
+              onChange={setPassword}
+              required={!ssoConnectionId}
+              autoComplete="current-password"
+              isEn={isEn}
+            />
+          </div>
+        )}
 
         {notice && !error && <div className="auth-notice">{notice}</div>}
         {error && <div className="auth-error">{error}</div>}
@@ -223,9 +293,20 @@ export default function CustomSignIn() {
           </a>
         )}
 
-        <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? 'Iniciando...' : 'Iniciar sesión'}
-        </button>
+        {ssoConnectionId && ssoRequired ? (
+          <button type="button" disabled={loading} className="btn-primary" onClick={handleSsoLogin}>
+            {isEn ? 'Continue with SSO' : 'Continuar con SSO'}
+          </button>
+        ) : (
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? 'Iniciando...' : 'Iniciar sesión'}
+          </button>
+        )}
+        {ssoConnectionId && !ssoRequired && (
+          <button type="button" className="auth-sso-secondary" onClick={handleSsoLogin}>
+            {isEn ? 'Sign in with SSO instead' : 'Iniciar sesión con SSO en su lugar'}
+          </button>
+        )}
       </form>
       <div className="auth-divider">
         <span>O iniciar sesión con</span>

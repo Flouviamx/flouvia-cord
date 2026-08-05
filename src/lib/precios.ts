@@ -240,7 +240,7 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Roles y permisos por sección', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Invitaciones de equipo por correo', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Organizaciones y cambio de espacio', free: false, starter: false, pro: true, scale: true, developer: true },
-            { label: 'SSO / SAML (enterprise)', free: false, starter: false, pro: false, scale: false, developer: true },
+            { label: 'SSO / SAML (enterprise)', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Audit log inmutable (traza en DB)', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Row Level Security (RLS) en base de datos', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Cifrado en tránsito y reposo (TLS + AES-256)', free: true, starter: true, pro: true, scale: true, developer: true },

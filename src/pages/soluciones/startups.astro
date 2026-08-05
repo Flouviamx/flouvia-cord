@@ -16,7 +16,11 @@ import { SOLUCIONES } from '../../lib/solucion';
 import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
 import '../../styles/mockups.css';
-import DarkAuroraBg from '../../components/soluciones/DarkAuroraBg.jsx';
+import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+
+// Shader estándar de Cord en paleta CLARA (mood del hero light original):
+// fondo blanco + azul cielo + verde menta.
+const HERO_PAL = { base: '#FFFFFF', color1: '#CAE8FD', color2: '#CCF1DF', color3: '#DDE9FF' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 
 const lang = getLangFromUrl(Astro.url);
@@ -62,7 +66,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         
         <header class="stripe-hero">
             <div class="stripe-hero-bg">
-                <DarkAuroraBg light client:only="react" />
+                <CordDynamicBg client:only="react" colors={HERO_PAL} grain={false} />
             </div>
 
             <div class="stripe-hero-content stripe-container">

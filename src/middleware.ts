@@ -190,7 +190,20 @@ const mainHandler = async (context: any, next: any) => {
     // requests simples). Ahora una escritura SIN Origin también se rechaza.
     // Comparación por IGUALDAD EXACTA, no startsWith — "https://cordhq.app"
     // ya no matchea "https://cordhq.app.evil.com".
-    if (isWrite) {
+    //
+    // Excepción quirúrgica: el ACS de SAML (POST /api/auth/saml/<uuid>/acs)
+    // recibe un POST CROSS-ORIGIN real del IdP (Origin = el dominio del IdP,
+    // ej. https://idp.okta.com, o null según el IdP) — nunca puede coincidir
+    // con este origin, así que un 403 por Origin bloquearía TODO login SAML.
+    // La defensa CSRF de esa ruta específica no es el Origin: es la firma
+    // XML-DSig del IdP + InResponseTo contra saml_auth_requests + el
+    // RelayState/assertion_id de un solo uso (ver src/lib/saml.ts). El regex
+    // exige POST, un id con forma de UUID, y el sufijo exacto "/acs" — no
+    // abre ninguna otra ruta de escritura.
+    const SAML_ACS_PATH = /^\/api\/auth\/saml\/[0-9a-fA-F-]{36}\/acs\/?$/;
+    const isSamlAcs = context.request.method === "POST" && SAML_ACS_PATH.test(path);
+
+    if (isWrite && !isSamlAcs) {
         const originHeader = context.request.headers.get("origin");
         const allowedOrigins = new Set([context.url.origin]);
         if (import.meta.env.SITE) allowedOrigins.add(import.meta.env.SITE as string);
@@ -237,8 +250,20 @@ const mainHandler = async (context: any, next: any) => {
         }
     }
 
-    // Rate limiting estricto para Auth (login/register)
-    if (path.startsWith("/api/auth/")) {
+    // Rate limiting estricto para Auth (login/register) — el carril SAML tiene
+    // SU PROPIO scope: 50 empleados detrás del mismo NAT saliente de la
+    // oficina (o del propio IdP, que suele reenviar todo desde un puñado de
+    // IPs) compartirían un solo trustedIp y agotarían 15/min en minutos. La
+    // defensa real de abuso ahí es el rate-limit POR CONEXIÓN dentro de
+    // acs.ts (rateLimit('saml-acs:'+cid, ...)), no este piso genérico.
+    if (path.startsWith("/api/auth/saml/")) {
+        if (!allow(ip, "saml", 120)) { // 120 req/min
+            return new Response(JSON.stringify({ error: "Demasiados intentos. Intenta de nuevo en un minuto." }), {
+                status: 429,
+                headers: { "Content-Type": "application/json", "Retry-After": "60" },
+            });
+        }
+    } else if (path.startsWith("/api/auth/")) {
         if (!allow(ip, "auth", 15)) { // 15 req/min
             return new Response(JSON.stringify({ error: "Demasiados intentos. Intenta de nuevo en un minuto." }), {
                 status: 429,

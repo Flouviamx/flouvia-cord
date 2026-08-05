@@ -5,7 +5,10 @@ import AppLayout from '../../../layouts/AppLayout.astro';
 import { getOrg, getSetupProgress, getMyMembership } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
 import { localizeCategories } from '../../../lib/settings';
-import SupportCoverBg from '../../../components/support/SupportCoverBg.jsx';
+import CordDynamicBg from '../../../components/CordDynamicBg.jsx';
+// Shader estándar de Cord — paleta oceánica del Centro de Ayuda
+// (navy casi negro + teal profundo + cobalto).
+const SUPPORT_PAL = { base: '#0A0F1C', color1: '#075E5A', color2: '#0D1E61', color3: '#0F3F7A' };
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -48,7 +51,7 @@ const sDev = [catMap.mcp, catMap.agentes, catMap.elements];
             <a href="/app?guia=1" class="idx-health">
                 <div class="idx-health-bg" aria-hidden="true">
                     <div class="idx-shader-wrap">
-                        <SupportCoverBg client:only="react" />
+                        <CordDynamicBg client:only="react" colors={SUPPORT_PAL} grain={false} />
                     </div>
                 </div>
                 <span class="idx-ring" style={`--c:${C}; --dash:${dash}`}>

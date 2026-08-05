@@ -12,7 +12,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "db:migrate": "node scripts/migrate.mjs",
-    "db:reset": "node scripts/migrate.mjs -- --reset"
+    "db:reset": "node scripts/migrate.mjs -- --reset",
+    "saml:xsw-check": "node scripts/saml-xsw-check.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
@@ -25,6 +26,7 @@
     "@nanostores/react": "^1.1.0",
     "@neondatabase/serverless": "^1.1.0",
     "@node-rs/argon2": "^2.0.2",
+    "@node-saml/node-saml": "^5.1.0",
     "@posthog/mcp": "^0.10.1",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",

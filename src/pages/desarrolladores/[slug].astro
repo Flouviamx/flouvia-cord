@@ -12,7 +12,10 @@ import PageAnims from '../../components/landing/PageAnims.astro';
 import DevBlockMockup from '../../components/desarrolladores/DevBlockMockup.astro';
 import TrustGrid from '../../components/desarrolladores/TrustGrid.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
-import PriceAuroraBg from '../../components/landing/PriceAuroraBg.jsx';
+import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+
+// Shader estándar de Cord — azul/índigo técnico para la tarjeta oscura de devs.
+const DARK_PAL = { base: '#1E1B4B', color1: '#6366F1', color2: '#8B5CF6', color3: '#38BDF8' };
 import { DEV_PAGES } from '../../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../../lib/desarrolladores.en';
 import { getLangFromUrl } from '../../i18n/utils';
@@ -230,7 +233,7 @@ const breadcrumbSchema = {
                 const dark = i === 0;
                 return (
                 <article class={`pp-bcard pp-bcard-${i}${dark ? ' pp-bcard-dark' : ''}`}>
-                    {dark && <PriceAuroraBg client:only="react" />}
+                    {dark && <CordDynamicBg client:only="react" colors={DARK_PAL} grain={false} />}
                     <div class="pp-bcard-text">
                         <p class="pp-bcard-eyebrow">{b.eyebrow}</p>
                         <h2 class="pp-bcard-h2 masked-title" set:html={b.titulo} />
@@ -716,7 +719,7 @@ const breadcrumbSchema = {
     .pp-bcard-bullets li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.83rem; color: var(--color-text); font-weight: 500; line-height: 1.45; }
     .pp-bcard-bullets svg { width: 15px; height: 15px; color: var(--color-ok); flex-shrink: 0; margin-top: 1px; }
 
-    /* ── Tarjeta oscura con aurora GLSL (PriceAuroraBg, mismo shader del ROI
+    /* ── Tarjeta oscura con aurora GLSL (CordDynamicBg, mismo shader del ROI
        de /precios) — fondo #08152a navy evita el flash antes de que el canvas
        cargue, contenido/mockup por encima en z-index 2, texto reestilizado a
        modo oscuro. Siempre el bloque 0 (tarjeta izquierda) de CUALQUIER

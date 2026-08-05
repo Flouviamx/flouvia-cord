@@ -18,6 +18,7 @@ import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
 import { posthogServer } from '../../../../lib/posthog-server';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
+import { ssoRequirementFor } from '../../../../lib/saml';
 
 export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
     const ip = trustedIp(request);
@@ -121,6 +122,13 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
                 properties: { sign_up_method: 'apple' },
             });
             await posthogServer.flush();
+        }
+
+        // Exigir SSO (org-level): mismo criterio que google/callback.ts — un
+        // "primer factor" alterno no puede saltarse la política de la org.
+        const ssoReq = await ssoRequirementFor(userId!);
+        if (ssoReq.blocked) {
+            return redirect('/sign-in?sso_error=sso_required');
         }
 
         // Si la cuenta tiene 2FA activo, ni el SSO se lo salta.

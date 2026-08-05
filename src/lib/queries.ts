@@ -110,6 +110,8 @@ export async function getOrg() {
         csdEstado: (o.csd_estado as string) ?? '',
         csdNombre: (o.csd_nombre as string) ?? '',
         require2fa: (o.require_2fa as boolean) ?? false,
+        requireSso: (o.require_sso as boolean) ?? false,
+        ssoBreakglassUntil: o.sso_breakglass_until ? new Date(o.sso_breakglass_until as string).toISOString() : null,
         sessionTimeoutMin: num(o.session_timeout_min),
         inviteDomains: (o.invite_domains as string) ?? '',
         embedDomains: (o.embed_domains as string) ?? '',

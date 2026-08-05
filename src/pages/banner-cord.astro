@@ -1,6 +1,6 @@
 ---
 // src/pages/banner-stripe.astro
-import StripeBannerBg from '../components/StripeBannerBg.jsx';
+import CordDynamicBg from '../components/CordDynamicBg.jsx';
 ---
 
 <!DOCTYPE html>
@@ -37,7 +37,7 @@ import StripeBannerBg from '../components/StripeBannerBg.jsx';
 <body>
   
   <div class="banner-container">
-    <StripeBannerBg client:only="react" />
+    <CordDynamicBg client:only="react" colors={{ base: '#0A192F', color1: '#38BDF8', color2: '#6670F4', color3: '#10B981' }} grain={false} />
     <!-- Logo centrado (usando la imagen oficial de Cord) -->
     <div class="logo-wrapper" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 10;">
       <img src="/imgs/logo-cord-white.png" alt="Cord" style="width: 320px; height: auto;" />

@@ -186,15 +186,31 @@ function AuroraPlane({ colors }) {
 
   useEffect(() => {
     const el = gl.domElement
+    // Cachea el bounding rect: leerlo en cada mousemove fuerza un reflow
+    // síncrono del layout — con varias instancias montadas a la vez eso es
+    // la causa principal del lag. Solo se recalcula cuando algo pudo haber
+    // movido/redimensionado el elemento (scroll/resize/el propio contenedor).
+    let rect = el.getBoundingClientRect()
+    let dirty = false
+    const markDirty = () => { dirty = true }
     const onMove = (e) => {
-      const r = el.getBoundingClientRect()
+      if (dirty) { rect = el.getBoundingClientRect(); dirty = false }
       mouseTarget.current.set(
-        (e.clientX - r.left) / r.width,
-        1.0 - (e.clientY - r.top) / r.height,
+        (e.clientX - rect.left) / rect.width,
+        1.0 - (e.clientY - rect.top) / rect.height,
       )
     }
+    const ro = new ResizeObserver(markDirty)
+    ro.observe(el)
     window.addEventListener('mousemove', onMove, { passive: true })
-    return () => window.removeEventListener('mousemove', onMove)
+    window.addEventListener('scroll', markDirty, { passive: true })
+    window.addEventListener('resize', markDirty, { passive: true })
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('scroll', markDirty)
+      window.removeEventListener('resize', markDirty)
+      ro.disconnect()
+    }
   }, [gl])
 
   useFrame(({ clock, size }) => {
@@ -231,6 +247,13 @@ export default function CordDynamicBg({
   const wrapRef = useRef(null)
   const [visible, setVisible] = useState(false)
   const [inView, setInView] = useState(false)
+  // Accesibilidad: con prefers-reduced-motion el Canvas NO se monta — queda el
+  // fondo sólido `colors.base` (mismo criterio que los shaders viejos, que
+  // hacían `if (reduced) return null`).
+  const [reduced] = useState(
+    () => typeof window !== 'undefined'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true))
@@ -240,7 +263,7 @@ export default function CordDynamicBg({
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       setInView(entry.isIntersecting)
-    }, { threshold: 0.1 })
+    }, { threshold: 0.01, rootMargin: '200px 0px' })
     
     if (wrapRef.current) observer.observe(wrapRef.current)
     return () => observer.disconnect()
@@ -249,28 +272,32 @@ export default function CordDynamicBg({
   return (
     <div
       ref={wrapRef}
+      aria-hidden="true"
       style={{
         position:      'absolute',
         inset:         0,
         zIndex:        0,
+        pointerEvents: 'none',
         backgroundColor: colors.base,
         opacity:       visible ? 1 : 0,
         transition:    'opacity 1s ease',
       }}
     >
-      {inView && (
+      {inView && !reduced && (
         <Canvas
           style={{ position: 'absolute', inset: 0 }}
           orthographic
-          dpr={2}
+          dpr={1}
           camera={{ position: [0, 0, 1], near: 0.1, far: 10 }}
           gl={{
-            antialias:             true,
+            antialias:             false,
             alpha:                 true,
-            powerPreference:       'high-performance',
-            preserveDrawingBuffer: true,
+            powerPreference:       'low-power',
+            preserveDrawingBuffer: false,
+            stencil:               false,
+            depth:                 false,
           }}
-          resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
+          resize={{ scroll: false, debounce: { scroll: 50, resize: 80 } }}
         >
           <AuroraPlane colors={colors} />
         </Canvas>

@@ -1,5 +1,4 @@
 ---
-import StripeBannerBg from '../components/StripeBannerBg.jsx';
 import CordDynamicBg from '../components/CordDynamicBg.jsx';
 import '../styles/mockups.css';
 import { flagSrc } from '../lib/flags';
@@ -119,7 +118,11 @@ import { flagSrc } from '../lib/flags';
             </div>
           </div>
           <div class="banner-wrapper" style="background-color: #0A192F;">
-            <StripeBannerBg client:only="react" />
+            <CordDynamicBg 
+              client:only="react" 
+              colors={{ base: '#0A192F', color1: '#38BDF8', color2: '#6670F4', color3: '#10B981' }} 
+              grain={false}
+            />
 
             <!-- Mockup: App Quote Creator -->
             <div class="cmk-stage">

@@ -16,8 +16,13 @@ import { SOLUCIONES } from '../../lib/solucion';
 import { SOLUCIONES_EN } from '../../lib/solucion.en';
 import { getLangFromUrl } from '../../i18n/utils';
 import '../../styles/mockups.css';
-import DarkAuroraBg from '../../components/soluciones/DarkAuroraBg.jsx';
-import CardAuroraBg from '../../components/soluciones/CardAuroraBg.jsx';
+import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+
+// Paletas del shader estándar de Cord (CordDynamicBg) para esta página:
+// hero = navy + teal esmeralda + índigo (el mood dark original del hero);
+// tarjetas = misma familia, un punto más presente (el teal es el foco).
+const HERO_PAL = { base: '#0B0F19', color1: '#0E7C66', color2: '#2B1A6B', color3: '#0F63FA' };
+const CARD_PAL = { base: '#0B0F19', color1: '#0F8A6E', color2: '#3A2280', color3: '#1E64E0' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 
 const lang = getLangFromUrl(Astro.url);
@@ -88,7 +93,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         ) : (
             <header class="stripe-hero">
                 <div class="stripe-hero-bg">
-                    <DarkAuroraBg client:only="react" />
+                    <CordDynamicBg client:only="react" colors={HERO_PAL} grain={false} />
                 </div>
                 
                 <div class="stripe-hero-content stripe-container">
@@ -436,7 +441,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     <div class="stripe-fg-main">
                         {solucion.blocks.map((block, idx) => (
                             <div class="stripe-fg-card aurora-card reveal">
-                                <CardAuroraBg client:only="react" />
+                                <CordDynamicBg client:only="react" colors={CARD_PAL} grain={false} />
                                 <div class="stripe-fg-card-content">
                                     <h3 class="stripe-fg-title">{block.titulo}</h3>
                                     <p class="stripe-fg-desc">{block.copy}</p>
@@ -659,7 +664,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                     <div class="stripe-fg-main">
                         <!-- Block 1 -->
                         <div class="stripe-fg-card aurora-card reveal">
-                            <CardAuroraBg client:only="react" />
+                            <CordDynamicBg client:only="react" colors={CARD_PAL} grain={false} />
                             <div class="stripe-fg-card-content">
                                 <h3 class="stripe-fg-title">Motor de Reglas de Negocio</h3>
                                 <p class="stripe-fg-desc">Automatiza decisiones de riesgo, establece límites de crédito dinámicos y aplica reglas de aprobación según monto, descuento y margen en tiempo real.</p>
@@ -696,7 +701,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
                         <!-- Block 2 -->
                         <div class="stripe-fg-card aurora-card reveal">
-                            <CardAuroraBg client:only="react" />
+                            <CordDynamicBg client:only="react" colors={CARD_PAL} grain={false} />
                             <div class="stripe-fg-card-content">
                                 <h3 class="stripe-fg-title">Reportes en Tiempo Real</h3>
                                 <p class="stripe-fg-desc">Audita absolutamente todo lo que ocurre. Tableros de Business Intelligence integrados para que nunca pierdas visibilidad de tu operación.</p>
@@ -737,7 +742,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
                         <!-- Block 3 -->
                         <div class="stripe-fg-card aurora-card reveal">
-                            <CardAuroraBg client:only="react" />
+                            <CordDynamicBg client:only="react" colors={CARD_PAL} grain={false} />
                             <div class="stripe-fg-card-content">
                                 <h3 class="stripe-fg-title">Multi-Entidad y Divisas</h3>
                                 <p class="stripe-fg-desc">Opera en varias divisas y entidades: convierte con tasa protegida (FX lock) y mantén cada negocio separado en una sola plataforma.</p>
@@ -876,7 +881,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             <div class="split-visual-sticky">
                                 <!-- Colorful Gradient Background -->
                                 <div class="split-visual-bg">
-                                    <CardAuroraBg client:only="react" />
+                                    <CordDynamicBg client:only="react" colors={CARD_PAL} grain={false} />
                                 </div>
                                 
                                 <!-- Floating Security Mockup -->
@@ -1279,7 +1284,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
     }
     
     .stripe-fg-card {
-        /* Dark card like the empresas hero — the real GLSL aurora (CardAuroraBg)
+        /* Dark card like the empresas hero — the real GLSL aurora (CordDynamicBg)
            paints over this base; this color avoids a flash before the canvas fades in. */
         background: #0b0f19;
         border-radius: 24px;
@@ -1293,7 +1298,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 
     /* ── Aurora Card — dark card, real hero shader behind the content ── */
     .aurora-card {
-        position: relative; /* needed for absolute CardAuroraBg canvas */
+        position: relative; /* needed for absolute CordDynamicBg canvas */
     }
 
     /* Content and visual sit above the aurora shader (z-index 1) */
@@ -3502,7 +3507,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
 </style>
 
 <script>
-    // Aurora de las tarjetas: ahora es el shader GLSL real (CardAuroraBg.jsx),
+    // Aurora de las tarjetas: ahora es el shader GLSL estándar (CordDynamicBg.jsx),
     // reactivo al cursor local de cada tarjeta. El tracking CSS quedó obsoleto.
 
     // Reactive Parallax Effect for Startups Hero Blobs

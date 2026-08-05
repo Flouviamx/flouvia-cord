@@ -3,7 +3,13 @@
 // Un mockup grande (estilo ElevenLabs "Flows") que cambia según la pestaña activa
 // debajo; barra indicadora que se desliza + rellena como temporizador de autoplay.
 import ShowcaseMockup from './ShowcaseMockup.astro';
-import ShowcaseAuroraBg from './ShowcaseAuroraBg.jsx';
+import CordDynamicBg from '../CordDynamicBg.jsx';
+
+// Shader estándar de Cord dentro de .shw-stage. La `base` es EXACTAMENTE el gris
+// del stage (#F5F5F7) para que el shader no "tape" el lienzo: donde no hay aurora
+// el resultado es idéntico al fondo. Los acentos son tintes azules CLAROS a
+// propósito — el stage debe quedar legible detrás de los mockups blancos.
+const STAGE_PAL = { base: '#F5F5F7', color1: '#C8D8F0', color2: '#D5DCF4', color3: '#C9E4F5' };
 
 interface ShowcaseTab {
     eyebrow: string;
@@ -33,7 +39,7 @@ const { slug, tabs, nav, isEn = false } = Astro.props as Props;
 
     <div class="shw-stage-wrap reveal-mockup">
         <div class="shw-stage">
-            <ShowcaseAuroraBg client:only="react" />
+            <CordDynamicBg client:only="react" colors={STAGE_PAL} grain={false} />
             {tabs.map((t, i) => (
                 <div class={`shw-panel${i === 0 ? ' shw-panel-active' : ''}`} data-panel={i}>
                     <ShowcaseMockup slug={slug} index={i} />

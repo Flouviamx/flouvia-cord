@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 import { currentUserId } from '../../lib/context';
-import { reauthenticate } from '../../lib/auth';
+import { reauthenticate, revokeAllSessions } from '../../lib/auth';
 import { parseJsonBody } from '../../lib/validation';
 import { rateLimit, tooMany } from '../../lib/ratelimit';
 import { deleteOrgCascade } from '../../lib/org-delete';
@@ -101,6 +101,25 @@ export const PATCH: APIRoute = async ({ request }) => {
     // ── Seguridad de la organización ──
     const require2fa = body.require_2fa !== undefined ? Boolean(body.require_2fa) : actual.require_2fa;
     const sessionTimeout = body.session_timeout_min !== undefined ? clamp(Math.round(Number(body.session_timeout_min) || 0), 0, 1440) : actual.session_timeout_min;
+
+    // Exigir SSO: activarlo está GUARDADO — sin esta precondición, el error
+    // de soporte más probable es un admin que prende el toggle a medio setup
+    // y deja fuera a toda la empresa (el owner conserva password siempre, ver
+    // ssoRequirementFor en saml.ts, pero nadie más podría entrar). Rechaza
+    // 422 salvo que exista una conexión habilitada con AL MENOS un dominio
+    // verificado.
+    const requireSso = body.require_sso !== undefined ? Boolean(body.require_sso) : actual.require_sso;
+    const turningSsoOn = requireSso && !actual.require_sso;
+    if (turningSsoOn) {
+        const [[readyConn]] = await withOrgTx(orgId, sql`
+            select 1 from sso_connections c
+            join sso_domains d on d.connection_id = c.id
+            where c.org_id = ${orgId} and c.enabled = true and d.verified_at is not null
+            limit 1`);
+        if (!readyConn) {
+            return json({ error: 'Necesitas al menos una conexión SSO activa con un dominio verificado antes de exigir SSO.' }, 422);
+        }
+    }
     // Dominios de invitación: lista coma-sep saneada a host válido (sin @, minúsculas).
     const inviteDomains = body.invite_domains !== undefined
         ? (String(body.invite_domains).trim() === '' ? null
@@ -149,6 +168,7 @@ export const PATCH: APIRoute = async ({ request }) => {
             moneda = ${moneda}, zona_horaria = ${zona}, idioma = ${idioma},
             color_secundario = ${colorSec}, portal_bienvenida = ${portalBien},
             require_2fa = ${require2fa}, session_timeout_min = ${sessionTimeout}, invite_domains = ${inviteDomains},
+            require_sso = ${requireSso},
             embed_domains = ${embedDomains},
             portal_banner = ${portalBanner}, portal_mostrar_chat = ${portalChat}, portal_powered = ${portalPowered},
             email_from_name = ${emailFromName}, email_reply_to = ${emailReplyTo}, email_intro = ${emailIntro}, email_firma = ${emailFirma},
@@ -156,6 +176,21 @@ export const PATCH: APIRoute = async ({ request }) => {
             banco_nombre = ${bancoNombre}, banco_clabe = ${bancoClabe}, banco_beneficiario = ${bancoBen}
         where id = ${orgId}`);
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: 'Se actualizaron los ajustes del negocio', ip: reqIp(request) });
+
+    // Al ACTIVAR "Exigir SSO": las sesiones de contraseña de los no-owner
+    // pueden seguir vivas hasta 30 días — sin esto, la política no surte
+    // efecto real para nadie que ya tenga sesión abierta hasta que expire
+    // sola. El owner NUNCA se toca (conserva su propia sesión + password).
+    if (turningSsoOn) {
+        const [members] = await withOrgTx(orgId, sql`
+            select user_id from org_members
+            where org_id = ${orgId} and estado = 'activo' and user_id is not null and user_id != ${actual.owner_id}`);
+        for (const m of members as any[]) {
+            await revokeAllSessions(m.user_id as string);
+        }
+        await logAudit(orgId, { accion: 'sso.exigir_activado', entidad: 'org', entidad_id: orgId, detalle: `${members.length} sesión(es) revocada(s)`, ip: reqIp(request) });
+    }
+
     return json({ ok: true });
 };
 

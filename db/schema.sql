@@ -1372,3 +1372,155 @@ alter table users add column if not exists puesto        text;        -- dueno|v
 -- a este literal, así que jamás puede volver a calificar en un re-run futuro.
 update orgs set onboarded_at = coalesce(created_at, now())
  where onboarded_at is null and created_at < timestamptz '2026-08-03T17:14:24.230Z';
+
+-- ══════════════════════════════════════════════════════════════════════════
+-- ── SSO empresarial SAML 2.0 (ago 2026) ──────────────────────────────────
+-- Reemplazo real del wizard cosmético que vivía en /app/ajustes/sso —
+-- generaba el código de verificación DNS en el navegador y nunca lo mandaba
+-- a ningún lado. Ver docs/historial-auth-clerk.md para el detalle de diseño.
+-- ══════════════════════════════════════════════════════════════════════════
+
+-- Una fila por conexión con un Identity Provider; una org puede tener varias
+-- (ej. Okta para el equipo interno + Entra para una subsidiaria adquirida).
+-- idp_certs es PLURAL a propósito: durante una rotación de certificado del
+-- IdP conviven el cert viejo y el nuevo, y node-saml acepta un array.
+create table if not exists sso_connections (
+  id                    uuid        default gen_random_uuid() primary key,
+  org_id                uuid        not null references orgs(id) on delete cascade,
+  nombre                text        not null,               -- "Okta producción"
+  proveedor             text        not null default 'saml', -- okta|entra|google|onelogin|otro (solo display)
+  enabled               boolean     not null default false,
+  -- Identity Provider
+  idp_entity_id         text        not null,
+  idp_sso_url           text        not null,               -- HTTP-Redirect binding
+  idp_slo_url           text,
+  idp_certs             text[]      not null default '{}',   -- PEM, uno o más (rotación sin downtime)
+  -- Protocolo
+  nameid_format         text        not null default 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
+  want_assertion_signed boolean     not null default true,
+  want_response_signed  boolean     not null default true,
+  sign_authn_request    boolean     not null default false,
+  clock_skew_ms         int         not null default 60000,
+  -- Comportamiento
+  allow_idp_initiated   boolean     not null default false,
+  jit_provisioning      boolean     not null default true,
+  attr_map              jsonb       not null default '{}'::jsonb,  -- {email,firstName,lastName,groups}: nombre real del atributo en el IdP
+  role_mappings         jsonb       not null default '[]'::jsonb,  -- [{attr,op,value,preset}], primera regla que matchea gana
+  default_preset        text        not null default 'lectura',
+  -- Auditoría / diagnóstico
+  last_login_at         timestamptz,
+  last_error            text,
+  last_error_at         timestamptz,
+  created_by            uuid        references users(id) on delete set null,
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
+);
+create index if not exists idx_sso_conn_org on sso_connections(org_id);
+create unique index if not exists uq_sso_conn_idp on sso_connections(org_id, idp_entity_id);
+
+-- Dominios que una conexión ha probado controlar por DNS TXT. Tabla APARTE
+-- (no una columna de texto tipo orgs.invite_domains) porque aquí el dominio
+-- es una CAPACIDAD, no un filtro: tener "acme.com" verificado permite
+-- reclamar cualquier fila de `users` con ese correo. uq_sso_domain_global es
+-- la defensa anti-toma-de-cuenta real — un dominio verificado le pertenece a
+-- EXACTAMENTE una org; sin este índice, dos orgs podrían "verificar" el
+-- mismo dominio y el ACS terminaría confiando en la que gane la carrera.
+create table if not exists sso_domains (
+  id                uuid        default gen_random_uuid() primary key,
+  connection_id     uuid        not null references sso_connections(id) on delete cascade,
+  org_id            uuid        not null references orgs(id) on delete cascade,
+  domain            text        not null,
+  verify_token      text        not null,   -- "cord-domain-verify=<32 hex>"
+  verified_at       timestamptz,
+  last_checked_at   timestamptz,
+  created_at        timestamptz not null default now()
+);
+create unique index if not exists uq_sso_domain_conn on sso_domains(connection_id, domain);
+create unique index if not exists uq_sso_domain_global on sso_domains(domain) where verified_at is not null;
+
+-- Reemplazo de la cookie SameSite=lax (inútil aquí: el ACS recibe un POST
+-- cross-site del IdP y esa cookie nunca vuelve). El `id` de cada fila ES el
+-- AuthnRequest ID que se manda al IdP y el InResponseTo que se espera de
+-- vuelta; `relay_state` es lo único que sí viaja (como query param del
+-- AuthnRequest y luego como campo del POST del IdP). TTL corto: 10 minutos
+-- alcanza para una IdP con MFA/reset de password de por medio, y mantiene
+-- la ventana de replay irrelevante. Sirve también de backing store al
+-- cacheProvider de node-saml (mismas filas, mismo id).
+create table if not exists saml_auth_requests (
+  id             text        primary key,     -- AuthnRequest ID ('_' + uuid)
+  connection_id  uuid        not null references sso_connections(id) on delete cascade,
+  relay_state    text        not null,
+  redirect_to    text,                        -- destino relativo, ya saneado por safeRelativeRedirect
+  ip             text,
+  consumed_at    timestamptz,
+  expires_at     timestamptz not null,
+  created_at     timestamptz not null default now()
+);
+create unique index if not exists uq_saml_req_relay on saml_auth_requests(relay_state);
+create index if not exists idx_saml_req_expires on saml_auth_requests(expires_at);
+
+-- Defensa contra replay de una aserción SAML ya usada. El PK ES la defensa:
+-- `insert ... on conflict (assertion_id) do nothing returning assertion_id`
+-- — cero filas devueltas significa que ya se vio esta aserción, rechazar.
+-- Atómico, sin carrera read-then-write. Necesario sobre todo para
+-- IdP-initiated (sin InResponseTo, sin la protección que ya da
+-- saml_auth_requests), pero se aplica siempre como defensa en profundidad.
+create table if not exists saml_assertion_replay (
+  assertion_id   text        primary key,
+  connection_id  uuid        not null references sso_connections(id) on delete cascade,
+  expires_at     timestamptz not null,        -- = NotOnOrAfter de la aserción + skew
+  created_at     timestamptz not null default now()
+);
+create index if not exists idx_saml_replay_expires on saml_assertion_replay(expires_at);
+
+-- El ACS NUNCA pone la cookie de sesión directamente (sería un Set-Cookie
+-- en un POST top-level cross-site, terreno inestable con partición de
+-- cookies de terceros y ya inconsistente en Safari/ITP). En vez de eso crea
+-- esta fila y redirige a un GET same-origin (/api/auth/saml/complete) que sí
+-- mintea la sesión — mismo patrón que two_factor_challenges (id=sha256 del
+-- token, un solo uso, TTL corto).
+create table if not exists sso_handoffs (
+  id           text        primary key,   -- sha256(token)
+  user_id      uuid        not null references users(id) on delete cascade,
+  redirect_to  text,
+  needs_2fa    boolean     not null default false,
+  expires_at   timestamptz not null,
+  created_at   timestamptz not null default now()
+);
+
+-- Exigir SSO para los miembros de la org (bloquea password/Google/Apple/
+-- passkeys — ver src/lib/saml.ts ssoRequirementFor). El owner SIEMPRE
+-- conserva su password como vía de escape; sso_breakglass_until es el
+-- segundo escape (ventana temporal, ver /api/org PATCH).
+alter table orgs add column if not exists require_sso          boolean not null default false;
+alter table orgs add column if not exists sso_breakglass_until timestamptz;
+
+-- sso_managed=true → el rol/permisos de este miembro los reescribe el IdP en
+-- cada login (evaluateRoleMappings); false → un admin lo fijó a mano y el
+-- login SAML no lo toca. sso_connection_id es solo trazabilidad (por dónde
+-- entró), nunca la fuente de verdad de si está gateado por dominio.
+alter table org_members add column if not exists sso_managed       boolean not null default false;
+alter table org_members add column if not exists sso_connection_id uuid references sso_connections(id) on delete set null;
+
+-- RLS: sso_connections/sso_domains llevan el MISMO patrón que orgs/org_members
+-- (enable SIN force) — el ACS corre sin sesión y sin app.org_id todavía
+-- establecido, así que un `force` aquí devolvería cero filas al camino de
+-- auth y cada login SAML fallaría en silencio con "conexión no encontrada".
+-- El CRUD de administración (bajo sesión, vía withOrgTx) sí queda protegido
+-- por la policy; el carril de auth (sql crudo) bypasea como el rol dueño,
+-- igual que ya hace resolveOrgId()/authApiKey() hoy.
+alter table sso_connections enable row level security;
+create policy "rls_sso_connections" on sso_connections
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+alter table sso_domains enable row level security;
+create policy "rls_sso_domains" on sso_domains
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+-- saml_auth_requests / saml_assertion_replay / sso_handoffs: SIN RLS,
+-- deliberado — mismas razones ya documentadas arriba para sessions/
+-- two_factor_challenges/email_verification_tokens. Son tablas del CARRIL DE
+-- AUTH: se escriben y leen ANTES de que exista cualquier contexto de org o
+-- de sesión (el ACS no tiene ninguno de los dos), están keyeadas por IDs
+-- opacos e impredecibles (uuid / sha256), y la protección real es que un
+-- atacante no puede adivinar la clave — no que Postgres filtre filas.

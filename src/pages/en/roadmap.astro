@@ -6,7 +6,9 @@ import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
-import RoadmapCoverBg from '../../components/landing/RoadmapCoverBg.jsx';
+import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+// Shader estándar de Cord — azul más claro/vívido que el de soporte.
+const ROADMAP_PAL = { base: '#071633', color1: '#0B3C87', color2: '#1F6FE0', color3: '#34D399' };
 import { roadmapData } from '../../lib/roadmap-data';
 
 const statusMap = {
@@ -36,7 +38,7 @@ const breadcrumbSchema = {
         <!-- ── HERO ── -->
         <header class="rd-hero">
             <div class="rd-hero-bg" aria-hidden="true">
-                <RoadmapCoverBg client:only="react" />
+                <CordDynamicBg client:only="react" colors={ROADMAP_PAL} grain={false} />
             </div>
             <div class="rd-hero-inner">
                 <p class="pp-eyebrow reveal">CORD PLATFORM</p>

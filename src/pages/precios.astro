@@ -11,7 +11,10 @@ import PageAnims from '../components/landing/PageAnims.astro';
 import { PLANES as PLANES_ES, COMPARATIVA as COMPARATIVA_ES, FAQ_PRECIOS as FAQ_ES, precioAnualMensualizado } from '../lib/precios';
 import { PLANES_EN, COMPARATIVA_EN, FAQ_PRECIOS_EN } from '../lib/precios.en';
 import { getLangFromUrl } from '../i18n/utils';
-import PriceAuroraBg from '../components/landing/PriceAuroraBg.jsx';
+import CordDynamicBg from '../components/CordDynamicBg.jsx';
+
+// Shader estándar de Cord — paleta AZUL ELÉCTRICO (mood original del ROI card).
+const ROI_PAL = { base: '#08152A', color1: '#0F63FA', color2: '#61B7FF', color3: '#10B981' };
 import FaqAccordion from '../components/landing/FaqAccordion.astro';
 
 const lang = getLangFromUrl(Astro.url);
@@ -216,7 +219,7 @@ const faqSchema = {
                     </div>
                 </div>
                 <div class="pr-roi-card reveal-mockup">
-                    <PriceAuroraBg client:only="react" />
+                    <CordDynamicBg client:only="react" colors={ROI_PAL} grain={false} />
                     <div class="pr-roi-card-inner">
                         <span class="pr-roi-label">{isEn ? 'Monthly pipeline' : 'Mueves al mes'}</span>
                         <span class="editorial pr-roi-big" id="roi-pipeline">{isEn ? '$36,000' : '$700,000'}</span>

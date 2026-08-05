@@ -1,163 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
+import CordDynamicBg from '../CordDynamicBg.jsx';
 import gsap from 'gsap';
 import './ProductAccordion.css';
 
-// ── GLSL — FBM 5 octavas + domain warp doble (igual a BlogCover) ─────────────
-const VERT = `
-attribute vec2 a_pos;
-void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
-`;
-
-const FRAG = `
-precision mediump float;
-uniform vec2  u_res;
-uniform float u_time;
-uniform vec2  u_mouse;
-uniform vec3  u_ca;
-uniform vec3  u_cb;
-uniform vec3  u_cc;
-
-vec2 hash2(vec2 p) {
-  p = fract(p * vec2(5.3983, 5.4427));
-  p += dot(p.yx, p + vec2(21.535, 14.314));
-  return fract(vec2(p.x * p.y * 95.434, p.x * p.y * 97.597));
-}
-float vnoise(vec2 p) {
-  vec2 i = floor(p); vec2 f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  float a = dot(hash2(i)           * 2.0 - 1.0, f);
-  float b = dot(hash2(i+vec2(1,0)) * 2.0 - 1.0, f - vec2(1,0));
-  float c = dot(hash2(i+vec2(0,1)) * 2.0 - 1.0, f - vec2(0,1));
-  float d = dot(hash2(i+vec2(1,1)) * 2.0 - 1.0, f - vec2(1,1));
-  return mix(mix(a,b,u.x), mix(c,d,u.x), u.y);
-}
-float fbm(vec2 p) {
-  float v = 0.0, a = 0.5;
-  for (int i = 0; i < 5; i++) {
-    v += a * vnoise(p); p = p * 2.13 + vec2(13.72, 5.29); a *= 0.46;
-  }
-  return v;
-}
-void main() {
-  vec2 uv = gl_FragCoord.xy / u_res;
-  uv.y = 1.0 - uv.y;
-  uv += u_mouse * 0.05;
-  float t = u_time * 0.10;
-  vec2 q = vec2(fbm(uv*2.2+t), fbm(uv*2.2+vec2(5.23,1.31)+t*0.82));
-  vec2 r = vec2(fbm(uv*1.6+q*0.9+vec2(1.71,9.25)+t*0.60), fbm(uv*1.6+q*0.9+vec2(8.31,2.82)+t*0.42));
-  float f = fbm(uv + r) * 0.5 + 0.5;
-  float y = clamp(uv.y * 0.75 + fbm(uv*2.8+t*0.28)*0.32 + 0.08, 0.0, 1.0);
-  vec3 col = mix(u_ca, u_cb, smoothstep(0.0, 0.55, y));
-  col = mix(col, u_cc, smoothstep(0.40, 1.0, y + f*0.22));
-  col += (f - 0.5) * 0.055;
-  float vig = clamp(1.0 - length((uv-0.5)*1.5), 0.0, 1.0); vig *= vig;
-  col *= vig * 0.28 + 0.72;
-  col += u_cc * exp(-length(uv - vec2(0.5,0.4))*3.5) * 0.09;
-  col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898,78.233)))*43758.5453) - 0.5) * 0.022;
-  col = col / (col + 0.35);
-  gl_FragColor = vec4(pow(clamp(col,0.0,1.0), vec3(0.90)), 1.0);
-}
-`;
-
-// ── 4 paletas azul-navy (todas en el mismo espectro, cada una con carácter propio) ─
+// ── Shader estándar de Cord ──────────────────────────────────────────────────
+// Antes había un motor GLSL propio (canvas fijo 480×560) aquí. Ahora el fondo de
+// cada tarjeta es CordDynamicBg; solo se conservan las 4 paletas para que las
+// tarjetas no se vean clonadas.
 const CARD_PALS = [
-  [[0.04, 0.10, 0.24], [0.09, 0.24, 0.54], [0.20, 0.50, 0.96]],
-  [[0.03, 0.07, 0.20], [0.10, 0.17, 0.48], [0.24, 0.40, 0.96]],
-  [[0.04, 0.11, 0.26], [0.07, 0.26, 0.58], [0.13, 0.52, 0.97]],
-  [[0.02, 0.06, 0.18], [0.10, 0.22, 0.54], [0.28, 0.52, 0.98]],
+  { base: '#0A192F', color1: '#38BDF8', color2: '#6670F4', color3: '#10B981' }, // navy/tech (ancla de marca)
+  { base: '#061F20', color1: '#10B981', color2: '#047857', color3: '#F59E0B' }, // teal profundo / ámbar
+  { base: '#0F172A', color1: '#22D3EE', color2: '#818CF8', color3: '#34D399' }, // cian / índigo claro
+  { base: '#1E1B4B', color1: '#6366F1', color2: '#8B5CF6', color3: '#D946EF' }, // índigo / violeta / fucsia
 ];
 
 // ── Tamaños en reposo distintos por posición ─────────────────────────────────
 const RESTING     = [1.5, 2.2, 1.8, 2.5];
 const ACTIVE_GROW = 5.0;
-
-// ── CardShader — canvas FIJO para eliminar el flash negro ────────────────────
-// Renderiza a 480×560px siempre. CSS lo estira con width/height 100%.
-// Nunca se asigna canvas.width/height durante la animación → sin reset WebGL.
-function CardShader({ palette }) {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-
-    const gl = canvas.getContext('webgl', {
-      antialias: false, powerPreference: 'low-power', alpha: false,
-    });
-    if (!gl) return;
-
-    // Tamaño fijo — nunca vuelve a cambiar
-    canvas.width  = Math.round(480 * dpr);
-    canvas.height = Math.round(560 * dpr);
-    gl.viewport(0, 0, canvas.width, canvas.height);
-
-    // Programa GLSL
-    function mkShader(type, src) {
-      const s = gl.createShader(type);
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      return s;
-    }
-    const prog = gl.createProgram();
-    gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FRAG));
-    gl.linkProgram(prog);
-    gl.useProgram(prog);
-
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-    const aPos = gl.getAttribLocation(prog, 'a_pos');
-    gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-    const uTime  = gl.getUniformLocation(prog, 'u_time');
-    const uMouse = gl.getUniformLocation(prog, 'u_mouse');
-    gl.uniform2f(gl.getUniformLocation(prog, 'u_res'), canvas.width, canvas.height);
-    gl.uniform3fv(gl.getUniformLocation(prog, 'u_ca'), palette[0]);
-    gl.uniform3fv(gl.getUniformLocation(prog, 'u_cb'), palette[1]);
-    gl.uniform3fv(gl.getUniformLocation(prog, 'u_cc'), palette[2]);
-
-    const st = { running: false, raf: null, mx: 0, my: 0, tx: 0, ty: 0 };
-
-    function render(ts) {
-      if (!st.running) return;
-      if (!reduced) {
-        st.mx += (st.tx - st.mx) * 0.055;
-        st.my += (st.ty - st.my) * 0.055;
-        gl.uniform1f(uTime, ts * 0.001);
-        gl.uniform2f(uMouse, st.mx, st.my);
-      }
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      st.raf = requestAnimationFrame(render);
-    }
-
-    const io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { st.running = true; st.raf = requestAnimationFrame(render); }
-      else { st.running = false; cancelAnimationFrame(st.raf); }
-    }, { threshold: 0.05 });
-    io.observe(canvas);
-
-    function onMouse(e) {
-      const rect = canvas.getBoundingClientRect();
-      st.tx =  (e.clientX - rect.left) / rect.width  * 2 - 1;
-      st.ty = -((e.clientY - rect.top) / rect.height * 2 - 1);
-    }
-    window.addEventListener('mousemove', onMouse, { passive: true });
-
-    return () => {
-      st.running = false;
-      cancelAnimationFrame(st.raf);
-      io.disconnect();
-      window.removeEventListener('mousemove', onMouse);
-      try { gl.deleteProgram(prog); gl.deleteBuffer(buf); } catch (_) {}
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="pac-shader-canvas" />;
-}
 
 // ── Iconos Apple SF Symbols — Duotone glass premium ──────────────────────────
 const ICONS = {
@@ -533,9 +392,9 @@ export default function ProductAccordion({ slug = 'editor' }) {
             aria-label={slide.title}
             onKeyDown={e => e.key === 'Enter' && handleClick(i)}
           >
-            {/* Canvas WebGL a tamaño fijo — CSS lo estira sin reset */}
+            {/* Fondo: shader estándar de Cord, una paleta por tarjeta */}
             <div className="pac-shader-wrap" aria-hidden="true">
-              <CardShader palette={CARD_PALS[i]} />
+              <CordDynamicBg colors={CARD_PALS[i]} grain={false} />
             </div>
 
             {/* Rim light especular */}

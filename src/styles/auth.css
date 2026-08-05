@@ -102,6 +102,22 @@ body:has(.auth-page) footer { display: none !important; }
 }
 .forgot-link:hover { color: #0a192f; }
 
+.auth-sso-secondary {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: none;
+    border: none;
+    padding: 0.6rem 0 0;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #6b7686;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.auth-sso-secondary:hover { color: #0a192f; }
+
 .checkbox-row {
     flex-direction: row;
     align-items: center;

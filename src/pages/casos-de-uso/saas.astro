@@ -5,7 +5,10 @@ export const prerender = true;
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
-import QuantizedWaveBg from '../../components/soluciones/QuantizedWaveBg.jsx';
+import CordDynamicBg from '../../components/CordDynamicBg.jsx';
+
+// Shader estándar de Cord — variante AZUL CIELO para SaaS.
+const HERO_PAL = { base: '#FFFFFF', color1: '#C7F0EA', color2: '#CFE8FB', color3: '#D9F5E3' };
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
 import '../../styles/mockups.css';
@@ -116,7 +119,7 @@ const testimonialItems = [
         <!-- HERO -->
         <header class="startup-hero">
             <div class="startup-hero-bg">
-                <QuantizedWaveBg client:only="react" />
+                <CordDynamicBg client:only="react" colors={HERO_PAL} grain={false} />
             </div>
             <div class="startup-hero-content">
                 <h1 class="startup-title reveal">De la propuesta al cobro para empresas de software</h1>

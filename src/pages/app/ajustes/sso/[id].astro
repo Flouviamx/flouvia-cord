@@ -1,0 +1,408 @@
+---
+// /app/ajustes/sso/[id] — detalle/wizard de una conexión SSO. Reemplaza el
+// wizard cosmético "configuracion.astro" (generaba el código DNS en el
+// navegador y nunca lo mandaba a ningún lado). Todo aquí es real: PATCH a
+// /api/sso/connections/[id], POST/DELETE a /api/sso/connections/[id]/domains,
+// POST a /api/sso/domains/[id]/verify.
+import SettingsShell from '../../../../components/app/SettingsShell.astro';
+import { getMyMembership } from '../../../../lib/queries';
+import { getActiveOrgId } from '../../../../lib/db';
+import { memberCan } from '../../../../lib/permissions';
+import { getConnectionForOrg, listDomains, acsUrl, metadataUrl } from '../../../../lib/saml';
+import { currentLocale } from '../../../../lib/context';
+import { t } from '../../../../i18n/app';
+
+const ME = await getMyMembership();
+const canEdit = memberCan(ME, 'equipo');
+const L = currentLocale();
+
+const id = Astro.params.id!;
+const orgId = await getActiveOrgId();
+const conn = await getConnectionForOrg(orgId, id);
+if (!conn) return Astro.redirect('/app/ajustes/sso');
+
+const domains = await listDomains(orgId, id);
+const rolePresets = ['admin', 'vendedor', 'lectura'];
+---
+
+<SettingsShell title="SSO — Ajustes" tab="sso" perm="equipo">
+    <a href="/app/ajustes/sso" class="sso-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        {t(L, 'set.sso.volver')}
+    </a>
+
+    <div class="s-block full">
+        <h3>{t(L, 'set.sso.sp_titulo')}</h3>
+        <p class="s-hint sso-sp-desc">{t(L, 'set.sso.sp_desc')}</p>
+        <div class="sso-sp-rows">
+            <div class="sso-sp-row">
+                <span class="sso-sp-label">{t(L, 'set.sso.acs_url')}</span>
+                <code class="sso-sp-value">{acsUrl(conn.id)}</code>
+                <button type="button" class="sso-copy-btn" data-copy={acsUrl(conn.id)}>{t(L, 'set.sso.copiar')}</button>
+            </div>
+            <div class="sso-sp-row">
+                <span class="sso-sp-label">{t(L, 'set.sso.entity_id')}</span>
+                <code class="sso-sp-value">{metadataUrl(conn.id)}</code>
+                <button type="button" class="sso-copy-btn" data-copy={metadataUrl(conn.id)}>{t(L, 'set.sso.copiar')}</button>
+            </div>
+            <div class="sso-sp-row">
+                <span class="sso-sp-label">{t(L, 'set.sso.metadata_url')}</span>
+                <code class="sso-sp-value">{metadataUrl(conn.id)}</code>
+                <button type="button" class="sso-copy-btn" data-copy={metadataUrl(conn.id)}>{t(L, 'set.sso.copiar')}</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="s-block" id="ssoForm">
+        <h3>{t(L, 'set.sso.general_titulo')}</h3>
+        <div class="s-body">
+            <div class="s-field">
+                <label>{t(L, 'set.sso.campo_nombre')}</label>
+                <input type="text" class="s-input" data-sso-field="nombre" value={conn.nombre} maxlength="120" disabled={!canEdit} />
+            </div>
+            <label class="s-toggle">
+                <input type="checkbox" data-sso-field="enabled" data-sso-bool checked={conn.enabled} disabled={!canEdit} />
+                <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                <span class="s-toggle-text">{t(L, 'set.sso.campo_habilitada')}</span>
+            </label>
+            <label class="s-toggle">
+                <input type="checkbox" data-sso-field="allow_idp_initiated" data-sso-bool checked={conn.allowIdpInitiated} disabled={!canEdit} />
+                <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                <span class="s-toggle-text">{t(L, 'set.sso.campo_idp_initiated')}</span>
+            </label>
+            <label class="s-toggle">
+                <input type="checkbox" data-sso-field="jit_provisioning" data-sso-bool checked={conn.jitProvisioning} disabled={!canEdit} />
+                <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                <span class="s-toggle-text">{t(L, 'set.sso.campo_jit')}</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="s-block">
+        <h3>{t(L, 'set.sso.idp_titulo')}</h3>
+        <div class="s-body">
+            <div class="s-field">
+                <label>{t(L, 'set.sso.campo_entity_id')}</label>
+                <input type="text" class="s-input" data-sso-field="idp_entity_id" value={conn.idpEntityId} disabled={!canEdit} />
+            </div>
+            <div class="s-field">
+                <label>{t(L, 'set.sso.campo_sso_url')}</label>
+                <input type="text" class="s-input" data-sso-field="idp_sso_url" value={conn.idpSsoUrl} disabled={!canEdit} />
+            </div>
+            <div class="s-field">
+                <label>{t(L, 'set.sso.campo_certs')}</label>
+                <textarea class="s-input s-textarea" data-sso-field="idp_certs" rows="5" disabled={!canEdit}>{conn.idpCerts.join('\n\n')}</textarea>
+                <span class="s-hint">{t(L, 'set.sso.modal_metadata_hint')}</span>
+            </div>
+        </div>
+    </div>
+
+    {canEdit && (
+        <div class="sso-save-row">
+            <button type="button" class="sso-btn-primary" id="ssoSaveBtn">{t(L, 'set.sso.guardar')}</button>
+            <span class="sso-save-msg" id="ssoSaveMsg"></span>
+        </div>
+    )}
+
+    <div class="s-block full">
+        <h3>{t(L, 'set.sso.dominios_titulo')}</h3>
+        <p class="s-hint sso-sp-desc">{t(L, 'set.sso.dominios_desc')}</p>
+
+        {canEdit && (
+            <div class="sso-domain-add">
+                <input type="text" id="ssoDomainInput" class="s-input" placeholder={t(L, 'set.sso.dominio_placeholder')} />
+                <button type="button" class="sso-btn-ghost" id="ssoDomainAddBtn">{t(L, 'set.sso.dominio_agregar')}</button>
+            </div>
+        )}
+
+        <div class="sso-domain-list" id="ssoDomainList">
+            {domains.map((d) => (
+                <div class="sso-domain-row" data-domain-id={d.id} data-verify-token={d.verifyToken}>
+                    <span class:list={['sso-conn-dot', { on: !!d.verifiedAt }]}></span>
+                    <span class="sso-domain-name">{d.domain}</span>
+                    <span class="sso-domain-status">{d.verifiedAt ? t(L, 'set.sso.dominio_verificado') : t(L, 'set.sso.dominio_pendiente')}</span>
+                    {!d.verifiedAt && canEdit && (
+                        <button type="button" class="sso-btn-ghost sso-domain-verify-btn" data-domain-verify={d.id}>{t(L, 'set.sso.dominio_verificar')}</button>
+                    )}
+                    {canEdit && <button type="button" class="sso-domain-del" data-domain-del={d.id} aria-label={t(L, 'set.sso.dominio_eliminar')}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>}
+                    {!d.verifiedAt && (
+                        <p class="s-hint sso-domain-txt">{t(L, 'set.sso.dominio_txt_hint')} <code>{d.verifyToken}</code></p>
+                    )}
+                </div>
+            ))}
+        </div>
+    </div>
+
+    <div class="s-block full">
+        <h3>{t(L, 'set.sso.roles_titulo')}</h3>
+        <p class="s-hint sso-sp-desc">{t(L, 'set.sso.roles_desc')}</p>
+
+        <div class="sso-role-list" id="ssoRoleList">
+            {conn.roleMappings.map((r, i) => (
+                <div class="sso-role-row" data-idx={i}>
+                    <input type="text" class="s-input" value={r.attr} placeholder={t(L, 'set.sso.regla_atributo')} data-role-field="attr" />
+                    <select class="s-input" data-role-field="op">
+                        <option value="equals" selected={r.op === 'equals'}>=</option>
+                        <option value="contains" selected={r.op === 'contains'}>⊃</option>
+                        <option value="regex" selected={r.op === 'regex'}>regex</option>
+                    </select>
+                    <input type="text" class="s-input" value={r.value} placeholder={t(L, 'set.sso.regla_valor')} data-role-field="value" />
+                    <select class="s-input" data-role-field="preset">
+                        {rolePresets.map((p) => <option value={p} selected={p === r.preset}>{p}</option>)}
+                    </select>
+                    {canEdit && <button type="button" class="sso-domain-del" data-role-del aria-label="Eliminar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    </button>}
+                </div>
+            ))}
+        </div>
+        {canEdit && <button type="button" class="sso-btn-ghost" id="ssoRoleAddBtn">{t(L, 'set.sso.regla_agregar')}</button>}
+
+        <div class="s-field sso-default-preset">
+            <label>{t(L, 'set.sso.default_preset')}</label>
+            <select class="s-input" id="ssoDefaultPreset" disabled={!canEdit}>
+                {rolePresets.map((p) => <option value={p} selected={p === conn.defaultPreset}>{p}</option>)}
+            </select>
+        </div>
+    </div>
+
+    {canEdit && (
+        <div class="s-block full">
+            <button type="button" class="sso-btn-danger" id="ssoDeleteBtn">{t(L, 'set.sso.eliminar_conexion')}</button>
+        </div>
+    )}
+</SettingsShell>
+
+<style>
+    .sso-back { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; margin-bottom: 1rem; }
+    .sso-back svg { width: 14px; height: 14px; }
+    .sso-back:hover { color: var(--color-blue-deep); }
+
+    .sso-sp-desc { margin: -0.4rem 0 1.2rem; }
+    .sso-sp-rows { display: flex; flex-direction: column; gap: 0.7rem; }
+    .sso-sp-row { display: flex; align-items: center; gap: 0.8rem; }
+    .sso-sp-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #99a2af; width: 130px; flex-shrink: 0; }
+    .sso-sp-value {
+        flex: 1; font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--color-text);
+        background: var(--color-bg-soft); padding: 8px 10px; border-radius: 8px; overflow-x: auto; white-space: nowrap;
+    }
+    .sso-copy-btn {
+        font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: var(--color-blue-deep);
+        background: none; border: none; cursor: pointer; padding: 6px 8px; flex-shrink: 0;
+    }
+
+    .s-textarea { font-family: ui-monospace, monospace; font-size: 0.76rem; }
+
+    .sso-save-row { display: flex; align-items: center; gap: 1rem; padding: 1.2rem 0; }
+    .sso-save-msg { font-size: 0.8rem; color: var(--color-ok); opacity: 0; transition: opacity 0.3s; }
+    .sso-save-msg.show { opacity: 1; }
+    .sso-save-msg.error { color: var(--color-danger); }
+
+    .sso-domain-add { display: flex; gap: 0.6rem; margin-bottom: 1.2rem; }
+    .sso-domain-add .s-input { flex: 1; }
+    .sso-domain-list { display: flex; flex-direction: column; }
+    .sso-domain-row {
+        display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 0.8rem;
+        padding: 0.8rem 0; border-bottom: 1px solid var(--color-border); position: relative;
+    }
+    .sso-domain-row:last-child { border-bottom: none; }
+    .sso-domain-name { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
+    .sso-domain-status { font-size: 0.76rem; color: var(--color-text-muted); }
+    .sso-domain-del { background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: 4px; }
+    .sso-domain-del svg { width: 15px; height: 15px; }
+    .sso-domain-txt { grid-column: 1 / -1; margin: 0; }
+    .sso-domain-txt code { font-family: ui-monospace, monospace; background: var(--color-bg-soft); padding: 2px 6px; border-radius: 5px; }
+
+    .sso-conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #c9d2de; }
+    .sso-conn-dot.on { background: var(--color-ok); }
+
+    .sso-role-list { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.8rem; }
+    .sso-role-row { display: grid; grid-template-columns: 1.2fr 90px 1.2fr 130px auto; gap: 0.6rem; align-items: center; }
+    .sso-default-preset { margin-top: 1.2rem; max-width: 260px; }
+
+    .sso-btn-primary {
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600;
+        background: var(--color-blue-deep); color: #fff; border: none; border-radius: 999px;
+        padding: 10px 20px; cursor: pointer; transition: transform 0.2s var(--ease-spring);
+    }
+    .sso-btn-primary:active { transform: scale(0.96); }
+    .sso-btn-ghost {
+        display: inline-flex; align-items: center; justify-content: center;
+        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600;
+        background: var(--color-bg-soft); color: var(--color-text); border: none; border-radius: 999px;
+        padding: 10px 20px; cursor: pointer; transition: transform 0.2s var(--ease-spring);
+    }
+    .sso-btn-ghost:active { transform: scale(0.96); }
+    .sso-btn-danger {
+        display: inline-flex; align-items: center; justify-content: center;
+        font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600;
+        background: var(--color-danger); color: #fff; border: none; border-radius: 999px;
+        padding: 10px 20px; cursor: pointer; transition: transform 0.2s var(--ease-spring);
+    }
+    .sso-btn-danger:active { transform: scale(0.96); }
+</style>
+
+<script define:vars={{ connId: id, copiedText: t(L, 'set.sso.copiado') }}>
+    function initSsoDetail() {
+        // ── Copiar al portapapeles ──
+        document.querySelectorAll('[data-copy]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const val = btn.dataset.copy || '';
+                try {
+                    await navigator.clipboard.writeText(val);
+                    const original = btn.textContent;
+                    btn.textContent = copiedText;
+                    setTimeout(() => { btn.textContent = original; }, 1500);
+                    if (window.cordToast) window.cordToast(copiedText, 'ok');
+                } catch { /* no-op */ }
+            });
+        });
+
+        // ── Guardar general/IdP ──
+        const saveBtn = document.getElementById('ssoSaveBtn');
+        const saveMsg = document.getElementById('ssoSaveMsg');
+        saveBtn?.addEventListener('click', async () => {
+            const body = {};
+            document.querySelectorAll('[data-sso-field]').forEach((el) => {
+                const key = el.dataset.ssoField;
+                if (el.hasAttribute('data-sso-bool')) body[key] = el.checked;
+                else if (el.tagName === 'TEXTAREA') body[key] = el.value.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean);
+                else body[key] = el.value;
+            });
+            saveBtn.disabled = true;
+            try {
+                const res = await fetch('/api/sso/connections/' + connId, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo guardar');
+                if (saveMsg) { saveMsg.textContent = 'Guardado'; saveMsg.className = 'sso-save-msg show'; }
+                if (window.cordToast) window.cordToast('Guardado', 'ok');
+            } catch (err) {
+                if (saveMsg) { saveMsg.textContent = err.message; saveMsg.className = 'sso-save-msg show error'; }
+                if (window.cordToast) window.cordToast(err.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                setTimeout(() => { if (saveMsg) saveMsg.className = 'sso-save-msg'; }, 3000);
+            }
+        });
+
+        // ── Dominios ──
+        document.getElementById('ssoDomainAddBtn')?.addEventListener('click', async () => {
+            const input = document.getElementById('ssoDomainInput');
+            const domain = (input?.value || '').trim();
+            if (!domain) return;
+            try {
+                const res = await fetch('/api/sso/connections/' + connId + '/domains', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'No se pudo agregar el dominio');
+                window.location.reload();
+            } catch (err) {
+                if (window.cordToast) window.cordToast(err.message, 'error');
+            }
+        });
+
+        document.querySelectorAll('[data-domain-verify]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const domainId = btn.dataset.domainVerify;
+                btn.disabled = true;
+                try {
+                    const res = await fetch('/api/sso/domains/' + domainId + '/verify', { method: 'POST' });
+                    const data = await res.json();
+                    if (data.ok) {
+                        if (window.cordToast) window.cordToast('Dominio verificado', 'ok');
+                        window.location.reload();
+                    } else {
+                        if (window.cordToast) window.cordToast('Todavía no encontramos el registro TXT. Puede tardar hasta 24h en propagarse.', 'error');
+                        btn.disabled = false;
+                    }
+                } catch {
+                    btn.disabled = false;
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-domain-del]').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const domainId = btn.dataset.domainDel;
+                const ok = window.cordConfirm ? await window.cordConfirm({ title: 'Eliminar dominio', danger: true, confirmText: 'Eliminar' }) : confirm('¿Eliminar este dominio?');
+                if (!ok) return;
+                try {
+                    const res = await fetch('/api/sso/connections/' + connId + '/domains', {
+                        method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domainId }),
+                    });
+                    if (!res.ok) throw new Error('No se pudo eliminar');
+                    window.location.reload();
+                } catch (err) {
+                    if (window.cordToast) window.cordToast(err.message, 'error');
+                }
+            });
+        });
+
+        // ── Mapeo de roles ──
+        const roleList = document.getElementById('ssoRoleList');
+        function roleRowHtml() {
+            const div = document.createElement('div');
+            div.className = 'sso-role-row';
+            div.innerHTML =
+                '<input type="text" class="s-input" placeholder="Atributo" data-role-field="attr">' +
+                '<select class="s-input" data-role-field="op"><option value="equals">=</option><option value="contains">⊃</option><option value="regex">regex</option></select>' +
+                '<input type="text" class="s-input" placeholder="Valor" data-role-field="value">' +
+                '<select class="s-input" data-role-field="preset"><option value="admin">admin</option><option value="vendedor">vendedor</option><option value="lectura">lectura</option></select>' +
+                '<button type="button" class="sso-domain-del" data-role-del><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>';
+            return div;
+        }
+        document.getElementById('ssoRoleAddBtn')?.addEventListener('click', () => {
+            const row = roleRowHtml();
+            roleList?.appendChild(row);
+            row.querySelector('[data-role-del]')?.addEventListener('click', () => row.remove());
+        });
+        document.querySelectorAll('[data-role-del]').forEach((btn) => {
+            btn.addEventListener('click', () => btn.closest('.sso-role-row')?.remove());
+        });
+
+        // El guardado de reglas de rol viaja junto con el resto del formulario
+        // general (mismo botón "Guardar cambios") — se agrega al body del PATCH.
+        if (saveBtn) {
+            const originalHandler = saveBtn.onclick;
+            saveBtn.addEventListener('click', async () => {
+                const rows = Array.from(roleList?.querySelectorAll('.sso-role-row') || []);
+                const role_mappings = rows.map((row) => ({
+                    attr: row.querySelector('[data-role-field="attr"]').value.trim(),
+                    op: row.querySelector('[data-role-field="op"]').value,
+                    value: row.querySelector('[data-role-field="value"]').value.trim(),
+                    preset: row.querySelector('[data-role-field="preset"]').value,
+                })).filter((r) => r.attr && r.value);
+                const default_preset = document.getElementById('ssoDefaultPreset')?.value;
+                try {
+                    await fetch('/api/sso/connections/' + connId, {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ role_mappings, default_preset }),
+                    });
+                } catch { /* el botón principal ya reporta el resultado del resto del form */ }
+            });
+        }
+
+        // ── Eliminar conexión ──
+        document.getElementById('ssoDeleteBtn')?.addEventListener('click', async () => {
+            const ok = window.cordConfirm
+                ? await window.cordConfirm({ title: 'Eliminar esta conexión', body: 'Los miembros que inician sesión por aquí ya no podrán entrar por SSO.', danger: true, confirmText: 'Eliminar' })
+                : confirm('¿Eliminar esta conexión?');
+            if (!ok) return;
+            try {
+                const res = await fetch('/api/sso/connections/' + connId, { method: 'DELETE' });
+                if (!res.ok) throw new Error('No se pudo eliminar');
+                window.location.href = '/app/ajustes/sso';
+            } catch (err) {
+                if (window.cordToast) window.cordToast(err.message, 'error');
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSsoDetail);
+    else initSsoDetail();
+</script>

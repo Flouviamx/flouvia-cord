@@ -9,6 +9,7 @@ import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
 import { posthogServer } from '../../../../lib/posthog-server';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
+import { ssoRequirementFor } from '../../../../lib/saml';
 
 export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
   const ip = trustedIp(request);
@@ -135,6 +136,15 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
         properties: { sign_up_method: 'google' },
       });
       await posthogServer.flush();
+    }
+
+    // Exigir SSO (org-level, ver src/lib/saml.ts): sin este chequeo, cualquier
+    // empleado con una cuenta de Google en el mismo Workspace se saltaría por
+    // completo el requisito — Google/Apple son otro "primer factor" más, y la
+    // política de la org debe aplicarles igual que a password.
+    const ssoReq = await ssoRequirementFor(userId!);
+    if (ssoReq.blocked) {
+      return redirect('/sign-in?sso_error=sso_required');
     }
 
     // Si la cuenta tiene 2FA activo, el SSO también lo respeta.
