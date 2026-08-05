@@ -117,18 +117,46 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
 
         <div class="sso-domain-list" id="ssoDomainList">
             {domains.map((d) => (
-                <div class="sso-domain-row" data-domain-id={d.id} data-verify-token={d.verifyToken}>
-                    <span class:list={['sso-conn-dot', { on: !!d.verifiedAt }]}></span>
-                    <span class="sso-domain-name">{d.domain}</span>
-                    <span class="sso-domain-status">{d.verifiedAt ? t(L, 'set.sso.dominio_verificado') : t(L, 'set.sso.dominio_pendiente')}</span>
-                    {!d.verifiedAt && canEdit && (
-                        <button type="button" class="sso-btn-ghost sso-domain-verify-btn" data-domain-verify={d.id}>{t(L, 'set.sso.dominio_verificar')}</button>
-                    )}
-                    {canEdit && <button type="button" class="sso-domain-del" data-domain-del={d.id} aria-label={t(L, 'set.sso.dominio_eliminar')}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                    </button>}
+                <div class="sso-domain-item" data-domain-id={d.id} data-verify-token={d.verifyToken}>
+                    <div class="sso-domain-row">
+                        <span class:list={['sso-conn-badge', { on: !!d.verifiedAt }]}>
+                            <span class="sso-conn-dot"></span>
+                            {d.verifiedAt ? t(L, 'set.sso.dominio_verificado') : t(L, 'set.sso.dominio_pendiente')}
+                        </span>
+                        <span class="sso-domain-name">{d.domain}</span>
+                        <span class="sso-domain-row-actions">
+                            {!d.verifiedAt && canEdit && (
+                                <button type="button" class="sso-btn-ghost sso-domain-verify-btn" data-domain-verify={d.id}>{t(L, 'set.sso.dominio_verificar')}</button>
+                            )}
+                            {canEdit && <button type="button" class="sso-domain-del" data-domain-del={d.id} aria-label={t(L, 'set.sso.dominio_eliminar')}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                            </button>}
+                        </span>
+                    </div>
+
                     {!d.verifiedAt && (
-                        <p class="s-hint sso-domain-txt">{t(L, 'set.sso.dominio_txt_hint')} <code>{d.verifyToken}</code></p>
+                        <div class="sso-dns-box">
+                            <p class="s-hint sso-dns-lead">{t(L, 'set.sso.dominio_txt_hint')}</p>
+                            <div class="sso-dns-rows">
+                                <div class="sso-dns-row">
+                                    <span class="sso-dns-label">{t(L, 'set.sso.dns_dominio')}</span>
+                                    <span class="sso-dns-value">{d.domain}</span>
+                                </div>
+                                <div class="sso-dns-row">
+                                    <span class="sso-dns-label">{t(L, 'set.sso.dns_nombre')}</span>
+                                    <span class="sso-dns-value">@</span>
+                                </div>
+                                <div class="sso-dns-row">
+                                    <span class="sso-dns-label">{t(L, 'set.sso.dns_registro')}</span>
+                                    <span class="sso-dns-value">TXT</span>
+                                </div>
+                                <div class="sso-dns-row">
+                                    <span class="sso-dns-label">{t(L, 'set.sso.dns_codigo')}</span>
+                                    <span class="sso-dns-value sso-dns-code">{d.verifyToken}</span>
+                                    <button type="button" class="sso-copy-btn" data-copy={d.verifyToken}>{t(L, 'set.sso.copiar')}</button>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
             ))}
@@ -203,20 +231,36 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
     .sso-domain-add { display: flex; gap: 0.6rem; margin-bottom: 1.2rem; }
     .sso-domain-add .s-input { flex: 1; }
     .sso-domain-list { display: flex; flex-direction: column; }
-    .sso-domain-row {
-        display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 0.8rem;
-        padding: 0.8rem 0; border-bottom: 1px solid var(--color-border); position: relative;
-    }
-    .sso-domain-row:last-child { border-bottom: none; }
-    .sso-domain-name { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
-    .sso-domain-status { font-size: 0.76rem; color: var(--color-text-muted); }
-    .sso-domain-del { background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: 4px; }
+    .sso-domain-item { border-bottom: 1px solid var(--color-border); padding: 1rem 0; }
+    .sso-domain-item:last-child { border-bottom: none; }
+    .sso-domain-row { display: flex; align-items: center; gap: 0.9rem; }
+    .sso-domain-name { font-size: 0.9rem; font-weight: 600; color: var(--color-text); flex: 1; }
+    .sso-domain-row-actions { display: flex; align-items: center; gap: 0.4rem; }
+    .sso-domain-del { background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: 6px; border-radius: 8px; transition: background 0.2s, color 0.2s; }
+    .sso-domain-del:hover { background: var(--color-bg-soft); color: var(--color-danger); }
     .sso-domain-del svg { width: 15px; height: 15px; }
-    .sso-domain-txt { grid-column: 1 / -1; margin: 0; }
-    .sso-domain-txt code { font-family: ui-monospace, monospace; background: var(--color-bg-soft); padding: 2px 6px; border-radius: 5px; }
 
-    .sso-conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #c9d2de; }
-    .sso-conn-dot.on { background: var(--color-ok); }
+    .sso-conn-badge {
+        display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 600;
+        color: var(--color-text-muted); background: var(--color-bg-soft); padding: 5px 11px; border-radius: 999px;
+        flex-shrink: 0;
+    }
+    .sso-conn-badge.on { color: #047857; background: rgba(16,185,129,0.12); }
+    .sso-conn-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* ── Caja de instrucciones DNS — lista limpia label/valor (referencia:
+       Stripe "Dominio / Nombre / Registro / Código DNS"), reemplaza el hint
+       de una línea con <code> incrustado que había antes. ── */
+    .sso-dns-box {
+        margin-top: 0.9rem; padding: 1.1rem 1.2rem; border-radius: 16px; background: var(--color-bg-soft);
+    }
+    .sso-dns-lead { margin: 0 0 0.9rem; }
+    .sso-dns-rows { display: flex; flex-direction: column; gap: 0.65rem; }
+    .sso-dns-row { display: flex; align-items: baseline; gap: 0.8rem; }
+    .sso-dns-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #99a2af; width: 90px; flex-shrink: 0; }
+    .sso-dns-value { font-size: 0.86rem; color: var(--color-text); word-break: break-all; }
+    .sso-dns-code { font-family: ui-monospace, monospace; font-size: 0.78rem; flex: 1; }
+    .sso-dns-row .sso-copy-btn { margin-left: auto; flex-shrink: 0; }
 
     .sso-role-list { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.8rem; }
     .sso-role-row { display: grid; grid-template-columns: 1.2fr 90px 1.2fr 130px auto; gap: 0.6rem; align-items: center; }
