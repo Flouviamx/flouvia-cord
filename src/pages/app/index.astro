@@ -1,7 +1,7 @@
 ---
-// Dashboard — pipeline, monto por cerrar, actividad reciente. Datos reales (Neon).
+// Dashboard — pipeline, dinero, actividad reciente. Datos reales (Neon).
 import AppLayout from '../../layouts/AppLayout.astro';
-import { getDashboard, getTareas, getCFO, getAnalytics, getOrg, STATUS_META, money } from '../../lib/queries';
+import { getDashboard, getTareas, getCFO, getAnalytics, getOrg, getSerieDiaria, getCobranza, STATUS_META, money } from '../../lib/queries';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 
@@ -12,27 +12,28 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
     return s;
 };
 
-const [dash, TAREAS, CFO, ANALYTICS, ORG] = await Promise.all([getDashboard(), getTareas(), getCFO(), getAnalytics(), getOrg()]);
+const [dash, TAREAS, CFO, ANALYTICS, ORG, SERIE, COBRANZA] = await Promise.all([
+    getDashboard(), getTareas(), getCFO(), getAnalytics(), getOrg(), getSerieDiaria(), getCobranza(),
+]);
 // Aviso único para invitar a configurar cobros a quien aún no conecta su cuenta
 // (existentes o nuevos). Se oculta permanentemente al conectar (server-side) o al
 // descartarlo (localStorage, ver script abajo).
 const mostrarNudgeCobros = !ORG.stripeAccountId;
-const { quotes: COTIZACIONES, porCerrar, cerradoMes, tasaCierre, abiertas, feed: eventosFeed } = dash;
+const { quotes: COTIZACIONES, porCerrar, tasaCierre, abiertas, feed: eventosFeed } = dash;
 const recientes = COTIZACIONES.slice(0, 5);
-const aprobadasN = COTIZACIONES.filter(q => q.status === 'approved').length;
-const pagadasN = COTIZACIONES.filter(q => q.status === 'paid').length;
 const seguimiento = COTIZACIONES.filter(q => q.status === 'viewed').length;
 
 // ── Datos para los widgets nuevos (Salud / Flujo / Silenciadas / Mix) ──
-const { dso, concentracion, totalEsperado: ingresoEsperado } = CFO.kpis;
+const { dso, concentracion, totalEsperado: ingresoEsperado, totalPipeline } = CFO.kpis;
 const semanas = CFO.semanas;
-const maxSemana = CFO.maxSemana;
 const silenciadas = CFO.silenciadas.slice(0, 5);
 const dsoTone = dso <= 30 ? 'ok' : dso <= 60 ? 'warn' : 'danger';
 const concTone = concentracion >= 70 ? 'danger' : concentracion >= 40 ? 'warn' : 'ok';
+const margenPct = Math.round(ANALYTICS.margen.pct);
+const margenTone = margenPct < 10 ? 'ok' : margenPct < 25 ? 'warn' : 'danger';
+const esperadoPct = totalPipeline > 0 ? Math.round((ingresoEsperado / totalPipeline) * 100) : 0;
 const clientesTasa = [...ANALYTICS.clientes].filter(c => c.cotizaciones > 0).sort((a, b) => b.tasa - a.tasa).slice(0, 5);
 const topProductos = ANALYTICS.productos.slice(0, 5);
-const maxProd = Math.max(1, ...topProductos.map(p => p.importe));
 
 const dotColor = (tipo: string) =>
     tipo === 'approved' || tipo === 'paid' ? '#10b981'
@@ -41,15 +42,81 @@ const dotColor = (tipo: string) =>
     : tipo === 'rejected' ? '#ef4444'
     : '#cbd5e1';
 
+// ── Hero de dinero (arriba de todo) ──
+// Fuente única: getSerieDiaria() — 365 días, 3 métricas por día (cotizado/cerrado/
+// cobrado), huecos ya rellenados a 0. El selector de fechas vive 100% en el cliente
+// (recorta sobre los mismos 365 puntos ya cargados, sin ir al servidor para hero/
+// tendencia); aquí solo calculamos el estado INICIAL ("Todo") para el primer render.
+const diasSerie = SERIE.dias;
+// Default del dashboard: últimos 30 días (no "Todo") — con 365 días de historia casi
+// siempre vacíos salvo los más recientes, "Todo" dibuja una línea plana seguida de picos
+// aplastados contra el borde derecho. 30 días es el default estándar de este tipo de
+// dashboard (Stripe/Shopify) y coincide con el rango que aplica el script del cliente.
+const heroTotal = diasSerie.slice(-30).reduce((s, d) => s + d.cerrado, 0);
+
+// ── Ciclo de venta: embudo + pipeline por estado (segmentado) ──
+const funnelSteps = [
+    { label: t(L, 'dash.funnel_enviadas'), value: ANALYTICS.funnel.enviadas },
+    { label: t(L, 'dash.funnel_vistas'), value: ANALYTICS.funnel.vistas },
+    { label: t(L, 'dash.funnel_aprobadas'), value: ANALYTICS.funnel.aprobadas },
+    { label: t(L, 'dash.funnel_pagadas'), value: ANALYTICS.funnel.pagadas },
+];
+const pipelineSegments = (['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((st) => {
+    const qs = COTIZACIONES.filter(q => q.status === st);
+    const total = qs.reduce((s, q) => s + (q.total ?? 0), 0);
+    return { key: st, label: `${STATUS_META[st].label} · ${qs.length}`, value: total, color: STATUS_META[st].color };
+});
+
+// Nota: la tendencia mensual se deriva 100% en el cliente de la MISMA serie diaria de
+// 365 días del hero (agregada por día/semana/mes según el ancho del rango elegido).
+
+// ── Estado "Todo" (default) del embudo/rankings: exactamente lo que ANALYTICS ya trae,
+// embebido para que el rango por defecto no dispare ningún fetch al cargar la página. ──
+const rangoTodoFunnel = ANALYTICS.funnel;
+const rangoTodoClientes = ANALYTICS.clientes;
+const rangoTodoProductos = ANALYTICS.productos;
+
 // ── Onboarding / Aha-moment Tour ──
 const isDemo = COTIZACIONES.length === 1 && String(COTIZACIONES[0].notas || '').includes('"is_demo": true');
 const demoToken = isDemo ? COTIZACIONES[0].token : null;
 const showTour = isDemo && COTIZACIONES[0].status === 'sent';
+
+// ── Editor de widgets ──
+// Cada widget del dashboard es un elemento unitario (mover/ocultar/redimensionar de a
+// uno, no por bloque). La barra de controles (arrastrar · subir · bajar · tamaño ·
+// ocultar) es IDÉNTICA en los 16 widgets, así que se arma UNA vez aquí y se inyecta con
+// set:html — es markup estático sin datos de usuario, seguro de inyectar así.
+const EDITBAR = `
+    <div class="widget-editbar">
+        <span class="we-btn we-drag" aria-hidden="true" title="${t(L, 'dash.widget_arrastrar')}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+        </span>
+        <button type="button" class="we-btn we-up" aria-label="${t(L, 'dash.widget_subir')}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+        </button>
+        <button type="button" class="we-btn we-down" aria-label="${t(L, 'dash.widget_bajar')}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <button type="button" class="we-btn we-resize" aria-label="${t(L, 'dash.widget_tamano')}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+        </button>
+        <button type="button" class="we-btn we-remove" aria-label="${t(L, 'dash.widget_ocultar')}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+    </div>`;
 ---
 
 <AppLayout title="Dashboard — Cord" page="dashboard" heading={t(L, 'dash.heading')}>
+    <Fragment slot="topbar-actions">
+        <button type="button" class="dash-edit-btn" id="dashEditBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18M3 9v10a2 2 0 0 0 2 2h4m10-12v10a2 2 0 0 1-2 2H9"/></svg>
+            {t(L, 'dash.personalizar')}
+        </button>
+        <button type="button" class="dash-edit-btn dash-edit-reset" id="dashResetBtn" hidden>{t(L, 'dash.restablecer')}</button>
+        <button type="button" class="dash-edit-btn dash-edit-done" id="dashDoneBtn" hidden>{t(L, 'dash.listo')}</button>
+    </Fragment>
     {mostrarNudgeCobros && (
-        <div class="cobros-nudge" id="cobrosNudge" style="display:none">
+        <div class="dash-card cobros-nudge" id="cobrosNudge" style="display:none">
             <div class="cn-ico">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5" fill="currentColor" fill-opacity="0.12"/><path d="M2 10h20"/></svg>
             </div>
@@ -76,225 +143,378 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             })();
         </script>
     )}
-    <!-- KPIs -->
-    <section class="kpis">
-        <div class="kpi">
-            <span class="kpi-label">{t(L, 'dash.kpi_por_cerrar')}</span>
-            <span class="editorial kpi-num" data-countup={porCerrar.toFixed(2)}>{money(porCerrar)}</span>
-            <span class="kpi-sub">{tf('dash.kpi_cotizaciones_activas', { n: String(abiertas) })}</span>
-        </div>
-        <div class="kpi">
-            <span class="kpi-label">{t(L, 'dash.kpi_cerrado_mes')}</span>
-            <span class="editorial kpi-num kpi-ok" data-countup={cerradoMes.toFixed(2)}>{money(cerradoMes)}</span>
-            <span class="kpi-sub">{tf('dash.kpi_aprobadas_pagadas', { a: String(aprobadasN), p: String(pagadasN), s: pagadasN === 1 ? '' : 's' })}</span>
-        </div>
-        <div class="kpi">
-            <span class="kpi-label">{t(L, 'dash.kpi_tasa_cierre')}</span>
-            <span class="editorial kpi-num">{tasaCierre}<span class="kpi-pct">%</span></span>
-            <span class="kpi-sub">{t(L, 'dash.kpi_ultimos_90d')}</span>
-        </div>
-        <a class="kpi kpi-link" href="/app/cotizaciones">
-            <span class="kpi-label">{t(L, 'dash.kpi_por_seguimiento')}</span>
-            <span class:list={['editorial', 'kpi-num', { 'kpi-warn': seguimiento > 0 }]}>{seguimiento}</span>
-            <span class="kpi-sub">{seguimiento === 1 ? t(L, 'dash.kpi_vista_singular') : t(L, 'dash.kpi_vista_plural')}</span>
-        </a>
-    </section>
 
-    <!-- Salud del pipeline (DSO · concentración · ingreso esperado) -->
-    <section class="health">
-        <div class="sec-head">
-            <h2 class="sec-title">{t(L, 'dash.salud_titulo')}</h2>
-            <a href="/app/cfo" class="sec-link">{t(L, 'dash.ver_cfo')}</a>
-        </div>
-        <div class="health-grid">
-            <div class="health-cell">
-                <span class="health-label">{t(L, 'dash.dso_label')}</span>
-                <span class:list={['editorial', 'health-num', `h-${dsoTone}`]}>{dso}<span class="health-unit">d</span></span>
-                <span class="health-sub"><span class:list={['health-dot', `h-${dsoTone}`]}></span>{dsoTone === 'ok' ? t(L, 'dash.dso_ok') : dsoTone === 'warn' ? t(L, 'dash.dso_warn') : t(L, 'dash.dso_danger')}</span>
+    <!-- ═══ HERO — dinero (lo primero que se ve) ═══ -->
+    <section class="dash-card hero-rev">
+        <div class="hero-rev-top">
+            <div class="hero-rev-main">
+                <div class="hero-rev-metrics" role="tablist" aria-label={t(L, 'dash.hero_titulo')}>
+                    <button type="button" class="hero-metric-pill is-active" data-metric="cerrado">{t(L, 'dash.hero_metric_cerrado')}</button>
+                    <button type="button" class="hero-metric-pill" data-metric="cobrado">{t(L, 'dash.hero_metric_cobrado')}</button>
+                    <button type="button" class="hero-metric-pill" data-metric="cotizado">{t(L, 'dash.hero_metric_cotizado')}</button>
+                </div>
+                <div class="hero-rev-row">
+                    <span class="editorial hero-rev-num" id="heroNum" data-countup={heroTotal.toFixed(2)}>{money(heroTotal)}</span>
+                    <span class="hero-rev-delta" id="heroDelta" hidden>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                        <span id="heroDeltaVal">0%</span>
+                        <span class="hero-rev-delta-sub">{t(L, 'dash.hero_vs_periodo')}</span>
+                    </span>
+                </div>
             </div>
-            <div class="health-cell">
-                <span class="health-label">{t(L, 'dash.conc_label')}</span>
-                <span class:list={['editorial', 'health-num', `h-${concTone}`]}>{concentracion}<span class="health-unit">%</span></span>
-                <span class="health-sub"><span class:list={['health-dot', `h-${concTone}`]}></span>{concentracion >= 70 ? t(L, 'dash.conc_danger') : concentracion >= 40 ? t(L, 'dash.conc_warn') : t(L, 'dash.conc_ok')}</span>
-            </div>
-            <div class="health-cell">
-                <span class="health-label">{t(L, 'dash.ingreso_esperado_label')}</span>
-                <span class="editorial health-num">{money(ingresoEsperado, 0)}</span>
-                <span class="health-sub">{tf('dash.de_pipeline', { monto: money(CFO.kpis.totalPipeline, 0) })}</span>
-            </div>
-        </div>
-    </section>
 
-    <!-- Pipeline -->
-    <section class="pipeline">
-        <div class="sec-head">
-            <h2 class="sec-title">{t(L, 'dash.pipeline_titulo')}</h2>
-            <a href="/app/cotizaciones" class="sec-link">{t(L, 'dash.ver_todas')}</a>
-        </div>
-        <div class="pipe-row">
-            {(['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((st) => {
-                const qs = COTIZACIONES.filter(q => q.status === st);
-                const total = qs.reduce((s, q) => s + (q.total ?? 0), 0);
-                return (
-                    <div class="pipe-col">
-                        <div class="pipe-head" style={`color:${STATUS_META[st].color}`}>
-                            <span class="pipe-dot" style={`background:${STATUS_META[st].color}`}></span>
-                            {STATUS_META[st].label}
-                            <span class="pipe-count">{qs.length}</span>
-                        </div>
-                        <span class="editorial pipe-total">{total > 0 ? money(total, 0) : '—'}</span>
+            <!-- ═══ Selector de rango de fechas (estilo Shopify) ═══ -->
+            <div class="dp-wrap">
+                <button type="button" class="dp-trigger" id="dpTrigger" data-i18n-todo={t(L, 'dash.rango_todo')} aria-haspopup="dialog" aria-expanded="false">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+                    <span id="dpTriggerLabel">{t(L, 'dash.dp_ultimos30')}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="dp-panel" id="dpPanel" hidden role="dialog" aria-label={t(L, 'dash.rango_label')}>
+                    <div class="dp-presets">
+                        <button type="button" class="dp-preset-btn" data-preset="todo">{t(L, 'dash.rango_todo')}</button>
+                        <button type="button" class="dp-preset-btn" data-preset="hoy">{t(L, 'dash.dp_hoy')}</button>
+                        <button type="button" class="dp-preset-btn" data-preset="ayer">{t(L, 'dash.dp_ayer')}</button>
+                        <span class="dp-preset-sep"></span>
+                        <button type="button" class="dp-preset-btn" data-preset="7">{t(L, 'dash.dp_ultimos7')}</button>
+                        <button type="button" class="dp-preset-btn is-active" data-preset="30">{t(L, 'dash.dp_ultimos30')}</button>
+                        <button type="button" class="dp-preset-btn" data-preset="90">{t(L, 'dash.dp_ultimos90')}</button>
+                        <span class="dp-preset-sep"></span>
+                        <button type="button" class="dp-preset-btn" data-preset="mes">{t(L, 'dash.rango_este_mes')}</button>
+                        <button type="button" class="dp-preset-btn" data-preset="mes_pasado">{t(L, 'dash.rango_mes_pasado')}</button>
+                        <button type="button" class="dp-preset-btn" data-preset="trimestre">{t(L, 'dash.rango_trimestre')}</button>
+                        <button type="button" class="dp-preset-btn" data-preset="ytd">{t(L, 'dash.rango_ytd')}</button>
+                        <span class="dp-preset-sep"></span>
+                        <button type="button" class="dp-preset-btn" data-preset="custom">{t(L, 'dash.rango_personalizado')}</button>
                     </div>
-                );
-            })}
-        </div>
-    </section>
-
-    <!-- Flujo esperado (5 semanas) + Necesitan seguimiento -->
-    <div class="two-col two-col-flow">
-        <section class="flow-card">
-            <div class="sec-head">
-                <h2 class="sec-title">{t(L, 'dash.flujo_titulo')}</h2>
-                <a href="/app/tesoreria/flujo" class="sec-link">{t(L, 'dash.tesoreria')}</a>
-            </div>
-            <div class="flow-bars">
-                {semanas.map((s, i) => (
-                    <div class="flow-col">
-                        <span class="editorial flow-amount">{s.valorEsperado > 0 ? money(s.valorEsperado, 0) : '—'}</span>
-                        <div class="flow-track">
-                            <div class="flow-fill" style={`height:${Math.max(s.valorEsperado > 0 ? 6 : 0, Math.round((s.valorEsperado / maxSemana) * 100))}%`}></div>
+                    <div class="dp-main">
+                        <div class="dp-inputs">
+                            <label class="dp-input-field"><span class="dp-input-label">{t(L, 'dash.rango_desde')}</span><input type="text" id="dpDesdeInput" readonly /></label>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dp-input-arrow"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                            <label class="dp-input-field"><span class="dp-input-label">{t(L, 'dash.rango_hasta')}</span><input type="text" id="dpHastaInput" readonly /></label>
                         </div>
-                        <span class="flow-label">{t(L, `dash.sem_short.${i}` as any)}</span>
-                        <span class="flow-n">{s.n > 0 ? tf('dash.n_cot', { n: String(s.n) }) : ''}</span>
-                    </div>
-                ))}
-            </div>
-        </section>
-
-        <section class="silence-card">
-            <div class="sec-head">
-                <h2 class="sec-title">{t(L, 'dash.seguimiento_titulo')}</h2>
-                {silenciadas.length > 0 && <span class="silence-count">{CFO.kpis.nSilenciadas}</span>}
-            </div>
-            {silenciadas.length > 0 ? (
-                <div class="silence-list">
-                    {silenciadas.map((s) => (
-                        <a href={`/app/cotizaciones/${s.id}`} class="silence-row">
-                            <div class="silence-info">
-                                <span class="silence-folio">{s.folio}</span>
-                                <span class="silence-client">{s.empresa}</span>
+                        <div class="dp-cals">
+                            <div class="dp-cal" id="dpCalLeft">
+                                <div class="dp-cal-head">
+                                    <button type="button" class="dp-cal-nav" id="dpPrev" aria-label="←"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                                    <span class="dp-cal-title"></span>
+                                    <span class="dp-cal-nav-spacer"></span>
+                                </div>
+                                <div class="dp-cal-grid"></div>
                             </div>
-                            <span class="silence-days">{tf('dash.sin_respuesta', { n: String(s.dias) })}</span>
-                            <span class="editorial silence-total">{money(s.total, 0)}</span>
-                            <span class="silence-go">→</span>
+                            <div class="dp-cal" id="dpCalRight">
+                                <div class="dp-cal-head">
+                                    <span class="dp-cal-nav-spacer"></span>
+                                    <span class="dp-cal-title"></span>
+                                    <button type="button" class="dp-cal-nav" id="dpNext" aria-label="→"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                                </div>
+                                <div class="dp-cal-grid"></div>
+                            </div>
+                        </div>
+                        <div class="dp-actions">
+                            <button type="button" class="dp-cancel" id="dpCancel">{t(L, 'dash.dp_cancelar')}</button>
+                            <button type="button" class="dp-apply" id="dpApply">{t(L, 'dash.rango_aplicar')}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="hero-rev-nota">{t(L, 'dash.rango_nota')}</p>
+        <div class="hero-rev-chart" id="heroChart"
+            data-empty-msg={t(L, 'dash.sin_datos_rango')}
+            data-points={JSON.stringify(diasSerie)}
+            data-funnel-todo={JSON.stringify(rangoTodoFunnel)}
+            data-clientes-todo={JSON.stringify(rangoTodoClientes)}
+            data-productos-todo={JSON.stringify(rangoTodoProductos)}
+        ></div>
+    </section>
+
+    <!--
+        Widgets reordenables/ocultables/redimensionables — CADA TARJETA es unitaria (no por
+        bloque). El hero de arriba queda SIEMPRE fijo, fuera de este contenedor. El orden y
+        tamaño reales se aplican con un <script is:inline> justo después de cerrar este div:
+        corre en medio del parseo del HTML, antes del primer paint, para que no haya flash
+        del layout por defecto seguido de un salto al guardado.
+    -->
+    <div id="dashWidgets" data-i18n-hidden={t(L, 'dash.widgets_ocultos')} data-i18n-reset-confirm={t(L, 'dash.confirmar_restablecer')}>
+
+        <article class="dash-widget" data-widget="kpi-por-cerrar" data-title={t(L, 'dash.w_kpi_por_cerrar')} data-size-sm="1" data-size-lg="2" data-span="1">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card kpi-card">
+                <span class="kpi-label">{t(L, 'dash.kpi_por_cerrar')}</span>
+                <span class="editorial kpi-num" data-countup={porCerrar.toFixed(2)}>{money(porCerrar)}</span>
+                <span class="kpi-sub">{tf('dash.kpi_cotizaciones_activas', { n: String(abiertas) })}</span>
+                <div class="kpi-spark" id="kpiSpark" data-values={JSON.stringify(diasSerie.slice(-14).map(d => d.cotizado))}></div>
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="kpi-tasa" data-title={t(L, 'dash.w_kpi_tasa')} data-size-sm="1" data-size-lg="2" data-span="1">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card kpi-card kpi-card-gauge">
+                <span class="kpi-label">{t(L, 'dash.kpi_tasa_cierre')}</span>
+                <div class="kpi-gauge" id="kpiTasaGauge" data-value={tasaCierre} data-tone={tasaCierre >= 40 ? 'ok' : tasaCierre >= 20 ? 'warn' : 'danger'}></div>
+                <span class="kpi-sub">{t(L, 'dash.kpi_ultimos_90d')}</span>
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="kpi-ticket" data-title={t(L, 'dash.w_kpi_ticket')} data-size-sm="1" data-size-lg="2" data-span="1">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card kpi-card">
+                <span class="kpi-label">{t(L, 'dash.kpi_ticket_promedio')}</span>
+                <span class="editorial kpi-num">{money(ANALYTICS.kpis.ticketPromedio, 0)}</span>
+                <span class="kpi-sub">{t(L, 'dash.kpi_ticket_sub')}</span>
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="kpi-seguimiento" data-title={t(L, 'dash.w_kpi_seguimiento')} data-size-sm="1" data-size-lg="2" data-span="1">
+            <Fragment set:html={EDITBAR} />
+            <a class="dash-card kpi-card kpi-link" href="/app/cotizaciones">
+                <span class="kpi-label">{t(L, 'dash.kpi_por_seguimiento')}</span>
+                <span class:list={['editorial', 'kpi-num', { 'kpi-warn': seguimiento > 0 }]}>{seguimiento}</span>
+                <span class="kpi-sub">{seguimiento === 1 ? t(L, 'dash.kpi_vista_singular') : t(L, 'dash.kpi_vista_plural')}</span>
+            </a>
+        </article>
+
+        <article class="dash-widget" data-widget="funnel" data-title={t(L, 'dash.w_funnel')} data-size-sm="2" data-size-lg="4" data-span="2">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.funnel_titulo')}</h2></div>
+                <div class="chart-host" id="funnelChart" data-steps={JSON.stringify(funnelSteps)}
+                    data-labels={JSON.stringify({
+                        enviadas: t(L, 'dash.funnel_enviadas'), vistas: t(L, 'dash.funnel_vistas'),
+                        aprobadas: t(L, 'dash.funnel_aprobadas'), pagadas: t(L, 'dash.funnel_pagadas'),
+                    })}
+                ></div>
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="pipeline" data-title={t(L, 'dash.w_pipeline')} data-size-sm="2" data-size-lg="4" data-span="2">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head">
+                    <h2 class="sec-title">{t(L, 'dash.pipeline_titulo')}</h2>
+                    <a href="/app/cotizaciones" class="sec-link">{t(L, 'dash.ver_todas')}</a>
+                </div>
+                <div class="chart-host" id="pipeSegChart" data-segments={JSON.stringify(pipelineSegments)}></div>
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="tendencia" data-title={t(L, 'dash.w_tendencia')} data-size-sm="4" data-size-lg="4" data-span="4">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tendencia_titulo')}</h2></div>
+                <div class="chart-host chart-host-tall" id="tendenciaChart"
+                    data-lbl-cotizado={t(L, 'dash.tendencia_cotizado')} data-lbl-cerrado={t(L, 'dash.tendencia_cerrado')}
+                ></div>
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="aging" data-title={t(L, 'dash.w_aging')} data-size-sm="2" data-size-lg="4" data-span="2">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.aging_titulo')}</h2></div>
+                <div class="chart-host" id="agingChart" data-slices={JSON.stringify(COBRANZA.aging.map(a => ({ key: a.key, label: a.label, value: a.monto, color: a.color })))}></div>
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="flujo" data-title={t(L, 'dash.w_flujo')} data-size-sm="2" data-size-lg="4" data-span="2">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head">
+                    <h2 class="sec-title">{t(L, 'dash.flujo_titulo')}</h2>
+                    <a href="/app/tesoreria/flujo" class="sec-link">{t(L, 'dash.tesoreria')}</a>
+                </div>
+                <div class="chart-host chart-host-tall" id="flowChart"
+                    data-items={JSON.stringify(semanas.map((s, i) => ({ label: t(L, `dash.sem_short.${i}` as any), value: s.valorEsperado, sub: s.n > 0 ? tf('dash.n_cot', { n: String(s.n) }) : '' })))}
+                ></div>
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="salud" data-title={t(L, 'dash.w_salud')} data-size-sm="4" data-size-lg="4" data-span="4">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head">
+                    <h2 class="sec-title">{t(L, 'dash.salud_titulo')}</h2>
+                    <a href="/app/cfo" class="sec-link">{t(L, 'dash.ver_cfo')}</a>
+                </div>
+                <div class="health-grid">
+                    <div class="health-cell">
+                        <div class="health-gauge" id="gaugeDso" data-value={Math.min(dso, 90)} data-max="90" data-tone={dsoTone} data-suffix="d"></div>
+                        <span class="health-label">{t(L, 'dash.dso_label')}</span>
+                        <span class="health-sub"><span class:list={['health-dot', `h-${dsoTone}`]}></span>{dsoTone === 'ok' ? t(L, 'dash.dso_ok') : dsoTone === 'warn' ? t(L, 'dash.dso_warn') : t(L, 'dash.dso_danger')}</span>
+                    </div>
+                    <div class="health-cell">
+                        <div class="health-gauge" id="gaugeConc" data-value={concentracion} data-max="100" data-tone={concTone} data-suffix="%"></div>
+                        <span class="health-label">{t(L, 'dash.conc_label')}</span>
+                        <span class="health-sub"><span class:list={['health-dot', `h-${concTone}`]}></span>{concentracion >= 70 ? t(L, 'dash.conc_danger') : concentracion >= 40 ? t(L, 'dash.conc_warn') : t(L, 'dash.conc_ok')}</span>
+                    </div>
+                    <div class="health-cell">
+                        <div class="health-gauge" id="gaugeMargen" data-value={margenPct} data-max="50" data-tone={margenTone} data-suffix="%"></div>
+                        <span class="health-label">{t(L, 'dash.margen_label')}</span>
+                        <span class="health-sub">{t(L, 'dash.margen_sub')}</span>
+                    </div>
+                    <div class="health-cell">
+                        <div class="health-gauge" id="gaugeEsperado" data-value={esperadoPct} data-max="100" data-tone="neutral" data-suffix="%"></div>
+                        <span class="health-label">{t(L, 'dash.ingreso_esperado_label')}</span>
+                        <span class="health-sub">{tf('dash.de_pipeline', { monto: money(totalPipeline, 0) })}</span>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="rank-clientes" data-title={t(L, 'dash.w_rank_clientes')} data-size-sm="2" data-size-lg="4" data-span="2">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_clientes_titulo')}</h2></div>
+                {clientesTasa.length > 0
+                    ? <div class="chart-host" id="rankClientesChart" data-items={JSON.stringify(clientesTasa.map(c => ({ label: c.empresa, value: c.tasa })))} data-format="pct"></div>
+                    : <p class="rank-empty">{t(L, 'dash.rank_sin_historial')}</p>}
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="rank-productos" data-title={t(L, 'dash.w_rank_productos')} data-size-sm="2" data-size-lg="4" data-span="2">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_productos_titulo')}</h2></div>
+                {topProductos.length > 0
+                    ? <div class="chart-host" id="rankProductosChart" data-items={JSON.stringify(topProductos.map(p => ({ label: p.nombre, value: p.importe })))} data-format="money" data-color="ok"></div>
+                    : <p class="rank-empty">{t(L, 'dash.rank_sin_productos')}</p>}
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="seguimiento-lista" data-title={t(L, 'dash.w_seguimiento_lista')} data-size-sm="2" data-size-lg="4" data-span="2">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head">
+                    <h2 class="sec-title">{t(L, 'dash.seguimiento_titulo')}</h2>
+                    {silenciadas.length > 0 && <span class="silence-count">{CFO.kpis.nSilenciadas}</span>}
+                </div>
+                {silenciadas.length > 0 ? (
+                    <div class="silence-list">
+                        {silenciadas.map((s) => (
+                            <a href={`/app/cotizaciones/${s.id}`} class="silence-row">
+                                <div class="silence-info">
+                                    <span class="silence-folio">{s.folio}</span>
+                                    <span class="silence-client">{s.empresa}</span>
+                                </div>
+                                <span class="silence-days">{tf('dash.sin_respuesta', { n: String(s.dias) })}</span>
+                                <span class="editorial silence-total">{money(s.total, 0)}</span>
+                                <span class="silence-go">→</span>
+                            </a>
+                        ))}
+                    </div>
+                ) : (
+                    <div class="silence-empty">
+                        <span class="silence-empty-ico">✓</span>
+                        <p>{t(L, 'dash.sin_silenciadas')}</p>
+                    </div>
+                )}
+            </div>
+        </article>
+
+        <article class="dash-widget" data-widget="recientes" data-title={t(L, 'dash.w_recientes')} data-size-sm="2" data-size-lg="4" data-span="2">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head">
+                    <h2 class="sec-title">{t(L, 'dash.recientes_titulo')}</h2>
+                    <a href="/app/cotizaciones" class="sec-link">{t(L, 'dash.ver_todas')}</a>
+                </div>
+                <div class="quote-list">
+                    {recientes.map((q) => (
+                        <a href={`/app/cotizaciones/${q.id}`} class="quote-row">
+                            <div class="qr-avatar">{q.clienteInicial}</div>
+                            <div class="qr-info">
+                                <span class="qr-folio">{q.folio}</span>
+                                <span class="qr-client">{q.cliente}</span>
+                            </div>
+                            <span class="editorial qr-amount">{money(q.total ?? 0, 0)}</span>
+                            <span class="status-pill" style={`color:${STATUS_META[q.status].color}; background:${STATUS_META[q.status].bg}`}>
+                                {STATUS_META[q.status].label}
+                            </span>
                         </a>
                     ))}
                 </div>
-            ) : (
-                <div class="silence-empty">
-                    <span class="silence-empty-ico">✓</span>
-                    <p>{t(L, 'dash.sin_silenciadas')}</p>
-                </div>
-            )}
-        </section>
-    </div>
-
-    <div class="two-col">
-        <!-- Cotizaciones recientes -->
-        <section class="list-card">
-            <div class="sec-head">
-                <h2 class="sec-title">{t(L, 'dash.recientes_titulo')}</h2>
-                <a href="/app/cotizaciones" class="sec-link">{t(L, 'dash.ver_todas')}</a>
             </div>
-            <div class="quote-list">
-                {recientes.map((q) => (
-                    <a href={`/app/cotizaciones/${q.id}`} class="quote-row">
-                        <div class="qr-avatar">{q.clienteInicial}</div>
-                        <div class="qr-info">
-                            <span class="qr-folio">{q.folio}</span>
-                            <span class="qr-client">{q.cliente}</span>
-                        </div>
-                        <span class="editorial qr-amount">{money(q.total ?? 0, 0)}</span>
-                        <span class="status-pill" style={`color:${STATUS_META[q.status].color}; background:${STATUS_META[q.status].bg}`}>
-                            {STATUS_META[q.status].label}
-                        </span>
-                    </a>
-                ))}
-            </div>
-        </section>
+        </article>
 
-        <!-- Actividad -->
-        <section class="activity-card">
-            <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.actividad_titulo')}</h2></div>
-            <div class="feed">
-                {eventosFeed.map((e) => (
-                    <a href={`/app/cotizaciones/${e.id}`} class="feed-item">
-                        <span class="feed-dot" style={`background:${dotColor(e.tipo)}`}></span>
-                        <div class="feed-body">
-                            <span class="feed-text">{e.detalle}</span>
-                            <span class="feed-meta">{e.folio} · {e.cuando}</span>
-                        </div>
-                    </a>
-                ))}
-            </div>
-        </section>
-    </div>
-
-    <!-- Mix: clientes por tasa de aprobación + productos por ingreso -->
-    <div class="two-col two-col-even">
-        <section class="rank-card">
-            <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_clientes_titulo')}</h2></div>
-            {clientesTasa.length > 0 ? (
-                <div class="rank-list">
-                    {clientesTasa.map((c) => (
-                        <div class="rank-row">
-                            <span class="rank-name">{c.empresa}</span>
-                            <div class="rank-track"><div class="rank-fill" style={`width:${c.tasa}%`}></div></div>
-                            <span class="editorial rank-val">{c.tasa}%</span>
-                        </div>
+        <article class="dash-widget" data-widget="actividad" data-title={t(L, 'dash.w_actividad')} data-size-sm="4" data-size-lg="4" data-span="4">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card">
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.actividad_titulo')}</h2></div>
+                <div class="feed">
+                    {eventosFeed.map((e) => (
+                        <a href={`/app/cotizaciones/${e.id}`} class="feed-item">
+                            <span class="feed-dot" style={`background:${dotColor(e.tipo)}`}></span>
+                            <div class="feed-body">
+                                <span class="feed-text">{e.detalle}</span>
+                                <span class="feed-meta">{e.folio} · {e.cuando}</span>
+                            </div>
+                        </a>
                     ))}
                 </div>
-            ) : <p class="rank-empty">{t(L, 'dash.rank_sin_historial')}</p>}
-        </section>
+            </div>
+        </article>
 
-        <section class="rank-card">
-            <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_productos_titulo')}</h2></div>
-            {topProductos.length > 0 ? (
-                <div class="rank-list">
-                    {topProductos.map((p) => (
-                        <div class="rank-row">
-                            <span class="rank-name">{p.nombre}</span>
-                            <div class="rank-track"><div class="rank-fill rank-fill-ok" style={`width:${Math.max(4, Math.round((p.importe / maxProd) * 100))}%`}></div></div>
-                            <span class="editorial rank-val">{money(p.importe, 0)}</span>
+        <article class="dash-widget" data-widget="tareas" data-title={t(L, 'dash.w_tareas')} data-size-sm="4" data-size-lg="4" data-span="4">
+            <Fragment set:html={EDITBAR} />
+            <div class="dash-card tasks-card">
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tareas_titulo')}</h2></div>
+                <form class="task-add" id="taskAdd">
+                    <input id="taskTitulo" class="task-input" placeholder={t(L, 'dash.tarea_ph')} autocomplete="off" required />
+                    <input id="taskDue" class="task-date" type="date" aria-label={t(L, 'dash.tarea_fecha_limite')} />
+                    <button class="task-btn" type="submit">{t(L, 'dash.agregar')}</button>
+                </form>
+                <div class="task-list" id="taskList">
+                    {TAREAS.map((tarea) => (
+                        <div class="task-row" data-id={tarea.id}>
+                            <button class="task-check" data-done aria-label={t(L, 'dash.marcar_completada')}></button>
+                            <div class="task-body">
+                                <span class="task-title">{tarea.titulo}</span>
+                                {(tarea.folio || tarea.due) && <span class="task-meta">{[tarea.folio, tarea.due].filter(Boolean).join(' · ')}</span>}
+                            </div>
+                            {tarea.vencida && <span class="task-overdue">{t(L, 'dash.vencida')}</span>}
+                            <button class="task-del" data-del aria-label={t(L, 'dash.eliminar')}>×</button>
                         </div>
                     ))}
+                    <p class="task-empty" id="taskEmpty" hidden={TAREAS.length > 0}>{t(L, 'dash.tareas_vacio')}</p>
                 </div>
-            ) : <p class="rank-empty">{t(L, 'dash.rank_sin_productos')}</p>}
+            </div>
+        </article>
+
+        <section class="dash-card widget-tray" id="widgetTray" hidden>
+            <p class="widget-tray-title">{t(L, 'dash.widgets_ocultos')}</p>
+            <div class="widget-tray-list" id="widgetTrayList"></div>
         </section>
     </div>
-
-    <!-- Tareas / recordatorios -->
-    <section class="tasks-card">
-        <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tareas_titulo')}</h2></div>
-        <form class="task-add" id="taskAdd">
-            <input id="taskTitulo" class="task-input" placeholder={t(L, 'dash.tarea_ph')} autocomplete="off" required />
-            <input id="taskDue" class="task-date" type="date" aria-label={t(L, 'dash.tarea_fecha_limite')} />
-            <button class="task-btn" type="submit">{t(L, 'dash.agregar')}</button>
-        </form>
-        <div class="task-list" id="taskList">
-            {TAREAS.map((tarea) => (
-                <div class="task-row" data-id={tarea.id}>
-                    <button class="task-check" data-done aria-label={t(L, 'dash.marcar_completada')}></button>
-                    <div class="task-body">
-                        <span class="task-title">{tarea.titulo}</span>
-                        {(tarea.folio || tarea.due) && <span class="task-meta">{[tarea.folio, tarea.due].filter(Boolean).join(' · ')}</span>}
-                    </div>
-                    {tarea.vencida && <span class="task-overdue">{t(L, 'dash.vencida')}</span>}
-                    <button class="task-del" data-del aria-label={t(L, 'dash.eliminar')}>×</button>
-                </div>
-            ))}
-            <p class="task-empty" id="taskEmpty" hidden={TAREAS.length > 0}>{t(L, 'dash.tareas_vacio')}</p>
-        </div>
-    </section>
+    <script is:inline>
+        // Aplica orden/visibilidad/tamaño guardados ANTES del primer paint (sync, mitad del
+        // parseo del HTML) — igual patrón que el anti-flash de tema/sidebar de AppLayout,
+        // pero acotado a este contenedor porque el editor de widgets es propio del dashboard.
+        (function () {
+            try {
+                var KEY = 'cord.dash.v1';
+                var raw = JSON.parse(localStorage.getItem(KEY) || '{}');
+                var order = Array.isArray(raw.order) ? raw.order : [];
+                var hidden = Array.isArray(raw.hidden) ? raw.hidden : [];
+                var sizes = raw.sizes && typeof raw.sizes === 'object' ? raw.sizes : {};
+                var host = document.getElementById('dashWidgets');
+                if (!host) return;
+                var widgets = Array.prototype.slice.call(host.children).filter(function (w) { return w.dataset && w.dataset.widget; });
+                var byId = {};
+                widgets.forEach(function (w) { byId[w.dataset.widget] = w; });
+                var finalOrder = order.filter(function (id) { return byId[id]; });
+                widgets.forEach(function (w) { if (finalOrder.indexOf(w.dataset.widget) === -1) finalOrder.push(w.dataset.widget); });
+                finalOrder.forEach(function (id) { host.appendChild(byId[id]); });
+                hidden.forEach(function (id) { if (byId[id]) byId[id].hidden = true; });
+                Object.keys(sizes).forEach(function (id) {
+                    var w = byId[id];
+                    if (!w) return;
+                    var size = sizes[id] === 'lg' ? w.dataset.sizeLg : w.dataset.sizeSm;
+                    if (size) w.dataset.span = size;
+                });
+            } catch (e) {}
+        })();
+    </script>
 
     {showTour && (
         <div id="demoTour" class="demo-tour-popover">
@@ -338,12 +558,35 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 </AppLayout>
 
 <style>
-    /* Aviso para activar cobros (dismissible) */
+    /* ── Tarjeta Apple/Stripe compartida ── */
+    .dash-card {
+        background: var(--surface);
+        border-radius: var(--card-radius);
+        box-shadow: var(--card-shadow);
+        padding: 1.5rem 1.7rem;
+    }
+    /* height:100% SOLO dentro del grid (para que dos tarjetas de la misma fila queden a la
+       misma altura). ⚠️ NUNCA en `.dash-card` a secas: el hero es hijo directo de
+       `.app-content`, que es flex item de `.app-main` (column, estirado a 100vh por
+       `.app-shell`) — los navegadores tratan esa altura como DEFINIDA tras el layout, así
+       que un `height:100%` ahí estira el hero a toda el área de contenido. */
+    .dash-widget > .dash-card { height: 100%; }
+    a.dash-card { display: block; text-decoration: none; transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-ios); }
+    a.dash-card:hover { transform: translateY(-2px); box-shadow: var(--card-shadow-hover); }
+
+    .sec-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.1rem; }
+    .sec-title { font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text); margin: 0; }
+    .sec-link { font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; transition: color 0.2s; }
+    .sec-link:hover { color: var(--color-blue-deep); }
+
+    .chart-host { min-height: 160px; }
+    .chart-host-tall { min-height: 220px; }
+
+    /* ── Aviso de cobros ── */
     .cobros-nudge {
         display: flex; align-items: center; gap: 14px;
-        padding: 14px 16px; margin-bottom: 1.8rem;
+        padding: 1rem 1.3rem; margin-bottom: 1.4rem;
         background: var(--color-blue-deep); color: #fff;
-        border-radius: var(--radius-card, 16px);
         box-shadow: 0 2px 4px rgba(10,25,47,0.06), 0 20px 44px -18px rgba(10,25,47,0.35);
     }
     .cobros-nudge .cn-ico {
@@ -376,47 +619,203 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
         .cobros-nudge .cn-close { position: absolute; }
     }
 
-    .kpis {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
-        margin-bottom: 2.6rem;
-        border-top: 1px solid var(--color-border);
-        border-bottom: 1px solid var(--color-border);
+    /* ── Hero de dinero ── */
+    /* ⚠️ z-index sobre el hero: AppLayout aplica `animation: app-fadein … both` a CADA hijo
+       directo de `.app-content`, y su estado final (`transform: translateY(0)`) convierte a
+       `.hero-rev` y a `#dashWidgets` en contextos de apilamiento hermanos. Con z-index auto
+       pintan en orden del DOM → los widgets taparían el panel del selector de fechas, sin
+       importar el z-index que tenga el panel (queda atrapado dentro del hero). Elevar el hero
+       por encima del grid es lo que deja el panel visible; ambos siguen por debajo de la
+       topbar sticky (z-index 50). */
+    .hero-rev { padding: 1.7rem 1.9rem 1.4rem; margin-bottom: 1.4rem; position: relative; z-index: 20; }
+    .hero-rev-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+    .hero-rev-metrics { display: inline-flex; gap: 4px; margin-bottom: 0.7rem; }
+    .hero-metric-pill {
+        appearance: none; border: none; background: transparent; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.74rem; font-weight: 700; letter-spacing: 0.2px;
+        color: var(--color-text-muted); padding: 5px 11px; border-radius: 100px;
+        transition: background 0.25s var(--ease-ios), color 0.25s var(--ease-ios);
     }
-    .kpi {
-        padding: 1.5rem 1.7rem; display: flex; flex-direction: column; gap: 0.45rem;
-        border-left: 1px solid var(--color-border);
+    .hero-metric-pill:hover { color: var(--color-text); }
+    .hero-metric-pill.is-active { background: var(--color-bg-soft); color: var(--color-blue-deep); }
+    .hero-rev-row { display: flex; align-items: baseline; gap: 0.9rem; flex-wrap: wrap; }
+    .hero-rev-num { font-size: clamp(2.2rem, 4vw, 3rem); color: var(--color-blue-deep); line-height: 1; }
+    .hero-rev-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 0.86rem; font-weight: 700; padding: 3px 0; color: var(--color-ok); }
+    .hero-rev-delta[hidden] { display: none; }
+    .hero-rev-delta.is-down { color: var(--color-danger); }
+    .hero-rev-delta-sub { font-weight: 500; color: var(--color-text-muted); margin-left: 2px; }
+    .hero-rev-chart { position: relative; height: 240px; margin-top: 0.8rem; }
+    .hero-rev-nota { margin: 0.5rem 0 0; font-size: 0.72rem; color: var(--color-text-muted); opacity: 0.85; }
+
+    /* ══ Selector de rango estilo Shopify ══ */
+    .dp-wrap { position: relative; flex-shrink: 0; }
+    .dp-trigger {
+        display: inline-flex; align-items: center; gap: 8px;
+        appearance: none; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600;
+        color: var(--color-text); background: var(--color-bg-soft); border: 1px solid transparent;
+        border-radius: 100px; padding: 8px 14px; cursor: pointer; transition: background 0.2s var(--ease-ios), border-color 0.2s;
     }
-    .kpi:first-child { border-left: none; padding-left: 0; }
-    .kpi-link { text-decoration: none; transition: background 0.3s var(--ease-ios); }
-    .kpi-link:hover { background: var(--color-bg-soft); }
-    .kpi-label { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.6px; color: #99a2af; }
-    .kpi-num { font-size: 2.1rem; color: var(--color-blue-deep); line-height: 1; font-variant-numeric: tabular-nums; }
-    .kpi-ok { color: #059669; }
+    .dp-trigger:hover { background: var(--row-hover); }
+    .dp-trigger[aria-expanded="true"] { background: var(--surface); border-color: var(--color-blue-deep); box-shadow: 0 1px 3px rgba(10,25,47,0.1); }
+    .dp-trigger svg:first-child { color: var(--color-text-muted); }
+    .dp-trigger svg:last-child { color: var(--color-text-muted); transition: transform 0.2s; }
+    .dp-trigger[aria-expanded="true"] svg:last-child { transform: rotate(180deg); }
+
+    .dp-panel {
+        position: absolute; top: calc(100% + 10px); right: 0; z-index: 30;
+        display: flex; background: var(--surface); border-radius: 20px;
+        box-shadow: 0 4px 16px rgba(10,25,47,0.1), 0 30px 70px -20px rgba(10,25,47,0.4);
+        overflow: hidden; width: min(94vw, 660px);
+    }
+    .dp-panel[hidden] { display: none; }
+    .dp-presets {
+        display: flex; flex-direction: column; gap: 2px; padding: 1rem 0.7rem;
+        width: 168px; flex-shrink: 0; border-right: 1px solid var(--color-border);
+        max-height: 420px; overflow-y: auto;
+    }
+    .dp-preset-btn {
+        appearance: none; border: none; background: transparent; text-align: left; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 500; color: var(--color-text);
+        padding: 8px 10px; border-radius: 9px; transition: background 0.15s var(--ease-ios);
+    }
+    .dp-preset-btn:hover { background: var(--row-hover); }
+    .dp-preset-btn.is-active { background: var(--color-blue-deep); color: #fff; font-weight: 600; }
+    .dp-preset-sep { height: 1px; background: var(--color-border); margin: 6px 4px; }
+
+    .dp-main { flex: 1; display: flex; flex-direction: column; padding: 1rem 1.2rem; min-width: 0; }
+    .dp-inputs { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+    .dp-input-field { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .dp-input-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-text-muted); opacity: 0.75; }
+    .dp-input-field input {
+        font-family: var(--font-sans); font-size: 0.82rem; color: var(--color-text);
+        background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px;
+        padding: 7px 10px; width: 100%;
+    }
+    .dp-input-arrow { color: var(--color-text-muted); flex-shrink: 0; margin-top: 14px; }
+    .dp-cals { display: flex; gap: 1.6rem; }
+    .dp-cal { flex: 1; min-width: 0; }
+    .dp-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+    .dp-cal-title { font-size: 0.82rem; font-weight: 600; color: var(--color-text); }
+    .dp-cal-nav {
+        appearance: none; border: none; background: var(--color-bg-soft); cursor: pointer;
+        width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: var(--color-text);
+        transition: background 0.15s;
+    }
+    .dp-cal-nav:hover { background: var(--row-hover); }
+    .dp-cal-nav-spacer { width: 24px; }
+    .dp-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+    .dp-cancel {
+        appearance: none; border: 1px solid var(--color-border); background: transparent; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text);
+        border-radius: 9px; padding: 8px 16px;
+    }
+    .dp-apply {
+        appearance: none; border: none; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff;
+        background: var(--color-blue-deep); border-radius: 9px; padding: 8px 16px;
+        transition: transform 0.2s var(--ease-spring);
+    }
+    .dp-apply:hover { transform: translateY(-1px); }
+
+    @media (max-width: 720px) {
+        .dp-panel { flex-direction: column; width: min(94vw, 340px); }
+        .dp-presets { width: auto; flex-direction: row; flex-wrap: wrap; max-height: none; border-right: none; border-bottom: 1px solid var(--color-border); }
+        .dp-preset-sep { display: none; }
+        #dpCalRight { display: none; }
+    }
+
+    /* ── Botones "Personalizar / Listo / Restablecer" (topbar-actions) ── */
+    .dash-edit-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        appearance: none; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
+        color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        border-radius: 100px; padding: 7px 14px; cursor: pointer; transition: background 0.2s var(--ease-ios);
+    }
+    .dash-edit-btn[hidden] { display: none; }
+    .dash-edit-btn:hover { background: var(--row-hover); }
+    .dash-edit-btn.dash-edit-done { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+
+    /* ══ Grid unitario de widgets ══ */
+    /* `position: relative` = referencia del widget que se arrastra (va en `absolute`, NO en
+       `fixed`: el `transform` de app-fadein en el ancestro lo anclaría a `.app-content`).
+       `z-index: 1` lo deja explícitamente por debajo del hero (ver nota en `.hero-rev`). */
+    #dashWidgets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4rem; position: relative; z-index: 1; }
+    .dash-widget { position: relative; grid-column: span 1; }
+    .dash-widget[data-span="1"] { grid-column: span 1; }
+    .dash-widget[data-span="2"] { grid-column: span 2; }
+    .dash-widget[data-span="4"] { grid-column: span 4; }
+    .dash-widget[hidden] { display: none; }
+    @media (max-width: 1199px) {
+        .dash-widget { grid-column: 1 / -1 !important; }
+    }
+    .widget-tray { grid-column: 1 / -1; }
+    .widget-tray[hidden] { display: none; }
+    .widget-tray-title { font-size: 0.78rem; font-weight: 700; color: var(--color-text-muted); margin: 0 0 0.7rem; }
+
+    /* ── Modo edición: wiggle + controles por widget (estilo iOS) ── */
+    #dashWidgets[data-editing="1"] > .dash-widget:not(.is-dragging) > .dash-card {
+        outline: 1.5px dashed var(--color-border); outline-offset: 3px;
+    }
+    #dashWidgets[data-editing="1"] > .dash-widget:not(.is-dragging) { cursor: grab; }
+    #dashWidgets[data-editing="1"] > .dash-widget:not(.is-dragging) > .dash-card {
+        animation: widget-wiggle 0.24s ease-in-out infinite;
+    }
+    #dashWidgets[data-editing="1"] > .dash-widget:nth-child(even):not(.is-dragging) > .dash-card { animation-delay: 0.05s; }
+    #dashWidgets[data-editing="1"] > .dash-widget:nth-child(3n):not(.is-dragging) > .dash-card { animation-delay: 0.09s; }
+    @keyframes widget-wiggle { 0%, 100% { transform: rotate(-0.45deg); } 50% { transform: rotate(0.45deg); } }
+    @media (prefers-reduced-motion: reduce) {
+        #dashWidgets[data-editing="1"] > .dash-widget > .dash-card { animation: none !important; }
+    }
+    .dash-widget.is-dragging { opacity: 0.92; }
+    .dash-widget.is-dragging > .dash-card { box-shadow: 0 30px 60px -14px rgba(10,25,47,0.4); }
+    /* Estilos del .widget-editbar (arrastrar/subir/bajar/tamaño/ocultar) viven en
+       <style is:global> — se inyecta con set:html, así que nunca lleva data-astro-cid-*
+       y ninguna regla scopeada aquí podría alcanzarlo (misma clase de bug ya documentada
+       para el DOM que crea chart.ts en runtime). */
+
+    /* ── KPIs ── */
+    .kpi-card { display: flex; flex-direction: column; gap: 0.4rem; }
+    .kpi-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--color-text-muted); opacity: 0.75; }
+    .kpi-num { font-size: 1.9rem; color: var(--color-blue-deep); line-height: 1; font-variant-numeric: tabular-nums; }
     .kpi-warn { color: var(--color-warn); }
-    .kpi-pct { font-size: 1.3rem; }
-    .kpi-sub { font-size: 0.78rem; color: var(--color-text-muted); }
+    .kpi-sub { font-size: 0.76rem; color: var(--color-text-muted); }
+    .kpi-spark { height: 30px; margin-top: 0.3rem; }
+    .kpi-card-gauge { align-items: flex-start; }
+    .kpi-gauge { margin: 0.2rem 0; }
 
-    .pipeline { margin-bottom: 2.6rem; }
+    /* ── Salud del pipeline ── */
+    .health-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+    .health-cell { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.5rem; }
+    .health-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--color-text-muted); opacity: 0.75; }
+    .health-sub { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: var(--color-text-muted); }
+    .health-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--color-text-muted); }
+    .health-dot.h-ok { background: var(--color-ok); } .health-dot.h-warn { background: var(--color-warn); } .health-dot.h-danger { background: var(--color-danger); }
+    @media (max-width: 640px) { .health-grid { grid-template-columns: repeat(2, 1fr); } }
 
-    .pipe-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.8rem; }
-    .pipe-col {
-        padding: 0.2rem 0 0.2rem 1rem;
-        border-left: 1px solid var(--color-border);
-        display: flex; flex-direction: column; gap: 0.5rem;
-    }
-    .pipe-col:first-child { border-left: none; padding-left: 0; }
-    .pipe-head { display: flex; align-items: center; gap: 7px; font-size: 0.72rem; font-weight: 700; }
-    .pipe-dot { width: 7px; height: 7px; border-radius: 50%; }
-    .pipe-count { margin-left: auto; font-size: 0.68rem; color: var(--color-text-muted); font-weight: 600; }
-    .pipe-total { font-size: 1.15rem; color: var(--color-blue-deep); }
+    /* ── Necesitan seguimiento ── */
+    .silence-count { font-size: 0.62rem; font-weight: 800; color: #fff; background: var(--color-warn); border-radius: 100px; min-width: 20px; height: 20px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; }
+    .silence-list { display: flex; flex-direction: column; }
+    .silence-row { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 0.8rem; padding: 0.7rem 0.5rem; border-radius: 10px; text-decoration: none; transition: background 0.25s var(--ease-ios); margin: 0 -0.5rem; }
+    .silence-row:hover { background: var(--color-bg-soft); }
+    .silence-row + .silence-row { border-top: 1px solid var(--color-border); }
+    .silence-info { display: flex; flex-direction: column; min-width: 0; }
+    .silence-folio { font-size: 0.82rem; font-weight: 700; color: var(--color-text); }
+    .silence-client { font-size: 0.74rem; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .silence-days { font-size: 0.66rem; font-weight: 700; color: #b45309; background: rgba(245,158,11,0.12); padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
+    .silence-total { font-size: 0.92rem; color: var(--color-blue-deep); }
+    .silence-go { color: var(--color-text-muted); font-weight: 700; transition: transform 0.25s var(--ease-spring), color 0.25s; }
+    .silence-row:hover .silence-go { transform: translateX(3px); color: var(--color-blue-deep); }
+    .silence-empty { display: flex; align-items: center; gap: 12px; padding: 0.4rem; }
+    .silence-empty-ico { width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; background: rgba(16,185,129,0.12); color: var(--color-ok); display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    .silence-empty p { margin: 0; font-size: 0.82rem; color: var(--color-text-muted); }
+    .rank-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.4rem 0; }
 
-    .two-col { display: grid; grid-template-columns: 1.6fr 1fr; gap: 2.6rem; margin-bottom: 2.6rem; }
-
+    /* ── Recientes / actividad ── */
     .quote-list { display: flex; flex-direction: column; }
     .quote-row {
         display: grid; grid-template-columns: auto 1fr auto auto;
         align-items: center; gap: 1rem;
-        padding: 0.8rem 0.6rem; margin: 0;
+        padding: 0.7rem 0.5rem; margin: 0 -0.5rem;
         border-radius: 10px; text-decoration: none;
         transition: background 0.25s var(--ease-ios);
     }
@@ -427,6 +826,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
         background: var(--color-blue-deep); color: #fff;
         display: flex; align-items: center; justify-content: center;
         font-size: 0.7rem; font-weight: 800;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
     }
     .qr-info { display: flex; flex-direction: column; min-width: 0; }
     .qr-folio { font-size: 0.84rem; font-weight: 700; color: var(--color-text); }
@@ -436,7 +836,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     .feed { display: flex; flex-direction: column; gap: 0.15rem; }
     .feed-item {
         display: flex; gap: 11px; align-items: flex-start;
-        padding: 0.55rem 0.6rem; margin: 0;
+        padding: 0.55rem 0.5rem; margin: 0 -0.5rem;
         border-radius: 9px; text-decoration: none;
         transition: background 0.25s var(--ease-ios);
     }
@@ -446,69 +846,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     .feed-text { font-size: 0.8rem; color: var(--color-text); font-weight: 500; }
     .feed-meta { font-size: 0.68rem; color: var(--color-text-muted); }
 
-    /* ── Salud del pipeline ── */
-    .health { margin-bottom: 2.6rem; }
-    .health-grid {
-        display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
-        border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);
-    }
-    .health-cell { padding: 1.3rem 1.6rem; display: flex; flex-direction: column; gap: 0.4rem; border-left: 1px solid var(--color-border); }
-    .health-cell:first-child { border-left: none; padding-left: 0; }
-    .health-label { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.4px; color: #99a2af; }
-    .health-num { font-size: 1.9rem; color: var(--color-blue-deep); line-height: 1; font-variant-numeric: tabular-nums; }
-    .health-num.h-ok { color: #059669; } .health-num.h-warn { color: #d97706; } .health-num.h-danger { color: var(--color-danger); }
-    .health-unit { font-size: 1.1rem; margin-left: 1px; }
-    .health-sub { display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: var(--color-text-muted); }
-    .health-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: #cbd5e1; }
-    .health-dot.h-ok { background: var(--color-ok); } .health-dot.h-warn { background: var(--color-warn); } .health-dot.h-danger { background: var(--color-danger); }
-
-    /* ── Flujo esperado (mini bar chart) ── */
-    .two-col-flow { grid-template-columns: 1.15fr 1fr; }
-    .flow-bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.7rem; align-items: end; }
-    .flow-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; justify-content: flex-end; text-align: center; }
-    .flow-amount { font-size: 0.74rem; color: var(--color-blue-deep); white-space: nowrap; }
-    .flow-track { width: 60%; max-width: 34px; height: 130px; display: flex; align-items: flex-end; background: var(--chart-track); border-radius: 7px; overflow: hidden; }
-    .flow-fill { width: 100%; background: var(--chart-fill); border-radius: 7px 7px 0 0; min-height: 4px; transition: height 0.7s var(--ease-spring); }
-    .flow-label { font-size: 0.64rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
-    .flow-n { font-size: 0.64rem; color: #aab2bd; min-height: 0.8em; }
-
-    /* ── Necesitan seguimiento (silenciadas) ── */
-    .silence-count { font-size: 0.62rem; font-weight: 800; color: #fff; background: var(--color-warn); border-radius: 100px; min-width: 20px; height: 20px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; }
-    .silence-list { display: flex; flex-direction: column; }
-    .silence-row { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 0.8rem; padding: 0.7rem 0.5rem; border-radius: 10px; text-decoration: none; transition: background 0.25s var(--ease-ios); }
-    .silence-row:hover { background: var(--color-bg-soft); }
-    .silence-row + .silence-row { border-top: 1px solid var(--color-border); }
-    .silence-info { display: flex; flex-direction: column; min-width: 0; }
-    .silence-folio { font-size: 0.82rem; font-weight: 700; color: var(--color-text); }
-    .silence-client { font-size: 0.74rem; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .silence-days { font-size: 0.66rem; font-weight: 700; color: #b45309; background: rgba(245,158,11,0.12); padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
-    .silence-total { font-size: 0.92rem; color: var(--color-blue-deep); }
-    .silence-go { color: #c3c9d2; font-weight: 700; transition: transform 0.25s var(--ease-spring), color 0.25s; }
-    .silence-row:hover .silence-go { transform: translateX(3px); color: var(--color-blue-deep); }
-    .silence-empty { display: flex; align-items: center; gap: 12px; padding: 1.4rem 0.4rem; }
-    .silence-empty-ico { width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; background: rgba(16,185,129,0.12); color: var(--color-ok); display: flex; align-items: center; justify-content: center; font-weight: 800; }
-    .silence-empty p { margin: 0; font-size: 0.82rem; color: var(--color-text-muted); }
-
-    /* ── Rankings (mix clientes/productos) ── */
-    .two-col-even { grid-template-columns: 1fr 1fr; }
-    .rank-list { display: flex; flex-direction: column; gap: 0.7rem; }
-    .rank-row { display: grid; grid-template-columns: minmax(0, 1.1fr) 1.4fr auto; align-items: center; gap: 0.8rem; }
-    .rank-name { font-size: 0.8rem; font-weight: 550; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rank-track { height: 8px; background: var(--chart-track); border-radius: 100px; overflow: hidden; }
-    .rank-fill { height: 100%; border-radius: 100px; background: var(--chart-fill); min-width: 4px; transition: width 0.7s var(--ease-spring); }
-    .rank-fill-ok { background: var(--color-ok); }
-    .rank-val { font-size: 0.82rem; color: var(--color-blue-deep); font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .rank-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.4rem 0; }
-
-    @media (max-width: 1080px) {
-        .health-grid { grid-template-columns: 1fr; }
-        .health-cell { border-left: none; padding-left: 0; }
-        .health-cell + .health-cell { border-top: 1px solid var(--color-border); }
-        .two-col-flow, .two-col-even { grid-template-columns: 1fr; }
-    }
-
     /* Tareas / recordatorios */
-    .tasks-card { margin-top: 0; }
     .task-add { display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
     .task-input { flex: 1; min-width: 180px; font-family: var(--font-sans); font-size: 0.85rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 12px; }
     .task-input:focus, .task-date:focus { outline: none; border-color: var(--color-blue-deep); }
@@ -524,30 +862,955 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     .task-title { font-size: 0.85rem; font-weight: 500; color: var(--color-text); }
     .task-meta { font-size: 0.7rem; color: var(--color-text-muted); }
     .task-overdue { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-danger); background: rgba(239,68,68,0.1); padding: 3px 8px; border-radius: 100px; flex-shrink: 0; }
-    .task-del { background: none; border: none; cursor: pointer; color: #c3c9d2; font-size: 1.1rem; line-height: 1; padding: 2px 6px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
+    .task-del { background: none; border: none; cursor: pointer; color: var(--color-text-muted); font-size: 1.1rem; line-height: 1; padding: 2px 6px; border-radius: 6px; transition: color 0.2s, background 0.2s; }
     .task-del:hover { color: var(--color-danger); background: rgba(239,68,68,0.07); }
     .task-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.6rem 0; }
 
-    @media (max-width: 1080px) {
-        .kpis { grid-template-columns: repeat(2, 1fr); }
-        .kpi:nth-child(odd) { border-left: none; padding-left: 0; }
-        .kpi:nth-child(3), .kpi:nth-child(4) { border-top: 1px solid var(--color-border); }
-        .pipe-row { grid-template-columns: repeat(3, 1fr); }
-        .two-col { grid-template-columns: 1fr; gap: 2.2rem; }
-    }
     @media (max-width: 680px) {
-        .kpis { grid-template-columns: 1fr; }
-        .kpi { border-left: none; padding-left: 0; border-top: 1px solid var(--color-border); }
-        .kpi:first-child { border-top: none; }
-        .pipe-row { grid-template-columns: repeat(2, 1fr); }
         .quote-row { grid-template-columns: auto 1fr auto; }
         .quote-row .status-pill { display: none; }
-        /* Alta de tareas: apilar para que el campo de fecha se vea completo (no un hueco blanco) */
         .task-add { flex-direction: column; align-items: stretch; }
         .task-input, .task-date, .task-btn { width: 100%; min-width: 0; }
         .task-date { min-height: 44px; }
     }
 </style>
+
+<!--
+    DOM inyectado en runtime por src/lib/chart.ts (tooltip, SVGs, filas de barras/embudo/
+    dona/gauge) y por el calendario del selector de rango (celdas de día) no lleva
+    data-astro-cid-* — sus estilos van SIEMPRE en is:global (regla documentada en
+    docs/sistema-de-diseno.md). Igual los 2 elementos del editor de widgets que sí se
+    crean en runtime (las filas de la bandeja de ocultos).
+-->
+<style is:global>
+    .cd-chart-wrap { position: relative; }
+    .cd-chart-wrap svg { cursor: crosshair; }
+    .cd-chart-wrap svg:focus-visible { outline: none; }
+    .chx-axis-label { font-size: 10px; fill: var(--chart-axis-text); font-family: var(--font-sans); }
+    .chx-empty { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 100px; font-size: 0.82rem; color: var(--color-text-muted); }
+
+    .cd-tooltip {
+        position: absolute; top: 0; left: 0; z-index: 5;
+        display: flex; flex-direction: column; gap: 3px;
+        padding: 8px 12px; border-radius: 11px;
+        background: var(--color-blue-deep); color: #fff;
+        font-family: var(--font-sans);
+        pointer-events: none; white-space: nowrap;
+        transition: opacity 0.12s var(--ease-ios, ease);
+        box-shadow: 0 10px 24px -8px rgba(10,25,47,0.45);
+    }
+    .cd-tt-x { font-size: 0.68rem; font-weight: 600; color: rgba(255,255,255,0.68); letter-spacing: 0.1px; margin-bottom: 1px; }
+    .cd-tt-row { display: flex; align-items: center; gap: 7px; }
+    .cd-tt-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .cd-tt-dot-dash { border: 1.5px dashed rgba(255,255,255,0.7); background: transparent !important; }
+    .cd-tt-lbl { font-size: 0.72rem; color: rgba(255,255,255,0.7); flex: 1; }
+    .cd-tt-val { font-size: 0.85rem; font-weight: 700; }
+    .cd-tt-delta { font-size: 0.7rem; font-weight: 700; margin-top: 1px; color: rgba(255,255,255,0.82); }
+    .cd-tt-delta.is-up { color: #6ee7b7; }
+    .cd-tt-delta.is-down { color: #fca5a5; }
+    html[data-theme="dark"] .cd-tooltip { background: var(--surface-2); box-shadow: 0 10px 24px -8px rgba(0,0,0,0.6); }
+
+    /* Foco al hover DENTRO de una gráfica: el resto se atenúa (patrón Stripe/Shopify).
+       reducedMotion ya desactiva las transiciones equivalentes en chart.ts; aquí solo el
+       valor final de opacity, sin duplicar esa lógica. */
+    .chx-bar.is-dim, .chx-hbar-fill.is-dim, .chx-segbar-seg.is-dim,
+    circle.is-dim, .chx-legend-item.is-dim {
+        opacity: 0.35; transition: opacity 0.2s var(--ease-ios, ease);
+    }
+    .chx-bar.is-focus, .chx-hbar-fill.is-focus, .chx-segbar-seg.is-focus,
+    circle.is-focus, .chx-legend-item.is-focus {
+        opacity: 1; transition: opacity 0.2s var(--ease-ios, ease);
+    }
+    .chx-legend-item { border-radius: 8px; padding: 3px 4px; margin: -3px -4px; cursor: pointer; }
+
+    /* Rankings — barras horizontales */
+    .chx-hbar { display: flex; flex-direction: column; gap: 0.85rem; }
+    .chx-hbar-row { display: grid; grid-template-columns: minmax(0, 1.05fr) 1.5fr auto; align-items: center; gap: 0.8rem; }
+    .chx-hbar-name { font-size: 0.8rem; font-weight: 550; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chx-hbar-track { height: 8px; background: var(--chart-track); border-radius: 100px; overflow: hidden; }
+    .chx-hbar-fill { height: 100%; border-radius: 100px; min-width: 4px; cursor: pointer; transition: width 0.7s var(--ease-spring), filter 0.2s, opacity 0.2s var(--ease-ios, ease); }
+    .chx-hbar-fill:hover, .chx-hbar-fill:focus-visible { filter: brightness(1.15); outline: none; }
+    .chx-hbar-val { font-size: 0.82rem; color: var(--color-blue-deep); white-space: nowrap; }
+
+    /* Embudo de conversión */
+    .chx-funnel { display: flex; flex-direction: column; gap: 0.6rem; }
+    .chx-funnel-row { display: flex; align-items: center; gap: 0.7rem; }
+    .chx-funnel-bar {
+        position: relative; display: flex; align-items: center; justify-content: space-between;
+        gap: 0.7rem; height: 40px; border-radius: 10px; padding: 0 14px;
+        cursor: pointer; transition: width 0.7s var(--ease-spring), filter 0.2s, opacity 0.2s var(--ease-ios, ease); min-width: 90px;
+    }
+    .chx-funnel-bar:hover, .chx-funnel-bar:focus-visible { filter: brightness(1.1); outline: none; }
+    .chx-funnel-label { font-size: 0.8rem; font-weight: 600; color: #fff; white-space: nowrap; }
+    .chx-funnel-val { font-size: 0.85rem; font-weight: 700; color: #fff; white-space: nowrap; }
+    .chx-funnel-note { font-size: 0.72rem; font-weight: 700; color: var(--color-text-muted); flex-shrink: 0; width: 34px; }
+
+    /* Dona */
+    .chx-donut-wrap { display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap; }
+    .chx-donut-stage { position: relative; flex-shrink: 0; }
+    .chx-donut-stage svg { display: block; }
+    .chx-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; pointer-events: none; }
+    .chx-donut-total { font-size: 1.15rem; color: var(--color-blue-deep); }
+    .chx-donut-sub { font-size: 0.68rem; color: var(--color-text-muted); }
+    .chx-donut-legend { display: flex; flex-direction: column; gap: 0.55rem; flex: 1; min-width: 140px; }
+
+    .chx-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+    .chx-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .chx-legend-label { color: var(--color-text); flex: 1; }
+    .chx-legend-val { color: var(--color-blue-deep); font-size: 0.8rem; }
+
+    /* Barra 100% segmentada (pipeline) */
+    .chx-segbar-wrap { display: flex; flex-direction: column; gap: 1.1rem; }
+    .chx-segbar { display: flex; height: 14px; border-radius: 100px; overflow: hidden; background: var(--chart-track); gap: 2px; }
+    .chx-segbar-seg { cursor: pointer; transition: flex-basis 0.7s var(--ease-spring), filter 0.2s, opacity 0.2s var(--ease-ios, ease); min-width: 0; }
+    .chx-segbar-seg:hover, .chx-segbar-seg:focus-visible { filter: brightness(1.15); outline: none; }
+    .chx-segbar-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem 1rem; }
+
+    /* Gauges */
+    .chx-gauge-host { display: inline-block; }
+    .chx-gauge-stage { position: relative; }
+    .chx-gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+    .chx-gauge-val { font-size: 0.95rem; color: var(--color-blue-deep); }
+    .chx-gauge-label { font-size: 0.6rem; color: var(--color-text-muted); }
+
+    /* ── Calendario del selector de rango (celdas creadas en runtime) ── */
+    .dp-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .dp-weekday { font-size: 0.62rem; font-weight: 700; color: var(--color-text-muted); text-align: center; padding: 4px 0 6px; text-transform: uppercase; }
+    .dp-day {
+        appearance: none; border: none; background: transparent; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.78rem; color: var(--color-text);
+        aspect-ratio: 1; border-radius: 8px; display: grid; place-items: center;
+        transition: background 0.15s var(--ease-ios);
+    }
+    .dp-day:hover:not(:disabled) { background: var(--row-hover); }
+    .dp-day:disabled { color: var(--color-text-muted); opacity: 0.32; cursor: default; }
+    .dp-day.is-out { visibility: hidden; }
+    .dp-day.is-today { font-weight: 700; box-shadow: inset 0 0 0 1.5px var(--color-border); }
+    .dp-day.is-in-range { background: var(--color-bg-soft); border-radius: 0; }
+    .dp-day.is-start, .dp-day.is-end {
+        background: var(--color-blue-deep) !important; color: #fff; font-weight: 700;
+    }
+    .dp-day.is-start:not(.is-end) { border-radius: 8px 0 0 8px; }
+    .dp-day.is-end:not(.is-start) { border-radius: 0 8px 8px 0; }
+
+    /* ── Bandeja de widgets ocultos (filas creadas en runtime) ── */
+    .widget-tray-list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .widget-tray-item {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 0.8rem; font-weight: 600; color: var(--color-text);
+        background: var(--color-bg-soft); border-radius: 100px; padding: 7px 8px 7px 14px;
+    }
+    .widget-tray-add {
+        appearance: none; border: none; cursor: pointer; background: var(--color-blue-deep); color: #fff;
+        width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.9rem; line-height: 1;
+    }
+
+    /* ── Barra de controles por widget (arrastrar/subir/bajar/tamaño/ocultar) ──
+       Se inyecta con set:html (markup estático idéntico en los 16 widgets), así que
+       NUNCA lleva data-astro-cid-* — sus reglas deben vivir aquí, nunca en el <style>
+       scoped de arriba (si viven ahí, ninguna aplica: ni el display:none de reposo ni
+       el display:flex de modo edición, y el control se ve siempre, sin estilo). */
+    .widget-editbar {
+        display: none; position: absolute; top: 8px; right: 8px; z-index: 6;
+        align-items: center; gap: 2px; padding: 3px;
+        background: var(--surface); border-radius: 100px;
+        box-shadow: 0 2px 6px rgba(10,25,47,0.1), 0 8px 20px -6px rgba(10,25,47,0.25);
+    }
+    #dashWidgets[data-editing="1"] > .dash-widget .widget-editbar { display: flex; }
+    #dashWidgets[data-editing="1"] > .dash-widget > .dash-card > *:not(.widget-editbar) { pointer-events: none; }
+    .we-btn {
+        appearance: none; border: none; background: transparent; cursor: pointer;
+        width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+        color: var(--color-text-muted); transition: background 0.15s, color 0.15s;
+    }
+    .we-btn:hover { background: var(--row-hover); color: var(--color-text); }
+    .we-drag { cursor: grab; }
+    .we-remove:hover { background: rgba(239,68,68,0.1); color: var(--color-danger); }
+    .we-resize.is-lg svg { transform: rotate(180deg); }
+</style>
+
+<script>
+    import {
+        mountLineChart, mountComboChart, mountBarChart, mountHBarChart,
+        mountFunnel, mountDonut, mountSegBar, mountSparkline, mountGauge, onVisible,
+    } from '../../lib/chart';
+    import type { ChartHandle, LineChartHandle } from '../../lib/chart';
+
+    const localeIntl = document.documentElement.lang === 'en' ? 'en-US' : 'es-MX';
+    const moneyFmt = (n: number) => '$' + new Intl.NumberFormat(localeIntl, { maximumFractionDigits: 0 }).format(n);
+    const moneyFmtFull = (n: number) => '$' + new Intl.NumberFormat(localeIntl, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    const dateFmt = (iso: string) => {
+        const d = new Date(iso + 'T00:00:00Z');
+        return new Intl.DateTimeFormat(localeIntl, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d);
+    };
+    const monthFmt = (iso: string) => {
+        const d = new Date(iso + 'T00:00:00Z');
+        return new Intl.DateTimeFormat(localeIntl, { month: 'short', timeZone: 'UTC' }).format(d);
+    };
+
+    type Dia = { fecha: string; cotizado: number; cerrado: number; cobrado: number };
+    type Range = { desde: string; hasta: string; key: string };
+
+    // dias (365 puntos) es la ÚNICA fuente para hero Y tendencia — se parsea una vez aquí y
+    // ambos widgets leen del mismo array, nunca de datos duplicados en el DOM.
+    const heroEl = document.getElementById('heroChart');
+    let dias: Dia[] = [];
+    if (heroEl) { try { dias = JSON.parse(heroEl.dataset.points || '[]'); } catch { dias = []; } }
+    const emptyMsg = heroEl?.dataset.emptyMsg || '';
+    const primeraFecha = dias[0]?.fecha ?? '';
+    const ultimaFecha = dias[dias.length - 1]?.fecha ?? '';
+
+    const addDaysISO = (iso: string, n: number) => {
+        const d = new Date(iso + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() + n);
+        return d.toISOString().slice(0, 10);
+    };
+    const spanDays = (desde: string, hasta: string) => {
+        const a = new Date(desde + 'T00:00:00Z').getTime(), b = new Date(hasta + 'T00:00:00Z').getTime();
+        return Math.round((b - a) / 86400000) + 1;
+    };
+    const clamp = (iso: string) => (iso < primeraFecha ? primeraFecha : iso > ultimaFecha ? ultimaFecha : iso);
+
+    function rangeFor(key: string, customDesde?: string, customHasta?: string): Range {
+        if (key === 'todo') return { desde: primeraFecha, hasta: ultimaFecha, key };
+        if (key === 'custom' && customDesde && customHasta) return { desde: clamp(customDesde), hasta: clamp(customHasta), key };
+        const n = parseInt(key, 10) || 30;
+        return { desde: clamp(addDaysISO(ultimaFecha, -(n - 1))), hasta: ultimaFecha, key };
+    }
+    function compareRangeFor(r: Range): Range | null {
+        if (r.key === 'todo') return null; // "Todo" ya es el histórico completo — no hay periodo "anterior"
+        const n = spanDays(r.desde, r.hasta);
+        const hasta = addDaysISO(r.desde, -1);
+        const desde = addDaysISO(hasta, -(n - 1));
+        if (desde < primeraFecha) return null; // sin suficiente historia detrás
+        return { desde, hasta, key: 'compare' };
+    }
+    const sliceDias = (r: Range) => dias.filter((d) => d.fecha >= r.desde && d.fecha <= r.hasta);
+
+    // ── Agregación adaptativa de la tendencia: día / semana / mes según el ancho del rango
+    // elegido — un rango de 14 días con 6 barras mensuales sería absurdo. ──
+    function aggregateTendencia(rows: Dia[]) {
+        const n = rows.length;
+        const bucketOf = (fecha: string) => {
+            if (n <= 16) return fecha; // por día
+            if (n <= 70) { // por semana (lunes de esa semana, UTC)
+                const d = new Date(fecha + 'T00:00:00Z');
+                const day = d.getUTCDay() || 7;
+                d.setUTCDate(d.getUTCDate() - (day - 1));
+                return d.toISOString().slice(0, 10);
+            }
+            return fecha.slice(0, 7); // por mes 'YYYY-MM'
+        };
+        const map = new Map<string, { cotizado: number; cerrado: number; first: string }>();
+        rows.forEach((d) => {
+            const key = bucketOf(d.fecha);
+            const cur = map.get(key) ?? { cotizado: 0, cerrado: 0, first: d.fecha };
+            cur.cotizado += d.cotizado; cur.cerrado += d.cerrado;
+            map.set(key, cur);
+        });
+        const keys = [...map.keys()].sort();
+        const labelFor = (key: string) => (n <= 16 ? dateFmt(key) : n <= 70 ? dateFmt(key) : monthFmt(key + '-01'));
+        return {
+            labels: keys.map(labelFor),
+            cotizado: keys.map((k) => map.get(k)!.cotizado),
+            cerrado: keys.map((k) => map.get(k)!.cerrado),
+        };
+    }
+
+    // ── Hero ──
+    let heroChart: LineChartHandle | null = null;
+    let metric: 'cerrado' | 'cobrado' | 'cotizado' = 'cerrado';
+    if (heroEl && dias.length) {
+        heroChart = mountLineChart(heroEl, {
+            points: [], comparePoints: [], height: 240,
+            formatY: moneyFmtFull, formatYAxis: moneyFmt, formatX: dateFmt,
+            valueLabel: '', compareLabel: '', emptyMessage: emptyMsg,
+        });
+    }
+    const numEl = document.getElementById('heroNum');
+    const deltaEl = document.getElementById('heroDelta');
+    const deltaValEl = document.getElementById('heroDeltaVal');
+
+    function refreshHero(r: Range) {
+        if (!heroChart) return;
+        const main = sliceDias(r).map((d) => ({ x: d.fecha, y: d[metric] }));
+        const cmpRange = compareRangeFor(r);
+        const cmp = cmpRange ? sliceDias(cmpRange).map((d) => ({ x: d.fecha, y: d[metric] })) : [];
+        heroChart.setPoints(main, cmp);
+        const total = main.reduce((s, p) => s + p.y, 0);
+        const prevTotal = cmp.reduce((s, p) => s + p.y, 0);
+        if (numEl) numEl.textContent = moneyFmtFull(total);
+        const hasCompare = !!cmpRange && (total > 0 || prevTotal > 0);
+        if (deltaEl) {
+            if (!hasCompare) { deltaEl.hidden = true; }
+            else {
+                deltaEl.hidden = false;
+                const delta = prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : 100;
+                deltaEl.classList.toggle('is-down', delta < 0);
+                const svgPath = deltaEl.querySelector('svg path');
+                if (svgPath) svgPath.setAttribute('d', delta >= 0 ? 'M12 19V5M5 12l7-7 7 7' : 'M12 5v14M19 12l-7 7-7-7');
+                if (deltaValEl) deltaValEl.textContent = `${Math.abs(delta)}%`;
+            }
+        }
+    }
+
+    // ── Tendencia mensual — se remonta (destroy+mount) en cada cambio de rango ──
+    const tendenciaEl = document.getElementById('tendenciaChart');
+    let tendenciaHandle: ChartHandle | null = null;
+    const lblCotizado = tendenciaEl?.dataset.lblCotizado || '';
+    const lblCerrado = tendenciaEl?.dataset.lblCerrado || '';
+    function refreshTendencia(r: Range) {
+        if (!tendenciaEl) return;
+        tendenciaHandle?.destroy();
+        const agg = aggregateTendencia(sliceDias(r));
+        tendenciaHandle = mountComboChart(tendenciaEl, {
+            labels: agg.labels, barValues: agg.cotizado, lineValues: agg.cerrado,
+            barLabel: lblCotizado, lineLabel: lblCerrado,
+            formatY: moneyFmt, formatYAxis: moneyFmt, height: 220, emptyMessage: emptyMsg,
+        });
+    }
+
+    // ── Embudo + rankings — "Todo" usa los datos ya embebidos (cero fetch); cualquier otro
+    // rango llama a /api/dashboard/rango una sola vez y remonta los 3 charts. ──
+    const funnelEl = document.getElementById('funnelChart');
+    const rankClientesEl = document.getElementById('rankClientesChart');
+    const rankProductosEl = document.getElementById('rankProductosChart');
+    let funnelHandle: ChartHandle | null = null, rankClientesHandle: ChartHandle | null = null, rankProductosHandle: ChartHandle | null = null;
+    const funnelLabels = (() => { try { return JSON.parse(funnelEl?.dataset.labels || '{}'); } catch { return {}; } })();
+    const todoData = {
+        funnel: (() => { try { return JSON.parse(heroEl?.dataset.funnelTodo || '{}'); } catch { return {}; } })(),
+        clientes: (() => { try { return JSON.parse(heroEl?.dataset.clientesTodo || '[]'); } catch { return []; } })(),
+        productos: (() => { try { return JSON.parse(heroEl?.dataset.productosTodo || '[]'); } catch { return []; } })(),
+    };
+    const rangoCache = new Map<string, typeof todoData>();
+
+    function buildFunnelSteps(funnel: any) {
+        return [
+            { label: funnelLabels.enviadas || 'Enviadas', value: funnel.enviadas || 0 },
+            { label: funnelLabels.vistas || 'Vistas', value: funnel.vistas || 0 },
+            { label: funnelLabels.aprobadas || 'Aprobadas', value: funnel.aprobadas || 0 },
+            { label: funnelLabels.pagadas || 'Pagadas', value: funnel.pagadas || 0 },
+        ];
+    }
+    function applyRangoData(data: typeof todoData) {
+        if (funnelEl) {
+            funnelHandle?.destroy();
+            funnelHandle = mountFunnel(funnelEl, { steps: buildFunnelSteps(data.funnel), formatY: (v) => new Intl.NumberFormat(localeIntl).format(v), emptyMessage: emptyMsg });
+        }
+        if (rankClientesEl) {
+            const items = (data.clientes || []).filter((c: any) => c.cotizaciones > 0).sort((a: any, b: any) => b.tasa - a.tasa).slice(0, 5)
+                .map((c: any) => ({ label: c.empresa, value: c.tasa }));
+            rankClientesHandle?.destroy();
+            rankClientesHandle = mountHBarChart(rankClientesEl, { items, formatY: (v) => `${v}%`, emptyMessage: emptyMsg });
+        }
+        if (rankProductosEl) {
+            const items = (data.productos || []).slice(0, 5).map((p: any) => ({ label: p.nombre, value: p.importe }));
+            rankProductosHandle?.destroy();
+            rankProductosHandle = mountHBarChart(rankProductosEl, { items, formatY: (v) => moneyFmt(v), color: 'var(--color-ok)', emptyMessage: emptyMsg });
+        }
+    }
+    async function refreshRango(r: Range) {
+        if (r.key === 'todo') { applyRangoData(todoData); return; }
+        const cacheKey = `${r.desde}:${r.hasta}`;
+        const cached = rangoCache.get(cacheKey);
+        if (cached) { applyRangoData(cached); return; }
+        try {
+            const res = await fetch(`/api/dashboard/rango?desde=${r.desde}&hasta=${r.hasta}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            rangoCache.set(cacheKey, data);
+            applyRangoData(data);
+        } catch { /* deja el estado anterior visible si falla la red */ }
+    }
+
+    function applyRange(key: string, customDesde?: string, customHasta?: string) {
+        const r = rangeFor(key, customDesde, customHasta);
+        refreshHero(r);
+        refreshTendencia(r);
+        refreshRango(r);
+    }
+    // Default del dashboard: últimos 30 días (ver nota en el frontmatter de por qué NO es
+    // "todo" — coincide con el heroTotal ya calculado server-side para el primer paint).
+    applyRange('30');
+
+    document.querySelectorAll<HTMLButtonElement>('.hero-metric-pill').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.hero-metric-pill').forEach((b) => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            metric = (btn.dataset.metric as typeof metric) ?? 'cerrado';
+            refreshHero(rangeFor(dpAppliedKeyRef.key, dpAppliedKeyRef.desde, dpAppliedKeyRef.hasta));
+        });
+    });
+
+    // ═══ Selector de rango estilo Shopify: presets a la izquierda + 2 calendarios ═══
+    const dpTrigger = document.getElementById('dpTrigger');
+    const dpTriggerLabel = document.getElementById('dpTriggerLabel');
+    const dpPanel = document.getElementById('dpPanel');
+    const dpDesdeInput = document.getElementById('dpDesdeInput') as HTMLInputElement | null;
+    const dpHastaInput = document.getElementById('dpHastaInput') as HTMLInputElement | null;
+    const dpCalLeftGrid = document.querySelector('#dpCalLeft .dp-cal-grid');
+    const dpCalRightGrid = document.querySelector('#dpCalRight .dp-cal-grid');
+    const dpCalLeftTitle = document.querySelector('#dpCalLeft .dp-cal-title');
+    const dpCalRightTitle = document.querySelector('#dpCalRight .dp-cal-title');
+    const todoLabel = dpTrigger?.dataset.i18nTodo || 'Todo';
+
+    type DP = { desde: string | null; hasta: string | null };
+    let dpPending: DP = { desde: null, hasta: null };
+    // Última selección APLICADA — es lo que alimenta el toggle de métrica del hero y lo
+    // que el panel restaura si se vuelve a abrir sin cambiar nada. Arranca en "30" (mismo
+    // default que applyRange('30') de arriba), no en "todo".
+    let dpAppliedKeyRef: { key: string; desde: string; hasta: string } = rangeFor('30');
+    let dpHover: string | null = null;
+    let dpViewYear = 2000, dpViewMonth = 0;
+    // Botones de día ACTIVOS ya renderizados (los deshabilitados no entran): permite repintar
+    // la selección en hover sin volver a construir la grilla.
+    let dayButtons: { iso: string; el: HTMLButtonElement }[] = [];
+
+    function ymFromISO(iso: string) { const d = new Date(iso + 'T00:00:00Z'); return { y: d.getUTCFullYear(), m: d.getUTCMonth() }; }
+    function setViewFromISO(iso: string) {
+        const { y, m } = ymFromISO(iso);
+        dpViewYear = y; dpViewMonth = m - 1;
+        if (dpViewMonth < 0) { dpViewMonth = 11; dpViewYear--; }
+    }
+    if (ultimaFecha) setViewFromISO(ultimaFecha);
+
+    const WEEKDAYS = (() => {
+        const base = new Date(Date.UTC(2024, 0, 1)); // lunes
+        return Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(base); d.setUTCDate(d.getUTCDate() + i);
+            return new Intl.DateTimeFormat(localeIntl, { weekday: 'narrow', timeZone: 'UTC' }).format(d);
+        });
+    })();
+    const inWindow = (iso: string) => iso >= primeraFecha && iso <= ultimaFecha;
+    // ¿"iso" cae dentro de los 2 meses actualmente pintados (izq+der)? — determina si mover
+    // el foco con flechas necesita recorrer la vista antes de re-renderizar.
+    function isoInCurrentView(iso: string): boolean {
+        const leftFirst = new Date(Date.UTC(dpViewYear, dpViewMonth, 1));
+        let ry = dpViewYear, rm = dpViewMonth + 1;
+        if (rm > 11) { rm = 0; ry++; }
+        const rightLast = new Date(Date.UTC(ry, rm + 1, 0));
+        const d = new Date(iso + 'T00:00:00Z');
+        return d >= leftFirst && d <= rightLast;
+    }
+    // Navegación por teclado en la grilla (flechas + Enter): recorre al día vecino (clamped
+    // a la ventana de 365 días), recorre el mes si hace falta, re-renderiza y regresa el
+    // foco al botón real (nunca a una celda "out"/disabled del mes vecino).
+    function focusDay(iso: string) {
+        if (!isoInCurrentView(iso)) setViewFromISO(iso);
+        renderCalendars();
+        requestAnimationFrame(() => {
+            const el = document.querySelector<HTMLButtonElement>(`.dp-day[data-iso="${iso}"]:not(:disabled)`);
+            el?.focus();
+        });
+    }
+    const fullDateFmt = (iso: string) => {
+        const d = new Date(iso + 'T00:00:00Z');
+        return new Intl.DateTimeFormat(localeIntl, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d);
+    };
+    const shortDateFmt = (iso: string) => {
+        const d = new Date(iso + 'T00:00:00Z');
+        return new Intl.DateTimeFormat(localeIntl, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(d);
+    };
+
+    function renderMonth(gridEl: Element | null, titleEl: Element | null, year: number, month: number) {
+        if (!gridEl || !titleEl) return;
+        const first = new Date(Date.UTC(year, month, 1));
+        // Solo la 1ª letra en mayúscula: `text-transform: capitalize` también subiría el
+        // "de" de "julio de 2026" ("Julio De 2026"), que se ve mal.
+        const titulo = new Intl.DateTimeFormat(localeIntl, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(first);
+        titleEl.textContent = titulo.charAt(0).toUpperCase() + titulo.slice(1);
+        const startDow = (first.getUTCDay() || 7) - 1; // 0 = lunes
+        const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+        const daysInPrevMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+        gridEl.innerHTML = '';
+        WEEKDAYS.forEach((w) => {
+            const el = document.createElement('div'); el.className = 'dp-weekday'; el.textContent = w;
+            gridEl.appendChild(el);
+        });
+        const cells: { iso: string; out: boolean }[] = [];
+        for (let i = 0; i < startDow; i++) {
+            const dayNum = daysInPrevMonth - startDow + 1 + i;
+            cells.push({ iso: new Date(Date.UTC(year, month - 1, dayNum)).toISOString().slice(0, 10), out: true });
+        }
+        for (let d = 1; d <= daysInMonth; d++) cells.push({ iso: new Date(Date.UTC(year, month, d)).toISOString().slice(0, 10), out: false });
+        while (cells.length < 42) {
+            const last = new Date(cells[cells.length - 1].iso + 'T00:00:00Z');
+            last.setUTCDate(last.getUTCDate() + 1);
+            cells.push({ iso: last.toISOString().slice(0, 10), out: true });
+        }
+        cells.forEach((c) => {
+            const btn = document.createElement('button');
+            btn.type = 'button'; btn.className = 'dp-day';
+            btn.dataset.iso = c.iso;
+            btn.textContent = String(parseInt(c.iso.slice(8, 10), 10));
+            const disabled = c.out || !inWindow(c.iso);
+            if (disabled) { btn.classList.add(c.out ? 'is-out' : 'is-disabled'); btn.disabled = true; }
+            if (c.iso === ultimaFecha) btn.classList.add('is-today');
+            if (!disabled) {
+                dayButtons.push({ iso: c.iso, el: btn });
+                btn.addEventListener('click', () => onDayClick(c.iso));
+                // ⚠️ El hover SOLO repinta clases (paintSelection), NUNCA re-renderiza la
+                // grilla. Reconstruirla aquí destruía el botón bajo el cursor: un `click`
+                // exige pointerdown y pointerup sobre el MISMO elemento, así que cualquier
+                // micro-movimiento entre ambos cancelaba el clic y era imposible elegir un
+                // día. (Además reconstruía 84 botones por cada píxel de movimiento.)
+                btn.addEventListener('pointerenter', () => { dpHover = c.iso; paintSelection(); });
+                btn.addEventListener('keydown', (e: KeyboardEvent) => {
+                    if (e.key === 'ArrowRight') { e.preventDefault(); focusDay(clamp(addDaysISO(c.iso, 1))); }
+                    else if (e.key === 'ArrowLeft') { e.preventDefault(); focusDay(clamp(addDaysISO(c.iso, -1))); }
+                    else if (e.key === 'ArrowDown') { e.preventDefault(); focusDay(clamp(addDaysISO(c.iso, 7))); }
+                    else if (e.key === 'ArrowUp') { e.preventDefault(); focusDay(clamp(addDaysISO(c.iso, -7))); }
+                    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onDayClick(c.iso); }
+                });
+            }
+            gridEl.appendChild(btn);
+        });
+    }
+
+    /** Repinta extremos/banda y los dos campos de fecha sobre los botones YA renderizados.
+     *  Es la única función que corre en hover y al elegir un día — nada de rebuilds. */
+    function paintSelection() {
+        const d = dpPending.desde;
+        // Mientras hay inicio sin fin, el día bajo el cursor previsualiza el fin.
+        const h = dpPending.hasta ?? (d && dpHover ? dpHover : null);
+        const lo = d && h ? (d < h ? d : h) : d;
+        const hi = d && h ? (d < h ? h : d) : null;
+        dayButtons.forEach(({ iso, el }) => {
+            el.classList.toggle('is-start', !!lo && iso === lo);
+            el.classList.toggle('is-end', !!hi && iso === hi);
+            el.classList.toggle('is-in-range', !!(lo && hi && iso > lo && iso < hi));
+        });
+        if (dpDesdeInput) dpDesdeInput.value = d ? fullDateFmt(d) : '';
+        if (dpHastaInput) dpHastaInput.value = dpPending.hasta ? fullDateFmt(dpPending.hasta) : (h && h !== d ? fullDateFmt(h) : '');
+    }
+    /** Reconstrucción COMPLETA de los dos meses. Solo al abrir, navegar de mes o elegir un
+     *  preset — nunca en hover ni al elegir un día (ver paintSelection). */
+    function renderCalendars() {
+        dayButtons = [];
+        renderMonth(dpCalLeftGrid, dpCalLeftTitle, dpViewYear, dpViewMonth);
+        let ry = dpViewYear, rm = dpViewMonth + 1;
+        if (rm > 11) { rm = 0; ry++; }
+        renderMonth(dpCalRightGrid, dpCalRightTitle, ry, rm);
+        paintSelection();
+    }
+    function onDayClick(iso: string) {
+        // 1er clic (o clic con rango ya completo) fija el inicio y limpia el fin;
+        // 2º clic fija el fin; un clic anterior al inicio se reinterpreta como nuevo inicio.
+        if (!dpPending.desde || dpPending.hasta) dpPending = { desde: iso, hasta: null };
+        else if (iso < dpPending.desde) dpPending = { desde: iso, hasta: null };
+        else dpPending = { desde: dpPending.desde, hasta: iso };
+        dpHover = null;
+        document.querySelectorAll('.dp-preset-btn').forEach((b) => b.classList.remove('is-active'));
+        document.querySelector('.dp-preset-btn[data-preset="custom"]')?.classList.add('is-active');
+        paintSelection(); // repinta sin reconstruir: el botón recién pulsado sigue vivo
+    }
+
+    function computePreset(key: string): { desde: string; hasta: string } | 'todo' {
+        const now = new Date(ultimaFecha + 'T00:00:00Z');
+        switch (key) {
+            case 'todo': return 'todo';
+            case 'hoy': return { desde: ultimaFecha, hasta: ultimaFecha };
+            case 'ayer': { const d = addDaysISO(ultimaFecha, -1); return { desde: d, hasta: d }; }
+            case '7': return { desde: clamp(addDaysISO(ultimaFecha, -6)), hasta: ultimaFecha };
+            case '30': return { desde: clamp(addDaysISO(ultimaFecha, -29)), hasta: ultimaFecha };
+            case '90': return { desde: clamp(addDaysISO(ultimaFecha, -89)), hasta: ultimaFecha };
+            case 'mes': return { desde: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10), hasta: ultimaFecha };
+            case 'mes_pasado': return {
+                desde: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)).toISOString().slice(0, 10),
+                hasta: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0)).toISOString().slice(0, 10),
+            };
+            case 'trimestre': { const qs = Math.floor(now.getUTCMonth() / 3) * 3; return { desde: new Date(Date.UTC(now.getUTCFullYear(), qs, 1)).toISOString().slice(0, 10), hasta: ultimaFecha }; }
+            case 'ytd': return { desde: new Date(Date.UTC(now.getUTCFullYear(), 0, 1)).toISOString().slice(0, 10), hasta: ultimaFecha };
+            default: return 'todo';
+        }
+    }
+    document.querySelectorAll<HTMLButtonElement>('.dp-preset-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.preset || 'todo';
+            document.querySelectorAll('.dp-preset-btn').forEach((b) => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            if (key === 'custom') { dpPending = { desde: null, hasta: null }; renderCalendars(); return; }
+            const r = computePreset(key);
+            dpPending = r === 'todo' ? { desde: primeraFecha, hasta: ultimaFecha } : { desde: clamp(r.desde), hasta: clamp(r.hasta) };
+            setViewFromISO(dpPending.hasta || ultimaFecha);
+            renderCalendars();
+        });
+    });
+    // Al salir del área de calendarios se limpia la previsualización de la banda.
+    document.querySelector('.dp-cals')?.addEventListener('pointerleave', () => {
+        if (dpHover === null) return;
+        dpHover = null;
+        paintSelection();
+    });
+    document.getElementById('dpPrev')?.addEventListener('click', () => { dpViewMonth--; if (dpViewMonth < 0) { dpViewMonth = 11; dpViewYear--; } renderCalendars(); });
+    document.getElementById('dpNext')?.addEventListener('click', () => { dpViewMonth++; if (dpViewMonth > 11) { dpViewMonth = 0; dpViewYear++; } renderCalendars(); });
+
+    function openPanel() {
+        if (!dpPanel || !dpTrigger) return;
+        dpPending = dpAppliedKeyRef.key === 'todo' ? { desde: null, hasta: null } : { desde: dpAppliedKeyRef.desde, hasta: dpAppliedKeyRef.hasta };
+        document.querySelectorAll('.dp-preset-btn').forEach((b) => b.classList.toggle('is-active', (b as HTMLElement).dataset.preset === dpAppliedKeyRef.key || (dpAppliedKeyRef.key === 'custom' && (b as HTMLElement).dataset.preset === 'custom')));
+        setViewFromISO(dpAppliedKeyRef.hasta || ultimaFecha);
+        renderCalendars();
+        dpPanel.hidden = false;
+        dpTrigger.setAttribute('aria-expanded', 'true');
+    }
+    function closePanel() {
+        if (!dpPanel || !dpTrigger) return;
+        const hadFocusInside = dpPanel.contains(document.activeElement);
+        dpPanel.hidden = true;
+        dpTrigger.setAttribute('aria-expanded', 'false');
+        if (hadFocusInside) dpTrigger.focus();
+    }
+    dpTrigger?.addEventListener('click', () => { if (!dpPanel) return; dpPanel.hidden ? openPanel() : closePanel(); });
+    document.getElementById('dpCancel')?.addEventListener('click', closePanel);
+    document.getElementById('dpApply')?.addEventListener('click', () => {
+        if (dpPending.desde && !dpPending.hasta) dpPending.hasta = dpPending.desde;
+        if (!dpPending.desde) {
+            dpAppliedKeyRef = { key: 'todo', desde: primeraFecha, hasta: ultimaFecha };
+            applyRange('todo');
+            if (dpTriggerLabel) dpTriggerLabel.textContent = todoLabel;
+        } else {
+            dpAppliedKeyRef = { key: 'custom', desde: dpPending.desde, hasta: dpPending.hasta! };
+            applyRange('custom', dpPending.desde, dpPending.hasta!);
+            if (dpTriggerLabel) {
+                dpTriggerLabel.textContent = dpPending.desde === dpPending.hasta
+                    ? shortDateFmt(dpPending.desde)
+                    : `${shortDateFmt(dpPending.desde)} – ${shortDateFmt(dpPending.hasta!)}`;
+            }
+        }
+        closePanel();
+    });
+    document.addEventListener('click', (e) => {
+        if (!dpPanel || dpPanel.hidden) return;
+        // ⚠️ NO usar `e.target` + `contains()` aquí: al hacer clic en un día, onDayClick()
+        // re-renderiza la grilla del calendario y DESPRENDE del DOM el botón que se acaba de
+        // pulsar ANTES de que este listener corra en la fase de burbuja → `contains()` daría
+        // false y el panel se cerraría en CADA clic de día (por eso "no deja seleccionar
+        // fechas personalizadas"). `composedPath()` se calcula al despachar el evento, así
+        // que conserva la ruta original aunque el nodo ya no exista.
+        const path = e.composedPath();
+        if (path.includes(dpPanel) || (dpTrigger && path.includes(dpTrigger))) return;
+        closePanel();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && dpPanel && !dpPanel.hidden) closePanel(); });
+
+    // ── KPIs: sparkline + gauge ──
+    const sparkEl = document.getElementById('kpiSpark');
+    if (sparkEl) {
+        let values: number[] = [];
+        try { values = JSON.parse(sparkEl.dataset.values || '[]'); } catch { values = []; }
+        mountSparkline(sparkEl, { values, height: 30 });
+    }
+    const tasaGaugeEl = document.getElementById('kpiTasaGauge');
+    if (tasaGaugeEl) {
+        mountGauge(tasaGaugeEl, {
+            value: Number(tasaGaugeEl.dataset.value || '0'),
+            max: 100,
+            size: 76,
+            tone: (tasaGaugeEl.dataset.tone as any) || 'neutral',
+            formatValue: (v) => `${Math.round(v)}%`,
+        });
+    }
+
+    // ── Salud del pipeline: 4 gauges (snapshot de HOY — no sigue el rango) ──
+    document.querySelectorAll<HTMLElement>('.health-gauge').forEach((el) => {
+        const suffix = el.dataset.suffix || '';
+        mountGauge(el, {
+            value: Number(el.dataset.value || '0'),
+            max: Number(el.dataset.max || '100'),
+            size: 72,
+            tone: (el.dataset.tone as any) || 'neutral',
+            formatValue: (v) => `${Math.round(v)}${suffix}`,
+        });
+    });
+
+    // ── Pipeline por estado (snapshot de HOY — no sigue el rango) ──
+    const pipeSegEl = document.getElementById('pipeSegChart');
+    if (pipeSegEl) {
+        onVisible(pipeSegEl, () => {
+            let segments: { key: string; label: string; value: number; color: string }[] = [];
+            try { segments = JSON.parse(pipeSegEl.dataset.segments || '[]'); } catch { segments = []; }
+            mountSegBar(pipeSegEl, { segments, formatY: (v) => moneyFmt(v), emptyMessage: emptyMsg });
+        });
+    }
+
+    // ── Dinero por cobrar: dona + flujo esperado (snapshot de HOY — no sigue el rango) ──
+    const agingEl = document.getElementById('agingChart');
+    if (agingEl) {
+        onVisible(agingEl, () => {
+            let slices: { key: string; label: string; value: number; color: string }[] = [];
+            try { slices = JSON.parse(agingEl.dataset.slices || '[]'); } catch { slices = []; }
+            mountDonut(agingEl, { slices, formatY: moneyFmt, emptyMessage: emptyMsg });
+        });
+    }
+    const flowEl = document.getElementById('flowChart');
+    if (flowEl) {
+        onVisible(flowEl, () => {
+            let items: { label: string; value: number; sub?: string }[] = [];
+            try { items = JSON.parse(flowEl.dataset.items || '[]'); } catch { items = []; }
+            mountBarChart(flowEl, { items, formatY: moneyFmt, formatYAxis: moneyFmt, height: 220, emptyMessage: emptyMsg });
+        });
+    }
+</script>
+
+<script>
+    // ═══ Editor de widgets — grid unitario, drag Pointer Events + FLIP, long-press,
+    // wiggle y redimensionar, estilo iOS. Persistencia en localStorage (cord.dash.v1 =
+    // {order[], hidden[], sizes{}}), misma convención que cord.pins.v1/cord.wb.v1. ═══
+    (function () {
+        const KEY = 'cord.dash.v1';
+        const hostEl = document.getElementById('dashWidgets');
+        if (!hostEl) return;
+        const host: HTMLElement = hostEl;
+        const editBtn = document.getElementById('dashEditBtn');
+        const doneBtn = document.getElementById('dashDoneBtn');
+        const resetBtn = document.getElementById('dashResetBtn');
+        const trayEl = document.getElementById('widgetTray');
+        const trayList = document.getElementById('widgetTrayList');
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        type Prefs = { order: string[]; hidden: string[]; sizes: Record<string, 'sm' | 'lg'> };
+        function getPrefs(): Prefs {
+            try {
+                const p = JSON.parse(localStorage.getItem(KEY) || '{}');
+                return {
+                    order: Array.isArray(p.order) ? p.order : [],
+                    hidden: Array.isArray(p.hidden) ? p.hidden : [],
+                    sizes: p.sizes && typeof p.sizes === 'object' ? p.sizes : {},
+                };
+            } catch { return { order: [], hidden: [], sizes: {} }; }
+        }
+        function setPrefs(p: Prefs) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch {} }
+
+        function widgets(): HTMLElement[] {
+            return Array.from(host.children).filter((w): w is HTMLElement => w instanceof HTMLElement && !!w.dataset.widget);
+        }
+        function persist() {
+            const prefs = getPrefs();
+            prefs.order = widgets().map((w) => w.dataset.widget!);
+            setPrefs(prefs);
+        }
+
+        function currentSize(w: HTMLElement): 'sm' | 'lg' {
+            return w.dataset.span === w.dataset.sizeLg && w.dataset.sizeLg !== w.dataset.sizeSm ? 'lg' : 'sm';
+        }
+        function applySize(w: HTMLElement, size: 'sm' | 'lg') {
+            const span = size === 'lg' ? w.dataset.sizeLg! : w.dataset.sizeSm!;
+            w.dataset.span = span;
+            w.querySelector('.we-resize')?.classList.toggle('is-lg', size === 'lg');
+        }
+
+        function renderTray() {
+            if (!trayEl || !trayList) return;
+            const prefs = getPrefs();
+            const all = widgets();
+            const hiddenW = all.filter((w) => prefs.hidden.includes(w.dataset.widget!));
+            trayEl.hidden = hiddenW.length === 0;
+            trayList.innerHTML = '';
+            hiddenW.forEach((w) => {
+                const item = document.createElement('div');
+                item.className = 'widget-tray-item';
+                const label = document.createElement('span');
+                label.textContent = w.dataset.title || w.dataset.widget || '';
+                const add = document.createElement('button');
+                add.type = 'button'; add.className = 'widget-tray-add'; add.setAttribute('aria-label', 'add'); add.textContent = '+';
+                add.addEventListener('click', () => setHidden(w.dataset.widget!, false));
+                item.append(label, add);
+                trayList.appendChild(item);
+            });
+        }
+        function setHidden(id: string, hide: boolean) {
+            const prefs = getPrefs();
+            prefs.hidden = hide ? Array.from(new Set([...prefs.hidden, id])) : prefs.hidden.filter((x) => x !== id);
+            setPrefs(prefs);
+            const w = widgets().find((x) => x.dataset.widget === id);
+            if (w) w.hidden = hide;
+            renderTray();
+        }
+
+        function enterEdit() {
+            host.dataset.editing = '1';
+            renderTray();
+            if (editBtn) editBtn.hidden = true;
+            if (doneBtn) doneBtn.hidden = false;
+            if (resetBtn) resetBtn.hidden = false;
+        }
+        function exitEdit() {
+            delete host.dataset.editing;
+            if (trayEl) trayEl.hidden = true;
+            if (editBtn) editBtn.hidden = false;
+            if (doneBtn) doneBtn.hidden = true;
+            if (resetBtn) resetBtn.hidden = true;
+        }
+        editBtn?.addEventListener('click', enterEdit);
+        doneBtn?.addEventListener('click', exitEdit);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && host.dataset.editing === '1') exitEdit(); });
+        resetBtn?.addEventListener('click', async () => {
+            const confirmFn = (window as any).cordConfirm;
+            const msg = host.dataset.i18nResetConfirm || '¿Restablecer?';
+            const ok = confirmFn ? await confirmFn(msg) : confirm(msg);
+            if (!ok) return;
+            setPrefs({ order: [], hidden: [], sizes: {} });
+            location.reload();
+        });
+
+        // ── FLIP genérico: ejecuta `mutate`, anima los widgets visibles desde su posición previa ──
+        function flip(mutate: () => void) {
+            const items = widgets().filter((w) => !w.hidden);
+            const first = new Map(items.map((w) => [w, w.getBoundingClientRect()] as const));
+            mutate();
+            if (reduceMotion) return;
+            requestAnimationFrame(() => {
+                widgets().filter((w) => !w.hidden).forEach((w) => {
+                    const f = first.get(w); if (!f) return;
+                    const l = w.getBoundingClientRect();
+                    const dx = f.left - l.left, dy = f.top - l.top;
+                    if (!dx && !dy) return;
+                    w.style.transition = 'none';
+                    w.style.transform = `translate(${dx}px, ${dy}px)`;
+                    w.getBoundingClientRect();
+                    w.style.transition = 'transform 0.32s var(--ease-spring, cubic-bezier(0.22,1,0.36,1))';
+                    w.style.transform = '';
+                    w.addEventListener('transitionend', () => { w.style.transition = ''; }, { once: true });
+                });
+            });
+        }
+
+        // ── Botones por widget: subir · bajar · tamaño · ocultar ──
+        widgets().forEach((w) => {
+            const id = w.dataset.widget!;
+            w.querySelector('.we-up')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const prev = w.previousElementSibling;
+                if (prev instanceof HTMLElement && prev.dataset.widget) flip(() => { host.insertBefore(w, prev); persist(); });
+            });
+            w.querySelector('.we-down')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const next = w.nextElementSibling;
+                if (next instanceof HTMLElement && next.dataset.widget) flip(() => { host.insertBefore(next, w); persist(); });
+            });
+            w.querySelector('.we-remove')?.addEventListener('click', (e) => { e.stopPropagation(); setHidden(id, true); });
+            const resizeBtn = w.querySelector('.we-resize');
+            if (w.dataset.sizeSm === w.dataset.sizeLg) { resizeBtn?.remove(); }
+            else if (resizeBtn) {
+                resizeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const next: 'sm' | 'lg' = currentSize(w) === 'sm' ? 'lg' : 'sm';
+                    flip(() => {
+                        applySize(w, next);
+                        const prefs = getPrefs(); prefs.sizes[id] = next; setPrefs(prefs);
+                    });
+                });
+            }
+        });
+
+        // ── Drag: Pointer Events + FLIP + long-press + auto-scroll (mecánica tipo iOS) ──
+        let dragEl: HTMLElement | null = null;
+        let dragStartX = 0, dragStartY = 0, dragOrigLeft = 0, dragOrigTop = 0, dragW = 0;
+        let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+        let moved = false;
+        let autoScrollRaf = 0;
+
+        function widgetOffset(w: HTMLElement) {
+            const hostRect = host.getBoundingClientRect();
+            const r = w.getBoundingClientRect();
+            return { left: r.left - hostRect.left, top: r.top - hostRect.top, width: r.width };
+        }
+        function beginDrag(w: HTMLElement, x: number, y: number) {
+            dragEl = w;
+            const r = widgetOffset(w);
+            dragOrigLeft = r.left; dragOrigTop = r.top; dragW = r.width;
+            dragStartX = x; dragStartY = y;
+            w.classList.add('is-dragging');
+            w.style.position = 'absolute';
+            w.style.left = dragOrigLeft + 'px';
+            w.style.top = dragOrigTop + 'px';
+            w.style.width = dragW + 'px';
+            w.style.zIndex = '50';
+        }
+        function moveDrag(x: number, y: number) {
+            if (!dragEl) return;
+            dragEl.style.left = (dragOrigLeft + (x - dragStartX)) + 'px';
+            dragEl.style.top = (dragOrigTop + (y - dragStartY)) + 'px';
+
+            cancelAnimationFrame(autoScrollRaf);
+            autoScrollRaf = requestAnimationFrame(() => {
+                const margin = 80;
+                if (y < margin) window.scrollBy(0, -Math.ceil((margin - y) / 3));
+                else if (y > window.innerHeight - margin) window.scrollBy(0, Math.ceil((margin - (window.innerHeight - y)) / 3));
+            });
+
+            const prevPE = dragEl.style.pointerEvents;
+            dragEl.style.pointerEvents = 'none';
+            const under = document.elementFromPoint(x, y) as HTMLElement | null;
+            dragEl.style.pointerEvents = prevPE;
+            const targetW = under?.closest<HTMLElement>('[data-widget]');
+            if (targetW && targetW !== dragEl && !targetW.hidden && host.contains(targetW)) {
+                const tr = targetW.getBoundingClientRect();
+                const before = y < tr.top + tr.height / 2;
+                flip(() => { if (before) host.insertBefore(dragEl!, targetW); else host.insertBefore(dragEl!, targetW.nextSibling); });
+            }
+        }
+        function endDrag() {
+            cancelAnimationFrame(autoScrollRaf);
+            if (!dragEl) return;
+            const w = dragEl;
+            w.classList.remove('is-dragging');
+            w.style.position = ''; w.style.left = ''; w.style.top = ''; w.style.width = ''; w.style.zIndex = '';
+            dragEl = null;
+            persist();
+        }
+
+        function attachMoveUp(pointerId: number) {
+            const onMove = (ev: PointerEvent) => { moved = true; moveDrag(ev.clientX, ev.clientY); };
+            const onUp = () => {
+                document.removeEventListener('pointermove', onMove);
+                document.removeEventListener('pointerup', onUp);
+                document.removeEventListener('pointercancel', onUp);
+                endDrag();
+            };
+            document.addEventListener('pointermove', onMove);
+            document.addEventListener('pointerup', onUp);
+            document.addEventListener('pointercancel', onUp);
+        }
+
+        host.addEventListener('pointerdown', (e: PointerEvent) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.widget-editbar')) return; // los botones tienen su propio handler
+            const w = target.closest<HTMLElement>('[data-widget]');
+            if (!w || !host.contains(w)) return;
+
+            if (host.dataset.editing === '1') {
+                moved = false;
+                beginDrag(w, e.clientX, e.clientY);
+                attachMoveUp(e.pointerId);
+                return;
+            }
+            if (target.closest('a,button,input,textarea')) return; // fuera de edición, deja pasar clics/links normales
+
+            moved = false;
+            const startX = e.clientX, startY = e.clientY;
+            longPressTimer = setTimeout(() => {
+                if (moved) return;
+                enterEdit();
+                beginDrag(w, startX, startY);
+                attachMoveUp(e.pointerId);
+            }, 500);
+            const onEarlyMove = (ev: PointerEvent) => {
+                if (Math.abs(ev.clientX - startX) > 8 || Math.abs(ev.clientY - startY) > 8) {
+                    moved = true;
+                    if (longPressTimer) clearTimeout(longPressTimer);
+                }
+            };
+            const onEarlyUp = () => {
+                if (longPressTimer) clearTimeout(longPressTimer);
+                document.removeEventListener('pointermove', onEarlyMove);
+            };
+            document.addEventListener('pointermove', onEarlyMove);
+            document.addEventListener('pointerup', onEarlyUp, { once: true });
+        });
+    })();
+</script>
 
 <script>
     // Count-up ligero de los KPIs (vanilla, sin GSAP — la app no carga GSAP)

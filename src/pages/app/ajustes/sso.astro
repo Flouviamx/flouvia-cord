@@ -21,9 +21,16 @@ const hasPlan = planTieneSso(org.plan_raw);
 const orgId = await getActiveOrgId();
 const connections = hasPlan ? await listConnections(orgId) : [];
 const breakglassActive = !!(org.ssoBreakglassUntil && new Date(org.ssoBreakglassUntil) > new Date());
+
+// El hero de estado vacío YA trae su propio título+descripción (más grande y
+// completo que este intro genérico) — pasarlos los DOS a la vez duplicaba el
+// mensaje en la página (el intro de SettingsShell se pinta SIEMPRE, sin
+// importar si hay conexiones o no). Solo tiene sentido como lead-in corto
+// cuando ya hay algo que introducir (la lista) o cuando el plan no alcanza.
+const showIntro = !hasPlan || connections.length > 0;
 ---
 
-<SettingsShell title="SSO — Ajustes" tab="sso" perm="equipo" intro={t(L, 'set.sso.intro')} save>
+<SettingsShell title="SSO — Ajustes" tab="sso" perm="equipo" intro={showIntro ? t(L, 'set.sso.intro') : undefined} save>
 
     {!hasPlan && (
         <div class="sso-upsell">

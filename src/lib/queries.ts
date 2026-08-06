@@ -1357,8 +1357,141 @@ async function getAnalyticsUncached() {
     };
 }
 
+// ── Serie diaria de dinero (hero chart del dashboard) ───────────────────────────
+// 365 días: cubre el rango custom más largo que el picker de fechas permite elegir
+// (12 meses atrás) Y sigue dejando el periodo de comparación completo detrás de
+// cualquier preset (7D/30D/90D). 3 métricas por día, cada una con su propia fecha
+// canónica — no se puede resolver en un solo `group by` porque cada una bucketea
+// por una columna de fecha distinta:
+//   · cotizado → created_at (cuando se armó la cotización)
+//   · cerrado  → coalesce(approved_at, created_at) — mismo criterio que getAnalytics
+//   · cobrado  → coalesce(paid_at, approved_at, created_at) — dinero que de verdad entró
+// 3 queries en el mismo batch withOrgTx (mismo patrón que getCFO/getAnalytics),
+// fusionadas en JS con relleno de huecos a 0 (día sin movimiento = 0, no ausente).
+// Único caller: src/pages/app/index.astro — el toggle 7D/30D/90D y el rango custom
+// (hasta 365 días atrás) se resuelven 100% en el cliente recortando este mismo array.
+const SERIE_DIARIA_DIAS = 365;
+export async function getSerieDiaria() {
+    const orgId = await getActiveOrgId();
+    return cached(`serie-diaria:${orgId}`, 30, getSerieDiariaUncached);
+}
+async function getSerieDiariaUncached() {
+    const orgId = await getActiveOrgId();
+    const [cotizadoRows, cerradoRows, cobradoRows] = await withOrgTx(orgId,
+        sql`select to_char(date_trunc('day', created_at), 'YYYY-MM-DD') as fecha,
+                   coalesce(sum(total),0) as monto
+            from cotizaciones
+            where org_id = ${orgId}
+              and created_at >= current_date - interval '364 days'
+            group by 1 order by 1`,
+        sql`select to_char(date_trunc('day', coalesce(approved_at, created_at)), 'YYYY-MM-DD') as fecha,
+                   coalesce(sum(total),0) as monto
+            from cotizaciones
+            where org_id = ${orgId}
+              and status in ('approved','paid','invoiced')
+              and coalesce(approved_at, created_at) >= current_date - interval '364 days'
+            group by 1 order by 1`,
+        sql`select to_char(date_trunc('day', coalesce(paid_at, approved_at, created_at)), 'YYYY-MM-DD') as fecha,
+                   coalesce(sum(total),0) as monto
+            from cotizaciones
+            where org_id = ${orgId}
+              and status = 'paid'
+              and coalesce(paid_at, approved_at, created_at) >= current_date - interval '364 days'
+            group by 1 order by 1`,
+    );
+    const toMap = (rows: any[]) => {
+        const m = new Map<string, number>();
+        for (const r of rows) m.set(r.fecha as string, num(r.monto));
+        return m;
+    };
+    const cotizadoM = toMap(cotizadoRows), cerradoM = toMap(cerradoRows), cobradoM = toMap(cobradoRows);
+
+    // Relleno de huecos, 365 puntos exactos, en UTC (date_trunc de Postgres corre
+    // en GMT; toISOString fuerza UTC sin importar el TZ del proceso Node).
+    const dias: { fecha: string; cotizado: number; cerrado: number; cobrado: number }[] = [];
+    const today = new Date();
+    for (let i = SERIE_DIARIA_DIAS - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setUTCDate(d.getUTCDate() - i);
+        const fecha = d.toISOString().slice(0, 10);
+        dias.push({
+            fecha,
+            cotizado: cotizadoM.get(fecha) ?? 0,
+            cerrado: cerradoM.get(fecha) ?? 0,
+            cobrado: cobradoM.get(fecha) ?? 0,
+        });
+    }
+    return { dias };
+}
+
+// ── Embudo + rankings acotados a un rango de fechas (picker custom del dashboard) ──
+// Función DEDICADA (no se parametriza getAnalytics): getAnalytics la consumen también
+// /app/analitica y el tool MCP resumen_negocio, y su query `forecast` es un snapshot del
+// pipeline vivo (sent/viewed HOY) que perdería sentido si se filtrara por fecha pasada.
+// Esta función solo trae lo que el rango del dashboard sí necesita: embudo y rankings,
+// ambos como cohorte "de lo creado en este periodo, cuánto avanzó". Clave de caché
+// snapeada a día (no a timestamp) para no explotar la cardinalidad del Map de cache.ts.
+export async function getAnalyticsRango(desde: string, hasta: string) {
+    const orgId = await getActiveOrgId();
+    return cached(`analytics-rango:${orgId}:${desde}:${hasta}`, 30, () => getAnalyticsRangoUncached(orgId, desde, hasta));
+}
+async function getAnalyticsRangoUncached(orgId: string, desde: string, hasta: string) {
+    const [kRows, clientes, productos] = await withOrgTx(orgId,
+        sql`select
+                count(*) filter (where status in ('sent','viewed','approved','paid','invoiced')) as enviadas,
+                count(*) filter (where status in ('viewed','approved','paid','invoiced')) as vistas,
+                count(*) filter (where status in ('approved','paid','invoiced')) as aprobadas,
+                count(*) filter (where status in ('paid','invoiced')) as pagadas
+            from cotizaciones
+            where org_id = ${orgId} and created_at >= ${desde} and created_at < (${hasta}::date + interval '1 day')`,
+        sql`select cl.empresa,
+                   coalesce(sum(c.total) filter (where c.status in ('approved','paid','invoiced')),0) as cerrado,
+                   count(*) as cotizaciones,
+                   count(*) filter (where c.status in ('approved','paid','invoiced')) as aprobadas
+            from cotizaciones c join clientes cl on cl.id = c.cliente_id
+            where c.org_id = ${orgId} and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
+            group by cl.empresa
+            order by cerrado desc, cotizaciones desc limit 6`,
+        sql`select coalesce(p.nombre, it.descripcion) as nombre,
+                   coalesce(sum(it.cantidad),0) as cantidad,
+                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad),0) as importe,
+                   count(distinct c.id) as cotizaciones
+            from cotizacion_items it
+            join cotizaciones c on c.id = it.cotizacion_id
+            left join productos p on p.id = it.producto_id
+            where c.org_id = ${orgId} and c.status <> 'draft'
+              and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
+            group by coalesce(p.nombre, it.descripcion)
+            order by importe desc limit 6`,
+    );
+    const k = kRows[0];
+    return {
+        funnel: { enviadas: num(k.enviadas), vistas: num(k.vistas), aprobadas: num(k.aprobadas), pagadas: num(k.pagadas) },
+        clientes: clientes.map(c => ({
+            empresa: c.empresa as string,
+            cerrado: num(c.cerrado),
+            cotizaciones: num(c.cotizaciones),
+            aprobadas: num(c.aprobadas),
+            tasa: num(c.cotizaciones) ? Math.round((num(c.aprobadas) / num(c.cotizaciones)) * 100) : 0,
+        })),
+        productos: productos.map(p => ({
+            nombre: p.nombre as string,
+            cantidad: num(p.cantidad),
+            importe: num(p.importe),
+            cotizaciones: num(p.cotizaciones),
+        })),
+    };
+}
+
 // ── COBRANZA / CUENTAS POR COBRAR (/app/cobranza) ──────────────────────────────
+// Cacheado ~30s (mismo patrón que getCFO/getAnalytics): el dashboard principal
+// también consume `aging` para la dona de cartera, y sin caché esta función hace
+// trabajo pesado en JS por cotización en cada carga de /app.
 export async function getCobranza() {
+    const orgId = await getActiveOrgId();
+    return cached(`cobranza:${orgId}`, 30, getCobranzaUncached);
+}
+async function getCobranzaUncached() {
     const orgId = await getActiveOrgId();
 
     // orgs no tiene FORCE RLS.

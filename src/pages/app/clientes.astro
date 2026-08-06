@@ -324,7 +324,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: t(L, 'cli.nivel_estandar
         display: grid;
         grid-template-columns: 1.6fr 1.4fr 1fr 0.7fr 1fr 0.8fr;
         gap: 1rem; align-items: center;
-        padding: 0.85rem 0.7rem;
+        padding: 0.95rem 0.85rem;
     }
     .t-head {
         font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
@@ -337,18 +337,19 @@ const NIVEL_LABEL: Record<string, string> = { estandar: t(L, 'cli.nivel_estandar
         width: 100%; text-align: left;
         font-family: var(--font-sans); background: none; border: none; cursor: pointer;
         border-bottom: 1px solid var(--color-border);
-        border-radius: 8px;
-        transition: background 0.2s var(--ease-ios);
+        border-radius: 10px;
+        transition: background 0.25s var(--ease-ios);
     }
     .t-row:hover { background: var(--color-bg-soft); }
     .t-row:last-of-type { border-bottom: none; }
 
     .t-client { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
     .t-avatar {
-        width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+        width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
         background: var(--color-blue-deep); color: #fff;
         display: flex; align-items: center; justify-content: center;
-        font-size: 0.62rem; font-weight: 800;
+        font-size: 0.64rem; font-weight: 800;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
     }
     .t-contact { display: flex; flex-direction: column; font-size: 0.82rem; font-weight: 500; color: var(--color-text); }
     .t-contact small { font-size: 0.7rem; color: var(--color-text-muted); }
@@ -406,7 +407,7 @@ const NIVEL_LABEL: Record<string, string> = { estandar: t(L, 'cli.nivel_estandar
         padding: 7px 16px; cursor: pointer;
         transition: all 0.25s var(--ease-ios);
     }
-    .chip.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+    .chip.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); box-shadow: 0 4px 14px -6px rgba(10,25,47,0.45); }
 
     /* Descuento por nivel: input con sufijo % + vista previa en pesos */
     .disc-row { display: flex; align-items: center; gap: 0.7rem; }
