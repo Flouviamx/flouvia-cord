@@ -21,7 +21,7 @@ import type { APIRoute } from 'astro';
 import { z } from 'zod';
 import { sql } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
-import { reauthenticate, SESSION_COOKIE } from '../../../lib/auth';
+import { reauthenticate, clearSessionCookies } from '../../../lib/auth';
 import { emailSchema, parseJsonBody } from '../../../lib/validation';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { deleteOrgCascade } from '../../../lib/org-delete';
@@ -100,7 +100,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     // org_members restantes).
     await sql`delete from users where id = ${userId}`;
 
-    cookies.delete(SESSION_COOKIE, { path: '/' });
+    clearSessionCookies(cookies);
 
     return json({ ok: true, redirect: '/' });
 };

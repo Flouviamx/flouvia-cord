@@ -89,12 +89,12 @@ export async function getActiveOrgId(): Promise<string> {
  *   `onboarded_at` no debe terminar configurando el negocio de otra
  *   persona; el dueño es quien completa el wizard.
  */
-export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; needsOnboarding: boolean }> {
-    const NONE = { needs2fa: false, needsOnboarding: false };
+export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; needsOnboarding: boolean; sessionTimeoutMin: number }> {
+    const NONE = { needs2fa: false, needsOnboarding: false, sessionTimeoutMin: 0 };
     try {
         const orgId = await getActiveOrgId();
         const rows = await sql`
-            select o.require_2fa, o.onboarded_at, o.owner_id, u.totp_enabled
+            select o.require_2fa, o.onboarded_at, o.owner_id, o.session_timeout_min, u.totp_enabled
             from orgs o cross join users u
             where o.id = ${orgId} and u.id = ${userId}
             limit 1`;
@@ -103,6 +103,7 @@ export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; 
         return {
             needs2fa: !!r.require_2fa && !r.totp_enabled,
             needsOnboarding: r.owner_id === userId && !r.onboarded_at,
+            sessionTimeoutMin: Number(r.session_timeout_min) || 0,
         };
     } catch {
         // Nunca bloquear /app por un fallo de esta verificación best-effort.

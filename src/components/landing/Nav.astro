@@ -512,22 +512,39 @@ const { darkHero = false } = Astro.props;
     .nav-container { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 40px; }
     .desktop-nav { display: flex; align-items: center; }
 
-    /* ── GLASS PILL ── */
+    /* ── GLASS PILL ──
+       Nota (ago 2026): el material se veía "demasiado transparente" — sobre una
+       landing casi blanca, backdrop-filter no tiene contraste que difuminar y un
+       fondo blanco al 50-72% se lava casi por completo. Subido a un rango donde
+       la píldora se lee como material sólido incluso sobre blanco, conservando
+       blur+saturate para que sobre un hero oscuro siga leyendo como cristal. */
     .glass-pill {
         display: inline-flex; flex-direction: column; align-items: stretch;
-        background: linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.5) 48%, rgba(255,255,255,0.56) 100%);
+        background: linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.88) 48%, rgba(255,255,255,0.92) 100%);
         backdrop-filter: blur(30px) saturate(1.9) brightness(1.04);
         -webkit-backdrop-filter: blur(30px) saturate(1.9) brightness(1.04);
         padding: 4px 6px; border-radius: 100px;
-        border: 1px solid rgba(255,255,255,0.55);
+        border: 1px solid rgba(10,25,47,0.07);
         box-shadow:
             inset 0 1px 1px rgba(255,255,255,0.95),
-            inset 0 0 0 0.5px rgba(255,255,255,0.4),
+            inset 0 0 0 0.5px rgba(255,255,255,0.5),
             inset 0 -6px 14px rgba(255,255,255,0.18),
             0 10px 34px rgba(10,25,47,0.1),
             0 2px 6px rgba(10,25,47,0.06);
         position: relative; overflow: hidden;
         transition: box-shadow 0.7s var(--ease-spring), border-color 0.7s var(--ease-spring), background 0.7s var(--ease-spring), backdrop-filter 0.7s var(--ease-spring), border-radius 0.6s var(--ease-spring);
+    }
+    /* Sin backdrop-filter (navegadores viejos / Firefox sin soporte): el
+       gradiente translúcido se ve como un lavado casi invisible sin nada que
+       difuminar detrás — fondo sólido de respaldo. */
+    @supports not (backdrop-filter: blur(1px)) {
+        .glass-pill { background: #ffffff; }
+        .navbar-wrapper.scrolled .glass-pill { background: var(--nb-dark); }
+        .lang-switch { background: #ffffff; }
+        .navbar-wrapper.scrolled .lang-switch { background: var(--nb-dark); }
+        .nav-login-pill { background: #ffffff; }
+        .navbar-wrapper.scrolled .nav-login-pill { background: var(--nb-dark); }
+        .mobile-pill-inner { background: var(--nb-dark); }
     }
     .pill-row { display: flex; align-items: center; }
 
@@ -619,7 +636,7 @@ const { darkHero = false } = Astro.props;
     .glass-pill:hover .pill-shimmer { transform: translateX(100%); transition: transform 0.55s var(--ease-expo); }
 
     .navbar-wrapper.scrolled .glass-pill {
-        background: linear-gradient(180deg, rgba(24,46,80,0.62) 0%, rgba(10,25,47,0.5) 55%, rgba(8,20,38,0.58) 100%);
+        background: linear-gradient(180deg, rgba(24,46,80,0.94) 0%, rgba(10,25,47,0.9) 55%, rgba(8,20,38,0.93) 100%);
         backdrop-filter: blur(34px) saturate(1.9) brightness(1.06);
         -webkit-backdrop-filter: blur(34px) saturate(1.9) brightness(1.06);
         border-color: rgba(255,255,255,0.14);
@@ -682,10 +699,10 @@ const { darkHero = false } = Astro.props;
     /* Switch de idioma ES/EN (estilo flouvia.com): segmented control de vidrio */
     .lang-switch {
         display: flex; align-items: center;
-        background: linear-gradient(180deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.42) 100%);
+        background: linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.86) 100%);
         backdrop-filter: blur(24px) saturate(1.8) brightness(1.04);
         -webkit-backdrop-filter: blur(24px) saturate(1.8) brightness(1.04);
-        border: 1px solid rgba(255,255,255,0.5); border-radius: 100px; padding: 3px;
+        border: 1px solid rgba(10,25,47,0.07); border-radius: 100px; padding: 3px;
         box-shadow:
             inset 0 1px 1px rgba(255,255,255,0.9),
             inset 0 0 0 0.5px rgba(255,255,255,0.35),
@@ -706,7 +723,7 @@ const { darkHero = false } = Astro.props;
     }
     .lang-option:not(.active):hover { color: rgba(0,0,0,0.78); }
     .navbar-wrapper.scrolled .lang-switch {
-        background: linear-gradient(180deg, rgba(24,46,80,0.6) 0%, rgba(10,25,47,0.5) 100%);
+        background: linear-gradient(180deg, rgba(24,46,80,0.94) 0%, rgba(10,25,47,0.9) 100%);
         border-color: rgba(255,255,255,0.14);
         backdrop-filter: blur(30px) saturate(1.9) brightness(1.05);
         -webkit-backdrop-filter: blur(30px) saturate(1.9) brightness(1.05);
@@ -722,10 +739,10 @@ const { darkHero = false } = Astro.props;
         font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
         color: rgba(0,0,0,0.6); text-decoration: none;
         padding: 9px 17px; border-radius: 100px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.5) 100%);
+        background: linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.88) 100%);
         backdrop-filter: blur(30px) saturate(1.9) brightness(1.04);
         -webkit-backdrop-filter: blur(30px) saturate(1.9) brightness(1.04);
-        border: 1px solid rgba(255,255,255,0.55);
+        border: 1px solid rgba(10,25,47,0.07);
         box-shadow:
             inset 0 1px 1px rgba(255,255,255,0.95),
             inset 0 0 0 0.5px rgba(255,255,255,0.4),
@@ -747,7 +764,7 @@ const { darkHero = false } = Astro.props;
     .nav-login-pill:hover svg { opacity: 1; }
     .navbar-wrapper.scrolled .nav-login-pill {
         color: rgba(255,255,255,0.75);
-        background: linear-gradient(180deg, rgba(24,46,80,0.62) 0%, rgba(10,25,47,0.5) 100%);
+        background: linear-gradient(180deg, rgba(24,46,80,0.94) 0%, rgba(10,25,47,0.9) 100%);
         border-color: rgba(255,255,255,0.14);
         box-shadow:
             inset 0 1px 0 rgba(255,255,255,0.22),
@@ -789,16 +806,16 @@ const { darkHero = false } = Astro.props;
         .mobile-pill-nav { display: flex; width: 100%; justify-content: center; z-index: 21000; position: relative; }
         .mobile-pill-inner {
             display: flex; align-items: center; justify-content: space-between; height: 50px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.74) 0%, rgba(255,255,255,0.54) 100%);
+            background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.9) 100%);
             backdrop-filter: blur(30px) saturate(1.9) brightness(1.04);
             -webkit-backdrop-filter: blur(30px) saturate(1.9) brightness(1.04);
-            border: 1px solid rgba(255,255,255,0.55); border-radius: 100px;
+            border: 1px solid rgba(10,25,47,0.07); border-radius: 100px;
             padding: 0 8px 0 16px; width: 92%; max-width: 380px;
-            box-shadow: inset 0 1px 1px rgba(255,255,255,0.95), inset 0 0 0 0.5px rgba(255,255,255,0.4), inset 0 -6px 14px rgba(255,255,255,0.18), 0 16px 44px rgba(10,25,47,0.12);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.95), inset 0 0 0 0.5px rgba(255,255,255,0.5), inset 0 -6px 14px rgba(255,255,255,0.18), 0 16px 44px rgba(10,25,47,0.12);
             transition: background 0.7s var(--ease-spring), border-color 0.7s var(--ease-spring), box-shadow 0.7s var(--ease-spring);
         }
         .navbar-wrapper.scrolled .mobile-pill-inner {
-            background: linear-gradient(180deg, rgba(24,46,80,0.66) 0%, rgba(10,25,47,0.56) 100%);
+            background: linear-gradient(180deg, rgba(24,46,80,0.95) 0%, rgba(10,25,47,0.9) 100%);
             border-color: rgba(255,255,255,0.16);
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), inset 0 0 0 0.5px rgba(255,255,255,0.08), 0 18px 50px rgba(0,0,0,0.3);
         }
@@ -970,8 +987,13 @@ const { darkHero = false } = Astro.props;
 
 <script>
     // ── ESTADO DE SESIÓN (Custom Auth) ──
-    // La landing es prerender:true (HTML estático).
-    // TODO: Implementar el store del cliente para auth custom y reemplazar false.
+    // La landing es prerender:true (HTML estático) y no puede leer la cookie
+    // httpOnly `cord_session` en servidor. En su lugar lee `cord_auth_hint`
+    // (no-httpOnly, valor constante '1', sin identidad — ver auth.ts) que el
+    // middleware escribe/renueva junto a la sesión real. Esto SOLO cambia qué
+    // botón se muestra ("Entrar" vs "Ir al Dashboard"); el acceso real a /app
+    // y a las APIs internas lo sigue validando el middleware contra la sesión
+    // httpOnly en cada request — este hint nunca autentica nada.
     const applyAuthState = (signedIn: boolean) => {
         document.querySelectorAll<HTMLAnchorElement>('[data-auth-swap]').forEach((el) => {
             const href = signedIn ? el.dataset.inHref : el.dataset.outHref;
@@ -984,8 +1006,10 @@ const { darkHero = false } = Astro.props;
         });
     };
 
-    // Aplicar estado deslogueado por defecto (se conectará al nuevo store luego)
-    applyAuthState(false);
+    const hasAuthHint = document.cookie
+        .split('; ')
+        .some((c) => c === 'cord_auth_hint=1');
+    applyAuthState(hasAuthHint);
 </script>
 
 <script>

@@ -6,7 +6,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { trustedIp } from '../../../../lib/ip';
-import { createSession, sessionCookieOptions, SESSION_COOKIE, createTwoFactorChallenge } from '../../../../lib/auth';
+import { createSession, setSessionCookies, createTwoFactorChallenge } from '../../../../lib/auth';
 import { consumeSsoHandoff } from '../../../../lib/saml';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 
@@ -31,6 +31,6 @@ export const GET: APIRoute = async ({ url, cookies, request, redirect }) => {
   }
 
   const sessionToken = await createSession(consumed.userId, 'SAML SSO', ip);
-  cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions());
+  setSessionCookies(cookies, sessionToken);
   return redirect(dest);
 };

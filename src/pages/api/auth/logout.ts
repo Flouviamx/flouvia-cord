@@ -9,7 +9,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { invalidateSession, SESSION_COOKIE } from '../../../lib/auth';
+import { invalidateSession, SESSION_COOKIE, clearSessionCookies } from '../../../lib/auth';
 
 export const POST: APIRoute = async ({ cookies }) => {
     try {
@@ -17,7 +17,7 @@ export const POST: APIRoute = async ({ cookies }) => {
         if (sessionToken) {
             await invalidateSession(sessionToken);
         }
-        cookies.delete(SESSION_COOKIE, { path: '/' });
+        clearSessionCookies(cookies);
         cookies.delete('cord_active_org', { path: '/' });
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (error) {

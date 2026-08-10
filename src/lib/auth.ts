@@ -149,7 +149,7 @@ export async function createSession(userId: string, userAgent?: string, ip?: str
     return token;
 }
 
-export async function validateSession(token: string): Promise<{ userId: string; sessionId: string; slid: boolean } | null> {
+export async function validateSession(token: string): Promise<{ userId: string; sessionId: string; slid: boolean; idleMs: number } | null> {
     const tokenHash = sha256Hex(token);
     const rows = await sql`
         select s.user_id, s.expires_at, s.absolute_expires_at, s.revoked_at,
@@ -165,6 +165,11 @@ export async function validateSession(token: string): Promise<{ userId: string; 
         await sql`delete from sessions where id = ${tokenHash}`;
         return null;
     }
+    // idleMs = tiempo transcurrido desde el ÚLTIMO request verificado, leído
+    // ANTES de tocar la fila — es lo que el caller (middleware.ts) usa para
+    // aplicar `orgs.session_timeout_min` (cierre de sesión por inactividad
+    // configurable por org, independiente del TTL deslizante de 30d de abajo).
+    const idleMs = now.getTime() - new Date(s.last_used_at).getTime();
     // Sliding expiry, con throttle: solo se reescribe si pasaron ≥5 min desde el
     // último uso — evita un UPDATE en cada request de una sesión activa.
     // `slid` le dice al caller (middleware.ts) si debe re-emitir la cookie con
@@ -173,13 +178,12 @@ export async function validateSession(token: string): Promise<{ userId: string; 
     // el navegador la borraba a los 30 días exactos aunque el usuario entrara
     // todos los días.
     let slid = false;
-    const staleMs = now.getTime() - new Date(s.last_used_at).getTime();
-    if (staleMs > SESSION_SLIDE_THROTTLE_MS) {
+    if (idleMs > SESSION_SLIDE_THROTTLE_MS) {
         const newExpires = new Date(Math.min(now.getTime() + SESSION_TTL_MS, new Date(s.absolute_expires_at).getTime()));
         await sql`update sessions set last_used_at = now(), expires_at = ${newExpires} where id = ${tokenHash}`;
         slid = true;
     }
-    return { userId: s.user_id as string, sessionId: tokenHash, slid };
+    return { userId: s.user_id as string, sessionId: tokenHash, slid, idleMs };
 }
 
 export async function invalidateSession(token: string): Promise<void> {
@@ -326,4 +330,36 @@ export function sessionCookieOptions() {
         sameSite: 'lax' as const,
         maxAge: SESSION_COOKIE_MAX_AGE,
     };
+}
+
+// Cookie "hint" — legible por JS, sin identidad (valor constante '1'), solo para
+// que el navbar de la landing (prerender:true, sin acceso al middleware) sepa
+// si mostrar "Entrar" o "Ir al Dashboard" sin exponer el token de sesión.
+// La cookie real de sesión (arriba) sigue siendo httpOnly y es la única que
+// el middleware valida contra la tabla `sessions` en cada request — esta
+// cookie NUNCA autentica nada, solo evita que la UI mienta sobre el estado.
+export const AUTH_HINT_COOKIE = 'cord_auth_hint';
+
+export function authHintCookieOptions() {
+    return {
+        path: '/',
+        httpOnly: false,
+        secure: import.meta.env.PROD,
+        sameSite: 'lax' as const,
+        maxAge: SESSION_COOKIE_MAX_AGE,
+    };
+}
+
+type CookieJar = { set: (name: string, value: string, opts?: any) => void; delete: (name: string, opts?: any) => void };
+
+/** Escribe la cookie de sesión (httpOnly) Y el hint (legible por JS) en un solo paso. */
+export function setSessionCookies(cookies: CookieJar, token: string): void {
+    cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
+    cookies.set(AUTH_HINT_COOKIE, '1', authHintCookieOptions());
+}
+
+/** Borra ambas cookies de sesión — logout, revocación, cuenta suspendida/eliminada. */
+export function clearSessionCookies(cookies: CookieJar): void {
+    cookies.delete(SESSION_COOKIE, { path: '/' });
+    cookies.delete(AUTH_HINT_COOKIE, { path: '/' });
 }

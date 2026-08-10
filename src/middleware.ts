@@ -167,7 +167,7 @@ const subdomainRewrite = async (context: any, next: any) => {
     return next();
 };
 
-import { validateSession, SESSION_COOKIE, sessionCookieOptions } from './lib/auth';
+import { validateSession, invalidateSession, SESSION_COOKIE, setSessionCookies, clearSessionCookies } from './lib/auth';
 import { OPS_SESSION_COOKIE, validateOpsSession } from './lib/ops-auth';
 import { trustedIp } from './lib/ip';
 import { getAppGates } from './lib/db';
@@ -177,20 +177,31 @@ const mainHandler = async (context: any, next: any) => {
     // Leer sesión desde la cookie 'cord_session' (Fase 3 - Custom Auth)
     const sessionId = context.cookies.get(SESSION_COOKIE)?.value;
     let userId = null;
+    let sessionIdleMs = 0;
     if (sessionId) {
         const session = await validateSession(sessionId);
         userId = session?.userId || null;
-        // La sesión se desliza en BD en cada visita (validateSession), pero el
-        // Max-Age de la cookie del navegador se fijaba una sola vez al hacer
-        // login — sin esto, el navegador borraba la cookie a los 30 días
-        // exactos del login aunque el usuario entrara todos los días. Cuando
-        // `slid` viene true (throttle de 5 min ya cumplido) se re-emite la
-        // MISMA cookie (mismo token crudo, ya en la mano) con un Max-Age
-        // renovado — `context.cookies.set(...)` se adjunta a la respuesta que
-        // sea que este handler termine devolviendo (attachCookiesToResponse
-        // de Astro tagea el jar completo sobre el Response final).
-        if (session?.slid) {
-            context.cookies.set(SESSION_COOKIE, sessionId, sessionCookieOptions());
+        sessionIdleMs = session?.idleMs ?? 0;
+        if (session) {
+            // La sesión se desliza en BD en cada visita (validateSession), pero el
+            // Max-Age de la cookie del navegador se fijaba una sola vez al hacer
+            // login — sin esto, el navegador borraba la cookie a los 30 días
+            // exactos del login aunque el usuario entrara todos los días. Cuando
+            // `slid` viene true (throttle de 5 min ya cumplido) se re-emiten
+            // AMBAS cookies (la de sesión con el mismo token crudo ya en la mano,
+            // y el hint no-httpOnly que lee el navbar público) con un Max-Age
+            // renovado — `context.cookies.set(...)` se adjunta a la respuesta que
+            // sea que este handler termine devolviendo (attachCookiesToResponse
+            // de Astro tagea el jar completo sobre el Response final).
+            if (session.slid) {
+                setSessionCookies(context.cookies, sessionId);
+            }
+        } else {
+            // Cookie presente pero la sesión ya no es válida (expiró, fue
+            // revocada, o la cuenta se suspendió) — sin esto la cookie muerta
+            // se quedaba en el navegador hasta su Max-Age original, y el hint
+            // seguía diciendo "hay sesión" aunque ya no la hubiera.
+            clearSessionCookies(context.cookies);
         }
     }
     const orgId = context.cookies.get('cord_active_org')?.value || null; // Fase 3: Active Org picker
@@ -400,6 +411,22 @@ const mainHandler = async (context: any, next: any) => {
             const gatePaths = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];
             const onGatePath = gatePaths.some((p) => path === p || path.startsWith(p + '/'));
 
+            // 0) Cierre de sesión por inactividad (orgs.session_timeout_min):
+            // se guardaba en Ajustes › Seguridad desde jul 2026 pero ningún
+            // código lo aplicaba — una org podía "exigir" cierre a 1h y la
+            // sesión seguía viva 30 días igual. `sessionIdleMs` es el tiempo
+            // transcurrido desde el ÚLTIMO request verificado (calculado en
+            // validateSession ANTES de tocar la fila), comparado contra el
+            // límite de la org ACTIVA (0 = sin límite). Al vencer: se invalida
+            // la sesión en BD, se limpian ambas cookies, y se manda a
+            // /sign-in — igual que una sesión expirada por cualquier otra vía.
+            const gates = await getAppGates(userId);
+            if (gates.sessionTimeoutMin > 0 && sessionIdleMs > gates.sessionTimeoutMin * 60_000) {
+                if (sessionId) await invalidateSession(sessionId);
+                clearSessionCookies(context.cookies);
+                return context.redirect(`/sign-in?redirect_url=${encodeURIComponent(path)}`);
+            }
+
             // 1) Gate de 2FA obligatorio (jul 2026: el toggle "Exigir 2FA al
             // equipo" en Ajustes › Seguridad se podía prender y no hacía NADA
             // — quedaba guardado en BD sin ningún enforcement). Si la org
@@ -409,7 +436,6 @@ const mainHandler = async (context: any, next: any) => {
             // internas — ajustes/cuenta y ajustes/seguridad dependen de ellas
             // para operar. Tiene prioridad sobre el gate de onboarding: si
             // faltan ambos, primero se resuelve seguridad.
-            const gates = await getAppGates(userId);
             if (!onGatePath && gates.needs2fa) {
                 return context.redirect('/app/ajustes/cuenta?require2fa=1');
             }

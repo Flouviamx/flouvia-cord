@@ -16,8 +16,7 @@ import {
     resetFailedLogins,
     createEmailVerificationToken,
     createTwoFactorChallenge,
-    sessionCookieOptions,
-    SESSION_COOKIE,
+    setSessionCookies,
     sha256Hex,
 } from '../../../lib/auth';
 import { sendVerificationEmail, sendNewDeviceAlertEmail } from '../../../lib/auth-email';
@@ -115,7 +114,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
 
         const sessionToken = await createSession(user.id, userAgent, ip);
-        cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions());
+        setSessionCookies(cookies, sessionToken);
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (error) {
         console.error('[auth/login]', error);

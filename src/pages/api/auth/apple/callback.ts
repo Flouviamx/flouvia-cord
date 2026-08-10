@@ -12,7 +12,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql } from '../../../../lib/db';
-import { createSession, sessionCookieOptions, SESSION_COOKIE, createTwoFactorChallenge } from '../../../../lib/auth';
+import { createSession, setSessionCookies, createTwoFactorChallenge } from '../../../../lib/auth';
 import { exchangeAppleCode, verifyAppleIdToken, AppleTokenVerificationError } from '../../../../lib/auth-apple';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
@@ -142,7 +142,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
         }
 
         const sessionToken = await createSession(userId!, 'Apple Sign In', ip);
-        cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions());
+        setSessionCookies(cookies, sessionToken);
         return redirect(dest);
     } catch (err) {
         console.error('[apple/callback] Error:', err);

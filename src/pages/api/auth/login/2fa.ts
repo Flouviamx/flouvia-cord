@@ -9,8 +9,7 @@ import { sql } from '../../../../lib/db';
 import {
     consumeTwoFactorChallenge,
     createSession,
-    sessionCookieOptions,
-    SESSION_COOKIE,
+    setSessionCookies,
 } from '../../../../lib/auth';
 import { verifyTotp, matchBackupCode } from '../../../../lib/totp';
 import { sendNewDeviceAlertEmail } from '../../../../lib/auth-email';
@@ -78,7 +77,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
 
         const sessionToken = await createSession(userId, userAgent, ip);
-        cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions());
+        setSessionCookies(cookies, sessionToken);
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (error) {
         console.error('[auth/login/2fa]', error);

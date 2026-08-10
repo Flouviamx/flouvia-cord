@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import { sql } from '../../../../lib/db';
-import { createSession, sessionCookieOptions, SESSION_COOKIE } from '../../../../lib/auth';
+import { createSession, setSessionCookies } from '../../../../lib/auth';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
 import { ssoRequirementFor } from '../../../../lib/saml';
@@ -97,7 +97,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const userAgent = request.headers.get('user-agent') || 'desconocido';
     const sessionToken = await createSession(userId, userAgent, ip);
 
-    cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions());
+    setSessionCookies(cookies, sessionToken);
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (error) {
     console.error('Error en verify:', error);

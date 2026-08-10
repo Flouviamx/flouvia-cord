@@ -1290,7 +1290,10 @@ alter table users add column if not exists suspended_reason      text;
 -- individual sin borrar el registro), absolute_expires_at (tope duro).
 alter table sessions add column if not exists last_used_at        timestamptz not null default now();
 alter table sessions add column if not exists revoked_at          timestamptz;
-alter table sessions add column if not exists absolute_expires_at timestamptz not null default (now() + interval '90 days');
+-- Default alineado a SESSION_ABSOLUTE_MS de src/lib/auth.ts (180 días) — createSession
+-- siempre pasa el valor explícito, este default solo aplica a una columna agregada
+-- sin backfill explícito (fresh DB). Antes decía 90 días y contradecía al código real.
+alter table sessions add column if not exists absolute_expires_at timestamptz not null default (now() + interval '180 days');
 create index if not exists idx_sessions_user on sessions(user_id);
 create index if not exists idx_sessions_expires on sessions(expires_at);
 

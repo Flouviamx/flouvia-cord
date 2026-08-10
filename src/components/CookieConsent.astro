@@ -4,8 +4,18 @@
 // link público) y en AppLayout.astro (app). Gatea la captura de PostHog: el script
 // de analítica de cada layout inicializa con `opt_out_capturing_by_default: true`,
 // y este componente es el único que llama opt_in_capturing()/opt_out_capturing()
-// según la decisión guardada en localStorage (compartido entre / y /app — mismo
-// origen). Vercel Analytics NO se gatea aquí: no usa cookies ni identifica a nadie
+// según la decisión guardada.
+//
+// La decisión vive en una cookie de primera parte `cord_cookie_consent` con
+// `Domain=.cordhq.app` (cuando el host termina en cordhq.app) — así se comparte
+// entre cordhq.app, docs.cordhq.app y cualquier futuro subdominio, que son
+// ORÍGENES DISTINTOS para localStorage (rewrite por host en middleware.ts) aunque
+// sean el mismo deployment. En localhost/otros hosts no se fija `domain` (o el
+// navegador la descarta) y sigue funcionando como cookie normal de ese origen.
+// `localStorage` se mantiene como respaldo/migración: si ya existe una decisión
+// ahí (usuarios de antes de este cambio) y no hay cookie, se lee de una vez y se
+// espeja a la cookie sin volver a preguntar.
+// Vercel Analytics NO se gatea aquí: no usa cookies ni identifica a nadie
 // (ver src/pages/privacidad.astro §05), así que corre siempre.
 
 interface Props {
@@ -47,10 +57,63 @@ const privacyHref = isEn ? '/en/privacidad#cookies' : '/privacidad#cookies';
 
 <script>
   const KEY = 'cord_cookie_consent';
+  const COOKIE_MAX_AGE = 15552000; // 6 meses — plazo habitual de re-consentimiento
 
-  function applyConsent(value) {
+  function cookieDomain() {
+    // Domain=.cordhq.app comparte la decisión entre cordhq.app, docs.cordhq.app,
+    // etc. (same-site). En localhost/otros hosts no se fija domain.
+    const host = window.location.hostname;
+    return host.endsWith('cordhq.app') ? '.cordhq.app' : '';
+  }
+
+  function readConsentCookie() {
+    const parts = document.cookie.split('; ');
+    for (const p of parts) {
+      const eq = p.indexOf('=');
+      if (eq === -1) continue;
+      if (p.slice(0, eq) === KEY) return p.slice(eq + 1);
+    }
+    return null;
+  }
+
+  function writeConsentCookie(value) {
+    const domain = cookieDomain();
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${KEY}=${value}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax${domain ? `; domain=${domain}` : ''}${secure}`;
+  }
+
+  function readStored() {
+    const fromCookie = readConsentCookie();
+    if (fromCookie === 'accepted' || fromCookie === 'rejected') return fromCookie;
+    // Migración: decisión previa solo en localStorage (usuarios de antes de la
+    // cookie cross-subdominio) — se adopta una vez y se espeja a la cookie.
     try {
-      if (typeof window.posthog === 'undefined') return;
+      const legacy = localStorage.getItem(KEY);
+      if (legacy === 'accepted' || legacy === 'rejected') {
+        writeConsentCookie(legacy);
+        return legacy;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function persistConsent(value) {
+    writeConsentCookie(value);
+    try { localStorage.setItem(KEY, value); } catch (e) {}
+  }
+
+  // El snippet de PostHog puede terminar de cargar después de que el usuario ya
+  // aceptó (o de que se aplique una decisión previa) — sin reintentar, ese
+  // opt_in_capturing()/opt_out_capturing() se perdía en silencio y esa visita
+  // nunca se instrumentaba. Reintenta acotado (20 × 150ms ≈ 3s) hasta que
+  // window.posthog exista.
+  function applyConsent(value, attemptsLeft) {
+    if (attemptsLeft === undefined) attemptsLeft = 20;
+    try {
+      if (typeof window.posthog === 'undefined') {
+        if (attemptsLeft > 0) window.setTimeout(() => applyConsent(value, attemptsLeft - 1), 150);
+        return;
+      }
       if (value === 'accepted') window.posthog.opt_in_capturing();
       else window.posthog.opt_out_capturing();
     } catch (e) {}
@@ -73,7 +136,7 @@ const privacyHref = isEn ? '/en/privacidad#cookies' : '/privacidad#cookies';
     const el = document.getElementById('cc-banner');
     if (!el) return;
 
-    const stored = (() => { try { return localStorage.getItem(KEY); } catch (e) { return null; } })();
+    const stored = readStored();
     if (stored === 'accepted' || stored === 'rejected') {
       applyConsent(stored);
     } else {
@@ -83,12 +146,12 @@ const privacyHref = isEn ? '/en/privacidad#cookies' : '/privacidad#cookies';
     const accept = document.getElementById('cc-accept');
     const reject = document.getElementById('cc-reject');
     accept?.addEventListener('click', () => {
-      try { localStorage.setItem(KEY, 'accepted'); } catch (e) {}
+      persistConsent('accepted');
       applyConsent('accepted');
       hideBanner(el);
     });
     reject?.addEventListener('click', () => {
-      try { localStorage.setItem(KEY, 'rejected'); } catch (e) {}
+      persistConsent('rejected');
       applyConsent('rejected');
       hideBanner(el);
     });

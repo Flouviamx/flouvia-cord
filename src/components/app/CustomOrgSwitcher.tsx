@@ -49,8 +49,12 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
   const memberships = safeUser.organizationMemberships ?? [];
 
   const handleSwitch = async (organizationId: string) => {
-    // Custom auth: set active org cookie and reload
-    document.cookie = `cord_active_org=${organizationId}; path=/; max-age=31536000`;
+    // Custom auth: set active org cookie and reload. Secure + SameSite=Lax
+    // aunque el valor de por sí no autoriza nada por su cuenta — resolveOrgId()
+    // en db.ts valida que el usuario sea miembro ACTIVO de esa org antes de
+    // honrarla — pero no hay razón para dejarla viajar sin Secure en producción.
+    const secureAttr = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `cord_active_org=${organizationId}; path=/; max-age=31536000; SameSite=Lax${secureAttr}`;
     setIsOpen(false);
 
     const path = window.location.pathname;

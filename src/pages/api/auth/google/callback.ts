@@ -4,7 +4,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql } from '../../../../lib/db';
-import { createSession, sessionCookieOptions, SESSION_COOKIE, createTwoFactorChallenge } from '../../../../lib/auth';
+import { createSession, setSessionCookies, createTwoFactorChallenge } from '../../../../lib/auth';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
 import { posthogServer } from '../../../../lib/posthog-server';
@@ -158,7 +158,7 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
     }
 
     const sessionToken = await createSession(userId!, 'Google OAuth', ip);
-    cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions());
+    setSessionCookies(cookies, sessionToken);
 
     return redirect(dest);
   } catch (err) {

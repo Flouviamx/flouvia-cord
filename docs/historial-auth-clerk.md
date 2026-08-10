@@ -6,6 +6,83 @@
 
 ---
 
+✅ **Sesión visible en la landing pública + cookie de consentimiento compartida entre
+   subdominios + glass restaurado (ago 2026)** — André reportó que al cerrar la
+   pestaña o salir a la landing pública tenía que volver a iniciar sesión, que el
+   aviso de cookies se repetía al cruzar entre `cordhq.app` y `docs.cordhq.app`, y
+   que el navbar público se veía "demasiado transparentoso". Auditoría antes de
+   tocar nada: **la sesión NO se estaba perdiendo** — `cord_session` ya es
+   persistente (30 días deslizante, tope de 180 días) con renovación automática en
+   cada request vía `middleware.ts`. Lo roto era la *percepción*: desde la
+   migración de Clerk, el navbar quedó con `applyAuthState(false)` hardcodeado, así
+   que siempre decía "Entrar" aunque la sesión estuviera viva.
+   • **Cookie "hint" no sensible** — `cord_auth_hint` (no-httpOnly, valor constante
+     `'1'`, sin identidad) nueva junto a `cord_session`, escrita/borrada SIEMPRE
+     en conjunto vía dos helpers nuevos en `src/lib/auth.ts`:
+     `setSessionCookies()`/`clearSessionCookies()` (reemplazan las 8 llamadas
+     sueltas a `cookies.set(SESSION_COOKIE,...)` que existían en
+     login/2fa/google/apple/passkeys/saml/verify-email y la re-emisión deslizante
+     del middleware, más los 2 sitios de borrado en logout y eliminación de
+     cuenta). El navbar público (`Nav.astro`) lee `document.cookie` buscando el
+     hint para decidir "Entrar" vs "Ir al Dashboard" — el hint NUNCA autentica
+     nada, el middleware sigue validando `cord_session` contra la tabla
+     `sessions` en cada request.
+   • **Bug real cerrado de paso — `middleware.ts` dejaba la cookie muerta:** si
+     `validateSession` devolvía `null` (sesión revocada/expirada/cuenta
+     suspendida) el navegador conservaba `cord_session` hasta su Max-Age original
+     y el hint seguía diciendo "hay sesión". Ahora ese caso limpia ambas cookies.
+   • **`orgs.session_timeout_min` — de decorativo a real:** se podía configurar en
+     Ajustes › Seguridad desde jul 2026 pero **ningún código lo aplicaba** — una
+     org podía "exigir" cierre a 1h y la sesión seguía viva 30 días igual, mismo
+     patrón de promesa-sin-enforcement que ya se había encontrado con
+     `require_2fa`. `validateSession()` ahora devuelve `idleMs` (tiempo desde el
+     último request verificado, leído ANTES de tocar la fila) y `getAppGates()`
+     expone `sessionTimeoutMin`; el middleware invalida la sesión y redirige a
+     `/sign-in` si se excede, mismo patrón que el gate de 2FA obligatorio
+     (limitado a `isApp`, no bloquea APIs internas directamente — igual que ese
+     gate). `db/schema.sql`: el default de `absolute_expires_at` decía 90 días
+     mientras `createSession` siempre insertaba 180 explícitos — alineado a 180.
+   • **`cord_active_org` reforzada** (`CustomOrgSwitcher.tsx`): ganó
+     `SameSite=Lax` y `Secure` en producción — el riesgo real de fuga cross-tenant
+     ya estaba cerrado desde antes (`resolveOrgId()` valida membresía activa
+     antes de honrar la cookie), esto es defensa adicional gratis.
+   • **Aviso de cookies compartido entre subdominios:** `cord_cookie_consent`
+     pasó de vivir solo en `localStorage` (particionado por origen — por eso
+     aceptar en `cordhq.app` no contaba en `docs.cordhq.app`, orígenes distintos
+     aunque sea el mismo deployment) a una cookie de primera parte con
+     `Domain=.cordhq.app` (same-site, se comparte de verdad), con
+     `localStorage` como respaldo y migración automática de quien ya había
+     aceptado antes (se lee una vez y se espeja a la cookie sin re-preguntar).
+     `dev.cordhq.app` se deja sin banner a propósito — no inicializa PostHog ni
+     pone cookies de analítica. **Bug real cerrado de paso:** `applyConsent()` se
+     rendía en silencio si `window.posthog` aún no había terminado de cargar
+     cuando el usuario aceptaba — esa visita se quedaba sin instrumentar.
+     Reintenta acotado (20×150ms) hasta que `posthog` exista.
+   • **Auditoría de bypass — sin hallazgos:** ninguna página de `src/pages/app/**`
+     es `prerender:true` (saltaría el middleware por completo, el mismo bug que
+     ya mordió con el `index.astro` de subdominios); `/api/account/**` no está en
+     `PUBLIC_API_PREFIXES`; `confirmEmailVerification` consume el token de un
+     solo uso antes de crear sesión; OAuth exige `verified_email`/
+     `email_verified` antes de vincular cuenta; el lockout de 10 intentos/15min
+     está bien cableado en `login.ts`.
+   • **Glass restaurado — SOLO navbar público y drawer de ayuda de `/app`**
+     (topbar/sidebar/dropdowns se dejaron intactos, se veían bien): `git log`
+     confirmó que el CSS del navbar no cambiaba desde el 10 de junio — los
+     valores siempre fueron así de finos (blanco 50-72% sobre landing casi
+     blanca, donde `backdrop-filter` no tiene nada que difuminar); no había
+     ningún commit que revertir. `.glass-pill`/`.lang-switch`/`.nav-login-pill`/
+     `.mobile-pill-inner` subidos a ~88-95% sin scroll y ~90-94% navy con scroll,
+     más un bloque `@supports not (backdrop-filter: blur(1px))` con fondos
+     sólidos que **no existía** (sin él, un navegador sin soporte mostraba solo
+     un lavado semitransparente). `.help-panel` de `AppLayout.astro` subido de
+     0.85 a 0.97 (a 0.85 se transparentaba el contenido de la app detrás del
+     texto del drawer).
+   • Verificado: `npm run build` limpio, grep de confirmación de que no quedaron
+     referencias sueltas a `sessionCookieOptions()`/`SESSION_COOKIE` fuera de los
+     helpers nuevos.
+
+---
+
 **Ops aislado con autenticación fuerte y allowlist doble (ago 2026)**
 
 El panel interno de `ops.cordhq.app` dejó de usar `OPS_SECRET`. Solo

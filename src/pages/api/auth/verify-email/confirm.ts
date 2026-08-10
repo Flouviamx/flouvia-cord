@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { confirmEmailVerification, createSession, sessionCookieOptions, SESSION_COOKIE } from '../../../../lib/auth';
+import { confirmEmailVerification, createSession, setSessionCookies } from '../../../../lib/auth';
 import { emailVerifyConfirmSchema, parseJsonBody } from '../../../../lib/validation';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
@@ -29,7 +29,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
         const userAgent = request.headers.get('user-agent') || 'desconocido';
         const sessionToken = await createSession(result.userId, userAgent, ip);
-        cookies.set(SESSION_COOKIE, sessionToken, sessionCookieOptions());
+        setSessionCookies(cookies, sessionToken);
 
         // El token de verificación es de un solo uso (se borra en confirmEmailVerification),
         // así que este endpoint dispara exactamente una vez por signup real de email.
