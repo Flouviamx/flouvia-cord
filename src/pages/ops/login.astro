@@ -1,162 +1,383 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import { validateOpsSession } from '../../lib/ops-auth';
+import OpsLayout from '../../layouts/OpsLayout.astro';
 
-// Si ya tiene una sesión de ops válida, lo mandamos al dashboard.
-const opsToken = Astro.cookies.get('cord_ops_token')?.value;
-if (await validateOpsSession(opsToken)) {
+if (Astro.locals.opsOperator) {
   return Astro.redirect('/ops');
 }
 ---
 
-<Layout title="Ops | Cord" theme="dark">
-  <div class="ops-login-container">
-    <div class="ops-card">
-      <div class="cord-logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
+<OpsLayout title="Acceso interno | Cord Ops">
+  <main class="ops-login">
+    <section class="ops-auth" aria-labelledby="ops-title">
+      <header class="ops-brand">
+        <span class="ops-wordmark">CORD</span>
+        <span class="ops-product">Ops</span>
+      </header>
+
+      <div class="ops-heading">
+        <h1 id="ops-title">Acceso interno</h1>
+        <p>Inicia sesión para continuar.</p>
       </div>
-      <h1>Sistemas Internos</h1>
-      <p>Acceso restringido</p>
-      
-      <form id="ops-auth-form">
-        <input type="password" id="secret" placeholder="Clave de operaciones" required autocomplete="off" />
-        <button type="submit" id="submit-btn">Ingresar</button>
+
+      <form id="ops-password-form" class="ops-form" novalidate>
+        <label for="ops-email">Correo</label>
+        <input
+          id="ops-email"
+          name="email"
+          type="email"
+          inputmode="email"
+          autocomplete="username webauthn"
+          maxlength="254"
+          required
+        />
+
+        <div id="password-fields" class="password-fields">
+          <label for="ops-password">Contraseña</label>
+          <input
+            id="ops-password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            maxlength="1024"
+            required
+          />
+        </div>
+
+        <div id="totp-fields" class="totp-fields" hidden>
+          <label for="ops-code">Código de autenticación</label>
+          <input
+            id="ops-code"
+            name="code"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            placeholder="000000"
+          />
+          <p>El reto es de un solo uso. Si el código falla, deberás verificar nuevamente tu contraseña.</p>
+        </div>
+
+        <div id="ops-error" class="ops-message ops-error" role="alert" hidden></div>
+        <div id="ops-notice" class="ops-message ops-notice" role="status" hidden></div>
+
+        <button id="password-submit" class="ops-primary" type="submit">Continuar</button>
+        <button id="passkey-submit" class="ops-secondary" type="button">
+          Usar Touch ID
+        </button>
       </form>
-      <div id="error-msg" class="error-msg"></div>
-    </div>
-  </div>
-
-  <style>
-    .ops-login-container {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #050505; /* Deep black for ultra-premium feel */
-      color: #fff;
-      font-family: var(--font-sans, system-ui, sans-serif);
-    }
-
-    .ops-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 3rem 2.5rem;
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    }
-
-    .cord-logo {
-      margin-bottom: 1.5rem;
-      color: #fff;
-      opacity: 0.8;
-    }
-
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 500;
-      margin: 0 0 0.5rem 0;
-      letter-spacing: -0.02em;
-    }
-
-    p {
-      color: #888;
-      font-size: 0.9rem;
-      margin: 0 0 2rem 0;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    input {
-      background: rgba(0,0,0,0.5);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 0.75rem 1rem;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 1rem;
-      transition: all 0.2s ease;
-      outline: none;
-    }
-
-    input:focus {
-      border-color: rgba(255, 255, 255, 0.3);
-      background: rgba(255,255,255,0.05);
-    }
-
-    button {
-      background: #fff;
-      color: #000;
-      border: none;
-      padding: 0.8rem;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: transform 0.1s ease, opacity 0.2s ease;
-    }
-
-    button:hover {
-      opacity: 0.9;
-    }
-
-    button:active {
-      transform: scale(0.98);
-    }
-    
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .error-msg {
-      color: #ff4a4a;
-      font-size: 0.85rem;
-      margin-top: 1rem;
-      min-height: 1.2em;
-    }
-  </style>
+    </section>
+  </main>
 
   <script>
-    const form = document.getElementById('ops-auth-form') as HTMLFormElement;
-    const input = document.getElementById('secret') as HTMLInputElement;
-    const btn = document.getElementById('submit-btn') as HTMLButtonElement;
-    const errorMsg = document.getElementById('error-msg') as HTMLDivElement;
+    import { startAuthentication } from '@simplewebauthn/browser';
 
-    form?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorMsg.textContent = '';
-      btn.disabled = true;
-      btn.textContent = 'Verificando...';
+    const form = document.getElementById('ops-password-form') as HTMLFormElement;
+    const email = document.getElementById('ops-email') as HTMLInputElement;
+    const password = document.getElementById('ops-password') as HTMLInputElement;
+    const code = document.getElementById('ops-code') as HTMLInputElement;
+    const passwordFields = document.getElementById('password-fields') as HTMLDivElement;
+    const totpFields = document.getElementById('totp-fields') as HTMLDivElement;
+    const primary = document.getElementById('password-submit') as HTMLButtonElement;
+    const passkey = document.getElementById('passkey-submit') as HTMLButtonElement;
+    const errorBox = document.getElementById('ops-error') as HTMLDivElement;
+    const noticeBox = document.getElementById('ops-notice') as HTMLDivElement;
+    let totpStage = false;
+
+    function setBusy(busy: boolean) {
+      primary.disabled = busy;
+      passkey.disabled = busy;
+      email.readOnly = busy || totpStage;
+      password.readOnly = busy;
+      code.readOnly = busy;
+    }
+
+    function message(kind: 'error' | 'notice', text: string) {
+      errorBox.hidden = kind !== 'error';
+      noticeBox.hidden = kind !== 'notice';
+      errorBox.textContent = kind === 'error' ? text : '';
+      noticeBox.textContent = kind === 'notice' ? text : '';
+    }
+
+    function resetMessages() {
+      errorBox.hidden = true;
+      noticeBox.hidden = true;
+      errorBox.textContent = '';
+      noticeBox.textContent = '';
+    }
+
+    function errorText(value: string, status: number): string {
+      if (value === 'account_locked') return 'La cuenta está bloqueada temporalmente por seguridad.';
+      if (value === 'strong_factor_required') return 'La activación de TOTP todavía no fue confirmada.';
+      if (value === 'local_session_required') return 'Inicia sesión primero en Cord desde este navegador.';
+      if (value === 'challenge_expired') return 'La verificación expiró. Vuelve a ingresar tu contraseña.';
+      if (value === 'invalid_code') return 'Código incorrecto. El reto fue consumido; vuelve a verificar tu contraseña.';
+      if (value === 'rate_limited' || status === 429) return 'Demasiados intentos. Espera antes de volver a probar.';
+      if (value === 'internal_error') return 'Ops no está disponible en este momento. El acceso permanece cerrado.';
+      return 'No pudimos verificar estas credenciales.';
+    }
+
+    function returnToPassword() {
+      totpStage = false;
+      totpFields.hidden = true;
+      passwordFields.hidden = false;
+      passkey.hidden = false;
+      email.readOnly = false;
+      password.value = '';
+      code.value = '';
+      primary.textContent = 'Continuar';
+      password.focus();
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      resetMessages();
+      setBusy(true);
+      primary.textContent = 'Verificando';
 
       try {
-        const res = await fetch('/api/ops/auth', {
+        const response = await fetch('/api/ops/auth', {
+          method: totpStage ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(totpStage
+            ? { code: code.value.trim() }
+            : { email: email.value.trim(), password: password.value }),
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok && data.mfaRequired) {
+          totpStage = true;
+          password.value = '';
+          passwordFields.hidden = true;
+          totpFields.hidden = false;
+          passkey.hidden = true;
+          primary.textContent = 'Verificar código';
+          message('notice', 'Contraseña verificada. Completa el segundo factor.');
+          code.focus();
+          return;
+        }
+        if (response.ok) {
+          window.location.replace('/ops');
+          return;
+        }
+
+        message('error', errorText(data.error || data.code, response.status));
+        if (totpStage) returnToPassword();
+      } catch {
+        message('error', 'No pudimos conectar con el servidor. El acceso permanece cerrado.');
+      } finally {
+        setBusy(false);
+        primary.textContent = totpStage ? 'Verificar código' : 'Continuar';
+      }
+    });
+
+    passkey.addEventListener('click', async () => {
+      resetMessages();
+      if (!email.validity.valid || !email.value.trim()) {
+        message('error', 'Ingresa primero tu correo de operador.');
+        email.focus();
+        return;
+      }
+      setBusy(true);
+      passkey.textContent = 'Esperando dispositivo';
+
+      try {
+        const optionsResponse = await fetch('/api/ops/passkey-options', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ secret: input.value })
+          body: JSON.stringify({ email: email.value.trim() }),
         });
+        const options = await optionsResponse.json().catch(() => ({}));
+        if (!optionsResponse.ok) throw new Error(options.code || options.error || 'request_failed');
 
-        if (res.ok) {
-          window.location.href = '/ops';
+        const credential = await startAuthentication({ optionsJSON: options });
+        const verifyResponse = await fetch('/api/ops/passkey-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(credential),
+        });
+        const result = await verifyResponse.json().catch(() => ({}));
+        if (!verifyResponse.ok) throw new Error(result.code || result.error || 'invalid_credential');
+        window.location.replace('/ops');
+      } catch (error: any) {
+        if (error?.name === 'NotAllowedError') {
+          message('error', 'La clave de acceso fue cancelada o no está disponible para esta cuenta.');
+        } else if (error?.message === 'rate_limited') {
+          message('error', 'Demasiados intentos. Espera antes de volver a probar.');
         } else {
-          errorMsg.textContent = 'Clave incorrecta.';
-          input.value = '';
-          input.focus();
+          message('error', 'No pudimos verificar la clave de acceso.');
         }
-      } catch (err) {
-        errorMsg.textContent = 'Error de conexión.';
       } finally {
-        btn.disabled = false;
-        btn.textContent = 'Ingresar';
+        setBusy(false);
+        passkey.textContent = 'Usar Touch ID';
       }
     });
   </script>
-</Layout>
+
+  <style>
+    .ops-login {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      place-items: center;
+      padding: 48px 24px;
+      background: #f5f5f7;
+    }
+
+    .ops-auth {
+      width: 100%;
+      max-width: 430px;
+      min-width: 0;
+      padding: 48px;
+      border: 1px solid rgba(0, 0, 0, 0.025);
+      border-radius: 38px;
+      background: #fff;
+      box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.018),
+        0 14px 34px rgba(0, 0, 0, 0.045),
+        0 38px 80px rgba(0, 0, 0, 0.035);
+    }
+
+    .ops-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 52px;
+    }
+
+    .ops-wordmark {
+      font-size: 0.78rem;
+      font-weight: 750;
+      letter-spacing: 0.18em;
+      color: #1d1d1f;
+    }
+
+    .ops-product {
+      padding-left: 12px;
+      border-left: 1px solid #d2d2d7;
+      color: #86868b;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
+    .ops-heading { margin-bottom: 30px; }
+
+    h1 {
+      margin: 0;
+      color: #050505;
+      font-size: clamp(2rem, 7vw, 2.6rem);
+      line-height: 1.06;
+      letter-spacing: -0.045em;
+      font-weight: 650;
+    }
+
+    .ops-heading > p:last-child {
+      margin: 10px 0 0;
+      color: #86868b;
+      font-size: 0.91rem;
+      line-height: 1.5;
+    }
+
+    .ops-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .password-fields,
+    .totp-fields {
+      display: contents;
+    }
+
+    .password-fields[hidden],
+    .totp-fields[hidden] { display: none; }
+
+    label {
+      margin-top: 8px;
+      color: #6e6e73;
+      font-size: 0.77rem;
+      font-weight: 550;
+    }
+
+    input {
+      width: 100%;
+      min-height: 52px;
+      border: 0;
+      border-radius: 15px;
+      padding: 0 16px;
+      color: #1d1d1f;
+      background: #f5f5f7;
+      box-shadow: 0 0 0 1px transparent;
+      outline: none;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    input:hover { background: #f0f0f2; }
+    input:focus {
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.18);
+    }
+    input:read-only { opacity: 0.68; }
+
+    .totp-fields input {
+      letter-spacing: 0.22em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .totp-fields p {
+      margin: 2px 0 5px;
+      color: #86868b;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    button {
+      min-height: 50px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.86rem;
+      font-weight: 650;
+      transition: transform 150ms ease, opacity 150ms ease, background 150ms ease;
+    }
+
+    button:hover:not(:disabled) { transform: scale(0.988); }
+    button:active:not(:disabled) { transform: scale(0.972); }
+    button:disabled { cursor: wait; opacity: 0.55; }
+
+    .ops-primary {
+      margin-top: 14px;
+      border: 0;
+      color: #fff;
+      background: #1d1d1f;
+    }
+
+    .ops-secondary {
+      border: 0;
+      color: #1d1d1f;
+      background: #f5f5f7;
+    }
+
+    .ops-secondary:hover:not(:disabled) { background: #ededf0; }
+
+    .ops-message {
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 13px;
+      font-size: 0.79rem;
+      line-height: 1.55;
+    }
+    .ops-error { color: #a51d28; background: #fff1f2; }
+    .ops-notice { color: #1557a0; background: #edf6ff; }
+
+    @media (max-width: 560px) {
+      .ops-login { place-items: center; padding: 20px; }
+      .ops-auth { padding: 38px 28px; border-radius: 32px; }
+      .ops-brand { margin-bottom: 44px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</OpsLayout>

@@ -48,7 +48,12 @@ async function upstashAllow(key: string, limit: number, windowSec: number): Prom
     return { ok: count <= limit, remaining: Math.max(0, limit - count), retryAfter: windowSec };
 }
 
-export interface RateResult { ok: boolean; remaining: number; retryAfter: number }
+export interface RateResult {
+    ok: boolean;
+    remaining: number;
+    retryAfter: number;
+    unavailable?: boolean;
+}
 
 /**
  * Cuenta un hit contra `key` en una ventana deslizante de `windowSec`. Devuelve
@@ -65,6 +70,40 @@ export async function rateLimit(key: string, limit: number, windowSec = 60): Pro
         }
     }
     return memAllow(key, limit, windowSec * 1000);
+}
+
+/**
+ * Variante fail-closed para superficies privilegiadas. En produccion exige el
+ * contador distribuido: si Upstash no esta configurado o no responde, el acceso
+ * se detiene temporalmente en vez de degradarse a limites aislados por instancia.
+ * En desarrollo conserva el fallback local para no bloquear localhost.
+ */
+export async function strictRateLimit(key: string, limit: number, windowSec = 60): Promise<RateResult> {
+    if (RATE_LIMIT_BACKEND === 'upstash') {
+        try {
+            return await upstashAllow(`rl:${key}`, limit, windowSec);
+        } catch {
+            return { ok: false, remaining: 0, retryAfter: 60, unavailable: true };
+        }
+    }
+    if (import.meta.env.PROD) {
+        return { ok: false, remaining: 0, retryAfter: 60, unavailable: true };
+    }
+    return memAllow(key, limit, windowSec * 1000);
+}
+
+export function strictLimitResponse(result: RateResult): Response | null {
+    if (result.ok) return null;
+    if (result.unavailable) {
+        return new Response(JSON.stringify({ error: 'access_temporarily_unavailable' }), {
+            status: 503,
+            headers: {
+                'Content-Type': 'application/json',
+                'Retry-After': String(result.retryAfter),
+            },
+        });
+    }
+    return tooMany(result.retryAfter);
 }
 
 // Helper: arma un Response 429 estándar con Retry-After.

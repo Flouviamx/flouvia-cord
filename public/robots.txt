@@ -8,6 +8,7 @@ Disallow: /sign-up
 Disallow: /forgot-password
 Disallow: /verify-email
 Disallow: /onboarding/
+Disallow: /ops/
 
 # AI crawlers — allowed explicitly so answer engines (ChatGPT, Claude, Perplexity,
 # Gemini) can read and cite public pages. Same disallow list as above.
@@ -34,6 +35,7 @@ Disallow: /sign-up
 Disallow: /forgot-password
 Disallow: /verify-email
 Disallow: /onboarding/
+Disallow: /ops/
 
 Sitemap: https://cordhq.app/sitemap.xml
 

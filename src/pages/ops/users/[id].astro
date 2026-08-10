@@ -1,0 +1,55 @@
+---
+import OpsLayout from '../../../layouts/OpsLayout.astro';
+import OpsShell from '../../../components/ops/OpsShell.astro';
+import OpsActionDialog from '../../../components/ops/OpsActionDialog.astro';
+import { sql } from '../../../lib/db';
+import { opsDate, opsNumber, OPS_AUDIT_LABELS } from '../../../lib/ops-format';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const id = String(Astro.params.id || '');
+if (!/^[0-9a-f-]{36}$/i.test(id)) return Astro.redirect('/ops/users');
+const [userRows, memberships, sessions, passkeys, connections, audit] = await Promise.all([
+  sql`select u.id,u.email,u.first_name,u.last_name,u.avatar_url,u.puesto,u.created_at,u.updated_at,u.email_verified_at,u.password_changed_at,u.failed_login_count,u.locked_until,u.totp_enabled,u.totp_confirmed_at,u.suspended_at,u.suspended_reason,
+      exists(select 1 from ops_operators o where o.user_id=u.id and o.active) is_operator,
+      (select count(*)::int from org_members m where m.user_id=u.id) membership_count,
+      (select count(*)::int from sessions s where s.user_id=u.id) session_count,
+      (select count(*)::int from passkeys p where p.user_id=u.id) passkey_count,
+      (select count(*)::int from oauth_accounts a where a.user_id=u.id) connection_count
+      from users u where u.id=${id} limit 1`,
+  sql`select o.id,o.nombre,m.rol,m.estado,m.joined_at,o.plan from org_members m join orgs o on o.id=m.org_id where m.user_id=${id} order by m.created_at desc limit 50`,
+  sql`select id,ip,user_agent,created_at,last_used_at,expires_at,revoked_at from sessions where user_id=${id} order by last_used_at desc limit 50`,
+  sql`select name,device_type,backed_up,transports,created_at,last_used_at from passkeys where user_id=${id} order by created_at desc limit 25`,
+  sql`select provider,email,created_at from oauth_accounts where user_id=${id} order by created_at desc limit 25`,
+  sql`select action,result,actor_email,metadata,ip,created_at from ops_audit_log where target_type='user' and target_id=${id} order by created_at desc limit 50`,
+]);
+if (!userRows.length) return Astro.redirect('/ops/users');
+const user:any=userRows[0];
+const name=[user.first_name,user.last_name].filter(Boolean).join(' ')||'Sin nombre';
+const endpoint=`/api/ops/users/${id}`;
+const locked=user.locked_until&&new Date(user.locked_until)>new Date();
+---
+<OpsLayout title={`${user.email} | Cord Ops`}>
+  <OpsShell active="users" eyebrow="Usuario" title={name} subtitle={user.email}>
+    <a href="/ops/users" style="display:inline-block;margin-bottom:16px;color:#0066cc;text-decoration:none;font-size:12px">Volver a usuarios</a>
+    <section class="ops-card">
+      <div class="ops-detail-hero"><div class="ops-detail-identity"><span class="ops-avatar">{name==='Sin nombre'?user.email.charAt(0).toUpperCase():name.charAt(0).toUpperCase()}</span><div><h2>{name}</h2><p>{user.email}</p></div></div>
+        <div class="ops-detail-actions">
+          <button class="ops-button secondary" data-ops-action="revoke_sessions" data-endpoint={endpoint} data-title="Revocar sesiones" data-description="Cerrará todas las sesiones normales de Cord de esta cuenta.">Revocar sesiones</button>
+          {locked&&<button class="ops-button secondary" data-ops-action="unlock" data-endpoint={endpoint} data-title="Desbloquear cuenta" data-description="Restablecerá intentos fallidos y quitará el bloqueo temporal.">Desbloquear</button>}
+          {!user.is_operator&&!user.suspended_at&&<button class="ops-button danger" data-ops-action="suspend" data-endpoint={endpoint} data-confirm={user.email} data-reason="true" data-danger="true" data-title="Suspender cuenta" data-description="Impedirá nuevos accesos por contraseña, OAuth, passkey y SSO, y cerrará todas las sesiones actuales.">Suspender</button>}
+          {!user.is_operator&&user.suspended_at&&<button class="ops-button" data-ops-action="restore" data-endpoint={endpoint} data-title="Restaurar cuenta" data-description="Devolverá el acceso a la cuenta y limpiará cualquier bloqueo temporal.">Restaurar</button>}
+          {!user.is_operator&&<button class="ops-button danger" data-ops-action="delete_user" data-endpoint={endpoint} data-confirm={user.email} data-danger="true" data-title="Eliminar usuario" data-description="Eliminará permanentemente la identidad si no posee organizaciones.">Eliminar</button>}
+        </div>
+      </div>
+      <div class="ops-facts"><div class="ops-fact"><span>Estado</span><strong>{user.suspended_at?'Suspendida':locked?'Bloqueada':'Activa'}</strong></div><div class="ops-fact"><span>Correo</span><strong>{user.email_verified_at?'Verificado':'Pendiente'}</strong></div><div class="ops-fact"><span>Segundo factor</span><strong>{Number(user.passkey_count)>0?'Passkey':user.totp_enabled?'TOTP':'No configurado'}</strong></div><div class="ops-fact"><span>Alta</span><strong>{opsDate(user.created_at)}</strong></div></div>
+    </section>
+    {user.suspended_at&&<section class="ops-section"><div class="ops-inline-error">Cuenta suspendida desde {opsDate(user.suspended_at)}{user.suspended_reason?`: ${user.suspended_reason}`:''}</div></section>}
+    <div class="ops-grid-2 ops-section">
+      <section><header class="ops-section-header"><div><h2>Perfil y seguridad</h2><p>Estado interno de la identidad.</p></div></header><div class="ops-card ops-card-pad"><dl class="ops-key-value"><div><dt>ID</dt><dd class="ops-code">{user.id}</dd></div><div><dt>Puesto</dt><dd>{user.puesto||'Sin definir'}</dd></div><div><dt>Intentos fallidos</dt><dd>{opsNumber(user.failed_login_count)}</dd></div><div><dt>TOTP</dt><dd>{user.totp_enabled?`Confirmado ${opsDate(user.totp_confirmed_at)}`:'No configurado'}</dd></div><div><dt>Cambio de contraseña</dt><dd>{opsDate(user.password_changed_at,'Sin registro')}</dd></div><div><dt>Actualización</dt><dd>{opsDate(user.updated_at)}</dd></div></dl></div></section>
+      <section><header class="ops-section-header"><div><h2>Organizaciones</h2><p>{opsNumber(user.membership_count)} membresías; últimas 50.</p></div></header><div class="ops-card ops-list">{memberships.map((m:any)=><a class="ops-list-row" href={`/ops/organizations/${m.id}`} style="text-decoration:none"><strong>{m.nombre}</strong><span>{m.rol} · {m.estado}</span><span class="ops-badge">{m.plan}</span></a>)}{memberships.length===0&&<div class="ops-empty">Sin organizaciones.</div>}</div></section>
+    </div>
+    <section class="ops-section"><header class="ops-section-header"><div><h2>Sesiones</h2><p>{opsNumber(user.session_count)} registradas; últimas 50.</p></div></header><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Dispositivo</th><th>IP</th><th>Último uso</th><th>Expira</th><th>Estado</th></tr></thead><tbody>{sessions.map((s:any)=><tr><td><span class="ops-data-value">{s.user_agent||'Desconocido'}</span></td><td class="ops-code">{s.ip||'—'}</td><td>{opsDate(s.last_used_at)}</td><td>{opsDate(s.expires_at)}</td><td><span class:list={['ops-badge',s.revoked_at?'red':'green']}>{s.revoked_at?'Revocada':'Vigente'}</span></td></tr>)}{sessions.length===0&&<tr><td colspan="5" class="ops-empty">Sin sesiones.</td></tr>}</tbody></table></div></section>
+    <div class="ops-grid-2 ops-section"><section><header class="ops-section-header"><div><h2>Passkeys</h2><p>{opsNumber(user.passkey_count)} registradas; últimas 25.</p></div></header><div class="ops-card ops-list">{passkeys.map((p:any)=><div class="ops-list-row"><strong>{p.name||'Clave de acceso'}</strong><span>{p.device_type} · {p.backed_up?'Sincronizada':'Solo dispositivo'}</span><span>{opsDate(p.last_used_at)}</span></div>)}{passkeys.length===0&&<div class="ops-empty">Sin passkeys.</div>}</div></section><section><header class="ops-section-header"><div><h2>Conexiones</h2><p>{opsNumber(user.connection_count)} proveedores; últimos 25.</p></div></header><div class="ops-card ops-list">{connections.map((c:any)=><div class="ops-list-row"><strong>{c.provider}</strong><span>{c.email||user.email}</span><span>{opsDate(c.created_at)}</span></div>)}{connections.length===0&&<div class="ops-empty">Sin conexiones OAuth.</div>}</div></section></div>
+    <section class="ops-section"><header class="ops-section-header"><div><h2>Historial administrativo</h2><p>Acciones de Ops sobre esta cuenta.</p></div></header><div class="ops-card">{audit.map((e:any)=><div class="ops-audit-row"><span class:list={['ops-audit-dot',e.result]}></span><div><strong>{OPS_AUDIT_LABELS[e.action]||e.action}</strong><span class="ops-sub">{e.actor_email||'Sistema'}</span></div><span>{e.ip||'IP no disponible'}</span><time>{opsDate(e.created_at)}</time></div>)}{audit.length===0&&<div class="ops-empty">Sin acciones administrativas.</div>}</div></section>
+  </OpsShell><OpsActionDialog />
+</OpsLayout>

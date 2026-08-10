@@ -1,0 +1,26 @@
+---
+import OpsLayout from '../../../layouts/OpsLayout.astro';
+import OpsShell from '../../../components/ops/OpsShell.astro';
+import OpsPagination from '../../../components/ops/OpsPagination.astro';
+import { opsDate, opsNumber } from '../../../lib/ops-format';
+import { getOpsOrganizationsPage } from '../../../lib/ops-list-queries';
+import { normalizeOpsSearch, OPS_PAGE_SIZE, parseOpsPage } from '../../../lib/ops-pagination';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const query=normalizeOpsSearch(Astro.url.searchParams.get('q'));
+const page=parseOpsPage(Astro.url.searchParams.get('page'));
+let organizations:any[]=[];
+let total=0;
+let error=false;
+try{
+  organizations=await getOpsOrganizationsPage(query,page);
+  total=Number(organizations[0]?.total_count||0);
+  if(page>1&&organizations.length===0)return Astro.redirect(`/ops/organizations${query?`?q=${encodeURIComponent(query)}`:''}`);
+}catch(cause){error=true;console.error('[ops/organizations]',cause)}
+---
+<OpsLayout title="Organizaciones | Cord Ops"><OpsShell active="organizations" title="Organizaciones" subtitle="Workspaces, actividad comercial e infraestructura conectada.">
+  <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input name="q" value={query} placeholder="Buscar organización" /></form>
+  <section class="ops-card ops-hero-card"><span class="ops-kicker">Workspaces</span><h2 style="margin:0;font-size:30px;letter-spacing:-.04em">{opsNumber(total)} organizaciones</h2><p style="margin:10px 0 0;color:#86868b;font-size:13px">Vista consolidada de propietarios, equipo, catálogo y cierre comercial.</p></section>
+  <section class="ops-section"><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Organización</th><th>Plan</th><th>Equipo</th><th>Datos</th><th>Cierre acumulado</th><th>Alta</th><th></th></tr></thead><tbody>{organizations.map((org)=><tr><td><div class="ops-identity"><span class="ops-avatar">{org.nombre.charAt(0).toUpperCase()}</span><div><a href={`/ops/organizations/${org.id}`}>{org.nombre}</a><span class="ops-sub">{org.owner_email||'Sin propietario'}</span></div></div></td><td><span class="ops-badge blue">{org.plan||'free'}</span><span class="ops-sub">{org.subscription_status||'Sin suscripción'}</span></td><td>{opsNumber(org.members)}<span class="ops-sub">miembros</span></td><td>{opsNumber(org.clients)} clientes<span class="ops-sub">{opsNumber(org.products)} productos · {opsNumber(org.quotes)} cotizaciones</span></td><td>{new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}).format(Number(org.closed_value||0))}</td><td>{opsDate(org.created_at)}</td><td><a href={`/ops/organizations/${org.id}`} style="color:#0066cc">Ver detalle</a></td></tr>)}{organizations.length===0&&<tr><td colspan="7" class="ops-empty">No se encontraron organizaciones.</td></tr>}</tbody></table></div>{!error&&<OpsPagination page={page} total={total} pageSize={OPS_PAGE_SIZE} path="/ops/organizations" search={query?`q=${encodeURIComponent(query)}`:''}/>}</section>
+  {error&&<div class="ops-inline-error">No se pudieron cargar las organizaciones.</div>}
+</OpsShell></OpsLayout>

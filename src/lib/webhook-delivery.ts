@@ -320,7 +320,7 @@ async function notifyOwner(orgId: string, opts: { subject: string; heading: stri
                 </div>
             </div>
         </div>`;
-        await sendEmail({ to, subject: opts.subject, html, fromName: (org?.nombre as string) || undefined });
+        await sendEmail({ to, subject: opts.subject, html, fromName: (org?.nombre as string) || undefined, orgId, operation: 'webhook_health_alert' });
     } catch { /* nunca romper el settle por un fallo de correo */ }
 }
 

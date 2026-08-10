@@ -30,10 +30,9 @@ const money = (n: any) => '$' + new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX', 
 <AppLayout title={t(L, 'tia.title')} page="ai-ar" heading={t(L, 'tia.heading')}>
   <p slot="page-sub">{t(L, 'tia.sub')}</p>
   <button slot="topbar-actions" class="ac-run" id="runBtn" data-i18n-ejecutando={t(L, 'tia.ejecutando')} data-i18n-fallo={t(L, 'tia.fallo')} data-i18n-ok-tpl={t(L, 'tia.ejecutado_ok')} data-i18n-no-pudo={t(L, 'tia.no_pudo_ejecutar')}>{t(L, 'tia.forzar_ejecucion')}</button>
-  <div slot="page-tabs">
+  <div slot="page-tabs" class="ph-tabs">
     <a href="/app/cobranza" class="ph-tab">{t(L, 'tia.tab_cobranza')}</a>
     <a href="/app/tesoreria/cobranza" class="ph-tab active">{t(L, 'tia.tab_ia')}</a>
-    <a href="/app/tesoreria/flujo" class="ph-tab">{t(L, 'tia.tab_flujo')}</a>
   </div>
 
   {!activa && (

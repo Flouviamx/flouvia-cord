@@ -1,0 +1,72 @@
+/* ══ Grid unitario de widgets — UNA sola implementación para /app y /app/informes ══
+   ⚠️ Este CSS DEBE vivir aquí (hoja global importada por AppLayout), no en el <style>
+   de la página. El contenedor lo renderiza WidgetGrid.astro, así que NUNCA recibe el
+   `data-astro-cid-*` de la página anfitriona: un `#dashWidgets { display: grid }` en el
+   <style> scopeado de index.astro no matchea nada y los widgets caen a `display:block`
+   apilados a ancho completo (bug real, ago 2026 — se rompieron las dos páginas a la vez).
+   Por eso todo se llavea por `[data-widget-grid]`, que sí está en el markup del componente.
+
+   `position: relative` = referencia del widget que se arrastra (va en `absolute`, NO en
+   `fixed`: el `transform` de app-fadein en el ancestro lo anclaría a `.app-content`).
+   `z-index: 1` lo deja explícitamente por debajo del hero. */
+[data-widget-grid] {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.4rem;
+    position: relative;
+    z-index: 1;
+    align-items: stretch;
+}
+[data-widget-grid] > .dash-widget { position: relative; grid-column: span 1; min-width: 0; }
+[data-widget-grid] > .dash-widget[data-span="2"] { grid-column: span 2; }
+[data-widget-grid] > .dash-widget[data-span="4"] { grid-column: span 4; }
+[data-widget-grid] > .dash-widget[hidden] { display: none; }
+/* La tarjeta llena su celda para que una fila de KPIs quede pareja. */
+[data-widget-grid] > .dash-widget > .dash-card,
+[data-widget-grid] > .dash-widget > .surface-card { height: 100%; }
+[data-widget-grid] > .widget-tray { grid-column: 1 / -1; }
+[data-widget-grid] > .widget-tray[hidden] { display: none; }
+
+@media (max-width: 1199px) {
+    [data-widget-grid] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    [data-widget-grid] > .dash-widget[data-span="4"] { grid-column: span 2; }
+}
+@media (max-width: 680px) {
+    [data-widget-grid] { grid-template-columns: 1fr; }
+    [data-widget-grid] > .dash-widget,
+    [data-widget-grid] > .dash-widget[data-span="2"],
+    [data-widget-grid] > .dash-widget[data-span="4"] { grid-column: 1 / -1; }
+}
+
+/* Modo edición: contorno punteado + wiggle, igual en las dos páginas. */
+[data-widget-grid][data-editing="1"] > .dash-widget:not(.is-dragging) { cursor: grab; }
+[data-widget-grid][data-editing="1"] > .dash-widget:not(.is-dragging) > .dash-card,
+[data-widget-grid][data-editing="1"] > .dash-widget:not(.is-dragging) > .surface-card {
+    outline: 1.5px dashed var(--color-border);
+    outline-offset: 3px;
+    animation: widget-wiggle 1.6s ease-in-out infinite;
+}
+[data-widget-grid][data-editing="1"] > .dash-widget:nth-child(even):not(.is-dragging) > .dash-card { animation-delay: 0.05s; }
+[data-widget-grid][data-editing="1"] > .dash-widget:nth-child(3n):not(.is-dragging) > .dash-card { animation-delay: 0.09s; }
+@keyframes widget-wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-0.22deg); }
+    75% { transform: rotate(0.22deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    [data-widget-grid][data-editing="1"] > .dash-widget > .dash-card,
+    [data-widget-grid][data-editing="1"] > .dash-widget > .surface-card { animation: none !important; }
+}
+
+.widget-tray-list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.widget-tray-item { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; color: var(--color-text); background: var(--color-bg-soft); border-radius: 100px; padding: 7px 8px 7px 14px; }
+.widget-tray-add { appearance: none; border: none; cursor: pointer; background: var(--color-blue-deep); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.9rem; line-height: 1; }
+.widget-editbar { display: none; position: absolute; top: 8px; right: 8px; z-index: 6; align-items: center; gap: 2px; padding: 3px; background: var(--surface); border-radius: 100px; box-shadow: 0 2px 6px rgba(10,25,47,0.1), 0 8px 20px -6px rgba(10,25,47,0.25); }
+[data-widget-grid][data-editing="1"] > .dash-widget .widget-editbar { display: flex; }
+[data-widget-grid][data-editing="1"] > .dash-widget > .dash-card > *:not(.widget-editbar) { pointer-events: none; }
+.we-btn { appearance: none; border: none; background: transparent; cursor: pointer; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--color-text-muted); transition: background 0.15s, color 0.15s; }
+.we-btn:hover { background: var(--row-hover); color: var(--color-text); }
+.we-drag { cursor: grab; }
+.we-remove:hover { background: rgba(239,68,68,0.1); color: var(--color-danger); }
+.we-resize.is-lg svg { transform: rotate(180deg); }
+

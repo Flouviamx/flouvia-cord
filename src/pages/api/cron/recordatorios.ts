@@ -92,6 +92,8 @@ export const GET: APIRoute = async ({ request }) => {
             </div>
         </div>`;
         const res = await sendEmail({
+            orgId: c.orgId,
+            operation: 'payment_reminder',
             to: c.email,
             subject: `Recordatorio de pago — ${c.folio}`,
             html,

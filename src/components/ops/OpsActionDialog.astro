@@ -1,0 +1,80 @@
+<dialog id="ops-global-dialog" class="ops-dialog">
+  <form method="dialog">
+    <button class="ops-dialog-close" value="cancel" aria-label="Cerrar">×</button>
+    <span class="ops-kicker">Confirmar acción</span>
+    <h2 id="ops-dialog-title">Administrar</h2>
+    <p id="ops-dialog-description"></p>
+    <label id="ops-dialog-reason-wrap" hidden>Motivo interno
+      <textarea id="ops-dialog-reason" maxlength="500" placeholder="Opcional. Quedará registrado en la auditoría."></textarea>
+    </label>
+    <label id="ops-dialog-confirm-wrap" hidden>Escribe <strong id="ops-dialog-confirm-label"></strong> para confirmar
+      <input id="ops-dialog-confirmation" autocomplete="off" />
+    </label>
+    <div id="ops-dialog-error" class="ops-inline-error" hidden></div>
+    <footer><button class="ops-button secondary" value="cancel">Cancelar</button><button id="ops-dialog-submit" class="ops-button" type="button">Confirmar</button></footer>
+  </form>
+</dialog>
+<div id="ops-global-toast" class="ops-toast" role="status" hidden></div>
+
+<script>
+  const dialog = document.getElementById('ops-global-dialog') as HTMLDialogElement;
+  const title = document.getElementById('ops-dialog-title') as HTMLElement;
+  const description = document.getElementById('ops-dialog-description') as HTMLElement;
+  const confirmWrap = document.getElementById('ops-dialog-confirm-wrap') as HTMLElement;
+  const confirmLabel = document.getElementById('ops-dialog-confirm-label') as HTMLElement;
+  const confirmation = document.getElementById('ops-dialog-confirmation') as HTMLInputElement;
+  const reasonWrap = document.getElementById('ops-dialog-reason-wrap') as HTMLElement;
+  const reason = document.getElementById('ops-dialog-reason') as HTMLTextAreaElement;
+  const errorBox = document.getElementById('ops-dialog-error') as HTMLElement;
+  const submit = document.getElementById('ops-dialog-submit') as HTMLButtonElement;
+  const toast = document.getElementById('ops-global-toast') as HTMLElement;
+  let pending: Record<string, string> | null = null;
+
+  document.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-ops-action]');
+    if (!button) return;
+    pending = { ...button.dataset } as Record<string, string>;
+    title.textContent = pending.title || 'Confirmar acción';
+    description.textContent = pending.description || '';
+    confirmWrap.hidden = !pending.confirm;
+    confirmLabel.textContent = pending.confirm || '';
+    reasonWrap.hidden = pending.reason !== 'true';
+    confirmation.value = '';
+    reason.value = '';
+    errorBox.hidden = true;
+    submit.classList.toggle('danger', pending.danger === 'true');
+    dialog.showModal();
+    (pending.confirm ? confirmation : submit).focus();
+  });
+
+  submit.addEventListener('click', async () => {
+    if (!pending) return;
+    if (pending.confirm && confirmation.value !== pending.confirm) {
+      errorBox.textContent = 'La confirmación no coincide.';
+      errorBox.hidden = false;
+      return confirmation.focus();
+    }
+    submit.disabled = true;
+    submit.textContent = 'Procesando';
+    errorBox.hidden = true;
+    try {
+      const response = await fetch(pending.endpoint, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: pending.opsAction, targetId: pending.targetId || undefined, confirmation: confirmation.value || undefined, reason: reason.value || undefined }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'No se pudo completar la acción');
+      dialog.close();
+      toast.textContent = data.affected === undefined ? 'Acción completada' : `Acción completada. ${data.affected} registros afectados.`;
+      toast.hidden = false;
+      window.setTimeout(() => window.location.reload(), 650);
+    } catch (error: any) {
+      errorBox.textContent = error?.message || 'No se pudo completar la acción';
+      errorBox.hidden = false;
+    } finally {
+      submit.disabled = false;
+      submit.textContent = 'Confirmar';
+    }
+  });
+</script>

@@ -1,0 +1,31 @@
+---
+interface Props {
+  page: number;
+  total: number;
+  pageSize: number;
+  path: string;
+  search?: string;
+  pageParam?: string;
+}
+
+const { page, total, pageSize, path, search = '', pageParam = 'page' } = Astro.props;
+const pages = Math.max(1, Math.ceil(total / pageSize));
+const first = total === 0 ? 0 : (page - 1) * pageSize + 1;
+const last = Math.min(page * pageSize, total);
+const hrefFor = (next: number) => {
+  const params = new URLSearchParams(search);
+  if (next > 1) params.set(pageParam, String(next));
+  else params.delete(pageParam);
+  const serialized = params.toString();
+  return `${path}${serialized ? `?${serialized}` : ''}`;
+};
+---
+
+<nav class="ops-pagination" aria-label="Paginación">
+  <span>Mostrando {first.toLocaleString('es-MX')}–{last.toLocaleString('es-MX')} de {total.toLocaleString('es-MX')}</span>
+  <div>
+    {page > 1 && <a class="ops-button secondary" href={hrefFor(page - 1)} rel="prev">Anterior</a>}
+    <span class="ops-page-number">Página {page.toLocaleString('es-MX')} de {pages.toLocaleString('es-MX')}</span>
+    {page < pages && <a class="ops-button secondary" href={hrefFor(page + 1)} rel="next">Siguiente</a>}
+  </div>
+</nav>

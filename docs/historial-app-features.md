@@ -4,6 +4,198 @@
 > cotizaciones, link público `/q`, dashboard, cobranza, onboarding, dark mode, entorno
 > de prueba, chat, tiempo real. Extraído de `historial.md`. Orden: más reciente arriba.
 
+✅ **Consolidación de Informes — 3 regresiones de la extracción, corregidas (ago 2026)** —
+   tras unificar la analítica en `/app/informes` (desplegable de informes, widgets
+   personalizables, motor de pronóstico único), André reportó que **se rompió Inicio**:
+   widgets a ancho completo en vez de en columnas, gráficas vacías, y los botones de
+   edición los tres visibles a la vez. Tres causas raíz, todas del mismo tipo:
+   • ⚠️ **El grid de widgets desapareció en LAS DOS páginas — CSS scopeado que no alcanza
+     al componente.** `index.astro` definía `#dashWidgets { display: grid }` e
+     `informes.astro` definía `#reportWidgets { display: grid }`, ambos en su `<style>`
+     **scopeado**. Pero el contenedor lo renderiza `WidgetGrid.astro`, así que **nunca
+     recibe el `data-astro-cid-*` de la página anfitriona** → ninguna de las dos reglas
+     matcheaba y los widgets caían a `display:block`, apilados a ancho completo. Además
+     las dos páginas tenían implementaciones DIVERGENTES del mismo grid (`data-span`
+     directo vs. `--widget-span`, gap 1.4rem vs 1rem, breakpoints distintos). Fix: una
+     sola implementación en **`src/styles/widgets.css`**
+     (global, ya importada por `AppLayout`), llaveada por `[data-widget-grid]`, con los
+     `data-span`, los breakpoints y el modo edición compartidos. Las dos copias scopeadas
+     se borraron.
+   • ⚠️ **Carrera del evento `cord:range` — las gráficas dependientes del rango nunca
+     recibían datos.** `DateRangePicker` emitía el `cord:range` inicial dentro de su
+     `initializeAll()`. Astro emite los `<script>` como módulos, que corren **después del
+     parseo** (`readyState === 'interactive'`, nunca `'loading'`) y **en orden de
+     documento**; el picker vive en `slot="topbar-actions"` (temprano en el DOM), así que
+     su chunk corre **antes** que el `<script>` de la página → el listener todavía no
+     existía y el evento inicial se perdía. Síntoma exacto: las gráficas estáticas
+     (sparkline, segbar de pipeline) pintaban y las del rango (hero, embudo) quedaban
+     vacías. Fix: `initialize()` devuelve el emit inicial y `boot()` lo dispara en
+     `DOMContentLoaded` (que ocurre **después** de todos los módulos diferidos), con
+     `setTimeout(0)` como respaldo si ya pasó. ⚠️ De paso se encontró que `initialize()`
+     tiene salidas tempranas y devuelve `undefined` en esos casos — sin filtrar, **un
+     solo picker mal formado tumbaba el arranque de todos los demás**; ahora se filtra.
+   • ⚠️ **`[hidden]` pisado por un `display` de autor** (trampa ya documentada del
+     proyecto, tercera vez): `.reports-edit-btn { display: inline-flex }` le ganaba al
+     `[hidden]{display:none}` del navegador → Personalizar + Listo + Restablecer se
+     pintaban los tres a la vez. `index.astro` sí tenía su `.dash-edit-btn[hidden]`;
+     `informes.astro` no. Agregado.
+   • **Paridad tipográfica:** el markup de los informes usa `.kpi-label`, pero esa clase
+     estaba **scopeada en `index.astro`** → en informes no aplicaba y las etiquetas salían
+     más grandes. `.kpi-card`/`.kpi-label`/`.kpi-num`/`.kpi-sub` se promovieron al
+     `<style is:global>` de `AppLayout` (junto a `.sec-head`/`.sec-title`, mismo criterio),
+     y `.report-kpi-value` se alineó a `.kpi-num` (1.9rem, navy, `tabular-nums`).
+   • **Selector de informe + fechas anclados a la derecha siempre** (`margin-left: auto`,
+     que no depende del ancho del hermano) — antes el breakpoint de 560px los pasaba a
+     `flex-start`. Se eliminó ese override.
+   • Verificado: `npm run build` limpio, `npx astro check` sin errores nuevos, y un
+     **harness de Playwright sobre el JS COMPILADO** (`.vercel/output/static/_astro`,
+     servido por HTTP porque los chunks se importan entre sí con rutas relativas) que
+     reproduce el orden real del DOM — chunk del picker primero, listener de la página
+     después — y confirma que el evento inicial SÍ llega (`initial=true key=30`) y que el
+     panel se portalea al `<body>`. En el CSS compilado se confirmó que el grid sale una
+     sola vez y que no queda ningún `#dashWidgets`/`#reportWidgets` con `display:grid`.
+
+---
+
+✅ **Clientes y Productos rediseñados estilo Apple + páginas de detalle + fix del bug
+   de scroll del modal (ago 2026)** — André pidió llevar `/app/clientes` y
+   `/app/productos` a la misma estética Apple del dashboard, con capturas de Stripe
+   (`/customers`/`/products`) como referencia: filtros tipo chip, clic en la fila entra
+   al detalle (editar pasa a un botón), páginas de detalle con métricas calculadas, y
+   reportó un bug real — el modal de "Nuevo cliente" perdía el header y el botón de
+   guardar al abrir la sección fiscal, porque scrolleaba el `<dialog>` completo en vez de
+   un área interna.
+   • **Fix de raíz del modal:** los 4 diálogos de la app (`clientModal`, `prodModal`, los
+     2 `importModal`, `kitDlg`) se reestructuraron a **head fija · body scrolleable ·
+     footer fijo** (`.m-head`/`.m-body`/`.m-foot`, `.modal{max-height:min(86dvh,...);
+     overflow:hidden}` + `.m-body{flex:1 1 auto;min-height:0;overflow-y:auto}`). Nuevo
+     helper global `window.cordWireModal(dlg)` en `AppLayout.astro` (hairlines de
+     head/foot que aparecen solo cuando hay contenido oculto por scroll, vía
+     `ResizeObserver`). ⚠️ **Bug real encontrado de paso:** los 3 pasos del importador CSV
+     (clientes y productos) se pintaban SIMULTÁNEAMENTE — faltaba
+     `.imp-step[hidden]{display:none}` (mismo patrón ya documentado del proyecto: un
+     `display` de autor siempre le gana al `[hidden]` del navegador).
+   • **CSS unificado en `src/styles/modal.css`** (nuevo, hoja compartida — un `<style>`
+     scopeado nunca habría alcanzado los 2 diálogos que no viven en la página) con la
+     regla de que CADA selector va prefijado por `.modal` para no filtrarse a otros
+     grupos de chips de la página (ej. términos/divisa del editor).
+   • **`ClientModal.astro` revivido** (estaba huérfano, 0 imports) y **`ProductModal.astro`
+     nuevo** — ambos con un **contrato por `CustomEvent` sobre `document`**
+     (`clientmodal:open/saved/deleted`, `prodmodal:open/saved/deleted`) en vez de import de
+     módulo, porque el editor de cotizaciones usa `<script is:inline define:vars>` (no
+     puede importar) mientras que las listas usan `<script>` bundleado normal. El modal de
+     "Nuevo cliente" que vivía DUPLICADO dentro de `cotizaciones/nueva.astro` (~90 líneas
+     de CSS copiadas + ~30 divergentes, con `#f5f5f7`/`#fff` hardcodeados → roto en dark
+     mode) se eliminó por completo; ahora `nueva.astro` monta `<ClientModal showDelete=
+     {false} />` y solo escucha `clientmodal:saved` para insertar/seleccionar el `<option>`
+     nuevo sin recargar. ⚠️ Se encontró que `nueva.astro` NUNCA importaba
+     `styles/modal.css` — bug real que habría dejado el modal sin estilo; corregido.
+   • **Queries nuevas (`src/lib/queries.ts`), sin `cached()` (editar → volver refleja el
+     cambio de inmediato):** `getCliente(id)` (ficha + tasa de cierre, cerrado/pipeline/
+     saldo abierto/cobrado —union disjunta con cobros de igualas recurrentes, mismo
+     patrón que `getCobros()`—, uso de crédito, descuento cedido, días de silencio, top 5
+     productos, últimas 10 cotizaciones, serie de 12 meses) y `getProducto(id)` (importe
+     cerrado, unidades vendidas, tasa de cierre, realización de precio min/prom/max,
+     descuento cedido, margen de lista vs. **margen realizado** —`null` explícito si
+     `costo_unitario` histórico es 0, para no inventar un margen falso del 100%—, top 5
+     clientes, últimas cotizaciones, kits que lo incluyen). `getClientes()`/
+     `getProductos()` ganaron campos aditivos (`telefono`, `origen`, `createdAt`,
+     `descripcion`, contadores de cotizaciones). `cotizacion_items` no tiene `org_id` — el
+     aislamiento multi-tenant sale siempre del `join cotizaciones`. `/api/productos` ganó
+     soporte para `descripcion` (la columna ya existía, la API nunca la aceptaba).
+   • **Páginas de detalle nuevas** `clientes/[id].astro` y `productos/[id].astro` (mismo
+     patrón que `cotizaciones/[id].astro`: `Promise.all` + redirect si no existe, crumbs,
+     `.detail-grid` con sidebar sticky) — franja de métricas (`.surface-card`, la única
+     superficie tipo card por la regla anti-grid del proyecto; el resto va hairline),
+     crédito usado vs. límite, negociación (descuento cedido), sparkline de actividad de
+     12 meses (`src/lib/chart.ts`), listas de cotizaciones/qué-le-vendes/quién-lo-compra/
+     kits, y sidebar con contacto (mailto/tel/WhatsApp)/condiciones/estado fiscal/
+     metadatos/eliminar. "Editar" abre el modal compartido (`showDelete={false}`, ya hay
+     un botón de eliminar dedicado en el sidebar); al guardar, recarga la página. El CTA
+     "Nueva cotización" del detalle de cliente usa el `?cliente=<uuid>` nuevo que
+     `nueva.astro` ahora soporta para preseleccionar cliente (aditivo, no interfiere con
+     `?draft=`).
+   • **`clientes.astro` movido a `clientes/index.astro`** (evita colisión de rutas con el
+     `[id].astro` nuevo) — de paso se eliminó una query `getCotizaciones()` completa que
+     el archivo viejo cargaba solo para contar cotizaciones por cliente EN MEMORIA
+     comparando por nombre de empresa; ahora `getClientes()` cuenta con un `left join
+     lateral` en una sola query. Ambas listas (`clientes/index.astro`/
+     `productos/index.astro`) ganaron barra de filtros tipo chip (Todos/Con cotizaciones/
+     Sin cotizar/Con nivel/Con crédito/Sin fiscal para clientes; Todos/Activos/Inactivos/
+     Con volumen/Sin costo/Margen bajo para productos, contadores calculados server-side)
+     + selector de orden, combinados client-side con la búsqueda ya existente y
+     persistidos en `?f=&s=` vía `history.replaceState`. Las filas pasaron de `<button>` a
+     `<div>` con **stretched link** (`<a class="t-rowlink" style="position:absolute;
+     inset:0">` + botón de editar como hermano con `z-index` mayor y
+     `preventDefault/stopPropagation`) — nunca un `<button>` dentro de un `<a>`, el parser
+     lo saca del anchor y rompe el grid en silencio.
+   • **`.surface-card`/`.dash-card` promovidas a global** en `AppLayout.astro` (antes
+     duplicadas en el `<style>` scopeado de `index.astro`) para que las nuevas páginas de
+     detalle las puedan usar sin reinventar la sombra compuesta de 3 capas.
+   • **Gráficas: NO se creó una librería nueva** — ambas fichas reutilizan tal cual el
+     motor SVG/vanilla-TS que ya existía en `src/lib/chart.ts` (el mismo que usa
+     `/app` para sus 9 tipos de gráfica: línea, combo, barras, hbar, embudo, dona,
+     segbar, sparkline, gauge — documentado ahí desde antes de esta sesión). La ficha
+     de cliente monta `mountSparkline()` para la fila "Actividad · 12 meses" (import
+     normal en un `<script>` bundleado, con los valores mensuales viajando por un
+     `data-values` JSON en el propio `<div>`, mismo patrón que `index.astro`). ⚠️ Detalle
+     técnico real: el CSS de este motor (`.cd-chart-wrap`, `.chx-empty`, tooltips, etc.)
+     vive scopeado por PÁGINA en cada consumidor — no hay una hoja global — porque el
+     DOM lo inyecta JS en runtime y Astro solo scopea nodos que existían en el server
+     render. Cada ficha nueva tuvo que copiar el mínimo necesario (`.cd-chart-wrap`/
+     `.chx-empty`) en su propio `<style>`; no se tocó `chart.ts` ni se le agregó nada.
+     Se evaluó agregar un `mountGauge()` (anillo de progreso, mismo motor) para "Tasa de
+     cierre"/"Margen realizado" pero se descartó para no romper la consistencia visual
+     de la franja de métricas (`.dc-kpis`/`.dp-kpis`), donde el resto de los números son
+     texto plano — queda como mejora natural de una pasada futura si se quiere ese
+     acento visual.
+   • **Pasada de refinamiento visual (mismo día, mismo pedido de André: "puede ser
+     mejor"):** las dos páginas de detalle ganaron una franja de identidad
+     (`.d-head`/`.dh-*`) calcada 1:1 del patrón ya establecido en
+     `cotizaciones/[id].astro` — avatar squircle (iniciales del cliente / ícono de caja
+     para producto, con anillo de color por nivel en clientes y estado atenuado si el
+     producto está inactivo) + badges (nivel/fiscal/origen o activo/con-volumen) + una
+     línea de meta (contacto o SKU·unidad) a la izquierda, y el KPI más importante
+     (Cerrado / Importe cerrado) como **hero stat grande** a la derecha — antes vivía
+     aplanado dentro de la franja de métricas, compitiendo visualmente con el resto.
+     La franja de métricas se reacomodó para no repetir ese número (ahora muestra
+     Cotizaciones/Cerradas en su lugar). Filas de listas (cotizaciones, qué-le-vendes,
+     compradores, kits, precios por volumen) pasaron de un hover plano de `opacity`
+     a fondo `--color-bg-soft` + `border-radius` + chevron que se desliza en hover
+     (mismo lenguaje de afordancia que ya usan los rankings del dashboard), y los
+     botones primarios/secundarios ganaron `:active{transform:scale(0.97)}` (Regla de
+     Diseño 5 — CTAs "responden con ligera reducción en hover/active", que se había
+     quedado a medias en la primera pasada).
+   • Verificado: `npm run build` limpio + `npx astro check` sin errores nuevos en ningún
+     archivo tocado (el baseline de errores preexistentes del repo, ajeno a esta sesión,
+     no cambió).
+
+---
+
+✅ **Pestañas de navegación contextual refinadas (ago 2026)** — el `page-tabs` del
+   `AppLayout` abandona el subrayado pesado de App Store/Music. Las vistas relacionadas
+   (Finanzas, Analítica, Equipo; Cobranza, IA y Flujo; Productos y Kits) comparten ahora
+   un selector segmentado compacto: pista translúcida, pestaña activa blanca y apenas
+   elevada, estados hover/active/focus visibles y equivalente oscuro. El cambio vive en
+   `src/layouts/AppLayout.astro`; cada grupo declara únicamente `ph-tabs`, sin duplicar
+   estilos locales.
+
+---
+
+✅ **Analítica convertida en diagnóstico comercial (ago 2026)** — `/app/analitica`
+   deja de repetir el resumen de Inicio y pasa a responder dónde se frena el cierre y
+   qué trabajo comercial conviene hacer primero.
+   • **Nueva lectura `getAnalyticsDiagnosis()`** en `src/lib/queries.ts`: cohorte de
+     90 días con serie diaria, embudo, pérdida por rechazo/vencimiento, descuentos por
+     producto, concentración de pipeline por cliente y cotizaciones sin actividad por
+     siete días. El pipeline por estado se declara explícitamente como fotografía viva,
+     separado del histórico para no mezclar dos semánticas.
+   • **Nueva superficie de Analítica:** tendencia intercambiable (cotizado/cerrado/cobrado),
+     cuello de botella entre transiciones del embudo, pipeline segmentado, lista enlazable
+     de seguimientos detenidos y rankings de descuento/pipeline. Consume las primitivas
+     existentes de `src/lib/chart.ts` (línea, funnel, barra segmentada y barras
+     horizontales); no se alteró la librería de gráficas.
+
 ---
 
 ✅ **Aviso de consentimiento de cookies + PostHog/Resend agregados al aviso de privacidad
@@ -1511,3 +1703,25 @@
      notificaciones de la topbar, hoy también polling), replicar este mismo patrón
      (`ReadableStream` + loop + heartbeat + `MAX_MS` + fallback a polling) en vez de meter
      WebSockets o un pub-sub nuevo — no hace falta esa complejidad para esta escala.
+
+**Consolidación de Informes y canon analítico (ago 2026)** — La analítica dejó de
+   repartirse entre Inicio, Analítica, CFO, Flujo y Cobranza. `/app/informes` es ahora el
+   shell único con siete informes registrados (`resumen`, `comercial`, `finanzas`,
+   `flujo`, `cobranza`, `clientes`, `productos`), selector buscable y personalización de
+   widgets persistida por informe. Los informes por rango comparten el selector de Inicio;
+   los informes snapshot muestran una fecha estática y no ofrecen un control que ignoren.
+   • Se extrajeron los estilos canónicos de gráficas, rango y widgets, además de los helpers
+   de formato, rango y montaje de charts. Los paneles de fecha e informe se portalean al
+   `body` para escapar del contexto de apilamiento de `.page-head`.
+   • El canon de estados vive en `src/lib/metrics.ts`: cotizado excluye borradores, enviado
+   incluye rechazadas/vencidas y cobrado acepta `status='paid'` o `paid_at`. Las series
+   cobradas incorporan también cobros de igualas.
+   • `getCFO()` es el único motor de pronóstico: 90 días, 13 semanas, desbordamiento
+   explícito, cartera/pipeline/MRR separados y banda de confianza según muestra histórica.
+   `getPayBehavior()` comparte el timing real por cliente con Cobranza.
+   • Las rutas anteriores redirigen temporalmente con 302 y los pins se migran al informe
+   equivalente. La navegación queda en nueve entradas y Cobranza conserva solo su trabajo
+   operativo.
+   • Los permisos se evalúan antes de las consultas; Inicio oculta y evita cargar widgets
+   financieros sin autorización. `getDashboard()` dejó de hidratar hasta 100,000
+   cotizaciones y usa agregados SQL más cinco filas recientes.

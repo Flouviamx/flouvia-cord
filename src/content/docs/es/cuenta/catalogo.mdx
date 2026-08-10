@@ -25,13 +25,28 @@ Se te pedirán los siguientes datos:
 - **Clave de Producto/Servicio y Unidad (SAT):** Obligatorio para el CFDI 4.0. Contamos con un buscador inteligente integrado.
 - **Impuestos aplicables:** Define si lleva IVA (16%, 8%, 0% o Exento) o IEPS.
 
-### 2. Importación Masiva (Próximamente)
+### 2. Importación Masiva (CSV)
 
-Para empresas B2B con cientos o miles de referencias, Cord pronto habilitará la importación masiva. 
-Podrás descargar nuestra **Plantilla CSV / Excel**, pegar la información extraída de tu ERP (como SAP, Oracle, o Microsip), y subirla a Cord para actualizar precios, claves del SAT y descripciones en un solo movimiento.
+Para empresas con cientos o miles de referencias, Cord soporta la importación masiva.
+Descarga nuestra **Plantilla CSV**, pega la información extraída de tu ERP (como SAP,
+Oracle, o Microsip), y súbela a Cord para dar de alta precios, SKUs y descripciones en
+un solo movimiento.
 
 <Callout type="info">
 **Consejo:** ¿Tus precios cambian constantemente?
 Con la **API Pública de Cord** (Desarrolladores), puedes sincronizar tu catálogo en tiempo real. Si actualizas un precio en tu ERP, un *webhook* o llamada de API puede actualizarlo automáticamente en Cord, asegurando que tus vendedores siempre coticen con la lista de precios vigente.
 
 </Callout>
+
+## La ficha del producto
+
+El catálogo (**Productos** en el menú principal) tiene filtros rápidos (activos,
+inactivos, con precio por volumen, sin costo capturado, margen bajo) para encontrar lo
+que buscas sin scrollear una lista larga.
+
+Haz clic en cualquier producto para abrir su **ficha**: importe cerrado y unidades
+vendidas, tasa de cierre, realización de precio (lo mínimo, promedio y máximo que
+realmente se ha cobrado contra el precio de lista), margen de lista vs. **margen
+realizado** sobre ventas históricas, su escalera de precios por volumen, quién lo
+compra más, sus últimas cotizaciones y qué kits lo incluyen — todo calculado sobre tu
+historial real, no solo los datos que capturaste al darlo de alta.

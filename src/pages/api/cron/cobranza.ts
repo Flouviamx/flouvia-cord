@@ -166,6 +166,8 @@ export const GET: APIRoute = async ({ request }) => {
         </div>
     </div>`;
         emailResult = await sendEmail({
+          orgId: quote.org_id,
+          operation: 'collection_reminder',
           to: quote.cliente_email,
           subject: `Recordatorio de pago — saldo vencido (${diasVencido} días)`,
           html: bodyHtml,

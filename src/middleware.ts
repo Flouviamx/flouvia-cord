@@ -1,6 +1,7 @@
 
 import { sequence } from "astro:middleware";
 import { reqContext } from "./lib/context";
+import { LEGACY_ROUTES } from "./lib/informes";
 
 // APIs que DEBEN seguir públicas (las llaman terceros sin sesión):
 //   /api/q/*         → vista pública del cliente (token secreto)
@@ -27,7 +28,14 @@ import { reqContext } from "./lib/context";
 // final para NO alcanzar /api/billing/connect/capture-session (esa SÍ requiere
 // sesión — la crea el escritorio autenticado).
 const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/auth/", "/api/contacto/", "/api/billing/connect/capture/"];
-const PUBLIC_API_EXACT = ["/api/mcp", "/api/docs-search.json"];
+// Solo los tres endpoints que CREAN una sesión de Ops son públicos. Cualquier
+// futura API bajo /api/ops queda privada por default y exige sesión Ops válida.
+const OPS_PUBLIC_API_EXACT = [
+    "/api/ops/auth",
+    "/api/ops/passkey-options",
+    "/api/ops/passkey-verify",
+];
+const PUBLIC_API_EXACT = ["/api/mcp", "/api/docs-search.json", ...OPS_PUBLIC_API_EXACT];
 
 // ── Rate limiting (in-memory, por IP) ────────────────────────────────────────
 // Ventana: 60 s. Límites:
@@ -78,14 +86,23 @@ function allow(ip: string, scope: string, limit: number): boolean {
 const SUBDOMAINS = [
     { host: "dev.cordhq.app", prefixes: ["/dev-blog"] },
     { host: "docs.cordhq.app", prefixes: ["/docs", "/en/docs"] },
-    { host: "ops.cordhq.app", prefixes: ["/ops"] },
+    // /api/ops debe pasar sin reescribirse: el formulario vive en el mismo
+    // subdominio y llama a esos endpoints. Antes terminaba como
+    // /ops/api/ops/auth y el login devolvía 404 en producción.
+    { host: "ops.cordhq.app", prefixes: ["/ops", "/api/ops"] },
 ];
 
+function normalizedHostname(value: string): string {
+    return value.trim().toLowerCase().replace(/\.$/, '');
+}
+
 const subdomainRewrite = async (context: any, next: any) => {
-    const host = (context.request.headers.get("host") || "").toLowerCase();
+    // Comparacion exacta. `includes()` tambien aceptaba hosts como
+    // ops.cordhq.app.ejemplo.com y convertia el Host en una frontera de auth.
+    const host = normalizedHostname(context.url.hostname || '');
     const path = context.url.pathname;
 
-    const sub = SUBDOMAINS.find((s) => host.includes(s.host));
+    const sub = SUBDOMAINS.find((s) => host === s.host);
     if (sub) {
         // Idempotente + a prueba de bucles: si el path YA vive bajo alguno de los
         // prefijos (porque context.rewrite re-ejecuta el middleware, o porque los
@@ -151,8 +168,10 @@ const subdomainRewrite = async (context: any, next: any) => {
 };
 
 import { validateSession, SESSION_COOKIE, sessionCookieOptions } from './lib/auth';
+import { OPS_SESSION_COOKIE, validateOpsSession } from './lib/ops-auth';
 import { trustedIp } from './lib/ip';
 import { getAppGates } from './lib/db';
+import { strictLimitResponse, strictRateLimit } from './lib/ratelimit';
 
 const mainHandler = async (context: any, next: any) => {
     // Leer sesión desde la cookie 'cord_session' (Fase 3 - Custom Auth)
@@ -206,7 +225,14 @@ const mainHandler = async (context: any, next: any) => {
     if (isWrite && !isSamlAcs) {
         const originHeader = context.request.headers.get("origin");
         const allowedOrigins = new Set([context.url.origin]);
-        if (import.meta.env.SITE) allowedOrigins.add(import.meta.env.SITE as string);
+        // Ops nunca confía en SITE como origen alterno. cordhq.app y
+        // ops.cordhq.app son same-site para cookies, así que permitir el origen
+        // principal aquí convertiría un XSS de la app en una mutación de Ops.
+        const isOpsMutation = path === '/ops' || path.startsWith('/ops/') ||
+            path === '/api/ops' || path.startsWith('/api/ops/');
+        if (!isOpsMutation && import.meta.env.SITE) {
+            allowedOrigins.add(import.meta.env.SITE as string);
+        }
         if (!originHeader || !allowedOrigins.has(originHeader)) {
             return new Response(JSON.stringify({ error: "Invalid Origin (CSRF)" }), {
                 status: 403,
@@ -226,9 +252,66 @@ const mainHandler = async (context: any, next: any) => {
         return context.redirect(`/app?wb=${tab}`, 301);
     }
 
+    // Informes consolida las superficies analíticas. 302 durante la primera
+    // release para poder revertir sin dejar redirects permanentes en navegador.
+    const reportTarget = LEGACY_ROUTES[path as keyof typeof LEGACY_ROUTES];
+    if (reportTarget) {
+        const destination = new URL(reportTarget, context.url);
+        context.url.searchParams.forEach((value, key) => {
+            if (!destination.searchParams.has(key)) destination.searchParams.append(key, value);
+        });
+        return context.redirect(`${destination.pathname}${destination.search}`, 302);
+    }
+
     const isApi = path.startsWith("/api/");
     const isPublicApi =
         PUBLIC_API_EXACT.includes(path) || PUBLIC_API_PREFIXES.some((p) => path.startsWith(p));
+    const isOpsPage = path === "/ops" || path.startsWith("/ops/");
+    const isOpsApi = path === "/api/ops" || path.startsWith("/api/ops/");
+    const isOpsLoginPage = path === "/ops/login";
+    const isPublicOpsApi = OPS_PUBLIC_API_EXACT.includes(path);
+
+    // La ruta fisica nunca basta para convertirse en Ops. En produccion debe
+    // llegar por el hostname canonico; previews y aliases desconocidos fallan
+    // cerrados aun si Vercel o Astro cambian el orden de sus rewrites.
+    if ((isOpsPage || isOpsApi) && import.meta.env.PROD &&
+        normalizedHostname(context.url.hostname || '') !== 'ops.cordhq.app') {
+        return new Response(isOpsApi ? JSON.stringify({ error: 'Not found' }) : 'Not found', {
+            status: 404,
+            headers: isOpsApi ? { 'Content-Type': 'application/json' } : undefined,
+        });
+    }
+
+    // Carril de identidad independiente: una sesión normal de cliente jamás
+    // autoriza Ops. Todo /ops y /api/ops se valida aquí, centralmente, además
+    // de los guards locales de las páginas/endpoints sensibles.
+    if (isOpsPage || isOpsApi) {
+        const opsToken = context.cookies.get(OPS_SESSION_COOKIE)?.value;
+        const opsOperator = await validateOpsSession(
+            opsToken,
+            context.request.headers.get('user-agent') || 'desconocido',
+        );
+        context.locals.opsOperator = opsOperator ?? undefined;
+
+        if (isOpsPage && !isOpsLoginPage && !opsOperator) {
+            return context.redirect('/ops/login');
+        }
+        if (isOpsApi && !isPublicOpsApi && !opsOperator) {
+            return new Response(JSON.stringify({ error: 'No autenticado' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+            });
+        }
+
+        if (isOpsApi && !isPublicOpsApi && opsOperator) {
+            const [sessionLimit, ipLimit] = await Promise.all([
+                strictRateLimit(`ops-api-session:${opsOperator.sessionId}`, 120, 60),
+                strictRateLimit(`ops-api-ip:${ip}`, 180, 60),
+            ]);
+            const limited = strictLimitResponse(!sessionLimit.ok ? sessionLimit : ipLimit);
+            if (limited) return limited;
+        }
+    }
 
     // Rate limiting en APIs internas (las públicas tienen su propia auth)
     if (isApi && !isPublicApi) {
@@ -287,7 +370,7 @@ const mainHandler = async (context: any, next: any) => {
         return context.redirect(`/sign-in?redirect_url=${encodeURIComponent(path)}`);
     }
     // Proteger las APIs internas (operan sobre la org del usuario). Las públicas pasan.
-    if (isApi && !isPublicApi && !userId) {
+    if (isApi && !isPublicApi && !isOpsApi && !userId) {
         return new Response(JSON.stringify({ error: "No autenticado" }), {
             status: 401,
             headers: { "Content-Type": "application/json" },
@@ -344,18 +427,19 @@ const mainHandler = async (context: any, next: any) => {
         return next();
     });
 
-    // ── Security Headers ──────────────────────────────────────────────────
-    // Se aplican a TODA respuesta (antes solo a text/html — las respuestas
-    // JSON de /api/** y el iframe de /embed quedaban sin ninguna protección).
-    //
-    // /embed/[token] es la ÚNICA página que arma su propio
-    // Content-Security-Policy (un frame-ancestors con la allowlist de
-    // dominios de CADA org, para permitir que la incrusten en iframes de
-    // terceros — ver embed/[token].astro). Ahí NO se sobreescribe el CSP ni
-    // se manda X-Frame-Options (lo volvería inembebible); el resto de
-    // headers sí se agregan igual.
+    return response;
+};
+
+// Capa exterior: decora incluso redirects, 401, 403, 404, 429 y 503 que el
+// handler principal devuelve antes de renderizar. Antes esas salidas tempranas
+// podian escapar con cache publica y la CSP general.
+const securityHeaders = async (context: any, next: any) => {
+    const response = await next();
+    const path = context.url.pathname;
     const secureRes = new Response(response.body, response);
     const isEmbed = path === "/embed" || path.startsWith("/embed/");
+    const isOpsPage = path === "/ops" || path.startsWith("/ops/");
+    const isOpsApi = path === "/api/ops" || path.startsWith("/api/ops/");
 
     if (!isEmbed) {
         // 'unsafe-inline' se mantiene (decenas de <script is:inline> en el
@@ -385,13 +469,49 @@ const mainHandler = async (context: any, next: any) => {
     }
 
     secureRes.headers.set("X-Content-Type-Options", "nosniff");
+    secureRes.headers.set("X-Permitted-Cross-Domain-Policies", "none");
     secureRes.headers.set("Referrer-Policy", path.startsWith("/reset-password") ? "no-referrer" : "strict-origin-when-cross-origin");
     secureRes.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(self)");
     secureRes.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    if (isOpsPage || isOpsApi) {
+        // Ops usa un layout aislado sin analytics, iframes, fuentes ni scripts
+        // externos. CSP mucho más cerrada que la landing (que aún necesita
+        // inline scripts por deuda histórica) y frame embedding prohibido.
+        secureRes.headers.set(
+            "Content-Security-Policy",
+            "default-src 'self'; " +
+            "script-src 'self'; " +
+            "script-src-attr 'none'; " +
+            "connect-src 'self'; " +
+            "img-src 'self' data:; " +
+            "style-src 'self' 'unsafe-inline'; " +
+            "font-src 'self'; " +
+            "frame-src 'none'; " +
+            "frame-ancestors 'none'; " +
+            "base-uri 'none'; " +
+            "form-action 'self'; " +
+            "object-src 'none';"
+        );
+        secureRes.headers.set("X-Frame-Options", "DENY");
+        secureRes.headers.set("Cache-Control", "private, no-store, max-age=0");
+        secureRes.headers.set("Pragma", "no-cache");
+        secureRes.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+        secureRes.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+        secureRes.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+        secureRes.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+        secureRes.headers.set("Referrer-Policy", "no-referrer");
+        secureRes.headers.set("Origin-Agent-Cluster", "?1");
+        secureRes.headers.set(
+            "Permissions-Policy",
+            "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), " +
+            "bluetooth=(), browsing-topics=(), publickey-credentials-create=(), " +
+            "publickey-credentials-get=(self)",
+        );
+    }
     if (import.meta.env.PROD) {
         secureRes.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
     }
     return secureRes;
 };
 
-export const onRequest = sequence(subdomainRewrite, mainHandler);
+export const onRequest = sequence(subdomainRewrite, securityHeaders, mainHandler);

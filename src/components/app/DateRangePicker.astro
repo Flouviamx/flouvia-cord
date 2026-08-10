@@ -1,0 +1,341 @@
+---
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+import { RANGO_KEYS, type RangoKey } from '../../lib/rango';
+
+interface Props {
+    minISO: string;
+    maxISO: string;
+    initialKey?: RangoKey;
+    initialDesde?: string;
+    initialHasta?: string;
+    presets?: RangoKey[];
+    storageKey?: string | null;
+    syncUrl?: boolean;
+}
+
+const {
+    minISO, maxISO, initialKey = '30', initialDesde = '', initialHasta = '',
+    presets = [...RANGO_KEYS], storageKey = null, syncUrl = true,
+} = Astro.props;
+const L = currentLocale();
+const labels: Record<RangoKey, string> = {
+    todo: t(L, 'dash.rango_todo'),
+    hoy: t(L, 'dash.dp_hoy'),
+    ayer: t(L, 'dash.dp_ayer'),
+    '7': t(L, 'dash.dp_ultimos7'),
+    '30': t(L, 'dash.dp_ultimos30'),
+    '90': t(L, 'dash.dp_ultimos90'),
+    mes: t(L, 'dash.rango_este_mes'),
+    mes_pasado: t(L, 'dash.rango_mes_pasado'),
+    trimestre: t(L, 'dash.rango_trimestre'),
+    ytd: t(L, 'dash.rango_ytd'),
+    custom: t(L, 'dash.rango_personalizado'),
+};
+const separatorsAfter = new Set<RangoKey>(['ayer', '90', 'ytd']);
+---
+
+<div
+    class="dp-wrap"
+    data-date-range
+    data-min={minISO}
+    data-max={maxISO}
+    data-initial-key={initialKey}
+    data-initial-desde={initialDesde}
+    data-initial-hasta={initialHasta}
+    data-presets={JSON.stringify(presets)}
+    data-storage-key={storageKey ?? ''}
+    data-sync-url={syncUrl ? '1' : '0'}
+    data-labels={JSON.stringify(labels)}
+>
+    <button type="button" class="dp-trigger" data-dp-trigger aria-haspopup="dialog" aria-expanded="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+        <span data-dp-label>{labels[initialKey]}</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="dp-panel" data-dp-panel hidden role="dialog" aria-label={t(L, 'dash.rango_label')}>
+        <div class="dp-presets">
+            {presets.map((key) => (
+                <Fragment>
+                    <button type="button" class:list={['dp-preset-btn', key === initialKey && 'is-active']} data-preset={key}>{labels[key]}</button>
+                    {separatorsAfter.has(key) && <span class="dp-preset-sep"></span>}
+                </Fragment>
+            ))}
+        </div>
+        <div class="dp-main">
+            <div class="dp-inputs">
+                <label class="dp-input-field"><span class="dp-input-label">{t(L, 'dash.rango_desde')}</span><input type="text" data-dp-desde readonly /></label>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dp-input-arrow"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                <label class="dp-input-field"><span class="dp-input-label">{t(L, 'dash.rango_hasta')}</span><input type="text" data-dp-hasta readonly /></label>
+            </div>
+            <div class="dp-cals">
+                <div class="dp-cal dp-cal-left">
+                    <div class="dp-cal-head">
+                        <button type="button" class="dp-cal-nav" data-dp-prev aria-label={L === 'en' ? 'Previous month' : 'Mes anterior'}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+                        <span class="dp-cal-title"></span><span class="dp-cal-nav-spacer"></span>
+                    </div>
+                    <div class="dp-cal-grid"></div>
+                </div>
+                <div class="dp-cal dp-cal-right">
+                    <div class="dp-cal-head">
+                        <span class="dp-cal-nav-spacer"></span><span class="dp-cal-title"></span>
+                        <button type="button" class="dp-cal-nav" data-dp-next aria-label={L === 'en' ? 'Next month' : 'Mes siguiente'}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+                    </div>
+                    <div class="dp-cal-grid"></div>
+                </div>
+            </div>
+            <div class="dp-actions">
+                <button type="button" class="dp-cancel" data-dp-cancel>{t(L, 'dash.dp_cancelar')}</button>
+                <button type="button" class="dp-apply" data-dp-apply>{t(L, 'dash.rango_aplicar')}</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script is:inline>
+    // Precedencia antes del primer paint: URL, persistencia, props iniciales.
+    (function () {
+        var root = document.currentScript && document.currentScript.previousElementSibling;
+        if (!root || !root.matches('[data-date-range]')) return;
+        try {
+            var params = new URLSearchParams(location.search);
+            var state = null;
+            var desde = params.get('desde'), hasta = params.get('hasta'), rango = params.get('rango');
+            if (desde && hasta) state = { key: 'custom', desde: desde, hasta: hasta };
+            else if (rango) state = { key: rango };
+            else if (root.dataset.storageKey) state = JSON.parse(localStorage.getItem(root.dataset.storageKey) || 'null');
+            if (!state) state = { key: root.dataset.initialKey, desde: root.dataset.initialDesde, hasta: root.dataset.initialHasta };
+            root.dataset.resolvedRange = JSON.stringify(state);
+            var labels = JSON.parse(root.dataset.labels || '{}');
+            var label = root.querySelector('[data-dp-label]');
+            if (label && labels[state.key]) label.textContent = labels[state.key];
+        } catch (e) {}
+    })();
+</script>
+
+<script>
+    import { addDaysISO, clampISO, compareRangeFor, isISODate, rangeFor, type Rango, type RangoKey } from '../../lib/rango';
+    import { dateFull, dateMed, intlLocale } from '../../lib/fmt';
+
+    type Pending = { desde: string | null; hasta: string | null };
+    type Stored = { key?: RangoKey; desde?: string; hasta?: string };
+
+    function initialize(root: HTMLElement) {
+        if (root.dataset.ready === '1') return;
+        root.dataset.ready = '1';
+        const minISO = root.dataset.min || '';
+        const maxISO = root.dataset.max || '';
+        if (!isISODate(minISO) || !isISODate(maxISO)) return;
+        const trigger = root.querySelector<HTMLButtonElement>('[data-dp-trigger]');
+        const label = root.querySelector<HTMLElement>('[data-dp-label]');
+        const panel = root.querySelector<HTMLElement>('[data-dp-panel]');
+        const desdeInput = panel?.querySelector<HTMLInputElement>('[data-dp-desde]');
+        const hastaInput = panel?.querySelector<HTMLInputElement>('[data-dp-hasta]');
+        const left = panel?.querySelector('.dp-cal-left');
+        const right = panel?.querySelector('.dp-cal-right');
+        const labels = JSON.parse(root.dataset.labels || '{}') as Record<RangoKey, string>;
+        if (!trigger || !label || !panel || !left || !right) return;
+
+        document.body.appendChild(panel);
+        const locale = intlLocale();
+        const allowed = new Set<RangoKey>(JSON.parse(root.dataset.presets || '[]'));
+        let stored: Stored = {};
+        try { stored = JSON.parse(root.dataset.resolvedRange || '{}'); } catch {}
+        let key = allowed.has(stored.key as RangoKey) ? stored.key as RangoKey : (root.dataset.initialKey as RangoKey || '30');
+        let applied = rangeFor(key, minISO, maxISO, maxISO, stored.desde, stored.hasta);
+        let pending: Pending = { desde: applied.desde, hasta: applied.hasta };
+        let pendingKey: RangoKey = applied.key as RangoKey;
+        let hover: string | null = null;
+        let viewYear = 2000;
+        let viewMonth = 0;
+        let dayButtons: { iso: string; el: HTMLButtonElement }[] = [];
+
+        const ym = (iso: string) => { const d = new Date(`${iso}T00:00:00Z`); return { y: d.getUTCFullYear(), m: d.getUTCMonth() }; };
+        function setView(iso: string) {
+            const value = ym(iso); viewYear = value.y; viewMonth = value.m - 1;
+            if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+        }
+        setView(applied.hasta);
+
+        const weekdays = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(Date.UTC(2024, 0, 1 + i));
+            return new Intl.DateTimeFormat(locale, { weekday: 'narrow', timeZone: 'UTC' }).format(d);
+        });
+        const inWindow = (iso: string) => iso >= minISO && iso <= maxISO;
+        const clamp = (iso: string) => clampISO(iso, minISO, maxISO);
+
+        function paintSelection() {
+            // NO TOCAR: hover solo alterna clases sobre botones existentes. Reconstruir
+            // la grilla destruiria el boton bajo el cursor e impediria el click.
+            const start = pending.desde;
+            const preview = pending.hasta ?? (start && hover ? hover : null);
+            const lo = start && preview ? (start < preview ? start : preview) : start;
+            const hi = start && preview ? (start < preview ? preview : start) : null;
+            dayButtons.forEach(({ iso, el }) => {
+                el.classList.toggle('is-start', !!lo && iso === lo);
+                el.classList.toggle('is-end', !!hi && iso === hi);
+                el.classList.toggle('is-in-range', !!(lo && hi && iso > lo && iso < hi));
+            });
+            if (desdeInput) desdeInput.value = start ? dateFull(start, locale) : '';
+            if (hastaInput) hastaInput.value = pending.hasta ? dateFull(pending.hasta, locale) : (preview && preview !== start ? dateFull(preview, locale) : '');
+        }
+
+        function onDayClick(iso: string) {
+            if (!pending.desde || pending.hasta) pending = { desde: iso, hasta: null };
+            else if (iso < pending.desde) pending = { desde: iso, hasta: null };
+            else pending = { desde: pending.desde, hasta: iso };
+            pendingKey = 'custom'; hover = null;
+            panel.querySelectorAll('.dp-preset-btn').forEach((b) => b.classList.toggle('is-active', (b as HTMLElement).dataset.preset === 'custom'));
+            paintSelection();
+        }
+
+        function renderMonth(host: Element, year: number, month: number) {
+            const grid = host.querySelector('.dp-cal-grid');
+            const title = host.querySelector('.dp-cal-title');
+            if (!grid || !title) return;
+            const first = new Date(Date.UTC(year, month, 1));
+            const titleText = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(first);
+            title.textContent = titleText.charAt(0).toUpperCase() + titleText.slice(1);
+            const startDow = (first.getUTCDay() || 7) - 1;
+            const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+            const daysInPrevious = new Date(Date.UTC(year, month, 0)).getUTCDate();
+            grid.innerHTML = '';
+            weekdays.forEach((weekday) => { const el = document.createElement('div'); el.className = 'dp-weekday'; el.textContent = weekday; grid.appendChild(el); });
+            const cells: { iso: string; out: boolean }[] = [];
+            for (let i = 0; i < startDow; i++) cells.push({ iso: new Date(Date.UTC(year, month - 1, daysInPrevious - startDow + 1 + i)).toISOString().slice(0, 10), out: true });
+            for (let day = 1; day <= daysInMonth; day++) cells.push({ iso: new Date(Date.UTC(year, month, day)).toISOString().slice(0, 10), out: false });
+            while (cells.length < 42) cells.push({ iso: addDaysISO(cells[cells.length - 1].iso, 1), out: true });
+            cells.forEach((cell) => {
+                const button = document.createElement('button');
+                button.type = 'button'; button.className = 'dp-day'; button.dataset.iso = cell.iso;
+                button.textContent = String(Number(cell.iso.slice(8)));
+                const disabled = cell.out || !inWindow(cell.iso);
+                if (disabled) { button.classList.add(cell.out ? 'is-out' : 'is-disabled'); button.disabled = true; }
+                if (cell.iso === maxISO) button.classList.add('is-today');
+                if (!disabled) {
+                    dayButtons.push({ iso: cell.iso, el: button });
+                    button.addEventListener('click', () => onDayClick(cell.iso));
+                    button.addEventListener('pointerenter', () => { hover = cell.iso; paintSelection(); });
+                    button.addEventListener('keydown', (event) => {
+                        const delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowDown' ? 7 : event.key === 'ArrowUp' ? -7 : 0;
+                        if (!delta) return;
+                        event.preventDefault();
+                        const target = clamp(addDaysISO(cell.iso, delta));
+                        setView(target); renderCalendars();
+                        requestAnimationFrame(() => panel.querySelector<HTMLButtonElement>(`.dp-day[data-iso="${target}"]:not(:disabled)`)?.focus());
+                    });
+                }
+                grid.appendChild(button);
+            });
+        }
+
+        function renderCalendars() {
+            dayButtons = [];
+            renderMonth(left, viewYear, viewMonth);
+            let nextYear = viewYear, nextMonth = viewMonth + 1;
+            if (nextMonth > 11) { nextMonth = 0; nextYear++; }
+            renderMonth(right, nextYear, nextMonth);
+            paintSelection();
+        }
+
+        function placePanel() {
+            if (panel.hidden) return;
+            const rect = trigger.getBoundingClientRect();
+            const gap = 10;
+            const width = panel.offsetWidth;
+            const height = panel.offsetHeight;
+            const left = Math.max(8, Math.min(window.innerWidth - width - 8, rect.right - width));
+            const below = rect.bottom + gap;
+            panel.style.left = `${left}px`;
+            panel.style.top = `${below + height <= window.innerHeight - 8 ? below : Math.max(8, rect.top - height - gap)}px`;
+        }
+
+        function open() {
+            pending = { desde: applied.desde, hasta: applied.hasta };
+            pendingKey = applied.key as RangoKey;
+            panel.querySelectorAll('.dp-preset-btn').forEach((b) => b.classList.toggle('is-active', (b as HTMLElement).dataset.preset === pendingKey));
+            setView(applied.hasta); renderCalendars(); panel.hidden = false; trigger.setAttribute('aria-expanded', 'true'); placePanel();
+        }
+        function close() {
+            const restoreFocus = panel.contains(document.activeElement);
+            panel.hidden = true; trigger.setAttribute('aria-expanded', 'false');
+            if (restoreFocus) trigger.focus();
+        }
+
+        function labelFor(range: Rango) {
+            if (range.key !== 'custom' && labels[range.key as RangoKey]) return labels[range.key as RangoKey];
+            return range.desde === range.hasta ? dateMed(range.desde, locale) : `${dateMed(range.desde, locale)} - ${dateMed(range.hasta, locale)}`;
+        }
+        function emit(initial = false) {
+            label.textContent = labelFor(applied);
+            const state = { key: applied.key, desde: applied.desde, hasta: applied.hasta };
+            if (root.dataset.storageKey) { try { localStorage.setItem(root.dataset.storageKey, JSON.stringify(state)); } catch {} }
+            if (root.dataset.syncUrl === '1') {
+                const url = new URL(location.href);
+                url.searchParams.delete('desde'); url.searchParams.delete('hasta'); url.searchParams.delete('rango');
+                if (applied.key === 'custom') { url.searchParams.set('desde', applied.desde); url.searchParams.set('hasta', applied.hasta); }
+                else url.searchParams.set('rango', applied.key);
+                history.replaceState(history.state, '', url);
+            }
+            root.dispatchEvent(new CustomEvent('cord:range', { bubbles: true, detail: { ...state, compare: compareRangeFor(applied, minISO), initial } }));
+        }
+
+        panel.querySelectorAll<HTMLButtonElement>('.dp-preset-btn').forEach((button) => button.addEventListener('click', () => {
+            const selected = button.dataset.preset as RangoKey;
+            pendingKey = selected;
+            panel.querySelectorAll('.dp-preset-btn').forEach((b) => b.classList.toggle('is-active', b === button));
+            if (selected === 'custom') { pending = { desde: null, hasta: null }; renderCalendars(); return; }
+            const range = rangeFor(selected, minISO, maxISO, maxISO);
+            pending = { desde: range.desde, hasta: range.hasta }; setView(range.hasta); renderCalendars();
+        }));
+        panel.querySelector('.dp-cals')?.addEventListener('pointerleave', () => { hover = null; paintSelection(); });
+        panel.querySelector('[data-dp-prev]')?.addEventListener('click', () => { viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; } renderCalendars(); });
+        panel.querySelector('[data-dp-next]')?.addEventListener('click', () => { viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; } renderCalendars(); });
+        trigger.addEventListener('click', () => panel.hidden ? open() : close());
+        panel.querySelector('[data-dp-cancel]')?.addEventListener('click', close);
+        panel.querySelector('[data-dp-apply]')?.addEventListener('click', () => {
+            if (pending.desde && !pending.hasta) pending.hasta = pending.desde;
+            if (!pending.desde || !pending.hasta) applied = rangeFor('todo', minISO, maxISO, maxISO);
+            else applied = rangeFor(pendingKey, minISO, maxISO, maxISO, pending.desde, pending.hasta);
+            emit(); close();
+        });
+        document.addEventListener('click', (event) => {
+            if (panel.hidden) return;
+            // NO TOCAR: composedPath conserva la ruta aunque el nodo pulsado haya sido
+            // desprendido. e.target + contains cerraria el panel durante el calendario.
+            const path = event.composedPath();
+            if (path.includes(panel) || path.includes(trigger)) return;
+            close();
+        });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !panel.hidden) close(); });
+        window.addEventListener('resize', placePanel, { passive: true });
+        window.addEventListener('scroll', placePanel, { passive: true, capture: true });
+        // El emit INICIAL no va aqui: lo devolvemos para dispararlo cuando toda la pagina
+        // ya se suscribio. Ver la nota de `boot()`.
+        return () => emit(true);
+    }
+
+    // ⚠️ NO TOCAR el diferido del emit inicial. Astro emite los <script> como modulos, que
+    // corren DESPUES del parseo (readyState === 'interactive', nunca 'loading') y en orden
+    // de documento. Este componente vive en `slot="topbar-actions"`, o sea al principio del
+    // DOM, asi que su chunk corre ANTES que el <script> de la pagina anfitriona. Si se
+    // emitiera `cord:range` aqui mismo, el listener de la pagina todavia no existe y el
+    // evento inicial se pierde: el hero y el embudo se quedan vacios para siempre (bug real,
+    // ago 2026). DOMContentLoaded se dispara despues de TODOS los modulos diferidos, que es
+    // justo la garantia que necesitamos.
+    function boot(domReadyAlreadyFired: boolean) {
+        // `initialize` tiene salidas tempranas (ya inicializado, fechas invalidas, markup
+        // incompleto) y en esos casos devuelve undefined: hay que filtrar antes de invocar,
+        // o un solo picker mal formado tumbaria el arranque de TODOS los demas.
+        const emits = Array.from(document.querySelectorAll<HTMLElement>('[data-date-range]'))
+            .map(initialize)
+            .filter((fn): fn is () => void => typeof fn === 'function');
+        const fire = () => emits.forEach((emitInitial) => emitInitial());
+        // Si DOMContentLoaded ya paso, engancharse a el nunca dispararia: un task basta,
+        // porque para entonces todos los modulos de la pagina ya corrieron.
+        if (domReadyAlreadyFired) setTimeout(fire, 0);
+        else document.addEventListener('DOMContentLoaded', fire, { once: true });
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => boot(true), { once: true });
+    else boot(false);
+</script>

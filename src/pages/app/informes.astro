@@ -1,0 +1,229 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import DateRangePicker from '../../components/app/DateRangePicker.astro';
+import ReportPicker from '../../components/app/ReportPicker.astro';
+import WidgetGrid from '../../components/app/WidgetGrid.astro';
+import ResumenReport from '../../components/app/informes/ResumenReport.astro';
+import ComercialReport from '../../components/app/informes/ComercialReport.astro';
+import FinanzasReport from '../../components/app/informes/FinanzasReport.astro';
+import FlujoReport from '../../components/app/informes/FlujoReport.astro';
+import CobranzaReport from '../../components/app/informes/CobranzaReport.astro';
+import ClientesReport from '../../components/app/informes/ClientesReport.astro';
+import ProductosReport from '../../components/app/informes/ProductosReport.astro';
+import { getMyMembership } from '../../lib/queries';
+import { memberCan } from '../../lib/permissions';
+import { REPORTS, REPORT_BY_ID, parseReportId, reportLabel, type ReportId } from '../../lib/informes';
+import { loadReport } from '../../lib/informes-data';
+import { addDaysISO, parseRangoParams } from '../../lib/rango';
+import { currentLocale } from '../../lib/context';
+import { dateFull } from '../../lib/fmt';
+
+const L = currentLocale();
+const es = L !== 'en';
+const ME = await getMyMembership();
+// Gate primario antes de cualquier consulta analítica.
+const hasAnalytics = memberCan(ME, 'analitica');
+const reportId = parseReportId(Astro.url.searchParams.get('r'));
+const report = REPORT_BY_ID[reportId];
+const hasReportAccess = hasAnalytics && memberCan(ME, report.perm);
+const allowed = hasAnalytics
+    ? REPORTS.filter((item) => memberCan(ME, item.perm)).map((item) => item.id)
+    : [];
+const todayISO = new Date().toISOString().slice(0, 10);
+const minISO = addDaysISO(todayISO, -364);
+const rango = parseRangoParams(Astro.url.searchParams, { minISO, maxISO: todayISO, anchorISO: todayISO, fallback: '30' });
+const payload = hasReportAccess ? await loadReport(reportId, rango) : null;
+const data = payload ? (payload as any)[reportId === 'resumen' || reportId === 'comercial' ? 'diagnosis' : reportId === 'finanzas' || reportId === 'flujo' ? 'cfo' : reportId === 'cobranza' ? 'cobranza' : 'analytics'] : null;
+const heading = reportLabel(report, L);
+const widgetLabels = {
+    drag: es ? 'Arrastrar widget' : 'Drag widget', up: es ? 'Subir widget' : 'Move widget up',
+    down: es ? 'Bajar widget' : 'Move widget down', resize: es ? 'Cambiar tamaño' : 'Resize widget',
+    remove: es ? 'Ocultar widget' : 'Hide widget',
+};
+---
+
+<AppLayout title={`${heading} — Cord`} page="informes" heading={heading}>
+    <p slot="page-sub">{es ? 'Una sola casa para entender el desempeño y decidir qué mover.' : 'One place to understand performance and decide what to move.'}</p>
+    <Fragment slot="topbar-actions">
+        <div class="reports-top-actions">
+            <ReportPicker current={reportId} locale={L} allowed={allowed as ReportId[]} />
+            {report.scope === 'rango' ? (
+                <DateRangePicker minISO={minISO} maxISO={todayISO} initialKey={rango.key as any} initialDesde={rango.desde} initialHasta={rango.hasta} storageKey={`cord.report.${reportId}.range.v1`} />
+            ) : (
+                <span class="snapshot-chip">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+                    {es ? `Al día de hoy · ${dateFull(todayISO, L)}` : `As of today · ${dateFull(todayISO, L)}`}
+                </span>
+            )}
+            {hasReportAccess && <button type="button" class="reports-edit-btn" id="reportEditBtn">{es ? 'Personalizar' : 'Customize'}</button>}
+            {hasReportAccess && <button type="button" class="reports-edit-btn" id="reportDoneBtn" hidden>{es ? 'Listo' : 'Done'}</button>}
+            {hasReportAccess && <button type="button" class="reports-reset-btn" id="reportResetBtn" hidden>{es ? 'Restablecer' : 'Reset'}</button>}
+        </div>
+    </Fragment>
+
+    {!hasAnalytics && <section class="reports-state"><h2>{es ? 'Sin acceso a informes' : 'No report access'}</h2><p>{es ? 'Tu rol no tiene permiso para consultar analítica.' : 'Your role cannot access analytics.'}</p></section>}
+    {hasAnalytics && !hasReportAccess && <section class="reports-state"><h2>{es ? 'Informe restringido' : 'Restricted report'}</h2><p>{es ? 'Cobranza y cartera requiere el permiso de Cobranza.' : 'Collections and receivables requires Collections permission.'}</p></section>}
+
+    {hasReportAccess && data && (
+        <div data-report-shell data-report-id={reportId} data-locale={L}>
+        <WidgetGrid id="reportWidgets" storageKey={`cord.report.${reportId}.v1`} editButtonId="reportEditBtn" doneButtonId="reportDoneBtn" resetButtonId="reportResetBtn" trayTitle={es ? 'Widgets ocultos' : 'Hidden widgets'} resetConfirm={es ? '¿Restablecer este informe?' : 'Reset this report?'} labels={widgetLabels}>
+            {reportId === 'resumen' && <ResumenReport data={data} L={L} />}
+            {reportId === 'comercial' && <ComercialReport data={data} L={L} />}
+            {reportId === 'finanzas' && <FinanzasReport data={data} L={L} />}
+            {reportId === 'flujo' && <FlujoReport data={data} L={L} />}
+            {reportId === 'cobranza' && <CobranzaReport data={data} L={L} />}
+            {reportId === 'clientes' && <ClientesReport data={data} L={L} />}
+            {reportId === 'productos' && <ProductosReport data={data} L={L} />}
+        </WidgetGrid>
+        </div>
+    )}
+</AppLayout>
+
+<script>
+    import { mountAll, remount } from '../../lib/chart-mount';
+    import { money as formatMoney } from '../../lib/fmt';
+    mountAll(document);
+
+    const shell = document.querySelector<HTMLElement>('[data-report-shell]');
+    const reportId = shell?.dataset.reportId;
+    const locale = shell?.dataset.locale || 'es';
+    const es = locale !== 'en';
+    const widget = (id: string) => shell?.querySelector<HTMLElement>(`[data-widget="${id}"]`);
+    const text = (selector: string, value: string) => { const el = shell?.querySelector<HTMLElement>(selector); if (el) el.textContent = value; };
+    const setChart = (widgetId: string, data: Record<string, unknown>) => {
+        const chart = widget(widgetId)?.querySelector<HTMLElement>('[data-chart]');
+        if (chart) remount(chart, data);
+    };
+    const pct = (a: number, b: number) => b ? Math.round(a / b * 100) : 0;
+    const clearAndRows = (host: HTMLElement | null | undefined, rows: any[], fields: (row: any) => [string, string, string]) => {
+        if (!host) return; host.innerHTML = '';
+        rows.forEach((row) => {
+            const [title, sub, value] = fields(row);
+            const line = document.createElement('div');
+            const copy = document.createElement('span');
+            const strong = document.createElement('strong'); strong.textContent = title;
+            const small = document.createElement('small'); small.textContent = sub;
+            const amount = document.createElement('b'); amount.className = 'editorial'; amount.textContent = value;
+            copy.append(strong, small); line.append(copy, amount); host.append(line);
+        });
+    };
+    function paintRangeData(payload: any) {
+        const wrapped = payload?.data;
+        if (!wrapped || !reportId) return;
+        if (reportId === 'resumen') {
+            const D = wrapped.diagnosis;
+            const lostN = D.losses.rejected.n + D.losses.expired.n;
+            const lost = D.losses.rejected.monto + D.losses.expired.monto;
+            const won = pct(D.summary.approved, D.summary.sent), lostPct = pct(lostN, D.summary.sent);
+            text('[data-report-bind="close-rate"]', `${won}%`);
+            text('[data-report-bind="close-rate-sub"]', `${D.summary.approved} / ${D.summary.sent} ${es ? 'cotizaciones enviadas' : 'sent quotes'}`);
+            text('[data-report-bind="closed"]', formatMoney(D.summary.cerrado, locale));
+            text('[data-report-bind="velocity"]', formatMoney(D.summary.cerrado / Math.max(1, D.series.length), locale));
+            text('[data-report-bind="lost"]', formatMoney(lost, locale));
+            text('[data-report-bind="lost-sub"]', `${lostN} ${es ? 'cotizaciones' : 'quotes'}`);
+            setChart('resumen-evolucion', { points: D.series.map((day: any) => ({ x: day.fecha, y: day.cerrado })) });
+            setChart('resumen-madurez', { segments: [
+                { key: 'won', label: es ? 'Ganado' : 'Won', value: won, color: '#059669' },
+                { key: 'lost', label: es ? 'Perdido' : 'Lost', value: lostPct, color: '#ef4444' },
+                { key: 'open', label: es ? 'Aún abierto' : 'Still open', value: Math.max(0, 100 - won - lostPct), color: '#8b95a5' },
+            ] });
+        } else if (reportId === 'comercial') {
+            const D = wrapped.diagnosis;
+            setChart('comercial-embudo', { steps: [
+                { label: es ? 'Enviadas' : 'Sent', value: D.funnel.sent }, { label: es ? 'Vistas' : 'Viewed', value: D.funnel.views },
+                { label: es ? 'Aprobadas' : 'Approved', value: D.funnel.approved }, { label: es ? 'Pagadas' : 'Paid', value: D.funnel.paid },
+            ] });
+            setChart('comercial-pipeline', { items: D.pipeline.map((row: any) => ({ label: row.key, value: row.monto, sub: String(row.n) })) });
+            setChart('comercial-descuento', { items: D.discounts.map((row: any) => ({ label: row.nombre, value: row.cedido, sub: `${Math.round(row.pct)}%` })) });
+            setChart('comercial-tiempo-etapa', { items: D.stageTiming.map((row: any) => ({ label: row.label, value: row.dias, sub: es ? 'días' : 'days' })) });
+            clearAndRows(widget('comercial-detenidas')?.querySelector<HTMLElement>('.report-list'), D.stalled, (row) => [row.empresa, `${row.folio} · ${row.dias}d`, formatMoney(row.total, locale)]);
+        } else if (reportId === 'clientes') {
+            const D = wrapped.analytics;
+            setChart('clientes-ranking', { items: D.clientes.map((row: any) => ({ label: row.empresa, value: row.cerrado, sub: `${row.tasa}%` })) });
+            clearAndRows(widget('clientes-tabla')?.querySelector<HTMLElement>('.report-list'), D.clientes, (row) => [row.empresa, `${row.aprobadas} / ${row.cotizaciones} · ${row.tasa}%`, formatMoney(row.cerrado, locale)]);
+            setChart('clientes-cohortes', { items: D.cohortes.map((row: any) => ({ label: row.tipo === 'nuevo' ? (es ? 'Nuevos' : 'New') : (es ? 'Recurrentes' : 'Returning'), value: row.cerrado, sub: String(row.clientes) })) });
+            clearAndRows(widget('clientes-riesgo')?.querySelector<HTMLElement>('.report-list'), D.enRiesgo, (row) => [row.empresa, `${row.nivel} · ${row.cotizaciones} ${es ? 'cotizaciones' : 'quotes'}`, formatMoney(row.cerrado, locale)]);
+        } else if (reportId === 'productos') {
+            const D = wrapped.analytics;
+            setChart('productos-importe', { items: D.productos.map((row: any) => ({ label: row.nombre, value: row.importe, sub: String(row.cotizaciones) })) });
+            clearAndRows(widget('productos-volumen')?.querySelector<HTMLElement>('.report-list'), D.productos, (row) => [row.nombre, `${row.cotizaciones} ${es ? 'cotizaciones' : 'quotes'}`, `${row.cantidad} · ${formatMoney(row.importe, locale)}`]);
+            setChart('productos-elasticidad', { items: D.pricingBands.map((row: any) => ({ label: `${row.band}%`, value: row.winRate * 100, sub: `n=${row.sample}` })) });
+            setChart('productos-cierre', { items: D.cierre.map((row: any) => ({ label: row.nombre, value: row.tasa, sub: `n=${row.decididas}` })) });
+        }
+    }
+    let request: AbortController | null = null;
+    document.addEventListener('cord:range', async (event) => {
+        const detail = (event as CustomEvent).detail;
+        if (detail?.initial || !reportId || location.pathname !== '/app/informes') return;
+        request?.abort(); request = new AbortController();
+        shell?.setAttribute('aria-busy', 'true');
+        try {
+            const response = await fetch(`/api/informes/${reportId}${location.search}`, { signal: request.signal });
+            if (!response.ok) throw new Error(String(response.status));
+            paintRangeData(await response.json());
+        } catch (error) {
+            if ((error as Error).name !== 'AbortError') (window as any).cordToast?.(es ? 'No se pudo actualizar el informe' : 'Could not update report');
+        } finally { shell?.removeAttribute('aria-busy'); }
+    });
+</script>
+
+<style>
+    /* Selector de informe + fechas + acciones: SIEMPRE pegados a la derecha, exista o no
+       texto a la izquierda (`margin-left: auto` no depende del ancho del hermano). */
+    .reports-top-actions { display: flex; align-items: center; justify-content: flex-end; margin-left: auto; gap: .55rem; flex-wrap: wrap; }
+    .snapshot-chip, .reports-edit-btn, .reports-reset-btn { min-height: 42px; display: inline-flex; align-items: center; gap: .55rem; padding: .62rem .9rem; border: 0; border-radius: 999px; font: inherit; font-size: .78rem; font-weight: 650; white-space: nowrap; }
+    /* ⚠️ Rescue obligatorio: un `display` de autor SIEMPRE le gana al `[hidden]{display:none}`
+       del navegador. Sin esto, Personalizar + Listo + Restablecer se pintan los tres a la vez
+       (bug real, ago 2026). Mismo patrón que `.dash-edit-btn[hidden]` en index.astro. */
+    .snapshot-chip[hidden], .reports-edit-btn[hidden], .reports-reset-btn[hidden] { display: none; }
+    .snapshot-chip { background: var(--color-bg-soft); color: var(--color-text-muted); }
+    .snapshot-chip svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+    .reports-edit-btn { background: var(--color-blue-deep); color: white; cursor: pointer; transition: transform .18s ease; }
+    .reports-edit-btn:hover { transform: scale(.98); }
+    .reports-edit-btn:active { transform: scale(.96); }
+    .reports-reset-btn { background: var(--color-bg-soft); color: var(--color-text-muted); cursor: pointer; }
+    .reports-state { max-width: 620px; margin: 8vh auto; padding: 4rem; text-align: center; border-radius: 40px; background: var(--color-surface); box-shadow: 0 30px 80px rgba(10,25,47,.08); }
+    .reports-state h2 { margin: 0 0 .7rem; color: var(--color-text); font-size: 1.6rem; letter-spacing: -.04em; }
+    .reports-state p { margin: 0; color: var(--color-text-muted); }
+    /* El grid vive en styles/widgets.css (global) — ver la nota ahí. Esta página comparte
+       exactamente el mismo grid, gap y breakpoints que /app. */
+    [data-report-shell][aria-busy='true'] { opacity: .68; pointer-events: none; transition: opacity .18s ease; }
+    /* Tipografía de KPI calcada de .kpi-card/.kpi-label/.kpi-num/.kpi-sub de /app para que
+       las dos páginas se lean idénticas. */
+    :global(.report-kpi) { display: flex; flex-direction: column; gap: .4rem; }
+    :global(.report-kpi-value) { color: var(--color-blue-deep); font-size: 1.9rem; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    :global(.report-kpi-value em) { margin-left: 2px; color: var(--color-text-muted); font-size: .5em; font-style: normal; }
+    :global(.report-kpi-value.is-danger) { color: var(--color-danger); }
+    :global(.report-kpi small), :global(.report-explain) { margin: 0; color: var(--color-text-muted); font-size: .76rem; line-height: 1.5; }
+    :global(.sec-head p) { margin: 0; color: var(--color-text-muted); font-size: .76rem; line-height: 1.5; }
+    :global(.sec-head > div) { display: flex; flex-direction: column; gap: .3rem; }
+    :global(.report-chart) { min-height: 250px; }
+    :global(.snapshot-tag) { display: inline-flex; margin-left: .45rem; padding: 2px 7px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: .6rem; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+    :global(.report-list) { display: flex; flex-direction: column; }
+    :global(.report-list > a), :global(.report-list > div) { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 0; border-top: 1px solid var(--color-border); color: var(--color-text); text-decoration: none; }
+    :global(.report-list > a:first-child), :global(.report-list > div:first-child) { border-top: 0; }
+    :global(.report-list span) { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+    :global(.report-list strong) { overflow: hidden; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
+    :global(.report-list small), :global(.report-empty) { color: var(--color-text-muted); font-size: .68rem; }
+    :global(.report-focus) { min-height: 250px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: .5rem; text-align: center; }
+    :global(.report-focus strong) { font-size: clamp(3rem, 7vw, 6rem); color: var(--color-text); letter-spacing: -.06em; }
+    :global(.report-focus span) { color: var(--color-text-muted); }
+    :global(.flow-legend) { display: flex; gap: .8rem; color: var(--color-text-muted); font-size: .65rem; }
+    :global(.flow-legend span::before) { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: currentColor; }
+    :global(.flow-legend .is-cartera), :global(.flow-week-track .is-cartera) { color: #0f766e; background: #0f766e; }
+    :global(.flow-legend .is-pipeline), :global(.flow-week-track .is-pipeline) { color: #2563eb; background: #2563eb; }
+    :global(.flow-legend .is-mrr), :global(.flow-week-track .is-mrr) { color: #8b5cf6; background: #8b5cf6; }
+    :global(.flow-weeks) { display: flex; flex-direction: column; gap: .72rem; }
+    :global(.flow-week) { display: grid; grid-template-columns: 130px minmax(100px, 1fr) 110px; gap: .8rem; align-items: center; }
+    :global(.flow-week-label) { color: var(--color-text-muted); font-size: .7rem; }
+    :global(.flow-week-track) { display: flex; height: 10px; overflow: hidden; border-radius: 999px; background: var(--chart-track); }
+    :global(.flow-week-track i) { display: block; height: 100%; }
+    :global(.flow-week strong) { text-align: right; font-size: .76rem; }
+    /* Los breakpoints del grid ya viven en widgets.css (compartidos con /app). Aquí solo
+       queda lo propio de este informe. Las acciones NO cambian de alineación: el usuario
+       las quiere a la derecha siempre. */
+    @media (max-width: 560px) {
+        :global(.flow-week) { grid-template-columns: 92px 1fr; }
+        :global(.flow-week strong) { grid-column: 2; }
+    }
+</style>

@@ -6,6 +6,31 @@
 
 ---
 
+✅ **Observabilidad de consumo externo y topes de IA en Cord Ops (ago 2026)** —
+   se agregó `/ops/usage` como centro interno para detectar abuso o gasto variable
+   antes de recibir la factura del proveedor. Reúne los medidores existentes de
+   `uso_periodo` (IA, API, CFDI y usuarios), actividad de `api_requests`, salud de
+   `webhook_deliveries`, cobros de `cotizacion_cobros`, tamaño de Neon y la nueva
+   telemetría `external_usage_events` para Anthropic y Resend. La tabla nueva está
+   aislada por RLS y solo guarda metadatos técnicos agregables, nunca prompts,
+   destinatarios, cuerpos, respuestas, API keys ni secretos.
+   • El armado de cotizaciones registra tokens de entrada/salida por turno de
+     Anthropic. El agente de cobranza ahora también pasa por `checkQuota()`, reporta
+     una acción de IA mediante `reportUsage()` y registra ambos turnos cuando usa
+     herramientas; antes ese agente consumía Anthropic fuera del medidor mensual.
+   • Los correos comerciales enviados con Resend registran éxito, fallo o envío
+     omitido cuando existe una organización atribuible. API y CFDI siguen usando sus
+     medidores existentes, y Ops calcula alertas al 80%/100% más tasas anormales de
+     errores y reintentos.
+   • Se cerró un hueco de control en la API pública: REST y MCP ya compartían rate
+     limit por minuto y medidor mensual, pero no llamaban `checkQuota()` antes de
+     ejecutar. `checkApiKeyRateLimit()` ahora aplica también la cuota mensual a toda
+     llave live: free se detiene al llegar al incluido y los planes con overage se
+     detienen en el techo de emergencia de 10 veces la cuota.
+   • No se inventan estimaciones monetarias: los precios y descuentos de proveedor
+     pueden cambiar. Ops muestra unidades, velocidad y riesgo; Anthropic, Resend,
+     Stripe, Facturapi, Vercel y Neon conservan la factura autoritativa.
+
 ✅ **Cobros recurrentes reales para igualas/retainers vía Stripe Subscriptions (jul 2026)** —
    auditoría de "promesas que el código hace pero no cumple": `casos-de-uso/agencias.astro`
    prometía "cargo automático cada mes" para igualas de agencias/consultoras, pero el sistema

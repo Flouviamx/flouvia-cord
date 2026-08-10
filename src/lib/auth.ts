@@ -131,6 +131,12 @@ const SESSION_SLIDE_THROTTLE_MS = 5 * 60 * 1000; // no reescribir en cada reques
 
 /** Crea una sesión y devuelve el token CRUDO (va en la cookie; nunca se guarda). */
 export async function createSession(userId: string, userAgent?: string, ip?: string): Promise<string> {
+    // Control común a password, OAuth, passkey, SAML y verificación de correo.
+    // Ningún método alterno puede abrir sesión si Ops suspendió la identidad.
+    const account = await sql`select suspended_at from users where id = ${userId} limit 1`;
+    if (!account.length || account[0].suspended_at) {
+        throw new Error('ACCOUNT_SUSPENDED');
+    }
     const token = randomBytes(32).toString('hex');
     const tokenHash = sha256Hex(token);
     const now = Date.now();
@@ -146,13 +152,16 @@ export async function createSession(userId: string, userAgent?: string, ip?: str
 export async function validateSession(token: string): Promise<{ userId: string; sessionId: string; slid: boolean } | null> {
     const tokenHash = sha256Hex(token);
     const rows = await sql`
-        select user_id, expires_at, absolute_expires_at, revoked_at, last_used_at
-        from sessions where id = ${tokenHash} limit 1
+        select s.user_id, s.expires_at, s.absolute_expires_at, s.revoked_at,
+               s.last_used_at, u.suspended_at
+        from sessions s
+        join users u on u.id = s.user_id
+        where s.id = ${tokenHash} limit 1
     `;
     if (!rows.length) return null;
     const s = rows[0] as any;
     const now = new Date();
-    if (s.revoked_at || new Date(s.expires_at) < now || new Date(s.absolute_expires_at) < now) {
+    if (s.revoked_at || s.suspended_at || new Date(s.expires_at) < now || new Date(s.absolute_expires_at) < now) {
         await sql`delete from sessions where id = ${tokenHash}`;
         return null;
     }

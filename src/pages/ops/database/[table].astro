@@ -1,0 +1,81 @@
+---
+import OpsLayout from '../../../layouts/OpsLayout.astro';
+import OpsShell from '../../../components/ops/OpsShell.astro';
+import { sql } from '../../../lib/db';
+import { databaseSearchColumns, decodeDatabaseCursor, encodeDatabaseCursor, formatDatabaseValue } from '../../../lib/ops-database';
+import { logOpsAudit } from '../../../lib/ops-auth';
+import { trustedIp } from '../../../lib/ip';
+
+const operator = Astro.locals.opsOperator;
+if (!operator) return Astro.redirect('/ops/login');
+const table = String(Astro.params.table || '');
+const limit = 25;
+const query = (Astro.url.searchParams.get('q') || '').trim().slice(0, 120);
+const cursor = decodeDatabaseCursor(Astro.url.searchParams.get('cursor'));
+let columns: any[] = [];
+let rows: any[] = [];
+let estimatedTotal = 0;
+let nextCursor = '';
+let hasMore = false;
+let error = '';
+try {
+  columns = await sql.query(`select column_name, data_type from information_schema.columns where table_schema='public' and table_name=$1 order by ordinal_position`, [table]);
+  if (!columns.length || !/^[a-z_][a-z0-9_]*$/.test(table)) return Astro.redirect('/ops/database');
+  const names = new Set(columns.map((item) => item.column_name));
+  const orderColumn = names.has('created_at') ? 'created_at' : names.has('updated_at') ? 'updated_at' : names.has('id') ? 'id' : columns[0].column_name;
+  const tieColumn = names.has('id') && orderColumn !== 'id' ? 'id' : '';
+  // El buscador tampoco inspecciona campos redactados: de lo contrario sería
+  // un oráculo para comprobar si un token/hash secreto coincide con un valor.
+  // Además se limita a columnas identificadoras para que una tabla ancha no
+  // convierta cada búsqueda en decenas de casts y escaneos completos.
+  const searchable = databaseSearchColumns(table, columns);
+  const hasFilter = Boolean(query && searchable.length);
+  const params: unknown[] = [];
+  const clauses: string[] = [];
+  if (hasFilter) {
+    params.push(`${query}%`);
+    clauses.push(`(${searchable.map((column) => `lower(coalesce("${column.column_name}"::text,'')) like lower($1)`).join(' or ')})`);
+  }
+  if (cursor?.order !== null && cursor?.order !== undefined) {
+    params.push(cursor.order);
+    const orderParam = `$${params.length}`;
+    if (tieColumn && cursor.tie !== null && cursor.tie !== undefined) {
+      params.push(cursor.tie);
+      clauses.push(`("${orderColumn}","${tieColumn}") < (${orderParam},$${params.length})`);
+    } else {
+      clauses.push(`"${orderColumn}" < ${orderParam}`);
+    }
+  }
+  params.push(limit + 1);
+  const where = clauses.length ? ` where ${clauses.join(' and ')}` : '';
+  const ordering = tieColumn ? `"${orderColumn}" desc nulls last,"${tieColumn}" desc` : `"${orderColumn}" desc nulls last`;
+  const fetched = await sql.query(`select * from "${table}" t${where} order by ${ordering} limit $${params.length}`, params);
+  hasMore = fetched.length > limit;
+  rows = fetched.slice(0, limit);
+  if (hasMore && rows.length) {
+    const last = rows[rows.length - 1];
+    nextCursor = encodeDatabaseCursor({ order: last[orderColumn], ...(tieColumn ? { tie: last[tieColumn] } : {}) });
+  }
+  const estimates = await sql.query(`select greatest(c.reltuples,0)::bigint estimated_total from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname=$1`, [table]);
+  estimatedTotal = Number(estimates[0]?.estimated_total || 0);
+  logOpsAudit({ actorUserId: operator.userId, actorEmail: operator.email, action: 'ops.database_table_viewed', targetType: 'table', targetId: table, metadata: { cursor: Boolean(cursor), filtered: !!query }, ip: trustedIp(Astro.request), userAgent: Astro.request.headers.get('user-agent') }).catch(() => null);
+} catch (cause) { error = 'No se pudo consultar esta tabla.'; console.error('[ops/database/table]', cause); }
+const nextUrl = `/ops/database/${table}?cursor=${encodeURIComponent(nextCursor)}${query ? `&q=${encodeURIComponent(query)}` : ''}`;
+const startUrl = `/ops/database/${table}${query ? `?q=${encodeURIComponent(query)}` : ''}`;
+---
+<OpsLayout title={`${table} | Cord Ops`}>
+  <OpsShell active="database" eyebrow="Base de datos" title={table} subtitle={`${query ? 'Resultados filtrados' : `Aproximadamente ${estimatedTotal.toLocaleString('es-MX')} registros`} · ${columns.length} columnas`}>
+    <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input name="q" value={query} placeholder="Buscar por identificador" /></form>
+    <a href="/ops/database" style="display:inline-block;margin-bottom:16px;color:#0066cc;text-decoration:none;font-size:12px">Volver al catálogo</a>
+    {error && <div class="ops-inline-error">{error}</div>}
+    {!error && <div class="ops-card ops-table-wrap">
+      <table class="ops-table"><thead><tr>{columns.map((column) => <th title={column.data_type}>{column.column_name}</th>)}</tr></thead>
+        <tbody>{rows.map((row) => <tr>{columns.map((column) => {
+          const value = formatDatabaseValue(table, column.column_name, row[column.column_name]);
+          return <td><span class:list={['ops-data-value','ops-code',value.redacted && 'redacted']} title={value.redacted ? 'Campo sensible redactado' : value.text}>{value.text}</span></td>;
+        })}</tr>)}{rows.length === 0 && <tr><td colspan={columns.length} class="ops-empty">No hay registros para mostrar.</td></tr>}</tbody>
+      </table>
+    </div>}
+    <nav class="ops-pagination" aria-label="Paginación"><span>Hasta {limit} registros por consulta</span><div>{cursor&&<a class="ops-button secondary" href={startUrl}>Volver al inicio</a>}{hasMore&&<a class="ops-button secondary" href={nextUrl} rel="next">Siguiente</a>}</div></nav>
+  </OpsShell>
+</OpsLayout>

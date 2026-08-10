@@ -6,6 +6,36 @@
 
 ---
 
+✅ **Cord Ops preparado para 10k+ usuarios y tablas de millones de filas (ago 2026)** —
+   se eliminó el patrón inicial de cargar hasta 200 registros y ejecutar cuatro a siete
+   subconsultas correlacionadas por cada fila visible. `/ops/users` y
+   `/ops/organizations` ahora usan páginas SSR de 50, búsqueda GET persistente y CTEs
+   que agregan sesiones, passkeys, membresías, clientes, productos y cotizaciones solo
+   para los ids de la página actual. Los totales provienen de `count(*) over()` y las
+   páginas fuera de rango regresan limpiamente al inicio.
+   • `/ops/usage` dejó de descargar todas las organizaciones y de construir un `<select>`
+     gigante. Se dividió en cuatro consultas con responsabilidades separadas: totales
+     globales, resumen de proveedores, inbox SQL de las 50 organizaciones con mayor
+     riesgo y una página de 50 organizaciones con agregados limitados a sus ids. El
+     filtro ahora busca en servidor y los links de detalle conservan el filtro exacto
+     por UUID. Esto evita que la vista crezca linealmente en HTML y en número de queries.
+   • `/ops/security` pagina la auditoría privilegiada a 50 y acota las señales de
+     identidad; las fichas de usuario/organización conservan conteos exactos pero limitan
+     listas históricas (sesiones, equipo, llaves, webhooks y SSO) a ventanas recientes.
+   • El explorador genérico cambió de `LIMIT/OFFSET + COUNT(*)` a keyset pagination con
+     cursor estable sobre `created_at/id`. “Siguiente” conserva costo constante aun en
+     tablas grandes, el total se toma de `pg_class.reltuples` como estimación y la
+     búsqueda se restringe a un máximo de seis columnas identificadoras no sensibles.
+   • `db/schema.sql` habilita `pg_trgm` y agrega índices idempotentes para búsquedas de
+     nombre/correo, orden cronológico, sesiones, membresías, actividad comercial,
+     ventanas de API/webhooks/proveedores/cobros y targets de auditoría. La migración se
+     aplicó a Neon sin modificar filas de negocio.
+   • Verificación: build de producción completo; smoke SSR autenticado real contra Neon
+     en usuarios, búsqueda, organizaciones, uso, seguridad y explorador (seis respuestas
+     200, sin errores); la sesión aislada de prueba se eliminó al terminar. La BD quedó
+     con 2 usuarios, 4 organizaciones y 1 sesión Ops real. Esto valida la arquitectura e
+     índices instalados; no pretende ser una prueba de carga sintética de 10k usuarios.
+
 ✅ **Auditoría de "listo para producción" + 4 bugs de dinero/seguridad corregidos
    (jul 2026)** — André pidió un mapeo completo de la app para salir a producción el
    mismo día ("qué falta, qué está mal conectado"). Se verificó el estado REAL contra

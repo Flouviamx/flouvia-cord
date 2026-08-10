@@ -1,0 +1,59 @@
+---
+interface Props {
+  active: 'overview' | 'users' | 'organizations' | 'usage' | 'database' | 'security';
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+}
+
+const { active, eyebrow = 'Cord Platform', title, subtitle } = Astro.props;
+const operator = Astro.locals.opsOperator;
+const nav = [
+  { id: 'overview', href: '/ops', label: 'Resumen' },
+  { id: 'users', href: '/ops/users', label: 'Usuarios' },
+  { id: 'organizations', href: '/ops/organizations', label: 'Organizaciones' },
+  { id: 'usage', href: '/ops/usage', label: 'Uso y costos' },
+  { id: 'database', href: '/ops/database', label: 'Base de datos' },
+  { id: 'security', href: '/ops/security', label: 'Seguridad' },
+];
+---
+
+<div class="ops-app-shell">
+  <aside class="ops-app-sidebar">
+    <a class="ops-app-brand" href="/ops" aria-label="Cord Ops">
+      <span>CORD</span><i></i><small>Ops</small>
+    </a>
+
+    <nav class="ops-app-nav" aria-label="Navegación de Ops">
+      {nav.map((item) => (
+        <a href={item.href} aria-current={active === item.id ? 'page' : undefined}>{item.label}</a>
+      ))}
+    </nav>
+
+    <div class="ops-app-sidebar-bottom">
+      <div class="ops-protection-state"><span></span><div><strong>Acceso protegido</strong><small>2 operadores autorizados</small></div></div>
+      <div class="ops-operator-card">
+        <strong>{operator?.email}</strong>
+        <small>{operator?.authMethod === 'passkey' ? 'Clave de acceso' : operator?.authMethod === 'local_session_password' ? 'Sesión local reforzada' : 'Contraseña y TOTP'}</small>
+        <button id="ops-shell-logout" type="button">Cerrar sesión</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="ops-app-main">
+    <header class="ops-page-header">
+      <div><p>{eyebrow}</p><h1>{title}</h1>{subtitle && <span>{subtitle}</span>}</div>
+      <div class="ops-page-actions"><slot name="actions" /></div>
+    </header>
+    <slot />
+  </main>
+</div>
+
+<script>
+  document.getElementById('ops-shell-logout')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    button.disabled = true;
+    try { await fetch('/api/ops/auth', { method: 'DELETE' }); }
+    finally { window.location.replace('/ops/login'); }
+  });
+</script>

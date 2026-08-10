@@ -3,12 +3,13 @@
 // agregas productos del catálogo, negocias precio por línea, el total se recalcula
 // en vivo con IVA, y al enviar hace POST a /api/cotizaciones (inserta en Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
+import ClientModal from '../../../components/app/ClientModal.astro';
 import { getProductos, getClientes, getOrg, getCotizacion, getKitsForEditor, money } from '../../../lib/queries';
-import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
 import { currentLocale } from '../../../lib/context';
 import { t, getEditorRuntimeI18n } from '../../../i18n/app';
 import FlagSelect from '../../../components/ui/FlagSelect';
 import { CURRENCY_FLAG } from '../../../lib/flags';
+import '../../../styles/modal.css';
 
 const L = currentLocale();
 const ET = getEditorRuntimeI18n(L);
@@ -26,6 +27,9 @@ if (draftId) {
         return Astro.redirect('/app/cotizaciones/nueva');
     }
 }
+// CTA "Nueva cotización" desde /app/clientes/[id] — preselecciona el cliente sin tocar
+// el flujo de borradores (un draft ya trae su propio cliente).
+const preselectCliente = !draftQuote ? (Astro.url.searchParams.get('cliente') || null) : null;
 
 const [productos, CLIENTES, ORG, kits] = await Promise.all([getProductos(), getClientes(), getOrg(), getKitsForEditor()]);
 const catalogo = productos.filter(p => p.activo);
@@ -278,102 +282,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         </aside>
     </div>
 
-    <!-- Modal Cliente Nuevo -->
-    <dialog class="modal" id="clientModal">
-        <form method="dialog" class="m-form" id="clientForm">
-            <div class="m-head">
-                <h2 id="mTitle">{t(L, 'ed.modal_cliente_titulo')}</h2>
-                <button type="button" class="m-close" id="mClose" aria-label={t(L, 'ed.cerrar')}>✕</button>
-            </div>
-
-            <div class="m-field">
-                <label for="fEmpresa">{t(L, 'ed.empresa')}</label>
-                <input class="m-input" id="fEmpresa" name="empresa" required placeholder={t(L, 'ed.empresa_ph')} />
-            </div>
-            <div class="m-row">
-                <div class="m-field">
-                    <label for="fContacto">{t(L, 'ed.contacto')}</label>
-                    <input class="m-input" id="fContacto" name="contacto" placeholder={t(L, 'ed.contacto_ph')} />
-                </div>
-                <div class="m-field">
-                    <label for="fEmail">{t(L, 'ed.correo')}</label>
-                    <input class="m-input" id="fEmail" name="email" type="email" placeholder={t(L, 'ed.correo_ph')} />
-                </div>
-            </div>
-            <div class="m-row">
-                <div class="m-field">
-                    <label for="fRfc">{t(L, 'ed.rfc')}</label>
-                    <input class="m-input" id="fRfc" name="rfc" placeholder="DEZ981123QX1" maxlength="13" />
-                </div>
-                <div class="m-field">
-                    <label for="fLimite">{t(L, 'ed.limite_credito')}</label>
-                    <input class="m-input" id="fLimite" name="limite" type="number" min="0" step="1000" placeholder="500000" />
-                </div>
-            </div>
-            <div class="m-field">
-                <label>{t(L, 'ed.nivel_precio')}</label>
-                <div class="m-chips m-tiers" id="fTiers">
-                    <button type="button" class="chip tier active" data-v="estandar" data-sug="0">{t(L, 'ed.tier_estandar')}</button>
-                    <button type="button" class="chip tier" data-v="plata" data-sug="5">{t(L, 'ed.tier_plata')}</button>
-                    <button type="button" class="chip tier" data-v="oro" data-sug="10">{t(L, 'ed.tier_oro')}</button>
-                    <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">{t(L, 'ed.tier_distribuidor')}</button>
-                </div>
-                <input type="hidden" id="fNivel" value="estandar" />
-            </div>
-            <div class="m-field">
-                <label for="fDescuento">{t(L, 'ed.descuento_auto')}</label>
-                <div class="disc-row">
-                    <div class="disc-input">
-                        <input class="m-input" id="fDescuento" type="number" min="0" max="100" step="1" placeholder="0" />
-                        <span class="disc-suffix">%</span>
-                    </div>
-                    <span class="disc-preview" id="discPreview">{ET.sinDescuento}</span>
-                </div>
-                <span class="m-hint" set:html={t(L, 'ed.descuento_hint')} />
-            </div>
-            <div class="m-field">
-                <label>{t(L, 'ed.terminos_pago')}</label>
-                <div class="m-chips" id="fTerminos">
-                    <button type="button" class="chip active" data-v="contado">{t(L, 'ed.term_contado')}</button>
-                    <button type="button" class="chip" data-v="net30">{t(L, 'ed.term_net30')}</button>
-                    <button type="button" class="chip" data-v="net60">{t(L, 'ed.term_net60')}</button>
-                </div>
-            </div>
-
-            <details class="m-fiscal">
-                <summary>{t(L, 'ed.fiscal_summary')}</summary>
-                <p class="m-hint" style="margin: 0 0 0.75rem 0;">{t(L, 'ed.fiscal_hint')}</p>
-                <div class="m-row">
-                    <div class="m-field">
-                        <label for="fRegimen">{t(L, 'ed.regimen_fiscal')}</label>
-                        <select class="m-input" id="fRegimen">
-                            <option value="">{t(L, 'ed.sin_especificar')}</option>
-                            {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
-                        </select>
-                    </div>
-                    <div class="m-field">
-                        <label for="fCp">{t(L, 'ed.cp_domicilio')}</label>
-                        <input class="m-input" id="fCp" inputmode="numeric" maxlength="5" placeholder="06600" />
-                    </div>
-                </div>
-                <div class="m-field">
-                    <label for="fUso">{t(L, 'ed.uso_cfdi')}</label>
-                    <select class="m-input" id="fUso">
-                        <option value="">{t(L, 'ed.sin_especificar_g03')}</option>
-                        {USOS_CFDI.map((u) => <option value={u.codigo}>{u.nombre}</option>)}
-                    </select>
-                </div>
-            </details>
-
-            <p class="m-error" id="mError"></p>
-
-            <div class="m-actions">
-                <span class="m-spacer"></span>
-                <button type="button" class="m-cancel" id="mCancel">{t(L, 'ed.cancelar')}</button>
-                <button type="submit" class="m-save" id="mSave">{t(L, 'ed.crear_seleccionar')}</button>
-            </div>
-        </form>
-    </dialog>
+    <!-- Modal Cliente Nuevo (componente compartido con /app/clientes) -->
+    <ClientModal showDelete={false} saveLabel={t(L, 'ed.crear_seleccionar')} />
 
     <!-- Toast -->
     <div class="toast" id="toast" hidden>
@@ -382,7 +292,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     </div>
 </AppLayout>
 
-<script is:inline define:vars={{ catalogo, kits, aprobMargenMin: ORG.aprobMargenMin, draftQuote, T: ET }}>
+<script is:inline define:vars={{ catalogo, kits, aprobMargenMin: ORG.aprobMargenMin, draftQuote, preselectCliente, T: ET }}>
     const tpl = (s, vars) => { let r = s; for (const k in vars) r = r.split('{' + k + '}').join(vars[k]); return r; };
     const lines = [];
     const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
@@ -750,7 +660,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     $client?.addEventListener('change', () => {
         if ($client.value === '__NEW__') {
             $client.value = lastClientVal; // Revertir visualmente temporalmente
-            openClientModal();
+            document.dispatchEvent(new CustomEvent('clientmodal:open'));
             return;
         }
         lastClientVal = $client.value;
@@ -1215,139 +1125,49 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         });
     }
 
-    // ── Modal Nuevo Cliente ──
-    const $ncOverlay = document.getElementById('clientModal');
-    const $ncForm = document.getElementById('clientForm');
-    const $ncSubmit = document.getElementById('mSave');
-    const $ncContacto = document.getElementById('fContacto');
-    const $ncEmail = document.getElementById('fEmail');
+    // ── Modal Nuevo Cliente: ahora es <ClientModal /> (componente compartido con
+    // /app/clientes) — este script solo escucha 'clientmodal:saved' e inserta/
+    // selecciona el <option> recién creado, sin recargar la página. ──
+    document.addEventListener('clientmodal:saved', (e) => {
+        const detail = e.detail || {};
+        const cliente = detail.cliente || {};
+        const id = detail.id;
+        if (!id || !$client) return;
 
-    // Manejo de chips y estado local del form
-    let terminos = 'contado';
-    const chips = Array.from(document.querySelectorAll('#fTerminos .chip'));
-    const setTerm = (v) => { terminos = v; chips.forEach(c => c.classList.toggle('active', c.dataset.v === v)); };
-    chips.forEach(c => c.addEventListener('click', () => setTerm(c.dataset.v)));
+        const empresa = cliente.empresa || '';
+        const contacto = cliente.contacto || '';
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.dataset.desc = String(Number(cliente.descuento_pct) || 0);
+        opt.dataset.nivel = cliente.nivel || 'estandar';
+        opt.dataset.term = cliente.terminos || 'contado';
+        opt.textContent = contacto ? `${empresa} — ${contacto}` : empresa;
 
-    const tierChips = Array.from(document.querySelectorAll('.chip.tier'));
-    const updateDiscPreview = () => {
-        const d = Number(document.getElementById('fDescuento').value || 0);
-        const el = document.getElementById('discPreview');
-        if (!el) return;
-        if (d <= 0) { el.innerHTML = T.sinDescuento; el.classList.remove('on'); }
-        else { el.innerHTML = `$1,000 → <b>$${Math.round(1000 * (1 - d / 100)).toLocaleString(T.localeIntl)}</b>`; el.classList.add('on'); }
-    };
-    const setNivel = (v, applySuggested = false) => {
-        document.getElementById('fNivel').value = v;
-        tierChips.forEach(c => c.classList.toggle('active', c.dataset.v === v));
-        if (applySuggested) {
-            const chip = tierChips.find(c => c.dataset.v === v);
-            document.getElementById('fDescuento').value = chip && chip.dataset.sug && chip.dataset.sug !== '0' ? chip.dataset.sug : '';
-        }
-        updateDiscPreview();
-    };
-    tierChips.forEach(c => c.addEventListener('click', () => setNivel(c.dataset.v, true)));
-    document.getElementById('fDescuento').addEventListener('input', updateDiscPreview);
-
-    function openClientModal() {
-        if (!$ncOverlay) return;
-        $ncForm.reset();
-        setNivel('estandar', false);
-        setTerm('contado');
-        const err = document.getElementById('mError');
-        if (err) err.textContent = '';
-        $ncOverlay.showModal();
-        const emp = document.getElementById('fEmpresa');
-        if (emp) setTimeout(() => emp.focus(), 60);
-    }
-    
-    function closeClientModal() {
-        if ($ncOverlay) $ncOverlay.close();
-    }
-
-    document.getElementById('mClose')?.addEventListener('click', closeClientModal);
-    document.getElementById('mCancel')?.addEventListener('click', closeClientModal);
-    $ncOverlay?.addEventListener('click', (e) => {
-        if (e.target === $ncOverlay) closeClientModal();
-    });
-
-    const $mError = document.getElementById('mError');
-
-    $ncForm?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if ($mError) $mError.textContent = '';
-        const empresa = document.getElementById('fEmpresa').value.trim();
-        if (!empresa) {
-            if ($mError) $mError.textContent = T.empresaObligatoria;
-            document.getElementById('fEmpresa').focus();
-            return;
+        const newOpt = $client.querySelector('option[value="__NEW__"]');
+        if (newOpt) {
+            $client.insertBefore(opt, newOpt);
+        } else {
+            $client.appendChild(opt);
         }
 
-        const prevHTML = $ncSubmit.innerHTML;
-        $ncSubmit.disabled = true;
-        $ncSubmit.textContent = T.creando;
+        $client.value = id;
+        lastClientVal = id;
 
-        try {
-            const contactoVal = $ncContacto ? $ncContacto.value.trim() : '';
-            const emailVal = $ncEmail ? $ncEmail.value.trim() : '';
-            const nivelVal = document.getElementById('fNivel').value || 'estandar';
-            const descVal = Number(document.getElementById('fDescuento').value || 0);
-            // Payload COMPLETO: antes solo se mandaban empresa/contacto/email y el
-            // resto del formulario (RFC, crédito, nivel, descuento, fiscal) se perdía.
-            const res = await fetch('/api/clientes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    empresa,
-                    contacto: contactoVal,
-                    email: emailVal,
-                    rfc: document.getElementById('fRfc').value.trim(),
-                    limite: document.getElementById('fLimite').value,
-                    terminos,
-                    nivel: nivelVal,
-                    descuento_pct: descVal,
-                    regimen_fiscal: document.getElementById('fRegimen').value,
-                    uso_cfdi: document.getElementById('fUso').value,
-                    cp_fiscal: document.getElementById('fCp').value,
-                })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || T.errorCrearCliente);
+        // Dispara el flujo normal de selección: aplica descuento por nivel
+        // a las líneas ya agregadas y pre-selecciona sus términos de pago.
+        $client.dispatchEvent(new Event('change'));
 
-            const opt = document.createElement('option');
-            opt.value = data.id;
-            opt.dataset.desc = String(descVal || 0);
-            opt.dataset.nivel = nivelVal;
-            opt.dataset.term = terminos || 'contado';
-            opt.textContent = contactoVal ? `${empresa} — ${contactoVal}` : empresa;
-
-            const newOpt = $client.querySelector('option[value="__NEW__"]');
-            if (newOpt) {
-                $client.insertBefore(opt, newOpt);
-            } else {
-                $client.appendChild(opt);
-            }
-
-            $client.value = data.id;
-            lastClientVal = data.id;
-
-            // Dispara el flujo normal de selección: aplica descuento por nivel
-            // a las líneas ya agregadas y pre-selecciona sus términos de pago.
-            $client.dispatchEvent(new Event('change'));
-
-            closeClientModal();
-            showToast(tpl(T.clienteCreadoTpl, { empresa }), 2400);
-        } catch (err) {
-            if ($mError) $mError.textContent = err.message || T.noSePudoCrearCliente;
-        } finally {
-            $ncSubmit.disabled = false;
-            $ncSubmit.innerHTML = prevHTML;
-        }
+        showToast(tpl(T.clienteCreadoTpl, { empresa }), 2400);
     });
 
     if (draftQuote && draftQuote.cliente_id && $client) {
         $client.value = draftQuote.cliente_id;
         lastClientVal = draftQuote.cliente_id;
         reflectDesc();
+    } else if (preselectCliente && $client && Array.from($client.options).some((o) => o.value === preselectCliente)) {
+        $client.value = preselectCliente;
+        lastClientVal = preselectCliente;
+        $client.dispatchEvent(new Event('change'));
     }
 
     // Inicializa la interfaz vacía.
@@ -1461,116 +1281,11 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
 </style>
 
 <style>
-    /* ── Modal (mismo lenguaje Apple del editor: inputs grises, foco navy) ── */
-    .modal {
-        border: none; border-radius: 22px; padding: 0;
-        width: min(540px, calc(100vw - 2rem));
-        background: #fff;
-        box-shadow:
-            0 0 0 0.5px rgba(0,0,0,0.05),
-            0 24px 60px -16px rgba(10,25,47,0.35),
-            0 8px 20px -8px rgba(10,25,47,0.15);
-    }
-    .modal::backdrop { background: rgba(10,25,47,0.38); backdrop-filter: blur(4px); }
-    .m-form { display: flex; flex-direction: column; gap: 1rem; padding: 1.6rem 1.7rem 1.5rem; }
-    .m-head { display: flex; align-items: center; justify-content: space-between; }
-    .m-head h2 { font-size: 1.08rem; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
-    .m-close {
-        background: #f5f5f7; border: none;
-        width: 30px; height: 30px; border-radius: 999px; cursor: pointer;
-        font-size: 0.78rem; color: var(--color-text-muted);
-        display: flex; align-items: center; justify-content: center;
-        transition: background 0.2s, color 0.2s, transform 0.2s var(--ease-spring);
-    }
-    .m-close:hover { background: #e8e8ec; color: var(--color-text); }
-    .m-close:active { transform: scale(0.92); }
-    .m-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.95rem; }
-    .m-fiscal { border-top: 1px solid var(--color-border); padding-top: 0.95rem; display: flex; flex-direction: column; gap: 0.95rem; }
-    .m-fiscal > summary { cursor: pointer; font-size: 0.78rem; font-weight: 700; color: var(--color-text); list-style: none; user-select: none; }
-    .m-fiscal > summary::-webkit-details-marker { display: none; }
-    .m-fiscal > summary::before { content: '+ '; color: var(--color-text-muted); font-weight: 700; }
-    .m-fiscal[open] > summary::before { content: '− '; }
-    .m-field { display: flex; flex-direction: column; gap: 0.4rem; }
-    .m-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
-    .m-input {
-        font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500;
-        color: var(--color-text); background: #f5f5f7;
-        border: 1.5px solid transparent; border-radius: 10px;
-        padding: 10px 12px;
-        transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
-    }
-    .m-input:hover { background: #ececee; }
-    .m-input:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
-    /* La "letra chiquita" de ayuda bajo un campo (antes esta clase no existía en
-       esta página y el texto salía en tamaño normal — se veía roto). */
-    .m-hint { font-size: 0.72rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
-    .m-hint b { color: var(--color-text); font-weight: 600; }
-
-    .m-chips { display: flex; gap: 0.5rem; }
-    .m-tiers { flex-wrap: wrap; }
-    .m-chips .chip {
-        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
-        color: var(--color-text-muted); background: var(--color-bg-soft);
-        border: 1px solid var(--color-border); border-radius: 100px;
-        padding: 7px 16px; cursor: pointer;
-        transition: all 0.25s var(--ease-ios);
-    }
-    .m-chips .chip.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
-
-    /* Descuento por nivel: input con sufijo % + vista previa en pesos */
-    .disc-row { display: flex; align-items: center; gap: 0.7rem; }
-    .disc-input { position: relative; flex: 0 0 120px; }
-    .disc-input .m-input { padding-right: 26px; width: 100%; }
-    .disc-suffix { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: var(--color-text-muted); pointer-events: none; }
-    .disc-preview { font-size: 0.82rem; font-weight: 500; color: var(--color-text-muted); }
-    .disc-preview.on { color: #059669; }
-    .disc-preview b { font-weight: 700; }
-
-    .m-error { font-size: 0.78rem; color: var(--color-danger); margin: 0; min-height: 1em; }
-
-    .m-actions { display: flex; align-items: center; gap: 0.6rem; }
-    .m-spacer { flex: 1; }
-    .m-delete {
-        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600;
-        color: var(--color-danger); background: none; border: none; cursor: pointer;
-        padding: 9px 4px;
-    }
-    .m-delete[hidden] { display: none; }
-    .m-cancel {
-        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
-        color: var(--color-text); background: var(--color-bg-soft);
-        border: 1px solid var(--color-border); border-radius: 9px;
-        padding: 9px 16px; cursor: pointer;
-    }
-    .m-save {
-        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
-        background: var(--color-blue-deep); color: #fff;
-        border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer;
-        box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5);
-    }
-    .m-save:disabled { opacity: 0.6; cursor: wait; }
-
-    @media (max-width: 880px) {
-        .m-row { grid-template-columns: 1fr; }
-    }
-
-    /* En móvil el modal se vuelve un "bottom sheet" que sube desde abajo (nativo). */
-    @media (max-width: 560px) {
-        .modal {
-            width: 100%; max-width: 100%;
-            margin: 0; top: auto; bottom: 0; left: 0; right: 0;
-            border-radius: 20px 20px 0 0;
-            max-height: 92dvh;
-            animation: sheet-up 0.32s var(--ease-spring);
-        }
-        .m-form {
-            padding: 1.3rem 1.2rem;
-            padding-bottom: calc(1.3rem + env(safe-area-inset-bottom));
-            max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
-        }
-    }
-    @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    @media (prefers-reduced-motion: reduce) { .modal { animation: none; } }
+    /* El CSS del modal de "Nuevo cliente" (.modal/.m-*/.disc-*/etc.) vivía duplicado
+       aquí — ahora es <ClientModal /> (componente compartido) + src/styles/modal.css,
+       importado en el frontmatter. .chip (SIN el prefijo .m-chips) más abajo en este
+       archivo sigue siendo la de OTROS controles del editor (divisa, vigencia…), no la
+       del modal — no se toca. */
 
     .draft-tag { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border); padding: 4px 10px; border-radius: 6px; }
 

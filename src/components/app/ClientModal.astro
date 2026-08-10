@@ -1,99 +1,279 @@
 ---
+// Modal de alta/edición de cliente — COMPARTIDO entre /app/clientes (con eliminar, con
+// modo edición, recarga al guardar) y el editor de cotizaciones (solo alta, sin recargar,
+// inserta y selecciona el cliente recién creado). Antes vivían dos copias con ~90 líneas de
+// CSS duplicadas literal y ~30 divergentes.
+//
+// Contrato por CustomEvent sobre `document` (no por import): la página anfitriona dispara
+// 'clientmodal:open' con los datos a precargar (o sin detail = alta); este componente
+// dispara 'clientmodal:saved' / 'clientmodal:deleted' y la página decide qué hacer
+// (recargar, insertar un <option>, quitar una fila…). Así un <script> bundleado
+// (este componente) y un <script is:inline> (el editor de cotizaciones) pueden coexistir
+// sin compartir módulo — CustomEvent no sabe de límites de bundling.
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../lib/sat';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+interface Props {
+    showDelete?: boolean;
+    saveLabel?: string;
+}
+const { showDelete = true, saveLabel } = Astro.props;
+const L = currentLocale();
+const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
 ---
 
-<dialog class="modal" id="clientModal">
+<dialog class="modal" id="clientModal"
+    data-i18n-nuevo={t(L, 'cmod.nuevo_titulo')} data-i18n-editar={t(L, 'cmod.editar_titulo')}
+    data-i18n-sin-descuento={t(L, 'cmod.sin_descuento')}
+    data-i18n-no-pudo-guardar={t(L, 'cmod.no_pudo_guardar')}
+    data-i18n-eliminar-titulo={t(L, 'cmod.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'cmod.eliminar_body')}
+    data-i18n-eliminar={t(L, 'cmod.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'cmod.no_pudo_eliminar')}
+    data-i18n-empresa-obligatoria={t(L, 'cmod.empresa_obligatoria')}
+    data-i18n-creando={t(L, 'cmod.creando')} data-i18n-guardando={t(L, 'cmod.guardando')}
+    data-show-delete={showDelete ? '1' : ''}
+>
     <form method="dialog" class="m-form" id="clientForm">
         <div class="m-head">
-            <h2 id="mTitle">Nuevo cliente</h2>
-            <button type="button" class="m-close" id="mClose" aria-label="Cerrar">✕</button>
+            <h2 id="cmTitle">{t(L, 'cmod.nuevo_titulo')}</h2>
+            <button type="button" class="m-close" id="cmClose" aria-label={t(L, 'cmod.cerrar')}>✕</button>
         </div>
 
-        <div class="m-field">
-            <label for="fEmpresa">Empresa *</label>
-            <input class="m-input" id="fEmpresa" name="empresa" required placeholder="Distribuidora El Zarco" />
-        </div>
-        <div class="m-row">
+        <div class="m-body">
             <div class="m-field">
-                <label for="fContacto">Contacto</label>
-                <input class="m-input" id="fContacto" name="contacto" placeholder="Raúl Mendoza" />
+                <label for="cmEmpresa">{t(L, 'cmod.empresa')}</label>
+                <input class="m-input" id="cmEmpresa" name="empresa" required placeholder={t(L, 'cmod.empresa_ph')} />
             </div>
-            <div class="m-field">
-                <label for="fEmail">Correo</label>
-                <input class="m-input" id="fEmail" name="email" type="email" placeholder="compras@elzarco.mx" />
-            </div>
-        </div>
-        <div class="m-row">
-            <div class="m-field">
-                <label for="fRfc">RFC</label>
-                <input class="m-input" id="fRfc" name="rfc" placeholder="DEZ981123QX1" maxlength="13" />
-            </div>
-            <div class="m-field">
-                <label for="fLimite">Límite de crédito (MXN)</label>
-                <input class="m-input" id="fLimite" name="limite" type="number" min="0" step="1000" placeholder="500000" />
-            </div>
-        </div>
-        <div class="m-field">
-            <label>Nivel de precio</label>
-            <div class="m-chips m-tiers" id="fTiers">
-                <button type="button" class="chip tier active" data-v="estandar" data-sug="0">Estándar</button>
-                <button type="button" class="chip tier" data-v="plata" data-sug="5">Plata</button>
-                <button type="button" class="chip tier" data-v="oro" data-sug="10">Oro</button>
-                <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">Distribuidor</button>
-            </div>
-            <input type="hidden" id="fNivel" value="estandar" />
-        </div>
-        <div class="m-field">
-            <label for="fDescuento">Descuento automático en sus precios</label>
-            <div class="disc-row">
-                <div class="disc-input">
-                    <input class="m-input" id="fDescuento" type="number" min="0" max="100" step="1" placeholder="0" />
-                    <span class="disc-suffix">%</span>
-                </div>
-                <span class="disc-preview" id="discPreview">Sin descuento</span>
-            </div>
-            <span class="m-hint">Cada vez que le cotices, sus precios bajan este % solos. Ej. <b>Oro = −10%</b>: un producto de $1,000 le sale en $900.</span>
-        </div>
-        <div class="m-field">
-            <label>Términos de pago</label>
-            <div class="m-chips" id="fTerminos">
-                <button type="button" class="chip active" data-v="contado">Contado</button>
-                <button type="button" class="chip" data-v="net30">Net 30</button>
-                <button type="button" class="chip" data-v="net60">Net 60</button>
-            </div>
-        </div>
-
-        <details class="m-fiscal">
-            <summary>Datos fiscales para CFDI (opcional)</summary>
-            <p class="m-hint" style="margin: 0 0 0.75rem 0;">Si los capturas, al facturar timbramos el CFDI 4.0 a nombre de este cliente. Si los dejas vacíos, usamos "público en general".</p>
             <div class="m-row">
                 <div class="m-field">
-                    <label for="fRegimen">Régimen fiscal</label>
-                    <select class="m-input" id="fRegimen">
-                        <option value="">— Sin especificar —</option>
-                        {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
-                    </select>
+                    <label for="cmContacto">{t(L, 'cmod.contacto')}</label>
+                    <input class="m-input" id="cmContacto" name="contacto" placeholder={t(L, 'cmod.contacto_ph')} />
                 </div>
                 <div class="m-field">
-                    <label for="fCp">Código postal (domicilio fiscal)</label>
-                    <input class="m-input" id="fCp" inputmode="numeric" maxlength="5" placeholder="06600" />
+                    <label for="cmEmail">{t(L, 'cmod.correo')}</label>
+                    <input class="m-input" id="cmEmail" name="email" type="email" placeholder={t(L, 'cmod.correo_ph')} />
+                </div>
+            </div>
+            <div class="m-row">
+                <div class="m-field">
+                    <label for="cmTelefono">{t(L, 'cmod.telefono')}</label>
+                    <input class="m-input" id="cmTelefono" name="telefono" type="tel" placeholder={t(L, 'cmod.telefono_ph')} />
+                </div>
+                <div class="m-field">
+                    <label for="cmRfc">{t(L, 'cmod.rfc')}</label>
+                    <input class="m-input" id="cmRfc" name="rfc" placeholder="DEZ981123QX1" maxlength="13" />
                 </div>
             </div>
             <div class="m-field">
-                <label for="fUso">Uso del CFDI</label>
-                <select class="m-input" id="fUso">
-                    <option value="">— Sin especificar (G03) —</option>
-                    {USOS_CFDI.map((u) => <option value={u.codigo}>{u.nombre}</option>)}
-                </select>
+                <label for="cmLimite">{t(L, 'cmod.limite_credito')}</label>
+                <input class="m-input" id="cmLimite" name="limite" type="number" min="0" step="1000" placeholder="500000" />
             </div>
-        </details>
+            <div class="m-field">
+                <label>{t(L, 'cmod.nivel_precio')}</label>
+                <div class="m-chips m-tiers" id="cmTiers">
+                    <button type="button" class="chip tier active" data-v="estandar" data-sug="0">{t(L, 'cmod.nivel_estandar')}</button>
+                    <button type="button" class="chip tier" data-v="plata" data-sug="5">{t(L, 'cmod.nivel_plata')}</button>
+                    <button type="button" class="chip tier" data-v="oro" data-sug="10">{t(L, 'cmod.nivel_oro')}</button>
+                    <button type="button" class="chip tier" data-v="distribuidor" data-sug="15">{t(L, 'cmod.nivel_distribuidor')}</button>
+                </div>
+                <input type="hidden" id="cmNivel" value="estandar" />
+            </div>
+            <div class="m-field">
+                <label for="cmDescuento">{t(L, 'cmod.descuento_auto')}</label>
+                <div class="disc-row">
+                    <div class="disc-input">
+                        <input class="m-input" id="cmDescuento" type="number" min="0" max="100" step="1" placeholder="0" />
+                        <span class="disc-suffix">%</span>
+                    </div>
+                    <span class="disc-preview" id="cmDiscPreview">{t(L, 'cmod.sin_descuento')}</span>
+                </div>
+                <span class="m-hint" set:html={t(L, 'cmod.descuento_hint')} />
+            </div>
+            <div class="m-field">
+                <label>{t(L, 'cmod.terminos_pago')}</label>
+                <div class="m-chips" id="cmTerminos">
+                    <button type="button" class="chip active" data-v="contado">{t(L, 'cmod.term_contado')}</button>
+                    <button type="button" class="chip" data-v="net30">{t(L, 'cmod.term_net30')}</button>
+                    <button type="button" class="chip" data-v="net60">{t(L, 'cmod.term_net60')}</button>
+                </div>
+            </div>
 
-        <p class="m-error" id="mError"></p>
+            <details class="m-fiscal" id="cmFiscal">
+                <summary>{t(L, 'cmod.fiscal_summary')}</summary>
+                <p class="m-hint" style="margin: 0 0 0.75rem 0;">{t(L, 'cmod.fiscal_hint')}</p>
+                <div class="m-row">
+                    <div class="m-field">
+                        <label for="cmRegimen">{t(L, 'cmod.regimen_fiscal')}</label>
+                        <select class="m-input" id="cmRegimen">
+                            <option value="">{t(L, 'cmod.sin_especificar')}</option>
+                            {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
+                        </select>
+                    </div>
+                    <div class="m-field">
+                        <label for="cmCp">{t(L, 'cmod.cp_domicilio')}</label>
+                        <input class="m-input" id="cmCp" inputmode="numeric" maxlength="5" placeholder="06600" />
+                    </div>
+                </div>
+                <div class="m-field">
+                    <label for="cmUso">{t(L, 'cmod.uso_cfdi')}</label>
+                    <select class="m-input" id="cmUso">
+                        <option value="">{t(L, 'cmod.sin_especificar_g03')}</option>
+                        {USOS_CFDI.map((u) => <option value={u.codigo}>{u.nombre}</option>)}
+                    </select>
+                </div>
+            </details>
+        </div>
 
-        <div class="m-actions">
-            <span class="m-spacer"></span>
-            <button type="button" class="m-cancel" id="mCancel">Cancelar</button>
-            <button type="submit" class="m-save" id="mSave">Crear y seleccionar</button>
+        <div class="m-foot">
+            <p class="m-error" id="cmError"></p>
+            <div class="m-actions">
+                {showDelete && <button type="button" class="m-delete" id="cmDelete" hidden>{t(L, 'cmod.eliminar')}</button>}
+                <span class="m-spacer"></span>
+                <button type="button" class="m-cancel" id="cmCancel">{t(L, 'cmod.cancelar')}</button>
+                <button type="submit" class="m-save" id="cmSave">{save}</button>
+            </div>
         </div>
     </form>
 </dialog>
+
+<script>
+    // CRUD de clientes contra /api/clientes, disparado por 'clientmodal:open' y
+    // notificando 'clientmodal:saved'/'clientmodal:deleted' — la página anfitriona decide
+    // qué hacer con eso (recargar, insertar un <option>, quitar una fila…).
+    (function () {
+        const dlgEl = document.getElementById('clientModal') as HTMLDialogElement | null;
+        if (!dlgEl) return;
+        const dlg: HTMLDialogElement = dlgEl;
+        const I = dlg.dataset;
+        const canDelete = I.showDelete === '1';
+        const form = document.getElementById('clientForm') as HTMLFormElement;
+        const title = document.getElementById('cmTitle')!;
+        const errorEl = document.getElementById('cmError')!;
+        const btnDelete = document.getElementById('cmDelete') as HTMLButtonElement | null;
+        const btnSave = document.getElementById('cmSave') as HTMLButtonElement;
+        const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('#cmTerminos .chip'));
+        const tierChips = Array.from(document.querySelectorAll<HTMLButtonElement>('#cmTiers .chip'));
+
+        let editId: string | null = null;
+        let terminos = 'contado';
+
+        const input = (id: string) => document.getElementById(id) as HTMLInputElement;
+        const setTerm = (v: string) => {
+            terminos = v;
+            chips.forEach((c) => c.classList.toggle('active', c.dataset.v === v));
+        };
+
+        const updateDiscPreview = () => {
+            const d = parseFloat(input('cmDescuento').value) || 0;
+            const el = document.getElementById('cmDiscPreview');
+            if (!el) return;
+            if (d <= 0) { el.innerHTML = I.sinDescuento || 'Sin descuento'; el.classList.remove('on'); }
+            else { el.innerHTML = `$1,000 → <b>$${Math.round(1000 * (1 - d / 100)).toLocaleString(document.documentElement.lang === 'en' ? 'en-US' : 'es-MX')}</b>`; el.classList.add('on'); }
+        };
+        const setNivel = (v: string, applySuggested = false) => {
+            input('cmNivel').value = v;
+            tierChips.forEach((c) => c.classList.toggle('active', c.dataset.v === v));
+            if (applySuggested) {
+                const chip = tierChips.find((c) => c.dataset.v === v);
+                input('cmDescuento').value = chip && chip.dataset.sug && chip.dataset.sug !== '0' ? chip.dataset.sug : '';
+            }
+            updateDiscPreview();
+        };
+        tierChips.forEach((c) => c.addEventListener('click', () => setNivel(c.dataset.v!, true)));
+        input('cmDescuento').addEventListener('input', updateDiscPreview);
+        chips.forEach((c) => c.addEventListener('click', () => setTerm(c.dataset.v!)));
+
+        function openModal(data?: DOMStringMap) {
+            errorEl.textContent = '';
+            editId = data?.id ?? null;
+            title.textContent = editId ? (I.editar || 'Editar cliente') : (I.nuevo || 'Nuevo cliente');
+            if (btnDelete) btnDelete.hidden = !(editId && canDelete);
+            input('cmEmpresa').value = data?.empresa ?? '';
+            input('cmContacto').value = data?.contacto ?? '';
+            input('cmEmail').value = data?.email ?? '';
+            input('cmTelefono').value = data?.telefono ?? '';
+            input('cmRfc').value = data?.rfc ?? '';
+            input('cmLimite').value = data?.limite ?? '';
+            input('cmDescuento').value = data?.descuento ?? '';
+            input('cmRegimen').value = data?.regimen ?? '';
+            input('cmUso').value = data?.uso ?? '';
+            input('cmCp').value = data?.cp ?? '';
+            setNivel(data?.nivel ?? 'estandar', false);
+            setTerm(data?.terminos ?? 'contado');
+            const fiscal = document.getElementById('cmFiscal') as HTMLDetailsElement | null;
+            if (fiscal) fiscal.open = false;
+            dlg.showModal();
+            (window as any).cordWireModal?.(dlg);
+            if (!editId) setTimeout(() => input('cmEmpresa').focus(), 60);
+        }
+        function closeModal() { dlg.close(); }
+
+        document.addEventListener('clientmodal:open', ((e: CustomEvent) => openModal(e.detail?.data)) as EventListener);
+        document.getElementById('cmClose')?.addEventListener('click', closeModal);
+        document.getElementById('cmCancel')?.addEventListener('click', closeModal);
+        dlg.addEventListener('click', (e) => { if (e.target === dlg) closeModal(); });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const empresa = input('cmEmpresa').value.trim();
+            if (!empresa) {
+                errorEl.textContent = I.empresaObligatoria || 'El nombre de la empresa es obligatorio.';
+                input('cmEmpresa').focus();
+                return;
+            }
+            btnSave.disabled = true;
+            errorEl.textContent = '';
+            const prevLabel = btnSave.textContent;
+            btnSave.textContent = editId ? (I.guardando || 'Guardando…') : (I.creando || 'Creando…');
+            const payload = {
+                id: editId ?? undefined,
+                empresa,
+                contacto: input('cmContacto').value,
+                email: input('cmEmail').value,
+                telefono: input('cmTelefono').value,
+                rfc: input('cmRfc').value,
+                terminos,
+                limite: input('cmLimite').value,
+                nivel: input('cmNivel').value,
+                descuento_pct: input('cmDescuento').value,
+                regimen_fiscal: input('cmRegimen').value,
+                uso_cfdi: input('cmUso').value,
+                cp_fiscal: input('cmCp').value,
+            };
+            try {
+                const res = await fetch('/api/clientes', {
+                    method: editId ? 'PATCH' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || I.noPudoGuardar);
+                document.dispatchEvent(new CustomEvent('clientmodal:saved', {
+                    detail: { id: editId || data.id, mode: editId ? 'edit' : 'create', cliente: { ...payload, id: editId || data.id } },
+                }));
+                closeModal();
+            } catch (err: any) {
+                errorEl.textContent = err.message;
+                btnSave.disabled = false;
+                btnSave.textContent = prevLabel;
+            }
+        });
+
+        btnDelete?.addEventListener('click', async () => {
+            if (!editId) return;
+            if (!(await (window as any).cordConfirm({ title: I.eliminarTitulo, body: I.eliminarBody, danger: true, confirmText: I.eliminar }))) return;
+            const delId = editId;
+            const res = await fetch('/api/clientes', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: delId }),
+            });
+            if (res.ok) {
+                document.dispatchEvent(new CustomEvent('clientmodal:deleted', { detail: { id: delId } }));
+                closeModal();
+            } else {
+                errorEl.textContent = (await res.json()).error || I.noPudoEliminar;
+            }
+        });
+    })();
+</script>

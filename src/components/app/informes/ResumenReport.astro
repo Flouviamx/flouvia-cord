@@ -1,0 +1,30 @@
+---
+import { money } from '../../../lib/queries';
+const { data: D, L } = Astro.props;
+const es = L !== 'en';
+const pct = (a: number, b: number) => b ? Math.round((a / b) * 100) : 0;
+const lost = D.losses.rejected.monto + D.losses.expired.monto;
+const maturity = D.summary.sent ? {
+    won: pct(D.summary.approved, D.summary.sent),
+    lost: pct(D.losses.rejected.n + D.losses.expired.n, D.summary.sent),
+} : { won: 0, lost: 0 };
+const open = Math.max(0, 100 - maturity.won - maturity.lost);
+---
+<article class="dash-widget" data-widget="resumen-cierre" data-title={es ? 'Tasa de cierre' : 'Close rate'} data-span="1">
+    <div class="dash-card report-kpi"><span class="kpi-label">{es ? 'TASA DE CIERRE' : 'CLOSE RATE'}</span><strong class="editorial report-kpi-value" data-report-bind="close-rate">{pct(D.summary.approved, D.summary.sent)}%</strong><small data-report-bind="close-rate-sub">{D.summary.approved} / {D.summary.sent} {es ? 'cotizaciones enviadas' : 'sent quotes'}</small></div>
+</article>
+<article class="dash-widget" data-widget="resumen-cerrado" data-title={es ? 'Valor cerrado' : 'Closed value'} data-span="1">
+    <div class="dash-card report-kpi"><span class="kpi-label">{es ? 'VALOR CERRADO' : 'CLOSED VALUE'}</span><strong class="editorial report-kpi-value" data-report-bind="closed">{money(D.summary.cerrado, 0)}</strong><small>{es ? 'Cohorte creada en el rango' : 'Cohort created in range'}</small></div>
+</article>
+<article class="dash-widget" data-widget="resumen-velocidad" data-title={es ? 'Velocidad del pipeline' : 'Pipeline velocity'} data-span="1">
+    <div class="dash-card report-kpi"><span class="kpi-label">{es ? 'VELOCIDAD DEL PIPELINE' : 'PIPELINE VELOCITY'}</span><strong class="editorial report-kpi-value" data-report-bind="velocity">{money(D.summary.cerrado / Math.max(1, D.series.length), 0)}</strong><small>{es ? 'cerrado por día del rango' : 'closed per range day'}</small></div>
+</article>
+<article class="dash-widget" data-widget="resumen-riesgo" data-title={es ? 'Valor perdido' : 'Lost value'} data-span="1">
+    <div class="dash-card report-kpi"><span class="kpi-label">{es ? 'VALOR PERDIDO' : 'LOST VALUE'}</span><strong class="editorial report-kpi-value is-danger" data-report-bind="lost">{money(lost, 0)}</strong><small data-report-bind="lost-sub">{D.losses.rejected.n + D.losses.expired.n} {es ? 'cotizaciones' : 'quotes'}</small></div>
+</article>
+<article class="dash-widget" data-widget="resumen-evolucion" data-title={es ? 'Movimiento comercial' : 'Commercial movement'} data-span="2">
+    <div class="dash-card"><div class="sec-head"><div><h2 class="sec-title">{es ? 'Movimiento comercial' : 'Commercial movement'}</h2><p>{es ? 'Valor cerrado por fecha de origen de la cotización.' : 'Closed value by quote creation date.'}</p></div></div><div class="chart-host report-chart" data-chart="line" data-points={JSON.stringify(D.series.map((day: any) => ({ x: day.fecha, y: day.cerrado })))}></div></div>
+</article>
+<article class="dash-widget" data-widget="resumen-madurez" data-title={es ? 'Madurez de la cohorte' : 'Cohort maturity'} data-span="2">
+    <div class="dash-card"><div class="sec-head"><div><h2 class="sec-title">{es ? 'Madurez de la cohorte' : 'Cohort maturity'}</h2><p>{es ? 'Qué pasó con lo cotizado dentro del rango.' : 'What happened to quotes created in range.'}</p></div></div><div class="chart-host" data-chart="segbar" data-segments={JSON.stringify([{ key: 'won', label: es ? 'Ganado' : 'Won', value: maturity.won, color: '#059669' }, { key: 'lost', label: es ? 'Perdido' : 'Lost', value: maturity.lost, color: '#ef4444' }, { key: 'open', label: es ? 'Aún abierto' : 'Still open', value: open, color: '#8b95a5' }])} data-format="pct"></div><p class="report-explain">{es ? 'Un rango reciente puede tener poco cierre porque la cohorte todavía no madura; no necesariamente porque esté rindiendo mal.' : 'A recent range may show little closing because its cohort has not matured yet, not because it is underperforming.'}</p></div>
+</article>

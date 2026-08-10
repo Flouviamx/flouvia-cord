@@ -1,0 +1,65 @@
+---
+import OpsLayout from '../../../layouts/OpsLayout.astro';
+import OpsShell from '../../../components/ops/OpsShell.astro';
+import { sql } from '../../../lib/db';
+import { databaseCategory } from '../../../lib/ops-database';
+import { opsNumber } from '../../../lib/ops-format';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+let tables: any[] = [];
+let error = false;
+try {
+  tables = await sql.query(`
+    select c.relname as table_name,
+           greatest(c.reltuples, 0)::bigint as estimated_rows,
+           pg_total_relation_size(c.oid)::bigint as bytes,
+           (select count(*)::int from information_schema.columns ic where ic.table_schema='public' and ic.table_name=c.relname) as columns
+    from pg_class c join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind='r'
+    order by c.relname
+  `);
+} catch (cause) { error = true; console.error('[ops/database]', cause); }
+const groups = new Map<string, any[]>();
+for (const table of tables) {
+  const category = databaseCategory(table.table_name);
+  groups.set(category, [...(groups.get(category) || []), table]);
+}
+const size = (bytes: unknown) => {
+  const n = Number(bytes || 0);
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 ** 2) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 ** 2).toFixed(1)} MB`;
+};
+---
+<OpsLayout title="Base de datos | Cord Ops">
+  <OpsShell active="database" title="Base de datos" subtitle="Exploración segura de toda la información de Cord.">
+    <label slot="actions" class="ops-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input id="table-search" type="search" placeholder="Buscar tabla" /></label>
+    {error && <div class="ops-inline-error">No se pudo leer el catálogo. El acceso permanece cerrado.</div>}
+    <section class="ops-card ops-hero-card">
+      <span class="ops-kicker">Catálogo de Neon</span>
+      <h2 style="margin:0;font-size:30px;letter-spacing:-.04em">{tables.length} tablas disponibles</h2>
+      <p style="margin:10px 0 0;color:#86868b;font-size:13px;max-width:700px">Puedes consultar registros, relaciones y estados. Credenciales, hashes, tokens y material criptográfico permanecen redactados por diseño.</p>
+    </section>
+    {[...groups.entries()].map(([category, items]) => (
+      <section class="ops-section" data-table-group>
+        <header class="ops-section-header"><div><h2>{category}</h2><p>{items.length} tablas</p></div></header>
+        <div class="ops-database-grid">
+          {items.map((table) => (
+            <a class="ops-card ops-table-card" href={`/ops/database/${table.table_name}`} data-table-name={table.table_name.toLowerCase()}>
+              <h3>{table.table_name}</h3><p>{table.columns} columnas</p>
+              <footer><span>~{opsNumber(table.estimated_rows)} filas</span><span>{size(table.bytes)}</span></footer>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
+  </OpsShell>
+  <script>
+    const input = document.getElementById('table-search') as HTMLInputElement;
+    input?.addEventListener('input', () => {
+      const query = input.value.trim().toLowerCase();
+      document.querySelectorAll<HTMLElement>('[data-table-name]').forEach((card) => card.hidden = !!query && !(card.dataset.tableName || '').includes(query));
+      document.querySelectorAll<HTMLElement>('[data-table-group]').forEach((group) => group.hidden = !group.querySelector('[data-table-name]:not([hidden])'));
+    });
+  </script>
+</OpsLayout>

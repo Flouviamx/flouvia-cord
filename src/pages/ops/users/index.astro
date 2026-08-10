@@ -1,0 +1,48 @@
+---
+import OpsLayout from '../../../layouts/OpsLayout.astro';
+import OpsShell from '../../../components/ops/OpsShell.astro';
+import OpsPagination from '../../../components/ops/OpsPagination.astro';
+import { opsDate, opsNumber } from '../../../lib/ops-format';
+import { getOpsUsersPage } from '../../../lib/ops-list-queries';
+import { normalizeOpsSearch, OPS_PAGE_SIZE, parseOpsPage } from '../../../lib/ops-pagination';
+
+if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
+const query = normalizeOpsSearch(Astro.url.searchParams.get('q'));
+const page = parseOpsPage(Astro.url.searchParams.get('page'));
+let users: any[] = [];
+let total = 0;
+let error = false;
+try {
+  users = await getOpsUsersPage(query, page);
+  total = Number(users[0]?.total_count || 0);
+  if (page > 1 && users.length === 0) return Astro.redirect(`/ops/users${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+} catch (cause) { error = true; console.error('[ops/users]', cause); }
+---
+<OpsLayout title="Usuarios | Cord Ops">
+  <OpsShell active="users" title="Usuarios" subtitle="Identidades, acceso y ciclo de vida de cada cuenta.">
+    <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input name="q" value={query} placeholder="Buscar usuario" /></form>
+    <section class="ops-card ops-hero-card">
+      <span class="ops-kicker">Identidad</span><h2 style="margin:0;font-size:30px;letter-spacing:-.04em">{opsNumber(total)} cuentas</h2>
+      <p style="margin:10px 0 0;color:#86868b;font-size:13px">Consulta la seguridad, sesiones, organizaciones y actividad de cada persona.</p>
+    </section>
+    <section class="ops-section">
+      <div class="ops-card ops-table-wrap">
+        <table class="ops-table"><thead><tr><th>Usuario</th><th>Estado</th><th>Seguridad</th><th>Organizaciones</th><th>Última actividad</th><th></th></tr></thead>
+          <tbody>{users.map((user) => {
+            const name = [user.first_name,user.last_name].filter(Boolean).join(' ') || 'Sin nombre';
+            const locked = user.locked_until && new Date(user.locked_until) > new Date();
+            return <tr>
+              <td><div class="ops-identity"><span class="ops-avatar">{name === 'Sin nombre' ? user.email.charAt(0).toUpperCase() : name.charAt(0).toUpperCase()}</span><div><a href={`/ops/users/${user.id}`}>{name}</a><span class="ops-sub">{user.email}</span></div></div></td>
+              <td>{user.suspended_at ? <span class="ops-badge red">Suspendida</span> : locked ? <span class="ops-badge amber">Bloqueada</span> : <span class="ops-badge green">Activa</span>}{user.is_operator && <span class="ops-sub">Operador Ops</span>}</td>
+              <td><span class:list={['ops-badge',user.passkeys>0||user.totp_enabled?'blue':'amber']}>{user.passkeys>0?'Passkey':user.totp_enabled?'TOTP':'Sin MFA'}</span><span class="ops-sub">{user.email_verified_at?'Correo verificado':'Correo pendiente'}</span></td>
+              <td>{opsNumber(user.organizations)}</td><td>{opsDate(user.last_seen)}<span class="ops-sub">{opsNumber(user.active_sessions)} sesiones activas</span></td>
+              <td><a href={`/ops/users/${user.id}`} style="color:#0066cc">Ver detalle</a></td>
+            </tr>;
+          })}{users.length===0&&<tr><td colspan="6" class="ops-empty">No se encontraron usuarios.</td></tr>}</tbody>
+        </table>
+      </div>
+      {!error && <OpsPagination page={page} total={total} pageSize={OPS_PAGE_SIZE} path="/ops/users" search={query ? `q=${encodeURIComponent(query)}` : ''} />}
+    </section>
+    {error && <div class="ops-inline-error">No se pudieron cargar los usuarios.</div>}
+  </OpsShell>
+</OpsLayout>

@@ -14,6 +14,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import Anthropic from '@anthropic-ai/sdk';
+import { trackExternalUsage } from '../../../lib/external-usage';
 import { getProductos } from '../../../lib/queries';
 import { getActiveOrgId } from '../../../lib/db';
 import { reportUsage, checkQuota } from '../../../lib/billing';
@@ -167,7 +168,17 @@ export const POST: APIRoute = async ({ request }) => {
                 tool_choice: { type: 'auto' },
                 messages: messages,
             });
+            await trackExternalUsage({
+                orgId,
+                provider: 'anthropic',
+                category: 'ai',
+                operation: 'quote_draft_turn',
+                inputTokens: Number(msg.usage?.input_tokens || 0),
+                outputTokens: Number(msg.usage?.output_tokens || 0),
+                metadata: { model: MODEL, iteration: i + 1 },
+            });
         } catch (err: any) {
+            await trackExternalUsage({ orgId, provider: 'anthropic', category: 'ai', operation: 'quote_draft_turn', status: 'failure', metadata: { model: MODEL, iteration: i + 1 } });
             console.error(err);
             return json({ error: 'La IA no pudo procesar el pedido. Revisa tu llave o intenta de nuevo.' }, 502);
         }

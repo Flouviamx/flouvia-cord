@@ -1,0 +1,38 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import OpsActionDialog from '../../components/ops/OpsActionDialog.astro';
+import OpsPagination from '../../components/ops/OpsPagination.astro';
+import { sql } from '../../lib/db';
+import { opsDate,opsNumber,OPS_AUDIT_LABELS } from '../../lib/ops-format';
+import { OPS_PAGE_SIZE, opsPageOffset, parseOpsPage } from '../../lib/ops-pagination';
+
+const operator=Astro.locals.opsOperator;
+if(!operator)return Astro.redirect('/ops/login');
+const auditPage=parseOpsPage(Astro.url.searchParams.get('auditPage'));
+const [counts,opsSessions,signals,audit]=await Promise.all([
+  sql`select (select count(*)::int from sessions where revoked_at is null and expires_at>now()) cord_sessions,(select count(*)::int from ops_sessions where revoked_at is null and expires_at>now()) ops_sessions,(select count(*)::int from users where locked_until>now()) locked_users,(select count(*)::int from users where suspended_at is not null) suspended_users,(select count(*)::int from passkeys) passkeys`,
+  sql`select s.id,s.operator_id,s.expires_at,s.absolute_expires_at,s.last_used_at,s.ip,s.user_agent,s.auth_method,s.created_at,o.email from ops_sessions s join ops_operators o on o.user_id=s.operator_id order by s.created_at desc`,
+  sql`with passkey_stats as (select user_id,count(*)::int passkeys from passkeys group by user_id)
+      select u.id,u.email,u.email_verified_at,u.totp_enabled,u.locked_until,u.suspended_at,
+             coalesce(p.passkeys,0) passkeys,count(*) over()::int total_count
+      from users u left join passkey_stats p on p.user_id=u.id
+      where u.email_verified_at is null or (u.totp_enabled=false and coalesce(p.passkeys,0)=0)
+        or u.locked_until>now() or u.suspended_at is not null
+      order by u.created_at desc,u.id desc limit 50`,
+  sql.query(`select id,actor_email,action,target_type,target_id,result,metadata,ip,user_agent,created_at,
+             count(*) over()::int total_count
+             from ops_audit_log order by created_at desc,id desc limit $1 offset $2`,[OPS_PAGE_SIZE,opsPageOffset(auditPage)]),
+]);
+const c:any=counts[0]||{};
+const signalsTotal=Number(signals[0]?.total_count||0);
+const auditTotal=Number(audit[0]?.total_count||0);
+if(auditPage>1&&audit.length===0)return Astro.redirect('/ops/security');
+---
+<OpsLayout title="Seguridad | Cord Ops"><OpsShell active="security" title="Seguridad" subtitle="Sesiones privilegiadas, señales de riesgo y auditoría de plataforma.">
+  <button slot="actions" id="ops-security-refresh" class="ops-button secondary">Actualizar</button>
+  <section class="ops-card ops-metrics"><div class="ops-metric"><span>Sesiones Cord</span><strong>{opsNumber(c.cord_sessions)}</strong><small>Vigentes</small></div><div class="ops-metric"><span>Sesiones Ops</span><strong>{opsNumber(c.ops_sessions)}</strong><small>Privilegiadas</small></div><div class="ops-metric"><span>Passkeys</span><strong>{opsNumber(c.passkeys)}</strong><small>Credenciales fuertes</small></div><div class="ops-metric"><span>Alertas</span><strong>{opsNumber(Number(c.locked_users)+Number(c.suspended_users))}</strong><small>Bloqueadas o suspendidas</small></div></section>
+  <section class="ops-section"><header class="ops-section-header"><div><h2>Sesiones privilegiadas</h2><p>Cada operador solo puede conservar una sesión Ops.</p></div></header><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Operador</th><th>Método</th><th>Dispositivo</th><th>IP</th><th>Último uso</th><th>Expira</th><th></th></tr></thead><tbody>{opsSessions.map((s:any)=><tr><td>{s.email}</td><td><span class="ops-badge blue">{s.auth_method}</span></td><td><span class="ops-data-value">{s.user_agent||'Desconocido'}</span></td><td class="ops-code">{s.ip||'—'}</td><td>{opsDate(s.last_used_at)}</td><td>{opsDate(s.expires_at)}</td><td><button class="ops-button danger" data-ops-action="revoke_ops_session" data-target-id={s.id} data-endpoint="/api/ops/security" data-confirm={s.email} data-danger="true" data-title="Revocar sesión Ops" data-description="Cerrará inmediatamente esta sesión privilegiada.">Revocar</button></td></tr>)}{opsSessions.length===0&&<tr><td colspan="7" class="ops-empty">No hay sesiones privilegiadas.</td></tr>}</tbody></table></div></section>
+  <section class="ops-section"><header class="ops-section-header"><div><h2>Señales de identidad</h2><p>{opsNumber(signalsTotal)} cuentas requieren atención; se muestran las 50 más recientes.</p></div></header><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Usuario</th><th>Correo</th><th>MFA</th><th>Cuenta</th><th></th></tr></thead><tbody>{signals.map((u:any)=><tr><td><a href={`/ops/users/${u.id}`}>{u.email}</a></td><td><span class:list={['ops-badge',u.email_verified_at?'green':'amber']}>{u.email_verified_at?'Verificado':'Pendiente'}</span></td><td><span class:list={['ops-badge',u.passkeys>0||u.totp_enabled?'green':'red']}>{u.passkeys>0?'Passkey':u.totp_enabled?'TOTP':'Sin MFA'}</span></td><td>{u.suspended_at?<span class="ops-badge red">Suspendida</span>:u.locked_until&&new Date(u.locked_until)>new Date()?<span class="ops-badge amber">Bloqueada</span>:<span class="ops-badge green">Activa</span>}</td><td><a href={`/ops/users/${u.id}`} style="color:#0066cc">Revisar</a></td></tr>)}{signals.length===0&&<tr><td colspan="5" class="ops-empty">No hay señales pendientes.</td></tr>}</tbody></table></div></section>
+  <section class="ops-section"><header class="ops-section-header"><div><h2>Auditoría de Ops</h2><p>{opsNumber(auditTotal)} eventos privilegiados registrados.</p></div></header><div class="ops-card">{audit.map((e:any)=><div class="ops-audit-row"><span class:list={['ops-audit-dot',e.result]}></span><div><strong>{OPS_AUDIT_LABELS[e.action]||e.action}</strong><span class="ops-sub">{e.actor_email||'Identidad no resuelta'} · {e.target_type||'plataforma'}</span></div><span>{e.ip||'IP no disponible'}</span><time>{opsDate(e.created_at)}</time></div>)}{audit.length===0&&<div class="ops-empty">Sin eventos.</div>}</div><OpsPagination page={auditPage} total={auditTotal} pageSize={OPS_PAGE_SIZE} path="/ops/security" pageParam="auditPage" /></section>
+</OpsShell><OpsActionDialog /><script>document.getElementById('ops-security-refresh')?.addEventListener('click',()=>window.location.reload());</script></OpsLayout>

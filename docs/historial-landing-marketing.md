@@ -6,6 +6,14 @@
 
 ---
 
+**404 inmersivo con shader tipográfico y rutas útiles (ago 2026)** — Se reemplazó la
+página de error pública por una composición light integrada con la navbar y el footer
+globales. El único shader usado es `CordDynamicBg`, el aurora GLSL estándar compartido
+por Cord; ahora acepta una máscara opcional aplicada directamente a su raíz React, lo que
+permite recortarlo dentro de un `404` vectorial sin afectar sus demás consumidores. La
+pantalla incluye fallback sólido para ausencia de WebGL/reduced motion, CTA al inicio y
+una superficie aireada con accesos a producto, precios y soporte.
+
 ✅ **SEO integral post-migración de dominio + i18n real del dev-blog + fix de blank page en
    producción (ago 2026)** — André reportó que buscar "cord cotizaciones" en Google seguía
    mostrando `cord.flouvia.com` (dominio ya borrado) y que `cordhq.app` casi no tenía presencia

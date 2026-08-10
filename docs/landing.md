@@ -113,7 +113,7 @@ Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
 
 ## Support Hub Architecture (Astro Content Collections)
 
-El Centro de Ayuda (`/soporte`) es un sistema de documentación *Stripe-level* impulsado por **Astro Content Collections** (Astro 6.0).
+El Centro de Ayuda (`/soporte`) es un sistema de documentación *Stripe-level* impulsado por **Astro Content Collections**.
 
 - **Estructura de Datos:** Los artículos viven en `src/content/support/*.md`. Contamos con ~61 artículos enriquecidos y estructurados con Markdown alerts (`> [!NOTE]`).
 - **Ruteo Dinámico (`prerender = true`):** 

@@ -1,0 +1,80 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import OpsPagination from '../../components/ops/OpsPagination.astro';
+import { sql } from '../../lib/db';
+import { INCLUDED } from '../../lib/billing';
+import { opsNumber } from '../../lib/ops-format';
+import { getOpsUsageAlerts, getOpsUsagePage, getOpsUsageSummary, usagePlan } from '../../lib/ops-usage-queries';
+import { normalizeOpsSearch, OPS_PAGE_SIZE, parseOpsPage } from '../../lib/ops-pagination';
+
+if(!Astro.locals.opsOperator)return Astro.redirect('/ops/login');
+const period=new Date().toISOString().slice(0,7);
+const selected=(Astro.url.searchParams.get('org')||'').trim();
+const selectedOrg=/^[0-9a-f-]{36}$/i.test(selected)?selected:'';
+const query=normalizeOpsSearch(Astro.url.searchParams.get('q'));
+const page=parseOpsPage(Astro.url.searchParams.get('page'));
+let organizations:any[]=[];
+let providers:any[]=[];
+let infra:any={};
+let alertOrganizations:any[]=[];
+let totalOrganizations=0;
+let error=false;
+
+try{
+  [organizations,providers,infra,alertOrganizations]=await Promise.all([
+    getOpsUsagePage(period,selectedOrg,query,page),
+    sql.query(`
+      select provider,category,status,coalesce(sum(units),0)::int units,
+        coalesce(sum(input_tokens+output_tokens),0)::bigint tokens,
+        count(*)::int events,max(created_at) last_event
+      from external_usage_events
+      where created_at>=now()-interval '30 days' and ($1='' or org_id=nullif($1,'')::uuid)
+      group by provider,category,status
+      order by provider,status`,[selectedOrg]),
+    getOpsUsageSummary(period,selectedOrg),
+    getOpsUsageAlerts(period,selectedOrg,query),
+  ]);
+  totalOrganizations=Number(organizations[0]?.total_count||0);
+  if(page>1&&organizations.length===0)return Astro.redirect(`/ops/usage${selectedOrg?`?org=${selectedOrg}`:query?`?q=${encodeURIComponent(query)}`:''}`);
+}catch(cause){
+  error=true;
+  console.error('[ops/usage]',cause);
+}
+
+const ratio=(used:number,limit:number|null)=>limit===null?0:limit<=0?(used>0?100:0):Math.round((used/limit)*100);
+const cap=(value:number)=>Math.max(0,Math.min(value,100));
+const rows=organizations.map((org)=>{
+  const limits=INCLUDED[usagePlan(org.plan)];
+  const iaPct=ratio(Number(org.ia),limits.ia),apiPct=ratio(Number(org.api),limits.api),cfdiPct=ratio(Number(org.cfdi),limits.cfdi);
+  const apiErrorRate=Number(org.api_24h)>0?Math.round(Number(org.api_errors_24h)/Number(org.api_24h)*100):0;
+  const webhookFailureRate=Number(org.webhook_24h)>0?Math.round(Number(org.webhook_failures_24h)/Number(org.webhook_24h)*100):0;
+  const severity=Math.max(iaPct,apiPct,cfdiPct,apiErrorRate>=20&&Number(org.api_24h)>=10?100:0,webhookFailureRate>=25&&Number(org.webhook_24h)>=10?100:0);
+  return {...org,limits,iaPct,apiPct,cfdiPct,apiErrorRate,webhookFailureRate,severity};
+});
+const alerts=alertOrganizations.flatMap((raw)=>{
+  const limits=INCLUDED[usagePlan(raw.plan)];
+  const org={...raw,limits,iaPct:ratio(Number(raw.ia),limits.ia),apiPct:ratio(Number(raw.api),limits.api),cfdiPct:ratio(Number(raw.cfdi),limits.cfdi),apiErrorRate:Number(raw.api_24h)>0?Math.round(Number(raw.api_errors_24h)/Number(raw.api_24h)*100):0,webhookFailureRate:Number(raw.webhook_24h)>0?Math.round(Number(raw.webhook_failures_24h)/Number(raw.webhook_24h)*100):0};
+  const result:{org:any;level:'amber'|'red';text:string}[]=[];
+  if(org.iaPct>=80)result.push({org,level:org.iaPct>=100?'red':'amber',text:`IA al ${org.iaPct}% de la cuota mensual`});
+  if(org.apiPct>=80)result.push({org,level:org.apiPct>=100?'red':'amber',text:`API al ${org.apiPct}% de la cuota mensual`});
+  if(org.cfdiPct>=80)result.push({org,level:org.cfdiPct>=100?'red':'amber',text:`CFDI al ${org.cfdiPct}% de la cuota mensual`});
+  if(org.apiErrorRate>=20&&Number(org.api_24h)>=10)result.push({org,level:'red',text:`${org.apiErrorRate}% de errores API en 24 horas`});
+  if(org.webhookFailureRate>=25&&Number(org.webhook_24h)>=10)result.push({org,level:'red',text:`${org.webhookFailureRate}% de fallos en webhooks durante 24 horas`});
+  return result;
+});
+const providerTotal=(provider:string,field:'units'|'tokens')=>providers.filter((item)=>item.provider===provider&&item.status==='success').reduce((sum,item)=>sum+Number(item[field]||0),0);
+const anthropicTokens=providerTotal('anthropic','tokens');
+const resendEmails=providerTotal('resend','units');
+const money=(value:number)=>new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}).format(value);
+const bytes=(value:number)=>value<1024**2?`${(value/1024).toFixed(1)} KB`:`${(value/1024**2).toFixed(1)} MB`;
+---
+<OpsLayout title="Uso y costos | Cord Ops"><OpsShell active="usage" title="Uso y costos" subtitle="Consumo que puede generar gasto, excedentes o abuso de plataforma.">
+  <form slot="actions" class="ops-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><input name="q" value={query} placeholder="Buscar organización" />{selectedOrg&&<input type="hidden" name="org" value={selectedOrg}/>}</form>
+  {error&&<div class="ops-inline-error">No se pudo calcular el consumo. Ningún dato fue modificado.</div>}
+  <section class="ops-card ops-hero-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px"><div><span class="ops-kicker">Periodo {period}</span><h2 style="margin:0;font-size:34px;letter-spacing:-.045em">{alerts.length?`${alerts.length} señales requieren atención`:'Consumo dentro de parámetros'}</h2><p style="margin:10px 0 0;color:#86868b;font-size:13px">Los montos definitivos siguen viviendo en los dashboards de cada proveedor; Ops detecta volumen, velocidad, errores y cercanía a cuotas.</p></div><span class:list={['ops-badge',alerts.some(a=>a.level==='red')?'red':alerts.length?'amber':'green']}>{alerts.some(a=>a.level==='red')?'Revisar ahora':alerts.length?'Atención':'Normal'}</span></div></section>
+  <section class="ops-section"><header class="ops-section-header"><div><h2>Superficies de costo</h2><p>Volumen medido por Cord.</p></div></header><div class="ops-cost-grid"><article class="ops-card ops-cost-card"><header><h3>Anthropic</h3><span class="ops-badge blue">IA</span></header><strong>{opsNumber(anthropicTokens)}</strong><p>tokens registrados en 30 días · {opsNumber(infra.ia)} acciones facturables este mes</p></article><article class="ops-card ops-cost-card"><header><h3>API pública</h3><span class="ops-badge blue">Infraestructura</span></header><strong>{opsNumber(infra.api)}</strong><p>llamadas del periodo · {opsNumber(infra.api_24h)} en las últimas 24 horas</p></article><article class="ops-card ops-cost-card"><header><h3>Facturapi</h3><span class="ops-badge blue">Fiscal</span></header><strong>{opsNumber(infra.cfdi)}</strong><p>timbres registrados durante el periodo actual</p></article><article class="ops-card ops-cost-card"><header><h3>Resend</h3><span class="ops-badge blue">Correo</span></header><strong>{opsNumber(resendEmails)}</strong><p>correos exitosos registrados en los últimos 30 días</p></article><article class="ops-card ops-cost-card"><header><h3>Webhooks</h3><span class:list={['ops-badge',Number(infra.webhook_failures_24h)>0?'amber':'green']}>Egress</span></header><strong>{opsNumber(infra.webhook_24h)}</strong><p>intentos en 24 horas · {opsNumber(infra.webhook_failures_24h)} fallidos o reintentados</p></article><article class="ops-card ops-cost-card"><header><h3>Stripe</h3><span class="ops-badge blue">Pagos</span></header><strong>{money(Number(infra.payment_volume_30d||0))}</strong><p>{opsNumber(infra.payments_30d)} cobros completados en 30 días</p></article><article class="ops-card ops-cost-card"><header><h3>Neon</h3><span class="ops-badge green">Almacenamiento</span></header><strong>{bytes(Number(infra.database_bytes||0))}</strong><p>tamaño actual de la base de datos principal</p></article><article class="ops-card ops-cost-card"><header><h3>Plataforma gestionada</h3><span class="ops-badge amber">Proveedor</span></header><strong>Revisión externa</strong><p>Vercel, PostHog y Upstash conservan métricas facturables que Cord no recibe por API.</p></article></div></section>
+  <section class="ops-section"><header class="ops-section-header"><div><h2>Alertas de consumo</h2><p>Umbrales, errores y reintentos inusuales.</p></div></header><div class="ops-card ops-alert-list">{alerts.map((alert)=><article class:list={['ops-alert',alert.level]}><span></span><div><strong>{alert.org.nombre}</strong><p>{alert.text}</p></div><a href={`/ops/organizations/${alert.org.id}`}>Abrir organización</a></article>)}{alerts.length===0&&<div class="ops-empty">No hay organizaciones cerca de sus cuotas ni tasas de error anormales.</div>}</div></section>
+  <section class="ops-section"><header class="ops-section-header"><div><h2>Consumo por organización</h2><p>Cuota mensual y velocidad reciente.</p></div></header><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Organización</th><th>IA</th><th>API</th><th>CFDI</th><th>Correos</th><th>Webhooks 24h</th><th>Riesgo</th></tr></thead><tbody>{rows.map((org)=><tr><td class="ops-usage-name"><a href={`/ops/organizations/${org.id}`}>{org.nombre}</a><span class="ops-sub">{org.plan} · {org.subscription_status||'sin suscripción'}</span></td><td class="ops-usage-cell"><strong>{opsNumber(org.ia)} / {org.limits.ia===null?'Sin límite':opsNumber(org.limits.ia)}</strong><div class:list={['ops-progress',org.iaPct>=100?'red':org.iaPct>=80?'amber':'']}><span style={`width:${cap(org.iaPct)}%`}></span></div></td><td class="ops-usage-cell"><strong>{opsNumber(org.api)} / {opsNumber(org.limits.api)}</strong><div class:list={['ops-progress',org.apiPct>=100?'red':org.apiPct>=80?'amber':'']}><span style={`width:${cap(org.apiPct)}%`}></span></div><span class="ops-sub">{opsNumber(org.api_24h)} hoy · {org.apiErrorRate}% error</span></td><td class="ops-usage-cell"><strong>{opsNumber(org.cfdi)} / {opsNumber(org.limits.cfdi)}</strong><div class:list={['ops-progress',org.cfdiPct>=100?'red':org.cfdiPct>=80?'amber':'']}><span style={`width:${cap(org.cfdiPct)}%`}></span></div></td><td>{opsNumber(org.emails_30d)}<span class="ops-sub">30 días</span></td><td>{opsNumber(org.webhook_24h)}<span class="ops-sub">{org.webhookFailureRate}% fallos</span></td><td><span class:list={['ops-badge',org.severity>=100?'red':org.severity>=80?'amber':'green']}>{org.severity>=100?'Alto':org.severity>=80?'Atención':'Normal'}</span></td></tr>)}{rows.length===0&&<tr><td colspan="7" class="ops-empty">No hay datos para este filtro.</td></tr>}</tbody></table></div>{!error&&<OpsPagination page={page} total={totalOrganizations} pageSize={OPS_PAGE_SIZE} path="/ops/usage" search={selectedOrg?`org=${selectedOrg}`:query?`q=${encodeURIComponent(query)}`:''}/>}</section>
+  <section class="ops-section"><header class="ops-section-header"><div><h2>Registro de proveedores</h2><p>Eventos nuevos capturados desde esta versión.</p></div></header><div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Proveedor</th><th>Categoría</th><th>Estado</th><th>Unidades</th><th>Tokens</th><th>Eventos</th><th>Último evento</th></tr></thead><tbody>{providers.map((p)=><tr><td>{p.provider}</td><td>{p.category}</td><td><span class:list={['ops-badge',p.status==='success'?'green':p.status==='failure'?'red':'amber']}>{p.status}</span></td><td>{opsNumber(p.units)}</td><td>{opsNumber(p.tokens)}</td><td>{opsNumber(p.events)}</td><td>{p.last_event?new Intl.DateTimeFormat('es-MX',{dateStyle:'medium',timeStyle:'short'}).format(new Date(p.last_event)):'Sin registros'}</td></tr>)}{providers.length===0&&<tr><td colspan="7" class="ops-empty">La telemetría detallada comenzará con las siguientes llamadas externas.</td></tr>}</tbody></table></div></section>
+</OpsShell></OpsLayout>

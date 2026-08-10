@@ -6,6 +6,113 @@
 
 ---
 
+**Ops aislado con autenticación fuerte y allowlist doble (ago 2026)**
+
+El panel interno de `ops.cordhq.app` dejó de usar `OPS_SECRET`. Solo
+`andrevalleo13@gmail.com` y `hola@flouvia.com` pueden entrar, y el permiso se
+comprueba simultáneamente contra una allowlist de código y la tabla
+`ops_operators`. En producción, el acceso exige passkey con verificación de usuario
+o contraseña más TOTP; una contraseña sola nunca crea una sesión.
+
+En desarrollo local existe un carril separado que exige una sesión normal de Cord
+vigente para el mismo usuario más volver a escribir su contraseña. Solo se activa
+en `localhost`, `127.0.0.1` o `::1` cuando `import.meta.env.PROD` es falso y no forma
+parte del comportamiento de `ops.cordhq.app`.
+
+Las sesiones Ops son independientes de `cord_session`, guardan únicamente el hash
+del token, permiten una sola sesión activa por operador, expiran tras 30 minutos de
+inactividad y tienen un máximo absoluto de 8 horas. También quedan ligadas al
+User-Agent que completó la autenticación. Se agregaron `ops_auth_challenges` para
+retos TOTP de un solo uso y `ops_audit_log` para accesos, rechazos y cierres de
+sesión sin registrar secretos. La rotación de sesión es transaccional y un índice
+único impide carreras que creen dos sesiones simultáneas para el mismo operador.
+Cada login correcto genera además una alerta por correo.
+
+El middleware protege todo `/ops/**` y `/api/ops/**` por default, corrige el rewrite
+del subdominio para las APIs, aplica CSP propia sin analytics, `no-store`,
+`noindex`, bloqueo de frames y referrer nulo. `OpsLayout.astro` mantiene el panel
+fuera del layout público. La UI de login y el centro de operaciones usan una
+superficie clara y minimalista.
+
+Una segunda pasada de endurecimiento cerró también las fallas de composición: el
+hostname se compara de forma exacta, la capa de headers envuelve incluso redirects
+y errores tempranos, y Ops agrega aislamiento de proceso (`COOP`/`COEP`), bloqueo
+de scripts por atributo y una Permissions Policy mínima. En producción, el login y
+las APIs privadas fallan cerrados si el rate limit distribuido de Upstash no está
+disponible; no degradan a un contador distinto por cada instancia de Vercel.
+
+Los retos de passkey ahora viven hasheados en `ops_passkey_challenges`, se ligan al
+operador esperado y se consumen atómicamente para impedir replay concurrente. Cada
+sesión WebAuthn conserva la credencial exacta que la abrió. La validación de sesión
+comprueba en cada request que la cuenta siga activa, verificada y no suspendida; que
+la contraseña no haya cambiado desde el login; y que TOTP o la passkey usada sigan
+vigentes. Quitar una credencial o rotar la identidad revoca el privilegio sin esperar
+a que venza la cookie. La base de datos incorpora además una restricción que solo
+permite los dos correos autorizados en `ops_operators`, no solo una validación de la
+aplicación.
+
+La auditoría de supply chain terminó con `npm audit --omit=dev` en cero hallazgos.
+Se migró Astro `6.4.8` a `7.2.0`, el adapter de Vercel a `11.0.5` y MDX a `7.0.5`;
+también se actualizaron las dependencias transitivas parcheables y se fijó
+`path-to-regexp@6.3.0` solo para `@vercel/routing-utils`. El compilador más estricto
+de Astro 7 descubrió y permitió corregir cuatro errores de marcado preexistentes.
+
+El centro de operaciones ahora permite administrar usuarios y organizaciones sin
+abrir Neon: revocar sesiones, desbloquear cuentas, revocar llaves API, desactivar
+webhooks, cerrar sesiones de un equipo y eliminar datos no protegidos. Estas
+mutaciones exigen rol `admin`, confirmación escrita para las de mayor impacto y se
+ejecutan en la misma transacción PostgreSQL que su entrada de auditoría. Los dos
+operadores y cualquier organización que posean o integren no pueden eliminarse
+desde el panel.
+
+La validación CSRF de Ops acepta únicamente el origen exacto de la petición. No
+acepta `SITE` como origen alterno porque `cordhq.app` y `ops.cordhq.app` son
+same-site para cookies; así, una vulnerabilidad en la app principal no puede emitir
+mutaciones privilegiadas aprovechando una sesión Ops abierta. La política sigue
+siendo fail-closed cuando falta `Origin`.
+
+Ops evolucionó de una sola vista a una consola multipágina tipo plataforma:
+`/ops/users` y `/ops/users/[id]` concentran identidad, membresías, sesiones,
+passkeys, OAuth y ciclo de vida; `/ops/organizations` y su detalle muestran equipo,
+actividad comercial, clientes, productos, pagos, API keys, webhooks y SSO;
+`/ops/security` reúne sesiones privilegiadas, señales de riesgo y la bitácora; y
+`/ops/database/[table]` permite explorar todas las tablas públicas con búsqueda y
+paginación. El explorador redacta hashes, contraseñas, TOTP, tokens, llaves,
+certificados, CLABE y cuerpos sensibles; esos campos tampoco participan en la
+búsqueda para evitar un oráculo de coincidencia.
+
+`/ops/usage` agrega la observabilidad de servicios que pueden generar costo o
+abuso. Por organización muestra la cuota mensual y el consumo de IA, API y CFDI;
+tokens de Anthropic; correos de Resend; tasa de error y latencia de la API;
+intentos y fallos de webhooks; cobros procesados por Stripe; y tamaño de Neon.
+Genera señales preventivas al 80% de una cuota y críticas al 100%, además de
+alertar tasas anormales de errores o reintentos. Las escrituras normales de
+telemetría entran por organización mediante `withOrgTx`; la agregación cross-org
+solo corre en la ruta privilegiada de Ops después de validar su sesión. Los eventos
+detallados viven en `external_usage_events` sin prompts, correos, payloads,
+respuestas ni secretos.
+Los dashboards de cada proveedor siguen siendo la fuente autoritativa de importes
+facturados; Ops funciona como detector temprano de volumen y riesgo.
+
+La capa visual de Ops se mantiene light-only con la estética Apple/Cord. El avatar
+de identidades ahora usa centrado geométrico independiente de los estilos del
+texto, y las entradas de página, tarjetas, foco, barras de cuota y estados tienen
+microinteracciones CSS breves con fallback completo para `prefers-reduced-motion`.
+
+Se agregó suspensión real de identidades mediante `users.suspended_at` y
+`suspended_reason`. Suspender revoca las sesiones y bloquea centralmente la creación
+y validación de sesiones por password, OAuth, passkey, SAML y confirmación de correo.
+Los operadores no pueden suspenderse desde Ops. Restaurar, suspender y eliminar
+continúan ligados atómicamente a `ops_audit_log`.
+
+Antes de abrir la plataforma a usuarios reales se ejecutó una limpieza
+transaccional: se conservaron únicamente los dos operadores y las cuatro
+organizaciones que poseen o integran; se eliminaron 13 identidades de prueba, 27
+organizaciones ajenas, invitaciones pendientes y su información dependiente por
+FK. `scripts/cleanup-non-ops-data.mjs` conserva el procedimiento como dry-run por
+defecto y exige `--execute`; `scripts/migrate.mjs` ya no inserta datos demo salvo
+que se invoque explícitamente con `--seed-demo`.
+
 ✅ **Auditoría y endurecimiento completo del auth propio — nivel producción (ago 2026)** —
    André pidió una pasada de seguridad exhaustiva sobre el sistema de auth propio que
    quedó a medias tras la migración de Clerk. Auditoría inicial (3 agentes en paralelo:

@@ -55,7 +55,7 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS,
 
 | Capa | Tecnología |
 |------|-----------|
-| Framework | Astro 6.4.8 (`output: 'server'`) + `@astrojs/vercel` |
+| Framework | Astro 7.2.0 (`output: 'server'`) + `@astrojs/vercel` 11.0.5 |
 | Auth | **MIGRACIÓN COMPLETADA (Jul 2026):** Sistema 100% custom en backend. Sesiones stateful en tabla `sessions`, hashes de password con Argon2id. Google OAuth nativo. `clerk` fue removido. La cookie principal es `cord_session` y el workspace activo usa `cord_active_org`. |
 | DB | **Neon (PostgreSQL serverless)** — schema en `db/schema.sql`. Decisión jun 2026: Neon en vez de Supabase. Crear vía Vercel Marketplace → integración Neon (auto-provisiona `DATABASE_URL`). |
 | Billing | Stripe Billing (freemium) |

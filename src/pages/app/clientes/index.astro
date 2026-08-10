@@ -1,0 +1,680 @@
+---
+// Clientes — directorio con términos y límite de crédito. CRUD real (Neon).
+// Antes vivía en src/pages/app/clientes.astro (archivo suelto) — se movió a este
+// directorio para poder tener clientes/[id].astro (detalle) como hermano.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import ClientModal from '../../../components/app/ClientModal.astro';
+import { getClientes, getMyMembership, money } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+import '../../../styles/modal.css';
+
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
+
+const [CLIENTES, ME] = await Promise.all([getClientes(), getMyMembership()]);
+const canEdit = memberCan(ME, 'clientes');
+
+const NIVEL_LABEL: Record<string, string> = { estandar: t(L, 'cmod.nivel_estandar'), plata: t(L, 'cmod.nivel_plata'), oro: t(L, 'cmod.nivel_oro'), distribuidor: t(L, 'cmod.nivel_distribuidor') };
+
+// Contadores de los chips de filtro — calculados server-side sobre el array ya cargado;
+// el JS del cliente aplica exactamente el mismo criterio sobre los data-* de cada fila.
+const fCount = {
+    all: CLIENTES.length,
+    conCotizaciones: CLIENTES.filter((c) => c.nCotizaciones > 0).length,
+    sinCotizar: CLIENTES.filter((c) => c.nCotizaciones === 0).length,
+    conNivel: CLIENTES.filter((c) => c.nivel !== 'estandar').length,
+    conCredito: CLIENTES.filter((c) => c.limite > 0).length,
+    sinFiscal: CLIENTES.filter((c) => !c.fiscalCompleto).length,
+};
+---
+
+<AppLayout title="Clientes — Cord" page="clientes" heading={t(L, 'cli.heading')}>
+    <div slot="topbar-actions" class="topbar-btns">
+        <div class="ph-search"
+            data-i18n-sin-resultados={t(L, 'cli.sin_resultados')} data-i18n-singular={t(L, 'cli.cliente_singular')} data-i18n-plural={t(L, 'cli.cliente_plural')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="searchClientes" type="search" placeholder={t(L, 'cli.buscar_ph')} autocomplete="off" spellcheck="false" />
+            <button class="ph-search-clear" id="searchClearCli" aria-label={t(L, 'cli.limpiar')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        {canEdit && <button class="btn-import" id="btnImport">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            {t(L, 'cli.importar_csv')}
+        </button>}
+        {canEdit && <button class="btn-new" id="btnNew">{t(L, 'cli.nuevo_cliente')}</button>}
+    </div>
+
+    <section class="dir">
+        <div class="section-head">
+            <h2>{t(L, 'cli.directorio')}</h2>
+            <span class="dir-count" id="dirCount">{CLIENTES.length} {CLIENTES.length === 1 ? t(L, 'cli.cliente_singular') : t(L, 'cli.cliente_plural')}</span>
+        </div>
+
+        <div class="lfbar">
+            <div class="filters" role="group" aria-label={t(L, 'cli.directorio')} id="lfFilters">
+                <button class="filter-pill active" data-f="all">{t(L, 'cli.filter_todos')}<span class="fp-count">{fCount.all}</span></button>
+                <button class="filter-pill" data-f="con_cotizaciones">{t(L, 'cli.filter_con_cotizaciones')}<span class="fp-count">{fCount.conCotizaciones}</span></button>
+                <button class="filter-pill" data-f="sin_cotizar">{t(L, 'cli.filter_sin_cotizar')}<span class="fp-count">{fCount.sinCotizar}</span></button>
+                <button class="filter-pill" data-f="con_nivel">{t(L, 'cli.filter_con_nivel')}<span class="fp-count">{fCount.conNivel}</span></button>
+                <button class="filter-pill" data-f="con_credito">{t(L, 'cli.filter_con_credito')}<span class="fp-count">{fCount.conCredito}</span></button>
+                <button class="filter-pill" data-f="sin_fiscal">{t(L, 'cli.filter_sin_fiscal')}<span class="fp-count">{fCount.sinFiscal}</span></button>
+            </div>
+            <label class="lf-sort">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+                <select id="lfSort">
+                    <option value="empresa">{t(L, 'cli.sort_empresa')}</option>
+                    <option value="cerrado">{t(L, 'cli.sort_cerrado')}</option>
+                    <option value="n">{t(L, 'cli.sort_cotizaciones')}</option>
+                    <option value="ultima">{t(L, 'cli.sort_actividad')}</option>
+                    <option value="limite">{t(L, 'cli.sort_limite')}</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="t-head">
+            <span>{t(L, 'cli.th_cliente')}</span><span>{t(L, 'cli.th_contacto')}</span><span>{t(L, 'cli.th_rfc')}</span><span>{t(L, 'cli.th_terminos')}</span><span class="t-right">{t(L, 'cli.th_limite')}</span><span class="t-right">{t(L, 'cli.th_cotizaciones')}</span><span></span>
+        </div>
+        <div class="t-body" id="lfBody">
+            {CLIENTES.map((c) => (
+                <div
+                    class="t-row"
+                    data-id={c.id}
+                    data-empresa={c.empresa}
+                    data-contacto={c.contacto}
+                    data-email={c.email}
+                    data-telefono={c.telefono}
+                    data-rfc={c.rfc}
+                    data-terminos={c.terminosCode}
+                    data-limite={c.limite > 0 ? String(c.limite) : ''}
+                    data-nivel={c.nivel}
+                    data-descuento={c.descuentoPct > 0 ? String(c.descuentoPct) : ''}
+                    data-regimen={c.regimenFiscal}
+                    data-uso={c.usoCfdi}
+                    data-cp={c.cpFiscal}
+                    data-n={c.nCotizaciones}
+                    data-cerrado={c.cerrado}
+                    data-ultima={c.ultimaActividad ?? ''}
+                    data-fiscal={c.fiscalCompleto ? '1' : ''}
+                >
+                    <a class="t-rowlink" href={`/app/clientes/${c.id}`} aria-label={c.empresa}></a>
+                    <span class="t-client">
+                        <span class="t-avatar">{c.inicial}</span>{c.empresa}
+                        {c.nivel !== 'estandar' && (
+                            <span class:list={['tier-badge', `tier-${c.nivel}`]}>{NIVEL_LABEL[c.nivel]}{c.descuentoPct > 0 ? ` −${c.descuentoPct}%` : ''}</span>
+                        )}
+                    </span>
+                    <span class="t-contact">{c.contacto}<small>{c.email}</small></span>
+                    <span class="t-muted">{c.rfc}</span>
+                    <span class="t-term">{c.terminos}</span>
+                    <span class="editorial t-amount t-right">{c.limite > 0 ? money(c.limite, 0) : '—'}</span>
+                    <span class="t-muted t-right">{c.nCotizaciones}</span>
+                    {canEdit
+                        ? <button class="t-act" type="button" data-edit-id={c.id} aria-label={tf('cli.editar_aria', { empresa: c.empresa })}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" fill="currentColor" fill-opacity="0.12"/><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                        </button>
+                        : <span></span>}
+                </div>
+            ))}
+        </div>
+        {CLIENTES.length === 0 && (
+            <div class="t-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <p><b>{t(L, 'cli.vacio_titulo')}</b> {t(L, 'cli.vacio_desc')}</p>
+                {canEdit && (
+                    <div class="t-empty-cta">
+                        <button class="btn-new" id="btnNewEmpty">{t(L, 'cli.nuevo_cliente')}</button>
+                        <button class="btn-import" id="btnImportEmpty">{t(L, 'cli.importar_csv')}</button>
+                    </div>
+                )}
+            </div>
+        )}
+    </section>
+
+    {canEdit && <ClientModal />}
+
+    <!-- Modal de importación CSV (solo si tiene permiso de edición) -->
+    {canEdit && <dialog class="modal modal-lg" id="importModal"
+        data-i18n-field-empresa={t(L, 'cli.field_empresa')} data-i18n-field-contacto={t(L, 'cli.field_contacto')}
+        data-i18n-field-correo={t(L, 'cli.field_correo')} data-i18n-field-telefono={t(L, 'cli.field_telefono')}
+        data-i18n-field-rfc={t(L, 'cli.field_rfc')} data-i18n-field-terminos={t(L, 'cli.field_terminos')}
+        data-i18n-field-limite={t(L, 'cli.field_limite')} data-i18n-ninguna={t(L, 'cli.ninguna')}
+        data-i18n-columna={t(L, 'cli.columna')} data-i18n-elige-empresa={t(L, 'cli.elige_columna_empresa')}
+        data-i18n-a-importar={t(L, 'cli.clientes_a_importar')} data-i18n-filas-omitidas={t(L, 'cli.filas_omitidas')}
+        data-i18n-th-email={t(L, 'cli.th_email')} data-i18n-th-contacto={t(L, 'cli.th_contacto')} data-i18n-th-rfc={t(L, 'cli.th_rfc')}
+        data-i18n-th-terminos={t(L, 'cli.th_terminos')} data-i18n-th-limite={t(L, 'cli.th_limite')} data-i18n-th-empresa={t(L, 'cli.field_empresa')}
+        data-i18n-term-contado={t(L, 'cli.term_contado')} data-i18n-term-net30={t(L, 'cli.term_net30')} data-i18n-term-net60={t(L, 'cli.term_net60')}
+        data-i18n-continuar={t(L, 'cli.continuar')} data-i18n-importar-n={t(L, 'cli.importar_n')} data-i18n-importando={t(L, 'cli.importando')}
+        data-i18n-no-pudo-importar={t(L, 'cli.no_pudo_importar')} data-i18n-archivo-vacio={t(L, 'cli.archivo_vacio')}>
+        <div class="m-form">
+            <div class="m-head">
+                <h2>{t(L, 'cli.importar_titulo')}</h2>
+                <button type="button" class="m-close" id="impClose" aria-label={t(L, 'cli.cerrar')}>✕</button>
+            </div>
+
+            <div class="m-body">
+                <div class="imp-steps" id="impSteps">
+                    <span class="imp-stepdot active" data-s="file"><i>1</i> {t(L, 'cli.paso1')}</span>
+                    <span class="imp-stepdot" data-s="map"><i>2</i> {t(L, 'cli.paso2')}</span>
+                    <span class="imp-stepdot" data-s="prev"><i>3</i> {t(L, 'cli.paso3')}</span>
+                </div>
+
+                <div class="imp-step" id="impStepFile">
+                    <label class="imp-drop" id="impDrop">
+                        <input type="file" id="impFile" accept=".csv,text/csv" hidden />
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
+                        <b>{t(L, 'cli.drop_titulo')}</b>
+                        <span>{t(L, 'cli.drop_hint')}</span>
+                    </label>
+                    <button type="button" class="imp-tpl" id="impTpl">{t(L, 'cli.descargar_plantilla')}</button>
+                </div>
+
+                <div class="imp-step" id="impStepMap" hidden>
+                    <p class="imp-lead">{t(L, 'cli.emparejar_hint')}</p>
+                    <label class="imp-check"><input type="checkbox" id="impHeader" checked /> {t(L, 'cli.primera_fila_encabezados')}</label>
+                    <div class="imp-maps" id="impMaps"></div>
+                </div>
+
+                <div class="imp-step" id="impStepPrev" hidden>
+                    <div class="imp-summary" id="impSummary"></div>
+                    <label class="imp-check"><input type="checkbox" id="impUpsert" checked /> {t(L, 'cli.actualizar_existentes')}</label>
+                    <div class="imp-prev-wrap"><table class="imp-prev"><thead id="impPrevHead"></thead><tbody id="impPrevBody"></tbody></table></div>
+                </div>
+            </div>
+
+            <div class="m-foot">
+                <p class="m-error" id="impError"></p>
+                <div class="m-actions">
+                    <button type="button" class="m-cancel" id="impBack" hidden>{t(L, 'cli.atras')}</button>
+                    <span class="m-spacer"></span>
+                    <button type="button" class="m-cancel" id="impCancel">{t(L, 'cli.cancelar')}</button>
+                    <button type="button" class="m-save" id="impNext" disabled>{t(L, 'cli.continuar')}</button>
+                </div>
+            </div>
+        </div>
+    </dialog>}
+</AppLayout>
+
+<style>
+    .btn-new {
+        font-family: var(--font-sans);
+        background: var(--color-blue-deep); color: #fff;
+        font-size: 0.82rem; font-weight: 600; border: none; cursor: pointer;
+        padding: 9px 16px; border-radius: 9px;
+        box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5);
+        transition: transform 0.4s var(--ease-spring);
+    }
+    .btn-new:hover { transform: translateY(-2px); }
+    .topbar-btns { display: flex; gap: 0.6rem; align-items: center; }
+    .btn-import {
+        font-family: var(--font-sans); display: inline-flex; align-items: center; gap: 7px;
+        background: var(--color-bg-soft); color: var(--color-text);
+        font-size: 0.82rem; font-weight: 600; border: 1px solid var(--color-border); cursor: pointer;
+        padding: 8px 14px; border-radius: 9px; transition: border-color 0.25s, transform 0.4s var(--ease-spring);
+    }
+    .btn-import svg { width: 14px; height: 14px; }
+    .btn-import:hover { transform: translateY(-2px); border-color: rgba(10,25,47,0.25); }
+
+    /* ── Directorio (plano editorial, sin caja) ── */
+    .dir { margin-bottom: 2.6rem; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.2rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--color-border); }
+    .section-head h2 { font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; text-transform: none; color: var(--color-text); margin: 0; }
+    .dir-count { font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); }
+
+    .t-head, .t-row {
+        display: grid;
+        grid-template-columns: 1.6fr 1.4fr 1fr 0.7fr 1fr 0.8fr 34px;
+        gap: 1rem; align-items: center;
+        padding: 0.95rem 0.85rem;
+    }
+    .t-head {
+        font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+        color: var(--color-text-muted); border-bottom: 1px solid var(--color-border);
+        padding-top: 0; padding-bottom: 0.7rem;
+    }
+    .t-head > span:first-child, .t-row > :first-child { padding-left: 0; }
+    .t-head > span:last-child, .t-row > :last-child { padding-right: 0; }
+    .t-row {
+        position: relative;
+        border-bottom: 1px solid var(--color-border);
+        border-radius: 10px;
+        transition: background 0.25s var(--ease-ios);
+    }
+    .t-row:hover { background: var(--color-bg-soft); }
+    .t-row:last-of-type { border-bottom: none; }
+    .t-row[hidden] { display: none !important; }
+    /* Stretched link: la fila entera navega, sin anidar <button> dentro de <a> (HTML
+       inválido — el parser lo sacaría del anchor y rompería el grid en silencio). */
+    .t-rowlink { position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
+    .t-row > :not(.t-rowlink) { position: relative; z-index: 1; }
+    .t-row:has(.t-rowlink:focus-visible) { background: var(--color-bg-soft); outline: 2px solid var(--color-blue-deep); outline-offset: -2px; }
+
+    .t-client { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .t-avatar {
+        width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+        background: var(--color-blue-deep); color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.64rem; font-weight: 800;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+    }
+    .t-contact { display: flex; flex-direction: column; font-size: 0.82rem; font-weight: 500; color: var(--color-text); }
+    .t-contact small { font-size: 0.7rem; color: var(--color-text-muted); }
+    .t-muted { font-size: 0.78rem; color: var(--color-text-muted); }
+    .t-term { font-size: 0.74rem; font-weight: 700; color: var(--color-blue-deep); }
+    .tier-badge { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.3px; padding: 2px 8px; border-radius: 100px; margin-left: 8px; vertical-align: 1px; white-space: nowrap; }
+    .tier-oro { color: #92600a; background: rgba(245,158,11,0.18); }
+    .tier-plata { color: #475569; background: rgba(100,116,139,0.15); }
+    .tier-distribuidor { color: #1e3a5f; background: rgba(10,25,47,0.1); }
+    .t-amount { font-size: 0.95rem; color: var(--color-blue-deep); }
+    .t-right { text-align: right; }
+    .t-empty { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; padding: 3rem 0; font-size: 0.85rem; color: var(--color-text-muted); margin: 0; text-align: center; line-height: 1.5; }
+    .t-empty svg { width: 34px; height: 34px; color: #cbd5e1; }
+    .t-empty b { color: var(--color-text); font-weight: 600; }
+    .t-empty-cta { display: flex; gap: 0.6rem; margin-top: 0.3rem; }
+
+    /* Botón "editar" por fila — solo visible al hover/foco (no compite con el clic de
+       navegar, que vive en el stretched link .t-rowlink). */
+    .t-act {
+        display: flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 8px; border: none; cursor: pointer;
+        background: var(--surface); color: var(--color-text-muted);
+        opacity: 0; transition: opacity 0.15s, background 0.15s, color 0.15s;
+    }
+    .t-act svg { width: 15px; height: 15px; }
+    .t-row:hover .t-act, .t-act:focus-visible { opacity: 1; }
+    .t-act:hover { background: var(--row-hover); color: var(--color-blue-deep); }
+
+    @media (max-width: 880px) {
+        .t-head { display: none; }
+        .t-row {
+            grid-template-columns: 1fr auto;
+            grid-template-areas: "name amount" "contact amount";
+            gap: 0.15rem 1rem; align-items: center; padding: 0.8rem 0.3rem;
+        }
+        .t-client { grid-area: name; }
+        .t-contact { grid-area: contact; display: flex; }
+        .t-amount { grid-area: amount; align-self: center; }
+        .t-muted, .t-term, .t-act { display: none; }
+    }
+</style>
+<style>
+    .ph-search {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--color-surface, #f5f5f7);
+        border: 1.5px solid transparent;
+        border-radius: 9px;
+        padding: 0 0.8rem;
+        height: 36px;
+        width: 240px;
+        transition: width 0.22s cubic-bezier(0.4,0,0.2,1),
+                    border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    .ph-search:focus-within {
+        width: 320px;
+        border-color: var(--color-blue-deep, #0a192f);
+        box-shadow: 0 0 0 3px rgba(10,25,47,0.08);
+        background: #fff;
+    }
+    .ph-search svg { width: 15px; height: 15px; color: #999; flex-shrink: 0; transition: color 0.15s; }
+    .ph-search:focus-within svg { color: var(--color-blue-deep, #0a192f); }
+    .ph-search input {
+        flex: 1; min-width: 0; border: none; background: transparent;
+        outline: none; font-size: 0.85rem; color: var(--color-text, #111);
+        font-family: inherit; letter-spacing: -0.01em;
+    }
+    .ph-search input::placeholder { color: #bbb; }
+    .ph-search-clear {
+        display: none; background: none; border: none; cursor: pointer;
+        padding: 2px; border-radius: 50%; color: #bbb; line-height: 1;
+        flex-shrink: 0; transition: color 0.12s, background 0.12s;
+    }
+    .ph-search-clear svg { width: 12px; height: 12px; display: block; }
+    .ph-search-clear:hover { color: var(--color-blue-deep, #0a192f); background: rgba(10,25,47,0.07); }
+    @media (max-width: 700px) {
+        .ph-search { width: 160px; }
+        .ph-search:focus-within { width: 220px; }
+    }
+</style>
+<style is:global>
+    /* .search-no-results se crea con document.createElement en runtime — Astro scopea
+       por [data-astro-cid] y el DOM inyectado no lo lleva, así que esta regla debe ser global. */
+    .search-no-results {
+        text-align: center; padding: 3rem 1rem;
+        color: var(--color-text-muted, #999); font-size: 0.9rem; display: none;
+    }
+</style>
+
+<script>
+    // Abrir/crear/editar (dispara clientmodal:open) + reaccionar a lo que el
+    // ClientModal compartido reporte (clientmodal:saved / clientmodal:deleted).
+    document.addEventListener('DOMContentLoaded', () => {
+        const canEdit = !!document.getElementById('clientModal');
+
+        document.getElementById('btnNew')?.addEventListener('click', () => document.dispatchEvent(new CustomEvent('clientmodal:open')));
+        document.getElementById('btnNewEmpty')?.addEventListener('click', () => document.dispatchEvent(new CustomEvent('clientmodal:open')));
+
+        document.querySelectorAll<HTMLElement>('.t-act[data-edit-id]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const row = btn.closest<HTMLElement>('.t-row');
+                if (row) document.dispatchEvent(new CustomEvent('clientmodal:open', { detail: { data: row.dataset } }));
+            });
+        });
+
+        // Auto-abrir el modal de alta cuando se llega con ?nuevo=1 (botón "+" del drawer móvil)
+        if (canEdit && new URLSearchParams(location.search).get('nuevo')) {
+            document.dispatchEvent(new CustomEvent('clientmodal:open'));
+            history.replaceState(null, '', location.pathname);
+        }
+
+        document.addEventListener('clientmodal:saved', () => location.reload());
+        document.addEventListener('clientmodal:deleted', () => location.reload());
+    });
+</script>
+
+<script>
+    // Importador CSV de clientes: archivo → mapeo → preview → carga masiva.
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('importModal') as HTMLDialogElement | null;
+        if (!modal) return;
+        const I = modal.dataset;
+        const $ = (id: string) => document.getElementById(id)!;
+        const fileInput = $('impFile') as HTMLInputElement;
+        const drop = $('impDrop');
+        const stepFile = $('impStepFile'), stepMap = $('impStepMap'), stepPrev = $('impStepPrev');
+        const headerChk = $('impHeader') as HTMLInputElement;
+        const upsertChk = $('impUpsert') as HTMLInputElement;
+        const mapsEl = $('impMaps');
+        const errorEl = $('impError');
+        const btnNext = $('impNext') as HTMLButtonElement;
+        const btnBack = $('impBack') as HTMLButtonElement;
+
+        const FIELDS = [
+            { key: 'empresa', label: I.i18nFieldEmpresa || 'Empresa', req: true, guess: ['empresa', 'cliente', 'razon', 'nombre', 'company'] },
+            { key: 'contacto', label: I.i18nFieldContacto || 'Contacto', req: false, guess: ['contacto', 'contact', 'atencion'] },
+            { key: 'email', label: I.i18nFieldCorreo || 'Correo', req: false, guess: ['email', 'correo', 'mail'] },
+            { key: 'telefono', label: I.i18nFieldTelefono || 'Teléfono', req: false, guess: ['telefono', 'tel', 'phone', 'celular', 'movil', 'whats'] },
+            { key: 'rfc', label: I.i18nFieldRfc || 'RFC', req: false, guess: ['rfc'] },
+            { key: 'terminos', label: I.i18nFieldTerminos || 'Términos de pago', req: false, guess: ['terminos', 'term', 'pago', 'condicion'] },
+            { key: 'limite', label: I.i18nFieldLimite || 'Límite de crédito', req: false, guess: ['limite', 'credito', 'limit', 'credit'] },
+        ];
+
+        let grid: string[][] = [];
+        let step: 'file' | 'map' | 'prev' = 'file';
+        let prepared: any[] = [];
+
+        const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+        const parseNum = (v: string) => Number(String(v ?? '').replace(/[^0-9.\-]/g, '')) || 0;
+        const TERM_LABEL: Record<string, string> = { contado: I.i18nTermContado || 'Contado', net30: I.i18nTermNet30 || 'Net 30', net60: I.i18nTermNet60 || 'Net 60' };
+        const normTerm = (v: string) => {
+            const s = norm(v);
+            if (s.includes('60')) return 'net60';
+            if (s.includes('30')) return 'net30';
+            if (s.includes('net') || s.includes('credito')) return 'net30';
+            return 'contado';
+        };
+        const money = (n: number) => '$' + new Intl.NumberFormat(document.documentElement.lang === 'en' ? 'en-US' : 'es-MX').format(n);
+        const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
+
+        function parseCSV(text: string): string[][] {
+            const first = text.split(/\r?\n/)[0] || '';
+            const counts: Record<string, number> = {
+                ',': (first.match(/,/g) || []).length,
+                ';': (first.match(/;/g) || []).length,
+                '\t': (first.match(/\t/g) || []).length,
+            };
+            const delim = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0] || ',';
+            const rows: string[][] = []; let row: string[] = []; let field = ''; let q = false; let i = 0;
+            while (i < text.length) {
+                const c = text[i];
+                if (q) {
+                    if (c === '"') { if (text[i + 1] === '"') { field += '"'; i += 2; continue; } q = false; i++; continue; }
+                    field += c; i++; continue;
+                }
+                if (c === '"') { q = true; i++; continue; }
+                if (c === delim) { row.push(field); field = ''; i++; continue; }
+                if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+                if (c === '\r') { i++; continue; }
+                field += c; i++;
+            }
+            if (field.length || row.length) { row.push(field); rows.push(row); }
+            return rows.filter(r => r.some(c => c.trim() !== ''));
+        }
+
+        const showStep = (s: 'file' | 'map' | 'prev') => {
+            step = s;
+            stepFile.hidden = s !== 'file';
+            stepMap.hidden = s !== 'map';
+            stepPrev.hidden = s !== 'prev';
+            btnBack.hidden = s === 'file';
+            errorEl.textContent = '';
+            if (s === 'file') { btnNext.disabled = true; btnNext.textContent = I.i18nContinuar || 'Continuar'; }
+            if (s === 'map') { btnNext.disabled = false; btnNext.textContent = I.i18nContinuar || 'Continuar'; }
+            const order: Record<string, number> = { file: 0, map: 1, prev: 2 };
+            document.querySelectorAll<HTMLElement>('#impSteps .imp-stepdot').forEach((d) => {
+                const di = order[d.dataset.s || 'file']; const ci = order[s];
+                d.classList.toggle('active', di === ci);
+                d.classList.toggle('done', di < ci);
+            });
+            (window as any).cordWireModal?.(modal);
+        };
+        const ncols = () => grid.reduce((m, r) => Math.max(m, r.length), 0);
+
+        function buildMaps() {
+            const useHeader = headerChk.checked;
+            const headers = useHeader ? (grid[0] || []) : [];
+            const n = ncols();
+            mapsEl.innerHTML = FIELDS.map(f => {
+                let guessed = -1;
+                if (useHeader) guessed = headers.findIndex(h => f.guess.some(g => norm(h).includes(g)));
+                const opts = [`<option value="-1">${I.i18nNinguna || '— ninguna —'}</option>`];
+                for (let i = 0; i < n; i++) {
+                    const label = useHeader && headers[i] ? headers[i] : (I.i18nColumna || 'Columna {n}').replace('{n}', String(i + 1));
+                    opts.push(`<option value="${i}" ${i === guessed ? 'selected' : ''}>${esc(label)}</option>`);
+                }
+                return `<div class="imp-map"><label>${f.label}${f.req ? ' <span class="req">*</span>' : ''}</label><select data-field="${f.key}">${opts.join('')}</select></div>`;
+            }).join('');
+        }
+        const readMap = () => {
+            const m: Record<string, number> = {};
+            mapsEl.querySelectorAll<HTMLSelectElement>('select[data-field]').forEach(s => { m[s.dataset.field!] = parseInt(s.value, 10); });
+            return m;
+        };
+
+        function buildPreview() {
+            const m = readMap();
+            if ((m.empresa ?? -1) < 0) { errorEl.textContent = I.i18nEligeEmpresa || 'Elige qué columna tiene el nombre de la empresa.'; return false; }
+            const dataRows = headerChk.checked ? grid.slice(1) : grid;
+            prepared = dataRows.map(r => ({
+                empresa: (r[m.empresa] ?? '').trim(),
+                contacto: m.contacto >= 0 ? (r[m.contacto] ?? '').trim() : '',
+                email: m.email >= 0 ? (r[m.email] ?? '').trim() : '',
+                telefono: m.telefono >= 0 ? (r[m.telefono] ?? '').trim() : '',
+                rfc: m.rfc >= 0 ? (r[m.rfc] ?? '').trim().toUpperCase() : '',
+                terminos: m.terminos >= 0 ? normTerm(r[m.terminos] ?? '') : 'contado',
+                limite: m.limite >= 0 ? (String(r[m.limite] ?? '').trim() === '' ? '' : parseNum(r[m.limite])) : '',
+            }));
+            const valid = prepared.filter(p => p.empresa);
+            const skipped = prepared.length - valid.length;
+
+            const importarNTpl = I.i18nImportarN || 'Importar {n} cliente{s}';
+            $('impSummary').innerHTML =
+                `<div><span class="is-num">${valid.length}</span><small>${I.i18nAImportar || 'clientes a importar'}</small></div>` +
+                (skipped > 0 ? `<div><span class="is-num warn">${skipped}</span><small>${I.i18nFilasOmitidas || 'filas omitidas (sin empresa)'}</small></div>` : '');
+
+            $('impPrevHead').innerHTML = `<tr><th>${I.i18nThEmpresa || 'Empresa'}</th><th>${I.i18nThContacto || 'Contacto'}</th><th>${I.i18nThEmail || 'Email'}</th><th>${I.i18nThRfc || 'RFC'}</th><th>${I.i18nThTerminos || 'Términos'}</th><th class="n">${I.i18nThLimite || 'Límite'}</th></tr>`;
+            $('impPrevBody').innerHTML = prepared.slice(0, 8).map(p => {
+                const bad = !p.empresa;
+                return `<tr class="${bad ? 'bad' : ''}"><td>${esc(p.empresa || '—')}</td><td>${esc(p.contacto || '—')}</td><td>${esc(p.email || '—')}</td><td>${esc(p.rfc || '—')}</td><td>${TERM_LABEL[p.terminos]}</td><td class="n">${p.limite === '' ? '—' : money(p.limite)}</td></tr>`;
+            }).join('');
+
+            btnNext.textContent = importarNTpl.replace('{n}', String(valid.length)).replace('{s}', valid.length === 1 ? '' : 's');
+            btnNext.disabled = valid.length === 0;
+            (window as any).cordWireModal?.(modal);
+            return true;
+        }
+
+        async function doImport() {
+            const valid = prepared.filter(p => p.empresa);
+            if (!valid.length) return;
+            btnNext.disabled = true; btnNext.textContent = I.i18nImportando || 'Importando…';
+            try {
+                const res = await fetch('/api/clientes/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rows: valid, upsert: upsertChk.checked }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || I.i18nNoPudoImportar);
+                location.reload();
+            } catch (err: any) {
+                errorEl.textContent = err.message;
+                btnNext.disabled = false; btnNext.textContent = (I.i18nImportarN || 'Importar {n} clientes').replace('{n}', String(valid.length)).replace('{s}', 's');
+            }
+        }
+
+        const loadFile = (file: File) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                grid = parseCSV(String(reader.result));
+                if (!grid.length) { errorEl.textContent = I.i18nArchivoVacio || 'El archivo está vacío o no se pudo leer.'; return; }
+                buildMaps();
+                showStep('map');
+            };
+            reader.readAsText(file, 'utf-8');
+        };
+
+        document.getElementById('btnImport')?.addEventListener('click', () => { showStep('file'); modal.showModal(); (window as any).cordWireModal?.(modal); });
+        document.getElementById('btnImportEmpty')?.addEventListener('click', () => { showStep('file'); modal.showModal(); (window as any).cordWireModal?.(modal); });
+        $('impClose').addEventListener('click', () => modal.close());
+        $('impCancel').addEventListener('click', () => modal.close());
+        fileInput.addEventListener('change', () => { if (fileInput.files?.[0]) loadFile(fileInput.files[0]); });
+        headerChk.addEventListener('change', buildMaps);
+        drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('drag'); });
+        drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+        drop.addEventListener('drop', (e) => {
+            e.preventDefault(); drop.classList.remove('drag');
+            const f = (e as DragEvent).dataTransfer?.files?.[0];
+            if (f) loadFile(f);
+        });
+        btnNext.addEventListener('click', () => {
+            if (step === 'map') { if (buildPreview()) showStep('prev'); }
+            else if (step === 'prev') doImport();
+        });
+        btnBack.addEventListener('click', () => {
+            if (step === 'prev') { showStep('map'); btnNext.textContent = 'Continuar'; }
+            else if (step === 'map') showStep('file');
+        });
+        $('impTpl').addEventListener('click', () => {
+            const csv = 'empresa,contacto,email,telefono,rfc,terminos,limite\nDistribuidora El Zarco,Raul Mendoza,compras@elzarco.mx,55 1234 5678,DEZ981123QX1,net30,500000\nConstructora GAMA,Lucia Ferreira,lucia@gama.com.mx,55 8765 4321,CGA050617HJ8,net60,850000\n';
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'plantilla-clientes-cord.csv';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        });
+    });
+</script>
+
+<script is:inline>
+    (function () {
+        const input = document.getElementById('searchClientes');
+        const clearBtn = document.getElementById('searchClearCli');
+        const countEl = document.getElementById('dirCount');
+        const body = document.getElementById('lfBody');
+        if (!input || !body) return;
+        const searchBox = document.querySelector('.ph-search');
+        const iSinResultados = (searchBox && searchBox.dataset.i18nSinResultados) || 'Sin resultados para esta búsqueda.';
+        const iSingular = (searchBox && searchBox.dataset.i18nSingular) || 'cliente';
+        const iPlural = (searchBox && searchBox.dataset.i18nPlural) || 'clientes';
+        const isEn = document.documentElement.lang === 'en';
+
+        const rows = Array.from(body.querySelectorAll('.t-row'));
+        const total = rows.length;
+        let noResults = document.querySelector('.search-no-results');
+        if (!noResults) {
+            noResults = document.createElement('div');
+            noResults.className = 'search-no-results';
+            noResults.textContent = iSinResultados;
+            document.querySelector('.dir').appendChild(noResults);
+        }
+
+        // ── Filtro por chip ──
+        const PRED = {
+            all: function () { return true; },
+            con_cotizaciones: function (d) { return Number(d.n || 0) > 0; },
+            sin_cotizar: function (d) { return Number(d.n || 0) === 0; },
+            con_nivel: function (d) { return d.nivel !== 'estandar'; },
+            con_credito: function (d) { return Number(d.limite || 0) > 0; },
+            sin_fiscal: function (d) { return d.fiscal !== '1'; },
+        };
+        const CMP = {
+            empresa: function (a, b) { return (a.dataset.empresa || '').localeCompare(b.dataset.empresa || ''); },
+            cerrado: function (a, b) { return Number(b.dataset.cerrado || 0) - Number(a.dataset.cerrado || 0); },
+            n: function (a, b) { return Number(b.dataset.n || 0) - Number(a.dataset.n || 0); },
+            ultima: function (a, b) { return (b.dataset.ultima || '').localeCompare(a.dataset.ultima || ''); },
+            limite: function (a, b) { return Number(b.dataset.limite || 0) - Number(a.dataset.limite || 0); },
+        };
+        const filterPills = Array.from(document.querySelectorAll('#lfFilters .filter-pill'));
+        const sortSel = document.getElementById('lfSort');
+        const params = new URLSearchParams(location.search);
+        let activeFilter = params.get('f') && PRED[params.get('f')] ? params.get('f') : 'all';
+        if (sortSel && params.get('s') && CMP[params.get('s')]) sortSel.value = params.get('s');
+        filterPills.forEach(function (p) { p.classList.toggle('active', p.dataset.f === activeFilter); });
+
+        function persist() {
+            const url = new URL(location.href);
+            if (activeFilter === 'all') url.searchParams.delete('f'); else url.searchParams.set('f', activeFilter);
+            const s = sortSel ? sortSel.value : 'empresa';
+            if (s === 'empresa') url.searchParams.delete('s'); else url.searchParams.set('s', s);
+            history.replaceState(null, '', url.pathname + url.search);
+        }
+
+        function apply() {
+            const q = input.value.trim().toLowerCase();
+            clearBtn.style.display = q ? 'flex' : 'none';
+            const pred = PRED[activeFilter] || PRED.all;
+            let visible = 0;
+            rows.forEach(function (row) {
+                const d = row.dataset;
+                const matchSearch = !q || (d.empresa || '').toLowerCase().includes(q) || (d.contacto || '').toLowerCase().includes(q) || (d.email || '').toLowerCase().includes(q) || (d.rfc || '').toLowerCase().includes(q);
+                const match = matchSearch && pred(d);
+                row.hidden = !match;
+                if (match) visible++;
+            });
+            const s = sortSel ? sortSel.value : 'empresa';
+            const cmp = CMP[s] || CMP.empresa;
+            rows.slice().sort(cmp).forEach(function (row) { body.appendChild(row); });
+
+            noResults.style.display = visible === 0 ? 'block' : 'none';
+            if (countEl) {
+                const labelFor = function (n) { return n === 1 ? iSingular : iPlural; };
+                if (q || activeFilter !== 'all') countEl.textContent = isEn ? (visible + ' of ' + total + ' ' + labelFor(total)) : (visible + ' de ' + total + ' ' + labelFor(total));
+                else countEl.textContent = total + ' ' + labelFor(total);
+            }
+            persist();
+        }
+
+        input.addEventListener('input', apply);
+        clearBtn.addEventListener('click', function () { input.value = ''; apply(); input.focus(); });
+        filterPills.forEach(function (p) {
+            p.addEventListener('click', function () {
+                activeFilter = p.dataset.f;
+                filterPills.forEach(function (x) { x.classList.toggle('active', x === p); });
+                apply();
+            });
+        });
+        if (sortSel) sortSel.addEventListener('change', apply);
+        apply();
+    })();
+</script>

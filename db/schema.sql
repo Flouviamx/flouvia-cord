@@ -513,6 +513,31 @@ create table if not exists uso_periodo (
   primary key (org_id, periodo)
 );
 
+-- Telemetría interna de proveedores que pueden generar costo variable. Nunca
+-- guarda prompts, correos, payloads, tokens ni secretos: solo proveedor,
+-- operación, unidades y conteos técnicos agregables para Cord Ops.
+create table if not exists external_usage_events (
+  id            uuid        default gen_random_uuid() primary key,
+  org_id        uuid        not null references orgs(id) on delete cascade,
+  provider      text        not null,
+  category      text        not null,
+  operation     text        not null,
+  units         int         not null default 1 check (units >= 0),
+  input_tokens  int         not null default 0 check (input_tokens >= 0),
+  output_tokens int         not null default 0 check (output_tokens >= 0),
+  status        text        not null default 'success' check (status in ('success','failure','skipped')),
+  metadata      jsonb       not null default '{}'::jsonb,
+  created_at    timestamptz not null default now()
+);
+alter table external_usage_events alter column org_id set not null;
+create index if not exists idx_external_usage_org_created on external_usage_events(org_id, created_at desc);
+create index if not exists idx_external_usage_provider_created on external_usage_events(provider, created_at desc);
+alter table external_usage_events enable row level security;
+drop policy if exists "rls_external_usage_events" on external_usage_events;
+create policy "rls_external_usage_events" on external_usage_events
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table external_usage_events force row level security;
+
 -- Idempotencia del webhook de Stripe: si un event.id ya se procesó, se ignora.
 create table if not exists stripe_events (
   id          text        primary key,             -- evt_…
@@ -1248,6 +1273,8 @@ alter table users add column if not exists failed_login_count    int not null de
 alter table users add column if not exists locked_until          timestamptz;
 alter table users add column if not exists totp_backup_codes     text[];   -- hashes sha256, nunca en claro
 alter table users add column if not exists totp_confirmed_at     timestamptz;
+alter table users add column if not exists suspended_at          timestamptz;
+alter table users add column if not exists suspended_reason      text;
 
 -- sessions: el id pasa a guardar sha256(token) en vez del token en CLARO
 -- (una lectura de la tabla = session hijack de cualquier usuario). El
@@ -1313,17 +1340,119 @@ update org_members set token = encode(digest(token, 'sha256'), 'hex') where toke
 -- audit_log: faltaba el user-agent (sessions sí lo captura desde siempre).
 alter table audit_log add column if not exists user_agent text;
 
--- Sesiones del panel interno /ops (secreto compartido de operaciones, NO
--- ligado a una cuenta de `users`). Antes la cookie `cord_ops_token` GUARDABA
--- EL SECRETO MISMO en claro — cualquier fuga de esa cookie (log, XSS, browser
--- compartido) entregaba la clave maestra completa, reutilizable para
--- siempre. Ahora la cookie es un token opaco de sesión; solo su sha256 vive
--- aquí, con expiración real y revocación posible sin rotar el secreto.
-create table if not exists ops_sessions (
-  id          text        primary key,  -- sha256(token)
-  expires_at  timestamptz not null,
-  created_at  timestamptz not null default now()
+-- Operadores internos de Cord. La allowlist efectiva se valida TAMBIÉN en
+-- src/lib/ops-auth.ts (defensa en profundidad): una fila insertada por error
+-- o por una futura pantalla administrativa no basta para ganar acceso. No hay
+-- endpoint público para crear operadores; estas dos filas se siembran desde
+-- usuarios ya existentes y cualquier alta futura exige cambio de código +
+-- migración revisable.
+create table if not exists ops_operators (
+  user_id     uuid        primary key references users(id) on delete cascade,
+  email       text        not null unique check (email = lower(email)),
+  role        text        not null default 'admin' check (role in ('admin', 'read_only')),
+  active      boolean     not null default true,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
 );
+
+insert into ops_operators (user_id, email)
+select id, lower(email) from users
+where lower(email) in ('andrevalleo13@gmail.com', 'hola@flouvia.com')
+on conflict (user_id) do update set email = excluded.email, updated_at = now();
+
+-- La base de datos tambien falla cerrada: aunque una futura ruta intentara
+-- insertar un tercer operador, la restriccion solo acepta estas dos identidades.
+delete from ops_operators
+where lower(email) not in ('andrevalleo13@gmail.com', 'hola@flouvia.com');
+alter table ops_operators drop constraint if exists ops_operators_email_allowlist_check;
+alter table ops_operators add constraint ops_operators_email_allowlist_check
+  check (email in ('andrevalleo13@gmail.com', 'hola@flouvia.com'));
+
+-- Reto de un solo uso entre contraseña correcta y TOTP. Ops nunca acepta una
+-- contraseña como único factor. El token crudo solo vive cinco minutos en una
+-- cookie HttpOnly; la BD guarda exclusivamente sha256(token).
+create table if not exists ops_auth_challenges (
+  id           text        primary key,
+  operator_id  uuid        not null references ops_operators(user_id) on delete cascade,
+  expires_at   timestamptz not null,
+  created_at   timestamptz not null default now()
+);
+create index if not exists idx_ops_challenges_operator on ops_auth_challenges(operator_id);
+create index if not exists idx_ops_challenges_expires on ops_auth_challenges(expires_at);
+
+-- Reto WebAuthn de un solo uso. La cookie por si sola no basta: persistir su
+-- hash permite consumirlo atomicamente y bloquea replays concurrentes.
+create table if not exists ops_passkey_challenges (
+  id           text        primary key,
+  operator_id  uuid        references ops_operators(user_id) on delete cascade,
+  expires_at   timestamptz not null,
+  created_at   timestamptz not null default now()
+);
+create index if not exists idx_ops_passkey_challenges_operator on ops_passkey_challenges(operator_id);
+create index if not exists idx_ops_passkey_challenges_expires on ops_passkey_challenges(expires_at);
+
+-- Sesiones del panel interno /ops. La cookie contiene un token opaco de 256
+-- bits; aquí solo vive su sha256. Expiración por inactividad de 30 minutos +
+-- tope absoluto de 8 horas. Cada login nuevo revoca la sesión Ops anterior
+-- del mismo operador (una sola sesión privilegiada activa por persona).
+create table if not exists ops_sessions (
+  id                   text        primary key,  -- sha256(token)
+  operator_id          uuid        not null references ops_operators(user_id) on delete cascade,
+  expires_at           timestamptz not null,
+  absolute_expires_at  timestamptz not null,
+  last_used_at         timestamptz not null default now(),
+  revoked_at           timestamptz,
+  ip                   text,
+  user_agent           text,
+  auth_method          text        not null check (auth_method in ('passkey', 'password_totp', 'local_session_password')),
+  credential_id        text        references passkeys(id) on delete cascade,
+  created_at           timestamptz not null default now()
+);
+
+-- Upgrade idempotente desde el esquema viejo basado en OPS_SECRET. Las filas
+-- antiguas carecen de identidad de operador y se eliminan UNA sola vez; las
+-- sesiones nuevas nunca vuelven a coincidir con este filtro.
+alter table ops_sessions add column if not exists operator_id uuid references ops_operators(user_id) on delete cascade;
+alter table ops_sessions add column if not exists absolute_expires_at timestamptz not null default (now() + interval '8 hours');
+alter table ops_sessions add column if not exists last_used_at timestamptz not null default now();
+alter table ops_sessions add column if not exists revoked_at timestamptz;
+alter table ops_sessions add column if not exists ip text;
+alter table ops_sessions add column if not exists user_agent text;
+alter table ops_sessions add column if not exists auth_method text;
+alter table ops_sessions add column if not exists credential_id text references passkeys(id) on delete cascade;
+delete from ops_sessions where operator_id is null or auth_method is null;
+delete from ops_sessions where auth_method = 'passkey' and credential_id is null;
+alter table ops_sessions alter column operator_id set not null;
+alter table ops_sessions alter column auth_method set not null;
+alter table ops_sessions drop constraint if exists ops_sessions_auth_method_check;
+alter table ops_sessions add constraint ops_sessions_auth_method_check
+  check (auth_method in ('passkey', 'password_totp', 'local_session_password'));
+alter table ops_sessions drop constraint if exists ops_sessions_passkey_credential_check;
+alter table ops_sessions add constraint ops_sessions_passkey_credential_check
+  check (auth_method <> 'passkey' or credential_id is not null);
+create index if not exists idx_ops_sessions_operator on ops_sessions(operator_id);
+create index if not exists idx_ops_sessions_expires on ops_sessions(expires_at);
+create unique index if not exists idx_ops_sessions_one_per_operator on ops_sessions(operator_id);
+
+-- Bitácora separada de la auditoría multi-tenant: los eventos de plataforma no
+-- pertenecen a ninguna org. No guarda contraseñas, códigos, tokens ni cuerpos
+-- de requests. actor_email es un snapshot para preservar atribución incluso si
+-- la cuenta cambia después.
+create table if not exists ops_audit_log (
+  id                 bigint generated always as identity primary key,
+  actor_operator_id  uuid references ops_operators(user_id) on delete set null,
+  actor_email        text,
+  action             text        not null,
+  target_type        text,
+  target_id          text,
+  result             text        not null default 'success' check (result in ('success', 'failure', 'denied')),
+  metadata           jsonb       not null default '{}'::jsonb,
+  ip                 text,
+  user_agent         text,
+  created_at         timestamptz not null default now()
+);
+create index if not exists idx_ops_audit_created on ops_audit_log(created_at desc);
+create index if not exists idx_ops_audit_actor on ops_audit_log(actor_operator_id, created_at desc);
 
 -- RLS deliberadamente NO se activa en users/sessions/oauth_accounts/passkeys/
 -- password_reset_tokens/email_verification_tokens: el driver conecta SIEMPRE
@@ -1359,6 +1488,43 @@ alter table orgs  add column if not exists tamano_equipo text;        -- solo|2-
 alter table orgs  add column if not exists casos_uso     jsonb not null default '[]'::jsonb;
 alter table orgs  add column if not exists onboarded_at  timestamptz;
 alter table users add column if not exists puesto        text;        -- dueno|ventas|finanzas|operaciones|otro
+
+-- ── Cord Ops preparado para 10k+ usuarios (ago 2026) ───────────────────────
+-- Las vistas internas paginan a 50 filas y agregan únicamente los ids de esa
+-- página. Estos índices sostienen búsqueda, orden cronológico y ventanas de
+-- consumo sin que Ops haga un scan por cada usuario u organización visible.
+create extension if not exists pg_trgm;
+
+create index if not exists idx_users_created_id on users(created_at desc,id desc);
+create index if not exists idx_users_email_trgm on users using gin (lower(email) gin_trgm_ops);
+create index if not exists idx_users_name_trgm on users using gin ((lower(coalesce(first_name,'') || ' ' || coalesce(last_name,''))) gin_trgm_ops);
+create index if not exists idx_orgs_created_id on orgs(created_at desc,id desc);
+create index if not exists idx_orgs_name_trgm on orgs using gin (lower(nombre) gin_trgm_ops);
+
+create index if not exists idx_sessions_user_activity on sessions(user_id,last_used_at desc);
+create index if not exists idx_sessions_active_expiry on sessions(expires_at) where revoked_at is null;
+create index if not exists idx_passkeys_user_created on passkeys(user_id,created_at desc);
+create index if not exists idx_oauth_user_created on oauth_accounts(user_id,created_at desc);
+create index if not exists idx_members_user_state_created on org_members(user_id,estado,created_at desc) where user_id is not null;
+create index if not exists idx_members_org_created on org_members(org_id,created_at desc);
+
+create index if not exists idx_clientes_org_created on clientes(org_id,created_at desc);
+create index if not exists idx_productos_org_created on productos(org_id,created_at desc);
+create index if not exists idx_cotizaciones_org_created on cotizaciones(org_id,created_at desc);
+create index if not exists idx_cotizaciones_closed_org on cotizaciones(org_id,status) include(total) where status in ('approved','paid','invoiced');
+create index if not exists idx_api_keys_org_created on api_keys(org_id,created_at desc);
+create index if not exists idx_webhooks_org_created on webhooks(org_id,created_at desc);
+
+create index if not exists idx_uso_periodo_period_org on uso_periodo(periodo,org_id);
+create index if not exists idx_api_requests_recent on api_requests(created_at desc,org_id) include(status,duracion_ms);
+create index if not exists idx_webhook_deliveries_recent on webhook_deliveries(created_at desc,org_id) include(ok);
+create index if not exists idx_external_usage_recent on external_usage_events(created_at desc,org_id,provider,status);
+create index if not exists idx_external_usage_org_provider on external_usage_events(org_id,provider,status,created_at desc);
+create index if not exists idx_cobros_paid_recent on cotizacion_cobros(paid_at desc,org_id) include(monto) where paid_at is not null;
+create index if not exists idx_cobros_org_paid on cotizacion_cobros(org_id,paid_at desc) include(monto) where paid_at is not null;
+
+create index if not exists idx_ops_audit_target_created on ops_audit_log(target_type,target_id,created_at desc);
+create index if not exists idx_ops_sessions_created on ops_sessions(created_at desc);
 
 -- Backfill: toda org que YA EXISTÍA antes de este cambio se marca como
 -- onboardeada, para que ningún usuario real en producción sea rebotado al
@@ -1416,6 +1582,7 @@ create table if not exists sso_connections (
   updated_at            timestamptz not null default now()
 );
 create index if not exists idx_sso_conn_org on sso_connections(org_id);
+create index if not exists idx_sso_org_created on sso_connections(org_id,created_at desc);
 create unique index if not exists uq_sso_conn_idp on sso_connections(org_id, idp_entity_id);
 
 -- Dominios que una conexión ha probado controlar por DNS TXT. Tabla APARTE

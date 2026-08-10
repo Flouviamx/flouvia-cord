@@ -189,14 +189,16 @@ Vender a crédito es estándar, pero controlar ese riesgo suele requerir comunic
 ### Beneficios clave:
 - **Límites de crédito duros:** Si un cliente tiene un límite de $100,000 MXN y ya tiene deuda por $95,000, un agente no podrá aprobarle una cotización de $10,000.
 - **Términos Net 30/60:** Al aprobar la cotización, Cord programa automáticamente la fecha de vencimiento y el ciclo de cobranza.
-- **Autonomía para ventas:** Los agentes pueden vender libremente siempre que el cliente esté al corriente, sin fricción ni autorizaciones manuales.`,
+- **Autonomía para ventas:** Los agentes pueden vender libremente siempre que el cliente esté al corriente, sin fricción ni autorizaciones manuales.
+- **Ficha del cliente:** cada perfil de cliente muestra su uso de crédito en vivo (saldo abierto vs. límite, con aviso si lo excede), su tasa de cierre real y el descuento que se le ha cedido en negociación — la misma señal que usa el motor de riesgo, visible de un vistazo.`,
             en: `## Automated risk control
 Selling on credit is standard, but controlling that risk usually requires constant manual communication between sales and finance teams. Cord automates these rules.
 
 ### Key benefits:
 - **Hard credit limits:** If a client has a $100,000 MXN limit and already owes $95,000, an agent won't be able to approve a $10,000 quote for them.
 - **Net 30/60 Terms:** Upon approving the quote, Cord automatically schedules the due date and the collections cycle.
-- **Autonomy for sales:** Agents can sell freely as long as the client is in good standing, without friction or manual authorizations.`
+- **Autonomy for sales:** Agents can sell freely as long as the client is in good standing, without friction or manual authorizations.
+- **Client profile:** every client profile shows live credit usage (open balance vs. limit, with a warning if they're over it), their real close rate, and the discount you've given them in negotiation — the same signal the risk engine uses, visible at a glance.`
         },
         area: 'finanzas',
         status: 'live',

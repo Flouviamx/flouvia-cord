@@ -78,6 +78,22 @@ export async function sendNewDeviceAlertEmail(to: string): Promise<SendResult> {
     });
 }
 
+/** Alerta de cada acceso exitoso al panel privilegiado de plataforma. */
+export async function sendOpsLoginAlertEmail(to: string, ip: string, userAgent: string): Promise<SendResult> {
+    const detail = `Se inició una sesión en Cord Ops. IP: ${escapeHtml(ip)}. Dispositivo: ${escapeHtml(userAgent)}. Si no fuiste tú, cambia tu contraseña, revoca tus sesiones y contacta al equipo de inmediato.`;
+    return sendEmail({
+        to,
+        subject: 'Nuevo acceso a Cord Ops',
+        fromName: FROM_NAME,
+        html: shell({
+            titulo: 'Nuevo acceso administrativo',
+            cuerpo: detail,
+            ctaLabel: 'Abrir Cord Ops',
+            ctaHref: 'https://ops.cordhq.app/ops',
+        }),
+    });
+}
+
 export async function sendTeamInviteEmail(to: string, orgName: string, token: string): Promise<SendResult> {
     const L = currentLocale();
     const link = `${siteOrigin()}/unirse/${encodeURIComponent(token)}`;

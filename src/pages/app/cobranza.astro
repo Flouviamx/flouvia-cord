@@ -1,6 +1,5 @@
 ---
-// Cobranza — cuentas por cobrar: cartera total, vencido, aging, exposición por
-// cliente y tabla accionable (marcar cobrada + recordatorio por WhatsApp).
+// Cobranza operativa: tabla accionable (marcar cobrada, promesa de pago y WhatsApp).
 // Datos reales de getCobranza(). Por cobrar = aprobadas/facturadas sin pagar.
 import AppLayout from '../../layouts/AppLayout.astro';
 import { getCobranza, getMyMembership, money } from '../../lib/queries';
@@ -13,15 +12,13 @@ const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g,
 const ME = await getMyMembership();
 const hasAccess = memberCan(ME, 'cobranza');
 const C = hasAccess ? await getCobranza() : null;
-const maxAging = Math.max(1, ...(C?.aging ?? []).map((a) => a.monto));
 const hay = (C?.items.length ?? 0) > 0;
 ---
 
 <AppLayout title={t(L, 'cob.title')} page="cobranza" heading={t(L, 'cob.heading')}>
-    <div slot="page-tabs">
+    <div slot="page-tabs" class="ph-tabs">
         <a href="/app/cobranza" class="ph-tab active">{t(L, 'cob.tab_cobranza')}</a>
         <a href="/app/tesoreria/cobranza" class="ph-tab">{t(L, 'cob.tab_ia')}</a>
-        <a href="/app/tesoreria/flujo" class="ph-tab">{t(L, 'cob.tab_flujo')}</a>
     </div>
     {!hasAccess && (
         <div class="cb-denied">
@@ -40,90 +37,6 @@ const hay = (C?.items.length ?? 0) > 0;
 
     {hasAccess && hay && (
         <>
-        <!-- KPIs de cartera -->
-        <section class="kpis">
-            <div class="kpi">
-                <span class="kpi-label">{t(L, 'cob.kpi_total')}</span>
-                <span class="editorial kpi-num">{money(C.resumen.totalPorCobrar, 0)}</span>
-                <span class="kpi-sub">{C.resumen.nPorCobrar} {C.resumen.nPorCobrar === 1 ? t(L, 'cob.cuenta_singular') : t(L, 'cob.cuenta_plural')}</span>
-            </div>
-            <div class="kpi">
-                <span class="kpi-label">{t(L, 'cob.kpi_vencido')}</span>
-                <span class:list={['editorial', 'kpi-num', { 'kpi-danger': C.resumen.totalVencido > 0 }]}>{money(C.resumen.totalVencido, 0)}</span>
-                <span class="kpi-sub">{C.resumen.nVencidas} {C.resumen.nVencidas === 1 ? t(L, 'cob.vencida_singular') : t(L, 'cob.vencida_plural')}</span>
-            </div>
-            <div class="kpi">
-                <span class="kpi-label">{t(L, 'cob.kpi_por_vencer')}</span>
-                <span class="editorial kpi-num">{money(C.resumen.totalVigente, 0)}</span>
-                <span class="kpi-sub">{t(L, 'cob.kpi_por_vencer_sub')}</span>
-            </div>
-            <div class="kpi">
-                <span class="kpi-label">{t(L, 'cob.kpi_clientes_saldo')}</span>
-                <span class="editorial kpi-num">{C.resumen.nClientes}</span>
-                <span class:list={['kpi-sub', { 'kpi-sub-danger': C.resumen.nExcedidos > 0 }]}>
-                    {C.resumen.nExcedidos > 0 ? tpl(t(L, 'cob.excede_limite'), { n: String(C.resumen.nExcedidos) }) : t(L, 'cob.dentro_limite')}
-                </span>
-            </div>
-        </section>
-
-        <!-- Flujo de caja predictivo -->
-        <section class="cash-card">
-            <div class="cash-main">
-                <span class="kpi-label">{t(L, 'cob.flujo_label')}</span>
-                <span class="editorial cash-num">{money(C.resumen.esperado30, 0)}</span>
-                <span class="kpi-sub">
-                    {C.resumen.avgDelay > 0
-                        ? tpl(t(L, 'cob.pagan_despues'), { n: String(C.resumen.avgDelay) })
-                        : C.resumen.avgDelay < 0
-                        ? tpl(t(L, 'cob.pagan_antes'), { n: String(Math.abs(C.resumen.avgDelay)) })
-                        : t(L, 'cob.sin_historial')}
-                </span>
-            </div>
-            <div class="cash-side">
-                <div><span>{t(L, 'cob.proximos_7')}</span><b class="editorial">{money(C.resumen.esperado7, 0)}</b></div>
-                {C.resumen.interesPct > 0 && (
-                    <div><span>{tpl(t(L, 'cob.interes_moratorio'), { pct: String(C.resumen.interesPct) })}</span><b class="editorial cash-interes">{money(C.resumen.interesTotal, 0)}</b></div>
-                )}
-            </div>
-        </section>
-
-        <div class="two-col">
-            <!-- Aging -->
-            <section class="aging-card">
-                <div class="sec-head"><h2 class="sec-title">{t(L, 'cob.antiguedad')}</h2></div>
-                <div class="aging">
-                    {C.aging.map((a) => (
-                        <div class="ag-row">
-                            <div class="ag-top">
-                                <span class="ag-label"><i class="ag-dot" style={`background:${a.color}`}></i>{a.label}</span>
-                                <span class="ag-vals"><b class="editorial">{money(a.monto, 0)}</b> · {a.n}</span>
-                            </div>
-                            <div class="ag-track"><span class="ag-fill" style={`width:${Math.round((a.monto / maxAging) * 100)}%; background:${a.color}`}></span></div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            <!-- Exposición por cliente -->
-            <section class="expo-card">
-                <div class="sec-head"><h2 class="sec-title">{t(L, 'cob.exposicion')}</h2><span class="rank-sub">{t(L, 'cob.exposicion_sub')}</span></div>
-                <div class="expo">
-                    {C.clientes.slice(0, 6).map((c) => (
-                        <div class="expo-row">
-                            <div class="expo-info">
-                                <span class="expo-name">{c.empresa}</span>
-                                <span class="expo-meta">{c.limite > 0 ? tpl(t(L, 'cob.de_monto'), { saldo: money(c.saldo, 0), limite: money(c.limite, 0) }) : tpl(t(L, 'cob.sin_limite'), { saldo: money(c.saldo, 0) })}</span>
-                            </div>
-                            {c.limite > 0 && (
-                                <div class="expo-bar"><span class:list={['expo-fill', { over: c.excede }]} style={`width:${Math.min(100, c.uso)}%`}></span></div>
-                            )}
-                            {c.excede && <span class="expo-flag">{t(L, 'cob.excede')}</span>}
-                        </div>
-                    ))}
-                </div>
-            </section>
-        </div>
-
         <!-- Tabla de cuentas por cobrar -->
         <section class="table-card">
             <div class="sec-head"><h2 class="sec-title">{t(L, 'cob.cuentas_por_cobrar')}</h2></div>
@@ -214,62 +127,8 @@ const hay = (C?.items.length ?? 0) > 0;
 </AppLayout>
 
 <style>
-    .kpis {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
-        margin-bottom: 2.6rem;
-        border-top: 1px solid var(--color-border);
-        border-bottom: 1px solid var(--color-border);
-    }
-    .kpi {
-        padding: 1.5rem 1.7rem; display: flex; flex-direction: column; gap: 0.45rem;
-        border-left: 1px solid var(--color-border);
-    }
-    .kpi:first-child { border-left: none; padding-left: 0; }
-    .kpi-label { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.6px; color: #99a2af; }
-    .kpi-num { font-size: 2.1rem; color: var(--color-blue-deep); line-height: 1; font-variant-numeric: tabular-nums; }
-    .kpi-danger { color: var(--color-danger); }
-    .kpi-sub { font-size: 0.78rem; color: var(--color-text-muted); }
-    .kpi-sub-danger { color: var(--color-danger); font-weight: 600; }
-
-    /* Flujo de caja predictivo */
-    .cash-card {
-        margin-bottom: 2.6rem; padding: 1.7rem 0; display: flex;
-        justify-content: space-between; align-items: center; gap: 2rem; flex-wrap: wrap;
-        border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);
-    }
-    .cash-main { display: flex; flex-direction: column; gap: 0.4rem; }
-    .cash-num { font-size: 2.1rem; color: #059669; line-height: 1; }
-    .cash-side { display: flex; gap: 2.4rem; flex-wrap: wrap; }
-    .cash-side > div { display: flex; flex-direction: column; gap: 4px; }
-    .cash-side span { font-size: 0.6rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #99a2af; }
-    .cash-side b { font-size: 1.2rem; color: var(--color-blue-deep); }
-    .cash-interes { color: var(--color-danger) !important; }
-
     .t-saldo { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
     .t-interes { font-size: 0.66rem; color: var(--color-danger); font-weight: 600; }
-
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2.6rem; margin-bottom: 2.6rem; }
-    .rank-sub { font-size: 0.72rem; color: var(--color-text-muted); }
-
-    .aging { display: flex; flex-direction: column; gap: 1rem; }
-    .ag-row { display: flex; flex-direction: column; gap: 6px; }
-    .ag-top { display: flex; justify-content: space-between; align-items: baseline; }
-    .ag-label { display: inline-flex; align-items: center; gap: 7px; font-size: 0.82rem; font-weight: 600; }
-    .ag-dot { width: 8px; height: 8px; border-radius: 50%; }
-    .ag-vals { font-size: 0.74rem; color: var(--color-text-muted); }
-    .ag-vals b { color: var(--color-text); font-size: 0.88rem; margin-right: 2px; }
-    .ag-track { height: 9px; background: var(--chart-track); border: 1px solid var(--color-border); border-radius: 100px; overflow: hidden; }
-    .ag-fill { display: block; height: 100%; border-radius: 100px; min-width: 2px; transition: width 0.7s var(--ease-spring); }
-
-    .expo { display: flex; flex-direction: column; gap: 0.9rem; }
-    .expo-row { display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 0.8rem; align-items: center; }
-    .expo-info { display: flex; flex-direction: column; min-width: 0; }
-    .expo-name { font-size: 0.84rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .expo-meta { font-size: 0.68rem; color: var(--color-text-muted); }
-    .expo-bar { height: 8px; background: var(--chart-track); border: 1px solid var(--color-border); border-radius: 100px; overflow: hidden; }
-    .expo-fill { display: block; height: 100%; background: var(--color-ok); border-radius: 100px; transition: width 0.7s var(--ease-spring); }
-    .expo-fill.over { background: var(--color-danger); }
-    .expo-flag { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.4px; color: var(--color-danger); background: rgba(239,68,68,0.1); padding: 3px 8px; border-radius: 100px; }
 
     /* Tabla */
     .table-card { margin-bottom: 2.6rem; overflow-x: auto; }
@@ -358,22 +217,10 @@ const hay = (C?.items.length ?? 0) > 0;
     .empty p { font-size: 0.88rem; color: var(--color-text-muted); max-width: 460px; margin: 0 auto 1.4rem; line-height: 1.6; }
     .empty-cta { display: inline-block; background: var(--color-blue-deep); color: #fff; text-decoration: none; font-size: 0.86rem; font-weight: 600; padding: 11px 20px; border-radius: 10px; }
 
-    @media (max-width: 1080px) {
-        .kpis { grid-template-columns: repeat(2, 1fr); }
-        .kpi:nth-child(odd) { border-left: none; padding-left: 0; }
-        .kpi:nth-child(3), .kpi:nth-child(4) { border-top: 1px solid var(--color-border); }
-        .two-col { grid-template-columns: 1fr; gap: 2.2rem; }
-    }
     @media (max-width: 880px) {
         .t-head { display: none; }
         .t-row { grid-template-columns: 1fr auto auto; gap: 0.5rem 0.8rem; min-width: 0; }
         .t-muted, .t-folio { display: none; }
-    }
-    @media (max-width: 680px) {
-        .kpis { grid-template-columns: 1fr; }
-        .kpi { border-left: none; padding-left: 0; border-top: 1px solid var(--color-border); }
-        .kpi:first-child { border-top: none; }
-        .cash-side { gap: 1.6rem; }
     }
     @media (max-width: 560px) {
         .t-estado { display: none; }

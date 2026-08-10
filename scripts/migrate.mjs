@@ -40,6 +40,7 @@ if (!url) {
 
 const sql = neon(url);
 const reset = process.argv.includes('--reset');
+const seedDemo = process.argv.includes('--seed-demo');
 
 // Errores de "ya existe" que ignoramos para que migrate sea re-ejecutable.
 const EXISTS = new Set(['42P07', '42P06', '42710', '42701']);
@@ -234,7 +235,8 @@ async function dropAll() {
         if (reset) await dropAll();
         console.log('• Aplicando schema…');
         await runDDL();
-        await seed();
+        if (seedDemo) await seed();
+        else console.log('• Seed demo omitido (usa --seed-demo para crearlo explícitamente).');
         console.log('\n✓ Migración completa. La app ya lee de Neon.\n');
     } catch (e) {
         console.error('\n✗ Error en la migración:', e.message, e.code ? `(${e.code})` : '');

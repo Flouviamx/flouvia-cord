@@ -1,0 +1,153 @@
+---
+import { REPORTS, reportLabel, type ReportId } from '../../lib/informes';
+
+interface Props { current: ReportId; locale: 'es' | 'en'; allowed: ReportId[]; }
+const { current, locale, allowed } = Astro.props;
+const visible = REPORTS.filter((report) => allowed.includes(report.id));
+const active = REPORTS.find((report) => report.id === current) ?? REPORTS[0];
+const label = (id: typeof active) => reportLabel(id, locale);
+const groups = [...new Set(visible.map((report) => report.group))];
+const iconPaths: Record<string, string> = {
+    overview: '<rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" fill-opacity="0.12"/><path d="M7 15l3-3 3 2 4-5"/><path d="M7 8h3" opacity=".55"/>',
+    pulse: '<path d="M3 12h4l2-5 4 10 2-5h6"/><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/>',
+    finance: '<path d="M4 20h16"/><rect x="5" y="12" width="3" height="8" rx="1" fill="currentColor" fill-opacity="0.12"/><rect x="10.5" y="7" width="3" height="13" rx="1" fill="currentColor" fill-opacity="0.15"/><rect x="16" y="10" width="3" height="10" rx="1" fill="currentColor" fill-opacity="0.12"/>',
+    flow: '<path d="M3 17l5-5 4 3 7-8"/><path d="M15 7h4v4"/><path d="M3 21h18V7l-9 10-4-3-5 5z" fill="currentColor" fill-opacity="0.12"/>',
+    collection: '<rect x="3" y="5" width="18" height="14" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18"/><path d="M7 15h4" opacity=".55"/>',
+    clients: '<circle cx="9" cy="8" r="3" fill="currentColor" fill-opacity="0.15"/><path d="M3 20v-2a5 5 0 0110 0v2"/><path d="M15 5a3 3 0 010 6M17 15a5 5 0 014 4" opacity=".55"/>',
+    products: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" fill="currentColor" fill-opacity="0.12"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/><path d="M8 5l8 4.5" opacity=".55"/>',
+};
+---
+
+<div class="report-picker" data-report-picker>
+    <button class="report-picker-trigger" type="button" data-report-trigger aria-haspopup="dialog" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" set:html={iconPaths[active.icon]}></svg>
+        <span>{label(active)}</span>
+        <svg class="report-picker-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
+    </button>
+    <div class="report-picker-panel" data-report-panel hidden role="dialog" aria-label={locale === 'en' ? 'Choose report' : 'Elegir informe'}>
+        <label class="report-picker-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+            <input type="search" data-report-search autocomplete="off" placeholder={locale === 'en' ? 'Search reports' : 'Buscar informes'} />
+        </label>
+        <div class="report-picker-list" data-report-list>
+            {groups.map((group) => (
+                <section class="report-picker-group" data-report-group>
+                    <span class="report-picker-group-label">{locale === 'en' ? (group === 'Dirección' ? 'Management' : 'Operations') : group}</span>
+                    {visible.filter((report) => report.group === group).map((report) => (
+                        <a href={`/app/informes?r=${report.id}`} class:list={['report-picker-option', { 'is-active': report.id === current }]} data-report-option data-search={`${report.label} ${report.labelEn}`.toLowerCase()}>
+                            <svg viewBox="0 0 24 24" aria-hidden="true" set:html={iconPaths[report.icon]}></svg>
+                            <span class="report-picker-copy">
+                                <strong>{label(report)}</strong>
+                                <small>{report.scope === 'snapshot' ? (locale === 'en' ? 'As of today' : 'Al día de hoy') : (locale === 'en' ? 'Date range' : 'Por rango de fechas')}</small>
+                            </span>
+                            {report.id === current && <svg class="report-picker-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4 4L19 6"/></svg>}
+                        </a>
+                    ))}
+                </section>
+            ))}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll<HTMLElement>('[data-report-picker]').forEach((root) => {
+        if (root.dataset.ready) return;
+        root.dataset.ready = '1';
+        const trigger = root.querySelector<HTMLButtonElement>('[data-report-trigger]');
+        const panel = root.querySelector<HTMLElement>('[data-report-panel]');
+        const search = panel?.querySelector<HTMLInputElement>('[data-report-search]');
+        if (!trigger || !panel || !search) return;
+        document.body.append(panel);
+        let options: HTMLAnchorElement[] = [];
+        let cursor = -1;
+
+        const position = () => {
+            if (panel.hidden) return;
+            const rect = trigger.getBoundingClientRect();
+            const width = Math.min(380, window.innerWidth - 24);
+            panel.style.width = `${width}px`;
+            panel.style.left = `${Math.max(12, Math.min(rect.left, window.innerWidth - width - 12))}px`;
+            panel.style.top = `${Math.min(rect.bottom + 8, window.innerHeight - panel.offsetHeight - 12)}px`;
+        };
+        const refresh = () => {
+            const query = search.value.trim().toLocaleLowerCase();
+            panel.querySelectorAll<HTMLElement>('[data-report-option]').forEach((option) => {
+                option.hidden = !!query && !(option.dataset.search || '').includes(query);
+            });
+            panel.querySelectorAll<HTMLElement>('[data-report-group]').forEach((group) => {
+                group.hidden = !group.querySelector('[data-report-option]:not([hidden])');
+            });
+            options = [...panel.querySelectorAll<HTMLAnchorElement>('[data-report-option]:not([hidden])')];
+            cursor = options.findIndex((option) => option.classList.contains('is-active'));
+            options.forEach((option, index) => option.classList.toggle('is-keyboard', index === cursor));
+            position();
+        };
+        const close = () => {
+            panel.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+            search.value = '';
+            refresh();
+        };
+        const open = () => {
+            panel.hidden = false;
+            trigger.setAttribute('aria-expanded', 'true');
+            refresh();
+            position();
+            requestAnimationFrame(() => search.focus());
+        };
+        trigger.addEventListener('click', () => panel.hidden ? open() : close());
+        search.addEventListener('input', refresh);
+        search.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') { event.preventDefault(); close(); trigger.focus(); return; }
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (!options.length) return;
+                cursor = (cursor + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+                options.forEach((option, index) => option.classList.toggle('is-keyboard', index === cursor));
+                options[cursor].scrollIntoView({ block: 'nearest' });
+            }
+            if (event.key === 'Enter' && cursor >= 0) {
+                event.preventDefault();
+                options[cursor].click();
+            }
+        });
+        document.addEventListener('pointerdown', (event) => {
+            if (panel.hidden) return;
+            const path = event.composedPath();
+            if (!path.includes(panel) && !path.includes(trigger)) close();
+        });
+        window.addEventListener('resize', position, { passive: true });
+        window.addEventListener('scroll', position, { passive: true });
+    });
+</script>
+
+<style>
+    .report-picker { display: inline-flex; }
+    .report-picker-trigger { min-height: 42px; display: inline-flex; align-items: center; gap: .65rem; border: 0; border-radius: 999px; padding: .62rem .9rem; background: var(--color-bg-soft, #f5f5f7); color: var(--color-text, #111); font: inherit; font-size: .82rem; font-weight: 650; cursor: pointer; transition: transform .18s ease, background .18s ease; }
+    .report-picker-trigger:hover { background: var(--color-bg-muted, #ececf0); transform: scale(.99); }
+    .report-picker-trigger:active { transform: scale(.97); }
+    .report-picker-trigger:focus-visible { outline: 2px solid rgba(10,25,47,.24); outline-offset: 2px; }
+    .report-picker-trigger svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    .report-picker-trigger .report-picker-chevron { width: 14px; opacity: .55; }
+    :global(.report-picker-panel) { position: fixed; z-index: 10050; max-height: min(560px, calc(100vh - 24px)); overflow: hidden; padding: 10px; border: 1px solid rgba(10,25,47,.08); border-radius: 24px; background: rgba(255,255,255,.98); box-shadow: 0 24px 80px rgba(10,25,47,.16), 0 3px 14px rgba(10,25,47,.08); backdrop-filter: blur(24px); }
+    :global(.report-picker-panel[hidden]) { display: none; }
+    :global(.report-picker-search) { display: flex; align-items: center; gap: .55rem; padding: .68rem .75rem; border-radius: 14px; background: #f5f5f7; }
+    :global(.report-picker-search svg) { width: 16px; height: 16px; fill: none; stroke: #687181; stroke-width: 1.5; }
+    :global(.report-picker-search input) { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: #111; font: inherit; font-size: .84rem; }
+    :global(.report-picker-list) { max-height: min(470px, calc(100vh - 110px)); overflow: auto; padding-top: 6px; }
+    :global(.report-picker-group) { padding: 5px 0; }
+    :global(.report-picker-group-label) { display: block; padding: .48rem .72rem .28rem; color: #9299a5; font-size: .58rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    :global(.report-picker-option) { display: flex; align-items: center; gap: .72rem; min-height: 54px; padding: .55rem .65rem; border-radius: 14px; color: #1d2430; text-decoration: none; }
+    :global(.report-picker-option[hidden]), :global(.report-picker-group[hidden]) { display: none; }
+    :global(.report-picker-option:hover), :global(.report-picker-option.is-keyboard) { background: #f5f5f7; }
+    :global(.report-picker-option.is-active) { background: #eef2f7; }
+    :global(.report-picker-option > svg) { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: #0a192f; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+    :global(.report-picker-copy) { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 2px; }
+    :global(.report-picker-copy strong) { font-size: .82rem; font-weight: 650; }
+    :global(.report-picker-copy small) { color: #858d99; font-size: .68rem; }
+    :global(.report-picker-option .report-picker-check) { width: 17px; height: 17px; fill: none; stroke: #0a192f; stroke-width: 1.5; }
+    :global([data-theme='dark'] .report-picker-panel) { background: rgba(21,25,31,.98); border-color: rgba(255,255,255,.1); }
+    :global([data-theme='dark'] .report-picker-search), :global([data-theme='dark'] .report-picker-option:hover), :global([data-theme='dark'] .report-picker-option.is-keyboard), :global([data-theme='dark'] .report-picker-option.is-active) { background: rgba(255,255,255,.07); }
+    :global([data-theme='dark'] .report-picker-search input), :global([data-theme='dark'] .report-picker-option) { color: #f5f5f7; }
+    :global([data-theme='dark'] .report-picker-option > svg), :global([data-theme='dark'] .report-picker-option .report-picker-check) { stroke: #dce5f0; }
+</style>

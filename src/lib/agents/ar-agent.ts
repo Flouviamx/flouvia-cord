@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { sql } from '../db';
 import { splitCuotas, isoDay } from '../cobros';
+import { checkQuota, reportUsage } from '../billing';
+import { trackExternalUsage } from '../external-usage';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || '',
@@ -96,6 +98,10 @@ async function executeProposePlan(context: ARContext, input: any): Promise<strin
 }
 
 export async function runARAgent(context: ARContext): Promise<string> {
+  const quota = await checkQuota(context.orgId, 'ia');
+  if (!quota.ok) {
+    return `Le recordamos que tiene un saldo pendiente de $${context.montoAdeudado.toFixed(2)}.${context.payUrl ? ` Puede consultar y pagar aquí: ${context.payUrl}` : ''}`;
+  }
   const systemPrompt = `
 Eres un especialista en Cuentas por Cobrar (Accounts Receivable) trabajando para una empresa comercial.
 Tu objetivo es lograr que el cliente pague el saldo vencido, manteniendo una relación profesional y cordial.
@@ -148,6 +154,15 @@ ${context.allowPlan
       messages,
       ...(tools.length ? { tools } : {}),
     });
+    await trackExternalUsage({
+      orgId: context.orgId,
+      provider: 'anthropic',
+      category: 'ai',
+      operation: 'collection_agent_turn',
+      inputTokens: Number(response.usage?.input_tokens || 0),
+      outputTokens: Number(response.usage?.output_tokens || 0),
+      metadata: { model: process.env.AI_MODEL || 'claude-haiku-4-5-20251001', turn: 1 },
+    });
 
     // Mini-loop de 2 turnos: si el modelo usa la herramienta, se ejecuta con
     // validación real y se le regresa el tool_result para que redacte el correo
@@ -172,6 +187,15 @@ ${context.allowPlan
           tools,
           tool_choice: { type: 'none' },
         });
+        await trackExternalUsage({
+          orgId: context.orgId,
+          provider: 'anthropic',
+          category: 'ai',
+          operation: 'collection_agent_turn',
+          inputTokens: Number(response.usage?.input_tokens || 0),
+          outputTokens: Number(response.usage?.output_tokens || 0),
+          metadata: { model: process.env.AI_MODEL || 'claude-haiku-4-5-20251001', turn: 2 },
+        });
       }
     }
 
@@ -188,9 +212,12 @@ ${context.allowPlan
       VALUES (${context.orgId}, ${context.cotizacionId}, 'agente_ia', ${finalMessage})
     `;
 
+    await reportUsage(context.orgId, 'ia', 1);
+
     return finalMessage;
 
   } catch (error) {
+    await trackExternalUsage({ orgId: context.orgId, provider: 'anthropic', category: 'ai', operation: 'collection_agent_turn', status: 'failure' });
     console.error('Error running AR Agent:', error);
     return 'Hubo un error al generar la respuesta de cobranza.';
   }

@@ -14,7 +14,7 @@ import { createHash } from 'node:crypto';
 import type { APIRoute } from 'astro';
 import { sql, resolveSandboxOrgId } from './db';
 import { reqContext } from './context';
-import { reportUsage } from './billing';
+import { checkQuota, reportUsage } from './billing';
 import { rateLimit, tooMany } from './ratelimit';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -191,6 +191,13 @@ export async function checkApiKeyRateLimit(auth: ApiAuth): Promise<Response | nu
     const maxReqs = auth.type === 'publishable' ? 120 : 600; // pk_ 120/min vs sk_ 600/min
     const keyRl = await rateLimit(`apikey:${auth.keyId}`, maxReqs, 60);
     if (!keyRl.ok) return tooMany(keyRl.retryAfter);
+    // Las llaves live también respetan el tope mensual del plan. Free se corta
+    // al llegar a su cuota; los planes con overage conservan el techo de
+    // emergencia 10x definido en billing.ts para frenar una llave comprometida.
+    if (auth.mode === 'live') {
+        const quota = await checkQuota(auth.orgId, 'api');
+        if (!quota.ok) return jsonError(quota.reason || 'Límite mensual de API alcanzado.', 'api_quota_exceeded', 429);
+    }
     return null;
 }
 

@@ -8,5 +8,7 @@
 // ya se corrigieron; este archivo existe para que un residuo similar en el
 // futuro sea un error de compilación, no un 500 en producción.
 declare namespace App {
-    interface Locals {}
+    interface Locals {
+        opsOperator?: import('./lib/ops-auth').OpsOperator;
+    }
 }

@@ -11,7 +11,10 @@ import { memberCan, type Membership, type PermKey, type PermMap } from './permis
 import { INCLUDED } from './billing';
 import { cached } from './cache';
 import { after } from './after';
-import { venceDia } from './cobros';
+import { dueDateFor, venceDia } from './cobros';
+import {
+    STATUS_ABIERTA, STATUS_GANADA, STATUS_PERDIDA, STATUS_SALIO,
+} from './metrics';
 import {
     STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal,
     type QuoteStatus, type MockItem, type MockEvent, type MockQuote,
@@ -715,12 +718,117 @@ export async function getProductos() {
         sku: (p.sku as string) ?? '',
         nombre: p.nombre as string,
         unidad: p.unidad as string,
+        descripcion: (p.descripcion as string) ?? '',
         precio: num(p.precio_lista),
         costo: num(p.costo),
         activo: p.activo as boolean,
+        createdAt: p.created_at ? new Date(p.created_at as string).toISOString() : null,
         // Matriz de precios por volumen: [{min, precio}] ordenada asc por min.
         preciosVolumen: normVolumen(p.precios_volumen),
     }));
+}
+
+// Ficha + métricas de UN producto para /app/productos/[id]. Sin cachear.
+export async function getProducto(id: string) {
+    const orgId = await getActiveOrgId();
+    const [rows, kpiRows, quotesRows, clientesRows, kitsRows] = await withOrgTx(orgId,
+        sql`select * from productos where id = ${id} and org_id = ${orgId}`,
+
+        sql`select
+                count(distinct c.id)                                                              as cotizaciones,
+                count(distinct c.id) filter (where c.status in ('approved','paid','invoiced'))    as cerradas,
+                coalesce(sum(it.cantidad), 0)                                                      as cantidad,
+                coalesce(sum(it.cantidad) filter (where c.status in ('approved','paid','invoiced')), 0) as cantidad_cerrada,
+                coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad)
+                         filter (where c.status in ('approved','paid','invoiced')), 0)             as importe_cerrado,
+                coalesce(sum(it.precio_unitario * it.cantidad), 0)                                 as lista_total,
+                coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad), 0)  as nego_total,
+                coalesce(sum(it.costo_unitario * it.cantidad)
+                         filter (where c.status in ('approved','paid','invoiced')), 0)              as costo_cerrado,
+                coalesce(avg(coalesce(it.precio_negociado, it.precio_unitario)), 0)                as precio_prom,
+                min(coalesce(it.precio_negociado, it.precio_unitario))                             as precio_min,
+                max(coalesce(it.precio_negociado, it.precio_unitario))                             as precio_max,
+                max(c.created_at)                                                                  as ultima_vez
+            from cotizacion_items it join cotizaciones c on c.id = it.cotizacion_id
+            where c.org_id = ${orgId} and it.producto_id = ${id} and c.status <> 'draft'`,
+
+        // Agregado POR COTIZACIÓN (no distinct on): una cotización puede tener 2 líneas
+        // del mismo producto y aparecería duplicada si no se agrupa.
+        sql`select c.id, c.folio, c.status, c.created_at, coalesce(cl.empresa, null) as empresa,
+                   sum(it.cantidad) as cantidad,
+                   sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad) as importe
+            from cotizacion_items it
+            join cotizaciones c on c.id = it.cotizacion_id
+            left join clientes cl on cl.id = c.cliente_id
+            where c.org_id = ${orgId} and it.producto_id = ${id} and c.status <> 'draft'
+            group by c.id, c.folio, c.status, c.created_at, cl.empresa
+            order by c.created_at desc limit 10`,
+
+        sql`select coalesce(cl.empresa, null) as empresa,
+                   sum(it.cantidad) as cantidad,
+                   sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad) as importe,
+                   count(distinct c.id) as veces
+            from cotizacion_items it
+            join cotizaciones c on c.id = it.cotizacion_id
+            left join clientes cl on cl.id = c.cliente_id
+            where c.org_id = ${orgId} and it.producto_id = ${id} and c.status <> 'draft' and cl.id is not null
+            group by cl.empresa order by importe desc limit 5`,
+
+        sql`select k.id, k.nombre, ki.cantidad
+            from kit_items ki join kits k on k.id = ki.kit_id
+            where ki.org_id = ${orgId} and ki.producto_id = ${id}
+            order by k.nombre`,
+    );
+    if (!rows.length) return null;
+    const p = rows[0];
+    const k = kpiRows[0];
+    const cotizaciones = num(k.cotizaciones), cerradas = num(k.cerradas);
+    const listaTotal = num(k.lista_total), negoTotal = num(k.nego_total);
+    const costoCerrado = num(k.costo_cerrado), importeCerrado = num(k.importe_cerrado);
+    const precioLista = num(p.precio_lista), costo = num(p.costo);
+    // ⚠️ costo_unitario es un snapshot con default 0 — si sale 0 pero el producto SÍ
+    // tiene costo hoy, NO calcular margen realizado con ese dato (daría ~100% falso).
+    // null = "sin costo histórico", la UI lo pinta explícito en vez de inventar un número.
+    const margenRealizado = costoCerrado > 0 && importeCerrado > 0
+        ? ((importeCerrado - costoCerrado) / importeCerrado) * 100
+        : null;
+
+    return {
+        id: p.id as string,
+        sku: (p.sku as string) ?? '',
+        nombre: p.nombre as string,
+        unidad: p.unidad as string,
+        descripcion: (p.descripcion as string) ?? '',
+        precio: precioLista,
+        costo,
+        activo: p.activo as boolean,
+        createdAt: p.created_at ? new Date(p.created_at as string).toISOString() : null,
+        preciosVolumen: normVolumen(p.precios_volumen),
+        metricas: {
+            cotizaciones, cerradas,
+            tasaCierre: cotizaciones ? Math.round((cerradas / cotizaciones) * 100) : 0,
+            cantidadVendida: num(k.cantidad_cerrada),
+            importeCerrado,
+            precioPromedio: num(k.precio_prom),
+            precioMin: num(k.precio_min),
+            precioMax: num(k.precio_max),
+            descuentoCedido: Math.max(0, listaTotal - negoTotal),
+            descuentoCedidoPct: listaTotal > 0 ? ((listaTotal - negoTotal) / listaTotal) * 100 : 0,
+            margenLista: precioLista > 0 ? ((precioLista - costo) / precioLista) * 100 : null,
+            margenRealizado,
+            ultimaVez: k.ultima_vez ? new Date(k.ultima_vez as string).toISOString() : null,
+        },
+        cotizaciones: quotesRows.map((q: any) => ({
+            id: q.id as string, folio: q.folio as string, status: q.status as string,
+            cliente: (q.empresa as string) || null,
+            cantidad: num(q.cantidad), importe: num(q.importe),
+            creada: new Date(q.created_at as string).toISOString(),
+        })),
+        topClientes: clientesRows.map((c: any) => ({
+            empresa: c.empresa as string, cantidad: num(c.cantidad), importe: num(c.importe), veces: num(c.veces),
+        })),
+        kits: kitsRows.map((k2: any) => ({ id: k2.id as string, nombre: k2.nombre as string, cantidad: num(k2.cantidad) })),
+    };
 }
 
 // Normaliza/saneadel jsonb de precios por volumen a [{min, precio}] válido y ordenado.
@@ -908,14 +1016,33 @@ export async function removeKitItem(orgId: string, kitId: string, itemId: string
 // ── CLIENTES ──────────────────────────────────────────────────────────────────
 export async function getClientes() {
     const orgId = await getActiveOrgId();
-    const [rows] = await withOrgTx(orgId, sql`select * from clientes where org_id = ${orgId} order by empresa`);
+    // Lateral join: cuenta y suma cotizaciones POR CLIENTE en la misma query — antes
+    // clientes.astro cargaba getCotizaciones() completo (todas las de la org, sin límite)
+    // solo para hacer un .filter() por nombre de empresa en memoria. Esto es O(n) real.
+    const [rows] = await withOrgTx(orgId, sql`
+        select c.*,
+               coalesce(q.n, 0)       as n_cotizaciones,
+               coalesce(q.cerrado, 0) as cerrado,
+               q.ultima
+        from clientes c
+        left join lateral (
+            select count(*) filter (where status <> 'draft')                                       as n,
+                   coalesce(sum(total) filter (where status in ('approved','paid','invoiced')), 0)  as cerrado,
+                   max(created_at)                                                                  as ultima
+            from cotizaciones
+            where org_id = c.org_id and cliente_id = c.id
+        ) q on true
+        where c.org_id = ${orgId}
+        order by c.empresa`);
     return rows.map(c => ({
         id: c.id as string,
         empresa: c.empresa as string,
         contacto: (c.contacto as string) ?? '',
         email: (c.email as string) ?? '',
+        telefono: (c.telefono as string) ?? '',
         rfc: (c.rfc as string) ?? '',
         terminos: termLabel(c.terminos_default as string),
+        terminosCode: (c.terminos_default as string) || 'contado',
         limite: num(c.limite_credito),
         inicial: initials(c.empresa),
         nivel: (c.nivel as string) || 'estandar',
@@ -923,7 +1050,140 @@ export async function getClientes() {
         regimenFiscal: (c.regimen_fiscal as string) ?? '',
         usoCfdi: (c.uso_cfdi as string) ?? '',
         cpFiscal: (c.cp_fiscal as string) ?? '',
+        origen: (c.origen as string) || 'app',
+        createdAt: c.created_at ? new Date(c.created_at as string).toISOString() : null,
+        fiscalCompleto: !!((c.regimen_fiscal as string) && (c.cp_fiscal as string)),
+        nCotizaciones: num(c.n_cotizaciones),
+        cerrado: num(c.cerrado),
+        ultimaActividad: c.ultima ? new Date(c.ultima as string).toISOString() : null,
     }));
+}
+
+// Ficha + métricas de UN cliente para /app/clientes/[id]. Sin cachear: editar → volver
+// debe reflejar el cambio de inmediato.
+export async function getCliente(id: string) {
+    const orgId = await getActiveOrgId();
+    const [rows, kpiRows, cobradoRows, recRows, quotesRows, prodRows, margRows, mesesRows] = await withOrgTx(orgId,
+        sql`select * from clientes where id = ${id} and org_id = ${orgId}`,
+
+        // "Cerrada" = status in ('approved','paid','invoiced') — mismo criterio que
+        // getAnalytics()/getDesempeno(). El saldo abierto excluye es_recurrente (una
+        // iguala al corriente nunca es "cartera pendiente", igual que getCobranza()).
+        sql`select
+                count(*) filter (where status <> 'draft')                                        as cotizaciones,
+                count(*) filter (where status in ('sent','viewed','approved','paid','invoiced'))  as enviadas,
+                count(*) filter (where status in ('approved','paid','invoiced'))                  as cerradas,
+                count(*) filter (where status in ('rejected','expired'))                          as perdidas,
+                count(*) filter (where status in ('sent','viewed'))                               as abiertas,
+                coalesce(sum(total) filter (where status in ('approved','paid','invoiced')), 0)   as cerrado_total,
+                coalesce(sum(total) filter (where status in ('sent','viewed')), 0)                as pipeline_total,
+                coalesce(sum(total) filter (where status in ('approved','invoiced')
+                                              and es_recurrente is not true), 0)                  as saldo_abierto,
+                coalesce(avg(extract(epoch from (approved_at - created_at))/86400)
+                         filter (where status in ('approved','paid','invoiced')
+                                   and approved_at is not null), 0)                                as dias_cierre,
+                max(coalesce(approved_at, sent_at, created_at))                                    as ultima_actividad
+            from cotizaciones where org_id = ${orgId} and cliente_id = ${id}`,
+
+        // Cobrado directo — MISMA semántica que getCobros(): 'paid' o paid_at seteado.
+        sql`select coalesce(sum(total), 0) as cobrado
+            from cotizaciones
+            where org_id = ${orgId} and cliente_id = ${id} and (status = 'paid' or paid_at is not null)`,
+
+        // Cobrado de igualas recurrentes — universo DISJUNTO del anterior (una iguala
+        // nunca marca cotizaciones.paid_at). Se suma en JS, sin doble conteo.
+        sql`select coalesce(sum(co.monto), 0) as cobrado
+            from cotizacion_cobros co
+            join cotizaciones c on c.id = co.cotizacion_id
+            where co.org_id = ${orgId} and co.status = 'pagado'
+              and c.es_recurrente is true and c.cliente_id = ${id}`,
+
+        sql`select id, folio, status, total, created_at, approved_at, public_token, es_recurrente
+            from cotizaciones where org_id = ${orgId} and cliente_id = ${id}
+            order by created_at desc limit 10`,
+
+        // Qué le vendes. cotizacion_items NO tiene org_id — el aislamiento sale del join.
+        sql`select coalesce(p.nombre, it.descripcion) as nombre,
+                   coalesce(sum(it.cantidad), 0) as cantidad,
+                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad), 0) as importe,
+                   count(distinct c.id) as veces
+            from cotizacion_items it
+            join cotizaciones c on c.id = it.cotizacion_id
+            left join productos p on p.id = it.producto_id
+            where c.org_id = ${orgId} and c.cliente_id = ${id} and c.status <> 'draft'
+            group by 1 order by importe desc limit 5`,
+
+        // Descuento real cedido (mismo cálculo que getAnalytics().margen).
+        sql`select coalesce(sum(it.precio_unitario * it.cantidad), 0) as lista,
+                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad), 0) as nego
+            from cotizacion_items it join cotizaciones c on c.id = it.cotizacion_id
+            where c.org_id = ${orgId} and c.cliente_id = ${id} and c.status <> 'draft'`,
+
+        sql`select to_char(date_trunc('month', created_at), 'YYYY-MM') as ym,
+                   coalesce(sum(total), 0) as cotizado
+            from cotizaciones
+            where org_id = ${orgId} and cliente_id = ${id}
+              and created_at >= date_trunc('month', now()) - interval '11 months'
+            group by 1 order by 1`,
+    );
+    if (!rows.length) return null;
+    const c = rows[0];
+    const k = kpiRows[0];
+    const cobradoTotal = num(cobradoRows[0]?.cobrado) + num(recRows[0]?.cobrado);
+    const enviadas = num(k.enviadas), cerradas = num(k.cerradas);
+    const cerradoTotal = num(k.cerrado_total);
+    const limite = num(c.limite_credito);
+    const saldoAbierto = num(k.saldo_abierto);
+    const marg = margRows[0];
+    const listaTotal = num(marg?.lista), negoTotal = num(marg?.nego);
+    const ultimaActividad = k.ultima_actividad ? new Date(k.ultima_actividad as string) : null;
+
+    return {
+        id: c.id as string,
+        empresa: c.empresa as string,
+        contacto: (c.contacto as string) ?? '',
+        email: (c.email as string) ?? '',
+        telefono: (c.telefono as string) ?? '',
+        rfc: (c.rfc as string) ?? '',
+        terminos: termLabel(c.terminos_default as string),
+        terminosCode: (c.terminos_default as string) || 'contado',
+        limite,
+        inicial: initials(c.empresa),
+        nivel: (c.nivel as string) || 'estandar',
+        descuentoPct: num(c.descuento_pct),
+        regimenFiscal: (c.regimen_fiscal as string) ?? '',
+        usoCfdi: (c.uso_cfdi as string) ?? '',
+        cpFiscal: (c.cp_fiscal as string) ?? '',
+        origen: (c.origen as string) || 'app',
+        createdAt: c.created_at ? new Date(c.created_at as string).toISOString() : null,
+        fiscalCompleto: !!((c.regimen_fiscal as string) && (c.cp_fiscal as string)),
+        metricas: {
+            cotizaciones: num(k.cotizaciones),
+            enviadas, cerradas,
+            perdidas: num(k.perdidas),
+            abiertas: num(k.abiertas),
+            tasaCierre: enviadas ? Math.round((cerradas / enviadas) * 100) : 0,
+            cerradoTotal, pipelineTotal: num(k.pipeline_total), saldoAbierto,
+            cobradoTotal,
+            ticketPromedio: cerradas ? cerradoTotal / cerradas : 0,
+            diasCierre: Math.round(num(k.dias_cierre) * 10) / 10,
+            usoCreditoPct: limite > 0 ? Math.round((saldoAbierto / limite) * 100) : 0,
+            excedeCredito: limite > 0 && saldoAbierto > limite,
+            descuentoCedido: Math.max(0, listaTotal - negoTotal),
+            descuentoCedidoPct: listaTotal > 0 ? ((listaTotal - negoTotal) / listaTotal) * 100 : 0,
+            ultimaActividad: ultimaActividad ? ultimaActividad.toISOString() : null,
+            diasSilencio: ultimaActividad ? Math.floor((Date.now() - ultimaActividad.getTime()) / 86400000) : null,
+        },
+        cotizaciones: quotesRows.map((q: any) => ({
+            id: q.id as string, folio: q.folio as string, status: q.status as string,
+            total: num(q.total), creada: new Date(q.created_at as string).toISOString(),
+            esRecurrente: !!q.es_recurrente, token: q.public_token as string,
+        })),
+        productos: prodRows.map((p: any) => ({
+            nombre: p.nombre as string, cantidad: num(p.cantidad), importe: num(p.importe), veces: num(p.veces),
+        })),
+        meses: mesesRows.map((m: any) => ({ ym: m.ym as string, cotizado: num(m.cotizado) })),
+    };
 }
 
 // ── COTIZACIONES ──────────────────────────────────────────────────────────────
@@ -1265,7 +1525,7 @@ export async function markViewed(token: string) {
     after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.viewed'));
 }
 
-// ── ANALÍTICA (/app/analitica) ────────────────────────────────────────────────
+// ── ANALÍTICA (Informes) ──────────────────────────────────────────────────────
 // Seis queries en un solo batch HTTP — mejora significativa de latencia.
 export async function getAnalytics() {
     // Cacheado ~30s: agregados de tendencia toleran staleness leve; recorta los
@@ -1278,17 +1538,17 @@ async function getAnalyticsUncached() {
 
     const [kRows, meses, margRows, clientes, productos, plRows] = await withOrgTx(orgId,
         sql`select
-                count(*) filter (where status in ('sent','viewed','approved','paid','invoiced')) as enviadas,
+                count(*) filter (where status = any(${STATUS_SALIO})) as enviadas,
                 count(*) filter (where status in ('viewed','approved','paid','invoiced')) as vistas,
-                count(*) filter (where status in ('approved','paid','invoiced')) as aprobadas,
-                count(*) filter (where status in ('paid','invoiced')) as pagadas,
-                coalesce(sum(total) filter (where status in ('approved','paid','invoiced')),0) as cerrado_total,
+                count(*) filter (where status = any(${STATUS_GANADA})) as aprobadas,
+                count(*) filter (where status = 'paid' or paid_at is not null) as pagadas,
+                coalesce(sum(total) filter (where status = any(${STATUS_GANADA})),0) as cerrado_total,
                 coalesce(avg(extract(epoch from (approved_at - created_at))/86400)
-                         filter (where status in ('approved','paid','invoiced') and approved_at is not null),0) as dias_cierre
+                         filter (where status = any(${STATUS_GANADA}) and approved_at is not null),0) as dias_cierre
             from cotizaciones where org_id = ${orgId}`,
         sql`select to_char(date_trunc('month', created_at),'YYYY-MM') as ym,
                    coalesce(sum(total),0) as cotizado,
-                   coalesce(sum(total) filter (where status in ('approved','paid','invoiced')),0) as cerrado
+                   coalesce(sum(total) filter (where status = any(${STATUS_GANADA})),0) as cerrado
             from cotizaciones
             where org_id = ${orgId} and created_at >= date_trunc('month', now()) - interval '5 months'
             group by 1 order by 1`,
@@ -1298,9 +1558,9 @@ async function getAnalyticsUncached() {
             join cotizaciones c on c.id = it.cotizacion_id
             where c.org_id = ${orgId} and c.status <> 'draft'`,
         sql`select cl.empresa,
-                   coalesce(sum(c.total) filter (where c.status in ('approved','paid','invoiced')),0) as cerrado,
-                   count(*) as cotizaciones,
-                   count(*) filter (where c.status in ('approved','paid','invoiced')) as aprobadas
+                   coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})),0) as cerrado,
+                   count(*) filter (where c.status = any(${STATUS_SALIO})) as cotizaciones,
+                   count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas
             from cotizaciones c join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId}
             group by cl.empresa
@@ -1364,9 +1624,10 @@ async function getAnalyticsUncached() {
 // canónica — no se puede resolver en un solo `group by` porque cada una bucketea
 // por una columna de fecha distinta:
 //   · cotizado → created_at (cuando se armó la cotización)
-//   · cerrado  → coalesce(approved_at, created_at) — mismo criterio que getAnalytics
+//   · cerrado  → coalesce(approved_at, created_at) (fecha de cierre; getAnalytics
+//                agrega por created_at y por eso no comparte este criterio)
 //   · cobrado  → coalesce(paid_at, approved_at, created_at) — dinero que de verdad entró
-// 3 queries en el mismo batch withOrgTx (mismo patrón que getCFO/getAnalytics),
+// 4 queries en el mismo batch withOrgTx (mismo patrón que getCFO/getAnalytics),
 // fusionadas en JS con relleno de huecos a 0 (día sin movimiento = 0, no ausente).
 // Único caller: src/pages/app/index.astro — el toggle 7D/30D/90D y el rango custom
 // (hasta 365 días atrás) se resuelven 100% en el cliente recortando este mismo array.
@@ -1377,26 +1638,36 @@ export async function getSerieDiaria() {
 }
 async function getSerieDiariaUncached() {
     const orgId = await getActiveOrgId();
-    const [cotizadoRows, cerradoRows, cobradoRows] = await withOrgTx(orgId,
+    const [cotizadoRows, cerradoRows, cobradoRows, recurrenteRows] = await withOrgTx(orgId,
         sql`select to_char(date_trunc('day', created_at), 'YYYY-MM-DD') as fecha,
                    coalesce(sum(total),0) as monto
             from cotizaciones
             where org_id = ${orgId}
+              and status <> 'draft'
               and created_at >= current_date - interval '364 days'
             group by 1 order by 1`,
         sql`select to_char(date_trunc('day', coalesce(approved_at, created_at)), 'YYYY-MM-DD') as fecha,
                    coalesce(sum(total),0) as monto
             from cotizaciones
             where org_id = ${orgId}
-              and status in ('approved','paid','invoiced')
+              and status = any(${STATUS_GANADA})
               and coalesce(approved_at, created_at) >= current_date - interval '364 days'
             group by 1 order by 1`,
         sql`select to_char(date_trunc('day', coalesce(paid_at, approved_at, created_at)), 'YYYY-MM-DD') as fecha,
                    coalesce(sum(total),0) as monto
             from cotizaciones
             where org_id = ${orgId}
-              and status = 'paid'
+              and (status = 'paid' or paid_at is not null)
               and coalesce(paid_at, approved_at, created_at) >= current_date - interval '364 days'
+            group by 1 order by 1`,
+        sql`select to_char(date_trunc('day', coalesce(co.paid_at, co.created_at)), 'YYYY-MM-DD') as fecha,
+                   coalesce(sum(co.monto),0) as monto
+            from cotizacion_cobros co
+            join cotizaciones c on c.id = co.cotizacion_id
+            where co.org_id = ${orgId}
+              and co.status = 'pagado'
+              and c.es_recurrente is true
+              and coalesce(co.paid_at, co.created_at) >= current_date - interval '364 days'
             group by 1 order by 1`,
     );
     const toMap = (rows: any[]) => {
@@ -1405,6 +1676,10 @@ async function getSerieDiariaUncached() {
         return m;
     };
     const cotizadoM = toMap(cotizadoRows), cerradoM = toMap(cerradoRows), cobradoM = toMap(cobradoRows);
+    for (const r of recurrenteRows) {
+        const fecha = r.fecha as string;
+        cobradoM.set(fecha, (cobradoM.get(fecha) ?? 0) + num(r.monto));
+    }
 
     // Relleno de huecos, 365 puntos exactos, en UTC (date_trunc de Postgres corre
     // en GMT; toISOString fuerza UTC sin importar el TZ del proceso Node).
@@ -1426,7 +1701,7 @@ async function getSerieDiariaUncached() {
 
 // ── Embudo + rankings acotados a un rango de fechas (picker custom del dashboard) ──
 // Función DEDICADA (no se parametriza getAnalytics): getAnalytics la consumen también
-// /app/analitica y el tool MCP resumen_negocio, y su query `forecast` es un snapshot del
+// Informes y el tool MCP resumen_negocio; su query `forecast` es un snapshot del
 // pipeline vivo (sent/viewed HOY) que perdería sentido si se filtrara por fecha pasada.
 // Esta función solo trae lo que el rango del dashboard sí necesita: embudo y rankings,
 // ambos como cohorte "de lo creado en este periodo, cuánto avanzó". Clave de caché
@@ -1435,19 +1710,119 @@ export async function getAnalyticsRango(desde: string, hasta: string) {
     const orgId = await getActiveOrgId();
     return cached(`analytics-rango:${orgId}:${desde}:${hasta}`, 30, () => getAnalyticsRangoUncached(orgId, desde, hasta));
 }
+
+// ── DIAGNÓSTICO COMERCIAL (Informes) ─────────────────────────────────────────
+// Esta lectura es deliberadamente distinta a getAnalytics(): no repite el resumen
+// del dashboard; explica dónde se frena el cierre y qué valor exige seguimiento.
+// Todas las cohortes se acotan por created_at para que un rango responda a la misma
+// pregunta: «¿qué ocurrió con las cotizaciones originadas en este periodo?».
+export async function getAnalyticsDiagnosis(desde: string, hasta: string) {
+    const orgId = await getActiveOrgId();
+    return cached(`analytics-diagnosis:${orgId}:${desde}:${hasta}`, 30,
+        () => getAnalyticsDiagnosisUncached(orgId, desde, hasta));
+}
+
+async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta: string) {
+    const [summaryRows, seriesRows, stageRows, stalledRows, lossRows, discountRows, clientRows] = await withOrgTx(orgId,
+        sql`select
+                count(*) filter (where status = any(${STATUS_SALIO})) as enviadas,
+                count(*) filter (where status in ('viewed','approved','paid','invoiced')) as vistas,
+                count(*) filter (where status = any(${STATUS_GANADA})) as aprobadas,
+                count(*) filter (where status = 'paid' or paid_at is not null) as pagadas,
+                coalesce(sum(total) filter (where status = any(${STATUS_GANADA})), 0) as cerrado,
+                coalesce(avg(extract(epoch from (approved_at - created_at)) / 86400)
+                    filter (where status = any(${STATUS_GANADA}) and approved_at is not null), 0) as dias_cierre
+            from cotizaciones
+            where org_id = ${orgId} and created_at >= ${desde} and created_at < (${hasta}::date + interval '1 day')`,
+        sql`select to_char(day, 'YYYY-MM-DD') as fecha,
+                coalesce(sum(c.total) filter (where c.status = any(${STATUS_SALIO})), 0) as cotizado,
+                coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado,
+                coalesce(sum(c.total) filter (where c.status = 'paid' or c.paid_at is not null), 0) as cobrado
+            from generate_series(${desde}::date, ${hasta}::date, interval '1 day') day
+            left join cotizaciones c on c.org_id = ${orgId}
+                and c.created_at >= day and c.created_at < day + interval '1 day'
+            group by day order by day`,
+        // Pipeline vivo: es una fotografía deliberada para priorizar trabajo hoy.
+        sql`select status, count(*) as n, coalesce(sum(total), 0) as monto
+            from cotizaciones
+            where org_id = ${orgId} and status = any(${[...STATUS_ABIERTA, ...STATUS_GANADA]})
+            group by status`,
+        // Se considera detenido si no hubo actividad en siete días. La vigencia
+        // próxima se separa para que no compita con el seguimiento general.
+        sql`select c.id, c.folio, c.total, c.status, c.vigencia,
+                coalesce(cl.empresa, 'Sin cliente') as empresa,
+                coalesce(c.viewer_last_seen, c.sent_at, c.created_at) as ultima_actividad,
+                floor(extract(epoch from (now() - coalesce(c.viewer_last_seen, c.sent_at, c.created_at))) / 86400) as dias_sin_movimiento
+            from cotizaciones c
+            left join clientes cl on cl.id = c.cliente_id
+            where c.org_id = ${orgId} and c.status in ('sent','viewed')
+              and coalesce(c.viewer_last_seen, c.sent_at, c.created_at) < now() - interval '7 days'
+            order by c.total desc, ultima_actividad asc limit 5`,
+        sql`select status, count(*) as n, coalesce(sum(total), 0) as monto
+            from cotizaciones
+            where org_id = ${orgId} and created_at >= ${desde} and created_at < (${hasta}::date + interval '1 day')
+              and status = any(${STATUS_PERDIDA})
+            group by status`,
+        sql`select coalesce(p.nombre, it.descripcion) as nombre,
+                coalesce(sum(it.precio_unitario * it.cantidad), 0) as lista,
+                coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad), 0) as negociado,
+                count(distinct c.id) as cotizaciones
+            from cotizacion_items it
+            join cotizaciones c on c.id = it.cotizacion_id
+            left join productos p on p.id = it.producto_id
+            where c.org_id = ${orgId} and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
+              and c.status <> 'draft'
+            group by coalesce(p.nombre, it.descripcion)
+            having sum(it.precio_unitario * it.cantidad) > sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad)
+            order by (sum(it.precio_unitario * it.cantidad) - sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad)) desc limit 5`,
+        sql`select coalesce(cl.empresa, 'Sin cliente') as empresa,
+                count(*) filter (where c.status in ('sent','viewed')) as abiertas,
+                coalesce(sum(c.total) filter (where c.status in ('sent','viewed')), 0) as pipeline,
+                count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas,
+                count(*) filter (where c.status = any(${STATUS_SALIO})) as enviadas
+            from cotizaciones c
+            left join clientes cl on cl.id = c.cliente_id
+            where c.org_id = ${orgId} and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
+            group by coalesce(cl.empresa, 'Sin cliente')
+            having count(*) filter (where c.status = any(${STATUS_SALIO})) > 0
+            order by pipeline desc, abiertas desc limit 5`,
+    );
+
+    const s = summaryRows[0];
+    const stages = new Map(stageRows.map((r: any) => [r.status as string, { n: num(r.n), monto: num(r.monto) }]));
+    const losses = new Map(lossRows.map((r: any) => [r.status as string, { n: num(r.n), monto: num(r.monto) }]));
+    const sent = num(s.enviadas), views = num(s.vistas), approved = num(s.aprobadas), paid = num(s.pagadas);
+
+    return {
+        summary: { sent, views, approved, paid, cerrado: num(s.cerrado), diasCierre: Math.round(num(s.dias_cierre) * 10) / 10 },
+        series: seriesRows.map((r: any) => ({ fecha: r.fecha as string, cotizado: num(r.cotizado), cerrado: num(r.cerrado), cobrado: num(r.cobrado) })),
+        funnel: { sent, views, approved, paid },
+        pipeline: ['sent', 'viewed', 'approved', 'paid', 'invoiced'].map((key) => ({ key, ...(stages.get(key) ?? { n: 0, monto: 0 }) })),
+        stalled: stalledRows.map((r: any) => ({ id: r.id as string, folio: r.folio as string, empresa: r.empresa as string, total: num(r.total), status: r.status as string, vigencia: r.vigencia ? String(r.vigencia).slice(0, 10) : null, dias: num(r.dias_sin_movimiento) })),
+        losses: { rejected: losses.get('rejected') ?? { n: 0, monto: 0 }, expired: losses.get('expired') ?? { n: 0, monto: 0 } },
+        discounts: discountRows.map((r: any) => {
+            const lista = num(r.lista), negociado = num(r.negociado);
+            return { nombre: r.nombre as string, cedido: Math.max(0, lista - negociado), pct: lista ? ((lista - negociado) / lista) * 100 : 0, cotizaciones: num(r.cotizaciones) };
+        }),
+        clients: clientRows.map((r: any) => {
+            const enviadas = num(r.enviadas), aprobadas = num(r.aprobadas);
+            return { empresa: r.empresa as string, abiertas: num(r.abiertas), pipeline: num(r.pipeline), tasa: enviadas ? Math.round((aprobadas / enviadas) * 100) : 0 };
+        }),
+    };
+}
 async function getAnalyticsRangoUncached(orgId: string, desde: string, hasta: string) {
     const [kRows, clientes, productos] = await withOrgTx(orgId,
         sql`select
-                count(*) filter (where status in ('sent','viewed','approved','paid','invoiced')) as enviadas,
+                count(*) filter (where status = any(${STATUS_SALIO})) as enviadas,
                 count(*) filter (where status in ('viewed','approved','paid','invoiced')) as vistas,
-                count(*) filter (where status in ('approved','paid','invoiced')) as aprobadas,
-                count(*) filter (where status in ('paid','invoiced')) as pagadas
+                count(*) filter (where status = any(${STATUS_GANADA})) as aprobadas,
+                count(*) filter (where status = 'paid' or paid_at is not null) as pagadas
             from cotizaciones
             where org_id = ${orgId} and created_at >= ${desde} and created_at < (${hasta}::date + interval '1 day')`,
         sql`select cl.empresa,
-                   coalesce(sum(c.total) filter (where c.status in ('approved','paid','invoiced')),0) as cerrado,
-                   count(*) as cotizaciones,
-                   count(*) filter (where c.status in ('approved','paid','invoiced')) as aprobadas
+                   coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})),0) as cerrado,
+                   count(*) filter (where c.status = any(${STATUS_SALIO})) as cotizaciones,
+                   count(*) filter (where c.status = any(${STATUS_GANADA})) as aprobadas
             from cotizaciones c join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId} and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
             group by cl.empresa
@@ -1483,7 +1858,231 @@ async function getAnalyticsRangoUncached(orgId: string, desde: string, hasta: st
     };
 }
 
+// ── INSIGHTS DE INFORMES (sin tablas nuevas) ─────────────────────────────────
+export async function getCommercialStageTiming(desde: string, hasta: string) {
+    const orgId = await getActiveOrgId();
+    return cached(`report-stage-timing:${orgId}:${desde}:${hasta}`, 60, async () => {
+        const [rows] = await withOrgTx(orgId, sql`
+            with stamps as (
+                select c.id, c.created_at,
+                       min(e.created_at) filter (where e.tipo = 'sent') as sent_at,
+                       min(e.created_at) filter (where e.tipo = 'viewed') as viewed_at,
+                       min(e.created_at) filter (where e.tipo = 'approved') as approved_at,
+                       min(e.created_at) filter (where e.tipo = 'paid') as paid_at
+                from cotizaciones c
+                left join eventos e on e.cotizacion_id = c.id and e.org_id = ${orgId}
+                where c.org_id = ${orgId}
+                  and c.created_at >= ${desde} and c.created_at < (${hasta}::date + interval '1 day')
+                group by c.id, c.created_at
+            )
+            select
+                percentile_cont(0.5) within group (order by extract(epoch from (sent_at - created_at)) / 86400)
+                    filter (where sent_at is not null) as creada_enviada,
+                percentile_cont(0.5) within group (order by extract(epoch from (viewed_at - sent_at)) / 86400)
+                    filter (where viewed_at is not null and sent_at is not null) as enviada_vista,
+                percentile_cont(0.5) within group (order by extract(epoch from (approved_at - viewed_at)) / 86400)
+                    filter (where approved_at is not null and viewed_at is not null) as vista_aprobada,
+                percentile_cont(0.5) within group (order by extract(epoch from (paid_at - approved_at)) / 86400)
+                    filter (where paid_at is not null and approved_at is not null) as aprobada_pagada
+            from stamps`);
+        const row = rows[0] ?? {};
+        return [
+            { key: 'created_sent', label: 'Creada → enviada', dias: Math.max(0, num(row.creada_enviada)) },
+            { key: 'sent_viewed', label: 'Enviada → vista', dias: Math.max(0, num(row.enviada_vista)) },
+            { key: 'viewed_approved', label: 'Vista → aprobada', dias: Math.max(0, num(row.vista_aprobada)) },
+            { key: 'approved_paid', label: 'Aprobada → pagada', dias: Math.max(0, num(row.aprobada_pagada)) },
+        ];
+    });
+}
+
+export async function getClientReportInsights(desde: string, hasta: string) {
+    const orgId = await getActiveOrgId();
+    return cached(`report-clients:${orgId}:${desde}:${hasta}`, 60, async () => {
+        const payBehavior = await getPayBehavior();
+        const [cohortRows, riskRows, levelRows] = await withOrgTx(orgId,
+            sql`with first_quote as (
+                    select cliente_id, min(created_at) as first_at
+                    from cotizaciones where org_id = ${orgId} and cliente_id is not null group by cliente_id
+                )
+                select case when f.first_at >= ${desde}::date then 'nuevo' else 'recurrente' end as tipo,
+                       count(distinct c.cliente_id) as clientes,
+                       count(*) filter (where c.status = any(${STATUS_SALIO})) as cotizaciones,
+                       count(*) filter (where c.status = any(${STATUS_GANADA})) as ganadas,
+                       coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
+                from cotizaciones c join first_quote f on f.cliente_id = c.cliente_id
+                where c.org_id = ${orgId} and c.created_at >= ${desde}
+                  and c.created_at < (${hasta}::date + interval '1 day')
+                group by 1`,
+            sql`select cl.id, cl.empresa, cl.nivel, max(c.created_at) as ultima_actividad,
+                       count(*) filter (where c.status <> 'draft') as cotizaciones,
+                       coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
+                from clientes cl join cotizaciones c on c.cliente_id = cl.id
+                where cl.org_id = ${orgId}
+                group by cl.id, cl.empresa, cl.nivel
+                having max(c.created_at) < now() - interval '90 days'
+                order by cerrado desc limit 10`,
+            sql`select cl.id, coalesce(cl.nivel, 'Sin nivel') as nivel,
+                       coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
+                from clientes cl
+                left join cotizaciones c on c.cliente_id = cl.id and c.org_id = ${orgId}
+                where cl.org_id = ${orgId}
+                group by cl.id, coalesce(cl.nivel, 'Sin nivel')`,
+        );
+        const matrixMap = new Map<string, { nivel: string; comportamiento: string; clientes: number; cerrado: number }>();
+        for (const row of levelRows) {
+            const delay = payBehavior.clientes[row.id as string]?.avgDiasRetraso ?? payBehavior.avgDiasRetraso;
+            const comportamiento = delay <= 0 ? 'puntual' : delay <= 7 ? 'ligero' : 'tarde';
+            const key = `${row.nivel}:${comportamiento}`;
+            const cell = matrixMap.get(key) ?? { nivel: row.nivel as string, comportamiento, clientes: 0, cerrado: 0 };
+            cell.clientes += 1;
+            cell.cerrado += num(row.cerrado);
+            matrixMap.set(key, cell);
+        }
+        return {
+            cohortes: cohortRows.map((row) => ({ tipo: row.tipo as string, clientes: num(row.clientes), cotizaciones: num(row.cotizaciones), ganadas: num(row.ganadas), cerrado: num(row.cerrado) })),
+            enRiesgo: riskRows.map((row) => ({ id: row.id as string, empresa: row.empresa as string, nivel: (row.nivel as string) || '—', cotizaciones: num(row.cotizaciones), cerrado: num(row.cerrado), ultimaActividad: String(row.ultima_actividad).slice(0, 10) })),
+            matriz: [...matrixMap.values()].sort((a, b) => b.cerrado - a.cerrado),
+        };
+    });
+}
+
+export async function getProductReportInsights(desde: string, hasta: string) {
+    const orgId = await getActiveOrgId();
+    return cached(`report-products:${orgId}:${desde}:${hasta}`, 60, async () => {
+        const [rows] = await withOrgTx(orgId, sql`
+            select coalesce(p.nombre, it.descripcion) as nombre,
+                   count(distinct c.id) filter (where c.status = any(${STATUS_SALIO})) as decididas,
+                   count(distinct c.id) filter (where c.status = any(${STATUS_GANADA})) as ganadas,
+                   coalesce(sum(coalesce(it.precio_negociado, it.precio_unitario) * it.cantidad)
+                       filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
+            from cotizacion_items it
+            join cotizaciones c on c.id = it.cotizacion_id
+            left join productos p on p.id = it.producto_id
+            where c.org_id = ${orgId} and c.created_at >= ${desde}
+              and c.created_at < (${hasta}::date + interval '1 day')
+            group by coalesce(p.nombre, it.descripcion)
+            having count(distinct c.id) filter (where c.status = any(${STATUS_SALIO})) > 0
+            order by cerrado desc limit 12`);
+        return rows.map((row) => ({
+            nombre: row.nombre as string, decididas: num(row.decididas), ganadas: num(row.ganadas), cerrado: num(row.cerrado),
+            tasa: num(row.decididas) ? Math.round(num(row.ganadas) / num(row.decididas) * 100) : 0,
+        }));
+    });
+}
+
+export async function getFinanceLevelInsights() {
+    const orgId = await getActiveOrgId();
+    return cached(`report-finance-levels:${orgId}`, 60, async () => {
+        const [rows] = await withOrgTx(orgId, sql`
+            select coalesce(cl.nivel, 'Sin nivel') as nivel,
+                   coalesce(avg(cl.descuento_pct), 0) as descuento,
+                   count(*) filter (where c.status = any(${STATUS_SALIO})) as enviadas,
+                   count(*) filter (where c.status = any(${STATUS_GANADA})) as ganadas,
+                   coalesce(sum(c.total) filter (where c.status = any(${STATUS_GANADA})), 0) as cerrado
+            from clientes cl
+            left join cotizaciones c on c.cliente_id = cl.id and c.org_id = ${orgId}
+            where cl.org_id = ${orgId}
+            group by coalesce(cl.nivel, 'Sin nivel')
+            order by cerrado desc`);
+        return rows.map((row) => ({
+            nivel: row.nivel as string, descuento: num(row.descuento), enviadas: num(row.enviadas),
+            ganadas: num(row.ganadas), cerrado: num(row.cerrado),
+            tasa: num(row.enviadas) ? Math.round(num(row.ganadas) / num(row.enviadas) * 100) : 0,
+        }));
+    });
+}
+
 // ── COBRANZA / CUENTAS POR COBRAR (/app/cobranza) ──────────────────────────────
+export type PayBehavior = {
+    clienteId: string;
+    avgDiasPago: number;
+    avgDiasRetraso: number;
+    muestra: number;
+};
+
+/**
+ * Comportamiento real de pago por cliente. `avgDiasPago` mide aprobación → pago
+ * y alimenta el pipeline probabilístico. `avgDiasRetraso` mide vencimiento → pago
+ * y desplaza únicamente el timing de la cartera cierta; nunca reduce su importe.
+ */
+export async function getPayBehavior() {
+    const orgId = await getActiveOrgId();
+    return cached(`pay-behavior:${orgId}`, 60, getPayBehaviorUncached);
+}
+
+async function getPayBehaviorUncached() {
+    const orgId = await getActiveOrgId();
+    const [rows, delayRows] = await withOrgTx(orgId, sql`
+        select c.cliente_id,
+               count(*) as muestra,
+               coalesce(avg(extract(epoch from (
+                   e.paid_at - coalesce(c.approved_at, c.created_at)
+               )) / 86400), 0) as avg_pago,
+               coalesce(avg(extract(epoch from (
+                   e.paid_at - (
+                       coalesce(c.approved_at, c.created_at)
+                       + make_interval(days => case coalesce(c.terminos, cl.terminos_default)
+                           when 'net30' then 30 when 'net60' then 60 else 0 end)
+                   )
+               )) / 86400), 0) as avg_retraso
+        from cotizaciones c
+        left join clientes cl on cl.id = c.cliente_id
+        join (
+            select cotizacion_id, max(created_at) as paid_at
+            from eventos
+            where org_id = ${orgId} and tipo = 'paid'
+            group by cotizacion_id
+        ) e on e.cotizacion_id = c.id
+        where c.org_id = ${orgId} and c.cliente_id is not null
+          and (c.status = 'paid' or c.paid_at is not null)
+        group by c.cliente_id`,
+        sql`select extract(epoch from (
+                   e.paid_at - (
+                       coalesce(c.approved_at, c.created_at)
+                       + make_interval(days => case coalesce(c.terminos, cl.terminos_default)
+                           when 'net30' then 30 when 'net60' then 60 else 0 end)
+                   )
+               )) / 86400 as dias
+            from cotizaciones c
+            left join clientes cl on cl.id = c.cliente_id
+            join (
+                select cotizacion_id, max(created_at) as paid_at
+                from eventos where org_id = ${orgId} and tipo = 'paid'
+                group by cotizacion_id
+            ) e on e.cotizacion_id = c.id
+            where c.org_id = ${orgId} and (c.status = 'paid' or c.paid_at is not null)`,
+    );
+
+    const clientes: Record<string, PayBehavior> = {};
+    let sumaRetraso = 0;
+    let sumaPago = 0;
+    let muestra = 0;
+    for (const row of rows) {
+        const item: PayBehavior = {
+            clienteId: row.cliente_id as string,
+            avgDiasPago: Math.max(0, Math.round(num(row.avg_pago))),
+            avgDiasRetraso: Math.round(num(row.avg_retraso)),
+            muestra: num(row.muestra),
+        };
+        clientes[item.clienteId] = item;
+        sumaPago += item.avgDiasPago * item.muestra;
+        sumaRetraso += item.avgDiasRetraso * item.muestra;
+        muestra += item.muestra;
+    }
+    return {
+        clientes,
+        muestra,
+        avgDiasPago: muestra ? Math.round(sumaPago / muestra) : 30,
+        avgDiasRetraso: muestra ? Math.round(sumaRetraso / muestra) : 0,
+        histograma: [
+            { key: 'puntual', label: 'A tiempo', n: delayRows.filter((row) => num(row.dias) <= 0).length },
+            { key: 'd7', label: '1–7 días tarde', n: delayRows.filter((row) => num(row.dias) > 0 && num(row.dias) <= 7).length },
+            { key: 'd30', label: '8–30 días tarde', n: delayRows.filter((row) => num(row.dias) > 7 && num(row.dias) <= 30).length },
+            { key: 'd30p', label: '+30 días tarde', n: delayRows.filter((row) => num(row.dias) > 30).length },
+        ],
+    };
+}
+
 // Cacheado ~30s (mismo patrón que getCFO/getAnalytics): el dashboard principal
 // también consume `aging` para la dona de cartera, y sin caché esta función hace
 // trabajo pesado en JS por cotización en cada carga de /app.
@@ -1493,28 +2092,23 @@ export async function getCobranza() {
 }
 async function getCobranzaUncached() {
     const orgId = await getActiveOrgId();
+    const payBehavior = await getPayBehavior();
 
     // orgs no tiene FORCE RLS.
     const [org] = await sql`select * from orgs where id = ${orgId}`;
     const rate = num(org?.interes_moratorio_pct);
 
     // Tres queries de datos en un solo batch.
-    const [dlRows, rows, promRows] = await withOrgTx(orgId,
-        sql`select coalesce(avg(extract(epoch from (e.paid_at - (coalesce(c.approved_at, c.created_at)
-                + make_interval(days => case c.terminos when 'net30' then 30 when 'net60' then 60 else 0 end)))) / 86400), 0) as avg_delay
-            from cotizaciones c
-            join (select cotizacion_id, max(created_at) as paid_at from eventos where org_id = ${orgId} and tipo = 'paid' group by cotizacion_id) e
-              on e.cotizacion_id = c.id
-            where c.org_id = ${orgId} and c.status = 'paid'`,
+    const [rows, promRows, promStatsRows] = await withOrgTx(orgId,
         // Las igualas recurrentes (es_recurrente) se EXCLUYEN: su status se queda
         // en 'approved' para siempre pero se cobran solas cada mes vía Stripe
         // Subscription — no son cartera vencida ni acumulan aging.
-        sql`select c.id, c.folio, c.total, c.terminos, c.status, c.public_token,
+        sql`select c.id, c.folio, c.total, c.cliente_id, coalesce(c.terminos, cl.terminos_default) as terminos, c.status, c.public_token,
                    coalesce(c.approved_at, c.created_at) as base_date,
                    cl.empresa, cl.limite_credito, cl.telefono
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
-            where c.org_id = ${orgId} and c.status in ('approved','invoiced')
+            where c.org_id = ${orgId} and c.status in ('approved','invoiced') -- canon: STATUS_POR_COBRAR
               and c.es_recurrente is not true
             order by coalesce(c.approved_at, c.created_at) asc`,
         // Promesas de pago vigentes (pendientes) — la más reciente por cotización.
@@ -1522,26 +2116,31 @@ async function getCobranzaUncached() {
             from promesas_pago
             where org_id = ${orgId} and estado = 'pendiente'
             order by created_at desc`,
+        sql`select count(*) filter (where estado = 'cumplida') as cumplidas,
+                   count(*) filter (where estado = 'incumplida') as incumplidas,
+                   count(*) filter (where estado = 'pendiente' and fecha_promesa < current_date) as pendientes_vencidas,
+                   count(*) as total
+            from promesas_pago where org_id = ${orgId}`,
     );
 
     // Mapa cotizacion_id → promesa pendiente más reciente.
     const promMap = new Map<string, any>();
     for (const p of promRows) { if (!promMap.has(p.cotizacion_id as string)) promMap.set(p.cotizacion_id as string, p); }
 
-    const avgDelay = Math.round(num(dlRows[0]?.avg_delay));
-    const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
+    const avgDelay = payBehavior.avgDiasRetraso;
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const MS = 86400000;
 
     const items = rows.map((r) => {
         const tot = num(r.total);
-        const base = new Date(r.base_date as string);
-        const due = new Date(base); due.setDate(due.getDate() + (DAYS[r.terminos as string] ?? 0));
+        const due = dueDateFor(r.base_date as string, r.terminos as string);
         const diff = Math.floor((today.getTime() - due.getTime()) / MS);
         const overdue = diff > 0;
         const bucket = !overdue ? 'vigente' : diff <= 30 ? 'd30' : diff <= 60 ? 'd60' : 'd60p';
         const interes = overdue && rate > 0 ? tot * (Math.pow(1 + rate / 100, diff / 30) - 1) : 0;
-        const expected = new Date(due); expected.setDate(expected.getDate() + avgDelay);
+        const clientBehavior = r.cliente_id ? payBehavior.clientes[r.cliente_id as string] : undefined;
+        const clientDelay = clientBehavior?.avgDiasRetraso ?? avgDelay;
+        const expected = new Date(due); expected.setDate(expected.getDate() + clientDelay);
         const expDias = Math.round((expected.getTime() - today.getTime()) / MS);
         const prom = promMap.get(r.id as string);
         const fechaProm = prom ? String(prom.fecha_promesa).slice(0, 10) : '';
@@ -1550,12 +2149,14 @@ async function getCobranzaUncached() {
             empresa: (r.empresa as string) ?? 'Sin cliente',
             inicial: initials((r.empresa as string) ?? '—'),
             total: tot, terminos: termLabel(r.terminos as string),
+            clienteId: (r.cliente_id as string) ?? null,
             status: r.status as string, token: r.public_token as string,
             telefono: (r.telefono as string) ?? '',
             vence: fmtDate(due), overdue,
             diasVencido: overdue ? diff : 0, diasParaVencer: overdue ? 0 : -diff,
             bucket, interes: Math.round(interes),
             expectedFecha: fmtDate(expected), expectedDias: expDias,
+            avgDiasCliente: clientDelay,
             // Promesa de pago pendiente (seguimiento manual). null = sin promesa.
             promesa: prom ? {
                 id: prom.id as string,
@@ -1591,6 +2192,7 @@ async function getCobranzaUncached() {
         .map((c) => ({ ...c, excede: c.limite > 0 && c.saldo > c.limite, uso: c.limite > 0 ? Math.round((c.saldo / c.limite) * 100) : 0 }))
         .sort((a, b) => b.saldo - a.saldo);
 
+    const promStats = promStatsRows[0] ?? {};
     return {
         items: items.sort((a, b) => b.diasVencido - a.diasVencido || a.diasParaVencer - b.diasParaVencer),
         resumen: {
@@ -1605,10 +2207,18 @@ async function getCobranzaUncached() {
             esperado30: items.filter(i => i.expectedDias <= 30).reduce((s, i) => s + i.total, 0),
         },
         aging, clientes,
+        promesas: {
+            cumplidas: num(promStats.cumplidas), incumplidas: num(promStats.incumplidas),
+            pendientesVencidas: num(promStats.pendientes_vencidas), total: num(promStats.total),
+            cumplimientoPct: num(promStats.cumplidas) + num(promStats.incumplidas)
+                ? Math.round(num(promStats.cumplidas) / (num(promStats.cumplidas) + num(promStats.incumplidas)) * 100)
+                : 0,
+        },
+        payBehavior,
     };
 }
 
-// ── CFO DASHBOARD (/app/cfo) ───────────────────────────────────────────────────
+// ── MOTOR FINANCIERO COMPARTIDO (Informes + Inicio) ───────────────────────────
 // Proyección de flujo de caja semanal. Cruza el pipeline abierto (sent/viewed)
 // con el historial REAL por cliente: tasa de cierre (aprobadas / enviadas),
 // días promedio a cierre (created→approved) y días a cobro (approved→paid).
@@ -1618,8 +2228,9 @@ export async function getCFO() {
 }
 async function getCFOUncached() {
     const orgId = await getActiveOrgId();
+    const payBehavior = await getPayBehavior();
 
-    const [activos, histRows, pagoRows] = await withOrgTx(orgId,
+    const [activos, histRows, pagoRows, carteraRows, susRows] = await withOrgTx(orgId,
         // Pipeline abierto.
         sql`select c.id, c.folio, c.total, c.status, c.cliente_id,
                    coalesce(cl.empresa, 'Sin cliente') as empresa,
@@ -1629,10 +2240,10 @@ async function getCFOUncached() {
             where c.org_id = ${orgId} and c.status in ('sent','viewed')`,
         // Historial por cliente: tasa de cierre + días a cierre.
         sql`select c.cliente_id,
-                   count(*) filter (where c.status in ('sent','viewed','approved','paid','invoiced')) as total_hist,
-                   count(*) filter (where c.status in ('approved','paid','invoiced')) as aprob_hist,
+                   count(*) filter (where c.status = any(${STATUS_SALIO})) as total_hist,
+                   count(*) filter (where c.status = any(${STATUS_GANADA})) as aprob_hist,
                    coalesce(avg(extract(epoch from (c.approved_at - c.created_at))/86400)
-                            filter (where c.status in ('approved','paid','invoiced') and c.approved_at is not null), 0) as avg_cierre
+                            filter (where c.status = any(${STATUS_GANADA}) and c.approved_at is not null), 0) as avg_cierre
             from cotizaciones c where c.org_id = ${orgId}
             group by c.cliente_id`,
         // Días a cobro por cliente (approved → evento paid).
@@ -1644,6 +2255,22 @@ async function getCFOUncached() {
               on e.cotizacion_id = c.id
             where c.org_id = ${orgId} and c.status = 'paid'
             group by c.cliente_id`,
+        // Cartera cierta. Se mantiene separada del pipeline: solo comparte timing.
+        sql`select c.id, c.total, c.cliente_id,
+                   coalesce(cl.empresa, 'Sin cliente') as empresa,
+                   coalesce(c.approved_at, c.created_at) as base_date,
+                   coalesce(c.terminos, cl.terminos_default) as terminos
+            from cotizaciones c
+            left join clientes cl on cl.id = c.cliente_id
+            where c.org_id = ${orgId}
+              and c.status in ('approved','invoiced') -- canon: STATUS_POR_COBRAR
+              and c.es_recurrente is not true`,
+        // MRR contratado: tres ocurrencias mensuales entran al horizonte/invariante.
+        sql`select s.id, s.monto, s.estado, s.current_period_end, s.cancel_at_period_end,
+                   coalesce(cl.empresa, 'Sin cliente') as empresa
+            from cotizacion_suscripciones s
+            left join clientes cl on cl.id = s.cliente_id
+            where s.org_id = ${orgId} and s.estado in ('active','trialing','past_due')`,
     );
 
     type Hist = { totalHist: number; aprobHist: number; avgCierre: number; avgPago: number };
@@ -1657,6 +2284,12 @@ async function getCFOUncached() {
     for (const p of pagoRows) {
         const h = histMap.get(p.cliente_id as string);
         if (h) h.avgPago = num(p.avg_pago);
+    }
+    // El comportamiento compartido es el canon. La tercera query se conserva por
+    // compatibilidad del motor y como fallback si todavía no hay eventos suficientes.
+    for (const [clienteId, behavior] of Object.entries(payBehavior.clientes)) {
+        const h = histMap.get(clienteId);
+        if (h && behavior.avgDiasPago > 0) h.avgPago = behavior.avgDiasPago;
     }
 
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -1674,28 +2307,122 @@ async function getCFOUncached() {
         const avgDiasCierre = Math.round(h && h.avgCierre > 0 ? h.avgCierre : 14);
         const avgDiasPago = Math.round(h && h.avgPago > 0 ? h.avgPago : 30);
         const total = num(r.total);
-        const valorEsperado = Math.round(total * tasaPct / 100);
+        const probability = tasaPct / 100;
+        const margin = !h || h.totalHist < 3
+            ? 0.20
+            : Math.min(0.35, Math.max(0.10, 1.96 * Math.sqrt((probability * (1 - probability)) / h.totalHist)));
+        const valorEsperado = total * probability;
+        const conservador = total * Math.max(0, probability - margin);
+        const optimista = total * Math.min(1, probability + margin);
         const diasParaCobro = avgDiasCierre + avgDiasPago;
         const diasSilencio = Math.floor((today.getTime() - new Date(r.last_act as string).getTime()) / MS);
         return {
             id: r.id as string, folio: r.folio as string,
             empresa: r.empresa as string, status, total,
-            tasaPct, valorEsperado, diasParaCobro,
+            tasaPct, valorEsperado, conservador, optimista, margenPct: Math.round(margin * 100), diasParaCobro,
             avgDiasCierre, avgDiasPago, diasSilencio,
             aprobHist: h?.aprobHist ?? 0, totalHist: h?.totalHist ?? 0,
         };
     }).sort((a, b) => b.valorEsperado - a.valorEsperado);
 
-    // Proyección de flujo de caja: 5 cubetas semanales por días a cobro.
-    const cfoLocale = currentLocale();
-    const semLabels = [0, 1, 2, 3, 4].map((i) => i18nT(cfoLocale, `dash.sem.${i}` as any));
-    const semanas = semLabels.map((label, i) => ({ n: 0, label, valorEsperado: 0 }));
-    for (const it of items) {
-        const idx = Math.min(4, Math.max(0, Math.floor(it.diasParaCobro / 7)));
-        semanas[idx].n += 1;
-        semanas[idx].valorEsperado += it.valorEsperado;
+    const iso = (date: Date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    };
+    const atOffset = (offset: number) => {
+        const date = new Date(today);
+        date.setDate(date.getDate() + offset);
+        return date;
+    };
+    const daysFromToday = (date: Date) => Math.max(1, Math.ceil((date.getTime() - today.getTime()) / MS));
+    const locale = currentLocale() === 'en' ? 'en-US' : 'es-MX';
+    const weekLabel = (index: number) => {
+        const from = atOffset(index * 7 + 1);
+        const to = atOffset(Math.min(90, index * 7 + 7));
+        const fmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' });
+        return `${fmt.format(from).replace('.', '')} – ${fmt.format(to).replace('.', '')}`;
+    };
+
+    type ForecastDay = {
+        fecha: string; esperado: number; conservador: number; optimista: number;
+        cartera: number; pipeline: number; recurrente: number; n: number;
+    };
+    const dias: ForecastDay[] = Array.from({ length: 90 }, (_, index) => ({
+        fecha: iso(atOffset(index + 1)), esperado: 0, conservador: 0, optimista: 0,
+        cartera: 0, pipeline: 0, recurrente: 0, n: 0,
+    }));
+    const semanas = Array.from({ length: 13 }, (_, index) => ({
+        n: 0, label: weekLabel(index), cartera: 0, pipeline: 0, recurrente: 0,
+        total: 0, valorEsperado: 0,
+    }));
+    const fueraDeHorizonte = { n: 0, valorEsperado: 0, cartera: 0, pipeline: 0, recurrente: 0 };
+    const flow30Map = new Map<string, number>();
+    const addFlow30 = (empresa: string, offset: number, amount: number) => {
+        if (offset <= 30) flow30Map.set(empresa, (flow30Map.get(empresa) ?? 0) + amount);
+    };
+
+    const addForecast = (
+        offset: number,
+        flow: 'cartera' | 'pipeline' | 'recurrente',
+        expected: number,
+        conservative = expected,
+        optimistic = expected,
+    ) => {
+        if (offset >= 91) {
+            fueraDeHorizonte.n += 1;
+            fueraDeHorizonte.valorEsperado += expected;
+            fueraDeHorizonte[flow] += expected;
+            return;
+        }
+        const day = dias[Math.max(1, offset) - 1];
+        day.n += 1;
+        day.esperado += expected;
+        day.conservador += conservative;
+        day.optimista += optimistic;
+        day[flow] += expected;
+        const week = semanas[Math.min(12, Math.floor((Math.max(1, offset) - 1) / 7))];
+        week.n += 1;
+        week[flow] += expected;
+        week.total += expected;
+        week.valorEsperado = week.total;
+    };
+
+    for (const item of items) {
+        addForecast(item.diasParaCobro, 'pipeline', item.valorEsperado, item.conservador, item.optimista);
+        addFlow30(item.empresa, item.diasParaCobro, item.valorEsperado);
     }
-    const maxSemana = Math.max(1, ...semanas.map((s) => s.valorEsperado));
+
+    let totalCartera = 0;
+    for (const row of carteraRows) {
+        const amount = num(row.total);
+        const due = dueDateFor(row.base_date as string, row.terminos as string);
+        const behavior = row.cliente_id ? payBehavior.clientes[row.cliente_id as string] : undefined;
+        due.setDate(due.getDate() + (behavior?.avgDiasRetraso ?? payBehavior.avgDiasRetraso));
+        const offset = daysFromToday(due);
+        totalCartera += amount;
+        addForecast(offset, 'cartera', amount);
+        addFlow30(row.empresa as string, offset, amount);
+    }
+
+    const recurringStates = new Set(['active', 'trialing', 'past_due']);
+    let totalRecurrente90 = 0;
+    for (const row of susRows) {
+        if (!recurringStates.has(row.estado as string)) continue;
+        const amount = num(row.monto);
+        const first = row.current_period_end ? new Date(row.current_period_end as string) : atOffset(30);
+        if (first <= today) first.setDate(today.getDate() + 1);
+        for (let occurrence = 0; occurrence < 3; occurrence += 1) {
+            const date = new Date(first);
+            date.setMonth(first.getMonth() + occurrence);
+            const offset = daysFromToday(date);
+            totalRecurrente90 += amount;
+            addForecast(offset, 'recurrente', amount);
+            addFlow30(row.empresa as string, offset, amount);
+        }
+    }
+    const maxSemana = Math.max(1, ...semanas.map((s) => s.total));
 
     // Ranking ponderado por cliente.
     const rankMap = new Map<string, {
@@ -1722,16 +2449,42 @@ async function getCFOUncached() {
     const concentracion = totalPipeline > 0 && rankClientes.length
         ? Math.round((rankClientes[0].totalPipeline / totalPipeline) * 100)
         : 0;
+    const flujo30Clientes = [...flow30Map.entries()]
+        .map(([empresa, valor]) => ({ empresa, valor }))
+        .sort((a, b) => b.valor - a.valor);
+    const flujo30Total = flujo30Clientes.reduce((sum, row) => sum + row.valor, 0);
+    const concentracionFlujo30 = flujo30Total > 0
+        ? Math.round((flujo30Clientes[0]?.valor ?? 0) / flujo30Total * 100)
+        : 0;
 
     const silenciadas = items
         .filter((i) => i.diasSilencio > 7)
         .sort((a, b) => b.diasSilencio - a.diasSilencio)
         .map((i) => ({ id: i.id, folio: i.folio, empresa: i.empresa, dias: i.diasSilencio, total: i.total }));
 
+    const mrrActivo = susRows.reduce((sum, row) => sum + num(row.monto), 0);
+    const mrr = {
+        activo: mrrActivo,
+        arr: mrrActivo * 12,
+        nIgualas: susRows.length,
+        proximos30: susRows.reduce((sum, row) => {
+            const next = row.current_period_end ? new Date(row.current_period_end as string) : atOffset(30);
+            return daysFromToday(next) <= 30 ? sum + num(row.monto) : sum;
+        }, 0),
+        enRiesgo: susRows.reduce((sum, row) =>
+            row.estado === 'past_due' || row.cancel_at_period_end ? sum + num(row.monto) : sum, 0),
+    };
+    const forecastTotal = semanas.reduce((sum, week) => sum + week.total, 0) + fueraDeHorizonte.valorEsperado;
+    const sourceTotal = totalCartera + totalEsperado + totalRecurrente90;
+
     return {
         items,
-        kpis: { totalPipeline, totalEsperado, dso, concentracion, nSilenciadas: silenciadas.length },
-        semanas, maxSemana, rankClientes, silenciadas,
+        kpis: {
+            totalPipeline, totalEsperado, totalCartera, totalRecurrente90,
+            dso, concentracion, concentracionFlujo30, flujo30Total, nSilenciadas: silenciadas.length,
+        },
+        semanas, fueraDeHorizonte, dias, mrr, maxSemana, rankClientes, flujo30Clientes, silenciadas,
+        invariante: { forecastTotal, sourceTotal, delta: forecastTotal - sourceTotal },
     };
 }
 
@@ -1775,22 +2528,41 @@ export async function getAuditLog() {
 // ── DASHBOARD KPIs ────────────────────────────────────────────────────────────
 export async function getDashboard() {
     const orgId = await getActiveOrgId();
-    const quotes = await getCotizaciones();
-    const porCerrar = quotes.filter(q => ['sent', 'viewed'].includes(q.status)).reduce((s, q) => s + (q.total ?? 0), 0);
-    const cerradoMes = quotes.filter(q => ['approved', 'paid', 'invoiced'].includes(q.status)).reduce((s, q) => s + (q.total ?? 0), 0);
-    const aprobadas = quotes.filter(q => ['approved', 'paid', 'invoiced'].includes(q.status)).length;
-    const cerrables = quotes.filter(q => !['draft'].includes(q.status)).length;
-    const tasaCierre = cerrables ? Math.round((aprobadas / cerrables) * 100) : 0;
-
-    const [eventos] = await withOrgTx(orgId, sql`
-        select e.tipo, e.detalle, e.created_at, c.folio, c.id as cotizacion_id
-        from eventos e join cotizaciones c on c.id = e.cotizacion_id
-        where e.org_id = ${orgId}
-        order by e.created_at desc limit 7`);
+    const [summaryRows, statusRows, recentRows, eventos] = await withOrgTx(orgId,
+        sql`select count(*) as total_quotes,
+                   coalesce(sum(total) filter (where status in ('sent','viewed')), 0) as por_cerrar,
+                   coalesce(sum(total) filter (where status = any(${STATUS_GANADA})), 0) as cerrado,
+                   count(*) filter (where status = any(${STATUS_GANADA})) as aprobadas,
+                   count(*) filter (where status <> 'draft') as salieron,
+                   count(*) filter (where status in ('sent','viewed')) as abiertas,
+                   count(*) filter (where status = 'viewed') as seguimiento
+            from cotizaciones where org_id = ${orgId}`,
+        sql`select status, count(*) as n, coalesce(sum(total), 0) as total
+            from cotizaciones where org_id = ${orgId} group by status`,
+        sql`select c.*, cl.empresa, cl.terminos_default,
+                   coalesce(c.terminos, cl.terminos_default) as terminos
+            from cotizaciones c
+            left join clientes cl on cl.id = c.cliente_id
+            where c.org_id = ${orgId}
+            order by c.created_at desc limit 5`,
+        sql`select e.tipo, e.detalle, e.created_at, c.folio, c.id as cotizacion_id
+            from eventos e join cotizaciones c on c.id = e.cotizacion_id
+            where e.org_id = ${orgId}
+            order by e.created_at desc limit 7`,
+    );
+    const summary = summaryRows[0] ?? {};
+    const quotes = recentRows.map(c => rowToQuote(c, [], [], []));
+    const salieron = num(summary.salieron);
 
     return {
-        quotes, porCerrar, cerradoMes, tasaCierre,
-        abiertas: quotes.filter(q => ['sent', 'viewed'].includes(q.status)).length,
+        quotes,
+        totalQuotes: num(summary.total_quotes),
+        porCerrar: num(summary.por_cerrar),
+        cerradoMes: num(summary.cerrado),
+        tasaCierre: salieron ? Math.round((num(summary.aprobadas) / salieron) * 100) : 0,
+        abiertas: num(summary.abiertas),
+        seguimiento: num(summary.seguimiento),
+        statusStats: statusRows.map((row) => ({ status: row.status as string, n: num(row.n), total: num(row.total) })),
         feed: eventos.map(e => ({
             tipo: e.tipo as string, detalle: e.detalle as string,
             cuando: fmtRelative(e.created_at as string),
@@ -1907,49 +2679,39 @@ export async function getCobros() {
     // puede facturarse SIN estar pagada (approved→invoiced). Se incluye status='paid'
     // para cubrir pagos legacy previos a la columna paid_at. (La condición se inlinea
     // en cada query porque el sql de neon-serverless no compone fragmentos.)
-    const [c] = await sql`
-        select coalesce(sum(total),0) as total_cobrado
-        from cotizaciones
-        where org_id = ${orgId} and (status = 'paid' or paid_at is not null)
-    `;
-
-    const methods = await sql`
-        select coalesce(payment_method, 'otro') as method,
-               sum(total) as monto, count(*) as txs
-        from cotizaciones
-        where org_id = ${orgId} and (status = 'paid' or paid_at is not null)
-        group by coalesce(payment_method, 'otro')
-        order by sum(total) desc
-    `;
-
-    const monthly = await sql`
-        select to_char(date_trunc('month', coalesce(paid_at, created_at)), 'YYYY-MM') as ym, sum(total) as monto
-        from cotizaciones
-        where org_id = ${orgId} and (status = 'paid' or paid_at is not null)
-        group by 1 order by 1
-    `;
-
-    const recent = await sql`
-        select c.id, c.folio, c.total, coalesce(c.payment_method, 'otro') as payment_method, coalesce(c.paid_at, c.created_at) as paid_at, cl.empresa
-        from cotizaciones c left join clientes cl on cl.id = c.cliente_id
-        where c.org_id = ${orgId} and (c.status = 'paid' or c.paid_at is not null)
-        order by coalesce(c.paid_at, c.created_at) desc limit 15
-    `;
-
-    // Ingreso de IGUALAS recurrentes: cada cobro mensual es una fila 'pagado' en
-    // cotizacion_cobros de una cotización es_recurrente (que NUNCA marca
-    // cotizaciones.paid_at, así que las queries de arriba no lo cuentan). Se suma
-    // aparte y se fusiona — sin doble conteo, porque ambos universos son disjuntos.
-    const recRows = await sql`
-        select co.id, co.monto, coalesce(co.payment_method, 'tarjeta') as payment_method,
-               coalesce(co.paid_at, co.created_at) as paid_at,
-               to_char(date_trunc('month', coalesce(co.paid_at, co.created_at)), 'YYYY-MM') as ym,
-               c.folio, cl.empresa
-        from cotizacion_cobros co
-        join cotizaciones c on c.id = co.cotizacion_id
-        left join clientes cl on cl.id = c.cliente_id
-        where co.org_id = ${orgId} and co.status = 'pagado' and c.es_recurrente is true
-    `;
+    // Las cinco lecturas pasan por el mismo withOrgTx: cotizaciones, clientes y
+    // cotizacion_cobros tienen FORCE RLS y necesitan app.org_id incluso cuando el
+    // rol de despliegue hoy tenga BYPASSRLS.
+    const [[c], methods, monthly, recent, recRows] = await withOrgTx(orgId,
+        sql`select coalesce(sum(total),0) as total_cobrado
+            from cotizaciones
+            where org_id = ${orgId} and (status = 'paid' or paid_at is not null)`,
+        sql`select coalesce(payment_method, 'otro') as method,
+                   sum(total) as monto, count(*) as txs
+            from cotizaciones
+            where org_id = ${orgId} and (status = 'paid' or paid_at is not null)
+            group by coalesce(payment_method, 'otro')
+            order by sum(total) desc`,
+        sql`select to_char(date_trunc('month', coalesce(paid_at, created_at)), 'YYYY-MM') as ym, sum(total) as monto
+            from cotizaciones
+            where org_id = ${orgId} and (status = 'paid' or paid_at is not null)
+            group by 1 order by 1`,
+        sql`select c.id, c.folio, c.total, coalesce(c.payment_method, 'otro') as payment_method,
+                   coalesce(c.paid_at, c.created_at) as paid_at, cl.empresa
+            from cotizaciones c left join clientes cl on cl.id = c.cliente_id
+            where c.org_id = ${orgId} and (c.status = 'paid' or c.paid_at is not null)
+            order by coalesce(c.paid_at, c.created_at) desc limit 15`,
+        // Ingreso de IGUALAS recurrentes: cada cobro mensual es una fila 'pagado'
+        // y nunca marca cotizaciones.paid_at. Ambos universos son disjuntos.
+        sql`select co.id, co.monto, coalesce(co.payment_method, 'tarjeta') as payment_method,
+                   coalesce(co.paid_at, co.created_at) as paid_at,
+                   to_char(date_trunc('month', coalesce(co.paid_at, co.created_at)), 'YYYY-MM') as ym,
+                   c.folio, cl.empresa
+            from cotizacion_cobros co
+            join cotizaciones c on c.id = co.cotizacion_id
+            left join clientes cl on cl.id = c.cliente_id
+            where co.org_id = ${orgId} and co.status = 'pagado' and c.es_recurrente is true`,
+    );
 
     const recTotal = recRows.reduce((s: number, r: any) => s + Number(r.monto), 0);
 
@@ -2025,11 +2787,11 @@ export async function getDesempeno() {
         // Creadas / enviadas / cerradas + tiempo a cierre, por vendedor.
         sql`select creado_por,
                 count(*) filter (where status <> 'draft') as creadas,
-                count(*) filter (where status in ('sent','viewed','approved','paid','invoiced')) as enviadas,
-                count(*) filter (where status in ('approved','paid','invoiced')) as cerradas,
-                coalesce(sum(total) filter (where status in ('approved','paid','invoiced')),0) as cerrado_total,
+                count(*) filter (where status = any(${STATUS_SALIO})) as enviadas,
+                count(*) filter (where status = any(${STATUS_GANADA})) as cerradas,
+                coalesce(sum(total) filter (where status = any(${STATUS_GANADA})),0) as cerrado_total,
                 coalesce(avg(extract(epoch from (approved_at - created_at))/86400)
-                         filter (where status in ('approved','paid','invoiced') and approved_at is not null),0) as dias_cierre
+                         filter (where status = any(${STATUS_GANADA}) and approved_at is not null),0) as dias_cierre
             from cotizaciones
             where org_id = ${orgId} and creado_por is not null
             group by creado_por`,
@@ -2046,7 +2808,7 @@ export async function getDesempeno() {
             where co.org_id = ${orgId} and co.status = 'pagado' and c.es_recurrente is true and c.creado_por is not null
             group by c.creado_por`,
         // Cerrado sin vendedor asignado (creado antes de este campo, o vía API key).
-        sql`select coalesce(sum(total) filter (where status in ('approved','paid','invoiced')),0) as sin_creador
+        sql`select coalesce(sum(total) filter (where status = any(${STATUS_GANADA})),0) as sin_creador
             from cotizaciones where org_id = ${orgId} and creado_por is null and status <> 'draft'`,
     );
 
@@ -2256,7 +3018,8 @@ export async function getSidebarBadges() {
         const [[r], [a]] = await withOrgTx(orgId,
             sql`select
                     count(*) filter (where status in ('sent','viewed')) as seguimiento,
-                    count(*) filter (where status in ('approved','invoiced')
+                    count(*) filter (where status in ('approved','invoiced') -- canon: STATUS_POR_COBRAR
+                        and es_recurrente is not true
                         and (coalesce(approved_at, created_at)
                             + make_interval(days => case terminos
                                 when 'net30' then 30 when 'net60' then 60 else 0 end)) < now()) as vencidas

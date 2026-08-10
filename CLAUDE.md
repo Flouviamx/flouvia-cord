@@ -48,6 +48,8 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS,
    - **Rellenos:** Agrega volumen y profundidad tipo "cristal" usando `fill="currentColor" fill-opacity="0.12"` a `0.15`. Nunca dejes los iconos 100% "huecos".
    - **Figuras y Geometría:** Rechaza abstracciones exageradas o excesivamente intrincadas. Usa geometría perfecta, profesional y minimalista que haga apología directa a la acción (ej. una CPU limpia en lugar de estrellas mágicas para la IA; gráficas de barras definidas). Debe reflejar una estética técnica corporativa ultra-limpia (Quiet Luxury).
 10. **Storytelling y Posicionamiento (Regla Estricta - Jul 2026):** Cord YA NO ES "Software B2B" o "Infraestructura B2B". El nuevo posicionamiento es horizontal y universal: **"Plataforma de cierre comercial"** (Commercial Closing Platform). El mensaje principal a usar en copys y meta-tags es: *"De la propuesta al pago. Todo en un solo link."* o *"El ciclo de ventas desde la propuesta hasta el pago"*. ESTÁ PROHIBIDO usar jerga limitante o excluyente como "solo para empresas B2B", "Corporativo" o "ERP" en landing pages, SEO, esquemas JSON-LD, y metadata. Cord es para CUALQUIER negocio, en cualquier parte.
+11. **CSS de markup que NO renderiza la propia página → SIEMPRE global (Regla Estricta - Ago 2026):** Astro scopea un `<style>` agregando `data-astro-cid-*` **solo a los elementos que esa página/componente renderiza**. Si el markup lo emite OTRO componente (o lo inyecta JS en runtime), una regla scopeada **nunca matchea y falla en silencio** — no hay error de build, simplemente no hay estilo. Este error ya rompió el proyecto **tres veces**: el CSS de gráficas triplicado y divergente, el grid de widgets (`#dashWidgets`/`#reportWidgets` scopeados mientras el contenedor lo renderiza `WidgetGrid.astro` → todos los widgets a ancho completo en `/app` **y** `/app/informes` a la vez), y `.kpi-label` scopeada en `index.astro` pero usada por los componentes de informes. **Regla:** si una clase la consume markup de un componente compartido o DOM inyectado por JS, su CSS va en una hoja de `src/styles/*.css` importada por `AppLayout.astro` (o en su `<style is:global>`), llaveada por un atributo del componente (`[data-widget-grid]`), nunca por un `id` de la página. Hojas compartidas vigentes: `charts.css`, `widgets.css`, `daterange.css`, `modal.css`, `ops.css`. **Verificación:** `grep` en `.vercel/output/static/_astro/*.css` para confirmar que la regla sale **una sola vez**.
+12. **Nada de `applyX()` suelto al final de un módulo — usar el evento del componente (Ago 2026):** los `<script>` de Astro son módulos que corren **después del parseo** (`readyState === 'interactive'`, nunca `'loading'`) y **en orden de documento**. Un componente montado en `slot="topbar-actions"` corre su chunk **antes** que el `<script>` de la página. Si ese componente emite su evento inicial durante su init, **el listener de la página todavía no existe y el evento se pierde** (bug real: `DateRangePicker` dejó el hero y el embudo vacíos en `/app` e `/app/informes`). El emit inicial se difiere a `DOMContentLoaded`, que ocurre después de TODOS los módulos diferidos.
 
 ---
 
@@ -55,7 +57,7 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS,
 
 | Capa | Tecnología |
 |------|-----------|
-| Framework | Astro 6.4.8 (`output: 'server'`) + `@astrojs/vercel` |
+| Framework | Astro 7.2.0 (`output: 'server'`) + `@astrojs/vercel` 11.0.5 |
 | Auth | **MIGRACIÓN COMPLETADA (Jul 2026):** Sistema 100% custom en backend. Sesiones stateful en tabla `sessions`, hashes de password con Argon2id. Google OAuth nativo. `clerk` fue removido. La cookie principal es `cord_session` y el workspace activo usa `cord_active_org`. |
 | DB | **Neon (PostgreSQL serverless)** — schema en `db/schema.sql`. Decisión jun 2026: Neon en vez de Supabase. Crear vía Vercel Marketplace → integración Neon (auto-provisiona `DATABASE_URL`). |
 | Billing | Stripe Billing (freemium) |
@@ -66,12 +68,76 @@ Node requerido: **>=22.12.0** (ver `.nvmrc` → 24.15.0; alineado a Node 24 LTS,
 | Tipografía | **Inter única** (las serif se ELIMINARON jun 2026 a petición de André) — montos con clase `.editorial` = Inter 600, tracking −0.03em, `tabular-nums` |
 
 ✅ **Auth Custom ACTIVO** (jul 2026): Clerk ha sido desinstalado completamente. Autenticación con email/password (hashes Argon2id), SSO de Google nativo (`/api/auth/google`), Passkeys (`/api/auth/passkeys/*`) y Reset de Password custom (`/api/auth/reset-password/*`). Middleware (`src/middleware.ts`) lee `cord_session` para proteger rutas internas y API. Los componentes de UI (`CustomOrgSwitcher`, `CustomUserProfile`) consumen la data nativa vía BD (tabla `users` y `org_members`). La migración invisible corrió mapeando UUIDs viejos de Clerk a la nueva tabla `users`.
-✅ **Clerk en PRODUCCIÓN:** se deja el webhook de Stripe operando independiente. ✅ **Stripe Billing CONECTADO + EN PROD
-(jun 2026):** suscripciones de 5 planes + medidores de excedente (ver "Stripe Billing"
-abajo); llaves `sk_live`, `STRIPE_WEBHOOK_SECRET` seteado, webhook apuntando a
-`cordhq.app/api/stripe/webhook` y Customer Portal configurado en el dashboard.
-Los 46 price_ids/meters reales viven en `billing.ts`. El meter de IA está cableado en
-(Organizations activado, webhook registrado, migración y backfill corridos — ver sección abajo).
+✅ **Stripe Billing CONECTADO + EN PROD (jun 2026):** suscripciones de 5 planes y
+medidores de excedente. Las llaves live, el webhook de Stripe y Customer Portal se
+configuran fuera del repo; los `price_id` y meters reales viven en `billing.ts`.
+
+## Cord Ops (ago 2026)
+
+`ops.cordhq.app` es la consola administrativa privada de Cord. Solo
+`andrevalleo13@gmail.com` y `hola@flouvia.com` pueden ser operadores: el correo debe
+coincidir tanto con la allowlist compilada como con `ops_operators` activo.
+
+- Producción exige passkey o contraseña + TOTP. Localhost exige sesión Cord vigente
+  del mismo usuario + contraseña. Una sesión normal nunca autoriza Ops.
+- Cookie y tablas de sesión separadas, token sha256, una sesión por operador, 30 min
+  de inactividad, máximo absoluto de 8 h, enlace al User-Agent, CSRF de origen exacto,
+  CSP propia, `no-store`, `noindex`, sin analytics y auditoría privilegiada.
+- En producción, login y APIs Ops exigen el rate limit distribuido de Upstash y
+  fallan cerrados si no está configurado o disponible. Las sesiones se revocan
+  automáticamente al cambiar password, suspender la cuenta, desactivar TOTP o
+  eliminar la passkey exacta que creó la sesión.
+- Rutas: `/ops`, `/ops/users`, `/ops/organizations`, `/ops/usage`, `/ops/database`
+  y `/ops/security`, con fichas detalladas para usuarios, organizaciones y tablas.
+- Acciones reales: suspender/restaurar/eliminar usuarios no protegidos, revocar
+  sesiones o API keys, desactivar webhooks, cerrar sesiones de equipos y eliminar
+  organizaciones no protegidas. Las mutaciones sensibles exigen confirmación y
+  escriben `ops_audit_log` en la misma transacción.
+- El explorador de base redacta hashes, contraseñas, TOTP, tokens, llaves,
+  certificados, CLABE y cuerpos sensibles; tampoco permite buscar esos campos.
+- `/ops/usage` vigila superficies con costo: cuotas de IA/API/CFDI, tokens Anthropic,
+  correos Resend, errores API, reintentos de webhooks, volumen Stripe y tamaño Neon.
+  Alerta al 80% y 100% de cuota. `external_usage_events` usa RLS por organización y
+  nunca guarda prompts, destinatarios, payloads, respuestas ni secretos. Los importes
+  finales siempre se verifican en el dashboard del proveedor.
+- REST v1 y MCP pasan por el mismo control de API: rate limit por llave, cuota mensual
+  con `checkQuota()` y medidor con `reportUsage()`. Free corta en su cuota; los planes
+  con overage cortan en el techo de seguridad de 10 veces el incluido.
+- UI Apple/Cord clara, CSS vanilla y microinteracciones breves. Todo movimiento debe
+  respetar `prefers-reduced-motion`; los avatares usan centrado geométrico propio.
+- Escala objetivo de Ops: 10k+ usuarios/organizaciones sin cargar colecciones completas.
+  Usuarios, organizaciones, consumo y auditoría usan páginas SSR de 50 filas con filtros
+  GET compartibles; `ops-list-queries.ts` agrega estadísticas solo para los ids visibles.
+  `/ops/usage` calcula totales globales por separado, busca organizaciones en servidor y
+  limita el inbox de alertas a las 50 cuentas de mayor riesgo. Nunca volver a renderizar
+  un `<select>` con todas las organizaciones ni hacer subconsultas correlacionadas por cada
+  fila. El explorador de tablas usa cursor `created_at/id` y estimaciones de `pg_class`:
+  no reintroducir `OFFSET` profundo ni `COUNT(*)` por página. Búsquedas de usuarios/orgs
+  dependen de `pg_trgm` y los índices de escala declarados en `db/schema.sql`.
+
+El procedimiento de limpieza pre-lanzamiento vive en
+`scripts/cleanup-non-ops-data.mjs`: dry-run por defecto y `--execute` explícito. No se
+debe usar nuevamente cuando existan usuarios reales sin una revisión manual previa.
+
+## Página 404 pública (ago 2026)
+
+La ruta `src/pages/404.astro` usa una composición Apple/Cord clara con navbar y footer
+globales. El hero muestra un `404` vectorial grande y, debajo, copy de recuperación, CTA
+al inicio y una superficie aireada con accesos a producto, precios y soporte.
+
+- El único shader de la página es `src/components/CordDynamicBg.jsx`, el aurora GLSL
+  compartido que se usa en el resto del sitio. No crear un shader alterno ni simular otro
+  con gradientes CSS animados para esta pantalla.
+- `CordDynamicBg` acepta props opcionales `maskImage`, `maskSize`, `maskPosition` y
+  `maskRepeat`. La máscara se aplica en el `div` raíz React para recortar canvas, grano y
+  color base dentro de la misma silueta sin alterar a consumidores que no pasan máscara.
+- La máscara vive en `public/404-mask.svg` y usa paths vectoriales, no texto dependiente
+  de una fuente. El fallback de `.error-number__fallback` es sólido y usa exactamente la
+  misma máscara; solo cubre carga inicial, ausencia de WebGL y reduced motion.
+- La isla usa `client:load`: el componente no monta Canvas durante SSR porque `inView`
+  inicia en falso, pero sí entrega su raíz/fallback y activa WebGL después de hidratar.
+- El fondo es `#f5f5f7`; el CTA es píldora navy con estados hover, active y focus; los
+  accesos inferiores colapsan de tres columnas a una en móvil.
 
 
 ---
@@ -135,7 +201,7 @@ FACTURAPI_USER_KEY=                                             # llave de CUENT
 ANTHROPIC_API_KEY=                                              # IA "armar cotización desde texto" + cobranza/MCP
 AI_MODEL=                                                       # opcional (default claude-haiku-4-5-20251001 — TODA la IA usa Haiku)
 INBOUND_EMAIL_SECRET=                                           # respuestas por correo a la cobranza IA (endpoint hoy inalcanzable a propósito, ver docs/historial-infra-hitos.md)
-UPSTASH_REDIS_REST_URL=  UPSTASH_REDIS_REST_TOKEN=              # rate-limit DURABLE compartido entre instancias (src/lib/ratelimit.ts) + sesiones del transporte SSE de MCP (src/lib/mcp/session-store.ts, jul 2026); sin ellas ambos caen a un Map en memoria por proceso — funcionan pero no son globales entre instancias. Provisionar vía Vercel Marketplace → Upstash → Storage del proyecto (auto-inyecta ambas)
+UPSTASH_REDIS_REST_URL=  UPSTASH_REDIS_REST_TOKEN=              # OBLIGATORIAS para Ops en prod (falla cerrado sin ellas); rate-limit durable compartido + sesiones SSE de MCP. Provisionar vía Vercel Marketplace → Upstash → Storage del proyecto
 MCP_SECRET_KEY=                                                 # opcional (jul 2026) — cifra en reposo mcp_servers.auth_token (AES-256-GCM, src/lib/crypto-secret.ts); sin ella el token se guarda en claro. Generar con `openssl rand -base64 32`
 PUBLIC_SITE_URL=                                                # opcional (default https://cordhq.app) — origen fijo para links en correos disparados por CRON (nunca derivar de request.url ahí, ver docs/historial-infra-hitos.md)
 PUBLIC_POSTHOG_KEY=  PUBLIC_POSTHOG_HOST=                       # Credenciales de PostHog para analíticas de producto

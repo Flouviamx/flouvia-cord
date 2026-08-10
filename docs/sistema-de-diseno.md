@@ -198,8 +198,10 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
      con `z-index:0`; el contenido tiene `z-index:2`. El `overflow:hidden` del padre recorta el `inset:-40%`.
    ⚠️ **Regla de escape en Astro JSX:** literales `{` `}` en texto de mockups DEBEN ser
      `&#123;` / `&#125;` — Astro los parsea como expresiones y lanza error de build.
-   ⚠️ **Dep fix (jun 2026):** `@clerk/astro@3.x` solo soporta hasta Astro 6 — NO actualizar
-     a Astro 7 hasta que Clerk publique soporte. Pin: `astro@^6.4.8`, `@astrojs/vercel@^10.0.6`.
+   **Dep fix (ago 2026):** Clerk ya no forma parte del proyecto. Astro se actualizó
+     a `^7.2.0`, `@astrojs/vercel` a `^11.0.5` y `@astrojs/mdx` a `^7.0.5` para
+     cerrar advisories de XSS, routing e imagen. `path-to-regexp` queda forzado a
+     `6.3.0` dentro de `@vercel/routing-utils` hasta que el adapter lo consuma directo.
      `nanostores` debe ser dep directa (antes solo transitiva desde Clerk, Rollup no la resolvía).
 
 ✅ **Rediseño Minimalista Puro en Correos Transaccionales (jun 2026)** — Todos los templates de correos (`src/lib/email.ts`, `api/contacto/ventas.ts`, `api/cron/cobranza.ts`, `api/agentes.ts`) siguen una estética de "lienzo en blanco":

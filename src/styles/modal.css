@@ -1,0 +1,243 @@
+/* ═══ Esqueleto compartido de <dialog class="modal"> — Cord "Apple" ═══
+ * Consumido por: clientes/index.astro, productos/index.astro, productos/kits.astro,
+ * cotizaciones/nueva.astro, ClientModal.astro, ProductModal.astro, y los 2 modales de
+ * importación CSV (clientes/productos).
+ *
+ * REGLA DE ORO: cada selector va prefijado por `.modal` (o `.modal-lg`). Sin esto, algo
+ * tan genérico como `.chip` se filtra a cualquier otra página que use esa clase (ej. los
+ * chips de términos del editor de cotizaciones) — es la fuga más fácil de este archivo.
+ *
+ * FIX DE SCROLL (causa raíz, no adivinada): en desktop ninguno de los 4 diálogos
+ * declaraba `max-height`/`overflow` — solo existía dentro de @media(max-width:560px), así
+ * que el UA stylesheet (`dialog:modal{overflow:auto}`) scrolleaba el <dialog> COMPLETO:
+ * el header y la barra de guardar se iban con el scroll al abrir la sección fiscal o
+ * agregar niveles de precio por volumen. Estructura nueva head/body/foot: el body es el
+ * ÚNICO que scrollea (`flex:1 1 auto; min-height:0; overflow-y:auto`), head y foot quedan
+ * fijos con `flex:0 0 auto`.
+ *
+ * ⚠️ `display:flex` va SOLO en `.modal[open]`, nunca en `.modal` a secas — si se declara
+ * en la clase base, el <dialog> CERRADO deja de respetar el `display:none` del UA y se ve
+ * SIEMPRE. Misma trampa que el atributo `hidden` + `display` de autor, aplicada a <dialog>.
+ */
+
+.modal {
+    padding: 0;
+    border: none;
+    background: var(--surface);
+    border-radius: var(--card-radius);
+    width: min(520px, calc(100vw - 2rem));
+    max-height: min(86vh, calc(100vh - 3rem));
+    max-height: min(86dvh, calc(100dvh - 3rem));
+    overflow: hidden; /* recorta esquinas y mata el scroll del dialog completo */
+    box-shadow:
+        0 0 0 0.5px rgba(10,25,47,0.05),
+        0 24px 60px -16px rgba(10,25,47,0.35),
+        0 8px 20px -8px rgba(10,25,47,0.15);
+}
+.modal[open] { display: flex; flex-direction: column; }
+.modal::backdrop { background: rgba(10,25,47,0.38); backdrop-filter: blur(4px); }
+.modal-lg { width: min(700px, calc(100vw - 2rem)); }
+
+.modal .m-form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; padding: 0; gap: 0; }
+
+.modal .m-head {
+    flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+    padding: 1.35rem 1.6rem 0.85rem;
+    border-bottom: 1px solid transparent; transition: border-color 0.2s;
+}
+.modal[data-top="1"] .m-head { border-bottom-color: var(--color-border); }
+.modal .m-head h2 { font-size: 1.08rem; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+.modal .m-close {
+    background: var(--color-bg-soft); border: none;
+    width: 30px; height: 30px; border-radius: 999px; cursor: pointer;
+    font-size: 0.78rem; color: var(--color-text-muted);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: background 0.2s, color 0.2s, transform 0.2s var(--ease-spring);
+}
+.modal .m-close:hover { background: var(--row-hover); color: var(--color-text); }
+.modal .m-close:active { transform: scale(0.92); }
+
+.modal .m-body {
+    flex: 1 1 auto; min-height: 0; /* imprescindible: sin esto un flex item no encoge y no scrollea */
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    display: flex; flex-direction: column; gap: 0.95rem;
+    padding: 0.15rem 1.6rem 1.1rem;
+}
+
+.modal .m-foot {
+    flex: 0 0 auto;
+    border-top: 1px solid transparent; transition: border-color 0.2s;
+    padding: 0.85rem 1.6rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+}
+.modal[data-bottom="1"] .m-foot { border-top-color: var(--color-border); }
+
+.modal .m-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.95rem; }
+.modal .m-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.modal .m-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+.modal .m-optlbl { text-transform: none; font-weight: 600; letter-spacing: 0; color: var(--color-text-muted); }
+
+.modal .m-input {
+    font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500;
+    color: var(--color-text); background: var(--color-bg-soft);
+    border: 1.5px solid transparent; border-radius: 10px;
+    padding: 10px 12px;
+    transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
+}
+.modal .m-input:hover { background: var(--row-hover); }
+.modal .m-input:focus { outline: none; border-color: var(--color-blue-deep); background: var(--surface); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+
+.modal .m-hint { font-size: 0.72rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
+.modal .m-hint b { color: var(--color-text); font-weight: 600; }
+.modal .m-error { font-size: 0.78rem; color: var(--color-danger); margin: 0 0 0.6rem; min-height: 1em; }
+.modal .m-error:empty { display: none; margin: 0; }
+
+.modal .m-fiscal { border-top: 1px solid var(--color-border); padding-top: 0.95rem; display: flex; flex-direction: column; gap: 0.95rem; }
+.modal .m-fiscal > summary { cursor: pointer; font-size: 0.78rem; font-weight: 700; color: var(--color-text); list-style: none; user-select: none; }
+.modal .m-fiscal > summary::-webkit-details-marker { display: none; }
+.modal .m-fiscal > summary::before { content: '+ '; color: var(--color-text-muted); font-weight: 700; }
+.modal .m-fiscal[open] > summary::before { content: '− '; }
+
+.modal .m-chips { display: flex; gap: 0.5rem; }
+.modal .m-tiers { flex-wrap: wrap; }
+.modal .chip {
+    font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
+    color: var(--color-text-muted); background: var(--color-bg-soft);
+    border: 1px solid var(--color-border); border-radius: 100px;
+    padding: 7px 16px; cursor: pointer;
+    transition: all 0.25s var(--ease-ios);
+}
+.modal .chip:hover { background: var(--row-hover); }
+.modal .chip.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); box-shadow: 0 4px 14px -6px rgba(10,25,47,0.45); }
+
+/* Descuento por nivel: input con sufijo % + vista previa en pesos */
+.modal .disc-row { display: flex; align-items: center; gap: 0.7rem; }
+.modal .disc-input { position: relative; flex: 0 0 120px; }
+.modal .disc-input .m-input { padding-right: 26px; width: 100%; }
+.modal .disc-suffix { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: var(--color-text-muted); pointer-events: none; }
+.modal .disc-preview { font-size: 0.82rem; font-weight: 500; color: var(--color-text-muted); }
+.modal .disc-preview.on { color: #059669; }
+.modal .disc-preview b { font-weight: 700; }
+
+.modal .m-actions { display: flex; align-items: center; gap: 0.6rem; }
+.modal .m-spacer { flex: 1; }
+.modal .m-delete {
+    font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600;
+    color: var(--color-danger); background: none; border: none; cursor: pointer;
+    padding: 9px 4px;
+}
+.modal .m-delete[hidden] { display: none; }
+.modal .m-cancel {
+    font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
+    color: var(--color-text); background: var(--color-bg-soft);
+    border: 1px solid var(--color-border); border-radius: 9px;
+    padding: 9px 16px; cursor: pointer;
+}
+.modal .m-save {
+    font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
+    background: var(--color-blue-deep); color: #fff;
+    border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer;
+    box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5);
+}
+.modal .m-save:disabled { opacity: 0.6; cursor: wait; }
+
+/* ── Medidor de margen (productos) ── */
+.modal .margin-strip { display: flex; flex-direction: column; gap: 0.4rem; }
+.modal .margin-strip[hidden] { display: none; }
+.modal .ms-bar { height: 6px; border-radius: 100px; background: var(--color-bg-soft); overflow: hidden; }
+.modal .ms-fill { display: block; height: 100%; border-radius: 100px; transition: width 0.3s var(--ease-ios), background 0.3s; }
+.modal .ms-fill.bad { background: var(--color-danger); }
+.modal .ms-fill.warn { background: var(--color-warn); }
+.modal .ms-fill.good { background: var(--color-ok); }
+.modal .ms-text { font-size: 0.76rem; font-weight: 500; color: var(--color-text-muted); }
+
+/* ── Precios por volumen (productos) — DOM inyectado por JS, va aquí (no scoped) ── */
+.modal .vol-list:empty { display: none; }
+.modal .vol-row { display: grid; grid-template-columns: 1fr auto 1fr 34px; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.modal .vol-cell {
+    display: flex; align-items: center; gap: 4px;
+    background: var(--color-bg-soft); border: 1.5px solid transparent; border-radius: 9px;
+    padding: 0 10px; transition: border-color 0.25s;
+}
+.modal .vol-cell:focus-within { border-color: var(--color-blue-deep); }
+.modal .vol-cell input {
+    font-family: var(--font-sans); font-size: 0.84rem; color: var(--color-text);
+    background: none; border: none; padding: 9px 2px; width: 100%; min-width: 0;
+}
+.modal .vol-cell input:focus { outline: none; }
+.modal .vc-pre { font-size: 0.76rem; color: var(--color-text-muted); flex-shrink: 0; }
+.modal .vol-arrow { color: var(--color-text-muted); font-size: 0.8rem; }
+.modal .vol-del {
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 8px; border: none; background: none; cursor: pointer;
+    color: var(--color-text-muted); transition: background 0.2s, color 0.2s;
+}
+.modal .vol-del:hover { background: rgba(239,68,68,0.1); color: var(--color-danger); }
+.modal .vol-add {
+    display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+    font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep);
+    background: none; border: none; cursor: pointer; padding: 4px 0;
+}
+.modal .vol-add:hover { text-decoration: underline; }
+
+/* ── Importador CSV (pasos, drop-zone, mapeo, preview) ── */
+.modal .imp-steps { display: flex; align-items: center; gap: 0.4rem; margin: -0.2rem 0 0.2rem; }
+.modal .imp-stepdot { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); }
+.modal .imp-stepdot i { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 50%; border: 1px solid var(--color-border); font-size: 0.66rem; font-style: normal; font-weight: 700; transition: all 0.25s; }
+.modal .imp-stepdot:not(:last-child)::after { content: ''; width: 18px; height: 1px; background: var(--color-border); margin-left: 0.4rem; }
+.modal .imp-stepdot.active { color: var(--color-blue-deep); }
+.modal .imp-stepdot.active i { border-color: var(--color-blue-deep); background: var(--color-blue-deep); color: #fff; }
+.modal .imp-stepdot.done { color: #059669; }
+.modal .imp-stepdot.done i { border-color: #10b981; background: #10b981; color: #fff; }
+.modal .imp-step { display: flex; flex-direction: column; gap: 0.9rem; }
+/* ⚠️ Bug real encontrado en la auditoría de este archivo: sin esta regla los 3 pasos se
+   pintaban a la vez — `display:flex` de autor le gana al `[hidden]` del UA. */
+.modal .imp-step[hidden] { display: none; }
+.modal .imp-lead { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; }
+.modal .imp-drop {
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-align: center;
+    border: 1.5px dashed var(--color-border); border-radius: 14px; padding: 2.4rem 1.5rem; cursor: pointer;
+    background: var(--color-bg-soft); transition: border-color 0.25s, background 0.25s;
+}
+.modal .imp-drop.drag, .modal .imp-drop:hover { border-color: var(--color-blue-deep); background: rgba(10,25,47,0.03); }
+.modal .imp-drop svg { width: 32px; height: 32px; color: var(--color-blue-deep); }
+.modal .imp-drop b { font-size: 0.9rem; font-weight: 700; color: var(--color-text); }
+.modal .imp-drop span { font-size: 0.76rem; color: var(--color-text-muted); }
+.modal .imp-tpl { align-self: center; background: none; border: none; cursor: pointer; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); }
+.modal .imp-tpl:hover { text-decoration: underline; }
+.modal .imp-check { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--color-text); cursor: pointer; }
+.modal .imp-maps { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+.modal .imp-map { display: flex; flex-direction: column; gap: 0.35rem; }
+.modal .imp-map label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #99a2af; }
+.modal .imp-map label .req { color: var(--color-danger); }
+.modal .imp-map select { font-family: var(--font-sans); font-size: 0.84rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 10px; }
+.modal .imp-map select:focus { outline: none; border-color: var(--color-blue-deep); }
+.modal .imp-summary { display: flex; gap: 1.4rem; flex-wrap: wrap; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 11px; padding: 0.9rem 1.1rem; }
+.modal .imp-summary .is-num { font-size: 1.3rem; font-weight: 700; color: var(--color-blue-deep); letter-spacing: -0.5px; }
+.modal .imp-summary .is-num.warn { color: var(--color-warn); }
+.modal .imp-summary div { display: flex; flex-direction: column; }
+.modal .imp-summary small { font-size: 0.68rem; color: var(--color-text-muted); }
+.modal .imp-prev-wrap { max-height: clamp(160px, 30dvh, 320px); overflow: auto; border: 1px solid var(--color-border); border-radius: 11px; }
+.modal .imp-prev { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+.modal .imp-prev th { position: sticky; top: 0; background: var(--color-bg-soft); text-align: left; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #99a2af; padding: 8px 10px; border-bottom: 1px solid var(--color-border); }
+.modal .imp-prev td { padding: 7px 10px; border-bottom: 1px solid var(--color-border); color: var(--color-text); white-space: nowrap; }
+.modal .imp-prev td.n { text-align: right; font-variant-numeric: tabular-nums; }
+.modal .imp-prev tr.bad td { background: rgba(239,68,68,0.05); color: var(--color-text-muted); }
+
+/* En móvil el modal se vuelve un "bottom sheet" que sube desde abajo. */
+@media (max-width: 560px) {
+    .modal {
+        width: 100%; max-width: 100%;
+        margin: 0; top: auto; bottom: 0; left: 0; right: 0;
+        border-radius: 22px 22px 0 0;
+        max-height: 92dvh;
+        animation: sheet-up 0.32s var(--ease-spring);
+    }
+    .modal .m-head { padding: 1.2rem 1.2rem 0.8rem; }
+    .modal .m-body { padding: 0.15rem 1.2rem 1rem; }
+    .modal .m-foot { padding: 0.8rem 1.2rem calc(1rem + env(safe-area-inset-bottom, 0px)); }
+    .modal .m-row { grid-template-columns: 1fr; }
+    .modal .imp-maps { grid-template-columns: 1fr; }
+}
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .modal { animation: none; } }

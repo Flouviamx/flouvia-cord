@@ -1,0 +1,269 @@
+---
+// Modal de alta/edición de producto — COMPARTIDO entre /app/productos (catálogo) y
+// /app/productos/[id] (detalle). Mismo contrato por CustomEvent que ClientModal.astro:
+// 'prodmodal:open' { data? } → 'prodmodal:saved' { id, mode, producto } / 'prodmodal:deleted'.
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+interface Props {
+    showDelete?: boolean;
+}
+const { showDelete = true } = Astro.props;
+const L = currentLocale();
+---
+
+<dialog class="modal" id="prodModal"
+    data-i18n-nuevo={t(L, 'pmod.nuevo_titulo')} data-i18n-editar={t(L, 'pmod.editar_titulo')}
+    data-i18n-no-pudo-guardar={t(L, 'pmod.no_pudo_guardar')}
+    data-i18n-eliminar-titulo={t(L, 'pmod.eliminar_titulo')} data-i18n-eliminar-body={t(L, 'pmod.eliminar_body')}
+    data-i18n-eliminar={t(L, 'pmod.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'pmod.no_pudo_eliminar')}
+    data-i18n-gana-tpl={t(L, 'pmod.gana_por_unidad')} data-i18n-pierde-tpl={t(L, 'pmod.pierde_por_unidad')}
+    data-i18n-vol-desde={t(L, 'pmod.vol_desde')} data-i18n-vol-pz={t(L, 'pmod.vol_pz')} data-i18n-vol-quitar={t(L, 'pmod.vol_quitar')}
+    data-i18n-nombre-obligatorio={t(L, 'pmod.nombre_obligatorio')}
+    data-i18n-creando={t(L, 'pmod.creando')} data-i18n-guardando={t(L, 'pmod.guardando')}
+    data-i18n-locale={L} data-show-delete={showDelete ? '1' : ''}
+>
+    <form method="dialog" class="m-form" id="prodForm">
+        <div class="m-head">
+            <h2 id="pmTitle">{t(L, 'pmod.nuevo_titulo')}</h2>
+            <button type="button" class="m-close" id="pmClose" aria-label={t(L, 'pmod.cerrar')}>✕</button>
+        </div>
+
+        <div class="m-body">
+            <div class="m-field">
+                <label for="pmNombre">{t(L, 'pmod.nombre')}</label>
+                <input class="m-input" id="pmNombre" required placeholder={t(L, 'pmod.nombre_ph')} />
+            </div>
+            <div class="m-row">
+                <div class="m-field">
+                    <label for="pmSku">{t(L, 'pmod.sku')}</label>
+                    <input class="m-input" id="pmSku" placeholder={t(L, 'pmod.sku_ph')} maxlength="24" />
+                </div>
+                <div class="m-field">
+                    <label for="pmUnidad">{t(L, 'pmod.unidad')}</label>
+                    <input class="m-input" id="pmUnidad" placeholder={t(L, 'pmod.unidad_ph')} />
+                </div>
+            </div>
+            <div class="m-field">
+                <label for="pmDescripcion">{t(L, 'pmod.descripcion')}</label>
+                <input class="m-input" id="pmDescripcion" placeholder={t(L, 'pmod.descripcion_ph')} maxlength="500" />
+            </div>
+            <div class="m-row">
+                <div class="m-field">
+                    <label for="pmPrecio">{t(L, 'pmod.precio_venta')}</label>
+                    <input class="m-input" id="pmPrecio" type="number" min="0" step="0.01" required placeholder="198.00" />
+                </div>
+                <div class="m-field">
+                    <label for="pmCosto">{t(L, 'pmod.costo_pregunta')}</label>
+                    <input class="m-input" id="pmCosto" type="number" min="0" step="0.01" placeholder="0.00" />
+                    <span class="m-hint">{t(L, 'pmod.costo_hint')}</span>
+                </div>
+            </div>
+            <div class="margin-strip" id="pmMarginStrip" hidden>
+                <div class="ms-bar"><span class="ms-fill" id="pmMsFill"></span></div>
+                <div class="ms-text" id="pmMsText"></div>
+            </div>
+
+            <div class="m-field vol-field">
+                <label>{t(L, 'pmod.vol_titulo')} <span class="m-optlbl">{t(L, 'pmod.vol_opcional')}</span></label>
+                <span class="m-hint">{t(L, 'pmod.vol_hint')}</span>
+                <div class="vol-list" id="pmVolList"></div>
+                <button type="button" class="vol-add" id="pmVolAdd">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    {t(L, 'pmod.vol_agregar')}
+                </button>
+            </div>
+
+            <div class="m-field" style="flex:0 0 auto">
+                <label>{t(L, 'pmod.estado_label')}</label>
+                <div class="m-chips" id="pmActivo">
+                    <button type="button" class="chip active" data-v="1">{t(L, 'pmod.activo')}</button>
+                    <button type="button" class="chip" data-v="">{t(L, 'pmod.inactivo')}</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="m-foot">
+            <p class="m-error" id="pmError"></p>
+            <div class="m-actions">
+                {showDelete && <button type="button" class="m-delete" id="pmDelete" hidden>{t(L, 'pmod.eliminar')}</button>}
+                <span class="m-spacer"></span>
+                <button type="button" class="m-cancel" id="pmCancel">{t(L, 'pmod.cancelar')}</button>
+                <button type="submit" class="m-save" id="pmSave">{t(L, 'pmod.guardar_producto')}</button>
+            </div>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    // CRUD de productos contra /api/productos, disparado por 'prodmodal:open' y
+    // notificando 'prodmodal:saved'/'prodmodal:deleted'.
+    (function () {
+        const dlgEl = document.getElementById('prodModal') as HTMLDialogElement | null;
+        if (!dlgEl) return;
+        const dlg: HTMLDialogElement = dlgEl;
+        const I = dlg.dataset;
+        const canDelete = I.showDelete === '1';
+        const isEn = I.locale === 'en';
+        const form = document.getElementById('prodForm') as HTMLFormElement;
+        const title = document.getElementById('pmTitle')!;
+        const errorEl = document.getElementById('pmError')!;
+        const btnDelete = document.getElementById('pmDelete') as HTMLButtonElement | null;
+        const btnSave = document.getElementById('pmSave') as HTMLButtonElement;
+        const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('#pmActivo .chip'));
+
+        let editId: string | null = null;
+        let activo = true;
+
+        const input = (id: string) => document.getElementById(id) as HTMLInputElement;
+        const setActivo = (v: boolean) => {
+            activo = v;
+            chips.forEach((c) => c.classList.toggle('active', Boolean(c.dataset.v) === v));
+        };
+
+        const moneyFmt = (n: number) => '$' + new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(n);
+        const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+        const updateMargin = () => {
+            const precio = parseFloat(input('pmPrecio').value) || 0;
+            const costo = parseFloat(input('pmCosto').value) || 0;
+            const strip = document.getElementById('pmMarginStrip')!;
+            const fill = document.getElementById('pmMsFill')!;
+            const text = document.getElementById('pmMsText')!;
+            if (costo <= 0 || precio <= 0) { strip.hidden = true; return; }
+            strip.hidden = false;
+            const ganancia = precio - costo;
+            const m = (ganancia / precio) * 100;
+            const cls = m < 15 ? 'bad' : m < 30 ? 'warn' : 'good';
+            fill.style.width = Math.max(0, Math.min(100, m)) + '%';
+            fill.className = 'ms-fill ' + cls;
+            text.className = 'ms-text ' + cls;
+            text.innerHTML = ganancia < 0
+                ? tpl(I.pierdeTpl || 'Pierdes <b>{monto}</b> por unidad — tu costo supera el precio', { monto: moneyFmt(Math.abs(ganancia)) })
+                : tpl(I.ganaTpl || 'Ganas <b>{monto}</b> por unidad · margen <b>{pct}%</b>', { monto: moneyFmt(ganancia), pct: String(Math.round(m)) });
+        };
+        input('pmPrecio').addEventListener('input', updateMargin);
+        input('pmCosto').addEventListener('input', updateMargin);
+
+        // ── Precios por volumen: editor de niveles {min, precio} ──
+        const volList = document.getElementById('pmVolList')!;
+        let volTiers: { min: number | string; precio: number | string }[] = [];
+        const renderVol = () => {
+            volList.innerHTML = volTiers.map((tr, i) => `
+                <div class="vol-row" data-i="${i}">
+                    <div class="vol-cell"><span class="vc-pre">${I.volDesde || 'Desde'}</span><input type="number" min="1" step="1" data-vk="min" value="${tr.min ?? ''}" placeholder="500" /><span class="vc-pre">${I.volPz || 'pz'}</span></div>
+                    <span class="vol-arrow">→</span>
+                    <div class="vol-cell"><span class="vc-pre">$</span><input type="number" min="0" step="0.01" data-vk="precio" value="${tr.precio ?? ''}" placeholder="90.00" /></div>
+                    <button type="button" class="vol-del" data-vdel="${i}" aria-label="${I.volQuitar || 'Quitar nivel'}">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>`).join('');
+        };
+        volList.addEventListener('input', (e) => {
+            const t2 = e.target as HTMLInputElement;
+            if (!t2.dataset.vk) return;
+            const i = parseInt((t2.closest('.vol-row') as HTMLElement).dataset.i!, 10);
+            (volTiers[i] as any)[t2.dataset.vk] = t2.value;
+        });
+        volList.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLElement>('.vol-del');
+            if (!btn) return;
+            volTiers.splice(parseInt(btn.dataset.vdel!, 10), 1);
+            renderVol();
+        });
+        document.getElementById('pmVolAdd')?.addEventListener('click', () => {
+            volTiers.push({ min: '', precio: '' });
+            renderVol();
+            (volList.querySelector('.vol-row:last-child input') as HTMLInputElement)?.focus();
+        });
+
+        function openModal(data?: DOMStringMap) {
+            errorEl.textContent = '';
+            editId = data?.id ?? null;
+            title.textContent = editId ? (I.editar || 'Editar producto') : (I.nuevo || 'Nuevo producto');
+            if (btnDelete) btnDelete.hidden = !(editId && canDelete);
+            input('pmNombre').value = data?.nombre ?? '';
+            input('pmSku').value = data?.sku ?? '';
+            input('pmUnidad').value = data?.unidad ?? '';
+            input('pmDescripcion').value = data?.descripcion ?? '';
+            input('pmPrecio').value = data?.precio ?? '';
+            input('pmCosto').value = data?.costo && data.costo !== '0' ? data.costo : '';
+            setActivo(data ? Boolean(data.activo) : true);
+            try { volTiers = JSON.parse(data?.volumen || '[]'); } catch { volTiers = []; }
+            if (!Array.isArray(volTiers)) volTiers = [];
+            renderVol();
+            updateMargin();
+            dlg.showModal();
+            (window as any).cordWireModal?.(dlg);
+            if (!editId) setTimeout(() => input('pmNombre').focus(), 60);
+        }
+        function closeModal() { dlg.close(); }
+
+        document.addEventListener('prodmodal:open', ((e: CustomEvent) => openModal(e.detail?.data)) as EventListener);
+        document.getElementById('pmClose')?.addEventListener('click', closeModal);
+        document.getElementById('pmCancel')?.addEventListener('click', closeModal);
+        dlg.addEventListener('click', (e) => { if (e.target === dlg) closeModal(); });
+        chips.forEach((c) => c.addEventListener('click', () => setActivo(Boolean(c.dataset.v))));
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = input('pmNombre').value.trim();
+            if (!nombre) {
+                errorEl.textContent = I.nombreObligatorio || 'El nombre del producto es obligatorio.';
+                input('pmNombre').focus();
+                return;
+            }
+            btnSave.disabled = true;
+            errorEl.textContent = '';
+            const prevLabel = btnSave.textContent;
+            btnSave.textContent = editId ? (I.guardando || 'Guardando…') : (I.creando || 'Creando…');
+            const payload = {
+                id: editId ?? undefined,
+                nombre,
+                sku: input('pmSku').value,
+                unidad: input('pmUnidad').value,
+                descripcion: input('pmDescripcion').value,
+                precio: input('pmPrecio').value,
+                costo: input('pmCosto').value || '0',
+                activo,
+                precios_volumen: volTiers
+                    .map((t2) => ({ min: Math.floor(Number(t2.min) || 0), precio: Math.max(0, Number(t2.precio) || 0) }))
+                    .filter((t2) => t2.min > 0 && t2.precio > 0)
+                    .sort((a, b) => a.min - b.min),
+            };
+            try {
+                const res = await fetch('/api/productos', {
+                    method: editId ? 'PATCH' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || I.noPudoGuardar);
+                document.dispatchEvent(new CustomEvent('prodmodal:saved', {
+                    detail: { id: editId || data.id, mode: editId ? 'edit' : 'create', producto: { ...payload, id: editId || data.id } },
+                }));
+                closeModal();
+            } catch (err: any) {
+                errorEl.textContent = err.message;
+                btnSave.disabled = false;
+                btnSave.textContent = prevLabel;
+            }
+        });
+
+        btnDelete?.addEventListener('click', async () => {
+            if (!editId) return;
+            if (!(await (window as any).cordConfirm({ title: I.eliminarTitulo, body: I.eliminarBody, danger: true, confirmText: I.eliminar }))) return;
+            const delId = editId;
+            const res = await fetch('/api/productos', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: delId }),
+            });
+            if (res.ok) {
+                document.dispatchEvent(new CustomEvent('prodmodal:deleted', { detail: { id: delId } }));
+                closeModal();
+            } else {
+                errorEl.textContent = (await res.json()).error || I.noPudoEliminar;
+            }
+        });
+    })();
+</script>

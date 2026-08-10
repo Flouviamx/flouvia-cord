@@ -242,7 +242,11 @@ export default function CordDynamicBg({
     color2: '#6670F4',
     color3: '#10B981'
   },
-  grain = true
+  grain = true,
+  maskImage,
+  maskSize = 'contain',
+  maskPosition = 'center',
+  maskRepeat = 'no-repeat',
 }) {
   const wrapRef = useRef(null)
   const [visible, setVisible] = useState(false)
@@ -277,10 +281,23 @@ export default function CordDynamicBg({
         position:      'absolute',
         inset:         0,
         zIndex:        0,
+        overflow:      'hidden',
         pointerEvents: 'none',
         backgroundColor: colors.base,
         opacity:       visible ? 1 : 0,
         transition:    'opacity 1s ease',
+        ...(maskImage ? {
+          WebkitMaskImage: `url(${maskImage})`,
+          WebkitMaskPosition: maskPosition,
+          WebkitMaskRepeat: maskRepeat,
+          WebkitMaskSize: maskSize,
+          WebkitMaskMode: 'alpha',
+          maskImage: `url(${maskImage})`,
+          maskPosition,
+          maskRepeat,
+          maskSize,
+          maskMode: 'alpha',
+        } : {}),
       }}
     >
       {inView && !reduced && (

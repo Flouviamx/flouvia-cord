@@ -25,13 +25,27 @@ You will be asked for the following data:
 - **Product/Service and Unit Key (SAT):** Mandatory for CFDI 4.0. We have a built-in smart search engine.
 - **Applicable Taxes:** Define if it carries VAT (16%, 8%, 0% or Exempt) or IEPS.
 
-### 2. Bulk Import (Coming Soon)
+### 2. Bulk Import (CSV)
 
-For B2B companies with hundreds or thousands of references, Cord will soon enable bulk import. 
-You will be able to download our **CSV / Excel Template**, paste the information extracted from your ERP (such as SAP, Oracle, or Microsip), and upload it to Cord to update prices, SAT keys, and descriptions in a single move.
+For companies with hundreds or thousands of references, Cord supports bulk import.
+Download our **CSV Template**, paste the information extracted from your ERP (such as
+SAP, Oracle, or Microsip), and upload it to Cord to create prices, SKUs, and
+descriptions in a single move.
 
 <Callout type="info">
 **Tip:** Do your prices change constantly?
 With the **Cord Public API** (Developers), you can synchronize your catalog in real-time. If you update a price in your ERP, a *webhook* or API call can automatically update it in Cord, ensuring your salespeople always quote with the current price list.
 
 </Callout>
+
+## The product profile
+
+The catalog (**Products** in the main menu) has quick filters (active, inactive, with
+volume pricing, missing cost, low margin) so you can find what you need without
+scrolling a long list.
+
+Click any product to open its **profile**: closed amount and units sold, close rate,
+price realization (the lowest, average, and highest price actually charged against the
+list price), list margin vs. **realized margin** over historical sales, its volume
+pricing ladder, who buys it most, its recent quotes, and which kits include it — all
+computed from your real history, not just the data you entered when creating it.

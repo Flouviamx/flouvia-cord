@@ -29,8 +29,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const rows = await sql`
-      select p.id, p.public_key, p.counter, p.user_id, p.transports
+      select p.id, p.public_key, p.counter, p.user_id, p.transports, u.suspended_at
       from passkeys p
+      join users u on u.id = p.user_id
       where p.id = ${body.id}
       limit 1
     `;
@@ -40,6 +41,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     const passkey = rows[0];
+    if (passkey.suspended_at) {
+      return new Response(JSON.stringify({ error: 'account_suspended' }), { status: 403 });
+    }
 
     let verification;
     try {

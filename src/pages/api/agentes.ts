@@ -48,6 +48,8 @@ async function runCobranzaForOrg(orgId: string): Promise<number> {
     });
     if (q.cliente_email) {
       await sendEmail({
+        orgId,
+        operation: 'ai_collection_email',
         to: q.cliente_email,
         subject: `Recordatorio de pago — factura vencida (${Math.floor(q.dias_vencido)} días)`,
         html: `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">

@@ -5,6 +5,7 @@
 import { sql } from './db';
 import { currentLocale } from './context';
 import { t } from '../i18n/app';
+import { trackExternalUsage } from './external-usage';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@flouvia.com>';
@@ -40,8 +41,11 @@ function fromWith(name?: string | null): string {
 }
 
 /** Envía un correo crudo. Devuelve el resultado sin lanzar. */
-export async function sendEmail(opts: { to: string; subject: string; html: string; fromName?: string | null; replyTo?: string | null }): Promise<SendResult> {
-    if (!RESEND_KEY) return { sent: false, skipped: 'sin RESEND_API_KEY' };
+export async function sendEmail(opts: { to: string; subject: string; html: string; fromName?: string | null; replyTo?: string | null; orgId?: string | null; operation?: string }): Promise<SendResult> {
+    if (!RESEND_KEY) {
+        await trackExternalUsage({ orgId: opts.orgId, provider: 'resend', category: 'email', operation: opts.operation || 'transactional_email', status: 'skipped' });
+        return { sent: false, skipped: 'sin RESEND_API_KEY' };
+    }
     if (!opts.to) return { sent: false, skipped: 'sin destinatario' };
     try {
         const payload: Record<string, unknown> = {
@@ -53,9 +57,14 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
             headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
-        if (!res.ok) return { sent: false, error: `Resend ${res.status}`, to: opts.to };
+        if (!res.ok) {
+            await trackExternalUsage({ orgId: opts.orgId, provider: 'resend', category: 'email', operation: opts.operation || 'transactional_email', status: 'failure', metadata: { http_status: res.status } });
+            return { sent: false, error: `Resend ${res.status}`, to: opts.to };
+        }
+        await trackExternalUsage({ orgId: opts.orgId, provider: 'resend', category: 'email', operation: opts.operation || 'transactional_email' });
         return { sent: true, to: opts.to };
     } catch (err: any) {
+        await trackExternalUsage({ orgId: opts.orgId, provider: 'resend', category: 'email', operation: opts.operation || 'transactional_email', status: 'failure' });
         return { sent: false, error: err?.message ?? 'fallo de red', to: opts.to };
     }
 }
@@ -128,6 +137,8 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
     // cotización de prueba con una real.
     const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
     return sendEmail({
+        orgId,
+        operation: 'quote_sent',
         to: r.email,
         subject: `${testPrefix}${tf('email.asunto', { folio: r.folio, org: r.org_nombre })}`,
         html,

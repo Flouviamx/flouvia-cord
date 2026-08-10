@@ -48,7 +48,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (!acctLimit.ok) return tooMany(acctLimit.retryAfter);
 
     try {
-        const users = await sql`select id, password_hash, email_verified_at, totp_enabled from users where email = ${email} limit 1`;
+        const users = await sql`select id, password_hash, email_verified_at, totp_enabled, suspended_at from users where email = ${email} limit 1`;
         const userAgent = request.headers.get('user-agent') || 'desconocido';
 
         if (users.length === 0) {
@@ -72,6 +72,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         if (!ok) {
             await recordFailedLogin(user.id);
             return new Response(JSON.stringify({ error: 'invalid_credentials' }), { status: 401 });
+        }
+
+        if (user.suspended_at) {
+            return new Response(JSON.stringify({ error: 'account_suspended' }), { status: 403 });
         }
 
         await resetFailedLogins(user.id);

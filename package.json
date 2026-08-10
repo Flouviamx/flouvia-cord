@@ -13,15 +13,16 @@
     "astro": "astro",
     "db:migrate": "node scripts/migrate.mjs",
     "db:reset": "node scripts/migrate.mjs -- --reset",
+    "db:cleanup-ops": "node scripts/cleanup-non-ops-data.mjs",
     "saml:xsw-check": "node scripts/saml-xsw-check.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
     "@astrojs/check": "^0.9.9",
-    "@astrojs/mdx": "^6.0.3",
+    "@astrojs/mdx": "^7.0.5",
     "@astrojs/react": "^5.0.7",
     "@astrojs/sitemap": "^3.7.3",
-    "@astrojs/vercel": "^10.0.6",
+    "@astrojs/vercel": "^11.0.5",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@nanostores/react": "^1.1.0",
     "@neondatabase/serverless": "^1.1.0",
@@ -37,7 +38,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vercel/analytics": "^2.0.1",
-    "astro": "^6.4.8",
+    "astro": "^7.2.0",
     "fuse.js": "^7.5.0",
     "gsap": "^3.15.0",
     "is-inside-container": "^1.0.0",
@@ -56,5 +57,10 @@
   "devDependencies": {
     "@types/qrcode": "^1.5.6",
     "circle-flags": "^2.8.3"
+  },
+  "overrides": {
+    "@vercel/routing-utils": {
+      "path-to-regexp": "6.3.0"
+    }
   }
 }

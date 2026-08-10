@@ -34,7 +34,9 @@ al `/api/orgs/provision` inseguro, invitaciones con token hasheado + expiración
 
 **Tablas** (`db/schema.sql`):
 - `orgs` — el negocio (nombre, logo, datos fiscales en `fiscal_metadata`, `country_code`, `quote_prefix`, plan, Stripe IDs, `owner_id` → `users.id`, `parent_org_id` → sub-cuentas anidadas). **`sandbox_of uuid`** (jul 2026, índice único parcial): si no es null, esta fila ES la org SANDBOX espejo de otra — ver "Entorno de prueba REAL tipo Stripe" en `historial.md`. `getActiveOrgId()` resuelve la sandbox del padre cuando la cookie `cord_test_mode` está activa (`resolveSandboxOrgId()` en `db.ts`, find-or-create idempotente).
-- `users`/`sessions`/`oauth_accounts`/`passkeys`/`password_reset_tokens`/`email_verification_tokens`/`two_factor_challenges`/`ops_sessions` (ago 2026) — núcleo de auth propio. `sessions.id`/`password_reset_tokens.id`/`org_members.token`/`ops_sessions.id` guardan **sha256(token)**, nunca el valor crudo (que solo vive en la cookie/link, jamás se persiste). Ver detalle completo en `historial-auth-clerk.md`.
+- `users`/`sessions`/`oauth_accounts`/`passkeys`/`password_reset_tokens`/`email_verification_tokens`/`two_factor_challenges` (ago 2026) — núcleo de auth propio. `sessions.id`/`password_reset_tokens.id`/`org_members.token` guardan **sha256(token)**, nunca el valor crudo (que solo vive en la cookie/link, jamás se persiste). `users.suspended_at` bloquea centralmente cualquier método de autenticación y revoca sesiones desde Ops. Ver detalle completo en `historial-auth-clerk.md`.
+- `ops_operators`/`ops_auth_challenges`/`ops_sessions`/`ops_audit_log` (ago 2026) — carril de identidad privilegiada exclusivo de `ops.cordhq.app`. Allowlist en código + BD, passkey o contraseña con TOTP, cookie separada, tokens y retos hasheados, expiración corta y bitácora de acceso. Una sesión normal de Cord nunca autoriza Ops.
+- `external_usage_events` (ago 2026) — telemetría RLS por organización para proveedores con costo variable. Registra proveedor, categoría, operación, unidades, tokens de entrada/salida y estado; nunca prompts, destinatarios, payloads, respuestas, llaves ni secretos. Complementa `uso_periodo`, `api_requests`, `webhook_deliveries` y `cotizacion_cobros` en `/ops/usage`.
 - `productos` — catálogo de cada org
 - `clientes` — a quién se cotiza (con `terminos_default` y `limite_credito`)
 - `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX. `creado_por` (jul 2026, nullable) = `users.id` de quien la creó/duplicó — alimenta `/app/desempeno`.
@@ -109,14 +111,20 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
 # App — CONECTADA a Neon (src/lib/queries.ts); usa AppLayout.astro
 /login /registro → Clerk SignIn/SignUp (es-MX)
 /app             → dashboard: KPIs (incl. "por dar seguimiento"), pipeline, recientes, feed
-/app/cfo         → CFO Dashboard (jun 2026): proyección de flujo de caja semanal,
-                   KPIs financieros (DSO, concentración de riesgo), alertas de
-                   silenciadas y ranking de clientes ponderado. getCFO() en queries.ts.
-/app/analitica   → analítica (jun 2026): KPIs (cerrado/tasa/ticket/días a cierre),
-                   gráfica cotizado vs cerrado por mes, embudo de conversión, margen
-                   cedido (lista vs negociado), top clientes y top productos. Charts en
-                   CSS puro; datos de getAnalytics() en queries.ts.
-/app/desempeno   → desempeño del equipo (jul 2026, 3ra pestaña junto a Finanzas/Analítica):
+/app/informes    → INFORMES (ago 2026) — la única casa de la analítica. Reemplaza a
+                   /app/cfo, /app/analitica y /app/tesoreria/flujo (los 3 borrados; el
+                   middleware 302-redirige desde ellos vía LEGACY_ROUTES de informes.ts).
+                   Una sola ruta con desplegable de informes (?r=resumen|comercial|
+                   finanzas|flujo|cobranza|clientes|productos) + un solo selector de
+                   fechas (?rango=30 o ?desde=&hasta=). Registro en src/lib/informes.ts
+                   (cada informe declara scope 'rango'|'snapshot', perm y grupo); carga
+                   de datos en src/lib/informes-data.ts; markup en
+                   src/components/app/informes/*Report.astro (un componente por informe,
+                   ~42 widgets). Widgets personalizables con clave por informe
+                   (cord.report.<id>.v1). Gate: memberCan('analitica') + ReportDef.perm.
+                   Los informes 'snapshot' NO renderizan el selector de fechas — muestran
+                   un chip "Al día de hoy" (así no hay control que ignorar).
+/app/desempeno   → desempeño del equipo (jul 2026; hoy 2ª pestaña junto a Informes):
                    ranking por vendedor (cotizaciones creadas/enviadas/cerradas, tasa de
                    cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía
                    getDesempeno() en queries.ts. Atribución por cotizaciones.creado_por
@@ -193,6 +201,34 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    sessions (listar/revocar) · 2fa/{start,verify,disable,
                    backup-codes} · passkeys (listar/[id] DELETE) ·
                    connections/[provider] DELETE. Ver CustomUserProfile.tsx.
+/ops             → Centro de operaciones interno, aislado del layout y analytics
+                   públicos. Solo los dos operadores de la allowlist doble;
+                   passkey o password+TOTP en producción.
+/ops/users/[id]  → ficha de identidad: perfil, membresías, sesiones, passkeys,
+                   OAuth, suspensión/restauración y auditoría.
+/ops/organizations/[id] → ficha del workspace: equipo, cotizaciones, clientes,
+                   productos, pagos, API keys, webhooks y SSO.
+/ops/usage        → centro de consumo y riesgo por organización: cuotas de IA,
+                   API y CFDI; tokens Anthropic; correos Resend; errores API;
+                   fallos de webhooks; volumen Stripe y tamaño de Neon. Alertas
+                   preventivas al 80% y críticas al 100% de la cuota. La tabla usa
+                   búsqueda server-side y páginas SSR de 50; los totales/alertas se
+                   calculan aparte y nunca se envía el catálogo completo de orgs.
+/ops/database/[table] → explorador paginado de todas las tablas públicas. Los
+                   campos criptográficos, secretos, tokens y datos financieros
+                   sensibles permanecen redactados y no son buscables. La navegación
+                   es keyset por cursor `created_at/id`, sin `OFFSET` profundo ni
+                   `COUNT(*)`; el total sin filtro es una estimación de `pg_class`.
+/ops/security    → sesiones Ops, señales de identidad y bitácora privilegiada. La
+                   auditoría se pagina a 50 filas y las señales muestran el inbox
+                   acotado de las 50 identidades más recientes que requieren atención.
+/api/ops/users/[id] → PATCH administrativo: revocar sesiones, desbloquear o
+                   eliminar una identidad no protegida. Rol Ops admin y auditoría
+                   atómica obligatorios.
+/api/ops/organizations/[id] → PATCH administrativo: revocar llaves API,
+                   desactivar webhooks, cerrar sesiones del equipo o eliminar una
+                   organización no protegida. Confirmación escrita para acciones
+                   destructivas y auditoría en la misma transacción.
 /api/orgs        → POST crea una org (el servidor genera el id — reemplaza a
                    /api/orgs/provision, que tenía un IDOR cross-tenant real).
 /api/equipo/resend → POST regenera el link de una invitación pendiente (rota
@@ -315,4 +351,3 @@ DEBEN vivir en `<style is:global>` — Astro scopea por `[data-astro-cid]` y el 
 dinámico no lleva ese atributo. NO moverlos al bloque `<style>` scopeado.
 
 ---
-

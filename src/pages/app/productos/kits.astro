@@ -42,7 +42,7 @@ const KIT_T = {
 ---
 
 <AppLayout title={t(L, 'kit.title')} page="productos" heading={t(L, 'prod.catalogo')}>
-    <div slot="page-tabs">
+    <div slot="page-tabs" class="ph-tabs">
         <a href="/app/productos" class="ph-tab">{t(L, 'prod.tab_catalogo')}</a>
         <a href="/app/productos/kits" class="ph-tab active">{t(L, 'prod.tab_kits')}</a>
     </div>
@@ -91,48 +91,51 @@ const KIT_T = {
                     <button type="button" class="kmod-close" id="kitClose" aria-label={t(L, 'kit.cerrar')}>✕</button>
                 </div>
 
-                <div class="kmod-field">
-                    <label for="kitNombre">{t(L, 'kit.nombre')}</label>
-                    <input class="kmod-input" id="kitNombre" required maxlength="120" placeholder={t(L, 'kit.nombre_ph')} />
-                </div>
-                <div class="kmod-field">
-                    <label for="kitDescripcion">{t(L, 'kit.descripcion')} <span class="kmod-opt">{t(L, 'kit.opcional')}</span></label>
-                    <input class="kmod-input" id="kitDescripcion" maxlength="300" placeholder={t(L, 'kit.descripcion_ph')} />
-                </div>
+                <div class="kmod-body">
+                    <div class="kmod-field">
+                        <label for="kitNombre">{t(L, 'kit.nombre')}</label>
+                        <input class="kmod-input" id="kitNombre" required maxlength="120" placeholder={t(L, 'kit.nombre_ph')} />
+                    </div>
+                    <div class="kmod-field">
+                        <label for="kitDescripcion">{t(L, 'kit.descripcion')} <span class="kmod-opt">{t(L, 'kit.opcional')}</span></label>
+                        <input class="kmod-input" id="kitDescripcion" maxlength="300" placeholder={t(L, 'kit.descripcion_ph')} />
+                    </div>
 
-                <div class="kmod-field">
-                    <label>{t(L, 'kit.renglones')}</label>
-                    <div class="ki-items" id="kiItems"></div>
-                    <div class="ki-items-empty" id="kiItemsEmpty">{t(L, 'kit.renglones_vacio')}</div>
+                    <div class="kmod-field">
+                        <label>{t(L, 'kit.renglones')}</label>
+                        <div class="ki-items" id="kiItems"></div>
+                        <div class="ki-items-empty" id="kiItemsEmpty">{t(L, 'kit.renglones_vacio')}</div>
 
-                    <div class="ki-add-row">
-                        <div class="prod-search">
-                            <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-                            <input type="text" class="prod-input" id="kitProdInput" placeholder={t(L, 'kit.buscar_ph')} autocomplete="off" role="combobox" aria-expanded="false" aria-controls="kitProdDrop" />
-                            <div class="prod-drop" id="kitProdDrop" hidden role="listbox"></div>
+                        <div class="ki-add-row">
+                            <div class="prod-search">
+                                <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+                                <input type="text" class="prod-input" id="kitProdInput" placeholder={t(L, 'kit.buscar_ph')} autocomplete="off" role="combobox" aria-expanded="false" aria-controls="kitProdDrop" />
+                                <div class="prod-drop" id="kitProdDrop" hidden role="listbox"></div>
+                            </div>
+                            <button type="button" class="btn-free-line" id="kitFreeLine">{t(L, 'kit.linea_libre')}</button>
                         </div>
-                        <button type="button" class="btn-free-line" id="kitFreeLine">{t(L, 'kit.linea_libre')}</button>
+                    </div>
+
+                    <div class="kmod-field">
+                        <label class="kmod-check"><input type="checkbox" id="kitComboToggle" /> {t(L, 'kit.combo_toggle')} <span class="kmod-opt">{t(L, 'kit.combo_toggle_hint')}</span></label>
+                        <div class="kmod-combo-box" id="kitComboBox" hidden>
+                            <div class="kmod-combo-row">
+                                <span class="kmod-combo-pre">$</span>
+                                <input type="number" min="0.01" step="0.01" class="kmod-combo-input" id="kitComboPrice" placeholder="0.00" />
+                            </div>
+                            <p class="kmod-combo-hint" id="kitComboHint">{t(L, 'kit.combo_hint_vacio')}</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="kmod-field">
-                    <label class="kmod-check"><input type="checkbox" id="kitComboToggle" /> {t(L, 'kit.combo_toggle')} <span class="kmod-opt">{t(L, 'kit.combo_toggle_hint')}</span></label>
-                    <div class="kmod-combo-box" id="kitComboBox" hidden>
-                        <div class="kmod-combo-row">
-                            <span class="kmod-combo-pre">$</span>
-                            <input type="number" min="0.01" step="0.01" class="kmod-combo-input" id="kitComboPrice" placeholder="0.00" />
-                        </div>
-                        <p class="kmod-combo-hint" id="kitComboHint">{t(L, 'kit.combo_hint_vacio')}</p>
+                <div class="kmod-foot">
+                    <p class="kmod-error" id="kitError"></p>
+                    <div class="kmod-actions">
+                        <button type="button" class="kmod-delete" id="kitDelete" hidden>{t(L, 'kit.eliminar_kit_btn')}</button>
+                        <span class="kmod-spacer"></span>
+                        <button type="button" class="kmod-cancel" id="kitCancel">{t(L, 'kit.cancelar')}</button>
+                        <button type="submit" class="kmod-save" id="kitSave">{t(L, 'kit.guardar_kit')}</button>
                     </div>
-                </div>
-
-                <p class="kmod-error" id="kitError"></p>
-
-                <div class="kmod-actions">
-                    <button type="button" class="kmod-delete" id="kitDelete" hidden>{t(L, 'kit.eliminar_kit_btn')}</button>
-                    <span class="kmod-spacer"></span>
-                    <button type="button" class="kmod-cancel" id="kitCancel">{t(L, 'kit.cancelar')}</button>
-                    <button type="submit" class="kmod-save" id="kitSave">{t(L, 'kit.guardar_kit')}</button>
                 </div>
             </form>
         </dialog>
@@ -171,13 +174,33 @@ const KIT_T = {
     .ki-empty svg { width: 34px; height: 34px; color: #cbd5e1; }
     .ki-empty b { color: var(--color-text); font-weight: 600; }
 
-    /* ── Modal (mismo lenguaje que productos/plantillas) ── */
-    .kmod { border: none; border-radius: 18px; padding: 0; width: min(560px, calc(100vw - 2rem)); box-shadow: 0 40px 90px -30px rgba(10,25,47,0.45); }
+    /* ── Modal (mismo lenguaje que productos/plantillas) ──
+       Fix de scroll (misma causa raíz que src/styles/modal.css): en desktop no había
+       max-height/overflow salvo dentro de @media(max-width:560px), así que el <dialog>
+       COMPLETO scrolleaba al crecer los renglones del kit — la barra de Guardar se iba
+       con el scroll. Estructura head/body/foot: solo .kmod-body scrollea. */
+    .kmod {
+        border: none; border-radius: 18px; padding: 0; width: min(560px, calc(100vw - 2rem));
+        max-height: min(86vh, calc(100vh - 3rem));
+        max-height: min(86dvh, calc(100dvh - 3rem));
+        overflow: hidden;
+        box-shadow: 0 40px 90px -30px rgba(10,25,47,0.45);
+    }
+    /* ⚠️ display SOLO bajo [open] — declararlo en `.kmod` a secas rompe el display:none
+       del <dialog> cerrado (misma trampa que `.modal` en src/styles/modal.css). */
+    .kmod[open] { display: flex; flex-direction: column; }
     .kmod::backdrop { background: rgba(10,25,47,0.38); backdrop-filter: blur(4px); }
-    .kmod-inner { display: flex; flex-direction: column; gap: 0.95rem; padding: 1.5rem 1.6rem 1.4rem; }
-    .kmod-head { display: flex; align-items: center; justify-content: space-between; }
+    .kmod-inner { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; padding: 0; gap: 0; }
+    .kmod-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 1.35rem 1.6rem 0.85rem; }
     .kmod-head h2 { font-size: 1.05rem; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
-    .kmod-close { background: var(--color-bg-soft); border: 1px solid var(--color-border); width: 30px; height: 30px; border-radius: 9px; cursor: pointer; font-size: 0.8rem; color: var(--color-text-muted); }
+    .kmod-close { background: var(--color-bg-soft); border: 1px solid var(--color-border); width: 30px; height: 30px; border-radius: 9px; cursor: pointer; font-size: 0.8rem; color: var(--color-text-muted); flex-shrink: 0; }
+    .kmod-body {
+        flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch; scrollbar-gutter: stable;
+        display: flex; flex-direction: column; gap: 0.95rem;
+        padding: 0.15rem 1.6rem 1.1rem;
+    }
+    .kmod-foot { flex: 0 0 auto; padding: 0.85rem 1.6rem calc(1.1rem + env(safe-area-inset-bottom, 0px)); }
     .kmod-field { display: flex; flex-direction: column; gap: 0.4rem; }
     .kmod-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
     .kmod-opt { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.6px; color: #b3bcc9; text-transform: none; }
@@ -199,7 +222,8 @@ const KIT_T = {
         padding: 10px 12px; transition: border-color 0.25s;
     }
     .kmod-input:focus { outline: none; border-color: var(--color-blue-deep); }
-    .kmod-error { font-size: 0.78rem; color: var(--color-danger); margin: 0; min-height: 1em; }
+    .kmod-error { font-size: 0.78rem; color: var(--color-danger); margin: 0 0 0.6rem; min-height: 1em; }
+    .kmod-error:empty { display: none; margin: 0; }
     .kmod-actions { display: flex; align-items: center; gap: 0.6rem; }
     .kmod-spacer { flex: 1; }
     .kmod-delete { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-danger); background: none; border: none; cursor: pointer; padding: 9px 4px; }
@@ -271,7 +295,9 @@ const KIT_T = {
 
     @media (max-width: 560px) {
         .kmod { width: 100%; max-width: 100%; margin: 0; top: auto; bottom: 0; left: 0; right: 0; border-radius: 20px 20px 0 0; max-height: 92dvh; }
-        .kmod-inner { padding: 1.3rem 1.2rem; padding-bottom: calc(1.3rem + env(safe-area-inset-bottom)); max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .kmod-head { padding: 1.2rem 1.2rem 0.8rem; }
+        .kmod-body { padding: 0.15rem 1.2rem 1rem; }
+        .kmod-foot { padding: 0.8rem 1.2rem calc(1rem + env(safe-area-inset-bottom, 0px)); }
         .kii-row { grid-template-columns: 1fr 60px 30px; }
         .kii-unit { display: none; }
     }
@@ -441,6 +467,7 @@ const KIT_T = {
             errorEl.textContent = '';
             renderItems();
             dlg.showModal();
+            window.cordWireModal?.(dlg);
         }
         function openEdit(kit) {
             editId = kit.id; removedIds = [];
@@ -454,6 +481,7 @@ const KIT_T = {
             errorEl.textContent = '';
             renderItems();
             dlg.showModal();
+            window.cordWireModal?.(dlg);
         }
 
         document.getElementById('kitNew')?.addEventListener('click', openNew);

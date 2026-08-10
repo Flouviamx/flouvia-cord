@@ -6,6 +6,7 @@ import PasswordField from './PasswordField';
 const ERROR_ES: Record<string, string> = {
   invalid_credentials: 'Correo o contraseña incorrectos.',
   account_locked: 'Demasiados intentos fallidos. Intenta de nuevo en 15 minutos.',
+  account_suspended: 'Esta cuenta está suspendida. Contacta al equipo de soporte.',
   missing_fields: 'Ingresa tu correo y contraseña.',
   rate_limited: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
   internal_error: 'Ocurrió un error en el servidor. Intenta de nuevo más tarde.',
@@ -17,6 +18,7 @@ const ERROR_ES: Record<string, string> = {
 const ERROR_EN: Record<string, string> = {
   invalid_credentials: 'Incorrect email or password.',
   account_locked: 'Too many failed attempts. Try again in 15 minutes.',
+  account_suspended: 'This account is suspended. Contact support.',
   missing_fields: 'Enter your email and password.',
   rate_limited: 'Too many attempts. Please wait a moment and try again.',
   internal_error: 'A server error occurred. Please try again later.',
@@ -166,7 +168,7 @@ export default function CustomSignIn() {
       // incorrecta" — ambas caen aquí con el MISMO mensaje del servidor
       // (login.ts nunca distingue). Mostrar siempre la sugerencia no añade
       // ninguna señal nueva de enumeración.
-      if (data.error !== 'account_locked' && data.error !== 'rate_limited') {
+      if (data.error !== 'account_locked' && data.error !== 'account_suspended' && data.error !== 'rate_limited') {
         setSuggestSignup(true);
       }
     } catch (err: any) {

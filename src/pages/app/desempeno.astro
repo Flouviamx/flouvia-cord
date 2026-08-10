@@ -22,9 +22,8 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
 ---
 
 <AppLayout title={t(L, 'des.title')} page="desempeno" heading={t(L, 'des.heading')}>
-    <div slot="page-tabs">
-        <a href="/app/cfo" class="ph-tab">{t(L, 'an.tab_finanzas')}</a>
-        <a href="/app/analitica" class="ph-tab">{t(L, 'an.tab_analitica')}</a>
+    <div slot="page-tabs" class="ph-tabs">
+        <a href="/app/informes" class="ph-tab">{t(L, 'an.tab_analitica')}</a>
         <a href="/app/desempeno" class="ph-tab active">{t(L, 'an.tab_equipo')}</a>
     </div>
 
@@ -94,12 +93,13 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
                     </div>
                     <span class="lb-n">{v.creadas}</span>
                     <span class="lb-n">{v.tasaCierre}%</span>
-                    <div class="lb-barwrap">
-                        <span class="lb-bar" style={`width:${Math.round((v.cerradoTotal / maxCerrado) * 100)}%`}></span>
+                    <div class="lb-close">
+                        <div class="lb-barwrap"><span class="lb-bar" style={`width:${Math.round((v.cerradoTotal / maxCerrado) * 100)}%`}></span></div>
+                        <span class="editorial lb-amt">{money(v.cerradoTotal, 0)}</span>
                     </div>
-                    <span class="editorial lb-amt">{money(v.cerradoTotal, 0)}</span>
                     <span class="editorial lb-amt lb-amt-muted">{money(v.cobradoTotal, 0)}</span>
                     <span class="editorial lb-amt lb-amt-small">{v.ticketPromedio ? money(v.ticketPromedio, 0) : '—'}</span>
+                    <span class="editorial lb-amt lb-amt-small">{v.diasCierre ? `${v.diasCierre} d` : '—'}</span>
                 </div>
             ))}
 
@@ -112,11 +112,12 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
                     </div>
                     <span class="lb-n">{D.sinAsignar.n}</span>
                     <span class="lb-n">—</span>
-                    <div class="lb-barwrap">
-                        <span class="lb-bar lb-bar-muted" style={`width:${Math.round((D.sinAsignar.cerradoTotal / maxCerrado) * 100)}%`}></span>
+                    <div class="lb-close">
+                        <div class="lb-barwrap"><span class="lb-bar lb-bar-muted" style={`width:${Math.round((D.sinAsignar.cerradoTotal / maxCerrado) * 100)}%`}></span></div>
+                        <span class="editorial lb-amt">{money(D.sinAsignar.cerradoTotal, 0)}</span>
                     </div>
-                    <span class="editorial lb-amt">{money(D.sinAsignar.cerradoTotal, 0)}</span>
                     <span class="editorial lb-amt lb-amt-muted">{money(D.sinAsignar.cobradoTotal, 0)}</span>
+                    <span class="lb-amt lb-amt-small">—</span>
                     <span class="lb-amt lb-amt-small">—</span>
                 </div>
             )}
@@ -126,7 +127,7 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
 </AppLayout>
 
 <style>
-    /* KPIs — misma tira que /app/analitica */
+    /* KPIs — misma tira que Informes */
     .kpis {
         display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
         margin-bottom: 2.6rem;
@@ -173,6 +174,7 @@ const mostrarSinAsignar = !!D && (D.sinAsignar.n > 0 || D.sinAsignar.cerradoTota
     .lb-role { font-size: 0.68rem; color: var(--color-text-muted); }
 
     .lb-n { text-align: right; font-size: 0.82rem; color: var(--color-text); font-variant-numeric: tabular-nums; }
+    .lb-close { display: grid; grid-template-columns: minmax(42px, 1fr) auto; align-items: center; gap: 0.55rem; min-width: 0; }
     .lb-barwrap { height: 8px; background: var(--chart-track); border-radius: 100px; overflow: hidden; border: 1px solid var(--color-border); }
     .lb-bar { display: block; height: 100%; background: var(--chart-fill); border-radius: 100px; min-width: 3px; transition: width 0.7s var(--ease-spring); }
     .lb-bar-muted { background: #c6d0dd; }
