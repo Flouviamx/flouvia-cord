@@ -1,0 +1,51 @@
+---
+title: "Refunds"
+description: "How to give money back to a customer from My Payments: full or partial refunds, the difference between card and SPEI, and what happens to the fee."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Refunds</h1>
+  <p class="page-subtitle">Give money back to a customer from the same panel where you see your payments — with identity confirmation along the way.</p>
+</header>
+
+## Where to refund
+
+Refunds live in **My Payments** (`/app/cobros`), not in the cotización's detail page. In the "Recent payments" widget, every row that corresponds to a payment **reconciled through Cord Payments** has a **Refund** button. A payment recorded manually (a transfer outside Cord Payments) doesn't have this button — for that case, you handle the refund directly with your customer outside Cord.
+
+<Callout type="warning">
+Refunding requires the **Refunds** permission. This permission is **not granted automatically** to team administrators — the account owner has to explicitly grant it to each member who needs to issue refunds, from Settings › Team. This is intentional: moving money out of the account is a more sensitive action than administering it.
+</Callout>
+
+## How it works
+
+1. Click **Refund** on the payment's row.
+2. A dialog opens with the amount available to refund (it may be less than the total, if you already issued a partial refund before) and an optional internal reason field.
+3. Enter the amount — the full total or just a portion — and confirm.
+4. Since this moves money, Cord asks you to **re-confirm your identity** (your password or your 2FA code) before executing the refund, even if your session was already active. It's the same "re-authentication" mechanism that protects other sensitive account actions.
+5. The refund is logged in your organization's audit trail, with the amount, the reason (if given), and who authorized it.
+
+You can refund the same payment **more than once**, as long as the accumulated total doesn't exceed what was originally charged — the dialog always shows you how much is still available.
+
+## Card vs. SPEI: two different flows
+
+### Card
+
+The refund is processed **automatically** as soon as you confirm it — no manual step required on your part. The money returns to the customer's original card on whatever timeline their bank handles.
+
+### SPEI
+
+A SPEI transfer **cannot be automatically reversed** — unlike a card, there's no way to "give back" the money through the same channel without you making a new transfer. So a refund on a SPEI payment:
+
+1. Gets recorded in Cord as "pending, manual refund".
+2. Cord automatically creates a task on your to-do list reminding you to transfer the amount back to the customer.
+3. You make the transfer yourself through your normal bank account, and mark the task as resolved.
+
+## What happens to your money
+
+- The refunded amount is deducted from your net revenue across all of [My Payments](/en/docs/pagos/dashboard)' reports — it never stays "hidden" in the total collected figure.
+- **The processing fee that Cord charged on the original payment is not refunded.** It's a processing cost that already occurred when the card was charged or the SPEI transfer was received — refunding the customer doesn't reverse that cost. See the details in [Fees and advantages](/en/docs/pagos/condiciones).
+- If the refunded payment was part of a quote with an [upfront deposit and balance](/en/docs/pagos/anticipos), the refund only affects the specific payment you chose — not the rest of that quote's slices.
+
+<Callout type="info">
+A refund **does not revert the cotización's status** — it stays marked as paid. If you also need to cancel the cotización itself (for example, because the entire order was called off), do that from the cotización's detail page separately.
+</Callout>

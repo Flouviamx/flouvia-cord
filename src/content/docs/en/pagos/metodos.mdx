@@ -1,48 +1,61 @@
 ---
 title: "Payment methods"
-description: "Discover how Cord's payment architecture works: from Dynamic SPEI to Card payments."
+description: "Discover how Cord Payments works: dynamic SPEI, card, and manual transfer, and how the customer picks a method."
 ---
 
 <header class="content-header">
   <h1 class="page-title">Payment methods</h1>
-  <p class="page-subtitle">Discover how Cord's payment architecture works: from Dynamic SPEI to Card payments.</p>
+  <p class="page-subtitle">Discover how Cord Payments works: dynamic SPEI, card, and manual transfer.</p>
 </header>
 
-## Payment Architecture
+## Payment architecture
 
-Cord is designed so that charging isn't a point of friction at the end of the project, but a fluid, integrated process. By connecting your Stripe account, you unlock two powerful automatic methods, while keeping your manual transfer method as a fallback.
+Cord Payments is designed so that charging isn't a point of friction at the end of the project. Once you activate Cord Payments (see [Connect your account](/en/docs/pagos/onboarding)), your business can accept three methods — card, dynamic SPEI, and manual transfer — each with its own fee (see [Fees and advantages](/en/docs/pagos/condiciones)) and its own level of automation.
 
-### 1. Dynamic SPEI (Stripe)
+On the public cotización link, the customer **picks the method explicitly before continuing** — one is never assigned to them by default without their knowledge. If your business only activated one method, that's the only one shown.
 
-This is the ideal method for B2B operations in Mexico, specifically designed to eliminate the manual reconciliation of invoices.
+### 1. Dynamic SPEI
 
-**How does it work?**
-Instead of giving all your clients the exact same CLABE account number for your company, Cord and Stripe generate **a unique, temporary, and exclusive virtual CLABE for each payment**.
+This is the method built for B2B in Mexico: it eliminates manual invoice reconciliation.
 
-When the client clicks "Pay with SPEI":
-1. The system creates an instant virtual sub-account assigned only to that specific quote.
-2. The client sees the instructions to wire funds from their banking app to that new CLABE.
-3. When the funds hit the interbank network, Stripe detects them and immediately identifies which quote they belong to (because the CLABE was unique to that sale).
-4. Cord receives the notification in real-time, marks the quote as **Paid**, and sends you a confirmation email.
+**How it works:**
+Instead of giving every customer the same CLABE for your company, Cord Payments generates **a unique, temporary CLABE for each individual payment**.
+
+When the customer picks "SPEI Transfer":
+1. Cord Payments generates a virtual CLABE assigned exclusively to that specific payment, and shows it on a Cord-native instructions screen — without leaving the cotización link or redirecting to an external site.
+2. The customer transfers from their banking app to that CLABE.
+3. As soon as the funds enter the interbank network, Cord Payments identifies them automatically (because the CLABE was unique to that payment).
+4. The system marks the cotización as **Paid** in real time and sends you the confirmation.
 
 <Callout type="info">
-**Zero collisions:** Unlike the traditional model where you receive a "$15,000" deposit and have to investigate which client sent it, dynamic SPEI makes it impossible for two payments to get mixed up.
+**Zero collisions:** unlike the traditional model where you get a "$15,000" deposit and have to investigate which client sent it, dynamic SPEI makes it impossible for two payments to be confused — every payment has its own CLABE.
 </Callout>
 
-### 2. Credit and Debit Card
+Fee: 1% + $7.00 MXN + VAT, capped at $588.12 MXN per payment (see the full detail in [Fees and advantages](/en/docs/pagos/condiciones)).
 
-The fastest and lowest-friction method. It is presented directly in the *in-house checkout* without taking the client away from the document.
+### 2. Credit and debit card
+
+The fastest, lowest-friction method. It shows up directly in the checkout embedded in the cotización (without ever taking the customer out of the document).
 
 **Key features:**
-- Supports **Visa, Mastercard, and American Express**.
-- Native *premium* interface (clean gray backgrounds, no redirects).
-- **Atomic authorization:** The moment the client presses "Pay", the funds are authorized and the quote switches to a Paid status in less than a second.
+- Supports Visa, Mastercard, and American Express.
+- Native interface with your brand's color and name — no third-party logos or references to any external processor.
+- **Near-instant authorization:** as soon as the customer confirms the payment, the cotización flips to Paid within seconds.
+- The only method that supports [recurring retainers](/en/docs/pagos/igualas) — a charge that gets set up once and repeats every month without the customer having to intervene again.
 
-### 3. Manual Bank Transfer
+Fee: 4% + $3.00 MXN + VAT per transaction.
 
-If you decide not to use Stripe, or if the quote is for a massive amount where you prefer to save on any commissions, you can leave manual transfers active.
+### 3. Manual bank transfer
+
+If you'd rather not use Cord Payments' automated collection — or the cotización is a large amount where you'd prefer to avoid any fee — you can leave manual transfer as the only active method.
 
 **The manual flow:**
-1. The client sees your traditional bank details (Bank, Account/CLABE, Beneficiary) configured in your Settings.
-2. The client makes the transfer externally.
-3. You (as the seller) must open the quote in Cord and press the "Mark as paid" button manually once you've verified the money landed in your corporate bank account.
+1. The customer sees your traditional banking details (Bank, CLABE, Beneficiary) configured in Settings.
+2. The customer transfers outside of Cord.
+3. You, the seller, go into the cotización and press "Mark as paid" manually once you've verified the money landed in your account.
+
+Fee: $0.00 — it doesn't go through Cord Payments, so it doesn't generate any fee, but it also doesn't have automatic reconciliation or chargeback protection.
+
+<Callout type="info">
+You can activate all three methods at once, or just the ones that make sense for you, from **Settings › Payments**. The customer only sees the options you have turned on.
+</Callout>

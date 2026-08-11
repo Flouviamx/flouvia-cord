@@ -3,13 +3,16 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import IdentityCaptureMobile from '../../components/app/IdentityCaptureMobile';
-import { sql } from '../../lib/db';
+import { createHash } from 'node:crypto';
+import { sql, withCaptureToken } from '../../lib/db';
 
 const { token } = Astro.params;
 
-const [row] = token
-    ? await sql`select org_id, expires_at from identity_capture_sessions where token = ${token}`
-    : [null];
+const tokenHash = createHash('sha256').update(token || '').digest('hex');
+const [captureRows] = token
+    ? await withCaptureToken(token, sql`select org_id, expires_at from identity_capture_sessions where token_hash = ${tokenHash}`)
+    : [[null]];
+const row = captureRows[0];
 
 let org: { nombre?: string; logo_url?: string; color_marca?: string } = {};
 if (row) {

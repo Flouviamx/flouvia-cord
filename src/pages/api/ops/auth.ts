@@ -16,6 +16,7 @@ import {
 import { verifyTotp } from '../../../lib/totp';
 import { strictLimitResponse, strictRateLimit } from '../../../lib/ratelimit';
 import { trustedIp } from '../../../lib/ip';
+import { decryptSecret } from '../../../lib/crypto-secret';
 import { sendOpsLoginAlertEmail } from '../../../lib/auth-email';
 import {
     OPS_CHALLENGE_COOKIE,
@@ -76,7 +77,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
         const rows = await sql`
             select u.id, u.email, u.password_hash, u.email_verified_at,
-                   u.totp_enabled, u.totp_secret, u.totp_confirmed_at,
+                   u.totp_enabled, u.totp_secret, u.totp_secret_enc, u.totp_confirmed_at,
                    u.suspended_at, o.active
             from users u
             join ops_operators o on o.user_id = u.id
@@ -89,6 +90,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         }
 
         const user = rows[0] as any;
+        const totpSecret = decryptSecret(user.totp_secret_enc) || user.totp_secret;
         if (await checkAndConsumeLockout(user.id)) {
             await logOpsAudit({
                 actorUserId: user.id,
@@ -157,7 +159,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
             user.suspended_at ||
             !user.email_verified_at ||
             !user.totp_enabled ||
-            !user.totp_secret ||
+            !totpSecret ||
             !user.totp_confirmed_at
         ) {
             await logOpsAudit({
@@ -209,7 +211,7 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
     try {
         const rows = await sql`
             select u.email, u.email_verified_at, u.suspended_at,
-                   u.totp_enabled, u.totp_secret, u.totp_confirmed_at,
+                   u.totp_enabled, u.totp_secret, u.totp_secret_enc, u.totp_confirmed_at,
                    o.email as operator_email, o.active
             from users u join ops_operators o on o.user_id = u.id
             where u.id = ${operatorId}
@@ -219,6 +221,7 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
             return new Response(JSON.stringify({ error: 'invalid_state' }), { status: 400 });
         }
         const user = rows[0] as any;
+        const totpSecret = decryptSecret(user.totp_secret_enc) || user.totp_secret;
         const email = normalizeOpsEmail(user.email);
         const valid =
             user.active &&
@@ -227,10 +230,10 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
             isAllowedOpsEmail(email) &&
             normalizeOpsEmail(user.operator_email) === email &&
             user.totp_enabled &&
-            typeof user.totp_secret === 'string' &&
+            typeof totpSecret === 'string' &&
             user.totp_confirmed_at &&
             /^[0-9]{6}$/.test(code) &&
-            verifyTotp(user.totp_secret, code);
+            verifyTotp(totpSecret, code);
 
         if (!valid) {
             await recordFailedLogin(operatorId);

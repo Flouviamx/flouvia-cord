@@ -1,5 +1,7 @@
 const PROTECTED_COLUMNS = new Set([
-  'password_hash', 'totp_secret', 'totp_backup_codes', 'hash', 'secret', 'secret_prev',
+  'password_hash', 'totp_secret', 'totp_secret_enc', 'totp_backup_codes', 'hash',
+  'secret', 'secret_enc', 'secret_prev', 'secret_prev_enc',
+  'stripe_person_id',
   'public_key', 'token', 'verify_token', 'relay_state', 'idp_certs', 'facturapi_live_key',
   'banco_clabe', 'request_body', 'response_body', 'payload', 'captured', 'provider_data',
   'fiscal_metadata', 'stripe_requirements', 'integraciones',

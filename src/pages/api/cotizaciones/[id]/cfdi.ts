@@ -6,6 +6,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
+import { decryptSecret } from '../../../../lib/crypto-secret';
 
 const FACTURAPI_KEY = import.meta.env.FACTURAPI_API_KEY || process.env.FACTURAPI_API_KEY || import.meta.env.FACTURAPI_KEY || process.env.FACTURAPI_KEY || '';
 const FACTURAPI_BASE = (import.meta.env.FACTURAPI_URL || process.env.FACTURAPI_URL || 'https://www.facturapi.io/v2').replace(/\/$/, '');
@@ -18,7 +19,7 @@ export const GET: APIRoute = async ({ params, url }) => {
   // Documento fiscal emitido más reciente de esta cotización + la llave LIVE de la
   // org (si timbró bajo su propio RFC, la global no puede descargar su CFDI).
   const [doc] = await sql`
-    select d.provider_data, o.facturapi_live_key
+    select d.provider_data, o.facturapi_live_key, o.facturapi_live_key_enc
     from documentos_fiscales d
     join orgs o on o.id = d.org_id
     where d.cotizacion_id = ${id} and d.org_id = ${orgId} and d.status = 'issued'
@@ -27,7 +28,7 @@ export const GET: APIRoute = async ({ params, url }) => {
   const facturapiId = doc?.provider_data?.facturapi_id as string | undefined;
   if (!facturapiId) return new Response('CFDI no encontrado', { status: 404 });
 
-  const apiKey = (doc?.facturapi_live_key as string) || FACTURAPI_KEY;
+  const apiKey = decryptSecret(doc?.facturapi_live_key_enc as string) || (doc?.facturapi_live_key as string) || FACTURAPI_KEY;
   if (!apiKey) return new Response('Facturapi no configurado', { status: 503 });
   const auth = 'Basic ' + Buffer.from(`${apiKey}:`).toString('base64');
   let res: Response;

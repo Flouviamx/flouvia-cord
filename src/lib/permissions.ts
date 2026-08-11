@@ -10,6 +10,8 @@ export const PERMISOS = [
     { key: 'productos', label: 'Productos',    desc: 'Crear y editar el catálogo' },
     { key: 'analitica', label: 'Analítica',    desc: 'Ver métricas, forecast y reportes' },
     { key: 'ajustes',   label: 'Ajustes',      desc: 'Cambiar marca, fiscal, PDF y reglas del negocio' },
+    { key: 'cobros_config', label: 'Configurar cobros', desc: 'Cambiar cuenta bancaria y configuración de Cord Pagos' },
+    { key: 'reembolsar', label: 'Reembolsos', desc: 'Solicitar reembolsos de pagos conciliados' },
     { key: 'equipo',    label: 'Equipo',       desc: 'Invitar miembros y gestionar permisos' },
 ] as const;
 
@@ -27,7 +29,7 @@ export const allPerms = (v: boolean): PermMap => fromKeys(v ? ALL_PERM_KEYS : []
 
 // Presets = punto de partida; el owner puede afinar por sección después.
 export const PRESETS: Record<string, { label: string; desc: string; permisos: PermMap }> = {
-    admin:    { label: 'Administrador', desc: 'Casi todo el control, incluido el equipo.', permisos: allPerms(true) },
+    admin:    { label: 'Administrador', desc: 'Casi todo el control, incluido el equipo.', permisos: fromKeys(ALL_PERM_KEYS.filter((key) => key !== 'reembolsar')) },
     vendedor: { label: 'Vendedor',      desc: 'Cotiza y gestiona clientes/productos; no toca ajustes ni aprueba.', permisos: fromKeys(['cotizar', 'clientes', 'productos', 'analitica']) },
     lectura:  { label: 'Solo lectura',  desc: 'Puede ver la app pero no modifica nada.', permisos: allPerms(false) },
 };

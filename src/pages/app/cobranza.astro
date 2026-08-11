@@ -1,11 +1,20 @@
 ---
-// Cobranza operativa: tabla accionable (marcar cobrada, promesa de pago y WhatsApp).
-// Datos reales de getCobranza(). Por cobrar = aprobadas/facturadas sin pagar.
+// /app/cobranza — trabajo OPERATIVO de cartera: qué cobrar hoy y con qué acción.
+//
+// Deliberadamente NO es un informe. La analítica de cartera (aging completo, exposición,
+// cumplimiento de promesas, histograma de DSO) vive en /app/informes?r=cobranza desde la
+// consolidación de ago 2026; duplicarla aquí sería deshacerla. Los widgets de esta página
+// responden a "¿qué hago hoy?", y la tabla accionable sigue siendo el centro.
+//
+// Snapshot de hoy: sin selector de fechas — una cartera "de la semana pasada" no significa
+// nada. Se usa el mismo `snapshot-chip` que los informes con scope !== 'rango'.
 import AppLayout from '../../layouts/AppLayout.astro';
+import WidgetGrid from '../../components/app/WidgetGrid.astro';
 import { getCobranza, getMyMembership, money } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
+import { dateFull } from '../../lib/fmt';
 
 const L = currentLocale();
 const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
@@ -13,6 +22,49 @@ const ME = await getMyMembership();
 const hasAccess = memberCan(ME, 'cobranza');
 const C = hasAccess ? await getCobranza() : null;
 const hay = (C?.items.length ?? 0) > 0;
+
+const todayISO = new Date().toISOString().slice(0, 10);
+
+// Derivados operativos. `getCobranza()` ya calcula el resumen; lo que falta son los
+// cortes de "qué toca hoy", que se sacan de `items` sin una query extra.
+const items = C?.items ?? [];
+const venceSemana = items.filter((i) => !i.overdue && i.diasParaVencer <= 7);
+const promesasHoy = items.filter((i) => i.promesa && i.promesa.fechaISO <= todayISO);
+const sinGestion = items.filter((i) => i.overdue && !i.promesa);
+const conPromesa = items.filter((i) => i.promesa)
+    .sort((a, b) => (a.promesa!.fechaISO).localeCompare(b.promesa!.fechaISO));
+// Prioridad = monto × antigüedad: lo que más pesa en dinero y en tiempo, primero.
+const prioridad = items.filter((i) => i.overdue)
+    .slice()
+    .sort((a, b) => (b.total * Math.max(1, b.diasVencido)) - (a.total * Math.max(1, a.diasVencido)))
+    .slice(0, 5);
+const excedidos = (C?.clientes ?? []).filter((c) => c.excede);
+
+// ⚠️ `aging[].label` y `payBehavior.histograma[].label` están hardcodeados en español en
+// queries.ts y los consumen 5 llamadores (informes, MCP, /api/v1, dashboard). Se traduce
+// por `key` y se IGNORA el label, en vez de tocar la query y romper a los demás.
+const AGING_LABEL: Record<string, string> = {
+    vigente: t(L, 'cob.aging_vigente'), d30: t(L, 'cob.aging_d30'),
+    d60: t(L, 'cob.aging_d60'), d60p: t(L, 'cob.aging_d60p'),
+};
+const agingSegments = ((C?.aging ?? []) as { key: string; monto: number; color: string }[])
+    .filter((a) => a.monto > 0)
+    .map((a) => ({ key: a.key, label: AGING_LABEL[a.key] ?? a.key, value: a.monto, color: a.color }));
+
+const widgetLabels = {
+    drag: t(L, 'cob.w_arrastrar'), up: t(L, 'cob.w_subir'), down: t(L, 'cob.w_bajar'),
+    resize: t(L, 'cob.w_tamano'), remove: t(L, 'cob.w_ocultar'),
+};
+
+// El <script> no es is:inline (necesita importar chart-mount), así que no puede llamar
+// t() en runtime: las cadenas se resuelven aquí. Mismo patrón que CORD_I18N_Q.
+const CBZ_T = {
+    kVencidoSub: t(L, 'cob.k_vencido_sub'), kSemanaSub: t(L, 'cob.k_semana_sub'),
+    kPromesasSub: t(L, 'cob.k_promesas_sub'), kSingestionSub: t(L, 'cob.k_singestion_sub'),
+    kMora: t(L, 'cob.k_mora'),
+    fVacio: t(L, 'cob.f_vacio'), todoCobrado: t(L, 'cob.todo_cobrado'),
+    prioridadVacio: t(L, 'cob.prioridad_vacio'), promesasVacio: t(L, 'cob.promesas_vacio'),
+};
 ---
 
 <AppLayout title={t(L, 'cob.title')} page="cobranza" heading={t(L, 'cob.heading')}>
@@ -20,6 +72,19 @@ const hay = (C?.items.length ?? 0) > 0;
         <a href="/app/cobranza" class="ph-tab active">{t(L, 'cob.tab_cobranza')}</a>
         <a href="/app/tesoreria/cobranza" class="ph-tab">{t(L, 'cob.tab_ia')}</a>
     </div>
+
+    <Fragment slot="topbar-actions">
+        <div class="cbz-top-actions">
+            <span class="snapshot-chip">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+                {tpl(t(L, 'cob.hoy'), { fecha: dateFull(todayISO, L) })}
+            </span>
+            {hasAccess && hay && <button type="button" class="cbz-edit-btn" id="cbzEditBtn">{t(L, 'cob.personalizar')}</button>}
+            {hasAccess && hay && <button type="button" class="cbz-edit-btn cbz-edit-done" id="cbzDoneBtn" hidden>{t(L, 'cob.listo')}</button>}
+            {hasAccess && hay && <button type="button" class="cbz-edit-btn" id="cbzResetBtn" hidden>{t(L, 'cob.restablecer')}</button>}
+        </div>
+    </Fragment>
+
     {!hasAccess && (
         <div class="cb-denied">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -35,50 +100,199 @@ const hay = (C?.items.length ?? 0) > 0;
         </section>
     )}
 
-    {hasAccess && hay && (
+    {hasAccess && hay && C && (
         <>
-        <!-- Tabla de cuentas por cobrar -->
-        <section class="table-card">
-            <div class="sec-head"><h2 class="sec-title">{t(L, 'cob.cuentas_por_cobrar')}</h2></div>
-            <div class="t-head">
-                <span>{t(L, 'cob.th_cliente')}</span><span>{t(L, 'cob.th_folio')}</span><span>{t(L, 'cob.th_terminos')}</span><span>{t(L, 'cob.th_vence')}</span><span>{t(L, 'cob.th_estado')}</span><span class="t-right">{t(L, 'cob.th_saldo')}</span><span class="t-right">{t(L, 'cob.th_accion')}</span>
-            </div>
-            {C.items.map((it) => (
-                <div class="t-row" data-id={it.id} data-token={it.token} data-folio={it.folio} data-empresa={it.empresa} data-total={money(it.total)} data-tel={it.telefono} data-vence={it.vence}
-                    data-prom-id={it.promesa?.id ?? ''} data-prom-fecha={it.promesa?.fechaISO ?? ''} data-prom-monto={it.promesa?.monto != null ? String(it.promesa.monto) : ''} data-prom-nota={it.promesa?.nota ?? ''}>
-                    <span class="t-client"><span class="t-avatar">{it.inicial}</span>{it.empresa}</span>
-                    <a class="t-folio" href={`/app/cotizaciones/${it.id}`}>{it.folio}</a>
-                    <span class="t-muted">{it.terminos}</span>
-                    <span class="t-muted">{it.vence}</span>
-                    <span class="t-estado">
-                        {it.overdue
-                            ? <span class="est est-over">{tpl(t(L, 'cob.vencida_dias'), { n: String(it.diasVencido) })}</span>
-                            : <span class="est est-due">{it.diasParaVencer === 0 ? t(L, 'cob.vence_hoy') : tpl(t(L, 'cob.vence_en'), { n: String(it.diasParaVencer) })}</span>}
-                        {it.promesa && (
-                            <span class="est est-prom" title={it.promesa.nota || t(L, 'cob.promesa_pago')}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-                                {tpl(t(L, 'cob.promete'), { fecha: it.promesa.fecha })}
-                            </span>
-                        )}
-                    </span>
-                    <span class="t-saldo t-right">
-                        <span class="editorial t-amount">{money(it.total, 0)}</span>
-                        {it.interes > 0 && <small class="t-interes">+{money(it.interes, 0)} {t(L, 'cob.mora')}</small>}
-                    </span>
-                    <span class="t-actions t-right">
-                        <button class:list={['cob-prom', { 'has-prom': it.promesa }]} title={t(L, 'cob.promesa_pago')} aria-label={t(L, 'cob.promesa_pago')}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        </button>
-                        <button class="cob-whats" title={t(L, 'cob.recordar_whatsapp')} aria-label={t(L, 'cob.recordar_whatsapp')}>
-                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
-                        </button>
-                        <button class="cob-paid">{t(L, 'cob.cobrada')}</button>
-                    </span>
+        <div data-cbz-shell>
+        <WidgetGrid
+            id="cobranzaWidgets" storageKey="cord.cobranza.v1"
+            editButtonId="cbzEditBtn" doneButtonId="cbzDoneBtn" resetButtonId="cbzResetBtn"
+            trayTitle={t(L, 'cob.widgets_ocultos')} resetConfirm={t(L, 'cob.reset_confirm')}
+            labels={widgetLabels}
+        >
+            <!-- 1 · Vencido. Clic → filtra la tabla. -->
+            <article class="dash-widget" data-widget="cbz-vencido" data-title={t(L, 'cob.k_vencido')} data-span="1" data-size-sm="1" data-size-lg="2">
+                <div class="dash-card report-kpi cbz-kpi-click" data-cbz-filter="vencidas" role="button" tabindex="0">
+                    <span class="kpi-label">{t(L, 'cob.k_vencido')}</span>
+                    <strong class="editorial report-kpi-value is-danger" data-cbz-bind="vencido-monto">{money(C.resumen.totalVencido, 0)}</strong>
+                    <small data-cbz-bind="vencido-sub">{tpl(t(L, 'cob.k_vencido_sub'), { n: String(C.resumen.nVencidas) })}</small>
+                    {C.resumen.interesTotal > 0 && <small class="cbz-mora">{tpl(t(L, 'cob.k_mora'), { monto: money(C.resumen.interesTotal, 0) })}</small>}
                 </div>
-            ))}
-        </section>
+            </article>
 
-        <!-- Modal: registrar / gestionar promesa de pago -->
+            <!-- 2 · Lo que vence en los próximos 7 días -->
+            <article class="dash-widget" data-widget="cbz-semana" data-title={t(L, 'cob.k_semana')} data-span="1" data-size-sm="1" data-size-lg="2">
+                <div class="dash-card report-kpi">
+                    <span class="kpi-label">{t(L, 'cob.k_semana')}</span>
+                    <strong class="editorial report-kpi-value" data-cbz-bind="semana-monto">{money(venceSemana.reduce((s, i) => s + i.total, 0), 0)}</strong>
+                    <small data-cbz-bind="semana-sub">{tpl(t(L, 'cob.k_semana_sub'), { n: String(venceSemana.length) })}</small>
+                </div>
+            </article>
+
+            <!-- 3 · Promesas que ya vencen -->
+            <article class="dash-widget" data-widget="cbz-promesas-hoy" data-title={t(L, 'cob.k_promesas')} data-span="1" data-size-sm="1" data-size-lg="2">
+                <div class="dash-card report-kpi cbz-kpi-click" data-cbz-filter="promesa" role="button" tabindex="0">
+                    <span class="kpi-label">{t(L, 'cob.k_promesas')}</span>
+                    <strong class="editorial report-kpi-value is-warn" data-cbz-bind="promesas-n">{promesasHoy.length}</strong>
+                    <small data-cbz-bind="promesas-sub">{tpl(t(L, 'cob.k_promesas_sub'), { n: String(promesasHoy.length) })}</small>
+                    {C.promesas.total > 0 && <small>{tpl(t(L, 'cob.k_promesas_ok'), { pct: String(C.promesas.cumplimientoPct) })}</small>}
+                </div>
+            </article>
+
+            <!-- 4 · Vencido que nadie ha tocado -->
+            <article class="dash-widget" data-widget="cbz-singestion" data-title={t(L, 'cob.k_singestion')} data-span="1" data-size-sm="1" data-size-lg="2">
+                <div class="dash-card report-kpi cbz-kpi-click" data-cbz-filter="singestion" role="button" tabindex="0">
+                    <span class="kpi-label">{t(L, 'cob.k_singestion')}</span>
+                    <strong class="editorial report-kpi-value is-danger" data-cbz-bind="singestion-monto">{money(sinGestion.reduce((s, i) => s + i.total, 0), 0)}</strong>
+                    <small data-cbz-bind="singestion-sub">{tpl(t(L, 'cob.k_singestion_sub'), { n: String(sinGestion.length) })}</small>
+                </div>
+            </article>
+
+            <!-- 5 · Atiende primero -->
+            <article class="dash-widget" data-widget="cbz-prioridad" data-title={t(L, 'cob.prioridad')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cob.prioridad')}</h2><p>{t(L, 'cob.prioridad_sub')}</p></div></div>
+                    <div class="report-list cbz-mini" data-cbz-list="prioridad">
+                        {prioridad.length === 0 && <p class="report-empty">{t(L, 'cob.prioridad_vacio')}</p>}
+                        {prioridad.map((it) => (
+                            <div data-cbz-id={it.id} data-token={it.token} data-folio={it.folio} data-empresa={it.empresa}
+                                data-total={money(it.total)} data-tel={it.telefono} data-vence={it.vence}>
+                                <span>
+                                    <strong>{it.empresa}</strong>
+                                    <small>{it.folio} · {tpl(t(L, 'cob.vencida_dias'), { n: String(it.diasVencido) })}</small>
+                                </span>
+                                <span class="cbz-mini-right">
+                                    <b class="editorial">{money(it.total, 0)}</b>
+                                    <button class="cob-whats" type="button" title={t(L, 'cob.recordar_whatsapp')} aria-label={t(L, 'cob.recordar_whatsapp')}>
+                                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                                    </button>
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </article>
+
+            <!-- 6 · Promesas de pago abiertas -->
+            <article class="dash-widget" data-widget="cbz-promesas" data-title={t(L, 'cob.promesas_titulo')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cob.promesas_titulo')}</h2><p>{t(L, 'cob.promesas_sub')}</p></div></div>
+                    <div class="report-list cbz-mini" data-cbz-list="promesas">
+                        {conPromesa.length === 0 && <p class="report-empty">{t(L, 'cob.promesas_vacio')}</p>}
+                        {conPromesa.map((it) => (
+                            <div data-cbz-id={it.id} data-prom-id={it.promesa!.id}>
+                                <span>
+                                    <strong>{it.empresa}</strong>
+                                    <small>{it.folio} · {tpl(t(L, 'cob.promete'), { fecha: it.promesa!.fecha })}</small>
+                                </span>
+                                <span class="cbz-mini-right">
+                                    <b class="editorial">{money(it.promesa!.monto ?? it.total, 0)}</b>
+                                    <button class="cbz-prom-done" type="button" data-prom-done={it.promesa!.id} title={t(L, 'cob.promesa_cumplir')} aria-label={t(L, 'cob.promesa_cumplir')}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                                    </button>
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </article>
+
+            <!-- 7 · Clientes que rebasaron su límite de crédito -->
+            <article class="dash-widget" data-widget="cbz-limites" data-title={t(L, 'cob.limites')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cob.limites')}</h2><p>{t(L, 'cob.limites_sub')}</p></div></div>
+                    <div class="report-list">
+                        {excedidos.length === 0 && <p class="report-empty">{t(L, 'cob.limites_vacio')}</p>}
+                        {excedidos.slice(0, 6).map((cl) => (
+                            <div>
+                                <span>
+                                    <strong>{cl.empresa}</strong>
+                                    <small>{tpl(t(L, 'cob.limite_uso'), { uso: String(cl.uso), limite: money(cl.limite, 0) })}</small>
+                                </span>
+                                <b class="editorial cbz-over">{money(cl.saldo, 0)}</b>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </article>
+
+            <!-- 8 · Antigüedad de la cartera. Barra de orientación compacta (segbar),
+                 NO la dona analítica de /app/informes?r=cobranza. -->
+            <article class="dash-widget" data-widget="cbz-aging" data-title={t(L, 'cob.aging_titulo')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head">
+                        <div><h2 class="sec-title">{t(L, 'cob.aging_titulo')}</h2><p>{t(L, 'cob.aging_sub')}</p></div>
+                        <strong class="editorial report-kpi-value">{money(C.resumen.totalPorCobrar, 0)}</strong>
+                    </div>
+                    <div class="chart-host cbz-aging-chart" data-chart="segbar"
+                        data-segments={JSON.stringify(agingSegments)}></div>
+                </div>
+            </article>
+
+            <!-- 9 · La tabla accionable: el centro de la página -->
+            <article class="dash-widget" data-widget="cbz-tabla" data-title={t(L, 'cob.cuentas_por_cobrar')} data-span="4" data-size-sm="4" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head">
+                        <div><h2 class="sec-title">{t(L, 'cob.cuentas_por_cobrar')}</h2></div>
+                        <div class="cbz-filters" data-cbz-filters>
+                            <button type="button" class="cbz-chip is-active" data-cbz-filter="todas">{t(L, 'cob.f_todas')}</button>
+                            <button type="button" class="cbz-chip" data-cbz-filter="vencidas">{t(L, 'cob.f_vencidas')}</button>
+                            <button type="button" class="cbz-chip" data-cbz-filter="promesa">{t(L, 'cob.f_promesa')}</button>
+                            <button type="button" class="cbz-chip" data-cbz-filter="singestion">{t(L, 'cob.f_singestion')}</button>
+                        </div>
+                    </div>
+                    <div class="cbz-table-wrap">
+                        <div class="t-head">
+                            <span>{t(L, 'cob.th_cliente')}</span><span>{t(L, 'cob.th_folio')}</span><span>{t(L, 'cob.th_terminos')}</span><span>{t(L, 'cob.th_vence')}</span><span>{t(L, 'cob.th_estado')}</span><span class="t-right">{t(L, 'cob.th_saldo')}</span><span class="t-right">{t(L, 'cob.th_accion')}</span>
+                        </div>
+                        {C.items.map((it) => (
+                            <div class="t-row" data-cbz-id={it.id} data-id={it.id} data-token={it.token} data-folio={it.folio} data-empresa={it.empresa}
+                                data-total={money(it.total)} data-tel={it.telefono} data-vence={it.vence}
+                                data-total-num={String(it.total)} data-interes-num={String(it.interes)}
+                                data-overdue={it.overdue ? '1' : ''} data-dias={String(it.diasParaVencer)}
+                                data-prom-id={it.promesa?.id ?? ''} data-prom-fecha={it.promesa?.fechaISO ?? ''} data-prom-monto={it.promesa?.monto != null ? String(it.promesa.monto) : ''} data-prom-nota={it.promesa?.nota ?? ''}>
+                                <span class="t-client"><span class="t-avatar">{it.inicial}</span>{it.empresa}</span>
+                                <a class="t-folio" href={`/app/cotizaciones/${it.id}`}>{it.folio}</a>
+                                <span class="t-muted">{it.terminos}</span>
+                                <span class="t-muted">{it.vence}</span>
+                                <span class="t-estado">
+                                    {it.overdue
+                                        ? <span class="est est-over">{tpl(t(L, 'cob.vencida_dias'), { n: String(it.diasVencido) })}</span>
+                                        : <span class="est est-due">{it.diasParaVencer === 0 ? t(L, 'cob.vence_hoy') : tpl(t(L, 'cob.vence_en'), { n: String(it.diasParaVencer) })}</span>}
+                                    {it.promesa && (
+                                        <span class="est est-prom" title={it.promesa.nota || t(L, 'cob.promesa_pago')}>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                                            {tpl(t(L, 'cob.promete'), { fecha: it.promesa.fecha })}
+                                        </span>
+                                    )}
+                                </span>
+                                <span class="t-saldo t-right">
+                                    <span class="editorial t-amount">{money(it.total, 0)}</span>
+                                    {it.interes > 0 && <small class="t-interes">+{money(it.interes, 0)} {t(L, 'cob.mora')}</small>}
+                                </span>
+                                <span class="t-actions t-right">
+                                    <button class:list={['cob-prom', { 'has-prom': it.promesa }]} type="button" title={t(L, 'cob.promesa_pago')} aria-label={t(L, 'cob.promesa_pago')}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    </button>
+                                    <button class="cob-whats" type="button" title={t(L, 'cob.recordar_whatsapp')} aria-label={t(L, 'cob.recordar_whatsapp')}>
+                                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                                    </button>
+                                    <button class="cob-paid" type="button">{t(L, 'cob.cobrada')}</button>
+                                </span>
+                            </div>
+                        ))}
+                        <p class="report-empty cbz-filter-empty" hidden>{t(L, 'cob.f_vacio')}</p>
+                    </div>
+                </div>
+            </article>
+        </WidgetGrid>
+        </div>
+
+        <!-- ⚠️ El <dialog> vive FUERA de <WidgetGrid> a propósito, por dos razones:
+             1. [data-widget-grid] es display:grid. Un <dialog> cerrado es display:none y no
+                crea celda, pero showModal() lo pone en display:block → se convierte en grid
+                item y descuadra el layout mientras está abierto.
+             2. `pointer-events` es HEREDADA y el top layer sigue heredando de su padre en el
+                DOM: la regla de modo edición (widgets.css) dejaría el modal inerte. -->
         <dialog class="modal" id="promModal"
             data-i18n-editar={t(L, 'cob.modal_editar_promesa')}
             data-i18n-nueva={t(L, 'cob.modal_nueva_promesa')}
@@ -126,117 +340,26 @@ const hay = (C?.items.length ?? 0) > 0;
     )}
 </AppLayout>
 
-<style>
-    .t-saldo { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
-    .t-interes { font-size: 0.66rem; color: var(--color-danger); font-weight: 600; }
-
-    /* Tabla */
-    .table-card { margin-bottom: 2.6rem; overflow-x: auto; }
-    .t-head, .t-row {
-        display: grid; grid-template-columns: 1.6fr 0.8fr 0.7fr 0.9fr 1fr 0.9fr 1fr;
-        gap: 1rem; align-items: center; padding: 0.85rem 0.6rem;
-        min-width: 860px;
-    }
-    .t-head {
-        font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
-        color: var(--color-text-muted); border-bottom: 1px solid var(--color-border);
-        padding-top: 0; padding-bottom: 0.7rem;
-    }
-    .t-row { border-bottom: 1px solid var(--color-border); transition: background 0.25s var(--ease-ios); }
-    .t-row:last-of-type { border-bottom: none; }
-    .t-row:hover { background: var(--color-bg-soft); }
-    .t-client { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; font-weight: 600; color: var(--color-text); min-width: 0; }
-    .t-client { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .t-avatar { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; background: var(--color-blue-deep); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; }
-    .t-folio { font-size: 0.8rem; font-weight: 700; color: var(--color-blue-deep); text-decoration: none; }
-    .t-folio:hover { text-decoration: underline; }
-    .t-muted { font-size: 0.8rem; color: var(--color-text-muted); }
-    .t-amount { font-size: 0.95rem; color: var(--color-blue-deep); }
-    .t-right { text-align: right; }
-    .est { font-size: 0.7rem; font-weight: 700; padding: 4px 9px; border-radius: 100px; white-space: nowrap; }
-    .est-over { color: var(--color-danger); background: rgba(239,68,68,0.1); }
-    .est-due { color: #2563eb; background: rgba(59,130,246,0.1); }
-    .t-actions { display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
-    .cob-whats {
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
-        color: #0b7a4b; background: rgba(37,211,102,0.1); border: 1px solid rgba(37,211,102,0.28);
-        transition: background 0.2s;
-    }
-    .cob-whats svg { width: 15px; height: 15px; }
-    .cob-whats:hover { background: rgba(37,211,102,0.18); }
-    .cob-paid {
-        font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; cursor: pointer;
-        color: #fff; background: var(--color-ok); border: none; border-radius: 8px; padding: 7px 12px;
-        transition: transform 0.3s var(--ease-spring), opacity 0.2s;
-    }
-    .cob-paid:hover { transform: translateY(-1px); }
-    .cob-paid:disabled { opacity: 0.55; cursor: wait; }
-    .cob-err { font-size: 0.78rem; color: var(--color-danger); margin: 0.6rem 0 0; min-height: 1em; }
-
-    /* Promesa de pago: badge en estado + botón de acción */
-    .t-estado { display: inline-flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-    .est-prom { display: inline-flex; align-items: center; gap: 4px; color: #7c5cff; background: rgba(124,92,255,0.1); }
-    .est-prom svg { width: 11px; height: 11px; }
-    .cob-prom {
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
-        color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border);
-        transition: background 0.2s, color 0.2s, border-color 0.2s;
-    }
-    .cob-prom svg { width: 15px; height: 15px; }
-    .cob-prom:hover { color: var(--color-text); border-color: #cbd5e1; }
-    .cob-prom.has-prom { color: #7c5cff; background: rgba(124,92,255,0.1); border-color: rgba(124,92,255,0.3); }
-
-    /* Modal de promesa (mismo lenguaje que los modales de la app) */
-    .modal { border: none; border-radius: 18px; padding: 0; width: min(440px, calc(100vw - 2rem)); box-shadow: 0 40px 90px -30px rgba(10,25,47,0.45); }
-    .modal::backdrop { background: rgba(10,25,47,0.38); backdrop-filter: blur(4px); }
-    .m-form { display: flex; flex-direction: column; gap: 0.9rem; padding: 1.5rem 1.6rem 1.4rem; }
-    .m-head { display: flex; align-items: center; justify-content: space-between; }
-    .m-head h2 { font-size: 1.05rem; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
-    .m-close { background: var(--color-bg-soft); border: 1px solid var(--color-border); width: 30px; height: 30px; border-radius: 9px; cursor: pointer; font-size: 0.8rem; color: var(--color-text-muted); }
-    .prom-ctx { font-size: 0.8rem; color: var(--color-text-muted); margin: -0.3rem 0 0; line-height: 1.45; }
-    .prom-ctx b { color: var(--color-text); font-weight: 600; }
-    .m-field { display: flex; flex-direction: column; gap: 0.4rem; }
-    .m-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
-    .m-input { font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 10px 12px; transition: border-color 0.25s; }
-    .m-input:focus { outline: none; border-color: var(--color-blue-deep); }
-    .m-error { font-size: 0.78rem; color: var(--color-danger); margin: 0; min-height: 1em; }
-    .m-actions { display: flex; align-items: center; gap: 0.6rem; }
-    .m-spacer { flex: 1; }
-    .m-delete { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-danger); background: none; border: none; cursor: pointer; padding: 9px 4px; }
-    .m-delete[hidden] { display: none; }
-    .m-done { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 9px; padding: 8px 14px; cursor: pointer; }
-    .m-done[hidden] { display: none; }
-    .m-save { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; background: var(--color-blue-deep); color: #fff; border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5); }
-    .m-save:disabled { opacity: 0.6; cursor: wait; }
-
-    /* Empty */
-    .empty { padding: 4rem 2rem; text-align: center; }
-    .empty h2 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem; }
-    .empty p { font-size: 0.88rem; color: var(--color-text-muted); max-width: 460px; margin: 0 auto 1.4rem; line-height: 1.6; }
-    .empty-cta { display: inline-block; background: var(--color-blue-deep); color: #fff; text-decoration: none; font-size: 0.86rem; font-weight: 600; padding: 11px 20px; border-radius: 10px; }
-
-    @media (max-width: 880px) {
-        .t-head { display: none; }
-        .t-row { grid-template-columns: 1fr auto auto; gap: 0.5rem 0.8rem; min-width: 0; }
-        .t-muted, .t-folio { display: none; }
-    }
-    @media (max-width: 560px) {
-        .t-estado { display: none; }
-    }
-    .cb-denied { display: flex; flex-direction: column; gap: 0.6rem; padding: 2rem 0; }
-    .cb-denied svg { width: 32px; height: 32px; color: #c9d2de; }
-    .cb-denied h3 { font-size: 1rem; font-weight: 700; margin: 0; }
-    .cb-denied p { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; line-height: 1.55; }
-</style>
+<script is:inline define:vars={{ CBZ_T }}>
+    window.CORD_CBZ_I18N = CBZ_T;
+</script>
 
 <script>
-    // Cobranza: marcar cobrada (PATCH paid) + recordatorio por WhatsApp + promesa de pago.
-    document.addEventListener('DOMContentLoaded', () => {
+    // Cobranza operativa: promesa de pago (modal), recordatorio por WhatsApp y marcar
+    // cobrada. La lógica de negocio es EXACTAMENTE la de antes; lo que cambia es cómo se
+    // enganchan los eventos (delegación en vez de un listener por fila) y que al cobrar
+    // una cuenta desaparece de TODOS los widgets, no solo de la tabla.
+    import { mountAll } from '../../lib/chart-mount';
+
+    mountAll(document);
+
+    const grid = document.getElementById('cobranzaWidgets');
+    if (grid) {
+        const T = (window as any).CORD_CBZ_I18N ?? {};
         const err = document.getElementById('cobErr');
         const E = err ? err.dataset : ({} as DOMStringMap);
-        const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+        const tpl = (s: string, vars: Record<string, string>) => String(s ?? '').replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+        const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
         const cleanPhone = (t: string) => {
             const d = (t || '').replace(/\D/g, '');
             if (!d) return '';
@@ -290,7 +413,7 @@ const hay = (C?.items.length ?? 0) > 0;
                 const oldId = promRow.dataset.promId;
                 if (oldId) await promApi('DELETE', { id: oldId }); // reemplaza la promesa vigente
                 await promApi('POST', {
-                    cotizacion_id: promRow.dataset.id,
+                    cotizacion_id: promRow.dataset.id || promRow.dataset.cbzId,
                     fecha_promesa: fecha,
                     monto: $p('promMonto').value || null,
                     nota: $p('promNota').value || null,
@@ -313,49 +436,340 @@ const hay = (C?.items.length ?? 0) > 0;
             catch (e2: any) { errP.textContent = e2.message; }
         });
 
-        document.querySelectorAll<HTMLElement>('.t-row').forEach((row) => {
+        // ── Acciones de fila ──
+        const tableRows = () => Array.from(grid.querySelectorAll<HTMLElement>('.cbz-table-wrap [data-cbz-id]'));
+
+        function sendWhats(row: HTMLElement) {
             const d = row.dataset;
-
-            row.querySelector('.cob-prom')?.addEventListener('click', () => openProm(row));
-
-            row.querySelector('.cob-whats')?.addEventListener('click', () => {
-                const link = `${location.origin}/q/${d.token}`;
-                const msg = tpl(E.i18nWaSaludoTpl || 'Hola{empresa}, le recordamos amablemente el saldo de la cotización {folio} por {total} (vence {vence}). Puede revisarla aquí: {link}. ¡Gracias!', {
-                    empresa: d.empresa ? ' ' + d.empresa : '',
-                    folio: d.folio || '',
-                    total: d.total || '',
-                    vence: d.vence || '',
-                    link,
-                });
-                const phone = cleanPhone(d.tel || '');
-                const url = phone
-                    ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
-                    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-                window.open(url, '_blank');
+            const link = `${location.origin}/q/${d.token}`;
+            const msg = tpl(E.i18nWaSaludoTpl || 'Hola{empresa}, le recordamos amablemente el saldo de la cotización {folio} por {total} (vence {vence}). Puede revisarla aquí: {link}. ¡Gracias!', {
+                empresa: d.empresa ? ' ' + d.empresa : '',
+                folio: d.folio || '',
+                total: d.total || '',
+                vence: d.vence || '',
+                link,
             });
+            const phone = cleanPhone(d.tel || '');
+            const url = phone
+                ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+                : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }
 
-            row.querySelector('.cob-paid')?.addEventListener('click', async (e) => {
-                const btn = e.currentTarget as HTMLButtonElement;
-                const body = tpl(E.i18nRegistrarBodyTpl || '¿Registrar el pago de {folio} por {total}?', { folio: d.folio || '', total: d.total || '' });
-                if (!await (window as any).cordConfirm({ title: E.i18nRegistrarTitulo || 'Registrar pago', body, confirmText: E.i18nRegistrarBtn || 'Registrar pago' })) return;
-                btn.disabled = true;
-                if (err) err.textContent = '';
-                try {
-                    const res = await fetch(`/api/cotizaciones/${d.id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'paid' }),
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || E.i18nNoPudoRegistrar || 'No se pudo registrar el pago');
-                    // Optimista: quita la fila cobrada en sitio (los KPI/aging se
-                    // recalculan en la próxima navegación).
-                    row.remove();
-                } catch (e2: any) {
-                    if (err) err.textContent = e2.message;
-                    btn.disabled = false;
+        /**
+         * Recalcula los 4 KPIs desde las filas que siguen vivas. Sin esto, cobrar una
+         * cuenta la quita de la tabla pero deja los totales de arriba mintiendo.
+         * ⚠️ Lee `data-total-num` (numérico) y NO `data-total`, que guarda el string ya
+         * formateado y lo consumen la plantilla de WhatsApp y el contexto del modal.
+         */
+        function recomputeKpis() {
+            const rows = tableRows();
+            let vencidoMonto = 0, vencidoN = 0, semanaMonto = 0, semanaN = 0;
+            let sinGestMonto = 0, sinGestN = 0, promN = 0;
+            const hoy = todayISO();
+            for (const r of rows) {
+                const total = Number(r.dataset.totalNum || 0);
+                const overdue = !!r.dataset.overdue;
+                const tienePromesa = !!r.dataset.promId;
+                if (overdue) {
+                    vencidoMonto += total; vencidoN += 1;
+                    if (!tienePromesa) { sinGestMonto += total; sinGestN += 1; }
+                } else if (Number(r.dataset.dias || 0) <= 7) {
+                    semanaMonto += total; semanaN += 1;
                 }
-            });
+                if (tienePromesa && (r.dataset.promFecha || '') <= hoy) promN += 1;
+            }
+            const set = (name: string, value: string) => {
+                const el = grid!.querySelector<HTMLElement>(`[data-cbz-bind="${name}"]`);
+                if (el) el.textContent = value;
+            };
+            set('vencido-monto', money(vencidoMonto));
+            set('vencido-sub', tpl(T.kVencidoSub, { n: String(vencidoN) }));
+            set('semana-monto', money(semanaMonto));
+            set('semana-sub', tpl(T.kSemanaSub, { n: String(semanaN) }));
+            set('singestion-monto', money(sinGestMonto));
+            set('singestion-sub', tpl(T.kSingestionSub, { n: String(sinGestN) }));
+            set('promesas-n', String(promN));
+            set('promesas-sub', tpl(T.kPromesasSub, { n: String(promN) }));
+        }
+
+        /**
+         * Quita una cotización de TODA la página. El `row.remove()` anterior solo tocaba
+         * la tabla: la misma cuenta seguía viva en "Atiende primero" y en "Promesas", y
+         * los KPIs quedaban desfasados.
+         */
+        function removeCotizacion(id: string) {
+            grid!.querySelectorAll(`[data-cbz-id="${CSS.escape(id)}"]`).forEach((n) => n.remove());
+            recomputeKpis();
+            for (const [list, empty] of [['prioridad', T.prioridadVacio], ['promesas', T.promesasVacio]] as const) {
+                const host = grid!.querySelector<HTMLElement>(`[data-cbz-list="${list}"]`);
+                if (host && !host.querySelector('[data-cbz-id]') && !host.querySelector('.report-empty')) {
+                    const p = document.createElement('p'); p.className = 'report-empty'; p.textContent = empty;
+                    host.append(p);
+                }
+            }
+            if (!tableRows().length) {
+                const wrap = grid!.querySelector<HTMLElement>('.cbz-table-wrap');
+                const msg = wrap?.querySelector<HTMLElement>('.cbz-filter-empty');
+                if (msg) { msg.textContent = T.todoCobrado; msg.hidden = false; }
+            }
+        }
+
+        async function markPaid(row: HTMLElement, btn: HTMLButtonElement) {
+            const d = row.dataset;
+            const body = tpl(E.i18nRegistrarBodyTpl || '¿Registrar el pago de {folio} por {total}?', { folio: d.folio || '', total: d.total || '' });
+            if (!await (window as any).cordConfirm({ title: E.i18nRegistrarTitulo || 'Registrar pago', body, confirmText: E.i18nRegistrarBtn || 'Registrar pago' })) return;
+            btn.disabled = true;
+            if (err) err.textContent = '';
+            try {
+                const res = await fetch(`/api/cotizaciones/${d.id || d.cbzId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'paid' }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || E.i18nNoPudoRegistrar || 'No se pudo registrar el pago');
+                removeCotizacion(d.cbzId || d.id || '');
+            } catch (e2: any) {
+                if (err) err.textContent = e2.message;
+                btn.disabled = false;
+            }
+        }
+
+        // Un solo handler delegado: sobrevive al re-render de los filtros y no duplica
+        // lógica entre la tabla y los widgets de lista.
+        grid.addEventListener('click', async (event) => {
+            // ⚠️ widgets.css ya pone pointer-events:none sobre el contenido en modo
+            // edición, pero eso NO impide activar un botón enfocado con Enter/Space.
+            // Sin esta guarda se puede registrar un pago sin querer mientras se reordena.
+            if (grid.dataset.editing === '1') return;
+            const el = event.target as HTMLElement;
+
+            const chip = el.closest<HTMLElement>('.cbz-chip');
+            if (chip) { applyFilter(chip.dataset.cbzFilter || 'todas'); return; }
+            const kpi = el.closest<HTMLElement>('.cbz-kpi-click');
+            if (kpi) { applyFilter(kpi.dataset.cbzFilter || 'todas'); return; }
+
+            const promDone = el.closest<HTMLElement>('[data-prom-done]');
+            if (promDone) {
+                const id = promDone.dataset.promDone!;
+                (promDone as HTMLButtonElement).disabled = true;
+                try { await promApi('PATCH', { id, estado: 'cumplida' }); location.reload(); }
+                catch (e2: any) { if (err) err.textContent = e2.message; (promDone as HTMLButtonElement).disabled = false; }
+                return;
+            }
+
+            const row = el.closest<HTMLElement>('[data-cbz-id]');
+            if (!row) return;
+            if (el.closest('.cob-prom')) return openProm(row);
+            if (el.closest('.cob-whats')) return sendWhats(row);
+            const paid = el.closest<HTMLElement>('.cob-paid');
+            if (paid) return markPaid(row, paid as HTMLButtonElement);
         });
-    });
+
+        // Teclado en los KPIs clicables (son role="button", no <button>, para no anidar
+        // controles dentro de la tarjeta arrastrable).
+        grid.addEventListener('keydown', (event) => {
+            if (grid.dataset.editing === '1') return;
+            const key = (event as KeyboardEvent).key;
+            if (key !== 'Enter' && key !== ' ') return;
+            const kpi = (event.target as HTMLElement).closest<HTMLElement>('.cbz-kpi-click');
+            if (!kpi) return;
+            event.preventDefault();
+            applyFilter(kpi.dataset.cbzFilter || 'todas');
+        });
+
+        /**
+         * Los filtros solo alternan `hidden` — NUNCA innerHTML. Así los data-attrs
+         * sobreviven y removeCotizacion sigue encontrando los nodos.
+         */
+        function applyFilter(filter: string) {
+            const rows = tableRows();
+            let visibles = 0;
+            for (const r of rows) {
+                const overdue = !!r.dataset.overdue;
+                const prom = !!r.dataset.promId;
+                const match = filter === 'vencidas' ? overdue
+                    : filter === 'promesa' ? prom
+                    : filter === 'singestion' ? (overdue && !prom)
+                    : true;
+                r.hidden = !match;
+                if (match) visibles++;
+            }
+            grid!.querySelectorAll<HTMLElement>('.cbz-chip').forEach((c) => {
+                c.classList.toggle('is-active', c.dataset.cbzFilter === filter);
+            });
+            const empty = grid!.querySelector<HTMLElement>('.cbz-filter-empty');
+            if (empty) {
+                empty.textContent = rows.length ? T.fVacio : T.todoCobrado;
+                empty.hidden = visibles > 0;
+            }
+            // La tabla puede estar oculta por el usuario: llevarlo a un filtro sin poder
+            // ver el resultado sería un callejón sin salida.
+            grid!.querySelector('[data-widget="cbz-tabla"]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
 </script>
+
+<style>
+    /* Este markup lo renderiza ESTA página → el scopeado sí lo alcanza. El vocabulario
+       compartido (.report-kpi, .report-list, .snapshot-tag) vive en
+       styles/report-widgets.css, y el grid en styles/widgets.css — Regla 11. */
+    .cbz-top-actions { display: flex; align-items: center; justify-content: flex-end; margin-left: auto; gap: .55rem; flex-wrap: wrap; }
+    .snapshot-chip { min-height: 42px; display: inline-flex; align-items: center; gap: .55rem; padding: .62rem .9rem; border: 0; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: .78rem; font-weight: 650; white-space: nowrap; }
+    .snapshot-chip svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+    .cbz-edit-btn {
+        display: inline-flex; align-items: center; gap: 6px; min-height: 42px;
+        appearance: none; font-family: var(--font-sans); font-size: .78rem; font-weight: 650;
+        color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        border-radius: 999px; padding: .62rem .9rem; cursor: pointer; white-space: nowrap;
+        transition: background .2s var(--ease-ios), transform .18s ease;
+    }
+    /* ⚠️ RESCUE OBLIGATORIO: un `display` de autor SIEMPRE gana al [hidden]{display:none}
+       del navegador. Sin esto salen Personalizar + Listo + Restablecer los tres a la vez. */
+    .cbz-edit-btn[hidden] { display: none; }
+    .cbz-edit-btn:hover { background: var(--row-hover); }
+    .cbz-edit-btn:active { transform: scale(.97); }
+    .cbz-edit-btn.cbz-edit-done { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+
+    .chart-host { min-height: 90px; }
+    .cbz-aging-chart { min-height: 96px; }
+
+    .cbz-kpi-click { cursor: pointer; }
+    .cbz-kpi-click:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; border-radius: var(--card-radius, 20px); }
+    .cbz-mora { color: var(--color-danger); font-weight: 650; }
+    .cbz-over { color: var(--color-danger); }
+
+    /* Listas accionables de los widgets 5 y 6 */
+    .cbz-mini-right { display: flex !important; flex-direction: row !important; align-items: center; gap: .55rem; }
+    .cbz-mini-right b { font-size: .84rem; white-space: nowrap; }
+    .cbz-prom-done {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; border-radius: 8px; cursor: pointer; flex: 0 0 auto;
+        color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+        transition: background .2s;
+    }
+    .cbz-prom-done svg { width: 14px; height: 14px; }
+    .cbz-prom-done:hover { background: rgba(16,185,129,0.2); }
+    .cbz-prom-done:disabled { opacity: .5; cursor: wait; }
+
+    /* Filtros.
+       ⚠️ El selector va anclado a `.sec-head >` a propósito: report-widgets.css declara
+       `.sec-head > div { display:flex; flex-direction:column }` para la columna de
+       título+subtítulo, y con la misma especificidad que `.cbz-filters` ganaba por orden
+       de fuente, apilando los chips en vertical. */
+    .sec-head > .cbz-filters { display: flex; flex-direction: row; gap: .4rem; flex-wrap: wrap; flex-shrink: 0; }
+    .cbz-chip {
+        appearance: none; font-family: var(--font-sans); font-size: .72rem; font-weight: 650;
+        color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid transparent;
+        border-radius: 999px; padding: .38rem .78rem; cursor: pointer;
+        transition: background .2s var(--ease-ios), color .2s;
+    }
+    .cbz-chip:hover { color: var(--color-text); }
+    .cbz-chip.is-active { background: var(--color-blue-deep); color: #fff; }
+
+    /* ── Tabla ── */
+    .cbz-table-wrap { overflow-x: auto; }
+    .t-head, .t-row {
+        display: grid; grid-template-columns: 1.6fr 0.8fr 0.7fr 0.9fr 1fr 0.9fr 1fr;
+        gap: 1rem; align-items: center; padding: 0.85rem 0.6rem;
+        min-width: 860px;
+    }
+    .t-head {
+        font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+        color: var(--color-text-muted); border-bottom: 1px solid var(--color-border);
+        padding-top: 0; padding-bottom: 0.7rem;
+    }
+    .t-row { border-bottom: 1px solid var(--color-border); transition: background 0.25s var(--ease-ios); }
+    .t-row:last-of-type { border-bottom: none; }
+    .t-row:hover { background: var(--color-bg-soft); }
+    /* El atributo `hidden` de los filtros tiene que ganarle al display:grid de autor. */
+    .t-row[hidden] { display: none; }
+    .cbz-filter-empty[hidden] { display: none; }
+    .cbz-filter-empty { padding: 1.4rem .6rem; }
+    .t-saldo { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+    .t-interes { font-size: 0.66rem; color: var(--color-danger); font-weight: 600; }
+    .t-client { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; font-weight: 600; color: var(--color-text); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .t-avatar { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; background: var(--color-blue-deep); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; }
+    .t-folio { font-size: 0.8rem; font-weight: 700; color: var(--color-blue-deep); text-decoration: none; }
+    .t-folio:hover { text-decoration: underline; }
+    .t-muted { font-size: 0.8rem; color: var(--color-text-muted); }
+    .t-amount { font-size: 0.95rem; color: var(--color-blue-deep); }
+    .t-right { text-align: right; }
+    .est { font-size: 0.7rem; font-weight: 700; padding: 4px 9px; border-radius: 100px; white-space: nowrap; }
+    .est-over { color: var(--color-danger); background: rgba(239,68,68,0.1); }
+    .est-due { color: #2563eb; background: rgba(59,130,246,0.1); }
+    .t-actions { display: flex; gap: 6px; justify-content: flex-end; align-items: center; }
+    .cob-whats {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 8px; cursor: pointer; flex: 0 0 auto;
+        color: #0b7a4b; background: rgba(37,211,102,0.1); border: 1px solid rgba(37,211,102,0.28);
+        transition: background 0.2s;
+    }
+    .cob-whats svg { width: 15px; height: 15px; }
+    .cob-whats:hover { background: rgba(37,211,102,0.18); }
+    .cob-paid {
+        font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; cursor: pointer;
+        color: #fff; background: var(--color-ok); border: none; border-radius: 8px; padding: 7px 12px;
+        transition: transform 0.3s var(--ease-spring), opacity 0.2s;
+    }
+    .cob-paid:hover { transform: translateY(-1px); }
+    .cob-paid:disabled { opacity: 0.55; cursor: wait; }
+    .cob-err { font-size: 0.78rem; color: var(--color-danger); margin: 0.6rem 0 0; min-height: 1em; }
+
+    /* Promesa de pago: badge en estado + botón de acción */
+    .t-estado { display: inline-flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .est-prom { display: inline-flex; align-items: center; gap: 4px; color: #7c5cff; background: rgba(124,92,255,0.1); }
+    .est-prom svg { width: 11px; height: 11px; }
+    .cob-prom {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 8px; cursor: pointer; flex: 0 0 auto;
+        color: var(--color-text-muted); background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .cob-prom svg { width: 15px; height: 15px; }
+    .cob-prom:hover { color: var(--color-text); border-color: #cbd5e1; }
+    .cob-prom.has-prom { color: #7c5cff; background: rgba(124,92,255,0.1); border-color: rgba(124,92,255,0.3); }
+
+    /* Modal de promesa (mismo lenguaje que los modales de la app) */
+    .modal { border: none; border-radius: 18px; padding: 0; width: min(440px, calc(100vw - 2rem)); box-shadow: 0 40px 90px -30px rgba(10,25,47,0.45); }
+    .modal::backdrop { background: rgba(10,25,47,0.38); backdrop-filter: blur(4px); }
+    .m-form { display: flex; flex-direction: column; gap: 0.9rem; padding: 1.5rem 1.6rem 1.4rem; }
+    .m-head { display: flex; align-items: center; justify-content: space-between; }
+    .m-head h2 { font-size: 1.05rem; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
+    .m-close { background: var(--color-bg-soft); border: 1px solid var(--color-border); width: 30px; height: 30px; border-radius: 9px; cursor: pointer; font-size: 0.8rem; color: var(--color-text-muted); }
+    .prom-ctx { font-size: 0.8rem; color: var(--color-text-muted); margin: -0.3rem 0 0; line-height: 1.45; }
+    .prom-ctx b { color: var(--color-text); font-weight: 600; }
+    .m-field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .m-field label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .m-input { font-family: var(--font-sans); font-size: 0.88rem; font-weight: 500; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 9px; padding: 10px 12px; transition: border-color 0.25s; }
+    .m-input:focus { outline: none; border-color: var(--color-blue-deep); }
+    .m-error { font-size: 0.78rem; color: var(--color-danger); margin: 0; min-height: 1em; }
+    .m-actions { display: flex; align-items: center; gap: 0.6rem; }
+    .m-spacer { flex: 1; }
+    .m-delete { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-danger); background: none; border: none; cursor: pointer; padding: 9px 4px; }
+    .m-delete[hidden] { display: none; }
+    .m-done { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 9px; padding: 8px 14px; cursor: pointer; }
+    .m-done[hidden] { display: none; }
+    .m-save { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; background: var(--color-blue-deep); color: #fff; border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5); }
+    .m-save:disabled { opacity: 0.6; cursor: wait; }
+
+    /* Empty */
+    .empty { padding: 4rem 2rem; text-align: center; }
+    .empty h2 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.5rem; }
+    .empty p { font-size: 0.88rem; color: var(--color-text-muted); max-width: 460px; margin: 0 auto 1.4rem; line-height: 1.6; }
+    .empty-cta { display: inline-block; background: var(--color-blue-deep); color: #fff; text-decoration: none; font-size: 0.86rem; font-weight: 600; padding: 11px 20px; border-radius: 10px; }
+
+    @media (max-width: 880px) {
+        .t-head { display: none; }
+        .t-row { grid-template-columns: 1fr auto auto; gap: 0.5rem 0.8rem; min-width: 0; }
+        .t-muted, .t-folio { display: none; }
+    }
+    @media (max-width: 560px) {
+        .t-estado { display: none; }
+    }
+    .cb-denied { display: flex; flex-direction: column; gap: 0.6rem; padding: 2rem 0; }
+    .cb-denied svg { width: 32px; height: 32px; color: #c9d2de; }
+    .cb-denied h3 { font-size: 1rem; font-weight: 700; margin: 0; }
+    .cb-denied p { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; line-height: 1.55; }
+</style>

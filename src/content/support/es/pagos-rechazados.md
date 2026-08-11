@@ -4,14 +4,14 @@ description: "Códigos de error bancarios comunes y cómo solucionarlos."
 category: "Pagos y Depósitos"
 ---
 
-Ver un pago fallido es frustrante, pero Cord delega el procesamiento directamente a Stripe, por lo que la declinación proviene de los algoritmos antifraude o del banco emisor de la tarjeta.
+Un pago puede ser rechazado por el banco emisor, autenticación incompleta, datos incorrectos o controles de riesgo de la red.
 
-### Identificar el motivo en Stripe
+### Identificar el motivo en Cord
 
 Si un cliente te reporta que su tarjeta no pasa al intentar pagar una cotización:
-1. Entra a tu Dashboard de Stripe y ve a **Pagos**.
-2. Verás los intentos fallidos. Stripe te dirá exactamente por qué rebotó (ej. *insufficient_funds*, *do_not_honor*, *fraudulent*).
-3. Al ser cobros B2B de alto monto (decenas de miles de pesos), es extremadamente común que los bancos bloqueen la tarjeta preventivamente.
+1. Ve a **Cobros** y abre el intento fallido.
+2. Cord muestra una explicación segura y una referencia de soporte sin exponer controles internos antifraude.
+3. Pide al cliente que revise sus datos, complete cualquier autenticación bancaria e intente nuevamente.
 
 **Solución recomendada:**
-Pide al cliente que llame a su banco, confirme que él está intentando hacer un pago fuerte en línea, y luego vuelva a intentar el pago desde la cotización de Cord.
+Si el problema continúa, el cliente debe contactar a su banco. Comparte la referencia de Cord con soporte para investigar sin solicitar números completos de tarjeta.

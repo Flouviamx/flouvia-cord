@@ -12,7 +12,7 @@ Create an `sk_test_...` key in **Settings > Developers > API**. Test keys **don'
 
 ### Testing card payments
 
-Payments go through **your Stripe account**. Put your Stripe account in **test mode** and use [Stripe's test cards](/en/support/tarjetas-prueba) (e.g. the Visa `4242 4242 4242 4242`) in the public link's checkout. No charge is real while Stripe is in test mode.
+The public link of a production organization processes real transactions and **must not be tested with laboratory card numbers**. For a development integration, ask support for a separate test environment. Never use a real card to simulate failures.
 
 ### Testing stamping (CFDI)
 

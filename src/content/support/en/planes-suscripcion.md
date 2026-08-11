@@ -5,7 +5,7 @@ category: "Account & Team"
 order: 4
 ---
 
-Cord is a freemium SaaS: you pay a monthly fee to use the platform. **We do not charge per-transaction fees** — card payments are processed by your own Stripe account.
+Cord is a freemium SaaS: you pay a monthly fee to use the platform. Payments handled by Cord Payments have a separate method-specific fee that is shown and accepted before activation.
 
 ### The plans
 
@@ -22,10 +22,10 @@ Cord is a freemium SaaS: you pay a monthly fee to use the platform. **We do not 
 ### Changing plans
 
 1. Go to **Settings > Plans & billing > Subscription** (`/app/ajustes/plan`).
-2. Pick the plan and cycle (monthly or annual). Stripe's secure checkout opens.
+2. Pick the plan and cycle (monthly or annual). The secure billing checkout opens.
 3. The change applies immediately; your included quota adjusts to the new plan.
 
-To change your card, view receipts, or cancel, use the **Manage billing** button, which opens Stripe's Customer Portal.
+To change your card, view receipts, or cancel, use the **Manage billing** button, which opens the secure billing portal.
 
 ### Overages (usage-based)
 

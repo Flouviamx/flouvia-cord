@@ -318,7 +318,13 @@ const hasAccess = !perm || memberCan(ME!, perm);
             msg.className = 's-saved';
 
             try {
-                const res = await fetch('/api/org', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const send = () => fetch('/api/org', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                let res = await send();
+                if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
+                    const confirmed = await (window as any).cordStepUp();
+                    if (!confirmed) throw new Error('Necesitas confirmar tu identidad para guardar este cambio');
+                    res = await send();
+                }
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || btn.dataset.i18nErr || 'No se pudo guardar');
 

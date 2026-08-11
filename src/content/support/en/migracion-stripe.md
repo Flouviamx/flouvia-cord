@@ -1,33 +1,33 @@
 ---
-title: "Cord alongside your Stripe"
-description: "How Cord fits with your existing Stripe account and how to bring your data over."
+title: "Move your payment flows to Cord"
+description: "How to activate Cord Payments and bring over customers, products, and current processes."
 category: "Developers"
 order: 5
 ---
 
-An important clarification: **Cord does not replace Stripe — it uses it.** Online payments for your quotes are processed by **your own Stripe account** via Stripe Connect (Cord never touches the funds). What Cord adds on top is what Stripe doesn't do in Mexico: interactive B2B quotes, price lists, credit, collections, and CFDI 4.0 stamping.
+Cord Payments brings the proposal, acceptance, and payment into one link. Funds reach your connected payment account; Cord does not hold balances or act as a bank.
 
-That's why there is no "migration" in the sense of moving cards or subscriptions. What you do is **connect your Stripe and bring your catalog over**.
+Migration means activating payments, importing your commercial data, and gradually moving new flows to Cord. Saved cards from another system cannot be copied: each customer authorizes their payment method inside the new secure flow.
 
 ### Concept mapping
 
-| Stripe object | In Cord | Note |
+| Current object | In Cord | Note |
 | :--- | :--- | :--- |
-| `Customer` | Client | In Cord a client carries RFC, legal name, credit terms, and tax data for CFDI. |
-| `Product` / `Price` | Product | Cord products can carry cost (for margin) and, in the future, a SAT code. |
-| `Invoice` / `Checkout` | Quote | An approved quote is charged via Stripe and, when invoiced, generates the CFDI 4.0. |
+| Customer | Client | Keeps contact, legal name, commercial terms, and tax data. |
+| Product or price | Product | Includes price, cost, taxes, and fiscal codes when applicable. |
+| Invoice or payment link | Quote | Brings together the proposal, approval, payment schedule, and CFDI. |
 
-> Cord has no recurring subscription engine for your business's customers. If you sell subscriptions, that still lives in Stripe Billing; Cord covers the quoting and CFDI invoicing side.
+Monthly retainers can be configured as recurring quotes. The customer authorizes their card once, and Cord records each monthly payment in the account history.
 
-### Step 1: Connect your Stripe
+### Step 1: Activate Cord Payments
 
-Go to **Settings › Payments** (Ajustes › Cobros) and complete the embedded onboarding to connect your account. Without Stripe connected, the public link still works but without online payment.
+Go to **Settings › Payments** and complete the embedded onboarding to connect your payment account. Without an active account, the public link still works but without online payment.
 
 ### Step 2: Import your catalog
 
 You don't need the API for this:
 
-1. In Stripe, export your customers to CSV (Customers > Export).
+1. Export your customers to CSV from your current system.
 2. In Cord, go to **Clients > Import** and map the columns (`empresa`, `email`, `RFC`…). You can also import **Products** via CSV.
 
 If you prefer to do it in code, use the REST API: see [API: Manage Customers](/en/support/api-clientes) and [API: Create Quotes](/en/support/api-cotizaciones).

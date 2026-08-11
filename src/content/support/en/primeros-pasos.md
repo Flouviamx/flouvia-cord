@@ -13,8 +13,8 @@ The core of Cord is your tax and brand profile.
 1. Go to **Settings > General** and enter your legal name, contact, and basic details.
 2. In **Settings > Billing & CFDI**, enter your RFC and tax regime, and upload your **CSD (Digital Seal Certificate)**: the `.cer` and `.key` files the SAT gives you, with their password. *Without the CSD you can quote, but not stamp CFDI.*
 
-## Step 2: (Optional) Connect your Stripe
-To collect online card payments, Cord uses **your own Stripe account** (we charge no per-transaction fee). Connect it in Settings to enable the public link's pay button. If your clients pay by bank transfer (SPEI), you don't need this step: they transfer to your business's CLABE and you mark the quote as paid.
+## Step 2: (Optional) Activate Cord Payments
+To collect card or automatic SPEI payments from the quote link, activate **Cord Payments** in Settings. You will see the method-specific fee, register the bank account that receives deposits, and complete verification. For manual transfers, show your usual bank details and mark the payment after it arrives.
 
 ## Step 3: Create your first client
 1. Go to **Clients > New client**.
@@ -25,7 +25,7 @@ To collect online card payments, Cord uses **your own Stripe account** (we charg
 ## Step 4: Send your first quote
 1. Go to **Quotes > New**.
 2. Pick the client, add line items (from your catalog or free lines), and review the total.
-3. When you send it, Cord generates a **public link** and, if email is configured, sends it to the client. They open it, review, approve and —if you connected Stripe— pay online.
+3. When you send it, Cord generates a **public link** and, if email is configured, sends it to the client. They open it, review, approve and, if Cord Payments is active, pay online.
 
 ## Step 5: (For devs) Connect the API
 If you'll use Cord programmatically:

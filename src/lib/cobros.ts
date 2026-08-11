@@ -7,7 +7,7 @@
 //   (nunca redondeando ambos lados), para que la suma siempre dé el total exacto.
 // - La cotización pasa a 'paid' solo cuando no quedan cobros 'pendiente'
 //   (el flip atómico vive en el webhook de Stripe).
-import { sql } from './db';
+import { sql, withOrgTx } from './db';
 
 export const TERM_DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 
@@ -57,14 +57,14 @@ export function splitCuotas(monto: number, n: number): number[] {
 // Idempotente: el unique (cotizacion_id, tipo, numero_cuota) hace que correrla
 // dos veces no duplique. No hace nada si la cotización no pide anticipo.
 // Llamar DESPUÉS de que el total quede final (p. ej. tras aprobación parcial).
-export async function materializeAnticipoCobros(cotizacionId: string) {
-    const rows = await sql`
+export async function materializeAnticipoCobros(cotizacionId: string, orgId: string) {
+    const [rows] = await withOrgTx(orgId, sql`
         select c.id, c.org_id, c.total, c.anticipo_pct,
                coalesce(c.terminos, cl.terminos_default) as terminos,
                coalesce(c.approved_at, c.created_at) as base_date
         from cotizaciones c
         left join clientes cl on cl.id = c.cliente_id
-        where c.id = ${cotizacionId}`;
+        where c.id = ${cotizacionId} and c.org_id = ${orgId}`);
     if (!rows.length) return false;
     const c = rows[0];
     const pct = Number(c.anticipo_pct);
@@ -76,13 +76,13 @@ export async function materializeAnticipoCobros(cotizacionId: string) {
 
     // ATÓMICO (un solo batch de Neon): si solo se insertara el anticipo y fallara
     // el saldo, el flip del webhook marcaría 'paid' con solo el anticipo cobrado.
-    await (sql as any).transaction([
+    await withOrgTx(orgId,
         sql`insert into cotizacion_cobros (org_id, cotizacion_id, tipo, monto, vence)
             values (${c.org_id}, ${cotizacionId}, 'anticipo', ${anticipo}, current_date)
             on conflict (cotizacion_id, tipo, numero_cuota) do nothing`,
         sql`insert into cotizacion_cobros (org_id, cotizacion_id, tipo, monto, vence)
             values (${c.org_id}, ${cotizacionId}, 'saldo', ${saldo}, ${venceSaldo})
             on conflict (cotizacion_id, tipo, numero_cuota) do nothing`,
-    ]);
+    );
     return true;
 }

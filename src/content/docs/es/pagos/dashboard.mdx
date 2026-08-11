@@ -1,45 +1,73 @@
 ---
 title: "Dashboard de cobros"
-description: "Monitorea tus ingresos, conoce tu saldo disponible y revisa las fechas de tus próximos depósitos."
+description: "Recorrido completo por los 12 widgets de Mis cobros: saldo, depósitos, estado de la cuenta, comisión, disputas y cobros recientes."
 ---
 
 <header class="content-header">
   <h1 class="page-title">Dashboard de cobros</h1>
-  <p class="page-subtitle">Monitorea tus ingresos, conoce tu saldo disponible y revisa las fechas de tus próximos depósitos.</p>
+  <p class="page-subtitle">Todo lo que entra por Cord Pagos, en un solo lugar — personalizable como el resto de los reportes de Cord.</p>
 </header>
 
-## Vista general
+**Mis cobros** (`/app/cobros`, sidebar › Mi dinero) es el panel donde ves el dinero que entra por Cord Pagos: cuánto has cobrado, cuánto es tuyo neto de comisión, cuándo te llega el próximo depósito, y el estado de salud de tu cuenta conectada. Es distinto de **Ajustes › Cobros**, que es donde *configuras* Cord Pagos (conectar tu cuenta, métodos activos, tarifas) — este dashboard es solo para *ver* lo que ya pasó.
 
-Una vez que hayas activado los pagos en línea mediante la configuración de cobros y empieces a recibir ingresos, la página principal de **Cobros** (ubicada en el menú lateral de la app) se transformará en un dashboard financiero completo.
+Como el resto de los reportes de Cord, el dashboard es **personalizable**: con el botón "Personalizar" puedes ocultar, reordenar o cambiar el tamaño de cualquier widget; "Restablecer" regresa al diseño original. Tu configuración se guarda por usuario.
 
-Este panel te da visibilidad total sobre tu flujo de caja en tiempo real, conectándose de forma directa con los datos de Stripe Connect.
+## Los widgets
 
-### Métricas y KPIs
+### Saldo disponible
 
-En la parte superior, encontrarás tres indicadores clave (KPIs) fundamentales:
+Cuánto dinero tienes disponible para depósito en este momento, más lo que sigue "en camino" (cobrado pero todavía no liberado para depositar) y lo que está en reserva. Solo aparece si ya conectaste tu cuenta.
 
-1. **TOTAL COBRADO:** La suma de todos los pagos que has recibido a lo largo de la historia de tu cuenta a través de Cord. Este es un indicador global de ventas cobradas.
-2. **SALDO DISPONIBLE:** El dinero que ya está liberado por Stripe y está listo para ser depositado en tu cuenta bancaria (o que ya está en proceso de depósito).
-3. **EN CAMINO (Pendiente):** El dinero proveniente de pagos muy recientes (ej. pagos con tarjeta hechos hoy) que Stripe aún está liquidando. Este saldo pasará a estar disponible de forma automática, generalmente en un plazo de 2 a 7 días dependiendo de la configuración de tu cuenta.
+### Depósitos
 
-## Historial y Depósitos
+Las transferencias que Cord Pagos ha hecho o hará a tu cuenta bancaria: fecha de llegada, monto y estado (Depositado / En camino / Programado). Si aún no has recibido ningún depósito, el widget lo indica explícitamente en vez de mostrarse vacío sin explicación.
 
-Debajo de los KPIs, el dashboard se divide en dos secciones principales:
+### Estado de la cuenta
 
-### Depósitos (Payouts)
-Muestra una lista de las transferencias de dinero que Stripe ha realizado hacia tu cuenta bancaria registrada. Cada registro indica la cantidad, la fecha de llegada estimada y el estado:
-- **Programado:** El depósito se realizará en el futuro.
-- **En camino:** Stripe ya envió los fondos a la red bancaria y deberían reflejarse pronto en tu cuenta.
-- **Depositado:** Los fondos ya aterrizaron en tu banco de forma exitosa.
+El semáforo de salud de tu cuenta conectada, con tres indicadores independientes:
 
-### Cobros Recientes
-Una tabla que registra de forma detallada cada pago individual realizado por tus clientes en las distintas cotizaciones. Incluye:
-- **Fecha:** Cuándo se realizó el pago.
-- **Monto:** La cantidad exacta cobrada.
-- **Método:** Si el pago fue realizado mediante "Tarjeta de crédito/débito", "Transferencia SPEI (Stripe)", o "Transferencia (Manual)".
-- **Estado y Enlace:** Te permite identificar a qué cotización pertenece ese cobro y acceder directamente al documento para ver los detalles.
+- **Cobros** — si tu cuenta puede procesar tarjeta y SPEI ahora mismo (Activos / Inactivos).
+- **Depósitos** — si Cord Pagos puede transferir a tu cuenta bancaria.
+- **Verificación** — si tu KYC está completo o si falta algún requisito pendiente (con fecha límite, si aplica).
+
+Si algo está incompleto, el widget muestra exactamente cuántos requisitos faltan y un botón "Administrar" que te lleva directo a completarlos en Ajustes › Cobros. Si todavía no activaste Cord Pagos, el widget lo dice claramente y explica que puedes seguir cotizando y registrando pagos manuales mientras tanto.
+
+### Cobrado
+
+El monto total que cobraste en el periodo seleccionado (con el mismo selector de fechas que usa el resto de los reportes de Cord), el número de operaciones, y la comparación en porcentaje contra el periodo anterior — con una mini-gráfica de la tendencia diaria.
+
+### Neto depositado
+
+Lo mismo que "Cobrado", pero **después de restar la comisión de Cord Pagos**: es el número real que te queda. Muestra la tarifa efectiva del periodo (el porcentaje real que se llevó Cord, que varía según tu mezcla de tarjeta/SPEI) junto al monto neto.
+
+### Igualas activas
+
+Cuántos contratos de [cobro recurrente mensual](/docs/pagos/igualas) tienes activos ahora mismo, y si alguno tiene un cargo mensual que falló y necesita atención.
+
+### Disputas abiertas
+
+Cuántas disputas (contracargos) tienes abiertas en el periodo y el monto total en juego. Si no hay ninguna, lo dice explícitamente — es una buena señal, no un vacío. Cada disputa te lleva a su [página de evidencia](/docs/pagos/disputas) dedicada.
+
+### Evolución del cobro
+
+La gráfica principal: cuánto dinero entró día a día en el periodo, comparado contra el mismo número de días del periodo anterior (la serie de comparación se muestra más tenue, para que la línea de este periodo sea la que domina visualmente).
+
+### Volumen mensual
+
+Comparativa mes a mes de cuánto has cobrado — útil para ver la tendencia de varios meses de un vistazo, más que el detalle diario de "Evolución del cobro".
+
+### A dónde va cada peso
+
+El desglose de tu bruto cobrado en el periodo: cuánto llega neto a tu banco, cuánto se fue en comisión de Cord, cuánto se descontó por reembolsos y cuánto está atado a disputas abiertas. Es la forma más directa de ver el costo real de aceptar pagos en línea.
+
+### Desglose por método
+
+Cuánto cobraste por cada método — tarjeta, SPEI, transferencia manual — con el número de transacciones de cada uno.
+
+### Cobros recientes
+
+La tabla de los cobros más recientes: folio de la cotización, cliente, método, fecha y monto. Es la vista que más se consulta día a día. Si tienes el permiso de *Reembolsos*, cada fila con un pago conciliado tiene un botón **Reembolsar** — ver [Reembolsos](/docs/pagos/reembolsos) para el flujo completo.
 
 <Callout type="info">
-**Sin conciliación manual:** Gracias a esta vista, ya no necesitas buscar depósitos en tu banca electrónica e intentar adivinar a qué factura pertenecen. Cada cobro se asocia automáticamente a su cotización y marca los documentos como pagados.
-
+Todos los widgets se calculan sobre el mismo rango de fechas seleccionado arriba del panel — cambiar el rango actualiza todo el dashboard a la vez.
 </Callout>

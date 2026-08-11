@@ -1,0 +1,55 @@
+---
+title: "Disputes and chargebacks"
+description: "What to do when a customer disputes a charge: how Cord automatically builds your evidence, and how to submit it before the deadline."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Disputes and chargebacks</h1>
+  <p class="page-subtitle">When a customer disputes a charge with their bank, here's how you defend yourself from Cord.</p>
+</header>
+
+## What a dispute is
+
+A dispute (or chargeback) happens when a cardholder asks their bank to reverse a charge — because they don't recognize it, say they never received the product or service, or for any other reason. The bank holds the amount while it's resolved, and you have a limited window of time to submit evidence that the charge was legitimate.
+
+When this happens on a payment processed by Cord Payments, you'll see the case in the **Open disputes** widget on the [payments dashboard](/en/docs/pagos/dashboard), and you can open its detail page under **My Payments › Disputes**.
+
+<Callout type="warning">
+While the dispute is open, the amount is held. If you lose it, that money leaves your balance — along with a dispute fee charged by the processor. Cord's original fee on that payment isn't refunded either. See [Fees and advantages](/en/docs/pagos/condiciones).
+</Callout>
+
+## The dispute page
+
+Each dispute has its own dedicated page, restricted to whoever holds the *Collections* or *Configure payments* permission. That's where you assemble the evidence submitted as your defense:
+
+- **Customer details:** name, email, and the IP address from which the cotización was approved.
+- **Service date:** when what was quoted was delivered or performed.
+- **Product or service description.**
+- **Customer communication:** the comment history on the cotización.
+- **Receipt:** the document proving the customer approved and paid.
+- **Any other context** that strengthens your case.
+
+### Auto-fill from your own data
+
+Instead of building evidence from scratch, there's a button to **auto-fill** that assembles two documents automatically using data Cord already has:
+
+1. **Proof of purchase:** a PDF with your business name, the cotización's folio, the client, the amount, the payment method, the date it was paid, and — most importantly for winning a dispute — **who signed the cotización, from what IP address, and on what exact date**, pulled directly from the electronic signature your customer left when approving it.
+2. **Customer communication:** a PDF with the full history of comments your customer left on the cotización, if any.
+
+Both get generated and attached to the case automatically — you just review the information is correct before submitting.
+
+## Saving a draft vs. submitting
+
+Evidence can be **saved as a draft** as many times as you like while you keep working on it — saving a draft doesn't commit anything or send any information to the processor.
+
+<Callout type="warning">
+**Submitting evidence is irreversible.** Once you confirm submission, the case is closed to further edits — you can't add or correct anything afterward. Review every field carefully before submitting.
+</Callout>
+
+Submitting the final evidence is a sensitive action: on top of the required permission, Cord asks you to **re-confirm your identity** (password or 2FA code) right before processing the submission, even if your session was already active.
+
+## What happens after
+
+The payment processor reviews the evidence and the customer's issuing bank decides the outcome — this process can take several weeks and **isn't guaranteed**: Cord gives you the tools to build the best possible case, but the final decision belongs to the issuing bank, not Cord. You'll see the status update (won, lost, or under review) right on the dispute's page.
+
+The entire process — saving drafts, auto-filling, and submitting — is logged in your organization's audit trail.

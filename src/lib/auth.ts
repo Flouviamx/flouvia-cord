@@ -21,6 +21,7 @@ import { hash as argon2Hash, verify as argon2Verify } from '@node-rs/argon2';
 import { scryptSync, randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { sql } from './db';
 import { verifyTotp, matchBackupCode } from './totp';
+import { decryptSecret } from './crypto-secret';
 
 // ── Parámetros de Argon2id (OWASP 2026) ─────────────────────────────────────
 // `Algorithm.Argon2id` (@node-rs/argon2) es un `const enum` — inaccesible con
@@ -103,16 +104,17 @@ export async function verifyAndMaybeUpgrade(userId: string, password: string, ha
  * única fuente para que las tres acciones no puedan divergir.
  */
 export async function reauthenticate(userId: string, creds: { password?: string; code?: string }): Promise<boolean> {
-    const [user] = await sql`select password_hash, totp_secret, totp_enabled, totp_backup_codes from users where id = ${userId} limit 1`;
+    const [user] = await sql`select password_hash, totp_secret, totp_secret_enc, totp_enabled, totp_backup_codes from users where id = ${userId} limit 1`;
     if (!user) return false;
+    const totpSecret = decryptSecret(user.totp_secret_enc as string | null) || (user.totp_secret as string | null);
 
     const hasRealPassword = !!user.password_hash && user.password_hash !== 'dummy_hash';
     if (hasRealPassword && creds.password) {
         return verifyPassword(creds.password, user.password_hash as string);
     }
-    if (user.totp_enabled && creds.code) {
+    if (user.totp_enabled && totpSecret && creds.code) {
         return (
-            verifyTotp(user.totp_secret as string, creds.code) ||
+            verifyTotp(totpSecret, creds.code) ||
             matchBackupCode((user.totp_backup_codes as string[]) || [], creds.code) !== -1
         );
     }
@@ -143,8 +145,8 @@ export async function createSession(userId: string, userAgent?: string, ip?: str
     const expiresAt = new Date(now + SESSION_TTL_MS);
     const absoluteExpiresAt = new Date(now + SESSION_ABSOLUTE_MS);
     await sql`
-        insert into sessions (id, user_id, expires_at, absolute_expires_at, user_agent, ip, last_used_at)
-        values (${tokenHash}, ${userId}, ${expiresAt}, ${absoluteExpiresAt}, ${userAgent || null}, ${ip || null}, now())
+        insert into sessions (id, user_id, expires_at, absolute_expires_at, user_agent, ip, last_used_at, reauthenticated_at)
+        values (${tokenHash}, ${userId}, ${expiresAt}, ${absoluteExpiresAt}, ${userAgent || null}, ${ip || null}, now(), now())
     `;
     return token;
 }

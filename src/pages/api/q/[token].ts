@@ -7,7 +7,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { createHash } from 'node:crypto';
-import { sql } from '../../../lib/db';
+import { sql, resolvePublicQuote, withOrgTx } from '../../../lib/db';
 import { dispatchQuoteEvent } from '../../../lib/webhooks';
 import { after } from '../../../lib/after';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
@@ -28,14 +28,20 @@ export const POST: APIRoute = async ({ params, request }) => {
     const rl = await rateLimit(`q:${action === 'ping' ? 'ping:' : ''}${token}`, action === 'ping' ? 120 : 30, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
 
-    const rows = await sql`select id, org_id, status from cotizaciones where public_token = ${token}`;
+    const identity = await resolvePublicQuote(token);
+    if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
+    const [rows] = await withOrgTx(identity.orgId, sql`
+        select id, org_id, status from cotizaciones
+        where id = ${identity.id} and org_id = ${identity.orgId}`);
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
     const c = rows[0];
+    const orgId = c.org_id as string;
     const alive = ['sent', 'viewed'].includes(c.status as string);
 
     // ── Heartbeat de presencia (el cliente tiene el link abierto AHORA) ──
     if (action === 'ping') {
-        await sql`update cotizaciones set viewer_last_seen = now() where id = ${c.id}`;
+        await withOrgTx(orgId, sql`update cotizaciones set viewer_last_seen = now()
+            where id = ${c.id} and org_id = ${orgId}`);
         return json({ ok: true });
     }
 
@@ -47,7 +53,9 @@ export const POST: APIRoute = async ({ params, request }) => {
         const ua = request.headers.get('user-agent') ?? 'desconocido';
         const email = String(body.email ?? '').trim().slice(0, 200);
         
-        const allItems = await sql`select id, descripcion, cantidad, precio_unitario, precio_negociado from cotizacion_items where cotizacion_id = ${c.id} order by orden`;
+        const [allItems] = await withOrgTx(orgId, sql`
+            select id, descripcion, cantidad, precio_unitario, precio_negociado
+            from cotizacion_items where cotizacion_id = ${c.id} order by orden`);
 
         // Aprobación parcial: el cliente puede incluir solo un subconjunto de líneas.
         // accepted_items = ids que SÍ aprueba; si no viene o las cubre todas, es total.
@@ -80,13 +88,13 @@ export const POST: APIRoute = async ({ params, request }) => {
         // El driver HTTP de Neon NO soporta sql.begin(callback); usa sql.transaction([...]).
         const txQueries: any[] = [];
         if (isPartial) {
-            const orgInfo = await sql`select iva_pct from orgs where id = ${c.org_id}`;
+            const [orgInfo] = await withOrgTx(orgId, sql`select iva_pct from orgs where id = ${orgId}`);
             const ivaPct = Number(orgInfo[0]?.iva_pct ?? 16) / 100;
             const newIva = subAceptado * ivaPct;
             const newTotal = subAceptado + newIva;
-            txQueries.push(sql`update cotizaciones set status = 'approved', approved_at = now(), subtotal = ${subAceptado}, iva = ${newIva}, total = ${newTotal} where id = ${c.id}`);
+            txQueries.push(sql`update cotizaciones set status = 'approved', approved_at = now(), subtotal = ${subAceptado}, iva = ${newIva}, total = ${newTotal} where id = ${c.id} and org_id = ${orgId}`);
         } else {
-            txQueries.push(sql`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id}`);
+            txQueries.push(sql`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id} and org_id = ${orgId}`);
         }
         // Marca el estado de cada línea (solo cambia algo en aprobación parcial).
         if (isPartial) {
@@ -99,12 +107,12 @@ export const POST: APIRoute = async ({ params, request }) => {
                   values (${c.org_id}, ${c.id}, 'approved', ${detalle})`);
         txQueries.push(sql`insert into cotizacion_firmas (org_id, cotizacion_id, firmante_nombre, firmante_email, firmante_ip, user_agent, snapshot_hash)
                   values (${c.org_id}, ${c.id}, ${signedBy || 'Anónimo'}, ${email || null}, ${ip}, ${ua}, ${snapshotHash})`);
-        await (sql as any).transaction(txQueries);
+        await withOrgTx(orgId, ...txQueries);
         // Anticipo: materializa las filas anticipo + saldo DESPUÉS de que el total
         // quedó final (la aprobación parcial lo recalcula arriba). Idempotente;
         // no hace nada si la cotización no pide anticipo. Best-effort: si falla,
         // payment-intent.ts las crea al primer intento de pago.
-        try { await materializeAnticipoCobros(c.id as string); } catch { /* fallback en payment-intent */ }
+        try { await materializeAnticipoCobros(c.id as string, c.org_id as string); } catch { /* fallback en payment-intent */ }
         // Fondo: el webhook/Slack jamás debe hacer esperar al cliente que aprueba.
         after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved'));
         return json({ ok: true, status: 'approved', hash: snapshotHash, partial: isPartial });
@@ -113,10 +121,11 @@ export const POST: APIRoute = async ({ params, request }) => {
     // ── Rechazar ──
     if (action === 'reject') {
         if (!alive) return json({ error: 'Esta cotización ya no se puede modificar', status: c.status }, 409);
-        await sql`update cotizaciones set status = 'rejected' where id = ${c.id}`;
+        await withOrgTx(orgId, sql`update cotizaciones set status = 'rejected'
+            where id = ${c.id} and org_id = ${orgId}`);
         const comentario = String(body.comentario ?? '').trim().slice(0, 500);
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${c.org_id}, ${c.id}, 'rejected', ${comentario ? `El cliente rechazó: "${comentario}"` : 'El cliente rechazó la cotización desde el link'})`;
+        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+            values (${orgId}, ${c.id}, 'rejected', ${comentario ? `El cliente rechazó: "${comentario}"` : 'El cliente rechazó la cotización desde el link'})`);
         after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.rejected'));
         return json({ ok: true, status: 'rejected' });
     }
@@ -130,8 +139,8 @@ export const POST: APIRoute = async ({ params, request }) => {
         const mensaje = String(body.mensaje ?? '').trim().slice(0, 800);
         if (!mensaje) return json({ error: 'Escribe un mensaje' }, 400);
         if (c.status === 'draft') return json({ error: 'Cotización no disponible' }, 409);
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${c.org_id}, ${c.id}, 'comment', ${mensaje})`;
+        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+            values (${orgId}, ${c.id}, 'comment', ${mensaje})`);
         return json({ ok: true });
     }
 
@@ -146,8 +155,8 @@ export const POST: APIRoute = async ({ params, request }) => {
         const detalle = propuesta
             ? `Propuesta: ${money(propuesta)}${mensaje ? ` — ${mensaje}` : ''}`
             : mensaje;
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${c.org_id}, ${c.id}, 'counter', ${detalle})`;
+        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+            values (${orgId}, ${c.id}, 'counter', ${detalle})`);
         return json({ ok: true });
     }
 
@@ -159,11 +168,12 @@ export const POST: APIRoute = async ({ params, request }) => {
         if (c.status === 'draft') return json({ error: 'Cotización no disponible' }, 409);
         
         // Verificar que el item pertenece a la cotización
-        const [item] = await sql`select id from cotizacion_items where id = ${itemId} and cotizacion_id = ${c.id}`;
+        const [[item]] = await withOrgTx(orgId, sql`
+            select id from cotizacion_items where id = ${itemId} and cotizacion_id = ${c.id}`);
         if (!item) return json({ error: 'Línea no encontrada' }, 404);
 
-        await sql`insert into cotizacion_comentarios (org_id, cotizacion_id, item_id, autor_tipo, autor_nombre, contenido)
-                  values (${c.org_id}, ${c.id}, ${itemId}, 'cliente', 'Cliente', ${mensaje})`;
+        await withOrgTx(orgId, sql`insert into cotizacion_comentarios (org_id, cotizacion_id, item_id, autor_tipo, autor_nombre, contenido)
+            values (${orgId}, ${c.id}, ${itemId}, 'cliente', 'Cliente', ${mensaje})`);
         return json({ ok: true });
     }
 

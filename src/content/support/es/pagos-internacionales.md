@@ -7,7 +7,7 @@ category: "Pagos y Depósitos"
 Vender software o servicios a clientes en el extranjero (exportación) es nativo en Cord.
 
 ### Cobros y Divisas
-Cord te permite crear la cotización en USD o EUR. Cuando el cliente internacional hace clic en Pagar, tu cuenta de Stripe procesará el cargo en su tarjeta (Visa, Mastercard, AMEX) sin importar de qué país provenga, depositando los fondos a tu banco en México según las reglas de tu cuenta Stripe.
+Cord te permite crear la cotización en USD o EUR. Cuando el cliente internacional selecciona **Pagar**, Cord valida si su tarjeta, país y moneda son compatibles con tu cuenta de pagos conectada. La disponibilidad y moneda de depósito dependen de la configuración de esa cuenta.
 
 ### Tratamiento Fiscal (Exportación de Servicios)
 Al cotizarle a un extranjero, debes usar el RFC genérico internacional **XEXX010101000**.

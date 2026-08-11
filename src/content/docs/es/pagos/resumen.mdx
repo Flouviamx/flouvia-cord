@@ -1,16 +1,16 @@
 ---
-title: "Resumen de Pagos"
-description: "Cobra a tus clientes B2B por tarjeta o SPEI directamente desde la cotizacion. Sin intermediarios, sin comisiones ocultas. Timbrado CFDI 4.0 automatico."
+title: "Resumen de Cord Pagos"
+description: "Cobra a tus clientes B2B por tarjeta, SPEI o transferencia manual directamente desde la cotización. Fondos directo a tu banco, con una sola tarifa transparente."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Resumen de Pagos</h1>
-  <p class="page-subtitle">El motor financiero de tu negocio B2B. Cobra por transferencia o tarjeta sin que nadie retenga tu dinero.</p>
+  <h1 class="page-title">Resumen de Cord Pagos</h1>
+  <p class="page-subtitle">El motor de cobros de tu negocio B2B. Tarjeta, SPEI o transferencia manual, con el dinero directo a tu banco.</p>
 </header>
 
-El modulo de pagos de Cord permite a negocios B2B en Mexico aceptar cobros por tarjeta de credito, debito y transferencia SPEI directamente desde la cotizacion, con fondos depositados en la cuenta bancaria del vendedor en un plazo maximo de 2 dias habiles. Cord no retiene comisiones ocultas: la unica comision es la de Stripe, transparente y visible desde el inicio.
+**Cord Pagos** es el sistema con el que aceptas cobros por tarjeta, transferencia SPEI o transferencia manual directamente desde una cotización, con los fondos depositados en tu propia cuenta bancaria en un plazo de entre 2 y 7 días hábiles. Cord cobra una sola comisión por transacción, calculada de forma transparente y visible antes de cobrar — sin cargos ocultos ni sorpresas. Ver la [tabla completa de tarifas](/docs/pagos/condiciones).
 
-*Ultima actualizacion: julio 2026*
+*Última actualización: 11 de agosto de 2026*
 
 <section class="docs-section split" style="margin-top: 40px; border-top: none; padding-top: 0; margin-bottom: 64px;">
 <div class="section-text">
@@ -53,15 +53,20 @@ El modulo de pagos de Cord permite a negocios B2B en Mexico aceptar cobros por t
 
 En el B2B tradicional, recibir un pago significa: pedirle al cliente que envíe el comprobante de transferencia por correo, que ventas lo reenvíe a finanzas, y que finanzas busque el depósito exacto en el portal del banco al día siguiente para cruzarlo contra la cotización.
 
-**Cord elimina ese proceso por completo.** Nuestra infraestructura de pagos está diseñada nativamente para B2B, automatizando la conciliación y enviando el dinero directo a tu cuenta bancaria.
+**Cord Pagos elimina ese proceso por completo.** Nuestra infraestructura de pagos está diseñada nativamente para B2B, automatizando la conciliación y enviando el dinero directo a tu cuenta bancaria.
 
 ### Lo que aprenderás en esta sección:
 
-1. **Aceptar un pago:** Cómo funcionan las CLABEs dinámicas (SPEI) y los cobros con tarjeta, y por qué el dinero llega directo a ti sin que nosotros toquemos un centavo.
-2. **Anticipos y saldos:** Cómo cobrar el 50% hoy y el resto cuando entregues el proyecto.
-3. **Flujo de caja:** Cómo ver el dinero que tienes en tránsito y el proyectado para el próximo mes.
+1. **[Aceptar un pago](/docs/pagos/aceptar):** Cómo funcionan las CLABEs dinámicas (SPEI) y los cobros con tarjeta, y por qué el dinero llega directo a ti.
+2. **[Tarifas y ventajas](/docs/pagos/condiciones):** Cuánto cobra Cord por cada método, y por qué.
+3. **[Anticipos y saldos](/docs/pagos/anticipos):** Cómo cobrar un porcentaje hoy y el resto después.
+4. **[Igualas recurrentes](/docs/pagos/igualas):** Cómo domiciliar un cobro mensual automático.
+5. **[Reembolsos](/docs/pagos/reembolsos)** y **[disputas](/docs/pagos/disputas):** Qué hacer cuando algo sale distinto a lo esperado.
 
 ## Una arquitectura "Direct-to-Bank"
 
-A diferencia de las pasarelas de pago genéricas que retienen tu dinero y luego te hacen "payouts", Cord opera sobre **Stripe Connect Custom**. 
-Esto significa que cuando tu cliente paga, los fondos viajan *directamente* a tu propia cuenta bancaria. Cord no es un intermediario, es la capa de software que orquesta la transacción.
+A diferencia de las pasarelas de pago genéricas que retienen tu dinero y luego te hacen "payouts" cada tanto, Cord Pagos usa **cargos directos**: cuando tu cliente paga, el dinero viaja directamente a tu propia cuenta bancaria conectada — nunca pasa por una cuenta de Cord. Cord no es un intermediario del dinero, es la capa de software que orquesta la transacción, verifica tu identidad, calcula la comisión y factura el CFDI correspondiente a esa comisión.
+
+<Callout type="info">
+Esto también significa que tú eres el comerciante de registro de cada cobro — no Cord. Eres responsable ante tu cliente por el bien o servicio vendido, y ante el banco por cualquier contracargo. Ver [Tarifas y ventajas](/docs/pagos/condiciones) para el detalle.
+</Callout>

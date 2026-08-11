@@ -4,8 +4,9 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql } from '../../../../lib/db';
+import { sql, resolvePublicQuote, withOrgTx } from '../../../../lib/db';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
+import { payerError } from '../../../../lib/pay-errors';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -15,14 +16,17 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Crear sesiones de Stripe es costoso/abusable: límite estricto por token.
     const rl = await rateLimit(`checkout:${token}`, 6, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
-    const rows = await sql`
-        select c.id, c.folio, c.total, c.status, 
+    const identity = await resolvePublicQuote(token);
+    if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
+    const [rows] = await withOrgTx(identity.orgId, sql`
+        select c.id, c.org_id, c.folio, c.total, c.status,
                o.sandbox_of, o.stripe_account_id, o.stripe_charges_enabled, 
-               o.acepta_tarjeta, o.cobro_spei_auto
+               o.acepta_tarjeta, o.cobro_spei_auto, o.checkout_v2
         from cotizaciones c join orgs o on o.id = c.org_id
-        where c.public_token = ${token}`;
+        where c.id = ${identity.id} and c.org_id = ${identity.orgId}`);
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
     const c = rows[0];
+    if (c.checkout_v2) return json({ error: 'Este flujo de pago ya no está disponible' }, 410);
     if (!['approved', 'invoiced'].includes(c.status as string)) {
         return json({ error: 'Esta cotización no está lista para pago' }, 409);
     }
@@ -79,7 +83,10 @@ export const POST: APIRoute = async ({ params, request }) => {
                 method: 'POST', headers: connectHeaders, body: cusForm.toString(),
             });
             const cus: any = await cusRes.json();
-            if (!cusRes.ok || !cus?.id) return json({ error: cus?.error?.message || 'No se pudo iniciar el pago por transferencia' }, 502);
+            if (!cusRes.ok || !cus?.id) {
+                const safe = payerError(cus?.error);
+                return json({ error: safe.message, reference: safe.reference }, 502);
+            }
             form.set('customer', cus.id);
         }
 
@@ -89,10 +96,14 @@ export const POST: APIRoute = async ({ params, request }) => {
             body: form.toString(),
         });
         const data: any = await res.json();
-        if (!res.ok) return json({ error: data?.error?.message || 'No se pudo iniciar el pago' }, 502);
+        if (!res.ok) {
+            const safe = payerError(data?.error);
+            return json({ error: safe.message, reference: safe.reference }, 502);
+        }
         return json({ url: data.url });
-    } catch {
-        return json({ error: 'No se pudo conectar con Stripe' }, 502);
+    } catch (error) {
+        const safe = payerError(error);
+        return json({ error: safe.message, reference: safe.reference }, 502);
     }
 };
 

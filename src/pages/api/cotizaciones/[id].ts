@@ -7,7 +7,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { notifyQuoteSent } from '../../../lib/email';
-import { requirePerm } from '../../../lib/queries';
+import { requirePerm, invalidateMoneyCaches } from '../../../lib/queries';
 import { dispatchQuoteEvent, dispatchQuoteEventFrom, type WebhookEvent } from '../../../lib/webhooks';
 import { after } from '../../../lib/after';
 import { reportUsage } from '../../../lib/billing';
@@ -204,7 +204,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     } else if (action.to === 'approved') {
         await sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id}`;
         // Anticipo: materializa anticipo + saldo (idempotente; no-op sin anticipo_pct).
-        try { await materializeAnticipoCobros(id); } catch { /* fallback en payment-intent */ }
+        try { await materializeAnticipoCobros(id, orgId); } catch { /* fallback en payment-intent */ }
     } else if (action.to === 'paid') {
         const method = body.payment_method || 'transferencia';
         await sql`update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}), payment_method = coalesce(payment_method, ${method}) where id = ${id}`;
@@ -238,6 +238,11 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     } else {
         await sql`update cotizaciones set status = ${action.to} where id = ${id}`;
     }
+
+    // Cualquier transición de estado mueve la cartera y el dinero cobrado: sin esto,
+    // /app/cobranza y /app/cobros sirven hasta 30 s de datos viejos y una cotización
+    // recién marcada como cobrada reaparece al recargar.
+    invalidateMoneyCaches(orgId);
 
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
               values (${orgId}, ${id}, ${action.evento}, ${action.detalle})`;

@@ -2,25 +2,29 @@
 export const prerender = false;
 import Layout from '../../../layouts/Layout.astro';
 import PaymentIsland from '../../../components/q/PaymentIsland';
-import { sql } from '../../../lib/db';
+import { sql, resolvePublicQuote, withOrgTx } from '../../../lib/db';
 import { materializeAnticipoCobros, venceDia } from '../../../lib/cobros';
 
 const token = Astro.params.token ?? '';
-const rows = await sql`
-    select c.id, c.folio, c.total, c.status, c.approved_at, c.created_at, c.anticipo_pct, c.es_recurrente,
+const identity = await resolvePublicQuote(token);
+if (!identity) return Astro.redirect('/404');
+const [rows] = await withOrgTx(identity.orgId, sql`
+    select c.id, c.org_id, c.folio, c.total, c.status, c.approved_at, c.created_at, c.anticipo_pct, c.es_recurrente,
            coalesce(c.terminos, cl.terminos_default) as terminos,
            o.nombre, o.color_marca, o.logo_url,
-           o.stripe_account_id, o.stripe_charges_enabled, o.acepta_tarjeta, o.cobro_spei_auto, o.sandbox_of
+           o.stripe_account_id, o.stripe_charges_enabled, o.acepta_tarjeta, o.cobro_spei_auto, o.sandbox_of,
+           o.checkout_v2
     from cotizaciones c
     left join clientes cl on cl.id = c.cliente_id
     join orgs o on o.id = c.org_id
-    where c.public_token = ${token}`;
+    where c.id = ${identity.id} and c.org_id = ${identity.orgId}`);
 
 if (!rows.length) {
     return Astro.redirect('/404');
 }
 
 const q = rows[0];
+const orgId = q.org_id as string;
 const yaPagada = q.status === 'paid';
 
 const fmtMxn = (n: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n);
@@ -40,7 +44,9 @@ if (esRecurrente) {
     // que hacer aquí → de vuelta al link, que muestra el estado de la iguala.
     const recurPagable = ['approved', 'invoiced'].includes(q.status as string)
         && !q.sandbox_of && !!q.stripe_account_id && !!q.stripe_charges_enabled && !!q.acepta_tarjeta;
-    const [subRow] = await sql`select estado from cotizacion_suscripciones where cotizacion_id = ${q.id} limit 1`;
+    const [[subRow]] = await withOrgTx(orgId, sql`
+        select estado from cotizacion_suscripciones
+        where org_id = ${orgId} and cotizacion_id = ${q.id} limit 1`);
     const yaActiva = subRow && ['active', 'trialing', 'past_due'].includes(subRow.estado as string);
     if (!yaPagada && (!recurPagable || yaActiva)) return Astro.redirect(`/q/${token}`);
     amount = fmtMxn(Number(q.total));
@@ -57,22 +63,22 @@ if (esRecurrente) {
     // Cobros parciales (anticipo/saldo/cuotas): se paga el siguiente cobro pendiente
     // cuya fecha ya llegó. Sin cobros: el total, gateado por términos de crédito
     // (contado = pagable ya; net30/net60 = hasta la fecha de vencimiento).
-    let cobros = await sql`
+    let [cobros] = await withOrgTx(orgId, sql`
         select id, tipo, numero_cuota, monto, status, vence
         from cotizacion_cobros
-        where cotizacion_id = ${q.id}
-        order by vence asc nulls first, created_at asc`;
+        where org_id = ${orgId} and cotizacion_id = ${q.id}
+        order by vence asc nulls first, created_at asc`);
     // Respaldo: cotización con anticipo cuyos cobros no se materializaron al aprobar
     // (best-effort ahí) — materializarlos aquí para que la página muestre el MISMO
     // monto que payment-intent.ts va a cobrar (el anticipo, no el total).
     if (!cobros.length && Number(q.anticipo_pct) > 0 && Number(q.anticipo_pct) < 100 && !yaPagada) {
         try {
-            await materializeAnticipoCobros(q.id as string);
-            cobros = await sql`
+            await materializeAnticipoCobros(q.id as string, orgId);
+            [cobros] = await withOrgTx(orgId, sql`
                 select id, tipo, numero_cuota, monto, status, vence
                 from cotizacion_cobros
-                where cotizacion_id = ${q.id}
-                order by vence asc nulls first, created_at asc`;
+                where org_id = ${orgId} and cotizacion_id = ${q.id}
+                order by vence asc nulls first, created_at asc`);
         } catch { /* payment-intent.ts lo reintenta */ }
     }
     const hoyISO = new Date().toISOString().slice(0, 10);
@@ -110,7 +116,7 @@ if (esRecurrente) {
 }
 ---
 
-<Layout title={`Pagar ${q.folio} — ${q.nombre}`} noindex={true}>
+<Layout title={`Pagar ${q.folio} | ${q.nombre}`} noindex={true}>
     <main class="payp">
         <div class="payp-col">
             <header class="payp-head">
@@ -152,14 +158,14 @@ if (esRecurrente) {
                     </div>
                 ) : (
                     <div class="payp-element" style={`--theme-color: ${color};`}>
-                        <PaymentIsland client:only="react" token={token} color={color} amountLabel={amount} cobroId={cobroId} subscription={esRecurrente} />
+                        <PaymentIsland client:only="react" token={token} color={color} amountLabel={amount} cobroId={cobroId} subscription={esRecurrente} acceptsCard={!!q.acepta_tarjeta} acceptsSpei={!!q.cobro_spei_auto} checkoutV2={!!q.checkout_v2} />
                     </div>
                 )}
             </section>
 
             <footer class="payp-foot">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Pago cifrado y procesado por Stripe. {q.nombre} nunca ve los datos de tu tarjeta.
+                Pago cifrado y procesado por Cord Pagos. {q.nombre} nunca ve los datos de tu tarjeta.
             </footer>
         </div>
     </main>

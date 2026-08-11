@@ -1,40 +1,42 @@
 ---
-title: "Aceptar un Pago"
-description: "Recibe dinero mediante tarjeta de crédito o transferencia SPEI dinámica."
+title: "Aceptar un pago"
+description: "Cómo se ve el checkout de Cord Pagos desde la perspectiva del cliente: elegir método, pagar con tarjeta o SPEI, y qué pasa con anticipos y saldos."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Aceptar un Pago</h1>
-  <p class="page-subtitle">Ofrece a tus clientes una experiencia de pago nativa sin salir de la cotización.</p>
+  <h1 class="page-title">Aceptar un pago</h1>
+  <p class="page-subtitle">Ofrece a tus clientes una experiencia de pago nativa, sin salir de la cotización.</p>
 </header>
 
-## El Checkout Integrado
+## El checkout integrado
 
-Una vez que el cliente aprueba la cotización (y firma electrónicamente), el Enlace Mágico se transforma. En lugar de mostrar el botón de aprobar, despliega un **Checkout de pago** elegante y responsivo.
+Una vez que el cliente aprueba la cotización (y firma electrónicamente), el link de la cotización se transforma. En lugar del botón de aprobar, aparece el **checkout de pago** — una pantalla incrustada directamente en el documento, con tu marca y colores.
 
-Dependiendo de cómo hayas configurado la cotización (Contado, Anticipo o Crédito), el sistema cobrará el monto correspondiente. El cliente tiene dos métodos de pago principales:
+Si activaste más de un método (ver [Métodos de cobro](/docs/pagos/metodos)), el cliente primero **elige explícitamente** cómo quiere pagar — Tarjeta o SPEI — antes de ver ningún formulario. Si solo activaste uno, se muestra directo.
 
-### 1. Transferencia Interbancaria (SPEI Dinámico)
+### Pagar con tarjeta
 
-Este es el método preferido para transacciones B2B de alto volumen.
-- Al seleccionar "Transferencia", Cord genera una **CLABE interbancaria única** asociada exclusivamente a esa cotización específica (usando la infraestructura de *Customer Balance*).
-- El cliente entra a su portal bancario y transfiere a esa CLABE.
-- **Conciliación Mágica:** En el instante en que el dinero toca la cuenta, Cord detecta el depósito, cambia el estado de la cotización a "Pagada" y te envía una notificación (junto con el cliente). No necesitas cruzar comprobantes.
+- Formulario nativo dentro del documento, sin redirecciones a ningún sitio externo.
+- Acepta Visa, Mastercard y American Express.
+- En cuanto el cliente confirma, la cotización pasa a "Pagada" en segundos y los fondos se depositan en tu cuenta bancaria en el siguiente ciclo de depósitos.
+- Es el único método compatible con [igualas recurrentes](/docs/pagos/igualas).
+
+### Pagar con SPEI
+
+- Al elegir "Transferencia SPEI", Cord Pagos genera una **CLABE interbancaria única**, asociada exclusivamente a ese cobro, y la muestra en una pantalla de instrucciones — el cliente nunca sale del link de la cotización ni ve un formulario de terceros.
+- El cliente transfiere desde su banca en línea a esa CLABE.
+- **Conciliación automática:** en cuanto el dinero llega, Cord detecta el depósito, cambia el estado de la cotización a "Pagada" y notifica a ambas partes — no hace falta cruzar comprobantes a mano.
 
 <Callout type="info">
-**Cero Comisiones:** Los pagos por SPEI viajan a través de tu cuenta Connect Custom. Cord no cobra porcentaje por estas transacciones.
+Cada método tiene su propia tarifa (4% + $3 + IVA en tarjeta; 1% + $7 + IVA con tope en SPEI). Ver el detalle completo en [Tarifas y ventajas](/docs/pagos/condiciones).
 </Callout>
 
-### 2. Tarjetas de Crédito y Débito
+## Pagos parciales y anticipos
 
-Para pagos rápidos o montos menores, el cliente puede usar su tarjeta.
-- El formulario está impulsado por **Stripe Elements** bajo el capó, garantizando los más altos estándares de seguridad (PCI Compliance).
-- Acepta Visa, Mastercard y American Express.
-- Los fondos también caen directo a tu cuenta conectada. *(Nota: El procesador de pagos retendrá la comisión estándar de procesamiento de tarjetas, pero Cord no agrega fees adicionales).*
+¿Qué pasa si configuraste un **anticipo del 50%** en la cotización?
 
-## Pagos Parciales y Anticipos
+1. El checkout inicial muestra únicamente el monto del anticipo.
+2. Una vez que el cliente lo paga, la cotización se marca como "Anticipo pagado" y el saldo queda pendiente según tus términos (contado o crédito).
+3. Cuando llega el momento de cobrar el saldo, Cord envía un correo al cliente con el botón para liquidarlo, que lo lleva de vuelta al mismo checkout por el monto restante.
 
-¿Qué pasa si configuraste un **Anticipo del 50%** en la cotización?
-1. El checkout de pago inicial mostrará únicamente el monto del anticipo.
-2. Una vez que el cliente paga ese 50%, la cotización se marca como "Anticipo Pagado".
-3. Cuando llegue la fecha de entrega del proyecto, Cord enviará automáticamente un nuevo correo al cliente con un botón para "Liquidar Saldo", que lo llevará al checkout por el 50% restante.
+Ver el detalle completo en [Anticipo y saldo](/docs/pagos/anticipos).

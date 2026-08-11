@@ -1,50 +1,84 @@
 ---
-title: "Fees and advantages"
-description: "Understand the true cost of payment processing, the benefits of automation, and what to consider before enabling Stripe."
+title: "Cord Payments fees"
+description: "The real per-method fee schedule for Cord Payments, how VAT is calculated, the SPEI cap, and what happens to the fee if you refund a payment."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Fees and advantages</h1>
-  <p class="page-subtitle">Understand the true cost of payment processing, the benefits of automation, and what to consider before enabling Stripe.</p>
+  <h1 class="page-title">Cord Payments fees</h1>
+  <p class="page-subtitle">How much Cord charges to process a payment, how it's calculated, and the rules that apply to refunds and disputes.</p>
 </header>
 
-## Real fees and commissions
+## The fee by method
 
-The golden rule at Cord is simple: **Cord does not charge any commission for processing your payments.** All the money flows through a **Stripe Connect Custom** account that you own, meaning the money lands directly in your bank without ever passing through our hands.
+Cord Payments charges a per-transaction fee that **already includes** the cost of processing — there's no second, hidden fee from a third party added on top later. The fee depends on the collection method:
 
-However, Stripe as a payment gateway does charge industry-standard fees for the use of their financial infrastructure:
-
-### Card Payment Fee (Credit and Debit)
-- **Cost:** 3.6% + $3.00 MXN (plus VAT) per successful transaction.
-- **Ideal use:** International clients, clients looking for installment plans (if enabled), or urgent payments for smaller amounts.
-- *Note: Stripe does not refund processing fees if you decide to refund the client.*
-
-### SPEI Transfer Fee (Automatic Stripe transfer)
-- **Cost:** Stripe charges a flat nominal fee (typically $8.00 MXN plus VAT, depending on your negotiated volume) for each processed SPEI, regardless of whether the client pays $100 pesos or $100,000 pesos.
-- **Ideal use:** High-volume B2B collections. Since it's a flat fee, the commission percentage becomes mathematically invisible on large payments.
-
-### Manual Transfer Fee (Outside of Stripe)
-- **Cost:** $0.00 (Free).
-- **Ideal use:** When the client prefers to wire the money directly to your traditional bank account using your standard CLABE/IBAN. The client uploads their receipt and you mark the payment as completed manually.
-
-## Advantages of charging through Cord
-
-Activating online payments with Cord (via Stripe) completely transforms your accounts receivable operation:
-
-1. **100% automated reconciliation:** No more hunting for deposits in your banking portal and guessing which invoice they belong to. Every payment is automatically linked to its quote and the status changes to paid in real-time.
-2. **Money direct to you:** By using a *Connect Custom* architecture, Cord doesn't hold your funds or act as a risky middleman. You are the sole financial owner of your payouts.
-3. **Brand experience:** Your client pays on an elegant in-house checkout embedded in the document (without strange redirects or third-party logos), keeping your brand front and center.
-4. **Retainers and split payments:** The system supports charging a deposit today and the balance on credit (Net 30/60), or even monthly retainers where Stripe debits the client's card automatically every month.
-
-## Disadvantages and considerations
-
-To be completely transparent, relying on an international payment gateway comes with a few rules you must agree to:
-
-1. **Payout time:** The money does not hit your local bank immediately. Stripe operates on a rolling payout schedule, which in Mexico typically takes between **2 to 7 business days** to arrive.
-2. **Rigorous onboarding (KYC):** Stripe is regulated as a financial entity, and its anti-money laundering processes are strict. They will require IDs, Tax IDs, articles of incorporation, and might ask questions about your business model if you experience an unusual spike in sales volume.
-3. **Chargeback freezes:** If a client denies a charge on their card (a chargeback), Stripe will temporarily freeze that money plus a dispute penalty fee while you prove with evidence (the signed quote) that the service was delivered.
+| Method | Fee | Example on $10,000 MXN |
+|---|---|---|
+| **Card** (credit/debit) | 4% + $3.00 MXN + VAT | $46.40 |
+| **SPEI** (automatic bank transfer) | 1% + $7.00 MXN + VAT, capped at **$588.12 MXN** per payment | $11.60 |
+| **Retainers** (monthly recurring charge) | 4% + $3.00 MXN + VAT per monthly charge | — |
+| **Manual transfer** | $0.00 — doesn't go through Cord Payments | $0.00 |
 
 <Callout type="info">
-**Golden recommendation:** If your quotes are for millions of dollars, the "Manual Transfer" method will always be the safest and cheapest option (0% commission, instant money). Use Stripe's features for deposits, monthly retainers, and card payments where the automation justifies the cost and payout time.
+VAT (16%) is calculated over the percentage component + the fixed component of the fee, never over the total payment amount. The figures above already include it.
+</Callout>
 
+### Why SPEI has a cap and cards don't
+
+The real cost of processing a SPEI transfer is nearly the same regardless of the amount — moving $1,000 or $500,000 costs about the same underneath. That's why, starting at cotizaciones of **$50,000 MXN and up**, Cord's fee on a SPEI payment stops growing and freezes at **$588.12 MXN** (VAT included), no matter how large the payment gets:
+
+| Payment amount | Card fee | SPEI fee |
+|---|---|---|
+| $50,000 | $2,320.00 (4.64%) | $580.00 → **$588.12 with VAT** |
+| $100,000 | $4,640.00 (4.64%) | **$588.12** (0.59% effective) |
+| $500,000 | $23,200.00 (4.64%) | **$588.12** (0.12% effective) |
+
+For large B2B quotes, this makes SPEI by far the cheapest way to collect online, whether compared to card or to nothing at all.
+
+### Retainers and recurring charges
+
+A retainer (monthly recurring quote) is always charged by card — it's the only way for the charge to go out automatically each month without the customer having to do anything. The fee is the **same as a regular card payment**: 4% + $3.00 MXN + VAT, applied to each individual monthly charge. There is no special reduced rate for retainers: the cost of processing a card is the same whether it's charged once or twelve times.
+
+### Manual transfer — still free
+
+If you'd rather share your CLABE directly and have the customer transfer outside Cord Payments (uploading proof of payment for you to mark the charge by hand), that option still costs **$0.00**. It doesn't go through Cord Payments, so it doesn't generate any fee — but it also doesn't have automatic reconciliation or chargeback protection.
+
+## How your fee schedule gets activated
+
+Cord Payments requires you to explicitly accept the current fee schedule before you can start charging. This happens in **Settings › Payments**:
+
+- **New account:** acceptance is the last step of the connection wizard (see [Connect your account](/en/docs/pagos/onboarding), the "Terms" step) — you can't finish connecting your account without checking the box that accepts the current fee schedule.
+- **Already-connected account, or if the schedule changes:** go to **Settings › Payments** (you need the *Configure payments* permission), review the current fee schedule and check the acceptance box.
+
+Until you accept, your account can stay connected and keep receiving manual payments, but it **cannot process card or SPEI** through Cord Payments.
+
+<Callout type="warning">
+**Accounts from before Cord Payments launched:** if your business was already accepting payments online before this fee schedule existed, your existing payments stay protected at **0% commission** until you, voluntarily, accept the current schedule in Settings › Payments. Nobody changes your rate without you confirming it first.
+</Callout>
+
+If we ever change the fee schedule, it does not apply retroactively to an already-given acceptance — you'll need to accept the new version again before it charges you differently. The full legal text lives in [Terms and Conditions, Cord Payments section](/en/terminos#cord-pagos).
+
+## What happens to the fee if you refund a payment
+
+If you refund a customer from **My Payments › Refund**, the refunded amount is deducted from your net revenue in the reports — but **the processing fee on the original payment is not refunded**. It's a cost already incurred at the moment the card or SPEI transfer was processed, whether the payment stays or you refund it later.
+
+## What happens to the fee in a dispute (chargeback)
+
+If a customer disputes a charge with their bank (a chargeback), you'll see the case in **My Payments › Disputes**. While the dispute is open, the amount is held; if you lose it, that money (plus a dispute fee) comes out of your balance — the original Cord Payments fee is not refunded in this case either. See [Disputes and chargebacks](/en/docs/pagos/disputas) for the full defense process.
+
+## Advantages of collecting with Cord Payments
+
+1. **100% automatic reconciliation.** Every payment gets tied to its cotización and the status flips to paid in real time — no more chasing bank deposits.
+2. **The money is yours, straight to your account.** Cord Payments never holds your funds or acts as a middleman for the money — you're the merchant of record for every payment.
+3. **Checkout with your brand.** Your customer pays on a screen embedded in the document, with your name and colors — no redirects to external sites, no third-party logos.
+4. **Deposits, balances, and retainers.** The same system collects a deposit today and the balance later (Net 30/60), or a monthly retainer automatically, without you having to chase the payment by hand.
+
+## Things to consider before activating
+
+1. **Deposit timing.** Money doesn't land in your bank instantly — deposits follow a schedule that usually takes between 2 and 7 business days after each payment.
+2. **Identity verification (KYC).** Activating Cord Payments requires you to pass a verification — official ID, RFC, and information about your business. It's a regulatory requirement, not a Cord decision.
+3. **Chargebacks.** If a customer disputes a charge, the money can be held while the dispute is resolved. Cord gives you the tools to defend yourself with evidence, but responsibility for the chargeback belongs to the business that collected the payment.
+
+<Callout type="info">
+**Recommendation:** for very large cotizaciones where the SPEI cap no longer offers a clear advantage, Manual Transfer (0% fee) remains the cheapest option — in exchange for losing automatic reconciliation and dispute protection.
 </Callout>

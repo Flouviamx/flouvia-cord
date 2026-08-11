@@ -23,6 +23,7 @@ import { safeFetch, type SafeFetchResult } from './ssrf';
 import { sendEmail, siteOrigin } from './email';
 import { rateLimit } from './ratelimit';
 import { after } from './after';
+import { decryptSecret, encryptRequiredSecret } from './crypto-secret';
 
 const TIMEOUT_MS = 5000;
 const MAX_BODY_BYTES = 8192;
@@ -500,12 +501,23 @@ async function fetchHooks(orgId: string, webhookIds: string[]): Promise<Map<stri
     if (!webhookIds.length) return new Map();
     let rows: any[] = [];
     try {
-        [rows] = await withOrgTx(orgId, sql`select id, url, secret, secret_prev, secret_prev_expira from webhooks where org_id = ${orgId} and id = any(${webhookIds})`);
+        [rows] = await withOrgTx(orgId, sql`
+            select id, url, secret, secret_enc, secret_prev, secret_prev_enc, secret_prev_expira
+            from webhooks where org_id = ${orgId} and id = any(${webhookIds})`);
     } catch { rows = []; }
-    return new Map(rows.map((h: any) => [h.id as string, {
-        id: h.id as string, url: h.url as string, secret: h.secret as string,
-        secretPrev: (h.secret_prev as string) ?? null, secretPrevExpira: (h.secret_prev_expira as string) ?? null,
-    }]));
+    const hooks: Array<[string, HookSecrets]> = [];
+    for (const h of rows) {
+        const secret = decryptSecret(h.secret_enc as string | null) || (h.secret as string | null);
+        if (!secret) continue;
+        hooks.push([h.id as string, {
+            id: h.id as string,
+            url: h.url as string,
+            secret,
+            secretPrev: decryptSecret(h.secret_prev_enc as string | null) || (h.secret_prev as string | null),
+            secretPrevExpira: (h.secret_prev_expira as string) ?? null,
+        }]);
+    }
+    return new Map(hooks);
 }
 
 // ── Entrega inmediata (latencia p50 — llamar con after() tras encolar) ──────
@@ -702,10 +714,19 @@ export async function rotateSecret(orgId: string, webhookId: string, overlapHour
     const hours = ROTATE_OVERLAP_HOURS.includes(overlapHours) ? overlapHours : 24;
     const newSecret = `whsec_${randomBytes(24).toString('hex')}`;
     try {
+        const [[current]] = await withOrgTx(orgId, sql`
+            select secret, secret_enc from webhooks
+            where id = ${webhookId} and org_id = ${orgId} limit 1`);
+        if (!current) return null;
+        const oldSecret = decryptSecret(current.secret_enc as string | null) || (current.secret as string | null);
+        if (!oldSecret) return null;
+        const oldSecretEnc = encryptRequiredSecret(oldSecret);
+        const newSecretEnc = encryptRequiredSecret(newSecret);
         const [rows] = await withOrgTx(orgId, sql`
             update webhooks
-               set secret_prev = secret, secret_prev_expira = now() + make_interval(hours => ${hours}),
-                   secret = ${newSecret}, secret_rotado_at = now()
+               set secret_prev = null, secret_prev_enc = ${oldSecretEnc},
+                   secret_prev_expira = now() + make_interval(hours => ${hours}),
+                   secret = null, secret_enc = ${newSecretEnc}, secret_rotado_at = now()
              where id = ${webhookId} and org_id = ${orgId}
             returning id`);
         if (!rows.length) return null;

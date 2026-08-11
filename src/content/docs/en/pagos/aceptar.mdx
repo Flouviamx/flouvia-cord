@@ -1,40 +1,42 @@
 ---
-title: "Accepting a Payment"
-description: "Receive money via credit card or dynamic SPEI wire transfer."
+title: "Accepting a payment"
+description: "What the Cord Payments checkout looks like from the customer's side: picking a method, paying by card or SPEI, and how deposits/balances work."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Accepting a Payment</h1>
-  <p class="page-subtitle">Offer your clients a native checkout experience without leaving the quote.</p>
+  <h1 class="page-title">Accepting a payment</h1>
+  <p class="page-subtitle">Offer your customers a native payment experience, without leaving the cotización.</p>
 </header>
 
-## The Integrated Checkout
+## The embedded checkout
 
-Once the client approves the quote (and electronically signs it), the Magic Link transforms. Instead of showing the approve button, it displays an elegant and responsive **Checkout panel**.
+Once the customer approves the cotización (and signs electronically), the cotización link transforms. Instead of the approve button, the **payment checkout** appears — a screen embedded directly into the document, with your brand and colors.
 
-Depending on how you configured the quote (Cash, Advance, or Credit), the system will charge the corresponding amount. The client has two primary payment methods:
+If you activated more than one method (see [Payment methods](/en/docs/pagos/metodos)), the customer first **explicitly picks** how they want to pay — Card or SPEI — before seeing any form. If you only activated one, it shows directly.
 
-### 1. Interbank Transfer (Dynamic SPEI)
+### Paying by card
 
-This is the preferred method for high-volume B2B transactions.
-- By selecting "Wire Transfer", Cord generates a **unique interbank CLABE** exclusively tied to that specific quote (using the *Customer Balance* infrastructure).
-- The client logs into their banking portal and transfers to that CLABE.
-- **Magic Reconciliation:** The instant the money hits the account, Cord detects the deposit, changes the quote's status to "Paid," and sends you a notification (along with the client). No need to cross-reference receipts.
+- Native form embedded in the document, no redirects to any external site.
+- Accepts Visa, Mastercard, and American Express.
+- As soon as the customer confirms, the cotización flips to "Paid" within seconds and funds are deposited into your bank account on the next deposit cycle.
+- The only method compatible with [recurring retainers](/en/docs/pagos/igualas).
+
+### Paying by SPEI
+
+- When the customer picks "SPEI Transfer", Cord Payments generates a **unique interbank CLABE**, tied exclusively to that payment, and shows it on an instructions screen — the customer never leaves the cotización link or sees a third-party form.
+- The customer transfers from their online banking to that CLABE.
+- **Automatic reconciliation:** as soon as the money arrives, Cord detects the deposit, flips the cotización to "Paid", and notifies both parties — no need to cross-reference receipts by hand.
 
 <Callout type="info">
-**Zero Commissions:** SPEI payments travel through your Connect Custom account. Cord charges no percentage for these transactions.
+Each method has its own fee (4% + $3 + VAT on card; 1% + $7 + VAT with a cap on SPEI). See the full detail in [Fees and advantages](/en/docs/pagos/condiciones).
 </Callout>
 
-### 2. Credit and Debit Cards
+## Partial payments and deposits
 
-For quick payments or smaller amounts, the client can use their card.
-- The form is powered by **Stripe Elements** under the hood, guaranteeing the highest security standards (PCI Compliance).
-- Accepts Visa, Mastercard, and American Express.
-- Funds also drop directly into your connected account. *(Note: The payment processor will hold the standard card processing fee, but Cord adds no additional fees).*
+What happens if you configured a **50% deposit** on the cotización?
 
-## Partial Payments and Advances
+1. The initial checkout shows only the deposit amount.
+2. Once the customer pays it, the cotización is marked "Deposit paid" and the balance is pending according to your terms (cash or credit).
+3. When it's time to collect the balance, Cord emails the customer a button to settle it, which takes them back to the same checkout for the remaining amount.
 
-What happens if you configured a **50% Advance** on the quote?
-1. The initial checkout will only show the advance amount.
-2. Once the client pays that 50%, the quote is marked as "Advance Paid".
-3. When the project delivery date arrives, Cord will automatically send a new email to the client with a "Settle Balance" button, taking them to the checkout for the remaining 50%.
+See the full detail in [Deposit and balance](/en/docs/pagos/anticipos).

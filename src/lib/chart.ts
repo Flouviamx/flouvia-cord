@@ -252,7 +252,7 @@ export function mountLineChart(container: HTMLElement, opts: LineChartOptions): 
         areaPath = svgEl('path', { fill: color, 'fill-opacity': 'var(--chart-area-opacity, 0.1)', stroke: 'none' });
         comparePath = svgEl('path', {
             fill: 'none', stroke: 'var(--chart-compare, var(--color-text-muted))', 'stroke-width': '1.75',
-            'stroke-dasharray': '4 4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+            'stroke-dasharray': '4 4', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: '0.4',
         });
         linePath = svgEl('path', {
             fill: 'none', stroke: color, 'stroke-width': '2.25',

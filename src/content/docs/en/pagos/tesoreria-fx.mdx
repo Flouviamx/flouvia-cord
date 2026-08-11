@@ -1,0 +1,42 @@
+---
+title: "Treasury and FX Lock"
+description: "Where to see your cash-flow forecast, how automatic late-payment interest works, and 30-day FX coverage."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Predictive Treasury and FX Lock</h1>
+  <p class="page-subtitle">Cash-flow forecasting, automatic late-payment interest, and currency protection — each living in its own place inside Cord.</p>
+</header>
+
+## Where each thing lives
+
+This document covers three distinct financial tools in Cord that sometimes get confused with each other because they all touch "money", but they live in different parts of the app:
+
+- **Cash-flow forecasting** (90 days out, with the AI CFO Insight) lives in **`/app/informes`**, not in My Payments. It's an analytics report, separate from the [Cord Payments dashboard](/en/docs/pagos/dashboard) that shows what you've already collected.
+- **Late-payment interest** is configured in **Settings › Approvals**.
+- **FX Lock** is a property of each individual quote in the editor, not a separate panel.
+
+## 90-Day Cash Flow
+
+In `/app/informes`, the cash-flow report cross-references the credit terms of your open quotes with each client's **real payment behavior history**.
+
+If a client has Net 30 terms but historically pays 15 days late on average, the forecast adjusts the expected incoming capital based on that real behavior — it doesn't assume everything gets paid exactly on the due date — giving you a more realistic view of your 90-day liquidity.
+
+## Automatic Late-Payment Interest
+
+To discourage late B2B payments, Cord includes a configurable financial penalty engine, set up in **Settings › Approvals**:
+
+- **Monthly cron job:** on the first day of every month, an automated process reviews all overdue quotes in your portfolio.
+- **Compound interest:** if you configured a late-payment interest rate above 0%, the system applies that monthly interest to the outstanding capital.
+- **Instant reflection:** the new outstanding balance updates on the client's portal and in the Cord Payments checkout transparently — the client sees the correct amount to pay, interest already included.
+
+## Currency Coverage (FX Lock)
+
+Selling internationally or in USD shouldn't be a game of chance. Cord implements a robust `FXService` system to protect your profit margins on multi-currency operations.
+
+### 30-Day FX Lock
+
+When you issue a B2B quote in a currency different from your base currency, the system **freezes the spot exchange rate (FX Lock)** for 30 days.
+
+- **Protection buffer:** Cord adds a minimum spread to mitigate currency volatility during the credit window.
+- **Financial certainty:** your client knows exactly how much they'll pay in their local currency, and you have the guarantee of the amount that will land in your account, eliminating the risk of loss from market fluctuations during the sales cycle.

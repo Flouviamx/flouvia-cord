@@ -1,17 +1,15 @@
 ---
 title: "Cambiar frecuencia de depósitos"
-description: "Elige entre depósitos diarios, semanales o mensuales."
+description: "Consulta cómo se determina el calendario de depósitos."
 category: "Pagos y Depósitos"
 ---
 
-Dado que Cord se conecta directamente a tu propia cuenta de Stripe para procesar los cobros con tarjeta, Cord no gestiona las dispersiones (Payouts) ni retiene tu dinero.
+Dado que Cord no retiene fondos, el calendario de depósitos lo determina tu cuenta de pagos conectada según el país, el giro y el historial de operación.
 
-### Modificar Payouts en Stripe
+### Consultar tus depósitos
 
-Todo el dinero cobrado a través de los enlaces de Cord viaja directamente a tu cuenta de Stripe.
-Para cambiar la frecuencia con la que Stripe envía el dinero a tu cuenta bancaria:
-1. Inicia sesión en tu [Dashboard de Stripe](https://dashboard.stripe.com/).
-2. Ve a **Configuración > Cuentas bancarias y calendarios**.
-3. En la sección *Calendario de transferencias*, puedes cambiar la frecuencia de 'Automática diaria' a 'Manual' o 'Semanal'.
+1. Ve a **Cobros** para consultar depósitos recientes, monto, estado y cuenta destino.
+2. Revisa **Ajustes › Cobros** para confirmar que la cuenta bancaria esté verificada.
+3. Si necesitas cambiar la frecuencia y la opción no aparece en Cord, solicita el ajuste a soporte. Algunas cuentas o países no admiten calendarios manuales.
 
-Recuerda que cualquier ajuste en la frecuencia de depósito no afecta el funcionamiento de Cord ni el timbrado de tus facturas.
+Un cambio de frecuencia no altera el historial de cobros ni el timbrado de tus facturas.

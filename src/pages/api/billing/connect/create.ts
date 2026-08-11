@@ -5,12 +5,17 @@ import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { createConnectAccount, retrieveAccount, updateConnectAccount } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
+import { auditConnect } from '../../../../lib/connect-audit';
+import { limitConnectMutation } from '../../../../lib/connect-security';
+import { sanitizeStripeRequirements } from '../../../../lib/connect-fields';
 
 export const POST: APIRoute = async ({ request }) => {
-    const denied = await requirePerm('ajustes');
+    const denied = await requirePerm('cobros_config');
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
+    const limited = await limitConnectMutation(request, 'create', orgId, 6);
+    if (limited) return limited;
     const [org] = await sql`select sandbox_of, stripe_account_id from orgs where id = ${orgId}`;
     if (org?.sandbox_of) {
         return new Response(JSON.stringify({ error: 'Connect no está disponible en el entorno de prueba' }), { status: 409 });
@@ -46,6 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
         accountId = await createConnectAccount(orgId, business_type);
         await sql`update orgs set stripe_account_id = ${accountId}, stripe_account_type = 'custom', stripe_business_type = ${business_type} where id = ${orgId}`;
         account = await retrieveAccount(accountId);
+        await auditConnect(orgId, request, 'cuenta_creada', { entityId: accountId, detail: business_type });
     } else if (account && account.business_type !== business_type && !account.details_submitted) {
         // El usuario cambió Persona Moral ↔ Física antes de enviar sus datos:
         // Stripe permite corregir business_type mientras la cuenta no esté verificada.
@@ -55,7 +61,7 @@ export const POST: APIRoute = async ({ request }) => {
         } catch { /* si Stripe lo rechaza, se continúa con el tipo original */ }
     }
 
-    await sql`update orgs set stripe_requirements = ${JSON.stringify(account.requirements)} where id = ${orgId}`;
+    await sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`;
 
     return new Response(JSON.stringify({ ok: true, accountId, requirements: account.requirements, business_type: account.business_type }), { headers: { 'Content-Type': 'application/json' } });
 };

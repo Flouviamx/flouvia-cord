@@ -6,6 +6,100 @@
 
 ---
 
+✅ **Auditoría completa de `docs.cordhq.app` para Cord Pagos (ago 2026)** — André pidió
+   revisar que toda la documentación pública de pagos explicara "cada paso" con precisión.
+   Todas las páginas de `/docs/pagos/*` databan de antes de que Cord Pagos existiera (jul
+   23) y la afirmación central — **"Cord no cobra ninguna comisión"** — seguía apareciendo
+   en 4 páginas distintas, incluida la que se llama literalmente "Tarifas y ventajas".
+   • **Reescritas por completo (ES+EN):** `condiciones.mdx` (tabla real: Tarjeta 4%+$3+IVA,
+     SPEI 1%+$7+IVA con tope $588.12, Igualas al mismo rate que tarjeta; cómo se acepta la
+     tabla — onboarding paso 8 o Ajustes›Cobros —; la herencia legacy a 0%; qué pasa con la
+     comisión en reembolsos/disputas), `resumen.mdx`/`metodos.mdx`/`aceptar.mdx` (marca
+     "Cord Pagos", selector explícito de método en vez de Stripe Elements auto-seleccionando,
+     pantalla SPEI 100% nativa), `onboarding.mdx` (el wizard real de 8 pasos — Tipo de
+     entidad/Datos del negocio/Dirección fiscal/Identidad/Dueños/Verificación/Cuenta
+     bancaria/Términos —, antes describía 3 pasos genéricos), `dashboard.mdx` (los 12
+     widgets reales del dashboard de `/app/cobros`, antes documentaba 3 KPIs de la versión
+     vieja).
+   • **2 páginas nuevas (ES+EN):** `reembolsos.mdx` y `disputas.mdx` — no existía ninguna
+     documentación de estas dos features (reembolso total/parcial con reautenticación,
+     diferencia tarjeta-automático vs. SPEI-manual; evidencia de disputa con autocompletado
+     desde los propios datos de Cord, guardar-borrador vs. enviar-irreversible).
+   • **Editadas:** `anticipos.mdx`/`igualas.mdx` (cross-link a la tarifa real por cobro).
+     3 páginas huérfanas reconectadas a la navegación: `facturacion.mdx` (quitado el
+     mention de Stripe + sección nueva del CFDI de la comisión de Cord, emitido en lotes),
+     `cobranza-ia.mdx`, y `tesoreria-fx.mdx` — esta última corregía una confusión real:
+     atribuía el pronóstico de flujo de caja a `/app/cobros`, cuando desde la
+     "Consolidación de Informes" (ver `historial-app-features.md`) ese pronóstico vive en
+     `/app/informes`; los intereses moratorios también se recolocaron a su ubicación real
+     (Ajustes › Aprobaciones).
+   • **`DocsLayout.astro`:** sidebar con 2 grupos nuevos ("Gestión de cobros" ampliado con
+     Reembolsos/Disputas/Facturación, y "Cobranza y tesorería" nuevo con los 2 huérfanos).
+   • **`scripts/whitelabel-lint.mjs`** ahora cubre `src/content/docs` (antes solo
+     `src/content/support`) — al activarlo encontró y se corrigieron 4 fugas más de
+     "Stripe" en páginas ajenas a pagos: `cotizacion/envio.mdx`, `cotizacion/opciones.mdx`,
+     `desarrolladores/herramientas/elements/eventos.mdx`, `gestion/dashboard.mdx` (ES+EN).
+   • Verificado: `npm run build` limpio, `node scripts/whitelabel-lint.mjs` en cero
+     hallazgos, las 22 rutas ES+EN de `/docs/pagos/*` responden 200 contra el dev server, y
+     el número `$588.12` que aparece en `condiciones.mdx` se confirmó como el que calcula
+     de verdad `src/lib/fees.ts` (no una cifra escrita a mano).
+
+**Cord Pagos white-label, comisión transaccional y defensa en profundidad (ago 2026)**:
+se implementó el flujo de cobro dentro de Cord con tarjeta o SPEI, cálculo autoritativo
+de comisión en servidor, conciliación contable, reembolsos y disputas. El comprador ya
+no recibe objetos internos del procesador ni sale a un checkout alojado; tarjeta usa
+campos seguros embebidos y SPEI devuelve únicamente instrucciones saneadas que pueden
+copiarse, imprimirse, guardarse como PDF o enviarse al correo de la cotización.
+
+* Seguridad de borde: la política CSRF compara orígenes exactos y mantiene una lista
+  mínima de rutas cookie-blind; el webhook valida firmas con tolerancia de cinco minutos,
+  múltiples firmas y comparación de tiempo constante. Los eventos se reclaman antes de
+  ejecutar, admiten recuperación de claims estancados y solo se confirman después de una
+  ejecución exitosa. Se agregaron heartbeat, alertas operativas y limpieza de capturas.
+* Secretos y autorización: datos bancarios, TOTP, CSD, claves fiscales y secretos de
+  webhooks usan cifrado versionado con rotación y backfill por lotes. Las operaciones
+  sensibles tienen rate limit estricto, auditoría, listas de campos permitidos y step-up
+  de autenticación. Los tokens de captura y nonces de reembolso se guardan únicamente
+  como hash.
+* Dinero: tarjeta aplica una tarifa combinada de 4% + MXN 3, más IVA. Las igualas con
+  tarjeta muestran esa misma tarifa total, aunque la comisión de aplicación de Cord sea
+  solo 0.4% más IVA. SPEI aplica 1% + MXN 7, más IVA, con tope de MXN 588.12 por cobro.
+  El margen mínimo, el tope y los snapshots por cobro se verifican en servidor. La versión
+  `cord-pagos-2026-08-11` exige aceptación expresa antes de aplicar el esquema.
+* Ledger: cada cobro concilia cargo, costo del procesador, comisión de Cord, impuestos,
+  neto, balance transaction y application fee. El cierre mensual crea un lote borrador y
+  alerta a Ops para revisión fiscal; no timbra automáticamente. Los reportes, métricas de
+  cliente y desempeño de vendedores descuentan reembolsos sin reabrir la cotización.
+* Postventa: los reembolsos de tarjeta se solicitan desde Cobros con permiso dedicado,
+  nonce de diez minutos, idempotencia y autenticación reciente. SPEI genera una tarea
+  manual y nunca simula una transferencia saliente. Las disputas se sincronizan en Cord,
+  alertan de inmediato y permiten guardar evidencia como borrador. Cord genera PDFs de
+  recibo y comunicación como archivos válidos del proveedor; el envío definitivo siempre
+  requiere confirmación y autenticación reciente.
+* White-label y veracidad: se añadió un lint que impide volver a mostrar el nombre del
+  proveedor en superficies de comprador o vendedor. Soporte dejó de prometer checkout
+  alojado, OXXO, MSI o REP automático y ahora documenta los flujos reales de Cord.
+* Protección contractual y privacidad: Términos asigna al vendedor la responsabilidad
+  económica de contracargos, cuotas de disputa y saldos negativos, además de autorizar
+  recuperación, compensación y pausa operativa. El Aviso de Privacidad declara la CLABE
+  cifrada, KYC, selfie, evidencia de disputas y los subencargados Vercel, Upstash y Slack.
+  El último paso de Connect exige consentimiento electrónico y registra versión, fecha e IP;
+  las fotos de identidad siguen viajando directo a Stripe sin persistencia en Cord.
+* Dashboard de Cobros: los 12 widgets se reorganizaron en tres zonas de jerarquía clara:
+  balance operativo, KPIs y conciliación densa. Se conservaron todos los identificadores
+  `data-widget` y las preferencias guardadas de visibilidad, tamaño y orden relativo. La
+  serie principal ahora domina visualmente al comparativo, el método de pago usa una dona
+  compacta y el KPI de cobro reutiliza la serie diaria como sparkline.
+* RLS: se añadió el rol `cord_app` sin BYPASSRLS y una auditoría automática de tablas
+  financieras. La activación en Neon queda deliberadamente separada del cambio de código:
+  crear y probar el rol, cambiar `DATABASE_URL`, observar y solo después habilitar FORCE
+  en las tablas legacy restantes.
+
+Verificación local: matriz CSRF, firmas, rotación de cifrado, invariantes de comisión,
+seguridad de disputas, lint white-label, `git diff --check` y build de producción. La
+prueba contra una cuenta conectada real y la activación gradual del rol de base de datos
+siguen siendo pasos operativos de despliegue.
+
 ✅ **Observabilidad de consumo externo y topes de IA en Cord Ops (ago 2026)** —
    se agregó `/ops/usage` como centro interno para detectar abuso o gasto variable
    antes de recibir la factura del proveedor. Reúne los medidores existentes de

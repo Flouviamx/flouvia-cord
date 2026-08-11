@@ -39,7 +39,7 @@ All events have the `cord:` prefix to avoid naming collisions with other librari
 ### Commercial interaction
 - **`cord:approved`**: Emitted the instant the user approves the terms of the commercial proposal. Returns useful data in the `detail` such as the validation hash and who signed (`signed_by`).
 - **`cord:signed`**: Fired sequentially upon capturing a legally binding signature.
-- **`cord:pay`**: Emitted when the user clicks the button to start their payment flow (Stripe, wire transfer, etc.).
+- **`cord:pay`**: Emitted when the user clicks the button to start their payment flow (card, SPEI, manual transfer, etc.).
 - **`cord:rejected`**: Fired if the client explicitly marks the proposal as declined.
 - **`cord:message`**: Triggered whenever the client leaves a general comment in the quote chat.
 - **`cord:item_comment`**: Fired when the user leaves a specific comment on an item (product line) of the quote.

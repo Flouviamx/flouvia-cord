@@ -14,6 +14,8 @@ import { reauthenticate, revokeAllSessions } from '../../lib/auth';
 import { parseJsonBody } from '../../lib/validation';
 import { rateLimit, tooMany } from '../../lib/ratelimit';
 import { deleteOrgCascade } from '../../lib/org-delete';
+import { decryptSecret, encryptRequiredSecret } from '../../lib/crypto-secret';
+import { requireFreshAuth } from '../../lib/step-up';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
@@ -23,11 +25,26 @@ const logoOk = (s: string) =>
     (/^data:image\/(png|jpe?g|webp|svg\+xml);base64,/.test(s) || /^https?:\/\//.test(s));
 
 export const PATCH: APIRoute = async ({ request }) => {
-    const denied = await requirePerm('ajustes');
-    if (denied) return denied;
-
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
+
+    const bankFields = new Set(['banco_nombre', 'banco_clabe', 'banco_beneficiario', 'acepta_transferencia', 'acepta_tarjeta', 'cobro_spei_auto']);
+    const bodyKeys = Object.keys(body);
+    const bankFieldTouched = bodyKeys
+        .some((key) => bankFields.has(key) && body[key] !== undefined);
+    const nonBankFieldTouched = bodyKeys.length === 0 || bodyKeys.some((key) => !bankFields.has(key));
+    if (nonBankFieldTouched) {
+        const denied = await requirePerm('ajustes');
+        if (denied) return denied;
+    }
+    if (bankFieldTouched) {
+        const cobrosDenied = await requirePerm('cobros_config');
+        if (cobrosDenied) return cobrosDenied;
+        if (body.banco_clabe !== undefined) {
+            const staleAuth = await requireFreshAuth();
+            if (staleAuth) return staleAuth;
+        }
+    }
 
     const orgId = await getActiveOrgId();
     const [[actual]] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
@@ -150,7 +167,18 @@ export const PATCH: APIRoute = async ({ request }) => {
     const aceptaTransf = body.acepta_transferencia !== undefined ? Boolean(body.acepta_transferencia) : actual.acepta_transferencia;
     const cobroSpeiAuto = body.cobro_spei_auto !== undefined ? Boolean(body.cobro_spei_auto) : actual.cobro_spei_auto;
     const bancoNombre = body.banco_nombre !== undefined ? str(body.banco_nombre, 100) : actual.banco_nombre;
-    const bancoClabe = body.banco_clabe !== undefined ? (String(body.banco_clabe) === '' ? null : String(body.banco_clabe).replace(/\D/g, '').slice(0, 18) || null) : actual.banco_clabe;
+    const previousClabe = decryptSecret(actual.banco_clabe_enc as string) || (actual.banco_clabe as string) || null;
+    const bancoClabe = body.banco_clabe !== undefined ? (String(body.banco_clabe) === '' ? null : String(body.banco_clabe).replace(/\D/g, '').slice(0, 18) || null) : previousClabe;
+    if (bancoClabe && !/^\d{18}$/.test(bancoClabe)) return json({ error: 'La CLABE debe tener 18 dígitos.' }, 400);
+    let bancoClabeEnc = actual.banco_clabe_enc;
+    if (body.banco_clabe !== undefined) {
+        try {
+            bancoClabeEnc = bancoClabe ? encryptRequiredSecret(bancoClabe) : null;
+        } catch {
+            return json({ error: 'El servicio de cifrado no está disponible.' }, 503);
+        }
+    }
+    const bancoClabeLast4 = body.banco_clabe !== undefined ? bancoClabe?.slice(-4) || null : actual.banco_clabe_last4;
     const bancoBen = body.banco_beneficiario !== undefined ? str(body.banco_beneficiario, 150) : actual.banco_beneficiario;
 
     await withOrgTx(orgId, sql`
@@ -173,9 +201,12 @@ export const PATCH: APIRoute = async ({ request }) => {
             portal_banner = ${portalBanner}, portal_mostrar_chat = ${portalChat}, portal_powered = ${portalPowered},
             email_from_name = ${emailFromName}, email_reply_to = ${emailReplyTo}, email_intro = ${emailIntro}, email_firma = ${emailFirma},
             acepta_tarjeta = ${aceptaTarjeta}, acepta_transferencia = ${aceptaTransf}, cobro_spei_auto = ${cobroSpeiAuto},
-            banco_nombre = ${bancoNombre}, banco_clabe = ${bancoClabe}, banco_beneficiario = ${bancoBen}
+            banco_nombre = ${bancoNombre}, banco_clabe = null, banco_clabe_enc = ${bancoClabeEnc},
+            banco_clabe_last4 = ${bancoClabeLast4}, banco_beneficiario = ${bancoBen}
         where id = ${orgId}`);
-    await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: 'Se actualizaron los ajustes del negocio', ip: reqIp(request) });
+    const submittedFields = Object.keys(body).filter((key) => key !== 'banco_clabe').sort();
+    if (body.banco_clabe !== undefined) submittedFields.push(`banco_clabe(last4:${actual.banco_clabe_last4 || 'ninguna'}->${bancoClabeLast4 || 'ninguna'})`);
+    await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: `Campos: ${submittedFields.join(', ') || 'ninguno'}`, ip: reqIp(request) });
 
     // Al ACTIVAR "Exigir SSO": las sesiones de contraseña de los no-owner
     // pueden seguir vivas hasta 30 días — sin esto, la política no surte

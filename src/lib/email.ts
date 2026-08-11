@@ -2,7 +2,7 @@
 // de recordatorios. TODO está gated por RESEND_API_KEY: si no está configurada,
 // no se manda nada y se devuelve { sent:false, skipped:'sin RESEND_API_KEY' }
 // (la app sigue funcionando — el link se genera igual).
-import { sql } from './db';
+import { sql, withOrgTx } from './db';
 import { currentLocale } from './context';
 import { t } from '../i18n/app';
 import { trackExternalUsage } from './external-usage';
@@ -75,7 +75,7 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
  * correo. `origin` = base URL (https://cordhq.app) para el link público.
  */
 export async function notifyQuoteSent(orgId: string, cotizacionId: string, origin: string): Promise<SendResult> {
-    const rows = await sql`
+    const [rows] = await withOrgTx(orgId, sql`
         select c.folio, c.total, c.public_token, cl.empresa, cl.email,
                o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
                coalesce(o.pdf_mensaje, '') as mensaje,
@@ -84,7 +84,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
         from cotizaciones c
         join orgs o on o.id = c.org_id
         left join clientes cl on cl.id = c.cliente_id
-        where c.id = ${cotizacionId} and c.org_id = ${orgId}`;
+        where c.id = ${cotizacionId} and c.org_id = ${orgId}`);
     if (!rows.length) return { sent: false, skipped: 'cotización no encontrada' };
     const r = rows[0] as any;
     if (!r.email) return { sent: false, skipped: 'el cliente no tiene correo' };

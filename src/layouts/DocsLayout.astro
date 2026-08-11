@@ -193,6 +193,19 @@ const jsonLd = {
                     </button>
                     <ul class="sidebar-submenu">
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/dashboard')) ? 'active' : ''}><a href={getUrl('/docs/pagos/dashboard')}>{lang === 'es' ? 'Dashboard de cobros' : 'Payments dashboard'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/reembolsos')) ? 'active' : ''}><a href={getUrl('/docs/pagos/reembolsos')}>{lang === 'es' ? 'Reembolsos' : 'Refunds'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/disputas')) ? 'active' : ''}><a href={getUrl('/docs/pagos/disputas')}>{lang === 'es' ? 'Disputas y contracargos' : 'Disputes and chargebacks'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/facturacion')) ? 'active' : ''}><a href={getUrl('/docs/pagos/facturacion')}>{lang === 'es' ? 'Facturación (CFDI 4.0)' : 'Invoicing (CFDI 4.0)'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Cobranza y tesorería' : 'Collections and treasury'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/cobranza-ia')) ? 'active' : ''}><a href={getUrl('/docs/pagos/cobranza-ia')}>{lang === 'es' ? 'Cobranza autónoma (IA)' : 'Autonomous collections (AI)'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/tesoreria-fx')) ? 'active' : ''}><a href={getUrl('/docs/pagos/tesoreria-fx')}>{lang === 'es' ? 'Tesorería y FX Lock' : 'Treasury and FX Lock'}</a></li>
                     </ul>
                   </li>
                 </ul>

@@ -7,13 +7,12 @@ order: 1
 
 The Payment Card Industry Data Security Standard (PCI DSS) protects credit card information.
 
-### Risk Delegation to Stripe
+### Isolated card data
 
 Cord **does not touch, store, or process directly** your clients' credit card numbers.
 
-When you configure online payments in Cord using your `STRIPE_SECRET_KEY`:
-1. Upon clicking "Pay", your client is redirected to a secure page hosted directly by Stripe (Stripe Checkout).
-2. The client enters their card details directly into Stripe's servers.
-3. Stripe processes the charge and simply notifies Cord via webhook that the payment was successful.
+1. The secure form is embedded in the Cord link, while sensitive fields are isolated and tokenized directly by the certified processor.
+2. Cord servers receive a payment identifier, never the full PAN or CVC.
+3. Cord validates the event signature before recording the payment result.
 
-Therefore, the immense burden of Level 1 PCI-DSS compliance falls entirely on Stripe. Your company and the Cord platform are exempted from complex audits.
+This design reduces compliance scope but does not replace your company's security obligations. Never request card numbers through email, chat, quote notes, or custom fields.

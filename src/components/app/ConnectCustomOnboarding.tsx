@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { STRIPE_MX_STATES, STRIPE_COMPANY_STRUCTURES, STRIPE_MCC_B2B, translateRequirement } from '../../lib/stripe-catalogs';
+import { FEE_TERMS_VERSION } from '../../lib/fees';
 
 interface ConnectCustomOnboardingProps {
     org?: any;
@@ -96,6 +97,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
     // Bank
     const [clabe, setClabe] = useState(org?.bancoClabe || '');
     const [accountHolder, setAccountHolder] = useState(org?.bancoBeneficiario || org?.razonSocial || '');
+    const [legalConsent, setLegalConsent] = useState(false);
 
     useEffect(() => {
         checkStatus(true).finally(() => setBooting(false));
@@ -389,23 +391,34 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
             } else if (step === 6) { // Cuenta Bancaria
                 const cl = String(clabe).replace(/\D/g, '');
                 if (cl.length !== 18) throw new Error('La CLABE debe tener 18 dígitos');
-                if (!clabeValida(cl)) throw new Error('La CLABE no es válida — revisa que esté bien escrita (el dígito de control no coincide)');
+                if (!clabeValida(cl)) throw new Error('La CLABE no es válida. Revisa que esté bien escrita; el dígito de control no coincide.');
                 if (!accountHolder.trim()) throw new Error('Escribe el nombre del titular de la cuenta');
-                const res = await fetch('/api/billing/connect/external-account', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const send = () => fetch('/api/billing/connect/external-account', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ clabe: cl, account_holder_name: accountHolder, account_holder_type: businessType })
                 });
+                let res = await send();
+                if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
+                    if (!await (window as any).cordStepUp()) throw new Error('Necesitas confirmar tu identidad para cambiar la cuenta bancaria');
+                    res = await send();
+                }
                 const data = await res.json();
                 if (!data.ok) throw new Error(data.error);
                 setRequirements(data.requirements);
                 if (data.external_account?.last4) setBankInfo({ bank_name: data.external_account.bank_name, last4: data.external_account.last4 });
                 setStep(7);
             } else if (step === 7) { // TOS Acceptance
+                if (!legalConsent) throw new Error('Confirma los términos y el tratamiento de datos para continuar');
                 const res = await fetch('/api/billing/connect/account', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tos_acceptance: true })
+                    body: JSON.stringify({
+                        tos_acceptance: true,
+                        legal_consents: {
+                            payments_terms: FEE_TERMS_VERSION,
+                            privacy: true,
+                        },
+                    })
                 });
                 const data = await res.json();
                 if (!data.ok) throw new Error(data.error);
@@ -465,7 +478,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                 </div>
                                 <div className="co-bank-text">
                                     <strong>{bankInfo.bank_name || 'Cuenta bancaria'}</strong>
-                                    <span>CLABE terminación •••• {bankInfo.last4} — aquí llegan tus depósitos.</span>
+                                    <span>CLABE terminación •••• {bankInfo.last4}. Aquí llegan tus depósitos.</span>
                                 </div>
                                 <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Cambiar</button>
                             </div>
@@ -486,11 +499,11 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                             <span className="co-spinner co-spinner-lg" aria-hidden="true"></span>
                             <h3>Tus datos están en revisión</h3>
                             <p>
-                                Stripe está verificando tu información — normalmente toma un par de minutos.
+                                Cord Pagos está verificando tu información. Normalmente toma un par de minutos.
                                 Esta página se actualizará sola en cuanto tus cobros estén activos.
                             </p>
                             {disabledReason && disabledReason !== 'requirements.pending_verification' && (
-                                <p className="co-review-reason">Detalle de Stripe: {disabledReason}</p>
+                                <p className="co-review-reason">Detalle: {translateRequirement(disabledReason).mensaje}</p>
                             )}
                         </div>
                     ) : null}
@@ -611,7 +624,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
 
                 {step === 3 && (
                     <div className="co-step">
-                        <p className="co-sub">{businessType === 'individual' ? 'Como persona física, necesitamos verificar tu identidad ante Stripe.' : 'Persona autorizada para operar la cuenta bancaria de la empresa.'}</p>
+                        <p className="co-sub">{businessType === 'individual' ? 'Como persona física, necesitamos verificar tu identidad para activar Cord Pagos.' : 'Persona autorizada para operar la cuenta bancaria de la empresa.'}</p>
                         <div className="s-row">
                             <div className="s-field">
                                 <label>Nombre(s)</label>
@@ -713,7 +726,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                         <div className="co-phone-ico">
                                             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5" fill="currentColor" fillOpacity="0.1"/><circle cx="12" cy="11" r="2.6" /><line x1="11" y1="17.3" x2="13" y2="17.3" /></svg>
                                         </div>
-                                        <p>Escanea el código con tu celular y toma las fotos con su cámara — mejor luz, mejor enfoque, y también te pedimos una selfie para reforzar la verificación.</p>
+                                        <p>Escanea el código con tu celular y toma las fotos con su cámara. Tendrás mejor luz y enfoque; también te pedimos una selfie para reforzar la verificación.</p>
                                         <button type="button" className="co-btn co-btn-primary" onClick={startPhoneCapture} disabled={captureStatus === 'creating'}>
                                             {captureStatus === 'creating' ? (<><span className="co-spinner co-spinner-btn" aria-hidden="true"></span> Generando…</>) : 'Generar código QR'}
                                         </button>
@@ -737,7 +750,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                         ) : (
                                             <span className="co-phone-done">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                Identidad verificada desde tu teléfono — continuando…
+                                                Identidad verificada desde tu teléfono. Continuando…
                                             </span>
                                         )}
                                     </div>
@@ -810,7 +823,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                             {clabe.length === 18 && (
                                 clabeValida(clabe)
                                     ? <span className="s-hint co-hint-ok">CLABE válida</span>
-                                    : <span className="s-hint co-hint-bad">El dígito de control no coincide — revisa la CLABE</span>
+                                    : <span className="s-hint co-hint-bad">El dígito de control no coincide. Revisa la CLABE.</span>
                             )}
                         </div>
                         <div className="s-field">
@@ -826,8 +839,16 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                             <p><strong>Stripe Connected Account Agreement</strong></p>
                             <p>Stripe procesa los pagos para este servicio. Al continuar, aceptas el <a href="https://stripe.com/mx/connect-account/legal" target="_blank" rel="noopener noreferrer">Acuerdo de Cuenta Conectada de Stripe</a>, que incluye los Términos de Servicio de Stripe.</p>
                             <p>Como condición para que Cord habilite los servicios de procesamiento de pagos a través de Stripe, aceptas proporcionar a Cord información precisa y completa sobre ti y tu negocio, y autorizas a Cord a compartirla junto con los datos de transacciones relacionados con tu uso de los servicios de procesamiento de pagos provistos por Stripe.</p>
+                            <p>Las imágenes de identificación y selfie se envían directamente a Stripe y CORD no las almacena de forma persistente. La CLABE se conserva cifrada para operar y mostrar tu cuenta de depósito.</p>
                         </div>
-                        <p className="co-tos-note">Al hacer clic en "Aceptar y finalizar", aceptas los términos legales de Stripe.</p>
+                        <label className="co-attest co-legal-consent">
+                            <input type="checkbox" checked={legalConsent} onChange={event => setLegalConsent(event.target.checked)} />
+                            <span className="co-attest-text">
+                                <strong>Acepto expresamente el tratamiento de datos y las condiciones de Cord Pagos</strong>
+                                <span>Confirmo que leí el <a href="/privacidad" target="_blank" rel="noopener noreferrer">Aviso de Privacidad</a>, los <a href="/terminos#cord-pagos" target="_blank" rel="noopener noreferrer">Términos de Cord Pagos</a> y el acuerdo de Stripe. Autorizo el tratamiento y las transferencias descritas de mis datos financieros, patrimoniales y de verificación de identidad.</span>
+                            </span>
+                        </label>
+                        <p className="co-tos-note">Tu aceptación se registra con fecha, dirección IP y versión de términos.</p>
                     </div>
                 )}
             </div>
@@ -836,7 +857,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                 {step > 0 && <button type="button" className="co-btn co-btn-ghost" onClick={goBack} disabled={loading}>Atrás</button>}
                 <div style={{ flex: 1 }}></div>
                 {!(step === 5 && uploadMode === 'phone' && captureStatus !== 'completed') && (
-                    <button type="button" className="co-btn co-btn-primary" onClick={handleNext} disabled={loading}>
+                    <button type="button" className="co-btn co-btn-primary" onClick={handleNext} disabled={loading || (step === 7 && !legalConsent)}>
                         {loading && <span className="co-spinner co-spinner-btn" aria-hidden="true"></span>}
                         {loading ? 'Guardando…' : step === 7 ? 'Aceptar y finalizar' : 'Continuar'}
                     </button>

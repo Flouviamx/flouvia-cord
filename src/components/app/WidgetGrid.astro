@@ -45,13 +45,19 @@ const {
             var order = Array.isArray(raw.order) ? raw.order : [];
             var hidden = Array.isArray(raw.hidden) ? raw.hidden : [];
             var sizes = raw.sizes && typeof raw.sizes === 'object' ? raw.sizes : {};
-            var widgets = Array.prototype.slice.call(host.children).filter(function (w) { return w.dataset && w.dataset.widget; });
+            var widgets = Array.prototype.slice.call(host.querySelectorAll('[data-widget]')).filter(function (w) { return w.closest('[data-widget-grid]') === host; });
             var byId = {};
             widgets.forEach(function (w) { byId[w.dataset.widget] = w; });
             var finalOrder = order.filter(function (widgetId) { return byId[widgetId]; });
             widgets.forEach(function (w) { if (finalOrder.indexOf(w.dataset.widget) === -1) finalOrder.push(w.dataset.widget); });
-            var tray = host.querySelector('[data-widget-tray]');
-            finalOrder.forEach(function (widgetId) { host.insertBefore(byId[widgetId], tray); });
+            var rank = {}; finalOrder.forEach(function (widgetId, index) { rank[widgetId] = index; });
+            var parents = [];
+            widgets.forEach(function (w) { if (parents.indexOf(w.parentElement) === -1) parents.push(w.parentElement); });
+            parents.forEach(function (parent) {
+                widgets.filter(function (w) { return w.parentElement === parent; })
+                    .sort(function (a, b) { return rank[a.dataset.widget] - rank[b.dataset.widget]; })
+                    .forEach(function (w) { parent.appendChild(w); });
+            });
             hidden.forEach(function (widgetId) { if (byId[widgetId]) byId[widgetId].hidden = true; });
             Object.keys(sizes).forEach(function (widgetId) {
                 var w = byId[widgetId]; if (!w) return;
@@ -76,7 +82,8 @@ const {
         const doneButton = document.getElementById(host.dataset.doneButton || '');
         const resetButton = document.getElementById(host.dataset.resetButton || '');
         const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const widgets = () => Array.from(host.children).filter((el): el is HTMLElement => el instanceof HTMLElement && !!el.dataset.widget);
+        const widgets = () => Array.from(host.querySelectorAll<HTMLElement>('[data-widget]'))
+            .filter((el) => el.closest('[data-widget-grid]') === host);
         const getPrefs = (): Prefs => {
             try {
                 const value = JSON.parse(localStorage.getItem(key) || '{}');
@@ -135,8 +142,8 @@ const {
 
         widgets().forEach((widget) => {
             const id = widget.dataset.widget!;
-            widget.querySelector('.we-up')?.addEventListener('click', (event) => { event.stopPropagation(); const previous = widget.previousElementSibling; if (previous instanceof HTMLElement && previous.dataset.widget) flip(() => { host.insertBefore(widget, previous); persistOrder(); }); });
-            widget.querySelector('.we-down')?.addEventListener('click', (event) => { event.stopPropagation(); const next = widget.nextElementSibling; if (next instanceof HTMLElement && next.dataset.widget) flip(() => { host.insertBefore(next, widget); persistOrder(); }); });
+            widget.querySelector('.we-up')?.addEventListener('click', (event) => { event.stopPropagation(); const previous = widget.previousElementSibling; if (previous instanceof HTMLElement && previous.dataset.widget) flip(() => { widget.parentElement?.insertBefore(widget, previous); persistOrder(); }); });
+            widget.querySelector('.we-down')?.addEventListener('click', (event) => { event.stopPropagation(); const next = widget.nextElementSibling; if (next instanceof HTMLElement && next.dataset.widget) flip(() => { widget.parentElement?.insertBefore(next, widget); persistOrder(); }); });
             widget.querySelector('.we-remove')?.addEventListener('click', (event) => { event.stopPropagation(); setHidden(id, true); });
             const resize = widget.querySelector<HTMLElement>('.we-resize');
             if (widget.dataset.sizeSm === widget.dataset.sizeLg) resize?.remove();
@@ -146,8 +153,9 @@ const {
         let dragging: HTMLElement | null = null;
         let startX = 0, startY = 0, originLeft = 0, originTop = 0;
         function begin(widget: HTMLElement, x: number, y: number) {
-            const hostRect = host.getBoundingClientRect(), rect = widget.getBoundingClientRect();
-            dragging = widget; startX = x; startY = y; originLeft = rect.left - hostRect.left; originTop = rect.top - hostRect.top;
+            const parentRect = widget.parentElement?.getBoundingClientRect() ?? host.getBoundingClientRect();
+            const rect = widget.getBoundingClientRect();
+            dragging = widget; startX = x; startY = y; originLeft = rect.left - parentRect.left; originTop = rect.top - parentRect.top;
             widget.classList.add('is-dragging'); Object.assign(widget.style, { position: 'absolute', left: `${originLeft}px`, top: `${originTop}px`, width: `${rect.width}px`, zIndex: '50' });
         }
         function move(x: number, y: number) {
@@ -155,9 +163,9 @@ const {
             dragging.style.left = `${originLeft + x - startX}px`; dragging.style.top = `${originTop + y - startY}px`;
             dragging.style.pointerEvents = 'none'; const under = document.elementFromPoint(x, y) as HTMLElement | null; dragging.style.pointerEvents = '';
             const target = under?.closest<HTMLElement>('[data-widget]');
-            if (target && target !== dragging && host.contains(target) && !target.hidden) {
+            if (target && target !== dragging && target.parentElement === dragging.parentElement && !target.hidden) {
                 const rect = target.getBoundingClientRect();
-                flip(() => host.insertBefore(dragging!, y < rect.top + rect.height / 2 ? target : target.nextSibling));
+                flip(() => target.parentElement?.insertBefore(dragging!, y < rect.top + rect.height / 2 ? target : target.nextSibling));
             }
         }
         function end() { if (!dragging) return; const widget = dragging; dragging = null; widget.classList.remove('is-dragging'); Object.assign(widget.style, { position: '', left: '', top: '', width: '', zIndex: '' }); persistOrder(); }
@@ -174,4 +182,3 @@ const {
     const mountAll = () => document.querySelectorAll<HTMLElement>('[data-widget-grid]').forEach(mountGrid);
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountAll, { once: true }); else mountAll();
 </script>
-

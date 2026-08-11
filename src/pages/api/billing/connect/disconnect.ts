@@ -2,15 +2,22 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit } from '../../../../lib/db';
+import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { stripe } from '../../../../lib/billing';
+import { limitConnectMutation } from '../../../../lib/connect-security';
+import { auditConnect } from '../../../../lib/connect-audit';
+import { requireFreshAuth } from '../../../../lib/step-up';
 
-export const POST: APIRoute = async () => {
-    const denied = await requirePerm('ajustes');
+export const POST: APIRoute = async ({ request }) => {
+    const denied = await requirePerm('cobros_config');
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
+    const limited = await limitConnectMutation(request, 'disconnect', orgId, 4);
+    if (limited) return limited;
+    const staleAuth = await requireFreshAuth();
+    if (staleAuth) return staleAuth;
     const [org] = await sql`select sandbox_of, stripe_account_id from orgs where id = ${orgId}`;
     if (org?.sandbox_of) {
         return new Response(JSON.stringify({ error: 'Connect no está disponible en el entorno de prueba' }), { status: 409, headers: { 'Content-Type': 'application/json' } });
@@ -25,7 +32,7 @@ export const POST: APIRoute = async () => {
     }
 
     await sql`update orgs set stripe_account_id = null, stripe_account_type = null, stripe_charges_enabled = false, acepta_tarjeta = false, cobro_spei_auto = false where id = ${orgId}`;
-    await logAudit(orgId, { accion: 'billing.disconnect', entidad: 'org', entidad_id: orgId, detalle: 'Stripe Connect desconectado' });
+    await auditConnect(orgId, request, 'cuenta_desconectada');
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
 };

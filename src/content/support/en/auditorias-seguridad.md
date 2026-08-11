@@ -8,7 +8,7 @@ For Enterprise plan clients, we offer full transparency regarding our security p
 
 ### Compliance and Certifications
 
-- **PCI-DSS Level 1:** We do not store full credit card numbers. Everything flows through tokens processed directly by the acquirers (Stripe/Conekta).
+- **PCI-DSS:** We do not store full card numbers or CVCs. Sensitive fields are isolated and tokenized directly with certified processors.
 - **Encryption:** Data at rest is encrypted using AES-256. Data in transit utilizes TLS 1.3.
 - **Independent Audits:** Cord undergoes annual penetration testing (*pentesting*) by third-party security firms.
 

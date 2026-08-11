@@ -7,6 +7,7 @@
 // usar sql.query('... $1 ...', [params]).
 
 import { neon } from '@neondatabase/serverless';
+import { createHash } from 'node:crypto';
 import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope } from './context';
 
 const url = import.meta.env.DATABASE_URL || process.env.DATABASE_URL;
@@ -22,7 +23,15 @@ if (!url) {
     console.warn('[db] DATABASE_URL NO usa el endpoint pooled de Neon (host sin "-pooler"). Bajo carga concurrente puede agotar las conexiones directas de Neon. Usa el connection string "Pooled" del dashboard de Neon.');
 }
 
-export const sql = neon(url || 'postgres://invalid');
+// ⚠️ El fallback tiene que ser una URL BIEN FORMADA. `neon()` valida el formato al
+// construirse y lanza si no le cuadra — un `postgres://invalid` hacía que el módulo
+// reventara al CARGARSE, no al consultarse, contradiciendo el comentario de arriba.
+// Como el middleware importa este archivo y Astro evalúa el middleware durante el
+// prerender (donde `import.meta.env.DATABASE_URL` no está disponible), eso rompía
+// `npm run build` entero con "Database connection string format for neon()".
+// Con una URL válida pero inservible, el módulo carga y el fallo ocurre al primer
+// query, que es justo lo que el comentario prometía.
+export const sql = neon(url || 'postgresql://unset:unset@db.invalid/unset');
 
 // ── Tenancy seam ──────────────────────────────────────────────────────────
 // Resuelve el org_id desde la sesión actual (userId → orgs.owner_id). La
@@ -32,7 +41,7 @@ export const sql = neon(url || 'postgres://invalid');
 // (protegidas en el middleware).
 
 async function demoOrgId(): Promise<string> {
-    const rows = await sql`select id from orgs where rfc = 'FERR010203XYZ' limit 1`;
+    const rows = await sql`select cord_demo_org_id() as id`;
     if (!rows.length) throw new Error('[db] org demo no encontrada — ¿corriste la migración (npm run db:migrate)?');
     return rows[0].id as string;
 }
@@ -41,10 +50,10 @@ async function demoOrgId(): Promise<string> {
 // nunca debe romper la resolución si la tabla aún no existe (pre-migración).
 async function ensureOwnerMember(orgId: string, userId: string): Promise<void> {
     try {
-        await sql`
+        await withUserTx(userId, sql`
             insert into org_members (org_id, user_id, rol, estado, joined_at)
             values (${orgId}, ${userId}, 'owner', 'activo', now())
-            on conflict (org_id, user_id) where user_id is not null do nothing`;
+            on conflict (org_id, user_id) where user_id is not null do nothing`);
     } catch { /* tabla aún no migrada → no-op */ }
 }
 
@@ -93,11 +102,11 @@ export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; 
     const NONE = { needs2fa: false, needsOnboarding: false, sessionTimeoutMin: 0 };
     try {
         const orgId = await getActiveOrgId();
-        const rows = await sql`
+        const [rows] = await withOrgTx(orgId, sql`
             select o.require_2fa, o.onboarded_at, o.owner_id, o.session_timeout_min, u.totp_enabled
             from orgs o cross join users u
             where o.id = ${orgId} and u.id = ${userId}
-            limit 1`;
+            limit 1`);
         if (!rows.length) return NONE;
         const r = rows[0] as any;
         return {
@@ -119,8 +128,9 @@ export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; 
 export async function resolveSandboxOrgId(parentId: string): Promise<string> {
     let rows: any[];
     try {
-        rows = await sql`select id, sandbox_of, (select s.id from orgs s where s.sandbox_of = orgs.id limit 1) as sandbox_id
-                         from orgs where id = ${parentId} limit 1`;
+        [rows] = await withOrgTx(parentId, sql`
+            select id, sandbox_of, (select s.id from orgs s where s.sandbox_of = orgs.id limit 1) as sandbox_id
+            from orgs where id = ${parentId} limit 1`);
     } catch {
         throw new Error('[db] No se pudo resolver el entorno de prueba — ¿corriste la migración (npm run db:migrate)?');
     }
@@ -130,7 +140,7 @@ export async function resolveSandboxOrgId(parentId: string): Promise<string> {
 
     // Primera vez: crear la sandbox copiando el snapshot de marca/config del padre.
     // El índice único parcial (sandbox_of) hace el insert idempotente ante carreras.
-    const [created] = await sql`
+    const [[created]] = await withOrgTx(parentId, sql`
         insert into orgs (sandbox_of, nombre, logo_url, color_marca, quote_prefix, plan,
                           country_code, iva_pct, vigencia_default_dias, terminos_default,
                           pdf_template, pdf_mensaje, pdf_condiciones, portal_bienvenida,
@@ -142,7 +152,7 @@ export async function resolveSandboxOrgId(parentId: string): Promise<string> {
         from orgs where id = ${parentId}
         on conflict (sandbox_of) where sandbox_of is not null
         do update set sandbox_of = excluded.sandbox_of
-        returning id`;
+        returning id`);
     const sandboxId = created.id as string;
 
     // Sembrar datos de ejemplo (best-effort): que el modo prueba no arranque vacío.
@@ -168,11 +178,11 @@ async function resolveOrgId(): Promise<string> {
     const activeChoice = currentActiveOrgId();
     if (activeChoice) {
         try {
-            const chosen = await sql`
+            const [chosen] = await withUserTx(userId, sql`
                 select m.org_id from org_members m
                 join orgs o on o.id = m.org_id and o.sandbox_of is null
                 where m.org_id = ${activeChoice} and m.user_id = ${userId} and m.estado = 'activo'
-                limit 1`;
+                limit 1`);
             if (chosen.length) return chosen[0].org_id as string;
         } catch { /* tabla/columna aún no migrada → seguimos con la lógica legacy */ }
         // La cookie apunta a una org de la que el usuario NO es miembro activo
@@ -186,27 +196,27 @@ async function resolveOrgId(): Promise<string> {
     //    ⚠️ Se EXCLUYEN las orgs sandbox (sandbox_of no nulo): una membresía ahí
     //    jamás debe capturar la sesión normal (solo se entra vía modo de prueba).
     try {
-        const mem = await sql`
+        const [mem] = await withUserTx(userId, sql`
             select m.org_id from org_members m
             join orgs o on o.id = m.org_id and o.sandbox_of is null
             where m.user_id = ${userId} and m.estado = 'activo'
             order by m.joined_at desc nulls last, m.created_at desc
-            limit 1`;
+            limit 1`);
         if (mem.length) return mem[0].org_id as string;
     } catch { /* tabla/columna aún no migrada → seguimos con la lógica legacy */ }
 
     // 2) ¿Tiene una org propia (creada antes de Equipo)? → sembrar su membresía owner.
-    const rows = await sql`select id from orgs where owner_id = ${userId} limit 1`;
+    const [rows] = await withUserTx(userId, sql`select id from orgs where owner_id = ${userId} limit 1`);
     if (rows.length) {
         await ensureOwnerMember(rows[0].id as string, userId);
         return rows[0].id as string;
     }
 
     // 3) Primer login: crear la org.
-    const [created] = await sql`
+    const [[created]] = await withUserTx(userId, sql`
         insert into orgs (owner_id, nombre)
         values (${userId}, ${'Mi negocio'})
-        returning id`;
+        returning id`);
     await ensureOwnerMember(created.id as string, userId);
     return created.id as string;
 }
@@ -223,8 +233,8 @@ export async function logAudit(orgId: string, e: AuditEvent): Promise<void> {
         // explícito y sin sesión (crons, contextos anónimos) se perdía sin dejar
         // rastro. 'system' es un valor honesto para esos casos.
         const actor = e.actor ?? currentUserId() ?? 'system';
-        await sql`insert into audit_log (org_id, actor, accion, entidad, entidad_id, detalle, ip, user_agent)
-                  values (${orgId}, ${actor}, ${e.accion}, ${e.entidad ?? null}, ${e.entidad_id ?? null}, ${e.detalle ?? null}, ${e.ip ?? null}, ${e.userAgent ?? null})`;
+        await withOrgTx(orgId, sql`insert into audit_log (org_id, actor, accion, entidad, entidad_id, detalle, ip, user_agent)
+            values (${orgId}, ${actor}, ${e.accion}, ${e.entidad ?? null}, ${e.entidad_id ?? null}, ${e.detalle ?? null}, ${e.ip ?? null}, ${e.userAgent ?? null})`);
     } catch { /* no-op: no romper la operación por fallo de auditoría */ }
 }
 
@@ -242,19 +252,42 @@ export { trustedIp as reqIp } from './ip';
 // Uso:
 //   const [rows] = await withOrgTx(orgId, sql`SELECT ...`);
 //   const [a, b, c] = await withOrgTx(orgId, sql`...`, sql`...`, sql`...`);
-//   const [rows] = await withPublicToken(token, sql`SELECT ... WHERE public_token = ${token}`);
+//   const identity = await resolvePublicQuote(token);
 export async function withOrgTx(orgId: string, ...queries: any[]): Promise<any[][]> {
+    const userId = currentUserId() || '';
     const results = await (sql as any).transaction([
+        sql`select set_config('app.user_id', ${userId}, true)`,
         sql`select set_config('app.org_id', ${orgId}, true)`,
+        ...queries,
+    ]);
+    return (results as any[][]).slice(2);
+}
+
+// Bootstrap de organización: permite resolver membresías antes de conocer el
+// org_id, pero limita RLS al user_id autenticado de la sesión.
+export async function withUserTx(userId: string, ...queries: any[]): Promise<any[][]> {
+    const results = await (sql as any).transaction([
+        sql`select set_config('app.user_id', ${userId}, true)`,
         ...queries,
     ]);
     return (results as any[][]).slice(1);
 }
 
-// Igual que withOrgTx pero setea app.public_token para las páginas /q/[token].
-export async function withPublicToken(token: string, ...queries: any[]): Promise<any[][]> {
+// Resuelve solo la identidad mínima del link público con una función SQL
+// SECURITY DEFINER estrecha; no hay ninguna política RLS basada en el token.
+// El caller debe volver a withOrgTx(orgId, ...) para consultar DTOs whitelist;
+// así el token jamás abre acceso SQL directo a la fila completa de orgs.
+export async function resolvePublicQuote(token: string): Promise<{ id: string; orgId: string } | null> {
+    const [row] = await sql`select id, org_id from cord_resolve_public_quote(${token})`;
+    return row ? { id: row.id as string, orgId: row.org_id as string } : null;
+}
+
+// Carril público para la captura móvil de identidad. La credencial cruda nunca
+// se persiste ni se coloca en app.capture_token; Postgres solo compara sha256.
+export async function withCaptureToken(token: string, ...queries: any[]): Promise<any[][]> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
     const results = await (sql as any).transaction([
-        sql`select set_config('app.public_token', ${token}, true)`,
+        sql`select set_config('app.capture_token_hash', ${tokenHash}, true)`,
         ...queries,
     ]);
     return (results as any[][]).slice(1);

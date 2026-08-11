@@ -5,6 +5,8 @@ import crypto from 'node:crypto';
 import QRCode from 'qrcode';
 import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
+import { auditConnect } from '../../../../lib/connect-audit';
+import { limitConnectMutation } from '../../../../lib/connect-security';
 
 // Crea una sesión efímera de verificación "continúa en tu teléfono" (estilo
 // Stripe Identity): el escritorio pide una sesión, se la muestra al usuario
@@ -13,10 +15,12 @@ import { requirePerm } from '../../../../lib/queries';
 const TTL_MS = 10 * 60 * 1000;
 
 export const POST: APIRoute = async ({ request }) => {
-    const denied = await requirePerm('ajustes');
+    const denied = await requirePerm('cobros_config');
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
+    const limited = await limitConnectMutation(request, 'capture-session', orgId, 8);
+    if (limited) return limited;
     const [org] = await sql`select stripe_account_id from orgs where id = ${orgId}`;
     if (!org?.stripe_account_id) return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
 
@@ -28,11 +32,12 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const token = crypto.randomBytes(24).toString('base64url');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const expiresAt = new Date(Date.now() + TTL_MS);
 
     await sql`
-        insert into identity_capture_sessions (token, org_id, stripe_account_id, person_id, is_company_doc, expires_at)
-        values (${token}, ${orgId}, ${org.stripe_account_id}, ${personId}, ${isCompanyDoc}, ${expiresAt.toISOString()})
+        insert into identity_capture_sessions (token_hash, org_id, stripe_account_id, person_id, is_company_doc, expires_at)
+        values (${tokenHash}, ${orgId}, ${org.stripe_account_id}, ${personId}, ${isCompanyDoc}, ${expiresAt.toISOString()})
     `;
 
     const origin = new URL(request.url).origin;
@@ -48,6 +53,8 @@ export const POST: APIRoute = async ({ request }) => {
     } catch {
         // El QR es decorativo — si falla, el link copiable sigue funcionando.
     }
+
+    await auditConnect(orgId, request, 'captura_movil_creada', { entity: 'identity_capture', detail: isCompanyDoc ? 'empresa' : 'persona' });
 
     return new Response(JSON.stringify({ ok: true, token, url, qrSvg, expiresAt: expiresAt.toISOString() }), {
         headers: { 'Content-Type': 'application/json' },

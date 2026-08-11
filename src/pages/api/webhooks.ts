@@ -17,6 +17,7 @@ import { webhookLimit, planLabel } from '../../lib/permissions';
 import { WEBHOOK_EVENT_IDS, sendTestEvent, redeliver, reenableAndRetryRecent, rotateSecret } from '../../lib/webhooks';
 import { validateWebhookUrl } from '../../lib/ssrf';
 import { rateLimit, tooMany } from '../../lib/ratelimit';
+import { encryptRequiredSecret } from '../../lib/crypto-secret';
 
 export const GET: APIRoute = async ({ request, url }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
@@ -97,12 +98,18 @@ export const POST: APIRoute = async ({ request }) => {
 
     const eventos = cleanEventos(body.eventos);
     const secret = `whsec_${randomBytes(24).toString('hex')}`;
+    let secretEnc: string;
+    try {
+        secretEnc = encryptRequiredSecret(secret);
+    } catch {
+        return json({ error: 'El servicio de cifrado no está disponible' }, 503);
+    }
 
     let row: any;
     try {
         [[row]] = await withOrgTx(orgId, sql`
-            insert into webhooks (org_id, url, eventos, secret)
-            values (${orgId}, ${url}, ${JSON.stringify(eventos)}::jsonb, ${secret})
+            insert into webhooks (org_id, url, eventos, secret, secret_enc)
+            values (${orgId}, ${url}, ${JSON.stringify(eventos)}::jsonb, null, ${secretEnc})
             returning id`);
     } catch {
         return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500);

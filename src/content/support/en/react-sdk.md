@@ -4,7 +4,7 @@ description: "Embed Cord's quoter in your React app with @flouviahq/elements."
 category: "Developers"
 ---
 
-On the frontend, Cord does not expose a "payment form" SDK: card processing is handled by **your own Stripe account** through the quote's public link. What we do publish is **Cord Elements**, the embeddable quoter, available as a Web Component and with a React wrapper.
+On the frontend, Cord does not expose a payment-form SDK: card processing happens through the quote's secure public link. What we do publish is **Cord Elements**, the embeddable quoter, available as a Web Component and with a React wrapper.
 
 ### Installation
 

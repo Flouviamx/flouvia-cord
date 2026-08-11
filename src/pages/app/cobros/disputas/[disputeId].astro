@@ -1,0 +1,174 @@
+---
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import { getActiveOrgId, sql, withOrgTx } from '../../../../lib/db';
+import { getMyMembership } from '../../../../lib/queries';
+import { memberCan } from '../../../../lib/permissions';
+import { currentLocale } from '../../../../lib/context';
+
+const L = currentLocale();
+const es = L !== 'en';
+const disputeId = Astro.params.disputeId || '';
+const orgId = await getActiveOrgId();
+const membership = await getMyMembership();
+const allowed = memberCan(membership, 'cobranza') || memberCan(membership, 'cobros_config');
+let dispute: any = null;
+if (allowed) {
+    const [[row]] = await withOrgTx(orgId, sql`
+        select d.stripe_dispute_id, d.amount_cents, d.currency, d.reason, d.status,
+               d.evidence_due_at, d.evidence_draft, c.folio, c.approved_at,
+               cl.empresa as customer_name, cl.email as customer_email_address,
+               (select string_agg(concat(ci.cantidad, ' × ', ci.descripcion), E'\n' order by ci.orden)
+                  from cotizacion_items ci where ci.cotizacion_id = c.id) as product_description,
+               (select cf.firmante_ip from cotizacion_firmas cf
+                 where cf.org_id = ${orgId} and cf.cotizacion_id = c.id
+                 order by cf.firmado_en desc limit 1) as customer_purchase_ip,
+               (select string_agg(concat(to_char(cm.created_at, 'YYYY-MM-DD HH24:MI'), ' ', cm.autor_nombre, ': ', cm.contenido), E'\n'
+                                  order by cm.created_at)
+                  from cotizacion_comentarios cm where cm.org_id = ${orgId} and cm.cotizacion_id = c.id) as customer_communication
+          from cobro_disputas d
+          left join cotizacion_cobros cc on cc.id = d.cobro_id and cc.org_id = d.org_id
+          left join cotizaciones c on c.id = cc.cotizacion_id and c.org_id = d.org_id
+          left join clientes cl on cl.id = c.cliente_id and cl.org_id = d.org_id
+         where d.org_id = ${orgId} and d.stripe_dispute_id = ${disputeId}
+         limit 1`);
+    dispute = row || null;
+}
+if (!allowed) Astro.response.status = 403;
+else if (!dispute) Astro.response.status = 404;
+const money = dispute ? new Intl.NumberFormat(es ? 'es-MX' : 'en-US', { style: 'currency', currency: dispute.currency || 'MXN' }).format(Number(dispute.amount_cents || 0) / 100) : '';
+const assembled = dispute ? {
+    customer_name: dispute.customer_name || '',
+    customer_email_address: dispute.customer_email_address || '',
+    customer_purchase_ip: dispute.customer_purchase_ip || '',
+    service_date: dispute.approved_at ? new Date(dispute.approved_at).toISOString().slice(0, 10) : '',
+    product_description: dispute.product_description || (dispute.folio ? `Cotización ${dispute.folio}` : ''),
+    customer_communication_text: dispute.customer_communication || '',
+} : {};
+const draft = { ...assembled, ...(dispute?.evidence_draft || {}) };
+---
+
+<AppLayout title={es ? 'Evidencia de contracargo — Cord' : 'Chargeback evidence — Cord'} page="cobros" heading={es ? 'Contracargo' : 'Chargeback'}>
+    {!allowed ? <div class="de-empty"><h2>{es ? 'Sin acceso' : 'No access'}</h2><p>{es ? 'Tu rol no puede gestionar contracargos.' : 'Your role cannot manage chargebacks.'}</p></div>
+    : !dispute ? <div class="de-empty"><h2>{es ? 'No encontrado' : 'Not found'}</h2><p>{es ? 'Este contracargo no existe o pertenece a otra organización.' : 'This chargeback does not exist or belongs to another organization.'}</p></div>
+    : <div class="de-shell" data-dispute={disputeId}>
+        <a class="de-back" href="/app/cobros">← {es ? 'Volver a Cobros' : 'Back to Payments'}</a>
+        <section class="de-hero">
+            <div><span>CORD PAGOS</span><h2>{es ? 'Prepara una defensa clara' : 'Build a clear response'}</h2><p>{es ? 'Guarda avances como borrador. Enviar evidencia es irreversible.' : 'Save your progress as a draft. Submitting evidence is irreversible.'}</p></div>
+            <div class="de-amount"><strong>{money}</strong><small>{String(dispute.status).replaceAll('_', ' ')}</small></div>
+        </section>
+        {dispute.evidence_due_at && <p class="de-deadline">{es ? 'Fecha límite:' : 'Due date:'} {new Date(dispute.evidence_due_at).toLocaleDateString(es ? 'es-MX' : 'en-US', { dateStyle: 'long' })}</p>}
+        <form class="de-form" id="evidenceForm">
+            <div class="de-grid">
+                <label>{es ? 'Nombre del cliente' : 'Customer name'}<input name="customer_name" maxlength="200" value={draft.customer_name || ''} /></label>
+                <label>{es ? 'Correo del cliente' : 'Customer email'}<input name="customer_email_address" type="email" maxlength="320" value={draft.customer_email_address || ''} /></label>
+                <label>{es ? 'Fecha del servicio' : 'Service date'}<input name="service_date" inputmode="numeric" placeholder="AAAA-MM-DD" value={draft.service_date || ''} /></label>
+                <label>{es ? 'IP de aprobación' : 'Approval IP'}<input name="customer_purchase_ip" inputmode="decimal" value={draft.customer_purchase_ip || ''} /></label>
+            </div>
+            <label>{es ? 'Qué compró el cliente' : 'What the customer purchased'}<textarea name="product_description" maxlength="2000" rows="4">{draft.product_description || ''}</textarea></label>
+            <label>{es ? 'Comunicación con el cliente' : 'Customer communication'}<textarea name="customer_communication_text" maxlength="20000" rows="7">{draft.customer_communication_text || ''}</textarea></label>
+            <label>{es ? 'Contexto adicional' : 'Additional context'}<textarea name="uncategorized_text" maxlength="20000" rows="5">{draft.uncategorized_text || ''}</textarea></label>
+            <label>{es ? 'Recibo o comprobante (PDF, JPG o PNG)' : 'Receipt or supporting file (PDF, JPG or PNG)'}
+                <span class="de-hint">{es ? 'Cord prepara un comprobante PDF automáticamente. Puedes reemplazarlo con tu propio archivo.' : 'Cord prepares a PDF receipt automatically. You can replace it with your own file.'}</span>
+                <input name="receipt_file" type="file" accept="application/pdf,image/jpeg,image/png" />
+            </label>
+            <p class="de-error" id="evidenceError" role="alert" hidden></p>
+            <div class="de-actions">
+                <button type="button" class="de-secondary" data-action="draft">{es ? 'Guardar borrador' : 'Save draft'}</button>
+                <button type="button" class="de-primary" data-action="submit">{es ? 'Revisar y enviar evidencia' : 'Review and submit evidence'}</button>
+            </div>
+        </form>
+    </div>}
+</AppLayout>
+
+{dispute && allowed && <script is:inline define:vars={{ disputeId, draft, es }}>
+    const form = document.getElementById('evidenceForm');
+    const errorBox = document.getElementById('evidenceError');
+    const setBusy = (busy) => form?.querySelectorAll('button').forEach((button) => { button.disabled = busy; });
+    const save = async (submit) => {
+        if (!form || !errorBox) return;
+        errorBox.hidden = true; setBusy(true);
+        try {
+            const fd = new FormData(form);
+            const evidence = {};
+            for (const key of ['customer_name', 'customer_email_address', 'customer_purchase_ip', 'service_date', 'product_description', 'customer_communication_text', 'uncategorized_text']) {
+                const value = String(fd.get(key) || '').trim(); if (value) evidence[key] = value;
+            }
+            const file = fd.get('receipt_file');
+            if (file instanceof File && file.size) {
+                const upload = new FormData(); upload.set('file', file);
+                const uploaded = await fetch(`/api/cobros/disputas/${encodeURIComponent(disputeId)}/archivo`, { method: 'POST', body: upload });
+                const uploadedData = await uploaded.json();
+                if (!uploaded.ok) throw new Error(uploadedData.error || (es ? 'No se pudo subir el archivo' : 'Could not upload file'));
+                evidence.receipt = uploadedData.fileId;
+            } else if (draft.receipt) evidence.receipt = draft.receipt;
+            const communication = String(evidence.customer_communication_text || '');
+            const autoResponse = await fetch(`/api/cobros/disputas/${encodeURIComponent(disputeId)}/auto-evidence`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    communication,
+                    ...(evidence.receipt ? { receiptId: evidence.receipt } : {}),
+                    forceCommunication: communication !== String(draft.customer_communication_text || ''),
+                }),
+            });
+            const autoData = await autoResponse.json();
+            if (!autoResponse.ok) throw new Error(autoData.error || (es ? 'No se pudieron preparar los PDFs de evidencia' : 'Could not prepare evidence PDFs'));
+            if (autoData.receipt) evidence.receipt = autoData.receipt;
+            if (autoData.customer_communication) evidence.customer_communication = autoData.customer_communication;
+            draft.receipt = evidence.receipt;
+            draft.customer_communication = evidence.customer_communication;
+            draft.customer_communication_text = communication;
+            if (submit) {
+                const question = es ? 'La evidencia se enviará y ya no podrás editarla. ¿Continuar?' : 'The evidence will be submitted and can no longer be edited. Continue?';
+                const confirmed = typeof window.cordConfirm === 'function'
+                    ? await window.cordConfirm({
+                        title: es ? 'Enviar evidencia' : 'Submit evidence',
+                        body: question,
+                        confirmText: es ? 'Enviar definitivamente' : 'Submit permanently',
+                        danger: true,
+                    })
+                    : window.confirm(question);
+                if (!confirmed) return;
+            }
+            const send = () => fetch(`/api/cobros/disputas/${encodeURIComponent(disputeId)}/evidencia`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ evidence, submit }),
+            });
+            let response = await send();
+            if (response.status === 428 && typeof window.cordStepUp === 'function' && await window.cordStepUp()) response = await send();
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || (es ? 'No se pudo guardar la evidencia' : 'Could not save evidence'));
+            window.cordToast?.(submit ? (es ? 'Evidencia enviada' : 'Evidence submitted') : (es ? 'Borrador guardado' : 'Draft saved'));
+            if (submit) location.href = '/app/cobros';
+        } catch (error) {
+            errorBox.textContent = error.message; errorBox.hidden = false;
+        } finally { setBusy(false); }
+    };
+    form?.querySelector('[data-action="draft"]')?.addEventListener('click', () => save(false));
+    form?.querySelector('[data-action="submit"]')?.addEventListener('click', () => save(true));
+</script>}
+
+<style>
+    .de-shell { max-width: 820px; margin: 0 auto; padding: 24px 0 72px; }
+    .de-back { display: inline-flex; margin-bottom: 28px; color: var(--color-text-muted); font-size: .78rem; font-weight: 650; text-decoration: none; }
+    .de-hero { display: flex; justify-content: space-between; gap: 36px; align-items: flex-end; padding-bottom: 28px; border-bottom: 1px solid var(--color-border); }
+    .de-hero span { font-size: .61rem; letter-spacing: .12em; font-weight: 750; color: var(--color-text-muted); }
+    .de-hero h2 { margin: 8px 0; font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1.03; letter-spacing: -.045em; }
+    .de-hero p, .de-deadline { margin: 0; color: var(--color-text-muted); font-size: .84rem; line-height: 1.6; }
+    .de-amount { text-align: right; white-space: nowrap; }
+    .de-amount strong { display: block; font-size: 1.35rem; letter-spacing: -.03em; }
+    .de-amount small { color: var(--color-danger); text-transform: capitalize; }
+    .de-deadline { padding: 16px 0; color: var(--color-danger); font-weight: 650; }
+    .de-form { background: var(--surface); border-radius: 32px; padding: clamp(22px, 5vw, 38px); box-shadow: 0 20px 60px -30px rgba(10,25,47,.25); display: flex; flex-direction: column; gap: 22px; }
+    .de-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .de-form label { display: flex; flex-direction: column; gap: 8px; font-size: .76rem; font-weight: 650; }
+    .de-hint { color: var(--color-text-muted); font-size: .72rem; font-weight: 450; line-height: 1.5; }
+    .de-form textarea, .de-form input { border: 0; border-radius: 14px; padding: 14px; background: var(--color-bg-soft); color: var(--color-text); font: inherit; outline: none; resize: vertical; }
+    .de-form textarea:focus, .de-form input:focus { box-shadow: 0 0 0 2px rgba(10,25,47,.15); }
+    .de-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .de-actions button { border: 0; border-radius: 999px; padding: 12px 18px; font: inherit; font-size: .78rem; font-weight: 650; cursor: pointer; transition: transform .16s ease; }
+    .de-actions button:active { transform: scale(.97); }
+    .de-secondary { background: var(--color-bg-soft); color: var(--color-text); }
+    .de-primary { background: var(--color-blue-deep); color: #fff; }
+    .de-error { color: var(--color-danger); font-size: .8rem; }
+    .de-empty { padding: 48px 0; }
+    @media (max-width: 640px) { .de-hero { align-items: flex-start; flex-direction: column; }.de-amount { text-align: left; }.de-grid { grid-template-columns: 1fr; }.de-actions { flex-direction: column-reverse; }.de-actions button { width: 100%; } }
+</style>

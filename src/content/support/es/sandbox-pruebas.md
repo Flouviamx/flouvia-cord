@@ -12,7 +12,7 @@ Crea una llave `sk_test_...` en la pestaña **API** del dock de Desarrolladores 
 
 ### Probar el cobro con tarjeta
 
-El cobro pasa por **tu cuenta de Stripe**. Pon tu cuenta de Stripe en **modo de prueba** y usa las [tarjetas de prueba de Stripe](/soporte/tarjetas-prueba) (ej. la Visa `4242 4242 4242 4242`) en el checkout del link público. Ningún cargo es real mientras Stripe esté en test.
+El link público de una organización productiva procesa operaciones reales y **no debe probarse con números de tarjeta de laboratorio**. Para una integración de desarrollo, solicita a soporte un entorno de prueba separado. Nunca uses una tarjeta real para simular errores.
 
 ### Probar el timbrado (CFDI)
 

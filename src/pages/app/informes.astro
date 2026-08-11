@@ -188,42 +188,10 @@ const widgetLabels = {
     /* El grid vive en styles/widgets.css (global) — ver la nota ahí. Esta página comparte
        exactamente el mismo grid, gap y breakpoints que /app. */
     [data-report-shell][aria-busy='true'] { opacity: .68; pointer-events: none; transition: opacity .18s ease; }
-    /* Tipografía de KPI calcada de .kpi-card/.kpi-label/.kpi-num/.kpi-sub de /app para que
-       las dos páginas se lean idénticas. */
-    :global(.report-kpi) { display: flex; flex-direction: column; gap: .4rem; }
-    :global(.report-kpi-value) { color: var(--color-blue-deep); font-size: 1.9rem; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-    :global(.report-kpi-value em) { margin-left: 2px; color: var(--color-text-muted); font-size: .5em; font-style: normal; }
-    :global(.report-kpi-value.is-danger) { color: var(--color-danger); }
-    :global(.report-kpi small), :global(.report-explain) { margin: 0; color: var(--color-text-muted); font-size: .76rem; line-height: 1.5; }
-    :global(.sec-head p) { margin: 0; color: var(--color-text-muted); font-size: .76rem; line-height: 1.5; }
-    :global(.sec-head > div) { display: flex; flex-direction: column; gap: .3rem; }
-    :global(.report-chart) { min-height: 250px; }
-    :global(.snapshot-tag) { display: inline-flex; margin-left: .45rem; padding: 2px 7px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: .6rem; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
-    :global(.report-list) { display: flex; flex-direction: column; }
-    :global(.report-list > a), :global(.report-list > div) { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 0; border-top: 1px solid var(--color-border); color: var(--color-text); text-decoration: none; }
-    :global(.report-list > a:first-child), :global(.report-list > div:first-child) { border-top: 0; }
-    :global(.report-list span) { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
-    :global(.report-list strong) { overflow: hidden; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
-    :global(.report-list small), :global(.report-empty) { color: var(--color-text-muted); font-size: .68rem; }
-    :global(.report-focus) { min-height: 250px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: .5rem; text-align: center; }
-    :global(.report-focus strong) { font-size: clamp(3rem, 7vw, 6rem); color: var(--color-text); letter-spacing: -.06em; }
-    :global(.report-focus span) { color: var(--color-text-muted); }
-    :global(.flow-legend) { display: flex; gap: .8rem; color: var(--color-text-muted); font-size: .65rem; }
-    :global(.flow-legend span::before) { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: currentColor; }
-    :global(.flow-legend .is-cartera), :global(.flow-week-track .is-cartera) { color: #0f766e; background: #0f766e; }
-    :global(.flow-legend .is-pipeline), :global(.flow-week-track .is-pipeline) { color: #2563eb; background: #2563eb; }
-    :global(.flow-legend .is-mrr), :global(.flow-week-track .is-mrr) { color: #8b5cf6; background: #8b5cf6; }
-    :global(.flow-weeks) { display: flex; flex-direction: column; gap: .72rem; }
-    :global(.flow-week) { display: grid; grid-template-columns: 130px minmax(100px, 1fr) 110px; gap: .8rem; align-items: center; }
-    :global(.flow-week-label) { color: var(--color-text-muted); font-size: .7rem; }
-    :global(.flow-week-track) { display: flex; height: 10px; overflow: hidden; border-radius: 999px; background: var(--chart-track); }
-    :global(.flow-week-track i) { display: block; height: 100%; }
-    :global(.flow-week strong) { text-align: right; font-size: .76rem; }
-    /* Los breakpoints del grid ya viven en widgets.css (compartidos con /app). Aquí solo
-       queda lo propio de este informe. Las acciones NO cambian de alineación: el usuario
-       las quiere a la derecha siempre. */
-    @media (max-width: 560px) {
-        :global(.flow-week) { grid-template-columns: 92px 1fr; }
-        :global(.flow-week strong) { grid-column: 2; }
-    }
+    /* El vocabulario de widgets (.report-kpi, .report-list, .report-chart, .report-focus,
+       .snapshot-tag, .flow-*) vive en styles/report-widgets.css — lo renderizan los
+       componentes informes/*Report.astro, no esta página, así que un `<style>` scopeado
+       nunca los alcanzaría (Regla 11). Desde ago 2026 lo comparten además /app/cobros y
+       /app/cobranza. Aquí solo queda lo que ESTA página emite: las acciones de la topbar
+       y el estado sin acceso. Los breakpoints del grid siguen en widgets.css. */
 </style>

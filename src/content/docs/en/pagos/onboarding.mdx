@@ -1,48 +1,55 @@
 ---
-title: "Configure payments"
-description: "Learn how to connect your bank account and pass the verification process (KYC) to start charging online."
+title: "Connect your account"
+description: "The 8 steps to verify your identity, connect your bank account, and activate Cord Payments — all inside Cord, with no redirects."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Configure payments</h1>
-  <p class="page-subtitle">Learn how to connect your bank account and pass the verification process (KYC) to start charging online.</p>
+  <h1 class="page-title">Connect your account</h1>
+  <p class="page-subtitle">Verify your identity and connect your bank account to start accepting payments online, without leaving Cord.</p>
 </header>
 
-## The Onboarding Process
+## Everything inside Cord
 
-For money to reach your bank directly without Cord holding it, we use **Stripe Connect**. This means you'll have your own sub-account for payment processing, tied to your bank account, and configured so that Cord charges zero commission—you only pay standard Stripe processing fees.
+Unlike traditional payment checkouts that take you to another page or force you to use an external dashboard, Cord Payments lives **100% inside the app** — the connection wizard, identity verification, and managing your bank account are all native Cord screens, with your own look and feel, not a third-party form.
 
-### Steps to connect your account
+Cord charges a fee for every payment you process (see the full detail in [Fees and advantages](/en/docs/pagos/condiciones)) — this document only covers the connection process, not what it costs to use it.
 
-1. Go to **Settings > Payments** inside the app.
-2. If your status is **"new"**, you will see a welcome screen.
-3. Click on the **Start verification** button. This will open a secure embedded Stripe component where you will be asked for information about your company.
+### How to get started
 
-### What information is required (KYC)?
+1. Go to **Settings › Payments** inside the app.
+2. If your account is in "New" status, click **Start verification**.
+3. Complete the 8-step wizard:
 
-Stripe is required by law to verify your identity and the legitimacy of your business (KYC - Know Your Customer). You should have ready:
+| Step | What it captures |
+|---|---|
+| **1. Entity type** | Whether your business operates as an individual or a legal entity, and the business category (MCC). |
+| **2. Business details** | Legal name, RFC/tax ID, and the details you invoice under. |
+| **3. Fiscal address** | Your business's registered fiscal address. |
+| **4. Identity** | Personal details of the legal representative or the individual operating the account. |
+| **5. Owners** | Information about any beneficial owners with a relevant stake in the business (anti-money-laundering regulatory requirement). |
+| **6. Verification** | Official ID and live selfie capture — see [LiveCapture](#identity-verification-with-livecapture) below. |
+| **7. Bank account** | The CLABE where you want to receive your deposits. |
+| **8. Terms** | You accept the handling of your data and **Cord Payments' current fee schedule** — it's the same step where you confirm how much Cord will charge you to process each payment. |
 
-- **Company Tax ID:** The legal name and tax ID (RFC) you use for billing.
-- **Official ID:** Passport or government ID of the legal representative.
-- **Bank account (CLABE/IBAN):** The account where you want your sales deposited automatically.
-- **Articles of Incorporation:** In some cases (for companies with high sales volume), Stripe might request the articles of incorporation to verify shareholder structure.
+The wizard picks up exactly where you left off if you leave halfway through — you won't have to recapture what you already saved. If Cord detects a specific missing requirement (say, a photo that came out blurry), it sends you straight to that particular step instead of restarting the whole process.
 
-<Callout type="warning">
-**Important note:** Cord does not store any of this sensitive information. The entire process takes place within a secure Stripe iframe (`<iframe>`), and documents go directly to their PCI Level 1 certified financial servers.
+### Identity verification with LiveCapture
+
+For financial regulatory reasons, verifying your identity and the legitimacy of your business (KYC — Know Your Customer) is mandatory. Cord uses a native system called **LiveCapture** that does this in seconds, directly from your browser or your phone:
+
+- The system asks for permission to access your camera.
+- You capture the front and back of your official ID (national ID or passport).
+- You take a live selfie as proof of liveness.
+- All of this happens without uploading files or opening third-party pages — the camera lives right inside the same Cord screen.
+
+<Callout type="info">
+**Your photos are not stored by Cord.** The identification images and selfie are transmitted encrypted directly to the financial verification system, and Cord does not persist them on its own servers. Your CLABE is retained, but encrypted at rest, so it can be displayed and used to operate your deposit account.
 </Callout>
 
-## Account Statuses
+## Your account's status
 
-Depending on your progress in onboarding, your payment account will show different statuses in the interface:
+Depending on your progress, your payments account shows different statuses:
 
-- **New:** You haven't started the process yet. No automatic payment methods will be available.
-- **Pending:** You've started the process but Stripe needs to verify your documents or requires additional uploads. In this state, Card and SPEI methods remain locked.
-- **Active:** You're all set! Stripe has verified your identity and your bank account is confirmed. You can now charge, and money will flow automatically.
-
-## Available Payment Methods
-
-Once your status is **Active**, you'll be able to individually toggle the methods you offer on your quotes:
-
-- **Credit and debit card:** Processed instantly (Visa, Mastercard, Amex).
-- **Automatic SPEI transfer (MX):** Generates a unique, temporary CLABE for the current quote. When the client transfers the funds, the system automatically marks the payment as completed and notifies you.
-- **Manual transfer (Without Stripe):** Displays your traditional bank account details. The client uploads their receipt, and you manually mark the payment as received. This method is available **regardless of the status** of your Stripe account.
+- **New:** you haven't started the process yet. No automatic method is available.
+- **Pending:** you started the process but verification is still in progress, or a requirement is missing (for example, re-capturing a photo). Card and SPEI are still blocked.
+- **Active:** everything is ready — your identity and your bank account are confirmed. You can now charge, and the money flows automatically into your account with every deposit.

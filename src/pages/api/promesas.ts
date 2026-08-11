@@ -7,7 +7,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
-import { requirePerm } from '../../lib/queries';
+import { requirePerm, invalidateMoneyCaches } from '../../lib/queries';
 
 const ESTADOS = new Set(['pendiente', 'cumplida', 'incumplida']);
 
@@ -33,6 +33,7 @@ export const POST: APIRoute = async ({ request }) => {
         values (${orgId}, ${cotizacionId}, ${fecha}, ${monto}, ${nota})
         returning id`);
     await logAudit(orgId, { accion: 'promesa.creada', entidad: 'cotizacion', entidad_id: cotizacionId, detalle: `Promesa de pago para ${fecha}`, ip: reqIp(request) });
+    invalidateMoneyCaches(orgId);
     return json({ id: row.id });
 };
 
@@ -47,6 +48,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const [rows] = await withOrgTx(orgId, sql`update promesas_pago set estado = ${estado} where id = ${body.id} and org_id = ${orgId} returning id`);
     if (!rows.length) return json({ error: 'Promesa no encontrada' }, 404);
+    invalidateMoneyCaches(orgId);
     return json({ ok: true });
 };
 
@@ -58,6 +60,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const [rows] = await withOrgTx(orgId, sql`delete from promesas_pago where id = ${body.id} and org_id = ${orgId} returning id`);
     if (!rows.length) return json({ error: 'Promesa no encontrada' }, 404);
+    invalidateMoneyCaches(orgId);
     return json({ ok: true });
 };
 

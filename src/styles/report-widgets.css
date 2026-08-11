@@ -1,0 +1,67 @@
+/* report-widgets.css — vocabulario visual compartido de los widgets de informes.
+ *
+ * ⚠️ REGLA 11 (CLAUDE.md). Este markup NO lo renderiza la página anfitriona: lo
+ * emiten los componentes `informes/*Report.astro` y, desde ago 2026, también
+ * `/app/cobros` y `/app/cobranza`. Astro scopea un `<style>` agregando
+ * `data-astro-cid-*` solo a los elementos que ESA página renderiza, así que estas
+ * reglas vivieron como `:global(...)` dentro del `<style>` de `informes.astro` —
+ * lo que las dejaba descargándose ÚNICAMENTE en `/app/informes`. Cualquier otra
+ * página que usara `.report-kpi` o `.report-list` se veía cruda.
+ *
+ * Aquí quedan una sola vez, importadas por `AppLayout.astro`, llaveadas por clase
+ * de componente (nunca por un `id` de página). Verificación:
+ *   grep -c "report-kpi-value" .vercel/output/static/_astro/*.css   → 1 en total.
+ *
+ * Lo que NO va aquí: `.dash-card`, `.kpi-label`, `.kpi-num`, `.sec-head`,
+ * `.sec-title` (ya globales en AppLayout) y el grid en `widgets.css`.
+ */
+
+/* ── KPI ─────────────────────────────────────────────────────────────────── */
+.report-kpi { display: flex; flex-direction: column; gap: .4rem; }
+.report-kpi-value { color: var(--color-blue-deep); font-size: 1.9rem; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.report-kpi-value em { margin-left: 2px; color: var(--color-text-muted); font-size: .5em; font-style: normal; }
+.report-kpi-value.is-danger { color: var(--color-danger); }
+.report-kpi-value.is-ok { color: var(--color-ok); }
+.report-kpi-value.is-warn { color: var(--color-warn); }
+.report-kpi small, .report-explain { margin: 0; color: var(--color-text-muted); font-size: .76rem; line-height: 1.5; }
+
+/* ── Encabezado de sección con subtítulo ─────────────────────────────────── */
+.sec-head p { margin: 0; color: var(--color-text-muted); font-size: .76rem; line-height: 1.5; }
+.sec-head > div { display: flex; flex-direction: column; gap: .3rem; }
+
+/* ── Gráficas ────────────────────────────────────────────────────────────── */
+.report-chart { min-height: 250px; }
+
+/* Etiqueta "hoy"/"en vivo": marca un dato que NO depende del rango de fechas. */
+.snapshot-tag { display: inline-flex; margin-left: .45rem; padding: 2px 7px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: .6rem; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+
+/* ── Listas hairline ─────────────────────────────────────────────────────── */
+.report-list { display: flex; flex-direction: column; }
+.report-list > a, .report-list > div { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 0; border-top: 1px solid var(--color-border); color: var(--color-text); text-decoration: none; }
+.report-list > a:first-child, .report-list > div:first-child { border-top: 0; }
+.report-list span { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.report-list strong { overflow: hidden; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
+.report-list small, .report-empty { color: var(--color-text-muted); font-size: .68rem; }
+
+/* ── Número gigante centrado ─────────────────────────────────────────────── */
+.report-focus { min-height: 250px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: .5rem; text-align: center; }
+.report-focus strong { font-size: clamp(3rem, 7vw, 6rem); color: var(--color-text); letter-spacing: -.06em; }
+.report-focus span { color: var(--color-text-muted); }
+
+/* ── Barras compuestas del informe de flujo ──────────────────────────────── */
+.flow-legend { display: flex; gap: .8rem; color: var(--color-text-muted); font-size: .65rem; }
+.flow-legend span::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: currentColor; }
+.flow-legend .is-cartera, .flow-week-track .is-cartera { color: #0f766e; background: #0f766e; }
+.flow-legend .is-pipeline, .flow-week-track .is-pipeline { color: #2563eb; background: #2563eb; }
+.flow-legend .is-mrr, .flow-week-track .is-mrr { color: #8b5cf6; background: #8b5cf6; }
+.flow-weeks { display: flex; flex-direction: column; gap: .72rem; }
+.flow-week { display: grid; grid-template-columns: 130px minmax(100px, 1fr) 110px; gap: .8rem; align-items: center; }
+.flow-week-label { color: var(--color-text-muted); font-size: .7rem; }
+.flow-week-track { display: flex; height: 10px; overflow: hidden; border-radius: 999px; background: var(--chart-track); }
+.flow-week-track i { display: block; height: 100%; }
+.flow-week strong { text-align: right; font-size: .76rem; }
+
+@media (max-width: 560px) {
+    .flow-week { grid-template-columns: 92px 1fr; }
+    .flow-week strong { grid-column: 2; }
+}

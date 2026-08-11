@@ -9,11 +9,11 @@ A dispute or chargeback occurs when a cardholder does not recognize a charge pro
 
 ### Where are disputes managed?
 
-Since Cord uses your own Stripe account to process cards, the entire dispute resolution process happens **within your Stripe dashboard**, not in Cord.
+Cord centralizes tracking and evidence preparation under **Payments › Disputes**. When a chargeback opens, the platform creates a task, notifies the owner, and displays the deadline reported by the payment network.
 
-1. Stripe will notify you via email about the dispute and withhold the funds.
-2. You have a timeframe (generally 7-15 days) to submit evidence through the Stripe Dashboard.
-3. **Evidence from Cord:** Go to the disputed quote in Cord and download the **Quote PDF** and the event history (Audit Trail) showing the IP and date the customer accepted the terms or digitally signed the proposal.
-4. Upload this PDF as evidence to Stripe.
+1. Open the dispute from **Payments** and review its reason, amount, and deadline.
+2. Prepare the product or service description, customer communication, and delivery details.
+3. Save the draft as often as needed. You can also attach a receipt or proof as PDF, PNG, or JPEG.
+4. Review all evidence and select **Submit permanently**. This action is irreversible and may require recent identity verification.
 
-If you win the dispute, Stripe will return the funds to you. If you lose it, you must issue a Credit Note in Cord to balance your taxes.
+Cord never submits evidence automatically. If the final outcome requires a tax correction, issue the corresponding Credit Note from Cord with guidance from your tax advisor.

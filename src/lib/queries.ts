@@ -3,14 +3,15 @@
 // src/lib/mock.ts para que las páginas sólo cambien el import + un `await`.
 // Re-exporta los helpers puros y STATUS_META del mock (no se duplican).
 
-import { sql, getActiveOrgId, withOrgTx, withPublicToken } from './db';
+import { sql, getActiveOrgId, resolvePublicQuote, withOrgTx } from './db';
 import { currentUserId, currentOrgIdOverride, currentLocale } from './context';
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
 import { memberCan, type Membership, type PermKey, type PermMap } from './permissions';
 import { INCLUDED } from './billing';
-import { cached } from './cache';
+import { cached, invalidate } from './cache';
 import { after } from './after';
+import { decryptSecret } from './crypto-secret';
 import { dueDateFor, venceDia } from './cobros';
 import {
     STATUS_ABIERTA, STATUS_GANADA, STATUS_PERDIDA, STATUS_SALIO,
@@ -57,10 +58,9 @@ const fmtRelative = (d: string | Date) => {
 // ── ORG ─────────────────────────────────────────────────────────────────────
 const PLAN_LABEL: Record<string, string> = { free: 'Gratis', starter: 'Starter', basico: 'Básico', pro: 'Profesional', scale: 'Scale', developer: 'Developer', negocio: 'Negocio', business: 'Negocio' };
 
-// orgs no tiene FORCE RLS — el rol dueño bypasea. No necesita withOrgTx.
 export async function getOrg() {
     const orgId = await getActiveOrgId();
-    const [o] = await sql`select * from orgs where id = ${orgId}`;
+    const [[o]] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
     return {
         id: orgId,
         nombre: o.nombre as string,
@@ -101,7 +101,7 @@ export async function getOrg() {
         zonaHoraria: (o.zona_horaria as string) || 'America/Mexico_City',
         // Solo el booleano (nunca la llave) — para que la UI pueda avisar cuando
         // el timbrado va a caer a la llave global de prueba en vez del CSD propio.
-        tieneCsdPropio: !!o.facturapi_live_key,
+        tieneCsdPropio: !!(o.facturapi_live_key_enc || o.facturapi_live_key),
         countryCode: (o.country_code as string) || 'MX',
         idioma: (o.idioma as string) || 'es-MX',
         colorSecundario: (o.color_secundario as string) || '',
@@ -131,8 +131,12 @@ export async function getOrg() {
         aceptaTarjeta: o.acepta_tarjeta !== false,
         aceptaTransferencia: !!o.acepta_transferencia,
         cobroSpeiAuto: !!o.cobro_spei_auto,
+        checkoutV2: !!o.checkout_v2,
+        feeEnabled: !!o.fee_enabled,
+        feePlan: (o.fee_plan as string) || 'legacy_zero',
+        feeTermsVersion: (o.fee_terms_version as string) || null,
         bancoNombre: (o.banco_nombre as string) || '',
-        bancoClabe: (o.banco_clabe as string) || '',
+        bancoClabe: decryptSecret(o.banco_clabe_enc as string) || (o.banco_clabe as string) || '',
         bancoBeneficiario: (o.banco_beneficiario as string) || '',
         // Para analítica (PostHog identify/group) e integridad de datos — no
         // se muestran en ninguna UI todavía.
@@ -228,7 +232,7 @@ export async function getWebhooks() {
         id: w.id as string,
         url: w.url as string,
         eventos: (Array.isArray(w.eventos) ? w.eventos : []) as string[],
-        secretMasked: `${String(w.secret).slice(0, 10)}${'•'.repeat(14)}`,
+        secretMasked: `${String(decryptSecret(w.secret_enc as string | null) || w.secret || 'whsec_').slice(0, 10)}${'•'.repeat(14)}`,
         activo: !!w.activo,
         lastStatus: w.last_status as number | null,
         lastError: (w.last_error as string) ?? null,
@@ -664,7 +668,7 @@ export async function getPlantillas() {
 // Uso del plan: cotizaciones "activas" vs límite del plan.
 export async function getPlanUsage() {
     const orgId = await getActiveOrgId();
-    const [o] = await sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`;
+    const [[o]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
     const plan = (o?.plan as string) || 'free';
     const [[{ activas }]] = await withOrgTx(orgId,
         sql`select count(*)::int as activas from cotizaciones
@@ -682,7 +686,7 @@ export async function getPlanUsage() {
 // Consumo del periodo actual (IA / CFDI / API) vs cuota incluida del plan.
 export async function getBillingUsage() {
     const orgId = await getActiveOrgId();
-    const [o] = await sql`select coalesce(plan,'free') as plan, subscription_status, billing_cycle, current_period_end from orgs where id = ${orgId}`;
+    const [[o]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, subscription_status, billing_cycle, current_period_end from orgs where id = ${orgId}`);
     const plan = (o?.plan as string) || 'free';
     const inc = INCLUDED[plan as keyof typeof INCLUDED] ?? INCLUDED.free;
     const periodo = new Date().toISOString().slice(0, 7);
@@ -1086,13 +1090,17 @@ export async function getCliente(id: string) {
             from cotizaciones where org_id = ${orgId} and cliente_id = ${id}`,
 
         // Cobrado directo — MISMA semántica que getCobros(): 'paid' o paid_at seteado.
-        sql`select coalesce(sum(total), 0) as cobrado
+        sql`select coalesce(sum(greatest(0, total - coalesce((
+                    select sum(cc.reembolsado_cents) / 100.0
+                    from cotizacion_cobros cc
+                    where cc.org_id = ${orgId} and cc.cotizacion_id = cotizaciones.id
+                ), 0))), 0) as cobrado
             from cotizaciones
             where org_id = ${orgId} and cliente_id = ${id} and (status = 'paid' or paid_at is not null)`,
 
         // Cobrado de igualas recurrentes — universo DISJUNTO del anterior (una iguala
         // nunca marca cotizaciones.paid_at). Se suma en JS, sin doble conteo.
-        sql`select coalesce(sum(co.monto), 0) as cobrado
+        sql`select coalesce(sum(greatest(0, co.monto - coalesce(co.reembolsado_cents, 0) / 100.0)), 0) as cobrado
             from cotizacion_cobros co
             join cotizaciones c on c.id = co.cotizacion_id
             where co.org_id = ${orgId} and co.status = 'pagado'
@@ -1291,15 +1299,14 @@ export async function getCotizacion(id: string): Promise<MockQuote | null> {
     return rowToQuote(rows[0], itemsWithComments, eventos, versiones, conv);
 }
 
-// Documentos fiscales emitidos para una cotización (CFDI / invoice). Plain sql
-// con filtro explícito por org (documentos_fiscales no tiene RLS FORCE).
+// Documentos fiscales emitidos para una cotización (CFDI / invoice).
 export async function getDocumentosFiscales(cotizacionId: string) {
     const orgId = await getActiveOrgId();
-    const rows = await sql`
+    const [rows] = await withOrgTx(orgId, sql`
         select id, country_code, document_type, fiscal_id, status, provider_data, pdf_url, xml_url, created_at
         from documentos_fiscales
         where cotizacion_id = ${cotizacionId} and org_id = ${orgId}
-        order by created_at desc`;
+        order by created_at desc`);
     return rows.map((r: any) => ({
         id: r.id as string,
         pais: r.country_code as string,
@@ -1335,10 +1342,15 @@ export async function getSuscripcionByCotizacion(cotizacionId: string) {
     };
 }
 
-// Link público — usa withPublicToken para satisfacer la política RLS de cotizaciones/items.
-// Tres queries en un solo batch con el token como contexto de RLS.
+// Link público: el token solo resuelve el par mínimo (cotización, organización).
+// Toda la carga posterior corre bajo el contexto tenant ya resuelto; así el rol de
+// aplicación nunca necesita políticas públicas sobre orgs, clientes o conversaciones.
 export async function getCotizacionByToken(token: string) {
-    const [rows, items, conv, comentarios, firmas, cobrosRows, susRows] = await withPublicToken(token,
+    const identity = await resolvePublicQuote(token);
+    if (!identity) return null;
+    const orgId = identity.orgId;
+    const quoteId = identity.id;
+    const [rows, items, conv, comentarios, firmas, cobrosRows, susRows] = await withOrgTx(orgId,
         sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos,
                o.nombre as org_nombre, o.rfc as org_rfc, o.color_marca as org_color,
                o.logo_url as org_logo_url,
@@ -1356,34 +1368,36 @@ export async function getCotizacionByToken(token: string) {
                o.acepta_transferencia as org_acepta_transferencia,
                o.cobro_spei_auto as org_cobro_spei_auto,
                o.banco_nombre as org_banco_nombre,
-               o.banco_clabe as org_banco_clabe,
+               o.banco_clabe as org_banco_clabe, o.banco_clabe_enc as org_banco_clabe_enc,
                o.banco_beneficiario as org_banco_beneficiario
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id
             join orgs o on o.id = c.org_id
-            where c.public_token = ${token}`,
+            where c.id = ${quoteId} and c.org_id = ${orgId}`,
         sql`select ci.* from cotizacion_items ci
             join cotizaciones c on c.id = ci.cotizacion_id
-            where c.public_token = ${token} order by ci.orden`,
+            where c.id = ${quoteId} and c.org_id = ${orgId} order by ci.orden`,
         sql`select e.tipo, e.detalle, e.created_at from eventos e
             join cotizaciones c on c.id = e.cotizacion_id
-            where c.public_token = ${token} and e.tipo in ('comment', 'counter', 'reply')
+            where c.id = ${quoteId} and c.org_id = ${orgId}
+              and e.tipo in ('comment', 'counter', 'reply')
             order by e.created_at asc`,
         sql`select cc.* from cotizacion_comentarios cc
             join cotizaciones c on c.id = cc.cotizacion_id
-            where c.public_token = ${token} order by cc.created_at asc`,
+            where c.id = ${quoteId} and c.org_id = ${orgId} order by cc.created_at asc`,
         sql`select f.* from cotizacion_firmas f
             join cotizaciones c on c.id = f.cotizacion_id
-            where c.public_token = ${token} order by f.firmado_en desc limit 1`,
+            where c.id = ${quoteId} and c.org_id = ${orgId}
+            order by f.firmado_en desc limit 1`,
         sql`select co.id, co.tipo, co.numero_cuota, co.monto, co.status, co.vence, co.paid_at
             from cotizacion_cobros co
             join cotizaciones c on c.id = co.cotizacion_id
-            where c.public_token = ${token}
+            where c.id = ${quoteId} and c.org_id = ${orgId}
             order by co.vence asc nulls last, co.created_at asc`,
         sql`select s.estado, s.monto, s.current_period_end
             from cotizacion_suscripciones s
             join cotizaciones c on c.id = s.cotizacion_id
-            where c.public_token = ${token} limit 1`,
+            where c.id = ${quoteId} and c.org_id = ${orgId} limit 1`,
     );
     if (!rows.length) return null;
     
@@ -1502,20 +1516,23 @@ export async function getCotizacionByToken(token: string) {
             aceptaTransferencia: !!rows[0].org_acepta_transferencia,
             cobroSpeiAuto: !!rows[0].org_cobro_spei_auto,
             bancoNombre: (rows[0].org_banco_nombre as string) || '',
-            bancoClabe: (rows[0].org_banco_clabe as string) || '',
+            bancoClabe: decryptSecret(rows[0].org_banco_clabe_enc as string) || (rows[0].org_banco_clabe as string) || '',
             bancoBeneficiario: (rows[0].org_banco_beneficiario as string) || '',
         },
     };
 }
 
 // Marca 'viewed' la primera vez que el cliente abre el link.
-// Fase 1: lee por token (contexto público). Fase 2: escribe por org_id (contexto tenant).
+// Fase 1: resuelve por token con superficie mínima. Fase 2: escribe por org_id.
 export async function markViewed(token: string) {
-    const [[c]] = await withPublicToken(token,
-        sql`select id, org_id, status from cotizaciones where public_token = ${token}`,
+    const identity = await resolvePublicQuote(token);
+    if (!identity) return;
+    const [[c]] = await withOrgTx(identity.orgId,
+        sql`select id, org_id, status from cotizaciones
+            where id = ${identity.id} and org_id = ${identity.orgId}`,
     );
     if (!c) return;
-    await withOrgTx(c.org_id as string,
+    await withOrgTx(identity.orgId,
         sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
             values (${c.org_id}, ${c.id}, 'viewed', 'El cliente abrió el link')`,
         sql`update cotizaciones set status = 'viewed'
@@ -1653,15 +1670,18 @@ async function getSerieDiariaUncached() {
               and status = any(${STATUS_GANADA})
               and coalesce(approved_at, created_at) >= current_date - interval '364 days'
             group by 1 order by 1`,
-        sql`select to_char(date_trunc('day', coalesce(paid_at, approved_at, created_at)), 'YYYY-MM-DD') as fecha,
-                   coalesce(sum(total),0) as monto
-            from cotizaciones
-            where org_id = ${orgId}
-              and (status = 'paid' or paid_at is not null)
-              and coalesce(paid_at, approved_at, created_at) >= current_date - interval '364 days'
+        sql`select to_char(date_trunc('day', coalesce(c.paid_at, c.approved_at, c.created_at)), 'YYYY-MM-DD') as fecha,
+                   coalesce(sum(greatest(0, c.total - coalesce((
+                       select sum(cc.reembolsado_cents) / 100.0 from cotizacion_cobros cc
+                       where cc.cotizacion_id = c.id
+                   ), 0))),0) as monto
+            from cotizaciones c
+            where c.org_id = ${orgId}
+              and (c.status = 'paid' or c.paid_at is not null)
+              and coalesce(c.paid_at, c.approved_at, c.created_at) >= current_date - interval '364 days'
             group by 1 order by 1`,
         sql`select to_char(date_trunc('day', coalesce(co.paid_at, co.created_at)), 'YYYY-MM-DD') as fecha,
-                   coalesce(sum(co.monto),0) as monto
+                   coalesce(sum(greatest(0, co.monto - coalesce(co.reembolsado_cents, 0) / 100.0)),0) as monto
             from cotizacion_cobros co
             join cotizaciones c on c.id = co.cotizacion_id
             where co.org_id = ${orgId}
@@ -2094,8 +2114,7 @@ async function getCobranzaUncached() {
     const orgId = await getActiveOrgId();
     const payBehavior = await getPayBehavior();
 
-    // orgs no tiene FORCE RLS.
-    const [org] = await sql`select * from orgs where id = ${orgId}`;
+    const [[org]] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
     const rate = num(org?.interes_moratorio_pct);
 
     // Tres queries de datos en un solo batch.
@@ -2572,7 +2591,6 @@ export async function getDashboard() {
 }
 
 // ── EQUIPO Y ROLES ────────────────────────────────────────────────────────────
-// org_members no tiene FORCE RLS — queries directas OK para bootstrap.
 const fmtFecha = (d: unknown) => d ? new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d as string)) : '';
 
 export interface MemberRow {
@@ -2598,10 +2616,10 @@ export async function getMembers(): Promise<MemberRow[]> {
     // para reconstruir el link (es un hash) y no hace falta filtrarlo a la
     // página — se manda `tieneInvitePendiente` para que la UI ofrezca
     // "Reenviar invitación" (token nuevo) en vez de "Copiar link".
-    const rows = await sql`
+    const [rows] = await withOrgTx(orgId, sql`
         select id, user_id, email, nombre, rol, permisos, estado, created_at, joined_at
         from org_members where org_id = ${orgId} and estado <> 'revocado'
-        order by case when rol = 'owner' then 0 else 1 end, created_at asc`;
+        order by case when rol = 'owner' then 0 else 1 end, created_at asc`);
     return rows.map((m) => {
         const nombre = (m.nombre as string) || (m.email as string) || 'Invitado';
         return {
@@ -2632,7 +2650,7 @@ export async function getMyMembership(): Promise<Membership> {
     }
     const orgId = await getActiveOrgId();
     try {
-        const rows = await sql`select rol, permisos from org_members where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`;
+        const [rows] = await withOrgTx(orgId, sql`select rol, permisos from org_members where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`);
         if (rows.length) {
             const m = rows[0];
             return { rol: m.rol as string, permisos: (m.permisos as PermMap) ?? {}, esOwner: m.rol === 'owner' };
@@ -2647,7 +2665,7 @@ export async function getMyMembership(): Promise<Membership> {
         // CERRADO. Antes esta rama devolvía owner por default: cualquier
         // request cuyo getActiveOrgId() resolviera a una org de la que el
         // usuario no fuera miembro activo quedaba autorizado como su dueño.
-        const sandboxRow = await sql`select 1 from orgs where id = ${orgId} and sandbox_of is not null limit 1`;
+        const [sandboxRow] = await withOrgTx(orgId, sql`select 1 from orgs where id = ${orgId} and sandbox_of is not null limit 1`);
         if (sandboxRow.length) return { rol: 'owner', permisos: {}, esOwner: true };
         return { rol: 'anon', permisos: {}, esOwner: false };
     } catch {
@@ -2663,6 +2681,42 @@ export async function requirePerm(key: PermKey): Promise<Response | null> {
     });
 }
 
+/**
+ * Como `requirePerm`, pero basta con UNO de los permisos. Existe para endpoints que
+ * sirven a dos superficies con gates distintos: `/api/billing/connect/payouts` lo
+ * consume Ajustes › Cobros (permiso `ajustes`) Y el dashboard "Mi dinero" (permiso
+ * `cobranza`). Exigir solo uno de los dos dejaba a la otra superficie con un 403
+ * desde el navegador mientras la página se veía completa por SSR.
+ */
+export async function requirePermAny(keys: PermKey[]): Promise<Response | null> {
+    const m = await getMyMembership();
+    if (keys.some((key) => memberCan(m, key))) return null;
+    return new Response(JSON.stringify({ error: 'No tienes permiso para esta acción.' }), {
+        status: 403, headers: { 'Content-Type': 'application/json' },
+    });
+}
+
+
+/**
+ * Tira los agregados de dinero/cartera de una org tras un cambio que los invalida
+ * (cotización que cambia de estado, cobro registrado, promesa de pago editada).
+ *
+ * Sin esto, `getCobranza()` y `getCobros()` sirven hasta 30 s de datos viejos: marcar
+ * una cotización como cobrada la sacaba de la tabla en pantalla y un F5 inmediato la
+ * resucitaba. Con KPIs derivados de esas mismas lecturas el síntoma es peor, porque
+ * los totales también se contradicen entre sí.
+ *
+ * `invalidate` borra por PREFIJO, así que una sola llamada cubre todas las variantes
+ * por rango de fechas de la misma familia. Las claves con prefijo distinto
+ * (`analytics-rango:` vs `analytics:`) tienen que listarse aparte.
+ */
+export function invalidateMoneyCaches(orgId: string): void {
+    for (const prefix of [
+        `cobranza:${orgId}`, `cobros:${orgId}`, `serie-diaria:${orgId}`, `cfo:${orgId}`,
+        `pay-behavior:${orgId}`, `mrr-igualas:${orgId}`,
+        `analytics:${orgId}`, `analytics-rango:${orgId}`, `analytics-diagnosis:${orgId}`,
+    ]) invalidate(prefix);
+}
 
 // Plan crudo de la org activa.
 export async function getOrgPlan(): Promise<string> {
@@ -2672,48 +2726,118 @@ export async function getOrgPlan(): Promise<string> {
 }
 
 // ── DASHBOARD DE COBROS (/app/cobros) ──────────────────────────────────────────
-export async function getCobros() {
+export interface CobrosData {
+    /** Cobrado DENTRO del rango pedido (o histórico completo si no se pasa rango). */
+    totalCobrado: number;
+    /** Cobrado sin límite de fechas — el "desde siempre", independiente del selector. */
+    totalHistorico: number;
+    /** Número de operaciones cobradas en el rango (one-time + cuotas de igualas). */
+    txs: number;
+    methods: { method: string; monto: number; txs: number }[];
+    monthly: { ym: string; monto: number }[];
+    recent: { id: string; cobroId: string | null; folio: string; empresa: string; total: number; method: string; paidAt: string }[];
+}
+// ⚠️ NO agregar aquí un `paidAtISO` sin decidir su zona horaria a propósito. Se intentó y
+// se revirtió: `paid_at` es timestamptz, la sesión de Postgres corre en GMT y el proceso
+// de Node en America/Mexico_City, así que `to_char(...,'YYYY-MM-DD')` y el `fmtDate` de
+// `paidAt` discrepan un día completo en cualquier pago hecho después de las 18:00 hora de
+// México (COT-0009: to_char='2026-08-10' vs fmtDate='9 ago 2026'). Un campo con las dos
+// semánticas posibles y ninguna documentada es una trampa. El eje de tiempo agregado
+// (rango, serie mensual, serie diaria) usa la convención de Postgres/GMT de forma
+// consistente con getSerieDiaria() y con /app/informes; `paidAt` es solo para leerlo.
+
+/**
+ * Dinero que ENTRÓ, acotado a un rango de fechas.
+ *
+ * Sin `rango` devuelve la historia completa (comportamiento previo a ago 2026).
+ * El eje de tiempo es siempre `coalesce(paid_at, created_at)`, el mismo que ya
+ * usaban la serie mensual y los recientes.
+ */
+export async function getCobros(rango?: { desde: string; hasta: string }): Promise<CobrosData> {
     const orgId = await getActiveOrgId();
+    const key = rango ? `cobros:${orgId}:${rango.desde}:${rango.hasta}` : `cobros:${orgId}:all`;
+    return cached(key, 30, () => getCobrosUncached(orgId, rango));
+}
+
+async function getCobrosUncached(orgId: string, rango?: { desde: string; hasta: string }): Promise<CobrosData> {
     // "Cobrado" = dinero REALMENTE recibido. `paid_at` solo se escribe al cobrar
     // (webhook o pago manual). NO usar status='invoiced' como cobrado: una cotización
     // puede facturarse SIN estar pagada (approved→invoiced). Se incluye status='paid'
     // para cubrir pagos legacy previos a la columna paid_at. (La condición se inlinea
     // en cada query porque el sql de neon-serverless no compone fragmentos.)
-    // Las cinco lecturas pasan por el mismo withOrgTx: cotizaciones, clientes y
+    //
+    // El rango entra por CENTINELAS en vez de bifurcar cada query: sin rango, los
+    // límites abren tanto que el predicado no descarta nada, y hay una sola forma de
+    // SQL que mantener en vez de dos.
+    // ⚠️ El límite superior es `< hasta + 1 día`, NO `<= hasta`: paid_at es timestamptz
+    // y `<= hasta::date` compara contra la medianoche de ese día, recortando todo lo
+    // cobrado durante la jornada.
+    const desde = rango?.desde ?? '1970-01-01';
+    const hasta = rango?.hasta ?? '9999-12-31';
+    // Las lecturas pasan por el mismo withOrgTx: cotizaciones, clientes y
     // cotizacion_cobros tienen FORCE RLS y necesitan app.org_id incluso cuando el
     // rol de despliegue hoy tenga BYPASSRLS.
-    const [[c], methods, monthly, recent, recRows] = await withOrgTx(orgId,
-        sql`select coalesce(sum(total),0) as total_cobrado
-            from cotizaciones
-            where org_id = ${orgId} and (status = 'paid' or paid_at is not null)`,
+    const [[hist], methods, monthly, recent, recRows] = await withOrgTx(orgId,
+        // Histórico sin acotar — el KPI "desde siempre" no debe moverse con el selector.
+        sql`select
+                (select coalesce(sum(greatest(0, c.total - coalesce((
+                    select sum(cc.reembolsado_cents) / 100.0 from cotizacion_cobros cc
+                    where cc.cotizacion_id = c.id
+                ), 0))), 0) from cotizaciones c
+                  where c.org_id = ${orgId} and (c.status = 'paid' or c.paid_at is not null)) as directo,
+                (select coalesce(sum(greatest(0, co.monto - coalesce(co.reembolsado_cents, 0) / 100.0)),0) from cotizacion_cobros co
+                  join cotizaciones c on c.id = co.cotizacion_id
+                  where co.org_id = ${orgId} and co.status = 'pagado' and c.es_recurrente is true) as recurrente`,
         sql`select coalesce(payment_method, 'otro') as method,
-                   sum(total) as monto, count(*) as txs
-            from cotizaciones
-            where org_id = ${orgId} and (status = 'paid' or paid_at is not null)
+                   sum(greatest(0, c.total - coalesce((
+                       select sum(cc.reembolsado_cents) / 100.0 from cotizacion_cobros cc
+                       where cc.cotizacion_id = c.id
+                   ), 0))) as monto, count(*) as txs
+            from cotizaciones c
+            where c.org_id = ${orgId} and (c.status = 'paid' or c.paid_at is not null)
+              and coalesce(c.paid_at, c.created_at) >= ${desde}::date
+              and coalesce(c.paid_at, c.created_at) < (${hasta}::date + 1)
             group by coalesce(payment_method, 'otro')
-            order by sum(total) desc`,
-        sql`select to_char(date_trunc('month', coalesce(paid_at, created_at)), 'YYYY-MM') as ym, sum(total) as monto
-            from cotizaciones
-            where org_id = ${orgId} and (status = 'paid' or paid_at is not null)
+            order by monto desc`,
+        sql`select to_char(date_trunc('month', coalesce(c.paid_at, c.created_at)), 'YYYY-MM') as ym,
+                   sum(greatest(0, c.total - coalesce((
+                       select sum(cc.reembolsado_cents) / 100.0 from cotizacion_cobros cc
+                       where cc.cotizacion_id = c.id
+                   ), 0))) as monto
+            from cotizaciones c
+            where c.org_id = ${orgId} and (c.status = 'paid' or c.paid_at is not null)
+              and coalesce(c.paid_at, c.created_at) >= ${desde}::date
+              and coalesce(c.paid_at, c.created_at) < (${hasta}::date + 1)
             group by 1 order by 1`,
-        sql`select c.id, c.folio, c.total, coalesce(c.payment_method, 'otro') as payment_method,
+        sql`select c.id, c.folio,
+                   (select cc.id from cotizacion_cobros cc
+                     where cc.cotizacion_id = c.id and cc.status = 'pagado'
+                       and cc.stripe_payment_intent_id is not null
+                     order by coalesce(cc.paid_at, cc.created_at) desc limit 1) as cobro_id,
+                   greatest(0, c.total - coalesce((select sum(cc.reembolsado_cents) / 100.0
+                       from cotizacion_cobros cc where cc.cotizacion_id = c.id), 0)) as total,
+                   coalesce(c.payment_method, 'otro') as payment_method,
                    coalesce(c.paid_at, c.created_at) as paid_at, cl.empresa
             from cotizaciones c left join clientes cl on cl.id = c.cliente_id
             where c.org_id = ${orgId} and (c.status = 'paid' or c.paid_at is not null)
+              and coalesce(c.paid_at, c.created_at) >= ${desde}::date
+              and coalesce(c.paid_at, c.created_at) < (${hasta}::date + 1)
             order by coalesce(c.paid_at, c.created_at) desc limit 15`,
         // Ingreso de IGUALAS recurrentes: cada cobro mensual es una fila 'pagado'
         // y nunca marca cotizaciones.paid_at. Ambos universos son disjuntos.
-        sql`select co.id, co.monto, coalesce(co.payment_method, 'tarjeta') as payment_method,
+        sql`select co.id, c.id as quote_id,
+                   greatest(0, co.monto - coalesce(co.reembolsado_cents, 0) / 100.0) as monto,
+                   coalesce(co.payment_method, 'tarjeta') as payment_method,
                    coalesce(co.paid_at, co.created_at) as paid_at,
                    to_char(date_trunc('month', coalesce(co.paid_at, co.created_at)), 'YYYY-MM') as ym,
                    c.folio, cl.empresa
             from cotizacion_cobros co
             join cotizaciones c on c.id = co.cotizacion_id
             left join clientes cl on cl.id = c.cliente_id
-            where co.org_id = ${orgId} and co.status = 'pagado' and c.es_recurrente is true`,
+            where co.org_id = ${orgId} and co.status = 'pagado' and c.es_recurrente is true
+              and coalesce(co.paid_at, co.created_at) >= ${desde}::date
+              and coalesce(co.paid_at, co.created_at) < (${hasta}::date + 1)`,
     );
-
-    const recTotal = recRows.reduce((s: number, r: any) => s + Number(r.monto), 0);
 
     // Fusiona métodos.
     const methodMap = new Map<string, { monto: number; txs: number }>();
@@ -2733,30 +2857,56 @@ export async function getCobros() {
     // Fusiona recientes (los 15 más nuevos entre one-time e igualas).
     const recentMerged = [
         ...recent.map((r: any) => ({
-            id: r.id as string, folio: r.folio as string,
+            id: r.id as string, cobroId: (r.cobro_id as string) || null, folio: r.folio as string,
             empresa: (r.empresa as string) || 'Sin cliente',
-            total: Number(r.total), method: r.payment_method as string, paidAtRaw: r.paid_at,
+            total: Number(r.total), method: r.payment_method as string,
+            paidAtRaw: r.paid_at,
         })),
         ...recRows.map((r: any) => ({
-            id: r.id as string, folio: `${r.folio} · iguala`,
+            id: r.quote_id as string, cobroId: r.id as string, folio: `${r.folio} · iguala`,
             empresa: (r.empresa as string) || 'Sin cliente',
-            total: Number(r.monto), method: r.payment_method as string, paidAtRaw: r.paid_at,
+            total: Number(r.monto), method: r.payment_method as string,
+            paidAtRaw: r.paid_at,
         })),
     ].sort((a, b) => new Date(b.paidAtRaw as any).getTime() - new Date(a.paidAtRaw as any).getTime()).slice(0, 15);
 
+    const methodList = [...methodMap.entries()]
+        .map(([method, v]) => ({ method, monto: v.monto, txs: v.txs }))
+        .sort((a, b) => b.monto - a.monto);
+
     return {
-        totalCobrado: Number(c?.total_cobrado || 0) + recTotal,
-        methods: [...methodMap.entries()]
-            .map(([method, v]) => ({ method, monto: v.monto, txs: v.txs }))
-            .sort((a, b) => b.monto - a.monto),
+        // El total del rango sale de los métodos ya fusionados: mismo universo, sin
+        // una query extra que pudiera divergir del desglose que se muestra al lado.
+        totalCobrado: methodList.reduce((s, m) => s + m.monto, 0),
+        totalHistorico: Number(hist?.directo || 0) + Number(hist?.recurrente || 0),
+        txs: methodList.reduce((s, m) => s + m.txs, 0),
+        methods: methodList,
         monthly: [...monthlyMap.entries()]
             .map(([ym, monto]) => ({ ym, monto }))
             .sort((a, b) => a.ym.localeCompare(b.ym)),
         recent: recentMerged.map((r) => ({
-            id: r.id, folio: r.folio, empresa: r.empresa,
+            id: r.id, cobroId: r.cobroId, folio: r.folio, empresa: r.empresa,
             total: r.total, method: r.method, paidAt: fmtDate(r.paidAtRaw),
         })),
     };
+}
+
+/**
+ * MRR contratado de igualas (retainers). `cotizacion_suscripciones` guarda el monto
+ * mensual y el estado que sincroniza el webhook de la cuenta CONECTADA, así que esto
+ * es ingreso recurrente comprometido, no una proyección.
+ */
+export async function getMrrIgualas(): Promise<{ mrr: number; n: number; pastDue: number }> {
+    const orgId = await getActiveOrgId();
+    return cached(`mrr-igualas:${orgId}`, 60, async () => {
+        const [[row]] = await withOrgTx(orgId, sql`
+            select coalesce(sum(monto) filter (where estado in ('active','trialing')), 0) as mrr,
+                   count(*) filter (where estado in ('active','trialing')) as n,
+                   count(*) filter (where estado = 'past_due') as past_due
+            from cotizacion_suscripciones
+            where org_id = ${orgId} and estado in ('active','trialing','past_due')`);
+        return { mrr: Number(row?.mrr || 0), n: Number(row?.n || 0), pastDue: Number(row?.past_due || 0) };
+    });
 }
 
 // ── DESEMPEÑO DEL EQUIPO (/app/desempeno) ──────────────────────────────────────
@@ -2796,13 +2946,18 @@ export async function getDesempeno() {
             where org_id = ${orgId} and creado_por is not null
             group by creado_por`,
         // Cobrado directo (pago único/anticipo/saldo/cuotas) — misma semántica que getCobros().
-        sql`select creado_por, coalesce(sum(total),0) as cobrado
+        sql`select creado_por, coalesce(sum(greatest(0, total - coalesce((
+                    select sum(cc.reembolsado_cents) / 100.0
+                    from cotizacion_cobros cc
+                    where cc.org_id = ${orgId} and cc.cotizacion_id = cotizaciones.id
+                ), 0))),0) as cobrado
             from cotizaciones
             where org_id = ${orgId} and creado_por is not null and (status = 'paid' or paid_at is not null)
             group by creado_por`,
         // Cobrado de igualas recurrentes — nunca marca la cotización 'paid' (ver
         // getCobros()), así que se suma aparte desde cotizacion_cobros.
-        sql`select c.creado_por, coalesce(sum(co.monto),0) as cobrado
+        sql`select c.creado_por,
+                   coalesce(sum(greatest(0, co.monto - coalesce(co.reembolsado_cents, 0) / 100.0)),0) as cobrado
             from cotizacion_cobros co
             join cotizaciones c on c.id = co.cotizacion_id
             where co.org_id = ${orgId} and co.status = 'pagado' and c.es_recurrente is true and c.creado_por is not null
@@ -2962,8 +3117,8 @@ function buildPricingSuggestion(rows: any[], precioLista: number): PricingSugges
 // ── GUÍA DE CONFIGURACIÓN ─────────────────────────────────────────────────────
 export async function getSetupProgress() {
     const orgId = await getActiveOrgId();
-    const [o] = await sql`select logo_url, email_contacto, telefono, rfc, color_marca,
-        pdf_mensaje, pdf_condiciones, portal_bienvenida, stripe_charges_enabled from orgs where id = ${orgId}`;
+    const [[o]] = await withOrgTx(orgId, sql`select logo_url, email_contacto, telefono, rfc, color_marca,
+        pdf_mensaje, pdf_condiciones, portal_bienvenida, stripe_charges_enabled from orgs where id = ${orgId}`);
     // Señales de avance en un solo batch (mismas tablas multi-tenant → seguras bajo RLS).
     const [[{ np }], [{ nc }], [{ nq }], [{ nsent }], [{ ncobro }], [{ nmem }]] = await withOrgTx(orgId,
         sql`select count(*)::int as np from productos where org_id = ${orgId}`,
@@ -2994,7 +3149,7 @@ export async function getSetupProgress() {
         { group: 'venta',    id: 'cotizacion',    label: 'Crea tu primera cotización',  desc: 'El corazón de Cord — elige un cliente, agrega líneas y guarda. Puedes armarla con IA pegando el pedido. Te toma 2 minutos.', href: '/app/cotizaciones/nueva', done: Number(nq) > 0 },
         { group: 'venta',    id: 'enviar',        label: 'Envía tu primera cotización', desc: 'Compártela por link, correo o WhatsApp y mira EN VIVO cuándo tu cliente la abre y la aprueba con firma electrónica.', href: '/app/cotizaciones',       done: Number(nsent) > 0 },
         { group: 'dinero',   id: 'online_cobros', label: 'Activa los cobros en línea',  desc: 'Conecta tu cuenta bancaria de forma segura para recibir pagos con tarjeta o SPEI directo a tu banco — incluye anticipos.', href: '/app/ajustes/cobros',     done: !!o?.stripe_charges_enabled },
-        { group: 'dinero',   id: 'cobro',         label: 'Cobra y factura',             desc: 'Cobra en línea con Stripe o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
+        { group: 'dinero',   id: 'cobro',         label: 'Cobra y factura',             desc: 'Cobra en línea con Cord Pagos o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
         { group: 'equipo',   id: 'equipo',        label: 'Invita a tu equipo',          desc: 'Suma vendedores y define permisos por rol (cotizar, aprobar, cobranza…) para trabajar en conjunto.', href: '/app/ajustes/equipo',     done: Number(nmem) > 1 },
 
     ];

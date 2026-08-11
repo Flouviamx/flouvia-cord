@@ -8,7 +8,7 @@ Para clientes de planes Enterprise, ofrecemos transparencia total sobre nuestras
 
 ### Cumplimiento y Certificaciones
 
-- **PCI-DSS Nivel 1:** No almacenamos números de tarjetas de crédito completos. Todo fluye mediante tokens procesados directamente por los adquirentes (Stripe/Conekta).
+- **PCI-DSS:** No almacenamos números completos de tarjeta ni CVC. Los campos sensibles se aíslan y tokenizan directamente con procesadores certificados.
 - **Cifrado:** Los datos en reposo están cifrados usando AES-256. Las transmisiones en tránsito utilizan TLS 1.3.
 - **Auditorías Independientes:** Cord se somete a pruebas de penetración (*pentesting*) anuales por firmas de seguridad de terceros.
 

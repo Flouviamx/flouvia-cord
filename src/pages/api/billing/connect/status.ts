@@ -5,12 +5,16 @@ import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { retrieveAccount } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
+import { limitConnectRead } from '../../../../lib/connect-security';
+import { sanitizeStripeRequirements } from '../../../../lib/connect-fields';
 
-export const GET: APIRoute = async () => {
-    const denied = await requirePerm('ajustes');
+export const GET: APIRoute = async ({ request }) => {
+    const denied = await requirePerm('cobros_config');
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
+    const limited = await limitConnectRead(request, 'status', orgId);
+    if (limited) return limited;
     const [org] = await sql`select stripe_account_id, stripe_person_id from orgs where id = ${orgId}`;
     if (!org?.stripe_account_id) {
         // No es un error: simplemente aún no hay cuenta (el wizard arranca en cero).
@@ -26,7 +30,7 @@ export const GET: APIRoute = async () => {
             stripe_payouts_enabled = ${account.payouts_enabled},
             stripe_details_submitted = ${account.details_submitted},
             stripe_disabled_reason = ${account.requirements?.disabled_reason || null},
-            stripe_requirements = ${JSON.stringify(account.requirements)}
+            stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))}
             where id = ${orgId}`;
 
         return new Response(JSON.stringify({ 

@@ -16,6 +16,7 @@ import { sendNewDeviceAlertEmail } from '../../../../lib/auth-email';
 import { twoFactorVerifySchema, parseJsonBody } from '../../../../lib/validation';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
+import { decryptSecret } from '../../../../lib/crypto-secret';
 
 const CHALLENGE_COOKIE = 'cord_2fa_challenge';
 
@@ -44,8 +45,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
 
     try {
-        const rows = await sql`select totp_secret, totp_enabled, totp_backup_codes, email from users where id = ${userId} limit 1`;
-        if (!rows.length || !rows[0].totp_enabled || !rows[0].totp_secret) {
+        const rows = await sql`select totp_secret, totp_secret_enc, totp_enabled, totp_backup_codes, email from users where id = ${userId} limit 1`;
+        const totpSecret = rows.length
+            ? decryptSecret(rows[0].totp_secret_enc as string | null) || (rows[0].totp_secret as string | null)
+            : null;
+        if (!rows.length || !rows[0].totp_enabled || !totpSecret) {
             return new Response(JSON.stringify({ error: 'invalid_state' }), { status: 400 });
         }
         const user = rows[0] as any;
@@ -53,7 +57,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         let ok = false;
         let consumedBackupIndex = -1;
         if (parsed.data.code) {
-            ok = verifyTotp(user.totp_secret, parsed.data.code);
+            ok = verifyTotp(totpSecret, parsed.data.code);
         } else if (parsed.data.backupCode) {
             const codes: string[] = user.totp_backup_codes || [];
             consumedBackupIndex = matchBackupCode(codes, parsed.data.backupCode);

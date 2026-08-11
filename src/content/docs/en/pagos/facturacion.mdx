@@ -1,0 +1,46 @@
+---
+title: "Global Invoicing (CFDI 4.0)"
+description: "Discover how Cord issues international invoices and CFDI 4.0 in Mexico using its Global Fiscal Abstraction."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Invoicing and Fiscal Abstraction</h1>
+  <p class="page-subtitle">Automated tax receipts, from global commercial invoices to nominative CFDI 4.0 in Mexico.</p>
+</header>
+
+## Global Fiscal Abstraction
+
+Cord's payments system is designed to scale internationally thanks to the **FiscalFactory** design pattern.
+
+Depending on the country of your client and your own business, the fiscal engine decides which stamping provider to use and what type of receipt to generate (for example, *US Commercial Invoices* for transactions in the United States).
+
+## Issuing in Mexico: Nominative CFDI 4.0
+
+For users in Mexico, Cord uses the **Facturapi** API (`MexicoSatProvider`) under the hood to achieve 100% compliance with SAT requirements, completely invisibly and automatically.
+
+### Extracting data from your Catalog
+
+Unlike other systems that issue generic invoices to the "General Public" and then force the client to log into a self-invoicing portal, Cord is proactive.
+
+Cord automatically extracts the information from the individual client's profile (CRM):
+
+- **Tax Regime:** Extracted directly from the SAT Catalog assigned to that client.
+- **CFDI Use:** Determined based on the type of service or product, or explicitly defined in the client's profile.
+- **Zip Code (C.P.):** Validated against the tax status certificate registered on their record.
+
+### Automatic and Transparent Stamping
+
+1. As soon as the payment is confirmed (by Card or dynamic SPEI through Cord Payments), the system notifies Cord's server.
+2. The system assembles the payload with the quote's line items and the client's exact fiscal data (Regime, Zip Code, CFDI Use).
+3. The `FiscalFactory` is invoked and stamps the document with the SAT (nominative CFDI 4.0).
+4. The final XML and PDF files are sent directly to the client's email along with their payment receipt, closing the commercial cycle without any manual intervention from your team.
+
+## The CFDI for Cord Payments' fee
+
+In addition to the CFDI you stamp for your own customers, Cord issues its **own income CFDI** for the fee it charges on every Cord Payments transaction (see [Fees and advantages](/en/docs/pagos/condiciones)) — this is the tax receipt for the payment-processing service Cord provides you, not for your own sale.
+
+This receipt is issued **consolidated, in periodic batches** (not one per individual transaction) against the RFC and fiscal data registered on your account.
+
+<Callout type="warning">
+If your RFC, tax regime, or zip code aren't up to date on your profile, Cord's commission CFDI cannot be issued. Keep that information current in **Settings › Fiscal**.
+</Callout>

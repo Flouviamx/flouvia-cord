@@ -133,7 +133,7 @@ export async function stripe(
     path: string,
     params?: Record<string, string>,
     method: 'GET' | 'POST' | 'DELETE' = 'POST',
-    opts?: { version?: string; stripeAccount?: string },
+    opts?: { version?: string; stripeAccount?: string; idempotencyKey?: string },
 ): Promise<any> {
     if (!STRIPE_KEY) throw new Error('STRIPE_SECRET_KEY no configurada');
     const isGet = method === 'GET';
@@ -146,6 +146,7 @@ export async function stripe(
             ...(isGet ? {} : { 'Content-Type': 'application/x-www-form-urlencoded' }),
             ...(opts?.version ? { 'Stripe-Version': opts.version } : {}),
             ...(opts?.stripeAccount ? { 'Stripe-Account': opts.stripeAccount } : {}),
+            ...(opts?.idempotencyKey && !isGet ? { 'Idempotency-Key': opts.idempotencyKey } : {}),
         },
         body: isGet ? undefined : body,
     });
@@ -304,7 +305,8 @@ export async function createExternalAccount(accountId: string, fields: Record<st
 export async function stripeUpload(
     bytes: Buffer | ArrayBuffer | Uint8Array,
     filename: string,
-    purpose: 'identity_document' | 'additional_verification',
+    mime: 'image/jpeg' | 'image/png' | 'application/pdf',
+    purpose: 'identity_document' | 'additional_verification' | 'dispute_evidence',
     stripeAccount: string
 ): Promise<any> {
     if (!STRIPE_KEY) throw new Error('STRIPE_SECRET_KEY no configurada');
@@ -320,14 +322,10 @@ export async function stripeUpload(
     };
 
     const appendFile = (name: string, fname: string, fileBytes: Buffer | ArrayBuffer | Uint8Array) => {
-        let mime = 'application/octet-stream';
-        if (fname.toLowerCase().endsWith('.jpg') || fname.toLowerCase().endsWith('.jpeg')) mime = 'image/jpeg';
-        else if (fname.toLowerCase().endsWith('.png')) mime = 'image/png';
-        else if (fname.toLowerCase().endsWith('.pdf')) mime = 'application/pdf';
-
+        const safeName = fname.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120);
         body = Buffer.concat([
             body,
-            Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"; filename="${fname}"\r\nContent-Type: ${mime}\r\n\r\n`),
+            Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"; filename="${safeName}"\r\nContent-Type: ${mime}\r\n\r\n`),
             Buffer.from(fileBytes),
             Buffer.from('\r\n')
         ]);

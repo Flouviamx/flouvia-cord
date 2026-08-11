@@ -5,7 +5,7 @@ category: "Pagos y Depósitos"
 order: 2
 ---
 
-Cord opera bajo un modelo de Software-as-a-Service (SaaS), no cobramos comisiones por transacción.
+Cord combina una suscripción de software con una tarifa de procesamiento para los cobros que pasan por Cord Pagos.
 
 ### Modelo de Suscripción de Cord
 Pagas una cuota mensual por acceder a la plataforma (Planes Free, Starter, Pro, Scale, Developer). 
@@ -15,5 +15,14 @@ Esta cuota incluye:
 - Llamadas a la API y uso de Inteligencia Artificial.
 *Los excedentes de CFDI o IA se cobran a un costo fijo por folio/uso según tu plan.*
 
-### Comisiones de Procesamiento (Stripe)
-Cord utiliza **Stripe Connect** para rutear los cobros en línea directo a tu cuenta bancaria. Cord NO te cobra ninguna comisión porcentual adicional. Toda transacción que pase por el botón de pago está sujeta **exclusivamente a las tarifas de tu propia cuenta de Stripe** (ej. 3.6% + $3 MXN en México). Ese cobro lo realiza Stripe directamente antes de depositarte, no Cord. Si habilitas el pago por **transferencia bancaria manual** en tus ajustes, Cord mostrará tu CLABE y banco a tus clientes, y ese método de cobro tiene un costo del 0% (es completamente gratis).
+### Tarifas de Cord Pagos
+
+Para cobros en pesos mexicanos, la tarifa publicada es:
+
+- **Tarjeta:** 4% + $3 MXN + IVA.
+- **SPEI automático:** 1% + $7 MXN + IVA, con un máximo total de $588.12 MXN por operación.
+- **Igualas recurrentes con tarjeta:** 4% + $3 MXN + IVA. Esta cifra incluye el procesamiento de tarjeta y el margen de 0.4% de Cord.
+
+El comprador paga el importe completo y el dinero se liquida directamente en tu cuenta. Cord Pagos descuenta una sola tarifa mezclada y muestra el neto conciliado. Las transferencias manuales a tu CLABE habitual no pasan por Cord Pagos y no generan esta tarifa.
+
+Las organizaciones existentes conservan su condición anterior hasta aceptar expresamente la versión vigente de los términos de comisión en **Ajustes › Cobros**.

@@ -2,6 +2,7 @@
 import { sequence } from "astro:middleware";
 import { reqContext } from "./lib/context";
 import { LEGACY_ROUTES } from "./lib/informes";
+import { isAllowedMutationOrigin, isCsrfExemptWrite } from './lib/csrf-policy';
 
 // APIs que DEBEN seguir públicas (las llaman terceros sin sesión):
 //   /api/q/*         → vista pública del cliente (token secreto)
@@ -37,6 +38,13 @@ const OPS_PUBLIC_API_EXACT = [
 ];
 const PUBLIC_API_EXACT = ["/api/mcp", "/api/docs-search.json", ...OPS_PUBLIC_API_EXACT];
 
+// Exención CSRF independiente de "API pública". Solo entra aquí una mutación
+// que se autentica con una credencial que el navegador no adjunta por sí solo
+// (firma HMAC, Bearer o CRON_SECRET) y cuyo handler no debe leer cookies.
+//
+// No reutilizar PUBLIC_API_PREFIXES: ahí también viven /api/auth/*, /api/q/*,
+// /api/contacto/* y capture/*, que sí reciben llamadas de navegador y dependen
+// de cookies o tokens en URL; exentarlas convertiría una ruta pública en CSRF.
 // ── Rate limiting (in-memory, por IP) ────────────────────────────────────────
 // Ventana: 60 s. Límites:
 //   · APIs internas de lectura (GET):   200 req/min
@@ -174,13 +182,22 @@ import { getAppGates } from './lib/db';
 import { strictLimitResponse, strictRateLimit } from './lib/ratelimit';
 
 const mainHandler = async (context: any, next: any) => {
+    const path = context.url.pathname;
+    const method = context.request.method;
+    const csrfExempt = isCsrfExemptWrite(path, method);
+
     // Leer sesión desde la cookie 'cord_session' (Fase 3 - Custom Auth)
-    const sessionId = context.cookies.get(SESSION_COOKIE)?.value;
+    // Las rutas CSRF-exempt son deliberadamente ciegas a cookies. Si una ruta se
+    // agrega por error a la lista, pierde el contexto de usuario/org y falla 401
+    // dentro de su handler en vez de heredar autoridad ambiental del navegador.
+    const sessionId = csrfExempt ? undefined : context.cookies.get(SESSION_COOKIE)?.value;
     let userId = null;
+    let validatedSessionId: string | null = null;
     let sessionIdleMs = 0;
     if (sessionId) {
         const session = await validateSession(sessionId);
         userId = session?.userId || null;
+        validatedSessionId = session?.sessionId || null;
         sessionIdleMs = session?.idleMs ?? 0;
         if (session) {
             // La sesión se desliza en BD en cada visita (validateSession), pero el
@@ -204,15 +221,13 @@ const mainHandler = async (context: any, next: any) => {
             clearSessionCookies(context.cookies);
         }
     }
-    const orgId = context.cookies.get('cord_active_org')?.value || null; // Fase 3: Active Org picker
-
-    const path = context.url.pathname;
+    const orgId = csrfExempt ? null : (context.cookies.get('cord_active_org')?.value || null); // Fase 3: Active Org picker
 
     // IP confiable (x-real-ip/x-vercel-forwarded-for — no spoofeable por el
     // cliente). x-forwarded-for[0] SÍ es spoofeable: un atacante que lo manda
     // se reescribe su propio rate-limit y envenena audit_log/sessions.ip.
     const ip = trustedIp(context.request);
-    const isWrite = ["POST", "PATCH", "PUT", "DELETE"].includes(context.request.method);
+    const isWrite = ["POST", "PATCH", "PUT", "DELETE"].includes(method);
 
     // Prevención de CSRF: Validación de Origin para mutaciones.
     // Fail-CLOSED: antes, si el header Origin venía ausente, el chequeo se
@@ -221,30 +236,12 @@ const mainHandler = async (context: any, next: any) => {
     // Comparación por IGUALDAD EXACTA, no startsWith — "https://cordhq.app"
     // ya no matchea "https://cordhq.app.evil.com".
     //
-    // Excepción quirúrgica: el ACS de SAML (POST /api/auth/saml/<uuid>/acs)
-    // recibe un POST CROSS-ORIGIN real del IdP (Origin = el dominio del IdP,
-    // ej. https://idp.okta.com, o null según el IdP) — nunca puede coincidir
-    // con este origin, así que un 403 por Origin bloquearía TODO login SAML.
-    // La defensa CSRF de esa ruta específica no es el Origin: es la firma
-    // XML-DSig del IdP + InResponseTo contra saml_auth_requests + el
-    // RelayState/assertion_id de un solo uso (ver src/lib/saml.ts). El regex
-    // exige POST, un id con forma de UUID, y el sufijo exacto "/acs" — no
-    // abre ninguna otra ruta de escritura.
-    const SAML_ACS_PATH = /^\/api\/auth\/saml\/[0-9a-fA-F-]{36}\/acs\/?$/;
-    const isSamlAcs = context.request.method === "POST" && SAML_ACS_PATH.test(path);
-
-    if (isWrite && !isSamlAcs) {
+    if (isWrite && !csrfExempt) {
         const originHeader = context.request.headers.get("origin");
-        const allowedOrigins = new Set([context.url.origin]);
-        // Ops nunca confía en SITE como origen alterno. cordhq.app y
-        // ops.cordhq.app son same-site para cookies, así que permitir el origen
-        // principal aquí convertiría un XSS de la app en una mutación de Ops.
-        const isOpsMutation = path === '/ops' || path.startsWith('/ops/') ||
-            path === '/api/ops' || path.startsWith('/api/ops/');
-        if (!isOpsMutation && import.meta.env.SITE) {
-            allowedOrigins.add(import.meta.env.SITE as string);
-        }
-        if (!originHeader || !allowedOrigins.has(originHeader)) {
+        if (!isAllowedMutationOrigin(path, originHeader, context.url.origin, import.meta.env.SITE as string | undefined)) {
+            if (!originHeader && context.request.headers.get('sec-fetch-site') === 'same-origin') {
+                console.warn(`[csrf] escritura same-origin sin Origin bloqueada: ${method} ${path}`);
+            }
             return new Response(JSON.stringify({ error: "Invalid Origin (CSRF)" }), {
                 status: 403,
                 headers: { "Content-Type": "application/json" }
@@ -268,7 +265,7 @@ const mainHandler = async (context: any, next: any) => {
     const reportTarget = LEGACY_ROUTES[path as keyof typeof LEGACY_ROUTES];
     if (reportTarget) {
         const destination = new URL(reportTarget, context.url);
-        context.url.searchParams.forEach((value, key) => {
+            context.url.searchParams.forEach((value: string, key: string) => {
             if (!destination.searchParams.has(key)) destination.searchParams.append(key, value);
         });
         return context.redirect(`${destination.pathname}${destination.search}`, 302);
@@ -344,6 +341,22 @@ const mainHandler = async (context: any, next: any) => {
         }
     }
 
+    // Piso para APIs públicas que antes quedaban fuera del carril interno. El
+    // webhook conserva solo el piso global: Stripe puede enviar ráfagas grandes
+    // durante redeliveries y su firma ya autentica cada request.
+    const isStripeWebhook = path === '/api/stripe/webhook';
+    if (isApi && isPublicApi && !isStripeWebhook) {
+        if (!allow(ip, 'api-public', 300)) {
+            return new Response(
+                JSON.stringify({ error: 'Demasiadas peticiones. Intenta de nuevo en un minuto.' }),
+                {
+                    status: 429,
+                    headers: { 'Content-Type': 'application/json', 'Retry-After': '60' },
+                },
+            );
+        }
+    }
+
     // Rate limiting estricto para Auth (login/register) — el carril SAML tiene
     // SU PROPIO scope: 50 empleados detrás del mismo NAT saliente de la
     // oficina (o del propio IdP, que suele reenviar todo desde un puñado de
@@ -392,7 +405,7 @@ const mainHandler = async (context: any, next: any) => {
     // switcher) hace que getActiveOrgId() resuelva la org SANDBOX espejo. Solo
     // aplica al carril de SESIÓN (app + APIs internas): las rutas públicas y el
     // carril de API key (sk_test_) tienen su propia resolución.
-    const testMode = context.cookies.get("cord_test_mode")?.value === "1";
+    const testMode = !csrfExempt && context.cookies.get("cord_test_mode")?.value === "1";
 
     // Idioma: detectado del header Accept-Language del navegador — sin toggle
     // manual (decisión del producto). Aplica a /app/**, /q/[token] y correos
@@ -405,7 +418,7 @@ const mainHandler = async (context: any, next: any) => {
     // Exponer el userId Y la org activa a las queries (db.ts →
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
-    const response = await reqContext.run({ userId: userId ?? null, activeOrgId: orgId ?? null, testMode, locale }, async () => {
+    const response = await reqContext.run({ userId: userId ?? null, sessionId: validatedSessionId, activeOrgId: orgId ?? null, testMode, locale }, async () => {
         // Gates de entrada a /app, resueltos en una sola query (getAppGates).
         if (isApp && userId) {
             const gatePaths = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];

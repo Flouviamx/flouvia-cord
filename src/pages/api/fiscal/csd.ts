@@ -10,12 +10,16 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 import { facturapiConfigured, createOrganization, updateLegal, uploadCertificate, getLiveKey } from '../../../lib/fiscal/facturapi';
+import { encryptRequiredSecret, requireEncryption } from '../../../lib/crypto-secret';
+import { requireFreshAuth } from '../../../lib/step-up';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
+    const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
     if (!facturapiConfigured()) {
         return json({ error: 'Falta FACTURAPI_USER_KEY en el entorno (llave de cuenta de Facturapi). Agrégala en Vercel para habilitar la subida de CSD por cliente.' }, 503);
     }
+    try { requireEncryption(); } catch { return json({ error: 'El cifrado de secretos no está configurado.' }, 503); }
 
     let form: FormData;
     try { form = await request.formData(); } catch { return json({ error: 'Envía el CSD como multipart/form-data.' }, 400); }
@@ -69,7 +73,8 @@ export const POST: APIRoute = async ({ request }) => {
     // 4. Obtener y guardar la llave LIVE de la organización (timbra bajo su RFC).
     const lk = await getLiveKey(fapiOrgId);
     if (lk.ok && lk.data) {
-        await sql`update orgs set facturapi_live_key = ${lk.data} where id = ${orgId}`;
+        const encrypted = encryptRequiredSecret(lk.data);
+        await sql`update orgs set facturapi_live_key = null, facturapi_live_key_enc = ${encrypted} where id = ${orgId}`;
     }
 
     await sql`update orgs set csd_estado = 'cargado', csd_nombre = ${cer.name}, csd_subido_at = now() where id = ${orgId}`;
@@ -79,8 +84,9 @@ export const POST: APIRoute = async ({ request }) => {
 
 export const DELETE: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
+    const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
     const orgId = await getActiveOrgId();
-    await sql`update orgs set csd_estado = null, csd_nombre = null, csd_subido_at = null, facturapi_live_key = null where id = ${orgId}`;
+    await sql`update orgs set csd_estado = null, csd_nombre = null, csd_subido_at = null, facturapi_live_key = null, facturapi_live_key_enc = null where id = ${orgId}`;
     await logAudit(orgId, { accion: 'csd.eliminado', entidad: 'org', entidad_id: orgId, detalle: 'CSD desconectado', ip: reqIp(request) });
     return json({ ok: true });
 };

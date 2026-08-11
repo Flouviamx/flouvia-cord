@@ -1,0 +1,55 @@
+---
+title: "Disputas y contracargos"
+description: "Qué hacer cuando un cliente desconoce un cargo: cómo Cord arma tu evidencia automáticamente y cómo enviarla antes de que venza el plazo."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Disputas y contracargos</h1>
+  <p class="page-subtitle">Cuando un cliente desconoce un cargo con su banco, así es como te defiendes desde Cord.</p>
+</header>
+
+## Qué es una disputa
+
+Una disputa (o contracargo/chargeback) ocurre cuando el titular de una tarjeta le pide a su banco que revierta un cargo — porque no lo reconoce, dice que no recibió el producto o servicio, o por cualquier otro motivo. El banco retiene el monto mientras se resuelve, y tú tienes una ventana de tiempo limitada para presentar evidencia de que el cargo era legítimo.
+
+Cuando esto pasa con un cobro procesado por Cord Pagos, verás el caso en el widget **Disputas abiertas** del [dashboard de cobros](/docs/pagos/dashboard), y podrás entrar a su página de detalle en **Mis cobros › Disputas**.
+
+<Callout type="warning">
+Mientras la disputa está abierta, el monto queda retenido. Si la pierdes, ese dinero sale de tu saldo — junto con una cuota de disputa que cobra el procesador. La comisión que Cord cobró en el cobro original tampoco se devuelve. Ver [Tarifas y ventajas](/docs/pagos/condiciones).
+</Callout>
+
+## La página de la disputa
+
+Cada disputa tiene su propia página dedicada, con acceso restringido a quien tenga el permiso *Cobranza* o *Configurar cobros*. Ahí armas la evidencia que se envía como tu defensa:
+
+- **Datos del cliente:** nombre, correo y la IP desde la que se aprobó la cotización.
+- **Fecha del servicio:** cuándo se entregó o prestó lo que se cotizó.
+- **Descripción del producto o servicio.**
+- **Comunicación con el cliente:** el historial de comentarios sobre la cotización.
+- **Comprobante:** el documento que demuestra que el cliente aprobó y pagó.
+- **Cualquier otro texto de contexto** que fortalezca tu caso.
+
+### Autocompletado desde tus propios datos
+
+En vez de armar la evidencia desde cero, hay un botón para **autocompletar** que arma dos documentos automáticamente con datos que Cord ya tiene:
+
+1. **Comprobante de operación:** un PDF con el nombre de tu negocio, el folio de la cotización, el cliente, el monto, el método de pago, la fecha en que se pagó, y — lo más importante para ganar una disputa — **quién firmó la cotización, desde qué dirección IP y en qué fecha exacta**, tomado directamente de la firma electrónica que tu cliente dejó al aprobarla.
+2. **Comunicación con el cliente:** un PDF con el historial completo de comentarios que tu cliente dejó sobre la cotización, si los hay.
+
+Ambos se generan y se adjuntan al caso automáticamente — tú solo revisas que la información sea correcta antes de enviar.
+
+## Guardar borrador vs. enviar
+
+La evidencia se puede **guardar como borrador** cuantas veces quieras mientras la sigues completando — guardar un borrador no compromete nada ni envía información al procesador.
+
+<Callout type="warning">
+**Enviar la evidencia es irreversible.** Una vez que confirmas el envío, el caso queda cerrado a nuevas ediciones — no puedes agregar ni corregir nada después. Antes de enviar, revisa cada campo con cuidado.
+</Callout>
+
+Enviar la evidencia final es una acción sensible: además del permiso requerido, Cord te pide **volver a confirmar tu identidad** (contraseña o código de 2FA) justo antes de procesar el envío, incluso si tu sesión ya estaba iniciada.
+
+## Qué pasa después
+
+El procesador de pagos revisa la evidencia y el banco del cliente decide el resultado — este proceso puede tardar varias semanas y **no está garantizado**: Cord te da las herramientas para armar el caso lo mejor posible, pero la decisión final es del banco emisor, no de Cord. Verás el estado actualizado (ganada, perdida, o en revisión) en la misma página de la disputa.
+
+Todo el proceso — guardar borrador, autocompletar y enviar — queda registrado en la bitácora de auditoría de tu organización.

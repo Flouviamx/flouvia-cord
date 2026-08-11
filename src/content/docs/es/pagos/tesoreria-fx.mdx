@@ -1,30 +1,34 @@
 ---
 title: "Tesorería y FX Lock"
-description: "Aprende cómo Cord protege tu flujo de caja con herramientas predictivas, intereses moratorios automáticos y cobertura cambiaria a 30 días."
+description: "Dónde ver la predicción de flujo de caja de tu negocio, cómo funcionan los intereses moratorios automáticos y la cobertura cambiaria a 30 días."
 ---
 
 <header class="content-header">
   <h1 class="page-title">Tesorería Predictiva y FX Lock</h1>
-  <p class="page-subtitle">Mantén el control total de tu flujo de caja con predicciones a 90 días, cobro de mora automático y protección de divisas.</p>
+  <p class="page-subtitle">Predicción de flujo de caja, cobro de mora automático y protección de divisas — cada una en su propio lugar dentro de Cord.</p>
 </header>
 
-## Mi Dinero (Dashboard de Tesorería)
+## Dónde vive cada cosa
 
-La sección **Mi Dinero** (ubicada en `/app/cobros`) es el centro de mando financiero de tu empresa. No solo te muestra lo que ya cobraste, sino que utiliza algoritmos predictivos para calcular cuándo entrará el dinero pendiente.
+Este documento cubre tres herramientas financieras distintas de Cord que a veces se confunden entre sí porque todas tocan "dinero", pero viven en lugares distintos de la app:
 
-### Flujo de Caja a 90 días
+- **La predicción de flujo de caja** (a 90 días, con el AI CFO Insight) vive en **`/app/informes`**, no en Mis cobros. Es un informe de análisis, separado del [dashboard de Cord Pagos](/docs/pagos/dashboard) que muestra lo que ya cobraste.
+- **Los intereses moratorios** se configuran en **Ajustes › Aprobaciones**.
+- **El FX Lock** es una propiedad de cada cotización en el editor, no un panel aparte.
 
-El sistema de tesorería de Cord cruza los términos de crédito de tus facturas abiertas con el **historial de comportamiento de pago** de cada cliente. 
+## Flujo de Caja a 90 días
 
-Si un cliente tiene términos `Net 30` pero históricamente se retrasa 15 días en promedio, la predicción de flujo de caja ajustará automáticamente la entrada esperada de capital, dándote una visibilidad realista (AI CFO Insight) de tu liquidez a 90 días.
+En `/app/informes`, el informe de flujo cruza los términos de crédito de tus cotizaciones abiertas con el **historial de comportamiento de pago real** de cada cliente.
+
+Si un cliente tiene términos Net 30 pero históricamente se retrasa 15 días en promedio, la predicción ajusta la entrada esperada de capital con ese comportamiento real — no asume que todo se cobra exactamente en la fecha de vencimiento — dándote una visibilidad más realista de tu liquidez a 90 días.
 
 ## Intereses Moratorios Automáticos
 
-Para desincentivar el retraso en pagos B2B, Cord incluye un motor de penalización financiera configurable:
+Para desincentivar el retraso en pagos B2B, Cord incluye un motor de penalización financiera configurable desde **Ajustes › Aprobaciones**:
 
-- **Cron Mensual:** El primer día de cada mes a las 6:00 AM (UTC), un proceso automático revisa todas las cotizaciones y facturas vencidas.
-- **Interés Compuesto:** Si habilitas esta opción en Ajustes, el sistema aplica un interés moratorio mensual al capital adeudado. 
-- **Reflejo Inmediato:** El nuevo saldo adeudado se actualiza en el portal del cliente y en los enlaces dinámicos de pago de forma transparente.
+- **Cron mensual:** el primer día de cada mes, un proceso automático revisa todas las cotizaciones vencidas de tu cartera.
+- **Interés compuesto:** si configuraste una tasa de interés moratorio mayor a 0%, el sistema aplica ese interés mensual al capital adeudado.
+- **Reflejo inmediato:** el nuevo saldo adeudado se actualiza en el portal del cliente y en el checkout de Cord Pagos de forma transparente — el cliente ve el monto correcto a pagar, con el interés ya incluido.
 
 ## Cobertura Cambiaria (FX Lock)
 

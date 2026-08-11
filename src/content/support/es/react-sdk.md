@@ -4,7 +4,7 @@ description: "Embebe el cotizador de Cord en tu app de React con @flouviahq/elem
 category: "Desarrolladores"
 ---
 
-Para frontend, Cord no expone un SDK de "formularios de pago": el cobro con tarjeta lo procesa **tu propia cuenta de Stripe** a través del link público de la cotización. Lo que sí publicamos es **Cord Elements**, el cotizador embebible, disponible como Web Component y con un wrapper de React.
+Para frontend, Cord no expone un SDK de formularios de pago: el cobro con tarjeta se procesa a través del link público seguro de la cotización. Lo que sí publicamos es **Cord Elements**, el cotizador embebible, disponible como Web Component y con un wrapper de React.
 
 ### Instalación
 

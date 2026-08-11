@@ -5,13 +5,13 @@ category: "Payments & Deposits"
 order: 1
 ---
 
-To allow your clients to pay your quotes directly from the public link, you need to activate online payments. Cord integrates with **Stripe Connect** to process these payments, meaning the money goes directly to your bank account and Cord charges **0% commission**.
+To let clients pay directly from a quote link, activate Cord Payments. Funds settle directly into your bank account and the processing fee is shown before you accept the terms.
 
 ### Steps to activate payments
 
 1. In Cord, go to **Settings › Payments** (Ajustes › Cobros).
-2. You will see the **Online Payments** panel. Complete the embedded form (Stripe Onboarding) with your business details, legal representative, and the bank account where you wish to receive the funds.
-3. Once completed, Stripe will verify your information (KYC). This process is usually quick.
+2. Open the **Cord Payments** panel and provide your business, representative, and payout bank details.
+3. Cord Payments will verify the information. This process is usually quick.
 4. When the status changes to **"Payments active"** (Cobros activos), your clients will see the pay button on your quotes.
 
 ### Available payment methods
@@ -19,10 +19,10 @@ To allow your clients to pay your quotes directly from the public link, you need
 Once your account is active, you can enable or disable these methods from the same Settings screen:
 
 - **Credit and debit card**: Processed instantly (Visa, Mastercard, Amex).
-- **Automatic SPEI transfer**: Stripe generates a unique CLABE for each quote. When the client transfers, the quote is automatically marked as paid.
-- **Manual bank transfer**: Shows your regular CLABE. You must manually confirm when you receive the payment. (This method does not require Stripe).
+- **Automatic SPEI transfer**: Cord Payments creates dedicated instructions for each payment and reconciles it automatically.
+- **Manual bank transfer**: Shows your regular bank details. You confirm receipt manually; this method does not pass through Cord Payments.
 
 ### Fees and payout times
 
-- **Cord charges zero commission** for processing your payments. You only assume Stripe's standard processing fees.
-- Payout times depend entirely on Stripe and your history with them. Generally, funds are automatically transferred to your bank in a couple of business days.
+- Cord Payments charges the published method-specific fee plus tax. Review it in **Settings › Payments** before activation.
+- Payout timing depends on your account status and history. Funds are generally transferred automatically within a few business days.

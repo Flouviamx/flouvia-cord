@@ -1,6 +1,6 @@
 // POST /api/account/2fa/start — genera un secreto TOTP nuevo y lo devuelve
 // como QR (SVG) + secreto en texto (para captura manual). El secreto se
-// guarda en `users.totp_secret` pero `totp_enabled` queda en false hasta que
+// guarda cifrado en `users.totp_secret_enc` pero `totp_enabled` queda en false hasta que
 // /2fa/verify confirme un código real — un secreto sin confirmar es inerte
 // (no lo consulta ningún gate ni el login).
 export const prerender = false;
@@ -11,6 +11,7 @@ import { sql } from '../../../../lib/db';
 import { currentUserId } from '../../../../lib/context';
 import { generateTotpSecret, totpAuthUri } from '../../../../lib/totp';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
+import { encryptRequiredSecret } from '../../../../lib/crypto-secret';
 
 export const POST: APIRoute = async () => {
     const userId = currentUserId();
@@ -24,7 +25,13 @@ export const POST: APIRoute = async () => {
     if (user.totp_enabled) return new Response(JSON.stringify({ error: 'already_enabled' }), { status: 409 });
 
     const secret = generateTotpSecret();
-    await sql`update users set totp_secret = ${secret} where id = ${userId}`;
+    let encrypted: string;
+    try {
+        encrypted = encryptRequiredSecret(secret);
+    } catch {
+        return new Response(JSON.stringify({ error: 'encryption_unavailable' }), { status: 503 });
+    }
+    await sql`update users set totp_secret = null, totp_secret_enc = ${encrypted} where id = ${userId}`;
 
     const uri = totpAuthUri(secret, user.email as string, 'Cord');
     let qrSvg = '';

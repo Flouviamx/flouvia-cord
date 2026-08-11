@@ -20,6 +20,7 @@ import CookieConsent from '../components/CookieConsent.astro';
 import '../styles/charts.css';
 import '../styles/daterange.css';
 import '../styles/widgets.css';
+import '../styles/report-widgets.css';
 
 
 const L = currentLocale();
@@ -436,6 +437,21 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
                     <button class="cconf-btn cconf-ok" id="cconfOk" type="button">{t(L, 'layout.confirm.confirmar')}</button>
                 </div>
             </div>
+        </div>
+
+        <div class="stepup" id="cordStepUp" hidden role="dialog" aria-modal="true" aria-labelledby="stepupTitle">
+            <div class="stepup-backdrop" id="stepupBackdrop"></div>
+            <form class="stepup-panel" id="stepupForm">
+                <h3 id="stepupTitle">Confirma tu identidad</h3>
+                <p>Por seguridad, vuelve a escribir tu contraseña. Si tu cuenta no usa contraseña, escribe el código de tu app de autenticación.</p>
+                <label for="stepupCredential">Contraseña o código</label>
+                <input id="stepupCredential" type="password" autocomplete="current-password" required />
+                <span class="stepup-error" id="stepupError" role="alert" hidden>No pudimos confirmar tu identidad.</span>
+                <div class="stepup-actions">
+                    <button type="button" class="stepup-cancel" id="stepupCancel">Cancelar</button>
+                    <button type="submit" class="stepup-ok" id="stepupOk">Confirmar</button>
+                </div>
+            </form>
         </div>
 
         <!-- Overlay de atajos de teclado (se abre con ?) -->
@@ -1061,6 +1077,24 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     @keyframes cconf-fade { from { opacity: 0; } to { opacity: 1; } }
     @keyframes cconf-pop { from { opacity: 0; transform: translateY(16px) scale(0.96); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) { .cconf-panel, .cconf-backdrop { animation: none; } }
+
+    .stepup { position: fixed; inset: 0; z-index: 1010; display: flex; align-items: center; justify-content: center; padding: 1.2rem; }
+    .stepup[hidden] { display: none; }
+    .stepup-backdrop { position: absolute; inset: 0; background: rgba(10,25,47,0.42); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+    .stepup-panel { position: relative; width: min(420px, 100%); background: var(--surface, #fff); border-radius: 22px; padding: 1.7rem; box-shadow: 0 30px 70px -18px rgba(10,25,47,0.45); }
+    .stepup-panel h3 { margin: 0 0 0.45rem; color: var(--color-text); font-size: 1.06rem; letter-spacing: -0.02em; }
+    .stepup-panel p { margin: 0 0 1.2rem; color: var(--color-text-muted); font-size: 0.84rem; line-height: 1.55; }
+    .stepup-panel label { display: block; margin-bottom: 0.45rem; color: var(--color-text); font-size: 0.78rem; font-weight: 600; }
+    .stepup-panel input { box-sizing: border-box; width: 100%; border: 1px solid transparent; border-radius: 12px; background: var(--color-bg-soft); color: var(--color-text); padding: 12px 14px; font: inherit; }
+    .stepup-panel input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); background: var(--surface); }
+    .stepup-error { display: block; margin-top: 0.55rem; color: var(--color-danger); font-size: 0.76rem; }
+    .stepup-error[hidden] { display: none; }
+    .stepup-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.4rem; }
+    .stepup-actions button { border-radius: 999px; padding: 10px 22px; border: 1px solid transparent; font: inherit; font-size: 0.86rem; font-weight: 600; cursor: pointer; transition: transform 0.15s ease, opacity 0.2s ease; }
+    .stepup-actions button:active { transform: scale(0.97); }
+    .stepup-cancel { background: var(--color-bg-soft); color: var(--color-text); border-color: var(--color-border) !important; }
+    .stepup-ok { background: var(--color-blue-deep); color: #fff; }
+    .stepup-ok:disabled { opacity: 0.55; cursor: default; }
 
     /* ════════ Skeletons reutilizables ════════ */
     .skeleton { position: relative; overflow: hidden; background: rgba(10,25,47,0.06); border-radius: 8px; }
@@ -1941,6 +1975,53 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         };
     }
 
+    function initStepUp() {
+        const modal = document.getElementById('cordStepUp');
+        const form = document.getElementById('stepupForm') as HTMLFormElement | null;
+        const input = document.getElementById('stepupCredential') as HTMLInputElement | null;
+        const error = document.getElementById('stepupError');
+        const cancel = document.getElementById('stepupCancel');
+        const submit = document.getElementById('stepupOk') as HTMLButtonElement | null;
+        if (!modal || !form || !input || !error || !cancel || !submit) return;
+        let resolver: ((value: boolean) => void) | null = null;
+        const close = (value: boolean) => {
+            modal.setAttribute('hidden', '');
+            input.value = '';
+            error.setAttribute('hidden', '');
+            const current = resolver;
+            resolver = null;
+            current?.(value);
+        };
+        cancel.addEventListener('click', () => close(false));
+        document.getElementById('stepupBackdrop')?.addEventListener('click', () => close(false));
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            submit.disabled = true;
+            error.setAttribute('hidden', '');
+            try {
+                const credential = input.value;
+                const response = await fetch('/api/account/reauthenticate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: credential, code: credential }),
+                });
+                if (!response.ok) throw new Error();
+                close(true);
+            } catch {
+                error.removeAttribute('hidden');
+                input.select();
+            } finally {
+                submit.disabled = false;
+            }
+        });
+        (window as any).cordStepUp = (): Promise<boolean> => {
+            if (resolver) return Promise.resolve(false);
+            modal.removeAttribute('hidden');
+            setTimeout(() => input.focus(), 20);
+            return new Promise((resolve) => { resolver = resolve; });
+        };
+    }
+
     // ── Barra de progreso al navegar (feedback de carga) ──
     function initNavProgress() {
         const bar = document.getElementById('navProgress');
@@ -2289,7 +2370,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         });
     }
 
-    function initApp() { initCmdk(); initTheme(); initToasts(); initConfirm(); initNavProgress(); initNotifs(); initHelp(); initShortcuts(); initCreateMenu('tbCreate', 'tbCreateMenu'); initQuickTask(); }
+    function initApp() { initCmdk(); initTheme(); initToasts(); initConfirm(); initStepUp(); initNavProgress(); initNotifs(); initHelp(); initShortcuts(); initCreateMenu('tbCreate', 'tbCreateMenu'); initQuickTask(); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
     else initApp();
 </script>

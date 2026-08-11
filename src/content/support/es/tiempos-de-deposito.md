@@ -10,7 +10,7 @@ Dado que Cord no retiene fondos, los tiempos en los que el dinero llega a tu cue
 ### 1. Transferencia Directa (SPEI / Wire)
 Si el cliente te paga manualmente haciendo una transferencia bancaria a la CLABE que pusiste en los Ajustes de Cord, el dinero **entra directo a tu banco de forma inmediata**. Cord no está en medio de esta transacción. Tú debes entrar a Cord y marcar la cotización como pagada.
 
-### 2. Cobros en línea (Stripe Connect)
-Si activaste los cobros en línea en Cord y el cliente paga con tarjeta o SPEI automático, el dinero entra a tu cuenta conectada de Stripe.
-- En México, el tiempo de dispersión estándar (Payout Schedule) de Stripe suele ser de **T+3** a **T+7** días naturales, dependiendo del giro de tu negocio y la antigüedad de tu cuenta en Stripe.
-- Entra a la configuración de Stripe para visualizar tu calendario exacto de depósitos.
+### 2. Cobros en línea
+Si activaste Cord Pagos y el cliente paga con tarjeta o SPEI, el dinero entra a tu cuenta de pagos conectada.
+- El plazo depende del método, país, revisión de riesgo e historial de la cuenta; no debe asumirse una fecha universal.
+- Ve a **Cobros** para consultar el estado y la fecha estimada de cada depósito. Un cobro exitoso puede aparecer antes que su depósito bancario.

@@ -1,12 +1,16 @@
 ---
-title: "Payments Overview"
-description: "Discover how Cord automates your B2B collections with no hidden fees."
+title: "Cord Payments Overview"
+description: "Collect from your B2B customers by card, SPEI, or manual transfer directly from the cotización. Money straight to your bank, one transparent fee."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Payments Overview</h1>
-  <p class="page-subtitle">The financial engine of your B2B business. Collect via wire transfer or card without anyone holding your money.</p>
+  <h1 class="page-title">Cord Payments Overview</h1>
+  <p class="page-subtitle">The collection engine of your B2B business. Card, SPEI, or manual transfer, with the money going straight to your bank.</p>
 </header>
+
+**Cord Payments** is the system you use to accept card, SPEI, or manual-transfer payments directly from a cotización, with funds deposited into your own bank account within 2 to 7 business days. Cord charges a single fee per transaction, calculated transparently and visible before you charge — no hidden fees, no surprises. See the [full fee schedule](/en/docs/pagos/condiciones).
+
+*Last updated: August 11, 2026*
 
 <section class="docs-section split" style="margin-top: 40px; border-top: none; padding-top: 0; margin-bottom: 64px;">
   <div class="section-text">
@@ -67,15 +71,20 @@ description: "Discover how Cord automates your B2B collections with no hidden fe
 
 In traditional B2B, receiving a payment means: asking the client to email the transfer receipt, sales forwarding it to finance, and finance searching for the exact deposit in the bank portal the next day to cross-reference it against the quote.
 
-**Cord completely eliminates this process.** Our payment infrastructure is natively designed for B2B, automating reconciliation and sending the money straight to your bank account.
+**Cord Payments completely eliminates this process.** Our payment infrastructure is natively designed for B2B, automating reconciliation and sending the money straight to your bank account.
 
 ### What you will learn in this section:
 
-1. **Accepting a payment:** How dynamic CLABEs (SPEI wire transfers) and card payments work, and why the money goes straight to you without us touching a dime.
-2. **Advances and balances:** How to charge 50% today and the rest when you deliver the project.
-3. **Cash flow:** How to view the money you have in transit and what's projected for the next month.
+1. **[Accepting a payment](/en/docs/pagos/aceptar):** How dynamic CLABEs (SPEI wire transfers) and card payments work, and why the money goes straight to you.
+2. **[Fees and advantages](/en/docs/pagos/condiciones):** How much Cord charges for each method, and why.
+3. **[Deposits and balances](/en/docs/pagos/anticipos):** How to charge a percentage today and the rest later.
+4. **[Recurring retainers](/en/docs/pagos/igualas):** How to set up an automatic monthly charge.
+5. **[Refunds](/en/docs/pagos/reembolsos)** and **[disputes](/en/docs/pagos/disputas):** What to do when something doesn't go as expected.
 
 ## A "Direct-to-Bank" architecture
 
-Unlike generic payment gateways that hold your money and then do "payouts", Cord operates on **Stripe Connect Custom**.
-This means that when your client pays, the funds travel *directly* to your own bank account. Cord is not a middleman; it is the software layer that orchestrates the transaction.
+Unlike generic payment gateways that hold your money and then do periodic "payouts", Cord Payments uses **direct charges**: when your customer pays, the money travels straight to your own connected bank account — it never passes through a Cord account. Cord isn't a middleman for the money — it's the software layer that orchestrates the transaction, verifies your identity, calculates the fee, and issues the CFDI for that fee.
+
+<Callout type="info">
+This also means you're the merchant of record for every payment — not Cord. You're responsible to your customer for the goods or services sold, and to the bank for any chargeback. See [Fees and advantages](/en/docs/pagos/condiciones) for the details.
+</Callout>

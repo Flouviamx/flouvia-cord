@@ -4,19 +4,10 @@ description: "List of PANs to simulate 3D Secure flows and failures."
 category: "Developers"
 ---
 
-When you are testing collection with your **Stripe account in test mode**, do not use real credit cards. You can simulate successful payments using the test numbers provided by Stripe.
+Test card numbers only work in a separate development environment. They are not valid on the public link of a production organization.
 
-### Magic Cards (Test mode only)
+### Request development access
 
-Make sure you have your Stripe `sk_test_...` key configured in Cord.
-In the Stripe Checkout form, enter any future expiration date and any 3-digit CVC.
+Contact support to obtain an isolated environment and the current scenario matrix. There you can simulate approval, additional authentication, and declines without moving money or mixing records with production.
 
-**To simulate successful payments:**
-- Use the generic Visa card: `4242 4242 4242 4242`
-
-**To simulate bank declines:**
-Stripe provides specific numbers to simulate errors. Use any of these with any date and CVC:
-- Insufficient funds: `4000 0000 0000 0004`
-- Card reported stolen: `4000 0000 0000 0002`
-
-The flow reacts the same as in production: if the payment fails in Stripe's checkout, the quote does not move to *Paid*.
+Never paste full card numbers into tickets, chats, quote notes, or Cord fields.

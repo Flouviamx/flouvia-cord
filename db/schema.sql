@@ -544,6 +544,20 @@ create table if not exists stripe_events (
   type        text,
   received_at timestamptz not null default now()
 );
+alter table stripe_events add column if not exists claimed_at timestamptz;
+alter table stripe_events add column if not exists processed_at timestamptz;
+alter table stripe_events add column if not exists claim_token text;
+alter table stripe_events add column if not exists attempt_count int not null default 0;
+alter table stripe_events add column if not exists last_error text;
+create index if not exists idx_stripe_events_processing on stripe_events(processed_at, claimed_at);
+
+create table if not exists platform_health (
+  key             text primary key,
+  last_success_at timestamptz,
+  last_alert_at   timestamptz,
+  metadata        jsonb not null default '{}'::jsonb,
+  updated_at      timestamptz not null default now()
+);
 
 -- ── Stripe Connect Custom (Onboarding API MX) ────────────────────────────────
 alter table orgs add column if not exists stripe_payouts_enabled boolean not null default false;
@@ -552,7 +566,19 @@ alter table orgs add column if not exists stripe_disabled_reason text;
 alter table orgs add column if not exists stripe_requirements jsonb;
 alter table orgs add column if not exists stripe_person_id text;
 alter table orgs add column if not exists stripe_business_type text;
-
+alter table orgs add column if not exists checkout_v2 boolean not null default false;
+alter table orgs add column if not exists fee_enabled boolean not null default false;
+alter table orgs add column if not exists fee_plan text not null default 'legacy_zero';
+alter table orgs add column if not exists fee_terms_version text;
+alter table orgs add column if not exists fee_terms_accepted_at timestamptz;
+-- Las organizaciones existentes conservan 0%. Las creadas después de esta
+-- migración nacen en el checkout propio, pero la comisión solo se activa al
+-- aceptar sus términos en onboarding/configuración.
+alter table orgs alter column checkout_v2 set default true;
+alter table orgs alter column fee_plan set default 'standard_mx';
+-- Una org con comisión activa necesita método único para calcularla; corrige
+-- cualquier estado intermedio creado durante el rollout.
+update orgs set checkout_v2 = true where fee_enabled is true and checkout_v2 is false;
 
 -- ── Interés moratorio mensual (jun 2026) ──────────────────────────────────────
 -- El cron /api/cron/intereses corre el día 1 de cada mes. Por cada cotización
@@ -581,17 +607,11 @@ create index if not exists idx_intereses_org on intereses_moratorios(org_id, per
 -- Esto garantiza que, aunque hubiera un bug en el código, la base de datos
 -- rechazaría cualquier fila que no pertenezca al org_id activo.
 --
--- Sin FORCE por ahora: los handlers de /api/* usan sql directamente (sin
--- withOrgTx) y el rol dueño de la tabla bypasea RLS sin FORCE.
--- Una vez que los handlers sean actualizados, agregar:
---   alter table <tabla> force row level security;
--- por cada tabla para enforcement total.
+-- orgs / org_members se fuerzan en una segunda ventana mediante
+-- db/cord-force-bootstrap-rls.sql, después de observar el rol cord_app 48 h.
 --
--- orgs / org_members: sin FORCE — las queries de bootstrap en getActiveOrgId()
--- necesitan acceso sin contexto establecido aún.
---
--- cotizaciones / cotizacion_items: política dual — contexto de org_id O de
--- public_token (para páginas públicas /q/[token] y /embed/[token]).
+-- Los links públicos resuelven únicamente (cotización, organización) mediante
+-- cord_resolve_public_quote(). No existe una política RLS basada en el token.
 --
 -- nullif(..., '') convierte string vacío → NULL, evitando error de cast ::uuid.
 -- NULL::uuid = NULL → "org_id = NULL" nunca es TRUE → fail-closed.
@@ -617,11 +637,29 @@ alter table impuestos          enable row level security;
 alter table uso_periodo        enable row level security;
 alter table intereses_moratorios enable row level security;
 
+drop policy if exists "rls_orgs" on orgs;
 create policy "rls_orgs" on orgs
-  using (id = nullif(current_setting('app.org_id', true), '')::uuid);
+  using (
+    id = nullif(current_setting('app.org_id', true), '')::uuid
+    or sandbox_of = nullif(current_setting('app.org_id', true), '')::uuid
+    or owner_id = nullif(current_setting('app.user_id', true), '')::uuid
+  )
+  with check (
+    id = nullif(current_setting('app.org_id', true), '')::uuid
+    or sandbox_of = nullif(current_setting('app.org_id', true), '')::uuid
+    or owner_id = nullif(current_setting('app.user_id', true), '')::uuid
+  );
 
+drop policy if exists "rls_org_members" on org_members;
 create policy "rls_org_members" on org_members
-  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or user_id = nullif(current_setting('app.user_id', true), '')::uuid
+  )
+  with check (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or user_id = nullif(current_setting('app.user_id', true), '')::uuid
+  );
 
 create policy "rls_productos" on productos
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
@@ -629,20 +667,23 @@ create policy "rls_productos" on productos
 create policy "rls_clientes" on clientes
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 
+drop policy if exists "rls_cotizaciones" on cotizaciones;
 create policy "rls_cotizaciones" on cotizaciones
-  using (
-    org_id = nullif(current_setting('app.org_id', true), '')::uuid
-    or public_token = nullif(current_setting('app.public_token', true), '')
-  );
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 
+drop policy if exists "rls_cotizaciones_public_select" on cotizaciones;
+
+drop policy if exists "rls_cotizacion_items" on cotizacion_items;
 create policy "rls_cotizacion_items" on cotizacion_items
-  using (
-    cotizacion_id in (
-      select id from cotizaciones
-      where org_id = nullif(current_setting('app.org_id', true), '')::uuid
-         or public_token = nullif(current_setting('app.public_token', true), '')
-    )
-  );
+  using (cotizacion_id in (
+    select id from cotizaciones
+    where org_id = nullif(current_setting('app.org_id', true), '')::uuid
+  ))
+  with check (cotizacion_id in (
+    select id from cotizaciones
+    where org_id = nullif(current_setting('app.org_id', true), '')::uuid
+  ));
 
 create policy "rls_eventos" on eventos
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
@@ -955,6 +996,28 @@ alter table orgs add column if not exists acepta_tarjeta boolean not null defaul
 alter table orgs add column if not exists acepta_transferencia boolean not null default false;
 alter table orgs add column if not exists banco_nombre text;
 alter table orgs add column if not exists banco_clabe text;
+alter table orgs add column if not exists banco_clabe_enc text;
+alter table orgs add column if not exists banco_clabe_last4 text;
+alter table orgs add column if not exists facturapi_live_key_enc text;
+alter table users add column if not exists totp_secret_enc text;
+alter table sessions add column if not exists reauthenticated_at timestamptz;
+update sessions set reauthenticated_at = created_at where reauthenticated_at is null;
+alter table webhooks add column if not exists secret_enc text;
+alter table webhooks add column if not exists secret_prev_enc text;
+alter table webhooks alter column secret drop not null;
+-- Los administradores conservan acceso a configuración de cobros. Otros roles
+-- no heredan el permiso por tener "ajustes"; solo se migra a quien ya operó
+-- Connect recientemente, con base en evidencia del audit log.
+update org_members m
+   set permisos = coalesce(m.permisos, '{}'::jsonb) || '{"cobros_config":true}'::jsonb
+ where m.rol = 'admin'
+    or exists (
+        select 1 from audit_log a
+         where a.org_id = m.org_id
+           and a.actor = m.user_id::text
+           and a.created_at >= now() - interval '90 days'
+           and (a.accion like 'billing.%' or a.accion like 'cord_pagos.%')
+    );
 alter table orgs add column if not exists banco_beneficiario text;
 alter table orgs add column if not exists cobro_spei_auto boolean not null default false;
 
@@ -977,14 +1040,23 @@ create table if not exists identity_capture_sessions (
   created_at        timestamptz not null default now(),
   expires_at        timestamptz not null
 );
+alter table identity_capture_sessions alter column token drop not null;
+alter table identity_capture_sessions add column if not exists token_hash text;
+create unique index if not exists uq_identity_capture_token_hash on identity_capture_sessions(token_hash) where token_hash is not null;
 create index if not exists idx_ics_org on identity_capture_sessions(org_id, created_at desc);
 
 alter table identity_capture_sessions enable row level security;
+drop policy if exists "rls_identity_capture_sessions" on identity_capture_sessions;
 create policy "rls_identity_capture_sessions" on identity_capture_sessions
   using (
     org_id = nullif(current_setting('app.org_id', true), '')::uuid
-    or token = nullif(current_setting('app.capture_token', true), '')
+    or token_hash = nullif(current_setting('app.capture_token_hash', true), '')
   );
+drop policy if exists "system_identity_capture_sessions" on identity_capture_sessions;
+create policy "system_identity_capture_sessions" on identity_capture_sessions
+  using (current_setting('app.scope', true) = 'system')
+  with check (current_setting('app.scope', true) = 'system');
+alter table identity_capture_sessions force row level security;
 
 -- ── Cobros parciales: anticipo / saldo / cuotas (jul 2026) ──────────────────
 -- Una cotización puede cobrarse en varias "rebanadas": anticipo + saldo (si el
@@ -1013,15 +1085,62 @@ create index if not exists idx_cotizacion_cobros_org on cotizacion_cobros(org_id
 create index if not exists idx_cotizacion_cobros_pi on cotizacion_cobros(stripe_payment_intent_id);
 
 alter table cotizacion_cobros enable row level security;
+drop policy if exists "rls_cotizacion_cobros" on cotizacion_cobros;
 create policy "rls_cotizacion_cobros" on cotizacion_cobros
-  using (
-    org_id = nullif(current_setting('app.org_id', true), '')::uuid
-    or cotizacion_id in (
-      select id from cotizaciones
-      where public_token = nullif(current_setting('app.public_token', true), '')
-    )
-  );
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table cotizacion_cobros force row level security;
+alter table cotizacion_cobros add column if not exists payment_failed_at timestamptz;
+alter table cotizacion_cobros add column if not exists payment_error_code text;
+alter table cotizacion_cobros add column if not exists metodo_pago text;
+alter table cotizacion_cobros add column if not exists application_fee_cents int;
+alter table cotizacion_cobros add column if not exists stripe_fee_cents int;
+alter table cotizacion_cobros add column if not exists fee_base_cents int;
+alter table cotizacion_cobros add column if not exists fee_iva_cents int;
+alter table cotizacion_cobros add column if not exists fee_total_cents int;
+alter table cotizacion_cobros add column if not exists neto_cents int;
+alter table cotizacion_cobros add column if not exists stripe_charge_id text;
+alter table cotizacion_cobros add column if not exists stripe_balance_transaction_id text;
+alter table cotizacion_cobros add column if not exists stripe_application_fee_id text;
+alter table cotizacion_cobros add column if not exists reembolsado_cents int not null default 0;
+alter table cotizacion_cobros add column if not exists reembolso_status text;
+alter table cotizacion_cobros add column if not exists refunded_at timestamptz;
+create unique index if not exists idx_cotizacion_cobros_org_payment_intent
+  on cotizacion_cobros(org_id, stripe_payment_intent_id) where stripe_payment_intent_id is not null;
+
+create table if not exists comisiones (
+  id                            uuid primary key default gen_random_uuid(),
+  org_id                        uuid not null references orgs(id) on delete cascade,
+  cobro_id                      uuid references cotizacion_cobros(id) on delete set null,
+  stripe_payment_intent_id      text not null,
+  stripe_charge_id              text,
+  stripe_balance_transaction_id text,
+  stripe_application_fee_id     text,
+  metodo_pago                   text not null,
+  moneda                        text not null default 'MXN',
+  monto_cents                   int not null,
+  fee_base_cents                int not null default 0,
+  fee_iva_cents                 int not null default 0,
+  fee_total_cents               int not null default 0,
+  stripe_fee_cents              int,
+  neto_vendedor_cents           int,
+  status                        text not null default 'pending',
+  refunded_cents                int not null default 0,
+  created_at                    timestamptz not null default now(),
+  updated_at                    timestamptz not null default now(),
+  unique (org_id, stripe_payment_intent_id)
+);
+create index if not exists idx_comisiones_org_created on comisiones(org_id, created_at desc);
+alter table comisiones enable row level security;
+drop policy if exists "rls_comisiones" on comisiones;
+create policy "rls_comisiones" on comisiones
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+drop policy if exists "system_comisiones" on comisiones;
+create policy "system_comisiones" on comisiones
+  using (current_setting('app.scope', true) = 'system')
+  with check (current_setting('app.scope', true) = 'system');
+alter table comisiones force row level security;
 
 -- % de anticipo requerido por cotización (null = sin anticipo, pago normal).
 alter table cotizaciones add column if not exists anticipo_pct numeric;
@@ -1032,7 +1151,7 @@ alter table orgs add column if not exists anticipo_default_pct numeric;
 -- Una cotización marcada `es_recurrente` (solo términos = contado, mutuamente
 -- excluyente con anticipo) NO se materializa como un cobro único: al autorizarla
 -- el cliente, se crea una Subscription de Stripe sobre la CUENTA CONECTADA del
--- vendedor (dinero directo a su banco, cero comisión de Cord) que cobra el total
+-- vendedor (dinero directo a su banco) que cobra el total
 -- automáticamente cada mes con la tarjeta guardada. Cada suscripción vive en
 -- cotizacion_suscripciones (una por cotización).
 alter table cotizaciones add column if not exists es_recurrente boolean default false;
@@ -1058,20 +1177,121 @@ create table if not exists cotizacion_suscripciones (
   created_at   timestamptz default now(),
   unique (cotizacion_id)                            -- una suscripción por cotización
 );
+alter table cotizacion_suscripciones add column if not exists application_fee_percent numeric;
 create index if not exists idx_cotizacion_suscripciones_cot on cotizacion_suscripciones(cotizacion_id);
 create index if not exists idx_cotizacion_suscripciones_org on cotizacion_suscripciones(org_id);
 create index if not exists idx_cotizacion_suscripciones_sub on cotizacion_suscripciones(stripe_subscription_id);
 
 alter table cotizacion_suscripciones enable row level security;
+drop policy if exists "rls_cotizacion_suscripciones" on cotizacion_suscripciones;
 create policy "rls_cotizacion_suscripciones" on cotizacion_suscripciones
-  using (
-    org_id = nullif(current_setting('app.org_id', true), '')::uuid
-    or cotizacion_id in (
-      select id from cotizaciones
-      where public_token = nullif(current_setting('app.public_token', true), '')
-    )
-  );
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table cotizacion_suscripciones force row level security;
+
+-- ── Reembolsos y contracargos de Cord Pagos (ago 2026) ─────────────────────
+-- El nonce de reembolso es de un solo uso, vive pocos minutos y se persiste
+-- únicamente como sha256. Evita doble clic y replays incluso entre instancias.
+create table if not exists refund_nonces (
+  id               uuid primary key default gen_random_uuid(),
+  org_id           uuid not null references orgs(id) on delete cascade,
+  cobro_id         uuid not null references cotizacion_cobros(id) on delete cascade,
+  nonce_hash       text not null unique,
+  max_amount_cents int not null check (max_amount_cents > 0),
+  expires_at       timestamptz not null,
+  consumed_at      timestamptz,
+  created_by       uuid references users(id) on delete set null,
+  created_at       timestamptz not null default now()
+);
+create index if not exists idx_refund_nonces_lookup on refund_nonces(org_id, cobro_id, expires_at);
+alter table refund_nonces enable row level security;
+drop policy if exists "rls_refund_nonces" on refund_nonces;
+create policy "rls_refund_nonces" on refund_nonces
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table refund_nonces force row level security;
+
+create table if not exists cobro_reembolsos (
+  id                 uuid primary key default gen_random_uuid(),
+  org_id             uuid not null references orgs(id) on delete cascade,
+  cobro_id           uuid not null references cotizacion_cobros(id) on delete cascade,
+  stripe_refund_id   text unique,
+  amount_cents       int not null check (amount_cents > 0),
+  currency           text not null default 'MXN',
+  status             text not null default 'pending',
+  reason             text,
+  manual             boolean not null default false,
+  failure_reason     text,
+  requested_by       uuid references users(id) on delete set null,
+  created_at         timestamptz not null default now(),
+  updated_at         timestamptz not null default now()
+);
+create index if not exists idx_cobro_reembolsos_org on cobro_reembolsos(org_id, created_at desc);
+create index if not exists idx_cobro_reembolsos_cobro on cobro_reembolsos(cobro_id);
+alter table cobro_reembolsos enable row level security;
+drop policy if exists "rls_cobro_reembolsos" on cobro_reembolsos;
+create policy "rls_cobro_reembolsos" on cobro_reembolsos
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table cobro_reembolsos force row level security;
+
+create table if not exists cobro_disputas (
+  id                    uuid primary key default gen_random_uuid(),
+  org_id                uuid not null references orgs(id) on delete cascade,
+  cobro_id              uuid references cotizacion_cobros(id) on delete set null,
+  stripe_dispute_id     text not null unique,
+  stripe_charge_id      text,
+  amount_cents          int not null default 0,
+  currency              text not null default 'MXN',
+  reason                text,
+  status                text not null,
+  evidence_due_at       timestamptz,
+  evidence_draft        jsonb not null default '{}'::jsonb,
+  evidence_submitted_at timestamptz,
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now()
+);
+create index if not exists idx_cobro_disputas_org on cobro_disputas(org_id, status, created_at desc);
+alter table cobro_disputas enable row level security;
+drop policy if exists "rls_cobro_disputas" on cobro_disputas;
+create policy "rls_cobro_disputas" on cobro_disputas
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table cobro_disputas force row level security;
+
+-- Borrador mensual para facturar la comisión de la plataforma. El cron solo
+-- cierra el periodo y alerta; el timbrado definitivo requiere revisión humana.
+create table if not exists comision_invoice_batches (
+  id             uuid primary key default gen_random_uuid(),
+  org_id         uuid references orgs(id) on delete restrict,
+  periodo        text not null,
+  currency       text not null default 'MXN',
+  fee_base_cents bigint not null default 0,
+  fee_iva_cents  bigint not null default 0,
+  total_cents    bigint not null default 0,
+  status         text not null default 'draft',
+  facturapi_id   text,
+  fiscal_uuid    text,
+  provider_data  jsonb not null default '{}'::jsonb,
+  invoice_error  text,
+  issued_at      timestamptz,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+alter table comision_invoice_batches add column if not exists org_id uuid references orgs(id) on delete restrict;
+alter table comision_invoice_batches add column if not exists fiscal_uuid text;
+alter table comision_invoice_batches add column if not exists provider_data jsonb not null default '{}'::jsonb;
+alter table comision_invoice_batches add column if not exists invoice_error text;
+alter table comision_invoice_batches add column if not exists issued_at timestamptz;
+alter table comision_invoice_batches drop constraint if exists comision_invoice_batches_periodo_key;
+create unique index if not exists idx_comision_invoice_batches_org_periodo
+  on comision_invoice_batches(org_id, periodo) where org_id is not null;
+alter table comision_invoice_batches enable row level security;
+drop policy if exists "system_comision_invoice_batches" on comision_invoice_batches;
+create policy "system_comision_invoice_batches" on comision_invoice_batches
+  using (current_setting('app.scope', true) = 'system')
+  with check (current_setting('app.scope', true) = 'system');
+alter table comision_invoice_batches force row level security;
 
 -- ── Desempeño por vendedor (jul 2026) ─────────────────────────────────────
 -- Quién creó cada cotización (clerk_user_id) — antes no se guardaba, así que
@@ -1255,6 +1475,89 @@ alter table mcp_idempotency enable row level security;
 create policy "rls_mcp_idempotency" on mcp_idempotency
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table mcp_idempotency force row level security;
+
+-- ── Resolutores estrechos para webhooks bajo un rol NOBYPASSRLS ────────────
+-- Solo revelan un org_id a partir de identificadores firmados del procesador.
+-- Toda lectura/escritura posterior debe volver a withOrgTx(org_id, ...).
+create or replace function cord_resolve_org_for_connected_account(p_account text)
+returns uuid
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select id from orgs
+   where p_account is not null and p_account <> '' and stripe_account_id = p_account
+   limit 1
+$$;
+
+create or replace function cord_demo_org_id()
+returns uuid
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select id from orgs where rfc = 'FERR010203XYZ' limit 1
+$$;
+
+create or replace function cord_resolve_public_quote(p_token text)
+returns table(id uuid, org_id uuid)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select c.id, c.org_id from cotizaciones c
+   where p_token is not null and p_token <> '' and c.public_token = p_token
+   limit 1
+$$;
+
+create or replace function cord_pending_payment_count()
+returns bigint
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select count(*) from cotizacion_cobros
+   where status = 'pendiente' and stripe_payment_intent_id is not null
+$$;
+
+create or replace function cord_resolve_org_for_quote(p_quote uuid, p_account text default null)
+returns uuid
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select c.org_id
+    from cotizaciones c join orgs o on o.id = c.org_id
+   where c.id = p_quote
+     and (p_account is null or p_account = '' or o.stripe_account_id = p_account)
+   limit 1
+$$;
+
+create or replace function cord_resolve_org_for_billing(p_subscription text, p_customer text)
+returns uuid
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select id from orgs
+   where (p_subscription is not null and p_subscription <> '' and stripe_subscription_id = p_subscription)
+      or (p_customer is not null and p_customer <> '' and stripe_customer_id = p_customer)
+   limit 1
+$$;
+
+create or replace function cord_resolve_org_for_quote_subscription(p_subscription text, p_account text)
+returns uuid
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select org_id from cotizacion_suscripciones
+   where p_subscription is not null and p_subscription <> ''
+     and stripe_subscription_id = p_subscription
+     and stripe_account_id = p_account
+   limit 1
+$$;
+
+revoke all on function cord_resolve_org_for_connected_account(text) from public;
+revoke all on function cord_demo_org_id() from public;
+revoke all on function cord_resolve_public_quote(text) from public;
+revoke all on function cord_pending_payment_count() from public;
+revoke all on function cord_resolve_org_for_quote(uuid, text) from public;
+revoke all on function cord_resolve_org_for_billing(text, text) from public;
+revoke all on function cord_resolve_org_for_quote_subscription(text, text) from public;
 
 -- ══════════════════════════════════════════════════════════════════════════
 -- ── Auth hardening (ago 2026) ────────────────────────────────────────────
@@ -1694,3 +1997,22 @@ create policy "rls_sso_domains" on sso_domains
 -- de sesión (el ACS no tiene ninguno de los dos), están keyeadas por IDs
 -- opacos e impredecibles (uuid / sha256), y la protección real es que un
 -- atacante no puede adivinar la clave — no que Postgres filtre filas.
+
+-- Contador durable de rate limit compartido entre TODAS las instancias de
+-- Vercel. Respaldo siempre disponible de `strictRateLimit` (src/lib/ratelimit.ts)
+-- para las superficies fail-closed: login de Ops, reembolsos, evidencia de
+-- disputas, reautenticación y Stripe Connect. Sustituye la dependencia dura de
+-- Upstash, que nunca se provisionó y dejaba esas rutas en 503 permanente.
+--
+-- `id` es sha256 de la clave lógica: el texto original lleva IPs y correos y
+-- esta tabla no tiene razón para acumular ese PII. Sin RLS a propósito, mismo
+-- criterio ya documentado para sessions / *_challenges: es una tabla del carril
+-- de auth, se escribe ANTES de que exista contexto de org o de sesión, y su
+-- clave es un hash impredecible. Las filas vencidas las barre perezosamente el
+-- propio limitador (máximo una pasada por minuto, 500 filas).
+create table if not exists rate_limit_counters (
+  id       text        primary key,  -- sha256(clave lógica)
+  count    integer     not null default 0,
+  reset_at timestamptz not null
+);
+create index if not exists idx_rate_limit_counters_reset on rate_limit_counters(reset_at);

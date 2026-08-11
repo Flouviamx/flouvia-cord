@@ -29,4 +29,4 @@ Las respuestas fallidas regresan un objeto JSON plano con dos campos:
 - **429 Too Many Requests:** superaste el límite de peticiones. Ver [Límites de peticiones](/soporte/limites-peticiones).
 - **500 Internal Server Error:** error de nuestro lado (raro; contacta a soporte si persiste).
 
-> Nota: la API v1 no procesa cobros con tarjeta directamente (eso ocurre en el link público vía Stripe), así que no verás errores de tarjeta declinada en estas respuestas.
+> Nota: la API v1 no procesa cobros con tarjeta directamente; eso ocurre en el link público de Cord. Por ello no verás errores de tarjeta declinada en estas respuestas.

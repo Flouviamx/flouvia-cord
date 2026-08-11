@@ -42,3 +42,7 @@ The magic of Cord's architecture (based on independent PaymentIntents for each s
 2. **Second charge:** Weeks later, when you are ready to collect the balance, the client can **re-enter the exact same link** from the original quote. The system will detect that the upfront deposit has already been paid, and the payment button will have automatically mutated to charge the **remaining Balance**.
 
 You didn't have to send a second email, nor generate a "payment link for the balance". Everything lives in the same ecosystem.
+
+<Callout type="info">
+Each payment (the upfront deposit and the balance) is an independent transaction for fee purposes — Cord Payments charges its fee on each one separately, using the same fee schedule as a normal payment. See [Fees and advantages](/en/docs/pagos/condiciones).
+</Callout>

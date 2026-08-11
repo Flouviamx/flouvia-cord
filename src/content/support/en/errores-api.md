@@ -29,4 +29,4 @@ Failed responses return a flat JSON object with two fields:
 - **429 Too Many Requests:** you exceeded the request limit. See [Rate limits](/en/support/limites-peticiones).
 - **500 Internal Server Error:** an error on our side (rare; contact support if it persists).
 
-> Note: the v1 API does not process card charges directly (that happens on the public link via Stripe), so you won't see card-declined errors in these responses.
+> Note: the v1 API does not process card charges directly; that happens on the Cord public link. Therefore, card-decline errors do not appear in these responses.

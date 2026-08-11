@@ -5,7 +5,7 @@ category: "Cuenta y Equipo"
 order: 4
 ---
 
-Cord es un SaaS con modelo freemium: pagas una cuota mensual por usar la plataforma. **No cobramos comisión por transacción** — los cobros con tarjeta los procesa tu propia cuenta de Stripe.
+Cord es un SaaS con modelo freemium: pagas una cuota mensual por usar la plataforma. Los cobros procesados por Cord Pagos tienen una tarifa separada por método, visible y aceptada antes de activarlos.
 
 ### Los planes
 
@@ -22,10 +22,10 @@ Todos los precios incluyen IVA. El pago **anual** te da 2 meses gratis (pagas 10
 ### Cambiar de plan
 
 1. Ve a **Ajustes > Planes y cobranza > Suscripción** (`/app/ajustes/plan`).
-2. Elige el plan y el ciclo (mensual o anual). Se abre el checkout seguro de Stripe.
+2. Elige el plan y el ciclo (mensual o anual). Se abre el checkout seguro de facturación.
 3. El cambio aplica de inmediato; tu cuota incluida se ajusta al nuevo plan.
 
-Para cambiar tu tarjeta, ver recibos o cancelar, usa el botón **Gestionar facturación**, que abre el Portal de Cliente de Stripe.
+Para cambiar tu tarjeta, ver recibos o cancelar, usa el botón **Gestionar facturación**, que abre el portal seguro de tu suscripción.
 
 ### Excedentes (consumo por uso)
 

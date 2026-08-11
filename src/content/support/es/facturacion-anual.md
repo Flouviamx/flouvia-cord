@@ -10,14 +10,14 @@ Si ya usas Cord en plan mensual, puedes cambiar a **pago anual** y ahorrar: el c
 
 1. Ve a **Ajustes > Planes y cobranza > Suscripción** (`/app/ajustes/plan`).
 2. Activa el interruptor **Anual** en la selección de plan.
-3. Confirma en el checkout de Stripe. El cobro anual se hace por adelantado y tu suscripción queda renovando cada 12 meses.
+3. Confirma en el formulario seguro. El cobro anual se hace por adelantado y tu suscripción queda renovando cada 12 meses.
 
 ### Cambios de plan a mitad del año
 
-Si pagaste anual y luego subes de plan (por ejemplo de Profesional a Scale), Stripe **prorratea** automáticamente: te cobra solo la diferencia por el tiempo que resta del periodo, sin que tengas que hacer cálculos ni notas de crédito manuales.
+Si pagaste anual y luego subes de plan (por ejemplo de Profesional a Scale), Cord muestra y aplica el **prorrateo** correspondiente al tiempo restante antes de confirmar el cambio.
 
 ### ¿Necesitas tu factura (CFDI) del cobro?
 
-El cargo de tu suscripción lo hace Stripe. Si requieres CFDI por lo que le pagas a Cord, solicítalo a nuestro equipo en `soporte@flouvia.com` con tus datos fiscales y te lo emitimos.
+Si requieres CFDI por lo que le pagas a Cord, solicítalo a nuestro equipo en `soporte@flouvia.com` con tus datos fiscales y te lo emitimos.
 
-> No confundas esto con cobrar a *tus* clientes: Cord factura cotizaciones B2B (timbrado CFDI 4.0), no opera planes de suscripción recurrente para los clientes de tu negocio.
+> No confundas esto con cobrar a *tus* clientes: las igualas mensuales se configuran desde una cotización recurrente y tienen su propio ciclo.

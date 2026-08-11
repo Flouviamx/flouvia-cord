@@ -1,45 +1,55 @@
 ---
-title: "Configurar cobros"
-description: "Aprende cómo conectar tu cuenta bancaria y pasar el proceso de verificación (KYC) para empezar a cobrar en línea."
+title: "Conectar tu cuenta"
+description: "Los 8 pasos para verificar tu identidad, conectar tu cuenta bancaria y activar Cord Pagos — todo dentro de Cord, sin redirecciones."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Configurar cobros</h1>
-  <p class="page-subtitle">Conecta tu cuenta bancaria y pasa la verificación (KYC) nativa para empezar a cobrar en línea, sin redirecciones.</p>
+  <h1 class="page-title">Conectar tu cuenta</h1>
+  <p class="page-subtitle">Verifica tu identidad y conecta tu cuenta bancaria para empezar a cobrar en línea, sin salir de Cord.</p>
 </header>
 
-## Arquitectura In-House
+## Todo dentro de Cord
 
-A diferencia de las pasarelas de pago tradicionales que sacan a tus clientes a otra página o te obligan a usar paneles externos, Cord utiliza la arquitectura **Stripe Connect Custom**.
+A diferencia de los checkouts de pago tradicionales, que te sacan a otra página o te obligan a usar un panel externo, Cord Pagos vive **100% dentro de la app** — el asistente de conexión, la verificación de identidad y la administración de tu cuenta bancaria son todas pantallas nativas de Cord, con tu propia estética, no un formulario de un tercero.
 
-Esto significa que cuentas con una sub-cuenta propia de procesamiento de pagos que está conectada a tu cuenta bancaria, pero **toda la experiencia vive 100% dentro de Cord**, con una estética profesional y bajo tu propia marca . 
+Cord cobra una comisión por cada cobro que proceses (ver el detalle completo en [Tarifas y ventajas](/docs/pagos/condiciones)) — este documento cubre solo el proceso de conexión, no cuánto cuesta usarlo.
 
-Cord no cobra ninguna comisión propia, tú solo asumes las tarifas estándar de procesamiento.
+### Cómo empezar
 
-### Pasos para conectar tu cuenta
+1. Ve a **Ajustes › Cobros** dentro de la app.
+2. Si tu cuenta está en estado "Nuevo", haz clic en **Empezar verificación**.
+3. Completa el asistente de 8 pasos:
 
-1. Dirígete a **Ajustes > Cobros** dentro de la app.
-2. Si tu estado es **"nuevo"**, verás una pantalla de bienvenida.
-3. Haz clic en el botón de **Empezar verificación**. 
+| Paso | Qué captura |
+|---|---|
+| **1. Tipo de entidad** | Si tu negocio opera como persona física o persona moral, y el giro comercial (MCC). |
+| **2. Datos del negocio** | Razón social, RFC y los datos con los que facturas. |
+| **3. Dirección fiscal** | El domicilio fiscal registrado de tu negocio. |
+| **4. Identidad** | Datos personales del representante legal o de la persona física que opera la cuenta. |
+| **5. Dueños** | Información de cualquier dueño beneficiario con participación relevante en el negocio (requisito regulatorio antilavado). |
+| **6. Verificación** | Captura de identificación oficial y selfie en vivo — ver [LiveCapture](#verificación-de-identidad-con-livecapture) abajo. |
+| **7. Cuenta bancaria** | La CLABE interbancaria donde quieres recibir tus depósitos. |
+| **8. Términos** | Aceptas el tratamiento de tus datos y **la tabla de tarifas vigente de Cord Pagos** — es el mismo paso donde confirmas cuánto te va a cobrar Cord por procesar cada pago. |
 
-### Verificación de Identidad (KYC) con LiveCapture
+El asistente retoma exactamente donde lo dejaste si sales a la mitad — no tienes que volver a capturar lo que ya guardaste. Si Cord detecta que falta un requisito específico (por ejemplo, una foto que salió borrosa), te manda directo a ese paso en particular en vez de reiniciar todo el proceso.
 
-Por regulaciones financieras internacionales, es obligatorio verificar tu identidad y la legitimidad de tu negocio (KYC - Know Your Customer). 
+### Verificación de identidad con LiveCapture
 
-Cord utiliza un sistema nativo llamado **LiveCapture** que realiza esto en segundos y directamente desde tu navegador:
+Por regulaciones financieras, es obligatorio verificar tu identidad y la legitimidad de tu negocio (KYC — Know Your Customer). Cord usa un sistema nativo llamado **LiveCapture** que hace esto en segundos, directamente desde tu navegador o tu celular:
 
-- **Información Básica:** Ingresarás tu razón social (con la que facturas) y la CLABE interbancaria donde deseas recibir tus fondos automáticamente.
-- **Toma de Fotografía en Vivo:** El sistema solicitará permiso para acceder a tu cámara. Capturarás el frente y reverso de la identificación oficial (INE o Pasaporte) del representante legal, y finalmente tomarás una *selfie* para prueba de vida.
-- Todo ocurre sin subir archivos pesados ni abrir páginas de terceros.
+- El sistema solicita permiso para acceder a tu cámara.
+- Capturas el frente y reverso de tu identificación oficial (INE o pasaporte).
+- Tomas una selfie en vivo como prueba de vida.
+- Todo ocurre sin subir archivos ni abrir páginas de terceros — la cámara vive dentro de la misma pantalla de Cord.
 
 <Callout type="info">
-**Seguridad Criptográfica:** Cord no almacena ninguna de las fotografías o documentos sensibles en sus servidores. Las imágenes se transmiten de forma encriptada directamente a los servidores financieros nivel PCI-1 a través de canales seguros efímeros.
+**Tus fotos no se guardan en Cord.** Las imágenes de identificación y la selfie se transmiten cifradas directamente al sistema de verificación financiera, y Cord no las almacena de forma persistente en sus propios servidores. Tu CLABE sí se conserva, pero cifrada en reposo, para poder mostrarla y operar tu cuenta de depósito.
 </Callout>
 
 ## Estados de tu cuenta
 
-Dependiendo de tu progreso en el onboarding, tu cuenta de cobros mostrará distintos estados en la interfaz:
+Dependiendo de tu progreso, tu cuenta de cobros muestra distintos estados:
 
-- **Nuevo:** Aún no has iniciado el proceso. Ningún método automático estará disponible.
-- **Pendiente:** Has iniciado el proceso pero el sistema financiero está evaluando tus imágenes o requieres re-capturar alguna foto borrosa. Las tarjetas y SPEI siguen bloqueados.
-- **Activo:** ¡Todo listo! Tu identidad y cuenta CLABE están confirmadas. Ya puedes cobrar y el dinero fluirá automáticamente.
+- **Nuevo:** aún no iniciaste el proceso. Ningún método automático está disponible.
+- **Pendiente:** iniciaste el proceso pero la verificación sigue en curso, o falta algún requisito (por ejemplo, re-capturar una foto). Tarjeta y SPEI siguen bloqueados.
+- **Activo:** todo listo — tu identidad y tu cuenta bancaria están confirmadas. Ya puedes cobrar y el dinero fluye automáticamente a tu cuenta en cada depósito.

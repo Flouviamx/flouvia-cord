@@ -4,6 +4,98 @@
 > cotizaciones, link público `/q`, dashboard, cobranza, onboarding, dark mode, entorno
 > de prueba, chat, tiempo real. Extraído de `historial.md`. Orden: más reciente arriba.
 
+✅ **"Mi dinero" y Cobranza rediseñadas con widgets + reconciliación real de Stripe (ago 2026)** —
+   `/app/cobros` y `/app/cobranza` se quedaron atrás del salto estético de `/app/informes` y,
+   sobre todo, subutilizaban sus datos: cobros mostraba el volumen mensual como una **lista de
+   texto** (cero gráficas, sin rango de fechas, sin personalización) y enseñaba el bruto de Neon
+   junto al saldo de Stripe **sin nada que los reconciliara**; cobranza solo pintaba `C.items`
+   mientras `getCobranza()` calculaba `resumen`, `aging`, `clientes`, `promesas` y `payBehavior`
+   en cada request para tirarlos a la basura.
+   • **`/app/cobros` — 12 widgets** (`cord.cobros.v1`) con `DateRangePicker` propio: cobrado del
+     rango con delta contra el tramo anterior, **neto depositado** (comisión de Stripe y % efectivo),
+     saldo disponible, MRR de igualas, evolución diaria con serie comparativa (`line`), mix por
+     método (`donut`), **"A dónde va cada peso"** (`segbar`: neto/comisión/reembolsos/disputas),
+     depósitos, **salud de la cuenta Connect**, disputas, volumen mensual (`bar`, reemplaza la lista
+     de texto) y cobros recientes.
+   • **`src/lib/stripe-cobros.ts` (nuevo)** — read-model de solo lectura, separado de `billing.ts`
+     (que es cliente REST + planes + meters + mutaciones de KYC). Agrega `/v1/balance_transactions`
+     y `/v1/disputes`, que no existían. Reglas duras: **whitelist, nunca spread** (fuera
+     `individual`, `company`, `tos_acceptance`, el blob crudo de `requirements` —solo conteos—,
+     `external_accounts` completo —solo `{bank_name, last4}`— y `dispute.evidence`); todo en PESOS
+     con una sola conversión en el borde del DTO; caché 60–300 s por función; `rateLimit`
+     (**nunca `strictRateLimit`**, que en prod sin Upstash falla cerrado y mataría los widgets);
+     y `Promise.allSettled` por llamada con array `degraded`, en vez del `try/catch` que englobaba
+     las dos llamadas y las perdía juntas. ⚠️ `balance_transaction.net` YA trae la comisión
+     descontada — restar `fee` otra vez descuenta doble.
+   • **La salud de Connect NO cuesta llamada:** sale de las columnas que el webhook `account.updated`
+     ya mantiene en `orgs`. Solo cae a `retrieveAccount()` (cacheado 5 min) si faltan requisitos o el
+     banco. Deliberadamente **no** llama a `/api/billing/connect/status`, que ESCRIBE en `orgs` en
+     cada GET y está gateado por `ajustes`.
+   • **`/app/cobranza` — 9 widgets operativos** (`cord.cobranza.v1`, snapshot de hoy, sin selector de
+     fechas): vencido, vence esta semana, promesas por vencer, vencido sin gestión (los 4 KPIs
+     filtran la tabla al tocarlos), "Atiende primero" (monto × días vencido, con WhatsApp inline),
+     promesas abiertas, crédito excedido, aging compacto y la **tabla accionable completa** como
+     widget span 4. Deliberadamente NO replica la analítica de `/app/informes?r=cobranza` — eso
+     desharía la consolidación de ago 2026.
+   • **`getCobros(rango?)` parametrizada y cacheada** (antes sin caché, sin rango, un solo consumidor).
+     El rango entra por **centinelas** (`1970-01-01`/`9999-12-31`) en vez de bifurcar las 5 queries,
+     porque el `sql` de neon-serverless no compone fragmentos. ⚠️ El límite superior es
+     `< hasta::date + 1`, NO `<= hasta`: `paid_at` es timestamptz y `<=` compara contra la
+     medianoche, recortando todo lo cobrado durante la jornada — **verificado contra la BD real: con
+     `<=` se perdía 1 de 6 cobros**. `getMrrIgualas()` nueva. `loadCobros()` en `src/lib/cobros-data.ts`
+     es la fuente única que comparten la página (SSR) y `GET /api/cobros`.
+   • **3 bugs propios encontrados durante la verificación:** (1) `conectado` se derivaba de
+     `D.stripe?.connected`, pero el SSR pide `withStripe:false` → era SIEMPRE false y escondía los
+     widgets de Stripe con la cuenta activa; ahora el payload expone `connected` derivado de `orgs`.
+     (2) **Caí en la Regla 11 yo mismo:** las chips de "Estado de la cuenta", el desglose y la tabla
+     de recientes los INYECTA el JS, así que su CSS scopeado no los alcanzaba — las chips salían como
+     texto corrido sin formato. Movido a `<style is:global>` prefijado con `[data-cobros-shell]`.
+     (3) Los chips de filtro de cobranza se apilaban en vertical porque `report-widgets.css` declara
+     `.sec-head > div { flex-direction: column }` (para la columna título+subtítulo) y ganaba por
+     orden de fuente; corregido anclando el selector a `.sec-head > .cbz-filters`.
+   • **Seguridad:** se cerró la asimetría de permisos real — `/api/billing/connect/payouts` exigía
+     `ajustes` mientras `/app/cobros` gatea con `cobranza`, así que un miembro de cobranza veía el
+     saldo por SSR y se comía un 403 desde el navegador; ahora usa `requirePermAny(['ajustes',
+     'cobranza'])` (nuevo helper) y devuelve DTOs recortados en vez de los objetos crudos de Stripe.
+     `/api/cobros` gatea con `cobranza`, simétrico con la página.
+   • **`invalidate()` de `cache.ts` estaba exportado y NUNCA se usaba** — bug latente: marcar una
+     cotización como cobrada la quitaba de la pantalla y un F5 dentro de los 30 s de TTL la
+     resucitaba. Nuevo `invalidateMoneyCaches(orgId)` cableado en `PATCH /api/cotizaciones/[id]`
+     (cualquier transición de estado) y en los 3 métodos de `/api/promesas`.
+   • **Preservar la tabla accionable dentro de un widget** fue la parte de mayor riesgo:
+     (a) el `<dialog>` y `#cobErr` viven FUERA del `WidgetGrid` — el grid es `display:grid` y
+     `showModal()` convertiría el diálogo en grid item, y `pointer-events` es heredada, así que la
+     regla de modo edición lo dejaría inerte; (b) los listeners pasaron de uno-por-fila a **delegación**
+     (el `forEach` sobre `.t-row` moría al re-renderizar y duplicaba lógica con los widgets de lista);
+     (c) guarda `data-editing` en el handler porque `pointer-events:none` **no impide activar un botón
+     enfocado con Enter/Space** — sin ella se podía registrar un pago mientras se reordenaban widgets;
+     (d) `row.remove()` → `removeCotizacion(id)`, que limpia la cuenta de TODOS los widgets y recalcula
+     los KPIs, leyendo un `data-total-num` nuevo (`data-total` guarda el string formateado que consumen
+     WhatsApp y el modal, no se puede repurposear).
+   • ⚠️ **Se intentó y se revirtió un `paidAtISO`:** `to_char(...,'YYYY-MM-DD')` (Postgres en GMT) y el
+     `fmtDate` de `paidAt` (Node en America/Mexico_City) **discrepan un día completo** en cualquier
+     pago posterior a las 18:00 hora de México (caso real: `to_char='2026-08-10'` vs
+     `fmtDate='9 ago 2026'`). Un campo con dos semánticas posibles y ninguna documentada es una
+     trampa; el eje agregado (rango, serie mensual, serie diaria) usa la convención GMT de forma
+     consistente con `getSerieDiaria()` y `/app/informes`.
+   • **Fase 0 de infraestructura:** el vocabulario de widgets (`.report-kpi`, `.report-list`,
+     `.report-chart`, `.report-focus`, `.snapshot-tag`, `.flow-*`) vivía como `:global()` DENTRO del
+     `<style>` scopeado de `informes.astro`, así que **solo se descargaba en `/app/informes`**. Movido
+     a `src/styles/report-widgets.css` e importado por `AppLayout`. Verificado en el CSS compilado:
+     sale **una sola vez**.
+   • Verificado: `npm run build` limpio; 12/12 checks de SQL contra Neon real (incluida la prueba que
+     demuestra el bug del `<= hasta`); **28/28 checks funcionales con Playwright** contra las páginas
+     VIVAS con sesión real (estructura del grid, diálogo fuera del grid, rescue de `[hidden]`, filtros
+     que no destruyen data-attrs, modal interactivo, la guarda de modo edición, borrado global,
+     montaje de las 4 gráficas, CSS de DOM inyectado, y ausencia de campos sensibles de Stripe en el
+     DOM); **14/14 de permisos y sandbox** creando miembros temporales con permisos parciales reales
+     (y borrándolos al terminar). Paridad i18n ES/EN confirmada por script.
+   ⚠️ **Fuera de alcance, documentado:** persistir `balance_transactions` en Neon (tabla + webhooks
+     `payout.paid`/`payout.failed`) para histórico de comisiones sin pegarle a Stripe — requiere
+     migración y config manual en el dashboard de Stripe. Y traducir a i18n los `aging[].label` /
+     `histograma[].label` hardcodeados en español en `queries.ts` (los consumen 5 llamadores; las
+     páginas nuevas traducen por `key` e ignoran el `label`).
+
 ✅ **Consolidación de Informes — 3 regresiones de la extracción, corregidas (ago 2026)** —
    tras unificar la analítica en `/app/informes` (desplegable de informes, widgets
    personalizables, motor de pronóstico único), André reportó que **se rompió Inicio**:

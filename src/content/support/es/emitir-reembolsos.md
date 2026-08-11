@@ -5,16 +5,21 @@ category: "Pagos y Depósitos"
 order: 4
 ---
 
-El proceso de reembolsos (Refunds) involucra dos áreas: la pasarela de pagos (donde está el dinero) y Cord (donde está tu contabilidad y CFDI).
+Cord permite iniciar un reembolso total o parcial desde el mismo historial del cobro, sin abandonar la plataforma. La corrección fiscal sigue siendo un paso separado cuando el pago ya tiene CFDI.
 
-### Paso 1: Devolver el Dinero (Stripe)
-Cord no puede mover el dinero de vuelta a la tarjeta del cliente.
-1. Entra a tu [Dashboard de Stripe](https://dashboard.stripe.com/).
-2. Localiza el cargo exitoso y haz clic en **Reembolsar** (Refund).
-3. Stripe solicitará al banco emisor que devuelva el dinero.
+### Paso 1: Reembolsar el cobro en Cord
+
+1. Ve a **Cobros** y localiza el pago exitoso.
+2. Selecciona **Reembolsar**, indica el monto y confirma la operación.
+3. En pagos con tarjeta, Cord solicita la devolución al banco emisor y actualiza el importe neto cuando recibe el resultado.
+4. En transferencias SPEI, Cord crea una tarea manual con el monto y la referencia. La devolución debe completarse desde tu banco; Cord no simula una transferencia saliente.
+
+Solo el propietario o un miembro con permiso de reembolsos puede confirmar la operación. Por seguridad, Cord puede solicitar una verificación reciente de contraseña o segundo factor.
+
+La comisión de procesamiento mostrada antes de confirmar no se devuelve de forma predeterminada. Un reembolso tampoco reabre ni cancela automáticamente la cotización.
 
 ### Paso 2: Corrección Fiscal en Cord (Nota de Crédito)
-Emitir el reembolso en Stripe NO cancela la factura ante el SAT.
+Emitir un reembolso no cancela la factura ante el SAT.
 1. Ve a Cord en **Contabilidad > Facturas** y localiza la factura original.
 2. En el menú de opciones (tres puntos), selecciona **Generar Nota de Crédito** (Egreso).
 3. Cord vinculará automáticamente el UUID de la factura padre usando el tipo de relación `01`.

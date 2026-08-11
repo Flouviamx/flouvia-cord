@@ -1,0 +1,51 @@
+---
+title: "Reembolsos"
+description: "Cómo devolverle dinero a un cliente desde Mis cobros: reembolsos totales o parciales, la diferencia entre tarjeta y SPEI, y qué pasa con la comisión."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Reembolsos</h1>
+  <p class="page-subtitle">Devuélvele dinero a un cliente desde el mismo panel donde ves tus cobros — con confirmación de identidad de por medio.</p>
+</header>
+
+## Dónde reembolsar
+
+Los reembolsos viven en **Mis cobros** (`/app/cobros`), no en el detalle de la cotización. En el widget "Cobros recientes", cada fila que corresponde a un pago **conciliado a través de Cord Pagos** tiene un botón **Reembolsar**. Un cobro registrado manualmente (transferencia fuera de Cord Pagos) no tiene este botón — para ese caso, la devolución la manejas directamente con tu cliente por fuera de Cord.
+
+<Callout type="warning">
+Reembolsar requiere el permiso **Reembolsos**. Este permiso **no se otorga automáticamente** a los administradores del equipo — el dueño de la cuenta tiene que concederlo explícitamente a cada miembro que necesite hacer devoluciones, desde Ajustes › Equipo. Es intencional: mover dinero hacia afuera de la cuenta es una acción más sensible que administrarla.
+</Callout>
+
+## Cómo funciona
+
+1. Haz clic en **Reembolsar** en la fila del cobro.
+2. Se abre un diálogo con el monto disponible a reembolsar (puede ser menor al total, si ya hiciste un reembolso parcial antes) y un campo de motivo interno opcional.
+3. Ingresa el monto — puede ser el total o solo una parte — y confirma.
+4. Como es una acción que mueve dinero, Cord te pide **volver a confirmar tu identidad** (tu contraseña o tu código de 2FA) antes de ejecutar el reembolso, aunque tu sesión ya esté iniciada. Es el mismo mecanismo de "reautenticación" que protege otras acciones sensibles de la cuenta.
+5. El reembolso queda registrado en la bitácora de auditoría de tu organización, con el monto, el motivo (si lo diste) y quién lo autorizó.
+
+Puedes reembolsar el mismo cobro **más de una vez**, mientras el total acumulado no supere lo que se cobró originalmente — el diálogo siempre te muestra cuánto queda disponible.
+
+## Tarjeta vs. SPEI: dos flujos distintos
+
+### Tarjeta
+
+El reembolso se procesa **automáticamente** en cuanto lo confirmas — no requiere ningún paso manual de tu parte. El dinero regresa a la tarjeta original del cliente en los tiempos que maneja su banco.
+
+### SPEI
+
+Una transferencia SPEI **no se puede revertir automáticamente** — a diferencia de una tarjeta, no hay forma de "devolver" el dinero por el mismo canal sin que tú hagas una transferencia nueva. Por eso, un reembolso de un cobro por SPEI:
+
+1. Se registra en Cord como "reembolso pendiente, manual".
+2. Cord crea automáticamente una tarea en tu lista de pendientes recordándote transferir el monto de vuelta al cliente.
+3. Tú haces la transferencia por tu cuenta bancaria normal, y marcas el pendiente como resuelto.
+
+## Qué pasa con tu dinero
+
+- El monto reembolsado se descuenta de tu ingreso neto en todos los reportes de [Mis cobros](/docs/pagos/dashboard) — nunca queda "escondido" en el total cobrado.
+- **La comisión de procesamiento que Cord cobró en el cobro original no se devuelve.** Es un costo del procesamiento en sí, que ya ocurrió cuando se cobró la tarjeta o se recibió el SPEI — reembolsar el pago al cliente no revierte ese costo. Ver el detalle en [Tarifas y ventajas](/docs/pagos/condiciones).
+- Si el cobro reembolsado formaba parte de una cotización con [anticipo y saldo](/docs/pagos/anticipos), el reembolso solo afecta al cobro específico que elegiste — no al resto de las rebanadas de esa cotización.
+
+<Callout type="info">
+Un reembolso **no revierte el estado de la cotización** — sigue marcada como pagada. Si necesitas también anular la cotización en sí (por ejemplo, porque el pedido completo se canceló), hazlo desde el detalle de la cotización por separado.
+</Callout>

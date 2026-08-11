@@ -2,7 +2,7 @@
 // Corre db/schema.sql contra Neon y siembra la org demo (clerk_user_id='demo-user').
 // Re-ejecutable: ignora "ya existe" en DDL y no re-siembra si la org demo ya está.
 //
-//   node scripts/migrate.mjs           (lee DATABASE_URL de .env o del entorno)
+//   node scripts/migrate.mjs           (lee DATABASE_URL de .env.local, .env o del entorno)
 //   npm run db:migrate
 //   npm run db:migrate -- --reset      (borra y recrea todo, ¡destructivo!)
 
@@ -14,10 +14,11 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
 
-// ── Cargar DATABASE_URL desde .env si no está en el entorno ──
+// ── Cargar DATABASE_URL desde archivos locales si no está en el entorno ──
 function readVar(name) {
     if (process.env[name]) return process.env[name];
-    for (const f of ['.env', '.env.local']) {
+    // `.env.local` contiene secretos locales y debe prevalecer sobre `.env`.
+    for (const f of ['.env.local', '.env']) {
         const p = join(root, f);
         if (!existsSync(p)) continue;
         for (const line of readFileSync(p, 'utf8').split('\n')) {
@@ -34,7 +35,7 @@ function loadEnv() {
 
 const url = loadEnv();
 if (!url) {
-    console.error('\n✗ No encontré DATABASE_URL.\n  Crea un .env con: DATABASE_URL=postgres://...\n  (o córrelo con DATABASE_URL=... node scripts/migrate.mjs)\n');
+    console.error('\nERROR: No encontré DATABASE_URL.\n  Crea un .env.local con: DATABASE_URL_UNPOOLED=postgres://...\n  (o córrelo con DATABASE_URL_UNPOOLED=... node scripts/migrate.mjs)\n');
     process.exit(1);
 }
 

@@ -10,6 +10,7 @@ import { currentUserId } from '../../../../lib/context';
 import { verifyTotp, generateBackupCodes, hashBackupCode } from '../../../../lib/totp';
 import { parseJsonBody } from '../../../../lib/validation';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
+import { decryptSecret } from '../../../../lib/crypto-secret';
 
 const schema = z.object({ code: z.string().trim().regex(/^\d{6}$/) });
 
@@ -23,11 +24,12 @@ export const POST: APIRoute = async ({ request }) => {
     const parsed = await parseJsonBody(request, schema);
     if (!parsed.ok) return new Response(JSON.stringify({ error: parsed.error }), { status: parsed.status });
 
-    const [user] = await sql`select totp_secret, totp_enabled from users where id = ${userId} limit 1`;
-    if (!user?.totp_secret) return new Response(JSON.stringify({ error: 'no_pending_setup' }), { status: 409 });
+    const [user] = await sql`select totp_secret, totp_secret_enc, totp_enabled from users where id = ${userId} limit 1`;
+    const totpSecret = decryptSecret(user?.totp_secret_enc as string | null) || (user?.totp_secret as string | null);
+    if (!totpSecret) return new Response(JSON.stringify({ error: 'no_pending_setup' }), { status: 409 });
     if (user.totp_enabled) return new Response(JSON.stringify({ error: 'already_enabled' }), { status: 409 });
 
-    if (!verifyTotp(user.totp_secret as string, parsed.data.code)) {
+    if (!verifyTotp(totpSecret, parsed.data.code)) {
         return new Response(JSON.stringify({ error: 'invalid_code' }), { status: 401 });
     }
 

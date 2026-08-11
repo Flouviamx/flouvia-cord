@@ -1,273 +1,899 @@
 ---
-// Dashboard de Cobros (Apple-style / Borderless)
+// /app/cobros — "Mi dinero": el dinero que ENTRA vía Stripe Connect Custom.
+//
+// La página cuenta la historia completa del peso: se cobró en bruto (Neon) → Stripe se
+// quedó su comisión → quedó un neto → Stripe lo depositó en el banco. Antes solo se veía
+// el bruto y el saldo, sin nada que los reconciliara.
+//
+// SSR pinta todo lo que sale de Neon. Los tres widgets que dependen de
+// /v1/balance_transactions se rellenan después con una sola llamada del cliente: esa API
+// pagina y puede costar hasta 10 viajes en frío, así que meterla en el render le regalaría
+// a Stripe la latencia percibida de la página.
 import AppLayout from '../../layouts/AppLayout.astro';
-import { getCobros, getMyMembership, money, getOrg } from '../../lib/queries';
-import { getBalance, listPayouts } from '../../lib/billing';
+import DateRangePicker from '../../components/app/DateRangePicker.astro';
+import WidgetGrid from '../../components/app/WidgetGrid.astro';
+import { getMyMembership, money } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
+import { loadCobros } from '../../lib/cobros-data';
+import { addDaysISO, parseRangoParams } from '../../lib/rango';
 
 const L = currentLocale();
-const isEn = L === 'en';
+const es = L !== 'en';
 const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+
 const ME = await getMyMembership();
 const hasAccess = memberCan(ME, 'cobranza');
-const C = hasAccess ? await getCobros() : null;
-const hay = (C?.recent.length ?? 0) > 0;
+const canRefund = memberCan(ME, 'reembolsar');
 
-let balance = null;
-let payouts = null;
+const todayISO = new Date().toISOString().slice(0, 10);
+const minISO = addDaysISO(todayISO, -364);
+const rango = parseRangoParams(Astro.url.searchParams, { minISO, maxISO: todayISO, anchorISO: todayISO, fallback: '30' });
 
-let ORG: any = null;
-if (hasAccess) {
-    try {
-        ORG = await getOrg();
-        if (ORG.stripeAccountId && ORG.stripeChargesEnabled) {
-            balance = await getBalance(ORG.stripeAccountId);
-            payouts = await listPayouts(ORG.stripeAccountId);
-        }
-    } catch (e) {
-        console.error('Error fetching Stripe balance', e);
-    }
-}
+// withStripe: false — el SSR no toca la red de Stripe salvo el balance/payouts, que
+// llegan por la misma llamada del cliente. Ver la nota del encabezado.
+const D = hasAccess ? await loadCobros(rango, { withStripe: false, minISO }) : null;
+// ⚠️ Sale del payload (que lo deriva de `orgs`), NUNCA de `D.stripe`: con
+// `withStripe: false` ese campo es null y esconderíamos los widgets de Stripe aun
+// teniendo la cuenta activa.
+const conectado = !!D?.connected;
 
-const formatDate = (ts: number) => {
-    return new Date(ts * 1000).toLocaleDateString(isEn ? 'en-US' : 'es-MX', { day: '2-digit', month: 'short' });
-};
-const translateStatus = (s: string) => {
-    if (s === 'paid') return t(L, 'cbr.depositado');
-    if (s === 'in_transit') return t(L, 'cbr.camino');
-    return t(L, 'cbr.programado');
-};
+// Delta contra el mismo tramo anterior.
+const prev = D?.prev ?? null;
+const deltaPct = prev && prev.totalCobrado > 0
+    ? Math.round(((D!.neon.totalCobrado - prev.totalCobrado) / prev.totalCobrado) * 1000) / 10
+    : null;
 
-// Utilidad para color por método
-const methodColor = (method: string) => {
-    switch(method) {
-        case 'tarjeta': return '#6366f1'; // Indigo
-        case 'spei': return '#10b981'; // Emerald
-        default: return '#94a3b8'; // Slate
-    }
+const METODO_COLOR: Record<string, string> = { tarjeta: '#6366f1', spei: '#10b981', transferencia: '#0ea5e9', otro: '#94a3b8' };
+const metodoColor = (m: string) => METODO_COLOR[m] ?? METODO_COLOR.otro;
+const metodoLabel = (m: string) =>
+    m === 'tarjeta' ? t(L, 'cbr.metodo_tarjeta') : m === 'spei' ? t(L, 'cbr.metodo_spei') : t(L, 'cbr.metodo_manual');
+
+// 'YYYY-MM' → 'ago 2026'. Antes la serie mensual se pintaba con la clave cruda.
+const mesLabel = (ym: string) => {
+    const [y, m] = ym.split('-');
+    const d = new Date(Number(y), Number(m) - 1, 1);
+    return d.toLocaleDateString(es ? 'es-MX' : 'en-US', { month: 'short', year: '2-digit' });
 };
 
-const methodLabel = (method: string) => {
-    switch(method) {
-        case 'tarjeta': return t(L, 'cbr.metodo_tarjeta');
-        case 'spei': return t(L, 'cbr.metodo_spei');
-        default: return t(L, 'cbr.metodo_manual');
-    }
+const widgetLabels = {
+    drag: t(L, 'cbr.w_arrastrar'), up: t(L, 'cbr.w_subir'), down: t(L, 'cbr.w_bajar'),
+    resize: t(L, 'cbr.w_tamano'), remove: t(L, 'cbr.w_ocultar'),
+};
+
+const donutSlices = (D?.neon.methods ?? []).map((m) => ({
+    key: m.method, label: metodoLabel(m.method), value: m.monto, color: metodoColor(m.method),
+}));
+const barItems = (D?.neon.monthly ?? []).map((m) => ({ label: mesLabel(m.ym), value: m.monto }));
+
+// El <script> de abajo NO es is:inline (importa chart-mount), así que no puede llamar
+// t() en runtime. Mismo patrón que getQuoteCardRuntimeI18n → window.CORD_I18N_Q: las
+// cadenas se resuelven aquí y se inyectan ya traducidas.
+const CBR_T = {
+    depositado: t(L, 'cbr.depositado'), camino: t(L, 'cbr.camino'), programado: t(L, 'cbr.programado'),
+    fallo: es ? 'Falló' : 'Failed', cancelado: es ? 'Cancelado' : 'Canceled',
+    llegada: t(L, 'cbr.llegada'),
+    cobradoSub: t(L, 'cbr.cobrado_sub'), vsAnterior: t(L, 'cbr.vs_anterior'), historico: t(L, 'cbr.historico'),
+    opSingular: t(L, 'cbr.op_singular'), opPlural: t(L, 'cbr.op_plural'),
+    netoSub: t(L, 'cbr.neto_sub'), netoError: t(L, 'cbr.neto_error'), netoTruncado: t(L, 'cbr.neto_truncado'),
+    sinMovimientos: t(L, 'cbr.sin_movimientos'),
+    disponibleSub: t(L, 'cbr.disponible_sub'), reservadoSub: t(L, 'cbr.reservado_sub'),
+    destinoNeto: t(L, 'cbr.destino_neto'), destinoFee: t(L, 'cbr.destino_fee'),
+    destinoRefunds: t(L, 'cbr.destino_refunds'), destinoDisputes: t(L, 'cbr.destino_disputes'),
+    saludCobros: t(L, 'cbr.salud_cobros'), saludDepositos: t(L, 'cbr.salud_depositos'),
+    saludVerificacion: t(L, 'cbr.salud_verificacion'), saludActivos: t(L, 'cbr.salud_activos'),
+    saludInactivos: t(L, 'cbr.salud_inactivos'), saludCompleta: t(L, 'cbr.salud_completa'),
+    saludPendiente: t(L, 'cbr.salud_pendiente'), saludRequisitos: t(L, 'cbr.salud_requisitos'),
+    saludDeadline: t(L, 'cbr.salud_deadline'), saludRevision: t(L, 'cbr.salud_revision'),
+    saludBanco: t(L, 'cbr.salud_banco'), saludBancoSin: t(L, 'cbr.salud_banco_sin'),
+    saludBloqueada: t(L, 'cbr.salud_bloqueada'),
+    disputasSub: t(L, 'cbr.disputas_sub'), disputasNinguna: t(L, 'cbr.disputas_ninguna'),
+    disputaVence: t(L, 'cbr.disputa_vence'),
+    metodoTarjeta: t(L, 'cbr.metodo_tarjeta'), metodoSpei: t(L, 'cbr.metodo_spei'), metodoManual: t(L, 'cbr.metodo_manual'),
+    sinDatos: t(L, 'cbr.sin_datos'), sinDepositos: t(L, 'cbr.sin_depositos'),
+    errorActualizar: t(L, 'cbr.error_actualizar'),
+    bancoGenerico: es ? 'tu banco' : 'your bank',
+    refund: es ? 'Reembolsar' : 'Refund',
+    canRefund,
 };
 ---
 
 <AppLayout title={t(L, 'cbr.title')} page="cobros" heading={t(L, 'cbr.heading')}>
+    <Fragment slot="topbar-actions">
+        <div class="cbr-top-actions">
+            <DateRangePicker
+                minISO={minISO} maxISO={todayISO} initialKey={rango.key as any}
+                initialDesde={rango.desde} initialHasta={rango.hasta}
+                storageKey="cord.cobros.range.v1"
+            />
+            {hasAccess && <button type="button" class="cbr-edit-btn" id="cbrEditBtn">{t(L, 'cbr.personalizar')}</button>}
+            {hasAccess && <button type="button" class="cbr-edit-btn cbr-edit-done" id="cbrDoneBtn" hidden>{t(L, 'cbr.listo')}</button>}
+            {hasAccess && <button type="button" class="cbr-edit-btn" id="cbrResetBtn" hidden>{t(L, 'cbr.restablecer')}</button>}
+        </div>
+    </Fragment>
+
     {!hasAccess && (
-        <div class="cb-denied">
+        <div class="cbr-denied">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <h3>{t(L, 'cbr.sin_acceso_titulo')}</h3>
             <p>{t(L, 'cbr.sin_acceso_desc')}</p>
         </div>
     )}
 
-    {hasAccess && ORG && !ORG.stripeChargesEnabled && (
-        <section class="empty">
-            <h2>{t(L, 'cbr.vacio_config_titulo')}</h2>
-            <p>{t(L, 'cbr.vacio_config_desc')}</p>
-            <a href="/app/ajustes/cobros" class="empty-cta">{t(L, 'cbr.activar_cobros')}</a>
-        </section>
-    )}
-
-    {hasAccess && ORG && ORG.stripeChargesEnabled && !hay && (
-        <section class="empty">
-            <h2>{t(L, 'cbr.vacio_sin_cobros_titulo')}</h2>
-            <p>{t(L, 'cbr.vacio_sin_cobros_desc')}</p>
-            <a href="/app/cotizaciones/nueva" class="empty-cta">{t(L, 'cbr.crear_cotizacion')}</a>
-        </section>
-    )}
-
-    {hasAccess && ORG && ORG.stripeChargesEnabled && hay && C && (
-        <>
-            <div class="two-col-flat" style="padding-top: 1rem; border-bottom: 1px solid var(--color-border); margin-bottom: 2rem; padding-bottom: 2rem;">
-                <section class="kpis-section" style="display: flex; flex-direction: column; gap: 2rem; justify-content: center;">
-                    <div class="kpi">
-                        <span class="kpi-label">{t(L, 'cbr.total_cobrado')}</span>
-                        <span class="editorial kpi-num">{money(C.totalCobrado, 0)}</span>
+    {hasAccess && D && (
+        <div data-cobros-shell data-locale={L} data-connected={conectado ? '1' : ''}>
+        <WidgetGrid
+            id="cobrosWidgets" storageKey="cord.cobros.v1"
+            editButtonId="cbrEditBtn" doneButtonId="cbrDoneBtn" resetButtonId="cbrResetBtn"
+            trayTitle={t(L, 'cbr.widgets_ocultos')} resetConfirm={t(L, 'cbr.reset_confirm')}
+            labels={widgetLabels}
+        >
+            <section class="cbr-zone cbr-balance-zone" data-widget-zone="balance" aria-labelledby="cbrBalanceHeading">
+                <header class="cbr-zone-head">
+                    <div>
+                        <span>{t(L, 'cbr.zone_balance_eyebrow')}</span>
+                        <h2 id="cbrBalanceHeading">{t(L, 'cbr.zone_balance')}</h2>
                     </div>
-                    {balance && (
-                        <div style="display: flex; gap: 3rem;">
-                            <div class="kpi">
-                                <span class="kpi-label">{t(L, 'cbr.saldo_disponible')}</span>
-                                <span class="editorial kpi-num" style="font-size: 1.8rem;">{money((balance.available[0]?.amount || 0) / 100, 0)}</span>
-                            </div>
-                            <div class="kpi">
-                                <span class="kpi-label">{t(L, 'cbr.en_camino')}</span>
-                                <span class="editorial kpi-num" style="font-size: 1.8rem; color: var(--color-text-muted);">{money((balance.pending[0]?.amount || 0) / 100, 0)}</span>
-                            </div>
-                        </div>
-                    )}
-                </section>
+                    <p>{t(L, 'cbr.zone_balance_sub')}</p>
+                </header>
 
-                {payouts && payouts.data && payouts.data.length > 0 && (
-                    <section class="list-section">
-                        <div class="sec-head" style="margin-bottom: 0;"><h2 class="sec-title">{t(L, 'cbr.depositos')}</h2></div>
-                        <div class="method-list">
-                            {payouts.data.slice(0, 4).map((p: any) => (
-                                <div class="method-row">
-                                    <div class="m-info">
-                                        <span class="m-dot" style={`background:${p.status === 'paid' ? '#10b981' : p.status === 'in_transit' ? '#3b82f6' : '#f59e0b'}`}></span>
-                                        <div class="m-text">
-                                            <span class="m-name">{translateStatus(p.status)}</span>
-                                            <span class="m-sub">{tpl(t(L, 'cbr.llegada'), { fecha: formatDate(p.arrival_date) })}</span>
-                                        </div>
-                                    </div>
-                                    <span class="editorial m-amount">{money(p.amount / 100, 0)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-            </div>
-
-            <div class="two-col-flat">
-                <section class="list-section">
-                    <div class="sec-head"><h2 class="sec-title">{t(L, 'cbr.desglose_metodo')}</h2></div>
-                    <div class="method-list">
-                        {C.methods.map((m) => (
-                            <div class="method-row">
-                                <div class="m-info">
-                                    <span class="m-dot" style={`background:${methodColor(m.method)}`}></span>
-                                    <div class="m-text">
-                                        <span class="m-name">{methodLabel(m.method)}</span>
-                                        <span class="m-sub">{m.txs} {m.txs === 1 ? t(L, 'cbr.transaccion_singular') : t(L, 'cbr.transaccion_plural')}</span>
-                                    </div>
-                                </div>
-                                <span class="editorial m-amount">{money(m.monto, 0)}</span>
-                            </div>
-                        ))}
+                <!-- 1 · Saldo, próximo depósito y salud comparten una sola superficie. -->
+                <article class="dash-widget" data-widget="cbr-disponible" data-title={t(L, 'cbr.saldo_disponible')} data-span="2" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
+                    <div class="dash-card report-kpi cbr-balance-primary" data-cbr-stripe="saldo" aria-busy="true">
+                        <span class="kpi-label">{t(L, 'cbr.saldo_disponible')}<span class="snapshot-tag">{t(L, 'cbr.en_vivo')}</span></span>
+                        <strong class="editorial report-kpi-value" data-cbr-bind="disponible">—</strong>
+                        <small data-cbr-bind="disponible-sub">&nbsp;</small>
                     </div>
-                </section>
+                </article>
 
-                <section class="list-section">
-                    <div class="sec-head"><h2 class="sec-title">{t(L, 'cbr.volumen_mensual')}</h2></div>
-                    <div class="monthly-list">
-                        {C.monthly.map((m) => (
-                            <div class="monthly-row">
-                                <span class="m-name">{m.ym}</span>
-                                <span class="editorial m-amount">{money(m.monto, 0)}</span>
-                            </div>
-                        ))}
+                <article class="dash-widget" data-widget="cbr-payouts" data-title={t(L, 'cbr.depositos')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
+                    <div class="dash-card cbr-balance-aside" data-cbr-stripe="payouts" aria-busy="true">
+                        <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.next_deposit')}<span class="snapshot-tag">{t(L, 'cbr.en_vivo')}</span></h2><p>{t(L, 'cbr.depositos_sub')}</p></div></div>
+                        <div class="report-list" data-cbr-bind="payouts"></div>
                     </div>
-                </section>
-            </div>
+                </article>
 
-            <section class="table-flat">
-                <div class="sec-head"><h2 class="sec-title">{t(L, 'cbr.cobros_recientes')}</h2></div>
-                <div class="t-head">
-                    <span>{t(L, 'cbr.th_folio')}</span>
-                    <span>{t(L, 'cbr.th_cliente')}</span>
-                    <span>{t(L, 'cbr.th_metodo')}</span>
-                    <span>{t(L, 'cbr.th_fecha')}</span>
-                    <span class="t-right">{t(L, 'cbr.th_monto')}</span>
-                </div>
-                <div class="t-body">
-                    {C.recent.map((r) => (
-                        <div class="t-row">
-                            <a class="t-folio" href={`/app/cotizaciones/${r.id}`}>{r.folio}</a>
-                            <span class="t-client">{r.empresa}</span>
-                            <span class="t-method">
-                                <span class="m-dot" style={`background:${methodColor(r.method)}`}></span>
-                                {methodLabel(r.method)}
-                            </span>
-                            <span class="t-date">{r.paidAt}</span>
-                            <span class="editorial t-amount t-right">{money(r.total, 0)}</span>
+                <article class="dash-widget" data-widget="cbr-salud" data-title={t(L, 'cbr.salud')} data-span={conectado ? '1' : '4'} data-size-sm={conectado ? '1' : '4'} data-size-lg={conectado ? '2' : '4'}>
+                    <div class="dash-card cbr-balance-aside" data-cbr-stripe="salud">
+                        <div class="sec-head">
+                            <div><h2 class="sec-title">{t(L, 'cbr.salud')}</h2><p>{t(L, 'cbr.salud_sub')}</p></div>
+                            <a class="cbr-manage" href="/app/ajustes/cobros">{conectado ? t(L, 'cbr.salud_administrar') : t(L, 'cbr.activar_cobros')} →</a>
                         </div>
-                    ))}
-                </div>
+                        {conectado
+                            ? <div class="cbr-salud-body" data-cbr-bind="salud"></div>
+                            : <p class="report-empty cbr-salud-off">{t(L, 'cbr.salud_sin_connect')}</p>}
+                    </div>
+                </article>
             </section>
-        </>
+
+            <section class="cbr-zone cbr-kpi-zone" data-widget-zone="kpis" aria-labelledby="cbrKpiHeading">
+                <header class="cbr-zone-head cbr-zone-head-compact">
+                    <div>
+                        <span>{t(L, 'cbr.zone_kpi_eyebrow')}</span>
+                        <h2 id="cbrKpiHeading">{t(L, 'cbr.zone_kpi')}</h2>
+                    </div>
+                </header>
+
+                <article class="dash-widget" data-widget="cbr-cobrado" data-title={t(L, 'cbr.cobrado_rango')} data-span="1" data-size-sm="1" data-size-lg="2">
+                    <div class="dash-card report-kpi cbr-kpi-tile">
+                        <span class="kpi-label">{t(L, 'cbr.cobrado_rango')}</span>
+                        <strong class="editorial report-kpi-value" data-cbr-bind="cobrado">{money(D.neon.totalCobrado, 0)}</strong>
+                        <small data-cbr-bind="cobrado-sub">{tpl(t(L, 'cbr.cobrado_sub'), { n: String(D.neon.txs), op: t(L, D.neon.txs === 1 ? 'cbr.op_singular' : 'cbr.op_plural') })}</small>
+                        {deltaPct !== null
+                            ? <small class={deltaPct >= 0 ? 'cbr-delta is-up' : 'cbr-delta is-down'} data-cbr-bind="cobrado-delta">
+                                {tpl(t(L, 'cbr.vs_anterior'), { signo: deltaPct >= 0 ? '+' : '', pct: String(deltaPct) })}
+                              </small>
+                            : <small data-cbr-bind="cobrado-delta">{tpl(t(L, 'cbr.historico'), { monto: money(D.neon.totalHistorico, 0) })}</small>}
+                        <div class="cbr-sparkline" data-chart="sparkline" data-values={JSON.stringify(D.daily.map((point) => point.y))} role="img" aria-label={t(L, 'cbr.cobrado_tendencia')}></div>
+                    </div>
+                </article>
+
+                <article class="dash-widget" data-widget="cbr-neto" data-title={t(L, 'cbr.neto')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
+                    <div class="dash-card report-kpi cbr-kpi-tile" data-cbr-stripe="neto" aria-busy="true">
+                        <span class="kpi-label">{t(L, 'cbr.neto')}</span>
+                        <strong class="editorial report-kpi-value" data-cbr-bind="neto">—</strong>
+                        <small data-cbr-bind="neto-sub">{t(L, 'cbr.neto_cargando')}</small>
+                    </div>
+                </article>
+
+                <article class="dash-widget" data-widget="cbr-mrr" data-title={t(L, 'cbr.mrr')} data-span="1" data-size-sm="1" data-size-lg="2">
+                    <div class="dash-card report-kpi cbr-kpi-tile">
+                        <span class="kpi-label">{t(L, 'cbr.mrr')}<span class="snapshot-tag">{t(L, 'cbr.en_vivo')}</span></span>
+                        <strong class="editorial report-kpi-value">{money(D.mrr.mrr, 0)}</strong>
+                        <small>{tpl(t(L, 'cbr.mrr_sub'), { n: String(D.mrr.n) })}</small>
+                        {D.mrr.pastDue > 0 && <small class="cbr-delta is-down">{tpl(t(L, 'cbr.mrr_pastdue'), { n: String(D.mrr.pastDue) })}</small>}
+                    </div>
+                </article>
+
+                <article class="dash-widget" data-widget="cbr-disputas" data-title={t(L, 'cbr.disputas')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
+                    <div class="dash-card report-kpi cbr-kpi-tile" data-cbr-stripe="disputas" aria-busy="true">
+                        <span class="kpi-label">{t(L, 'cbr.disputas')}</span>
+                        <strong class="editorial report-kpi-value" data-cbr-bind="disputas">—</strong>
+                        <small data-cbr-bind="disputas-sub">&nbsp;</small>
+                        <div class="report-list cbr-disp-list" data-cbr-bind="disputas-list"></div>
+                    </div>
+                </article>
+            </section>
+
+            <section class="cbr-zone cbr-detail-zone" data-widget-zone="detail" aria-labelledby="cbrDetailHeading">
+                <header class="cbr-zone-head">
+                    <div>
+                        <span>{t(L, 'cbr.zone_detail_eyebrow')}</span>
+                        <h2 id="cbrDetailHeading">{t(L, 'cbr.zone_detail')}</h2>
+                    </div>
+                    <p>{t(L, 'cbr.zone_detail_sub')}</p>
+                </header>
+
+                <article class="dash-widget" data-widget="cbr-evolucion" data-title={t(L, 'cbr.evolucion')} data-span="2" data-size-sm="2" data-size-lg="4">
+                    <div class="dash-card cbr-detail-card">
+                        <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.evolucion')}</h2><p>{t(L, 'cbr.evolucion_sub')}</p></div></div>
+                        <div class="chart-host report-chart cbr-primary-chart" data-chart="line"
+                            data-chart-options={JSON.stringify({ height: 210, ariaLabel: t(L, 'cbr.evolucion') })}
+                            data-empty-msg={t(L, 'cbr.sin_datos')}
+                            data-points={JSON.stringify(D.daily)}
+                            data-compare-points={JSON.stringify(D.dailyPrev)}></div>
+                    </div>
+                </article>
+
+                <article class="dash-widget" data-widget="cbr-mensual" data-title={t(L, 'cbr.volumen_mensual')} data-span="2" data-size-sm="2" data-size-lg="4">
+                    <div class="dash-card cbr-detail-card">
+                        <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.volumen_mensual')}</h2><p>{t(L, 'cbr.mensual_sub')}</p></div></div>
+                        <div class="chart-host report-chart cbr-compact-chart" data-chart="bar"
+                            data-chart-options={JSON.stringify({ height: 190 })}
+                            data-empty-msg={t(L, 'cbr.sin_datos')}
+                            data-items={JSON.stringify(barItems)}></div>
+                    </div>
+                </article>
+
+                <article class="dash-widget" data-widget="cbr-destino" data-title={t(L, 'cbr.destino')} data-span="2" data-size-sm="2" data-size-lg="4" hidden={!conectado}>
+                    <div class="dash-card cbr-detail-card" data-cbr-stripe="destino" aria-busy="true">
+                        <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.destino')}</h2><p>{t(L, 'cbr.destino_sub')}</p></div></div>
+                        <div class="chart-host report-chart cbr-segbar-chart" data-chart="segbar" data-format="pct" data-empty-msg={t(L, 'cbr.neto_cargando')} data-segments="[]"></div>
+                        <div class="cbr-destino-rows" data-cbr-bind="destino-rows"></div>
+                        <p class="report-empty" data-cbr-bind="destino-nota" hidden></p>
+                    </div>
+                </article>
+
+                <article class="dash-widget" data-widget="cbr-metodos" data-title={t(L, 'cbr.desglose_metodo')} data-span="2" data-size-sm="2" data-size-lg="4">
+                    <div class="dash-card cbr-detail-card">
+                        <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.desglose_metodo')}</h2><p>{t(L, 'cbr.metodos_sub')}</p></div></div>
+                        <div class="chart-host report-chart cbr-donut-chart" data-chart="donut"
+                            data-chart-options={JSON.stringify({ size: 116 })}
+                            data-empty-msg={t(L, 'cbr.sin_datos')}
+                            data-slices={JSON.stringify(donutSlices)}></div>
+                    </div>
+                </article>
+
+                <article class="dash-widget" data-widget="cbr-recientes" data-title={t(L, 'cbr.cobros_recientes')} data-span="4" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.cobros_recientes')}</h2></div></div>
+                    <div class="cbr-table" data-cbr-bind="recientes">
+                        <div class="t-head">
+                            <span>{t(L, 'cbr.th_folio')}</span><span>{t(L, 'cbr.th_cliente')}</span>
+                            <span>{t(L, 'cbr.th_metodo')}</span><span>{t(L, 'cbr.th_fecha')}</span>
+                            <span class="t-right">{t(L, 'cbr.th_monto')}</span><span></span>
+                        </div>
+                        {D.neon.recent.length === 0 && <p class="report-empty cbr-table-empty">{t(L, 'cbr.sin_datos')}</p>}
+                        {D.neon.recent.map((r) => (
+                            <div class="t-row">
+                                <a class="t-folio" href={`/app/cotizaciones/${r.id}`}>{r.folio}</a>
+                                <span class="t-client">{r.empresa}</span>
+                                <span class="t-method"><span class="m-dot" style={`background:${metodoColor(r.method)}`}></span>{metodoLabel(r.method)}</span>
+                                <span class="t-date">{r.paidAt}</span>
+                                <span class="editorial t-amount t-right">{money(r.total, 0)}</span>
+                                {canRefund && r.cobroId && <button type="button" class="cbr-refund" data-refund-cobro={r.cobroId}>{es ? 'Reembolsar' : 'Refund'}</button>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </article>
+            </section>
+        </WidgetGrid>
+        </div>
     )}
 </AppLayout>
 
+{canRefund && (
+    <dialog class="cbr-refund-dialog" id="refundDialog" aria-labelledby="refundTitle">
+        <form method="dialog" class="cbr-refund-card" id="refundForm">
+            <div class="cbr-refund-head">
+                <div><span>{es ? 'CORD PAGOS' : 'CORD PAYMENTS'}</span><h2 id="refundTitle">{es ? 'Reembolsar cobro' : 'Refund payment'}</h2></div>
+                <button type="button" class="cbr-refund-close" data-refund-close aria-label={es ? 'Cerrar' : 'Close'}>×</button>
+            </div>
+            <p>{es ? 'El ingreso neto de tus reportes bajará por este importe. La comisión de procesamiento no se devuelve.' : 'Your reported net revenue will decrease by this amount. The processing fee is not returned.'}</p>
+            <label>{es ? 'Monto a reembolsar' : 'Refund amount'}<input id="refundAmount" type="number" min="0.01" step="0.01" inputmode="decimal" required /></label>
+            <label>{es ? 'Motivo interno (opcional)' : 'Internal reason (optional)'}<textarea id="refundReason" maxlength="240" rows="3"></textarea></label>
+            <p class="cbr-refund-note" id="refundNote"></p>
+            <p class="cbr-refund-error" id="refundError" role="alert" hidden></p>
+            <div class="cbr-refund-actions">
+                <button type="button" class="cbr-refund-cancel" data-refund-close>{es ? 'Cancelar' : 'Cancel'}</button>
+                <button type="submit" class="cbr-refund-submit">{es ? 'Confirmar reembolso' : 'Confirm refund'}</button>
+            </div>
+        </form>
+    </dialog>
+)}
+
+<!-- is:inline + define:vars = JS PURO obligatorio: cualquier sintaxis TS aquí
+     (un `as`, una anotación de tipo) es un SyntaxError que mata el bloque entero. -->
+<script is:inline define:vars={{ CBR_T }}>
+    window.CORD_CBR_I18N = CBR_T;
+</script>
+
+<script>
+    import { mountAll, remount } from '../../lib/chart-mount';
+    import { money as fmtMoney, intlLocale } from '../../lib/fmt';
+
+    const shell = document.querySelector<HTMLElement>('[data-cobros-shell]');
+    if (shell) {
+        const locale = intlLocale();
+        const T = (window as any).CORD_CBR_I18N ?? {};
+        const tpl = (str: string, vars: Record<string, string>) => String(str ?? '').replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? '');
+        const money = (n: number) => fmtMoney(n, locale);
+
+        mountAll(document);
+
+        const widget = (id: string) => shell.querySelector<HTMLElement>(`[data-widget="${id}"]`);
+        const bind = (name: string) => shell.querySelector<HTMLElement>(`[data-cbr-bind="${name}"]`);
+        const setText = (name: string, value: string) => { const el = bind(name); if (el) el.textContent = value; };
+        const setChart = (widgetId: string, data: Record<string, unknown>) => {
+            // El widget puede estar oculto por el usuario: sin este guard, remount()
+            // revienta con un TypeError al cambiar de rango.
+            const chart = widget(widgetId)?.querySelector<HTMLElement>('[data-chart]');
+            if (chart) remount(chart, data);
+        };
+        const busy = (part: string, on: boolean) => {
+            shell.querySelectorAll<HTMLElement>(`[data-cbr-stripe="${part}"]`).forEach((el) => {
+                if (on) el.setAttribute('aria-busy', 'true'); else el.removeAttribute('aria-busy');
+            });
+        };
+
+        function row(title: string, sub: string, amount: string, tone = '') {
+            const line = document.createElement('div');
+            const copy = document.createElement('span');
+            const strong = document.createElement('strong'); strong.textContent = title;
+            const small = document.createElement('small'); small.textContent = sub;
+            const b = document.createElement('b'); b.className = `editorial${tone ? ' ' + tone : ''}`; b.textContent = amount;
+            copy.append(strong, small); line.append(copy, b);
+            return line;
+        }
+
+        const PAYOUT_LABEL: Record<string, string> = {
+            paid: T.depositado,
+            in_transit: T.camino,
+            pending: T.programado,
+            failed: T.fallo,
+            canceled: T.cancelado,
+        };
+        const PAYOUT_DOT: Record<string, string> = {
+            paid: '#10b981', in_transit: '#3b82f6', pending: '#f59e0b', failed: '#ef4444', canceled: '#94a3b8',
+        };
+        const fecha = (iso: string) => {
+            if (!iso) return '';
+            const [y, m, d] = iso.split('-').map(Number);
+            return new Date(y, m - 1, d).toLocaleDateString(locale, { day: '2-digit', month: 'short' });
+        };
+
+        /** Pinta todo lo que vino de Stripe. Tolera partes faltantes (array `degraded`). */
+        function paintStripe(stripe: any) {
+            if (!stripe || !stripe.connected) return;
+            const failed = new Set<string>(stripe.degraded || []);
+
+            // Neto real.
+            busy('neto', false);
+            if (stripe.range && !failed.has('range')) {
+                setText('neto', money(stripe.range.net));
+                setText('neto-sub', tpl(T.netoSub,
+                    { fee: money(stripe.range.fee), pct: String(stripe.range.feePct) }));
+            } else {
+                setText('neto', '—');
+                setText('neto-sub', T.netoError);
+            }
+
+            // Saldo.
+            busy('saldo', false);
+            if (stripe.snapshot && !failed.has('snapshot')) {
+                setText('disponible', money(stripe.snapshot.available));
+                const partes = [tpl(T.disponibleSub, { monto: money(stripe.snapshot.pending) })];
+                if (stripe.snapshot.reserved > 0) {
+                    partes.push(tpl(T.reservadoSub, { monto: money(stripe.snapshot.reserved) }));
+                }
+                setText('disponible-sub', partes.join(' · '));
+            } else {
+                setText('disponible', '—');
+                setText('disponible-sub', '');
+            }
+
+            // A dónde va cada peso.
+            busy('destino', false);
+            const rangeData = stripe.range;
+            const destRows = bind('destino-rows');
+            if (destRows) destRows.innerHTML = '';
+            if (rangeData && !failed.has('range') && rangeData.gross > 0) {
+                const pct = (v: number) => Math.max(0, Math.round((v / rangeData.gross) * 1000) / 10);
+                setChart('cbr-destino', {
+                    segments: [
+                        { key: 'net', label: T.destinoNeto, value: pct(rangeData.net), color: '#059669' },
+                        { key: 'fee', label: T.destinoFee, value: pct(rangeData.fee), color: '#f59e0b' },
+                        { key: 'ref', label: T.destinoRefunds, value: pct(rangeData.refunds), color: '#8b95a5' },
+                        { key: 'dis', label: T.destinoDisputes, value: pct(rangeData.disputes), color: '#ef4444' },
+                    ].filter((seg) => seg.value > 0),
+                });
+                if (destRows) {
+                    destRows.append(row(T.destinoNeto, `${pct(rangeData.net)}%`, money(rangeData.net), 'is-ok'));
+                    destRows.append(row(T.destinoFee, `${rangeData.feePct}%`, `−${money(rangeData.fee)}`, 'is-warn'));
+                    if (rangeData.refunds > 0) destRows.append(row(T.destinoRefunds, '', `−${money(rangeData.refunds)}`));
+                    if (rangeData.disputes > 0) destRows.append(row(T.destinoDisputes, '', `−${money(rangeData.disputes)}`, 'is-danger'));
+                }
+                const nota = bind('destino-nota');
+                if (nota) {
+                    // Con el tope de páginas alcanzado los totales son un piso, no el
+                    // total real: decirlo es obligatorio, no un detalle.
+                    nota.hidden = !rangeData.truncated;
+                    nota.textContent = rangeData.truncated ? T.netoTruncado : '';
+                }
+            } else {
+                // Sin movimientos, el placeholder de carga tiene que dar paso a un
+                // mensaje honesto: la llamada terminó, simplemente no hubo nada.
+                setChart('cbr-destino', { segments: [], emptyMessage: T.sinMovimientos });
+            }
+
+            // Depósitos.
+            busy('payouts', false);
+            const payoutsHost = bind('payouts');
+            if (payoutsHost) {
+                payoutsHost.innerHTML = '';
+                const list = failed.has('payouts') ? [] : (stripe.payouts || []);
+                if (!list.length) {
+                    const p = document.createElement('p'); p.className = 'report-empty';
+                    p.textContent = T.sinDepositos;
+                    payoutsHost.append(p);
+                } else {
+                    const nextPayout = list.find((p: any) => p.status === 'in_transit' || p.status === 'pending') || list[0];
+                    for (const p of nextPayout ? [nextPayout] : []) {
+                        const line = row(PAYOUT_LABEL[p.status] || p.status,
+                            tpl(T.llegada, { fecha: fecha(p.arrivalISO) }),
+                            money(p.amount));
+                        const dot = document.createElement('i');
+                        dot.className = 'cbr-dot'; dot.style.background = PAYOUT_DOT[p.status] || '#94a3b8';
+                        line.prepend(dot);
+                        payoutsHost.append(line);
+                    }
+                }
+            }
+
+            // Salud de la cuenta.
+            const saludHost = bind('salud');
+            if (saludHost && stripe.health) {
+                const h = stripe.health;
+                saludHost.innerHTML = '';
+                const chips = document.createElement('div'); chips.className = 'cbr-chips';
+                const chip = (label: string, ok: boolean, okText: string, badText: string) => {
+                    const c = document.createElement('span');
+                    c.className = `cbr-chip ${ok ? 'is-ok' : 'is-bad'}`;
+                    c.innerHTML = '';
+                    const dot = document.createElement('i'); dot.className = 'cbr-dot';
+                    const strong = document.createElement('strong'); strong.textContent = label;
+                    const small = document.createElement('small'); small.textContent = ok ? okText : badText;
+                    c.append(dot, strong, small);
+                    return c;
+                };
+                const act = T.saludActivos;
+                const inact = T.saludInactivos;
+                chips.append(chip(T.saludCobros, h.chargesEnabled, act, inact));
+                chips.append(chip(T.saludDepositos, h.payoutsEnabled, act, inact));
+                chips.append(chip(T.saludVerificacion, h.detailsSubmitted,
+                    T.saludCompleta, T.saludPendiente));
+                saludHost.append(chips);
+
+                if (h.disabledReason) {
+                    const alert = document.createElement('p'); alert.className = 'cbr-alert';
+                    alert.textContent = T.saludBloqueada;
+                    saludHost.append(alert);
+                }
+                const pendientes = (h.currentlyDue || 0) + (h.pastDue || 0);
+                const lines: string[] = [];
+                if (pendientes > 0) {
+                    let txt = tpl(T.saludRequisitos, { n: String(pendientes) });
+                    if (h.deadlineISO) txt += ` · ${tpl(T.saludDeadline, { fecha: fecha(h.deadlineISO) })}`;
+                    lines.push(txt);
+                }
+                if (h.pendingVerification > 0) {
+                    lines.push(tpl(T.saludRevision, { n: String(h.pendingVerification) }));
+                }
+                lines.push(h.bank
+                    ? tpl(T.saludBanco, { banco: h.bank.name || T.bancoGenerico, last4: h.bank.last4 })
+                    : T.saludBancoSin);
+                for (const line of lines) {
+                    const p = document.createElement('p'); p.className = 'cbr-salud-line'; p.textContent = line;
+                    saludHost.append(p);
+                }
+            }
+
+            // Disputas.
+            busy('disputas', false);
+            const disp = failed.has('disputes') ? [] : (stripe.disputes || []);
+            const abiertas = disp.filter((d: any) => d.status !== 'won' && d.status !== 'lost' && d.status !== 'warning_closed');
+            setText('disputas', String(abiertas.length));
+            const total = abiertas.reduce((sum: number, d: any) => sum + d.amount, 0);
+            setText('disputas-sub', abiertas.length
+                ? tpl(T.disputasSub, { monto: money(total) })
+                : T.disputasNinguna);
+            const dispHost = bind('disputas-list');
+            if (dispHost) {
+                dispHost.innerHTML = '';
+                for (const d of abiertas.slice(0, 3)) {
+                    const item = row(d.reason, d.evidenceDueISO
+                        ? tpl(T.disputaVence, { fecha: fecha(d.evidenceDueISO) })
+                        : d.status, money(d.amount), 'is-danger');
+                    const link = document.createElement('a');
+                    link.className = 'cbr-dispute-link'; link.href = `/app/cobros/disputas/${encodeURIComponent(d.id)}`;
+                    link.textContent = locale.startsWith('es') ? 'Preparar evidencia' : 'Prepare evidence';
+                    item.append(link); dispHost.append(item);
+                }
+            }
+        }
+
+        /** Repinta lo que sale de Neon tras cambiar el rango. */
+        function paintNeon(payload: any) {
+            if (!payload?.neon) return;
+            const n = payload.neon;
+            setText('cobrado', money(n.totalCobrado));
+            setText('cobrado-sub', tpl(T.cobradoSub, { n: String(n.txs), op: n.txs === 1 ? T.opSingular : T.opPlural }));
+            const deltaEl = bind('cobrado-delta');
+            if (deltaEl) {
+                const prev = payload.prev;
+                if (prev && prev.totalCobrado > 0) {
+                    const pct = Math.round(((n.totalCobrado - prev.totalCobrado) / prev.totalCobrado) * 1000) / 10;
+                    deltaEl.textContent = tpl(T.vsAnterior,
+                        { signo: pct >= 0 ? '+' : '', pct: String(pct) });
+                    deltaEl.className = pct >= 0 ? 'cbr-delta is-up' : 'cbr-delta is-down';
+                } else {
+                    deltaEl.textContent = tpl(T.historico, { monto: money(n.totalHistorico) });
+                    deltaEl.className = '';
+                }
+            }
+            setChart('cbr-evolucion', { points: payload.daily || [], comparePoints: payload.dailyPrev || [] });
+            setChart('cbr-cobrado', { values: (payload.daily || []).map((point: any) => Number(point.y) || 0) });
+            setChart('cbr-metodos', {
+                slices: (n.methods || []).map((m: any) => ({
+                    key: m.method,
+                    label: m.method === 'tarjeta' ? T.metodoTarjeta : m.method === 'spei' ? T.metodoSpei : T.metodoManual,
+                    value: m.monto,
+                    color: m.method === 'tarjeta' ? '#6366f1' : m.method === 'spei' ? '#10b981' : m.method === 'transferencia' ? '#0ea5e9' : '#94a3b8',
+                })),
+            });
+            setChart('cbr-mensual', {
+                items: (n.monthly || []).map((m: any) => {
+                    const [y, mo] = m.ym.split('-');
+                    return { label: new Date(Number(y), Number(mo) - 1, 1).toLocaleDateString(locale, { month: 'short', year: '2-digit' }), value: m.monto };
+                }),
+            });
+
+            // Tabla de recientes: se reconstruye con createElement, nunca innerHTML de datos.
+            const tabla = bind('recientes');
+            if (tabla) {
+                tabla.querySelectorAll('.t-row, .cbr-table-empty').forEach((el) => el.remove());
+                if (!n.recent.length) {
+                    const p = document.createElement('p'); p.className = 'report-empty cbr-table-empty';
+                    p.textContent = T.sinDatos;
+                    tabla.append(p);
+                }
+                for (const r of n.recent) {
+                    const div = document.createElement('div'); div.className = 't-row';
+                    const a = document.createElement('a'); a.className = 't-folio'; a.href = `/app/cotizaciones/${r.id}`; a.textContent = r.folio;
+                    const cli = document.createElement('span'); cli.className = 't-client'; cli.textContent = r.empresa;
+                    const met = document.createElement('span'); met.className = 't-method';
+                    const dot = document.createElement('span'); dot.className = 'm-dot';
+                    dot.style.background = r.method === 'tarjeta' ? '#6366f1' : r.method === 'spei' ? '#10b981' : r.method === 'transferencia' ? '#0ea5e9' : '#94a3b8';
+                    met.append(dot, document.createTextNode(r.method === 'tarjeta' ? T.metodoTarjeta : r.method === 'spei' ? T.metodoSpei : T.metodoManual));
+                    const fech = document.createElement('span'); fech.className = 't-date'; fech.textContent = r.paidAt;
+                    const amt = document.createElement('span'); amt.className = 'editorial t-amount t-right'; amt.textContent = money(r.total);
+                    div.append(a, cli, met, fech, amt);
+                    if (T.canRefund && r.cobroId) {
+                        const refund = document.createElement('button');
+                        refund.type = 'button'; refund.className = 'cbr-refund';
+                        refund.dataset.refundCobro = r.cobroId; refund.textContent = T.refund;
+                        div.append(refund);
+                    }
+                    tabla.append(div);
+                }
+            }
+        }
+
+        // Primer relleno de la parte de Stripe: una sola llamada, después del render.
+        let request: AbortController | null = null;
+        async function fetchStripe() {
+            if (!shell!.dataset.connected) return;
+            try {
+                const res = await fetch(`/api/cobros?parts=stripe${location.search ? '&' + location.search.slice(1) : ''}`);
+                if (!res.ok) throw new Error(String(res.status));
+                paintStripe((await res.json()).stripe);
+            } catch {
+                // Stripe caído no puede tumbar la página: los widgets de Neon siguen
+                // vivos y estos avisan en vez de quedarse girando para siempre.
+                ['neto', 'saldo', 'destino', 'payouts', 'disputas'].forEach((p) => busy(p, false));
+                setText('neto-sub', T.netoError);
+            }
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fetchStripe, { once: true });
+        else fetchStripe();
+
+        const refundDialog = document.querySelector<HTMLDialogElement>('#refundDialog');
+        const refundForm = document.querySelector<HTMLFormElement>('#refundForm');
+        const refundAmount = document.querySelector<HTMLInputElement>('#refundAmount');
+        const refundReason = document.querySelector<HTMLTextAreaElement>('#refundReason');
+        const refundNote = document.querySelector<HTMLElement>('#refundNote');
+        const refundError = document.querySelector<HTMLElement>('#refundError');
+        let refundState: { cobroId: string; nonce: string; method: string; maxAmountCents: number } | null = null;
+
+        shell.addEventListener('click', async (event) => {
+            const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-refund-cobro]');
+            if (!button || !refundDialog || !refundAmount || !refundNote || !refundError) return;
+            refundError.hidden = true; button.disabled = true;
+            try {
+                const res = await fetch(`/api/cobros/${encodeURIComponent(button.dataset.refundCobro || '')}/reembolso`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || T.errorActualizar);
+                refundState = { cobroId: button.dataset.refundCobro || '', nonce: data.nonce, method: data.method, maxAmountCents: data.maxAmountCents };
+                refundAmount.max = (data.maxAmountCents / 100).toFixed(2);
+                refundAmount.value = (data.maxAmountCents / 100).toFixed(2);
+                refundNote.textContent = data.method === 'spei'
+                    ? (locale.startsWith('es') ? 'SPEI requiere devolver el dinero por transferencia manual. Cord creará la tarea y el registro contable.' : 'SPEI requires a manual bank transfer. Cord will create the task and accounting record.')
+                    : (locale.startsWith('es') ? `Máximo disponible: ${money(data.maxAmountCents / 100)}` : `Maximum available: ${money(data.maxAmountCents / 100)}`);
+                refundDialog.showModal(); refundAmount.focus();
+            } catch (error) {
+                (window as any).cordToast?.((error as Error).message);
+            } finally { button.disabled = false; }
+        });
+        document.querySelectorAll<HTMLElement>('[data-refund-close]').forEach((button) => button.addEventListener('click', () => refundDialog?.close()));
+        refundDialog?.addEventListener('click', (event) => { if (event.target === refundDialog) refundDialog.close(); });
+        refundForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!refundState || !refundAmount || !refundReason || !refundError) return;
+            const amountCents = Math.round(Number(refundAmount.value) * 100);
+            if (!(amountCents > 0) || amountCents > refundState.maxAmountCents) return;
+            const submit = refundForm.querySelector<HTMLButtonElement>('.cbr-refund-submit');
+            if (submit) submit.disabled = true;
+            const send = () => fetch(`/api/cobros/${encodeURIComponent(refundState!.cobroId)}/reembolso`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nonce: refundState!.nonce, amountCents, reason: refundReason.value, manual: refundState!.method === 'spei' }),
+            });
+            try {
+                let res = await send();
+                if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
+                    // Un <dialog> modal vive en el top layer del navegador y
+                    // taparía el modal global de reautenticación si siguiera abierto.
+                    refundDialog?.close();
+                    const verified = await (window as any).cordStepUp();
+                    if (!verified) {
+                        refundDialog?.showModal();
+                        return;
+                    }
+                    refundDialog?.showModal();
+                    res = await send();
+                }
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || T.errorActualizar);
+                refundDialog?.close();
+                (window as any).cordToast?.(locale.startsWith('es') ? 'Reembolso registrado' : 'Refund recorded');
+                window.location.reload();
+            } catch (error) {
+                refundError.textContent = (error as Error).message; refundError.hidden = false;
+            } finally { if (submit) submit.disabled = false; }
+        });
+
+        document.addEventListener('cord:range', async (event) => {
+            const detail = (event as CustomEvent).detail;
+            // El emit inicial ya viene servido por el SSR; refrescar ahí sería un fetch
+            // redundante en cada carga.
+            if (detail?.initial || location.pathname !== '/app/cobros') return;
+            request?.abort(); request = new AbortController();
+            shell!.setAttribute('aria-busy', 'true');
+            try {
+                const res = await fetch(`/api/cobros${location.search}`, { signal: request.signal });
+                if (!res.ok) throw new Error(String(res.status));
+                const payload = await res.json();
+                paintNeon(payload);
+                paintStripe(payload.stripe);
+            } catch (error) {
+                if ((error as Error).name !== 'AbortError') {
+                    (window as any).cordToast?.(T.errorActualizar);
+                }
+            } finally { shell!.removeAttribute('aria-busy'); }
+        });
+    }
+</script>
+
 <style>
-    /* Estilo Apple/Hairline (sin cards, sin box-shadow) */
-    
-    .kpi {
-        display: flex; flex-direction: column; gap: 0.5rem;
+    /* Este markup lo renderiza ESTA página, así que el scopeado sí lo alcanza. El
+       vocabulario compartido (.report-kpi, .report-list, .report-chart, .snapshot-tag)
+       vive en styles/report-widgets.css — Regla 11. */
+    .cbr-top-actions { display: flex; align-items: center; justify-content: flex-end; margin-left: auto; gap: .55rem; flex-wrap: wrap; }
+    .cbr-edit-btn {
+        display: inline-flex; align-items: center; gap: 6px; min-height: 42px;
+        appearance: none; font-family: var(--font-sans); font-size: .78rem; font-weight: 650;
+        color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border);
+        border-radius: 999px; padding: .62rem .9rem; cursor: pointer; white-space: nowrap;
+        transition: background .2s var(--ease-ios), transform .18s ease;
     }
-    .kpi-label { font-size: 0.65rem; font-weight: 800; letter-spacing: 1.5px; color: var(--color-text-muted); }
-    .kpi-num { font-size: 2.5rem; color: var(--color-text); line-height: 1; font-variant-numeric: tabular-nums; }
+    /* ⚠️ RESCUE OBLIGATORIO: un `display` de autor SIEMPRE le gana al
+       `[hidden]{display:none}` del navegador. Sin esto salen Personalizar + Listo +
+       Restablecer los tres a la vez (bug real, ya visto en informes e index). */
+    .cbr-edit-btn[hidden] { display: none; }
+    .cbr-edit-btn:hover { background: var(--row-hover); }
+    .cbr-edit-btn:active { transform: scale(.97); }
+    .cbr-edit-btn.cbr-edit-done { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
 
-    .two-col-flat {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
-        margin-bottom: 3rem;
-    }
-    .sec-head {
-        padding-bottom: 0.8rem;
+    [data-cobros-shell][aria-busy='true'] { opacity: .68; pointer-events: none; transition: opacity .18s ease; }
+    /* El contenido que aún espera a Stripe se atenúa, pero NO bloquea el puntero: el
+       resto de la tarjeta (links, botón de administrar) tiene que seguir usable. */
+    [data-cbr-stripe][aria-busy='true'] { opacity: .55; transition: opacity .2s ease; }
+
+    .chart-host { min-height: 160px; }
+
+    .cbr-zone { align-items: stretch; min-width: 0; }
+    .cbr-zone-head {
+        grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between;
+        gap: 2rem; padding: 1.55rem 1.7rem 1.2rem; background: var(--surface);
         border-bottom: 1px solid var(--color-border);
-        margin-bottom: 1rem;
     }
-    .sec-title {
-        font-size: 0.9rem; font-weight: 600; margin: 0; color: var(--color-text);
+    .cbr-zone-head > div { display: flex; flex-direction: column; gap: .32rem; }
+    .cbr-zone-head span { color: var(--color-text-muted); font-size: .58rem; font-weight: 800; letter-spacing: .14em; }
+    .cbr-zone-head h2 { margin: 0; color: var(--color-text); font-size: 1.2rem; font-weight: 680; letter-spacing: -.035em; }
+    .cbr-zone-head > p { max-width: 52ch; margin: 0; color: var(--color-text-muted); font-size: .74rem; line-height: 1.5; text-align: right; }
+    .cbr-zone-head-compact { padding-bottom: .95rem; }
+
+    .cbr-balance-zone, .cbr-kpi-zone {
+        overflow: hidden; border-radius: 34px; background: var(--surface); box-shadow: var(--card-shadow);
+    }
+    .cbr-balance-zone .dash-card, .cbr-kpi-zone .dash-card {
+        border-radius: 0; background: transparent; box-shadow: none;
+    }
+    .cbr-balance-zone .dash-widget + .dash-widget .dash-card,
+    .cbr-kpi-zone .dash-widget + .dash-widget .dash-card { border-left: 1px solid var(--color-border); }
+    .cbr-balance-zone .dash-card { min-height: 210px; padding: 1.5rem 1.7rem; }
+    .cbr-balance-primary { justify-content: center; }
+    .cbr-balance-primary .report-kpi-value { font-size: clamp(2.6rem, 5vw, 4.4rem); letter-spacing: -.055em; }
+    .cbr-balance-aside .sec-head { align-items: flex-start; margin-bottom: .75rem; padding-bottom: .65rem; }
+    .cbr-balance-aside .sec-head p { max-width: 32ch; }
+
+    .cbr-kpi-zone .cbr-zone-head { border-bottom-color: var(--color-border); }
+    .cbr-kpi-tile { min-height: 176px; padding: 1.35rem 1.45rem; }
+    .cbr-kpi-tile .report-kpi-value { font-size: clamp(1.65rem, 2.5vw, 2.15rem); }
+    .cbr-sparkline { min-height: 32px; width: 100%; margin-top: auto; opacity: .72; }
+
+    .cbr-detail-zone {
+        gap: 1px; overflow: hidden; border-radius: 32px; background: var(--color-border);
+        box-shadow: 0 18px 60px -34px rgba(10,25,47,.28);
+    }
+    .cbr-detail-zone .dash-card { border-radius: 0; background: var(--surface); box-shadow: none; }
+    .cbr-detail-zone .report-chart { min-height: 0; }
+    .cbr-detail-zone .sec-head { margin-bottom: .8rem; padding-bottom: .65rem; }
+    .cbr-segbar-chart { min-height: 72px !important; }
+    .cbr-donut-chart { min-height: 120px !important; }
+
+    @media (max-width: 1199px) {
+        .cbr-balance-zone .dash-widget:nth-of-type(2) .dash-card { border-left: 0; }
+        .cbr-balance-zone .dash-widget:nth-of-type(n + 2) .dash-card { border-top: 1px solid var(--color-border); }
+        .cbr-kpi-zone .dash-widget:nth-of-type(odd) .dash-card { border-left: 0; }
+        .cbr-kpi-zone .dash-widget:nth-of-type(n + 3) .dash-card { border-top: 1px solid var(--color-border); }
+    }
+    @media (max-width: 680px) {
+        .cbr-zone-head { align-items: flex-start; flex-direction: column; gap: .55rem; padding: 1.3rem 1.25rem 1rem; }
+        .cbr-zone-head > p { text-align: left; }
+        .cbr-balance-zone, .cbr-kpi-zone, .cbr-detail-zone { border-radius: 26px; }
+        .cbr-balance-zone .dash-widget .dash-card,
+        .cbr-kpi-zone .dash-widget .dash-card { border-left: 0; border-top: 1px solid var(--color-border); }
+        .cbr-balance-zone .dash-card { min-height: 0; }
+        .cbr-balance-primary { min-height: 190px !important; }
     }
 
-    /* Listas hairline */
-    .method-row, .monthly-row {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 0.8rem 0;
-        border-bottom: 1px solid var(--color-border);
-    }
-    .method-row:last-child, .monthly-row:last-child {
-        border-bottom: none;
-    }
-    .m-info {
-        display: flex; align-items: center; gap: 12px;
-    }
-    .m-dot {
-        width: 10px; height: 10px; border-radius: 50%; display: inline-block;
-    }
-    .m-text {
-        display: flex; flex-direction: column; gap: 2px;
-    }
-    .m-name { font-size: 0.88rem; font-weight: 500; color: var(--color-text); }
-    .m-sub { font-size: 0.75rem; color: var(--color-text-muted); }
-    .m-amount { font-size: 0.95rem; font-weight: 500; color: var(--color-text); }
+    .cbr-delta { font-size: .72rem; font-weight: 650; }
+    .cbr-delta.is-up { color: var(--color-ok); }
+    .cbr-delta.is-down { color: var(--color-danger); }
 
-    /* Tabla plana */
-    .table-flat { margin-bottom: 3rem; }
-    .t-head, .t-row {
-        display: grid; grid-template-columns: 1fr 2fr 1.5fr 1fr 1fr;
-        gap: 1rem; align-items: center;
-        padding: 0.8rem 0;
+    .cbr-manage { font-size: .74rem; font-weight: 650; color: var(--color-blue-deep); text-decoration: none; white-space: nowrap; }
+    .cbr-manage:hover { text-decoration: underline; }
+
+    .cbr-salud-off { margin: 0; }
+    .cbr-disp-list { margin-top: .6rem; }
+
+    .cbr-denied { display: flex; flex-direction: column; gap: .6rem; padding: 2rem 0; }
+    .cbr-denied svg { width: 32px; height: 32px; color: #c9d2de; }
+    .cbr-denied h3 { font-size: 1rem; font-weight: 700; margin: 0; }
+    .cbr-denied p { font-size: .84rem; color: var(--color-text-muted); margin: 0; line-height: 1.55; }
+    .cbr-refund-dialog { border: 0; padding: 0; border-radius: 28px; background: transparent; color: var(--color-text); max-width: min(480px, calc(100vw - 32px)); width: 100%; }
+    .cbr-refund-dialog::backdrop { background: rgba(5, 12, 24, .46); backdrop-filter: blur(8px); }
+    .cbr-refund-card { background: var(--surface); border-radius: 28px; padding: 28px; box-shadow: 0 32px 90px rgba(5,12,24,.24); display: flex; flex-direction: column; gap: 18px; }
+    .cbr-refund-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+    .cbr-refund-head span { font-size: .61rem; letter-spacing: .12em; font-weight: 750; color: var(--color-text-muted); }
+    .cbr-refund-head h2 { margin: 5px 0 0; font-size: 1.45rem; letter-spacing: -.035em; }
+    .cbr-refund-card > p { margin: 0; color: var(--color-text-muted); font-size: .82rem; line-height: 1.6; }
+    .cbr-refund-card label { display: flex; flex-direction: column; gap: 7px; font-size: .75rem; font-weight: 650; }
+    .cbr-refund-card input, .cbr-refund-card textarea { border: 0; border-radius: 14px; background: var(--color-bg-soft); color: var(--color-text); padding: 13px 14px; font: inherit; outline: none; resize: vertical; }
+    .cbr-refund-card input:focus, .cbr-refund-card textarea:focus { box-shadow: 0 0 0 2px rgba(10,25,47,.15); }
+    .cbr-refund-close { border: 0; width: 34px; height: 34px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: 1.25rem; cursor: pointer; }
+    .cbr-refund-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .cbr-refund-actions button, .cbr-refund { border: 0; border-radius: 999px; padding: 10px 15px; font: inherit; font-size: .75rem; font-weight: 650; cursor: pointer; transition: transform .16s ease; }
+    .cbr-refund-actions button:active, .cbr-refund:active { transform: scale(.97); }
+    .cbr-refund-cancel, .cbr-refund { background: var(--color-bg-soft); color: var(--color-text); }
+    .cbr-refund-submit { background: var(--color-blue-deep); color: #fff; }
+    .cbr-refund-error { color: var(--color-danger) !important; }
+</style>
+
+<style is:global>
+    /* ⚠️ REGLA 11. Todo lo de abajo estiliza DOM que el <script> INYECTA en runtime
+       (chips de salud, filas del desglose, alertas, y la tabla de recientes que se
+       reconstruye al cambiar de rango). Astro scopea agregando `data-astro-cid-*` solo a
+       los nodos que el servidor renderiza, así que un `<style>` scopeado NO alcanza nada
+       de esto y falla en silencio — pasó exactamente aquí: las chips de "Estado de la
+       cuenta" salían como texto corrido sin formato.
+       Se prefija con [data-cobros-shell] para no filtrar estas clases al resto de la app. */
+    [data-cobros-shell] .cbr-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+
+    [data-cobros-shell] .cbr-destino-rows { margin-top: .4rem; }
+    [data-cobros-shell] .cbr-destino-rows > div { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .6rem 0; border-top: 1px solid var(--color-border); }
+    [data-cobros-shell] .cbr-destino-rows > div:first-child { border-top: 0; }
+    [data-cobros-shell] .cbr-destino-rows span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    [data-cobros-shell] .cbr-destino-rows strong { font-size: .8rem; font-weight: 600; }
+    [data-cobros-shell] .cbr-destino-rows small { color: var(--color-text-muted); font-size: .68rem; }
+    [data-cobros-shell] .cbr-destino-rows b { font-size: .84rem; }
+    [data-cobros-shell] .cbr-destino-rows b.is-ok { color: var(--color-ok); }
+    [data-cobros-shell] .cbr-destino-rows b.is-warn { color: var(--color-warn); }
+    [data-cobros-shell] .cbr-destino-rows b.is-danger { color: var(--color-danger); }
+    [data-cobros-shell] .cbr-dispute-link { color: var(--color-blue-deep); font-size: .7rem; font-weight: 650; text-decoration: none; white-space: nowrap; }
+    [data-cobros-shell] .cbr-dispute-link:hover { text-decoration: underline; }
+
+    [data-cobros-shell] .cbr-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .9rem; }
+    [data-cobros-shell] .cbr-balance-zone .cbr-chips { display: grid; grid-template-columns: 1fr; gap: .4rem; }
+    [data-cobros-shell] .cbr-chip {
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: .45rem .8rem; border-radius: 999px; background: var(--color-bg-soft);
+        font-size: .74rem; line-height: 1.2;
     }
-    .t-head {
-        font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    [data-cobros-shell] .cbr-chip strong { font-weight: 600; color: var(--color-text); }
+    [data-cobros-shell] .cbr-chip small { color: var(--color-text-muted); }
+    [data-cobros-shell] .cbr-chip.is-ok .cbr-dot { background: var(--color-ok); }
+    [data-cobros-shell] .cbr-chip.is-bad .cbr-dot { background: var(--color-warn); }
+
+    [data-cobros-shell] .cbr-alert {
+        margin: 0 0 .8rem; padding: .7rem .9rem; border-radius: 12px;
+        background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+        color: var(--color-danger); font-size: .76rem; line-height: 1.5;
+    }
+    [data-cobros-shell] .cbr-salud-line { margin: 0 0 .35rem; color: var(--color-text-muted); font-size: .76rem; line-height: 1.5; }
+    [data-cobros-shell] .cbr-donut-chart .chx-donut-wrap { flex-wrap: nowrap; gap: 1.1rem; }
+    [data-cobros-shell] .cbr-donut-chart .chx-donut-legend { min-width: 110px; gap: .42rem; }
+    [data-cobros-shell] .cbr-donut-chart .chx-legend-item { font-size: .74rem; }
+
+    /* ── Tabla de cobros recientes (el <script> la reconstruye al cambiar de rango) ── */
+    [data-cobros-shell] .cbr-table .t-head,
+    [data-cobros-shell] .cbr-table .t-row {
+        display: grid; grid-template-columns: 1fr 2fr 1.5fr 1fr 1fr auto;
+        gap: 1rem; align-items: center; padding: .75rem 0;
+    }
+    [data-cobros-shell] .cbr-table .t-head {
+        font-size: .62rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
         color: var(--color-text-muted); border-bottom: 1px solid var(--color-border);
     }
-    .t-row {
-        border-bottom: 1px solid var(--color-border);
-    }
-    .t-folio { font-size: 0.85rem; font-weight: 600; color: var(--color-text); text-decoration: none; }
-    .t-folio:hover { text-decoration: underline; color: var(--color-blue-deep); }
-    .t-client { font-size: 0.85rem; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .t-method { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--color-text-muted); }
-    .t-date { font-size: 0.8rem; color: var(--color-text-muted); }
-    .t-right { text-align: right; }
-    .t-amount { font-size: 0.95rem; color: var(--color-text); }
-
-    .empty { padding: 4rem 0; }
-    .empty h2 { font-size: 1.2rem; font-weight: 600; margin: 0 0 0.5rem; color: var(--color-text); }
-    .empty p { font-size: 0.9rem; color: var(--color-text-muted); max-width: 460px; margin: 0 0 1.5rem; line-height: 1.5; }
-    .empty-cta { display: inline-flex; align-items: center; justify-content: center; height: 38px; padding: 0 20px; font-size: 0.85rem; font-weight: 500; color: #fff; background: var(--color-text); border-radius: 8px; transition: opacity 0.2s; }
-    .empty-cta:hover { opacity: 0.9; }
-
-    .cb-denied { display: flex; flex-direction: column; gap: 0.6rem; padding: 2rem 0; }
-    .cb-denied svg { width: 32px; height: 32px; color: #c9d2de; }
-    .cb-denied h3 { font-size: 1rem; font-weight: 700; margin: 0; }
-    .cb-denied p { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; line-height: 1.55; }
+    [data-cobros-shell] .cbr-table .t-row { border-bottom: 1px solid var(--color-border); }
+    [data-cobros-shell] .cbr-table .t-row:last-child { border-bottom: none; }
+    [data-cobros-shell] .cbr-table .t-folio { font-size: .82rem; font-weight: 600; color: var(--color-text); text-decoration: none; }
+    [data-cobros-shell] .cbr-table .t-folio:hover { color: var(--color-blue-deep); text-decoration: underline; }
+    [data-cobros-shell] .cbr-table .t-client { font-size: .82rem; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    [data-cobros-shell] .cbr-table .t-method { display: inline-flex; align-items: center; gap: 8px; font-size: .76rem; color: var(--color-text-muted); }
+    [data-cobros-shell] .cbr-table .m-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+    [data-cobros-shell] .cbr-table .t-date { font-size: .76rem; color: var(--color-text-muted); }
+    [data-cobros-shell] .cbr-table .t-right { text-align: right; }
+    [data-cobros-shell] .cbr-table .t-amount { font-size: .88rem; color: var(--color-text); }
+    [data-cobros-shell] .cbr-table-empty { padding: 1.2rem 0; }
 
     @media (max-width: 800px) {
-        .two-col-flat { grid-template-columns: 1fr; gap: 2rem; }
-        .t-head { display: none; }
-        .t-row { grid-template-columns: 1fr 1fr; gap: 0.5rem; padding: 1rem 0; }
-        .t-method, .t-date { display: none; }
-        .t-client { text-align: right; }
+        [data-cobros-shell] .cbr-table .t-head { display: none; }
+        [data-cobros-shell] .cbr-table .t-row { grid-template-columns: 1fr 1fr; gap: .5rem; padding: 1rem 0; }
+        [data-cobros-shell] .cbr-table .t-method,
+        [data-cobros-shell] .cbr-table .t-date { display: none; }
+        [data-cobros-shell] .cbr-table .t-client { text-align: right; }
     }
 </style>

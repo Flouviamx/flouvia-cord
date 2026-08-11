@@ -9,11 +9,11 @@ Una disputa o contracargo ocurre cuando el titular de una tarjeta desconoce un c
 
 ### ¿Dónde se gestionan las disputas?
 
-Dado que Cord utiliza tu propia cuenta de Stripe para procesar tarjetas, todo el proceso de resolución de disputas sucede **dentro de tu panel de Stripe**, no en Cord.
+Cord centraliza el seguimiento y la preparación de evidencia en **Cobros › Disputas**. Cuando se abre un contracargo, la plataforma crea una tarea, notifica al propietario y muestra la fecha límite informada por la red de pagos.
 
-1. Stripe te notificará por correo electrónico sobre la disputa y retendrá los fondos.
-2. Tienes un lapso de tiempo (generalmente 7-15 días) para enviar evidencia a través del Dashboard de Stripe.
-3. **Evidencia desde Cord:** Ve a la cotización disputada en Cord y descarga el **PDF de la cotización** y el historial de eventos (Audit Trail) que muestra la IP y fecha en que el cliente aceptó los términos o firmó digitalmente la propuesta.
-4. Sube este PDF como evidencia a Stripe.
+1. Abre la disputa desde **Cobros** y revisa el motivo, monto y fecha límite.
+2. Prepara la descripción del producto o servicio, la comunicación con el cliente y los datos de entrega.
+3. Guarda el borrador cuantas veces necesites. También puedes adjuntar un recibo o comprobante en PDF, PNG o JPEG.
+4. Revisa toda la evidencia y selecciona **Enviar definitivamente**. Esta acción es irreversible y puede requerir verificación reciente de identidad.
 
-Si ganas la disputa, Stripe te devolverá los fondos. Si la pierdes, deberás emitir una Nota de Crédito en Cord para cuadrar tus impuestos.
+Cord nunca envía evidencia automáticamente. Si la resolución final requiere una corrección fiscal, emite la Nota de Crédito correspondiente desde Cord con apoyo de tu asesor fiscal.

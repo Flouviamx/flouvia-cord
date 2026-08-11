@@ -14,7 +14,16 @@
     "db:migrate": "node scripts/migrate.mjs",
     "db:reset": "node scripts/migrate.mjs -- --reset",
     "db:cleanup-ops": "node scripts/cleanup-non-ops-data.mjs",
-    "saml:xsw-check": "node scripts/saml-xsw-check.mjs"
+    "saml:xsw-check": "node scripts/saml-xsw-check.mjs",
+    "security:csrf": "node scripts/csrf-matrix.mjs",
+    "security:stripe-signature": "node scripts/stripe-signature-check.mjs",
+    "security:encrypt-backfill": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/encrypt-backfill.mjs",
+    "security:crypto": "node scripts/crypto-secret-check.mjs",
+    "security:fees": "node --experimental-strip-types scripts/fees-check.mjs",
+    "security:whitelabel": "node scripts/whitelabel-lint.mjs",
+    "security:disputes": "node --experimental-strip-types scripts/dispute-safety-check.mjs",
+    "security:rls": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/rls-audit.mjs",
+    "test:payments": "npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

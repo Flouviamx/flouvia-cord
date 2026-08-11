@@ -12,7 +12,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql } from '../../../../lib/db';
+import { sql, resolvePublicQuote, withOrgTx } from '../../../../lib/db';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 
 const encoder = new TextEncoder();
@@ -25,7 +25,11 @@ export const GET: APIRoute = async ({ params, request }) => {
     const rl = await rateLimit(`q:stream:${token}`, 60, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
 
-    const rows = await sql`select id, org_id, status from cotizaciones where public_token = ${token}`;
+    const identity = await resolvePublicQuote(token);
+    if (!identity) return new Response('not found', { status: 404 });
+    const [rows] = await withOrgTx(identity.orgId, sql`
+        select id, org_id, status from cotizaciones
+        where id = ${identity.id} and org_id = ${identity.orgId}`);
     if (!rows.length) return new Response('not found', { status: 404 });
     const c = rows[0] as { id: string; org_id: string; status: string };
 
@@ -48,15 +52,18 @@ export const GET: APIRoute = async ({ params, request }) => {
 
             while (!closed && !request.signal.aborted && Date.now() - started < MAX_MS) {
                 try {
-                    const msgs = await sql`select detalle, created_at from eventos
-                        where cotizacion_id = ${c.id} and org_id = ${c.org_id}
-                          and tipo = 'reply' and created_at > ${lastMsgTs}
-                        order by created_at asc limit 20`;
+                    const [msgs, statusRows] = await withOrgTx(c.org_id,
+                        sql`select detalle, created_at from eventos
+                            where cotizacion_id = ${c.id} and org_id = ${c.org_id}
+                              and tipo = 'reply' and created_at > ${lastMsgTs}
+                            order by created_at asc limit 20`,
+                        sql`select status from cotizaciones where id = ${c.id} and org_id = ${c.org_id}`,
+                    );
                     if (msgs.length) {
                         lastMsgTs = String(msgs[msgs.length - 1].created_at);
                         for (const m of msgs) send('message', { detalle: m.detalle });
                     }
-                    const [statusRow] = await sql`select status from cotizaciones where id = ${c.id}`;
+                    const statusRow = statusRows[0];
                     if (statusRow && statusRow.status !== lastStatus) {
                         lastStatus = statusRow.status as string;
                         send('status', { status: lastStatus });
