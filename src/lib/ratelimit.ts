@@ -9,6 +9,9 @@
 // dentro de una instancia). Así queda listo para producción sin bloquear dev:
 // agregas las 2 env vars y el rate limit pasa a ser global, sin cambios de código.
 
+import { createHash } from 'node:crypto';
+import { sql } from './db';
+
 const UP_URL = import.meta.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_REDIS_REST_URL;
 const UP_TOKEN = import.meta.env.UPSTASH_REDIS_REST_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -55,6 +58,57 @@ export interface RateResult {
     unavailable?: boolean;
 }
 
+// ── Backend durable #2: Postgres (Neon) ──────────────────────────────────────
+// Alternativa a Upstash para las superficies fail-closed. Neon YA es el estado
+// compartido entre todas las instancias de Vercel, así que el conteo es global
+// sin sumar un proveedor, un secreto ni un costo nuevo. El volumen que pasa por
+// aquí es bajo por diseño (login de Ops, reembolsos, disputas, reauth): son
+// caminos privilegiados o de dinero, no rutas calientes. `rateLimit()` normal
+// NUNCA usa este backend — ahí sí habría carga real contra la BD.
+//
+// La clave se guarda hasheada: el texto original lleva IPs y correos, y esta
+// tabla no tiene ninguna razón para acumular ese PII.
+
+let lastCounterSweep = 0;
+
+function counterId(key: string): string {
+    return createHash('sha256').update(key).digest('hex');
+}
+
+async function postgresAllow(key: string, limit: number, windowSec: number): Promise<RateResult> {
+    // Un solo statement ⇒ atómico. El `on conflict` toma el lock de la fila, así
+    // que dos requests concurrentes nunca leen el mismo contador viejo. La
+    // ventana se reinicia sola cuando `reset_at` ya pasó: sin cron, sin carrera.
+    const rows = await sql`
+        insert into rate_limit_counters (id, count, reset_at)
+        values (${counterId(key)}, 1, now() + make_interval(secs => ${windowSec}))
+        on conflict (id) do update set
+            count = case when rate_limit_counters.reset_at <= now()
+                         then 1 else rate_limit_counters.count + 1 end,
+            reset_at = case when rate_limit_counters.reset_at <= now()
+                            then now() + make_interval(secs => ${windowSec})
+                            else rate_limit_counters.reset_at end
+        returning count, extract(epoch from (reset_at - now())) as seconds_left
+    `;
+    const count = Number(rows[0]?.count ?? 1);
+    const retryAfter = Math.max(1, Math.ceil(Number(rows[0]?.seconds_left ?? windowSec)));
+
+    // Barrido perezoso de ventanas ya vencidas, como máximo una vez por minuto
+    // por instancia. Acotado a 500 filas para que jamás bloquee un login.
+    const now = Date.now();
+    if (now - lastCounterSweep > 60_000) {
+        lastCounterSweep = now;
+        sql`
+            delete from rate_limit_counters where id in (
+                select id from rate_limit_counters
+                where reset_at < now() - interval '10 minutes' limit 500
+            )
+        `.catch(() => null);
+    }
+
+    return { ok: count <= limit, remaining: Math.max(0, limit - count), retryAfter };
+}
+
 /**
  * Cuenta un hit contra `key` en una ventana deslizante de `windowSec`. Devuelve
  * ok=false cuando se rebasa `limit`. NUNCA lanza: ante un fallo del backend
@@ -73,23 +127,38 @@ export async function rateLimit(key: string, limit: number, windowSec = 60): Pro
 }
 
 /**
- * Variante fail-closed para superficies privilegiadas. En produccion exige el
- * contador distribuido: si Upstash no esta configurado o no responde, el acceso
- * se detiene temporalmente en vez de degradarse a limites aislados por instancia.
- * En desarrollo conserva el fallback local para no bloquear localhost.
+ * Variante fail-closed para superficies privilegiadas (login de Ops, reembolsos,
+ * disputas, reauth, Connect). Siempre exige un contador DURABLE compartido entre
+ * instancias — nunca degrada a un contador por proceso, que sería un límite
+ * multiplicado por el número de réplicas.
+ *
+ * Orden: Upstash si está configurado → Postgres (Neon) como respaldo siempre
+ * disponible → fail-closed si ninguno responde. En desarrollo, si la BD tampoco
+ * está a la mano, cae al contador local para no bloquear localhost.
+ *
+ * ⚠️ Histórico: antes esto exigía Upstash y NADA más. Como Upstash nunca se
+ * provisionó, en producción devolvía 503 en el 100% de los intentos — Ops quedó
+ * inaccesible incluso para sus dos operadores, y con él los reembolsos, la
+ * evidencia de disputas, la reautenticación y la aceptación de tarifas.
  */
 export async function strictRateLimit(key: string, limit: number, windowSec = 60): Promise<RateResult> {
     if (RATE_LIMIT_BACKEND === 'upstash') {
         try {
             return await upstashAllow(`rl:${key}`, limit, windowSec);
         } catch {
-            return { ok: false, remaining: 0, retryAfter: 60, unavailable: true };
+            // Upstash configurado pero caído: intentamos el respaldo durable
+            // antes de cerrar la puerta.
         }
     }
-    if (import.meta.env.PROD) {
-        return { ok: false, remaining: 0, retryAfter: 60, unavailable: true };
+    try {
+        return await postgresAllow(key, limit, windowSec);
+    } catch (error) {
+        console.error('[ratelimit/postgres]', error);
+        if (import.meta.env.PROD) {
+            return { ok: false, remaining: 0, retryAfter: 60, unavailable: true };
+        }
+        return memAllow(key, limit, windowSec * 1000);
     }
-    return memAllow(key, limit, windowSec * 1000);
 }
 
 export function strictLimitResponse(result: RateResult): Response | null {

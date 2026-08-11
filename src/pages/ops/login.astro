@@ -8,65 +8,82 @@ if (Astro.locals.opsOperator) {
 
 <OpsLayout title="Acceso interno | Cord Ops">
   <main class="ops-login">
-    <section class="ops-auth" aria-labelledby="ops-title">
-      <header class="ops-brand">
-        <span class="ops-wordmark">CORD</span>
-        <span class="ops-product">Ops</span>
-      </header>
+    <div class="ops-brand">
+      <img src="/imgs/logo-cord-navy.png" alt="Cord" height="26" />
+      <span class="ops-product">Ops</span>
+    </div>
 
+    <section class="ops-auth" aria-labelledby="ops-title">
       <div class="ops-heading">
         <h1 id="ops-title">Acceso interno</h1>
-        <p>Inicia sesión para continuar.</p>
+        <p>Panel de operaciones. Solo cuentas autorizadas.</p>
       </div>
 
       <form id="ops-password-form" class="ops-form" novalidate>
-        <label for="ops-email">Correo</label>
-        <input
-          id="ops-email"
-          name="email"
-          type="email"
-          inputmode="email"
-          autocomplete="username webauthn"
-          maxlength="254"
-          required
-        />
-
-        <div id="password-fields" class="password-fields">
-          <label for="ops-password">Contraseña</label>
+        <div class="ops-field">
+          <label for="ops-email">Correo</label>
           <input
-            id="ops-password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            maxlength="1024"
+            id="ops-email"
+            name="email"
+            type="email"
+            inputmode="email"
+            autocomplete="username webauthn"
+            maxlength="254"
             required
           />
         </div>
 
+        <div id="password-fields" class="password-fields">
+          <div class="ops-field">
+            <label for="ops-password">Contraseña</label>
+            <input
+              id="ops-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              maxlength="1024"
+              required
+            />
+          </div>
+        </div>
+
         <div id="totp-fields" class="totp-fields" hidden>
-          <label for="ops-code">Código de autenticación</label>
-          <input
-            id="ops-code"
-            name="code"
-            type="text"
-            inputmode="numeric"
-            autocomplete="one-time-code"
-            pattern="[0-9]{6}"
-            maxlength="6"
-            placeholder="000000"
-          />
-          <p>El reto es de un solo uso. Si el código falla, deberás verificar nuevamente tu contraseña.</p>
+          <div class="ops-field">
+            <label for="ops-code">Código de autenticación</label>
+            <input
+              id="ops-code"
+              name="code"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxlength="6"
+              placeholder="000000"
+            />
+            <p>El reto es de un solo uso. Si el código falla, deberás verificar nuevamente tu contraseña.</p>
+          </div>
         </div>
 
         <div id="ops-error" class="ops-message ops-error" role="alert" hidden></div>
         <div id="ops-notice" class="ops-message ops-notice" role="status" hidden></div>
 
         <button id="password-submit" class="ops-primary" type="submit">Continuar</button>
+
+        <div class="ops-divider"><span>o</span></div>
+
         <button id="passkey-submit" class="ops-secondary" type="button">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.5"
+                    fill="currentColor" fill-opacity="0.12" />
+            <path d="M6 19.2c0-2.9 2.7-5 6-5s6 2.1 6 5" stroke="currentColor"
+                  stroke-width="1.5" stroke-linecap="round" />
+          </svg>
           Usar Touch ID
         </button>
       </form>
     </section>
+
+    <p class="ops-login-footer">Acceso restringido &nbsp;&middot;&nbsp; Cada intento queda auditado</p>
   </main>
 
   <script>
@@ -113,6 +130,12 @@ if (Astro.locals.opsOperator) {
       if (value === 'challenge_expired') return 'La verificación expiró. Vuelve a ingresar tu contraseña.';
       if (value === 'invalid_code') return 'Código incorrecto. El reto fue consumido; vuelve a verificar tu contraseña.';
       if (value === 'rate_limited' || status === 429) return 'Demasiados intentos. Espera antes de volver a probar.';
+      // 503: el contador durable de rate limit no respondió. Se distingue a
+      // propósito de "credenciales inválidas" — confundirlos hizo que una
+      // indisponibilidad total de Ops se leyera como un password equivocado.
+      if (value === 'access_temporarily_unavailable' || status === 503) {
+        return 'El control de acceso no está disponible. Ops permanece cerrado, no es tu contraseña.';
+      }
       if (value === 'internal_error') return 'Ops no está disponible en este momento. El acceso permanece cerrado.';
       return 'No pudimos verificar estas credenciales.';
     }
@@ -204,6 +227,8 @@ if (Astro.locals.opsOperator) {
           message('error', 'La clave de acceso fue cancelada o no está disponible para esta cuenta.');
         } else if (error?.message === 'rate_limited') {
           message('error', 'Demasiados intentos. Espera antes de volver a probar.');
+        } else if (error?.message === 'access_temporarily_unavailable') {
+          message('error', 'El control de acceso no está disponible. Ops permanece cerrado.');
         } else {
           message('error', 'No pudimos verificar la clave de acceso.');
         }
@@ -214,111 +239,124 @@ if (Astro.locals.opsOperator) {
     });
   </script>
 
+  <!--
+    Misma composición que el login público (/sign-in): lienzo blanco, columna
+    centrada, logo real arriba y formulario SIN tarjeta (sin borde, sin sombra,
+    sin fondo propio). Los tokens de color/radio/foco son los de styles/auth.css
+    y se copian aquí porque Ops corre bajo una CSP propia y no comparte hojas
+    con el sitio público. La tipografía es la del sistema a propósito: la CSP de
+    Ops fija `font-src 'self'` y no carga Google Fonts.
+  -->
   <style>
     .ops-login {
       min-height: 100vh;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      place-items: center;
-      padding: 48px 24px;
-      background: #f5f5f7;
-    }
-
-    .ops-auth {
-      width: 100%;
-      max-width: 430px;
-      min-width: 0;
-      padding: 48px;
-      border: 1px solid rgba(0, 0, 0, 0.025);
-      border-radius: 38px;
-      background: #fff;
-      box-shadow:
-        0 2px 4px rgba(0, 0, 0, 0.018),
-        0 14px 34px rgba(0, 0, 0, 0.045),
-        0 38px 80px rgba(0, 0, 0, 0.035);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.25rem;
+      padding: 2.5rem 1.5rem;
+      background: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI',
+                   system-ui, sans-serif;
     }
 
     .ops-brand {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 52px;
+      gap: 0.7rem;
+      opacity: 0.95;
     }
 
-    .ops-wordmark {
-      font-size: 0.78rem;
-      font-weight: 750;
-      letter-spacing: 0.18em;
-      color: #1d1d1f;
-    }
+    .ops-brand img { display: block; }
 
     .ops-product {
-      padding-left: 12px;
-      border-left: 1px solid #d2d2d7;
-      color: #86868b;
-      font-size: 0.82rem;
+      padding-left: 0.7rem;
+      border-left: 1px solid #e4e8ee;
+      color: #6b7686;
+      font-size: 0.8rem;
       font-weight: 500;
+      letter-spacing: 0.01em;
     }
 
-    .ops-heading { margin-bottom: 30px; }
+    .ops-auth {
+      width: 100%;
+      max-width: 380px;
+      min-width: 0;
+      animation: ops-fadein 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .ops-heading {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
 
     h1 {
-      margin: 0;
-      color: #050505;
-      font-size: clamp(2rem, 7vw, 2.6rem);
-      line-height: 1.06;
-      letter-spacing: -0.045em;
-      font-weight: 650;
+      margin: 0 0 0.4rem;
+      color: #0a192f;
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
     }
 
     .ops-heading > p:last-child {
-      margin: 10px 0 0;
-      color: #86868b;
-      font-size: 0.91rem;
+      margin: 0;
+      color: #6b7686;
+      font-size: 0.9rem;
+      font-weight: 400;
       line-height: 1.5;
     }
 
     .ops-form {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 0.9rem;
       min-width: 0;
     }
 
+    /* `display: contents` deja que los campos hereden el gap del formulario:
+       ocultar un paso no debe dejar un hueco vertical. */
     .password-fields,
-    .totp-fields {
-      display: contents;
-    }
+    .totp-fields { display: contents; }
 
     .password-fields[hidden],
     .totp-fields[hidden] { display: none; }
 
+    .ops-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      min-width: 0;
+    }
+
     label {
-      margin-top: 8px;
-      color: #6e6e73;
-      font-size: 0.77rem;
-      font-weight: 550;
+      color: #4a5567;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
     }
 
     input {
       width: 100%;
-      min-height: 52px;
-      border: 0;
-      border-radius: 15px;
-      padding: 0 16px;
-      color: #1d1d1f;
-      background: #f5f5f7;
-      box-shadow: 0 0 0 1px transparent;
+      box-sizing: border-box;
+      padding: 0.72rem 0.9rem;
+      border: 1px solid #e4e8ee;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: #0a192f;
+      background: #ffffff;
       outline: none;
-      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+      transition: border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    input:hover { background: #f0f0f2; }
+    input:hover { border-color: #cdd4dd; }
     input:focus {
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.18);
+      border-color: #0a192f;
+      box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08);
     }
-    input:read-only { opacity: 0.68; }
+    input:read-only { color: #6b7686; background: #fafbfc; }
 
     .totp-fields input {
       letter-spacing: 0.22em;
@@ -326,58 +364,100 @@ if (Astro.locals.opsOperator) {
     }
 
     .totp-fields p {
-      margin: 2px 0 5px;
-      color: #86868b;
+      margin: 0;
+      color: #8891a0;
       font-size: 0.75rem;
       line-height: 1.5;
     }
 
     button {
-      min-height: 50px;
-      border-radius: 999px;
+      width: 100%;
+      padding: 0.78rem 1rem;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
       cursor: pointer;
-      font-size: 0.86rem;
-      font-weight: 650;
-      transition: transform 150ms ease, opacity 150ms ease, background 150ms ease;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    button:hover:not(:disabled) { transform: scale(0.988); }
-    button:active:not(:disabled) { transform: scale(0.972); }
-    button:disabled { cursor: wait; opacity: 0.55; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
     .ops-primary {
-      margin-top: 14px;
-      border: 0;
-      color: #fff;
-      background: #1d1d1f;
+      margin-top: 0.6rem;
+      border: none;
+      color: #ffffff;
+      background: #0a192f;
     }
+    .ops-primary:hover:not(:disabled) {
+      background: #112444;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px -8px rgba(10, 25, 47, 0.4);
+    }
+    .ops-primary:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
 
     .ops-secondary {
-      border: 0;
-      color: #1d1d1f;
-      background: #f5f5f7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      border: 1px solid #e4e8ee;
+      color: #1e293b;
+      background: #ffffff;
+      font-weight: 500;
     }
+    .ops-secondary:hover:not(:disabled) { border-color: #cdd4dd; background: #fafbfc; }
+    .ops-secondary svg { display: block; }
+    .ops-secondary[hidden] { display: none; }
 
-    .ops-secondary:hover:not(:disabled) { background: #ededf0; }
+    .ops-divider {
+      position: relative;
+      text-align: center;
+      margin: 0.6rem 0 0.1rem;
+    }
+    .ops-divider::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      height: 1px;
+      background: #ebeef2;
+    }
+    .ops-divider span {
+      position: relative;
+      padding: 0 0.875rem;
+      background: #ffffff;
+      color: #aab2bf;
+      font-size: 0.74rem;
+      font-weight: 500;
+    }
+    /* El divisor solo tiene sentido si el botón de passkey sigue visible. */
+    .ops-form:has(#passkey-submit[hidden]) .ops-divider { display: none; }
 
     .ops-message {
-      margin-top: 8px;
-      padding: 12px 14px;
-      border-radius: 13px;
-      font-size: 0.79rem;
-      line-height: 1.55;
+      padding: 0.7rem 0.875rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      line-height: 1.5;
     }
-    .ops-error { color: #a51d28; background: #fff1f2; }
-    .ops-notice { color: #1557a0; background: #edf6ff; }
+    .ops-error { color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; }
+    .ops-notice { color: #0a192f; background: #f5f5f7; border: 1px solid #e4e8ee; }
 
-    @media (max-width: 560px) {
-      .ops-login { place-items: center; padding: 20px; }
-      .ops-auth { padding: 38px 28px; border-radius: 32px; }
-      .ops-brand { margin-bottom: 44px; }
+    .ops-login-footer {
+      margin: 0;
+      color: #b4bcc7;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    @keyframes ops-fadein {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { transition: none !important; }
+      *, *::before, *::after { transition: none !important; animation: none !important; }
     }
   </style>
 </OpsLayout>

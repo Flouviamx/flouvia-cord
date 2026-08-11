@@ -47,8 +47,15 @@ export const profileUpdateSchema = z.object({
     lastName: nameSchema,
 });
 
+// `currentPassword` es OPCIONAL a propósito: una cuenta creada con Google/Apple
+// no tiene contraseña que confirmar y necesita poder ESTABLECER la primera.
+// Quien sí decide si hace falta es el endpoint, que lo exige solo cuando la
+// cuenta ya tiene un hash real (ver api/account/password.ts).
+// ⚠️ Antes esto era `.min(1)` y contradecía al endpoint: el usuario OAuth-only
+// enviaba una cadena vacía, zod respondía 400 y la UI mostraba "no se pudo
+// cambiar la contraseña" — nunca podía crear una.
 export const passwordChangeSchema = z.object({
-    currentPassword: z.string().min(1).max(256),
+    currentPassword: z.string().max(256).optional(),
     newPassword: passwordSchema,
 });
 

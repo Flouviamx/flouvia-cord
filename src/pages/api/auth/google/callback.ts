@@ -10,6 +10,7 @@ import { trustedIp } from '../../../../lib/ip';
 import { posthogServer } from '../../../../lib/posthog-server';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 import { ssoRequirementFor } from '../../../../lib/saml';
+import { completeOAuthLink, consumeOAuthLink, linkRedirect } from '../../../../lib/oauth-link';
 
 export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
   const ip = trustedIp(request);
@@ -84,6 +85,23 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
     // email — es exactamente la ruta de toma de control que se cerró en Apple.
     if (profile.verified_email !== true) {
       return redirect('/sign-in?sso_error=1');
+    }
+
+    // ── Carril de VINCULACIÓN (Ajustes › Tu cuenta) ──────────────────────
+    // La identidad ya la fija la sesión: aquí no se busca por correo, no se
+    // crea usuario, no se abre sesión nueva y no se pasa por 2FA (la persona
+    // ya está dentro). Solo se adjunta la credencial.
+    const linkUserId = await consumeOAuthLink(cookies);
+    if (linkUserId) {
+      const outcome = await completeOAuthLink(linkUserId, 'google', providerUserId, email);
+      if (outcome === 'already_linked') {
+        return redirect(linkRedirect({ link_error: 'already_linked', provider: 'google' }));
+      }
+      // Solo se toma la foto de Google si la cuenta todavía no tiene una.
+      if (picture) {
+        await sql`update users set avatar_url = coalesce(avatar_url, ${picture}) where id = ${linkUserId}`;
+      }
+      return redirect(linkRedirect({ linked: 'google' }));
     }
 
     // Buscar si ya existe cuenta OAuth vinculada

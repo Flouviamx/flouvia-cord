@@ -5,14 +5,25 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { randomBytes, createHash } from 'node:crypto';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
+import { currentUserId } from '../../../../lib/context';
+import { beginOAuthLink, clearOAuthLink, linkRedirect } from '../../../../lib/oauth-link';
 
 function base64url(buf: Buffer): string {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
 export const GET: APIRoute = async ({ cookies, redirect, url }) => {
+  // ?link=1 → "conectar Google a mi cuenta" desde Ajustes › Tu cuenta, no un
+  // login. Sin sesión no hay nada que vincular.
+  const linkMode = url.searchParams.get('link') === '1';
+  const linkUserId = linkMode ? currentUserId() : null;
+  if (linkMode && !linkUserId) return redirect('/sign-in');
+
   const clientId = import.meta.env.GOOGLE_CLIENT_ID;
   if (!clientId) {
+    // En vinculación el usuario viene navegando desde Ajustes: devolverle un
+    // 503 de texto plano lo sacaría de la app. Regresa con un error legible.
+    if (linkMode) return redirect(linkRedirect({ link_error: 'unavailable', provider: 'google' }));
     return new Response('GOOGLE_CLIENT_ID no configurado', { status: 503 });
   }
 
@@ -35,6 +46,10 @@ export const GET: APIRoute = async ({ cookies, redirect, url }) => {
   // roundtrip completo a Google y de vuelta (un query param se perdería).
   const dest = safeRelativeRedirect(url.searchParams.get('redirect_url'));
   if (dest) cookies.set('cord_oauth_redirect', dest, cookieOpts);
+
+  // Una intención de vinculación vieja jamás debe contaminar un login normal.
+  if (linkUserId) beginOAuthLink(cookies, linkUserId);
+  else clearOAuthLink(cookies);
 
   const params = new URLSearchParams({
     client_id: clientId,

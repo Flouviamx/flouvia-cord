@@ -6,6 +6,86 @@
 
 ---
 
+✅ **Ops desbloqueado (503 permanente), login sin tarjeta, primera contraseña en cuentas
+   OAuth y vinculación de Google desde Ajustes (ago 2026)** — André reportó que ni él
+   podía entrar a `ops.cordhq.app`, que quería revisar la seguridad del panel y que el
+   login no viviera en una tarjeta. En la misma sesión pidió poder ponerle contraseña a
+   una cuenta creada con Google y conectar Google/Apple desde Ajustes en vez de solo
+   desde `/sign-in`.
+   • **Causa raíz del bloqueo total — un solo backend como requisito duro:**
+     `strictRateLimit` exigía Upstash y fallaba cerrado; Upstash NUNCA se provisionó en
+     Vercel (confirmado con `vercel env ls`), así que en producción devolvía
+     `access_temporarily_unavailable` en el **100%** de los intentos. Verificado en vivo,
+     no por lectura de código: `POST /api/ops/auth` y `/api/ops/passkey-options` → 503.
+     ⚠️ **El alcance era mucho mayor que Ops**: el mismo helper gatea reembolsos de
+     tarjeta, evidencia y archivos de disputas, `POST /api/account/reauthenticate`,
+     aceptación de tarifas de Cord Pagos y `connect-security.ts` — todo eso llevaba
+     semanas en 503 permanente en producción sin que nadie lo notara.
+   • **Backend durable #2 sobre Neon** (`src/lib/ratelimit.ts` + tabla nueva
+     `rate_limit_counters`): un solo statement con `on conflict` (atómico, el lock de
+     fila evita lecturas perdidas), ventana que se reinicia sola por `reset_at` sin cron,
+     y barrido perezoso acotado a 500 filas máximo una vez por minuto. La clave se guarda
+     como sha256 porque el texto original lleva IPs y correos. `rateLimit()` normal NO usa
+     este backend (ahí sí habría carga real contra la BD); es exclusivo del carril
+     fail-closed, cuyo volumen es bajo por diseño. Orden nuevo: Upstash si está → Neon →
+     cerrado. Verificado contra Neon real: conteo secuencial, 10 peticiones concurrentes
+     contadas sin perder ninguna, reset de ventana, y contra el servidor el corte real en
+     el intento 11 → 429 (ya no 503).
+   • **`/ops/login` rediseñado sin tarjeta**, calcado del login público `/sign-in`:
+     lienzo blanco, columna centrada, logo real, formulario sin borde ni sombra, mismos
+     tokens de `styles/auth.css`. Tipografía del sistema a propósito — la CSP de Ops fija
+     `font-src 'self'` y no carga Google Fonts. Se agregó `.ops-secondary[hidden]` y un
+     `:has()` que esconde el divisor "o" cuando el botón de passkey se oculta en el paso
+     TOTP (la trampa ya documentada del `[hidden]` pisado por un `display` de autor).
+     Un 503 dejó de mostrarse como "credenciales inválidas" — esa confusión es justo lo
+     que hizo que una caída total se leyera como un password equivocado.
+   • **Auditoría de seguridad de Ops — sin vías de entrada.** Allowlist doble (código +
+     tabla + CHECK en Postgres), passkey o password+TOTP en prod, tokens solo como sha256,
+     cookies `__Host-` con `SameSite=strict`, una sesión por operador atada al User-Agent,
+     host canónico obligatorio, CSRF de origen exacto sin fallback a `SITE`, CSP propia y
+     mutaciones con rol admin + confirmación escrita + auditoría transaccional.
+   • **Bug real: una cuenta OAuth-only no podía crear su primera contraseña.**
+     `passwordChangeSchema` exigía `currentPassword` con `.min(1)` mientras el endpoint
+     documentaba y soportaba justo lo contrario — zod respondía 400 antes de llegar a esa
+     lógica y la UI decía "no se pudo cambiar la contraseña". El esquema pasó a
+     `.optional()` y **quien decide sigue siendo el endpoint**: la exige solo cuando hay
+     hash real. Verificado: crear sin contraseña → 200 con Argon2id real; con contraseña
+     existente, la actual sigue siendo obligatoria → 401.
+   • **Vincular Google desde Ajustes › Tu cuenta** (`src/lib/oauth-link.ts`, nuevo):
+     carril SEPARADO del login y la diferencia es de seguridad. En login el proveedor
+     decide quién eres y Cord cae a emparejar por correo verificado; en vinculación la
+     identidad ya la fija la sesión, así que aquí **nunca** se empareja por correo, no se
+     crea usuario, no se abre sesión y no se pasa por 2FA — emparejar por correo en este
+     carril reabriría la ruta de toma de control que se cerró en la auditoría de auth.
+     La intención viaja en cookie HttpOnly de 10 min y al volver se exige sesión viva del
+     MISMO usuario; la cookie sola no autoriza nada. Si la credencial ya pertenece a otra
+     cuenta de Cord se rechaza, jamás se reasigna. Sin step-up, por consistencia con el
+     registro de passkeys (que también agrega un método de acceso y tampoco lo pide).
+   • ⚠️ **Apple queda como "No disponible" a propósito, no por olvido.** (1) No hay ninguna
+     variable `APPLE_*` en Vercel — el login con Apple tampoco funciona hoy. (2) Apple
+     responde con `form_post` (POST cross-site) y sus cookies estaban en `SameSite=Lax`,
+     que el navegador NO envía en ese POST → todo login habría terminado en `sso_error=1`.
+     Eso **sí se corrigió** (`SameSite=None; Secure`, que es lo que exige form_post). Pero
+     la vinculación necesita además leer la cookie de SESIÓN, que es `Lax` por diseño;
+     relajarla a `None` debilitaría la defensa CSRF de toda la app por un botón. La salida
+     limpia es un token de vinculación firmado de un solo uso — diseño aparte, no parche.
+   • ⚠️ **`hola@flouvia.com` no puede entrar a Ops:** `email_verified_at` en null y
+     `password_hash` literal `'dummy_hash'` (artefacto de la migración de Clerk). Tiene
+     TOTP y passkey, pero el guard de correo verificado lo corta antes.
+     `andrevalleo13@gmail.com` sí está completo.
+   • ⚠️ **Trampa de entorno local, no de código:** un `vercel env pull` dejó `.env.local`
+     con 44 de 55 valores en `""` — incluido `DATABASE_URL` — y Vite le da PRECEDENCIA
+     sobre `.env`. Cualquier dev server nuevo tomaba una cadena vacía y el driver de Neon
+     fallaba con `getaddrinfo ENOTFOUND api.invalid`. Se depuraron las líneas vacías
+     (respaldo en `.env.local.bak-vacio`, ignorado por `.env*`). **Si vuelves a correr
+     `vercel env pull`, vuelve a romperse igual** — córrelo hacia otro archivo. De paso
+     ese pull deja `VERCEL_ENV="production"` en tu máquina local.
+   • Verificado: `npm run db:migrate` contra Neon, dos builds limpios, capturas Playwright
+     del login de Ops en sus dos pasos y de las secciones de Ajustes, y 12/12 checks E2E
+     contra la BD real con usuario y organización temporales (borrados al terminar).
+
+---
+
 ✅ **Sesión visible en la landing pública + cookie de consentimiento compartida entre
    subdominios + glass restaurado (ago 2026)** — André reportó que al cerrar la
    pestaña o salir a la landing pública tenía que volver a iniciar sesión, que el

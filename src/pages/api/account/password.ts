@@ -35,7 +35,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // sin exigir "la actual" (no existe). Cuentas con password real sí la exigen.
     const hasRealPassword = !!user.password_hash && user.password_hash !== 'dummy_hash';
     if (hasRealPassword) {
-        const ok = await verifyPassword(currentPassword, user.password_hash as string);
+        const ok = currentPassword
+            ? await verifyPassword(currentPassword, user.password_hash as string)
+            : false;
         if (!ok) return new Response(JSON.stringify({ error: 'wrong_password' }), { status: 401 });
     }
 
