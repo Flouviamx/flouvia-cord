@@ -23,6 +23,7 @@ import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit } from '../../../lib/db';
 import { sendEmail, siteOrigin } from '../../../lib/email';
+import { notify } from '../../../lib/notify';
 
 const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
@@ -52,7 +53,7 @@ export const GET: APIRoute = async ({ request }) => {
 
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const MS = 86400000;
-    const candidatos = rows.map((r) => {
+    const todas = rows.map((r) => {
         const due = new Date(r.base as string); due.setDate(due.getDate() + (DAYS[r.terminos as string] ?? 0));
         const dias = Math.round((due.getTime() - today.getTime()) / MS);
         return {
@@ -63,7 +64,13 @@ export const GET: APIRoute = async ({ request }) => {
             poweredOff: r.portal_powered === false,
             vence: due, dias,
         };
-    }).filter((c) => c.dias >= 0 && c.dias <= 3); // vence en los próximos 3 días
+    });
+    const candidatos = todas.filter((c) => c.dias >= 0 && c.dias <= 3); // vence en los próximos 3 días
+    // Owner: aviso de "pago vencido" (evento payment_overdue) exactamente el
+    // primer día tras el vencimiento — coincidencia exacta de fecha, el cron
+    // corre una vez al día, así se dispara una sola vez por cotización sin
+    // necesitar una tabla de dedup.
+    const vencidasHoy = todas.filter((c) => c.dias === -1);
 
     const origin = siteOrigin();
     let enviados = 0;
@@ -101,7 +108,15 @@ export const GET: APIRoute = async ({ request }) => {
         });
         if (res.sent) { enviados++; await logAudit(c.orgId, { accion: 'recordatorio.enviado', entidad: 'cotizacion', entidad_id: c.id, detalle: `${c.folio} → ${c.email}` }); }
     }
-    return json({ enviados, candidatos: candidatos.length });
+
+    for (const c of vencidasHoy) {
+        await notify(c.orgId, 'payment_overdue', {
+            folio: c.folio, cliente: c.empresa, total: c.total,
+            link: `${origin}/app/cobranza`,
+        });
+    }
+
+    return json({ enviados, candidatos: candidatos.length, vencidasHoy: vencidasHoy.length });
 };
 
 const num = (v: unknown) => Number(v ?? 0);

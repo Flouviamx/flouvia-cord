@@ -17,7 +17,7 @@ export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
     const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
     if (!facturapiConfigured()) {
-        return json({ error: 'Falta FACTURAPI_USER_KEY en el entorno (llave de cuenta de Facturapi). Agrégala en Vercel para habilitar la subida de CSD por cliente.' }, 503);
+        return json({ error: 'Timbrar con tu propio CSD todavía no está disponible en tu cuenta. Escríbenos a soporte@flouvia.com y lo activamos.' }, 503);
     }
     try { requireEncryption(); } catch { return json({ error: 'El cifrado de secretos no está configurado.' }, 503); }
 

@@ -1,7 +1,9 @@
 ---
-// Ajustes › Notificaciones — matriz evento → canal (correo / Slack / WhatsApp).
-// Guarda en orgs.notif_prefs (jsonb) vía /api/org/prefs. No usa el guardado
-// genérico del shell (por eso NO pasa `save`): tiene su propia barra.
+// Ajustes › Notificaciones — matriz evento → canal (correo / Slack). Guarda en
+// orgs.notif_prefs (jsonb) vía /api/org/prefs; src/lib/notify.ts es quien de
+// verdad la consulta antes de mandar algo (ver historial-app-features.md).
+// No usa el guardado genérico del shell (por eso NO pasa `save`): tiene su
+// propia barra.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
@@ -20,11 +22,13 @@ const EVENTOS = [
     { id: 'team_join',       label: t(L, 'set.notif.ev.team_join'), desc: t(L, 'set.notif.ev.team_join_desc') },
 ];
 const CANALES = [
-    { id: 'email',    label: t(L, 'set.notif.canal.email') },
-    { id: 'slack',    label: t(L, 'set.notif.canal.slack') },
-    { id: 'whatsapp', label: t(L, 'set.notif.canal.whatsapp') },
+    { id: 'email', label: t(L, 'set.notif.canal.email') },
+    { id: 'slack', label: t(L, 'set.notif.canal.slack') },
 ];
 const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
+// team_join no tiene forma de mensaje de Slack (no hay folio/cliente/total que
+// mostrar) — se deja sin celda interactiva en vez de fingir que aplica.
+const sinSlack = (ev: string, c: string) => c === 'slack' && ev === 'team_join';
 ---
 
 <SettingsShell title="Notificaciones — Ajustes" tab="notificaciones"
@@ -44,10 +48,14 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
                         <span class="notif-ev-desc">{ev.desc}</span>
                     </span>
                     {CANALES.map((c) => (
-                        <label class="notif-cell">
-                            <input type="checkbox" data-canal={c.id} checked={on(ev.id, c.id)} />
-                            <span class="notif-box"></span>
-                        </label>
+                        sinSlack(ev.id, c.id) ? (
+                            <span class="notif-na" title={t(L, 'set.notif.sin_canal')}>—</span>
+                        ) : (
+                            <label class="notif-cell">
+                                <input type="checkbox" data-canal={c.id} checked={on(ev.id, c.id)} />
+                                <span class="notif-box"></span>
+                            </label>
+                        )
                     ))}
                 </div>
             ))}
@@ -79,7 +87,7 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
 
 <style>
     .notif-grid { display: flex; flex-direction: column; }
-    .notif-row { display: grid; grid-template-columns: 1fr 72px 72px 72px; align-items: center; gap: 0.5rem; padding: 0.85rem 0.3rem; border-bottom: 1px solid var(--color-border); }
+    .notif-row { display: grid; grid-template-columns: 1fr 72px 72px; align-items: center; gap: 0.5rem; padding: 0.85rem 0.3rem; border-bottom: 1px solid var(--color-border); }
     .notif-head { padding-top: 0; padding-bottom: 0.6rem; }
     .notif-ch { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #99a2af; text-align: center; }
     .notif-ev { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -91,9 +99,10 @@ const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
     .notif-box::after { content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0); transition: transform 0.2s var(--ease-spring); }
     .notif-cell input:checked + .notif-box { background: var(--color-ok); border-color: var(--color-ok); }
     .notif-cell input:checked + .notif-box::after { transform: rotate(45deg) scale(1); }
+    .notif-na { display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); opacity: 0.4; font-size: 0.9rem; cursor: default; }
 
     @media (max-width: 560px) {
-        .notif-row { grid-template-columns: 1fr 48px 48px 48px; }
+        .notif-row { grid-template-columns: 1fr 52px 52px; }
     }
 </style>
 

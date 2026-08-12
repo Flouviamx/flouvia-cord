@@ -1,0 +1,39 @@
+---
+title: "Notifications"
+description: "Decide which events notify you and how: email to the account owner and Slack."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Notifications</h1>
+  <p class="page-subtitle">Find out the moment your client makes a decision, by email or Slack, without having to keep checking the dashboard.</p>
+</header>
+
+## How it works
+
+Under **Settings › Notifications** there's a matrix of 7 events by 2 channels (email and Slack). Check the boxes you want — every combination saves immediately and applies from that point on.
+
+| Event | When it fires |
+|---|---|
+| Quote viewed | The client opened the public link |
+| Quote approved | The client accepted the proposal |
+| Quote rejected | The client rejected or countered |
+| Payment received | An online payment was recorded |
+| Quote about to expire | 3 days before the validity date |
+| Overdue payment | A receivable passed its due date |
+| Someone joined the team | An invitee accepted your invitation |
+
+<Callout type="info">
+**Before you save your matrix for the first time**, Cord already emails you when a quote is approved, rejected, or paid — the three highest-value events, on by default. As soon as you save the screen once, your selection takes over: you can turn any of the three off or turn the rest on.
+</Callout>
+
+## Email
+
+Email always goes to the business owner's account (`Settings › Your account`). It's never sent to the whole team — if several people need to know, use Slack.
+
+## Slack
+
+Connect an **Incoming Webhook** from Slack on the same screen (`Settings › Integrations`) and check the Slack column for the events you want posted to your channel. The message includes the folio, the client, the total, and a direct link to the quote.
+
+<Callout type="warning">
+**"Someone joined the team" has no Slack version.** That alert isn't tied to any quote (no folio, no amount to show in the channel), so it can only be received by email.
+</Callout>

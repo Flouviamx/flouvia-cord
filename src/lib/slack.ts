@@ -8,15 +8,23 @@
 
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(Number(n ?? 0));
 
-// Texto + emoji por evento de cotización.
-const EVENT_MSG: Record<string, { emoji: string; verbo: string }> = {
-    'quote.sent':      { emoji: '📤', verbo: 'enviada' },
-    'quote.viewed':    { emoji: '👀', verbo: 'vista por el cliente' },
-    'quote.approved':  { emoji: '✅', verbo: 'APROBADA' },
-    'quote.rejected':  { emoji: '❌', verbo: 'rechazada' },
-    'quote.paid':      { emoji: '💰', verbo: 'PAGADA' },
-    'invoice.stamped': { emoji: '🧾', verbo: 'facturada (CFDI)' },
-    'ping':            { emoji: '🔔', verbo: 'de prueba' },
+// Texto por evento (sin emojis — Regla 1 de CLAUDE.md). `notify.*` son los
+// eventos que dispara src/lib/notify.ts (matriz de Ajustes › Notificaciones);
+// el resto queda por si algún día vuelve a haber un disparo de integraciones.
+const EVENT_MSG: Record<string, { verbo: string }> = {
+    'quote.sent':        { verbo: 'enviada' },
+    'quote.viewed':      { verbo: 'vista por el cliente' },
+    'quote.approved':    { verbo: '*APROBADA*' },
+    'quote.rejected':    { verbo: 'rechazada' },
+    'quote.paid':        { verbo: '*PAGADA*' },
+    'invoice.stamped':   { verbo: 'facturada (CFDI)' },
+    'notify.quote_viewed':    { verbo: 'vista por el cliente' },
+    'notify.quote_approved':  { verbo: '*APROBADA*' },
+    'notify.quote_rejected':  { verbo: 'rechazada' },
+    'notify.quote_paid':      { verbo: '*PAGADA*' },
+    'notify.quote_expiring':  { verbo: 'está por vencer' },
+    'notify.payment_overdue': { verbo: 'con pago vencido' },
+    'ping': { verbo: 'de prueba' },
 };
 
 export interface SlackPayload {
@@ -28,9 +36,9 @@ export interface SlackPayload {
 
 /** Construye y envía el mensaje. Devuelve ok/status sin lanzar. */
 export async function postToSlack(webhookUrl: string, evento: string, data: SlackPayload): Promise<{ ok: boolean; status: number }> {
-    const meta = EVENT_MSG[evento] || { emoji: '🔔', verbo: evento };
+    const meta = EVENT_MSG[evento] || { verbo: evento };
     const lineas = [
-        `${meta.emoji} Cotización *${data.folio}* ${meta.verbo}`,
+        `Cotización *${data.folio}* ${meta.verbo}`,
         `Cliente: ${data.cliente || '—'} · Total: *${money(data.total)}*`,
     ];
     if (data.link) lineas.push(`<${data.link}|Ver cotización>`);

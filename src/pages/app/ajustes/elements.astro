@@ -19,6 +19,7 @@ const [reciente] = await sql`
     select public_token from cotizaciones
     where org_id = ${orgId} and status <> 'draft'
     order by created_at desc limit 1`;
+const hasSample = !!reciente?.public_token;
 const sampleToken = (reciente?.public_token as string) || 'TOKEN_DE_TU_COTIZACION';
 
 const base = Astro.url.origin;
@@ -31,6 +32,30 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
 <SettingsShell title="Cotizador embebible — Ajustes" tab="elements" perm="ajustes" save={true}
     intro={t(L, 'set.el.intro')}>
 
+    <div class="s-block full">
+        <div class="el-preview-head">
+            <h3>{t(L, 'set.el.preview_titulo')}</h3>
+            <span class:list={['el-install-badge', hasDomains ? 'ok' : 'open']}>
+                {hasDomains ? t(L, 'set.el.preview_dominios_ok') : t(L, 'set.el.preview_dominios_abierto')}
+            </span>
+        </div>
+        {hasSample ? (
+            <>
+                <p class="el-p">{t(L, 'set.el.preview_desc')}</p>
+                <div class="el-frame">
+                    <div class="el-frame-bar">
+                        <span class="el-frame-dot" /><span class="el-frame-dot" /><span class="el-frame-dot" />
+                        <span class="el-frame-url">tu-sitio.com</span>
+                    </div>
+                    <iframe class="el-frame-iframe" src={`/embed/${sampleToken}`} title="Preview del cotizador embebido" loading="lazy" />
+                </div>
+                <a class="el-preview" href={`/embed/${sampleToken}`} target="_blank" rel="noopener">{t(L, 'set.el.ver_embed')}</a>
+            </>
+        ) : (
+            <p class="el-p el-preview-empty">{t(L, 'set.el.preview_vacio')}</p>
+        )}
+    </div>
+
     <div class="s-block">
         <h3>{t(L, 'set.el.paso1_titulo')}</h3>
         <p class="el-p">{t(L, 'set.el.paso1_desc')}</p>
@@ -38,9 +63,6 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
             <pre><code id="elSnippet">{snippet}</code></pre>
             <button class="el-copy" id="elCopy" type="button" data-i18n-copiar={t(L, 'set.el.copiar')} data-i18n-copiado={t(L, 'set.el.copiado')}>{t(L, 'set.el.copiar')}</button>
         </div>
-        <a class="el-preview" href={`/embed/${sampleToken}`} target="_blank" rel="noopener">
-            {t(L, 'set.el.ver_embed')}
-        </a>
     </div>
 
     <div class="s-block">
@@ -90,6 +112,20 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
     .el-copy.done { color: #6ee7b7; border-color: rgba(110,231,183,0.4); }
     .el-preview { display: inline-block; margin-top: 0.8rem; font-size: 0.82rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
     .el-preview:hover { text-decoration: underline; }
+    html[data-theme="dark"] .el-preview { color: #7fb0ff; }
+
+    /* ── Vista previa en vivo ── */
+    .el-preview-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
+    .el-preview-head h3 { margin: 0; }
+    .el-install-badge { font-size: 0.68rem; font-weight: 700; padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
+    .el-install-badge.ok { color: var(--color-ok); background: rgba(16,185,129,0.12); }
+    .el-install-badge.open { color: #b45309; background: rgba(245,158,11,0.12); }
+    .el-preview-empty { padding: 2rem 1rem; text-align: center; background: var(--color-bg-soft); border-radius: 12px; }
+    .el-frame { border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; background: var(--surface); }
+    .el-frame-bar { display: flex; align-items: center; gap: 6px; padding: 9px 12px; background: var(--color-bg-soft); border-bottom: 1px solid var(--color-border); }
+    .el-frame-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-border); }
+    .el-frame-url { margin-left: 8px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.7rem; color: var(--color-text-muted); }
+    .el-frame-iframe { display: block; width: 100%; height: 480px; border: none; background: var(--color-bg-soft); }
     .el-domains {
         width: 100%; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.82rem;
         color: var(--color-text); background: var(--surface);

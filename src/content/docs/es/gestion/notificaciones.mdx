@@ -1,0 +1,39 @@
+---
+title: "Notificaciones"
+description: "Decide qué eventos te avisan y por dónde: correo al dueño de la cuenta y Slack."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Notificaciones</h1>
+  <p class="page-subtitle">Entérate por correo o Slack en el momento en que tu cliente decide algo, sin tener que estar revisando el dashboard.</p>
+</header>
+
+## Cómo funciona
+
+En **Ajustes › Notificaciones** hay una matriz de 7 eventos por 2 canales (correo y Slack). Marca las casillas que quieras — cada combinación se guarda de inmediato y aplica a partir de ese momento.
+
+| Evento | Cuándo se dispara |
+|---|---|
+| Cotización vista | El cliente abrió el link público |
+| Cotización aprobada | El cliente aceptó la propuesta |
+| Cotización rechazada | El cliente rechazó o contraofertó |
+| Pago recibido | Se registró un pago en línea |
+| Cotización por vencer | 3 días antes de la fecha de vigencia |
+| Pago vencido | Una cuenta por cobrar pasó su fecha límite |
+| Alguien se unió al equipo | Un invitado aceptó tu invitación |
+
+<Callout type="info">
+**Antes de guardar tu matriz por primera vez**, Cord ya te avisa por correo cuando una cotización se aprueba, se rechaza o se paga — son los tres eventos con más valor y vienen encendidos por default. En cuanto guardas la pantalla una vez, tu selección manda: puedes apagar cualquiera de los tres o encender los demás.
+</Callout>
+
+## Correo
+
+El correo siempre llega a la cuenta del dueño del negocio (`Ajustes › Tu cuenta`). No se manda a todo el equipo — si varias personas necesitan enterarse, usa Slack.
+
+## Slack
+
+Conecta un **Incoming Webhook** de Slack en la misma pantalla (`Ajustes › Integraciones`) y marca la columna de Slack en los eventos que quieras publicar en tu canal. El mensaje incluye el folio, el cliente, el total y un link directo a la cotización.
+
+<Callout type="warning">
+**"Alguien se unió al equipo" no tiene versión de Slack.** Ese aviso no está atado a ninguna cotización (sin folio, sin monto que mostrar en el canal), así que solo se puede recibir por correo.
+</Callout>

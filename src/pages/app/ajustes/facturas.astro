@@ -1,0 +1,102 @@
+---
+// Ajustes › Facturación y CFDI › Facturas emitidas — bandeja con TODOS los
+// documentos fiscales de la org (antes solo se veían uno por uno dentro de
+// cada cotización, sin forma de ver el mes completo junto).
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { getOrg, getFacturas } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+const ORG = await getOrg();
+const FACTURAS = await getFacturas();
+const L = currentLocale();
+const isMx = ORG.countryCode === 'MX';
+
+const money = (n: number) => '$' + new Intl.NumberFormat(L === 'en' ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(n);
+const STATUS_KEY: Record<string, string> = { issued: 'set.fact.status_issued', pending: 'set.fact.status_pending', error: 'set.fact.status_error', cancelled: 'set.fact.status_cancelled' };
+---
+
+<SettingsShell title="Facturas emitidas — Ajustes" tab="facturas" perm="ajustes"
+    intro={t(L, 'set.fact.intro')}>
+
+    {!isMx && (
+        <div class="fiscal-notice">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <p>{t(L, 'set.fact.no_mx')}</p>
+        </div>
+    )}
+
+    <div class="s-block full">
+        {FACTURAS.length === 0 ? (
+            <div class="fact-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" fill="currentColor" fill-opacity="0.06"/><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <strong>{t(L, 'set.fact.vacio_titulo')}</strong>
+                <p>{t(L, 'set.fact.vacio_desc')}</p>
+            </div>
+        ) : (
+            <div class="fact-table" role="table">
+                <div class="fact-row fact-head" role="row">
+                    <span role="columnheader">{t(L, 'set.fact.col_folio')}</span>
+                    <span role="columnheader">{t(L, 'set.fact.col_cliente')}</span>
+                    <span role="columnheader" class="fact-num">{t(L, 'set.fact.col_total')}</span>
+                    <span role="columnheader">{t(L, 'set.fact.col_fecha')}</span>
+                    <span role="columnheader">{t(L, 'set.fact.col_estado')}</span>
+                    <span role="columnheader" class="fact-docs-h"></span>
+                </div>
+                {FACTURAS.map((f) => (
+                    <div class="fact-row" role="row">
+                        <a class="fact-folio" href={`/app/cotizaciones/${f.cotizacionId}`} role="cell">{f.folio}</a>
+                        <span class="fact-cliente" role="cell">{f.cliente || '—'}</span>
+                        <span class="fact-num editorial" role="cell">{money(f.total)}</span>
+                        <span class="fact-fecha" role="cell">{f.creado}</span>
+                        <span role="cell">
+                            <span class={`fact-pill fact-pill-${f.status}`}>{t(L, STATUS_KEY[f.status] ?? 'set.fact.status_pending')}</span>
+                            {f.simulado && <span class="fact-badge">{t(L, 'set.fact.badge_simulado')}</span>}
+                            {!f.simulado && f.testMode && <span class="fact-badge">{t(L, 'set.fact.badge_prueba')}</span>}
+                        </span>
+                        <span class="fact-docs" role="cell">
+                            {f.pdfUrl && <a href={`/api/cotizaciones/${f.cotizacionId}/cfdi?type=pdf`} target="_blank" rel="noopener">{t(L, 'set.fact.ver_pdf')}</a>}
+                            {f.xmlUrl && <a href={`/api/cotizaciones/${f.cotizacionId}/cfdi?type=xml`} target="_blank" rel="noopener">{t(L, 'set.fact.ver_xml')}</a>}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+</SettingsShell>
+
+<style>
+    .fiscal-notice { display: flex; gap: 12px; align-items: flex-start; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.22); border-radius: 14px; padding: 14px 16px; margin-bottom: 1.6rem; color: #92400e; }
+    html[data-theme="dark"] .fiscal-notice { color: #fcd34d; }
+    .fiscal-notice svg { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
+    .fiscal-notice p { margin: 0; font-size: 0.82rem; line-height: 1.5; }
+
+    .fact-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.6rem; padding: 3rem 1rem; color: var(--color-text-muted); }
+    .fact-empty svg { width: 40px; height: 40px; opacity: 0.5; margin-bottom: 0.4rem; }
+    .fact-empty strong { font-size: 0.94rem; color: var(--color-text); }
+    .fact-empty p { margin: 0; font-size: 0.82rem; max-width: 360px; line-height: 1.5; }
+
+    .fact-table { display: flex; flex-direction: column; max-height: 620px; overflow-y: auto; overflow-x: auto; }
+    .fact-row { display: grid; grid-template-columns: 110px 1fr 120px 100px 150px 90px; gap: 0.8rem; align-items: center; padding: 0.7rem 0.2rem; border-bottom: 1px solid var(--color-border); min-width: 720px; }
+    .fact-row:last-child { border-bottom: none; }
+    .fact-head { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.7px; text-transform: uppercase; color: #99a2af; padding-top: 0; padding-bottom: 0.6rem; }
+    .fact-num { text-align: right; }
+    .fact-folio { font-size: 0.82rem; font-weight: 700; color: var(--color-blue-deep); text-decoration: none; }
+    .fact-folio:hover { text-decoration: underline; }
+    html[data-theme="dark"] .fact-folio { color: #7fb0ff; }
+    .fact-cliente { font-size: 0.84rem; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fact-fecha { font-size: 0.78rem; color: var(--color-text-muted); white-space: nowrap; }
+
+    .fact-pill { display: inline-flex; align-items: center; font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
+    .fact-pill-issued { color: var(--color-ok); background: rgba(16,185,129,0.12); }
+    .fact-pill-pending { color: #b45309; background: rgba(245,158,11,0.12); }
+    .fact-pill-error { color: var(--color-danger); background: rgba(239,68,68,0.12); }
+    .fact-pill-cancelled { color: var(--color-text-muted); background: var(--color-bg-soft); }
+    .fact-badge { display: inline-flex; margin-left: 6px; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.3px; padding: 2px 7px; border-radius: 100px; color: #b45309; background: rgba(245,158,11,0.1); white-space: nowrap; }
+
+    .fact-docs { display: flex; gap: 0.6rem; }
+    .fact-docs a { font-size: 0.76rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
+    .fact-docs a:hover { text-decoration: underline; }
+    html[data-theme="dark"] .fact-docs a { color: #7fb0ff; }
+
+    @media (max-width: 640px) { .fact-row { grid-template-columns: 90px 1fr 100px 90px 130px 80px; } }
+</style>

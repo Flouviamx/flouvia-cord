@@ -1,13 +1,17 @@
 ---
-// Ajustes › Developers › MCP.
-// Conecta una IA (Claude, Cursor…) al servidor MCP de Cord: consulta y crea
-// información del negocio en lenguaje natural. Se autentica con una API key.
-// Incluye config por cliente + catálogo de herramientas + probador en vivo.
-// Separado de la API (jun 2026). La gobernanza de servidores MCP SALIENTES y los
-// agentes de IA viven en la pestaña "Agentes IA".
+// Ajustes › MCP. Conecta una IA (Claude, Cursor…) al servidor MCP de Cord:
+// consulta y crea información del negocio en lenguaje natural. Se autentica
+// con una API key. La gobernanza de servidores MCP SALIENTES y los agentes de
+// IA viven en la pestaña "Inteligencia artificial".
+//
+// Rediseño (ago 2026): antes mostraba una llave FALSA (sk_live_xxxxxxxxxxxx)
+// sin ninguna señal de si algo estaba realmente conectado — imposible saber
+// si servía. Ahora: tablero de estado real (¿hay llave activa? ¿cuándo se usó
+// MCP por última vez?, leído de api_requests) + crear la llave sin salir de
+// la página (POST /api/keys, mismo endpoint que el Workbench).
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { MCP_TOOLS } from '../../../lib/mcp';
-import '../../../styles/developers.css';
+import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const L = currentLocale();
@@ -16,16 +20,52 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
     for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
     return s;
 };
-const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
+const READ_TOOLS = MCP_TOOLS.filter((tool) => tool.scope === 'read');
+
+const orgId = await getActiveOrgId();
+const [hasKeyRow, mcpCallsRow] = await withOrgTx(orgId,
+    sql`select count(*)::int as n from api_keys where org_id = ${orgId} and type = 'secret' and revoked_at is null`,
+    sql`select count(*)::int as n, max(created_at) as ultima from api_requests where org_id = ${orgId} and ruta like '/mcp%'`,
+);
+const hasActiveKey = (hasKeyRow[0]?.n ?? 0) > 0;
+const mcpCalls = mcpCallsRow[0]?.n ?? 0;
+const lastUsed = mcpCallsRow[0]?.ultima as string | null;
+const fmtDate = (d: string) => new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(d));
+
+const estado: 'conectado' | 'listo' | 'sin_llave' = !hasActiveKey ? 'sin_llave' : mcpCalls > 0 ? 'conectado' : 'listo';
 ---
 
 <SettingsShell title="MCP — Ajustes" tab="mcp" perm="ajustes"
     intro={t(L, 'set.mcp.intro')}>
-<div class="dev-wrapper">
 
-    <div class="dev-card">
-        <h3 class="dev-card-title">{t(L, 'set.mcp.conecta_titulo')}</h3>
-        <p class="dev-note" style="margin-top:0.5rem">{t(L, 'set.mcp.conecta_desc_pre')} <a href="/app?wb=api" style="color:var(--color-blue-deep);font-weight:600">API</a> {t(L, 'set.mcp.conecta_desc_post')}</p>
+    <div class="s-block">
+        <h3>{t(L, 'set.mcp.estado_titulo')}</h3>
+        <div class="mcp-status" data-estado={estado} data-placeholder={t(L, 'set.mcp.llave_placeholder')}
+            data-i18n-estado-listo={t(L, 'set.mcp.estado_listo')} data-i18n-estado-listo-desc={t(L, 'set.mcp.estado_listo_desc')}>
+            <span class="mcp-status-dot"></span>
+            <span class="mcp-status-info">
+                <span class="mcp-status-title">
+                    {estado === 'conectado' ? t(L, 'set.mcp.estado_conectado') : estado === 'listo' ? t(L, 'set.mcp.estado_listo') : t(L, 'set.mcp.estado_sin_llave')}
+                </span>
+                <span class="mcp-status-sub">
+                    {estado === 'conectado'
+                        ? `${tf('set.mcp.estado_conectado_desc', { fecha: lastUsed ? fmtDate(lastUsed) : '' })} · ${tf('set.mcp.n_llamadas_30d', { n: String(mcpCalls) })}`
+                        : estado === 'listo' ? t(L, 'set.mcp.estado_listo_desc') : t(L, 'set.mcp.estado_sin_llave_desc')}
+                </span>
+            </span>
+            {!hasActiveKey && (
+                <button type="button" class="mcp-crear-btn" id="mcpCrearLlave" data-i18n-creando={t(L, 'set.mcp.creando_llave')} data-i18n-err={t(L, 'set.mcp.no_pudo_crear')}>
+                    {t(L, 'set.mcp.crear_llave')}
+                </button>
+            )}
+        </div>
+        {hasActiveKey && <a class="mcp-manage-link" href="/app?wb=api">{t(L, 'set.mcp.gestionar_llaves')}</a>}
+        <p class="mcp-key-banner" id="mcpKeyBanner" hidden>{t(L, 'set.mcp.llave_creada_aviso')}</p>
+    </div>
+
+    <div class="s-block">
+        <h3>{t(L, 'set.mcp.conecta_titulo')}</h3>
+        <p class="mcp-note">{t(L, 'set.mcp.conecta_desc_pre')} <a href="/app?wb=api">API</a> {t(L, 'set.mcp.conecta_desc_post')}</p>
 
         <div class="mcp-connect">
             <div class="mcp-tabs" role="tablist">
@@ -33,53 +73,116 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
                 <button class="mcp-tab" data-client="cursor">Cursor</button>
                 <button class="mcp-tab" data-client="url">{t(L, 'set.mcp.url_directa')}</button>
             </div>
-            <div class="dev-terminal mcp-code">
-                <button class="dev-terminal-copy" id="mcpCopy" type="button" data-i18n-copiar={t(L, 'set.mcp.copiar')} data-i18n-copiado={t(L, 'set.mcp.copiado')}>{t(L, 'set.mcp.copiar')}</button>
+            <div class="mcp-code">
+                <button class="mcp-code-copy" id="mcpCopy" type="button" data-i18n-copiar={t(L, 'set.mcp.copiar')} data-i18n-copiado={t(L, 'set.mcp.copiado')}>{t(L, 'set.mcp.copiar')}</button>
                 <pre><code id="mcpConfig"></code></pre>
             </div>
-            <p class="dev-note" style="margin-top:0.7rem">{t(L, 'set.mcp.pega_config')}</p>
+            <p class="mcp-note">{t(L, 'set.mcp.pega_config')}</p>
         </div>
     </div>
 
-    <div class="dev-card" data-i18n-json-invalido={t(L, 'set.mcp.json_invalido')} data-i18n-ejecutando={t(L, 'set.mcp.ejecutando')} data-i18n-fallo={t(L, 'set.mcp.fallo')} data-i18n-error-red={t(L, 'set.mcp.error_red')}>
-        <h3 class="dev-card-title">{tf('set.mcp.herramientas_titulo', { n: String(MCP_TOOLS.length) })}</h3>
-        <p class="dev-note" style="margin:0.4rem 0 0" set:html={t(L, 'set.mcp.herramientas_desc')} />
+    <div class="s-block" data-i18n-json-invalido={t(L, 'set.mcp.json_invalido')} data-i18n-ejecutando={t(L, 'set.mcp.ejecutando')} data-i18n-fallo={t(L, 'set.mcp.fallo')} data-i18n-error-red={t(L, 'set.mcp.error_red')}>
+        <h3>{tf('set.mcp.herramientas_titulo', { n: String(MCP_TOOLS.length) })}</h3>
+        <p class="mcp-note" set:html={t(L, 'set.mcp.herramientas_desc')} />
         <div class="mcp-tools">
             {MCP_TOOLS.map((tool) => (
                 <div class="mcp-tool">
                     <div class="mcp-tool-head">
-                        <code>{tool.name}</code>
+                        <span class="mcp-tool-title">{tool.annotations?.title || tool.name}</span>
                         <span class={`mcp-scope ${tool.scope}`}>{tool.scope === 'write' ? t(L, 'set.mcp.escritura') : t(L, 'set.mcp.lectura')}</span>
                     </div>
                     <p>{tool.description}</p>
+                    <code class="mcp-tool-name">{tool.name}</code>
                 </div>
             ))}
         </div>
 
         <div class="mcp-try">
-            <span class="wh-events-label">{t(L, 'set.mcp.probar_titulo')}</span>
-            <p class="dev-note" style="margin:0 0 0.8rem">{t(L, 'set.mcp.probar_desc')}</p>
+            <h4>{t(L, 'set.mcp.probar_titulo')}</h4>
+            <p class="mcp-note">{t(L, 'set.mcp.probar_desc')}</p>
             <div class="mcp-try-row">
                 <select class="s-input mcp-select" id="mcpTool">
-                    {READ_TOOLS.map((tool) => <option value={tool.name}>{tool.name}</option>)}
+                    {READ_TOOLS.map((tool) => <option value={tool.name}>{tool.annotations?.title || tool.name}</option>)}
                 </select>
                 <input class="s-input mcp-args" id="mcpArgs" placeholder={t(L, 'set.mcp.args_ph')} />
-                <button class="api-btn-solid" id="mcpRun" type="button">{t(L, 'set.mcp.ejecutar')}</button>
+                <button class="mcp-run-btn" id="mcpRun" type="button">{t(L, 'set.mcp.ejecutar')}</button>
             </div>
             <pre class="mcp-out" id="mcpOut" hidden></pre>
         </div>
     </div>
-</div>
 </SettingsShell>
 
+<style>
+    .mcp-note { font-size: 0.83rem; color: var(--color-text-muted); line-height: 1.55; margin: 0.4rem 0 0.9rem; }
+    .mcp-note a { color: var(--color-blue-deep); font-weight: 600; text-decoration: none; }
+    .mcp-note a:hover { text-decoration: underline; }
+    html[data-theme="dark"] .mcp-note a { color: #7fb0ff; }
+    .mcp-note :global(b) { color: var(--color-text); font-weight: 600; }
+
+    /* ── Estado de conexión ── */
+    .mcp-status { display: flex; align-items: center; gap: 12px; }
+    .mcp-status-dot { width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+    .mcp-status[data-estado="conectado"] .mcp-status-dot { background: var(--color-ok); box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
+    .mcp-status[data-estado="sin_llave"] .mcp-status-dot { background: var(--color-text-muted); }
+    .mcp-status-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .mcp-status-title { font-size: 0.9rem; font-weight: 650; color: var(--color-text); }
+    .mcp-status-sub { font-size: 0.78rem; color: var(--color-text-muted); }
+    .mcp-crear-btn { flex-shrink: 0; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 16px; cursor: pointer; transition: transform 0.2s var(--ease-spring); }
+    .mcp-crear-btn:hover { transform: translateY(-1px); }
+    .mcp-crear-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
+    .mcp-manage-link { display: inline-block; margin-top: 0.9rem; font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
+    .mcp-manage-link:hover { text-decoration: underline; }
+    html[data-theme="dark"] .mcp-manage-link { color: #7fb0ff; }
+    .mcp-key-banner { margin: 0.9rem 0 0; font-size: 0.8rem; font-weight: 600; color: #047857; background: rgba(16,185,129,0.1); border-radius: 10px; padding: 0.7rem 0.9rem; }
+
+    /* ── Tabs + code block (mismo lenguaje que el snippet de Elements) ── */
+    .mcp-tabs { display: inline-flex; gap: 2px; padding: 3px; border-radius: 11px; background: rgba(10,25,47,0.065); margin-bottom: 0.9rem; }
+    html[data-theme="dark"] .mcp-tabs { background: rgba(255,255,255,0.1); }
+    .mcp-tab { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); background: none; border: none; border-radius: 8px; padding: 7px 13px; cursor: pointer; }
+    .mcp-tab.active { color: var(--color-text); background: var(--surface); box-shadow: 0 1px 3px rgba(10,25,47,0.12); }
+    .mcp-code { position: relative; }
+    .mcp-code pre { background: #0a192f; color: #e6edf3; border-radius: 12px; padding: 1.1rem 1.2rem; overflow-x: auto; margin: 0; }
+    .mcp-code code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.8rem; line-height: 1.6; white-space: pre; }
+    .mcp-code-copy { position: absolute; top: 10px; right: 10px; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 600; color: #cdd9e5; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; padding: 5px 11px; cursor: pointer; transition: background 0.2s; }
+    .mcp-code-copy:hover { background: rgba(255,255,255,0.16); }
+
+    /* ── Herramientas ── */
+    .mcp-tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.9rem; margin-top: 1rem; }
+    .mcp-tool { border: 1px solid var(--color-border); border-radius: 12px; padding: 0.9rem 1rem; }
+    .mcp-tool-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.35rem; }
+    .mcp-tool-title { font-size: 0.86rem; font-weight: 650; color: var(--color-text); }
+    .mcp-tool p { margin: 0 0 0.5rem; font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.5; }
+    .mcp-tool-name { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.7rem; color: var(--color-text-muted); opacity: 0.75; }
+    .mcp-scope { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
+    .mcp-scope.read { color: #0369a1; background: rgba(3,105,161,0.1); }
+    .mcp-scope.write { color: #b45309; background: rgba(245,158,11,0.12); }
+
+    /* ── Probador ── */
+    .mcp-try { margin-top: 1.6rem; padding-top: 1.4rem; border-top: 1px solid var(--color-border); }
+    .mcp-try h4 { margin: 0; font-size: 0.86rem; font-weight: 650; color: var(--color-text); }
+    .mcp-try-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .mcp-select { max-width: 220px; }
+    .mcp-args { flex: 1; min-width: 200px; }
+    .mcp-run-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 0 18px; cursor: pointer; }
+    .mcp-run-btn:disabled { opacity: 0.6; cursor: wait; }
+    .mcp-out { margin-top: 0.9rem; background: #0a192f; color: #e6edf3; border-radius: 12px; padding: 1rem 1.1rem; font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.78rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow-y: auto; }
+    .mcp-out.err { color: #fca5a5; }
+
+    @media (max-width: 640px) {
+        .mcp-status { flex-wrap: wrap; }
+        .mcp-tools { grid-template-columns: 1fr; }
+    }
+</style>
+
 <script>
-    // ── MCP: connect card (config por cliente) + probador de tools ──
     function initMcp() {
         const cfg = document.getElementById('mcpConfig');
         if (!cfg) return;
-        const URL_BASE = 'https://cordhq.app/api/mcp';
-        const KEY = 'sk_live_xxxxxxxxxxxx';
-        const CONFIGS: Record<string, string> = {
+        const URL_BASE = `${location.origin}/api/mcp`;
+        const statusEl = document.querySelector('.mcp-status') as HTMLElement | null;
+        let KEY = statusEl?.dataset.placeholder || 'TU_LLAVE_SECRETA';
+
+        const CONFIGS = (): Record<string, string> => ({
             claude: `{
   "mcpServers": {
     "cord": {
@@ -98,13 +201,14 @@ const READ_TOOLS = MCP_TOOLS.filter((t) => t.scope === 'read');
 }`,
             url: `URL:     ${URL_BASE}
 Header:  Authorization: Bearer ${KEY}`,
-        };
-        const setCfg = (c: string) => { cfg.textContent = CONFIGS[c] || CONFIGS.url; };
+        });
+        let activeClient = 'claude';
+        const setCfg = (c: string) => { activeClient = c; cfg.textContent = CONFIGS()[c] || CONFIGS().url; };
         setCfg('claude');
-        document.querySelectorAll('.mcp-tab').forEach((t) => t.addEventListener('click', () => {
+        document.querySelectorAll('.mcp-tab').forEach((tabEl) => tabEl.addEventListener('click', () => {
             document.querySelectorAll('.mcp-tab').forEach((x) => x.classList.remove('active'));
-            t.classList.add('active');
-            setCfg((t as HTMLElement).dataset.client || 'claude');
+            tabEl.classList.add('active');
+            setCfg((tabEl as HTMLElement).dataset.client || 'claude');
         }));
         const copyBtn = document.getElementById('mcpCopy') as HTMLElement | null;
         const i18nCopiar = copyBtn?.dataset.i18nCopiar || 'Copiar';
@@ -113,10 +217,41 @@ Header:  Authorization: Bearer ${KEY}`,
             try { await navigator.clipboard.writeText(cfg.textContent || ''); copyBtn.textContent = i18nCopiado; setTimeout(() => (copyBtn.textContent = i18nCopiar), 1500); } catch {}
         });
 
-        // Probador
+        // ── Crear llave in-situ (POST /api/keys, mismo endpoint del Workbench) ──
+        const crearBtn = document.getElementById('mcpCrearLlave') as HTMLButtonElement | null;
+        const banner = document.getElementById('mcpKeyBanner');
+        crearBtn?.addEventListener('click', async () => {
+            const orig = crearBtn.textContent;
+            crearBtn.disabled = true; crearBtn.textContent = crearBtn.dataset.i18nCreando || 'Creando…';
+            try {
+                const res = await fetch('/api/keys', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre: 'MCP', scope: 'write' }),
+                });
+                const d = await res.json();
+                if (!res.ok || !d.secret) throw new Error(d.error || crearBtn.dataset.i18nErr || 'No se pudo crear la llave');
+                KEY = d.secret;
+                setCfg(activeClient);
+                if (banner) banner.hidden = false;
+                crearBtn.style.display = 'none';
+                if (statusEl) {
+                    statusEl.setAttribute('data-estado', 'listo');
+                    const title = statusEl.querySelector('.mcp-status-title');
+                    if (title) title.textContent = statusEl.dataset.i18nEstadoListo || 'Listo para conectar';
+                    const sub = statusEl.querySelector('.mcp-status-sub');
+                    if (sub) sub.textContent = statusEl.dataset.i18nEstadoListoDesc || '';
+                }
+                (window as any).cordToast?.('Llave creada', 'ok');
+            } catch (err: any) {
+                (window as any).cordToast?.(err.message || crearBtn.dataset.i18nErr || 'No se pudo crear la llave', 'error');
+                crearBtn.textContent = orig;
+            } finally { crearBtn.disabled = false; }
+        });
+
+        // ── Probador de tools ──
         const runBtn = document.getElementById('mcpRun') as HTMLButtonElement | null;
         const out = document.getElementById('mcpOut');
-        const card = document.querySelector('.dev-card[data-i18n-fallo]') as HTMLElement | null;
+        const card = document.querySelector('.s-block[data-i18n-fallo]') as HTMLElement | null;
         const i18nJsonInvalido = card?.dataset.i18nJsonInvalido || 'El JSON de args no es válido.';
         const i18nEjecutando = card?.dataset.i18nEjecutando || 'Ejecutando…';
         const i18nFallo = card?.dataset.i18nFallo || 'Falló';

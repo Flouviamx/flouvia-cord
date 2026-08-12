@@ -9,6 +9,7 @@ import type { APIRoute } from 'astro';
 import { createHash } from 'node:crypto';
 import { sql, resolvePublicQuote, withOrgTx } from '../../../lib/db';
 import { dispatchQuoteEvent } from '../../../lib/webhooks';
+import { notifyQuoteEvent } from '../../../lib/notify';
 import { after } from '../../../lib/after';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
@@ -115,6 +116,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         try { await materializeAnticipoCobros(c.id as string, c.org_id as string); } catch { /* fallback en payment-intent */ }
         // Fondo: el webhook/Slack jamás debe hacer esperar al cliente que aprueba.
         after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved'));
+        after(notifyQuoteEvent(c.org_id as string, c.id as string, 'quote_approved'));
         return json({ ok: true, status: 'approved', hash: snapshotHash, partial: isPartial });
     }
 
@@ -127,6 +129,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
             values (${orgId}, ${c.id}, 'rejected', ${comentario ? `El cliente rechazó: "${comentario}"` : 'El cliente rechazó la cotización desde el link'})`);
         after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.rejected'));
+        after(notifyQuoteEvent(c.org_id as string, c.id as string, 'quote_rejected'));
         return json({ ok: true, status: 'rejected' });
     }
 

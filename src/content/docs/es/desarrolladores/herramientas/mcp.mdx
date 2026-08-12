@@ -25,9 +25,13 @@ La autenticación para tu cliente de IA se realiza utilizando tu **Clave de API*
 
 1. Navega a **Ajustes › Desarrolladores › MCP** en la interfaz de Cord (aparece al activar el
    **Modo desarrollador** al final del índice de Ajustes).
-2. Genera una Clave de API si no tienes una — desde la pestaña **API** del
-   [Cord Workbench](/docs/desarrolladores/herramientas/workbench). Necesitas scope `write` para
-   usar `crear_cotizacion_borrador`; `read` alcanza para las demás.
+2. Un tablero de estado arriba te dice si ya tienes una llave activa y, si ya conectaste un
+   cliente de IA, cuándo se usó por última vez. Si no tienes ninguna, el botón **"Crear llave
+   para MCP"** genera una llave `write` sin salir de la página — se pega sola en la
+   configuración de abajo. **Cópiala en ese momento: no se vuelve a mostrar.** (También puedes
+   crear una desde la pestaña **API** del [Cord Workbench](/docs/desarrolladores/herramientas/workbench)
+   si prefieres controlar el scope a mano — `write` para usar `crear_cotizacion_borrador`,
+   `read` alcanza para las demás.)
 3. Copia la configuración JSON del cliente MCP proporcionada en pantalla.
 4. Pega esta configuración en la ruta local correspondiente a tu cliente (por ejemplo, el archivo `claude_desktop_config.json` si usas la aplicación Claude for Desktop).
 

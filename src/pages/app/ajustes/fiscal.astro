@@ -108,20 +108,7 @@ const isMx = ORG.countryCode === 'MX';
             <button type="button" class="csd-btn-solid" id="csdUpload">{t(L, 'set.fiscal.subir_csd')}</button>
             <span class="csd-msg" id="csdMsg"></span>
         </div>
-    </div>
-
-    <div class="s-block" style={isMx ? undefined : 'opacity:0.5; pointer-events:none;'}>
-        <h3>{t(L, 'set.fiscal.timbrado')}</h3>
-        <div class="s-body">
-            <div class="pac-row">
-                <span class="csd-dot pac-dot" id="pacDot" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}></span>
-                <span class="pac-info">
-                    <span class="pac-title">{t(L, 'set.fiscal.pac_titulo')}</span>
-                    <span class="pac-desc">{t(L, 'set.fiscal.pac_desc')}</span>
-                </span>
-                <span class="pac-badge" id="pacBadge" data-on={ORG.csdEstado === 'cargado' ? '1' : '0'}>{ORG.csdEstado === 'cargado' ? t(L, 'set.fiscal.conectado') : t(L, 'set.fiscal.sin_conectar')}</span>
-            </div>
-        </div>
+        <a class="fact-link" href="/app/ajustes/facturas">{t(L, 'set.fiscal.ver_facturas')}</a>
     </div>
 </SettingsShell>
 
@@ -161,15 +148,9 @@ const isMx = ORG.countryCode === 'MX';
     .csd-drop-t { font-size: 0.85rem; font-weight: 600; color: var(--color-text); }
     .csd-drop-s { font-size: 0.72rem; color: #99a2af; }
 
-    .pac-row { display: flex; align-items: center; gap: 11px; border: 1px solid var(--color-border); border-radius: 10px; padding: 14px; }
-    .pac-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-    .pac-title { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
-    .pac-desc { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; }
-    .csd-dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
-    .csd-dot[data-on="1"] { background: var(--color-ok); }
-    .pac-dot { align-self: flex-start; margin-top: 5px; }
-    .pac-badge { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; color: #b45309; background: rgba(245,158,11,0.1); white-space: nowrap; }
-    .pac-badge[data-on="1"] { color: var(--color-ok); background: rgba(16,185,129,0.12); }
+    .fact-link { display: inline-block; margin-top: 1.1rem; font-size: 0.82rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
+    .fact-link:hover { text-decoration: underline; }
+    html[data-theme="dark"] .fact-link { color: #7fb0ff; }
 
     @media (max-width: 560px) { .csd-files { grid-template-columns: 1fr; } }
 </style>
@@ -232,10 +213,7 @@ const isMx = ORG.countryCode === 'MX';
                 if (title) title.textContent = M.i18nCargado || 'CSD cargado';
                 if (name) name.textContent = d.csd_nombre || M.i18nCertActivo || 'Certificado activo';
                 if (rmBtn) rmBtn.style.display = '';
-                document.getElementById('pacBadge')?.setAttribute('data-on', '1');
-                const pb = document.getElementById('pacBadge'); if (pb) pb.textContent = M.i18nConectado || 'Conectado';
-                document.getElementById('pacDot')?.setAttribute('data-on', '1');
-                (window as any).cordToast?.(M.i18nConectadoToast || 'CSD conectado a Facturapi', 'ok');
+                (window as any).cordToast?.(M.i18nConectadoToast || 'CSD conectado', 'ok');
             } catch (err: any) {
                 flash(err.message || M.i18nNoSubio || 'No se pudo subir el CSD', false);
             } finally { upBtn.disabled = false; upBtn.textContent = orig; }
@@ -253,9 +231,6 @@ const isMx = ORG.countryCode === 'MX';
                 if (title) title.textContent = M.i18nSinCsd || 'Sin CSD';
                 if (name) name.textContent = M.i18nSube || 'Sube tu .cer y .key para empezar a timbrar.';
                 rmBtn.style.display = 'none';
-                document.getElementById('pacBadge')?.setAttribute('data-on', '0');
-                const pb = document.getElementById('pacBadge'); if (pb) pb.textContent = M.i18nSinConectar || 'Sin conectar';
-                document.getElementById('pacDot')?.setAttribute('data-on', '0');
                 flash(M.i18nRemovido || 'CSD removido.', true);
             } catch { flash(M.i18nNoQuito || 'No se pudo quitar el CSD', false); } finally { rmBtn.disabled = false; }
         });

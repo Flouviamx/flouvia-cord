@@ -394,5 +394,67 @@ Selling to other countries from Mexico requires highly specific tax processes, s
         area: 'fiscal',
         status: 'next',
         api: true
+    },
+    {
+        id: '13',
+        slug: 'notificaciones',
+        title: {
+            es: 'Notificaciones por correo y Slack',
+            en: 'Email and Slack notifications'
+        },
+        shortDesc: {
+            es: 'Entérate por correo o Slack cuando tu cliente ve, aprueba, rechaza o paga una cotización — sin tener que revisar el dashboard.',
+            en: 'Find out by email or Slack when your client views, approves, rejects, or pays a quote — without checking the dashboard.'
+        },
+        content: {
+            es: `## Entérate en el momento, no cuando revisas el dashboard
+Una matriz de 7 eventos por 2 canales (correo y Slack) en Ajustes › Notificaciones. Marca las casillas que quieras y se guardan al instante.
+
+### Beneficios clave:
+- **Correo al dueño de la cuenta:** vista, aprobada, rechazada, pago recibido, por vencer, pago vencido y equipo — vienen encendidos por default en aprobada/rechazada/pagada desde el primer día.
+- **Slack para todo el equipo:** conecta un Incoming Webhook y publica los mismos eventos en tu canal, con folio, cliente, total y link directo.
+- **Sin ruido falso:** solo se dispara lo que de verdad marcaste — nada se postea "por si acaso".`,
+            en: `## Find out the moment it happens, not when you check the dashboard
+A matrix of 7 events by 2 channels (email and Slack) under Settings › Notifications. Check the boxes you want and they save instantly.
+
+### Key benefits:
+- **Email to the account owner:** viewed, approved, rejected, payment received, about to expire, overdue, and team — approved/rejected/paid come on by default from day one.
+- **Slack for the whole team:** connect an Incoming Webhook and post the same events to your channel, with folio, client, total, and a direct link.
+- **No false noise:** only what you actually checked fires — nothing gets posted "just in case".`
+        },
+        area: 'finanzas',
+        status: 'live',
+        api: false
+    },
+    {
+        id: '14',
+        slug: 'facturas-emitidas',
+        title: {
+            es: 'Bandeja de facturas emitidas',
+            en: 'Issued invoices inbox'
+        },
+        shortDesc: {
+            es: 'Todos tus CFDI en una sola tabla — folio, cliente, monto, fecha, estado y sus archivos PDF/XML — sin abrir cada cotización una por una.',
+            en: 'All your CFDI in one table — folio, client, amount, date, status, and their PDF/XML files — without opening each quote one by one.'
+        },
+        content: {
+            es: `## Tus facturas, juntas por fin
+Antes solo se veía un CFDI a la vez, dentro de cada cotización. Ajustes › Facturación y CFDI › Facturas emitidas las junta todas.
+
+### Beneficios clave:
+- **Una tabla, todo el mes:** folio, cliente, monto, fecha y estado (timbrada/pendiente/error/cancelada) de cada CFDI que has emitido.
+- **PDF y XML a un clic:** cada fila enlaza directo a sus archivos, listos para descargar o reenviar.
+- **Contexto honesto:** las facturas generadas en un entorno de prueba se marcan explícitamente, para que nunca se confundan con un CFDI real ante el SAT.`,
+            en: `## Your invoices, together at last
+Before, you could only see one CFDI at a time, inside each quote. Settings › Invoicing & CFDI › Issued invoices brings them all together.
+
+### Key benefits:
+- **One table, the whole month:** folio, client, amount, date, and status (stamped/pending/error/cancelled) for every CFDI you've issued.
+- **PDF and XML one click away:** each row links straight to its files, ready to download or forward.
+- **Honest context:** invoices generated in a test environment are marked explicitly, so they're never confused with a real CFDI filed with the SAT.`
+        },
+        area: 'fiscal',
+        status: 'live',
+        api: false
     }
 ];

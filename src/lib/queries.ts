@@ -7,6 +7,7 @@ import { sql, getActiveOrgId, resolvePublicQuote, withOrgTx } from './db';
 import { currentUserId, currentOrgIdOverride, currentLocale } from './context';
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
+import { notifyQuoteEvent } from './notify';
 import { memberCan, seatLimit, type Membership, type PermKey, type PermMap } from './permissions';
 import { INCLUDED } from './billing';
 import { cached, invalidate } from './cache';
@@ -1324,6 +1325,41 @@ export async function getDocumentosFiscales(cotizacionId: string) {
     }));
 }
 
+// Bandeja de "Facturas emitidas" (Ajustes › Facturación y CFDI) — todos los
+// documentos fiscales de la org, no solo los de una cotización (a diferencia
+// de getDocumentosFiscales de arriba). Antes no existía ninguna pantalla que
+// listara los CFDI juntos: solo se veían uno por uno dentro de cada
+// cotización. Mismo criterio simulado/testMode que getDocumentosFiscales.
+export async function getFacturas(limit = 200) {
+    const orgId = await getActiveOrgId();
+    const [rows] = await withOrgTx(orgId, sql`
+        select d.id, d.cotizacion_id, d.country_code, d.document_type, d.fiscal_id,
+               d.status, d.provider_data, d.pdf_url, d.xml_url, d.created_at,
+               c.folio, c.total, cl.empresa
+        from documentos_fiscales d
+        join cotizaciones c on c.id = d.cotizacion_id
+        left join clientes cl on cl.id = c.cliente_id
+        where d.org_id = ${orgId}
+        order by d.created_at desc
+        limit ${limit}`);
+    return rows.map((r: any) => ({
+        id: r.id as string,
+        cotizacionId: r.cotizacion_id as string,
+        folio: r.folio as string,
+        cliente: (r.empresa as string) || null,
+        total: num(r.total),
+        pais: r.country_code as string,
+        tipo: r.document_type as string,
+        fiscalId: (r.fiscal_id as string) || null,
+        status: r.status as string,
+        simulado: !!(r.provider_data && (r.provider_data as any).simulado === true),
+        testMode: !!(r.provider_data && (r.provider_data as any).livemode === false),
+        pdfUrl: (r.pdf_url as string) || null,
+        xmlUrl: (r.xml_url as string) || null,
+        creado: fmtDate(r.created_at as string),
+    }));
+}
+
 // Suscripción recurrente (iguala) de una cotización, para el detalle del vendedor.
 export async function getSuscripcionByCotizacion(cotizacionId: string) {
     const orgId = await getActiveOrgId();
@@ -1540,6 +1576,7 @@ export async function markViewed(token: string) {
     );
     // Fondo: no bloquear el render del link del cliente con el webhook saliente.
     after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.viewed'));
+    after(notifyQuoteEvent(c.org_id as string, c.id as string, 'quote_viewed'));
 }
 
 // ── ANALÍTICA (Informes) ──────────────────────────────────────────────────────

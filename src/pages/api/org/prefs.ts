@@ -1,6 +1,7 @@
 // /api/org/prefs — preferencias en jsonb que no caben en el guardado genérico:
 //   PATCH { notif_prefs?, integraciones?, slack_webhook_url? } → { ok }
-// notif_prefs: { [evento]: { email?:bool, slack?:bool, whatsapp?:bool } }
+// notif_prefs: { [evento]: { email?:bool, slack?:bool } } — la consulta
+// src/lib/notify.ts antes de mandar cada correo/post a Slack (ver historial).
 // integraciones: { [id]: bool }   (toggle de conectores — maqueta que persiste)
 export const prerender = false;
 
@@ -10,7 +11,7 @@ import { requirePerm } from '../../../lib/queries';
 
 // Eventos y canales válidos (whitelist — evita basura en el jsonb).
 const EVENTOS = new Set(['quote_viewed', 'quote_approved', 'quote_rejected', 'quote_paid', 'quote_expiring', 'payment_overdue', 'team_join']);
-const CANALES = new Set(['email', 'slack', 'whatsapp']);
+const CANALES = new Set(['email', 'slack']);
 const INTEGR = new Set(['shopify', 'woo', 'meli', 'zapier', 'contpaqi', 'slack']);
 
 function sanitizeNotif(input: unknown): Record<string, Record<string, boolean>> {

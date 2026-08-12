@@ -101,7 +101,7 @@ const TOOL = {
 
 export const POST: APIRoute = async ({ request }) => {
     if (!API_KEY) {
-        return json({ error: 'La IA aún no está configurada. Define ANTHROPIC_API_KEY (o enciende Vercel AI Gateway) en el entorno.' }, 503);
+        return json({ error: 'Armar cotizaciones con IA todavía no está disponible en tu cuenta. Escríbenos a soporte@flouvia.com y lo activamos.' }, 503);
     }
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }

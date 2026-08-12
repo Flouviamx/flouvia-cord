@@ -4,6 +4,119 @@
 > cotizaciones, link público `/q`, dashboard, cobranza, onboarding, dark mode, entorno
 > de prueba, chat, tiempo real. Extraído de `historial.md`. Orden: más reciente arriba.
 
+✅ **Ajustes: notificaciones reales, bandeja de facturas, MCP/Embed rediseñados, integraciones honestas (ago 2026)** —
+   sesión grande sobre 6 páginas de Ajustes que André señaló con capturas ("hazlo funcionar",
+   "esto no sirve para nada"). Auditoría previa encontró que Notificaciones e Integraciones eran
+   **decorativas** (guardaban una preferencia que ningún emisor consultaba — la MISMA clase de bug
+   documentada ya dos veces antes en este archivo con Cobranza IA/Equipo), que Facturación no podía
+   funcionar por una tercera fuga de variable de entorno, y que MCP/Embed mostraban estado falso
+   (una llave `sk_live_xxxxxxxxxxxx` con forma real que nunca conectaba nada). Ver Reglas 14 y 15
+   nuevas de `CLAUDE.md`.
+   • **`src/lib/notify.ts` (nuevo) — el emisor que Notificaciones nunca tuvo.** `orgs.notif_prefs`
+     se guardaba desde jun 2026 pero **cero** correos al dueño existían en el código (los únicos
+     `sendEmail` reales eran todos AL CLIENTE) y `dispatchSlack` (dentro de `webhooks.ts`) posteaba
+     **todos** los eventos a Slack sin mirar la matriz. `notify(orgId, evento, data)` es la única
+     puerta de salida: lee `notif_prefs`, manda correo al dueño (`orgs.owner_id → users.email`,
+     plantilla propia con logo+botón pill, mismo lenguaje que `notifyQuoteSent`) y/o postea a Slack
+     — nunca ambos si el checkbox está apagado. **Defaults sensatos**: una org que NUNCA guardó su
+     matriz (`Object.keys(notif_prefs).length === 0`) recibe correo en aprobada/rechazada/pagada
+     por default — en cuanto guarda una vez, la UI serializa las 7 filas completas y a partir de
+     ahí se respeta literalmente lo guardado, defaults incluidos apagados. `dispatchSlack` se
+     ELIMINÓ de `webhooks.ts` (dead code); el post a Slack ahora solo ocurre vía `notify()`, y solo
+     si `data.folio` está presente — `team_join` (sin folio posible) estructuralmente nunca puede
+     postear a Slack aunque alguien fuerce `slack:true` a mano en la BD. Cableado en los 7 puntos
+     reales: `quote_viewed` (`markViewed` en queries.ts), `quote_approved`/`quote_rejected`
+     (`/api/q/[token]`), `quote_paid` (3 sitios en `stripe/webhook.ts`, incluida la rama de iguala
+     recurrente), `team_join` (`/api/equipo/join`), `quote_expiring` (query nueva en el cron
+     `expirar-cotizaciones`, exactamente 3 días antes — coincidencia de fecha, sin tabla de dedup) y
+     `payment_overdue` (query nueva en el cron `recordatorios`, exactamente el primer día vencido).
+     La columna WhatsApp se **eliminó** de la UI/API (`CANALES`/whitelist de `/api/org/prefs`) — no
+     existe ningún canal WhatsApp en el backend, ofrecerlo era otra promesa falsa.
+   • **Fix de higiene encontrado al tocar `slack.ts`:** `EVENT_MSG` llevaba emojis (📤👀✅❌💰🧾🔔),
+     violación directa de la Regla 1 de diseño del proyecto — se quitaron, quedaron marcadores de
+     texto (`*APROBADA*` en negritas de Slack en vez de ✅).
+   • **`/app/ajustes/facturas` (nuevo) — bandeja de facturas emitidas.** No existía NINGUNA pantalla
+     que listara los CFDI juntos — solo se veían uno por uno dentro de cada cotización. `getFacturas()`
+     nuevo en `queries.ts` (todos los `documentos_fiscales` de la org, join con folio/cliente/total),
+     tabla con folio/cliente/total/fecha/estado (pill issued/pending/error/cancelled) + badges
+     Simulada/Cuenta de prueba + links reales a los proxies `/api/cotizaciones/[id]/cfdi?type=pdf|xml`
+     que ya existían. Nueva pestaña "Facturas emitidas" junto a "Datos fiscales" en la categoría
+     Facturación y CFDI.
+   • **Fuga de env var #3, cerrada:** `/api/fiscal/csd.ts` devolvía 503 con *"Falta
+     FACTURAPI_USER_KEY en el entorno... Agrégala en Vercel"* — mensaje de infraestructura interna
+     mostrado al dueño del negocio. Ahora: *"Timbrar con tu propio CSD todavía no está disponible en
+     tu cuenta. Escríbenos a soporte@flouvia.com y lo activamos."*
+   • **Panel "Timbrado (PAC)" — construido y luego ELIMINADO en la misma sesión, a petición
+     explícita de André.** El primer intento agregó un panel de 3 estados (CSD propio/cuenta
+     compartida/simulado) explicando honestamente con qué cuenta se timbraba — pero al verlo en
+     vivo, André señaló que **nombrar el proveedor (Facturapi) y el mecanismo de cuenta compartida
+     es información que el dueño del negocio no necesita**: lo único que le importa es si SU CSD
+     está conectado (ya visible en el bloque de arriba) y poder ver sus facturas (el link nuevo). Se
+     removió el panel completo — markup, CSS (`.pac-*`), el helper `facturapiSharedKeyConfigured()`
+     recién creado en `src/lib/fiscal/facturapi.ts`, y las 3 menciones de "Facturapi" que quedaban
+     en `set.fiscal.csd_intro`/`contrasena_hint`/`csd_conectado_toast` — el link "Ver facturas
+     emitidas →" se reubicó junto al botón de subir CSD.
+   • **`/app/ajustes/mcp` rediseñada — de plantilla falsa a estado real.** Antes mostraba
+     `sk_live_xxxxxxxxxxxx` sin ninguna señal de si algo estaba conectado. Ahora: tablero de estado
+     (¿hay una API key `secret` activa? ¿cuándo se usó MCP por última vez? — de `api_requests`
+     filtrando `ruta like '/mcp%'`, instrumentado desde la fase 9 de MCP) con 3 estados reales
+     (Sin conectar/Listo para conectar/Conectado) y botón **"Crear llave para MCP"** que llama
+     `POST /api/keys` sin salir de la página — la llave real sustituye al placeholder en el snippet
+     de configuración al instante, con el aviso "cópiala ahora, no se vuelve a mostrar" (mismo
+     patrón de un-solo-vistazo que CSD/webhooks). Las 7 herramientas pasaron de `<code>nombre</code>`
+     a `annotations.title` humano como encabezado + el nombre técnico en monospace debajo. Salió de
+     `developers.css` al lenguaje visual de Ajustes (hairline, `.s-block`).
+   • **`/app/ajustes/elements` — preview en vivo del embed.** Antes solo había un link "Ver el
+     embed en una pestaña nueva". Ahora, si existe una cotización real enviada, se monta un
+     `<iframe src="/embed/[token]">` DENTRO de la página (mockup de navegador con barra de URL) —
+     prueba visual inmediata de que el cotizador embebible funciona, sin salir de Ajustes. Badge de
+     "Instalación" (con dominios autorizados / modo abierto) junto al título.
+   • **`/app/ajustes/integraciones` — reescrita dos veces en la misma sesión.** Primer intento:
+     Slack se mantuvo como única integración real arriba, y la tabla de 5 conectores
+     (Shopify/Woo/Meli/Zapier/CONTPAQi) + una grilla de "Aplicaciones recomendadas" (9 apps más)
+     pasaron de toggle-que-no-conecta-nada a badges "Próximamente" estáticos. André corrigió en
+     caliente: **"las que no están quítalas, deja solo Slack y di que habrá más próximamente"** —
+     se eliminaron las DOS listas completas (14 nombres de producto que Cord no tiene, ninguno de
+     los cuales era una promesa real de roadmap) y se reemplazaron por un solo bloque genérico "Más
+     integraciones próximamente" con link a `/contacto/ventas` para pedir prioridad, sin nombrar
+     ningún conector específico. `orgs.integraciones` (jsonb) queda como plumbing inerte — ya no
+     hay ninguna UI que lo escriba.
+   • **Bug de layout real encontrado por André en capturas — 3 páginas afectadas.** `.s-block` de
+     `SettingsShell.astro` es un CSS grid de 2 columnas (`260px label | 1fr contenido`) que asume
+     que el **primer hijo directo** es un `<h3>` (va a la columna angosta) y el resto a la columna
+     ancha (`.s-block > *:not(:first-child) { grid-column: 2 }`). Los 3 bloques nuevos de esta
+     sesión (estado de MCP, preview de Embed, "más integraciones" de Integraciones) tenían un
+     `<div>` wrapper como primer hijo en vez de un `<h3>` directo — caían enteros en la columna de
+     260px, comprimiendo el texto a una franja angosta con un vacío enorme a la derecha (exactamente
+     lo que la captura de André mostraba: "Sin / conectar" partido en dos líneas). Fix: el bloque de
+     MCP ganó su `<h3>` directo ("Estado de la conexión"); los de Embed e Integraciones pasaron a
+     `.s-block.full` (grid de 1 columna, sin la reserva de 260px) ya que su contenido no tiene un
+     label natural de columna izquierda. **Regla de verificación a futuro**: cualquier `.s-block`
+     nuevo cuyo primer hijo NO sea un `<h3>` directo necesita la clase `.full`, o el contenido queda
+     comprimido en silencio — sin error de build, sin warning, solo un layout roto que solo se ve
+     al abrir la página real (exactamente el mismo patrón de "CSS que falla en silencio" ya
+     documentado para el scoping de Astro en `app-rutas.md`).
+   • **Onboarding a ancho completo + icono de Planes + tabs Apple.** `.idx-health` (tarjeta de
+     onboarding en el índice de Ajustes) tenía un `max-width:800px` heredado dentro de un
+     contenedor de 1040px — quitado. El icono de "Planes y suscripción" (un rayo genérico de
+     "upgrade") se cambió por una tarjeta con banda (el objeto real de la categoría) — 9 de los 13
+     iconos de categoría ganaron tratamiento duotone (Regla 9) donde tenían una forma cerrada real
+     que lo justificaba. Las tabs de `SettingsShell` (antes un subrayado estilo 2010) pasaron al
+     mismo lenguaje de segmented-control (`.ph-tab`) ya usado en Cobranza/Informes/Productos —
+     unificación, no un tercer sistema de tabs nuevo.
+   • Verificado con **90+ checks automatizados contra Neon real** (orgs/usuarios/sesiones
+     temporales, siempre borrados al final) a lo largo de 6 harnesses distintos: `notify()` gatea
+     de verdad en ambas direcciones (email/Slack encendido vs. apagado, defaults vs. matriz
+     guardada, sandbox/demo excluidos, nunca lanza) confirmado con un servidor HTTP local
+     capturando los posts reales de Slack; la bandeja de facturas cuadra con un `documentos_fiscales`
+     sembrado a mano; el flujo completo de crear-llave-de-MCP fue probado con clic real → `POST
+     /api/keys` real → llave real con forma `sk_(live|test)_[0-9a-f]{48}` inyectada en el snippet;
+     el iframe de preview de Embed se navegó de verdad y respondió 200; el fix de layout se verificó
+     midiendo `boundingBox().width` de cada bloque afectado (no solo presencia de clases); y el
+     flujo de quitar CSD (con el modal `cordConfirm` real, no un `confirm()` simulado) se re-verificó
+     después de la limpieza de JS que dejó huérfanos los hooks del panel PAC eliminado. `npm run
+     build` limpio en cada tanda de cambios.
+
 ✅ **Ajustes › IA: fuera la jerga de infraestructura y la configuración duplicada (ago 2026)** —
    André abrió `/app/ajustes/agentes` y señaló tres cosas: que el aviso mencionaba
    `RESEND_API_KEY` ("no sé por qué dice lo de resend"), que el bloque de abajo era

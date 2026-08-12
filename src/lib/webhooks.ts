@@ -11,7 +11,6 @@
 
 import { sql } from './db';
 import { after } from './after';
-import { postToSlack } from './slack';
 import { enqueueForSubscribers, flushNow, newEventId } from './webhook-delivery';
 
 // Catálogo de eventos públicos (lo consume la UI y la validación de la API).
@@ -108,9 +107,6 @@ export async function dispatchPaymentPartial(orgId: string, cotizacionId: string
 // eventos como payment.partial pueden llevar campos propios sin que
 // dispatchQuoteEvent tenga que conocerlos.
 async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSummary, extra?: Record<string, unknown>): Promise<void> {
-    // ── Slack (best-effort, en paralelo a los webhooks) ──
-    void dispatchSlack(orgId, evento, q);
-
     let hooks: any[] = [];
     try {
         hooks = await sql`select id, eventos from webhooks where org_id = ${orgId} and activo = true`;
@@ -153,21 +149,4 @@ async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSumm
     // demorar la operación de negocio que disparó el evento.
     const ids = await enqueueForSubscribers(orgId, subs.map((h) => h.id as string), evento, body, eventId);
     if (ids.length) after(flushNow(orgId, ids));
-}
-
-// Postea el evento al Slack de la org si tiene un Incoming Webhook conectado.
-// Silencioso ante cualquier error (columna/tabla faltante, red, etc.).
-async function dispatchSlack(orgId: string, evento: string, q: any): Promise<void> {
-    try {
-        const [o] = await sql`select slack_webhook_url from orgs where id = ${orgId}`;
-        const url = o?.slack_webhook_url as string | null;
-        if (!url) return;
-        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
-        await postToSlack(url, evento, {
-            folio: q.folio as string,
-            cliente: (q.empresa as string) ?? null,
-            total: Number(q.total ?? 0),
-            link: `${base}/q/${q.public_token}`,
-        });
-    } catch { /* no-op */ }
 }

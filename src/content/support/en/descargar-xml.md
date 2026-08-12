@@ -1,19 +1,17 @@
 ---
-title: "Mass download of XMLs"
-description: "Export your monthly invoices in ZIP format for your accountant."
+title: "Download an invoice's PDF and XML"
+description: "Find the files for any CFDI you've stamped, invoice by invoice."
 category: "Billing & CFDI"
 ---
 
-Maintaining order in your accounting is fundamental, especially for monthly reconciliation.
+Every CFDI you stamp in Cord automatically generates its PDF (printable version) and its XML (the actual tax document — the one your accountant needs).
 
-### Mass Download of CFDI
+### Where to find them
 
-Instead of downloading invoices one by one, you can download all invoices for a specific period in a `.ZIP` format (containing the PDFs and structured XMLs).
+**Settings › Invoicing & CFDI › Issued invoices** brings together every CFDI you've stamped in a single table: folio, client, amount, date, and status. Each row has its own **PDF** and **XML** links ready to download.
 
-1. Go to the **Accounting > Invoices** module.
-2. In the upper right corner, click the **Export** button.
-3. Select the date range (e.g., The entire month of October).
-4. Choose whether you want to export only XMLs, only PDFs, or both.
-5. The system will process the request in the *background*. If you selected hundreds of invoices, you will receive an email within 2 to 5 minutes with a secure download link valid for 24 hours.
+You can also reach the same file from the detail page of the quote that generated that invoice, in the tax documents section.
 
-**Important for Accountants:** The ZIP file contains separate folders for Income CFDIs, Expense CFDIs (Credit Notes), and Payments (REP), so that the upload to your accounting software is as clean and fast as possible.
+<Callout type="info">
+Downloads are per-invoice today — there's no bulk `.ZIP` export of a whole period yet. If you need several invoices for your accountant, download them one by one from the Issued invoices inbox.
+</Callout>

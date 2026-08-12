@@ -25,9 +25,13 @@ Authentication for your AI client is performed using your standard Cord **API Ke
 
 1. Navigate to **Settings › Developers › MCP** in the Cord interface (it appears once you turn
    on **Developer mode** at the bottom of the Settings index).
-2. Generate an API Key if you don't have one — from the **API** tab of the
-   [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench). You need `write` scope to use
-   `crear_cotizacion_borrador`; `read` is enough for the rest.
+2. A status card at the top tells you whether you already have an active key and, if an AI
+   client is already connected, when it was last used. If you don't have one, the
+   **"Create a key for MCP"** button generates a `write` key without leaving the page — it's
+   pasted automatically into the config below. **Copy it right then: it won't be shown again.**
+   (You can also create one from the **API** tab of the
+   [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench) if you'd rather control the
+   scope by hand — `write` to use `crear_cotizacion_borrador`, `read` is enough for the rest.)
 3. Copy the MCP client JSON configuration provided on the screen.
 4. Paste this configuration into the corresponding local path for your client (e.g., the `claude_desktop_config.json` file if you use the Claude for Desktop app).
 

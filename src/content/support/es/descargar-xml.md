@@ -1,19 +1,17 @@
 ---
-title: "Descarga masiva de XMLs"
-description: "Exporta tus facturas del mes en formato ZIP para tu contador."
+title: "Descargar el PDF y el XML de una factura"
+description: "Encuentra los archivos de cualquier CFDI que hayas timbrado, folio por folio."
 category: "Facturación y CFDI"
 ---
 
-Mantener el orden en tu contabilidad es fundamental, especialmente para la conciliación mensual. 
+Cada CFDI que timbras en Cord genera automáticamente su PDF (representación impresa) y su XML (el comprobante fiscal en sí, el que necesita tu contador).
 
-### Descarga Masiva de CFDI
+### Dónde encontrarlos
 
-En lugar de bajar facturas una por una, puedes descargar todas las de un periodo específico en formato `.ZIP` (conteniendo los PDFs y XMLs estructurados).
+**Ajustes › Facturación y CFDI › Facturas emitidas** reúne todos los CFDI que has timbrado en una sola tabla: folio, cliente, monto, fecha y estado. Cada fila tiene sus propios links **PDF** y **XML** listos para descargar.
 
-1. Ve al módulo **Contabilidad > Facturas**.
-2. En la esquina superior derecha, haz clic en el botón de **Exportar**.
-3. Selecciona el rango de fechas (ej. Todo el mes de Octubre).
-4. Elige si quieres exportar solo los XML, solo PDFs, o ambos.
-5. El sistema procesará la solicitud en *background*. Si seleccionaste cientos de facturas, recibirás un correo electrónico en un lapso de 2 a 5 minutos con un enlace seguro de descarga válido por 24 horas.
+También puedes llegar al mismo archivo desde el detalle de la cotización que originó esa factura, en la sección de documentos fiscales.
 
-**Importante para Contadores:** El archivo ZIP contiene carpetas separadas por CFDI de Ingreso, Egreso (Notas de crédito) y Pagos (REP), para que la subida a tu software contable sea lo más limpia y rápida posible.
+<Callout type="info">
+Hoy la descarga es individual, por factura — no existe todavía una exportación masiva en `.ZIP` de todo un periodo. Si necesitas varias facturas para tu contador, descárgalas una por una desde la bandeja de Facturas emitidas.
+</Callout>

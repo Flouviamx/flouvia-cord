@@ -22,6 +22,8 @@ import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit } from '../../../lib/db';
 import { dispatchQuoteEvent } from '../../../lib/webhooks';
+import { notify } from '../../../lib/notify';
+import { siteOrigin } from '../../../lib/email';
 
 
 export const GET: APIRoute = async ({ request }) => {
@@ -54,7 +56,31 @@ export const GET: APIRoute = async ({ request }) => {
         await dispatchQuoteEvent(orgId, id, 'quote.expired');
     }
 
-    return json({ vencidas: rows.length });
+    // ── Aviso "por vencer" (evento quote_expiring de Ajustes › Notificaciones) ──
+    // Exactamente 3 días antes de la vigencia — el cron corre una vez al día,
+    // así que la coincidencia exacta de fecha basta para disparar una sola vez
+    // por cotización (sin tabla de dedup: al día siguiente `vigencia` ya no
+    // matchea `current_date + 3`).
+    const porVencer = await sql`
+        select c.id, c.org_id, c.folio, c.total, cl.empresa
+        from cotizaciones c
+        join orgs o on o.id = c.org_id
+        left join clientes cl on cl.id = c.cliente_id
+        where c.status in ('sent', 'viewed')
+          and c.vigencia = current_date + 3
+          and o.sandbox_of is null
+          and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'`;
+
+    for (const r of porVencer) {
+        await notify(r.org_id as string, 'quote_expiring', {
+            folio: r.folio as string,
+            cliente: (r.empresa as string) ?? null,
+            total: Number(r.total ?? 0),
+            link: `${siteOrigin()}/app/cotizaciones/${r.id}`,
+        });
+    }
+
+    return json({ vencidas: rows.length, porVencer: porVencer.length });
 };
 
 function json(data: unknown, status = 200) {

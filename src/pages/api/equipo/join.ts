@@ -11,6 +11,9 @@ import { sha256Hex } from '../../../lib/auth';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { trustedIp } from '../../../lib/ip';
 import { trackServer } from '../../../lib/posthog-server';
+import { notify } from '../../../lib/notify';
+import { siteOrigin } from '../../../lib/email';
+import { after } from '../../../lib/after';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -66,5 +69,10 @@ export const POST: APIRoute = async ({ request }) => {
     await reportUsage(orgId, 'usuario', 1);
     const [orgFlags] = await sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`;
     await trackServer('team_member_accepted', orgId, { role: inv.rol }, !!orgFlags?.is_sandbox, !!orgFlags?.is_demo);
+
+    const [me2] = await sql`select first_name, last_name, email from users where id = ${userId} limit 1`;
+    const nombre = me2 ? [me2.first_name, me2.last_name].filter(Boolean).join(' ').trim() || String(me2.email) : String(inv.email || 'Alguien');
+    after(notify(orgId, 'team_join', { detalle: nombre, link: `${siteOrigin()}/app/ajustes/equipo` }));
+
     return json({ ok: true, orgId });
 };

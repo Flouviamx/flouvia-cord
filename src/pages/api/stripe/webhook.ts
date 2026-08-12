@@ -12,6 +12,7 @@ import type { APIRoute } from 'astro';
 import { randomUUID } from 'node:crypto';
 import { sql, logAudit, withOrgTx } from '../../../lib/db';
 import { dispatchQuoteEvent, dispatchPaymentPartial } from '../../../lib/webhooks';
+import { notifyQuoteEvent } from '../../../lib/notify';
 import { PRICE_TO_PLAN, isPaidPlan, stripe } from '../../../lib/billing';
 import { trackPaymentReceived, trackServer } from '../../../lib/posthog-server';
 import { after } from '../../../lib/after';
@@ -521,6 +522,7 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea con Cord Pagos' });
                 await trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid, !!rows[0].is_sandbox, !!rows[0].is_demo);
                 after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
+                after(notifyQuoteEvent(orgId, cid, 'quote_paid'));
             } else if (marked.length) {
                 // Pago PARCIAL: evento informativo, sin quote.paid (avisar a las
                 // integraciones que "se pagó todo" cuando solo cayó el anticipo
@@ -571,6 +573,7 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
             // cuanto el handler responde (el evento de dinero más crítico del sistema
             // no puede depender de que la función siga viva por accidente).
             after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
+            after(notifyQuoteEvent(orgId, cid, 'quote_paid'));
         }
     }
 }
@@ -902,6 +905,7 @@ async function recurringInvoicePaid(invoice: any, account: string) {
     // Cada cobro mensual exitoso es un "Pago recibido" real para las integraciones.
     // after()/waitUntil — no perderlo si Vercel congela la invocación tras el 200.
     after(dispatchQuoteEvent(row.org_id as string, row.cotizacion_id as string, 'quote.paid'));
+    after(notifyQuoteEvent(row.org_id as string, row.cotizacion_id as string, 'quote_paid'));
 }
 
 async function recurringInvoiceFailed(invoice: any, account: string) {

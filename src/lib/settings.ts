@@ -28,7 +28,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         id: 'branding', label: 'Branding', labelEn: 'Branding',
         desc: 'Logo, colores de marca y portal de tus clientes.',
         descEn: 'Logo, brand colors, and your clients’ portal.',
-        icon: '<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z"/>',
+        icon: '<path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.012 17.5 2 12 2z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" stroke="none"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" stroke="none"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" stroke="none"/>',
         tabs: [
             { id: 'branding', label: 'Branding',          labelEn: 'Branding',      href: '/app/ajustes/branding' },
             { id: 'portal',   label: 'Portal del cliente', labelEn: 'Client portal', href: '/app/ajustes/portal' },
@@ -38,7 +38,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         id: 'cotizaciones', label: 'Cotizaciones', labelEn: 'Quotes',
         desc: 'Folio, impuestos, documento PDF y reglas de aprobación.',
         descEn: 'Numbering, taxes, PDF document, and approval rules.',
-        icon: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/>',
+        icon: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13" stroke-opacity="0.5"/><line x1="16" x2="8" y1="17" y2="17" stroke-opacity="0.5"/><line x1="10" x2="8" y1="9" y2="9" stroke-opacity="0.5"/>',
         tabs: [
             { id: 'cotizaciones', label: 'Folio e IVA',         labelEn: 'Numbering & tax',  href: '/app/ajustes/cotizaciones' },
             { id: 'impuestos',    label: 'Impuestos',           labelEn: 'Taxes',            href: '/app/ajustes/impuestos' },
@@ -54,6 +54,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         icon: '<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
         tabs: [
             { id: 'fiscal', label: 'Datos fiscales', labelEn: 'Tax details', href: '/app/ajustes/fiscal' },
+            { id: 'facturas', label: 'Facturas emitidas', labelEn: 'Issued invoices', href: '/app/ajustes/facturas' },
         ],
     },
     {
@@ -69,7 +70,9 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         id: 'planes', label: 'Planes y suscripción', labelEn: 'Plans & subscription',
         desc: 'Tu suscripción de Cord, uso del plan y tu método de pago.',
         descEn: 'Your Cord subscription, plan usage, and payment method.',
-        icon: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+        // Antes un rayo genérico ("upgrade"/velocidad) sin relación con una
+        // suscripción. Una tarjeta con banda — el objeto real de la categoría.
+        icon: '<rect x="2" y="5" width="20" height="14" rx="2.5" fill="currentColor" fill-opacity="0.12"/><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/><path d="M6 15h4"/>',
         tabs: [
             { id: 'plan', label: 'Suscripción', labelEn: 'Subscription', href: '/app/ajustes/plan' },
         ],
@@ -88,7 +91,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         id: 'equipo', label: 'Equipo y permisos', labelEn: 'Team & permissions',
         desc: 'Invita a tu equipo, define permisos y la seguridad de acceso.',
         descEn: 'Invite your team, set permissions, and access security.',
-        icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+        icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5"/>',
         tabs: [
             { id: 'equipo',    label: 'Equipo y Roles',  labelEn: 'Team & roles',  href: '/app/ajustes/equipo' },
             { id: 'sso',       label: 'SSO',             labelEn: 'SSO',           href: '/app/ajustes/sso' },
@@ -99,7 +102,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         id: 'integraciones', label: 'Integraciones', labelEn: 'Integrations',
         desc: 'Conecta Cord con tus aplicaciones y plataformas favoritas.',
         descEn: 'Connect Cord with your favorite apps and platforms.',
-        icon: '<rect width="7" height="7" x="14" y="3" rx="1"/><path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3"/>',
+        icon: '<rect width="7" height="7" x="14" y="3" rx="1" fill="currentColor" fill-opacity="0.18" stroke="none"/><rect width="7" height="7" x="14" y="3" rx="1"/><path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3"/>',
         tabs: [
             { id: 'integraciones', label: 'Integraciones', labelEn: 'Integrations', href: '/app/ajustes/integraciones' },
         ],
@@ -108,7 +111,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         id: 'mcp', label: 'MCP', labelEn: 'MCP',
         desc: 'Configura el Model Context Protocol para tus asistentes.',
         descEn: 'Configure the Model Context Protocol for your assistants.',
-        icon: '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/>',
+        icon: '<rect width="16" height="16" x="4" y="4" rx="2" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1" fill="currentColor" fill-opacity="0.25" stroke="none"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2" stroke-opacity="0.5"/><path d="M15 20v2" stroke-opacity="0.5"/><path d="M2 15h2" stroke-opacity="0.5"/><path d="M2 9h2" stroke-opacity="0.5"/><path d="M20 15h2" stroke-opacity="0.5"/><path d="M20 9h2" stroke-opacity="0.5"/><path d="M9 2v2" stroke-opacity="0.5"/><path d="M9 20v2" stroke-opacity="0.5"/>',
         tabs: [
             { id: 'mcp',           label: 'MCP',                 labelEn: 'MCP',      href: '/app/ajustes/mcp' },
         ],
@@ -119,7 +122,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         id: 'agentes', label: 'Inteligencia artificial', labelEn: 'Artificial intelligence',
         desc: 'Qué puede hacer sola la IA de Cord, y hasta dónde llega.',
         descEn: "What Cord's AI can do on its own, and how far it goes.",
-        icon: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+        icon: '<rect width="16" height="12" x="4" y="8" rx="2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M12 8V4H8" stroke-opacity="0.5"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2" stroke-opacity="0.5"/><path d="M20 14h2" stroke-opacity="0.5"/><path d="M15 13v2"/><path d="M9 13v2"/>',
         tabs: [
             { id: 'agentes',       label: 'Inteligencia artificial', labelEn: 'Artificial intelligence', href: '/app/ajustes/agentes' },
         ],
@@ -128,7 +131,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         id: 'elements', label: 'Cotizador embebible', labelEn: 'Embeddable quote builder',
         desc: 'Integra el cotizador directamente en tu sitio web.',
         descEn: 'Embed the quote builder directly on your website.',
-        icon: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><rect width="9" height="8" x="3" y="3"/><rect width="18" height="5" x="3" y="16"/>',
+        icon: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2" fill="currentColor" fill-opacity="0.08" stroke="none"/><rect width="9" height="8" x="3" y="3" fill="currentColor" fill-opacity="0.16" stroke="none"/><rect width="18" height="5" x="3" y="16" fill="currentColor" fill-opacity="0.16" stroke="none"/><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><rect width="9" height="8" x="3" y="3"/><rect width="18" height="5" x="3" y="16"/>',
         tabs: [
             { id: 'elements',      label: 'Cotizador embebible', labelEn: 'Embeddable builder', href: '/app/ajustes/elements' },
         ],
@@ -137,7 +140,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         id: 'avanzado', label: 'Avanzado', labelEn: 'Advanced',
         desc: 'Exportar tus datos, zona de peligro y registro de auditoría.',
         descEn: 'Export your data, danger zone, and audit log.',
-        icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+        icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
         tabs: [
             { id: 'datos',     label: 'Datos y privacidad', labelEn: 'Data & privacy', href: '/app/ajustes/datos' },
             { id: 'auditoria', label: 'Auditoría',          labelEn: 'Audit log',      href: '/app/ajustes/auditoria' },
@@ -147,7 +150,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         id: 'cuenta', label: 'Tu cuenta', labelEn: 'Your account',
         desc: 'Tu perfil, sesiones activas, seguridad y autenticación.',
         descEn: 'Your profile, active sessions, security, and authentication.',
-        icon: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>',
+        icon: '<circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.1" stroke="none"/><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" stroke-opacity="0.7"/>',
         tabs: [
             { id: 'cuenta', label: 'Perfil y seguridad', labelEn: 'Profile & security', href: '/app/ajustes/cuenta' },
         ],
