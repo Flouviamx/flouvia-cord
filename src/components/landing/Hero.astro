@@ -38,6 +38,15 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
                 <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 <div class="btn-shimmer"></div>
             </a>
+            
+            <a href="https://www.producthunt.com/products/cord-4?embed=true&utm_source=embed&utm_medium=post_embed" target="_blank" rel="noopener" class="ph-widget">
+                <img alt="Cord" src="https://ph-files.imgix.net/47690456-df89-4caf-9d90-e67e6d24be43.png?auto=compress,format&codec=mozjpeg&cs=strip&fit=crop&h=80&w=80" class="ph-widget-img">
+                <div class="ph-widget-info">
+                    <span class="ph-widget-title">Cord on Product Hunt</span>
+                    <span class="ph-widget-desc">From proposal to payment. All in a single link.</span>
+                </div>
+                <div class="ph-widget-cta">Check it out →</div>
+            </a>
         </div>
     </div>
 
@@ -313,7 +322,13 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
     }
 
     .hero-actions {
-        display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: flex-start; margin-bottom: 1.6rem;
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 3.5rem;
+        width: 100%;
+        align-items: center;
+        justify-items: start;
+        margin-bottom: 1.6rem;
     }
 
     .btn-luxe {
@@ -370,6 +385,59 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
     .btn-luxe:hover .btn-shimmer {
         left: 150%;
         transition: left 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── PRODUCT HUNT WIDGET ── */
+    .ph-widget {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px 8px 8px;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(10, 25, 47, 0.08);
+        border-radius: 100px;
+        text-decoration: none;
+        transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-spring), background 0.4s;
+        box-shadow: 0 4px 12px rgba(10, 25, 47, 0.03);
+    }
+    .ph-widget:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(10, 25, 47, 0.08);
+        background: rgba(255, 255, 255, 0.9);
+    }
+    .ph-widget-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .ph-widget-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .ph-widget-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #0a192f;
+        line-height: 1.1;
+    }
+    .ph-widget-desc {
+        font-size: 0.65rem;
+        color: #555c68;
+        margin-top: 2px;
+    }
+    .ph-widget-cta {
+        margin-left: 6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #ff6154; /* PH Orange */
+        background: rgba(255, 97, 84, 0.1);
+        padding: 6px 12px;
+        border-radius: 100px;
+        white-space: nowrap;
     }
 
     .hero-microcopy { font-size: 0.85rem; color: var(--color-text-muted); margin: 0 0 4rem 0; }
@@ -599,7 +667,7 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
             transform-origin: top center;
         }
         .hero { padding-top: 5.5rem; }
-        .hero-top { grid-template-columns: 1fr; gap: 1.3rem; }
+        .hero-top, .hero-actions { grid-template-columns: 1fr; gap: 1.3rem; }
         .hero-desc { max-width: none; padding-top: 0; }
     }
 
