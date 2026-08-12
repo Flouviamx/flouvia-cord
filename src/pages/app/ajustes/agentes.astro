@@ -1,210 +1,358 @@
 ---
-// Ajustes › Developers › Agentes IA y MCP — gobernanza de la IA de Cord.
-// 1) Cobranza autónoma (opt-in): activa el cron que negocia el cobro por correo.
-// 2) Servidores MCP: registra CRMs/sistemas (HubSpot, Salesforce…) y decide a
-//    cuáles puede conectarse el agente que arma cotizaciones. Estilo LISTA.
+// Ajustes › Avanzado › Inteligencia artificial.
+//
+// Rediseño ago 2026. Antes esta página: (1) duplicaba el interruptor de la
+// cobranza con IA, que desde el rediseño del agente vive en /app/cobranza/agente
+// con toda su configuración — dos fuentes de verdad, y el copy de aquí ya estaba
+// desactualizado ("hasta 3 cuotas" cuando ya son configurables, "solo sobre
+// facturadas" cuando también entran las aprobadas); (2) le pedía al usuario tener
+// `RESEND_API_KEY` configurada — una variable de entorno de la plataforma que
+// ningún cliente ve ni configura jamás; y (3) presentaba "Servidores MCP" con
+// "URL del endpoint SSE" y "Bearer token" como si el lector fuera un developer.
+//
+// Ahora: la cobranza es una tarjeta de ESTADO que enlaza a su página, y las
+// conexiones se explican por lo que hacen, no por el protocolo que usan.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import { getActiveOrgId } from '../../../lib/db';
-import { sql } from '../../../lib/db';
+import '../../../styles/modal.css';
+import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
 import { listMcpServers } from '../../../lib/agents/governance';
+import { getCobranzaConfig } from '../../../lib/agents/cobranza-run';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
 const orgId = await getActiveOrgId();
-const [org] = await sql`select ai_cobranza_activa from orgs where id = ${orgId}`;
-const aiCobranza = !!org?.ai_cobranza_activa;
-const servers = await listMcpServers(orgId);
 const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
+
+const [cfg, servers] = await Promise.all([getCobranzaConfig(orgId), listMcpServers(orgId)]);
+// Estado real del agente, para que la tarjeta diga algo verdadero y no solo
+// "encendido/apagado".
+const [[pend]] = await withOrgTx(orgId, sql`
+    select count(*) filter (where estado = 'borrador') as borradores,
+           count(*) filter (where estado = 'enviado' and created_at >= now() - interval '30 days') as enviados30
+    from cobranza_conversaciones where org_id = ${orgId}`);
+const borradores = Number(pend?.borradores ?? 0);
+const enviados30 = Number(pend?.enviados30 ?? 0);
+const enAprobacion = cfg.modo === 'aprobacion';
+
+const conectados = servers.filter((s: any) => s.activo).length;
+const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
 ---
 
-<SettingsShell title="Agentes IA y MCP — Ajustes" tab="agentes" perm="ajustes"
-    intro={t(L, 'set.ag.intro')}>
+<SettingsShell title="Inteligencia artificial — Ajustes" tab="agentes" perm="ajustes">
 
-    <!-- ── Cobranza autónoma (opt-in) ── -->
+    <!-- ── Cobranza con IA: tarjeta de estado, NO un segundo interruptor ── -->
     <div class="s-block">
         <h3>{t(L, 'set.ag.cobranza_titulo')}</h3>
         <div class="s-body">
-            <div class="ag-toggle-row">
-                <p class="ag-sub">{t(L, 'set.ag.cobranza_desc')}</p>
-                <label class="s-toggle" title={t(L, 'set.ag.activar_cobranza')}>
-                    <input type="checkbox" id="cobranzaToggle" checked={aiCobranza}
-                        data-i18n-on={t(L, 'set.ag.cobranza_activada')} data-i18n-off={t(L, 'set.ag.cobranza_desactivada')} data-i18n-err={t(L, 'set.ag.no_pudo_guardar')} />
-                    <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
-                </label>
+            <div class="ag-card">
+                <div class="ag-card-top">
+                    <span class:list={['ag-state', cfg.activa ? (enAprobacion ? 'is-review' : 'is-auto') : 'is-off']}>
+                        <i aria-hidden="true"></i>
+                        {!cfg.activa
+                            ? t(L, 'set.ag.estado_apagado')
+                            : enAprobacion ? t(L, 'set.ag.estado_aprobacion') : t(L, 'set.ag.estado_automatico')}
+                    </span>
+                    <a class="ag-cta" href="/app/cobranza/agente">
+                        {cfg.activa ? t(L, 'set.ag.abrir_agente') : t(L, 'set.ag.configurar_agente')}
+                    </a>
+                </div>
+
+                <p class="ag-card-desc">
+                    {cfg.activa
+                        ? (enAprobacion ? t(L, 'set.ag.desc_aprobacion') : t(L, 'set.ag.desc_automatico'))
+                        : t(L, 'set.ag.desc_apagado')}
+                </p>
+
+                {cfg.activa && (
+                    <div class="ag-facts">
+                        <span><b class="editorial">{cfg.graciaDias}</b>{tf('set.ag.fact_gracia', { n: String(cfg.graciaDias) })}</span>
+                        <span><b class="editorial">{cfg.cadenciaDias}</b>{tf('set.ag.fact_cadencia', { n: String(cfg.cadenciaDias) })}</span>
+                        <span><b class="editorial">{enviados30}</b>{tf('set.ag.fact_enviados', { n: String(enviados30) })}</span>
+                        {borradores > 0 && (
+                            <a class="ag-fact-alert" href="/app/cobranza/agente">
+                                <b class="editorial">{borradores}</b>{tf('set.ag.fact_borradores', { n: String(borradores) })}
+                            </a>
+                        )}
+                    </div>
+                )}
             </div>
-            <p class="ag-warn" set:html={t(L, 'set.ag.cobranza_warn')} />
+            <p class="ag-note">{t(L, 'set.ag.cobranza_nota')}</p>
         </div>
     </div>
 
-    <!-- ── Servidores MCP (gobernanza outbound) ── -->
+    <!-- ── Conexiones (MCP explicado por lo que HACE) ── -->
     <div class="s-block"
+        data-mcp-block
         data-i18n-perm-on={t(L, 'set.ag.permiso_otorgado')} data-i18n-perm-off={t(L, 'set.ag.permiso_revocado')}
         data-i18n-err={t(L, 'set.ag.no_pudo_guardar')} data-i18n-del-titulo={t(L, 'set.ag.eliminar_servidor_titulo')}
         data-i18n-del-body={t(L, 'set.ag.eliminar_servidor_body')} data-i18n-del-confirm={t(L, 'set.ag.eliminar')}
         data-i18n-del-ok={t(L, 'set.ag.servidor_eliminado')} data-i18n-del-err={t(L, 'set.ag.no_pudo_eliminar')}
-        data-i18n-add-err={t(L, 'set.ag.no_pudo_agregar')}>
-        <h3>{t(L, 'set.ag.mcp_titulo')}</h3>
+        data-i18n-add-err={t(L, 'set.ag.no_pudo_agregar')}
+        data-i18n-conectado={t(L, 'set.ag.conectado')} data-i18n-pausado={t(L, 'set.ag.pausado')}>
+        <h3>{t(L, 'set.ag.conex_titulo')}</h3>
         <div class="s-body">
-            <div class="ag-toggle-row">
-                <p class="ag-sub" set:html={t(L, 'set.ag.mcp_desc')} />
-                <button class="api-btn-solid" id="addBtn">{t(L, 'set.ag.agregar_servidor')}</button>
-            </div>
+            <p class="ag-sub">{t(L, 'set.ag.conex_desc')}</p>
 
-            <div class="mcp-rows" id="mcpRows">
-                {servers.length === 0 && (
-                    <p class="mcp-empty">{t(L, 'set.ag.mcp_vacio')}</p>
-                )}
-                {servers.map((s) => (
-                    <div class="mcp-row" data-id={s.id}>
-                        <span class="mcp-dot" data-on={s.activo ? '1' : '0'}></span>
-                        <span class="mcp-body">
-                            <span class="mcp-name">{s.nombre}</span>
-                            <span class="mcp-url">{s.url_sse}{s.auth_token ? t(L, 'set.ag.con_token') : ''}</span>
-                        </span>
-                        <label class="mcp-perm" title={t(L, 'set.ag.permitir_ia_titulo')}>
-                            <input type="checkbox" data-perm checked={s.permitido} />
-                            <span>{t(L, 'set.ag.permitir_ia')}</span>
-                        </label>
-                        <label class="s-toggle" title={t(L, 'set.ag.activo')}>
-                            <input type="checkbox" data-activo checked={s.activo} />
-                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
-                        </label>
-                        <button class="mcp-del" data-del title={t(L, 'set.ag.eliminar_titulo')}>✕</button>
+            {servers.length === 0 ? (
+                <div class="ag-empty">
+                    <div class="ag-empty-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="2.5" y="4" width="19" height="7" rx="2.5" fill="currentColor" fill-opacity="0.12"/>
+                            <rect x="2.5" y="14" width="19" height="6" rx="2.5"/>
+                            <path d="M6.5 7.5h.01M6.5 17h.01"/>
+                        </svg>
                     </div>
-                ))}
-            </div>
-            <p class="ag-note" set:html={t(L, 'set.ag.nota')} />
+                    <p class="ag-empty-title">{t(L, 'set.ag.conex_vacio_titulo')}</p>
+                    <p class="ag-empty-desc">{t(L, 'set.ag.conex_vacio_desc')}</p>
+                    <button class="ag-cta" id="addBtn">{t(L, 'set.ag.conectar')}</button>
+                </div>
+            ) : (
+                <>
+                    <div class="ag-list-head">
+                        <span>{tf('set.ag.resumen_conex', { n: String(conectados), ia: String(conPermiso) })}</span>
+                        <button class="ag-btn" id="addBtn">{t(L, 'set.ag.conectar')}</button>
+                    </div>
+                    <p class="ag-legend">{t(L, 'set.ag.leyenda')}</p>
+                    <div class="mcp-rows" id="mcpRows">
+                        {servers.map((s: any) => (
+                            <div class="mcp-row" data-id={s.id}>
+                                <span class="mcp-main">
+                                    <span class="mcp-dot" data-on={s.activo ? '1' : '0'} aria-hidden="true"></span>
+                                    <span class="mcp-body">
+                                        <span class="mcp-name">{s.nombre}</span>
+                                        <span class="mcp-meta" data-mcp-estado>
+                                            {s.activo ? t(L, 'set.ag.conectado') : t(L, 'set.ag.pausado')}
+                                            {s.auth_token ? ` · ${t(L, 'set.ag.con_token')}` : ''}
+                                        </span>
+                                    </span>
+                                </span>
+
+                                <span class="mcp-controls">
+                                    <label class="mcp-ctl" title={t(L, 'set.ag.permitir_ia_hint')}>
+                                        <span class="mcp-ctl-label">{t(L, 'set.ag.permitir_ia')}</span>
+                                        <span class="s-toggle">
+                                            <input type="checkbox" data-perm checked={s.permitido} />
+                                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                                        </span>
+                                    </label>
+                                    <label class="mcp-ctl" title={t(L, 'set.ag.conexion_activa_hint')}>
+                                        <span class="mcp-ctl-label">{t(L, 'set.ag.conexion_activa')}</span>
+                                        <span class="s-toggle">
+                                            <input type="checkbox" data-activo checked={s.activo} />
+                                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                                        </span>
+                                    </label>
+                                    <button class="mcp-del" data-del title={t(L, 'set.ag.eliminar_titulo')} aria-label={t(L, 'set.ag.eliminar_titulo')}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                                    </button>
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            <details class="ag-what">
+                <summary>{t(L, 'set.ag.que_es_titulo')}</summary>
+                <p>{t(L, 'set.ag.que_es_body')}</p>
+            </details>
         </div>
     </div>
 </SettingsShell>
 
-<!-- Modal alta de servidor MCP -->
-<dialog id="addModal" class="ag-dialog">
-    <form method="dialog" class="ag-form">
-        <h3>{t(L, 'set.ag.modal_titulo')}</h3>
-        <label class="ag-l">{t(L, 'set.ag.nombre')}<input id="mNombre" placeholder="HubSpot CRM" /></label>
-        <label class="ag-l">{t(L, 'set.ag.url_endpoint')}<input id="mUrl" placeholder="https://mcp.tuservicio.com/sse" /></label>
-        <label class="ag-l">{t(L, 'set.ag.token_opcional')}<input id="mToken" placeholder="Bearer token / API key" /></label>
-        <p class="ag-err" id="mErr"></p>
-        <div class="ag-form-actions">
-            <button type="button" class="api-btn-ghost" id="mCancel">{t(L, 'set.ag.cancelar')}</button>
-            <button type="button" class="api-btn-solid" id="mSave">{t(L, 'set.ag.agregar')}</button>
-        </div>
+<dialog class="modal" id="addModal">
+    <form method="dialog" class="m-head">
+        <h2>{t(L, 'set.ag.modal_titulo')}</h2>
+        <button class="m-close" aria-label={t(L, 'set.ag.cancelar')}>✕</button>
     </form>
+    <div class="m-body">
+        <div class="ag-f">
+            <label for="mNombre">{t(L, 'set.ag.nombre')}</label>
+            <input id="mNombre" placeholder={t(L, 'set.ag.nombre_ph')} autocomplete="off" />
+            <p class="ag-hint">{t(L, 'set.ag.nombre_hint')}</p>
+        </div>
+        <div class="ag-f">
+            <label for="mUrl">{t(L, 'set.ag.direccion')}</label>
+            <input id="mUrl" placeholder="https://…" autocomplete="off" spellcheck="false" />
+            <p class="ag-hint">{t(L, 'set.ag.direccion_hint')}</p>
+        </div>
+        <div class="ag-f">
+            <label for="mToken">{t(L, 'set.ag.clave')}</label>
+            <input id="mToken" type="password" placeholder="••••••••" autocomplete="off" />
+            <p class="ag-hint">{t(L, 'set.ag.clave_hint')}</p>
+        </div>
+        <p class="ag-err" id="mErr" hidden></p>
+    </div>
+    <div class="m-foot">
+        <button type="button" class="ag-btn" id="mCancel">{t(L, 'set.ag.cancelar')}</button>
+        <button type="button" class="ag-cta" id="mSave">{t(L, 'set.ag.conectar')}</button>
+    </div>
 </dialog>
 
-<style>
-    .ag-toggle-row { display: flex; align-items: center; gap: 1.5rem; justify-content: space-between; }
-    .ag-sub { font-size: 0.84rem; color: var(--color-text-muted); line-height: 1.55; margin: 0; max-width: 60ch; }
-    .ag-warn { font-size: 0.78rem; color: #b45309; background: rgba(245,158,11,0.1); padding: 0.7rem 0.9rem; border-radius: 10px; margin: 0; line-height: 1.5; }
-    .ag-warn code { font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px; }
-    .ag-note { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.55; margin: 0; }
-    .ag-note b { color: var(--color-text); font-weight: 600; }
+<style is:global>
+/* ⚠️ GLOBAL: las filas se mutan por JS (estado, eliminar) y el modal vive en un
+   <dialog> fuera del bloque. El aislamiento lo da el prefijo `ag-`/`mcp-`. */
 
-    .mcp-rows { display: flex; flex-direction: column; margin-top: 0; }
-    .mcp-empty { font-size: 0.84rem; color: var(--color-text-muted); padding: 1.2rem 0.2rem; }
-    .mcp-row { display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 1rem; padding: 1rem 0.4rem; border-bottom: 1px solid var(--color-border); }
-    .mcp-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--color-text-muted); flex-shrink: 0; opacity: 0.4; }
-    .mcp-dot[data-on="1"] { background: var(--color-ok); opacity: 1; }
-    .mcp-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .mcp-name { font-size: 0.92rem; font-weight: 600; color: var(--color-text); }
-    .mcp-url { font-size: 0.74rem; color: var(--color-text-muted); font-family: ui-monospace, Menlo, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mcp-perm { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; white-space: nowrap; }
-    .mcp-perm input { accent-color: var(--color-blue-deep); }
-    .mcp-del { background: none; border: none; color: var(--color-text-muted); cursor: pointer; font-size: 0.9rem; padding: 4px 8px; border-radius: 6px; }
-    .mcp-del:hover { color: var(--color-danger); background: rgba(239,68,68,0.08); }
+/* Tarjeta de estado de la cobranza */
+.ag-card { border: 1px solid var(--color-border); border-radius: 18px; padding: 1.2rem 1.3rem; display: flex; flex-direction: column; gap: .8rem; }
+.ag-card-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.ag-state { display: inline-flex; align-items: center; gap: 7px; font-size: .74rem; font-weight: 700; letter-spacing: .01em; padding: 6px 12px; border-radius: 999px; }
+.ag-state i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.ag-state.is-off { background: var(--color-bg-soft); color: var(--color-text-muted); }
+.ag-state.is-review { background: rgba(245,158,11,.13); color: #b45309; }
+.ag-state.is-auto { background: rgba(16,185,129,.13); color: #047857; }
+html[data-theme="dark"] .ag-state.is-review { color: #fcd34d; }
+html[data-theme="dark"] .ag-state.is-auto { color: #6ee7b7; }
+.ag-card-desc { margin: 0; font-size: .86rem; line-height: 1.6; color: var(--color-text-muted); max-width: 62ch; }
+.ag-facts { display: flex; flex-wrap: wrap; gap: 1.4rem; padding-top: .3rem; }
+.ag-facts > span, .ag-fact-alert { display: flex; align-items: baseline; gap: 6px; font-size: .78rem; color: var(--color-text-muted); }
+.ag-facts b { font-size: 1.05rem; color: var(--color-text); }
+.ag-fact-alert { text-decoration: none; }
+.ag-fact-alert b { color: var(--color-warn); }
+.ag-fact-alert:hover { color: var(--color-text); }
+.ag-note { margin: .9rem 0 0; font-size: .78rem; line-height: 1.55; color: var(--color-text-muted); }
 
-    .ag-dialog { border: none; border-radius: 16px; padding: 0; box-shadow: 0 30px 60px -20px rgba(0,0,0,0.4); max-width: 440px; width: 92%; }
-    .ag-dialog::backdrop { background: rgba(10,25,47,0.4); backdrop-filter: blur(3px); }
-    .ag-form { padding: 1.6rem; display: flex; flex-direction: column; gap: 0.9rem; }
-    .ag-form h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 0.2rem; }
-    .ag-l { display: flex; flex-direction: column; gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); }
-    .ag-l input { font-family: var(--font-sans); font-size: 0.88rem; padding: 9px 12px; border: 1px solid var(--color-border); border-radius: 9px; color: var(--color-text); }
-    .ag-err { font-size: 0.78rem; color: var(--color-danger); min-height: 1em; margin: 0; }
-    .ag-form-actions { display: flex; flex-direction: column-reverse; gap: 0.6rem; margin-top: 0.4rem; }
-    .ag-form-actions > button { width: 100%; text-align: center; }
-    @media (min-width: 480px) {
-        .ag-form-actions { flex-direction: row; justify-content: flex-end; }
-        .ag-form-actions > button { width: auto; }
-    }
-    .api-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
-    .api-btn-solid:disabled { opacity: 0.6; cursor: wait; }
-    .api-btn-ghost { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+/* Botones */
+.ag-cta { font-family: var(--font-sans); font-size: .82rem; font-weight: 600; background: var(--color-blue-deep); color: #fff; border: none; border-radius: 999px; padding: 10px 20px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; transition: transform .3s var(--ease-spring), filter .2s; }
+.ag-cta:hover { filter: brightness(1.12); }
+.ag-cta:active { transform: scale(.97); }
+.ag-cta:disabled { opacity: .6; cursor: wait; }
+.ag-btn { font-family: var(--font-sans); font-size: .8rem; font-weight: 600; background: var(--surface); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 999px; padding: 9px 17px; cursor: pointer; transition: transform .18s var(--ease-ios), background .2s; }
+.ag-btn:hover { background: var(--color-bg-soft); }
+.ag-btn:active { transform: scale(.96); }
 
-    @media (max-width: 720px) {
-        .mcp-row { grid-template-columns: auto 1fr auto; row-gap: 0.6rem; }
-        .mcp-perm { grid-column: 2; justify-self: start; }
-    }
+.ag-sub { font-size: .86rem; color: var(--color-text-muted); line-height: 1.6; margin: 0 0 1.2rem; max-width: 62ch; }
+
+/* Estado vacío de conexiones */
+.ag-empty { text-align: center; padding: 2.5rem 1.5rem; border: 1px dashed var(--color-border); border-radius: 18px; }
+.ag-empty-icon { width: 52px; height: 52px; margin: 0 auto 1rem; border-radius: 16px; background: var(--color-bg-soft); color: var(--color-blue-deep); display: flex; align-items: center; justify-content: center; }
+.ag-empty-icon svg { width: 25px; height: 25px; }
+.ag-empty-title { margin: 0 0 .4rem; font-size: .95rem; font-weight: 600; color: var(--color-text); }
+.ag-empty-desc { margin: 0 auto 1.4rem; font-size: .84rem; line-height: 1.6; color: var(--color-text-muted); max-width: 46ch; }
+
+/* Lista de conexiones */
+.ag-list-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .3rem; }
+.ag-list-head span { font-size: .78rem; color: var(--color-text-muted); }
+.mcp-rows { display: flex; flex-direction: column; }
+.mcp-row { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.1rem .2rem; border-top: 1px solid var(--color-border); flex-wrap: wrap; }
+.mcp-main { display: flex; align-items: center; gap: .8rem; min-width: 0; flex: 1 1 240px; }
+.mcp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-text-muted); opacity: .35; flex-shrink: 0; }
+.mcp-dot[data-on="1"] { background: var(--color-ok); opacity: 1; }
+.mcp-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mcp-name { font-size: .9rem; font-weight: 600; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcp-meta { font-size: .74rem; color: var(--color-text-muted); }
+.mcp-controls { display: flex; align-items: center; gap: 1.4rem; flex: 0 0 auto; }
+.mcp-ctl { display: flex; align-items: center; gap: .6rem; cursor: pointer; }
+.mcp-ctl-label { font-size: .76rem; font-weight: 600; color: var(--color-text-muted); white-space: nowrap; }
+.ag-legend { margin: 0 0 .2rem; font-size: .74rem; line-height: 1.5; color: var(--color-text-muted); }
+.mcp-del { all: unset; cursor: pointer; width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); transition: background .2s, color .2s; }
+.mcp-del svg { width: 15px; height: 15px; }
+.mcp-del:hover { background: rgba(239,68,68,.1); color: var(--color-danger); }
+
+/* "¿Qué es esto?" — la sigla vive aquí, no en el título */
+.ag-what { margin-top: 1.4rem; }
+.ag-what > summary { font-size: .8rem; font-weight: 600; color: var(--color-blue-deep); cursor: pointer; list-style: none; padding: 4px 0; }
+.ag-what > summary::-webkit-details-marker { display: none; }
+.ag-what > summary::before { content: '+'; display: inline-block; width: 14px; font-weight: 700; }
+.ag-what[open] > summary::before { content: '−'; }
+.ag-what p { margin: .5rem 0 0 14px; font-size: .8rem; line-height: 1.6; color: var(--color-text-muted); max-width: 62ch; }
+
+/* Modal */
+#addModal .m-body { display: flex; flex-direction: column; gap: 1.2rem; }
+.ag-f { display: flex; flex-direction: column; gap: .4rem; }
+.ag-f > label { font-size: .62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+.ag-f input { font-family: var(--font-sans); font-size: .86rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid transparent; border-radius: 10px; padding: 10px 12px; }
+.ag-f input:focus { outline: none; background: var(--surface); border-color: rgba(10,25,47,.15); }
+.ag-hint { margin: 0; font-size: .7rem; line-height: 1.5; color: var(--color-text-muted); }
+.ag-err { margin: 0; font-size: .8rem; color: var(--color-danger); }
+.ag-err[hidden] { display: none; }
+
+@media (max-width: 720px) {
+    .mcp-row { align-items: flex-start; }
+    .mcp-controls { width: 100%; justify-content: space-between; gap: 1rem; }
+    .mcp-ctl-label { text-align: left; }
+}
 </style>
 
 <script>
     function post(body: any) {
         return fetch('/api/agentes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     }
-    function toast(msg: string, type: 'ok' | 'error' = 'ok') {
-        (window as any).cordToast?.(msg, type);
-    }
+    const toast = (m: string, k: 'ok' | 'error' = 'ok') => (window as any).cordToast?.(m, k);
 
     function init() {
-        // Cobranza toggle
-        const cob = document.getElementById('cobranzaToggle') as HTMLInputElement | null;
-        cob?.addEventListener('change', async () => {
-            const res = await post({ action: 'cobranza', value: cob.checked });
-            if (res.ok) toast(cob.checked ? (cob.dataset.i18nOn || 'Cobranza autónoma activada') : (cob.dataset.i18nOff || 'Cobranza autónoma desactivada'));
-            else { cob.checked = !cob.checked; toast(cob.dataset.i18nErr || 'No se pudo guardar', 'error'); }
-        });
+        const blk = document.querySelector<HTMLElement>('[data-mcp-block]');
+        const T = blk?.dataset ?? ({} as DOMStringMap);
+        const txt = (k: string, f: string) => (T as any)[k] || f;
 
-        // Row toggles (perm / activo / delete)
-        const mcpBlock = document.getElementById('mcpRows')?.closest('.s-block') as HTMLElement | null;
-        const i18nPermOn = mcpBlock?.dataset.i18nPermOn || 'Permiso otorgado a la IA';
-        const i18nPermOff = mcpBlock?.dataset.i18nPermOff || 'Permiso revocado';
-        const i18nErr = mcpBlock?.dataset.i18nErr || 'No se pudo guardar';
-        const i18nDelTitulo = mcpBlock?.dataset.i18nDelTitulo || 'Eliminar servidor MCP';
-        const i18nDelBody = mcpBlock?.dataset.i18nDelBody || '¿Eliminar este servidor MCP? Los agentes dejarán de usar sus herramientas.';
-        const i18nDelConfirm = mcpBlock?.dataset.i18nDelConfirm || 'Eliminar';
-        const i18nDelOk = mcpBlock?.dataset.i18nDelOk || 'Servidor eliminado';
-        const i18nDelErr = mcpBlock?.dataset.i18nDelErr || 'No se pudo eliminar';
-        const i18nAddErr = mcpBlock?.dataset.i18nAddErr || 'No se pudo agregar';
         document.getElementById('mcpRows')?.querySelectorAll('.mcp-row').forEach((row) => {
             const id = (row as HTMLElement).dataset.id!;
-            const perm = row.querySelector('[data-perm]') as HTMLInputElement | null;
-            const activo = row.querySelector('[data-activo]') as HTMLInputElement | null;
-            const del = row.querySelector('[data-del]') as HTMLButtonElement | null;
-            const dot = row.querySelector('.mcp-dot') as HTMLElement | null;
+            const perm = row.querySelector<HTMLInputElement>('[data-perm]');
+            const activo = row.querySelector<HTMLInputElement>('[data-activo]');
+            const del = row.querySelector<HTMLButtonElement>('[data-del]');
+            const dot = row.querySelector<HTMLElement>('.mcp-dot');
+            const estado = row.querySelector<HTMLElement>('[data-mcp-estado]');
 
             perm?.addEventListener('change', async () => {
                 const res = await post({ action: 'toggle_permiso', id, value: perm.checked });
-                if (res.ok) toast(perm.checked ? i18nPermOn : i18nPermOff);
-                else { perm.checked = !perm.checked; toast(i18nErr, 'error'); }
+                if (res.ok) toast(perm.checked ? txt('i18nPermOn', 'Listo') : txt('i18nPermOff', 'Listo'));
+                else { perm.checked = !perm.checked; toast(txt('i18nErr', 'No se pudo guardar'), 'error'); }
             });
+
             activo?.addEventListener('change', async () => {
                 const res = await post({ action: 'toggle_activo', id, value: activo.checked });
-                if (res.ok && dot) dot.setAttribute('data-on', activo.checked ? '1' : '0');
-                else if (!res.ok) { activo.checked = !activo.checked; toast(i18nErr, 'error'); }
+                if (!res.ok) { activo.checked = !activo.checked; toast(txt('i18nErr', 'No se pudo guardar'), 'error'); return; }
+                dot?.setAttribute('data-on', activo.checked ? '1' : '0');
+                // El texto de estado se mantiene sincronizado con el toggle; antes
+                // solo cambiaba el puntito y la fila quedaba diciendo "Conectado"
+                // con la conexión pausada.
+                if (estado) {
+                    const sufijo = estado.textContent?.includes('·') ? estado.textContent.slice(estado.textContent.indexOf('·')) : '';
+                    estado.textContent = (activo.checked ? txt('i18nConectado', 'Conectado') : txt('i18nPausado', 'Pausado')) + (sufijo ? ' ' + sufijo : '');
+                }
             });
+
             del?.addEventListener('click', async () => {
-                if (!await (window as any).cordConfirm({ title: i18nDelTitulo, body: i18nDelBody, danger: true, confirmText: i18nDelConfirm })) return;
+                const ok = await (window as any).cordConfirm?.({
+                    title: txt('i18nDelTitulo', 'Eliminar'), body: txt('i18nDelBody', ''),
+                    danger: true, confirmText: txt('i18nDelConfirm', 'Eliminar'),
+                });
+                if (!ok) return;
                 const res = await post({ action: 'delete', id });
-                if (res.ok) { row.remove(); toast(i18nDelOk); }
-                else toast(i18nDelErr, 'error');
+                if (res.ok) { row.remove(); toast(txt('i18nDelOk', 'Eliminado')); }
+                else toast(txt('i18nDelErr', 'No se pudo eliminar'), 'error');
             });
         });
 
-        // Add modal
         const modal = document.getElementById('addModal') as HTMLDialogElement | null;
-        document.getElementById('addBtn')?.addEventListener('click', () => modal?.showModal());
+        const err = document.getElementById('mErr');
+        document.getElementById('addBtn')?.addEventListener('click', () => {
+            if (!modal) return;
+            if (err) err.hidden = true;
+            (window as any).cordWireModal?.(modal);
+            modal.showModal();
+            (document.getElementById('mNombre') as HTMLInputElement | null)?.focus();
+        });
         document.getElementById('mCancel')?.addEventListener('click', () => modal?.close());
-        document.getElementById('mSave')?.addEventListener('click', async () => {
-            const nombre = (document.getElementById('mNombre') as HTMLInputElement).value;
-            const url_sse = (document.getElementById('mUrl') as HTMLInputElement).value;
-            const auth_token = (document.getElementById('mToken') as HTMLInputElement).value;
-            const err = document.getElementById('mErr')!;
-            err.textContent = '';
-            const res = await post({ action: 'add', nombre, url_sse, auth_token });
-            const d = await res.json();
-            if (!res.ok) { err.textContent = d.error || i18nAddErr; return; }
-            modal?.close();
-            location.reload();
+        document.getElementById('mSave')?.addEventListener('click', async (ev) => {
+            const b = ev.currentTarget as HTMLButtonElement;
+            const val = (id: string) => (document.getElementById(id) as HTMLInputElement).value.trim();
+            if (err) err.hidden = true;
+            b.disabled = true;
+            try {
+                const res = await post({ action: 'add', nombre: val('mNombre'), url_sse: val('mUrl'), auth_token: val('mToken') });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || txt('i18nAddErr', 'No se pudo conectar'));
+                modal?.close();
+                location.reload();
+            } catch (e: any) {
+                if (err) { err.textContent = e.message; err.hidden = false; }
+            } finally { b.disabled = false; }
         });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

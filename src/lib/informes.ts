@@ -42,5 +42,8 @@ export const LEGACY_ROUTES = {
     '/app/analitica': '/app/informes?r=resumen',
     '/app/cfo': '/app/informes?r=finanzas',
     '/app/tesoreria/flujo': '/app/informes?r=flujo',
+    // La cobranza con IA salió de tesoreria/ (esa carpeta ya no existe: flujo se
+    // fue a informes en ago 2026 y el agente vive ahora junto a Cobranza).
+    '/app/tesoreria/cobranza': '/app/cobranza/agente',
 } as const;
 

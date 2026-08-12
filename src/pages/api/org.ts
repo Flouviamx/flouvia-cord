@@ -8,7 +8,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
-import { requirePerm } from '../../lib/queries';
+import { requirePerm, invalidateMoneyCaches } from '../../lib/queries';
 import { currentUserId } from '../../lib/context';
 import { reauthenticate, revokeAllSessions } from '../../lib/auth';
 import { parseJsonBody } from '../../lib/validation';
@@ -95,6 +95,36 @@ export const PATCH: APIRoute = async ({ request }) => {
     const anticipoDef = body.anticipo_default_pct !== undefined
         ? (Number(body.anticipo_default_pct) >= 1 ? clamp(Math.round(Number(body.anticipo_default_pct)), 1, 99) : null)
         : actual.anticipo_default_pct;
+    // ── Cobranza con IA (ago 2026): comportamiento del agente ──
+    // Los rangos no son cosméticos: gracia 0 + cadencia 0 convertirían al agente
+    // en spam diario a los clientes del usuario. El motor los vuelve a acotar al
+    // leerlos (defensa en profundidad), pero no hay razón para guardar basura.
+    const MODOS_IA = new Set(['aprobacion', 'automatico']);
+    const TONOS_IA = new Set(['cercano', 'profesional', 'firme']);
+    const IDIOMAS_IA = new Set(['es', 'en']);
+    const aiModo = body.ai_cobranza_modo !== undefined
+        ? (MODOS_IA.has(String(body.ai_cobranza_modo)) ? String(body.ai_cobranza_modo) : 'aprobacion') : actual.ai_cobranza_modo;
+    const aiGracia = body.ai_cobranza_gracia_dias !== undefined
+        ? clamp(Math.round(Number(body.ai_cobranza_gracia_dias) || 0), 0, 90) : actual.ai_cobranza_gracia_dias;
+    const aiCadencia = body.ai_cobranza_cadencia_dias !== undefined
+        ? clamp(Math.round(Number(body.ai_cobranza_cadencia_dias) || 7), 1, 90) : actual.ai_cobranza_cadencia_dias;
+    const aiPlanDias = body.ai_cobranza_plan_dias !== undefined
+        ? clamp(Math.round(Number(body.ai_cobranza_plan_dias) || 15), 1, 365) : actual.ai_cobranza_plan_dias;
+    const aiMaxCuotas = body.ai_cobranza_max_cuotas !== undefined
+        ? clamp(Math.round(Number(body.ai_cobranza_max_cuotas) || 3), 2, 6) : actual.ai_cobranza_max_cuotas;
+    const aiTono = body.ai_cobranza_tono !== undefined
+        ? (TONOS_IA.has(String(body.ai_cobranza_tono)) ? String(body.ai_cobranza_tono) : 'profesional') : actual.ai_cobranza_tono;
+    const aiIdioma = body.ai_cobranza_idioma !== undefined
+        ? (IDIOMAS_IA.has(String(body.ai_cobranza_idioma)) ? String(body.ai_cobranza_idioma) : 'es') : actual.ai_cobranza_idioma;
+    const aiFirma = body.ai_cobranza_firma !== undefined ? str(body.ai_cobranza_firma, 400) : actual.ai_cobranza_firma;
+    const aiMontoMin = body.ai_cobranza_monto_min !== undefined
+        ? Math.max(0, Number(body.ai_cobranza_monto_min) || 0) : actual.ai_cobranza_monto_min;
+    const aiMaxCorrida = body.ai_cobranza_max_corrida !== undefined
+        ? clamp(Math.round(Number(body.ai_cobranza_max_corrida) || 25), 1, 200) : actual.ai_cobranza_max_corrida;
+    // El interruptor maestro también entra por aquí (el panel de configuración
+    // vive en /app/cobranza/agente, no en Ajustes › Agentes).
+    const aiActiva = body.ai_cobranza_activa !== undefined ? Boolean(body.ai_cobranza_activa) : actual.ai_cobranza_activa;
+
     const retIsr = body.retencion_isr_pct !== undefined ? clamp(Number(body.retencion_isr_pct) || 0, 0, 100) : actual.retencion_isr_pct;
     const retIva = body.retencion_iva_pct !== undefined ? clamp(Number(body.retencion_iva_pct) || 0, 0, 100) : actual.retencion_iva_pct;
     const textoLegal = body.texto_legal !== undefined ? str(body.texto_legal, 600) : actual.texto_legal;
@@ -190,6 +220,11 @@ export const PATCH: APIRoute = async ({ request }) => {
             pdf_mensaje = ${pdfMensaje}, pdf_condiciones = ${pdfCond}, pdf_mostrar_lista = ${pdfLista},
             aprob_descuento_max = ${aprobDesc}, aprob_monto_max = ${aprobMonto}, aprob_margen_min = ${aprobMargen}, interes_moratorio_pct = ${interes},
             vigencia_default_dias = ${vigDias}, terminos_default = ${termDef}, anticipo_default_pct = ${anticipoDef},
+            ai_cobranza_activa = ${aiActiva}, ai_cobranza_modo = ${aiModo},
+            ai_cobranza_gracia_dias = ${aiGracia}, ai_cobranza_cadencia_dias = ${aiCadencia},
+            ai_cobranza_plan_dias = ${aiPlanDias}, ai_cobranza_max_cuotas = ${aiMaxCuotas},
+            ai_cobranza_tono = ${aiTono}, ai_cobranza_idioma = ${aiIdioma}, ai_cobranza_firma = ${aiFirma},
+            ai_cobranza_monto_min = ${aiMontoMin}, ai_cobranza_max_corrida = ${aiMaxCorrida},
             retencion_isr_pct = ${retIsr}, retencion_iva_pct = ${retIva}, texto_legal = ${textoLegal},
             sitio_web = ${sitioWeb}, whatsapp = ${whatsapp},
             regimen_fiscal = ${regimen}, uso_cfdi = ${usoCfdi}, cp_fiscal = ${cpFiscal}, serie_folio = ${serieFolio},
@@ -221,6 +256,12 @@ export const PATCH: APIRoute = async ({ request }) => {
         }
         await logAudit(orgId, { accion: 'sso.exigir_activado', entidad: 'org', entidad_id: orgId, detalle: `${members.length} sesión(es) revocada(s)`, ip: reqIp(request) });
     }
+
+    // Varios read-models cachean config de la org (getCobranzaIA lee todo el
+    // bloque ai_cobranza_*, getCobranza lee interes_moratorio_pct). Sin esto,
+    // guardar en Ajustes y recargar seguía mostrando los valores viejos hasta
+    // 30-60 s: el usuario cree que no se guardó y vuelve a guardar.
+    invalidateMoneyCaches(orgId);
 
     return json({ ok: true });
 };

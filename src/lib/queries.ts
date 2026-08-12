@@ -7,7 +7,7 @@ import { sql, getActiveOrgId, resolvePublicQuote, withOrgTx } from './db';
 import { currentUserId, currentOrgIdOverride, currentLocale } from './context';
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
-import { memberCan, type Membership, type PermKey, type PermMap } from './permissions';
+import { memberCan, seatLimit, type Membership, type PermKey, type PermMap } from './permissions';
 import { INCLUDED } from './billing';
 import { cached, invalidate } from './cache';
 import { after } from './after';
@@ -2605,6 +2605,17 @@ export interface MemberRow {
     inicial: string;
     desde: string;
     esYo: boolean;
+    // ── Actividad real (ago 2026) ──
+    // La columna de la tabla decía "Último inicio de sesión" y mostraba la fecha
+    // de ALTA: el dato no existía en ningún lado. Ahora sale de `sessions`.
+    ultimaSesion: string | null;
+    ultimaSesionISO: string | null;
+    cotizaciones30d: number;
+    ultimaAccion: string | null;
+    // Gestionado por el IdP: editar sus permisos a mano no sirve de nada, el
+    // siguiente login por SAML los pisa. Antes era invisible en la UI.
+    ssoManaged: boolean;
+    invitacionExpirada: boolean;
 }
 
 export async function getMembers(): Promise<MemberRow[]> {
@@ -2616,10 +2627,40 @@ export async function getMembers(): Promise<MemberRow[]> {
     // para reconstruir el link (es un hash) y no hace falta filtrarlo a la
     // página — se manda `tieneInvitePendiente` para que la UI ofrezca
     // "Reenviar invitación" (token nuevo) en vez de "Copiar link".
+    //
+    // ⚠️ Ya NO se filtra `estado <> 'revocado'`: el tab "Inactivos" de la página
+    // llevaba desde su creación mostrando siempre 0 porque el SQL los quitaba
+    // antes de llegar a la UI. Ahora vienen todos y la página filtra por estado.
+    //
+    // Los agregados van en `left join lateral` acotados, no en subconsultas
+    // correlacionadas por fila (regla de escala documentada para Ops).
     const [rows] = await withOrgTx(orgId, sql`
-        select id, user_id, email, nombre, rol, permisos, estado, created_at, joined_at
-        from org_members where org_id = ${orgId} and estado <> 'revocado'
-        order by case when rol = 'owner' then 0 else 1 end, created_at asc`);
+        select m.id, m.user_id, m.email, m.nombre, m.rol, m.permisos, m.estado,
+               m.created_at, m.joined_at, m.token_expires_at, m.sso_managed,
+               s.last_used_at,
+               coalesce(q.n, 0) as cotizaciones_30d,
+               a.accion as ultima_accion
+        from org_members m
+        left join lateral (
+            select max(last_used_at) as last_used_at from sessions
+            where user_id = m.user_id and revoked_at is null
+        ) s on m.user_id is not null
+        left join lateral (
+            -- cotizaciones.creado_por es TEXT (nació como clerk_user_id y nunca
+            -- se migró a uuid), así que el cast es obligatorio.
+            select count(*) as n from cotizaciones
+            where org_id = ${orgId} and creado_por = m.user_id::text
+              and created_at >= now() - interval '30 days'
+        ) q on m.user_id is not null
+        left join lateral (
+            -- audit_log.actor es TEXT y guarda el user_id (o 'system' para crons).
+            select accion from audit_log
+            where org_id = ${orgId} and actor = m.user_id::text
+            order by created_at desc limit 1
+        ) a on m.user_id is not null
+        where m.org_id = ${orgId}
+        order by case when m.rol = 'owner' then 0 else 1 end, m.created_at asc`);
+    const ahora = Date.now();
     return rows.map((m) => {
         const nombre = (m.nombre as string) || (m.email as string) || 'Invitado';
         return {
@@ -2633,8 +2674,28 @@ export async function getMembers(): Promise<MemberRow[]> {
             inicial: initials(nombre),
             desde: fmtFecha(m.joined_at || m.created_at),
             esYo: !!me && m.user_id === me,
+            ultimaSesion: m.last_used_at ? fmtFecha(m.last_used_at) : null,
+            ultimaSesionISO: m.last_used_at ? new Date(m.last_used_at as string).toISOString() : null,
+            cotizaciones30d: Number(m.cotizaciones_30d ?? 0),
+            ultimaAccion: (m.ultima_accion as string) ?? null,
+            ssoManaged: !!m.sso_managed,
+            invitacionExpirada: m.estado === 'invitado' && !!m.token_expires_at
+                && new Date(m.token_expires_at as string).getTime() < ahora,
         };
     });
+}
+
+/** Asientos ocupados = miembros activos + invitaciones vigentes (un invitado ya
+ *  reserva su lugar; si no, se podría invitar a 50 personas con 5 asientos). */
+export async function getSeatUsage(): Promise<{ usados: number; limite: number; plan: string }> {
+    const orgId = await getActiveOrgId();
+    const [[row]] = await withOrgTx(orgId, sql`
+        select coalesce(o.plan, 'free') as plan,
+               (select count(*) from org_members
+                where org_id = ${orgId} and estado in ('activo', 'invitado')) as usados
+        from orgs o where o.id = ${orgId}`);
+    const plan = (row?.plan as string) || 'free';
+    return { usados: Number(row?.usados ?? 0), limite: seatLimit(plan), plan };
 }
 
 export async function getMyMembership(): Promise<Membership> {
@@ -2713,7 +2774,7 @@ export async function requirePermAny(keys: PermKey[]): Promise<Response | null> 
 export function invalidateMoneyCaches(orgId: string): void {
     for (const prefix of [
         `cobranza:${orgId}`, `cobros:${orgId}`, `serie-diaria:${orgId}`, `cfo:${orgId}`,
-        `pay-behavior:${orgId}`, `mrr-igualas:${orgId}`,
+        `pay-behavior:${orgId}`, `mrr-igualas:${orgId}`, `cobranza-ia:${orgId}`,
         `analytics:${orgId}`, `analytics-rango:${orgId}`, `analytics-diagnosis:${orgId}`,
     ]) invalidate(prefix);
 }
@@ -3188,4 +3249,195 @@ export async function getSidebarBadges() {
             porAprobar: Number(a?.n ?? 0),
         };
     } catch { return zero; }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Cobranza con IA — read-model de /app/cobranza/agente (ago 2026)
+//
+// Antes la página hacía DOS queries SQL crudas inline (sin withOrgTx) y pintaba
+// un feed plano de 50 mensajes: cero KPIs, cero acciones, y los planes de pago
+// negociados —la pieza más sólida del sistema— no se mostraban en ninguna parte.
+// ════════════════════════════════════════════════════════════════════════════
+
+export interface CobranzaIAMensaje {
+    id: string; autor: 'agente_ia' | 'cliente' | 'usuario'; mensaje: string;
+    estado: string; editado: boolean; fecha: string; fechaISO: string; error: string | null;
+}
+export interface CobranzaIAHilo {
+    cotizacionId: string; folio: string; empresa: string; inicial: string;
+    saldo: number; diasVencido: number; overdue: boolean; token: string;
+    email: string | null; nMensajes: number; ultimoISO: string;
+    excluida: boolean; mensajes: CobranzaIAMensaje[];
+}
+
+export async function getCobranzaIA() {
+    const orgId = await getActiveOrgId();
+    return cached(`cobranza-ia:${orgId}`, 30, getCobranzaIAUncached);
+}
+
+async function getCobranzaIAUncached() {
+    const orgId = await getActiveOrgId();
+    const { getCobranzaConfig, runCobranzaOrg } = await import('./agents/cobranza-run');
+    const config = await getCobranzaConfig(orgId);
+
+    const [convRows, planRows, exclRows, recuperadoRows, actividadRows] = await withOrgTx(orgId,
+        // Conversaciones de las cotizaciones que siguen vivas. Se acotan a 400
+        // mensajes: un hilo de cobranza real tiene 3-6, así que esto cubre ~70
+        // cuentas activas sin traer el histórico completo de la org.
+        sql`select cc.id, cc.cotizacion_id, cc.autor_tipo, cc.mensaje, cc.estado, cc.editado,
+                   cc.error, cc.created_at, cc.enviado_at,
+                   c.folio, c.total, c.public_token, c.paid_at, c.status,
+                   cl.empresa, cl.email as cliente_email, cl.id as cliente_id,
+                   coalesce((select sum(monto) from cotizacion_cobros
+                             where cotizacion_id = c.id and status = 'pagado'), 0) as pagado,
+                   floor(date_part('day', now() - (
+                     coalesce(c.approved_at, c.created_at)
+                     + make_interval(days => case coalesce(c.terminos, cl.terminos_default, 'contado')
+                         when 'net30' then 30 when 'net60' then 60 else 0 end)
+                   )))::int as dias_vencido,
+                   exists(select 1 from cobranza_exclusiones x where x.org_id = cc.org_id
+                          and (x.cotizacion_id = c.id or x.cliente_id = c.cliente_id)) as excluida
+            from cobranza_conversaciones cc
+            join cotizaciones c on c.id = cc.cotizacion_id
+            join clientes cl on cl.id = c.cliente_id
+            where cc.org_id = ${orgId} and cc.estado <> 'descartado'
+            order by cc.created_at desc
+            limit 400`,
+
+        // Planes negociados + avance real de cuotas.
+        sql`select p.id, p.cotizacion_id, p.cuotas, p.monto_cuota, p.estado, p.created_at,
+                   c.folio, cl.empresa,
+                   (select count(*) from cotizacion_cobros co
+                    where co.cotizacion_id = p.cotizacion_id and co.tipo = 'cuota' and co.status = 'pagado') as pagadas,
+                   (select min(vence) from cotizacion_cobros co
+                    where co.cotizacion_id = p.cotizacion_id and co.tipo = 'cuota' and co.status = 'pendiente') as proxima
+            from planes_pago_negociados p
+            join cotizaciones c on c.id = p.cotizacion_id
+            join clientes cl on cl.id = c.cliente_id
+            where p.org_id = ${orgId} and p.estado in ('propuesto', 'activo')
+            order by p.created_at desc
+            limit 50`,
+
+        sql`select x.id, x.cliente_id, x.cotizacion_id, x.motivo, x.created_at,
+                   cl.empresa, c.folio
+            from cobranza_exclusiones x
+            left join clientes cl on cl.id = x.cliente_id
+            left join cotizaciones c on c.id = x.cotizacion_id
+            where x.org_id = ${orgId}
+            order by x.created_at desc
+            limit 100`,
+
+        // LA MÉTRICA QUE JUSTIFICA EL FEATURE: dinero cobrado en los últimos 30
+        // días de cotizaciones a las que el agente les había escrito ANTES del
+        // pago. Sin este "antes" cualquier cobro contaría como mérito del agente.
+        sql`select coalesce(sum(co.monto), 0) as recuperado, count(distinct co.cotizacion_id) as cuentas
+            from cotizacion_cobros co
+            where co.org_id = ${orgId} and co.status = 'pagado'
+              and co.paid_at >= now() - interval '30 days'
+              and exists (select 1 from cobranza_conversaciones cc
+                          where cc.cotizacion_id = co.cotizacion_id
+                            and cc.estado = 'enviado'
+                            and cc.enviado_at < co.paid_at)`,
+
+        sql`select
+              count(*) filter (where estado = 'enviado' and created_at >= now() - interval '30 days') as enviados30,
+              count(*) filter (where estado = 'borrador') as borradores,
+              count(*) filter (where estado = 'fallido' and created_at >= now() - interval '30 days') as fallidos30,
+              count(*) filter (where autor_tipo = 'cliente' and created_at >= now() - interval '30 days') as respuestas30,
+              count(*) filter (where estado = 'enviado' and editado = false and aprobado_at is not null) as aprobados_sin_editar,
+              max(enviado_at) as ultimo_envio
+            from cobranza_conversaciones where org_id = ${orgId}`,
+    );
+
+    // ── Agrupar por cotización (antes era un feed plano sin hilo) ──
+    const hilosMap = new Map<string, CobranzaIAHilo>();
+    const pendientes: any[] = [];
+    for (const r of convRows as any[]) {
+        const saldo = Math.max(0, num(r.total) - num(r.pagado));
+        const dias = Math.max(0, Number(r.dias_vencido) || 0);
+        let h = hilosMap.get(r.cotizacion_id);
+        if (!h) {
+            h = {
+                cotizacionId: r.cotizacion_id, folio: r.folio, empresa: r.empresa,
+                inicial: String(r.empresa || '?').charAt(0).toUpperCase(),
+                saldo, diasVencido: dias, overdue: dias > 0, token: r.public_token,
+                email: r.cliente_email ?? null, nMensajes: 0,
+                ultimoISO: new Date(r.created_at).toISOString(),
+                excluida: !!r.excluida, mensajes: [],
+            };
+            hilosMap.set(r.cotizacion_id, h);
+        }
+        h.nMensajes++;
+        h.mensajes.push({
+            id: r.id, autor: r.autor_tipo, mensaje: r.mensaje, estado: r.estado,
+            editado: !!r.editado, error: r.error ?? null,
+            fecha: fmtFecha(r.created_at), fechaISO: new Date(r.created_at).toISOString(),
+        });
+        if (r.estado === 'borrador') {
+            pendientes.push({
+                id: r.id, cotizacionId: r.cotizacion_id, folio: r.folio, empresa: r.empresa,
+                inicial: String(r.empresa || '?').charAt(0).toUpperCase(),
+                saldo, diasVencido: dias, mensaje: r.mensaje, editado: !!r.editado,
+                email: r.cliente_email ?? null, token: r.public_token,
+                fecha: fmtFecha(r.created_at), fechaISO: new Date(r.created_at).toISOString(),
+            });
+        }
+    }
+    // La query viene DESC (lo más reciente primero) para poder cortar en 400; el
+    // hilo se lee al revés.
+    for (const h of hilosMap.values()) h.mensajes.reverse();
+    const hilos = [...hilosMap.values()].sort((a, b) => b.ultimoISO.localeCompare(a.ultimoISO));
+    pendientes.sort((a, b) => (b.saldo * Math.max(1, b.diasVencido)) - (a.saldo * Math.max(1, a.diasVencido)));
+
+    const planPropuestoPorCot = new Map<string, any>();
+    const planes = (planRows as any[]).map((p) => {
+        const plan = {
+            id: p.id, cotizacionId: p.cotizacion_id, folio: p.folio, empresa: p.empresa,
+            cuotas: Number(p.cuotas), montoCuota: num(p.monto_cuota), estado: p.estado as string,
+            pagadas: Number(p.pagadas ?? 0),
+            proxima: p.proxima ? fmtFecha(p.proxima) : null,
+            comprometido: num(p.monto_cuota) * Number(p.cuotas),
+        };
+        if (p.estado === 'propuesto') planPropuestoPorCot.set(p.cotizacion_id, plan);
+        return plan;
+    });
+    // El borrador enseña el plan que PROPONE, para que quien aprueba sepa que
+    // está autorizando cuotas reales y no solo un correo.
+    for (const p of pendientes) p.plan = planPropuestoPorCot.get(p.cotizacionId) ?? null;
+
+    const exclusiones = (exclRows as any[]).map((x) => ({
+        id: x.id, clienteId: x.cliente_id, cotizacionId: x.cotizacion_id,
+        etiqueta: x.empresa ?? x.folio ?? '—',
+        tipo: x.cliente_id ? 'cliente' : 'cotizacion',
+        motivo: x.motivo ?? null, fecha: fmtFecha(x.created_at),
+    }));
+
+    // "En la mira": a quién le tocaría en la próxima corrida y a quién no, con el
+    // motivo. Es un dry-run del motor real, no una reimplementación.
+    let enLaMira: { procesadas: number; omitidas: { cotizacionId: string; folio: string; empresa: string; motivo: string }[] } =
+        { procesadas: 0, omitidas: [] };
+    try {
+        const dry = await runCobranzaOrg(orgId, { dryRun: true });
+        enLaMira = { procesadas: dry.procesadas, omitidas: dry.omitidas };
+    } catch { /* el dry-run es informativo: si falla, la página se pinta igual */ }
+
+    const act = (actividadRows as any[])[0] ?? {};
+    const rec = (recuperadoRows as any[])[0] ?? {};
+    const enviados30 = Number(act.enviados30 ?? 0);
+    const metricas = {
+        recuperado30d: num(rec.recuperado),
+        cuentasRecuperadas: Number(rec.cuentas ?? 0),
+        enviados30d: enviados30,
+        respuestas30d: Number(act.respuestas30 ?? 0),
+        tasaRespuesta: enviados30 > 0 ? Math.round((Number(act.respuestas30 ?? 0) / enviados30) * 100) : 0,
+        fallidos30d: Number(act.fallidos30 ?? 0),
+        borradores: Number(act.borradores ?? 0),
+        aprobadosSinEditar: Number(act.aprobados_sin_editar ?? 0),
+        ultimoEnvio: act.ultimo_envio ? fmtFecha(act.ultimo_envio) : null,
+        ultimoEnvioISO: act.ultimo_envio ? new Date(act.ultimo_envio).toISOString() : null,
+        planesActivos: planes.filter((p) => p.estado === 'activo').length,
+        comprometido: planes.filter((p) => p.estado === 'activo').reduce((s, p) => s + p.comprometido, 0),
+    };
+
+    return { config, pendientes, hilos, planes, exclusiones, enLaMira, metricas };
 }

@@ -5,72 +5,18 @@
 //   POST { action: 'toggle_activo', id, value }
 //   POST { action: 'toggle_permiso', id, value }
 //   POST { action: 'cobranza', value }      → activa/desactiva cobranza autónoma
+// La EJECUCIÓN del agente vive en /api/cobranza-ia/run (motor único compartido
+// con el cron). Antes había aquí un `run_cobranza` que era un clon divergente.
 // Requiere permiso 'ajustes'.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
-import { runARAgent } from '../../lib/agents/ar-agent';
-import { sendEmail } from '../../lib/email';
 import { trackServer } from '../../lib/posthog-server';
 import {
   listMcpServers, addMcpServer, deleteMcpServer, setServerActivo, setServerPermitido,
 } from '../../lib/agents/governance';
-
-const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-// Ejecuta el agente de cobranza sobre las cotizaciones vencidas de UNA org
-// (versión manual del cron, gated por el opt-in ai_cobranza_activa).
-async function runCobranzaForOrg(orgId: string): Promise<number> {
-  const [[org]] = await withOrgTx(orgId, sql`select ai_cobranza_activa from orgs where id = ${orgId}`);
-  if (!org?.ai_cobranza_activa) return 0;
-
-  const [overdue] = await withOrgTx(orgId, sql`
-    SELECT c.id as cotizacion_id, c.total as monto_adeudado,
-           cl.empresa as cliente_nombre, cl.email as cliente_email,
-           DATE_PART('day', NOW() - c.vigencia) as dias_vencido
-    FROM cotizaciones c
-    JOIN clientes cl ON c.cliente_id = cl.id
-    WHERE c.org_id = ${orgId} AND c.status = 'invoiced' AND c.paid_at IS NULL AND c.vigencia < NOW()`);
-
-  let n = 0;
-  for (const q of overdue) {
-    const [historial] = await withOrgTx(orgId, sql`
-      SELECT autor_tipo, mensaje FROM cobranza_conversaciones
-      WHERE cotizacion_id = ${q.cotizacion_id} ORDER BY created_at ASC`);
-    const mapped = historial.map((h: any) => ({ rol: h.autor_tipo === 'agente_ia' ? 'user' : 'user', contenido: h.mensaje }));
-    const msg = await runARAgent({
-      cotizacionId: q.cotizacion_id, orgId,
-      clienteNombre: q.cliente_nombre, clienteEmail: q.cliente_email,
-      montoAdeudado: parseFloat(q.monto_adeudado), diasVencido: Math.floor(q.dias_vencido),
-      historialConversacion: mapped as any,
-    });
-    if (q.cliente_email) {
-      await sendEmail({
-        orgId,
-        operation: 'ai_collection_email',
-        to: q.cliente_email,
-        subject: `Recordatorio de pago — factura vencida (${Math.floor(q.dias_vencido)} días)`,
-        html: `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-        <div style="max-width:540px;margin:0 auto;">
-            <div style="margin-bottom:32px;">
-                <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord Logo" style="display:block;">
-            </div>
-            
-            <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:0;font-weight:400;margin-top:0;white-space:pre-wrap;">${escapeHtml(msg)}</p>
-
-            <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
-                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">Agente Cord · Cord by Flouvia</p>
-            </div>
-        </div>
-    </div>`
-      });
-    }
-    n++;
-  }
-  return n;
-}
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -132,15 +78,6 @@ export const POST: APIRoute = async ({ request }) => {
         await trackServer('cobranza_ia_activated', orgId, {}, !!flags?.is_sandbox, !!flags?.is_demo);
       }
       return json({ ok: true });
-    }
-    case 'run_cobranza': {
-      try {
-        const procesadas = await runCobranzaForOrg(orgId);
-        await logAudit(orgId, { accion: 'agente.cobranza_ejecutada', entidad: 'org', entidad_id: orgId, detalle: `${procesadas} cotizaciones`, ip });
-        return json({ ok: true, procesadas });
-      } catch (e: any) {
-        return json({ error: e?.message || 'No se pudo ejecutar el agente' }, 500);
-      }
     }
     default:
       return json({ error: 'Acción no válida' }, 400);

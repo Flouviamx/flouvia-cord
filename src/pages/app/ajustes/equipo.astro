@@ -1,11 +1,25 @@
 ---
+// Ajustes › Equipo y permisos.
+//
+// Rediseño ago 2026. Lo que estaba roto antes: el tab "Inactivos" siempre salía
+// vacío (el SQL de getMembers filtraba los revocados), "Exportar" no tenía
+// listener, la columna "Último inicio de sesión" mostraba la fecha de ALTA
+// porque el dato no existía, 13 atributos data-i18n-* se emitían y nunca se
+// leían (todos los toasts estaban en español duro), faltaban 4 claves i18n que
+// renderizaban la clave cruda en el picker, el picker estaba duplicado literal
+// entre los dos modales, y el límite de asientos que promete /precios no
+// existía en código ni se mostraba.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import { getOrg, getMembers, getMyMembership } from '../../../lib/queries';
-import { memberCan, PERMISOS, PRESETS } from '../../../lib/permissions';
+import '../../../styles/modal.css';
+import PermPicker from '../../../components/app/PermPicker.astro';
+import { getOrg, getMembers, getMyMembership, getSeatUsage } from '../../../lib/queries';
+import { memberCan, PERMISOS, PRESETS, planTieneEquipo, minPlanOf, planLabel, TEAM_PLANS } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
-const [ORG, ME, members] = await Promise.all([getOrg(), getMyMembership(), getMembers()]);
+const [ORG, ME, members, seats] = await Promise.all([
+    getOrg(), getMyMembership(), getMembers(), getSeatUsage(),
+]);
 const canEdit = memberCan(ME, 'equipo');
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -14,11 +28,10 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
     return s;
 };
 
-const activos = members.filter(m => m.estado === 'activo');
-const pendientes = members.filter(m => m.estado === 'invitado');
-const inactivos = members.filter(m => m.estado === 'revocado');
+const activos = members.filter((m) => m.estado === 'activo');
+const pendientes = members.filter((m) => m.estado === 'invitado');
+const inactivos = members.filter((m) => m.estado === 'revocado');
 
-// Mapeo amigable de roles
 const ROL_LABEL: Record<string, string> = {
     owner: t(L, 'set.eq.rol.owner'),
     admin: t(L, 'set.eq.rol.admin'),
@@ -26,724 +39,657 @@ const ROL_LABEL: Record<string, string> = {
     lectura: t(L, 'set.eq.rol.lectura'),
 };
 
-// Descripciones del segmented control de presets + el texto de "Personalizado",
-// precalculadas server-side (i18n) y pasadas al cliente como JSON — el script
-// del picker de permisos no es is:inline y podría importar `t()` (es puro),
-// pero no `currentLocale()` (depende del contexto de request); más simple pasar
-// el resultado ya traducido vía data-attribute.
-const PRESET_DESC_MAP = JSON.stringify({
-    ...Object.fromEntries(Object.keys(PRESETS).map((key) => [key, t(L, `set.eq.preset.${key}.desc` as any)])),
-    __custom: t(L, 'set.eq.personalizado_desc'),
-});
+const ilimitado = !Number.isFinite(seats.limite);
+const lleno = !ilimitado && seats.usados >= seats.limite;
+const pctAsientos = ilimitado ? 0 : Math.min(100, Math.round((seats.usados / seats.limite) * 100));
+const tienePlanEquipo = planTieneEquipo(seats.plan);
+const dominios = (ORG.inviteDomains || '').split(',').map((d: string) => d.trim()).filter(Boolean);
 
-const getAvatarColor = (name: string) => {
-    const colors = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'];
-    let sum = 0;
-    for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i);
-    return colors[sum % colors.length];
+// Todo lo que el <script> necesita traducido (no es is:inline, no puede llamar
+// t() en runtime). Antes se emitían 13 data-i18n-* que el script jamás leía.
+const EQ_T = {
+    invitado: t(L, 'set.eq.toast_invitado'),
+    invitado_link: t(L, 'set.eq.toast_invitado_link'),
+    actualizado: t(L, 'set.eq.toast_actualizado'),
+    revocado: t(L, 'set.eq.toast_revocado'),
+    reenviado: t(L, 'set.eq.invitacion_reenviada'),
+    error: t(L, 'set.eq.toast_error'),
+    viendo: t(L, 'set.eq.viendo'),
+    exportando: t(L, 'set.eq.exportando'),
+    dominio_invalido: tf('set.eq.dominio_invalido', { dominios: dominios.join(', ') }),
+    custom_label: t(L, 'set.eq.preset.custom.label'),
+    presets: JSON.stringify(Object.fromEntries(
+        Object.entries(PRESETS).map(([k, v]) => [k, v.permisos]),
+    )),
+    presetDescs: JSON.stringify({
+        ...Object.fromEntries(Object.keys(PRESETS).map((k) => [k, t(L, `set.eq.preset.${k}.desc` as any)])),
+        __custom: t(L, 'set.eq.personalizado_desc'),
+    }),
+    dominios: JSON.stringify(dominios),
+    // Etiquetas de permiso para la ficha (el drawer las pinta por JS).
+    permLabels: JSON.stringify(Object.fromEntries(
+        PERMISOS.map((p) => [p.key, t(L, `set.eq.perm.${p.key}.label` as any)]),
+    )),
+    sinPermisos: t(L, 'set.eq.ficha_sin_permisos'),
+    ultimaAccion: t(L, 'set.eq.ficha_ultima_accion'),
+    actSesion: t(L, 'set.eq.act_sesion'),
+    actNunca: t(L, 'set.eq.act_nunca'),
+    actCotizaciones: t(L, 'set.eq.act_cotizaciones'),
 };
 ---
 
-<SettingsShell title="Equipo y roles — Ajustes" tab="equipo"
-    intro={t(L, 'set.eq.intro')}>
+<SettingsShell title="Equipo y permisos — Ajustes" tab="equipo" intro={t(L, 'set.eq.intro')}>
 
-    <div class="tm-controls">
-        <div class="tm-tabs" id="teamTabs">
-            <button class="tm-tab active" data-filter="all">{t(L, 'set.eq.todos')} <span class="tm-badge">{members.length}</span></button>
-            <button class="tm-tab" data-filter="activo">{t(L, 'set.eq.activos')} <span class="tm-badge">{activos.length}</span></button>
-            <button class="tm-tab" data-filter="invitado">{t(L, 'set.eq.invitaciones_pendientes')} <span class="tm-badge">{pendientes.length}</span></button>
-            <button class="tm-tab" data-filter="revocado">{t(L, 'set.eq.inactivos')} <span class="tm-badge">{inactivos.length}</span></button>
-        </div>
-        <div class="tm-tools">
-            <button class="btn-secondary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                {t(L, 'set.eq.exportar')}
-            </button>
-            {canEdit && (
-                <button class="btn-primary" id="btnInvite" data-i18n-add={t(L, 'set.eq.enviar_invitacion')} data-i18n-adding={t(L, 'set.eq.enviando')}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    {t(L, 'set.eq.agregar_miembro')}
-                </button>
+    <div data-eq-shell data-t={JSON.stringify(EQ_T)}>
+
+        {/* ── Asientos: antes no había ninguna señal de plan en la página; el
+             usuario se enteraba del límite con un 402 al invitar. ── */}
+        <div class="eq-seats">
+            <div class="eq-seats-copy">
+                <strong class="editorial">
+                    {ilimitado
+                        ? tf('set.eq.asientos_ilimitados', { usados: String(seats.usados) })
+                        : tf('set.eq.asientos', { usados: String(seats.usados), limite: String(seats.limite) })}
+                </strong>
+                {lleno && <small>{tf('set.eq.asientos_lleno', { plan: planLabel(seats.plan) })}</small>}
+            </div>
+            {!ilimitado && (
+                <div class="eq-seats-bar" role="presentation">
+                    <i style={`width:${pctAsientos}%`} class={lleno ? 'is-full' : ''}></i>
+                </div>
             )}
+            <div class="eq-seats-actions">
+                <button type="button" class="eq-btn" id="eqExport">{t(L, 'set.eq.exportar')}</button>
+                {canEdit && (lleno || !tienePlanEquipo
+                    ? <a class="eq-btn eq-btn-primary" href={`/app/ajustes/plan?plan=${minPlanOf(TEAM_PLANS)}`}>{t(L, 'set.eq.asientos_ver_planes')}</a>
+                    : <button type="button" class="eq-btn eq-btn-primary" id="eqInvite">{t(L, 'set.eq.agregar_miembro')}</button>)}
+            </div>
         </div>
-    </div>
 
-    <div class="tm-table-wrap">
-        <div class="tm-thead">
-            <div class="tm-th">{t(L, 'set.eq.th_nombre')}</div>
-            <div class="tm-th">{t(L, 'set.eq.th_correo')}</div>
-            <div class="tm-th">{t(L, 'set.eq.th_rol')}</div>
-            <div class="tm-th">{t(L, 'set.eq.th_ultimo_login')}</div>
-            <div class="tm-th tm-th-action"></div>
+        {dominios.length > 0 && (
+            <p class="eq-domains">{tf('set.eq.dominios_aviso', { dominios: dominios.join(', ') })}</p>
+        )}
+
+        {/* ── Filtros ── */}
+        <div class="eq-filters" data-eq-filters>
+            <button type="button" class="eq-chip is-active" data-eq-filter="todos">{t(L, 'set.eq.todos')} <b>{members.length}</b></button>
+            <button type="button" class="eq-chip" data-eq-filter="activo">{t(L, 'set.eq.activos')} <b>{activos.length}</b></button>
+            <button type="button" class="eq-chip" data-eq-filter="invitado">{t(L, 'set.eq.invitaciones_pendientes')} <b>{pendientes.length}</b></button>
+            <button type="button" class="eq-chip" data-eq-filter="revocado">{t(L, 'set.eq.inactivos')} <b>{inactivos.length}</b></button>
         </div>
-        <div class="tm-tbody" id="teamList"
-            data-i18n-copiado={t(L, 'set.eq.enlace_copiado')} data-i18n-err-invitar={t(L, 'set.eq.error_invitar')}
-            data-i18n-ok-invitar={t(L, 'set.eq.invitacion_enviada')} data-i18n-err-actualizar={t(L, 'set.eq.error_actualizar')}
-            data-i18n-ok-actualizar={t(L, 'set.eq.funciones_actualizadas')} data-i18n-err-revocar={t(L, 'set.eq.error_revocar')}
-            data-i18n-ok-revocar={t(L, 'set.eq.acceso_revocado')}
-            data-i18n-enviando={t(L, 'set.eq.enviando')} data-i18n-enviar={t(L, 'set.eq.enviar_invitacion')}
-            data-i18n-guardando={t(L, 'set.eq.guardando')} data-i18n-guardar={t(L, 'set.eq.guardar_cambios')}
-            data-i18n-revocando={t(L, 'set.eq.revocando')} data-i18n-revocar-btn={t(L, 'set.eq.revocar_acceso')}
-            data-i18n-viendo={t(L, 'set.eq.viendo')}>
-            {members.map(m => {
-                const ac = getAvatarColor(m.nombre || 'A');
-                return (
-                <div class="tm-row" data-status={m.estado}>
-                    <div class="tm-col tm-col-name">
-                        <div class="tm-avatar" style={`background-color: ${ac}15; color: ${ac}; border-color: ${ac}30;`}>
-                            {m.inicial}
-                        </div>
-                        <div class="tm-name-meta">
-                            <span class="tm-name">{m.nombre}</span>
-                            {m.esYo && <span class="tm-pill">{t(L, 'set.eq.tu')}</span>}
-                        </div>
-                    </div>
-                    <div class="tm-col tm-col-email">{m.email || '—'}</div>
-                    <div class="tm-col tm-col-role">
-                        <span class={`role-badge ${m.rol}`}>{ROL_LABEL[m.rol] || t(L, 'set.eq.rol.miembro')}</span>
-                    </div>
-                    <div class="tm-col tm-col-date">
-                        {m.estado === 'invitado' ? <span class="status-inv">{t(L, 'set.eq.invitacion_pendiente')}</span> : tf('set.eq.desde', { fecha: m.desde })}
-                    </div>
-                    <div class="tm-col tm-col-action">
-                        {canEdit && !m.esYo && m.rol !== 'owner' && (
-                            <div class="tm-menu-wrap">
-                                <button class="tm-btn-more" aria-label={t(L, 'set.eq.opciones')} data-id={m.id}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-                                </button>
-                                <div class="tm-dropdown" hidden>
-                                    <button class="tm-dd-item act-edit" data-id={m.id} data-permisos={JSON.stringify(m.permisos ?? {})}>{t(L, 'set.eq.editar_funciones')}</button>
-                                    {m.tieneInvitePendiente && (
-                                        <button class="tm-dd-item act-resend" data-id={m.id}>{t(L, 'set.eq.reenviar_invitacion')}</button>
+
+        {/* ── Tabla ── */}
+        <div class="eq-table">
+            <div class="eq-thead">
+                <span>{t(L, 'set.eq.col_miembro')}</span>
+                <span>{t(L, 'set.eq.th_rol')}</span>
+                <span>{t(L, 'set.eq.col_actividad')}</span>
+                <span></span>
+            </div>
+            <div class="eq-tbody" id="eqList">
+                {members.map((m) => (
+                    <div class="eq-row" data-eq-row data-estado={m.estado} data-id={m.id}
+                        data-email={m.email} data-nombre={m.nombre} data-rol={m.rol}
+                        data-sso={m.ssoManaged ? '1' : ''}
+                        data-inicial={m.inicial} data-desde={m.desde}
+                        data-sesion={m.ultimaSesion ?? ''} data-cot30={String(m.cotizaciones30d)}
+                        data-accion={m.ultimaAccion ?? ''} data-esyo={m.esYo ? '1' : ''}
+                        data-rol-label={ROL_LABEL[m.rol] ?? t(L, 'set.eq.rol.miembro')}
+                        data-permisos={JSON.stringify(m.permisos)}>
+                        <button type="button" class="eq-rowlink" data-eq-act="ficha" aria-label={m.nombre}></button>
+                        <span class="eq-member">
+                            <span class="eq-avatar" aria-hidden="true">{m.inicial}</span>
+                            <span class="eq-member-text">
+                                <b>
+                                    {m.nombre}
+                                    {m.esYo && <em class="eq-you">{t(L, 'set.eq.tu')}</em>}
+                                </b>
+                                <small>{m.email || '—'}</small>
+                            </span>
+                        </span>
+
+                        <span class="eq-rolcell">
+                            <span class:list={['eq-role', m.rol]}>{ROL_LABEL[m.rol] ?? t(L, 'set.eq.rol.miembro')}</span>
+                            {m.ssoManaged && <span class="eq-sso" title={t(L, 'set.eq.sso_desc')}>{t(L, 'set.eq.sso_badge')}</span>}
+                        </span>
+
+                        <span class="eq-activity">
+                            {m.estado === 'invitado' ? (
+                                <span class={m.invitacionExpirada ? 'eq-state is-expired' : 'eq-state is-pending'}>
+                                    {m.invitacionExpirada ? t(L, 'set.eq.invite_expirada') : t(L, 'set.eq.estado_invitado')}
+                                </span>
+                            ) : m.estado === 'revocado' ? (
+                                <span class="eq-state is-off">{t(L, 'set.eq.estado_revocado')}</span>
+                            ) : (
+                                <>
+                                    <b>{m.ultimaSesion ? tf('set.eq.act_sesion', { fecha: m.ultimaSesion }) : t(L, 'set.eq.act_nunca')}</b>
+                                    {m.cotizaciones30d > 0 && <small>{tf('set.eq.act_cotizaciones', { n: String(m.cotizaciones30d) })}</small>}
+                                </>
+                            )}
+                        </span>
+
+                        <span class="eq-rowactions">
+                            {canEdit && !m.esYo && m.rol !== 'owner' && (
+                                <>
+                                    {m.estado === 'invitado' && (
+                                        <button type="button" class="eq-icon" data-eq-act="reenviar" title={t(L, 'set.eq.reenviar_invitacion')} aria-label={t(L, 'set.eq.reenviar_invitacion')}>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+                                        </button>
                                     )}
-                                    <button class="tm-dd-item tm-dd-danger act-revoke" data-id={m.id}>{t(L, 'set.eq.revocar_acceso')}</button>
-                                </div>
-                            </div>
-                        )}
+                                    {m.estado === 'revocado' ? (
+                                        <button type="button" class="eq-act-link" data-eq-act="reinvitar">{t(L, 'set.eq.volver_a_invitar')}</button>
+                                    ) : (
+                                        <>
+                                            <button type="button" class="eq-act-link" data-eq-act="editar">{t(L, 'set.eq.editar_funciones')}</button>
+                                            <button type="button" class="eq-icon eq-icon-danger" data-eq-act="revocar" title={t(L, 'set.eq.revocar_acceso')} aria-label={t(L, 'set.eq.revocar_acceso')}>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                                            </button>
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </span>
                     </div>
-                </div>
-            )})}
-            {members.length === 0 && (
-                <div class="tm-empty-state">
-                    <div class="tm-empty-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    </div>
-                    <h4>{t(L, 'set.eq.vacio_titulo')}</h4>
-                    <p>{t(L, 'set.eq.vacio_desc')}</p>
-                </div>
-            )}
+                ))}
+                <p class="eq-empty" data-eq-empty hidden>{t(L, 'set.eq.vacio_titulo')}</p>
+            </div>
+            <p class="eq-count" data-eq-count>{tf('set.eq.viendo', { n: String(members.length), total: String(members.length) })}</p>
         </div>
     </div>
-    <p class="tm-footer-count" id="tmFooterCount">{tf('set.eq.viendo', { n: String(members.length), total: String(members.length) })}</p>
+
+    <dialog class="modal eq-drawer" id="eqFicha">
+        <form method="dialog" class="m-head">
+            <h2>{t(L, 'set.eq.ficha_titulo')}</h2>
+            <button class="m-close" aria-label={t(L, 'set.eq.cerrar')}>✕</button>
+        </form>
+        <div class="m-body">
+            <div class="eq-fi-head">
+                <span class="eq-avatar eq-avatar-lg" data-fi="inicial" aria-hidden="true"></span>
+                <span class="eq-fi-id">
+                    <b data-fi="nombre"></b>
+                    <small data-fi="email"></small>
+                </span>
+            </div>
+
+            <section class="eq-fi-sec">
+                <h4>{t(L, 'set.eq.ficha_acceso')}</h4>
+                <div class="eq-fi-kv"><span>{t(L, 'set.eq.th_rol')}</span><b data-fi="rol"></b></div>
+                <p class="eq-fi-note" data-fi="owner-note" hidden>{t(L, 'set.eq.ficha_owner')}</p>
+                <p class="eq-fi-note" data-fi="sso-note" hidden>{t(L, 'set.eq.sso_desc')}</p>
+                <p class="eq-fi-note" data-fi="noperm-note" hidden>{t(L, 'set.eq.ficha_sin_permisos')}</p>
+                <ul class="eq-fi-perms" data-fi="perms"></ul>
+            </section>
+
+            <section class="eq-fi-sec">
+                <h4>{t(L, 'set.eq.ficha_actividad')}</h4>
+                <div class="eq-fi-kv"><span>{t(L, 'set.eq.col_actividad')}</span><b data-fi="sesion"></b></div>
+                <div class="eq-fi-kv"><span>{t(L, 'set.eq.desde_label')}</span><b data-fi="desde"></b></div>
+                <div class="eq-fi-kv" data-fi="cot-row" hidden><span>{t(L, 'set.eq.col_cotizaciones')}</span><b data-fi="cot30"></b></div>
+                <p class="eq-fi-note" data-fi="accion" hidden></p>
+            </section>
+        </div>
+        <div class="m-foot">
+            <button type="button" class="eq-btn" data-eq-act="cerrar-modal">{t(L, 'set.eq.cerrar')}</button>
+            {canEdit && <button type="button" class="eq-btn eq-btn-primary" id="eqFichaEdit">{t(L, 'set.eq.editar_funciones')}</button>}
+        </div>
+    </dialog>
+
+    {canEdit && (
+    <>
+    <dialog class="modal" id="eqInviteModal">
+        <form method="dialog" class="m-head">
+            <h2>{t(L, 'set.eq.modal_invitar_titulo')}</h2>
+            <button class="m-close" aria-label={t(L, 'set.eq.cerrar')}>✕</button>
+        </form>
+        <div class="m-body">
+            <div class="eq-f">
+                <label for="eqEmail">{t(L, 'set.eq.correo_electronico')}</label>
+                <input id="eqEmail" type="email" placeholder="persona@empresa.com" autocomplete="off" />
+                <p class="eq-hint">{t(L, 'set.eq.correo_hint')}</p>
+                <p class="eq-err" id="eqInviteErr" hidden></p>
+            </div>
+            <PermPicker prefix="inv" />
+        </div>
+        <div class="m-foot">
+            <button type="button" class="eq-btn" data-eq-act="cerrar-modal">{t(L, 'set.eq.cancelar')}</button>
+            <button type="button" class="eq-btn eq-btn-primary" id="eqInviteSave">{t(L, 'set.eq.enviar_invitacion')}</button>
+        </div>
+    </dialog>
+
+    <dialog class="modal" id="eqEditModal">
+        <form method="dialog" class="m-head">
+            <h2 id="eqEditTitle">{t(L, 'set.eq.modal_editar_titulo')}</h2>
+            <button class="m-close" aria-label={t(L, 'set.eq.cerrar')}>✕</button>
+        </form>
+        <div class="m-body">
+            <p class="eq-sso-note" id="eqSsoNote" hidden>{t(L, 'set.eq.sso_desc')}</p>
+            <PermPicker prefix="edit" />
+            <p class="eq-err" id="eqEditErr" hidden></p>
+        </div>
+        <div class="m-foot">
+            <button type="button" class="eq-btn" data-eq-act="cerrar-modal">{t(L, 'set.eq.cancelar')}</button>
+            <button type="button" class="eq-btn eq-btn-primary" id="eqEditSave">{t(L, 'set.eq.guardar_cambios')}</button>
+        </div>
+    </dialog>
+    </>
+    )}
 </SettingsShell>
 
-<!-- ── MODAL: INVITAR ── -->
-<div class="modal-overlay" id="modInvite" hidden>
-    <div class="modal-card">
-        <div class="modal-head">
-            <h3 class="modal-title">{t(L, 'set.eq.modal_invitar_titulo')}</h3>
-            <button class="modal-close" data-close="modInvite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-        </div>
-        <div class="modal-body">
-            <p style="font-size:0.86rem; color:var(--color-text-muted); margin-bottom:1.5rem; line-height: 1.5;">{tf('set.eq.modal_invitar_desc', { org: ORG?.nombre || '' })}</p>
-            <form id="frmInvite">
-                <div class="form-group">
-                    <label for="invEmail">{t(L, 'set.eq.correo_electronico')}</label>
-                    <input type="email" id="invEmail" class="form-control" required placeholder="ejemplo@empresa.com" />
-                </div>
-                <div class="perm-field" data-prefix="inv" data-desc-map={PRESET_DESC_MAP}>
-                    <div class="perm-seg-row">
-                        <span class="perm-seg-label">{t(L, 'set.eq.punto_partida')}</span>
-                        <div class="perm-seg">
-                            {Object.entries(PRESETS).map(([key]) => (
-                                <button type="button" class="perm-seg-btn" data-preset={key}>{t(L, `set.eq.preset.${key}.label` as any)}</button>
-                            ))}
-                        </div>
-                    </div>
-                    <p class="perm-seg-desc" data-seg-desc></p>
-                    <p class="perm-list-title">{t(L, 'set.eq.permisos_titulo')}</p>
-                    <div class="perm-list">
-                        {PERMISOS.map(p => (
-                            <div class="perm-row">
-                                <span class="perm-row-text">
-                                    <span class="perm-row-label">{t(L, `set.eq.perm.${p.key}.label` as any)}</span>
-                                    <span class="perm-row-desc">{t(L, `set.eq.perm.${p.key}.desc` as any)}</span>
-                                </span>
-                                <label class="s-toggle">
-                                    <input type="checkbox" class="perm-chk" data-key={p.key} />
-                                    <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
-                                </label>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" data-close="modInvite">{t(L, 'set.eq.cancelar')}</button>
-                    <button type="submit" class="btn-primary" id="btnSubmitInvite">{t(L, 'set.eq.enviar_invitacion')}</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<style is:global>
+/* ⚠️ GLOBAL (Regla 11): las filas se mutan por JS (revocar, filtrar) y los
+   modales viven en <dialog> fuera del shell. Un <style> scopeado no alcanzaría a
+   ninguno.
+   Lo que vive DENTRO del shell va anclado a [data-eq-shell]; lo que vive en los
+   diálogos (.eq-btn, .eq-f, .eq-fi-*) no puede llevar ese ancla, y se aísla por
+   el prefijo `eq-`, exclusivo de esta página. */
 
-<!-- ── MODAL: EDITAR ── -->
-<div class="modal-overlay" id="modEdit" hidden>
-    <div class="modal-card">
-        <div class="modal-head">
-            <h3 class="modal-title">{t(L, 'set.eq.modal_editar_titulo')}</h3>
-            <button class="modal-close" data-close="modEdit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-        </div>
-        <div class="modal-body">
-            <form id="frmEdit">
-                <input type="hidden" id="editId" />
-                <div class="perm-field" data-prefix="edit" data-desc-map={PRESET_DESC_MAP}>
-                    <div class="perm-seg-row">
-                        <span class="perm-seg-label">{t(L, 'set.eq.punto_partida')}</span>
-                        <div class="perm-seg">
-                            {Object.entries(PRESETS).map(([key]) => (
-                                <button type="button" class="perm-seg-btn" data-preset={key}>{t(L, `set.eq.preset.${key}.label` as any)}</button>
-                            ))}
-                        </div>
-                    </div>
-                    <p class="perm-seg-desc" data-seg-desc></p>
-                    <p class="perm-list-title">{t(L, 'set.eq.permisos_titulo')}</p>
-                    <div class="perm-list">
-                        {PERMISOS.map(p => (
-                            <div class="perm-row">
-                                <span class="perm-row-text">
-                                    <span class="perm-row-label">{t(L, `set.eq.perm.${p.key}.label` as any)}</span>
-                                    <span class="perm-row-desc">{t(L, `set.eq.perm.${p.key}.desc` as any)}</span>
-                                </span>
-                                <label class="s-toggle">
-                                    <input type="checkbox" class="perm-chk" data-key={p.key} />
-                                    <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
-                                </label>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" data-close="modEdit">{t(L, 'set.eq.cancelar')}</button>
-                    <button type="submit" class="btn-primary" id="btnSubmitEdit">{t(L, 'set.eq.guardar_cambios')}</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+/* Asientos */
+[data-eq-shell] .eq-seats { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; padding-bottom: 1.4rem; }
+[data-eq-shell] .eq-seats-copy { display: flex; flex-direction: column; gap: 2px; }
+[data-eq-shell] .eq-seats-copy strong { font-size: .95rem; color: var(--color-text); }
+[data-eq-shell] .eq-seats-copy small { font-size: .74rem; color: var(--color-warn); }
+[data-eq-shell] .eq-seats-bar { flex: 1; min-width: 120px; max-width: 220px; height: 4px; border-radius: 999px; background: var(--color-bg-soft); overflow: hidden; }
+[data-eq-shell] .eq-seats-bar i { display: block; height: 100%; border-radius: 999px; background: var(--color-blue-deep); transition: width .4s var(--ease-ios); }
+[data-eq-shell] .eq-seats-bar i.is-full { background: var(--color-warn); }
+[data-eq-shell] .eq-seats-actions { display: flex; gap: .5rem; margin-left: auto; }
+[data-eq-shell] .eq-domains { margin: 0 0 1.2rem; font-size: .76rem; color: var(--color-text-muted); }
 
-<!-- ── MODAL: REVOCAR ── -->
-<div class="modal-overlay" id="modRevoke" hidden>
-    <div class="modal-card">
-        <div class="modal-head">
-            <h3 class="modal-title">{t(L, 'set.eq.modal_revocar_titulo')}</h3>
-            <button class="modal-close" data-close="modRevoke"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-        </div>
-        <div class="modal-body">
-            <p style="font-size:0.9rem; color:var(--color-text); margin-bottom:1.5rem; line-height: 1.5;">
-                {t(L, 'set.eq.revocar_confirm')}
-            </p>
-            <form id="frmRevoke">
-                <input type="hidden" id="revokeId" />
-                <div class="modal-actions">
-                    <button type="button" class="btn-secondary" data-close="modRevoke">{t(L, 'set.eq.cancelar')}</button>
-                    <button type="submit" class="btn-danger" id="btnSubmitRevoke">{t(L, 'set.eq.revocar_acceso')}</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+.eq-btn { font-family: var(--font-sans); font-size: .8rem; font-weight: 600; padding: 9px 17px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--surface); color: var(--color-text); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; transition: transform .18s var(--ease-ios), background .2s; }
+.eq-btn:hover { background: var(--color-bg-soft); }
+.eq-btn:active { transform: scale(.96); }
+.eq-btn:disabled { opacity: .55; cursor: wait; }
+.eq-btn-primary { background: var(--color-blue-deep); color: #fff; border-color: transparent; }
+.eq-btn-primary:hover { background: var(--color-blue-deep); filter: brightness(1.12); }
 
-<style>
-    /* Controls Header */
-    .tm-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+/* Filtros */
+[data-eq-shell] .eq-filters { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+[data-eq-shell] .eq-chip { font-family: var(--font-sans); font-size: .78rem; font-weight: 600; padding: 7px 13px; border-radius: 999px; border: none; background: var(--color-bg-soft); color: var(--color-text-muted); cursor: pointer; transition: background .2s, color .2s; }
+[data-eq-shell] .eq-chip b { font-weight: 700; opacity: .7; margin-left: 3px; }
+[data-eq-shell] .eq-chip:hover { color: var(--color-text); }
+[data-eq-shell] .eq-chip.is-active { background: var(--color-blue-deep); color: #fff; }
+[data-eq-shell] .eq-chip.is-active b { opacity: .8; }
 
-    /* Segmented pill (mismo patrón que el toggle de ciclo de Plan/Precios) */
-    .tm-tabs { display: flex; gap: 2px; background: var(--color-bg-soft); padding: 4px; border-radius: 999px; border: 1px solid var(--color-border); overflow-x: auto; scrollbar-width: none; }
-    .tm-tabs::-webkit-scrollbar { display: none; }
-    .tm-tab { padding: 7px 14px; font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; border-radius: 100px; border: none; background: none; font-family: inherit; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; transition: color 0.25s var(--ease-ios), background 0.25s var(--ease-ios); }
-    .tm-tab:hover { color: var(--color-text); }
-    .tm-tab.active { background: var(--color-blue-deep); color: #fff; }
+/* Tabla */
+[data-eq-shell] .eq-thead, [data-eq-shell] .eq-row { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.2fr) minmax(0, 1.4fr) auto; align-items: center; gap: 1rem; }
+[data-eq-shell] .eq-thead { padding: 0 .7rem .6rem; font-size: .62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+[data-eq-shell] .eq-row { padding: .8rem .7rem; border-top: 1px solid var(--color-border); border-radius: 12px; transition: background .2s; }
+[data-eq-shell] .eq-row:hover { background: var(--color-bg-soft); }
+[data-eq-shell] .eq-row[hidden] { display: none; }
+[data-eq-shell] .eq-member { display: flex; align-items: center; gap: .7rem; min-width: 0; }
+[data-eq-shell] .eq-avatar { width: 34px; height: 34px; border-radius: 11px; background: var(--color-bg-soft); color: var(--color-text-muted); display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 700; flex-shrink: 0; }
+[data-eq-shell] .eq-member-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+[data-eq-shell] .eq-member-text b { font-size: .86rem; font-weight: 600; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-eq-shell] .eq-member-text small { font-size: .74rem; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-eq-shell] .eq-you { margin-left: 6px; font-style: normal; font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 6px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); }
+[data-eq-shell] .eq-rolcell { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+[data-eq-shell] .eq-role { font-size: .74rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); white-space: nowrap; }
+[data-eq-shell] .eq-role.owner { background: rgba(10,25,47,.08); color: var(--color-blue-deep); }
+[data-eq-shell] .eq-sso { font-size: .6rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--color-text-muted); cursor: help; }
+[data-eq-shell] .eq-activity { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+[data-eq-shell] .eq-activity b { font-size: .78rem; font-weight: 500; color: var(--color-text); }
+[data-eq-shell] .eq-activity small { font-size: .72rem; color: var(--color-text-muted); }
+[data-eq-shell] .eq-state { font-size: .74rem; font-weight: 600; }
+[data-eq-shell] .eq-state.is-pending { color: var(--color-warn); }
+[data-eq-shell] .eq-state.is-expired { color: var(--color-danger); }
+[data-eq-shell] .eq-state.is-off { color: var(--color-text-muted); }
+[data-eq-shell] .eq-rowactions { display: flex; align-items: center; gap: .4rem; justify-content: flex-end; }
+[data-eq-shell] .eq-act-link { all: unset; cursor: pointer; font-size: .78rem; font-weight: 600; color: var(--color-blue-deep); padding: 5px 8px; border-radius: 8px; }
+[data-eq-shell] .eq-act-link:hover { background: rgba(10,25,47,.06); }
+[data-eq-shell] .eq-icon { all: unset; cursor: pointer; width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); transition: background .2s, color .2s; }
+[data-eq-shell] .eq-icon svg { width: 16px; height: 16px; }
+[data-eq-shell] .eq-icon:hover { background: var(--color-bg-soft); color: var(--color-text); }
+[data-eq-shell] .eq-icon-danger:hover { background: rgba(239,68,68,.1); color: var(--color-danger); }
+[data-eq-shell] .eq-empty { padding: 2.5rem 0; margin: 0; text-align: center; font-size: .85rem; color: var(--color-text-muted); }
+[data-eq-shell] .eq-empty[hidden] { display: none; }
+[data-eq-shell] .eq-count { margin: 1rem 0 0; font-size: .74rem; color: var(--color-text-muted); }
 
-    .tm-badge { display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; border-radius: 10px; font-size: 0.64rem; min-width: 17px; height: 17px; color: var(--color-text-muted); background: var(--surface); font-weight: 700; transition: all 0.3s; }
-    .tm-tab.active .tm-badge { background: rgba(255,255,255,0.2); color: #fff; }
+@media (max-width: 760px) {
+    [data-eq-shell] .eq-thead { display: none; }
+    [data-eq-shell] .eq-row { grid-template-columns: 1fr auto; grid-template-areas: "m a" "r r" "act act"; gap: .5rem 1rem; }
+    [data-eq-shell] .eq-member { grid-area: m; }
+    [data-eq-shell] .eq-rowactions { grid-area: a; }
+    [data-eq-shell] .eq-rolcell { grid-area: r; flex-direction: row; align-items: center; gap: .5rem; }
+    [data-eq-shell] .eq-activity { grid-area: act; }
+}
 
-    .tm-tools { display: flex; gap: 0.6rem; align-items: center; }
+/* Campos de los modales */
+.eq-f { display: flex; flex-direction: column; gap: .4rem; }
+.eq-f > label { font-size: .62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+.eq-f input { font-family: var(--font-sans); font-size: .86rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid transparent; border-radius: 10px; padding: 10px 12px; }
+.eq-f input:focus { outline: none; background: var(--surface); border-color: rgba(10,25,47,.15); }
+.eq-hint { margin: 0; font-size: .7rem; line-height: 1.5; color: var(--color-text-muted); }
+.eq-err { margin: 0; font-size: .78rem; color: var(--color-danger); }
+.eq-err[hidden] { display: none; }
+.eq-sso-note { margin: 0 0 .4rem; padding: .7rem .9rem; border-radius: 10px; background: var(--color-bg-soft); font-size: .78rem; line-height: 1.5; color: var(--color-text-muted); }
+.eq-sso-note[hidden] { display: none; }
+#eqInviteModal .m-body, #eqEditModal .m-body { display: flex; flex-direction: column; gap: 1.4rem; }
 
-    /* Botones píldora — mismo lenguaje que .plan-cta / .pcard-cta */
-    .btn-primary {
-        position: relative; overflow: hidden;
-        display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-        background: var(--color-blue-deep); color: #fff;
-        padding: 0.62rem 1.2rem; border-radius: 999px; font-weight: 600; font-size: 0.85rem;
-        border: 1px solid transparent; cursor: pointer; font-family: inherit;
-        transition: transform 0.22s var(--ease-spring), box-shadow 0.22s;
-    }
-    .btn-primary::after {
-        content: ''; position: absolute; inset: 0;
-        background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
-        transform: translateX(-110%); transition: transform 0.55s cubic-bezier(0.16,1,0.3,1); pointer-events: none;
-    }
-    .btn-primary:hover::after { transform: translateX(110%); }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -8px rgba(10,25,47,0.4); }
-    .btn-primary:active { transform: scale(0.97); }
-    .btn-primary svg { width: 15px; height: 15px; }
-
-    .btn-secondary {
-        display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
-        background: none; color: var(--color-text);
-        padding: 0.6rem 1.15rem; border-radius: 999px; font-weight: 600; font-size: 0.85rem;
-        border: 1px solid var(--color-border); font-family: inherit; cursor: pointer;
-        transition: background 0.2s, border-color 0.2s, transform 0.2s;
-    }
-    .btn-secondary:hover { background: var(--color-bg-soft); border-color: var(--color-text-muted); }
-    .btn-secondary:active { transform: scale(0.97); }
-    .btn-secondary svg { width: 15px; height: 15px; opacity: 0.7; }
-
-    /* ── Lista "inset grouped" estilo Apple Settings: una sola tarjeta,
-       filas separadas por hairline (no cards flotantes por fila) ──
-       ⚠️ SIN overflow:hidden aquí a propósito: el menú "···" de cada fila
-       es un dropdown absolute que necesita poder salir de esta caja (antes
-       quedaba recortado/oculto). El redondeo de esquinas se logra aplicando
-       border-radius directo a las piezas con fondo propio (thead arriba,
-       última fila en hover abajo) en vez de recortar todo el contenedor. */
-    .tm-table-wrap {
-        border: 1px solid var(--color-border); border-radius: 20px;
-        background: var(--surface);
-    }
-
-    .tm-thead {
-        display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 44px;
-        padding: 13px 20px; background: var(--color-bg-soft);
-        border-bottom: 1px solid var(--color-border);
-        border-radius: 20px 20px 0 0;
-    }
-    .tm-th { font-size: 0.66rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
-
-    .tm-tbody { display: flex; flex-direction: column; border-radius: 0 0 20px 20px; }
-    .tm-row {
-        display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 44px;
-        padding: 13px 20px; align-items: center; position: relative;
-        border-bottom: 1px solid var(--color-border);
-        transition: background 0.2s;
-    }
-    .tm-row:last-child { border-bottom: none; border-radius: 0 0 20px 20px; }
-    .tm-row:hover { background: var(--color-bg-soft); z-index: 2; }
-    /* La fila con el menú "···" abierto sube por encima de cualquier otra
-       fila que el usuario esté sobrepasando con el cursor (z-index:2 en
-       :hover) — sin esto el dropdown podía quedar tapado por la fila de
-       abajo al pasar el mouse sobre ella. */
-    .tm-row.has-menu-open { z-index: 6; }
-    .tm-row.hidden { display: none; }
-
-    .tm-col { font-size: 0.88rem; color: var(--color-text); }
-    .tm-col-email, .tm-col-date { color: var(--color-text-muted); font-size: 0.83rem; }
-
-    .tm-col-name { display: flex; align-items: center; gap: 12px; }
-    .tm-avatar {
-        width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.85rem; font-weight: 700;
-    }
-    .tm-name-meta { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .tm-name { font-weight: 600; color: var(--color-text); font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tm-pill {
-        font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; flex-shrink: 0;
-        background: var(--color-bg-soft); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.4px;
-    }
-    
-    /* Roles Badges — monocromo (navy para roles de gestión, gris para el resto) */
-    .role-badge {
-        padding: 4px 10px; border-radius: 100px; font-size: 0.72rem;
-        font-weight: 600; display: inline-block; letter-spacing: 0.1px;
-        background: var(--color-bg-soft); color: var(--color-text-muted);
-    }
-    .role-badge.owner, .role-badge.admin { background: rgba(10,25,47,0.08); color: var(--color-blue-deep); }
-    html[data-theme="dark"] .role-badge.owner, html[data-theme="dark"] .role-badge.admin { background: rgba(255,255,255,0.1); color: #fff; }
-
-    .status-inv { color: #b45309; background: rgba(245,158,11,0.12); padding: 3px 9px; border-radius: 100px; font-size: 0.72rem; font-weight: 600; }
-    html[data-theme="dark"] .status-inv { color: #fbbf24; background: rgba(245,158,11,0.16); }
-
-    .tm-col-action { display: flex; justify-content: flex-end; position: relative; }
-    .tm-btn-more { background: transparent; border: none; color: var(--color-text-muted); cursor: pointer; padding: 6px; border-radius: 8px; transition: background 0.2s, color 0.2s; }
-    .tm-btn-more:hover { background: var(--surface); color: var(--color-text); }
-    .tm-btn-more svg { width: 17px; height: 17px; }
-
-    /* Menú flotante — mismo lenguaje que el dropdown del org switcher: sólido, squircle, sombra compuesta */
-    .tm-dropdown {
-        position: absolute; top: calc(100% + 6px); right: 0; background: var(--surface);
-        border: 1px solid var(--color-border); border-radius: 14px;
-        box-shadow: 0 4px 12px rgba(10,25,47,0.06), 0 16px 40px -12px rgba(10,25,47,0.18);
-        padding: 6px; min-width: 200px;
-        z-index: 10; display: flex; flex-direction: column; gap: 1px;
-    }
-    .tm-dropdown[hidden] { display: none; }
-    .tm-dd-item {
-        background: transparent; border: none; font-size: 0.84rem; font-weight: 500;
-        text-align: left; padding: 8px 11px; border-radius: 9px; cursor: pointer;
-        color: var(--color-text); transition: background 0.15s; font-family: var(--font-sans);
-    }
-    .tm-dd-item:hover { background: var(--color-bg-soft); }
-    .tm-dd-danger { color: var(--color-danger); }
-    .tm-dd-danger:hover { background: rgba(239, 68, 68, 0.1); }
-
-    .tm-empty {
-        padding: 5rem 2rem; text-align: center;
-    }
-    .tm-empty-icon {
-        width: 56px; height: 56px; border-radius: 14px; background: var(--color-bg-soft);
-        display: flex; align-items: center;
-        justify-content: center; color: var(--color-blue-deep); margin: 0 auto 1.4rem;
-    }
-    .tm-empty-icon svg { width: 28px; height: 28px; opacity: 0.85; }
-    .tm-empty-state h4 { font-size: 1.05rem; font-weight: 600; color: var(--color-text); margin: 0 0 0.4rem 0; letter-spacing: -0.02em; }
-    .tm-empty-state p { font-size: 0.88rem; color: var(--color-text-muted); margin: 0 auto; max-width: 320px; line-height: 1.5; }
-
-    .tm-footer-count { font-size: 0.8rem; color: var(--color-text-muted); margin: 0; padding-top: 1rem; }
-
-    /* ── MODALES — squircle Apple, tokens dark-safe (mismo lenguaje que el resto de la app) ── */
-    .modal-overlay {
-        position: fixed; inset: 0; background: rgba(10, 15, 25, 0.42);
-        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-        z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem;
-    }
-    .modal-overlay[hidden] { display: none; }
-    .modal-card {
-        background: var(--surface); width: 100%; max-width: 480px; border-radius: 24px;
-        box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 32px 64px -20px rgba(10,25,47,0.28), inset 0 1px 0 rgba(255,255,255,0.5);
-        overflow: hidden; max-height: min(88vh, 760px); display: flex; flex-direction: column;
-        animation: modIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    html[data-theme="dark"] .modal-card { box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 32px 64px -20px rgba(0,0,0,0.5); }
-    @keyframes modIn { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-
-    .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 1.4rem 1.6rem; border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
-    .modal-title { margin: 0; font-size: 1.05rem; font-weight: 600; color: var(--color-text); letter-spacing: -0.3px; }
-    .modal-close { background: none; border: none; color: var(--color-text-muted); cursor: pointer; padding: 6px; border-radius: 8px; transition: background 0.2s, color 0.2s; display: flex; align-items: center; justify-content: center; }
-    .modal-close:hover { background: var(--color-bg-soft); color: var(--color-text); }
-    .modal-close svg { width: 18px; height: 18px; }
-    .modal-body { padding: 1.6rem; overflow-y: auto; }
-
-    .form-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 1.3rem; }
-    .form-group label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
-    .form-control {
-        width: 100%; padding: 11px 13px; font-size: 0.9rem; color: var(--color-text);
-        background: var(--color-bg-soft); border: 1px solid transparent; border-radius: 10px;
-        font-family: var(--font-sans); transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box;
-    }
-    .form-control:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); }
-
-    .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.6rem; flex-shrink: 0; }
-
-    /* ── Selector de permisos: segmented control de presets (mismo lenguaje
-       que `.tm-tabs`/`.tm-tab` arriba) + lista hairline con toggles iOS
-       (reusa el componente global `.s-toggle` de AppLayout, el mismo que
-       usan el resto de páginas de Ajustes). Los 3 presets son solo un punto
-       de partida — tocar cualquier toggle después de elegir uno apaga la
-       selección del segmented control ("Personalizado" / rol='miembro'
-       server-side), calculado 100% en cliente comparando contra PRESETS.
-       ⚠️ Nota deliberada: NO se usa la clase `.form-group` para envolver
-       este bloque (se usa `.perm-field` en su lugar) — `.form-group label`
-       más abajo pone TODO `<label>` descendiente en mayúsculas trackeadas
-       para las etiquetas de campo, y el `<label class="s-toggle">` de cada
-       fila es justo eso: un `<label>`. Si se reutiliza `.form-group` aquí
-       otra vez, los títulos de la lista vuelven a salir en mayúsculas. ── */
-    .perm-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.3rem; }
-
-    .perm-seg-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-    .perm-seg-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
-    .perm-seg { display: flex; gap: 2px; background: var(--color-bg-soft); padding: 3px; border-radius: 999px; border: 1px solid var(--color-border); }
-    .perm-seg-btn {
-        padding: 6px 13px; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted);
-        cursor: pointer; border-radius: 100px; border: none; background: none; font-family: inherit;
-        transition: color 0.22s var(--ease-ios), background 0.22s var(--ease-ios);
-    }
-    .perm-seg-btn:hover { color: var(--color-text); }
-    .perm-seg-btn.active { background: var(--color-blue-deep); color: #fff; }
-    .perm-seg-desc { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.45; margin: 0; min-height: 1.2em; }
-
-    .perm-list-title { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; margin: 6px 0 0; }
-    .perm-list {
-        display: flex; flex-direction: column; background: var(--color-bg-soft);
-        border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden;
-    }
-    .perm-row {
-        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-        padding: 12px 14px; border-bottom: 1px solid var(--color-border);
-    }
-    .perm-row:last-child { border-bottom: none; }
-    .perm-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .perm-row-label { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
-    .perm-row-desc { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.4; }
-
-    .btn-danger {
-        position: relative; overflow: hidden;
-        display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; font-size: 0.85rem; width: 100%;
-        background: var(--color-danger); color: #fff; font-family: inherit;
-        padding: 11px; border-radius: 999px; border: none; cursor: pointer;
-        transition: transform 0.22s var(--ease-spring), box-shadow 0.22s;
-    }
-    .btn-danger:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -8px rgba(239, 68, 68, 0.5); }
-    .btn-danger:active { transform: scale(0.97); }
+/* Ficha del miembro */
+[data-eq-shell] .eq-row { position: relative; }
+[data-eq-shell] .eq-rowlink { all: unset; position: absolute; inset: 0; cursor: pointer; border-radius: 12px; }
+[data-eq-shell] .eq-rowlink:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: -2px; }
+/* Las acciones van POR ENCIMA del link estirado, si no serían inalcanzables. */
+[data-eq-shell] .eq-rowactions { position: relative; z-index: 1; }
+.eq-drawer .m-body { display: flex; flex-direction: column; gap: 1.6rem; }
+.eq-fi-head { display: flex; align-items: center; gap: .9rem; }
+.eq-avatar-lg { width: 46px !important; height: 46px !important; border-radius: 15px !important; font-size: 1rem !important; }
+.eq-fi-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.eq-fi-id b { font-size: 1rem; font-weight: 600; color: var(--color-text); }
+.eq-fi-id small { font-size: .8rem; color: var(--color-text-muted); }
+.eq-fi-sec h4 { margin: 0 0 .5rem; font-size: .6rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+.eq-fi-kv { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .6rem 0; border-top: 1px solid var(--color-border); font-size: .82rem; }
+.eq-fi-sec h4 + .eq-fi-kv { border-top: 0; }
+.eq-fi-kv span { color: var(--color-text-muted); }
+.eq-fi-kv b { font-weight: 600; color: var(--color-text); }
+.eq-fi-kv[hidden] { display: none; }
+.eq-fi-note { margin: .6rem 0 0; font-size: .76rem; line-height: 1.5; color: var(--color-text-muted); }
+.eq-fi-note[hidden] { display: none; }
+.eq-fi-perms { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; margin: .7rem 0 0; padding: 0; }
+.eq-fi-perms li { font-size: .74rem; font-weight: 500; padding: 5px 11px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text); }
 </style>
 
 <script>
-    import { PRESETS, ALL_PERM_KEYS, type PermKey } from '../../../lib/permissions';
+    import { PRESETS, ALL_PERM_KEYS, type PermKey, type PermMap } from '../../../lib/permissions';
 
-    function toast(msg: string, type: 'ok' | 'error' = 'ok') {
-        (window as any).cordToast?.(msg, type);
-    }
+    const shellEl = document.querySelector<HTMLElement>('[data-eq-shell]');
+    if (shellEl) {
+        // Alias no-nulo: TypeScript no estrecha `shell` dentro de los callbacks.
+        const shell = shellEl;
+        const T = JSON.parse(shell.dataset.t || '{}');
+        const PRESET_PERMS: Record<string, PermMap> = JSON.parse(T.presets || '{}');
+        const PRESET_DESCS: Record<string, string> = JSON.parse(T.presetDescs || '{}');
+        const DOMINIOS: string[] = JSON.parse(T.dominios || '[]');
+        const toast = (m: string, k: 'ok' | 'error' | 'info' = 'ok') => (window as any).cordToast?.(m, k);
+        const confirmar = async (o: any) => {
+            const fn = (window as any).cordConfirm;
+            return fn ? await fn(o) : confirm(typeof o === 'string' ? o : o.title);
+        };
+        const tpl = (s: string, v: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
 
-    // ── Selector de permisos (segmented control de presets + lista de toggles) ──
-    // Cada modal (invitar/editar) tiene su propio `.perm-field[data-prefix]`.
-    // Los 3 botones del segmented control son solo un punto de partida — tocar
-    // cualquier toggle apaga la selección y el estado pasa a "Personalizado";
-    // volver a tocar un botón reaplica ese preset de golpe.
-    function pickerRoot(prefix: string): HTMLElement | null {
-        return document.querySelector(`.perm-field[data-prefix="${prefix}"]`);
-    }
-    function checksOf(root: HTMLElement): HTMLInputElement[] {
-        return Array.from(root.querySelectorAll('.perm-chk'));
-    }
-    function collectPermisos(prefix: string): Record<string, boolean> {
-        const root = pickerRoot(prefix);
-        const out: Record<string, boolean> = {};
-        if (!root) return out;
-        checksOf(root).forEach(cb => { out[cb.dataset.key as string] = cb.checked; });
-        return out;
-    }
-    function setPermisos(prefix: string, permisos: Record<string, boolean> | null | undefined) {
-        const root = pickerRoot(prefix);
-        if (!root) return;
-        checksOf(root).forEach(cb => { cb.checked = !!(permisos && permisos[cb.dataset.key as string]); });
-    }
-    function matchPreset(permisos: Record<string, boolean>): string | null {
-        for (const key of Object.keys(PRESETS)) {
-            const presetPermisos = PRESETS[key].permisos as Record<string, boolean>;
-            const same = (ALL_PERM_KEYS as PermKey[]).every(k => !!permisos[k] === !!presetPermisos[k]);
-            if (same) return key;
+        async function req(url: string, body: any, method = 'POST') {
+            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || T.error);
+            return d;
         }
-        return null;
-    }
-    function refreshPickerState(prefix: string) {
-        const root = pickerRoot(prefix);
-        if (!root) return;
-        const matched = matchPreset(collectPermisos(prefix));
-        root.querySelectorAll('.perm-seg-btn').forEach(btn => {
-            btn.classList.toggle('active', (btn as HTMLElement).dataset.preset === matched);
-        });
-        const descEl = root.querySelector('[data-seg-desc]') as HTMLElement | null;
-        if (descEl) {
-            let descMap: Record<string, string> = {};
-            try { descMap = JSON.parse(root.dataset.descMap || '{}'); } catch { /* ignora */ }
-            descEl.textContent = descMap[matched ?? '__custom'] ?? '';
-        }
-    }
-    function applyPreset(prefix: string, key: string) {
-        setPermisos(prefix, PRESETS[key]?.permisos as Record<string, boolean>);
-        refreshPickerState(prefix);
-    }
-    document.querySelectorAll('.perm-field').forEach(root => {
-        const prefix = (root as HTMLElement).dataset.prefix as string;
-        root.querySelectorAll('.perm-seg-btn').forEach(btn => {
-            btn.addEventListener('click', () => applyPreset(prefix, (btn as HTMLElement).dataset.preset as string));
-        });
-        checksOf(root as HTMLElement).forEach(cb => {
-            cb.addEventListener('change', () => refreshPickerState(prefix));
-        });
-    });
 
-    const tabs = document.querySelectorAll('.tm-tab');
-    const rows = document.querySelectorAll('.tm-row');
-    const footerCount = document.getElementById('tmFooterCount');
-    const totalRows = rows.length;
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const filter = (tab as HTMLElement).dataset.filter;
-            let visible = 0;
-            rows.forEach(row => {
-                const status = (row as HTMLElement).dataset.status;
-                const match = filter === 'all' || status === filter;
-                (row as HTMLElement).classList.toggle('hidden', !match);
-                if (match) visible++;
+        // ── Picker de permisos (compartido por los dos modales) ──
+        const picker = (prefix: string) => document.querySelector<HTMLElement>(`[data-perm-picker="${prefix}"]`);
+        const checks = (prefix: string) =>
+            Array.from(picker(prefix)?.querySelectorAll<HTMLInputElement>('[data-perm]') ?? []);
+        const readPerms = (prefix: string): PermMap => {
+            const out: PermMap = {};
+            for (const c of checks(prefix)) out[c.dataset.perm as PermKey] = c.checked;
+            return out;
+        };
+        const writePerms = (prefix: string, p: PermMap) => {
+            for (const c of checks(prefix)) c.checked = !!p?.[c.dataset.perm as PermKey];
+        };
+        /** ¿La matriz actual coincide exactamente con algún preset? */
+        const matchPreset = (p: PermMap): string | null => {
+            for (const [key, perms] of Object.entries(PRESET_PERMS)) {
+                if (ALL_PERM_KEYS.every((k) => !!perms[k] === !!p[k])) return key;
+            }
+            return null;
+        };
+        function refreshPicker(prefix: string) {
+            const root = picker(prefix); if (!root) return;
+            const key = matchPreset(readPerms(prefix));
+            root.querySelectorAll<HTMLElement>('.pp-preset').forEach((b) => {
+                b.classList.toggle('is-active', b.dataset.preset === (key ?? '__custom'));
+                if (b.dataset.preset === '__custom') b.hidden = !!key;
             });
-            if (footerCount) footerCount.textContent = `Viendo ${visible} de ${totalRows} resultados`;
+            const desc = root.querySelector<HTMLElement>('[data-perm-desc]');
+            if (desc) desc.textContent = PRESET_DESCS[key ?? '__custom'] ?? '';
+        }
+        function applyPreset(prefix: string, key: string) {
+            writePerms(prefix, PRESET_PERMS[key] ?? {});
+            refreshPicker(prefix);
+        }
+        document.querySelectorAll<HTMLElement>('[data-perm-picker]').forEach((root) => {
+            const prefix = root.dataset.permPicker!;
+            root.addEventListener('click', (e) => {
+                const b = (e.target as HTMLElement).closest<HTMLElement>('.pp-preset');
+                if (b && b.dataset.preset && b.dataset.preset !== '__custom') applyPreset(prefix, b.dataset.preset);
+            });
+            root.addEventListener('change', (e) => {
+                if ((e.target as HTMLElement).matches('[data-perm]')) refreshPicker(prefix);
+            });
         });
-    });
 
-    const btnInvite = document.getElementById('btnInvite');
-    const modInvite = document.getElementById('modInvite');
-    const modEdit = document.getElementById('modEdit');
-    const modRevoke = document.getElementById('modRevoke');
-
-    document.querySelectorAll('[data-close]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = (btn as HTMLElement).dataset.close;
-            document.getElementById(id!)!.hidden = true;
+        // ── Filtros ──
+        const rows = () => Array.from(shell.querySelectorAll<HTMLElement>('[data-eq-row]'));
+        function applyFilter(f: string) {
+            let visibles = 0;
+            for (const r of rows()) {
+                const ok = f === 'todos' || r.dataset.estado === f;
+                r.hidden = !ok;
+                if (ok) visibles++;
+            }
+            const empty = shell.querySelector<HTMLElement>('[data-eq-empty]');
+            if (empty) empty.hidden = visibles > 0;
+            const count = shell.querySelector<HTMLElement>('[data-eq-count]');
+            if (count) count.textContent = tpl(T.viendo, { n: String(visibles), total: String(rows().length) });
+        }
+        shell.querySelector('[data-eq-filters]')?.addEventListener('click', (e) => {
+            const b = (e.target as HTMLElement).closest<HTMLElement>('[data-eq-filter]');
+            if (!b) return;
+            shell.querySelectorAll('.eq-chip').forEach((c) => c.classList.toggle('is-active', c === b));
+            applyFilter(b.dataset.eqFilter!);
         });
-    });
 
-    if (btnInvite) {
-        btnInvite.addEventListener('click', () => {
-            (document.getElementById('frmInvite') as HTMLFormElement).reset();
+        /** Recalcula los contadores de los chips tras una mutación. */
+        function syncCounts() {
+            const all = rows();
+            const n = (estado: string) => all.filter((r) => r.dataset.estado === estado).length;
+            const set = (f: string, v: number) => {
+                const b = shell.querySelector<HTMLElement>(`[data-eq-filter="${f}"] b`);
+                if (b) b.textContent = String(v);
+            };
+            set('todos', all.length); set('activo', n('activo'));
+            set('invitado', n('invitado')); set('revocado', n('revocado'));
+        }
+
+        // ── Modales ──
+        const inviteModal = document.getElementById('eqInviteModal') as HTMLDialogElement | null;
+        const editModal = document.getElementById('eqEditModal') as HTMLDialogElement | null;
+        const emailInput = document.getElementById('eqEmail') as HTMLInputElement | null;
+        const inviteErr = document.getElementById('eqInviteErr') as HTMLElement | null;
+        const editErr = document.getElementById('eqEditErr') as HTMLElement | null;
+        let editingId: string | null = null;
+
+        function openInvite(email = '') {
+            if (!inviteModal) return;
+            if (emailInput) emailInput.value = email;
+            if (inviteErr) inviteErr.hidden = true;
             applyPreset('inv', 'vendedor');
-            modInvite!.hidden = false;
-        });
-    }
+            (window as any).cordWireModal?.(inviteModal);
+            inviteModal.showModal();
+            emailInput?.focus();
+        }
+        document.getElementById('eqInvite')?.addEventListener('click', () => openInvite());
 
-    document.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
-        const btnMore = target.closest('.tm-btn-more');
-
-        document.querySelectorAll('.tm-dropdown').forEach(dd => {
-            if (!btnMore || dd !== btnMore.nextElementSibling) {
-                (dd as HTMLElement).hidden = true;
-                dd.closest('.tm-row')?.classList.remove('has-menu-open');
-            }
+        // ── Exportar (el botón llevaba desde siempre sin listener) ──
+        document.getElementById('eqExport')?.addEventListener('click', () => {
+            toast(T.exportando, 'info');
+            window.location.href = '/api/equipo/export';
         });
 
-        if (btnMore) {
-            const dd = btnMore.nextElementSibling as HTMLElement;
-            dd.hidden = !dd.hidden;
-            dd.closest('.tm-row')?.classList.toggle('has-menu-open', !dd.hidden);
-        }
-
-        if (target.matches('.act-resend')) {
-            const id = target.dataset.id;
-            const original = target.textContent;
-            (target as HTMLButtonElement).setAttribute('disabled', 'true');
-            target.textContent = 'Reenviando…';
-            fetch('/api/equipo/resend', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
-            })
-                .then(async (res) => {
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'No se pudo reenviar la invitación');
-                    await navigator.clipboard.writeText(data.link);
-                    toast(data.emailed ? 'Invitación reenviada — link también copiado' : 'Invitación reenviada — link copiado');
-                })
-                .catch((err) => toast(err.message, 'error'))
-                .finally(() => {
-                    target.removeAttribute('disabled');
-                    target.textContent = original;
-                });
-        }
-        if (target.matches('.act-edit')) {
-            const id = target.dataset.id;
-            (document.getElementById('editId') as HTMLInputElement).value = id || '';
-            let permisos: Record<string, boolean> = {};
-            try { permisos = JSON.parse(target.dataset.permisos || '{}'); } catch { /* ignora jsonb malformado */ }
-            setPermisos('edit', permisos);
-            refreshPickerState('edit');
-            modEdit!.hidden = false;
-        }
-        if (target.matches('.act-revoke')) {
-            const id = target.dataset.id;
-            (document.getElementById('revokeId') as HTMLInputElement).value = id || '';
-            modRevoke!.hidden = false;
-        }
-    });
-
-    const frmInvite = document.getElementById('frmInvite') as HTMLFormElement;
-    if (frmInvite) {
-        frmInvite.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btnSubmitInvite') as HTMLButtonElement;
-            btn.disabled = true; btn.textContent = 'Enviando...';
-            
-            const email = (document.getElementById('invEmail') as HTMLInputElement).value;
-            const permisos = collectPermisos('inv');
-            const matched = matchPreset(permisos);
-            // Si el checklist calza exacto con un preset, mandamos el preset
-            // (el servidor arma sus permisos limpios); si no, mandamos los
-            // permisos tal cual con preset:'miembro' — ningún preset real se
-            // llama así, así que el servidor cae al rol 'miembro' (Personalizado).
-            const body = matched ? { email, preset: matched } : { email, preset: 'miembro', permisos };
-
+        // ── Delegación de acciones de fila ──
+        shell.addEventListener('click', async (e) => {
+            const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-eq-act]');
+            if (!btn) return;
+            const row = btn.closest<HTMLElement>('[data-eq-row]')!;
+            const id = row.dataset.id!;
             try {
-                const res = await fetch('/api/equipo', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Error al invitar');
-
-                // El link siempre se copia — es el único respaldo real si el
-                // correo no llega (o no hay RESEND_API_KEY configurada). Antes
-                // se descartaba y el admin no tenía forma de recuperarlo.
-                if (data.link) { try { await navigator.clipboard.writeText(data.link); } catch { /* portapapeles no disponible */ } }
-                toast(data.emailed ? 'Invitación enviada — link también copiado' : 'Invitación creada — link copiado al portapapeles');
-                setTimeout(() => location.reload(), 900);
+                btn.disabled = true;
+                if (btn.dataset.eqAct === 'ficha') {
+                    abrirFicha(row);
+                } else if (btn.dataset.eqAct === 'editar') {
+                    editingId = id;
+                    writePerms('edit', JSON.parse(row.dataset.permisos || '{}'));
+                    refreshPicker('edit');
+                    const note = document.getElementById('eqSsoNote');
+                    if (note) note.hidden = !row.dataset.sso;
+                    if (editErr) editErr.hidden = true;
+                    const title = document.getElementById('eqEditTitle');
+                    if (title) title.textContent = row.dataset.nombre || '';
+                    if (editModal) { (window as any).cordWireModal?.(editModal); editModal.showModal(); }
+                } else if (btn.dataset.eqAct === 'reenviar') {
+                    const d = await req('/api/equipo/resend', { id });
+                    if (d.link) await navigator.clipboard?.writeText(d.link).catch(() => {});
+                    toast(T.reenviado, 'ok');
+                } else if (btn.dataset.eqAct === 'reinvitar') {
+                    openInvite(row.dataset.email || '');
+                } else if (btn.dataset.eqAct === 'revocar') {
+                    const ok = await confirmar({
+                        title: T.revocado, body: row.dataset.nombre, danger: true,
+                    });
+                    if (!ok) return;
+                    await req('/api/equipo', { id }, 'DELETE');
+                    // Actualización optimista: antes cada mutación hacía location.reload().
+                    row.dataset.estado = 'revocado';
+                    row.querySelector('.eq-activity')!.innerHTML = '';
+                    const st = document.createElement('span');
+                    st.className = 'eq-state is-off';
+                    st.textContent = shell.querySelector<HTMLElement>('[data-eq-filter="revocado"]')?.firstChild?.textContent?.trim() || '—';
+                    row.querySelector('.eq-activity')!.appendChild(st);
+                    row.querySelector('.eq-rowactions')!.innerHTML = '';
+                    syncCounts();
+                    const active = shell.querySelector<HTMLElement>('.eq-chip.is-active');
+                    applyFilter(active?.dataset.eqFilter || 'todos');
+                    toast(T.revocado, 'ok');
+                }
             } catch (err: any) {
-                toast(err.message, 'error');
-                btn.disabled = false; btn.textContent = 'Enviar invitación';
-            }
+                toast(err.message || T.error, 'error');
+            } finally { btn.disabled = false; }
         });
-    }
 
-    const frmEdit = document.getElementById('frmEdit') as HTMLFormElement;
-    if (frmEdit) {
-        frmEdit.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btnSubmitEdit') as HTMLButtonElement;
-            btn.disabled = true; btn.textContent = 'Guardando...';
-            
-            const id = (document.getElementById('editId') as HTMLInputElement).value;
-            const permisos = collectPermisos('edit');
-            const matched = matchPreset(permisos);
-            // Mismo contrato que el invite: preset exacto → { id, rol }
-            // (el servidor resetea permisos a los defaults del preset);
-            // si no calza con ninguno → { id, permisos } (el servidor fuerza
-            // rol='miembro' = Personalizado).
-            const body = matched ? { id, rol: matched } : { id, permisos };
+        // ── Ficha del miembro ──
+        const ficha = document.getElementById('eqFicha') as HTMLDialogElement | null;
+        const PERM_LABELS: Record<string, string> = JSON.parse(T.permLabels || '{}');
+        let fichaRow: HTMLElement | null = null;
 
+        function abrirFicha(row: HTMLElement) {
+            if (!ficha) return;
+            fichaRow = row;
+            const set = (k: string, v: string) => {
+                const el = ficha!.querySelector<HTMLElement>(`[data-fi="${k}"]`);
+                if (el) el.textContent = v;
+            };
+            const show = (k: string, on: boolean) => {
+                const el = ficha!.querySelector<HTMLElement>(`[data-fi="${k}"]`);
+                if (el) el.hidden = !on;
+            };
+            const d = row.dataset;
+            set('inicial', d.inicial || '?');
+            set('nombre', d.nombre || '');
+            set('email', d.email || '—');
+            set('rol', d.rolLabel || '');
+            set('desde', d.desde || '—');
+            set('sesion', d.sesion ? tpl(T.actSesion, { fecha: d.sesion }) : T.actNunca);
+            set('cot30', tpl(T.actCotizaciones, { n: d.cot30 || '0' }));
+            show('cot-row', Number(d.cot30 || 0) > 0);
+            show('owner-note', d.rol === 'owner');
+            show('sso-note', !!d.sso);
+
+            // Permisos EFECTIVOS: el owner siempre los tiene todos (override de
+            // memberCan), aunque su matriz en BD esté vacía.
+            const perms = JSON.parse(d.permisos || '{}');
+            const activos = d.rol === 'owner'
+                ? Object.keys(PERM_LABELS)
+                : Object.keys(PERM_LABELS).filter((k) => perms[k]);
+            const ul = ficha!.querySelector<HTMLElement>('[data-fi="perms"]')!;
+            ul.innerHTML = '';
+            for (const k of activos) {
+                const li = document.createElement('li');
+                li.textContent = PERM_LABELS[k];
+                ul.appendChild(li);
+            }
+            show('noperm-note', activos.length === 0);
+
+            const accion = ficha!.querySelector<HTMLElement>('[data-fi="accion"]');
+            if (accion) {
+                accion.hidden = !d.accion;
+                if (d.accion) accion.textContent = tpl(T.ultimaAccion, { accion: d.accion });
+            }
+            // Editar solo tiene sentido si la fila lo permite (no yo, no owner).
+            const editBtn = document.getElementById('eqFichaEdit');
+            if (editBtn) editBtn.hidden = !!d.esyo || d.rol === 'owner' || d.estado === 'revocado';
+
+            (window as any).cordWireModal?.(ficha);
+            ficha.showModal();
+        }
+
+        document.getElementById('eqFichaEdit')?.addEventListener('click', () => {
+            const row = fichaRow;
+            ficha?.close();
+            if (row) row.querySelector<HTMLButtonElement>('[data-eq-act="editar"]')?.click();
+        });
+
+        // Cerrar modales
+        document.querySelectorAll('[data-eq-act="cerrar-modal"]').forEach((b) =>
+            b.addEventListener('click', () => (b.closest('dialog') as HTMLDialogElement | null)?.close()));
+
+        // ── Guardar invitación ──
+        document.getElementById('eqInviteSave')?.addEventListener('click', async (e) => {
+            const b = e.currentTarget as HTMLButtonElement;
+            const email = (emailInput?.value || '').trim().toLowerCase();
+            if (inviteErr) inviteErr.hidden = true;
+            // Validación de dominio ANTES de enviar: antes solo te enterabas con
+            // un 422 del servidor, sin saber siquiera que existía la restricción.
+            if (email && DOMINIOS.length) {
+                const dom = email.split('@')[1] ?? '';
+                if (!DOMINIOS.includes(dom)) {
+                    if (inviteErr) { inviteErr.textContent = T.dominio_invalido; inviteErr.hidden = false; }
+                    return;
+                }
+            }
+            b.disabled = true;
             try {
-                const res = await fetch('/api/equipo', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Error al actualizar');
-                
-                toast('Funciones actualizadas');
+                const perms = readPerms('inv');
+                const key = matchPreset(perms);
+                const d = await req('/api/equipo', key ? { email, preset: key } : { email, preset: 'miembro', permisos: perms });
+                if (d.link) await navigator.clipboard?.writeText(d.link).catch(() => {});
+                toast(d.emailed ? T.invitado : T.invitado_link, 'ok');
+                inviteModal?.close();
                 setTimeout(() => location.reload(), 800);
             } catch (err: any) {
-                toast(err.message, 'error');
-                btn.disabled = false; btn.textContent = 'Guardar cambios';
-            }
+                if (inviteErr) { inviteErr.textContent = err.message || T.error; inviteErr.hidden = false; }
+            } finally { b.disabled = false; }
         });
-    }
 
-    const frmRevoke = document.getElementById('frmRevoke') as HTMLFormElement;
-    if (frmRevoke) {
-        frmRevoke.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btnSubmitRevoke') as HTMLButtonElement;
-            btn.disabled = true; btn.textContent = 'Revocando...';
-            
-            const id = (document.getElementById('revokeId') as HTMLInputElement).value;
-
+        // ── Guardar permisos ──
+        document.getElementById('eqEditSave')?.addEventListener('click', async (e) => {
+            const b = e.currentTarget as HTMLButtonElement;
+            if (!editingId) return;
+            b.disabled = true;
+            if (editErr) editErr.hidden = true;
             try {
-                const res = await fetch('/api/equipo', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Error al revocar');
-                
-                toast('Acceso revocado');
-                setTimeout(() => location.reload(), 800);
+                const perms = readPerms('edit');
+                const key = matchPreset(perms);
+                await req('/api/equipo', key ? { id: editingId, rol: key } : { id: editingId, permisos: perms }, 'PATCH');
+                // Optimista: la fila refleja el rol nuevo sin recargar.
+                const row = shell.querySelector<HTMLElement>(`[data-eq-row][data-id="${editingId}"]`);
+                if (row) {
+                    row.dataset.permisos = JSON.stringify(perms);
+                    row.dataset.rol = key ?? 'miembro';
+                    const chip = row.querySelector<HTMLElement>('.eq-role');
+                    const label = document.querySelector<HTMLElement>(`[data-perm-picker="edit"] .pp-preset.is-active`);
+                    if (chip) chip.textContent = key ? (label?.textContent?.trim() || key) : T.custom_label;
+                    if (chip) chip.className = `eq-role ${key ?? 'miembro'}`;
+                }
+                toast(T.actualizado, 'ok');
+                editModal?.close();
             } catch (err: any) {
-                toast(err.message, 'error');
-                btn.disabled = false; btn.textContent = 'Revocar acceso';
-            }
+                if (editErr) { editErr.textContent = err.message || T.error; editErr.hidden = false; }
+            } finally { b.disabled = false; }
         });
+
+        // Estado inicial de los pickers
+        refreshPicker('inv'); refreshPicker('edit');
+        // `PRESETS` se importa solo para que el bundler conserve el módulo compartido
+        // con el servidor y los presets no puedan divergir entre ambos lados.
+        void PRESETS;
     }
 </script>

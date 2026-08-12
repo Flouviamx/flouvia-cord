@@ -6,6 +6,7 @@
 // Si `perm` está presente, verifica el permiso del usuario y muestra acceso
 // denegado inline (sin redirigir) si no lo tiene.
 import AppLayout from '../../layouts/AppLayout.astro';
+import AccessGate from './AccessGate.astro';
 import { localizedCategoryOfTab } from '../../lib/settings';
 import { getMyMembership } from '../../lib/queries';
 import { memberCan, type PermKey } from '../../lib/permissions';
@@ -47,11 +48,7 @@ const hasAccess = !perm || memberCan(ME!, perm);
 
         <div class="set2-content" data-settings-form>
             {!hasAccess && (
-                <div class="access-denied">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    <h3>{t(L, 'settings.sin_acceso')}</h3>
-                    <p>{t(L, 'settings.sin_acceso_desc')}</p>
-                </div>
+                <AccessGate class="is-inset" title={t(L, 'settings.sin_acceso')} desc={t(L, 'settings.sin_acceso_desc')} />
             )}
             {hasAccess && intro && <p class="set2-intro">{intro}</p>}
             {hasAccess && <slot />}
@@ -237,11 +234,8 @@ const hasAccess = !perm || memberCan(ME!, perm);
     }
     .s-saved.show .s-check-icon path { stroke-dashoffset: 0; }
 
-    /* Panel de acceso denegado inline */
-    .access-denied { display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem; padding: 2.4rem 0 1rem; }
-    .access-denied svg { width: 32px; height: 32px; color: #c9d2de; }
-    .access-denied h3 { font-size: 1rem; font-weight: 700; margin: 0; color: var(--color-text); }
-    .access-denied p { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; line-height: 1.55; }
+    /* El bloqueo de acceso vive en components/app/AccessGate.astro (un solo
+       lenguaje visual para toda la app). Aquí ya no queda CSS propio. */
 </style>
 
 <script>

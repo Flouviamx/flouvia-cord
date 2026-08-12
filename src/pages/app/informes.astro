@@ -1,5 +1,6 @@
 ---
 import AppLayout from '../../layouts/AppLayout.astro';
+import AccessGate from '../../components/app/AccessGate.astro';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import ReportPicker from '../../components/app/ReportPicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
@@ -16,6 +17,7 @@ import { REPORTS, REPORT_BY_ID, parseReportId, reportLabel, type ReportId } from
 import { loadReport } from '../../lib/informes-data';
 import { addDaysISO, parseRangoParams } from '../../lib/rango';
 import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
 import { dateFull } from '../../lib/fmt';
 
 const L = currentLocale();
@@ -61,8 +63,8 @@ const widgetLabels = {
         </div>
     </Fragment>
 
-    {!hasAnalytics && <section class="reports-state"><h2>{es ? 'Sin acceso a informes' : 'No report access'}</h2><p>{es ? 'Tu rol no tiene permiso para consultar analítica.' : 'Your role cannot access analytics.'}</p></section>}
-    {hasAnalytics && !hasReportAccess && <section class="reports-state"><h2>{es ? 'Informe restringido' : 'Restricted report'}</h2><p>{es ? 'Cobranza y cartera requiere el permiso de Cobranza.' : 'Collections and receivables requires Collections permission.'}</p></section>}
+    {!hasAnalytics && <AccessGate title={t(L, 'an.sin_acceso_titulo')} desc={t(L, 'an.sin_acceso_desc')} />}
+    {hasAnalytics && !hasReportAccess && <AccessGate title={t(L, 'an.informe_restringido_titulo')} desc={t(L, 'an.informe_restringido_desc')} />}
 
     {hasReportAccess && data && (
         <div data-report-shell data-report-id={reportId} data-locale={L}>
@@ -182,9 +184,6 @@ const widgetLabels = {
     .reports-edit-btn:hover { transform: scale(.98); }
     .reports-edit-btn:active { transform: scale(.96); }
     .reports-reset-btn { background: var(--color-bg-soft); color: var(--color-text-muted); cursor: pointer; }
-    .reports-state { max-width: 620px; margin: 8vh auto; padding: 4rem; text-align: center; border-radius: 40px; background: var(--color-surface); box-shadow: 0 30px 80px rgba(10,25,47,.08); }
-    .reports-state h2 { margin: 0 0 .7rem; color: var(--color-text); font-size: 1.6rem; letter-spacing: -.04em; }
-    .reports-state p { margin: 0; color: var(--color-text-muted); }
     /* El grid vive en styles/widgets.css (global) — ver la nota ahí. Esta página comparte
        exactamente el mismo grid, gap y breakpoints que /app. */
     [data-report-shell][aria-busy='true'] { opacity: .68; pointer-events: none; transition: opacity .18s ease; }

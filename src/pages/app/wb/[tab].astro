@@ -31,6 +31,7 @@ import { WEBHOOK_EVENTS } from '../../../lib/webhooks';
 import { FAIL_WARN_THRESHOLD } from '../../../lib/webhook-delivery';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import AccessGate from '../../../components/app/AccessGate.astro';
 
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -110,7 +111,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
 <div class="wb-frag">
 
 {!hasAccess && (
-    <div class="wb-sinacceso">{t(L, 'wb.sin_acceso')}</div>
+    <AccessGate title={t(L, 'wb.sin_acceso_titulo')} desc={t(L, 'wb.sin_acceso')} />
 )}
 
 {hasAccess && tab === 'resumen' && OV && (

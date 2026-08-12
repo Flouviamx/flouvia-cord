@@ -9,7 +9,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { currentUserId } from '../../lib/context';
 import { requirePerm } from '../../lib/queries';
-import { PRESETS, ALL_PERM_KEYS, planTieneEquipo, type PermMap } from '../../lib/permissions';
+import { PRESETS, ALL_PERM_KEYS, planTieneEquipo, planUpsell, planLabel, minPlanOf, seatLimit, TEAM_PLANS, type PermMap } from '../../lib/permissions';
 import { sha256Hex } from '../../lib/auth';
 import { sendTeamInviteEmail } from '../../lib/auth-email';
 import { randomBytes } from 'node:crypto';
@@ -37,9 +37,25 @@ export const POST: APIRoute = async (context) => {
     const rl = await rateLimit(`invite-create:${orgId}`, 30, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
 
-    const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, invite_domains, nombre, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
+    const [[org], [seats]] = await withOrgTx(orgId,
+        sql`select coalesce(plan,'free') as plan, invite_domains, nombre, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`,
+        sql`select count(*) as n from org_members where org_id = ${orgId} and estado in ('activo', 'invitado')`);
     if (!planTieneEquipo(org.plan as string)) {
-        return json({ error: 'Invitar a tu equipo requiere el plan Negocio.' }, 402);
+        return json({ error: planUpsell(org.plan as string, 'Invitar a tu equipo', TEAM_PLANS), plan_required: minPlanOf(TEAM_PLANS) }, 402);
+    }
+
+    // Asientos por plan. Hasta ago 2026 el número que promete /precios (Pro = 5)
+    // no existía en código: solo se verificaba `planTieneEquipo` y nunca se
+    // contaban miembros.
+    // ⚠️ Grandfathering: una org que YA rebasa su límite conserva a todos sus
+    // miembros — solo no puede invitar a uno más. Nunca se expulsa a nadie.
+    const usados = Number(seats?.n ?? 0);
+    const limite = seatLimit(org.plan as string);
+    if (usados >= limite) {
+        return json({
+            error: `Tu plan ${planLabel(org.plan as string)} incluye ${limite} asiento${limite === 1 ? '' : 's'} y ya los estás usando. Sube de plan para invitar a más gente.`,
+            plan_required: minPlanOf(TEAM_PLANS), seats: { usados, limite },
+        }, 402);
     }
 
     let body: any;

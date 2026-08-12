@@ -1,5 +1,6 @@
 ---
 import AppLayout from '../../../../layouts/AppLayout.astro';
+import AccessGate from '../../../../components/app/AccessGate.astro';
 import { getActiveOrgId, sql, withOrgTx } from '../../../../lib/db';
 import { getMyMembership } from '../../../../lib/queries';
 import { memberCan } from '../../../../lib/permissions';
@@ -48,7 +49,7 @@ const draft = { ...assembled, ...(dispute?.evidence_draft || {}) };
 ---
 
 <AppLayout title={es ? 'Evidencia de contracargo — Cord' : 'Chargeback evidence — Cord'} page="cobros" heading={es ? 'Contracargo' : 'Chargeback'}>
-    {!allowed ? <div class="de-empty"><h2>{es ? 'Sin acceso' : 'No access'}</h2><p>{es ? 'Tu rol no puede gestionar contracargos.' : 'Your role cannot manage chargebacks.'}</p></div>
+    {!allowed ? <AccessGate title={es ? 'Sin acceso' : 'No access'} desc={es ? 'Gestionar contracargos requiere el permiso de Cobranza o el de Configurar cobros. Pídeselo al administrador de tu organización.' : 'Managing chargebacks requires the Collections or Payment settings permission. Ask your organization\'s admin for it.'} />
     : !dispute ? <div class="de-empty"><h2>{es ? 'No encontrado' : 'Not found'}</h2><p>{es ? 'Este contracargo no existe o pertenece a otra organización.' : 'This chargeback does not exist or belongs to another organization.'}</p></div>
     : <div class="de-shell" data-dispute={disputeId}>
         <a class="de-back" href="/app/cobros">← {es ? 'Volver a Cobros' : 'Back to Payments'}</a>

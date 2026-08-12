@@ -23,6 +23,12 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
 // igual (409), pero la UI no debe ofrecerlos siquiera.
 const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
 
+// ?plan=pro — el plan al que apunta un AccessGate de motivo `plan`. Sin esto, el
+// CTA de un bloqueo aterrizaba en la página genérica sin decir cuál desbloquea.
+const highlightPlan = PLANES.some((p) => p.id === Astro.url.searchParams.get('plan'))
+    ? Astro.url.searchParams.get('plan')
+    : null;
+
 const planRaw = ORG.plan_raw;
 const esPago = planRaw !== 'free';
 const PAID = PLANES.filter((p) => p.id !== 'free');
@@ -76,7 +82,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                 const anual = precioAnualMensualizado(p.precioMensual);
                 const actual = p.id === planRaw;
                 return (
-                    <article class:list={['pcard', { featured: p.destacado, current: actual }]} data-pcard data-current={actual ? '1' : undefined}>
+                    <article class:list={['pcard', { featured: p.destacado, current: actual, highlight: p.id === highlightPlan }]} data-pcard data-current={actual ? '1' : undefined}>
                         <div class="pcard-visual">
                             <div class="pcard-aurora" aria-hidden="true">
                                 <div class="pab-b1"></div>
@@ -236,6 +242,10 @@ const planActual = PLANES.find((p) => p.id === planRaw);
 </script>
 
 <style>
+    /* Plan resaltado al llegar desde un bloqueo (`?plan=pro`): anillo navy sutil,
+       mismo lenguaje que `.s-save.dirty`. No cambia el layout ni el orden. */
+    .pcard.highlight { box-shadow: 0 0 0 2px var(--color-blue-deep), 0 24px 48px -22px rgba(10,25,47,.4); }
+
     .plan-test-note {
         display: flex; align-items: center; gap: 0.65rem;
         padding: 0.85rem 1.1rem; margin-bottom: 1.4rem;

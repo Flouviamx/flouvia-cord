@@ -1,0 +1,832 @@
+---
+// /app/cobranza/agente — el agente de cobranza con IA.
+//
+// Antes vivía en /app/tesoreria/cobranza y era un feed plano de 50 mensajes sin
+// agrupar, sin KPIs y sin una sola acción: no se podía aprobar, editar, frenar
+// ni responder nada. Los planes de pago negociados —la pieza más sólida del
+// sistema— no se mostraban en ninguna parte.
+//
+// Ahora: bandeja de aprobación (el agente redacta, tú apruebas), hilos reales
+// por cotización donde el humano también escribe, planes con su avance, y "En la
+// mira" para que el usuario vea a quién le va a escribir ANTES de que pase.
+//
+// ⚠️ Todo el CSS va en <style is:global> prefijado con [data-cia-shell]: la
+// bandeja, los hilos y las chips se re-renderizan por JS tras cada acción, y un
+// <style> scopeado no alcanza al DOM inyectado en runtime (Regla 11 — el mismo
+// bug que ya mordió en /app/cobros).
+import AppLayout from '../../../layouts/AppLayout.astro';
+import '../../../styles/modal.css';
+import AccessGate from '../../../components/app/AccessGate.astro';
+import WidgetGrid from '../../../components/app/WidgetGrid.astro';
+import { getCobranzaIA, getMyMembership, getOrg, money } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+
+const L = currentLocale();
+const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+const ME = await getMyMembership();
+const hasAccess = memberCan(ME, 'cobranza');
+const canConfig = hasAccess && memberCan(ME, 'ajustes');
+const [D, ORG] = hasAccess ? await Promise.all([getCobranzaIA(), getOrg()]) : [null, null];
+
+const cfg = D?.config;
+const activa = !!cfg?.activa;
+const enAprobacion = cfg?.modo === 'aprobacion';
+const M = D?.metricas;
+
+// Sugerencia de pasar a automático: solo con evidencia real de confianza (8+
+// correos aprobados sin tocarles una coma).
+const sugerirAuto = enAprobacion && (M?.aprobadosSinEditar ?? 0) >= 8;
+
+const widgetLabels = {
+    drag: t(L, 'cia.w_arrastrar'), up: t(L, 'cia.w_subir'), down: t(L, 'cia.w_bajar'),
+    resize: t(L, 'cia.w_tamano'), remove: t(L, 'cia.w_ocultar'),
+};
+
+// El <script> no es is:inline (importa nada, pero sí es módulo bundleado), así
+// que no puede llamar t() en runtime: las cadenas viajan por data-*.
+const CIA_T = {
+    aprobar_ok: t(L, 'cia.toast_aprobado'),
+    aprobar_plan: t(L, 'cia.toast_aprobado_plan'),
+    descartado: t(L, 'cia.toast_descartado'),
+    guardado: t(L, 'cia.toast_guardado'),
+    regenerado: t(L, 'cia.toast_regenerado'),
+    enviado: t(L, 'cia.toast_mensaje_enviado'),
+    excluido: t(L, 'cia.toast_excluido'),
+    incluido: t(L, 'cia.toast_incluido'),
+    error: t(L, 'cia.toast_error'),
+    confirmar_descartar: t(L, 'cia.confirmar_descartar'),
+    confirmar_descartar_body: t(L, 'cia.confirmar_descartar_body'),
+    confirmar_aprobar: t(L, 'cia.confirmar_aprobar'),
+    confirmar_aprobar_plan: t(L, 'cia.confirmar_aprobar_plan'),
+    aprobar_cta: t(L, 'cia.aprobar_enviar'),
+    cancelar: t(L, 'cia.cancelar'),
+    bandeja_vacia: t(L, 'cia.bandeja_vacia'),
+    corriendo: t(L, 'cia.corriendo'),
+    corrida_ok: t(L, 'cia.corrida_ok'),
+};
+
+const MOTIVO_LABEL: Record<string, string> = {
+    cadencia: t(L, 'cia.motivo_cadencia'),
+    exclusion: t(L, 'cia.motivo_exclusion'),
+    monto_min: t(L, 'cia.motivo_monto_min'),
+    plan_al_corriente: t(L, 'cia.motivo_plan'),
+    saldado: t(L, 'cia.motivo_saldado'),
+    tope_corrida: t(L, 'cia.motivo_tope'),
+};
+---
+
+<AppLayout title={t(L, 'cia.title')} page="ai-ar" heading={t(L, 'cia.heading')}>
+    <p slot="page-sub">{t(L, 'cia.sub')}</p>
+
+    <div slot="page-tabs" class="ph-tabs">
+        <a href="/app/cobranza" class="ph-tab">{t(L, 'cia.tab_cobranza')}</a>
+        <a href="/app/cobranza/agente" class="ph-tab active">{t(L, 'cia.tab_ia')}</a>
+    </div>
+
+    <Fragment slot="topbar-actions">
+        {hasAccess && activa && (
+            <div class="cia-top-actions">
+                <span class:list={['cia-state', enAprobacion ? 'is-review' : 'is-auto']}>
+                    <i class="cia-dot" aria-hidden="true"></i>
+                    {enAprobacion ? t(L, 'cia.modo_aprobacion') : t(L, 'cia.modo_automatico')}
+                </span>
+                <button type="button" class="cia-btn" id="ciaRunBtn">{t(L, 'cia.forzar')}</button>
+                {canConfig && <button type="button" class="cia-btn" id="ciaCfgBtn">{t(L, 'cia.configurar')}</button>}
+                <button type="button" class="cia-btn" id="ciaEditBtn">{t(L, 'cia.personalizar')}</button>
+                <button type="button" class="cia-btn" id="ciaDoneBtn" hidden>{t(L, 'cia.listo')}</button>
+                <button type="button" class="cia-btn" id="ciaResetBtn" hidden>{t(L, 'cia.restablecer')}</button>
+            </div>
+        )}
+    </Fragment>
+
+    {!hasAccess && <AccessGate title={t(L, 'cia.sin_acceso_titulo')} desc={t(L, 'cia.sin_acceso_desc')} />}
+
+    {hasAccess && D && (
+    <div data-cia-shell data-t={JSON.stringify(CIA_T)}>
+
+        {/* ── Estado de arranque: el agente está apagado ── */}
+        {!activa && (
+            <section class="cia-onb">
+                <div class="cia-onb-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="4" y="7" width="16" height="12" rx="3" fill="currentColor" fill-opacity="0.12"/>
+                        <path d="M12 7V4M9 13h.01M15 13h.01M9.5 16.2c.7.5 1.5.8 2.5.8s1.8-.3 2.5-.8"/>
+                        <path d="M2 12h2M20 12h2"/>
+                    </svg>
+                </div>
+                <h2>{t(L, 'cia.onb_titulo')}</h2>
+                <p class="cia-onb-lead">{t(L, 'cia.onb_lead')}</p>
+
+                <ol class="cia-steps">
+                    <li><b>{t(L, 'cia.onb_p1_t')}</b><span>{tpl(t(L, 'cia.onb_p1_d'), { dias: String(cfg?.graciaDias ?? 3) })}</span></li>
+                    <li><b>{t(L, 'cia.onb_p2_t')}</b><span>{t(L, 'cia.onb_p2_d')}</span></li>
+                    <li><b>{t(L, 'cia.onb_p3_t')}</b><span>{tpl(t(L, 'cia.onb_p3_d'), { dias: String(cfg?.planDias ?? 15) })}</span></li>
+                </ol>
+
+                <div class="cia-onb-preview">
+                    <span class="cia-onb-preview-label">{t(L, 'cia.onb_preview')}</span>
+                    <p>{tpl(t(L, 'cia.onb_preview_cuerpo'), { negocio: ORG?.nombre ?? 'tu negocio' })}</p>
+                </div>
+
+                <p class="cia-onb-mira">
+                    {D.enLaMira.procesadas > 0
+                        ? tpl(t(L, 'cia.onb_mira'), { n: String(D.enLaMira.procesadas) })
+                        : t(L, 'cia.onb_mira_cero')}
+                </p>
+
+                {canConfig
+                    ? <button type="button" class="cia-cta" id="ciaActivar">{t(L, 'cia.onb_activar')}</button>
+                    : <p class="cia-onb-perm">{t(L, 'cia.onb_sin_ajustes')}</p>}
+            </section>
+        )}
+
+        {activa && (
+        <>
+        {sugerirAuto && (
+            <div class="cia-nudge" id="ciaNudge">
+                <span>{tpl(t(L, 'cia.nudge'), { n: String(M!.aprobadosSinEditar) })}</span>
+                <div>
+                    <button type="button" class="cia-nudge-yes" id="ciaNudgeYes">{t(L, 'cia.nudge_si')}</button>
+                    <button type="button" class="cia-nudge-no" id="ciaNudgeNo">{t(L, 'cia.nudge_no')}</button>
+                </div>
+            </div>
+        )}
+
+        <WidgetGrid
+            id="ciaWidgets" storageKey="cord.cobranza-ia.v1"
+            editButtonId="ciaEditBtn" doneButtonId="ciaDoneBtn" resetButtonId="ciaResetBtn"
+            trayTitle={t(L, 'cia.widgets_ocultos')} resetConfirm={t(L, 'cia.reset_confirm')}
+            labels={widgetLabels}
+        >
+            {/* 1 · La cifra que justifica el feature */}
+            <article class="dash-widget" data-widget="cia-recuperado" data-title={t(L, 'cia.k_recuperado')} data-span="1" data-size-sm="1" data-size-lg="2">
+                <div class="dash-card report-kpi">
+                    <span class="kpi-label">{t(L, 'cia.k_recuperado')}</span>
+                    <strong class="editorial report-kpi-value is-ok">{money(M!.recuperado30d, 0)}</strong>
+                    <small>{tpl(t(L, 'cia.k_recuperado_sub'), { n: String(M!.cuentasRecuperadas) })}</small>
+                </div>
+            </article>
+
+            {/* 2 · Esperan tu aprobación */}
+            <article class="dash-widget" data-widget="cia-pendientes" data-title={t(L, 'cia.k_pendientes')} data-span="1" data-size-sm="1" data-size-lg="2">
+                <div class="dash-card report-kpi cia-kpi-click" data-cia-goto="cia-bandeja" role="button" tabindex="0">
+                    <span class="kpi-label">{t(L, 'cia.k_pendientes')}</span>
+                    <strong class="editorial report-kpi-value is-warn" data-cia-bind="n-pendientes">{D.pendientes.length}</strong>
+                    <small>{enAprobacion ? t(L, 'cia.k_pendientes_sub') : t(L, 'cia.k_pendientes_auto')}</small>
+                </div>
+            </article>
+
+            {/* 3 · Planes de pago vivos */}
+            <article class="dash-widget" data-widget="cia-planes" data-title={t(L, 'cia.k_planes')} data-span="1" data-size-sm="1" data-size-lg="2">
+                <div class="dash-card report-kpi">
+                    <span class="kpi-label">{t(L, 'cia.k_planes')}</span>
+                    <strong class="editorial report-kpi-value">{M!.planesActivos}</strong>
+                    <small>{tpl(t(L, 'cia.k_planes_sub'), { monto: money(M!.comprometido, 0) })}</small>
+                </div>
+            </article>
+
+            {/* 4 · Actividad de correo */}
+            <article class="dash-widget" data-widget="cia-correos" data-title={t(L, 'cia.k_correos')} data-span="1" data-size-sm="1" data-size-lg="2">
+                <div class="dash-card report-kpi">
+                    <span class="kpi-label">{t(L, 'cia.k_correos')}</span>
+                    <strong class="editorial report-kpi-value">{M!.enviados30d}</strong>
+                    <small>{M!.enviados30d > 0
+                        ? tpl(t(L, 'cia.k_correos_sub'), { pct: String(M!.tasaRespuesta) })
+                        : t(L, 'cia.k_correos_cero')}</small>
+                    {M!.fallidos30d > 0 && <small class="cia-warn">{tpl(t(L, 'cia.k_correos_fallidos'), { n: String(M!.fallidos30d) })}</small>}
+                </div>
+            </article>
+
+            {/* 5 · LA BANDEJA — el centro de la página */}
+            <article class="dash-widget" data-widget="cia-bandeja" data-title={t(L, 'cia.bandeja')} data-span="4" data-size-sm="4" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head">
+                        <div>
+                            <h2 class="sec-title">{t(L, 'cia.bandeja')}</h2>
+                            <p>{enAprobacion ? t(L, 'cia.bandeja_sub') : t(L, 'cia.bandeja_sub_auto')}</p>
+                        </div>
+                    </div>
+                    <div class="cia-inbox" data-cia-inbox>
+                        {D.pendientes.length === 0 && <p class="report-empty" data-cia-inbox-empty>{t(L, 'cia.bandeja_vacia')}</p>}
+                        {D.pendientes.map((p: any) => (
+                            <div class="cia-draft" data-cia-draft={p.id} data-cot={p.cotizacionId}>
+                                <div class="cia-draft-head">
+                                    <span class="cia-avatar" aria-hidden="true">{p.inicial}</span>
+                                    <span class="cia-draft-who">
+                                        <strong>{p.empresa}</strong>
+                                        <small>
+                                            <a href={`/app/cotizaciones/${p.cotizacionId}`}>{p.folio}</a>
+                                            {' · '}{tpl(t(L, 'cia.vencida_dias'), { n: String(p.diasVencido) })}
+                                            {p.editado && <em class="cia-tag-edit">{t(L, 'cia.editado')}</em>}
+                                        </small>
+                                    </span>
+                                    <span class="editorial cia-draft-monto">{money(p.saldo, 0)}</span>
+                                </div>
+
+                                {p.plan && (
+                                    <div class="cia-plan-card">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                                        <span>{tpl(t(L, 'cia.plan_propuesto'), { n: String(p.plan.cuotas), monto: money(p.plan.montoCuota, 0) })}</span>
+                                    </div>
+                                )}
+
+                                <textarea class="cia-draft-text" data-cia-text rows="7" spellcheck="false">{p.mensaje}</textarea>
+
+                                <div class="cia-draft-actions">
+                                    <button type="button" class="cia-act cia-act-primary" data-cia-act="aprobar">{t(L, 'cia.aprobar_enviar')}</button>
+                                    <button type="button" class="cia-act" data-cia-act="guardar" hidden>{t(L, 'cia.guardar_cambios')}</button>
+                                    <button type="button" class="cia-act" data-cia-act="regenerar-abrir">{t(L, 'cia.regenerar')}</button>
+                                    <button type="button" class="cia-act cia-act-ghost" data-cia-act="descartar">{t(L, 'cia.descartar')}</button>
+                                    <button type="button" class="cia-act cia-act-ghost" data-cia-act="excluir">{t(L, 'cia.no_escribir')}</button>
+                                </div>
+
+                                <div class="cia-regen" data-cia-regen hidden>
+                                    <input type="text" data-cia-instr maxlength="200" placeholder={t(L, 'cia.instruccion_ph')} />
+                                    <button type="button" class="cia-act cia-act-primary" data-cia-act="regenerar">{t(L, 'cia.regenerar_ok')}</button>
+                                    <button type="button" class="cia-act cia-act-ghost" data-cia-act="regenerar-cerrar">{t(L, 'cia.cancelar')}</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </article>
+
+            {/* 6 · Conversaciones agrupadas por cotización (antes: feed plano) */}
+            <article class="dash-widget" data-widget="cia-hilos" data-title={t(L, 'cia.hilos')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cia.hilos')}</h2><p>{t(L, 'cia.hilos_sub')}</p></div></div>
+                    <div class="cia-threads">
+                        {D.hilos.length === 0 && <p class="report-empty">{t(L, 'cia.hilos_vacio')}</p>}
+                        {D.hilos.slice(0, 12).map((h: any) => (
+                            <details class="cia-thread" data-cia-thread={h.cotizacionId}>
+                                <summary>
+                                    <span class="cia-avatar" aria-hidden="true">{h.inicial}</span>
+                                    <span class="cia-thread-who">
+                                        <strong>{h.empresa}</strong>
+                                        <small>{h.folio} · {tpl(t(L, 'cia.n_mensajes'), { n: String(h.nMensajes) })}</small>
+                                    </span>
+                                    <span class="editorial cia-thread-monto">{money(h.saldo, 0)}</span>
+                                </summary>
+                                <div class="cia-msgs" data-cia-msgs>
+                                    {h.mensajes.map((m: any) => (
+                                        <div class:list={['cia-msg', m.autor === 'agente_ia' ? 'is-agent' : (m.autor === 'cliente' ? 'is-client' : 'is-user')]}>
+                                            <span class="cia-msg-meta">
+                                                {m.autor === 'agente_ia' ? t(L, 'cia.autor_agente') : (m.autor === 'cliente' ? t(L, 'cia.autor_cliente') : t(L, 'cia.autor_tu'))}
+                                                {' · '}{m.fecha}
+                                                {m.estado === 'borrador' && <em>{t(L, 'cia.estado_borrador')}</em>}
+                                                {m.estado === 'fallido' && <em class="cia-warn">{t(L, 'cia.estado_fallido')}</em>}
+                                            </span>
+                                            <p>{m.mensaje}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                {h.email ? (
+                                    <div class="cia-compose">
+                                        <textarea data-cia-compose rows="2" placeholder={t(L, 'cia.compose_ph')}></textarea>
+                                        <button type="button" class="cia-act cia-act-primary" data-cia-act="mensaje">{t(L, 'cia.enviar')}</button>
+                                    </div>
+                                ) : <p class="cia-nomail">{t(L, 'cia.sin_correo')}</p>}
+                            </details>
+                        ))}
+                    </div>
+                </div>
+            </article>
+
+            {/* 7 · Planes negociados con avance real */}
+            <article class="dash-widget" data-widget="cia-planes-lista" data-title={t(L, 'cia.planes_titulo')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cia.planes_titulo')}</h2><p>{t(L, 'cia.planes_sub')}</p></div></div>
+                    <div class="report-list">
+                        {D.planes.length === 0 && <p class="report-empty">{t(L, 'cia.planes_vacio')}</p>}
+                        {D.planes.map((p: any) => (
+                            <a href={`/app/cotizaciones/${p.cotizacionId}`}>
+                                <span>
+                                    <strong>{p.empresa}</strong>
+                                    <small>
+                                        {p.folio} · {tpl(t(L, 'cia.plan_avance'), { pagadas: String(p.pagadas), total: String(p.cuotas) })}
+                                        {p.estado === 'propuesto' && <em class="cia-tag-prop">{t(L, 'cia.plan_pendiente')}</em>}
+                                        {p.proxima && p.estado === 'activo' && ` · ${tpl(t(L, 'cia.plan_proxima'), { fecha: p.proxima })}`}
+                                    </small>
+                                </span>
+                                <b class="editorial">{money(p.montoCuota, 0)}</b>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            </article>
+
+            {/* 8 · En la mira — qué va a pasar en la próxima corrida */}
+            <article class="dash-widget" data-widget="cia-mira" data-title={t(L, 'cia.mira')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head">
+                        <div><h2 class="sec-title">{t(L, 'cia.mira')}</h2><p>{t(L, 'cia.mira_sub')}</p></div>
+                        <strong class="editorial report-kpi-value">{D.enLaMira.procesadas}</strong>
+                    </div>
+                    <div class="report-list">
+                        {D.enLaMira.omitidas.length === 0 && D.enLaMira.procesadas === 0 && (
+                            <p class="report-empty">{t(L, 'cia.mira_vacio')}</p>
+                        )}
+                        {D.enLaMira.omitidas.slice(0, 8).map((o: any) => (
+                            <div>
+                                <span>
+                                    <strong>{o.empresa}</strong>
+                                    <small>{o.folio}</small>
+                                </span>
+                                <em class="cia-motivo">{MOTIVO_LABEL[o.motivo] ?? o.motivo}</em>
+                            </div>
+                        ))}
+                    </div>
+                    {M!.ultimoEnvio && <p class="report-explain cia-lastrun">{tpl(t(L, 'cia.ultimo_envio'), { fecha: M!.ultimoEnvio })}</p>}
+                </div>
+            </article>
+
+            {/* 9 · Exclusiones */}
+            <article class="dash-widget" data-widget="cia-exclusiones" data-title={t(L, 'cia.exclusiones')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cia.exclusiones')}</h2><p>{t(L, 'cia.exclusiones_sub')}</p></div></div>
+                    <div class="cia-excl" data-cia-excl>
+                        {D.exclusiones.length === 0 && <p class="report-empty" data-cia-excl-empty>{t(L, 'cia.exclusiones_vacio')}</p>}
+                        {D.exclusiones.map((x: any) => (
+                            <span class="cia-chip" data-cia-excl-id={x.id}>
+                                {x.etiqueta}
+                                <button type="button" data-cia-act="incluir" aria-label={t(L, 'cia.quitar_exclusion')}>✕</button>
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </article>
+        </WidgetGrid>
+        </>
+        )}
+    </div>
+    )}
+
+    {/* ⚠️ El <dialog> vive FUERA del WidgetGrid: el grid es display:grid y
+        showModal() convertiría el diálogo en grid item; además `pointer-events`
+        se hereda y la regla de modo edición lo dejaría inerte. */}
+    {hasAccess && canConfig && cfg && (
+    <dialog class="modal cia-modal" id="ciaCfg">
+        <form method="dialog" class="m-head">
+            <h2>{t(L, 'cia.cfg_titulo')}</h2>
+            <button class="m-close" aria-label={t(L, 'cia.cerrar')}>✕</button>
+        </form>
+        <div class="m-body">
+            <div class="cia-f">
+                <label>{t(L, 'cia.cfg_modo')}</label>
+                <div class="cia-seg" role="radiogroup">
+                    <label><input type="radio" name="ciaModo" value="aprobacion" checked={cfg.modo === 'aprobacion'} /><span>{t(L, 'cia.modo_aprobacion')}</span></label>
+                    <label><input type="radio" name="ciaModo" value="automatico" checked={cfg.modo === 'automatico'} /><span>{t(L, 'cia.modo_automatico')}</span></label>
+                </div>
+                <p class="cia-hint">{t(L, 'cia.cfg_modo_hint')}</p>
+            </div>
+
+            <div class="cia-grid2">
+                <div class="cia-f">
+                    <label for="ciaGracia">{t(L, 'cia.cfg_gracia')}</label>
+                    <input id="ciaGracia" type="number" min="0" max="90" value={cfg.graciaDias} />
+                    <p class="cia-hint">{t(L, 'cia.cfg_gracia_hint')}</p>
+                </div>
+                <div class="cia-f">
+                    <label for="ciaCadencia">{t(L, 'cia.cfg_cadencia')}</label>
+                    <input id="ciaCadencia" type="number" min="1" max="90" value={cfg.cadenciaDias} />
+                    <p class="cia-hint">{t(L, 'cia.cfg_cadencia_hint')}</p>
+                </div>
+                <div class="cia-f">
+                    <label for="ciaPlanDias">{t(L, 'cia.cfg_plan_dias')}</label>
+                    <input id="ciaPlanDias" type="number" min="1" max="365" value={cfg.planDias} />
+                    <p class="cia-hint">{t(L, 'cia.cfg_plan_dias_hint')}</p>
+                </div>
+                <div class="cia-f">
+                    <label for="ciaMaxCuotas">{t(L, 'cia.cfg_max_cuotas')}</label>
+                    <input id="ciaMaxCuotas" type="number" min="2" max="6" value={cfg.maxCuotas} />
+                    <p class="cia-hint">{t(L, 'cia.cfg_max_cuotas_hint')}</p>
+                </div>
+                <div class="cia-f">
+                    <label for="ciaMontoMin">{t(L, 'cia.cfg_monto_min')}</label>
+                    <input id="ciaMontoMin" type="number" min="0" step="1" value={cfg.montoMin} />
+                    <p class="cia-hint">{t(L, 'cia.cfg_monto_min_hint')}</p>
+                </div>
+                <div class="cia-f">
+                    <label for="ciaMaxCorrida">{t(L, 'cia.cfg_max_corrida')}</label>
+                    <input id="ciaMaxCorrida" type="number" min="1" max="200" value={cfg.maxCorrida} />
+                    <p class="cia-hint">{t(L, 'cia.cfg_max_corrida_hint')}</p>
+                </div>
+            </div>
+
+            <div class="cia-grid2">
+                <div class="cia-f">
+                    <label for="ciaTono">{t(L, 'cia.cfg_tono')}</label>
+                    <select id="ciaTono">
+                        <option value="cercano" selected={cfg.tono === 'cercano'}>{t(L, 'cia.tono_cercano')}</option>
+                        <option value="profesional" selected={cfg.tono === 'profesional'}>{t(L, 'cia.tono_profesional')}</option>
+                        <option value="firme" selected={cfg.tono === 'firme'}>{t(L, 'cia.tono_firme')}</option>
+                    </select>
+                </div>
+                <div class="cia-f">
+                    <label for="ciaIdioma">{t(L, 'cia.cfg_idioma')}</label>
+                    <select id="ciaIdioma">
+                        <option value="es" selected={cfg.idioma === 'es'}>{t(L, 'cia.idioma_es')}</option>
+                        <option value="en" selected={cfg.idioma === 'en'}>{t(L, 'cia.idioma_en')}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="cia-f">
+                <label for="ciaFirma">{t(L, 'cia.cfg_firma')}</label>
+                <textarea id="ciaFirma" rows="3" placeholder={t(L, 'cia.cfg_firma_ph')}>{cfg.firma ?? ''}</textarea>
+            </div>
+        </div>
+        <div class="m-foot">
+            <button type="button" class="cia-act cia-act-ghost" data-cia-act="cfg-cancel">{t(L, 'cia.cancelar')}</button>
+            <button type="button" class="cia-act cia-act-primary" id="ciaCfgSave">{t(L, 'cia.guardar')}</button>
+        </div>
+    </dialog>
+    )}
+</AppLayout>
+
+<style is:global>
+/* ⚠️ GLOBAL a propósito (Regla 11): la bandeja, los hilos y las chips de
+   exclusión se mutan por JS tras cada acción, y además los botones de la topbar
+   viven en slot="topbar-actions" y el panel de configuración en un <dialog> —
+   los tres FUERA de [data-cia-shell]. Un <style> scopeado no alcanzaría a
+   ninguno.
+   El aislamiento lo da el prefijo `cia-`, que es exclusivo de esta página
+   (verificado: ningún otro archivo usa esas clases). Solo las reglas que sí
+   viven dentro del shell se anclan a [data-cia-shell]; prefijar las demás las
+   rompería. */
+[data-cia-shell] { display: block; }
+
+/* Topbar */
+.cia-top-actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.cia-btn { font-family: var(--font-sans); font-size: .78rem; font-weight: 600; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--surface); color: var(--color-text); cursor: pointer; transition: transform .18s var(--ease-ios), background .2s; }
+.cia-btn:hover { background: var(--color-bg-soft); }
+.cia-btn:active { transform: scale(.96); }
+.cia-state { display: inline-flex; align-items: center; gap: 6px; font-size: .7rem; font-weight: 700; letter-spacing: .02em; padding: 5px 11px; border-radius: 999px; }
+.cia-state .cia-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.cia-state.is-review { background: rgba(245,158,11,.12); color: #b45309; }
+.cia-state.is-auto { background: rgba(16,185,129,.12); color: #047857; }
+html[data-theme="dark"] [data-cia-shell] ~ * .cia-state.is-review,
+html[data-theme="dark"] .cia-state.is-review { color: #fcd34d; }
+
+/* Estado de arranque */
+.cia-onb { max-width: 620px; margin: 0 auto; padding: 3.5rem 1.5rem 4rem; text-align: center; }
+.cia-onb-icon { width: 64px; height: 64px; margin: 0 auto 1.4rem; border-radius: 20px; background: var(--color-bg-soft); color: var(--color-blue-deep); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px var(--color-border); }
+.cia-onb-icon svg { width: 30px; height: 30px; }
+.cia-onb h2 { margin: 0 0 .6rem; font-size: 1.45rem; font-weight: 600; letter-spacing: -.03em; color: var(--color-text); }
+.cia-onb-lead { margin: 0 auto 2.2rem; max-width: 46ch; font-size: .92rem; line-height: 1.6; color: var(--color-text-muted); }
+.cia-steps { list-style: none; margin: 0 0 2rem; padding: 0; text-align: left; counter-reset: s; }
+.cia-steps li { counter-increment: s; position: relative; padding: 1rem 0 1rem 2.5rem; border-top: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 3px; }
+.cia-steps li:first-child { border-top: 0; }
+.cia-steps li::before { content: counter(s); position: absolute; left: 0; top: 1rem; width: 22px; height: 22px; border-radius: 50%; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: .68rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.cia-steps b { font-size: .88rem; font-weight: 600; color: var(--color-text); }
+.cia-steps span { font-size: .82rem; line-height: 1.55; color: var(--color-text-muted); }
+.cia-onb-preview { text-align: left; padding: 1.2rem 1.3rem; border-radius: 16px; background: var(--color-bg-soft); margin-bottom: 1.4rem; }
+.cia-onb-preview-label { font-size: .6rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--color-text-muted); }
+.cia-onb-preview p { margin: .6rem 0 0; font-size: .85rem; line-height: 1.65; color: var(--color-text); white-space: pre-wrap; }
+.cia-onb-mira { margin: 0 0 1.8rem; font-size: .82rem; color: var(--color-text-muted); }
+.cia-onb-perm { font-size: .82rem; color: var(--color-text-muted); }
+.cia-cta { font-family: var(--font-sans); font-size: .88rem; font-weight: 600; background: var(--color-blue-deep); color: #fff; border: none; border-radius: 999px; padding: 13px 30px; cursor: pointer; box-shadow: 0 8px 22px -10px rgba(10,25,47,.5); transition: transform .35s var(--ease-spring); }
+.cia-cta:hover { transform: translateY(-1px); }
+.cia-cta:active { transform: scale(.97); }
+
+/* Nudge para pasar a automático */
+.cia-nudge { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: .9rem 1.2rem; margin-bottom: 1.1rem; border-radius: 14px; background: rgba(16,185,129,.09); font-size: .84rem; color: var(--color-text); }
+.cia-nudge > div { display: flex; gap: .5rem; }
+.cia-nudge button { font-family: var(--font-sans); font-size: .78rem; font-weight: 600; border-radius: 999px; padding: 7px 15px; cursor: pointer; border: none; }
+.cia-nudge-yes { background: var(--color-blue-deep); color: #fff; }
+.cia-nudge-no { background: transparent; color: var(--color-text-muted); }
+
+/* Bandeja */
+.cia-kpi-click { cursor: pointer; }
+.cia-inbox { display: flex; flex-direction: column; gap: 1rem; }
+.cia-draft { border: 1px solid var(--color-border); border-radius: 18px; padding: 1.1rem 1.2rem; background: var(--surface); transition: opacity .25s, transform .25s var(--ease-ios); }
+.cia-draft.is-going { opacity: 0; transform: scale(.98); }
+.cia-draft-head { display: flex; align-items: center; gap: .7rem; margin-bottom: .8rem; }
+.cia-draft-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.cia-draft-who strong { font-size: .9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cia-draft-who small, .cia-thread-who small { font-size: .74rem; color: var(--color-text-muted); }
+.cia-draft-who a { color: var(--color-text-muted); text-decoration: none; font-family: ui-monospace, Menlo, monospace; }
+.cia-draft-who a:hover { color: var(--color-blue-deep); }
+.cia-draft-monto { font-size: 1rem; color: var(--color-text); }
+.cia-avatar { width: 32px; height: 32px; border-radius: 10px; background: var(--color-bg-soft); color: var(--color-text-muted); display: flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 700; flex-shrink: 0; }
+.cia-tag-edit, .cia-tag-prop { margin-left: 6px; font-style: normal; font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 6px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); }
+.cia-plan-card { display: flex; align-items: center; gap: .6rem; padding: .7rem .9rem; margin-bottom: .8rem; border-radius: 12px; background: rgba(10,25,47,.05); font-size: .82rem; color: var(--color-text); }
+.cia-plan-card svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--color-blue-deep); }
+.cia-draft-text { width: 100%; font-family: var(--font-sans); font-size: .85rem; line-height: 1.65; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid transparent; border-radius: 12px; padding: .9rem 1rem; resize: vertical; transition: border-color .2s, background .2s; }
+.cia-draft-text:focus { outline: none; background: var(--surface); border-color: rgba(10,25,47,.15); }
+.cia-draft-actions { display: flex; gap: .5rem; margin-top: .8rem; flex-wrap: wrap; }
+.cia-act { font-family: var(--font-sans); font-size: .8rem; font-weight: 600; border-radius: 999px; padding: 9px 17px; cursor: pointer; border: 1px solid var(--color-border); background: var(--surface); color: var(--color-text); transition: transform .18s var(--ease-ios), background .2s, opacity .2s; }
+.cia-act:hover { background: var(--color-bg-soft); }
+.cia-act:active { transform: scale(.96); }
+.cia-act:disabled { opacity: .55; cursor: wait; }
+.cia-act-primary { background: var(--color-blue-deep); color: #fff; border-color: transparent; }
+.cia-act-primary:hover { background: var(--color-blue-deep); filter: brightness(1.12); }
+.cia-act-ghost { border-color: transparent; color: var(--color-text-muted); background: transparent; }
+.cia-act-ghost:hover { background: var(--color-bg-soft); }
+.cia-regen { display: flex; gap: .5rem; margin-top: .7rem; align-items: center; flex-wrap: wrap; }
+.cia-regen[hidden] { display: none; }
+.cia-regen input { flex: 1; min-width: 180px; font-family: var(--font-sans); font-size: .82rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid transparent; border-radius: 999px; padding: 9px 15px; }
+.cia-regen input:focus { outline: none; background: var(--surface); border-color: rgba(10,25,47,.15); }
+
+/* Hilos */
+.cia-threads { display: flex; flex-direction: column; }
+.cia-thread { border-top: 1px solid var(--color-border); }
+.cia-thread:first-child { border-top: 0; }
+.cia-thread > summary { display: flex; align-items: center; gap: .7rem; padding: .85rem 0; cursor: pointer; list-style: none; }
+.cia-thread > summary::-webkit-details-marker { display: none; }
+.cia-thread-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.cia-thread-who strong { font-size: .82rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cia-thread-monto { font-size: .85rem; }
+.cia-msgs { display: flex; flex-direction: column; gap: .7rem; padding: .3rem 0 .9rem; max-height: 340px; overflow-y: auto; }
+.cia-msg { max-width: 86%; padding: .7rem .9rem; border-radius: 14px; font-size: .82rem; line-height: 1.6; }
+.cia-msg p { margin: .3rem 0 0; white-space: pre-wrap; }
+.cia-msg-meta { font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; opacity: .65; }
+.cia-msg-meta em { margin-left: 6px; font-style: normal; }
+.cia-msg.is-agent { align-self: flex-start; background: var(--color-bg-soft); color: var(--color-text); border-bottom-left-radius: 4px; }
+.cia-msg.is-client { align-self: flex-end; background: rgba(16,185,129,.12); color: var(--color-text); border-bottom-right-radius: 4px; }
+.cia-msg.is-user { align-self: flex-end; background: var(--color-blue-deep); color: #fff; border-bottom-right-radius: 4px; }
+.cia-msg.is-user .cia-msg-meta { opacity: .8; }
+.cia-compose { display: flex; gap: .5rem; align-items: flex-end; padding-bottom: .9rem; }
+.cia-compose textarea { flex: 1; font-family: var(--font-sans); font-size: .82rem; line-height: 1.5; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid transparent; border-radius: 12px; padding: .6rem .8rem; resize: vertical; }
+.cia-compose textarea:focus { outline: none; background: var(--surface); border-color: rgba(10,25,47,.15); }
+.cia-nomail { padding: 0 0 .9rem; margin: 0; font-size: .78rem; color: var(--color-text-muted); }
+
+/* En la mira / exclusiones */
+.cia-motivo { font-style: normal; font-size: .7rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+.cia-lastrun { margin-top: .9rem; }
+.cia-excl { display: flex; flex-wrap: wrap; gap: .5rem; }
+.cia-chip { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 500; padding: 6px 8px 6px 12px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text); }
+.cia-chip button { all: unset; cursor: pointer; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .9rem; line-height: 1; color: var(--color-text-muted); }
+.cia-chip button:hover { background: rgba(10,25,47,.08); color: var(--color-text); }
+.cia-warn { color: var(--color-warn); }
+
+/* Modal de configuración */
+.cia-modal .m-body { display: flex; flex-direction: column; gap: 1.3rem; }
+.cia-f { display: flex; flex-direction: column; gap: .4rem; }
+.cia-f > label { font-size: .62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+.cia-f input[type="number"], .cia-f select, .cia-f textarea { font-family: var(--font-sans); font-size: .86rem; color: var(--color-text); background: var(--color-bg-soft); border: 1px solid transparent; border-radius: 10px; padding: 10px 12px; }
+.cia-f input[type="number"]:focus, .cia-f select:focus, .cia-f textarea:focus { outline: none; background: var(--surface); border-color: rgba(10,25,47,.15); }
+.cia-hint { margin: 0; font-size: .7rem; line-height: 1.5; color: var(--color-text-muted); }
+.cia-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+@media (max-width: 620px) { .cia-grid2 { grid-template-columns: 1fr; } }
+.cia-seg { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--color-bg-soft); }
+.cia-seg label { flex: 1; }
+.cia-seg input { position: absolute; opacity: 0; pointer-events: none; }
+.cia-seg span { display: block; text-align: center; font-size: .8rem; font-weight: 600; padding: 8px 10px; border-radius: 9px; color: var(--color-text-muted); cursor: pointer; transition: background .2s, color .2s; }
+.cia-seg input:checked + span { background: var(--surface); color: var(--color-text); box-shadow: 0 1px 3px rgba(10,25,47,.1); }
+.cia-seg input:focus-visible + span { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+</style>
+
+<script>
+    const shell = document.querySelector<HTMLElement>('[data-cia-shell]');
+    if (shell) {
+        const T = JSON.parse(shell.dataset.t || '{}');
+        const toast = (m: string, k: 'ok' | 'error' | 'info' = 'ok') => (window as any).cordToast?.(m, k);
+        const confirmar = async (opts: any) => {
+            const fn = (window as any).cordConfirm;
+            return fn ? await fn(opts) : confirm(typeof opts === 'string' ? opts : opts.title);
+        };
+
+        async function post(url: string, body: any, method = 'POST') {
+            const res = await fetch(url, {
+                method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+            });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(d.error || T.error);
+            return d;
+        }
+
+        /** Actualiza el contador de la bandeja y saca el estado vacío cuando toca. */
+        function syncInbox() {
+            const inbox = shell!.querySelector<HTMLElement>('[data-cia-inbox]');
+            if (!inbox) return;
+            const n = inbox.querySelectorAll('[data-cia-draft]').length;
+            const bind = shell!.querySelector<HTMLElement>('[data-cia-bind="n-pendientes"]');
+            if (bind) bind.textContent = String(n);
+            let empty = inbox.querySelector<HTMLElement>('[data-cia-inbox-empty]');
+            if (n === 0 && !empty) {
+                empty = document.createElement('p');
+                empty.className = 'report-empty';
+                empty.setAttribute('data-cia-inbox-empty', '');
+                empty.textContent = T.bandeja_vacia;
+                inbox.appendChild(empty);
+            } else if (n > 0 && empty) empty.remove();
+        }
+
+        function removeDraft(card: HTMLElement) {
+            card.classList.add('is-going');
+            setTimeout(() => { card.remove(); syncInbox(); }, 250);
+        }
+
+        // ── Delegación única para toda la página ──
+        shell.addEventListener('click', async (ev) => {
+            const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>('[data-cia-act]');
+            if (!btn) {
+                const kpi = (ev.target as HTMLElement).closest<HTMLElement>('[data-cia-goto]');
+                if (kpi) document.querySelector(`[data-widget="${kpi.dataset.ciaGoto}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+            const act = btn.dataset.ciaAct!;
+            const card = btn.closest<HTMLElement>('[data-cia-draft]');
+            const thread = btn.closest<HTMLElement>('[data-cia-thread]');
+
+            try {
+                btn.disabled = true;
+
+                if (act === 'aprobar' && card) {
+                    const id = card.dataset.ciaDraft!;
+                    const ta = card.querySelector<HTMLTextAreaElement>('[data-cia-text]')!;
+                    const tienePlan = !!card.querySelector('.cia-plan-card');
+                    const ok = await confirmar({
+                        title: T.confirmar_aprobar,
+                        body: tienePlan ? T.confirmar_aprobar_plan : undefined,
+                        confirmText: T.aprobar_cta, cancelText: T.cancelar,
+                    });
+                    if (!ok) return;
+                    // Si el usuario editó el texto, se guarda ANTES de aprobar: si no,
+                    // se enviaría el borrador original y su edición se perdería.
+                    if (ta.value !== ta.defaultValue) await post(`/api/cobranza-ia/${id}`, { action: 'editar', mensaje: ta.value });
+                    const d = await post(`/api/cobranza-ia/${id}`, { action: 'aprobar' });
+                    toast(d.planActivado ? T.aprobar_plan : T.aprobar_ok, 'ok');
+                    removeDraft(card);
+                    return;
+                }
+
+                if (act === 'guardar' && card) {
+                    const id = card.dataset.ciaDraft!;
+                    const ta = card.querySelector<HTMLTextAreaElement>('[data-cia-text]')!;
+                    await post(`/api/cobranza-ia/${id}`, { action: 'editar', mensaje: ta.value });
+                    ta.defaultValue = ta.value;
+                    btn.hidden = true;
+                    toast(T.guardado, 'ok');
+                    return;
+                }
+
+                if (act === 'regenerar-abrir' && card) {
+                    const row = card.querySelector<HTMLElement>('[data-cia-regen]')!;
+                    row.hidden = false;
+                    row.querySelector<HTMLInputElement>('[data-cia-instr]')?.focus();
+                    return;
+                }
+
+                if (act === 'regenerar-cerrar' && card) {
+                    card.querySelector<HTMLElement>('[data-cia-regen]')!.hidden = true;
+                    return;
+                }
+
+                if (act === 'regenerar' && card) {
+                    const id = card.dataset.ciaDraft!;
+                    const row = card.querySelector<HTMLElement>('[data-cia-regen]')!;
+                    const instruccion = row.querySelector<HTMLInputElement>('[data-cia-instr]')?.value.trim() ?? '';
+                    const d = await post(`/api/cobranza-ia/${id}`, { action: 'regenerar', instruccion });
+                    const ta = card.querySelector<HTMLTextAreaElement>('[data-cia-text]')!;
+                    ta.value = d.mensaje; ta.defaultValue = d.mensaje;
+                    card.querySelector<HTMLElement>('[data-cia-act="guardar"]')!.hidden = true;
+                    row.hidden = true;
+                    toast(T.regenerado, 'ok');
+                    return;
+                }
+
+                if (act === 'descartar' && card) {
+                    const ok = await confirmar({
+                        title: T.confirmar_descartar, body: T.confirmar_descartar_body,
+                        danger: true, confirmText: T.confirmar_descartar, cancelText: T.cancelar,
+                    });
+                    if (!ok) return;
+                    await post(`/api/cobranza-ia/${card.dataset.ciaDraft}`, { action: 'descartar' });
+                    toast(T.descartado, 'ok');
+                    removeDraft(card);
+                    return;
+                }
+
+                if (act === 'excluir' && card) {
+                    await post('/api/cobranza-ia/exclusiones', { cotizacion_id: card.dataset.cot });
+                    await post(`/api/cobranza-ia/${card.dataset.ciaDraft}`, { action: 'descartar' });
+                    toast(T.excluido, 'ok');
+                    removeDraft(card);
+                    return;
+                }
+
+                if (act === 'incluir') {
+                    const chip = btn.closest<HTMLElement>('[data-cia-excl-id]')!;
+                    await post('/api/cobranza-ia/exclusiones', { id: chip.dataset.ciaExclId }, 'DELETE');
+                    chip.remove();
+                    toast(T.incluido, 'ok');
+                    return;
+                }
+
+                if (act === 'mensaje' && thread) {
+                    const ta = thread.querySelector<HTMLTextAreaElement>('[data-cia-compose]')!;
+                    const texto = ta.value.trim();
+                    if (!texto) return;
+                    await post('/api/cobranza-ia/mensaje', { cotizacion_id: thread.dataset.ciaThread, mensaje: texto });
+                    // Append optimista: la burbuja aparece al instante, sin recargar.
+                    const box = thread.querySelector<HTMLElement>('[data-cia-msgs]')!;
+                    const div = document.createElement('div');
+                    div.className = 'cia-msg is-user';
+                    const meta = document.createElement('span');
+                    meta.className = 'cia-msg-meta';
+                    meta.textContent = T.enviado;
+                    const p = document.createElement('p');
+                    p.textContent = texto;               // textContent, nunca innerHTML
+                    div.append(meta, p);
+                    box.appendChild(div);
+                    box.scrollTop = box.scrollHeight;
+                    ta.value = '';
+                    toast(T.enviado, 'ok');
+                    return;
+                }
+
+                if (act === 'cfg-cancel') {
+                    (document.getElementById('ciaCfg') as HTMLDialogElement | null)?.close();
+                    return;
+                }
+            } catch (e: any) {
+                toast(e.message || T.error, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // El botón "Guardar cambios" aparece solo cuando el correo se tocó.
+        shell.addEventListener('input', (ev) => {
+            const ta = (ev.target as HTMLElement).closest<HTMLTextAreaElement>('[data-cia-text]');
+            if (!ta) return;
+            const card = ta.closest<HTMLElement>('[data-cia-draft]');
+            const save = card?.querySelector<HTMLElement>('[data-cia-act="guardar"]');
+            if (save) save.hidden = ta.value === ta.defaultValue;
+        });
+
+        // ── Correr el agente ahora ──
+        document.getElementById('ciaRunBtn')?.addEventListener('click', async (ev) => {
+            const b = ev.currentTarget as HTMLButtonElement;
+            const prev = b.textContent;
+            b.disabled = true; b.textContent = T.corriendo;
+            try {
+                const d = await post('/api/cobranza-ia/run', {});
+                toast(T.corrida_ok.replace('{n}', String(d.procesadas ?? 0)), 'ok');
+                if ((d.procesadas ?? 0) > 0) setTimeout(() => location.reload(), 1100);
+            } catch (e: any) {
+                toast(e.message || T.error, 'error');
+            } finally { b.disabled = false; b.textContent = prev; }
+        });
+
+        // ── Configuración ──
+        const dlg = document.getElementById('ciaCfg') as HTMLDialogElement | null;
+        document.getElementById('ciaCfgBtn')?.addEventListener('click', () => {
+            if (!dlg) return;
+            (window as any).cordWireModal?.(dlg);
+            dlg.showModal();
+        });
+        document.getElementById('ciaCfgSave')?.addEventListener('click', async (ev) => {
+            const b = ev.currentTarget as HTMLButtonElement;
+            const val = (id: string) => (document.getElementById(id) as HTMLInputElement | null)?.value;
+            b.disabled = true;
+            try {
+                await post('/api/org', {
+                    ai_cobranza_modo: (document.querySelector('input[name="ciaModo"]:checked') as HTMLInputElement | null)?.value,
+                    ai_cobranza_gracia_dias: val('ciaGracia'),
+                    ai_cobranza_cadencia_dias: val('ciaCadencia'),
+                    ai_cobranza_plan_dias: val('ciaPlanDias'),
+                    ai_cobranza_max_cuotas: val('ciaMaxCuotas'),
+                    ai_cobranza_monto_min: val('ciaMontoMin'),
+                    ai_cobranza_max_corrida: val('ciaMaxCorrida'),
+                    ai_cobranza_tono: val('ciaTono'),
+                    ai_cobranza_idioma: val('ciaIdioma'),
+                    ai_cobranza_firma: (document.getElementById('ciaFirma') as HTMLTextAreaElement | null)?.value ?? '',
+                }, 'PATCH');
+                toast(T.guardado, 'ok');
+                dlg?.close();
+                setTimeout(() => location.reload(), 700);
+            } catch (e: any) {
+                toast(e.message || T.error, 'error');
+            } finally { b.disabled = false; }
+        });
+
+        // ── Encender el agente desde el estado de arranque ──
+        document.getElementById('ciaActivar')?.addEventListener('click', async (ev) => {
+            const b = ev.currentTarget as HTMLButtonElement;
+            b.disabled = true;
+            try {
+                await post('/api/org', { ai_cobranza_activa: true, ai_cobranza_modo: 'aprobacion' }, 'PATCH');
+                location.reload();
+            } catch (e: any) {
+                toast(e.message || T.error, 'error');
+                b.disabled = false;
+            }
+        });
+
+        // ── Nudge: pasar a automático ──
+        document.getElementById('ciaNudgeYes')?.addEventListener('click', async () => {
+            try {
+                await post('/api/org', { ai_cobranza_modo: 'automatico' }, 'PATCH');
+                location.reload();
+            } catch (e: any) { toast(e.message || T.error, 'error'); }
+        });
+        document.getElementById('ciaNudgeNo')?.addEventListener('click', () => {
+            document.getElementById('ciaNudge')?.remove();
+        });
+    }
+</script>

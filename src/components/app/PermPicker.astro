@@ -1,0 +1,84 @@
+---
+// PermPicker — selector de permisos de un miembro.
+//
+// Antes vivía duplicado LITERAL entre el modal de invitar y el de editar de
+// equipo.astro (~25 líneas × 2), y era una lista plana de 10 toggles sin
+// jerarquía: nadie entiende de un vistazo qué le está dando a esa persona.
+// Aquí van agrupados por área de trabajo.
+//
+// El CSS es scopeado a propósito: este componente renderiza su propio markup y
+// los toggles no se inyectan por JS (la página solo cambia su `checked`).
+import { PERMISOS, PRESETS } from '../../lib/permissions';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+interface Props { prefix: string }
+const { prefix } = Astro.props;
+const L = currentLocale();
+
+// Agrupación por área. El orden importa: de lo más cotidiano (vender) a lo más
+// delicado (administrar la cuenta y al equipo).
+const GRUPOS: { key: string; keys: string[] }[] = [
+    { key: 'ventas',  keys: ['cotizar', 'clientes', 'productos'] },
+    { key: 'dinero',  keys: ['cobranza', 'cobros_config', 'reembolsar'] },
+    { key: 'control', keys: ['aprobar', 'analitica'] },
+    { key: 'admin',   keys: ['ajustes', 'equipo'] },
+];
+
+// Salvaguarda: si algún día se agrega un permiso a PERMISOS y se olvida meterlo
+// en un grupo, aparece igual en "Otros" en vez de desaparecer de la UI.
+const agrupados = new Set(GRUPOS.flatMap((g) => g.keys));
+const sueltos = PERMISOS.filter((p) => !agrupados.has(p.key)).map((p) => p.key);
+const grupos = sueltos.length ? [...GRUPOS, { key: 'otros', keys: sueltos }] : GRUPOS;
+---
+
+<div class="pp" data-perm-picker={prefix}>
+    <div class="pp-presets" role="group" aria-label={t(L, 'set.eq.presets')}>
+        {Object.entries(PRESETS).map(([key]) => (
+            <button type="button" class="pp-preset" data-preset={key}>
+                {t(L, `set.eq.preset.${key}.label` as any)}
+            </button>
+        ))}
+        <span class="pp-preset pp-preset-custom" data-preset="__custom" hidden>{t(L, 'set.eq.preset.custom.label')}</span>
+    </div>
+    <p class="pp-desc" data-perm-desc>{t(L, 'set.eq.preset.vendedor.desc')}</p>
+
+    <div class="pp-groups">
+        {grupos.map((g) => (
+            <section class="pp-group">
+                <h4>{t(L, `set.eq.grupo.${g.key}` as any)}</h4>
+                {g.keys.map((k) => (
+                    <label class="pp-row">
+                        <span class="pp-row-text">
+                            <b>{t(L, `set.eq.perm.${k}.label` as any)}</b>
+                            <small>{t(L, `set.eq.perm.${k}.desc` as any)}</small>
+                        </span>
+                        <span class="s-toggle">
+                            <input type="checkbox" data-perm={k} id={`${prefix}-${k}`} />
+                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                        </span>
+                    </label>
+                ))}
+            </section>
+        ))}
+    </div>
+</div>
+
+<style>
+    .pp { display: flex; flex-direction: column; gap: .9rem; }
+    .pp-presets { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--color-bg-soft); }
+    .pp-preset { flex: 1; font-family: var(--font-sans); font-size: .8rem; font-weight: 600; text-align: center; padding: 8px 10px; border-radius: 9px; border: none; background: transparent; color: var(--color-text-muted); cursor: pointer; transition: background .2s, color .2s; }
+    .pp-preset:hover { color: var(--color-text); }
+    .pp-preset.is-active { background: var(--surface); color: var(--color-text); box-shadow: 0 1px 3px rgba(10, 25, 47, 0.1); }
+    .pp-preset-custom { flex: 0 0 auto; cursor: default; }
+    .pp-preset-custom[hidden] { display: none; }
+    .pp-desc { margin: 0; font-size: .76rem; line-height: 1.5; color: var(--color-text-muted); }
+
+    .pp-groups { display: flex; flex-direction: column; gap: 1.1rem; }
+    .pp-group h4 { margin: 0 0 .2rem; font-size: .6rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .pp-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .7rem 0; border-top: 1px solid var(--color-border); cursor: pointer; }
+    .pp-group h4 + .pp-row { border-top: 0; }
+    .pp-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .pp-row-text b { font-size: .84rem; font-weight: 600; color: var(--color-text); }
+    .pp-row-text small { font-size: .74rem; line-height: 1.45; color: var(--color-text-muted); }
+</style>

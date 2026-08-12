@@ -2016,3 +2016,66 @@ create table if not exists rate_limit_counters (
   reset_at timestamptz not null
 );
 create index if not exists idx_rate_limit_counters_reset on rate_limit_counters(reset_at);
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Cobranza con IA v2 (ago 2026): configuración por org, ciclo de vida del
+-- mensaje y exclusiones.
+--
+-- Antes de esto TODO el comportamiento del agente estaba hardcodeado en el
+-- código (3 días de gracia, escalar a plan a los 15, tono, siempre español) y
+-- el cron —que corre diario— NO consultaba el último envío: le escribía a la
+-- misma cotización vencida todos los días. `ai_cobranza_cadencia_dias` cierra
+-- ese bug.
+-- ════════════════════════════════════════════════════════════════════════════
+
+-- Modo de operación. Default 'aprobacion': el agente redacta y espera visto
+-- bueno humano. Nadie deja que una IA le escriba a sus clientes a ciegas la
+-- primera vez; el paso a 'automatico' se ofrece cuando ya hay confianza.
+alter table orgs add column if not exists ai_cobranza_modo          text    not null default 'aprobacion';
+alter table orgs add column if not exists ai_cobranza_gracia_dias   integer not null default 3;
+alter table orgs add column if not exists ai_cobranza_cadencia_dias integer not null default 7;
+alter table orgs add column if not exists ai_cobranza_plan_dias     integer not null default 15;
+alter table orgs add column if not exists ai_cobranza_max_cuotas    integer not null default 3;
+alter table orgs add column if not exists ai_cobranza_tono          text    not null default 'profesional';
+alter table orgs add column if not exists ai_cobranza_idioma        text    not null default 'es';
+alter table orgs add column if not exists ai_cobranza_firma         text;
+alter table orgs add column if not exists ai_cobranza_monto_min     numeric(14,2) not null default 0;
+alter table orgs add column if not exists ai_cobranza_max_corrida   integer not null default 25;
+
+-- Ciclo de vida del mensaje. Default 'enviado' para que las filas históricas
+-- (todas ya enviadas) queden coherentes sin backfill.
+alter table cobranza_conversaciones add column if not exists estado       text not null default 'enviado';
+alter table cobranza_conversaciones add column if not exists aprobado_por uuid references users(id) on delete set null;
+alter table cobranza_conversaciones add column if not exists aprobado_at  timestamptz;
+alter table cobranza_conversaciones add column if not exists editado      boolean not null default false;
+alter table cobranza_conversaciones add column if not exists enviado_at   timestamptz;
+alter table cobranza_conversaciones add column if not exists error        text;
+create index if not exists idx_cobranza_conv_estado
+  on cobranza_conversaciones(org_id, estado, created_at desc);
+-- La cadencia consulta "¿cuándo fue el último ENVIADO de esta cotización?" en
+-- cada corrida, una vez por cotización candidata.
+create index if not exists idx_cobranza_conv_cot_enviado
+  on cobranza_conversaciones(cotizacion_id, enviado_at desc) where estado = 'enviado';
+
+-- Exclusiones: "no le escribas a este cliente" / "no a esta cotización".
+-- Al menos una de las dos referencias debe venir.
+create table if not exists cobranza_exclusiones (
+  id            uuid        default gen_random_uuid() primary key,
+  org_id        uuid        not null references orgs(id) on delete cascade,
+  cliente_id    uuid        references clientes(id) on delete cascade,
+  cotizacion_id uuid        references cotizaciones(id) on delete cascade,
+  motivo        text,
+  created_by    uuid        references users(id) on delete set null,
+  created_at    timestamptz default now(),
+  constraint cobranza_exclusiones_target check (cliente_id is not null or cotizacion_id is not null)
+);
+create unique index if not exists uq_cobranza_excl_cliente
+  on cobranza_exclusiones(org_id, cliente_id) where cliente_id is not null;
+create unique index if not exists uq_cobranza_excl_cot
+  on cobranza_exclusiones(org_id, cotizacion_id) where cotizacion_id is not null;
+
+alter table cobranza_exclusiones enable row level security;
+drop policy if exists "rls_cobranza_exclusiones" on cobranza_exclusiones;
+create policy "rls_cobranza_exclusiones" on cobranza_exclusiones
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table cobranza_exclusiones force row level security;

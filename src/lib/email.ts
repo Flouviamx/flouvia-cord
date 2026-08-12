@@ -28,7 +28,11 @@ export function siteOrigin(): string {
 const moneyFmt = (n: number, locale: 'es' | 'en') => '$' + new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(Number(n ?? 0));
 const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
 
-export interface SendResult { sent: boolean; skipped?: string; error?: string; to?: string }
+// `messageId` = el id que devuelve Resend. Lo consume la cobranza con IA para
+// sembrar `cobranza_conversaciones.message_id`: el día que se active el correo
+// entrante (ver api/webhooks/inbound-email.ts) el threading ya tiene con qué
+// emparejar la respuesta del cliente contra su hilo.
+export interface SendResult { sent: boolean; skipped?: string; error?: string; to?: string; messageId?: string }
 
 // "Remitente" de Resend: el dominio DEBE estar verificado en Resend, pero el
 // NOMBRE visible sí es libre. Combina el nombre custom de la org con la dirección
@@ -62,7 +66,11 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
             return { sent: false, error: `Resend ${res.status}`, to: opts.to };
         }
         await trackExternalUsage({ orgId: opts.orgId, provider: 'resend', category: 'email', operation: opts.operation || 'transactional_email' });
-        return { sent: true, to: opts.to };
+        // El id de Resend es best-effort: si el cuerpo no viene o no parsea, el
+        // correo YA se envió — no se degrada el resultado por eso.
+        let messageId: string | undefined;
+        try { messageId = (await res.json())?.id || undefined; } catch { /* sin id */ }
+        return { sent: true, to: opts.to, messageId };
     } catch (err: any) {
         await trackExternalUsage({ orgId: opts.orgId, provider: 'resend', category: 'email', operation: opts.operation || 'transactional_email', status: 'failure' });
         return { sent: false, error: err?.message ?? 'fallo de red', to: opts.to };

@@ -92,3 +92,26 @@ export const apiKeyLimit = (plan: string): number => APIKEY_LIMITS[plan] ?? APIK
 // free no puede dejar fuera a toda una empresa a media mañana.
 export const SSO_PLANS = ['scale', 'developer'];
 export const planTieneSso = (plan: string) => SSO_PLANS.includes(plan);
+
+// ── Asientos de equipo por plan (ago 2026) ──
+// La matriz de /precios prometía "Pro (5), Scale (15), Developer ilimitados" desde
+// jun 2026, pero el número no existía en código: `POST /api/equipo` solo verificaba
+// `planTieneEquipo` y nunca contaba miembros. Ahora sí se aplica.
+// ⚠️ Grandfathering: una cuenta que YA rebasa su límite conserva a todos sus
+// miembros — el tope solo impide invitar a uno más. Nunca se expulsa a nadie.
+export const SEAT_LIMITS: Record<string, number> = {
+    free: 1, starter: 1, pro: 5, scale: 15, developer: Infinity, business: 5, negocio: 5,
+};
+export const seatLimit = (plan: string): number => SEAT_LIMITS[plan] ?? SEAT_LIMITS.free;
+
+/** El plan MÍNIMO que desbloquea una lista de planes (el primero de la lista, que
+ *  siempre se declara de menor a mayor). Sirve para el CTA `/app/ajustes/plan?plan=`. */
+export const minPlanOf = (plans: string[]): string => plans[0] ?? 'pro';
+
+/** Copy único de "tu plan no alcanza". Antes estaba copiado inline en tres endpoints
+ *  (`api/equipo.ts`, `api/sso/connections.ts`, `api/sso/connections/[id].ts`) y el de
+ *  equipo llevaba meses desactualizado: decía "plan Negocio" contra un TEAM_PLANS que
+ *  ya arranca en Pro. */
+export function planUpsell(plan: string, feature: string, plans: string[]): string {
+    return `${feature} requiere el plan ${planLabel(minPlanOf(plans))} o superior. Tu plan actual es ${planLabel(plan)}.`;
+}

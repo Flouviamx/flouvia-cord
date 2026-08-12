@@ -5,9 +5,10 @@
 // "Exigir SSO" (toggle genérico vía SettingsShell → PATCH /api/org) +
 // break-glass. El detalle/wizard de cada conexión vive en /app/ajustes/sso/[id].
 import SettingsShell from '../../../components/app/SettingsShell.astro';
+import AccessGate from '../../../components/app/AccessGate.astro';
 import { getMyMembership, getOrg } from '../../../lib/queries';
 import { getActiveOrgId } from '../../../lib/db';
-import { memberCan, planTieneSso, planLabel } from '../../../lib/permissions';
+import { memberCan, planTieneSso, planLabel, minPlanOf, SSO_PLANS } from '../../../lib/permissions';
 import { listConnections } from '../../../lib/saml';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
@@ -33,16 +34,13 @@ const showIntro = !hasPlan || connections.length > 0;
 <SettingsShell title="SSO — Ajustes" tab="sso" perm="equipo" intro={showIntro ? t(L, 'set.sso.intro') : undefined} save>
 
     {!hasPlan && (
-        <div class="sso-upsell">
-            <div class="sso-upsell-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.12"/></svg>
-            </div>
-            <div>
-                <h3>{t(L, 'set.sso.upsell_titulo')}</h3>
-                <p>{t(L, 'set.sso.upsell_desc').replace('{plan}', planLabel(org.plan_raw))}</p>
-                <a href="/app/ajustes/plan" class="sso-btn-primary">{t(L, 'set.sso.upsell_cta')}</a>
-            </div>
-        </div>
+        <AccessGate
+            class="is-inset" reason="plan"
+            title={t(L, 'set.sso.upsell_titulo')}
+            desc={t(L, 'set.sso.upsell_desc').replace('{plan}', planLabel(org.plan_raw))}
+            ctaHref={`/app/ajustes/plan?plan=${minPlanOf(SSO_PLANS)}`}
+            ctaLabel={t(L, 'set.sso.upsell_cta')}
+        />
     )}
 
     {hasPlan && connections.length === 0 && (
@@ -168,11 +166,6 @@ const showIntro = !hasPlan || connections.length > 0;
 </SettingsShell>
 
 <style>
-    .sso-upsell { display: flex; gap: 1.4rem; align-items: flex-start; padding: 2rem 0; }
-    .sso-upsell-icon { width: 48px; height: 48px; border-radius: 14px; background: var(--color-bg-soft); display: flex; align-items: center; justify-content: center; color: var(--color-blue-deep); flex-shrink: 0; }
-    .sso-upsell-icon svg { width: 24px; height: 24px; }
-    .sso-upsell h3 { font-size: 1rem; font-weight: 700; margin: 0 0 0.4rem; color: var(--color-text); }
-    .sso-upsell p { font-size: 0.86rem; color: var(--color-text-muted); margin: 0 0 1rem; line-height: 1.55; max-width: 52ch; }
 
     /* ── Hero de estado vacío (referencia: Stripe "Configurar el inicio de
        sesión único") — antes esto era un <p class="s-hint"> de una sola

@@ -8,13 +8,14 @@
 //
 // Snapshot de hoy: sin selector de fechas — una cartera "de la semana pasada" no significa
 // nada. Se usa el mismo `snapshot-chip` que los informes con scope !== 'rango'.
-import AppLayout from '../../layouts/AppLayout.astro';
-import WidgetGrid from '../../components/app/WidgetGrid.astro';
-import { getCobranza, getMyMembership, money } from '../../lib/queries';
-import { memberCan } from '../../lib/permissions';
-import { currentLocale } from '../../lib/context';
-import { t } from '../../i18n/app';
-import { dateFull } from '../../lib/fmt';
+import AppLayout from '../../../layouts/AppLayout.astro';
+import AccessGate from '../../../components/app/AccessGate.astro';
+import WidgetGrid from '../../../components/app/WidgetGrid.astro';
+import { getCobranza, getMyMembership, money } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+import { dateFull } from '../../../lib/fmt';
 
 const L = currentLocale();
 const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
@@ -70,7 +71,7 @@ const CBZ_T = {
 <AppLayout title={t(L, 'cob.title')} page="cobranza" heading={t(L, 'cob.heading')}>
     <div slot="page-tabs" class="ph-tabs">
         <a href="/app/cobranza" class="ph-tab active">{t(L, 'cob.tab_cobranza')}</a>
-        <a href="/app/tesoreria/cobranza" class="ph-tab">{t(L, 'cob.tab_ia')}</a>
+        <a href="/app/cobranza/agente" class="ph-tab">{t(L, 'cob.tab_ia')}</a>
     </div>
 
     <Fragment slot="topbar-actions">
@@ -86,11 +87,7 @@ const CBZ_T = {
     </Fragment>
 
     {!hasAccess && (
-        <div class="cb-denied">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <h3>{t(L, 'cob.sin_acceso_titulo')}</h3>
-            <p>{t(L, 'cob.sin_acceso_desc')}</p>
-        </div>
+        <AccessGate title={t(L, 'cob.sin_acceso_titulo')} desc={t(L, 'cob.sin_acceso_desc')} />
     )}
     {hasAccess && !hay && (
         <section class="empty">
@@ -349,7 +346,7 @@ const CBZ_T = {
     // cobrada. La lógica de negocio es EXACTAMENTE la de antes; lo que cambia es cómo se
     // enganchan los eventos (delegación en vez de un listener por fila) y que al cobrar
     // una cuenta desaparece de TODOS los widgets, no solo de la tabla.
-    import { mountAll } from '../../lib/chart-mount';
+    import { mountAll } from '../../../lib/chart-mount';
 
     mountAll(document);
 
@@ -768,8 +765,4 @@ const CBZ_T = {
     @media (max-width: 560px) {
         .t-estado { display: none; }
     }
-    .cb-denied { display: flex; flex-direction: column; gap: 0.6rem; padding: 2rem 0; }
-    .cb-denied svg { width: 32px; height: 32px; color: #c9d2de; }
-    .cb-denied h3 { font-size: 1rem; font-weight: 700; margin: 0; }
-    .cb-denied p { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; line-height: 1.55; }
 </style>

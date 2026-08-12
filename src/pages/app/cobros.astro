@@ -10,6 +10,7 @@
 // pagina y puede costar hasta 10 viajes en frío, así que meterla en el render le regalaría
 // a Stripe la latencia percibida de la página.
 import AppLayout from '../../layouts/AppLayout.astro';
+import AccessGate from '../../components/app/AccessGate.astro';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
 import { getMyMembership, money } from '../../lib/queries';
@@ -114,11 +115,7 @@ const CBR_T = {
     </Fragment>
 
     {!hasAccess && (
-        <div class="cbr-denied">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <h3>{t(L, 'cbr.sin_acceso_titulo')}</h3>
-            <p>{t(L, 'cbr.sin_acceso_desc')}</p>
-        </div>
+        <AccessGate title={t(L, 'cbr.sin_acceso_titulo')} desc={t(L, 'cbr.sin_acceso_desc')} />
     )}
 
     {hasAccess && D && (
@@ -799,10 +796,6 @@ const CBR_T = {
     .cbr-salud-off { margin: 0; }
     .cbr-disp-list { margin-top: .6rem; }
 
-    .cbr-denied { display: flex; flex-direction: column; gap: .6rem; padding: 2rem 0; }
-    .cbr-denied svg { width: 32px; height: 32px; color: #c9d2de; }
-    .cbr-denied h3 { font-size: 1rem; font-weight: 700; margin: 0; }
-    .cbr-denied p { font-size: .84rem; color: var(--color-text-muted); margin: 0; line-height: 1.55; }
     .cbr-refund-dialog { border: 0; padding: 0; border-radius: 28px; background: transparent; color: var(--color-text); max-width: min(480px, calc(100vw - 32px)); width: 100%; }
     .cbr-refund-dialog::backdrop { background: rgba(5, 12, 24, .46); backdrop-filter: blur(8px); }
     .cbr-refund-card { background: var(--surface); border-radius: 28px; padding: 28px; box-shadow: 0 32px 90px rgba(5,12,24,.24); display: flex; flex-direction: column; gap: 18px; }

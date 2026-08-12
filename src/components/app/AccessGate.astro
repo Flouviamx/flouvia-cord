@@ -1,0 +1,83 @@
+---
+// AccessGate — el ÚNICO bloqueo de la app. Antes existían 7 variantes visuales
+// distintas para decir "no puedes ver esto" (5 copias literales del mismo hairline
+// con candado, una card de border-radius:40px en informes, una línea de texto muted
+// en el Workbench, y un .de-empty en disputas idéntico al estado 404). Solo una de
+// las siete ofrecía salida.
+//
+// Dos motivos, un solo lenguaje visual: `perm` (tu rol no alcanza — no hay nada que
+// puedas hacer solo, por eso NO lleva CTA) y `plan` (tu plan no alcanza — sí hay
+// salida, por eso lleva CTA a /app/ajustes/plan).
+//
+// El copy NO vive aquí: cada página pasa sus propias claves i18n, que ya son
+// específicas ("Tu rol no tiene permiso para consultar analítica" dice más que un
+// genérico). El componente aporta la forma, no el texto.
+//
+// CSS scopeado a propósito: este componente SÍ renderiza su propio markup, así que
+// la Regla 11 (CSS de markup ajeno → hoja global) no aplica. Todo sale de tokens,
+// por lo que también funciona dentro del Workbench navy, que los redefine en .wb-dock.
+interface Props {
+    reason?: 'perm' | 'plan';
+    title: string;
+    desc: string;
+    ctaHref?: string;
+    ctaLabel?: string;
+    class?: string;
+}
+const { reason = 'perm', title, desc, ctaHref, ctaLabel, class: className } = Astro.props;
+---
+
+<div class:list={['access-gate', className]} data-gate={reason} role="status">
+    <div class="access-gate-icon">
+        {reason === 'plan' ? (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.12"/>
+                <path d="m9.2 11.8 1.9 1.9 3.7-3.7"/>
+            </svg>
+        ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3.5" y="10.5" width="17" height="11" rx="3" fill="currentColor" fill-opacity="0.12"/>
+                <path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/>
+                <circle cx="12" cy="16" r="1.15" fill="currentColor" stroke="none"/>
+            </svg>
+        )}
+    </div>
+    <h2 class="access-gate-title">{title}</h2>
+    <p class="access-gate-desc">{desc}</p>
+    {ctaHref && ctaLabel && <a href={ctaHref} class="access-gate-cta">{ctaLabel}</a>}
+</div>
+
+<style>
+    .access-gate {
+        display: flex; flex-direction: column; align-items: center; text-align: center;
+        gap: 0.55rem; max-width: 460px; margin: 0 auto; padding: 5rem 1.5rem 4rem;
+    }
+    .access-gate-icon {
+        width: 56px; height: 56px; border-radius: 18px; margin-bottom: 0.7rem;
+        background: var(--color-bg-soft); color: var(--color-blue-deep);
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .access-gate-icon svg { width: 26px; height: 26px; }
+    .access-gate-title {
+        font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em;
+        color: var(--color-text); margin: 0;
+    }
+    .access-gate-desc {
+        font-size: 0.88rem; line-height: 1.55; color: var(--color-text-muted);
+        margin: 0; max-width: 42ch;
+    }
+    .access-gate-cta {
+        margin-top: 1.1rem; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;
+        background: var(--color-blue-deep); color: #fff; text-decoration: none;
+        border-radius: 999px; padding: 11px 24px;
+        box-shadow: 0 8px 22px -10px rgba(10, 25, 47, 0.5);
+        transition: transform 0.35s var(--ease-spring), box-shadow 0.3s var(--ease-ios);
+    }
+    .access-gate-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 28px -10px rgba(10, 25, 47, 0.55); }
+    .access-gate-cta:active { transform: scale(0.97); }
+
+    /* Dentro de Ajustes el gate vive en una columna de 640px con su propio ritmo
+       vertical; ahí no necesita el padding de página completa. */
+    .access-gate.is-inset { padding: 3.5rem 1.5rem 2.5rem; }
+</style>

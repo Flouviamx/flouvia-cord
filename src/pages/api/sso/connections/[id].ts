@@ -6,7 +6,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { getActiveOrgId, logAudit, reqIp, withOrgTx, sql } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
-import { planTieneSso, planLabel } from '../../../../lib/permissions';
+import { planTieneSso, planUpsell, minPlanOf, SSO_PLANS } from '../../../../lib/permissions';
 import { updateConnection, deleteConnection, SamlValidationError, type ConnectionPatch } from '../../../../lib/saml';
 
 export const PATCH: APIRoute = async ({ request, params }) => {
@@ -21,7 +21,7 @@ export const PATCH: APIRoute = async ({ request, params }) => {
     const [[planRow]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
     const plan = (planRow?.plan as string) ?? 'free';
     if (!planTieneSso(plan)) {
-        return json({ error: `SSO empresarial requiere el plan Scale o Developer. Tu plan actual es ${planLabel(plan)}.` }, 402);
+        return json({ error: planUpsell(plan, 'SSO empresarial', SSO_PLANS), plan_required: minPlanOf(SSO_PLANS) }, 402);
     }
 
     const patch: ConnectionPatch = {};

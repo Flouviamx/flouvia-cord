@@ -114,12 +114,14 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         ],
     },
     {
-        id: 'agentes', label: 'Agentes IA', labelEn: 'AI Agents',
-        desc: 'Configura agentes autónomos de inteligencia artificial.',
-        descEn: 'Configure autonomous AI agents.',
+        // "Agentes autónomos de inteligencia artificial" no le dice nada a nadie
+        // fuera de la industria. El título describe qué hace, no qué es.
+        id: 'agentes', label: 'Inteligencia artificial', labelEn: 'Artificial intelligence',
+        desc: 'Qué puede hacer sola la IA de Cord, y hasta dónde llega.',
+        descEn: "What Cord's AI can do on its own, and how far it goes.",
         icon: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
         tabs: [
-            { id: 'agentes',       label: 'Agentes IA',          labelEn: 'AI Agents', href: '/app/ajustes/agentes' },
+            { id: 'agentes',       label: 'Inteligencia artificial', labelEn: 'Artificial intelligence', href: '/app/ajustes/agentes' },
         ],
     },
     {

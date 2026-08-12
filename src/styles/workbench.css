@@ -236,7 +236,6 @@ html.wb-maxed { overflow: hidden; }
     animation: wb-spin 0.7s linear infinite;
 }
 @keyframes wb-spin { to { transform: rotate(360deg); } }
-.wb-sinacceso { color: var(--color-text-muted); font-size: 0.86rem; padding: 2rem 0; text-align: center; }
 /* Contenedor raíz INCONDICIONAL del fragmento: mantiene el head-instruction de
    Astro en un lugar estable (ver el comentario de [tab].astro). No debe llevar
    layout propio — solo existe como ancla estructural. */

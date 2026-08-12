@@ -2,6 +2,7 @@
 // Ajustes — ÍNDICE. Lista de categorías (estilo Stripe). Cada una abre su primera
 // pestaña; dentro, las sub-páginas son pestañas horizontales (no rail lateral).
 import AppLayout from '../../../layouts/AppLayout.astro';
+import AccessGate from '../../../components/app/AccessGate.astro';
 import { getOrg, getSetupProgress, getMyMembership } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
 import { localizeCategories } from '../../../lib/settings';
@@ -35,11 +36,7 @@ const sDev = [catMap.mcp, catMap.agentes, catMap.elements];
 
 <AppLayout title="Configuración — Cord" page="ajustes" heading="Ajustes">
     {!hasAccess && (
-        <div class="access-denied-idx">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <h3>{t(L, 'settings.sin_acceso')}</h3>
-            <p>{t(L, 'settings.sin_acceso_idx_desc')}</p>
-        </div>
+        <AccessGate title={t(L, 'settings.sin_acceso')} desc={t(L, 'settings.sin_acceso_idx_desc')} />
     )}
     {hasAccess && <div class="idx">
         <header class="idx-head">
@@ -165,10 +162,6 @@ const sDev = [catMap.mcp, catMap.agentes, catMap.elements];
 </script>
 
 <style>
-    .access-denied-idx { display: flex; flex-direction: column; gap: 0.6rem; padding: 2rem 0; }
-    .access-denied-idx svg { width: 32px; height: 32px; color: #c9d2de; }
-    .access-denied-idx h3 { font-size: 1rem; font-weight: 700; margin: 0; }
-    .access-denied-idx p { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; line-height: 1.55; }
     .idx { max-width: 1040px; }
     .idx-head { margin-bottom: 2.5rem; }
     .idx-head h2 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.6px; margin: 0; }

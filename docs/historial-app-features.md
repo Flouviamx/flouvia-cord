@@ -4,6 +4,200 @@
 > cotizaciones, link público `/q`, dashboard, cobranza, onboarding, dark mode, entorno
 > de prueba, chat, tiempo real. Extraído de `historial.md`. Orden: más reciente arriba.
 
+✅ **Ajustes › IA: fuera la jerga de infraestructura y la configuración duplicada (ago 2026)** —
+   André abrió `/app/ajustes/agentes` y señaló tres cosas: que el aviso mencionaba
+   `RESEND_API_KEY` ("no sé por qué dice lo de resend"), que el bloque de abajo era
+   incomprensible ("eso de mcp no sé qué es") y que quería la página **ya lista para el
+   cliente**, sin trabajo de su parte.
+
+   • ⚠️ **Dos fugas de variables de entorno a la UI del cliente.** El aviso de esta página
+     decía "Requiere `RESEND_API_KEY` configurada", y `Ajustes › Correo` iba más lejos:
+     "no se enviará hasta verificar tu dominio en Resend y **setear RESEND_API_KEY**". Son
+     variables de la PLATAFORMA — ningún cliente las ve, las configura, ni sabe qué es
+     Resend. Además el requisito era falso desde el punto de vista del usuario: en
+     producción ya está configurada. Reescritas para hablar de lo que el usuario sí
+     controla, con una salida real ("escríbenos a soporte@flouvia.com y lo activamos").
+     También se quitaron las menciones a Resend de `set.correo.intro` y
+     `set.correo.dominio_hint`. **Barrido completo: cero `*_API_KEY`, `*_SECRET` o nombres
+     de proveedor de infraestructura en el diccionario de la app** (las de `set.mcp.*` y
+     `wb.*` se conservan: viven tras el toggle "Modo desarrollador" y ahí el público es
+     explícitamente técnico).
+
+   • ⚠️ **Configuración duplicada y desactualizada.** La entrada anterior de este changelog
+     afirmaba que el toggle de cobranza de esta página "pasa a ser un link a la página del
+     agente"; **no se hizo**, y quedó un segundo interruptor con copy viejo ("hasta 3
+     cuotas" cuando ya son configurables 2–6; "solo sobre cotizaciones facturadas" cuando
+     también entran las aprobadas). Ahora es una **tarjeta de estado** que lee la config
+     real: modo (apagado / con aprobación / automático), días de gracia, cadencia, correos
+     de los últimos 30 días y cuántos borradores esperan aprobación — con enlace a
+     `/app/cobranza/agente`, que es la única fuente de verdad.
+
+   • **"Servidores MCP" reescrito por lo que HACE.** El bloque presentaba "Servidores MCP
+     conectados", "URL del endpoint SSE" y "Bearer token / API key" como si el lector fuera
+     developer. Ahora se llama **"Conectar Cord a tus otros sistemas"** y explica el
+     beneficio ("si tu información vive en otro lado… para que la IA la consulte al armar
+     cotizaciones"). El estado vacío dice la verdad tranquilizadora: *"Cord funciona
+     perfecto sin esto"*. El modal pide "Nombre", "Dirección del servidor" (con pista de
+     dónde sacarla) y "Clave de acceso" (enmascarada, "solo si tu proveedor te pidió una").
+     **La sigla MCP aparece exactamente una vez**, dentro de un `<details>` colapsado
+     ("¿Qué tipo de sistemas puedo conectar?") que explica que es un estándar abierto y que
+     si no sabes si aplica, no lo necesitas.
+
+   • **Filas de conexión legibles.** Antes: dos toggles sin jerarquía ("Permitir IA" +
+     uno sin etiqueta) y la URL técnica expuesta. Ahora cada fila dice su estado en
+     palabras ("Conectado · con clave" / "Pausado") en vez de solo un puntito de color, los
+     dos toggles están etiquetados ("La IA puede usarlo" / "Conexión activa") con la
+     explicación de la diferencia **una sola vez** arriba en lugar de repetida por fila, y
+     el nombre —el dato que importa— dejó de ser lo más aplastado del renglón. Bug corregido
+     de paso: pausar una conexión solo cambiaba el puntito y la fila seguía diciendo
+     "Conectado".
+
+   • **Encabezado alineado:** la categoría se llamaba "Agentes IA — Configura agentes
+     autónomos de inteligencia artificial", que no le dice nada a nadie fuera de la
+     industria. Ahora es **"Inteligencia artificial — Qué puede hacer sola la IA de Cord, y
+     hasta dónde llega"** (`src/lib/settings.ts`). El `intro` de la página, que repetía ese
+     mismo texto, se eliminó.
+
+   • **Verificado:** 49 claves `set.ag.*` reescritas con paridad ES/EN y sin huérfanas;
+     `npm run build` limpio y `astro check` sin hallazgos; **31 checks con Playwright y
+     sesión real** en dos suites — cero menciones de `RESEND`/env vars en la página y en
+     Correo, cero "MCP" en la superficie pero sí dentro del desplegable, ausencia del
+     segundo interruptor, la tarjeta reflejando el modo real y sus datos de config, el modal
+     sin jerga y con la clave enmascarada, y las filas de conexión con nombre largo real
+     (no desbordan, los controles siguen alcanzables, el estado en texto se sincroniza con
+     el toggle y se persiste en la BD).
+   ⚠️ **Nota de método:** dos "fallos" iniciales de la verificación resultaron ser errores
+     del propio test, no del producto — `innerText()` devuelve vacío dentro de un
+     `<details>` cerrado, y respeta `text-transform: uppercase`, así que comparar contra el
+     texto en minúsculas falla. Verificar el DOM con `textContent` y comparar sin distinguir
+     mayúsculas.
+
+✅ **Cobranza con IA v2, Equipo rediseñado y UN solo bloqueo de permiso/plan (ago 2026)** —
+   André pidió llevar `/app/ajustes/equipo` y la cobranza con IA al nivel Apple del resto
+   de la app, que sirvieran de verdad, que fueran obvias desde el día 1, y unificar los
+   bloqueos de "no tienes permiso / no tienes el plan", que tenían **7 diseños distintos**.
+
+   • **`AccessGate.astro` (nuevo) — un solo bloqueo.** Antes había 5 copias literales del
+     mismo hairline con candado (`SettingsShell`, `ajustes/index`, `desempeno`, `cobros`,
+     `cobranza`), una card `border-radius:40px` centrada en `informes.astro` con texto
+     hardcodeado sin `t()`, una línea de texto muted en el Workbench y un `.de-empty` en
+     disputas idéntico al estado 404; solo **uno de los siete** ofrecía salida. Ahora todos
+     usan el mismo componente centrado estilo Apple (squircle 56×56, icono duotone, copy y
+     CTA por props): candado sin CTA para `perm`, escudo con CTA a
+     `/app/ajustes/plan?plan=…` para `plan`. Cada página sigue pasando SUS claves i18n (el
+     copy específico no se centraliza). `planUpsell()`/`minPlanOf()`/`SEAT_LIMITS` nuevos en
+     `permissions.ts` — el 402 de equipo llevaba meses diciendo "plan Negocio" contra un
+     `TEAM_PLANS` que ya arranca en Pro. `/app/ajustes/plan` acepta `?plan=pro` y resalta el
+     plan destino. Se conservan a propósito la píldora `.lock-tag` de `portal.astro` (gate de
+     CAMPO, no de página) y el `.de-empty` del 404 de disputas.
+
+   • **Cobranza con IA: de cascarón a producto.** La página vivía en `/app/tesoreria/cobranza`
+     (carpeta residual — `tesoreria/flujo` ya no existe) y era un feed plano de 50 mensajes
+     sin agrupar, sin KPIs, sin una sola acción, con SQL crudo inline sin `withOrgTx`, y los
+     `planes_pago_negociados` no se mostraban en ninguna parte. Ahora vive en
+     **`/app/cobranza/agente`** (302 desde la ruta vieja vía `LEGACY_ROUTES`; `cobranza.astro`
+     pasó a `cobranza/index.astro`) con `WidgetGrid` y 9 widgets: recuperado por el agente
+     (30 d), esperan aprobación, planes activos, correos/tasa de respuesta, **bandeja de
+     aprobación** (span 4, el centro: correo editable inline + plan propuesto + aprobar/
+     editar/regenerar/descartar/no-escribirle), hilos agrupados por cotización con compose
+     para que el humano tome el control, planes con avance real de cuotas, **"En la mira"**
+     (a quién escribirá en la próxima corrida y a quién no, con el motivo), y exclusiones.
+     Estado de arranque nuevo: 3 pasos + **el correo real que mandaría hoy** + "Activar con
+     aprobación" (nadie enciende una IA que escribe a sus clientes sin ver antes qué dice).
+
+   • **Un solo motor (`src/lib/agents/cobranza-run.ts`).** `runCobranzaForOrg` de
+     `api/agentes.ts` —lo que ejecutaba el botón "Forzar ejecución"— era un **clon divergente
+     con 6 bugs** que el cron ya había corregido: vencimiento por `c.vigencia`, solo
+     `status='invoiced'`, monto = total crudo en vez del saldo, sin días de gracia, sin
+     `payUrl` (el correo salía sin link de pago) y el historial mapeado con
+     `rol: h.autor_tipo === 'agente_ia' ? 'user' : 'user'`, que además rompe la API de
+     Anthropic con turnos consecutivos del mismo rol. Borrado. El cron quedó como loop
+     delgado sobre `orgsConCobranzaActiva()`.
+
+   • ⚠️ **Bug de producción corregido — sin cadencia.** El cron corre diario (`vercel.json`,
+     16:00 UTC) y **no consultaba el último envío**: le escribía a la misma cotización
+     vencida todos los días. `ai_cobranza_cadencia_dias` (default 7) lo cierra; un borrador
+     sin resolver también frena el hilo. El comentario del cron que afirmaba "aún no está
+     agendado a propósito" llevaba tiempo siendo falso; eliminado.
+
+   • ⚠️ **Riesgo de dinero cerrado — plan en dry-run.** `executeProposePlan` cancelaba los
+     PaymentIntents del cliente y reescribía `cotizacion_cobros` DENTRO del turno del modelo.
+     Con bandeja de aprobación eso significaba que un correo que quedara en borrador y nunca
+     se aprobara ya habría destruido los cobros pendientes. Ahora en modo aprobación valida
+     igual pero solo registra el plan como **`'propuesto'`** (estado que existía en el schema
+     desde jun 2026 y nunca se escribía); la materialización real (`materializePlan`,
+     exportada) ocurre al aprobar el correo. También: el fallo de `checkQuota` devolvía un
+     texto genérico que se enviaba igual y no quedaba registrado — ahora se guarda como
+     `estado='fallido'`.
+
+   • **Configuración real del agente** (10 campos nuevos en `orgs`, todos con rango acotado
+     en `/api/org` y otra vez en el motor): modo aprobación/automático, gracia, cadencia,
+     umbral de plan, máx. cuotas, tono (cercano/profesional/firme), idioma, firma, monto
+     mínimo y tope por corrida. Antes todo estaba hardcodeado y siempre en español. Panel
+     `<dialog>` desde la topbar; el toggle de Ajustes › Agentes pasa a ser un link (fuente
+     única). Tabla nueva `cobranza_exclusiones` (RLS+FORCE) y ciclo de vida del mensaje en
+     `cobranza_conversaciones` (`estado`/`aprobado_por`/`aprobado_at`/`editado`/`enviado_at`/
+     `error`, default `'enviado'` para que el histórico quede coherente sin backfill).
+     Endpoints nuevos en `/api/cobranza-ia/*`. `getCobranzaIA()` en `queries.ts` (cacheada
+     30 s) calcula **`recuperado30d`** — dinero cobrado de cuentas a las que el agente
+     escribió ANTES del pago; la cifra que justifica el feature y que no existía.
+
+   • ⚠️ **`PATCH /api/org` no invalidaba ningún caché.** Guardar la config y recargar seguía
+     mostrando los valores viejos hasta 30-60 s: el usuario cree que no se guardó y vuelve a
+     guardar. Ahora llama `invalidateMoneyCaches(orgId)`. Detectado en la verificación con
+     Playwright, no leyendo el código.
+
+   • **Correo entrante:** `inbound-email.ts` corregido (threading por `message_id` real en vez
+     del mock "última cotización invoiced del remitente", saldo real, vencimiento canónico,
+     y el envío de la respuesta **descomentado** — el agente redactaba y nadie mandaba nada)
+     pero **deliberadamente NO se agregó a `PUBLIC_API_PREFIXES`**: sigue inalcanzable, con
+     los dos pasos exactos para encenderlo documentados en el archivo. Los correos salientes
+     ya guardan `message_id` (`sendEmail` lo devuelve), así que el threading queda sembrado.
+
+   • **Equipo — lo que estaba roto:** el tab "Inactivos" salía SIEMPRE vacío (el SQL de
+     `getMembers` filtraba `estado <> 'revocado'`), "Exportar" no tenía listener (ahora es
+     `/api/equipo/export` real), la columna "Último inicio de sesión" mostraba la fecha de
+     ALTA porque el dato no existía (ahora sale de `sessions.last_used_at`), **13 atributos
+     `data-i18n-*` se emitían y el script nunca los leía** (todos los toasts hardcodeados en
+     español), faltaban **4 claves i18n** que renderizaban la clave cruda en el picker
+     (`set.eq.perm.cobros_config.*`, `set.eq.perm.reembolsar.*` — la página itera los 10
+     `PERMISOS` pero el diccionario solo tenía 8), y toda mutación hacía `location.reload()`.
+     Todo corregido; 35 claves huérfanas del diseño anterior eliminadas.
+
+   • **Equipo — lo nuevo:** medidor de asientos con `SEAT_LIMITS` (free 1 · starter 1 · pro 5
+     · scale 15 · developer ilimitado) — el número que promete `/precios` desde jun 2026 no
+     existía en código ni se mostraba; **grandfathering explícito**: una org que ya rebasa
+     conserva a todos sus miembros y solo no puede invitar más. Actividad real por miembro
+     (última sesión, cotizaciones de 30 días, última acción del `audit_log`, con `left join
+     lateral` acotado). Badge "Gestionado por SSO" (`org_members.sso_managed` existía desde
+     jul 2026 y era invisible: editabas permisos a mano y el siguiente login SAML los pisaba).
+     Dominios de invitación visibles + validados antes del 422. **`PermPicker.astro`** nuevo
+     (estaba duplicado literal entre los dos modales) agrupado por área — Vender / Dinero /
+     Control y análisis / Administración — en vez de 10 toggles planos. Ficha del miembro en
+     drawer con permisos EFECTIVOS (el owner los tiene todos por override de `memberCan`
+     aunque su matriz esté vacía). Los modales migraron a `src/styles/modal.css` +
+     `cordWireModal`. `/unirse/[token]` ganó i18n y dark mode, y dejó de aceptar invitaciones
+     **ya usadas** (solo excluía `revocado`, así que un link consumido mostraba "Unirme" y
+     devolvía 409 sin explicación).
+
+   ⚠️ **Regla reconfirmada:** `src/styles/modal.css` **no** lo importa `AppLayout` — va por
+     página. Se me olvidó en las dos páginas nuevas y los modales salieron sin cabecera flex
+     ni botón de cerrar redondo; lo detectó Playwright midiendo `getComputedStyle`, no la
+     inspección visual. Y el contrato es `.m-close` + `<h2>` (no `.m-x` + `<h3>`).
+
+   • **Verificado:** `npm run db:migrate` contra Neon + 26 checks de schema (columnas,
+     defaults, RLS/FORCE, índices, el CHECK que rechaza una exclusión sin destino);
+     **17/17 del motor** contra la BD real con una org sembrada y borrada al terminar
+     (gracia, monto mínimo, exclusiones, cadencia en sus dos sentidos, borrador que frena,
+     dry-run que NO toca `cotizacion_cobros`, `materializePlan` con cuotas que suman exacto,
+     plan al corriente, agente apagado, exclusión de demo/sandbox); **58 checks con Playwright
+     y sesión real** repartidos en 4 suites (estado de arranque, 9 widgets, panel de config
+     guardando los 10 campos, medidor y 402 real de asientos con grandfathering, picker
+     agrupado sin claves crudas, ficha, y el MISMO gate en 3 páginas distintas visto con un
+     miembro sin permiso); `npm run build` limpio y `astro check` sin hallazgos nuevos; y el
+     CSS del build confirmando que las 8 clases de bloqueo viejas ya no salen y que las del
+     `AccessGate` salen scopeadas.
+
 ✅ **"Mi dinero" y Cobranza rediseñadas con widgets + reconciliación real de Stripe (ago 2026)** —
    `/app/cobros` y `/app/cobranza` se quedaron atrás del salto estético de `/app/informes` y,
    sobre todo, subutilizaban sus datos: cobros mostraba el volumen mensual como una **lista de
