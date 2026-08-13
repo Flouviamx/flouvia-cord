@@ -287,6 +287,38 @@ const rolePresets = ['admin', 'vendedor', 'lectura'];
         padding: 10px 20px; cursor: pointer; transition: transform 0.2s var(--ease-spring);
     }
     .sso-btn-danger:active { transform: scale(0.96); }
+
+    @media (max-width: 680px) {
+        .sso-back { min-height: 44px; }
+        .sso-sp-row { flex-wrap: wrap; gap: .45rem; }
+        .sso-sp-label { width: 100%; }
+        .sso-sp-value { min-width: 0; }
+        .sso-copy-btn { min-width: 44px; min-height: 44px; }
+        .sso-save-row { align-items: stretch; flex-direction: column; }
+        .sso-save-row .sso-btn-primary { width: 100%; }
+        .sso-domain-add { flex-direction: column; }
+        .sso-domain-add .sso-btn-primary { width: 100%; }
+        .sso-domain-row { align-items: flex-start; flex-wrap: wrap; }
+        .sso-domain-name { flex-basis: calc(100% - 110px); overflow-wrap: anywhere; }
+        .sso-domain-row-actions { margin-left: auto; }
+        .sso-domain-del { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+        .sso-dns-box { padding: 1rem; }
+        .sso-dns-row { align-items: flex-start; flex-wrap: wrap; }
+        .sso-dns-label { width: 100%; }
+        .sso-dns-value, .sso-dns-code { min-width: 0; flex: 1; }
+        .sso-default-preset { max-width: none; }
+        .sso-btn-primary, .sso-btn-ghost, .sso-btn-danger { min-height: 46px; }
+    }
+</style>
+
+<style is:global>
+    @media (max-width: 680px) {
+        .sso-role-row { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: .6rem; align-items: center; }
+        .sso-role-row > :nth-child(1), .sso-role-row > :nth-child(3) { grid-column: 1; }
+        .sso-role-row > :nth-child(2), .sso-role-row > :nth-child(4) { grid-column: 2; }
+        .sso-role-row > :nth-child(5) { grid-column: 1 / -1; justify-self: end; min-width: 44px; min-height: 44px; }
+        .sso-role-row .s-input { min-height: 46px; min-width: 0; font-size: 16px; }
+    }
 </style>
 
 <script define:vars={{ connId: id, copiedText: t(L, 'set.sso.copiado') }}>

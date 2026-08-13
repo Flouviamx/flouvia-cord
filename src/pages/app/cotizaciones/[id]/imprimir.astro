@@ -268,6 +268,25 @@ const headStyle = isBand
     .sheet[data-template="detallado"] .doc-items td:first-child { padding-left: 12px; }
     .sheet[data-template="detallado"] .doc-items th:first-child { padding-left: 12px; }
 
+    @media screen and (max-width: 700px) {
+        .toolbar { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: 1fr auto; gap: .4rem .75rem; padding: max(.65rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-right)) .65rem max(.75rem, env(safe-area-inset-left)); background: rgba(238,240,243,.96); backdrop-filter: blur(16px); }
+        .tb-back, .tb-print { min-height: 44px; display: inline-flex; align-items: center; }
+        .tb-print { justify-content: center; }
+        .tb-hint { grid-column: 1 / -1; grid-row: 2; text-align: left; }
+        .sheet { margin: .5rem .5rem 2rem; padding: 1.4rem 1rem; border-radius: 14px; overflow-x: auto; }
+        .doc-head { flex-direction: column; gap: 1.25rem; }
+        .dh-org { min-width: 0; }
+        .dh-org > div { min-width: 0; }
+        .dh-org h1, .dh-org p { overflow-wrap: anywhere; }
+        .dh-logo { max-width: min(180px, 60vw); }
+        .dh-doc { align-items: flex-start; }
+        .doc-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+        .doc-items { min-width: 640px; }
+        .doc-totals { align-items: stretch; }
+        .doc-totals > div { width: 100%; min-width: 0; gap: 1rem; }
+        .sheet[data-template="detallado"] .doc-head { padding: 1.2rem; }
+    }
+
     @media print {
         html, body { background: #fff; }
         /* Respeta los colores de marca (banda, acentos) al imprimir/guardar PDF */

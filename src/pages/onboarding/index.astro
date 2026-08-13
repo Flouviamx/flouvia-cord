@@ -303,6 +303,7 @@ const T = isEn
 
     .ob-page {
         min-height: 100vh;
+        min-height: 100dvh;
         background: #ffffff;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     }
@@ -387,20 +388,18 @@ const T = isEn
     .ob-input.ob-invalid { background: #fff0f0; box-shadow: 0 0 0 3px rgba(239,68,68,0.18); }
 
     /* El FlagSelect del país hereda las mismas proporciones que .ob-input
-       para que ambos campos del Paso 1 se vean como un solo formulario.
-       :global() completo (no solo en .fs-btn): el DOM de un island de React
-       nunca lleva el atributo data-astro-cid que el scoping de Astro necesita
-       — ni siquiera la clase que le pasamos por prop (.ob-flagselect) lo
-       lleva, porque la renderiza React en runtime, no el compilador de Astro. */
-    :global(.ob-flagselect .fs-btn) {
+       para que ambos campos del Paso 1 se vean como un solo formulario. Esta
+       hoja completa usa `is:global` porque el DOM del island de React nunca
+       lleva el atributo data-astro-cid que genera el scoping de Astro. */
+    .ob-flagselect .fs-btn {
         padding: 14px 18px;
         border-radius: 12px;
         font-size: 0.975rem;
         color: #1d1d1f;
     }
-    :global(.ob-flagselect .fs-btn:hover) { background: #e8e8ed; }
-    :global(.ob-flagselect .fs-btn:focus-visible),
-    :global(.ob-flagselect .fs-btn.is-open) {
+    .ob-flagselect .fs-btn:hover { background: #e8e8ed; }
+    .ob-flagselect .fs-btn:focus-visible,
+    .ob-flagselect .fs-btn.is-open {
         background: #ffffff;
         border-color: transparent;
         box-shadow: 0 0 0 3.5px rgba(10,25,47,0.13), 0 1px 4px rgba(0,0,0,0.05);
@@ -510,8 +509,20 @@ const T = isEn
     .ob-check-mark { stroke-dasharray: 40; stroke-dashoffset: 40; }
 
     @media (max-width: 600px) {
-        .ob-shell { padding: 5rem 1.25rem 3rem; }
-        .ob-actions { flex-wrap: wrap; }
+        .ob-shell { min-height: 100dvh; padding: max(3.5rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); }
+        .ob-logo { margin-bottom: 1.5rem; }
+        .ob-step-ctr { margin-bottom: 1.75rem; }
+        .ob-title { font-size: clamp(1.8rem, 9vw, 2.35rem); }
+        .ob-sub { font-size: .95rem; margin-bottom: 2rem; }
+        .ob-fields { gap: 1.4rem; }
+        .ob-input, .ob-input-hero, .ob-flagselect .fs-btn { min-height: 48px; font-size: 16px; }
+        .ob-chip { min-height: 44px; padding: 11px 16px; }
+        .ob-actions { position: sticky; bottom: 0; display: grid; grid-template-columns: 1fr 1fr; margin-top: auto; padding: 1rem 0 max(.25rem, env(safe-area-inset-bottom)); background: linear-gradient(to bottom, rgba(255,255,255,0), #fff 18px); }
+        .ob-actions-end .ob-btn-next { grid-column: 2; }
+        .ob-btn-back, .ob-btn-next, .ob-btn-submit { min-height: 48px; justify-content: center; }
+        .ob-btn-back { width: 100%; padding-inline: 12px; }
+        .ob-btn-next, .ob-btn-submit { width: 100%; padding-inline: 16px; }
+        .ob-success-slide { padding-top: 0; }
     }
 
     @media (prefers-reduced-motion: reduce) {

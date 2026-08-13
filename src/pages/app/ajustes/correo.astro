@@ -111,6 +111,11 @@ const RESEND_ON = !!(import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KE
     .mv-foot { font-size: 0.62rem; color: #9aa1ad; }
 
     @media (max-width: 1024px) { .mail-grid { grid-template-columns: 1fr; } .mail-pane { position: static; max-width: 360px; } }
+    @media (max-width: 600px) {
+        .mail-pane { width: 100%; max-width: none; }
+        .mail-client { border-radius: 16px; }
+        .mail-warn { padding: 0.85rem; }
+    }
 </style>
 
 <script>

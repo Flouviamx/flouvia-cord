@@ -170,7 +170,16 @@ const estado: 'conectado' | 'listo' | 'sin_llave' = !hasActiveKey ? 'sin_llave' 
 
     @media (max-width: 640px) {
         .mcp-status { flex-wrap: wrap; }
+        .mcp-status-info { flex-basis: calc(100% - 24px); }
+        .mcp-crear-btn { width: 100%; min-height: 46px; }
+        .mcp-manage-link { min-height: 44px; display: inline-flex; align-items: center; }
+        .mcp-tabs { display: flex; width: 100%; overflow-x: auto; }
+        .mcp-tab { min-height: 44px; flex: 1 0 auto; }
+        .mcp-code-copy { min-width: 44px; min-height: 44px; top: 6px; right: 6px; }
         .mcp-tools { grid-template-columns: 1fr; }
+        .mcp-try-row { flex-direction: column; }
+        .mcp-select, .mcp-args { width: 100%; max-width: none; min-width: 0; min-height: 46px; font-size: 16px; }
+        .mcp-run-btn { width: 100%; min-height: 46px; }
     }
 </style>
 

@@ -293,13 +293,37 @@ const KIT_T = {
     .prod-item-price small { font-size: 0.68rem; color: #99a2af; font-weight: 400; }
     .prod-empty { padding: 14px; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; line-height: 1.5; }
 
-    @media (max-width: 560px) {
+    @media (max-width: 600px) {
+        .ki-row { align-items: flex-start; flex-wrap: wrap; gap: 0.65rem; padding: 1rem 0; }
+        .ki-info { flex-basis: 100%; }
+        .ki-name { flex-wrap: wrap; }
+        .ki-desc { white-space: normal; overflow-wrap: anywhere; }
+        .ki-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+        .ki-btn { min-height: 44px; }
         .kmod { width: 100%; max-width: 100%; margin: 0; top: auto; bottom: 0; left: 0; right: 0; border-radius: 20px 20px 0 0; max-height: 92dvh; }
         .kmod-head { padding: 1.2rem 1.2rem 0.8rem; }
         .kmod-body { padding: 0.15rem 1.2rem 1rem; }
         .kmod-foot { padding: 0.8rem 1.2rem calc(1rem + env(safe-area-inset-bottom, 0px)); }
-        .kii-row { grid-template-columns: 1fr 60px 30px; }
-        .kii-unit { display: none; }
+        .kmod-close { width: 44px; height: 44px; margin: -7px -7px -7px 0; }
+        .kmod-input, .kmod-combo-input, .prod-input, .kii-desc-input, .kii-qty { min-height: 46px; font-size: 16px; }
+        .kii-row {
+            grid-template-columns: minmax(0, 1fr) 76px 44px;
+            grid-template-areas: "name quantity delete" "unit unit unit";
+            gap: 0.45rem 0.6rem;
+            padding: 0.75rem 0;
+        }
+        .kii-row > :is(.kii-name, .kii-desc-input) { grid-area: name; }
+        .kii-qty { grid-area: quantity; }
+        .kii-unit { grid-area: unit; display: block; }
+        .kii-del { grid-area: delete; width: 44px; height: 44px; }
+        .ki-add-row { align-items: stretch; flex-direction: column; }
+        .prod-search { width: 100%; min-width: 0; }
+        .prod-drop { max-height: 38dvh; }
+        .btn-free-line { width: 100%; min-height: 44px; }
+        .kmod-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+        .kmod-spacer { display: none; }
+        .kmod-delete { grid-column: 1 / -1; min-height: 44px; text-align: left; }
+        .kmod-cancel, .kmod-save { min-height: 46px; }
     }
 </style>
 

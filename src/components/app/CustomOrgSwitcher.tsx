@@ -734,6 +734,42 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
         .org-list::-webkit-scrollbar-thumb:hover {
           background: var(--sb-menu-muted);
         }
+
+        @media (max-width: 880px) {
+          .sb-collapsed .custom-org-switcher {
+            display: block;
+          }
+          .org-switcher-btn,
+          .sb-collapsed .org-switcher-btn {
+            width: 100%;
+            min-height: 48px;
+            height: auto;
+            justify-content: flex-start;
+            gap: 0.65rem;
+            padding: 0.42rem 0.55rem;
+          }
+          .sb-collapsed .org-text,
+          .sb-collapsed .chevron-icon {
+            opacity: 1;
+            width: auto;
+            overflow: visible;
+            margin: 0;
+            padding: 0;
+          }
+          .sb-collapsed .org-text { flex: 1; min-width: 0; }
+          .org-dropdown,
+          .sb-collapsed .org-dropdown {
+            width: 100%;
+            max-width: calc(100vw - 2.8rem);
+            max-height: calc(100dvh - 7rem - env(safe-area-inset-bottom));
+            overflow-y: auto;
+            overscroll-behavior: contain;
+          }
+          .org-list-item,
+          .dropdown-action-btn {
+            min-height: 44px;
+          }
+        }
       `}</style>
       
       <CreateWorkspaceModal

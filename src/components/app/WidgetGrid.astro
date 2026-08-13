@@ -82,6 +82,13 @@ const {
         const doneButton = document.getElementById(host.dataset.doneButton || '');
         const resetButton = document.getElementById(host.dataset.resetButton || '');
         const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const mobileLayout = matchMedia('(max-width: 880px)');
+        const syncInputMode = () => {
+            if (mobileLayout.matches) host.dataset.touchLayout = '1';
+            else delete host.dataset.touchLayout;
+        };
+        syncInputMode();
+        mobileLayout.addEventListener('change', syncInputMode);
         const widgets = () => Array.from(host.querySelectorAll<HTMLElement>('[data-widget]'))
             .filter((el) => el.closest('[data-widget-grid]') === host);
         const getPrefs = (): Prefs => {
@@ -133,7 +140,9 @@ const {
         function enterEdit() { host.dataset.editing = '1'; renderTray(); if (editButton) editButton.hidden = true; if (doneButton) doneButton.hidden = false; if (resetButton) resetButton.hidden = false; }
         function exitEdit() { delete host.dataset.editing; if (tray) tray.hidden = true; if (editButton) editButton.hidden = false; if (doneButton) doneButton.hidden = true; if (resetButton) resetButton.hidden = true; }
         editButton?.addEventListener('click', enterEdit); doneButton?.addEventListener('click', exitEdit);
-        document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && host.dataset.editing === '1') exitEdit(); });
+        document.addEventListener('keydown', (event) => {
+            if (!mobileLayout.matches && event.key === 'Escape' && host.dataset.editing === '1') exitEdit();
+        });
         resetButton?.addEventListener('click', async () => {
             const confirmFn = (window as any).cordConfirm;
             const ok = confirmFn ? await confirmFn(host.dataset.resetConfirm || '') : confirm(host.dataset.resetConfirm || '');
@@ -170,7 +179,7 @@ const {
         }
         function end() { if (!dragging) return; const widget = dragging; dragging = null; widget.classList.remove('is-dragging'); Object.assign(widget.style, { position: '', left: '', top: '', width: '', zIndex: '' }); persistOrder(); }
         host.addEventListener('pointerdown', (event) => {
-            if (host.dataset.editing !== '1' || (event.target as HTMLElement).closest('.widget-editbar')) return;
+            if (mobileLayout.matches || host.dataset.editing !== '1' || (event.target as HTMLElement).closest('.widget-editbar')) return;
             const widget = (event.target as HTMLElement).closest<HTMLElement>('[data-widget]'); if (!widget) return;
             event.preventDefault(); begin(widget, event.clientX, event.clientY);
             const onMove = (moveEvent: PointerEvent) => move(moveEvent.clientX, moveEvent.clientY);

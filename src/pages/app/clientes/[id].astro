@@ -353,4 +353,48 @@ const metaBits = [c.contacto, c.email, c.telefono].filter(Boolean);
     .dc-delete:hover { border-color: var(--color-danger); background: rgba(239,68,68,0.06); }
     .dc-delete:active { transform: scale(0.98); }
     .dc-delete:disabled { opacity: 0.6; cursor: wait; }
+
+    @media (max-width: 680px) {
+        .d-main, .d-side { gap: 1.75rem; }
+        .d-head { align-items: flex-start; gap: 1rem; padding-bottom: 1.25rem; }
+        .dh-client { align-items: flex-start; width: 100%; }
+        .dh-meta { white-space: normal; overflow-wrap: anywhere; }
+        .dh-total { width: 100%; align-items: flex-start; }
+        .dh-total-val { font-size: clamp(1.7rem, 9vw, 2rem); }
+        .dc-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dc-kpi { min-width: 0; padding: 0.25rem 0.8rem; }
+        .dc-kpi:nth-child(odd) { border-left: none; padding-left: 0.2rem; }
+        .dc-credit-nums { align-items: flex-start; flex-direction: column; }
+        .dc-qrow {
+            position: relative;
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas:
+                "folio total"
+                "status date";
+            gap: 0.55rem 0.75rem;
+            min-height: 72px;
+            margin-inline: 0;
+            padding: 0.9rem 0;
+            border-radius: 0;
+        }
+        .dc-qfolio { grid-area: folio; min-width: 0; }
+        .dc-qrow > .status-pill { grid-area: status; justify-self: start; }
+        .dc-qtotal { grid-area: total; }
+        .dc-qdate { grid-area: date; }
+        .dc-chevron { display: none; }
+        .dc-prow {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas: "name total" "times total";
+            gap: 0.35rem 0.75rem;
+            margin-inline: 0;
+            padding: 0.9rem 0;
+            border-radius: 0;
+        }
+        .dc-pname { grid-area: name; }
+        .dc-pveces { grid-area: times; }
+        .dc-ptotal { grid-area: total; }
+        .dc-kv { align-items: flex-start; flex-wrap: wrap; overflow-wrap: anywhere; }
+        .dc-wa-btn, .dc-delete, .dc-btn-primary, .dc-btn-ghost { min-height: 46px; }
+        .dc-wa-btn { width: 100%; }
+    }
 </style>

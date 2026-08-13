@@ -158,11 +158,11 @@ const WBI18N = {
                             </span>
                         </label>
 
-                        <div class="wb-menu-sep"></div>
-                        <h5 class="wb-menu-h">{t(L, 'wb.opts.atajos')}</h5>
-                        <div class="wb-menu-kbd"><kbd>W</kbd><span>{t(L, 'wb.opts.k_toggle')}</span></div>
-                        <div class="wb-menu-kbd"><kbd>⇧</kbd><kbd>W</kbd><span>{t(L, 'wb.opts.k_max')}</span></div>
-                        <div class="wb-menu-kbd"><kbd>Esc</kbd><span>{t(L, 'wb.opts.k_esc')}</span></div>
+                        <div class="wb-menu-sep wb-shortcut-only"></div>
+                        <h5 class="wb-menu-h wb-shortcut-only">{t(L, 'wb.opts.atajos')}</h5>
+                        <div class="wb-menu-kbd wb-shortcut-only"><kbd>W</kbd><span>{t(L, 'wb.opts.k_toggle')}</span></div>
+                        <div class="wb-menu-kbd wb-shortcut-only"><kbd>⇧</kbd><kbd>W</kbd><span>{t(L, 'wb.opts.k_max')}</span></div>
+                        <div class="wb-menu-kbd wb-shortcut-only"><kbd>Esc</kbd><span>{t(L, 'wb.opts.k_esc')}</span></div>
 
                         <div class="wb-menu-sep"></div>
                         <h5 class="wb-menu-h">{t(L, 'wb.opts.acerca')}</h5>
@@ -798,6 +798,7 @@ const WBI18N = {
                 if (isOpen) closeDock();
                 return;
             }
+            if (window.matchMedia('(max-width: 880px)').matches) return;
             if (e.metaKey || e.ctrlKey || e.altKey) return;
             if (typing(e.target)) return;
             if (openModalEl) return;                                   // wizard/modal abierto

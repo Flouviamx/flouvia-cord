@@ -88,8 +88,8 @@ export default function LiveCapture({ onCapture, onCancel, side }: LiveCapturePr
                          'Toma una selfie para verificar tu identidad';
 
     return (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', zIndex: 10 }}>
+        <div style={{ position: 'fixed', inset: 0, minHeight: '100dvh', background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: 'calc(12px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left))', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', zIndex: 10 }}>
                 <button type="button" onClick={onCancel} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1rem', cursor: 'pointer', padding: '10px' }}>Cancelar</button>
                 <span style={{ fontSize: '1rem', fontWeight: 600 }}>{side === 'front' ? 'Frente INE' : side === 'back' ? 'Reverso INE' : 'Selfie'}</span>
                 <div style={{ width: '80px' }}></div>
@@ -137,7 +137,7 @@ export default function LiveCapture({ onCapture, onCancel, side }: LiveCapturePr
                 )}
             </div>
 
-            <div style={{ padding: '30px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', background: '#000', paddingBottom: 'env(safe-area-inset-bottom, 30px)' }}>
+            <div style={{ padding: '22px max(16px, env(safe-area-inset-right)) calc(22px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left))', display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '14px', background: '#000' }}>
                 {!capturedImage ? (
                     <button 
                         type="button" 

@@ -250,6 +250,7 @@ if (Astro.locals.opsOperator) {
   <style>
     .ops-login {
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -458,6 +459,19 @@ if (Astro.locals.opsOperator) {
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+
+    @media (max-width: 600px) {
+      .ops-login {
+        justify-content: flex-start;
+        gap: 1.75rem;
+        padding: calc(1.5rem + env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) calc(1.25rem + env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+      }
+      .ops-auth { margin-block: auto; }
+      .ops-heading { margin-bottom: 1.5rem; }
+      input { min-height: 46px; font-size: 16px; }
+      button { min-height: 46px; }
+      .ops-login-footer { max-width: 280px; text-align: center; line-height: 1.45; }
     }
   </style>
 </OpsLayout>

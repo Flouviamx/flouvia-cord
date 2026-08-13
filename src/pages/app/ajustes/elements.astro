@@ -138,6 +138,15 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
     .el-events { margin: 1rem 0 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
     .el-events li { font-size: 0.83rem; color: var(--color-text); line-height: 1.5; }
     .el-events span { color: var(--color-text-muted); font-size: 0.76rem; }
+
+    @media (max-width: 600px) {
+        .el-preview-head { align-items: flex-start; }
+        .el-frame-iframe { height: min(480px, 70dvh); }
+        .el-copy { min-width: 64px; min-height: 44px; top: 8px; right: 8px; }
+        .el-code pre { padding: 3.8rem 1rem 1rem; }
+        .el-preview { min-height: 44px; display: inline-flex; align-items: center; }
+        .el-domains { min-height: 112px; font-size: 16px; }
+    }
 </style>
 
 <script>

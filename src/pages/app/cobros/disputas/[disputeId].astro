@@ -171,5 +171,15 @@ const draft = { ...assembled, ...(dispute?.evidence_draft || {}) };
     .de-primary { background: var(--color-blue-deep); color: #fff; }
     .de-error { color: var(--color-danger); font-size: .8rem; }
     .de-empty { padding: 48px 0; }
-    @media (max-width: 640px) { .de-hero { align-items: flex-start; flex-direction: column; }.de-amount { text-align: left; }.de-grid { grid-template-columns: 1fr; }.de-actions { flex-direction: column-reverse; }.de-actions button { width: 100%; } }
+    @media (max-width: 640px) {
+        .de-shell { padding: 0 0 calc(3rem + env(safe-area-inset-bottom)); }
+        .de-back { min-height: 44px; align-items: center; margin-bottom: 1rem; }
+        .de-hero { align-items: flex-start; flex-direction: column; gap: 1rem; padding-bottom: 1.25rem; }
+        .de-amount { text-align: left; }
+        .de-grid { grid-template-columns: 1fr; }
+        .de-form { padding: 1.25rem 1rem; border-radius: 22px; }
+        .de-form textarea, .de-form input { min-height: 46px; font-size: 16px; }
+        .de-actions { flex-direction: column-reverse; }
+        .de-actions button { width: 100%; min-height: 48px; }
+    }
 </style>

@@ -370,6 +370,7 @@ html.wb-maxed { overflow: hidden; }
 @media (max-width: 900px) {
     .wb-ov { grid-template-columns: 1fr; }
     .wb-ov-duo { grid-template-columns: 1fr; }
+    .wb-shortcut-only { display: none !important; }
 }
 
 /* ════════ Maestro-detalle (Registros y Eventos) ════════ */
@@ -672,4 +673,29 @@ html.wb-modal-open { overflow: hidden; }
     .wb-tab { padding: 0 0.6rem; font-size: 0.74rem; }
     .wb-body { padding: 1.1rem 1rem 1.6rem; padding-bottom: calc(1.6rem + env(safe-area-inset-bottom)); }
     .wb-bar { padding-bottom: env(safe-area-inset-bottom); height: calc(46px + env(safe-area-inset-bottom)); }
+    .wb-panel { height: min(72dvh, 680px); }
+    .wb-tabs { overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none; }
+    .wb-tabs::-webkit-scrollbar { display: none; }
+    .wb-tab { min-width: max-content; height: 44px; }
+    .wb-chrome { position: sticky; right: 0; background: var(--wb-bg); }
+    .wb-ico-btn { width: 44px; height: 44px; }
+    .wb-menu { position: fixed; right: var(--mobile-gutter); bottom: calc(54px + env(safe-area-inset-bottom)); left: var(--mobile-gutter); top: auto; width: auto; max-height: 70dvh; }
+    .wb-sec-head { align-items: stretch; flex-direction: column; }
+    .wb-range, .wb-chips { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+    .wb-range-btn, .wb-chip { min-height: 44px; flex: 0 0 auto; }
+    .wb-md-filters { align-items: stretch; flex-direction: column; }
+    .wb-search, .wb-search input { width: 100%; min-height: 46px; font-size: 16px; }
+    .wb-md-count { margin-left: 0; }
+    .wb-health-wide { align-items: flex-start; flex-direction: column; }
+    .wb-health-wide i { margin-left: 0; text-align: left; }
+    .wb-salud-grid { grid-template-columns: 1fr; }
+    .wb-modal-top { padding-top: calc(1rem + env(safe-area-inset-top)); }
+    .wb-modal-x { width: 44px; height: 44px; }
+    .wb-wiz-steps { overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none; }
+    .wb-wiz-steps::-webkit-scrollbar { display: none; }
+    .wb-wiz-step { flex: 0 0 auto; min-height: 44px; }
+    .wb-modal .s-input { min-height: 46px; font-size: 16px; }
+    .wb-modal-foot { display: grid; grid-template-columns: 1fr 1fr; }
+    .wb-modal-err { grid-column: 1 / -1; margin-right: 0; }
+    .wb-modal-foot > button { min-height: 46px; }
 }

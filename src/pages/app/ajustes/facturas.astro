@@ -98,5 +98,10 @@ const STATUS_KEY: Record<string, string> = { issued: 'set.fact.status_issued', p
     .fact-docs a:hover { text-decoration: underline; }
     html[data-theme="dark"] .fact-docs a { color: #7fb0ff; }
 
-    @media (max-width: 640px) { .fact-row { grid-template-columns: 90px 1fr 100px 90px 130px 80px; } }
+    @media (max-width: 640px) {
+        .fact-table { margin-inline: calc(var(--mobile-gutter, 1rem) * -1); padding-inline: var(--mobile-gutter, 1rem); overscroll-behavior-inline: contain; scroll-padding-inline: var(--mobile-gutter, 1rem); }
+        .fact-row { grid-template-columns: 90px 1fr 100px 90px 130px 80px; }
+        .fact-head { position: sticky; top: 0; z-index: 1; background: var(--surface); }
+        .fact-folio, .fact-docs a { min-height: 44px; display: inline-flex; align-items: center; }
+    }
 </style>

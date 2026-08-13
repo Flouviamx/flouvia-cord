@@ -544,12 +544,45 @@ export default function CreateWorkspaceModal({
         @keyframes cmZoom { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
         @media (max-width: 640px) {
+          .cm-overlay {
+            align-items: flex-end;
+            padding: max(12px, env(safe-area-inset-top)) 0 0;
+          }
+          .cm-dialog,
+          .cm-dialog--wide {
+            width: 100%;
+            max-width: none;
+            max-height: calc(100dvh - max(12px, env(safe-area-inset-top)));
+            border-radius: 24px 24px 0 0;
+          }
+          .cm-close {
+            top: 10px;
+            right: max(10px, env(safe-area-inset-right));
+            width: 44px;
+            height: 44px;
+          }
           .cm-choices { grid-template-columns: 1fr; }
           .cm-form { grid-template-columns: 1fr; }
           .cm-preview { order: -1; }
-          .cm-header { padding: 28px 22px 0; }
-          .cm-body { padding: 22px 22px 26px; }
-          .cm-footer { padding: 16px 22px 22px; }
+          .cm-header { padding: 26px max(18px, env(safe-area-inset-right)) 0 max(18px, env(safe-area-inset-left)); }
+          .cm-subtitle { max-width: calc(100% - 36px); }
+          .cm-body {
+            min-height: 0;
+            padding: 20px max(18px, env(safe-area-inset-right)) 24px max(18px, env(safe-area-inset-left));
+            overflow-y: auto;
+            overscroll-behavior: contain;
+          }
+          .cm-choice { min-height: 44px; padding: 16px; }
+          .cm-graphic { min-height: 160px; }
+          .cm-input { min-height: 46px; font-size: 16px; }
+          .cm-footer {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            padding: 14px max(18px, env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+            border-top: 1px solid var(--sb-divider);
+          }
+          .cm-footer .cm-btn { min-height: 46px; width: 100%; padding-inline: 16px; }
+          .cm-footer .cm-btn:only-child { grid-column: 1 / -1; }
         }
 
         @media (prefers-reduced-motion: reduce) {

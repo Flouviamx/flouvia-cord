@@ -245,8 +245,14 @@ if (esRecurrente) {
     .payp-foot svg { flex-shrink: 0; opacity: 0.7; }
 
     @media (max-width: 480px) {
-        .payp { padding: 1.4rem 1rem 2.2rem; }
-        .payp-card { padding: 1.5rem 1.25rem 1.4rem; border-radius: 22px; }
-        .payp-amount { font-size: 1.65rem; }
+        .payp { padding: max(1rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(.75rem, env(safe-area-inset-left)); }
+        .payp-head { margin-bottom: .75rem; }
+        .payp-back { min-height: 44px; }
+        .payp-card { padding: 1.35rem 1rem; border-radius: 22px; }
+        .payp-brand { align-items: flex-start; margin-bottom: 1.25rem; }
+        .payp-org, .payp-folio { overflow-wrap: anywhere; }
+        .payp-amount-block { padding: 1rem; margin-bottom: 1.25rem; }
+        .payp-amount { font-size: clamp(1.45rem, 8vw, 1.65rem); overflow-wrap: anywhere; }
+        .payp-paid-link { min-height: 44px; display: inline-flex; align-items: center; }
     }
 </style>

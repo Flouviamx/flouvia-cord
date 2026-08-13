@@ -86,7 +86,15 @@ const SLACK_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20p
     html[data-theme="dark"] .int-soon-cta { color: #7fb0ff; }
 
     @media (max-width: 560px) {
+        .slk-head { align-items: flex-start; flex-wrap: wrap; }
+        .slk-sub { flex-basis: calc(100% - 50px); }
+        .slk-status { margin-left: 50px; }
+        .slk-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+        .slk-msg { grid-column: 1 / -1; }
+        .api-btn-solid, .api-btn-ghost { min-height: 46px; width: 100%; }
         .int-soon-row { flex-wrap: wrap; }
+        .int-soon-body { flex-basis: calc(100% - 56px); }
+        .int-soon-cta { width: 100%; min-height: 44px; padding-left: 56px; display: flex; align-items: center; }
     }
 </style>
 

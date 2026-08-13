@@ -275,6 +275,28 @@ const showIntro = !hasPlan || connections.length > 0;
     .form-control:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); }
 
     .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.6rem; flex-shrink: 0; }
+
+    @media (max-width: 600px) {
+        .sso-hero { padding: 2.5rem 0 2rem; }
+        .sso-hero-actions { flex-direction: column; align-items: stretch; }
+        .sso-hero-actions .sso-btn-primary, .sso-hero-actions .sso-btn-ghost { width: 100%; min-height: 46px; }
+        .sso-list-head { align-items: flex-start; gap: 1rem; }
+        .sso-list-head .sso-btn-primary { min-height: 44px; }
+        .sso-conn-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "icon text arrow" "badge badge badge"; gap: .65rem .8rem; }
+        .sso-conn-icon { grid-area: icon; }
+        .sso-conn-text { grid-area: text; }
+        .sso-conn-badge { grid-area: badge; width: fit-content; margin-left: 52px; }
+        .sso-conn-arrow { grid-area: arrow; }
+        .sso-btn-primary, .sso-btn-ghost, .sso-btn-danger { min-height: 46px; }
+        .modal-overlay { align-items: flex-end; padding: 0; }
+        .modal-card { max-width: none; max-height: calc(100dvh - 16px); border-radius: 20px 20px 0 0; }
+        .modal-head { padding: 1.1rem max(1rem, env(safe-area-inset-right)) 1.1rem max(1rem, env(safe-area-inset-left)); }
+        .modal-close { width: 44px; height: 44px; padding: 0; }
+        .modal-body { padding: 1.2rem max(1rem, env(safe-area-inset-right)) max(1.25rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left)); }
+        .form-control { min-height: 46px; font-size: 16px; }
+        .modal-actions { display: grid; grid-template-columns: 1fr 1fr; }
+        .modal-actions button { width: 100%; }
+    }
 </style>
 
 <script>

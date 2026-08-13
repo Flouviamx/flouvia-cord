@@ -119,7 +119,7 @@ export default function CustomSignUp() {
       </div>
 
       <form onSubmit={handleSubmit} className="auth-form">
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div className="auth-name-row" style={{ display: 'flex', gap: '1rem' }}>
           <div className="form-group" style={{ flex: 1 }}>
             <label htmlFor="firstName">Nombre</label>
             <input

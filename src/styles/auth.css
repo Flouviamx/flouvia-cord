@@ -10,6 +10,7 @@ body:has(.auth-page) footer { display: none !important; }
 
 .auth-page {
     min-height: 100vh;
+    min-height: 100dvh;
     background: #ffffff;
     display: flex;
     flex-direction: column;
@@ -301,6 +302,7 @@ body:has(.auth-page) footer { display: none !important; }
 }
 
 .auth-social { display: flex; flex-direction: column; gap: 0.6rem; }
+.auth-name-row { display: flex; gap: 1rem; }
 
 .btn-social {
     display: flex;
@@ -340,4 +342,30 @@ body:has(.auth-page) footer { display: none !important; }
 @keyframes auth-fadein {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+    .auth-page {
+        justify-content: flex-start;
+        gap: 1.75rem;
+        padding: max(1.5rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+    }
+    .auth-logo { margin-top: .25rem; }
+    .auth-card { margin-block: auto; }
+    .auth-header { margin-bottom: 1.5rem; }
+    .auth-title { font-size: 1.4rem; text-wrap: balance; }
+    .auth-name-row { flex-direction: column; gap: .9rem !important; }
+    .form-input { min-height: 46px; font-size: 16px; }
+    .pw-toggle { right: 0; width: 44px; height: 44px; }
+    .checkbox-row { min-height: 44px; }
+    .checkbox-row input[type="checkbox"] { width: 20px; height: 20px; }
+    .forgot-link, .auth-sso-secondary { min-height: 44px; display: inline-flex; align-items: center; }
+    .auth-sso-secondary { justify-content: center; padding-top: 0; }
+    .btn-primary, .btn-secondary, .btn-social { min-height: 46px; }
+    .auth-suggest { min-height: 46px; }
+    .auth-page-footer { text-align: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .auth-card { animation: none; }
 }

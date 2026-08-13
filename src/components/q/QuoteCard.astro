@@ -209,9 +209,9 @@ const hayContacto = !!(vEmail || vWa || vTel);
                             </button>
                         )}
                     </span>
-                    <span class="qi-center qi-qty">{it.cantidad.toLocaleString(L === 'en' ? 'en-US' : 'es-MX')} {it.unidad}</span>
-                    <span class="editorial qi-right qi-price">{money(it.precioNegociado ?? it.precioLista)}</span>
-                    <span class="editorial qi-right qi-total">{money(lineTotal(it))}</span>
+                    <span class="qi-center qi-qty" data-label={t(L, 'q.th_cant')}>{it.cantidad.toLocaleString(L === 'en' ? 'en-US' : 'es-MX')} {it.unidad}</span>
+                    <span class="editorial qi-right qi-price" data-label={t(L, 'q.th_unit')}>{money(it.precioNegociado ?? it.precioLista)}</span>
+                    <span class="editorial qi-right qi-total" data-label={t(L, 'q.th_importe')}>{money(lineTotal(it))}</span>
                 </div>
 
                 {mostrarChat && (
@@ -1436,16 +1436,61 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
 /* ── Responsive ───────────────────────────────── */
 @media (max-width: 600px) {
-    .q-card { padding: 1.8rem 1.5rem; gap: 1.6rem; border-radius: 22px; }
-    .q-sticky-cta { padding: 12px 18px; font-size: 0.9rem; }
-    .q-sticky-inner { padding-left: 1.1rem; }
+    .q-card { padding: 1.5rem 1rem; gap: 1.4rem; border-radius: 22px; }
+    .q-header { flex-wrap: wrap; }
+    .q-brand-row { min-width: 0; }
+    .q-brand-text { min-width: 0; }
+    .q-company, .q-rfc { overflow-wrap: anywhere; }
+    .q-folio-tag { width: 100%; flex-direction: row; align-items: baseline; justify-content: space-between; text-align: left; padding-top: .75rem; border-top: 1px solid rgba(10,25,47,.06); }
+    .q-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .q-meta-col { min-width: 0; }
+    .q-meta-val { overflow-wrap: anywhere; }
+    .q-total-hero { padding: 1.6rem .75rem; }
+    .q-total-amount { max-width: 100%; font-size: clamp(2rem, 10vw, 2.4rem); overflow-wrap: anywhere; }
+    .q-total-split { white-space: normal; }
+    .q-sticky { padding: 0 max(.75rem, env(safe-area-inset-right)) max(.75rem, env(safe-area-inset-bottom)) max(.75rem, env(safe-area-inset-left)); }
+    .q-sticky-cta { min-height: 46px; padding: 12px 16px; font-size: 0.88rem; }
+    .q-sticky-inner { gap: .65rem; padding: .55rem .55rem .55rem .9rem; }
+    .q-sticky-total { font-size: 1.05rem; overflow-wrap: anywhere; }
     .q-contact { justify-content: flex-start; }
+    .q-contact-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+    .q-contact-link { min-height: 44px; justify-content: center; }
     .qi-head { display: none; }
-    .qi-row { grid-template-columns: 1fr auto; }
-    .qi-center, .qi-price { display: none; }
-    .q-folio-tag { display: none; }
-    .q-meta { gap: 1.2rem; }
-    .q-total-amount { font-size: 2.4rem; }
+    .qi-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "name name name" "qty price total"; gap: .7rem .5rem; align-items: end; }
+    .qi-name { grid-area: name; align-items: flex-start; flex-wrap: wrap; }
+    .qi-qty { grid-area: qty; text-align: left; }
+    .qi-price { grid-area: price; text-align: center; }
+    .qi-total { grid-area: total; text-align: right; }
+    .qi-qty, .qi-price, .qi-total { display: flex; min-width: 0; flex-direction: column; gap: 3px; overflow-wrap: anywhere; }
+    .qi-qty::before, .qi-price::before, .qi-total::before { content: attr(data-label); font-family: var(--font-sans); font-size: .5rem; font-weight: 800; line-height: 1; letter-spacing: .08em; text-transform: uppercase; color: #c0c5cd; }
+    .qi-price::before { text-align: center; }
+    .qi-total::before { text-align: right; }
+    .qi-pick { min-width: 44px; min-height: 44px; margin: -12px -8px -12px -12px; justify-content: center; }
+    .qi-chat-btn { min-width: 44px; min-height: 44px; justify-content: center; margin-block: -12px; }
+    .qi-thread { padding-inline: 0; }
+    .qi-reply-box { flex-direction: column; }
+    .qi-reply-input, .ql-input, .q-compose-ta, .q-compose-price { min-height: 46px; font-size: 16px; }
+    .qi-reply-btn { min-height: 44px; }
+    .ql-back { width: 44px; height: 44px; }
+    .ql-secondary-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+    .ql-ghost { min-height: 44px; }
+    .ql-check-row { min-height: 44px; align-items: flex-start; }
+    .ql-checkbox { width: 20px; height: 20px; }
+    .q-compose-row { align-items: center; }
+    .q-compose-send { width: 44px; height: 44px; }
+    .q-compose-extras { align-items: stretch; }
+    .q-compose-price { max-width: none; }
+    .q-counter-pill { min-height: 44px; justify-content: center; }
+    .ql-pay, .ql-pay-transfer, .ql-credit-note { padding: 1rem; }
+    .ql-pay-amount { align-items: flex-start; flex-direction: column; }
+    .ql-pay-total { overflow-wrap: anywhere; }
+    .ql-pay-cards { margin-left: 0; }
+    .ql-transfer-row { align-items: flex-start; flex-direction: column; gap: 4px; }
+    .ql-transfer-row strong { text-align: left; }
+    .ql-cobro-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+    .ql-cobro-status { grid-column: 1 / -1; min-width: 0; text-align: left; }
+    .q-cord-badge { align-items: flex-start; }
+    .q-cord-badge-cta { min-height: 44px; }
 }
 
 /* ── Print ─────────────────────────────────────── */

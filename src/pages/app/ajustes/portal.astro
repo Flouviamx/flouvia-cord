@@ -128,6 +128,10 @@ const L = currentLocale();
     .pp-powered b { color: #5b6472; }
 
     @media (max-width: 1024px) { .portal-grid { grid-template-columns: 1fr; } .portal-pane { position: static; max-width: 360px; } }
+    @media (max-width: 600px) {
+        .portal-pane { width: 100%; max-width: none; }
+        .lock-tag { display: inline-flex; margin: 5px 0 0; }
+    }
 </style>
 
 <script>

@@ -1,0 +1,361 @@
+/*
+ * Cord mobile foundation
+ *
+ * Capa compartida exclusivamente para la estructura de la app autenticada.
+ * Las reglas particulares de cada producto siguen viviendo junto a su página.
+ * El shell cambia a móvil hasta 880px; escritorio conserva su composición.
+ */
+
+:root {
+    --mobile-gutter: 1rem;
+    --mobile-tap: 44px;
+    --mobile-section-gap: 1rem;
+}
+
+@media (max-width: 880px) {
+    :root {
+        --content-max: 100%;
+        --card-radius: 18px;
+        --radius-card: 14px;
+    }
+
+    html,
+    body {
+        width: 100%;
+        min-width: 0;
+        min-height: 100%;
+        overscroll-behavior-x: none;
+    }
+
+    body {
+        min-height: 100dvh;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+        touch-action: manipulation;
+    }
+
+    input,
+    select,
+    textarea {
+        max-width: 100%;
+    }
+
+    .app-shell {
+        min-height: 100dvh;
+    }
+
+    .app-main,
+    .page-head,
+    .ph-inner,
+    .ph-titles,
+    .ph-title-row,
+    .app-content {
+        min-width: 0;
+    }
+
+    .topbar {
+        min-height: 56px;
+        gap: 0.25rem;
+        padding-left: max(0.45rem, env(safe-area-inset-left));
+        padding-right: max(0.45rem, env(safe-area-inset-right));
+    }
+
+    .tb-burger,
+    .tb-search,
+    .tb-create,
+    .tb-icon {
+        width: var(--mobile-tap);
+        height: var(--mobile-tap);
+        min-width: var(--mobile-tap);
+        min-height: var(--mobile-tap);
+    }
+
+    .tb-burger {
+        margin-left: 0;
+    }
+
+    .tb-right {
+        gap: 0.15rem;
+    }
+
+    .test-banner {
+        min-height: var(--mobile-tap);
+        margin-left: max(0.6rem, env(safe-area-inset-left));
+        margin-right: max(0.6rem, env(safe-area-inset-right));
+    }
+
+    .test-banner-actions,
+    .test-banner-exit {
+        min-height: 36px;
+    }
+
+    .page-head {
+        padding-left: max(var(--mobile-gutter), env(safe-area-inset-left));
+        padding-right: max(var(--mobile-gutter), env(safe-area-inset-right));
+    }
+
+    .ph-inner {
+        align-items: stretch;
+        gap: 0.85rem;
+    }
+
+    .ph-titles {
+        width: 100%;
+    }
+
+    .ph-title-row {
+        align-items: flex-start;
+    }
+
+    .ph-title {
+        overflow-wrap: anywhere;
+        text-wrap: balance;
+    }
+
+    .ph-crumbs {
+        flex-wrap: nowrap;
+        max-width: 100%;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+    }
+
+    .ph-crumbs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .ph-actions {
+        width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        padding: 2px 0;
+        scrollbar-width: none;
+    }
+
+    .ph-actions::-webkit-scrollbar {
+        display: none;
+    }
+
+    .ph-actions > :is(a, button, select),
+    .ph-actions > * > :is(a, button, select) {
+        min-height: var(--mobile-tap);
+        flex-shrink: 0;
+    }
+
+    .ph-tabs-row:not(:empty),
+    .set2-tabs-row {
+        margin-left: calc(var(--mobile-gutter) * -1);
+        margin-right: calc(var(--mobile-gutter) * -1);
+        padding-left: var(--mobile-gutter);
+        padding-right: var(--mobile-gutter);
+        scroll-padding-inline: var(--mobile-gutter);
+        overscroll-behavior-inline: contain;
+    }
+
+    .ph-tab,
+    .set2-tab,
+    .filter-pill,
+    .chip,
+    .vt-btn {
+        min-height: var(--mobile-tap);
+    }
+
+    .app-content {
+        padding-left: max(var(--mobile-gutter), env(safe-area-inset-left));
+        padding-right: max(var(--mobile-gutter), env(safe-area-inset-right));
+        padding-bottom: calc(2.5rem + var(--wb-bar-h, 0px) + env(safe-area-inset-bottom));
+    }
+
+    .surface-card,
+    .dash-card {
+        padding: 1.1rem;
+    }
+
+    .lfbar {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .filters {
+        width: calc(100% + var(--mobile-gutter));
+        max-width: none;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        padding: 2px var(--mobile-gutter) 4px 0;
+        scrollbar-width: none;
+    }
+
+    .filters::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-pill {
+        flex: 0 0 auto;
+        padding-inline: 15px;
+    }
+
+    .lf-sort {
+        width: 100%;
+        min-height: var(--mobile-tap);
+        justify-content: flex-end;
+    }
+
+    .lf-sort select {
+        min-height: var(--mobile-tap);
+        max-width: calc(100% - 24px);
+    }
+
+    .sec-head {
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .sec-head > div {
+        min-width: 0;
+    }
+
+    .sec-title,
+    .sec-head p {
+        overflow-wrap: anywhere;
+    }
+
+    .cmdk {
+        padding: calc(env(safe-area-inset-top) + 4.5rem) var(--mobile-gutter)
+            calc(env(safe-area-inset-bottom) + var(--mobile-gutter));
+    }
+
+    .cmdk-panel {
+        max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 6rem);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cmdk-results {
+        min-height: 0;
+        max-height: none;
+        flex: 1;
+    }
+
+    .cmdk-foot,
+    .cmdk-hint,
+    .cmdk-kbd,
+    .cmdk-esc,
+    .cmdk-item.sel::after {
+        display: none;
+    }
+
+    .cmdk-item {
+        min-height: 52px;
+        padding-block: 10px;
+    }
+
+    .tb-notif-wrap .notif-panel {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        left: auto;
+        width: min(340px, calc(100vw - (var(--mobile-gutter) * 2)));
+        max-width: calc(100vw - (var(--mobile-gutter) * 2));
+        max-height: calc(100dvh - env(safe-area-inset-top) - 6rem);
+    }
+
+    .notif-list {
+        max-height: calc(100dvh - env(safe-area-inset-top) - 13rem);
+    }
+
+    .notif-item {
+        min-height: 58px;
+        padding: 11px 10px;
+    }
+
+    .toast-stack {
+        right: var(--mobile-gutter);
+        bottom: calc(var(--mobile-gutter) + var(--wb-h, 0px) + env(safe-area-inset-bottom));
+        left: var(--mobile-gutter);
+        transform: none;
+        align-items: stretch;
+    }
+
+    .toast {
+        width: 100%;
+        max-width: none;
+    }
+
+    .qtask,
+    .cconf,
+    .stepup,
+    .kbd-help {
+        align-items: flex-end;
+        padding: var(--mobile-gutter) var(--mobile-gutter) env(safe-area-inset-bottom);
+    }
+
+    .qtask-panel,
+    .cconf-panel,
+    .stepup-panel,
+    .kbd-help-panel {
+        width: 100%;
+        max-width: none;
+        max-height: calc(100dvh - env(safe-area-inset-top) - var(--mobile-gutter));
+        overflow-y: auto;
+        border-radius: 22px 22px 0 0;
+    }
+
+    .kbd-help,
+    .help-grid-btn[data-help-action="shortcuts"],
+    .tb-create-item kbd,
+    .sb-shortcut {
+        display: none !important;
+    }
+
+    .cconf-actions,
+    .stepup-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .cconf-btn,
+    .stepup-actions button,
+    .qtask-btn,
+    .qtask-date,
+    .qtask-input {
+        min-height: var(--mobile-tap);
+    }
+
+    .help-panel,
+    .help-panel.ai-active {
+        width: 100%;
+        max-width: none;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+@media (max-width: 420px) {
+    :root {
+        --mobile-gutter: 0.875rem;
+    }
+
+    .surface-card,
+    .dash-card {
+        padding: 1rem;
+    }
+
+    .ph-title {
+        font-size: 1.3rem;
+    }
+
+    .test-banner {
+        padding-inline: 0.65rem;
+    }
+
+    .test-banner-badge,
+    .test-banner-exit {
+        font-size: 0.75rem;
+    }
+}

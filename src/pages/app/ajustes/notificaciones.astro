@@ -103,6 +103,8 @@ const sinSlack = (ev: string, c: string) => c === 'slack' && ev === 'team_join';
 
     @media (max-width: 560px) {
         .notif-row { grid-template-columns: 1fr 52px 52px; }
+        .notif-cell, .notif-na { min-width: 44px; min-height: 44px; }
+        .notif-ev-desc { line-height: 1.5; }
     }
 </style>
 

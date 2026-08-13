@@ -193,4 +193,10 @@ const widgetLabels = {
        nunca los alcanzaría (Regla 11). Desde ago 2026 lo comparten además /app/cobros y
        /app/cobranza. Aquí solo queda lo que ESTA página emite: las acciones de la topbar
        y el estado sin acceso. Los breakpoints del grid siguen en widgets.css. */
+    @media (max-width: 880px) {
+        .reports-top-actions { width: 100%; justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-inline: contain; padding-bottom: 2px; scrollbar-width: none; }
+        .reports-top-actions::-webkit-scrollbar { display: none; }
+        .reports-top-actions > * { flex: 0 0 auto; }
+        .snapshot-chip, .reports-edit-btn, .reports-reset-btn { min-height: 44px; }
+    }
 </style>

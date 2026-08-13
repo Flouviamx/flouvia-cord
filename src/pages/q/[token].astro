@@ -210,6 +210,11 @@ const color = ORG.colorMarca || '#0a192f';
     @keyframes qp-payback-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
     @media (prefers-reduced-motion: reduce) { .qp-payback { animation: none; } }
 
+    @media (max-width: 600px) {
+        .qp-main { justify-content: flex-start; gap: 1rem; padding: max(1rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-right)) max(5rem, env(safe-area-inset-bottom)) max(.75rem, env(safe-area-inset-left)); }
+        .qp-payback { border-radius: 14px; padding: 12px; }
+    }
+
     @media print {
         .qp-bg, .qp-payback { display: none !important; }
         .qp-main { min-height: 0; padding: 0; display: block; }

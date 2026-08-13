@@ -273,9 +273,22 @@ html[data-theme="dark"] .ag-state.is-auto { color: #6ee7b7; }
 .ag-err[hidden] { display: none; }
 
 @media (max-width: 720px) {
-    .mcp-row { align-items: flex-start; }
-    .mcp-controls { width: 100%; justify-content: space-between; gap: 1rem; }
+    .ag-card { padding: 1rem; }
+    .ag-card-top { align-items: flex-start; }
+    .ag-facts { gap: .8rem 1.2rem; }
+    .ag-facts > span, .ag-fact-alert { flex: 1 1 120px; }
+    .ag-cta, .ag-btn { min-height: 44px; justify-content: center; }
+    .ag-empty { padding: 2rem 1rem; }
+    .ag-list-head { align-items: flex-start; }
+    .mcp-row { align-items: flex-start; gap: .8rem; padding: 1rem 0; }
+    .mcp-controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr 44px; justify-content: stretch; gap: .5rem; }
+    .mcp-ctl { min-height: 44px; }
     .mcp-ctl-label { text-align: left; }
+    .mcp-del { width: 44px; height: 44px; }
+    .ag-what > summary { min-height: 44px; display: flex; align-items: center; }
+    .ag-f input { min-height: 46px; font-size: 16px; }
+    #addModal .m-foot { display: grid; grid-template-columns: 1fr 1fr; }
+    #addModal .m-foot .ag-btn, #addModal .m-foot .ag-cta { width: 100%; }
 }
 </style>
 

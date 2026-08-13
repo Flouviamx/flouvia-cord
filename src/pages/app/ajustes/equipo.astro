@@ -344,12 +344,22 @@ const EQ_T = {
 [data-eq-shell] .eq-count { margin: 1rem 0 0; font-size: .74rem; color: var(--color-text-muted); }
 
 @media (max-width: 760px) {
+    [data-eq-shell] .eq-seats { align-items: stretch; flex-wrap: wrap; }
+    [data-eq-shell] .eq-seats-actions { width: 100%; margin-left: 0; display: grid; grid-template-columns: 1fr 1fr; }
+    [data-eq-shell] .eq-seats-actions .eq-btn { width: 100%; justify-content: center; }
+    [data-eq-shell] .eq-filters { flex-wrap: nowrap; overflow-x: auto; margin-inline: calc(var(--mobile-gutter, 1rem) * -1); padding-inline: var(--mobile-gutter, 1rem); scrollbar-width: none; }
+    [data-eq-shell] .eq-filters::-webkit-scrollbar { display: none; }
+    [data-eq-shell] .eq-chip { min-height: 44px; flex: 0 0 auto; }
     [data-eq-shell] .eq-thead { display: none; }
-    [data-eq-shell] .eq-row { grid-template-columns: 1fr auto; grid-template-areas: "m a" "r r" "act act"; gap: .5rem 1rem; }
+    [data-eq-shell] .eq-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "m a" "r r" "act act"; gap: .5rem 1rem; padding: 1rem 0; border-radius: 0; }
     [data-eq-shell] .eq-member { grid-area: m; }
     [data-eq-shell] .eq-rowactions { grid-area: a; }
     [data-eq-shell] .eq-rolcell { grid-area: r; flex-direction: row; align-items: center; gap: .5rem; }
     [data-eq-shell] .eq-activity { grid-area: act; }
+    [data-eq-shell] .eq-act-link { min-height: 44px; display: inline-flex; align-items: center; }
+    [data-eq-shell] .eq-icon { width: 44px; height: 44px; }
+    .eq-btn { min-height: 44px; justify-content: center; }
+    .eq-f input { min-height: 46px; font-size: 16px; }
 }
 
 /* Campos de los modales */

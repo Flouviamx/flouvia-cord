@@ -37,6 +37,10 @@ function clear(el: HTMLElement) {
     el.querySelectorAll(':scope > svg, :scope > .chx-hbar, :scope > .chx-empty').forEach((n) => n.remove());
 }
 
+let activeTooltip: HTMLElement | null = null;
+let tooltipDismissReady = false;
+const mobileChart = () => typeof matchMedia !== 'undefined' && matchMedia('(max-width: 880px)').matches;
+
 /** Un solo nodo de tooltip por contenedor de gráfica (se reutiliza, nunca se recrea por evento). */
 function ensureTooltip(host: HTMLElement): HTMLElement {
     let tip = host.querySelector<HTMLElement>(':scope > .cd-tooltip');
@@ -47,11 +51,20 @@ function ensureTooltip(host: HTMLElement): HTMLElement {
     }
     if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
     tip.style.opacity = '0';
+    if (!tooltipDismissReady) {
+        tooltipDismissReady = true;
+        document.addEventListener('pointerdown', (event) => {
+            const owner = activeTooltip?.parentElement;
+            if (activeTooltip && owner && !owner.contains(event.target as Node)) hideTooltip(activeTooltip);
+        }, { passive: true });
+    }
     return tip;
 }
 
 /** Posiciona el tooltip centrado sobre (px,py) relativo al host, con clamping a los bordes. */
 function placeTooltip(tooltip: HTMLElement, host: HTMLElement, px: number, py: number, above = true) {
+    if (activeTooltip && activeTooltip !== tooltip) activeTooltip.style.opacity = '0';
+    activeTooltip = tooltip;
     const hostRect = host.getBoundingClientRect();
     // Medimos el tooltip ya con su contenido puesto (offsetWidth/Height reales).
     const tw = tooltip.offsetWidth || 120;
@@ -67,6 +80,7 @@ function placeTooltip(tooltip: HTMLElement, host: HTMLElement, px: number, py: n
 
 function hideTooltip(tooltip: HTMLElement) {
     tooltip.style.opacity = '0';
+    if (activeTooltip === tooltip) activeTooltip = null;
 }
 
 /** "Nice numbers" (Heckbert) — dominio y ticks redondos para el eje Y. Fuerza mínimo en 0
@@ -398,6 +412,7 @@ export function mountLineChart(container: HTMLElement, opts: LineChartOptions): 
     function wireEvents() {
         svg!.addEventListener('pointermove', (e) => onMove(e.clientX));
         svg!.addEventListener('pointerdown', (e) => onMove(e.clientX));
+        svg!.addEventListener('click', (e) => { if (mobileChart()) onMove(e.clientX); });
         svg!.addEventListener('pointerleave', hide);
         svg!.addEventListener('focus', () => showAt(points.length - 1));
         svg!.addEventListener('blur', hide);
@@ -526,6 +541,7 @@ export function mountComboChart(container: HTMLElement, opts: ComboChartOptions)
             hit.addEventListener('pointerenter', focus);
             hit.addEventListener('pointermove', focus);
             hit.addEventListener('pointerleave', blur);
+            hit.addEventListener('click', () => { if (mobileChart()) focus(); });
             hit.addEventListener('focus', focus);
             hit.addEventListener('blur', blur);
             hit.setAttribute('tabindex', '0');
@@ -611,8 +627,6 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
                 width: String(barW), height: String(barH), rx: '5', fill: color, class: 'chx-bar',
             });
             rect.style.transition = reducedMotion() ? 'none' : 'fill 0.2s var(--ease-ios, ease), opacity 0.2s var(--ease-ios, ease)';
-            rect.style.cursor = 'pointer';
-            rect.setAttribute('tabindex', '0');
             bars.push(rect);
             svg.appendChild(rect);
 
@@ -626,6 +640,12 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
             const rect = bars[i];
             const cx = PAD.left + colW * (i + 0.5);
             const barH = it.value > 0 ? Math.max(3, (it.value / scale.max) * plotH) : 0;
+            const hit = svgEl('rect', {
+                x: String(PAD.left + colW * i), y: String(PAD.top),
+                width: String(colW), height: String(plotH), fill: 'transparent', style: 'cursor:pointer',
+                'aria-label': `${it.label}: ${formatY(it.value)}`,
+            });
+            hit.setAttribute('tabindex', '0');
             const show = () => {
                 tooltip.innerHTML = `<div class="cd-tt-x">${it.label}${it.sub ? ` · ${it.sub}` : ''}</div>` + tooltipRow(color, '', formatY(it.value));
                 placeTooltip(tooltip, container, cx, PAD.top + plotH - barH);
@@ -633,11 +653,13 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
                 dim.focus(rect);
             };
             const unshow = () => { hideTooltip(tooltip); rect.style.fill = color; dim.clear(); };
-            rect.addEventListener('pointerenter', show);
-            rect.addEventListener('pointermove', show);
-            rect.addEventListener('pointerleave', unshow);
-            rect.addEventListener('focus', show);
-            rect.addEventListener('blur', unshow);
+            hit.addEventListener('pointerenter', show);
+            hit.addEventListener('pointermove', show);
+            hit.addEventListener('pointerleave', unshow);
+            hit.addEventListener('click', () => { if (mobileChart()) show(); });
+            hit.addEventListener('focus', show);
+            hit.addEventListener('blur', unshow);
+            svg.appendChild(hit);
         });
 
         container.appendChild(svg);
@@ -690,7 +712,7 @@ export function mountHBarChart(container: HTMLElement, opts: HBarChartOptions): 
         fill.className = 'chx-hbar-fill';
         fill.style.background = it.color ?? color;
         fill.style.width = '0%';
-        fill.tabIndex = 0;
+        row.tabIndex = 0;
         requestAnimationFrame(() => { fill.style.width = Math.max(3, (it.value / max) * 100) + '%'; });
         track.appendChild(fill);
         fills.push(fill);
@@ -705,6 +727,7 @@ export function mountHBarChart(container: HTMLElement, opts: HBarChartOptions): 
     const dim = makeDimGroup(fills);
     opts.items.forEach((it, idx) => {
         const fill = fills[idx];
+        const row = wrap.children[idx] as HTMLElement;
         const show = () => {
             tooltip.innerHTML = tooltipRow(it.color ?? color, it.label, formatY(it.value));
             const fillRect = fill.getBoundingClientRect();
@@ -713,17 +736,18 @@ export function mountHBarChart(container: HTMLElement, opts: HBarChartOptions): 
             dim.focus(fill);
         };
         const unshow = () => { hideTooltip(tooltip); dim.clear(); };
-        fill.addEventListener('pointerenter', show);
-        fill.addEventListener('pointermove', show);
-        fill.addEventListener('pointerleave', unshow);
-        fill.addEventListener('focus', show);
-        fill.addEventListener('blur', unshow);
+        row.addEventListener('pointerenter', show);
+        row.addEventListener('pointermove', show);
+        row.addEventListener('pointerleave', unshow);
+        row.addEventListener('click', () => { if (mobileChart()) show(); });
+        row.addEventListener('focus', show);
+        row.addEventListener('blur', unshow);
         listeners.push(() => {
-            fill.removeEventListener('pointerenter', show);
-            fill.removeEventListener('pointermove', show);
-            fill.removeEventListener('pointerleave', unshow);
-            fill.removeEventListener('focus', show);
-            fill.removeEventListener('blur', unshow);
+            row.removeEventListener('pointerenter', show);
+            row.removeEventListener('pointermove', show);
+            row.removeEventListener('pointerleave', unshow);
+            row.removeEventListener('focus', show);
+            row.removeEventListener('blur', unshow);
         });
     });
     container.appendChild(wrap);
@@ -815,6 +839,7 @@ export function mountFunnel(container: HTMLElement, opts: FunnelOptions): ChartH
         const unshow = () => { hideTooltip(tooltip); clearBars(); };
         bar.addEventListener('pointerenter', show); bar.addEventListener('pointermove', show);
         bar.addEventListener('pointerleave', unshow); bar.addEventListener('focus', show); bar.addEventListener('blur', unshow);
+        bar.addEventListener('click', () => { if (mobileChart()) show(); });
         listeners.push(() => {
             bar.removeEventListener('pointerenter', show); bar.removeEventListener('pointermove', show);
             bar.removeEventListener('pointerleave', unshow); bar.removeEventListener('focus', show); bar.removeEventListener('blur', unshow);
@@ -918,6 +943,7 @@ export function mountDonut(container: HTMLElement, opts: DonutOptions): ChartHan
         [circle, legendItem].forEach((el) => {
             el.addEventListener('pointerenter', show); el.addEventListener('pointermove', show);
             el.addEventListener('pointerleave', unshow); el.addEventListener('focus', show); el.addEventListener('blur', unshow);
+            el.addEventListener('click', () => { if (mobileChart()) show(); });
             listeners.push(() => {
                 el.removeEventListener('pointerenter', show); el.removeEventListener('pointermove', show);
                 el.removeEventListener('pointerleave', unshow); el.removeEventListener('focus', show); el.removeEventListener('blur', unshow);
@@ -995,6 +1021,7 @@ export function mountSegBar(container: HTMLElement, opts: SegBarOptions): ChartH
         [seg, legendItem].forEach((el) => {
             el.addEventListener('pointerenter', show); el.addEventListener('pointermove', show);
             el.addEventListener('pointerleave', unshow); el.addEventListener('focus', show); el.addEventListener('blur', unshow);
+            el.addEventListener('click', () => { if (mobileChart()) show(); });
             listeners.push(() => {
                 el.removeEventListener('pointerenter', show); el.removeEventListener('pointermove', show);
                 el.removeEventListener('pointerleave', unshow); el.removeEventListener('focus', show); el.removeEventListener('blur', unshow);

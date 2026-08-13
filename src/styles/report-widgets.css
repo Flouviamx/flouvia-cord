@@ -61,7 +61,25 @@
 .flow-week-track i { display: block; height: 100%; }
 .flow-week strong { text-align: right; font-size: .76rem; }
 
+@media (max-width: 880px) {
+    .report-chart,
+    .report-list,
+    .flow-weeks { width: 100%; min-width: 0; max-width: 100%; }
+    .report-list > a,
+    .report-list > div { min-height: 56px; touch-action: manipulation; }
+    .flow-week { grid-template-columns: minmax(88px, 120px) minmax(0, 1fr); }
+    .flow-week strong { grid-column: 2; }
+}
+
 @media (max-width: 560px) {
+    .report-kpi-value { font-size: 1.65rem; overflow-wrap: anywhere; }
+    .report-chart { min-height: 220px; }
+    .report-list > a, .report-list > div { align-items: flex-start; flex-wrap: wrap; min-height: 56px; }
+    .report-list strong { overflow: visible; text-overflow: clip; white-space: normal; }
+    .report-list b { margin-left: auto; overflow-wrap: anywhere; }
+    .report-focus { min-height: 210px; }
+    .report-focus strong { max-width: 100%; font-size: clamp(2.5rem, 15vw, 4rem); overflow-wrap: anywhere; }
+    .flow-legend { flex-wrap: wrap; }
     .flow-week { grid-template-columns: 92px 1fr; }
     .flow-week strong { grid-column: 2; }
 }

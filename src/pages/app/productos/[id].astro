@@ -335,4 +335,57 @@ const metaBits = [p.sku, p.unidad].filter(Boolean);
     .dp-delete:hover { border-color: var(--color-danger); background: rgba(239,68,68,0.06); }
     .dp-delete:active { transform: scale(0.98); }
     .dp-delete:disabled { opacity: 0.6; cursor: wait; }
+
+    @media (max-width: 680px) {
+        .d-main, .d-side { gap: 1.75rem; }
+        .d-head { align-items: flex-start; gap: 1rem; padding-bottom: 1.25rem; }
+        .dh-client { align-items: flex-start; width: 100%; }
+        .dh-meta { white-space: normal; overflow-wrap: anywhere; }
+        .dh-total { width: 100%; align-items: flex-start; }
+        .dh-total-val { font-size: clamp(1.7rem, 9vw, 2rem); }
+        .dp-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dp-kpi { min-width: 0; padding: 0.25rem 0.8rem; }
+        .dp-kpi:nth-child(odd) { border-left: none; padding-left: 0.2rem; }
+        .dp-real-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dp-vrow {
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.35rem 0.75rem;
+            margin-inline: 0;
+            padding: 0.9rem 0;
+            border-radius: 0;
+        }
+        .dp-vsave { grid-column: 1 / -1; text-align: left; }
+        .dp-crow {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas: "name total" "times total";
+            gap: 0.35rem 0.75rem;
+            margin-inline: 0;
+            padding: 0.9rem 0;
+            border-radius: 0;
+        }
+        .dp-cname { grid-area: name; }
+        .dp-cveces { grid-area: times; }
+        .dp-ctotal { grid-area: total; }
+        .dp-qrow {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas:
+                "folio total"
+                "client status"
+                "date date";
+            gap: 0.45rem 0.75rem;
+            min-height: 84px;
+            margin-inline: 0;
+            padding: 0.9rem 0;
+            border-radius: 0;
+        }
+        .dp-qfolio { grid-area: folio; }
+        .dp-qcliente { grid-area: client; }
+        .dp-qrow > .status-pill { grid-area: status; justify-self: end; }
+        .dp-qtotal { grid-area: total; }
+        .dp-qdate { grid-area: date; text-align: left; }
+        .dp-chevron { display: none; }
+        .dp-krow { min-height: 52px; margin-inline: 0; padding-inline: 0; border-radius: 0; }
+        .dc-kv { align-items: flex-start; flex-wrap: wrap; overflow-wrap: anywhere; }
+        .dp-delete, .dp-btn-primary, .dp-btn-ghost { min-height: 46px; }
+    }
 </style>

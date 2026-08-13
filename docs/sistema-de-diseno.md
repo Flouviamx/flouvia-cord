@@ -144,6 +144,38 @@ El componente `Sidebar.astro` es el menú principal de la app y presenta un dise
 - **Microinteracciones:** Las tooltips en modo colapsado usan `transform-origin: left center` para brotar elásticamente desde el ícono.
 - **MISMO material glass que la pill de la topbar (regla, jul 2026):** la sidebar y la `.topbar` comparten fondo (`--sb-bg`), `blur(24px) saturate(1.4)`, borde y sombra (`--sb-shadow` == box-shadow de la topbar, `0 12px 36px -8px rgba(10,25,47,0.14)`), y el mismo radio (17px). El brillo superior lo da SOLO el inset highlight de `--sb-shadow` (compartido). ⚠️ `--sb-sheen` está en `transparent` a propósito — **no re-introducir un sheen/tinte propio en la sidebar** (un radial navy oscuro la apagaba y la hacía ver más gris que la topbar); el material debe quedar idéntico al de la topbar en light y dark.
 
+### Base mobile-first de la app (ago 2026)
+
+- `src/styles/mobile-app.css` es la última capa responsive de `AppLayout` y solo actúa
+  hasta 880 px. No cambiar el layout de escritorio desde esa hoja.
+- Tokens compartidos: `--mobile-gutter`, `--mobile-tap` y `--mobile-section-gap`.
+  El target mínimo interactivo es 44 px; acciones primarias y campos principales usan
+  46–48 px. Inputs, selects y textareas deben renderizar a 16 px para evitar zoom en iOS.
+- Toda superficie de pantalla completa usa `100dvh` y combina padding con
+  `env(safe-area-inset-*)`. Los elementos fijos inferiores también suman la safe area.
+- El sidebar móvil es un drawer fuera del flujo. Cerrado debe estar completamente fuera
+  del viewport y además usar `visibility:hidden` y `pointer-events:none`; el estado
+  persistido `sb-collapsed` solo afecta escritorio.
+- Popovers de topbar se anclan a su control y crecen hacia dentro del viewport. Modales
+  largos se convierten en bottom sheets con scroll interno; tabs, filtros y grupos de
+  acciones secundarios usan scroll horizontal cuando apilarlos destruiría la jerarquía.
+- Mobile no puede perder información comercial. Tablas pueden transformarse en filas
+  etiquetadas o conservar un `min-width` dentro de un contenedor con scroll, pero no se
+  ocultan folios, cantidades, precios, importes, estados, fechas ni acciones esenciales.
+- En móvil, los widgets compartidos de Dashboard e Informes siempre forman una columna.
+  Su modo de edición usa subir, bajar y ocultar con targets mínimos de 44 px; drag, resize
+  y la animación de wiggle quedan en escritorio para no bloquear el scroll vertical.
+- Ningún dato de una gráfica puede depender de hover. Bajo 880 px, línea, barras, ranking,
+  embudo, dona y segmentos responden a tap; el tooltip se presenta dentro del borde inferior
+  del widget, persiste después del toque y se cierra al tocar fuera. Filas y leyendas
+  interactivas usan al menos 44 px de alto.
+- Los atajos y sus indicadores visuales son una mejora exclusiva de escritorio. Bajo
+  880 px se ocultan `kbd` y la ayuda de comandos, y los comandos globales no se ejecutan;
+  el teclado virtual, la escritura y `Enter` dentro de campos y formularios siguen activos.
+- Las reglas particulares permanecen junto a cada página. La hoja compartida resuelve
+  shell, safe areas, targets táctiles y overlays; no debe contener reglas de negocio ni
+  selectores frágiles dependientes de una sola ruta.
+
 ### Blog Aesthetics (WebGL GLSL — ElevenLabs Pattern)
 El blog público (`/blog`) usa portadas generadas por **WebGL puro** (`BlogCover.jsx`, `client:only="react"`), no CSS ni fotografías.
 - **Portadas GLSL:** FBM de 5 octavas con domain-warp de 2 capas → gradiente orgánico fotográfico. Tonemap Reinhard + dither. Reactivo al mouse (parallax UV shift) y al giroscopio en móvil. IntersectionObserver pausa el RAF cuando el canvas no está visible.

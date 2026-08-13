@@ -286,13 +286,71 @@ const pendingCount = countFor('approval');
     .t-empty p { font-size: 0.85rem; color: var(--color-text-muted); margin: 0; }
 
     @media (max-width: 880px) {
+        .cot-summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1.25rem 1rem;
+            width: 100%;
+            min-width: 0;
+            margin-inline: 0;
+            padding-inline: 0;
+            overflow: visible;
+        }
+        .cs-item { min-width: 0; }
+        .cs-val { font-size: clamp(1.3rem, 7vw, 1.6rem); overflow-wrap: anywhere; }
+
+        .view-row {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            margin-bottom: 0.75rem;
+        }
+        .view-row .filters {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            flex-wrap: wrap;
+            overflow: visible;
+            visibility: visible !important;
+        }
+
+        /* En móvil el tablero no es una alternativa útil: la lista es la única
+           representación visible, incluso después de redimensionar la ventana. */
+        .view-toggle,
+        .board,
+        .board[hidden],
+        .board-hint,
+        .board-toast {
+            display: none !important;
+        }
+        .table-card,
+        .table-card[hidden] {
+            display: block !important;
+            width: 100%;
+            min-width: 0;
+        }
+
         .t-head { display: none; }
-        .t-row { grid-template-columns: 1fr auto; gap: 0.3rem 1rem; padding: 0.9rem 1rem; }
-        .t-folio { order: 1; }
-        .t-amount { order: 2; }
-        .t-client { order: 3; grid-column: 1; }
-        .t-row .status-pill { order: 4; justify-self: end; }
-        .t-muted { display: none; }
+        .t-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas:
+                "folio amount"
+                "client status"
+                "terms validity";
+            gap: 0.5rem 1rem;
+            padding: 1rem 0;
+            border-radius: 0;
+            width: 100%;
+            min-width: 0;
+        }
+        .t-folio { grid-area: folio; }
+        .t-amount { grid-area: amount; align-self: start; }
+        .t-client { grid-area: client; overflow-wrap: anywhere; }
+        .t-row .status-pill { grid-area: status; justify-self: end; align-self: center; }
+        .t-row > .t-muted:nth-child(3) { grid-area: terms; }
+        .t-row > .t-muted:nth-child(4) { grid-area: validity; justify-self: end; text-align: right; }
+        .t-muted { display: block; font-size: 0.72rem; }
     }
 </style>
 

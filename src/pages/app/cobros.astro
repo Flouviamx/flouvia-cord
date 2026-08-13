@@ -784,6 +784,16 @@ const CBR_T = {
         .cbr-kpi-zone .dash-widget .dash-card { border-left: 0; border-top: 1px solid var(--color-border); }
         .cbr-balance-zone .dash-card { min-height: 0; }
         .cbr-balance-primary { min-height: 190px !important; }
+        .cbr-refund-dialog {
+            width: 100%; max-width: 100%; margin: 0;
+            inset: auto 0 0;
+            border-radius: 24px 24px 0 0;
+        }
+        .cbr-refund-card { border-radius: 24px 24px 0 0; padding: 1.25rem 1rem calc(1rem + env(safe-area-inset-bottom)); }
+        .cbr-refund-close { width: 44px; height: 44px; }
+        .cbr-refund-card input, .cbr-refund-card textarea { min-height: 46px; font-size: 16px; }
+        .cbr-refund-actions { display: grid; grid-template-columns: 1fr 1fr; }
+        .cbr-refund-actions button { min-height: 46px; }
     }
 
     .cbr-delta { font-size: .72rem; font-weight: 650; }
@@ -884,9 +894,21 @@ const CBR_T = {
 
     @media (max-width: 800px) {
         [data-cobros-shell] .cbr-table .t-head { display: none; }
-        [data-cobros-shell] .cbr-table .t-row { grid-template-columns: 1fr 1fr; gap: .5rem; padding: 1rem 0; }
-        [data-cobros-shell] .cbr-table .t-method,
-        [data-cobros-shell] .cbr-table .t-date { display: none; }
-        [data-cobros-shell] .cbr-table .t-client { text-align: right; }
+        [data-cobros-shell] .cbr-table .t-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas:
+                "folio amount"
+                "client client"
+                "method date"
+                "refund refund";
+            gap: .5rem .75rem;
+            padding: 1rem 0;
+        }
+        [data-cobros-shell] .cbr-table .t-folio { grid-area: folio; }
+        [data-cobros-shell] .cbr-table .t-client { grid-area: client; white-space: normal; }
+        [data-cobros-shell] .cbr-table .t-method { grid-area: method; display: inline-flex; }
+        [data-cobros-shell] .cbr-table .t-date { grid-area: date; display: block; text-align: right; }
+        [data-cobros-shell] .cbr-table .t-amount { grid-area: amount; }
+        [data-cobros-shell] .cbr-table .cbr-refund { grid-area: refund; width: 100%; min-height: 44px; }
     }
 </style>

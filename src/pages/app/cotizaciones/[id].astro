@@ -698,13 +698,59 @@ const dotColor = (tipo: string) =>
     .di-thread-send:disabled { opacity: 0.5; cursor: wait; }
 
     @media (max-width: 980px) {
-        .detail-grid { grid-template-columns: 1fr; }
-        .d-side { position: static; }
+        .detail-grid { display: flex; flex-direction: column; gap: 2rem; }
+        .d-side { display: contents; }
+        .d-actions { order: -1; }
+        .d-main { order: 0; }
+        .d-timeline, .d-chat { order: 1; }
     }
     @media (max-width: 680px) {
+        .q-stepper { overflow-x: auto; margin-inline: calc(var(--mobile-gutter) * -1); padding: 4px var(--mobile-gutter) 8px; overscroll-behavior-inline: contain; scrollbar-width: none; }
+        .q-stepper::-webkit-scrollbar { display: none; }
+        .qs-step { flex: 0 0 auto; }
+        .qs-step:not(:last-child)::after { width: 28px; flex: 0 0 28px; }
+        .qs-label { display: block; }
+        .d-head { align-items: flex-start; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.25rem; }
+        .dh-client { align-items: flex-start; min-width: 0; }
+        .dh-client > div:last-child { min-width: 0; }
+        .dh-meta { overflow-wrap: anywhere; }
+        .dh-total { width: 100%; align-items: flex-start; }
+        .dh-total-val { font-size: clamp(1.7rem, 9vw, 2rem); }
+        .d-items, .d-notes, .d-versions, .d-fiscal { margin-bottom: 2rem; }
         .di-head { display: none; }
-        .di-row { grid-template-columns: 1fr auto; }
-        .di-qty, .di-price { display: none; }
+        .di-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas:
+                "name amount"
+                "quantity price";
+            gap: 0.55rem 1rem;
+            padding: 1rem 0;
+        }
+        .di-name { grid-area: name; min-width: 0; }
+        .di-amount { grid-area: amount; align-self: start; }
+        .di-qty { grid-area: quantity; display: block; align-self: end; }
+        .di-price { grid-area: price; display: flex; align-items: flex-end; justify-self: end; }
+        .di-totals { padding-inline: 0; align-items: stretch; }
+        .dt-line { width: 100%; min-width: 0; gap: 1rem; }
+        .di-chat-toggle { min-width: 44px; min-height: 44px; margin-top: 0; justify-content: flex-start; }
+        .di-thread { margin-inline: calc(var(--mobile-gutter) * -0.5); padding: 0.9rem calc(var(--mobile-gutter) * 0.5) 1rem; }
+        .di-thread-input { min-width: 0; min-height: 44px; font-size: 16px; }
+        .di-thread-send { width: 44px; height: 44px; }
+        .d-actions { padding-bottom: 2rem; border-bottom: 1px solid var(--color-border); }
+        .act-primary, .act-secondary, .act-danger, .act-ok, .act-cfdi, .act-delete { min-height: 46px; }
+        .act-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .act-util { min-height: 64px; }
+        .df-row { align-items: flex-start; flex-wrap: wrap; }
+        .df-body { flex-basis: calc(100% - 40px); }
+        .df-uuid code { overflow-wrap: anywhere; }
+        .df-actions { width: 100%; padding-left: 36px; }
+        .df-link { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+        .v-accordion summary { min-height: 52px; padding-inline: 1rem; }
+        .v-list { padding-inline: 1rem; }
+        .v-item { gap: 0.6rem; }
+        .v-date { margin-left: 0; }
+        .dc-compose textarea { min-width: 0; font-size: 16px; }
+        .dc-send { width: 44px; height: 44px; }
     }
 </style>
 

@@ -481,6 +481,27 @@ const pasos = [
     .connect-custom-onboarding .co-phone-waiting { display: inline-flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--color-text-muted); }
     .connect-custom-onboarding .co-phone-waiting .co-spinner-btn { border-color: rgba(10,25,47,0.18); border-top-color: var(--color-blue-deep); }
     .connect-custom-onboarding .co-phone-done { display: inline-flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 600; color: var(--color-ok); }
+
+    @media (max-width: 559px) {
+        .pay-method { align-items: flex-start; }
+        .fee-check input { width: 20px; height: 20px; flex-shrink: 0; }
+        .fee-accept-btn { width: 100%; min-height: 46px; }
+        .connect-custom-onboarding .s-input { min-height: 46px; font-size: 16px; }
+        .connect-custom-onboarding .co-header { align-items: flex-start; flex-wrap: wrap; }
+        .connect-custom-onboarding .co-dob { display: grid; grid-template-columns: 1fr auto 1fr auto 1.35fr; }
+        .connect-custom-onboarding .co-dob .s-input:nth-child(1),
+        .connect-custom-onboarding .co-dob .s-input:nth-child(3),
+        .connect-custom-onboarding .co-dob .s-input:nth-child(5) { width: 100%; }
+        .connect-custom-onboarding .co-footer { display: grid; grid-template-columns: 1fr 1fr; }
+        .connect-custom-onboarding .co-btn { min-height: 46px; padding-inline: 14px; }
+        .connect-custom-onboarding .co-doc-actions { display: grid; grid-template-columns: 1fr; }
+        .connect-custom-onboarding .co-doc-actions .co-btn { width: 100%; min-width: 0; }
+        .connect-custom-onboarding .co-phone-intro,
+        .connect-custom-onboarding .co-phone-active { padding-inline: 0; }
+        .connect-custom-onboarding .co-phone-steps { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+        .co-bank-row { align-items: flex-start; flex-wrap: wrap; }
+        .co-bank-row .co-btn { width: 100%; margin-left: 0; }
+    }
 </style>
 
 <script>

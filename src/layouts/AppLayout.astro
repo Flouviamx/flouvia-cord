@@ -21,6 +21,7 @@ import '../styles/charts.css';
 import '../styles/daterange.css';
 import '../styles/widgets.css';
 import '../styles/report-widgets.css';
+import '../styles/mobile-app.css';
 
 
 const L = currentLocale();
@@ -1404,7 +1405,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 </style>
 
 <style>
-    .app-shell { display: flex; min-height: 100vh; }
+    .app-shell { display: flex; min-height: 100vh; min-height: 100dvh; }
 
     /* ── MAIN ── */
     .app-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -1712,6 +1713,8 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 </script>
 
 <script>
+    const mobileUi = () => window.matchMedia('(max-width: 880px)').matches;
+
     // ── Salir del entorno de prueba (banner ámbar) ──
     // Limpia la cookie (fuente de verdad server-side) + el espejo en localStorage
     // y regresa al dashboard real.
@@ -1855,7 +1858,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         document.getElementById('cmdkOpen')?.addEventListener('click', open);
         document.getElementById('cmdkBackdrop')?.addEventListener('click', close);
         document.addEventListener('keydown', (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); (cmdk as HTMLElement).hidden ? open() : close(); }
+            if (!mobileUi() && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); (cmdk as HTMLElement).hidden ? open() : close(); }
             else if (e.key === 'Escape' && !(cmdk as HTMLElement).hidden) { close(); }
         });
     }
@@ -2125,6 +2128,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
     // ── Atajos de teclado globales ──
     function initShortcuts() {
         const help = document.getElementById('kbdHelp');
+        if (mobileUi()) {
+            if (help) (help as HTMLElement).hidden = true;
+            return;
+        }
         document.getElementById('kbdHelpBackdrop')?.addEventListener('click', () => { if (help) (help as HTMLElement).hidden = true; });
         const ROUTES: any = { d: '/app', c: '/app/cotizaciones', l: '/app/clientes', p: '/app/productos', b: '/app/cobranza', a: '/app/informes' };
         const typing = (el: any) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
@@ -2315,7 +2322,10 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         drawer.querySelectorAll('[data-help-action]').forEach((el) => {
             el.addEventListener('click', () => {
                 const action = (el as HTMLElement).dataset.helpAction;
-                if (action === 'shortcuts') { close(); const h = document.getElementById('kbdHelp'); if (h) (h as HTMLElement).hidden = false; }
+                if (action === 'shortcuts') {
+                    if (mobileUi()) return;
+                    close(); const h = document.getElementById('kbdHelp'); if (h) (h as HTMLElement).hidden = false;
+                }
                 else if (action === 'guide') { close(); document.getElementById('onbPill')?.click(); }
             });
         });

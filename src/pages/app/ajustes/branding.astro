@@ -113,6 +113,20 @@ const L = currentLocale();
     .brand-line { height: 9px; border-radius: 5px; background: var(--color-bg-soft); border: 1px solid var(--color-border); margin-bottom: 8px; }
     .brand-line.short { width: 55%; }
     .brand-cta { margin-top: 14px; width: 100%; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 10px; cursor: default; }
+
+    @media (max-width: 600px) {
+        .logo-row { align-items: flex-start; }
+        .logo-actions, .logo-btns { width: 100%; min-width: 0; }
+        .logo-btns { flex-wrap: wrap; }
+        .logo-btn, .logo-remove { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+        .brand-card { width: 100%; max-width: none; }
+        .brand-cta { min-height: 44px; }
+    }
+
+    @media (max-width: 380px) {
+        .logo-row { flex-direction: column; }
+        .logo-btns { display: grid; grid-template-columns: 1fr 1fr; }
+    }
 </style>
 
 <script>

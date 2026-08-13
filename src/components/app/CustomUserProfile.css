@@ -563,18 +563,121 @@ html[data-theme="dark"] .badge-success { color: #34d399; }
 
 @media (max-width: 640px) {
   .cup-wrapper {
+    width: 100%;
+    min-width: 0;
     gap: 2.5rem;
+    padding-bottom: 1rem;
   }
-  
+
+  .cup-section,
+  .cup-section-body,
+  .cup-form-container,
+  .cup-group,
+  .cup-session-info {
+    min-width: 0;
+  }
+
+  .cup-avatar-row {
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .avatar-wrapper {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 auto;
+  }
+
+  .cup-avatar-info {
+    min-width: 0;
+  }
+
+  .cup-avatar-info h4,
+  .cup-avatar-info p,
+  .cup-session-meta {
+    overflow-wrap: anywhere;
+  }
+
+  .s-input {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
+  .cup-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.65rem !important;
+  }
+
+  .cup-actions > :is(button, a),
+  .cup-security-actions > button,
+  .cup-list-item > button,
+  .cup-pw-toggle,
+  .totp-secret-box button,
+  .totp-backup-head button {
+    min-height: 44px;
+  }
+
+  .cup-actions > :is(button, a) {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .cup-security-block {
+    padding: 1rem;
+  }
+
+  .cup-security-block-header,
+  .totp-backup-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .cup-security-actions {
+    display: flex !important;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .totp-secret-box {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .totp-backup-grid {
+    grid-template-columns: 1fr;
+  }
+
   .cup-session-item, .cup-list-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
     padding: 1rem;
   }
-  
+
+  .cup-session-item > button,
+  .cup-list-item > button {
+    align-self: stretch;
+    text-align: left;
+  }
+
+  .cup-session-device {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
   .totp-verify-form {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .cup-pw-toggle {
+    width: 44px;
+    height: 44px;
+    right: 1px;
   }
 }

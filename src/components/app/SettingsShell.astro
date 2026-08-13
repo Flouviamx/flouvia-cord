@@ -254,6 +254,32 @@ const hasAccess = !perm || memberCan(ME!, perm);
     }
     .s-saved.show .s-check-icon path { stroke-dashoffset: 0; }
 
+    @media (max-width: 880px) {
+        .set2 { width: 100%; max-width: none; }
+        .set2-title { font-size: 1.45rem; line-height: 1.15; }
+        .set2-desc { max-width: 58ch; line-height: 1.55; }
+        .set2-content { padding-top: 1.35rem; }
+        .s-block { padding: 1.5rem 0; }
+        .s-block > h3 { margin-bottom: 1rem; }
+        .s-body, .s-field, .s-row { width: 100%; min-width: 0; max-width: none; }
+        /* Algunos ajustes antiguos fijan el ancho con style="max-width:50%".
+           En móvil la estructura es siempre de una columna completa. */
+        .set2-content .s-field[style] { max-width: 100% !important; }
+        .s-input { width: 100%; min-height: 46px; font-size: 16px; border-radius: 11px; }
+        .s-textarea { min-height: 104px; }
+        .s-field label { font-size: 0.68rem; letter-spacing: 0.08em; }
+        .s-hint { font-size: 0.74rem; line-height: 1.5; }
+        .set2-tab { min-height: 44px; height: 44px; padding-inline: 15px; }
+        .s-save-row { align-items: stretch; flex-direction: column; gap: 0.65rem; }
+        .s-save, .s-saved { width: 100%; min-height: 46px; justify-content: center; }
+    }
+
+    @media (max-width: 420px) {
+        .set2-title { font-size: 1.35rem; }
+        .set2-crumb { min-height: 36px; margin-bottom: 0.45rem; }
+        .s-block { padding: 1.3rem 0; }
+    }
+
     /* El bloqueo de acceso vive en components/app/AccessGate.astro (un solo
        lenguaje visual para toda la app). Aquí ya no queda CSS propio. */
 </style>
@@ -309,6 +335,7 @@ const hasAccess = !perm || memberCan(ME!, perm);
 
         // ⌘S / Ctrl+S guarda (en vez del "Guardar página" del navegador).
         window.addEventListener('keydown', (e) => {
+            if (window.matchMedia('(max-width: 880px)').matches) return;
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
                 e.preventDefault();
                 if (!btn.disabled) btn.click();

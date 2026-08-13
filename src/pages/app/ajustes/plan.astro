@@ -385,4 +385,13 @@ const planActual = PLANES.find((p) => p.id === planRaw);
     .usage-note { font-size: 0.78rem; color: var(--color-danger); margin: 0.6rem 0 0; line-height: 1.5; }
     .usage-unlim { font-size: 0.9rem; font-weight: 600; color: var(--color-ok); }
     .plan-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0; line-height: 1.6; }
+
+    @media (max-width: 560px) {
+        .plan-row { align-items: stretch; padding-inline: 0; }
+        .plan-row .plan-btn { width: 100%; }
+        .plan-btn, .pcard-cta { min-height: 46px; }
+        .cycle-toggle { display: flex; width: 100%; }
+        .cyc-btn { flex: 1; min-height: 44px; justify-content: center; padding-inline: 10px; }
+        .pcard-visual { min-height: 128px; }
+    }
 </style>

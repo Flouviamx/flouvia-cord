@@ -4,6 +4,50 @@
 > cotizaciones, link público `/q`, dashboard, cobranza, onboarding, dark mode, entorno
 > de prueba, chat, tiempo real. Extraído de `historial.md`. Orden: más reciente arriba.
 
+**Refactor mobile-first completo de la app y superficies transaccionales (ago 2026)** —
+   la estructura móvil de Cord se revisó de extremo a extremo sin modificar reglas de
+   negocio, llamadas de red, validaciones ni estados. `src/styles/mobile-app.css` quedó
+   como última capa compartida de `AppLayout`: define gutters con safe areas, targets
+   táctiles de 44–48 px, controles a 16 px para evitar zoom de iOS, tabs y filtros con
+   scroll horizontal, modales como bottom sheets, toasts dentro del viewport y paneles
+   de ayuda/comandos/notificaciones adaptados a `100dvh`. El sidebar conserva intacta
+   la composición de escritorio y pasa a drawer móvil; cerrado usa traslación completa,
+   `visibility:hidden` y `pointer-events:none`, y abierto restaura el ancho aunque exista
+   la preferencia de sidebar colapsado. El popover de notificaciones se ancla al borde
+   derecho de la campana y crece hacia la izquierda para no salir de pantalla.
+   • Dashboard e Informes dejan de tratar los widgets como piezas de escritorio encogidas:
+     bajo 880 px el grid es de una columna, editar usa controles táctiles de subir, bajar y
+     ocultar, y se desactivan drag, resize y Escape del editor. Las gráficas de línea,
+     combinación, barras, rankings, embudos, dona y segmentos exponen sus tooltips por tap,
+     mantienen el detalle visible y lo descartan al tocar fuera; rankings, leyendas y
+     embudos tienen filas táctiles y reflujo propio para anchos estrechos.
+   • Los comandos de teclado se mantienen intactos en escritorio y desaparecen solo en
+     móvil: no se muestran `kbd`, ayuda de atajos, `Cmd/Ctrl+K`, navegación por letras,
+     `Cmd/Ctrl+Enter`, `Cmd/Ctrl+S` ni comandos del Workbench. La entrada normal de texto,
+     el teclado virtual y `Enter` dentro de formularios conservan su comportamiento.
+   • Se adaptaron dashboard, cotizaciones (lista, editor, detalle e impresión), clientes,
+     productos, kits, cobranza, cobros/contracargos, desempeño, informes, checkout y
+     Workbench. Tablas densas conservan todos sus datos mediante filas móviles con
+     etiquetas o scroll deliberado; no se ocultaron cantidades, importes, márgenes,
+     estados ni acciones necesarias. La validación visual posterior dejó Cotizaciones
+     exclusivamente en lista bajo 880 px; Clientes y Productos apilan buscador y acciones,
+     contienen sus filtros y presentan cada registro como una fila vertical etiquetada,
+     sin scroll horizontal de página.
+   • Ajustes se revisó completo, incluido índice, tabs compartidas, formularios, previews,
+     diálogos, equipo, plan, facturas, impuestos, correo, portal, SSO, MCP, cuenta y
+     seguridad. Un fallo visual real del índice provenía del SVG de flecha sin dimensiones,
+     que ocupaba el ancho intrínseco y comprimía el texto; ahora mide 18 px y las filas
+     fuerzan `min-width:0`.
+   • Las superficies fuera del shell también quedaron cubiertas: sign-in/sign-up/reset y
+     verificaciones, onboarding, invitación, cotización pública, pago, embed, captura de
+     identidad y Cord Ops. Todas respetan notch/barra inferior y teclado móvil. El flujo
+     público de cotización volvió a mostrar en pantallas pequeñas folio, cantidad, precio
+     unitario e importe por concepto.
+   • QA: build de producción completo, `git diff --check`, auditoría de cambios para
+     confirmar ausencia de modificaciones de lógica y capturas reales a 375 px de acceso
+     público y Ops sin overflow horizontal. Se conservaron los warnings preexistentes de
+     Vite/Astro sobre opciones de esbuild, chunks grandes y headers en rutas prerenderizadas.
+
 ✅ **Ajustes: notificaciones reales, bandeja de facturas, MCP/Embed rediseñados, integraciones honestas (ago 2026)** —
    sesión grande sobre 6 páginas de Ajustes que André señaló con capturas ("hazlo funcionar",
    "esto no sirve para nada"). Auditoría previa encontró que Notificaciones e Integraciones eran

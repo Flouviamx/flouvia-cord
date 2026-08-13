@@ -916,6 +916,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     // ⌘/Ctrl + Enter = enviar (fluido con teclado, estándar de composers).
     // No aplica con el modal de cliente abierto (ahí Enter pertenece al form).
     document.addEventListener('keydown', (e) => {
+        if (window.matchMedia('(max-width: 880px)').matches) return;
         if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
             const modal = document.getElementById('clientModal');
             if (modal && modal.open) return;
@@ -1275,8 +1276,25 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     .prod-empty small { font-size: 0.72rem; color: #99a2af; }
 
     @media (max-width: 720px) {
-        .line-row { grid-template-columns: 1fr 60px 90px auto; }
-        .lr-lista, .lr-importe, .lr-margen, .lh-margen { display: none; }
+        .add-hint,
+        .sum-kbd { display: none; }
+        .line-row {
+            grid-template-columns: minmax(0, 1fr) minmax(92px, 0.72fr) 44px;
+            grid-template-areas:
+                "name name delete"
+                "quantity price price"
+                "list margin amount";
+            gap: 0.65rem 0.75rem;
+            padding: 1rem 0;
+        }
+        .line-row > :is(.lr-name, .lr-desc-input) { grid-area: name; min-width: 0; }
+        .line-row > .lr-input:nth-child(2) { grid-area: quantity; }
+        .line-row > .lr-lista { grid-area: list; display: block; align-self: center; }
+        .line-row > .lr-nego { grid-area: price; }
+        .line-row > .lr-importe { grid-area: amount; display: block; justify-self: end; align-self: center; }
+        .line-row > .lr-margen { grid-area: margin; display: inline-flex; align-items: center; justify-content: center; justify-self: start; align-self: center; min-height: 24px; }
+        .line-row > .lr-del { grid-area: delete; width: 44px; height: 44px; padding: 0; justify-self: end; }
+        .lr-input { min-height: 44px; font-size: 16px; }
     }
 </style>
 
@@ -1549,7 +1567,53 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         .ed-side { position: static; }
     }
     @media (max-width: 720px) {
-        .lines-head { grid-template-columns: 1fr 60px 90px auto; }
-        .lines-head span:nth-child(3), .lines-head span:nth-child(5) { display: none; }
+        .editor-grid { gap: 1.75rem; }
+        .ed-main { gap: 1.75rem; }
+        .ed-block { min-width: 0; }
+        .ai-block { padding: 1rem; border-radius: 14px; }
+        .ai-btn { width: 100%; min-height: 44px; }
+        .ai-attach-btn { top: 3px; right: 3px; width: 44px; height: 44px; }
+        .ai-file-chip button { min-width: 44px; min-height: 44px; justify-content: center; align-items: center; }
+        .client-row { flex-direction: column; align-items: stretch; }
+        .ed-select { width: 100%; min-width: 0; min-height: 46px; font-size: 16px; }
+        .term-chips {
+            margin-inline: calc(var(--mobile-gutter) * -1);
+            padding-inline: var(--mobile-gutter);
+            overflow-x: auto;
+            overscroll-behavior-inline: contain;
+            scrollbar-width: none;
+        }
+        .term-chips::-webkit-scrollbar { display: none; }
+        .chip { flex: 0 0 auto; min-height: 44px; }
+        .lines-head { display: none; }
+        .lines-empty { padding: 2rem 1rem; }
+        .add-actions { align-items: stretch; }
+        .prod-search { flex: 1 1 100%; min-width: 0; max-width: none; }
+        .prod-input { min-height: 46px; font-size: 16px; }
+        .prod-drop { max-height: 42dvh; }
+        .btn-free-line { flex: 1 1 140px; min-height: 44px; }
+        .kit-insert-wrap { flex: 1 1 140px; }
+        .kit-insert-wrap > .btn-free-line { width: 100%; }
+        .kit-insert-drop { left: auto; right: 0; width: min(360px, calc(100vw - (var(--mobile-gutter) * 2))); }
+        .kit-insert-row { min-height: 56px; }
+        .kit-insert-qty, .kit-insert-add { min-height: 44px; }
+        .ed-textarea { font-size: 16px; }
+        .fx-stepper { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+        .fx-step { min-width: 0; }
+        .fx-cush-chip { min-height: 52px; }
+        .ed-summary { padding: 1.2rem; border-radius: 18px; }
+        .btn-send, .btn-draft { width: 100%; min-height: 48px; }
+        .toast {
+            bottom: calc(0.9rem + env(safe-area-inset-bottom));
+            width: calc(100vw - (var(--mobile-gutter) * 2));
+            justify-content: center;
+            text-align: center;
+        }
+    }
+    @media (max-width: 420px) {
+        .fx-stepper { grid-template-columns: 1fr; }
+        .fx-arrow { display: none; }
+        .kit-insert-row { flex-wrap: wrap; }
+        .kit-insert-name { flex-basis: calc(100% - 56px); }
     }
 </style>

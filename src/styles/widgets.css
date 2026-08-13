@@ -45,15 +45,29 @@
     [data-widget-grid] > [data-widget-zone] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     [data-widget-grid] > [data-widget-zone] > .dash-widget[data-span="4"] { grid-column: span 2; }
 }
-@media (max-width: 680px) {
-    [data-widget-grid] { grid-template-columns: 1fr; }
+@media (max-width: 880px) {
+    [data-widget-grid] { grid-template-columns: 1fr; gap: 1rem; touch-action: pan-y; }
     [data-widget-grid] > .dash-widget,
     [data-widget-grid] > .dash-widget[data-span="2"],
     [data-widget-grid] > .dash-widget[data-span="4"] { grid-column: 1 / -1; }
-    [data-widget-grid] > [data-widget-zone] { grid-template-columns: 1fr; }
+    [data-widget-grid] > [data-widget-zone] { grid-template-columns: 1fr; gap: 1rem; }
     [data-widget-grid] > [data-widget-zone] > .dash-widget,
     [data-widget-grid] > [data-widget-zone] > .dash-widget[data-span="2"],
     [data-widget-grid] > [data-widget-zone] > .dash-widget[data-span="4"] { grid-column: 1 / -1; }
+    .widget-tray-list { flex-direction: column; }
+    .widget-tray-item { width: 100%; min-height: 52px; justify-content: space-between; }
+    .widget-tray-add, .we-btn { width: 44px; height: 44px; }
+    .widget-editbar { top: 6px; right: 6px; }
+    .widget-editbar .we-drag,
+    .widget-editbar .we-resize { display: none; }
+    [data-widget-grid][data-touch-layout][data-editing="1"] > .dash-widget,
+    [data-widget-grid][data-touch-layout][data-editing="1"] > [data-widget-zone] > .dash-widget { cursor: default; }
+    [data-widget-grid][data-touch-layout][data-editing="1"] > .dash-widget > .dash-card,
+    [data-widget-grid][data-touch-layout][data-editing="1"] > .dash-widget > .surface-card,
+    [data-widget-grid][data-touch-layout][data-editing="1"] > [data-widget-zone] > .dash-widget > .dash-card,
+    [data-widget-grid][data-touch-layout][data-editing="1"] > [data-widget-zone] > .dash-widget > .surface-card { animation: none; }
+    .widget-tray-add:active,
+    .we-btn:active { transform: scale(0.92); }
 }
 
 /* Modo edición: contorno punteado + wiggle, igual en las dos páginas. */

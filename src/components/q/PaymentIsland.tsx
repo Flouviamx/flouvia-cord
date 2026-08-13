@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { payerError } from '../../lib/pay-errors';
+import '../../styles/payment-island.css';
 
 const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
 type PaymentMethod = 'card' | 'spei';
@@ -46,14 +47,15 @@ function MethodSelector({ method, onChange, acceptsCard, acceptsSpei, color }: {
 }) {
     if (!(acceptsCard && acceptsSpei)) return null;
     return (
-        <fieldset style={{ border: 0, padding: 0, margin: '0 0 20px' }}>
+        <fieldset className="payi-methods" style={{ border: 0, padding: 0, margin: '0 0 20px' }}>
             <legend style={{ fontSize: '12.5px', fontWeight: 600, color: '#4a5567', marginBottom: '9px' }}>Método de pago</legend>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '4px', background: '#f5f5f7', borderRadius: '14px' }}>
+            <div className="payi-method-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '4px', background: '#f5f5f7', borderRadius: '14px' }}>
                 {([['card', 'Tarjeta'], ['spei', 'SPEI']] as const).map(([value, label]) => {
                     const selected = method === value;
                     return (
                         <button
                             key={value}
+                            className="payi-method-btn"
                             type="button"
                             aria-pressed={selected}
                             onClick={() => onChange(value)}
@@ -98,12 +100,12 @@ function SpeiView({ instructions, color, token, cobroId }: { instructions: SpeiI
         } catch { setEmailState('error'); }
     };
     const row = (label: string, value: string, copyable = false) => (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(92px, 0.7fr) minmax(0, 1.3fr)', gap: '14px', alignItems: 'center', padding: '13px 0', borderBottom: '1px solid rgba(10,25,47,0.08)' }}>
+        <div className="payi-spei-row" style={{ display: 'grid', gridTemplateColumns: 'minmax(92px, 0.7fr) minmax(0, 1.3fr)', gap: '14px', alignItems: 'center', padding: '13px 0', borderBottom: '1px solid rgba(10,25,47,0.08)' }}>
             <span style={{ color: '#667085', fontSize: '0.78rem' }}>{label}</span>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', minWidth: 0 }}>
                 <strong style={{ color: '#050505', fontSize: '0.86rem', fontWeight: 600, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' }}>{value}</strong>
                 {copyable && (
-                    <button type="button" onClick={() => copy(label, value)} style={{ border: 0, background: 'transparent', color: color || '#0a192f', fontSize: '0.76rem', fontWeight: 650, cursor: 'pointer', padding: '5px 0', flexShrink: 0 }}>
+                    <button className="payi-spei-copy" type="button" onClick={() => copy(label, value)} style={{ border: 0, background: 'transparent', color: color || '#0a192f', fontSize: '0.76rem', fontWeight: 650, cursor: 'pointer', padding: '5px 0', flexShrink: 0 }}>
                         {copied === label ? 'Copiado' : 'Copiar'}
                     </button>
                 )}
@@ -111,7 +113,7 @@ function SpeiView({ instructions, color, token, cobroId }: { instructions: SpeiI
         </div>
     );
     return (
-        <section aria-labelledby="spei-title">
+        <section className="payi-spei" aria-labelledby="spei-title">
             <h2 id="spei-title" style={{ fontSize: '1.02rem', letterSpacing: '-0.02em', margin: '0 0 5px', color: '#050505' }}>Instrucciones SPEI</h2>
             <p style={{ fontSize: '0.82rem', color: '#667085', lineHeight: 1.55, margin: '0 0 9px' }}>Transfiere el monto exacto y usa la referencia indicada. La confirmación es automática.</p>
             <div>
@@ -123,13 +125,14 @@ function SpeiView({ instructions, color, token, cobroId }: { instructions: SpeiI
                 {expiry && row('Vigencia', expiry)}
             </div>
             <button
+                className="payi-primary"
                 type="button"
                 onClick={() => window.print()}
                 style={{ width: '100%', marginTop: '18px', background: color || '#0a192f', color: '#ffffff', border: 0, borderRadius: '999px', padding: '14px 20px', fontSize: '0.9rem', fontWeight: 650, cursor: 'pointer' }}
             >
                 Imprimir o guardar PDF
             </button>
-            <button type="button" onClick={emailInstructions} disabled={emailState === 'sending' || emailState === 'sent'}
+            <button className="payi-secondary" type="button" onClick={emailInstructions} disabled={emailState === 'sending' || emailState === 'sent'}
                 style={{ width: '100%', marginTop: '9px', background: '#f5f5f7', color: '#0a192f', border: 0, borderRadius: '999px', padding: '13px 20px', fontSize: '0.86rem', fontWeight: 650, cursor: 'pointer' }}>
                 {emailState === 'sending' ? 'Enviando…' : emailState === 'sent' ? 'Instrucciones enviadas' : 'Enviar a mi correo'}
             </button>
@@ -182,7 +185,7 @@ function CheckoutForm({ token, color, amountLabel, subscription, onSuccess }: { 
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <form className="payi-checkout-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             <PaymentElement onReady={() => setReady(true)} options={{ layout: 'tabs' }} />
             {error && (
                 <div role="alert" style={{ color: '#dc2626', fontSize: '0.82rem', lineHeight: 1.5, padding: '10px 14px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px' }}>
@@ -190,6 +193,7 @@ function CheckoutForm({ token, color, amountLabel, subscription, onSuccess }: { 
                 </div>
             )}
             <button
+                className="payi-primary"
                 type="submit"
                 disabled={!stripe || !ready || loading}
                 style={{
@@ -300,6 +304,7 @@ export default function PaymentIsland({ token, color, amountLabel, cobroId, subs
                 <div style={{ textAlign: 'center', padding: '1.4rem 0 0.6rem' }}>
                 <p style={{ color: '#dc2626', fontSize: '0.86rem', lineHeight: 1.55, margin: '0 0 1rem' }}>{error}</p>
                 <button
+                    className="payi-retry"
                     type="button"
                     onClick={() => setRetry(r => r + 1)}
                     style={{ background: 'transparent', border: '1px solid rgba(10,25,47,0.15)', color: '#0a192f', padding: '9px 22px', borderRadius: '999px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}

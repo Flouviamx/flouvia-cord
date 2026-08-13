@@ -202,6 +202,16 @@ const tpl = ORG.pdfTemplate || 'clasico';
         .pdf-layout { grid-template-columns: 1fr; }
         .pdf-pane { position: static; max-width: 460px; }
     }
+    @media (max-width: 600px) {
+        .tpl-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(112px, 1fr); overflow-x: auto; padding-bottom: 4px; overscroll-behavior-inline: contain; scroll-snap-type: x proximity; }
+        .tpl-card { min-height: 100px; scroll-snap-align: start; }
+        .logo-row { align-items: flex-start; }
+        .logo-actions { min-width: 0; flex: 1; }
+        .logo-btns { display: grid; grid-template-columns: 1fr 1fr; }
+        .logo-btn, .logo-remove { min-height: 44px; padding-inline: 10px; }
+        .pdf-pane { width: 100%; max-width: none; }
+        .pdf-doc { padding: 1rem; }
+    }
 </style>
 
 <script is:inline define:vars={{

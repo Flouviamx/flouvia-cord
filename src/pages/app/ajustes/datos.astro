@@ -160,6 +160,20 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
 
     .wh-dlg-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.4rem; }
     .api-btn-ghost { font-family: var(--font-sans); font-size: 0.84rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+
+    @media (max-width: 600px) {
+        .datos-row { flex-direction: column; align-items: stretch; gap: 1rem; }
+        .datos-btn-group { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+        .datos-btn, .danger-btn { width: 100%; min-height: 46px; text-align: center; }
+        .datos-owner-note { max-width: none; text-align: left; }
+        .danger-box { padding-inline: 1rem; }
+        .dz-dlg { width: 100%; max-width: none; max-height: calc(100dvh - 16px); margin: 0; inset: auto 0 0; border-radius: 20px 20px 0 0; }
+        .dz-dlg-inner { padding: 1.25rem max(1rem, env(safe-area-inset-left)) max(1.25rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-right)); overflow-y: auto; }
+        .dz-dlg .s-input { min-height: 46px; font-size: 16px; }
+        .dz-pw-toggle { right: 0; width: 44px; height: 44px; }
+        .dz-dlg .wh-dlg-actions { display: grid; grid-template-columns: 1fr 1fr; }
+        .dz-dlg .wh-dlg-actions button { width: 100%; min-height: 46px; }
+    }
 </style>
 
 <script>

@@ -1,0 +1,28 @@
+@media (max-width: 600px) {
+    .payi-method-btn,
+    .payi-primary,
+    .payi-secondary,
+    .payi-retry {
+        min-height: 46px;
+    }
+
+    .payi-spei-row {
+        grid-template-columns: minmax(76px, 0.55fr) minmax(0, 1.45fr) !important;
+        gap: 10px !important;
+    }
+
+    .payi-spei-copy {
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 360px) {
+    .payi-spei-row {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 5px !important;
+    }
+}

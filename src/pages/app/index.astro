@@ -505,9 +505,10 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     }
     .cobros-nudge .cn-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
     @media (max-width: 640px) {
-        .cobros-nudge { flex-wrap: wrap; }
-        .cobros-nudge .cn-cta { margin-left: 0; width: 100%; text-align: center; order: 3; }
-        .cobros-nudge .cn-close { position: absolute; }
+        .cobros-nudge { position: relative; align-items: flex-start; flex-wrap: wrap; padding: 1rem; }
+        .cobros-nudge .cn-text { padding-right: 2.25rem; }
+        .cobros-nudge .cn-cta { margin-left: 0; width: 100%; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; order: 3; }
+        .cobros-nudge .cn-close { position: absolute; top: 0.55rem; right: 0.55rem; width: 44px; height: 44px; }
     }
 
     /* ── Hero de dinero ── */
@@ -647,11 +648,48 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     .task-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.6rem 0; }
 
     @media (max-width: 680px) {
-        .quote-row { grid-template-columns: auto 1fr auto; }
-        .quote-row .status-pill { display: none; }
+        .dash-edit-btn { min-height: 44px; justify-content: center; padding-inline: 1rem; }
+        .hero-rev { padding: 1.25rem 1rem; }
+        .hero-rev-metrics {
+            width: 100%;
+            margin-inline: -0.25rem;
+            padding: 0.15rem 0.25rem;
+            overflow-x: auto;
+            overscroll-behavior-inline: contain;
+            scrollbar-width: none;
+        }
+        .hero-rev-metrics::-webkit-scrollbar { display: none; }
+        .hero-metric-pill { flex: 0 0 auto; min-height: 44px; }
+        .hero-rev-chart { height: 210px; }
+        .silence-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas: "info total" "days go";
+            gap: 0.45rem 0.75rem;
+            min-height: 68px;
+            margin: 0;
+            padding: 0.85rem 0;
+            border-radius: 0;
+        }
+        .silence-info { grid-area: info; }
+        .silence-days { grid-area: days; justify-self: start; }
+        .silence-total { grid-area: total; }
+        .silence-go { grid-area: go; justify-self: end; }
+        .quote-row {
+            grid-template-columns: 40px minmax(0, 1fr) auto;
+            grid-template-areas: "avatar info amount" "avatar status status";
+            gap: 0.45rem 0.75rem;
+            min-height: 68px;
+            margin: 0;
+            padding: 0.85rem 0;
+            border-radius: 0;
+        }
+        .qr-avatar { grid-area: avatar; }
+        .qr-info { grid-area: info; }
+        .quote-row .status-pill { grid-area: status; display: inline-flex; justify-self: start; }
+        .qr-amount { grid-area: amount; }
         .task-add { flex-direction: column; align-items: stretch; }
-        .task-input, .task-date, .task-btn { width: 100%; min-width: 0; }
-        .task-date { min-height: 44px; }
+        .task-input, .task-date, .task-btn { width: 100%; min-width: 0; min-height: 46px; font-size: 16px; }
+        .task-check, .task-del { min-width: 44px; min-height: 44px; }
     }
 </style>
 
