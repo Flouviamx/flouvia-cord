@@ -251,17 +251,17 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 </div>
 
                 <div class="fx-cover" id="fxCover" hidden>
-                    <p class="fx-explain">{t(L, 'ed.fx_explain_pre')} <b id="fxBaseLbl2">USD</b>{t(L, 'ed.fx_explain_post')}</p>
+                    <p class="fx-explain" id="fxExplain"></p>
 
                     <div class="fx-stepper">
                         <div class="fx-step">
                             <span class="fx-step-lbl">{t(L, 'ed.fx_tipo_hoy')}</span>
-                            <span class="fx-step-val editorial" id="fxSpot">—</span>
+                            <span class="fx-step-val editorial" id="fxSpot">&mdash;</span>
                         </div>
-                        <span class="fx-arrow" aria-hidden="true">→</span>
+                        <span class="fx-arrow" aria-hidden="true">&rarr;</span>
                         <div class="fx-step fx-step-on">
                             <span class="fx-step-lbl">{t(L, 'ed.fx_tasa_protegida')} <span id="fxBufLbl">+2%</span></span>
-                            <span class="fx-step-val editorial" id="fxApplied">—</span>
+                            <span class="fx-step-val editorial" id="fxApplied">&mdash;</span>
                         </div>
                     </div>
 
@@ -273,8 +273,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                     </div>
                     <input type="hidden" id="fxBuffer" value="2" />
 
-                    <p class="fx-client-sees" id="fxPreview" set:html={t(L, 'ed.fx_preview_default')} />
-                    <div class="fx-lock-row"><span class="fx-lock-ic">🔒</span> {t(L, 'ed.fx_lock_row')}</div>
+                    <p class="fx-client-sees" id="fxPreview"></p>
+                    <div class="fx-lock-row"><svg class="fx-lock-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> {t(L, 'ed.fx_lock_row')}</div>
                 </div>
 
                 <button class="btn-send" id="btnSend">
@@ -298,7 +298,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     </div>
 </AppLayout>
 
-<script is:inline define:vars={{ catalogo, kits, aprobMargenMin: ORG.aprobMargenMin, draftQuote, preselectCliente, T: ET }}>
+<script is:inline define:vars={{ catalogo, kits, aprobMargenMin: ORG.aprobMargenMin, draftQuote, preselectCliente, T: ET, orgCurrency: ORG.moneda || 'MXN' }}>
     const tpl = (s, vars) => { let r = s; for (const k in vars) r = r.split('{' + k + '}').join(vars[k]); return r; };
     const lines = [];
     const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
@@ -806,12 +806,13 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         // Validación del cliente
         const cliente_id = clientSel && clientSel.value !== "" ? clientSel.value : null;
 
-        // Multi-divisa: si la moneda elegida no es MXN, se factura en MXN con cobertura.
+        // Multi-divisa: si la moneda elegida difiere de la moneda fiscal de la org,
+        // se aplica cobertura cambiaria.
         const fxBaseSel = document.getElementById('fxBase');
         const fxBufferEl = document.getElementById('fxBuffer');
-        const base_currency = fxBaseSel ? fxBaseSel.value : 'MXN';
-        const fiscal_currency = base_currency === 'MXN' ? 'MXN' : 'MXN';
-        const fx_buffer_pct = base_currency === 'MXN' ? 0 : (fxBufferEl ? parseFloat(fxBufferEl.value) || 0 : 0);
+        const base_currency = fxBaseSel ? fxBaseSel.value : orgCurrency;
+        const fiscal_currency = orgCurrency;
+        const fx_buffer_pct = base_currency === orgCurrency ? 0 : (fxBufferEl ? parseFloat(fxBufferEl.value) || 0 : 0);
 
         // Iguala recurrente: cobra el total automáticamente cada mes (solo contado;
         // excluyente con anticipo).
@@ -926,13 +927,27 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     const $fxBuffer = document.getElementById('fxBuffer');
     const $fxCover = document.getElementById('fxCover');
     const $fxPreview = document.getElementById('fxPreview');
-    const $fxBaseLbl2 = document.getElementById('fxBaseLbl2');
+    const $fxExplain = document.getElementById('fxExplain');
     const $fxSpot = document.getElementById('fxSpot');
     const $fxApplied = document.getElementById('fxApplied');
     const $fxBufLbl = document.getElementById('fxBufLbl');
     const $fxCushion = document.getElementById('fxCushion');
     const nfFx = new Intl.NumberFormat(T.localeIntl, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const symFx = (c) => c === 'USD' ? 'US$' : c === 'EUR' ? '€' : '$';
+    // Símbolo corto de la moneda para mostrar en el preview — usa Intl para
+    // resolver el símbolo real de cualquier divisa (US$, €, £, ¥, etc.).
+    const symFx = (c) => {
+        try {
+            const parts = new Intl.NumberFormat(T.localeIntl, { style: 'currency', currency: c, currencyDisplay: 'narrowSymbol' }).formatToParts(0);
+            const sym = parts.find(p => p.type === 'currency');
+            return sym ? sym.value : c;
+        } catch { return c; }
+    };
+    // Nombre de la moneda fiscal de la org ("pesos mexicanos", "US dollars", etc.)
+    const fiscalCurrencyName = (() => {
+        try {
+            return new Intl.DisplayNames([T.localeIntl], { type: 'currency' }).of(orgCurrency) || orgCurrency;
+        } catch { return orgCurrency; }
+    })();
 
     function parseTotal() {
         const t = (document.getElementById('sumTotal')?.textContent || '0').replace(/[^0-9.]/g, '');
@@ -943,26 +958,29 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     async function refreshFx() {
         if (!$fxBase) return;
         const base = $fxBase.value;
-        const isForeign = base !== 'MXN';
+        const isForeign = base !== orgCurrency;
         if ($fxCover) $fxCover.hidden = !isForeign;
         if (!isForeign) return;
-        if ($fxBaseLbl2) $fxBaseLbl2.textContent = base;
+        // Texto explicativo dinámico: describe la divisa del cliente y la fiscal
+        if ($fxExplain) {
+            $fxExplain.innerHTML = tpl(T.fxExplainTpl, { base: '<b>' + base + '</b>', fiscal: fiscalCurrencyName, fiscalCode: orgCurrency });
+        }
         const buffer = $fxBuffer ? parseFloat($fxBuffer.value) || 0 : 0;
         if ($fxBufLbl) $fxBufLbl.textContent = '+' + buffer + '%';
         const amount = parseTotal();
         try {
-            const res = await fetch(`/api/fx/quote?base=${base}&fiscal=MXN&amount=${amount}&buffer=${buffer}`);
+            const res = await fetch(`/api/fx/quote?base=${base}&fiscal=${orgCurrency}&amount=${amount}&buffer=${buffer}`);
             const fx = await res.json();
             const spot = Number(fx.spotRate || 0);
             const applied = Number(fx.appliedRate || 0);
             // Tasas: hoy vs. protegida (con tu colchón)
-            if ($fxSpot) $fxSpot.textContent = '$' + nfFx.format(spot);
-            if ($fxApplied) $fxApplied.textContent = '$' + nfFx.format(applied);
-            // Lo que el cliente verá en SU moneda = total en pesos ÷ tasa protegida
+            if ($fxSpot) $fxSpot.textContent = symFx(orgCurrency) + nfFx.format(spot);
+            if ($fxApplied) $fxApplied.textContent = symFx(orgCurrency) + nfFx.format(applied);
+            // Lo que el cliente verá en SU moneda = total fiscal ÷ tasa protegida
             const clientSees = applied > 0 ? amount / applied : 0;
             if ($fxPreview) {
                 $fxPreview.innerHTML = amount > 0
-                    ? tpl(T.clienteVeraTpl, { sym: symFx(base), monto: nfFx.format(clientSees), mxn: nfFx.format(amount) })
+                    ? tpl(T.clienteVeraTpl, { sym: symFx(base), monto: nfFx.format(clientSees), sym2: symFx(orgCurrency), fiscal: nfFx.format(amount), fiscalCode: orgCurrency })
                     : tpl(T.agregaProductosDivisaTpl, { base });
             }
         } catch {
@@ -971,9 +989,9 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     }
     function scheduleFx() { clearTimeout(fxTimer); fxTimer = setTimeout(refreshFx, 250); }
     $fxBase?.addEventListener('change', refreshFx);
-    // Si la moneda inicial (default de la org o del borrador) no es MXN, el
-    // panel de cobertura FX debe aparecer desde el primer render.
-    if ($fxBase && $fxBase.value !== 'MXN') refreshFx();
+    // Si la moneda inicial (default de la org o del borrador) no es la fiscal,
+    // el panel de cobertura FX debe aparecer desde el primer render.
+    if ($fxBase && $fxBase.value !== orgCurrency) refreshFx();
     // Colchón: chips de preset (Poco / Normal / Cauto)
     $fxCushion?.querySelectorAll('.fx-cush-chip').forEach((chip) => {
         chip.addEventListener('click', () => {
@@ -1486,7 +1504,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     .fx-client-sees { font-size: 0.8rem; color: var(--color-text); margin: 0; line-height: 1.4; }
     .fx-client-sees b { font-weight: 600; }
     .fx-lock-row { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--color-text-muted); }
-    .fx-lock-ic { font-size: 0.7rem; }
+    .fx-lock-svg { flex-shrink: 0; color: var(--color-text-muted); }
 
     /* Sidebar summary — Apple checkout style */
     .ed-side { position: sticky; top: 76px; }

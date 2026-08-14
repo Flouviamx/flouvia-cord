@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { flagSrc } from '../../lib/flags';
 
@@ -66,17 +66,30 @@ export default function FlagSelect({
   const current = isControlled ? (value as string) : internalValue;
 
   const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(() => Math.max(0, options.findIndex((o) => o.code === current)));
+  const [search, setSearch] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
 
   const btnRef = useRef<HTMLButtonElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const nativeRef = useRef<HTMLSelectElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const reactId = useId();
   const listboxId = `fs-listbox-${reactId.replace(/[:]/g, '')}`;
 
   const getFlag = (code: string) => options.find((o) => o.code === code)?.flag || code;
+
+  // Opciones filtradas por búsqueda
+  const filtered = search.trim()
+    ? options.filter((o) => {
+        const q = search.toLowerCase();
+        return o.code.toLowerCase().includes(q)
+          || o.label.toLowerCase().includes(q)
+          || (o.hint && o.hint.toLowerCase().includes(q));
+      })
+    : options;
 
   useEffect(() => {
     if (isControlled && value !== internalValue) setInternalValue(value as string);
@@ -91,6 +104,23 @@ export default function FlagSelect({
     }
   }, [current]);
 
+  // Reset del activeIndex cuando cambia el filtro
+  useEffect(() => {
+    // Al filtrar, si el valor actual está en la lista filtrada, seleccionarlo;
+    // si no, ir al primer item.
+    const currentIdx = filtered.findIndex((o) => o.code === current);
+    setActiveIndex(currentIdx >= 0 ? currentIdx : 0);
+  }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll automático para mantener visible el item activo
+  useEffect(() => {
+    if (!open || !listRef.current) return;
+    const activeEl = listRef.current.children[activeIndex] as HTMLElement | undefined;
+    if (activeEl) {
+      activeEl.scrollIntoView({ block: 'nearest' });
+    }
+  }, [activeIndex, open]);
+
   useEffect(() => {
     if (!open) return;
     const onDocPointer = (e: MouseEvent) => {
@@ -98,14 +128,22 @@ export default function FlagSelect({
       if (rootRef.current?.contains(t) || popupRef.current?.contains(t)) return;
       setOpen(false);
     };
-    const onScrollOrResize = () => setOpen(false);
+    // Solo cerramos al hacer scroll FUERA del popup — el scroll DENTRO del
+    // listbox (o del search) no debe cerrar el dropdown. Usamos capture para
+    // interceptar scroll en cualquier ancestro.
+    const onScrollOutside = (e: Event) => {
+      // Si el scroll viene del popup o de alguno de sus hijos, ignorar.
+      if (popupRef.current && popupRef.current.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    const onResize = () => setOpen(false);
     document.addEventListener('mousedown', onDocPointer);
-    window.addEventListener('scroll', onScrollOrResize, true);
-    window.addEventListener('resize', onScrollOrResize);
+    window.addEventListener('scroll', onScrollOutside, true);
+    window.addEventListener('resize', onResize);
     return () => {
       document.removeEventListener('mousedown', onDocPointer);
-      window.removeEventListener('scroll', onScrollOrResize, true);
-      window.removeEventListener('resize', onScrollOrResize);
+      window.removeEventListener('scroll', onScrollOutside, true);
+      window.removeEventListener('resize', onResize);
     };
   }, [open]);
 
@@ -120,82 +158,76 @@ export default function FlagSelect({
 
   function openList() {
     if (disabled || !options.length) return;
-    const idx = Math.max(0, options.findIndex((o) => o.code === current));
-    setActiveIndex(idx);
+    setSearch('');
     if (btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setPopupStyle({ position: 'fixed', top: r.bottom + 6, left: r.left, width: r.width, zIndex: FS_POPUP_Z });
+      // Calcular si el popup cabe abajo o necesita ir arriba
+      const spaceBelow = window.innerHeight - r.bottom - 6;
+      const maxH = 340; // max-height del popup (con search: un poco más que antes)
+      const goUp = spaceBelow < maxH && r.top > spaceBelow;
+      setPopupStyle({
+        position: 'fixed',
+        ...(goUp
+          ? { bottom: window.innerHeight - r.top + 6 }
+          : { top: r.bottom + 6 }),
+        left: r.left,
+        width: r.width,
+        zIndex: FS_POPUP_Z,
+      });
     }
     setOpen(true);
+    // Focus el input de búsqueda después del render
+    requestAnimationFrame(() => searchRef.current?.focus());
   }
 
   function closeList(refocus = true) {
     setOpen(false);
+    setSearch('');
     if (refocus) btnRef.current?.focus();
   }
 
   function selectActive() {
-    const opt = options[activeIndex];
+    const opt = filtered[activeIndex];
     if (opt) commit(opt.code);
     closeList(true);
   }
 
-  // Typeahead — igual que un <select> nativo: acumula letras en una ventana
-  // de 500ms y salta a la primera opción cuyo label empiece por ese buffer.
-  const typeaheadRef = useRef({ buffer: '', timer: 0 as unknown as ReturnType<typeof setTimeout> });
-  function nextTypeaheadIndex(key: string, fromIndex: number): number | null {
-    const ta = typeaheadRef.current;
-    clearTimeout(ta.timer);
-    ta.buffer += key.toLowerCase();
-    ta.timer = setTimeout(() => { ta.buffer = ''; }, 500);
-    const n = options.length;
-    for (let step = 1; step <= n; step++) {
-      const idx = (fromIndex + step) % n;
-      if (options[idx].label.toLowerCase().startsWith(ta.buffer)) return idx;
+  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const n = filtered.length;
+    if (!n) return;
+    switch (e.key) {
+      case 'ArrowDown': e.preventDefault(); setActiveIndex((i) => (i + 1) % n); return;
+      case 'ArrowUp': e.preventDefault(); setActiveIndex((i) => (i - 1 + n) % n); return;
+      case 'Home': e.preventDefault(); setActiveIndex(0); return;
+      case 'End': e.preventDefault(); setActiveIndex(n - 1); return;
+      case 'Enter': e.preventDefault(); selectActive(); return;
+      case 'Escape': e.preventDefault(); closeList(true); return;
+      case 'Tab': closeList(false); return;
     }
-    for (let step = 0; step < n; step++) {
-      const idx = (fromIndex + step) % n;
-      if (options[idx].label.toLowerCase().startsWith(key.toLowerCase())) return idx;
-    }
-    return null;
-  }
+  }, [filtered, activeIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function onTriggerKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
     if (disabled) return;
-    const n = options.length;
     if (!open) {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         openList();
         return;
       }
+      // Cualquier letra abre y empieza a buscar
       if (e.key.length === 1 && /[a-z0-9]/i.test(e.key)) {
         e.preventDefault();
-        const curIdx = Math.max(0, options.findIndex((o) => o.code === current));
-        const idx = nextTypeaheadIndex(e.key, curIdx);
-        if (idx !== null) commit(options[idx].code);
+        openList();
+        // El search se establece después del render
+        requestAnimationFrame(() => setSearch(e.key));
+        return;
       }
       return;
     }
-    switch (e.key) {
-      case 'ArrowDown': e.preventDefault(); setActiveIndex((i) => (i + 1) % n); return;
-      case 'ArrowUp': e.preventDefault(); setActiveIndex((i) => (i - 1 + n) % n); return;
-      case 'Home': e.preventDefault(); setActiveIndex(0); return;
-      case 'End': e.preventDefault(); setActiveIndex(n - 1); return;
-      case 'Enter':
-      case ' ': e.preventDefault(); selectActive(); return;
-      case 'Escape': e.preventDefault(); closeList(true); return;
-      case 'Tab': closeList(false); return;
-      default:
-        if (e.key.length === 1 && /[a-z0-9]/i.test(e.key)) {
-          e.preventDefault();
-          const idx = nextTypeaheadIndex(e.key, activeIndex);
-          if (idx !== null) setActiveIndex(idx);
-        }
-    }
+    onKeyDown(e);
   }
 
-  const activeOpt = options[activeIndex];
+  const activeOpt = filtered[activeIndex];
   const activeId = open && activeOpt ? `${listboxId}-opt-${activeOpt.code}` : undefined;
 
   return (
@@ -247,36 +279,77 @@ export default function FlagSelect({
       {open && createPortal(
         <div
           ref={popupRef}
-          id={listboxId}
-          role="listbox"
-          className="fs-list"
+          className="fs-popup"
           style={popupStyle}
-          aria-label={ariaLabel}
         >
-          {options.map((opt, i) => (
-            <div
-              key={opt.code}
-              id={`${listboxId}-opt-${opt.code}`}
-              role="option"
-              aria-selected={opt.code === current}
-              className={`fs-opt ${i === activeIndex ? 'is-active' : ''} ${opt.code === current ? 'is-selected' : ''}`}
-              onMouseEnter={() => setActiveIndex(i)}
-              onClick={() => { commit(opt.code); closeList(true); }}
-            >
-              <span className="fs-opt-flag" aria-hidden="true">
-                <img src={flagSrc(getFlag(opt.code))} alt="" width={20} height={20} />
-              </span>
-              <span className="fs-opt-text">
-                <span className="fs-opt-label">{opt.label}</span>
-                {opt.hint ? <span className="fs-opt-hint">{opt.hint}</span> : null}
-              </span>
-              {opt.code === current && (
-                <svg className="fs-opt-check" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+          {/* Barra de búsqueda — solo se muestra si hay suficientes opciones */}
+          {options.length > 8 && (
+            <div className="fs-search-wrap">
+              <svg className="fs-search-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                ref={searchRef}
+                type="text"
+                className="fs-search"
+                placeholder="Buscar…"
+                value={search}
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={onKeyDown}
+                aria-label="Buscar opciones"
+              />
+              {search && (
+                <button
+                  type="button"
+                  className="fs-search-clear"
+                  onClick={() => { setSearch(''); searchRef.current?.focus(); }}
+                  aria-label="Limpiar búsqueda"
+                  tabIndex={-1}
+                >
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
               )}
             </div>
-          ))}
+          )}
+
+          <div
+            ref={listRef}
+            id={listboxId}
+            role="listbox"
+            className="fs-list"
+            aria-label={ariaLabel}
+          >
+            {filtered.length === 0 && (
+              <div className="fs-empty">Sin resultados</div>
+            )}
+            {filtered.map((opt, i) => (
+              <div
+                key={opt.code}
+                id={`${listboxId}-opt-${opt.code}`}
+                role="option"
+                aria-selected={opt.code === current}
+                className={`fs-opt ${i === activeIndex ? 'is-active' : ''} ${opt.code === current ? 'is-selected' : ''}`}
+                onMouseEnter={() => setActiveIndex(i)}
+                onClick={() => { commit(opt.code); closeList(true); }}
+              >
+                <span className="fs-opt-flag" aria-hidden="true">
+                  <img src={flagSrc(getFlag(opt.code))} alt="" width={20} height={20} />
+                </span>
+                <span className="fs-opt-text">
+                  <span className="fs-opt-label">{opt.label}</span>
+                  {opt.hint ? <span className="fs-opt-hint">{opt.hint}</span> : null}
+                </span>
+                {opt.code === current && (
+                  <svg className="fs-opt-check" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </div>
+            ))}
+          </div>
         </div>,
         document.body,
       )}
@@ -319,15 +392,60 @@ export default function FlagSelect({
         .fs-caret { flex-shrink: 0; color: var(--sb-menu-muted, #8a94a3); transition: transform 0.2s var(--ease-ios, cubic-bezier(0.25,1,0.5,1)); }
         .fs-btn.is-open .fs-caret { transform: rotate(180deg); }
 
-        .fs-list {
-          overflow-y: auto; max-height: 280px;
+        /* ── Popup container (search + list) ── */
+        .fs-popup {
+          display: flex; flex-direction: column;
           background: var(--sb-menu-solid-bg, #fff);
           border: 1px solid var(--sb-menu-border, rgba(10,25,47,0.1));
-          border-radius: 12px; padding: 6px;
+          border-radius: 12px;
           box-shadow: 0 4px 20px rgba(0,0,0,0.1), 0 20px 48px -16px rgba(10,25,47,0.28);
           animation: fsPop 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+          max-height: 340px;
+          overflow: hidden;
         }
-        html[data-theme="dark"] .fs-list { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 20px 48px -16px rgba(0,0,0,0.5); }
+        html[data-theme="dark"] .fs-popup { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 20px 48px -16px rgba(0,0,0,0.5); }
+
+        /* ── Search bar ── */
+        .fs-search-wrap {
+          display: flex; align-items: center; gap: 8px;
+          padding: 8px 10px;
+          border-bottom: 1px solid var(--sb-menu-border, rgba(10,25,47,0.08));
+          flex-shrink: 0;
+        }
+        .fs-search-icon { flex-shrink: 0; color: var(--sb-menu-muted, #8a94a3); }
+        .fs-search {
+          flex: 1; min-width: 0;
+          border: none; outline: none; background: transparent;
+          font-family: inherit; font-size: 0.84rem;
+          color: var(--sb-text-strong, #0a192f);
+          padding: 4px 0;
+        }
+        .fs-search::placeholder { color: var(--sb-menu-muted, #8a94a3); }
+        html[data-theme="dark"] .fs-search { color: #fff; }
+        .fs-search-clear {
+          flex-shrink: 0; width: 20px; height: 20px;
+          display: flex; align-items: center; justify-content: center;
+          background: var(--sb-hover-bg, rgba(10,25,47,0.06));
+          border: none; border-radius: 50%; cursor: pointer;
+          color: var(--sb-menu-muted, #8a94a3);
+          transition: background 0.15s, color 0.15s;
+        }
+        .fs-search-clear:hover { background: rgba(10,25,47,0.1); color: var(--sb-text-strong, #0a192f); }
+        html[data-theme="dark"] .fs-search-clear { background: rgba(255,255,255,0.08); }
+        html[data-theme="dark"] .fs-search-clear:hover { background: rgba(255,255,255,0.14); color: #fff; }
+
+        /* ── Scrollable list ── */
+        .fs-list {
+          overflow-y: auto; flex: 1; min-height: 0;
+          padding: 6px;
+          overscroll-behavior: contain;
+        }
+
+        .fs-empty {
+          padding: 16px 10px; text-align: center;
+          font-size: 0.82rem; color: var(--sb-menu-muted, #8a94a3);
+        }
+
         @keyframes fsPop { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
         .fs-opt {
@@ -349,7 +467,7 @@ export default function FlagSelect({
         html[data-theme="dark"] .fs-opt-check { color: #fff; }
 
         @media (prefers-reduced-motion: reduce) {
-          .fs-list { animation: none; }
+          .fs-popup { animation: none; }
           .fs-caret { transition: none; }
         }
       `}</style>
