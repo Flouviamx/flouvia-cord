@@ -7,6 +7,12 @@
 
 ---
 
+**Cadencia diaria del reconciliador de Billing (14 ago 2026)** — el despliegue que
+introdujo `/api/cron/billing-reconcile` fue rechazado por Vercel porque su expresión
+horaria excedía el límite del plan Hobby. La programación pasó a una ejecución diaria
+a las 05:15 UTC; los webhooks y la entrega inmediata del outbox permanecen como caminos
+rápidos, mientras el cron conserva su papel de recuperación ante fallos.
+
 **Núcleo fiscal internacional propiedad de Cord (14 ago 2026)** — la emisión dejó
 de modelarse como “llamar a Facturapi y guardar su respuesta”. Cord ahora conserva el
 documento canónico, sus partes emisor/receptor, conceptos, totales, moneda, folio y una

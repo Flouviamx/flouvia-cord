@@ -83,7 +83,8 @@ Flujo:
   La reserva se cancela si el proveedor no produjo resultado; si sí, el outbox se
   entrega a Stripe con reintentos. `meter_value` contiene solo la porción que rebasa
   lo incluido: nunca se factura nuevamente la cuota incluida.
-- **Reconciliación:** `/api/cron/billing-reconcile` corre cada hora. Recupera checkouts,
+- **Reconciliación:** `/api/cron/billing-reconcile` corre una vez al día por el límite
+  operativo de Vercel Hobby. Recupera checkouts,
   consulta la suscripción actual y la factura pagada del Price base, corrige eventos
   perdidos, alerta suscripciones duplicadas y drena el outbox. En anual, conserva la
   evidencia anual aunque existan invoices mensuales separadas de medidores.
