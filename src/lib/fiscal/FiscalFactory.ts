@@ -1,12 +1,13 @@
 import type { FiscalProvider } from './index';
 import { MexicoSatProvider } from './providers/MexicoSatProvider';
-import { USInvoiceProvider } from './providers/USInvoiceProvider';
+import { CommercialInvoiceProvider } from './providers/CommercialInvoiceProvider';
 
 export class FiscalFactory {
   private static providers: FiscalProvider[] = [
     new MexicoSatProvider(),
-    new USInvoiceProvider(),
-    // Agregar ColombiaDianProvider(), SpainFacturaEProvider() aquí en el futuro.
+    new CommercialInvoiceProvider(),
+    // Un adapter regulatorio nuevo se registra antes del provider comercial.
+    // El documento canónico y el folio permanecen iguales.
   ];
 
   static getProvider(countryCode: string): FiscalProvider {

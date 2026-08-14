@@ -1,36 +1,31 @@
 # Cómo funciona la app: Multi-tenant y Rutas — Cord
 
 > Modelo multi-tenant (tablas, RLS, org_id), mapa completo de rutas (landing, app,
-> API pública/MCP, legales) y AppLayout. Auto-cargado vía `@import` desde `/CLAUDE.md`.
+> API pública/MCP, legales) y AppLayout. Documento de estado actual; los detalles
+> cronológicos viven en [`historial.md`](historial.md).
 
 ---
 
 ## Multi-tenant
 
-PK de relación = **`org_id`** (NO `email_cliente` como el portal de flouvia-web).
-Cada negocio registrado es una `org`. El owner sigue en `orgs.clerk_user_id`.
+PK de relación = **`org_id`**; nunca `email_cliente`. Cada negocio registrado es una
+`org`; su owner vigente se relaciona mediante `orgs.owner_id → users.id`.
 
-✅ **Equipo y roles MULTI-USUARIO (jun 2026):** tabla **`org_members`**
-(`org_id`, `clerk_user_id`, `email`, `rol`, `permisos jsonb`, `estado`, `token`).
-`getActiveOrgId()` (db.ts) ahora resuelve la org por **membresía activa** (membresía
-más reciente primero), con fallback a la org propia + auto-siembra de la membresía
-`owner` (backward-compatible; resiliente si la tabla no existe). **Permisos por
-sección custom** en `src/lib/permissions.ts` (PERMISOS: cotizar/aprobar/cobranza/
-clientes/productos/analitica/ajustes/equipo; PRESETS admin/vendedor/lectura; el
-owner = override total). Helpers en queries.ts: `getMembers`, `getMyMembership`,
-**`requirePerm(key)`** (devuelve Response 403). Enforcement REAL en `/api/org`
-(ajustes), `/api/equipo` (equipo), `/api/cotizaciones`(+[id], cotizar/aprobar),
-`/api/clientes`, `/api/productos`. **Invitación por LINK** (token): owner invita en
-`/app/ajustes/equipo` → comparte `/unirse/{token}` → la persona inicia sesión
-(login/registro honran `?redirect_url=`) y acepta vía `/api/equipo/join`. **Gating:
-invitar requiere plan Negocio** (`planTieneEquipo`, hoy `['pro','business','negocio']`).
-⚠️ **Doc drift corregido (ago 2026):** las líneas de arriba describen el approach viejo de
-"membresía propia sobre identidad de Clerk". Clerk ya no existe en el repo — la identidad
-(`users`, `sessions`) y el switcher de orgs (`cord_active_org` cookie, validado contra
-`org_members` en `resolveOrgId()`, `db.ts`) son 100% propios. Ver la entrada "Auditoría y
-endurecimiento completo del auth propio" en `historial-auth-clerk.md` para el detalle
-completo (Argon2id, 2FA/TOTP, passkeys v13, sesiones con sha256, `/api/orgs` reemplazando
-al `/api/orgs/provision` inseguro, invitaciones con token hasheado + expiración real).
+La identidad es 100% propia (`users`, `sessions`) y el switcher usa la cookie
+`cord_active_org`. `resolveOrgId()` en `src/lib/db.ts` solo honra esa cookie si el
+usuario tiene una membresía activa en `org_members`; si no, la ignora. Después
+resuelve la membresía activa más reciente, cae a una organización propia y, en el
+primer acceso, crea la organización y siembra la membresía `owner` de forma
+idempotente.
+
+`org_members` contiene `org_id`, `user_id`, `email`, `rol`, `permisos`, `estado` y
+el token hasheado de invitación. El owner tiene override total. Los permisos por
+sección viven en `src/lib/permissions.ts`; `requirePerm(key)` aplica el gate en las
+APIs correspondientes. Las invitaciones usan `/unirse/{token}` y se aceptan vía
+`/api/equipo/join`. Invitar requiere un plan con equipo habilitado.
+
+Para la migración desde Clerk, Argon2id, TOTP, passkeys, hashing de tokens y SSO,
+consulta [`historial-auth-clerk.md`](historial-auth-clerk.md).
 
 **Tablas** (`db/schema.sql`):
 - `orgs` — el negocio (nombre, logo, datos fiscales en `fiscal_metadata`, `country_code`, `quote_prefix`, plan, Stripe IDs, `owner_id` → `users.id`, `parent_org_id` → sub-cuentas anidadas). **`sandbox_of uuid`** (jul 2026, índice único parcial): si no es null, esta fila ES la org SANDBOX espejo de otra — ver "Entorno de prueba REAL tipo Stripe" en `historial.md`. `getActiveOrgId()` resuelve la sandbox del padre cuando la cookie `cord_test_mode` está activa (`resolveSandboxOrgId()` en `db.ts`, find-or-create idempotente).
@@ -42,8 +37,9 @@ al `/api/orgs/provision` inseguro, invitaciones con token hasheado + expiración
 - `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX. `creado_por` (jul 2026, nullable) = `users.id` de quien la creó/duplicó — alimenta `/app/desempeno`.
 - `cotizacion_items` — líneas (permite línea libre sin producto; `precio_negociado` opcional)
 - `eventos` — timeline + "tu cliente vio la cotización" (**feature estrella**)
-- `documentos_fiscales` — registro global de emisiones fiscales por país (reemplaza a la tabla legado `facturas_cfdi`)
-- `org_members` — equipo multi-usuario (rol, permisos jsonb, estado, token invitación); sincronizado desde Clerk vía webhook
+- `documentos_fiscales` — fuente canónica de las emisiones fiscales por país (reemplaza a la tabla legado `facturas_cfdi`). Conserva número, moneda, totales, snapshots inmutables de emisor/receptor/líneas, proveedor y llave de idempotencia. México usa el rail CFDI 4.0 de Facturapi; el resto puede emitir una factura comercial propia de Cord sin afirmar envío a la autoridad local.
+- `invoice_sequences` — consecutivo atómico por `org_id + country_code + document_type`; RLS + FORCE evita cruces entre organizaciones y la llave única de `documentos_fiscales` evita duplicar una emisión por cotización.
+- `org_members` — equipo multi-usuario (rol, permisos JSON, estado y token de invitación); identidad mediante `user_id → users.id`
 - `tareas` — recordatorios CRM del vendedor
 - `audit_log` — registro inmutable de acciones (logAudit/reqIp)
 - `api_keys` — llaves API públicas (hash SHA-256, mode test|live, scope read|write, **type secret|publishable** jul 2026 — ver "Cord Elements: llaves pk_/sk_" en historial.md)
@@ -109,7 +105,7 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    pixel/dark-mode.
 
 # App — CONECTADA a Neon (src/lib/queries.ts); usa AppLayout.astro
-/login /registro → Clerk SignIn/SignUp (es-MX)
+/login /registro → formularios propios de acceso y alta; email/password + OAuth nativo
 /app             → dashboard: KPIs (incl. "por dar seguimiento"), pipeline, recientes, feed
 /app/informes    → INFORMES (ago 2026) — la única casa de la analítica. Reemplaza a
                    /app/cfo, /app/analitica y /app/tesoreria/flujo (los 3 borrados; el
@@ -128,7 +124,7 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    ranking por vendedor (cotizaciones creadas/enviadas/cerradas, tasa de
                    cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía
                    getDesempeno() en queries.ts. Atribución por cotizaciones.creado_por
-                   (clerk_user_id); gateado por el permiso 'analitica'.
+                   (`users.id`); gateado por el permiso `analitica`.
 /app/cobranza    → cuentas por cobrar (jun 2026): cartera total, vencido, aging por
                    antigüedad, exposición por cliente (saldo vs límite) y tabla con
                    "marcar cobrada" + recordatorio por WhatsApp. getCobranza() en
@@ -168,14 +164,20 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    (NO rail lateral, jun 2026 — André lo pidió). El `SettingsShell.astro`
                    recibe `tab="x"` (deriva la categoría), pinta breadcrumb + título +
                    tabs + slot + barra de guardar opcional. Guardado GENÉRICO: junta los
-                   `[data-field]` → PATCH /api/org. Categorías:
-                   • Empresa: marca · fiscal · plan
+                   `[data-field]` → PATCH /api/org. La categoría de facturación se
+                   adapta al país de la organización: México muestra RFC, régimen,
+                   CSD y CFDI 4.0; los demás países muestran perfil fiscal y factura
+                   comercial, indicando cuando aún no existe conexión con la autoridad.
+                   El país se puede corregir en General; al cambiarlo se reconfigura
+                   la experiencia fiscal en la siguiente navegación.
+                   Categorías:
+                   • Empresa: general · marca · facturación · plan
                    • Cotizaciones: cotizaciones (folio/IVA/retenciones/defaults/legal) · pdf · aprobaciones
                    • Equipo y roles: equipo
                    • Avanzado: integraciones · auditoria
-                   • Tu cuenta: **cuenta** → monta `<UserProfile>` de Clerk (perfil,
-                     SESIONES, 2FA, passkeys, cuentas conectadas — nivel "datos de
-                     usuario", distinto de los datos del negocio).
+                   • Tu cuenta: **cuenta** → monta `CustomUserProfile` propio (perfil,
+                     sesiones, 2FA, passkeys y cuentas conectadas — identidad del
+                     usuario, distinta de los datos del negocio).
 /q/[token]       → vista PÚBLICA — aprobar/rechazar REALES via POST /api/q/[token]
                    (token = secreto, sin auth); muestra estado si ya se decidió;
                    "Descargar PDF" = window.print con @media print; color de marca
@@ -231,6 +233,10 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    destructivas y auditoría en la misma transacción.
 /api/orgs        → POST crea una org (el servidor genera el id — reemplaza a
                    /api/orgs/provision, que tenía un IDOR cross-tenant real).
+/api/fiscal/documents/[id]/{pdf,xml} → descarga autenticada y acotada al `org_id`.
+                   CFDI se proxifica desde Facturapi; las facturas comerciales se
+                   renderizan desde los snapshots canónicos de Cord. XML solo existe
+                   cuando el rail regulatorio realmente lo produce.
 /api/equipo/resend → POST regenera el link de una invitación pendiente (rota
                    el token; el crudo original no es recuperable, solo su hash).
 
@@ -283,8 +289,8 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
 # Legales
 /privacidad      → Aviso de Privacidad Integral (LFPDPPP + DPA estándares internacionales):
                    responsable/encargado, datos recabados, finalidades, datos anonimizados,
-                   cookies (Clerk + Vercel Analytics), tabla de sub-processors (Stripe/Clerk/
-                   Neon/Anthropic/PAC), transferencias internacionales, M&A, seguridad
+                   cookies y analytics, tabla de subencargados (Stripe/Neon/Anthropic/
+                   Resend/PostHog/PAC), transferencias internacionales, M&A, seguridad
                    (TLS+AES-256), brechas (72h), portabilidad/eliminación, menores, ARCO
                    (legal@flouvia.com). `prerender:true`, scrollspy IntersectionObserver,
                    TOC sticky con 14 secciones.

@@ -2,7 +2,8 @@
 
 > Landing pública (home, precios, producto, soluciones, casos de uso, blog, soporte,
 > roadmap, legales), mockups de UI, shaders GLSL/WebGL, SEO/AI-SEO, navbar/footer,
-> copy y contenido de marketing. Extraído de `historial.md`. Orden: más reciente arriba.
+> copy y contenido de marketing. Registro acumulativo; cada entrada conserva su fecha
+> y no reemplaza los estándares vigentes.
 
 ---
 

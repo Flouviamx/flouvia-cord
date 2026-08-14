@@ -3,6 +3,7 @@ import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { sql } from "../db";
 import { assertSafeWebhookTarget } from "../ssrf";
 import { decryptSecret } from "../crypto-secret";
+import { checkEntitlement } from "../org-entitlements";
 
 export interface AllowedTool {
   serverName: string;
@@ -78,6 +79,8 @@ export class McpClientManager {
   // Instancia clientes MCP y devuelve las herramientas permitidas en formato Anthropic.
   // toolMap mapea el nombre seguro (prefijado) → cómo ejecutarla (cliente + nombre real).
   async getAnthropicTools(): Promise<{ tools: any[]; toolMap: Map<string, ToolBinding> }> {
+    const entitlement = await checkEntitlement(this.orgId, 'agent_governance');
+    if (!entitlement.ok) return { tools: [], toolMap: new Map() };
     const servers = await this.getServers();
     const permissions = await this.getAgentPermissions();
 

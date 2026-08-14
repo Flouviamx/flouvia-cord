@@ -7,8 +7,13 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getPricingSuggestion } from '../../../lib/queries';
+import { getActiveOrgId } from '../../../lib/db';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 
 export const GET: APIRoute = async ({ url }) => {
+    const orgId = await getActiveOrgId();
+    const subscriptionDenied = await requireEntitlement(orgId, 'advanced_forecast');
+    if (subscriptionDenied) return subscriptionDenied;
     const productoId = url.searchParams.get('producto_id') || null;
     const clienteId = url.searchParams.get('cliente_id') || null;
     const precioLista = Number(url.searchParams.get('precio_lista')) || 0;

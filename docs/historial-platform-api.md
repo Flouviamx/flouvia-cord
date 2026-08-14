@@ -1,7 +1,8 @@
 # Historial — Plataforma: API pública, MCP, Webhooks, Cord Elements
 
 > API REST v1, servidor y cliente MCP, webhooks salientes, y el SDK `@flouviahq/elements`
-> (Cord Elements) en todas sus fases. Extraído de `historial.md`. Orden: más reciente arriba.
+> (Cord Elements) en todas sus fases. Registro acumulativo; cada entrada conserva su
+> fecha y puede describir una arquitectura ya reemplazada.
 
 ---
 

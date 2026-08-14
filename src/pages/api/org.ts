@@ -16,9 +16,15 @@ import { rateLimit, tooMany } from '../../lib/ratelimit';
 import { deleteOrgCascade } from '../../lib/org-delete';
 import { decryptSecret, encryptRequiredSecret } from '../../lib/crypto-secret';
 import { requireFreshAuth } from '../../lib/step-up';
+import { requireEntitlement } from '../../lib/org-entitlements';
+import type { FeatureKey } from '../../lib/entitlements';
+import { isCountryCode } from '../../lib/countries';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
+// Node 24/ICU es la fuente local del catálogo ISO 4217. Así Ajustes admite la
+// moneda de cualquier país sin depender de una API o paquete de terceros.
+const SUPPORTED_CURRENCIES = new Set(Intl.supportedValuesOf('currency'));
 // Logo: acepta data URL de imagen (subida, cap ~1.1MB) o URL http(s).
 const logoOk = (s: string) =>
     s.length <= 1_500_000 &&
@@ -47,6 +53,23 @@ export const PATCH: APIRoute = async ({ request }) => {
     }
 
     const orgId = await getActiveOrgId();
+
+    // El body no puede activar ni reconfigurar una función superior llamando la
+    // API directamente. Desactivar/restaurar defaults sigue permitido para que
+    // un downgrade nunca encierre al usuario en una configuración vieja.
+    const gatedWrites: Array<[FeatureKey, boolean]> = [
+        ['remove_branding', body.portal_powered === false],
+        ['custom_email', ['email_from_name', 'email_reply_to', 'email_intro', 'email_firma'].some((key) => body[key] !== undefined)],
+        ['approvals', ['aprob_descuento_max', 'aprob_monto_max', 'aprob_margen_min'].some((key) => body[key] !== undefined && Number(body[key]) > 0)],
+        ['late_interest', body.interes_moratorio_pct !== undefined && Number(body.interes_moratorio_pct) > 0],
+        ['collections_ai', Object.keys(body).some((key) => key.startsWith('ai_cobranza_')) && body.ai_cobranza_activa !== false],
+        ['sso', body.require_sso === true],
+    ];
+    for (const [feature, touched] of gatedWrites) {
+        if (!touched) continue;
+        const entitlementDenied = await requireEntitlement(orgId, feature);
+        if (entitlementDenied) return entitlementDenied;
+    }
     const [[actual]] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
 
     // Cada campo: si viene en el body lo tomamos (saneado), si no, conservamos.
@@ -88,6 +111,32 @@ export const PATCH: APIRoute = async ({ request }) => {
     const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
     const TERMS = new Set(['contado', 'net30', 'net60']);
     const str = (v: unknown, max = 200) => { const s = String(v).trim(); return s ? s.slice(0, max) : null; };
+
+    // Perfil fiscal internacional. El JSON solo contiene este allowlist; no se
+    // acepta fiscal_metadata arbitrario desde el cliente. México conserva sus
+    // columnas SAT dedicadas y los demás países usan este bloque extensible.
+    const currentFiscalMetadata = actual.fiscal_metadata && typeof actual.fiscal_metadata === 'object'
+        ? { ...(actual.fiscal_metadata as Record<string, unknown>) }
+        : {};
+    const fiscalField = (bodyKey: string, metadataKey: string, max: number, transform?: (value: string) => string | null) => {
+        if (body[bodyKey] === undefined) return;
+        const raw = String(body[bodyKey]).trim();
+        const value = transform ? transform(raw) : (raw ? raw.slice(0, max) : null);
+        if (value) currentFiscalMetadata[metadataKey] = value;
+        else delete currentFiscalMetadata[metadataKey];
+    };
+    fiscalField('fiscal_legal_name', 'legal_name', 200);
+    fiscalField('fiscal_tax_id', 'tax_id', 64, (value) => value ? value.toUpperCase().slice(0, 64) : null);
+    fiscalField('fiscal_address_line1', 'address_line1', 200);
+    fiscalField('fiscal_address_line2', 'address_line2', 200);
+    fiscalField('fiscal_city', 'city', 100);
+    fiscalField('fiscal_region', 'region', 100);
+    fiscalField('fiscal_postal_code', 'postal_code', 20, (value) => value
+        ? value.toUpperCase().replace(/[^A-Z0-9 -]/g, '').slice(0, 20) || null
+        : null);
+    fiscalField('fiscal_invoice_prefix', 'invoice_prefix', 12, (value) => value
+        ? value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 12) || null
+        : null);
 
     const vigDias = body.vigencia_default_dias !== undefined ? clamp(Math.round(Number(body.vigencia_default_dias) || 0), 1, 365) : actual.vigencia_default_dias;
     const termDef = body.terminos_default !== undefined ? (TERMS.has(String(body.terminos_default)) ? String(body.terminos_default) : 'contado') : actual.terminos_default;
@@ -134,10 +183,15 @@ export const PATCH: APIRoute = async ({ request }) => {
     const usoCfdi = body.uso_cfdi !== undefined ? str(body.uso_cfdi, 5) : actual.uso_cfdi;
     const cpFiscal = body.cp_fiscal !== undefined ? (String(body.cp_fiscal) === '' ? null : String(body.cp_fiscal).replace(/\D/g, '').slice(0, 5) || null) : actual.cp_fiscal;
     const serieFolio = body.serie_folio !== undefined ? (String(body.serie_folio) === '' ? null : String(body.serie_folio).trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || null) : actual.serie_folio;
+    const countryCode = body.country_code !== undefined
+        ? String(body.country_code).trim().toUpperCase()
+        : String(actual.country_code || 'MX').toUpperCase();
+    if (!isCountryCode(countryCode)) return json({ error: 'País no soportado.' }, 400);
 
     // ── Centro de mando Enterprise (jun 2026) ──
-    const MONEDAS = new Set(['MXN', 'USD', 'EUR']);
-    const moneda = body.moneda !== undefined ? (MONEDAS.has(String(body.moneda)) ? String(body.moneda) : 'MXN') : actual.moneda;
+    const moneda = body.moneda !== undefined
+        ? (SUPPORTED_CURRENCIES.has(String(body.moneda).toUpperCase()) ? String(body.moneda).toUpperCase() : actual.moneda)
+        : actual.moneda;
     const zona = body.zona_horaria !== undefined ? (str(body.zona_horaria, 40) || 'America/Mexico_City') : actual.zona_horaria;
     const idioma = body.idioma !== undefined ? (str(body.idioma, 10) || 'es-MX') : actual.idioma;
     const colorSec = body.color_secundario !== undefined
@@ -228,6 +282,8 @@ export const PATCH: APIRoute = async ({ request }) => {
             retencion_isr_pct = ${retIsr}, retencion_iva_pct = ${retIva}, texto_legal = ${textoLegal},
             sitio_web = ${sitioWeb}, whatsapp = ${whatsapp},
             regimen_fiscal = ${regimen}, uso_cfdi = ${usoCfdi}, cp_fiscal = ${cpFiscal}, serie_folio = ${serieFolio},
+            country_code = ${countryCode},
+            fiscal_metadata = ${JSON.stringify(currentFiscalMetadata)},
             moneda = ${moneda}, zona_horaria = ${zona}, idioma = ${idioma},
             color_secundario = ${colorSec}, portal_bienvenida = ${portalBien},
             require_2fa = ${require2fa}, session_timeout_min = ${sessionTimeout}, invite_domains = ${inviteDomains},

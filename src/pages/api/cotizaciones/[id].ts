@@ -10,7 +10,8 @@ import { notifyQuoteSent } from '../../../lib/email';
 import { requirePerm, invalidateMoneyCaches } from '../../../lib/queries';
 import { dispatchQuoteEvent, dispatchQuoteEventFrom, type WebhookEvent } from '../../../lib/webhooks';
 import { after } from '../../../lib/after';
-import { reportUsage } from '../../../lib/billing';
+import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../lib/billing';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 import { emitFiscalDocument } from '../../../lib/fiscal/emit';
 import { MAX_ITEMS } from '../../../lib/cotizaciones';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
@@ -87,7 +88,13 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     // Flujo de aprobación: gerencia aprueba o rechaza una solicitud pendiente.
     if (body.action === 'approve_request' || body.action === 'reject_request') {
         const orgId = await getActiveOrgId();
-        const rows = await sql`select id, folio, aprob_estado from cotizaciones where id = ${id} and org_id = ${orgId}`;
+        const subscriptionDenied = await requireEntitlement(orgId, 'approvals');
+        if (subscriptionDenied) return subscriptionDenied;
+        const rows = await sql`
+            select c.id, c.folio, c.aprob_estado, c.total, c.base_currency,
+                   (o.sandbox_of is not null) as is_sandbox, o.is_demo
+            from cotizaciones c join orgs o on o.id = c.org_id
+            where c.id = ${id} and c.org_id = ${orgId}`;
         if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
         if (rows[0].aprob_estado !== 'pendiente') return json({ error: 'No hay una solicitud de aprobación pendiente' }, 409);
         const now = new Date().toISOString();
@@ -96,6 +103,14 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'sent', 'Aprobada por gerencia y enviada al cliente')`;
             await logAudit(orgId, { accion: 'cotizacion.aprobacion_aprobada', entidad: 'cotizacion', entidad_id: id, detalle: rows[0].folio as string, ip: reqIp(request) });
             after(dispatchQuoteEvent(orgId, id, 'quote.sent'));
+            after(trackServer('quote_sent', orgId, {
+                event_id: `${id}:initial`,
+                quote_id: id,
+                total: Number(rows[0].total ?? 0),
+                currency: (rows[0].base_currency as string) || 'MXN',
+                source: 'approval_flow',
+                send_type: 'initial',
+            }, !!rows[0].is_sandbox, !!rows[0].is_demo));
             return json({ ok: true, status: 'sent' });
         }
         await sql`update cotizaciones set aprob_estado = 'rechazada' where id = ${id}`;
@@ -184,15 +199,50 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     // país (CFDI MX, invoice US, …) vía FiscalFactory y registra el documento
     // en documentos_fiscales incluso cuando falla (status 'error').
     let fiscal: Awaited<ReturnType<typeof emitFiscalDocument>> | undefined;
+    let fiscalCountry = 'MX';
     if (action.to === 'invoiced') {
+        const [orgFiscal] = await sql`
+            select upper(coalesce(country_code, 'MX')) as country_code
+              from orgs where id = ${orgId} limit 1`;
+        if (!orgFiscal) return json({ error: 'Organización no encontrada' }, 404);
+        const isMexico = String(orgFiscal.country_code) === 'MX';
+        fiscalCountry = String(orgFiscal.country_code);
+        const subscriptionDenied = await requireEntitlement(
+            orgId,
+            isMexico ? 'cfdi' : 'international_invoicing',
+        );
+        if (subscriptionDenied) return subscriptionDenied;
+        let fiscalUsageId: string | null = null;
+        if (isMexico) {
+            const usage = await reserveUsage(orgId, 'timbrado', 1);
+            if (!usage.ok || !usage.id) {
+                const unavailable = /verificar|registrar/i.test(usage.reason || '');
+                return json({ error: usage.reason }, unavailable ? 503 : 429);
+            }
+            fiscalUsageId = usage.id;
+        }
         // Cuenta ANTES de timbrar — para detectar si este va a ser el PRIMER
         // CFDI real de la org ("aha moment" fiscal, distinto del genérico de cotizar).
-        const [priorCount] = await sql`select count(*)::int as n from documentos_fiscales where org_id = ${orgId} and status = 'issued'`;
+        const [priorCount] = await sql`
+            select count(*)::int as n
+              from documentos_fiscales
+             where org_id = ${orgId} and country_code = 'MX' and status = 'issued'
+               and coalesce((provider_data->>'simulado')::boolean, false) = false
+               and coalesce((provider_data->>'livemode')::boolean, true) = true
+               and provider_data->>'facturapi_id' is not null`;
         fiscal = await emitFiscalDocument(orgId, id);
         if (!fiscal.emitted) {
-            return json({ error: fiscal.error || 'No se pudo timbrar el CFDI', fiscal }, 502);
+            if (fiscalUsageId) await cancelUsage(orgId, fiscalUsageId);
+            return json({ error: fiscal.error || 'No se pudo emitir el documento fiscal', fiscal }, 502);
         }
-        if ((priorCount?.n ?? 0) === 0) {
+        // Una respuesta idempotente puede devolver el documento ya emitido. En
+        // ese caso la reserva nueva se cancela para no cobrar dos timbrados por
+        // el mismo CFDI; solo una emisión realmente nueva llega al medidor.
+        if (fiscalUsageId) {
+            if (fiscal.reused || fiscal.billable === false) await cancelUsage(orgId, fiscalUsageId);
+            else void flushUsageReservation(orgId, fiscalUsageId);
+        }
+        if (isMexico && fiscal.billable === true && (priorCount?.n ?? 0) === 0) {
             const [orgFlags] = await sql`select created_at, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`;
             const timeSince = orgFlags?.created_at ? Math.max(0, Math.round((Date.now() - new Date(orgFlags.created_at as string).getTime()) / 86400000)) : null;
             await trackServer('cfdi_first_timbrado', orgId, { time_since_org_created_days: timeSince }, !!orgFlags?.is_sandbox, !!orgFlags?.is_demo);
@@ -244,19 +294,18 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     // recién marcada como cobrada reaparece al recargar.
     invalidateMoneyCaches(orgId);
 
+    const eventDetail = action.evento === 'invoiced'
+        ? (fiscalCountry === 'MX' ? 'CFDI emitido' : `Factura ${fiscal?.invoiceNumber || ''} emitida`.trim())
+        : action.detalle;
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-              values (${orgId}, ${id}, ${action.evento}, ${action.detalle})`;
+              values (${orgId}, ${id}, ${action.evento}, ${eventDetail})`;
     await logAudit(orgId, { accion: `cotizacion.${body.action}`, entidad: 'cotizacion', entidad_id: id, detalle: `${actual} → ${action.to}`, ip: reqIp(request) });
 
     // Notifica el evento a las webhooks suscritas de la org (best-effort).
-    const whev = WH_MAP[action.evento];
+    const whev = action.evento === 'invoiced' && fiscalCountry !== 'MX'
+        ? 'invoice.issued'
+        : WH_MAP[action.evento];
     if (whev) after(dispatchQuoteEvent(orgId, id, whev));
-
-    // Timbrar consume un folio: mide el uso del periodo (excedente vía Stripe).
-    // Solo se llega aquí si fiscal.emitted === true (ver el corte temprano arriba).
-    if (action.to === 'invoiced') {
-        await reportUsage(orgId, 'timbrado', 1);
-    }
 
     // Al enviar/reenviar, intenta avisar al cliente por correo (si hay Resend).
     let email: { sent: boolean; skipped?: string } | undefined;
@@ -266,6 +315,35 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         if (email.sent) {
             await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                       values (${orgId}, ${id}, 'email', 'Correo enviado al cliente')`;
+        }
+    }
+
+    const analyticsEvent = body.action === 'send' || body.action === 'resend'
+        ? 'quote_sent'
+        : body.action === 'approve'
+            ? 'quote_approved'
+            : body.action === 'paid'
+                ? 'quote_marked_paid'
+                : null;
+    if (analyticsEvent) {
+        const [metric] = await sql`
+            select c.total, c.base_currency, c.version,
+                   (o.sandbox_of is not null) as is_sandbox, o.is_demo
+            from cotizaciones c join orgs o on o.id = c.org_id
+            where c.id = ${id} and c.org_id = ${orgId}`;
+        if (metric) {
+            after(trackServer(analyticsEvent, orgId, {
+                event_id: analyticsEvent === 'quote_sent'
+                    ? `${id}:${body.action === 'resend' ? `resend:${metric.version}` : 'initial'}`
+                    : id,
+                quote_id: id,
+                total: Number(metric.total ?? 0),
+                currency: (metric.base_currency as string) || 'MXN',
+                source: 'manual',
+                ...(analyticsEvent === 'quote_sent'
+                    ? { send_type: body.action === 'resend' ? 'resend' : 'initial' }
+                    : {}),
+            }, !!metric.is_sandbox, !!metric.is_demo));
         }
     }
 

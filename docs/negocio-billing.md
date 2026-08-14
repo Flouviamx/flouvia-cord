@@ -1,7 +1,8 @@
 # Negocio y Billing — Cord
 
-> Modelo de negocio (planes freemium) y Stripe Billing (suscripciones + medidores).
-> Auto-cargado vía `@import` desde `/CLAUDE.md`.
+> Modelo de negocio, planes freemium y Stripe Billing. **Este archivo toca dinero
+> real: modificar con extremo cuidado.** Para decisiones fechadas consulta
+> [`historial-billing-cobros.md`](historial-billing-cobros.md).
 
 ---
 
@@ -21,8 +22,10 @@ ancla** (destacado en la landing):
 | Developer | $2,990 | infra | + usuarios/IA ilimitados, 1,000 CFDI + 50,000 API/mes, excedentes más baratos |
 
 Cada plan de pago trae cuota mensual (IA/CFDI/API/usuarios); el **excedente se
-cobra por uso** vía Stripe Billing Meters (de Pro en adelante; Free/Starter =
-topes duros). Código de plan en `orgs.plan`: `free|starter|pro|scale|developer`.
+cobra por uso** vía Stripe Billing Meters. Gratis tiene topes duros; Starter cobra
+excedente de IA/CFDI/API pero conserva un asiento duro; Pro y Scale cobran los cuatro
+medidores; Developer mantiene usuarios e IA ilimitados según la matriz pública.
+Código de plan almacenado: `free|starter|pro|scale|developer`.
 Cuotas incluidas y mapping de price_id/meter en **`src/lib/billing.ts`**.
 
 > ⚠️ Precios son placeholders comerciales — André los puede ajustar. Si cambian:
@@ -32,7 +35,9 @@ Cuotas incluidas y mapping de price_id/meter en **`src/lib/billing.ts`**.
 >   (Starter $12 · Pro $30 · Scale $70 · Developer $150). Labels "USD" en `src/i18n/ui.ts`
 >   (`pr.sub`, `pr.cycle.m`) y en `precios.astro` (meta, lead, tarjeta, ROI).
 
-Moneda v1 = MXN con IVA 16% configurable. Landing + app en el MISMO subdominio
+Cada organización nace con país, moneda y zona horaria. México inicia en MXN con IVA
+16% configurable; fuera de México la tasa inicia en 0 para que Cord no invente un impuesto
+local y el negocio la configura. Landing + app en el MISMO subdominio
 (estilo linear.app: marketing en `/`, app en `/app`).
 
 ### Stripe Billing (suscripciones + medidores de uso) — jun 2026
@@ -41,32 +46,75 @@ REST puro (sin SDK), igual que el resto de la integración Stripe. Config CENTRA
 en **`src/lib/billing.ts`**: `PLAN_PRICES` (price_id base × ciclo mensual/anual),
 `METER_PRICES` (price_id medido por plan × dimensión), `METERS` (mtr_ ids),
 `INCLUDED` (cuota mensual por plan), `PRICE_TO_PLAN` (reverse, para el webhook),
-y helpers `stripe()`, `getOrCreateCustomer()`, `reportUsage(orgId, dim, n)`.
+y helpers `stripe()`, `getOrCreateCustomer()`, `reserveUsage()`, `cancelUsage()` y
+`flushUsageReservation()`.
+
+**Regla autoritativa (ago 2026):** el texto de `orgs.plan` no concede acceso. El
+contrato ejecutable vive en `src/lib/entitlements.ts`; `src/lib/org-entitlements.ts`
+y la función SQL `cord_effective_plan(uuid)` exigen status `active`, customer y
+subscription reales, periodo vigente y una factura pagada que cubra el periodo base
+con un nivel igual o superior al solicitado (`billing_paid_plan`).
+Una inconsistencia baja el plan efectivo a Gratis; un fallo de BD/verificación bloquea
+la operación premium. Las sandboxes heredan esta evidencia de su org padre.
 
 Flujo:
 - **Alta/cambio de plan:** `POST /api/billing/subscribe {plan, cycle}` (INTERNA,
-  exige sesión) → Checkout `mode=subscription` con precio base + items medidos.
+  exige permiso de ajustes) → Payment Element o Checkout `mode=subscription` con
+  precio base + items medidos. `billing_checkout_attempts` y el índice parcial
+  `uq_billing_checkout_open_org` admiten una sola tentativa concurrente por org;
+  customer, Subscription y Checkout usan Idempotency-Key estable.
   **Sin periodo de prueba** (eliminado jun 2026): Stripe exige tarjeta en el
   checkout y cobra desde el alta. El CTA de los planes dice "Empezar ahora".
 - **Gestionar:** `POST /api/billing/portal` → Customer Portal de Stripe.
+- **Cambiar plan/ciclo:** el mismo `POST /api/billing/subscribe` detecta la suscripción
+  activa. Un upgrade crea un pending update, factura el prorrateo y conserva el plan
+  anterior hasta confirmar ese pago; un downgrade o cambio lateral se programa con
+  Subscription Schedule para el cierre del periodo. El Portal se limita a método de pago,
+  historial y cancelación porque Stripe no permite modificar ahí suscripciones medidas.
 - **Webhook** `POST /api/stripe/webhook` (PÚBLICO, firma HMAC, idempotente vía
   tabla `stripe_events`): `customer.subscription.created/updated` sincroniza
-  `orgs.plan/subscription_status/billing_cycle/current_period_end` (**cambio de
-  plan en vivo**); `.deleted` → free; `invoice.paid|payment_failed` → estado;
+  la proyección local desde el Price real, nunca desde metadata; `.deleted` → free;
+  `invoice.paid|payment_failed|payment_action_required|marked_uncollectible|voided`
+  sincroniza o revoca la evidencia de pago;
   `checkout.session.completed` liga la suscripción (subscription) o marca la
   cotización `paid` (payment, flujo del link público — sin cambios).
-- **Excedente (overage):** `reportUsage()` incrementa `uso_periodo` en Neon (UI en
-  vivo) **y** manda un meter event a Stripe (cobro al cierre). Los 4 dims ya
-  están cableados (jun 2026): `ia` (`ai-draft`), `timbrado` (`cotizaciones/[id]`
-  al facturar), `api` (`apikey.ts` en cada llamada live) y `usuario`
-  (`equipo/join` al aceptar invitación).
+- **Excedente (overage):** `reserveUsage()` toma un advisory lock, incrementa
+  `uso_periodo` y crea `usage_reservations` antes de IA/CFDI/API/alta de usuario.
+  La reserva se cancela si el proveedor no produjo resultado; si sí, el outbox se
+  entrega a Stripe con reintentos. `meter_value` contiene solo la porción que rebasa
+  lo incluido: nunca se factura nuevamente la cuota incluida.
+- **Reconciliación:** `/api/cron/billing-reconcile` corre cada hora. Recupera checkouts,
+  consulta la suscripción actual y la factura pagada del Price base, corrige eventos
+  perdidos, alerta suscripciones duplicadas y drena el outbox. En anual, conserva la
+  evidencia anual aunque existan invoices mensuales separadas de medidores.
+- **Intervalos mixtos:** anual base + medidores mensuales requiere `billing_mode=flexible`
+  y se crea mediante Subscriptions/Payment Element. Stripe Checkout no soporta esa mezcla;
+  el fallback alojado rechaza anual explícitamente en vez de crear una suscripción parcial.
 - **UI:** `/app/ajustes/plan` usa `getBillingUsage()` (medidores IA/CFDI/API del
   periodo) + botones reales de subir de plan / portal.
-- Tablas nuevas: `uso_periodo` (org+periodo, contadores) y `stripe_events`
-  (idempotencia). Columnas nuevas en `orgs`: `subscription_status`,
-  `billing_cycle`, `current_period_end`. **Correr `npm run db:migrate` tras pull.**
+- Persistencia: `uso_periodo`, `stripe_events`, `billing_checkout_attempts` y
+  `usage_reservations` (las dos últimas con `FORCE RLS`), más evidencia de invoice en
+`orgs`. Triggers serializados protegen cotizaciones, productos, clientes y asientos.
 - Los price_id/meter_id NO son secretos (viven en `billing.ts`); el secreto es
   `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` (env).
+- Verificación: `npm run test:payments`, `npm run security:billing-live`,
+  `npm run security:billing-db` y `npm run build`.
+
+### Facturación internacional — ago 2026
+
+- México: CFDI 4.0 mediante `MexicoSatProvider` y Facturapi como PAC intercambiable.
+  La llave canónica de Cord también se manda como `idempotency_key` de Facturapi; los
+  reintentos de red conservan esa llave y los documentos simulados/test no consumen el
+  medidor de CFDI.
+- Resto de códigos ISO: factura comercial propia de Cord, con folio por organización,
+  snapshots inmutables y PDF interno. No equivale a clearance o presentación ante la
+  autoridad tributaria local.
+- El feature de plan `international_invoicing` habilita la emisión fuera de México; `cfdi`
+  conserva el gate y medidor de timbrado mexicano.
+- Persistencia: `documentos_fiscales`, `invoice_sequences` y `orgs.fiscal_metadata`, todas
+  aisladas por organización; las dos primeras usan RLS y la secuencia usa `FORCE RLS`.
+- Los adapters regulatorios futuros deben implementar `FiscalProvider` y registrarse antes
+  de `CommercialInvoiceProvider`; no deben sustituir el documento canónico de Cord.
 
 
 ### Stripe Connect Custom (Cobros B2B directos) — jul 2026, auditado y endurecido jul 2026
@@ -89,7 +137,11 @@ Flujo y Arquitectura:
 - **Gestión de la cuenta**:
   - Al ser Custom, la plataforma es responsable. Endpoints en `/api/billing/connect/*` exponen la creación de cuentas bancarias (external_accounts), representantes (persons), subida de documentos y revisión de estado (status). `create.ts` solo desconecta la cuenta guardada cuando Stripe confirma que ya no existe (antes cualquier error de red la borraba); `status.ts` ya no truena con 400 cuando aún no hay cuenta (el wizard arranca en cero sin error en consola).
 
-⚠️ **Pendiente de configuración manual (no es código):** falta el SEGUNDO endpoint de webhook en el dashboard de Stripe ("eventos en cuentas conectadas", misma URL, evento `payment_intent.succeeded`) con su secreto en `STRIPE_CONNECT_WEBHOOK_SECRET` — sin esto el dinero cae al vendedor pero Cord nunca marca la cotización pagada.
+**Contrato de producción:** Stripe mantiene un segundo endpoint para eventos de
+cuentas conectadas, apuntado a la misma ruta y firmado con
+`STRIPE_CONNECT_WEBHOOK_SECRET`. En agosto de 2026 se verificó que existe en Live.
+Debe conservar al menos `payment_intent.succeeded`; si se elimina o su secreto
+diverge, el dinero puede llegar al vendedor sin que Cord marque la cotización pagada.
 
 ### Cobros recurrentes — igualas/retainers vía Stripe Subscriptions (jul 2026)
 
@@ -109,14 +161,15 @@ igualas/retainers vía Stripe Subscriptions". Resumen rápido:
   `customer.subscription.*` de cuentas CONECTADAS a handlers de iguala, separados de los
   handlers de suscripción de PLAN de Cord (son dos sistemas de suscripción distintos sobre el
   mismo endpoint).
-- ⚠️ Una cotización recurrente **nunca se marca `paid`** (es continua, no tiene evento
+- Una cotización recurrente **nunca se marca `paid`** (es continua, no tiene evento
   terminal) — por eso `getCobranza()`, el cron de intereses, el cron de recordatorios y el
   agente de cobranza IA **excluyen `es_recurrente`** explícitamente (si no, tratan una iguala
   al corriente como cartera vencida). El ingreso mensual real se ve en `getCobros()` vía una
   unión aparte sobre los cobros `'cuota'` que el webhook registra en `cotizacion_cobros`.
-- ⚠️ Pendiente de configuración manual: el mismo webhook de "eventos en cuentas conectadas" de
-  arriba necesita suscribirse ADEMÁS a `invoice.paid`, `invoice.payment_failed`,
-  `customer.subscription.updated` y `customer.subscription.deleted`.
+- El webhook de cuentas conectadas también debe conservar `invoice.paid`,
+  `invoice.payment_failed`, `customer.subscription.updated` y
+  `customer.subscription.deleted`. Estos eventos se verificaron en Live en agosto
+  de 2026; cualquier cambio en Dashboard debe revalidar la lista y la firma.
 
 ### Cobros por términos de crédito + Anticipo/Saldo + Cuotas (jul 2026)
 

@@ -12,7 +12,7 @@ export interface CreateWorkspaceSubmit {
   country: Country;
 }
 
-const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ code: c.code, label: c.name }));
+const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ code: c.code, label: c.name, hint: c.tag }));
 
 export default function CreateWorkspaceModal({
   isOpen,
@@ -215,7 +215,7 @@ export default function CreateWorkspaceModal({
                   Define tu moneda y tus documentos fiscales.{' '}
                   {country === 'MX'
                     ? 'Emitimos CFDI 4.0 ante el SAT.'
-                    : 'La facturación local para este país está en camino — mientras tanto operas con cotizaciones y cobros normales.'}
+                    : 'Puedes emitir facturas comerciales desde Cord; la conexión con la autoridad fiscal local no está incluida actualmente.'}
                 </p>
               </div>
             </div>

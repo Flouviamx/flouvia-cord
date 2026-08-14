@@ -80,7 +80,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         return new Response(null, { status: 202 });
     }
 
-    meterApiUsage(auth);
+    const meteringError = await meterApiUsage(auth);
+    if (meteringError) return meteringError;
 
     return reqContext.run({ userId: null, orgId: session.orgId }, async () => {
         try {

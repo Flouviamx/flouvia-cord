@@ -157,6 +157,7 @@ That means you can update your `CORD_WEBHOOK_SECRET` at any point within the win
 | `payment.partial` | A SINGLE partial charge is received (deposit, balance, or one installment) without the quote being fully paid yet. |
 | `payment.failed` | A recurring retainer/subscription charge fails. |
 | `invoice.stamped` | The CFDI is stamped. |
+| `invoice.issued` | A commercial invoice is issued outside Mexico. |
 | `ping` | Only shows up when using "Test" from the Workbench — never fired by a real event. |
 
 > **Note:** `payment.partial` carries extra fields on `data` that other events don't have:

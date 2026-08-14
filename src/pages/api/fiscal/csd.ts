@@ -12,6 +12,7 @@ import { requirePerm } from '../../../lib/queries';
 import { facturapiConfigured, createOrganization, updateLegal, uploadCertificate, getLiveKey } from '../../../lib/fiscal/facturapi';
 import { encryptRequiredSecret, requireEncryption } from '../../../lib/crypto-secret';
 import { requireFreshAuth } from '../../../lib/step-up';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
@@ -32,6 +33,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (cer.size > 50_000 || key.size > 50_000) return json({ error: 'Los archivos parecen demasiado grandes. Sube el .cer y el .key del CSD (no el FIEL ni otros).' }, 400);
 
     const orgId = await getActiveOrgId();
+    const subscriptionDenied = await requireEntitlement(orgId, 'cfdi');
+    if (subscriptionDenied) return subscriptionDenied;
     const [o] = await sql`select rfc, razon_social, nombre, regimen_fiscal, cp_fiscal, telefono, sitio_web, facturapi_org_id from orgs where id = ${orgId}`;
     const rfc = String(o?.rfc ?? '').trim();
     const razon = String(o?.razon_social ?? o?.nombre ?? '').trim();

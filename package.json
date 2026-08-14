@@ -22,8 +22,12 @@
     "security:fees": "node --experimental-strip-types scripts/fees-check.mjs",
     "security:whitelabel": "node scripts/whitelabel-lint.mjs",
     "security:disputes": "node --experimental-strip-types scripts/dispute-safety-check.mjs",
+    "security:fiscal": "node --experimental-strip-types scripts/fiscal-core-check.mjs",
+    "security:billing": "node --experimental-strip-types scripts/billing-security-check.mjs",
+    "security:billing-live": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-stripe-billing.mjs",
+    "security:billing-db": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-billing-db.mjs",
     "security:rls": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/rls-audit.mjs",
-    "test:payments": "npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes"
+    "test:payments": "npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes && npm run security:billing"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

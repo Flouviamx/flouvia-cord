@@ -8,8 +8,12 @@ import type { APIRoute } from 'astro';
 import { getActiveOrgId } from '../../../lib/db';
 import { sql } from '../../../lib/db';
 import { STRIPE_KEY, stripe } from '../../../lib/billing';
+import { requirePerm } from '../../../lib/queries';
+import { siteOrigin } from '../../../lib/email';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async () => {
+    const denied = await requirePerm('ajustes');
+    if (denied) return denied;
     if (!STRIPE_KEY) return json({ error: 'La facturación aún no está configurada.' }, 503);
 
     const orgId = await getActiveOrgId();
@@ -18,12 +22,12 @@ export const POST: APIRoute = async ({ request }) => {
     const customer = o?.stripe_customer_id as string | undefined;
     if (!customer) return json({ error: 'Aún no tienes una suscripción activa.' }, 409);
 
-    const origin = new URL(request.url).origin;
+    const origin = siteOrigin();
     try {
         const session = await stripe('/v1/billing_portal/sessions', {
             customer,
             return_url: `${origin}/app/ajustes/plan`,
-        });
+        }, 'POST', { idempotencyKey: `billing-portal:${orgId}:${Math.floor(Date.now() / 60_000)}` });
         return json({ url: session.url });
     } catch (e: any) {
         return json({ error: e?.message || 'No se pudo abrir el portal' }, 502);

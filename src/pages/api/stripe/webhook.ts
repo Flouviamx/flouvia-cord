@@ -4,7 +4,8 @@
 // https://cordhq.app/api/stripe/webhook con estos eventos:
 //   • checkout.session.completed
 //   • customer.subscription.created / .updated / .deleted
-//   • invoice.paid / invoice.payment_failed
+//   • invoice.paid / invoice.payment_failed / invoice.payment_action_required
+//   • invoice.marked_uncollectible / invoice.voided
 //   • payment_intent.succeeded / .payment_failed
 export const prerender = false;
 
@@ -13,7 +14,7 @@ import { randomUUID } from 'node:crypto';
 import { sql, logAudit, withOrgTx } from '../../../lib/db';
 import { dispatchQuoteEvent, dispatchPaymentPartial } from '../../../lib/webhooks';
 import { notifyQuoteEvent } from '../../../lib/notify';
-import { PRICE_TO_PLAN, isPaidPlan, stripe } from '../../../lib/billing';
+import { METER_PRICES, PRICE_TO_PLAN, stripe } from '../../../lib/billing';
 import { trackPaymentReceived, trackServer } from '../../../lib/posthog-server';
 import { after } from '../../../lib/after';
 import { verifyStripeSignature } from '../../../lib/stripe-signature';
@@ -159,7 +160,9 @@ async function handleStripeEvent(event: any): Promise<void> {
         case 'customer.subscription.created':
         case 'customer.subscription.updated': {
             if (event.account) await syncQuoteSubscription(obj, event.account);
-            else await syncSubscription(obj);
+            // Los eventos pueden llegar fuera de orden. Recuperar el objeto actual
+            // evita que un payload viejo vuelva a conceder un plan cancelado.
+            else await retrieveAndSyncSubscription(obj?.id);
             break;
         }
         case 'customer.subscription.deleted': {
@@ -170,12 +173,18 @@ async function handleStripeEvent(event: any): Promise<void> {
         // ── Cobros (incluye el excedente medido del periodo) ──────────────────
         case 'invoice.paid': {
             if (event.account) await recurringInvoicePaid(obj, event.account);
-            else await setStatusByCustomer(obj.customer, 'active');
+            else await syncPaidBillingInvoice(obj);
             break;
         }
         case 'invoice.payment_failed': {
             if (event.account) await recurringInvoiceFailed(obj, event.account);
-            else await setStatusByCustomer(obj.customer, 'past_due');
+            else await syncFailedBillingInvoice(obj);
+            break;
+        }
+        case 'invoice.payment_action_required':
+        case 'invoice.marked_uncollectible':
+        case 'invoice.voided': {
+            if (!event.account) await syncFailedBillingInvoice(obj);
             break;
         }
         // ── Actualización de cuenta Connect ───────────────────────────────────
@@ -520,7 +529,11 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                     values (${orgId}, ${cid}, 'paid', 'Pago recibido con Cord Pagos; cotización saldada')`);
                 await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea con Cord Pagos' });
-                await trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid, !!rows[0].is_sandbox, !!rows[0].is_demo);
+                await trackPaymentReceived(
+                    orgId, amountPaid, currency, paymentMethod, false, cid,
+                    !!rows[0].is_sandbox, !!rows[0].is_demo,
+                    { payment_id: String(sessionOrIntent?.id || ''), cobro_id: cobroId, payment_kind: 'settlement' },
+                );
                 after(dispatchQuoteEvent(orgId, cid, 'quote.paid'));
                 after(notifyQuoteEvent(orgId, cid, 'quote_paid'));
             } else if (marked.length) {
@@ -537,7 +550,11 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                     values (${orgId}, ${cid}, 'paid', ${`${label} de ${monto} pagado con Cord Pagos${sufijo}`})`);
                 await logAudit(orgId, { accion: 'cotizacion.cobro_pagado', entidad: 'cotizacion', entidad_id: cid, detalle: `${label} pagado en línea con Cord Pagos` });
-                await trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid, !!rows[0].is_sandbox, !!rows[0].is_demo);
+                await trackPaymentReceived(
+                    orgId, amountPaid, currency, paymentMethod, false, cid,
+                    !!rows[0].is_sandbox, !!rows[0].is_demo,
+                    { payment_id: String(sessionOrIntent?.id || ''), cobro_id: cobroId, payment_kind: 'partial' },
+                );
                 // payment.partial: antes NINGÚN webhook avisaba que cayó un
                 // anticipo/saldo/cuota — una integración solo se enteraba hasta
                 // que el TOTAL quedaba cubierto (quote.paid). `sums` ya refleja
@@ -565,7 +582,11 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
             
             const amountPaid = Number(sessionOrIntent?.amount ?? 0) / 100;
             const currency = (sessionOrIntent?.currency ?? 'MXN').toUpperCase();
-            await trackPaymentReceived(orgId, amountPaid, currency, paymentMethod, false, cid, !!rows[0].is_sandbox, !!rows[0].is_demo);
+            await trackPaymentReceived(
+                orgId, amountPaid, currency, paymentMethod, false, cid,
+                !!rows[0].is_sandbox, !!rows[0].is_demo,
+                { payment_id: String(sessionOrIntent?.id || ''), payment_kind: 'legacy' },
+            );
 
             // No demorar el 200 a Stripe con nuestro webhook saliente, pero SIN perderlo:
             // after()/waitUntil mantiene viva la invocación hasta que termine, a
@@ -657,17 +678,23 @@ async function reconcilePaymentIntent(
 async function linkSubscription(session: any) {
     const orgId = session?.metadata?.org_id;
     if (orgId && session.subscription) {
-        const [updated] = await withOrgTx(orgId, sql`update orgs set stripe_subscription_id = ${session.subscription},
-            stripe_customer_id = coalesce(stripe_customer_id, ${session.customer})
-            where id = ${orgId} returning id`);
+        const [updated] = await withOrgTx(orgId,
+            sql`update orgs set stripe_subscription_id = ${session.subscription},
+                stripe_customer_id = coalesce(stripe_customer_id, ${session.customer})
+                where id = ${orgId} returning id`,
+            sql`update billing_checkout_attempts
+                   set stripe_subscription_id = ${session.subscription}, status = 'incomplete', updated_at = now()
+                 where org_id = ${orgId}
+                   and (stripe_session_id = ${session.id} or stripe_subscription_id = ${session.subscription})
+                   and status in ('creating','incomplete')`);
         if (!updated.length) throw new Error(`No se pudo ligar la suscripción a la organización ${orgId}`);
     }
 }
 
 // Resuelve el plan desde los items de la suscripción (o el metadata).
 function planOf(sub: any): string {
-    const metaPlan = sub?.metadata?.plan;
-    if (metaPlan && isPaidPlan(metaPlan)) return metaPlan;
+    // Los items son la autoridad. Metadata no cambia automáticamente cuando el
+    // Customer Portal sustituye un Price y puede quedar apuntando al plan viejo.
     for (const item of sub?.items?.data ?? []) {
         const p = PRICE_TO_PLAN[item?.price?.id];
         if (p) return p;
@@ -675,19 +702,52 @@ function planOf(sub: any): string {
     return 'free';
 }
 
+function basePlanItem(sub: any): any | null {
+    return (sub?.items?.data ?? []).find((item: any) => {
+        const priceId = typeof item?.price === 'string' ? item.price : item?.price?.id;
+        return !!priceId && !!PRICE_TO_PLAN[priceId];
+    }) ?? null;
+}
+
+function hasRequiredMeterItems(sub: any, plan: string): boolean {
+    if (plan === 'free' || !(plan in METER_PRICES)) return false;
+    const itemPrices = new Set((sub?.items?.data ?? []).map((item: any) =>
+        typeof item?.price === 'string' ? item.price : item?.price?.id
+    ));
+    return Object.values(METER_PRICES[plan as keyof typeof METER_PRICES])
+        .filter(Boolean)
+        .every((price) => itemPrices.has(price));
+}
+
+function invoiceLinePriceId(line: any): string | null {
+    const price = line?.price ?? line?.pricing?.price_details?.price;
+    if (typeof price === 'string') return price;
+    return price?.id ? String(price.id) : null;
+}
+
 // Ranking de planes para distinguir upgrade vs downgrade en PostHog — orden
 // real de negocio (ver docs/negocio-billing.md), no alfabético.
 const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, scale: 3, developer: 4 };
+
+async function retrieveAndSyncSubscription(subscriptionId: string | undefined) {
+    if (!subscriptionId) return;
+    const current = await stripe(`/v1/subscriptions/${subscriptionId}`, {
+        'expand[0]': 'items.data.price',
+    }, 'GET');
+    await syncSubscription(current);
+}
 
 // Sincroniza plan / estado / fin de ciclo. ESTE es el "cambio de plan en vivo".
 async function syncSubscription(sub: any) {
     const plan = planOf(sub);
     const status = (sub.status as string) || 'active';
-    const cycle = sub?.metadata?.cycle || (sub?.items?.data?.[0]?.price?.recurring?.interval === 'year' ? 'anual' : 'mensual');
+    const baseItem = basePlanItem(sub);
+    const interval = baseItem?.price?.recurring?.interval;
+    const cycle = interval === 'year' ? 'anual' : interval === 'month' ? 'mensual' : (sub?.metadata?.cycle || 'mensual');
     // En la API "Basil" (2025-06-30+) Stripe MOVIÓ current_period_end del objeto
     // Subscription raíz a cada item — se lee del item como fallback para que la
     // fecha de renovación no quede en null según la versión con que llegue el evento.
-    const rawPeriodEnd = sub.current_period_end ?? sub?.items?.data?.[0]?.current_period_end;
+    const rawPeriodEnd = baseItem?.current_period_end ?? sub.current_period_end;
     const periodEnd = rawPeriodEnd ? Number(rawPeriodEnd) : null;
 
     // Localiza la org por subscription_id o por customer_id. De paso trae el
@@ -695,9 +755,13 @@ async function syncSubscription(sub: any) {
     // downgrade en PostHog sin una segunda query.
     const orgId = await orgForBilling(sub?.id, typeof sub?.customer === 'string' ? sub.customer : sub?.customer?.id);
     if (!orgId) return;
-    const [rows] = await withOrgTx(orgId, sql`select id, plan as prev_plan, (sandbox_of is not null) as is_sandbox, is_demo
+    const [rows] = await withOrgTx(orgId, sql`select id, plan as prev_plan, stripe_subscription_id, (sandbox_of is not null) as is_sandbox, is_demo
         from orgs where id = ${orgId} limit 1`);
     if (!rows.length) return;
+    if (rows[0].stripe_subscription_id && rows[0].stripe_subscription_id !== sub?.id) {
+        await sendOpsAlert('Evento de suscripción obsoleta ignorado', `Organización ${orgId}; actual ${rows[0].stripe_subscription_id}; evento ${String(sub?.id || '')}`);
+        return;
+    }
     const prevPlan = (rows[0].prev_plan as string) || 'free';
     const isSandbox = !!rows[0].is_sandbox;
     const isDemo = !!rows[0].is_demo;
@@ -706,7 +770,11 @@ async function syncSubscription(sub: any) {
     // Payment Element la suscripción nace `incomplete` (antes de pagar): en ese
     // estado NO se debe upgradear el plan — se hace al llegar `active` (vía
     // invoice.paid / subscription.updated). El resto de campos sí se sincroniza.
-    const grantsPlan = status === 'active' || status === 'trialing' || status === 'past_due';
+    const metersComplete = hasRequiredMeterItems(sub, plan);
+    const grantsPlan = status === 'active' && plan !== 'free' && metersComplete && !!periodEnd && periodEnd * 1000 > Date.now();
+    if (status === 'active' && plan !== 'free' && !metersComplete) {
+        await sendOpsAlert('Suscripción sin todos los medidores requeridos', `Organización ${orgId}; suscripción ${String(sub?.id || '')}; plan ${plan}`);
+    }
 
     if (grantsPlan) {
         const [updated] = await withOrgTx(orgId, sql`update orgs set
@@ -720,6 +788,7 @@ async function syncSubscription(sub: any) {
         if (!updated.length) throw new Error(`Plan no actualizado para organización ${orgId}`);
     } else {
         const [updated] = await withOrgTx(orgId, sql`update orgs set
+                    plan = 'free',
                     subscription_status = ${status},
                     billing_cycle = ${cycle},
                     stripe_subscription_id = ${sub.id},
@@ -728,6 +797,12 @@ async function syncSubscription(sub: any) {
                   where id = ${orgId} returning id`);
         if (!updated.length) throw new Error(`Suscripción no actualizada para organización ${orgId}`);
     }
+    await withOrgTx(orgId, sql`
+        update billing_checkout_attempts
+           set status = ${grantsPlan ? 'completed' : (['canceled','incomplete_expired'].includes(status) ? 'expired' : 'incomplete')},
+               updated_at = now()
+         where org_id = ${orgId} and stripe_subscription_id = ${sub.id}
+           and status in ('creating','incomplete')`);
     await logAudit(orgId, { accion: 'billing.plan_sync', entidad: 'org', entidad_id: orgId, detalle: `Plan ${grantsPlan ? plan : '(sin cambio)'} (${status})` });
 
     // Solo dispara cuando el plan efectivo REALMENTE cambió (no en cada renovación
@@ -746,12 +821,19 @@ async function syncSubscription(sub: any) {
 async function downgradeToFree(sub: any) {
     const orgId = await orgForBilling(sub?.id, typeof sub?.customer === 'string' ? sub.customer : sub?.customer?.id);
     if (!orgId) return;
-    const [rows] = await withOrgTx(orgId, sql`select id, plan, created_at, (sandbox_of is not null) as is_sandbox, is_demo
+    const [rows] = await withOrgTx(orgId, sql`select id, plan, created_at, stripe_subscription_id, (sandbox_of is not null) as is_sandbox, is_demo
         from orgs where id = ${orgId} limit 1`);
     if (!rows.length) return;
+    // Un `deleted` tardío de una suscripción vieja no puede cancelar la nueva.
+    if (rows[0].stripe_subscription_id && rows[0].stripe_subscription_id !== sub?.id) return;
     const prevPlan = (rows[0].plan as string) || 'free';
-    const [updated] = await withOrgTx(orgId, sql`update orgs set plan = 'free', subscription_status = 'canceled', stripe_subscription_id = null
-        where id = ${orgId} returning id`);
+    const [updated] = await withOrgTx(orgId,
+        sql`update orgs set plan = 'free', subscription_status = 'canceled', stripe_subscription_id = null,
+            current_period_end = null, billing_paid_through = null, billing_paid_plan = null
+            where id = ${orgId} returning id`,
+        sql`update billing_checkout_attempts set status = 'canceled', updated_at = now()
+            where org_id = ${orgId} and stripe_subscription_id = ${sub.id}
+              and status in ('creating','incomplete')`);
     if (!updated.length) throw new Error(`Cancelación no aplicada a organización ${orgId}`);
     await logAudit(orgId, { accion: 'billing.canceled', entidad: 'org', entidad_id: orgId, detalle: 'Suscripción cancelada → Gratis' });
     const tenureDays = rows[0].created_at ? Math.max(0, Math.round((Date.now() - new Date(rows[0].created_at as string).getTime()) / 86400000)) : null;
@@ -761,15 +843,68 @@ async function downgradeToFree(sub: any) {
     }, !!rows[0].is_sandbox, !!rows[0].is_demo);
 }
 
-async function setStatusByCustomer(customer: string | undefined, status: string) {
-    if (!customer) return;
-    const orgId = await orgForBilling(undefined, customer);
+async function syncPaidBillingInvoice(invoice: any) {
+    const customer = typeof invoice?.customer === 'string' ? invoice.customer : invoice?.customer?.id;
+    const subId = invoiceSubId(invoice);
+    const orgId = await orgForBilling(subId || undefined, customer);
+    if (!orgId || !subId) return;
+    const [[current]] = await withOrgTx(orgId, sql`select stripe_subscription_id from orgs where id = ${orgId} limit 1`);
+    if (current?.stripe_subscription_id && current.stripe_subscription_id !== subId) return;
+
+    const amountPaid = Number(invoice?.amount_paid ?? 0);
+    const baseLines = (invoice?.lines?.data ?? []).map((line: any) => {
+        const priceId = invoiceLinePriceId(line);
+        return { line, plan: priceId ? PRICE_TO_PLAN[priceId] : null };
+    }).filter((entry: any) => !!entry.plan);
+    const paidPlan = baseLines
+        .map((entry: any) => String(entry.plan))
+        .sort((a: string, b: string) => (PLAN_RANK[b] ?? 0) - (PLAN_RANK[a] ?? 0))[0] || null;
+    const paidThroughSeconds = Math.max(0, ...baseLines
+        .filter((entry: any) => entry.plan === paidPlan)
+        .map((entry: any) => Number(entry.line?.period?.end || 0)));
+
+    // Los medidores mensuales de una suscripción anual generan facturas
+    // auxiliares. Una factura auxiliar en cero no puede borrar la evidencia
+    // del precio base anual, ni una pagada puede extender esa evidencia.
+    if (!baseLines.length && amountPaid <= 0) return;
+    if (baseLines.length && (amountPaid <= 0 || !paidThroughSeconds || !paidPlan)) {
+        await sendOpsAlert('Factura de plan sin pago cobrable', `Organización ${orgId}; factura ${String(invoice?.id || '')}; amount_paid=${amountPaid}`);
+        await retrieveAndSyncSubscription(subId);
+        return;
+    }
+
+    await withOrgTx(orgId, sql`update orgs set
+        billing_last_paid_at = now(),
+        billing_paid_through = case
+            when ${paidThroughSeconds} > 0 then greatest(
+                coalesce(billing_paid_through, '-infinity'::timestamptz),
+                ${paidThroughSeconds > 0 ? new Date(paidThroughSeconds * 1000).toISOString() : null}::timestamptz
+            )
+            else billing_paid_through
+        end,
+        billing_paid_plan = case when ${paidThroughSeconds} > 0 then ${paidPlan} else billing_paid_plan end,
+        billing_last_invoice_id = ${String(invoice.id)},
+        billing_last_amount_paid = ${amountPaid},
+        billing_currency = ${String(invoice.currency || '').toUpperCase() || null}
+        where id = ${orgId}`);
+    await retrieveAndSyncSubscription(subId);
+}
+
+async function syncFailedBillingInvoice(invoice: any) {
+    const customer = typeof invoice?.customer === 'string' ? invoice.customer : invoice?.customer?.id;
+    const subId = invoiceSubId(invoice);
+    const orgId = await orgForBilling(subId || undefined, customer);
     if (!orgId) return;
-    const [rows, updated] = await withOrgTx(orgId,
-        sql`select id, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId} limit 1`,
-        sql`update orgs set subscription_status = ${status} where id = ${orgId} returning id`);
-    if (!updated.length) throw new Error(`Estado de suscripción no actualizado para organización ${orgId}`);
-    if (status === 'past_due' && rows.length) {
+    const [[current]] = await withOrgTx(orgId, sql`select stripe_subscription_id from orgs where id = ${orgId} limit 1`);
+    if (current?.stripe_subscription_id && current.stripe_subscription_id !== subId) return;
+    const [rows] = await withOrgTx(orgId,
+        sql`select id, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId} limit 1`);
+    // Para un upgrade con `pending_if_incomplete`, Stripe mantiene los items y
+    // el status del plan anterior si falla el prorrateo. Releer la suscripción
+    // conserva ese derecho; una renovación realmente fallida ya vendrá
+    // `past_due`/`unpaid` y syncSubscription la revoca.
+    if (subId) await retrieveAndSyncSubscription(subId);
+    if (rows.length) {
         await trackServer('payment_failed', rows[0].id as string, { context: 'subscription' }, !!rows[0].is_sandbox, !!rows[0].is_demo);
     }
 }
@@ -900,7 +1035,11 @@ async function recurringInvoicePaid(invoice: any, account: string) {
     
     const currency = (invoice?.currency ?? 'MXN').toUpperCase();
     const [[orgFlags]] = await withOrgTx(orgId, sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
-    await trackPaymentReceived(orgId, montoNum, currency, 'tarjeta', true, row.cotizacion_id as string, !!orgFlags?.is_sandbox, !!orgFlags?.is_demo);
+    await trackPaymentReceived(
+        orgId, montoNum, currency, 'tarjeta', true, row.cotizacion_id as string,
+        !!orgFlags?.is_sandbox, !!orgFlags?.is_demo,
+        { payment_id: piId, stripe_invoice_id: String(invoice?.id || ''), payment_kind: 'recurring' },
+    );
     
     // Cada cobro mensual exitoso es un "Pago recibido" real para las integraciones.
     // after()/waitUntil — no perderlo si Vercel congela la invocación tras el 200.

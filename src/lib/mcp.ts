@@ -11,6 +11,7 @@ import {
 } from './queries';
 import { createCotizacion, QuoteError } from './cotizaciones';
 import type { ApiScope } from './apikey';
+import { checkEntitlement } from './org-entitlements';
 
 // Anotaciones estándar de MCP — le dicen a un cliente si puede AUTO-APROBAR
 // una llamada sin confirmación humana (readOnlyHint) o si debe pedir
@@ -112,6 +113,8 @@ export const MCP_TOOLS: McpToolDef[] = [
         annotations: { title: 'Cartera vencida', readOnlyHint: true, idempotentHint: true, openWorldHint: false },
         scope: 'read',
         handler: async () => {
+            const entitlement = await checkEntitlement(await getActiveOrgId(), 'collections');
+            if (!entitlement.ok) throw new Error('Esta herramienta requiere el plan Scale o superior.');
             const cob = await getCobranza();
             const vencidas = cob.items.filter((i) => i.overdue).map(({ token, ...r }) => r);
             return { resumen: cob.resumen, aging: cob.aging, vencidas };
@@ -126,8 +129,10 @@ export const MCP_TOOLS: McpToolDef[] = [
         scope: 'read',
         handler: async () => {
             const [a, plan] = await Promise.all([getAnalytics(), getPlanUsage()]);
+            const advanced = await checkEntitlement(await getActiveOrgId(), 'advanced_forecast');
             return {
-                kpis: a.kpis, funnel: a.funnel, forecast: a.forecast, margen: a.margen,
+                kpis: a.kpis, funnel: a.funnel,
+                ...(advanced.ok ? { forecast: a.forecast, margen: a.margen } : {}),
                 topClientes: a.clientes.slice(0, 5), topProductos: a.productos.slice(0, 5),
                 plan: { nombre: plan.plan, cotizacionesActivas: plan.usadas, limite: plan.limite, ilimitado: plan.ilimitado },
             };

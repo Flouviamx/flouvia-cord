@@ -10,6 +10,7 @@ import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
 import { apiKeyLimit, planLabel } from '../../lib/permissions';
 import { trackServer } from '../../lib/posthog-server';
+import { getEntitlementContext } from '../../lib/org-entitlements';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -30,18 +31,15 @@ export const POST: APIRoute = async ({ request }) => {
     // Límite por plan de claves ACTIVAS (no revocadas). Todos los planes (incluido
     // free) pueden generar claves de prueba Y en vivo, pero la cantidad está
     // limitada — free = prueba real (poquito); el consumo se mide por uso aparte.
-    const [[planResult]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
-    const plan = planResult?.plan;
+    const [entitlements, [[planResult]]] = await Promise.all([
+        getEntitlementContext(orgId),
+        withOrgTx(orgId, sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`),
+    ]);
+    const plan = entitlements.effectivePlan;
     // En el ENTORNO DE PRUEBA (org sandbox) solo se generan llaves sk_test_:
     // una llave "live" nacida en la sandbox sería un estado inválido.
     if (planResult?.is_sandbox) mode = 'test';
-    let activas = 0;
-    try { const [[c]] = await withOrgTx(orgId, sql`select count(*)::int as n from api_keys where org_id = ${orgId} and revoked_at is null`); activas = (c?.n as number) ?? 0; }
-    catch { return json({ error: 'No se pudo crear la llave. ¿Corriste la migración (npm run db:migrate)?' }, 500); }
     const limite = apiKeyLimit(plan as string);
-    if (activas >= limite) {
-        return json({ error: `Tu plan ${planLabel(plan as string)} permite ${limite} claves activas. Revoca una o sube de plan.` }, 403);
-    }
 
     // sk_(live|test)_ o pk_(live|test)_ + 48 hex. prefix visible = pk_xxxx_ + 8, last4 = últimos 4.
     const raw = randomBytes(24).toString('hex');         // 48 hex chars
@@ -53,12 +51,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     let row: any;
     try {
-        [[row]] = await withOrgTx(orgId, sql`
-            insert into api_keys (org_id, nombre, prefix, last4, hash, scope, mode, type, created_by)
-            values (${orgId}, ${nombre}, ${prefix}, ${last4}, ${hash}, ${scope}, ${mode}, ${type}, ${reqIp(request)})
-            returning id`);
+        const [, inserted] = await withOrgTx(
+            orgId,
+            sql`select pg_advisory_xact_lock(hashtextextended(${'api_keys:' + orgId}, 0))`,
+            sql`
+                insert into api_keys (org_id, nombre, prefix, last4, hash, scope, mode, type, created_by)
+                select ${orgId}, ${nombre}, ${prefix}, ${last4}, ${hash}, ${scope}, ${mode}, ${type}, ${reqIp(request)}
+                 where (select count(*) from api_keys where org_id = ${orgId} and revoked_at is null) < ${limite}
+                returning id`,
+        );
+        [row] = inserted;
     } catch (e: any) {
         return json({ error: 'No se pudo crear la llave. ¿Corriste la migración (npm run db:migrate)?' }, 500);
+    }
+    if (!row) {
+        return json({ error: `Tu plan ${planLabel(plan as string)} permite ${limite} claves activas. Revoca una o sube de plan.` }, 403);
     }
 
     await logAudit(orgId, { accion: 'apikey.creada', entidad: 'api_key', entidad_id: row.id as string, detalle: `Creó la API key "${nombre}" (${mode})`, ip: reqIp(request) });

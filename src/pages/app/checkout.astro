@@ -103,6 +103,10 @@ const CHK_T = {
                 body: JSON.stringify({ plan: form?.dataset.plan, cycle: form?.dataset.cycle, ui: 'element' }),
             });
             const data = await r.json().catch(() => ({}));
+            if (r.ok && data.redirect_url) {
+                window.location.href = data.redirect_url;
+                return;
+            }
             if (!r.ok || !data.client_secret) {
                 if (mount) mount.innerHTML = '';
                 showError(data.error || T.noPudoIniciar || 'No se pudo iniciar el pago');

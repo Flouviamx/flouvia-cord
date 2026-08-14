@@ -35,6 +35,7 @@ const logoUrl = (ORG.logoUrl ?? '').trim();
 const folio = q.folio as string;
 const total = money(quoteTotal(q));
 const viva = !yaAprobada && !yaRechazada;
+const taxLabel = ORG.paisCode === 'MX' ? null : (L === 'en' ? 'Tax' : 'Impuesto');
 
 // Vigencia / urgencia
 const dias: number | undefined = typeof q.diasVigencia === 'number' ? q.diasVigencia : undefined;
@@ -236,7 +237,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         ))}
         <div class="qi-subtotals">
             <div class="qt-row"><span>{t(L, 'q.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-            <div class="qt-row"><span>{tf('q.iva', { pct: String(ORG.ivaPct) })}</span><span class="editorial">{money(quoteIva(q))}</span></div>
+            <div class="qt-row"><span>{taxLabel ? `${taxLabel} ${ORG.ivaPct}%` : tf('q.iva', { pct: String(ORG.ivaPct) })}</span><span class="editorial">{money(quoteIva(q))}</span></div>
             <div class="qt-row qt-grand"><span>{t(L, 'q.total')}</span><span class="editorial">{money(quoteTotal(q))}</span></div>
         </div>
     </div>

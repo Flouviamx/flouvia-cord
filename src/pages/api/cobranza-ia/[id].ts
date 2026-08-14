@@ -14,6 +14,7 @@ import { runARAgent, materializePlan } from '../../../lib/agents/ar-agent';
 import { getCobranzaConfig, renderCollectionEmail } from '../../../lib/agents/cobranza-run';
 import { sendEmail, siteOrigin } from '../../../lib/email';
 import { rateLimit } from '../../../lib/ratelimit';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -60,6 +61,8 @@ export const POST: APIRoute = async ({ request, params }) => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
+    const entitlementDenied = await requireEntitlement(orgId, 'collections_ai');
+    if (entitlementDenied) return entitlementDenied;
     const id = String(params.id ?? '');
     if (!id) return json({ error: 'Falta el id del mensaje' }, 400);
 

@@ -778,113 +778,414 @@ import { flagSrc } from '../lib/flags';
       
       <div class="variants-carousel">
         
-        <!-- Portada 1 -->
+        <!-- Portada 1: Title -->
         <div class="carousel-slide">
           <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 0 10px;">
             <div class="footer-text">
               <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
               <span style="opacity: 0.4;">|</span>
-              Operational Infrastructure
+              Cord Payments
             </div>
           </div>
-          <div class="banner-wrapper-vertical" style="background-color: #0A192F;">
+          <div class="banner-wrapper-vertical" style="background-color: #0A192F; overflow: hidden; position: relative;">
             <CordDynamicBg 
               client:only="react" 
               colors={{ base: '#0A192F', color1: '#38BDF8', color2: '#6670F4', color3: '#10B981' }} 
               grain={false}
             />
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10;">
-              <h1 style="color: white; font-size: 24px; font-weight: 800; margin: 0; white-space: nowrap; letter-spacing: -0.02em;">Cotizaciones con IA</h1>
+            <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; padding: 40px; text-align: center;">
+              <h1 style="color: white; font-size: 48px; font-weight: 800; margin: 0 0 16px 0; letter-spacing: -0.04em; line-height: 1.05;">Cord<br/>Payments</h1>
+              <p style="color: rgba(255,255,255,0.8); font-size: 18px; font-weight: 500; margin: 0; line-height: 1.4; max-width: 280px; letter-spacing: -0.01em;">
+                The complete commercial closing platform. From quote to cash in a single link.
+              </p>
             </div>
           </div>
         </div>
 
-        <!-- Portada 2 -->
+        <!-- Portada 2: Checkout Card Vertical (From Horizontal 1) -->
         <div class="carousel-slide">
           <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 0 10px;">
             <div class="footer-text">
               <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
               <span style="opacity: 0.4;">|</span>
-              Operational Infrastructure
+              Cord Payments
             </div>
           </div>
-          <div class="banner-wrapper-vertical" style="background-color: #061F20;">
+          <div class="banner-wrapper-vertical" style="background-color: #061F20; overflow: hidden; position: relative;">
             <CordDynamicBg 
               client:only="react" 
               colors={{ base: '#061F20', color1: '#10B981', color2: '#047857', color3: '#F59E0B' }} 
               grain={false}
             />
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10;">
-              <h1 style="color: white; font-size: 24px; font-weight: 800; margin: 0; white-space: nowrap; letter-spacing: -0.02em;">Cotizaciones interactivas</h1>
+            <div style="position: absolute; width: 420px; top: 70px; left: -30px; z-index: 10; transform: scale(0.85);">
+              <!-- Checkout Card from Horizontal 1 -->
+              <div style="background: #ffffff; border-radius: 20px; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,1); border: 1px solid rgba(226,232,240,1); overflow: hidden; display: flex; flex-direction: column; padding: 24px 28px; font-family: 'Inter', sans-serif;">
+                 <!-- Header (Logo & Name) -->
+                 <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.1);">
+                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="8" cy="12" r="5" stroke="white" stroke-width="2" fill="none"/>
+                          <circle cx="16" cy="12" r="5" stroke="white" stroke-width="2" stroke-opacity="0.6" fill="none"/>
+                          <path d="M8 7A5 5 0 0 1 12 12A5 5 0 0 1 8 17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                       </svg>
+                    </div>
+                    <div>
+                       <div style="font-size: 15px; font-weight: 600; color: #0f172a;">Nexus Studio</div>
+                       <div style="font-size: 12px; color: #64748b; font-weight: 500;">Quote COT-0011</div>
+                    </div>
+                 </div>
+                 
+                 <!-- Amount Section -->
+                 <div style="background: #f8fafc; border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+                    <div style="font-size: 10px; font-weight: 600; color: #64748b; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 2px;">Amount Due</div>
+                    <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px;">
+                       <span style="font-size: 28px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em;">$1,087.67</span>
+                       <span style="font-size: 13px; font-weight: 600; color: #64748b;">USD</span>
+                    </div>
+                    <div style="font-size: 12px; color: #64748b;">of $2,175.34 total</div>
+                 </div>
+                 
+                 <!-- Payment Method -->
+                 <div style="margin-bottom: 16px;">
+                    <div style="font-size: 12px; font-weight: 500; color: #0f172a; margin-bottom: 6px;">Payment method</div>
+                    <div style="display: flex; background: #f8fafc; border-radius: 10px; padding: 4px;">
+                       <div style="flex: 1; text-align: center; background: #ffffff; padding: 8px 0; border-radius: 6px; font-size: 12px; font-weight: 600; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">Card</div>
+                       <div style="flex: 1; text-align: center; padding: 8px 0; border-radius: 6px; font-size: 12px; font-weight: 500; color: #64748b;">Wire</div>
+                    </div>
+                 </div>
+                 
+                 <!-- Card Details Form -->
+                 <div style="margin-bottom: 16px;">
+                    <div style="font-size: 12px; font-weight: 500; color: #0f172a; margin-bottom: 6px;">Card number</div>
+                    <div style="border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+                       <span style="color: #cbd5e1; font-size: 13px; font-family: monospace; letter-spacing: 0.05em;">1234 1234 1234 1234</span>
+                       <div style="display: flex; gap: 4px;">
+                          <div style="width: 24px; height: 16px; background: #1434CB; border-radius: 3px; display: flex; align-items: center; justify-content: center; color: white; font-size: 7px; font-weight: bold; font-style: italic;">VISA</div>
+                          <div style="width: 24px; height: 16px; background: #EB001B; border-radius: 3px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                             <div style="position: absolute; left: 3px; width: 9px; height: 9px; border-radius: 50%; background: #F79E1B;"></div>
+                             <div style="position: absolute; right: 3px; width: 9px; height: 9px; border-radius: 50%; background: #FF5F00;"></div>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+                 
+                 <!-- Expiry & CVC -->
+                 <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                    <div style="flex: 1;">
+                       <div style="font-size: 12px; font-weight: 500; color: #0f172a; margin-bottom: 6px;">Expiry date</div>
+                       <div style="border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 10px; padding: 10px 14px; color: #cbd5e1; font-size: 13px;">MM/YY</div>
+                    </div>
+                    <div style="flex: 1;">
+                       <div style="font-size: 12px; font-weight: 500; color: #0f172a; margin-bottom: 6px;">Security code</div>
+                       <div style="border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; color: #cbd5e1; font-size: 13px;">
+                          <span>CVC</span>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #94a3b8;"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="16" y1="15" x2="18" y2="15"/></svg>
+                       </div>
+                    </div>
+                 </div>
+
+                 <!-- Pay Button -->
+                 <button style="width: 100%; background: #0f172a; color: white; border: none; border-radius: 10px; padding: 14px; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 0; box-shadow: 0 4px 12px rgba(15,23,42,0.15);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Pay $1,087.67
+                 </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Portada 3 -->
+        <!-- Portada 3: Quote Preview Vertical (From Horizontal 3) -->
         <div class="carousel-slide">
           <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 0 10px;">
             <div class="footer-text">
               <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
               <span style="opacity: 0.4;">|</span>
-              Operational Infrastructure
+              Cord Payments
             </div>
           </div>
-          <div class="banner-wrapper-vertical" style="background-color: #0F172A;">
+          <div class="banner-wrapper-vertical" style="background-color: #0F172A; overflow: hidden; position: relative;">
             <CordDynamicBg 
               client:only="react" 
               colors={{ base: '#0F172A', color1: '#38BDF8', color2: '#6670F4', color3: '#10B981' }} 
               grain={false}
             />
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10;">
-              <h1 style="color: white; font-size: 24px; font-weight: 800; margin: 0; white-space: nowrap; letter-spacing: -0.02em;">AI Quotes</h1>
+            <div style="position: absolute; width: 1040px; height: 600px; left: -450px; top: 120px; z-index: 10; font-family: 'Inter', sans-serif; transform: scale(0.85);">
+              <div class="cmk-shot" style="width: 100%; height: 100%; background: white; border-radius: 20px; box-shadow: 0 40px 100px rgba(0,0,0,0.8); border: 1px solid rgba(226,232,240,1);">
+                <div class="cmk-nav" style="border-bottom: 1px solid #e2e8f0; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0;">
+                  <div class="cmk-nav-l" style="display: flex; gap: 16px; align-items: center;">
+                    <div class="cmk-brand-dot" style="width: 36px; height: 36px; background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; border-radius: 8px;">Ac</div>
+                    <div>
+                       <div class="cmk-nav-title" style="font-weight: 600; font-size: 15px;">Acme Corp Enterprise</div>
+                       <div class="cmk-nav-sub" style="font-size: 13px; color: #64748b;">Propuesta Comercial · Q3</div>
+                    </div>
+                  </div>
+                  <div class="cmk-badge cmk-b-green" style="background: #ecfdf5; color: #059669; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;"><div class="cmk-dot cmk-dot-green" style="width: 6px; height: 6px; background: #10b981; border-radius: 50%;"></div> Client Viewing Now</div>
+                </div>
+                
+                <div class="cmk-body" style="padding: 40px; display: flex; gap: 40px;">
+                   <div style="flex: 2;">
+                      <div class="cmk-eyebrow" style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.1em; text-transform: uppercase;">Document Status</div>
+                      <div class="cmk-rule" style="margin-top: 24px;">
+                         <div style="display: flex; gap: 16px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"></path></svg></div>
+                            <div>
+                              <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">Identity Verified</div>
+                              <div class="cmk-rule-line" style="font-size: 14px; color: #64748b;">Jane Doe (jane@acmecorp.com) authenticated via work email.</div>
+                            </div>
+                         </div>
+                      </div>
+                      <div class="cmk-rule" style="margin-top: 32px;">
+                         <div style="display: flex; gap: 16px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
+                            <div>
+                              <div style="font-weight: 700; font-size: 15px; color: #0f172a; margin-bottom: 4px;">Legally Binding</div>
+                              <div class="cmk-rule-line" style="font-size: 14px; color: #64748b;">Compliant with ESIGN Act and local electronic signature laws.</div>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                   
+                   <div style="flex: 1.5; background: #f8fafc; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: center;">
+                      <div style="text-align: center; margin-bottom: 32px;">
+                         <div class="cmk-big-sub" style="font-size: 14px; color: #64748b; font-weight: 500; margin-bottom: 8px;">Total a pagar</div>
+                         <div class="cmk-big" style="font-size: 40px; font-weight: 800; color: #0f172a; letter-spacing: -0.03em;">$6,150.00</div>
+                      </div>
+                      <button style="width: 100%; padding: 18px; background: linear-gradient(180deg, #1e293b, #0f172a); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(15,23,42,0.15); cursor: pointer;">Approve & Sign</button>
+                      <div style="text-align: center; font-size: 12px; color: #64748b; margin-top: 16px;">By clicking, you agree to the Terms of Service.</div>
+                   </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Portada 4 -->
+        <!-- Portada 4: Settings Vertical (From Horizontal 4) -->
         <div class="carousel-slide">
           <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 0 10px;">
             <div class="footer-text">
               <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
               <span style="opacity: 0.4;">|</span>
-              Operational Infrastructure
+              Cord Payments
             </div>
           </div>
-          <div class="banner-wrapper-vertical" style="background-color: #1E1B4B;">
+          <div class="banner-wrapper-vertical" style="background-color: #1E1B4B; overflow: hidden; position: relative;">
             <CordDynamicBg 
               client:only="react" 
               colors={{ base: '#1E1B4B', color1: '#6366F1', color2: '#8B5CF6', color3: '#D946EF' }} 
               grain={false}
             />
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10;">
-              <h1 style="color: white; font-size: 24px; font-weight: 800; margin: 0; white-space: nowrap; letter-spacing: -0.02em;">Interactive Quotes</h1>
+            <div style="position: absolute; width: 1150px; height: 580px; left: -220px; top: 80px; z-index: 10; font-family: 'Inter', sans-serif; transform: scale(0.85);">
+              <!-- Mac OS window style wrapper (Replica) -->
+              <div style="width: 100%; height: 100%; background: #ffffff; border-radius: 16px; box-shadow: 0 40px 100px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,1); display: flex; overflow: hidden;">
+                 
+                 <!-- Sidebar -->
+                 <div style="width: 250px; background: #ffffff; border-right: 1px solid #f3f4f6; display: flex; flex-direction: column; flex-shrink: 0;">
+                    <!-- Workspace switch -->
+                    <div style="padding: 24px 20px 16px;">
+                       <div style="display: flex; align-items: center; justify-content: space-between;">
+                          <div style="display: flex; align-items: center; gap: 12px;">
+                             <div style="width: 36px; height: 36px; background: #0f172a; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                             </div>
+                             <div>
+                                <div style="font-size: 10px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Workspace</div>
+                                <div style="font-size: 14px; font-weight: 600; color: #111827;">Nexus Studio</div>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                    
+                    <!-- Menu items -->
+                    <div style="padding: 0 16px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 500; color: #4b5563;">
+                       <div style="padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Home
+                       </div>
+                    </div>
+
+                    <!-- Section: My Money -->
+                    <div style="padding: 24px 16px 0;">
+                       <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 12px 8px; font-size: 11px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+                          <span>My money</span>
+                       </div>
+                       <div style="display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 500; color: #4b5563;">
+                          <div style="padding: 10px 12px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; gap: 12px; color: #111827; font-weight: 600;">
+                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> Payments
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+
+                 <!-- Main Content -->
+                 <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                    <!-- Topbar Replica -->
+                    <div style="height: 68px; background: #ffffff; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; flex-shrink: 0; border-bottom: 1px solid #f3f4f6;">
+                       <div style="font-weight: 700; font-size: 16px; color: #111827;">Settings</div>
+                    </div>
+                    
+                    <!-- Settings Body -->
+                    <div style="padding: 32px 48px; flex: 1; background: #ffffff;">
+                       <!-- Section 1: Account Status -->
+                       <div style="font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 12px;">Account status</div>
+                       
+                       <div style="display: flex; flex-direction: column; gap: 0;">
+                          <!-- Box 1: Ready -->
+                          <div style="display: flex; align-items: flex-start; justify-content: space-between; padding: 24px 0; border-bottom: 1px solid #f3f4f6;">
+                             <div style="display: flex; gap: 16px;">
+                                <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; margin-top: 6px; box-shadow: 0 0 0 3px #d1fae5;"></div>
+                                <div>
+                                   <div style="font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 4px;">All set, you are ready to collect!</div>
+                                   <div style="font-size: 14px; color: #6b7280; line-height: 1.5; max-width: 400px;">Your account is verified and active. The money from your collections will be sent automatically to your bank.</div>
+                                </div>
+                             </div>
+                             <button style="background: white; border: 1px solid #fca5a5; color: #ef4444; padding: 8px 20px; border-radius: 999px; font-size: 14px; font-weight: 600; white-space: nowrap; margin-left: 20px;">Disconnect</button>
+                          </div>
+                          
+                          <!-- Box 2: Bank Account -->
+                          <div style="display: flex; align-items: flex-start; justify-content: space-between; padding: 24px 0;">
+                             <div style="display: flex; gap: 16px;">
+                                <div style="width: 48px; height: 48px; background: #ecfdf5; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #059669; flex-shrink: 0;">
+                                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"></path><path d="M3 10h18"></path><path d="M5 6l7-3 7 3"></path><path d="M4 10v11"></path><path d="M20 10v11"></path><path d="M8 14v3"></path><path d="M12 14v3"></path><path d="M16 14v3"></path></svg>
+                                </div>
+                                <div>
+                                   <div style="font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 4px;">Chase Bank, N.A.</div>
+                                   <div style="font-size: 14px; color: #6b7280;">Routing ending in •••• 1133. Your payouts arrive here.</div>
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Portada 5 -->
+        <!-- Portada 5: Invoice Total -->
         <div class="carousel-slide">
           <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 0 10px;">
             <div class="footer-text">
               <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
               <span style="opacity: 0.4;">|</span>
-              Operational Infrastructure
+              Cord Payments
             </div>
           </div>
-          <div class="banner-wrapper-vertical" style="background-color: #38BDF8;">
+          <div class="banner-wrapper-vertical" style="background-color: #2D142C; overflow: hidden; position: relative;">
             <CordDynamicBg 
               client:only="react" 
-              colors={{ base: '#38BDF8', color1: '#60A5FA', color2: '#FDE68A', color3: '#34D399' }} 
+              colors={{ base: '#2D142C', color1: '#F43F5E', color2: '#D946EF', color3: '#F59E0B' }} 
               grain={false}
             />
-            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10;">
-              <h1 style="color: white; font-size: 24px; font-weight: 800; margin: 0; white-space: nowrap; letter-spacing: -0.02em;">Cord</h1>
+            <div style="position: absolute; width: 1080px; height: 560px; left: -720px; top: 150px; z-index: 10; font-family: 'Inter', sans-serif; transform: scale(0.85);">
+               <div style="width: 100%; height: 100%; background: #ffffff; border-radius: 20px; box-shadow: 0 40px 100px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,1); display: flex; overflow: hidden; position: relative;">
+                  <div style="flex: 1; padding: 40px; display: flex; flex-direction: column;">
+                     <div style="margin-left: auto; width: 320px; margin-top: 24px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 14px; color: #64748b; margin-bottom: 8px;">
+                           <div>Subtotal</div>
+                           <div style="font-weight: 600; color: #0f172a;">$169,370.00</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 14px; color: #64748b; margin-bottom: 20px;">
+                           <div>IVA 16%</div>
+                           <div style="font-weight: 600; color: #0f172a;">$27,099.20</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                           <div style="font-weight: 700; color: #0f172a; font-size: 16px;">Total</div>
+                           <div style="font-weight: 700; color: #0f172a; font-size: 24px; letter-spacing: -0.02em;">$196,469.20</div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
             </div>
           </div>
         </div>
 
-      </div>
+        <!-- Portada 6: Key Metrics -->
+        <div class="carousel-slide">
+          <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 0 10px;">
+            <div class="footer-text">
+              <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
+              <span style="opacity: 0.4;">|</span>
+              Cord Payments
+            </div>
+          </div>
+          <div class="banner-wrapper-vertical" style="background-color: #450A0A; overflow: hidden; position: relative;">
+            <CordDynamicBg 
+              client:only="react" 
+              colors={{ base: '#450A0A', color1: '#EF4444', color2: '#F59E0B', color3: '#10B981' }} 
+              grain={false}
+            />
+            <div style="position: absolute; width: 800px; left: -220px; top: 120px; z-index: 10; font-family: 'Inter', sans-serif; transform: scale(0.85);">
+               <div style="background: #ffffff; border: 1px solid rgba(0,0,0,0.04); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
+                  <div style="padding: 24px 32px 16px; border-bottom: 1px solid #f3f4f6;">
+                     <div style="font-size: 9px; font-weight: 700; color: #6b7280; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;">PERFORMANCE</div>
+                     <div style="font-size: 18px; font-weight: 700; color: #111827; letter-spacing: -0.01em;">Key metrics</div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0;">
+                     <div style="padding: 24px 32px;">
+                        <div style="font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">COLLECTED</div>
+                        <div style="font-size: 28px; font-weight: 800; color: #111827; letter-spacing: -0.02em; margin-bottom: 6px;">$218,450</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 6px;">42 operations in period</div>
+                        <div style="font-size: 12px; font-weight: 600; color: #ef4444;">-90.6% vs. last period</div>
+                     </div>
+                     <div style="padding: 24px 32px;">
+                        <div style="font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">NET DEPOSITED</div>
+                        <div style="font-size: 28px; font-weight: 800; color: #111827; letter-spacing: -0.02em; margin-bottom: 6px;">$204,180</div>
+                        <div style="font-size: 12px; color: #6b7280;">Fees $14,270 · 0% cash</div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Portada 7: Manual Bank Transfer -->
+        <div class="carousel-slide">
+          <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 0 10px;">
+            <div class="footer-text">
+              <img src="/imgs/logo-cord-white.png" style="height: 14px; opacity: 0.8;" />
+              <span style="opacity: 0.4;">|</span>
+              Cord Payments
+            </div>
+          </div>
+          <div class="banner-wrapper-vertical" style="background-color: #022C22; overflow: hidden; position: relative;">
+            <CordDynamicBg 
+              client:only="react" 
+              colors={{ base: '#022C22', color1: '#10B981', color2: '#3B82F6', color3: '#6366F1' }} 
+              grain={false}
+            />
+            <div style="position: absolute; width: 460px; left: -50px; top: 120px; z-index: 10; font-family: 'Inter', sans-serif; transform: scale(0.85);">
+               <div style="background: white; border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">
+                  <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px;">
+                     <div style="display: flex; gap: 16px;">
+                        <div style="width: 40px; height: 40px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #4b5563; flex-shrink: 0;">
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        </div>
+                        <div>
+                           <div style="font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 4px;">Manual bank transfer</div>
+                           <div style="font-size: 13px; color: #6b7280; max-width: 250px;">Shows your account details on the public link.</div>
+                        </div>
+                     </div>
+                     <div style="width: 44px; height: 24px; background: #10b981; border-radius: 12px; position: relative; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);">
+                        <div style="width: 20px; height: 20px; background: white; border-radius: 50%; position: absolute; right: 2px; top: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"></div>
+                     </div>
+                  </div>
+                  <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                     <div style="flex: 1;">
+                        <div style="font-size: 9px; font-weight: 700; color: #9ca3af; letter-spacing: 0.05em; margin-bottom: 8px;">BANK</div>
+                        <div style="background: white; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 1px 2px rgba(0,0,0,0.02); border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #111827; font-weight: 500;">Ex. Bank of America</div>
+                     </div>
+                  </div>
+                  <div>
+                     <div style="font-size: 9px; font-weight: 700; color: #9ca3af; letter-spacing: 0.05em; margin-bottom: 8px;">BENEFICIARY NAME</div>
+                     <div style="background: white; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 1px 2px rgba(0,0,0,0.02); border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #111827; font-weight: 500;">Nexus Studio LLC</div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
+
+    </div>
     </div>
 
 </body>
 </html>
+

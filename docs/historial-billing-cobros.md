@@ -2,9 +2,94 @@
 
 > Suscripciones (Stripe Billing), Stripe Connect (Standard/Express/Custom), cobros por
 > anticipo/saldo/cuotas, cobros recurrentes (igualas), CFDI/Facturapi, CSD multi-tenant,
-> intereses moratorios y FX. Extraído de `historial.md`. Orden: más reciente arriba.
+> intereses moratorios y FX. Registro acumulativo: cada entrada conserva su fecha;
+> ante conflicto, el estado vigente vive en `negocio-billing.md` y en el código.
 
 ---
+
+**Núcleo fiscal internacional propiedad de Cord (14 ago 2026)** — la emisión dejó
+de modelarse como “llamar a Facturapi y guardar su respuesta”. Cord ahora conserva el
+documento canónico, sus partes emisor/receptor, conceptos, totales, moneda, folio y una
+fotografía inmutable de los datos con versión de schema. Facturapi permanece como adapter
+del carril CFDI 4.0 de México; para los otros 248 códigos ISO se habilitó una factura
+comercial numerada y un PDF servido directamente por Cord. La UI dice expresamente que
+esa factura comercial no implica presentación, autorización ni timbrado ante la autoridad
+local; los futuros adapters regulatorios se podrán insertar sin migrar el dominio.
+
+* El alta y onboarding aceptan los 249 códigos ISO, muestran el país con bandera y aplican
+  defaults operativos de moneda/zona horaria. México inicia con IVA 16%; fuera de México
+  inicia en 0 para no inventar una tasa local y el negocio la configura. Ajustes cambia de
+  “Facturación y CFDI” a “Facturación” fuera de México y expone razón social, identificación
+  fiscal con etiqueta local, domicilio y prefijo de factura en `orgs.fiscal_metadata`. El
+  país puede corregirse después en Ajustes › General y los selectores de moneda/zona horaria
+  usan los catálogos ICU de Node 24, sin una API externa en runtime.
+* `documentos_fiscales` ganó proveedor, id externo, folio propio, importes y snapshots.
+  `invoice_sequences` reserva la numeración por organización/país/tipo. Un advisory lock y
+  `idempotency_key` única impiden doble documento por doble click o pestañas concurrentes;
+  México manda esa misma llave en `idempotency_key` a Facturapi, por lo que un timeout o
+  una instancia interrumpida puede reintentar sin crear otro CFDI. Los `pending` viejos se
+  reclaman con lease y la misma llave. Un resultado reutilizado, simulado o de test tampoco
+  vuelve a consumir el medidor de timbrado ni dispara el evento de primer CFDI real.
+* `CommercialInvoiceProvider` reemplazó el stub de Estados Unidos y cubre cualquier país no
+  mexicano. La descarga provider-neutral `/api/fiscal/documents/:id/:format` valida la
+  organización activa: genera el PDF propio o hace proxy autenticado al PAC para PDF/XML de
+  CFDI. La bandeja y el detalle usan la URL persistida, moneda y folio reales.
+* Los clientes fuera de México ven la identificación fiscal correspondiente en vez de RFC.
+  El evento público `invoice.issued` separa una factura comercial de `invoice.stamped`, que
+  conserva el significado preciso de CFDI timbrado.
+* Migración requerida: `npm run db:migrate`. Verificación local: `npm run security:fiscal`
+  y `npm run build` correctos. `astro check` continúa fallando por cientos de diagnósticos
+  preexistentes del repositorio; los diagnósticos nuevos de esta entrega se corrigieron.
+
+**Billing autoritativo y cierre de bypasses de suscripción (13 ago 2026)** — se
+auditó el flujo completo de los cinco planes contra Stripe Live y todas las superficies
+que consumen capacidades o límites. `orgs.plan` dejó de ser una credencial: la nueva
+matriz ejecutable (`entitlements.ts`) y el resolver fail-closed (`org-entitlements.ts` /
+`cord_effective_plan`) exigen suscripción `active`, ids reales, periodo vigente y pago
+que cubra el periodo base y el nivel solicitado. Una factura inferior ya no puede
+autorizar un upgrade pendiente; una superior sí cubre un downgrade. Sandboxes heredan el derecho del padre y los downgrades
+preservan datos, pero apagan inmediatamente las capacidades no incluidas.
+
+* Checkout usa una tentativa durable única por org e idempotencia en Customer,
+  Subscription y Checkout. Suscripciones incompletas, con deuda o pausadas no pueden
+  sustituirse por otra; se recuperan desde Portal. El webhook reconsulta el objeto actual
+  para ignorar eventos fuera de orden, obtiene el plan solo del Price y revoca en impago,
+  acción requerida, incobrable o invoice anulada.
+  También se reparó el cambio de plan que antes siempre chocaba con "ya existe una
+  suscripción": upgrades usan pending update + prorrateo confirmado en Payment Element;
+  downgrades/cambios de ciclo se programan al fin del periodo. Stripe Checkout no admite
+  anual base + meters mensuales, por lo que anual usa exclusivamente la Subscription
+  flexible dentro de Cord. El Portal queda deliberadamente para método, invoices y
+  cancelación: Stripe no actualiza suscripciones usage-based desde esa superficie.
+* Se gatearon en servidor y/o capa de datos: equipo/asientos/roles, multi-org, SSO SAML
+  (incluidas URLs públicas conservadas), branding y correos, CFDI vs. facturación
+  internacional, presencia en vivo, analítica avanzada/CFO/flujo, aprobaciones,
+  cobranza/IA/intereses, audit log, replay de webhooks, MCP saliente, API REST, crons y
+  límites de cotizaciones/productos/clientes. API keys y webhooks se crean bajo advisory
+  lock; tras downgrade solo opera el subconjunto más antiguo cubierto por el plan.
+* La medición pasó a reserva atómica previa a la operación. `usage_reservations` es un
+  outbox con `FORCE RLS`, identifier e idempotencia estable; los fallos revierten cuota y
+  los éxitos se reintentan hasta llegar a Stripe. Se corrigió un cobro excesivo real: los
+  meters Live agregan por `sum`, por lo que ahora se envía solo `meter_value` por encima
+  de lo incluido, no el consumo total.
+* El reconciliador horario recupera tentativas, consulta la factura pagada del Price base,
+  detecta customers con múltiples suscripciones y drena el outbox. Se separó el periodo
+  anual base de invoices mensuales de uso para que un excedente no conceda acceso ni
+  invalide un año ya pagado.
+* Stripe Live quedó auditado con 23 prices, 4 meters, Customer Portal y 11 eventos del
+  webhook. Se añadieron los cuatro que faltaban: `invoice.payment_action_required`,
+  `invoice.marked_uncollectible`, `invoice.voided` y
+  `checkout.session.async_payment_succeeded`. La auditoría exacta de importes detectó
+  que el usuario adicional de Scale cobraba MXN 250 aunque el contrato declaraba MXN
+  300: se creó el Price correcto, se actualizó `billing.ts`, se archivó el anterior y
+  ahora el script valida cada importe base y medido, no solo que sea positivo.
+  Neon quedó migrado con dos tablas
+  `FORCE RLS` y cuatro triggers de límites; también se corrigió el splitter del migrador
+  para respetar bloques PostgreSQL `$$...$$`.
+* Verificación final: 55 invariantes adversariales de Billing, suite financiera completa,
+  auditorías read-only de Stripe Live y Neon, expansiones reales de la API de Stripe y
+  build de producción. `astro check` aún reporta errores preexistentes ajenos a Billing,
+  aunque el build termina correctamente.
 
 ✅ **Auditoría completa de `docs.cordhq.app` para Cord Pagos (ago 2026)** — André pidió
    revisar que toda la documentación pública de pagos explicara "cada paso" con precisión.

@@ -65,7 +65,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                     {BILL.periodFin && <i class="plan-renews">{tf('set.plan.renueva', { fecha: BILL.periodFin })}</i>}
                 </span>
             </div>
-            {esPago && !isTestEnv && <button class="plan-btn solid" data-portal>{t(L, 'set.plan.gestionar')}</button>}
+            {BILL.canManage && !isTestEnv && <button class="plan-btn solid" data-portal>{t(L, 'set.plan.gestionar')}</button>}
         </div>
     </div>
 
@@ -167,7 +167,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         <h3>{t(L, 'set.plan.metodo_pago')}</h3>
         {isTestEnv ? (
             <p class="plan-empty">{t(L, 'set.plan.pagos_no_aplican')}</p>
-        ) : esPago ? (
+        ) : BILL.canManage ? (
             <p class="plan-empty">{t(L, 'set.plan.gestion_stripe')} <button class="link-btn" data-portal>{t(L, 'set.plan.abrir_portal')}</button></p>
         ) : (
             <p class="plan-empty">{t(L, 'set.plan.agrega_metodo')}</p>

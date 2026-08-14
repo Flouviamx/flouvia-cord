@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ request }) => {
                coalesce(c.approved_at, c.created_at) as base,
                cl.empresa, cl.email,
                o.id as org_id, o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
-               o.portal_powered
+               (o.portal_powered = false and cord_effective_plan(o.id) <> 'free') as powered_off
         from cotizaciones c
         join clientes cl on cl.id = c.cliente_id
         join orgs o on o.id = c.org_id
@@ -61,7 +61,7 @@ export const GET: APIRoute = async ({ request }) => {
             token: r.public_token as string, empresa: r.empresa as string, email: r.email as string,
             orgId: r.org_id as string, orgNombre: (r.org_nombre as string) || 'Cord',
             color: /^#[0-9a-fA-F]{6}$/.test(r.color as string) ? (r.color as string) : '#0a192f',
-            poweredOff: r.portal_powered === false,
+            poweredOff: r.powered_off === true,
             vence: due, dias,
         };
     });

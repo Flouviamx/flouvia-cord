@@ -18,11 +18,15 @@ import { WEBHOOK_EVENT_IDS, sendTestEvent, redeliver, reenableAndRetryRecent, ro
 import { validateWebhookUrl } from '../../lib/ssrf';
 import { rateLimit, tooMany } from '../../lib/ratelimit';
 import { encryptRequiredSecret } from '../../lib/crypto-secret';
+import { getEntitlementContext, requireEntitlement } from '../../lib/org-entitlements';
 
-export const GET: APIRoute = async ({ request, url }) => {
+export const GET: APIRoute = async ({ url }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
     const webhookId = url.searchParams.get('deliveries');
     if (!webhookId) return json({ error: 'Falta el parámetro deliveries' }, 400);
+    const orgId = await getActiveOrgId();
+    const entitlementDenied = await requireEntitlement(orgId, 'webhook_replay');
+    if (entitlementDenied) return entitlementDenied;
     const deliveries = await getWebhookDeliveries(webhookId);
     return json({ deliveries });
 };
@@ -73,6 +77,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Acción: re-entregar (replay) una entrega pasada.
     if (body.action === 'redeliver') {
+        const entitlementDenied = await requireEntitlement(orgIdForAction, 'webhook_replay');
+        if (entitlementDenied) return entitlementDenied;
         const deliveryId = String(body.deliveryId ?? '');
         if (!deliveryId) return json({ error: 'Falta deliveryId' }, 400);
         const r = await redeliver(orgIdForAction, deliveryId);
@@ -86,15 +92,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     const orgId = await getActiveOrgId();
     // Límite por plan (free también tiene, pero poquito). Contamos los existentes.
-    const [[planResult]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
-    const plan = planResult?.plan;
-    let usados = 0;
-    try { const [[c]] = await withOrgTx(orgId, sql`select count(*)::int as n from webhooks where org_id = ${orgId}`); usados = (c?.n as number) ?? 0; }
-    catch { return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500); }
+    const plan = (await getEntitlementContext(orgId)).effectivePlan;
     const limite = webhookLimit(plan as string);
-    if (usados >= limite) {
-        return json({ error: `Tu plan ${planLabel(plan as string)} permite ${limite} webhook${limite === 1 ? '' : 's'}. Elimina uno o sube de plan para agregar más.` }, 403);
-    }
 
     const eventos = cleanEventos(body.eventos);
     const secret = `whsec_${randomBytes(24).toString('hex')}`;
@@ -107,12 +106,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     let row: any;
     try {
-        [[row]] = await withOrgTx(orgId, sql`
-            insert into webhooks (org_id, url, eventos, secret, secret_enc)
-            values (${orgId}, ${url}, ${JSON.stringify(eventos)}::jsonb, null, ${secretEnc})
-            returning id`);
+        const [, inserted] = await withOrgTx(
+            orgId,
+            sql`select pg_advisory_xact_lock(hashtextextended(${'webhooks:' + orgId}, 0))`,
+            sql`
+                insert into webhooks (org_id, url, eventos, secret, secret_enc)
+                select ${orgId}, ${url}, ${JSON.stringify(eventos)}::jsonb, null, ${secretEnc}
+                 where (select count(*) from webhooks where org_id = ${orgId}) < ${limite}
+                returning id`,
+        );
+        [row] = inserted;
     } catch {
         return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500);
+    }
+    if (!row) {
+        return json({ error: `Tu plan ${planLabel(plan as string)} permite ${limite} webhook${limite === 1 ? '' : 's'}. Elimina uno o sube de plan para agregar más.` }, 403);
     }
     await logAudit(orgId, { accion: 'webhook.creado', entidad: 'webhook', entidad_id: row.id as string, detalle: url, ip: reqIp(request) });
     return json({ id: row.id, secret });
@@ -142,6 +150,8 @@ export const PATCH: APIRoute = async ({ request }) => {
             // 24h (nunca el backlog completo — un endpoint caído una semana no
             // debe despertar con miles de eventos viejos disparándose de golpe).
             if (body.retryRecent === true) {
+                const entitlementDenied = await requireEntitlement(orgId, 'webhook_replay');
+                if (entitlementDenied) return entitlementDenied;
                 const r = await reenableAndRetryRecent(orgId, id);
                 cambios.push(r.requeued ? `reactivado + ${r.requeued} reintento(s) reencolado(s)` : 'reactivado (sin fallos recientes que reintentar)');
             } else {

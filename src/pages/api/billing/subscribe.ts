@@ -9,17 +9,139 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
-import { getOrg } from '../../../lib/queries';
+import { randomUUID } from 'node:crypto';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
+import { getOrg, requirePerm } from '../../../lib/queries';
 import {
     STRIPE_KEY, PLAN_PRICES, METER_PRICES, isPaidPlan, getOrCreateCustomer, stripe,
     type Cycle,
 } from '../../../lib/billing';
+import { siteOrigin } from '../../../lib/email';
+import { PLAN_RANK, type PaidPlan } from '../../../lib/entitlements';
 
 // API version mínima para billing_mode flexible + invoice.confirmation_secret.
 const STRIPE_VERSION = '2025-06-30.basil';
 
+function priceIdOf(value: any): string {
+    return typeof value === 'string' ? value : String(value?.id || '');
+}
+
+function currentBaseItem(subscription: any): any | null {
+    return (subscription?.items?.data ?? []).find((item: any) =>
+        Object.values(PLAN_PRICES).some((cycles) => Object.values(cycles).includes(priceIdOf(item?.price)))
+    ) ?? null;
+}
+
+function currentPaidPlan(subscription: any): PaidPlan | null {
+    const priceId = priceIdOf(currentBaseItem(subscription)?.price);
+    for (const [plan, cycles] of Object.entries(PLAN_PRICES) as Array<[PaidPlan, Record<Cycle, string>]>) {
+        if (Object.values(cycles).includes(priceId)) return plan;
+    }
+    return null;
+}
+
+function meterDimension(priceId: string): string | null {
+    for (const prices of Object.values(METER_PRICES)) {
+        for (const [dimension, candidate] of Object.entries(prices)) {
+            if (candidate === priceId) return dimension;
+        }
+    }
+    return null;
+}
+
+function appendDesiredItems(params: Record<string, string>, prefix: string, plan: PaidPlan, cycle: Cycle): void {
+    const prices = [PLAN_PRICES[plan][cycle], ...Object.values(METER_PRICES[plan]).filter(Boolean) as string[]];
+    prices.forEach((price, index) => { params[`${prefix}[${index}][price]`] = price; });
+}
+
+function subscriptionChangeParams(subscription: any, orgId: string, plan: PaidPlan, cycle: Cycle): Record<string, string> {
+    const params: Record<string, string> = {
+        payment_behavior: 'pending_if_incomplete',
+        proration_behavior: 'always_invoice',
+        'expand[0]': 'latest_invoice.confirmation_secret',
+        'metadata[org_id]': orgId,
+        'metadata[plan]': plan,
+        'metadata[cycle]': cycle,
+    };
+    const existing = subscription?.items?.data ?? [];
+    const used = new Set<string>();
+    let index = 0;
+    const base = currentBaseItem(subscription);
+    if (base) {
+        params[`items[${index}][id]`] = String(base.id);
+        params[`items[${index}][price]`] = PLAN_PRICES[plan][cycle];
+        used.add(String(base.id));
+        index++;
+    }
+    for (const [dimension, desiredPrice] of Object.entries(METER_PRICES[plan])) {
+        if (!desiredPrice) continue;
+        const item = existing.find((candidate: any) => meterDimension(priceIdOf(candidate?.price)) === dimension);
+        if (item) {
+            params[`items[${index}][id]`] = String(item.id);
+            used.add(String(item.id));
+        }
+        params[`items[${index}][price]`] = desiredPrice;
+        index++;
+    }
+    for (const item of existing) {
+        if (used.has(String(item.id))) continue;
+        params[`items[${index}][id]`] = String(item.id);
+        params[`items[${index}][deleted]`] = 'true';
+        index++;
+    }
+    return params;
+}
+
+async function ensureFlexible(subscription: any, idempotencyKey: string): Promise<any> {
+    if (subscription?.billing_mode?.type === 'flexible') return subscription;
+    return stripe(`/v1/subscriptions/${subscription.id}/migrate`, {
+        'billing_mode[type]': 'flexible',
+    }, 'POST', { version: STRIPE_VERSION, idempotencyKey: `${idempotencyKey}:flexible` });
+}
+
+async function schedulePlanChange(subscription: any, orgId: string, plan: PaidPlan, cycle: Cycle, idempotencyKey: string): Promise<any> {
+    const scheduleId = priceIdOf(subscription?.schedule);
+    const schedule = scheduleId
+        ? await stripe(`/v1/subscription_schedules/${scheduleId}`, undefined, 'GET', { version: STRIPE_VERSION })
+        : await stripe('/v1/subscription_schedules', { from_subscription: String(subscription.id) }, 'POST', {
+            version: STRIPE_VERSION,
+            idempotencyKey: `${idempotencyKey}:schedule`,
+        });
+    const phase = schedule?.phases?.find((candidate: any) => Number(candidate.start_date) <= Date.now() / 1000 && Number(candidate.end_date) > Date.now() / 1000)
+        ?? schedule?.phases?.[0];
+    const base = currentBaseItem(subscription);
+    const periodEnd = Number(base?.current_period_end || subscription?.current_period_end || phase?.end_date || 0);
+    if (!phase || !periodEnd || periodEnd * 1000 <= Date.now()) throw new Error('No pudimos determinar el cierre del periodo actual.');
+
+    const params: Record<string, string> = {
+        end_behavior: 'release',
+        'phases[0][start_date]': String(phase.start_date),
+        'phases[0][end_date]': String(periodEnd),
+        'phases[0][proration_behavior]': 'none',
+        'phases[1][start_date]': String(periodEnd),
+        'phases[1][duration][interval]': cycle === 'anual' ? 'year' : 'month',
+        'phases[1][duration][interval_count]': '1',
+        'phases[1][proration_behavior]': 'none',
+        'phases[1][metadata][org_id]': orgId,
+        'phases[1][metadata][plan]': plan,
+        'phases[1][metadata][cycle]': cycle,
+    };
+    (phase.items ?? []).forEach((item: any, index: number) => {
+        params[`phases[0][items][${index}][price]`] = priceIdOf(item.price);
+        if (item.quantity && item?.price?.recurring?.usage_type !== 'metered') {
+            params[`phases[0][items][${index}][quantity]`] = String(item.quantity);
+        }
+    });
+    appendDesiredItems(params, 'phases[1][items]', plan, cycle);
+    return stripe(`/v1/subscription_schedules/${schedule.id}`, params, 'POST', {
+        version: STRIPE_VERSION,
+        idempotencyKey: `${idempotencyKey}:schedule-update`,
+    });
+}
+
 export const POST: APIRoute = async ({ request }) => {
+    const denied = await requirePerm('ajustes');
+    if (denied) return denied;
     if (!STRIPE_KEY) return json({ error: 'La facturación aún no está configurada.' }, 503);
 
     let body: any = {};
@@ -32,26 +154,132 @@ export const POST: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
 
     // El ENTORNO DE PRUEBA nunca toca Stripe Billing real.
-    const [sb] = await sql`select sandbox_of from orgs where id = ${orgId}`;
+    const [[sb]] = await withOrgTx(orgId, sql`select sandbox_of from orgs where id = ${orgId}`);
     if (sb?.sandbox_of) {
         return json({ error: 'Estás en el entorno de prueba. Sal del modo de prueba para gestionar tu plan.' }, 409);
     }
 
     const org = await getOrg();
-    const origin = new URL(request.url).origin;
+    const origin = siteOrigin();
 
     try {
         const customer = await getOrCreateCustomer(orgId, org.email, org.nombre);
 
-        if (useElement) {
-            // Guard anti-doble-cobro: si ya hay suscripción vigente, los cambios de
-            // plan se hacen por el Customer Portal (no creamos una segunda).
-            const [o] = await sql`select subscription_status from orgs where id = ${orgId}`;
-            const st = (o?.subscription_status as string) || '';
-            if (st === 'active' || st === 'trialing') {
-                return json({ error: 'Ya tienes una suscripción activa. Usa “Gestionar suscripción” para cambiar de plan.' }, 409);
-            }
+        // Expira locks abandonados. Una Subscription `incomplete` queda terminal
+        // en Stripe después de su ventana; el webhook/reconciliador sincroniza el
+        // estado real, pero este TTL evita un lock local eterno si el evento faltó.
+        await withOrgTx(orgId, sql`
+            update billing_checkout_attempts
+               set status = 'expired', updated_at = now()
+             where org_id = ${orgId} and status in ('creating','incomplete') and expires_at <= now()`);
 
+        const [[open]] = await withOrgTx(orgId, sql`
+            select * from billing_checkout_attempts
+             where org_id = ${orgId} and status in ('creating','incomplete')
+             order by created_at desc limit 1`);
+        if (open) {
+            if (open.mode === 'element' && open.stripe_subscription_id) {
+                const existing = await stripe(`/v1/subscriptions/${open.stripe_subscription_id}`, {
+                    'expand[0]': 'latest_invoice.confirmation_secret',
+                }, 'GET', { version: STRIPE_VERSION });
+                const clientSecret = existing?.latest_invoice?.confirmation_secret?.client_secret;
+                if (clientSecret && ['incomplete', 'active', 'past_due'].includes(String(existing.status)) && open.plan === plan && open.cycle === cycle) {
+                    return json({ client_secret: clientSecret, resumed: true });
+                }
+            }
+            if (open.mode === 'checkout' && open.stripe_session_id) {
+                const existing = await stripe(`/v1/checkout/sessions/${open.stripe_session_id}`, undefined, 'GET');
+                if (existing?.url && existing?.status === 'open' && open.plan === plan && open.cycle === cycle) {
+                    return json({ url: existing.url, resumed: true });
+                }
+            }
+            return json({ error: 'Ya hay un pago de suscripción en proceso. Complétalo o gestiona tu suscripción actual.' }, 409);
+        }
+
+        // Una deuda, pausa o alta incompleta se recupera sobre la suscripción
+        // existente desde el portal. Nunca se crea una segunda para evadirla.
+        const [[billing]] = await withOrgTx(orgId, sql`
+            select subscription_status, stripe_subscription_id
+              from orgs where id = ${orgId} limit 1`);
+        if (billing?.stripe_subscription_id) {
+            // La fila local puede estar atrasada. Stripe es la autoridad y una
+            // falla al consultarlo bloquea la creación: nunca asumimos que un id
+            // desconocido ya terminó porque eso permitiría duplicar suscripciones.
+            let existingSubscription: any;
+            try {
+                existingSubscription = await stripe(`/v1/subscriptions/${billing.stripe_subscription_id}`, undefined, 'GET', { version: STRIPE_VERSION });
+            } catch {
+                return json({ error: 'No pudimos verificar tu suscripción existente. Intenta de nuevo o entra al portal de facturación.' }, 503);
+            }
+            const terminal = new Set(['canceled', 'incomplete_expired']);
+            const existingStatus = String(existingSubscription?.status || '');
+            if (existingStatus === 'active') {
+                existingSubscription = await stripe(`/v1/subscriptions/${billing.stripe_subscription_id}`, {
+                    'expand[0]': 'items.data.price',
+                    'expand[1]': 'latest_invoice.confirmation_secret',
+                }, 'GET', { version: STRIPE_VERSION });
+                const currentPlan = currentPaidPlan(existingSubscription);
+                const currentInterval = currentBaseItem(existingSubscription)?.price?.recurring?.interval;
+                const currentCycle: Cycle = currentInterval === 'year' ? 'anual' : 'mensual';
+                if (!currentPlan) return json({ error: 'No pudimos identificar el plan actual. Entra al portal de facturación.' }, 409);
+                if (currentPlan === plan && currentCycle === cycle) return json({ error: 'Ese ya es tu plan y ciclo actuales.' }, 409);
+
+                const attemptId = randomUUID();
+                const idempotencyKey = `billing-change:${attemptId}`;
+                try {
+                    await withOrgTx(orgId, sql`
+                        insert into billing_checkout_attempts
+                            (id, org_id, plan, cycle, mode, status, idempotency_key, stripe_subscription_id)
+                        values (${attemptId}, ${orgId}, ${plan}, ${cycle}, 'element', 'creating', ${idempotencyKey}, ${existingSubscription.id})`);
+                } catch {
+                    return json({ error: 'Ya hay un cambio de suscripción en proceso.' }, 409);
+                }
+
+                const isUpgrade = PLAN_RANK[plan] > PLAN_RANK[currentPlan];
+                existingSubscription = await ensureFlexible(existingSubscription, idempotencyKey);
+                if (!isUpgrade) {
+                    const schedule = await schedulePlanChange(existingSubscription, orgId, plan, cycle, idempotencyKey);
+                    await withOrgTx(orgId, sql`
+                        update billing_checkout_attempts set status = 'completed', updated_at = now()
+                         where id = ${attemptId} and org_id = ${orgId}`);
+                    await logAudit(orgId, { accion: 'billing.cambio_programado', entidad: 'org', entidad_id: orgId, detalle: `${currentPlan}/${currentCycle} → ${plan}/${cycle}; schedule ${schedule.id}`, ip: reqIp(request) });
+                    return json({ changed: true, scheduled: true, redirect_url: `${origin}/app/ajustes/plan?cambio_programado=1` });
+                }
+
+                const changed = await stripe(`/v1/subscriptions/${existingSubscription.id}`, subscriptionChangeParams(existingSubscription, orgId, plan, cycle), 'POST', {
+                    version: STRIPE_VERSION,
+                    idempotencyKey,
+                });
+                const clientSecret = changed?.latest_invoice?.confirmation_secret?.client_secret;
+                await withOrgTx(orgId, sql`
+                    update billing_checkout_attempts set status = 'incomplete', updated_at = now()
+                     where id = ${attemptId} and org_id = ${orgId}`);
+                if (!clientSecret) throw new Error('Stripe no devolvió la confirmación del prorrateo. El cambio quedó pendiente para recuperarse.');
+                await logAudit(orgId, { accion: 'billing.upgrade', entidad: 'org', entidad_id: orgId, detalle: `${currentPlan}/${currentCycle} → ${plan}/${cycle}`, ip: reqIp(request) });
+                return json({ client_secret: clientSecret, change: true });
+            }
+            if (!terminal.has(existingStatus)) {
+                return json({ error: 'Ya existe una suscripción que debes gestionar o recuperar antes de iniciar otra.' }, 409);
+            }
+            await withOrgTx(orgId, sql`update orgs set
+                plan = 'free', subscription_status = ${String(existingSubscription.status)},
+                stripe_subscription_id = null, current_period_end = null,
+                billing_paid_through = null, billing_paid_plan = null where id = ${orgId}`);
+        }
+
+        const attemptId = randomUUID();
+        const idempotencyKey = `billing-subscription:${attemptId}`;
+        try {
+            await withOrgTx(orgId, sql`
+                insert into billing_checkout_attempts
+                    (id, org_id, plan, cycle, mode, status, idempotency_key)
+                values (${attemptId}, ${orgId}, ${plan}, ${cycle}, ${useElement ? 'element' : 'checkout'}, 'creating', ${idempotencyKey})`);
+        } catch (error) {
+            // El índice parcial es la autoridad ante dos requests simultáneas.
+            return json({ error: 'Ya hay un pago de suscripción en proceso.' }, 409);
+        }
+
+        if (useElement) {
             const params: Record<string, string> = {
                 customer,
                 'items[0][price]': PLAN_PRICES[plan][cycle],
@@ -71,21 +299,38 @@ export const POST: APIRoute = async ({ request }) => {
                 i++;
             }
 
-            const sub = await stripe('/v1/subscriptions', params, 'POST', { version: STRIPE_VERSION });
+            const sub = await stripe('/v1/subscriptions', params, 'POST', {
+                version: STRIPE_VERSION,
+                idempotencyKey,
+            });
             const clientSecret = sub?.latest_invoice?.confirmation_secret?.client_secret;
-            if (!clientSecret) return json({ error: 'No se pudo iniciar el pago' }, 502);
+            await withOrgTx(orgId,
+                sql`update billing_checkout_attempts
+                       set status = 'incomplete', stripe_subscription_id = ${sub.id}, updated_at = now()
+                     where id = ${attemptId} and org_id = ${orgId}`,
+                sql`update orgs
+                       set stripe_subscription_id = ${sub.id}, stripe_customer_id = coalesce(stripe_customer_id, ${customer}),
+                           subscription_status = ${String(sub.status || 'incomplete')}
+                     where id = ${orgId}`,
+            );
+            if (!clientSecret) return json({ error: 'No se pudo iniciar el pago. La suscripción quedó pendiente para recuperarse de forma segura.' }, 502);
             await logAudit(orgId, { accion: 'billing.checkout', entidad: 'org', entidad_id: orgId, detalle: `Payment Element ${plan} (${cycle})`, ip: reqIp(request) });
             return json({ client_secret: clientSecret });
         }
 
         // ── Fallback: Checkout hosteado ──
+        // Stripe Checkout no puede crear suscripciones de intervalos mixtos.
+        // El camino principal (Payment Element) sí crea flexible annual+meters.
+        if (cycle === 'anual') {
+            await withOrgTx(orgId, sql`update billing_checkout_attempts set status = 'failed', last_error = 'checkout_mixed_interval_unsupported', updated_at = now() where id = ${attemptId}`);
+            return json({ error: 'La facturación anual se completa dentro de Cord. Vuelve a elegir el plan desde la app.' }, 422);
+        }
         // Item 0 = precio base (flat). Items siguientes = precios medidos (sin qty).
         const params: Record<string, string> = {
             mode: 'subscription',
             customer,
             success_url: `${origin}/app/ajustes/plan?suscrito=1`,
             cancel_url: `${origin}/app/ajustes/plan`,
-            allow_promotion_codes: 'true',
             'line_items[0][price]': PLAN_PRICES[plan][cycle],
             'line_items[0][quantity]': '1',
             'subscription_data[metadata][org_id]': orgId,
@@ -102,10 +347,20 @@ export const POST: APIRoute = async ({ request }) => {
             i++;
         }
 
-        const session = await stripe('/v1/checkout/sessions', params);
+        const session = await stripe('/v1/checkout/sessions', params, 'POST', { idempotencyKey });
+        await withOrgTx(orgId, sql`
+            update billing_checkout_attempts
+               set status = 'incomplete', stripe_session_id = ${session.id}, updated_at = now()
+             where id = ${attemptId} and org_id = ${orgId}`);
         await logAudit(orgId, { accion: 'billing.checkout', entidad: 'org', entidad_id: orgId, detalle: `Checkout ${plan} (${cycle})`, ip: reqIp(request) });
         return json({ url: session.url });
     } catch (e: any) {
+        // Solo cierra tentativas que aún no alcanzaron a crear un objeto Stripe.
+        // Las que ya guardaron subscription/session permanecen recuperables.
+        await withOrgTx(orgId, sql`
+            update billing_checkout_attempts
+               set status = 'failed', last_error = ${String(e?.message || 'error').slice(0, 500)}, updated_at = now()
+             where org_id = ${orgId} and status = 'creating'`).catch(() => null);
         return json({ error: e?.message || 'No se pudo iniciar el checkout' }, 502);
     }
 };

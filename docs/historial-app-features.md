@@ -2,7 +2,8 @@
 
 > Todo lo que vive dentro de `/app/**`: shell (sidebar/topbar/ajustes), editor de
 > cotizaciones, link público `/q`, dashboard, cobranza, onboarding, dark mode, entorno
-> de prueba, chat, tiempo real. Extraído de `historial.md`. Orden: más reciente arriba.
+> de prueba, chat y tiempo real. Registro acumulativo: cada entrada conserva su fecha,
+> pero migraciones anteriores pueden haber dejado bloques fuera de orden estricto.
 
 **Refactor mobile-first completo de la app y superficies transaccionales (ago 2026)** —
    la estructura móvil de Cord se revisó de extremo a extremo sin modificar reglas de

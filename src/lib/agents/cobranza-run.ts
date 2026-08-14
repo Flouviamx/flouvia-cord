@@ -15,6 +15,7 @@ import { sql, withOrgTx } from '../db';
 import { runARAgent } from './ar-agent';
 import { sendEmail, siteOrigin } from '../email';
 import { moneyFull } from '../fmt';
+import { checkEntitlement } from '../org-entitlements';
 
 export interface CobranzaConfig {
     activa: boolean;
@@ -156,6 +157,8 @@ export async function runCobranzaOrg(
     orgId: string,
     opts: { dryRun?: boolean; limit?: number } = {},
 ): Promise<RunResult> {
+    const entitlement = await checkEntitlement(orgId, 'collections_ai');
+    if (!entitlement.ok) throw new Error('La suscripción no incluye cobranza autónoma con IA.');
     const cfg = await getCobranzaConfig(orgId);
     const out: RunResult = { orgId, procesadas: 0, borradores: 0, enviados: 0, fallidos: 0, omitidas: [] };
     if (!cfg.activa && !opts.dryRun) return out;
@@ -359,6 +362,7 @@ export async function orgsConCobranzaActiva(): Promise<string[]> {
     const rows = await sql`
         select id from orgs
         where ai_cobranza_activa = true
+          and cord_effective_plan(id) in ('scale', 'developer')
           and sandbox_of is null
           and is_demo is not true
           and owner_id::text <> '00000000-0000-0000-0000-000000000000'`;

@@ -33,6 +33,7 @@ export const GET: APIRoute = async ({ request }) => {
                (select email from org_members where org_id = orgs.id and rol = 'owner' limit 1) as owner_email
         from orgs
         where interes_moratorio_pct > 0
+          and cord_effective_plan(id) in ('scale', 'developer')
           and sandbox_of is null`;
 
     let totalCargos = 0;

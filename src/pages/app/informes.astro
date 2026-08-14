@@ -19,6 +19,8 @@ import { addDaysISO, parseRangoParams } from '../../lib/rango';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import { dateFull } from '../../lib/fmt';
+import { getActiveOrgId } from '../../lib/db';
+import { checkEntitlement } from '../../lib/org-entitlements';
 
 const L = currentLocale();
 const es = L !== 'en';
@@ -27,7 +29,9 @@ const ME = await getMyMembership();
 const hasAnalytics = memberCan(ME, 'analitica');
 const reportId = parseReportId(Astro.url.searchParams.get('r'));
 const report = REPORT_BY_ID[reportId];
-const hasReportAccess = hasAnalytics && memberCan(ME, report.perm);
+const premiumFeature = reportId === 'finanzas' ? 'cfo_dashboard' : reportId === 'flujo' ? 'cashflow_90' : reportId === 'cobranza' ? 'collections' : null;
+const subscriptionAccess = premiumFeature ? (await checkEntitlement(await getActiveOrgId(), premiumFeature)).ok : true;
+const hasReportAccess = hasAnalytics && memberCan(ME, report.perm) && subscriptionAccess;
 const allowed = hasAnalytics
     ? REPORTS.filter((item) => memberCan(ME, item.perm)).map((item) => item.id)
     : [];

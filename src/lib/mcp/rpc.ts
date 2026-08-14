@@ -14,6 +14,7 @@
 import { reqIp } from '../db';
 import { MCP_TOOLS, findTool, McpToolError } from '../mcp';
 import { PostHogMCP } from '@posthog/mcp';
+import { isInternalAnalyticsOrg } from '../analytics-internal';
 
 export const SERVER_INFO = { name: 'cord', title: 'Cord — Cotizaciones', version: '1.0.0' };
 export const DEFAULT_PROTOCOL = '2025-06-18';
@@ -66,6 +67,11 @@ const _phHost =
 const _isDev =
     (typeof import.meta !== 'undefined' && (import.meta as any).env?.DEV) ||
     process.env.NODE_ENV === 'development';
+const _captureDisabled = _isDev || String(
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.POSTHOG_DISABLE_CAPTURE)
+    || process.env.POSTHOG_DISABLE_CAPTURE
+    || '',
+).toLowerCase() === 'true';
 
 if (!_phToken && _isDev) {
     // eslint-disable-next-line no-console
@@ -77,7 +83,7 @@ if (!_phToken && _isDev) {
 }
 
 // Exported so route handlers can await flush() after each serverless request.
-export const posthogMcp: PostHogMCP | null = _phToken
+export const posthogMcp: PostHogMCP | null = _phToken && !_captureDisabled
     ? new PostHogMCP(_phToken, {
         host: _phHost,
         enableExceptionAutocapture: true,
@@ -92,11 +98,12 @@ export const posthogMcp: PostHogMCP | null = _phToken
 // result con isError:true en vez de lanzar — así el cliente MCP ve el
 // mensaje sin que el transporte lo trate como error de protocolo.
 export async function handle(msg: any, auth: RpcAuth, request: Request): Promise<unknown> {
+    const analytics = posthogMcp && !await isInternalAnalyticsOrg(auth.orgId) ? posthogMcp : null;
     switch (msg.method) {
         case 'initialize': {
             const want = msg.params?.protocolVersion;
             const protocolVersion = SUPPORTED_PROTOCOLS.includes(want) ? want : DEFAULT_PROTOCOL;
-            posthogMcp?.captureInitialize({
+            analytics?.captureInitialize({
                 clientName: msg.params?.clientInfo?.name,
                 clientVersion: msg.params?.clientInfo?.version,
                 ...mcpCaptureContext(auth),
@@ -129,7 +136,7 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
             if (!tool) throw new RpcError(-32602, `Tool desconocida: ${name}`);
             if (tool.scope === 'write' && auth.scope !== 'write') {
                 const authResult = { content: [{ type: 'text', text: 'Esta acción requiere una API key con permiso de escritura.' }], isError: true };
-                posthogMcp?.captureToolCall({
+                analytics?.captureToolCall({
                     toolName: name,
                     parameters: summarizeMcpArguments(msg.params?.arguments),
                     durationMs: 0,
@@ -142,7 +149,7 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
             try {
                 const data = await tool.handler(msg.params?.arguments ?? {}, { ip: reqIp(request), keyId: auth.keyId });
                 const result = { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
-                posthogMcp?.captureToolCall({
+                analytics?.captureToolCall({
                     toolName: name,
                     parameters: summarizeMcpArguments(msg.params?.arguments),
                     durationMs: Date.now() - _t0,
@@ -153,7 +160,7 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
             } catch (e) {
                 if (e instanceof McpToolError) {
                     const errResult = { content: [{ type: 'text', text: e.message }], isError: true };
-                    posthogMcp?.captureToolCall({
+                    analytics?.captureToolCall({
                         toolName: name,
                         parameters: summarizeMcpArguments(msg.params?.arguments),
                         durationMs: Date.now() - _t0,
@@ -162,7 +169,7 @@ export async function handle(msg: any, auth: RpcAuth, request: Request): Promise
                     });
                     return errResult;
                 }
-                posthogMcp?.captureToolCall({
+                analytics?.captureToolCall({
                     toolName: name,
                     parameters: summarizeMcpArguments(msg.params?.arguments),
                     durationMs: Date.now() - _t0,

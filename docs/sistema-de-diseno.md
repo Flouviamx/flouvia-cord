@@ -1,8 +1,9 @@
-# Sistema de Diseño — Cord
+# Sistema de diseño — Cord
 
-> Extraído de `CLAUDE.md` para organización. Tokens de diseño, reglas visuales
-> detalladas y componentes de UI. **Las 9 reglas core de diseño viven en `/CLAUDE.md`;**
-> este archivo es el detalle extendido. Auto-carga vía `@import`.
+> Tokens, patrones visuales y contratos detallados de componentes. Las reglas
+> permanentes viven en [`estandares-ingenieria.md`](estandares-ingenieria.md); este
+> archivo conserva el detalle de implementación y la evolución visual. Las
+> secciones fechadas son evidencia histórica y no reemplazan el estado del código.
 
 ---
 
@@ -77,10 +78,9 @@ Sin SplitText, sin blur/scale en reveals de contenido.
   nunca `gsap.from`+`immediateRender:false`.
 - `clearProps:'transform,opacity'` tras el reveal para liberar hovers.
 - `overflow: clip` (no `hidden`) para no romper `position: sticky`.
-- Estilos de DOM inyectado en runtime (Clerk, librerías) → `<style is:global>` porque
-  Astro scopea con `[data-astro-cid]` y el DOM inyectado no lo lleva.
-- `Clerk.signOut(cb)` necesita callback para no auto-navegar.
-- **Error 500 / TypeError de Clerk en SSR (Pantalla Blanca):** Al usar componentes de React de Clerk (como `<WorkspaceSwitcher />`, `<SignInForm />`, etc.) dentro de `.astro`, **siempre** usar `client:only="react"`, NUNCA `client:load`. Clerk depende de `<ClerkProvider>`, el cual no existe en el SSR de Astro. Usar `client:load` causa que Astro intente pre-renderizarlo en servidor, provocando un crasheo interno en Vite ("TypeError: Cannot read properties of undefined") y dejando la pantalla blanca.
+- Estilos de DOM inyectado en runtime por librerías → `<style is:global>` porque
+  Astro scopea con `[data-astro-cid]` y el DOM inyectado no lo lleva. El contrato
+  completo vive en la Regla 11 de `estandares-ingenieria.md`.
 - **Corrupción de caché de Vite (tsconfig.json):** Mantén la configuración de TypeScript nativa de Astro. Forzar `"jsx": "react-jsx"` en `compilerOptions` corrompe el servidor de desarrollo (`npm run dev`) tirando TypeErrors fantasmas durante la transformación de dependencias. Si esto ocurre, borrar `.vite`, `.astro`, `node_modules` y hacer un `npm install` limpio.
 - ⚠️ **NUNCA sintaxis TypeScript dentro de un `<script is:inline>` (jul 2026):** un
   `<script>` normal de Astro se compila con esbuild (quita los tipos → JS válido), PERO

@@ -15,7 +15,7 @@ import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db
 import { currentUserId } from '../../../lib/context';
 import { parseJsonBody } from '../../../lib/validation';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
-import { COUNTRY_CODES } from '../../../lib/countries';
+import { COUNTRY_CODES, getCountryProfile } from '../../../lib/countries';
 
 const PUESTOS = ['dueno', 'ventas', 'finanzas', 'operaciones', 'otro'] as const;
 const INDUSTRIAS = ['distribucion', 'manufactura', 'construccion', 'servicios', 'tecnologia', 'comercio', 'otro'] as const;
@@ -24,7 +24,7 @@ const CASOS_USO = ['cotizar', 'cobrar', 'facturar', 'seguimiento', 'margenes', '
 
 const schema = z.object({
     nombre: z.string().trim().min(1).max(120),
-    countryCode: z.enum(COUNTRY_CODES as [string, ...string[]]),
+    countryCode: z.enum(COUNTRY_CODES),
     puesto: z.enum(PUESTOS),
     industria: z.enum(INDUSTRIAS),
     tamano: z.enum(TAMANOS),
@@ -41,6 +41,8 @@ export const POST: APIRoute = async ({ request }) => {
     const parsed = await parseJsonBody(request, schema);
     if (!parsed.ok) return json({ error: parsed.error }, parsed.status);
     const { nombre, countryCode, puesto, industria, tamano, casosUso } = parsed.data;
+    const countryProfile = getCountryProfile(countryCode);
+    const appLocale = countryProfile.locale.startsWith('es') ? 'es-MX' : 'en-US';
 
     const orgId = await getActiveOrgId();
 
@@ -56,6 +58,10 @@ export const POST: APIRoute = async ({ request }) => {
         sql`update orgs set
                 nombre = ${nombre},
                 country_code = ${countryCode},
+                moneda = ${countryProfile.currency},
+                zona_horaria = ${countryProfile.timeZone},
+                idioma = ${appLocale},
+                iva_pct = ${countryCode === 'MX' ? 16 : 0},
                 industria = ${industria},
                 tamano_equipo = ${tamano},
                 casos_uso = ${JSON.stringify(casosUso)}::jsonb,

@@ -1,20 +1,52 @@
-// Puente entre el flujo de cotizaciones y la abstracción fiscal global.
-// Junta los datos de la cotización (org, cliente, items, totales, país/divisa),
-// enruta al proveedor correcto vía FiscalFactory y registra el resultado en
-// documentos_fiscales. Best-effort: nunca lanza — si el proveedor falla, deja
-// una fila con status 'error' para que el flujo de facturación no se rompa.
+// Emisión fiscal provider-neutral. Cord reserva primero el folio y persiste un
+// documento canónico inmutable; después invoca el rail regulatorio del país.
+// Así una falla de Facturapi no borra el intento ni convierte al proveedor en
+// la fuente de verdad del producto.
 
 import { sql, withOrgTx, withSystemTx } from '../db';
-import { FiscalFactory } from './FiscalFactory';
-import type { FiscalDocumentResponse } from './index';
 import { decryptSecret } from '../crypto-secret';
+import { getCountryProfile } from '../countries';
+import { FiscalFactory } from './FiscalFactory';
+import type {
+  FiscalDocumentRequest,
+  FiscalDocumentResponse,
+  FiscalLineItem,
+  FiscalParty,
+} from './index';
 
 export interface EmitResult {
   emitted: boolean;
   documentId?: string;
   fiscalId?: string;
+  invoiceNumber?: string;
+  reused?: boolean;
+  billable?: boolean;
   status: 'issued' | 'error';
   error?: string;
+}
+
+const money = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+
+function cleanPrefix(value: unknown, fallback: string): string {
+  const cleaned = String(value || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 12);
+  return cleaned || fallback;
+}
+
+function metadata(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+    .filter(([, item]) => typeof item === 'string')
+    .map(([key, item]) => [key, String(item)]));
+}
+
+function documentTypeFor(country: string): string {
+  return country.toUpperCase() === 'MX' ? 'cfdi_40' : 'commercial_invoice';
+}
+
+function isBillableCfdi(country: string, providerData: unknown): boolean {
+  if (country.toUpperCase() !== 'MX' || !providerData || typeof providerData !== 'object') return false;
+  const data = providerData as Record<string, unknown>;
+  return data.simulado !== true && data.livemode !== false && typeof data.facturapi_id === 'string';
 }
 
 /**
@@ -28,13 +60,13 @@ export async function emitPlatformInvoice(batchId: string): Promise<EmitResult> 
 
   const [[batch]] = await withSystemTx(sql`
     select id, org_id, periodo, currency, fee_base_cents, fee_iva_cents,
-           total_cents, status, facturapi_id
+           total_cents, status, facturapi_id, provider_data
       from comision_invoice_batches
      where id = ${batchId}
      limit 1`);
   if (!batch) return { emitted: false, status: 'error', error: 'borrador no encontrado' };
   if (batch.status === 'issued') {
-    return { emitted: true, status: 'issued', documentId: batch.facturapi_id as string };
+    return { emitted: true, status: 'issued', documentId: batch.facturapi_id as string, reused: true };
   }
   const orgId = String(batch.org_id || '');
   if (!orgId) return { emitted: false, status: 'error', error: 'borrador sin organización' };
@@ -49,35 +81,46 @@ export async function emitPlatformInvoice(batchId: string): Promise<EmitResult> 
     return { emitted: false, status: 'error', error: 'el receptor no tiene RFC, régimen y código postal completos' };
   }
 
+  const subtotal = Number(batch.fee_base_cents || 0) / 100;
+  const taxes = Number(batch.fee_iva_cents || 0) / 100;
+  const total = Number(batch.total_cents || 0) / 100;
   let resp: FiscalDocumentResponse;
   try {
     resp = await FiscalFactory.getProvider('MX').issueDocument({
-      orgId: String(batch.org_id),
+      documentId: String(batch.id),
+      invoiceNumber: `CORD-${String(batch.periodo)}-${String(batch.id).slice(0, 8).toUpperCase()}`,
+      idempotencyKey: `platform:${batch.id}:invoice:v1`,
+      orgId,
       quoteId: `cord-fee-${batch.id}`,
       countryCode: 'MX',
       providerApiKey: platformKey,
-      customerData: {
-        legal_name: receiver.razon_social || receiver.nombre,
-        tax_id: receiver.rfc,
-        tax_system: receiver.regimen_fiscal,
-        zip: receiver.cp_fiscal,
-        cfdi_use: receiver.uso_cfdi || 'G03',
-        payment_form: '03',
+      issuer: { legalName: 'CORD', address: { countryCode: 'MX' } },
+      recipient: {
+        legalName: String(receiver.razon_social || receiver.nombre),
+        taxId: String(receiver.rfc),
+        taxSystem: String(receiver.regimen_fiscal),
+        address: { countryCode: 'MX', postalCode: String(receiver.cp_fiscal) },
       },
-      items: [{
-        description: `Servicios de plataforma Cord Pagos ${batch.periodo}`,
+      lines: [{
+        description: `Servicios de plataforma Cord ${batch.periodo}`,
         quantity: 1,
-        unit_price: Number(batch.fee_base_cents || 0) / 100,
+        unitPrice: subtotal,
+        taxRate: subtotal ? taxes / subtotal : 0,
+        subtotal,
+        taxAmount: taxes,
+        total,
       }],
-      totalAmounts: {
-        subtotal: Number(batch.fee_base_cents || 0) / 100,
-        taxes: Number(batch.fee_iva_cents || 0) / 100,
-        total: Number(batch.total_cents || 0) / 100,
-        currency: String(batch.currency || 'MXN'),
-      },
+      totals: { subtotal, taxes, total, currency: String(batch.currency || 'MXN') },
+      issuedAt: new Date().toISOString(),
+      cfdi: { use: String(receiver.uso_cfdi || 'G03'), paymentForm: '03', paymentMethod: 'PUE' },
     });
-  } catch (error: any) {
-    resp = { success: false, documentId: `err-platform-${batch.id}`, error: error?.message || 'fallo del proveedor fiscal' };
+  } catch (error: unknown) {
+    resp = {
+      success: false,
+      provider: 'facturapi',
+      documentId: `err-platform-${batch.id}`,
+      error: error instanceof Error ? error.message : 'fallo del proveedor fiscal',
+    };
   }
 
   const providerData = resp.rawProviderData ?? {};
@@ -101,21 +144,20 @@ export async function emitPlatformInvoice(batchId: string): Promise<EmitResult> 
   };
 }
 
-// MX timbra CFDI 4.0; el resto (US, etc.) emite factura comercial simple.
-function documentTypeFor(country: string): string {
-  return country.toUpperCase() === 'MX' ? 'cfdi_40' : 'invoice';
-}
-
 export async function emitFiscalDocument(orgId: string, cotizacionId: string): Promise<EmitResult> {
-  // 1. Datos de la org (país) + cotización (totales, divisa) + cliente.
   const [headRows, allItems] = await withOrgTx(orgId,
     sql`select
-          o.country_code, o.iva_pct, o.cp_fiscal as org_cp, o.uso_cfdi as org_uso,
+          o.nombre as org_nombre, o.razon_social as org_razon_social, o.rfc as org_tax_id,
+          o.regimen_fiscal as org_tax_system, o.country_code, o.iva_pct,
+          o.cp_fiscal as org_cp, o.uso_cfdi as org_uso, o.email_contacto as org_email,
+          o.telefono as org_telefono, o.direccion as org_direccion,
+          o.fiscal_metadata, o.serie_folio,
           o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of,
-          c.subtotal, c.iva, c.total, c.fiscal_currency,
+          c.folio as quote_folio, c.subtotal, c.iva, c.total, c.fiscal_currency,
           cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
           cl.email as cliente_email, cl.contacto as cliente_contacto,
-          cl.regimen_fiscal as cliente_regimen, cl.uso_cfdi as cliente_uso, cl.cp_fiscal as cliente_cp
+          cl.regimen_fiscal as cliente_regimen, cl.uso_cfdi as cliente_uso,
+          cl.cp_fiscal as cliente_cp
         from cotizaciones c
         join orgs o on o.id = c.org_id
         left join clientes cl on cl.id = c.cliente_id
@@ -128,97 +170,233 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
         order by ci.orden asc`,
   );
   const head = headRows[0];
-
   if (!head) return { emitted: false, status: 'error', error: 'cotización no encontrada' };
 
-  const country: string = (head.country_code as string) || 'MX';
+  const country = String(head.country_code || 'MX').toUpperCase();
+  const profile = getCountryProfile(country);
+  const docType = documentTypeFor(country);
+  const approvedItems = allItems.filter((item: any) => item.aprobado !== false);
+  if (!approvedItems.length) {
+    return { emitted: false, status: 'error', error: 'no hay líneas aprobadas para facturar' };
+  }
 
-  // Facturar SOLO las líneas aprobadas. Si fue aprobación parcial, recalculamos
-  // los totales desde las líneas aceptadas (los totales del head son del original).
-  const items = allItems.filter((it: any) => it.aprobado !== false);
-  if (items.length === 0) return { emitted: false, status: 'error', error: 'no hay líneas aprobadas para facturar' };
+  const isPartial = approvedItems.length < allItems.length;
+  const taxRate = head.iva_pct !== null && head.iva_pct !== undefined ? Number(head.iva_pct) / 100 : 0;
+  const lines: FiscalLineItem[] = approvedItems.map((item: any) => {
+    const quantity = Number(item.cantidad) || 1;
+    const unitPrice = Number(item.precio_negociado ?? item.precio_unitario) || 0;
+    const subtotal = money(quantity * unitPrice);
+    const taxAmount = money(subtotal * taxRate);
+    return {
+      description: String(item.descripcion || 'Concepto'),
+      quantity,
+      unitPrice,
+      taxRate,
+      subtotal,
+      taxAmount,
+      total: money(subtotal + taxAmount),
+    };
+  });
 
-  const isPartial = items.length < allItems.length;
-  const ivaPct = head.iva_pct !== null && head.iva_pct !== undefined ? Number(head.iva_pct) / 100 : 0.16;
   let subtotal = Number(head.subtotal) || 0;
   let taxes = Number(head.iva) || 0;
   let total = Number(head.total) || 0;
   if (isPartial) {
-    subtotal = items.reduce((s: number, it: any) => s + Number(it.cantidad) * Number(it.precio_negociado ?? it.precio_unitario), 0);
-    taxes = subtotal * ivaPct;
-    total = subtotal + taxes;
+    subtotal = money(lines.reduce((sum, line) => sum + line.subtotal, 0));
+    taxes = money(lines.reduce((sum, line) => sum + line.taxAmount, 0));
+    total = money(subtotal + taxes);
   }
 
-  const docType = documentTypeFor(country);
-
-  // ENTORNO DE PRUEBA: jamás timbrar un documento fiscal real. Se registra un
-  // documento SIMULADO (honesto: provider_data.simulado + modo_prueba) para que
-  // el flujo completo se pueda ensayar sin consecuencias ante el SAT.
-  if (head.sandbox_of) {
-    const fakeId = `SIM-${cotizacionId.slice(0, 8).toUpperCase()}`;
-    const providerData = { simulado: true, modo_prueba: true, nota: 'Documento generado en el entorno de prueba — sin validez fiscal.' };
-    await withOrgTx(orgId, sql`
-      insert into documentos_fiscales (org_id, cotizacion_id, country_code, document_type, fiscal_id, status, provider_data)
-      values (${orgId}, ${cotizacionId}, ${country}, ${docType}, ${fakeId}, 'issued', ${JSON.stringify(providerData)})`);
-    return { emitted: true, documentId: fakeId, fiscalId: fakeId, status: 'issued' };
-  }
-
-  let resp: FiscalDocumentResponse;
-  try {
-    const provider = FiscalFactory.getProvider(country);
-    resp = await provider.issueDocument({
-      orgId,
-      quoteId: cotizacionId,
+  const fiscalMetadata = metadata(head.fiscal_metadata);
+  const issuer: FiscalParty = {
+    legalName: fiscalMetadata.legal_name || String(head.org_razon_social || head.org_nombre || 'Emisor'),
+    taxId: fiscalMetadata.tax_id || (head.org_tax_id ? String(head.org_tax_id) : undefined),
+    taxSystem: head.org_tax_system ? String(head.org_tax_system) : undefined,
+    email: head.org_email ? String(head.org_email) : undefined,
+    address: {
       countryCode: country,
-      // Si la org subió su CSD, timbra bajo SU RFC con su llave LIVE de Facturapi.
-      providerApiKey: decryptSecret(head.facturapi_live_key_enc as string) || (head.facturapi_live_key as string) || undefined,
-      customerData: {
-        legal_name: head.cliente_empresa,
-        tax_id: head.cliente_rfc,
-        email: head.cliente_email,
-        contacto: head.cliente_contacto,
-        // Datos fiscales del receptor capturados POR CLIENTE (CFDI nominativo).
-        // Si el cliente no los tiene, caemos a los del emisor como placeholder
-        // (el provider degrada a "público en general" cuando el RFC es genérico).
-        tax_system: head.cliente_regimen || undefined,
-        zip: head.cliente_cp || head.org_cp || undefined,
-        cfdi_use: head.cliente_uso || head.org_uso || undefined,
+      line1: fiscalMetadata.address_line1 || (head.org_direccion ? String(head.org_direccion) : undefined),
+      line2: fiscalMetadata.address_line2 || undefined,
+      city: fiscalMetadata.city || undefined,
+      region: fiscalMetadata.region || undefined,
+      postalCode: fiscalMetadata.postal_code || (head.org_cp ? String(head.org_cp) : undefined),
+    },
+  };
+  const recipient: FiscalParty = {
+    legalName: String(head.cliente_empresa || head.cliente_contacto || 'Cliente'),
+    taxId: head.cliente_rfc ? String(head.cliente_rfc) : undefined,
+    taxSystem: head.cliente_regimen ? String(head.cliente_regimen) : undefined,
+    email: head.cliente_email ? String(head.cliente_email) : undefined,
+    contactName: head.cliente_contacto ? String(head.cliente_contacto) : undefined,
+    address: {
+      countryCode: country,
+      postalCode: head.cliente_cp ? String(head.cliente_cp) : undefined,
+    },
+  };
+  const currency = String(head.fiscal_currency || profile.currency).toUpperCase();
+  const prefix = cleanPrefix(
+    fiscalMetadata.invoice_prefix || (country === 'MX' ? head.serie_folio : ''),
+    profile.invoicePrefix,
+  );
+  const idempotencyKey = `quote:${cotizacionId}:invoice:v1`;
+  const issuedAt = new Date().toISOString();
+
+  // El advisory lock serializa dos clicks/pestañas del mismo documento. Dentro
+  // de esa misma transacción se revisa idempotencia, se incrementa la secuencia
+  // solo si hace falta y se crea el pending antes de tocar al proveedor.
+  const [, reservedRows] = await withOrgTx(orgId,
+    sql`select pg_advisory_xact_lock(hashtextextended(${`${orgId}:${idempotencyKey}`}, 0))`,
+    sql`with existing as (
+          select id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, created_at, updated_at
+            from documentos_fiscales
+           where org_id = ${orgId} and idempotency_key = ${idempotencyKey}
+           limit 1
+        ), next_number as (
+          insert into invoice_sequences (org_id, country_code, document_type, prefix, next_value)
+          select ${orgId}, ${country}, ${docType}, ${prefix}, 2
+           where not exists (select 1 from existing)
+          on conflict (org_id, country_code, document_type) do update
+             set next_value = invoice_sequences.next_value + 1,
+                 prefix = excluded.prefix,
+                 updated_at = now()
+          returning next_value - 1 as sequence_value
+        ), inserted as (
+          insert into documentos_fiscales (
+            org_id, cotizacion_id, country_code, document_type, status, provider,
+            invoice_number, currency, subtotal, tax_total, total,
+            issuer_snapshot, recipient_snapshot, line_items_snapshot,
+            idempotency_key, schema_version, provider_data, updated_at
+          )
+          select ${orgId}, ${cotizacionId}, ${country}, ${docType}, 'pending',
+                 ${country === 'MX' ? 'facturapi' : 'cord'},
+                 ${prefix} || '-' || lpad(sequence_value::text, 6, '0'),
+                 ${currency}, ${subtotal}, ${taxes}, ${total},
+                 ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
+                 ${idempotencyKey}, 'cord.invoice.v1', '{}'::jsonb, now()
+            from next_number
+          returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, created_at, updated_at
+        ), claimed as (
+          update documentos_fiscales d
+             set status = 'pending', updated_at = now()
+           where d.id = (select id from existing)
+             and (
+               d.status = 'error'
+               or (d.status = 'pending' and d.updated_at < now() - interval '2 minutes')
+             )
+          returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, created_at, updated_at
+        )
+        select inserted.*, true as created from inserted
+        union all
+        select claimed.*, true as created from claimed
+        union all
+        select existing.*, false as created from existing
+         where not exists (select 1 from claimed)
+        limit 1`,
+  );
+  const reserved = reservedRows[0];
+  if (!reserved) return { emitted: false, status: 'error', error: 'no se pudo reservar el folio fiscal' };
+  const localDocumentId = String(reserved.id);
+  const invoiceNumber = String(reserved.invoice_number || '');
+
+  if (!reserved.created && reserved.status === 'issued') {
+    return {
+      emitted: true,
+      documentId: localDocumentId,
+      fiscalId: reserved.fiscal_id ? String(reserved.fiscal_id) : undefined,
+      invoiceNumber,
+      reused: true,
+      billable: isBillableCfdi(country, reserved.provider_data),
+      status: 'issued',
+    };
+  }
+  if (!reserved.created && reserved.status === 'pending') {
+    return {
+      emitted: false,
+      documentId: localDocumentId,
+      invoiceNumber,
+      status: 'error',
+      error: 'la emisión de esta factura ya está en proceso; vuelve a consultar en unos segundos',
+    };
+  }
+  const request: FiscalDocumentRequest = {
+    documentId: localDocumentId,
+    invoiceNumber,
+    idempotencyKey,
+    orgId,
+    quoteId: cotizacionId,
+    countryCode: country,
+    issuer,
+    recipient,
+    lines,
+    totals: { subtotal, taxes, total, currency },
+    issuedAt,
+    providerApiKey: decryptSecret(head.facturapi_live_key_enc as string)
+      || (head.facturapi_live_key as string)
+      || undefined,
+    cfdi: {
+      use: String(head.cliente_uso || head.org_uso || 'G03'),
+      paymentForm: '03',
+      paymentMethod: 'PUE',
+    },
+  };
+
+  let response: FiscalDocumentResponse;
+  if (head.sandbox_of) {
+    response = {
+      success: true,
+      provider: 'cord-sandbox',
+      documentId: localDocumentId,
+      fiscalId: country === 'MX' ? `SIM-${cotizacionId.slice(0, 8).toUpperCase()}` : undefined,
+      pdfUrl: `/api/fiscal/documents/${localDocumentId}/pdf`,
+      rawProviderData: {
+        simulado: true,
+        modo_prueba: true,
+        regulatory_status: country === 'MX' ? 'not_stamped' : 'commercial_only',
       },
-      items: items.map((it: any) => ({
-        description: it.descripcion,
-        quantity: Number(it.cantidad) || 1,
-        unit_price: Number(it.precio_negociado ?? it.precio_unitario) || 0,
-      })),
-      totalAmounts: {
-        subtotal,
-        taxes,
-        total,
-        currency: (head.fiscal_currency as string) || 'MXN',
-      },
-    });
-  } catch (err: any) {
-    // País sin proveedor o fallo del PAC → registramos el intento como error.
-    await withOrgTx(orgId, sql`
-      insert into documentos_fiscales (org_id, cotizacion_id, country_code, document_type, status, provider_data)
-      values (${orgId}, ${cotizacionId}, ${country}, ${docType}, 'error', ${JSON.stringify({ error: err?.message ?? 'fallo del proveedor' })})`);
-    return { emitted: false, status: 'error', error: err?.message ?? 'fallo del proveedor' };
+    };
+  } else {
+    try {
+      response = await FiscalFactory.getProvider(country).issueDocument(request);
+    } catch (error: unknown) {
+      response = {
+        success: false,
+        provider: country === 'MX' ? 'facturapi' : 'cord',
+        documentId: localDocumentId,
+        error: error instanceof Error ? error.message : 'fallo del proveedor fiscal',
+      };
+    }
   }
 
-  const status: 'issued' | 'error' = resp.success ? 'issued' : 'error';
-  // Anotamos en provider_data si se facturó una aprobación parcial (subset de líneas).
-  const providerData = { ...(resp.rawProviderData ?? {}), ...(isPartial ? { aprobacion_parcial: true, lineas_facturadas: items.length, lineas_totales: allItems.length } : {}) };
+  const status: 'issued' | 'error' = response.success ? 'issued' : 'error';
+  const providerData = {
+    ...(response.rawProviderData ?? {}),
+    ...(isPartial ? {
+      aprobacion_parcial: true,
+      lineas_facturadas: approvedItems.length,
+      lineas_totales: allItems.length,
+    } : {}),
+    ...(!response.success ? { error: response.error || 'fallo del proveedor fiscal' } : {}),
+  };
   await withOrgTx(orgId, sql`
-    insert into documentos_fiscales
-      (org_id, cotizacion_id, country_code, document_type, fiscal_id, status, provider_data, pdf_url, xml_url)
-    values
-      (${orgId}, ${cotizacionId}, ${country}, ${docType}, ${resp.fiscalId ?? null}, ${status},
-       ${JSON.stringify(providerData)}, ${resp.pdfUrl ?? null}, ${resp.xmlUrl ?? null})`);
+    update documentos_fiscales
+       set status = ${status},
+           provider = ${response.provider},
+           provider_document_id = ${response.documentId || null},
+           fiscal_id = ${response.fiscalId ?? null},
+           provider_data = ${JSON.stringify(providerData)},
+           pdf_url = ${response.pdfUrl ?? null},
+           xml_url = ${response.xmlUrl ?? null},
+           issued_at = ${response.success ? new Date(issuedAt) : null},
+           updated_at = now()
+     where id = ${localDocumentId} and org_id = ${orgId}`);
 
   return {
-    emitted: resp.success,
-    documentId: resp.documentId,
-    fiscalId: resp.fiscalId,
+    emitted: response.success,
+    documentId: localDocumentId,
+    fiscalId: response.fiscalId,
+    invoiceNumber,
+    billable: response.success && isBillableCfdi(country, providerData),
     status,
-    error: resp.error,
+    error: response.error,
   };
 }

@@ -9,7 +9,8 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { currentUserId } from '../../lib/context';
 import { requirePerm } from '../../lib/queries';
-import { PRESETS, ALL_PERM_KEYS, planTieneEquipo, planUpsell, planLabel, minPlanOf, seatLimit, TEAM_PLANS, type PermMap } from '../../lib/permissions';
+import { PRESETS, ALL_PERM_KEYS, type PermMap } from '../../lib/permissions';
+import { requireEntitlement, requireResourceCapacity, resourceLimitError } from '../../lib/org-entitlements';
 import { sha256Hex } from '../../lib/auth';
 import { sendTeamInviteEmail } from '../../lib/auth-email';
 import { randomBytes } from 'node:crypto';
@@ -37,26 +38,13 @@ export const POST: APIRoute = async (context) => {
     const rl = await rateLimit(`invite-create:${orgId}`, 30, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
 
-    const [[org], [seats]] = await withOrgTx(orgId,
-        sql`select coalesce(plan,'free') as plan, invite_domains, nombre, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`,
-        sql`select count(*) as n from org_members where org_id = ${orgId} and estado in ('activo', 'invitado')`);
-    if (!planTieneEquipo(org.plan as string)) {
-        return json({ error: planUpsell(org.plan as string, 'Invitar a tu equipo', TEAM_PLANS), plan_required: minPlanOf(TEAM_PLANS) }, 402);
-    }
+    const entitlementDenied = await requireEntitlement(orgId, 'team');
+    if (entitlementDenied) return entitlementDenied;
+    const capacityDenied = await requireResourceCapacity(orgId, 'seats');
+    if (capacityDenied) return capacityDenied;
 
-    // Asientos por plan. Hasta ago 2026 el número que promete /precios (Pro = 5)
-    // no existía en código: solo se verificaba `planTieneEquipo` y nunca se
-    // contaban miembros.
-    // ⚠️ Grandfathering: una org que YA rebasa su límite conserva a todos sus
-    // miembros — solo no puede invitar a uno más. Nunca se expulsa a nadie.
-    const usados = Number(seats?.n ?? 0);
-    const limite = seatLimit(org.plan as string);
-    if (usados >= limite) {
-        return json({
-            error: `Tu plan ${planLabel(org.plan as string)} incluye ${limite} asiento${limite === 1 ? '' : 's'} y ya los estás usando. Sube de plan para invitar a más gente.`,
-            plan_required: minPlanOf(TEAM_PLANS), seats: { usados, limite },
-        }, 402);
-    }
+    const [[org]] = await withOrgTx(orgId,
+        sql`select invite_domains, nombre, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
 
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
@@ -87,10 +75,15 @@ export const POST: APIRoute = async (context) => {
     const token = randomBytes(24).toString('base64url');
     const tokenHash = sha256Hex(token);
 
-    const [[row]] = await withOrgTx(orgId, sql`
-        insert into org_members (org_id, email, nombre, rol, permisos, estado, token, token_expires_at, invited_by)
-        values (${orgId}, ${email}, ${nombre}, ${rol}, ${JSON.stringify(permisos)}::jsonb, 'invitado', ${tokenHash}, now() + interval '7 days', ${currentUserId()})
-        returning id`);
+    let row: any;
+    try {
+        [[row]] = await withOrgTx(orgId, sql`
+            insert into org_members (org_id, email, nombre, rol, permisos, estado, token, token_expires_at, invited_by)
+            values (${orgId}, ${email}, ${nombre}, ${rol}, ${JSON.stringify(permisos)}::jsonb, 'invitado', ${tokenHash}, now() + interval '7 days', ${currentUserId()})
+            returning id`);
+    } catch (error) {
+        return resourceLimitError(error) ?? json({ error: 'No se pudo crear la invitación.' }, 500);
+    }
 
     await logAudit(orgId, { accion: 'equipo.invitado', entidad: 'miembro', entidad_id: row.id, detalle: email ?? 'invitación por link', ip: reqIp(request), userAgent: request.headers.get('user-agent') });
     await trackServer('team_member_invited', orgId, { role_assigned: rol }, !!org.is_sandbox, !!org.is_demo);
@@ -114,6 +107,8 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
+    const entitlementDenied = await requireEntitlement(orgId, 'roles');
+    if (entitlementDenied) return entitlementDenied;
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     const id = String(body.id ?? '');

@@ -6,8 +6,11 @@ export const prerender = false;
 import { withApiAuth } from '../../../lib/apikey';
 import { getCobranza } from '../../../lib/queries';
 import { ok } from '../../../lib/apiv1';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 
-export const GET = withApiAuth('read', async () => {
+export const GET = withApiAuth('read', async (_ctx, auth) => {
+    const subscriptionDenied = await requireEntitlement(auth.orgId, 'collections');
+    if (subscriptionDenied) return subscriptionDenied;
     const cob = await getCobranza();
     // Quitamos el public_token de cada cuenta (es secreto del link público).
     const items = cob.items.map(({ token, ...rest }) => rest);

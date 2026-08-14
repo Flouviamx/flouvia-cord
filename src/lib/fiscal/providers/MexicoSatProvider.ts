@@ -29,47 +29,57 @@ export class MexicoSatProvider implements FiscalProvider {
     if (!apiKey) {
       return {
         success: true,
+        provider: 'facturapi',
         documentId: 'sim_mx_' + request.quoteId,
         fiscalId: undefined,
-        rawProviderData: { simulado: true, motivo: 'Facturapi no configurado (falta CSD del cliente y FACTURAPI_API_KEY global)' },
+        pdfUrl: `/api/fiscal/documents/${request.documentId}/pdf`,
+        rawProviderData: {
+          simulado: true,
+          motivo: 'Facturapi no configurado (falta CSD del cliente y FACTURAPI_API_KEY global)',
+          idempotency_key: request.idempotencyKey,
+        },
       };
     }
 
-    const c: any = request.customerData || {};
-    const rfc = String(c.tax_id || '').toUpperCase().trim();
+    const c = request.recipient;
+    const rfc = String(c.taxId || '').toUpperCase().trim();
     // RFC genérico = "público en general" (sin RFC real del cliente).
     const generico = !rfc || rfc === 'XAXX010101000';
 
     const customer = {
-      legal_name: String(c.legal_name || 'PÚBLICO EN GENERAL').toUpperCase().slice(0, 254),
+      legal_name: String(c.legalName || 'PÚBLICO EN GENERAL').toUpperCase().slice(0, 254),
       tax_id: generico ? 'XAXX010101000' : rfc,
       // 616 = Sin obligaciones fiscales (genérico); 601 = Persona Moral (default con RFC).
-      tax_system: c.tax_system || (generico ? '616' : '601'),
-      address: { zip: String(c.zip || '00000') },
+      tax_system: c.taxSystem || (generico ? '616' : '601'),
+      address: { zip: String(c.address?.postalCode || '00000') },
       ...(c.email ? { email: String(c.email) } : {}),
     };
 
-    const items = (request.items || []).map((it: any) => ({
-      quantity: Number(it.quantity ?? it.cantidad ?? 1),
+    const items = request.lines.map((it) => ({
+      quantity: it.quantity,
       product: {
-        description: String(it.description ?? it.descripcion ?? 'Concepto').slice(0, 1000),
+        description: String(it.description || 'Concepto').slice(0, 1000),
         // Claves SAT por defecto: 01010101 = "No existe en el catálogo"; H87 = Pieza.
-        product_key: String(it.product_key || '01010101'),
-        unit_key: String(it.unit_key || 'H87'),
-        price: Number(it.unit_price ?? it.precio_negociado ?? it.precio_unitario ?? 0),
+        product_key: String(it.productKey || '01010101'),
+        unit_key: String(it.unitKey || 'H87'),
+        price: it.unitPrice,
         tax_included: false, // Cord maneja precios SIN IVA; Facturapi agrega el 16%.
       },
     }));
 
     // Uso del CFDI: "público en general" (RFC genérico) EXIGE S01 (sin efectos
     // fiscales); con RFC real se usa el uso configurado o G03 por defecto.
-    const cfdiUse = generico ? 'S01' : (c.cfdi_use || 'G03');
+    const cfdiUse = generico ? 'S01' : (request.cfdi?.use || 'G03');
     const body = {
       customer,
       items,
       use: cfdiUse,
-      payment_form: c.payment_form || '03', // 03 = Transferencia electrónica
-      payment_method: 'PUE',             // Pago en una sola exhibición
+      payment_form: request.cfdi?.paymentForm || '03', // 03 = Transferencia electrónica
+      payment_method: request.cfdi?.paymentMethod || 'PUE',
+      // Facturapi documenta esta llave como la protección oficial contra
+      // duplicados al reintentar la misma petición.
+      idempotency_key: request.idempotencyKey,
+      external_id: request.documentId,
     };
 
     try {
@@ -81,24 +91,60 @@ export class MexicoSatProvider implements FiscalProvider {
       });
       const data: any = await res.json().catch(() => ({}));
       if (!res.ok) {
+        const providerPayload = data && typeof data === 'object' && !Array.isArray(data)
+          ? data
+          : { response: data };
         return {
           success: false,
+          provider: 'facturapi',
           documentId: 'err_mx_' + request.quoteId,
           error: data?.message || `Facturapi ${res.status}`,
-          rawProviderData: data,
+          rawProviderData: {
+            ...providerPayload,
+            // Un 5xx puede ocurrir después de que el PAC aceptó el documento.
+            // Se conserva la señal para auditoría; el reintento usa exactamente
+            // la misma idempotency_key reconocida por Facturapi.
+            delivery_uncertain: res.status >= 500,
+            retry_safe: true,
+            idempotency_key: request.idempotencyKey,
+            http_status: res.status,
+          },
         };
       }
       return {
         success: true,
+        provider: 'facturapi',
         documentId: data.id,
         fiscalId: data.uuid, // Folio fiscal (UUID) del SAT
         // Facturapi no expone URLs públicas: el PDF/XML se sirven por un proxy de Cord.
-        pdfUrl: data.id ? `/api/cotizaciones/${request.quoteId}/cfdi?type=pdf` : undefined,
-        xmlUrl: data.id ? `/api/cotizaciones/${request.quoteId}/cfdi?type=xml` : undefined,
-        rawProviderData: { facturapi_id: data.id, uuid: data.uuid, total: data.total, status: data.status, livemode: data.livemode },
+        pdfUrl: data.id ? `/api/fiscal/documents/${request.documentId}/pdf` : undefined,
+        xmlUrl: data.id ? `/api/fiscal/documents/${request.documentId}/xml` : undefined,
+        rawProviderData: {
+          facturapi_id: data.id,
+          uuid: data.uuid,
+          total: data.total,
+          status: data.status,
+          livemode: data.livemode,
+          idempotency_key: request.idempotencyKey,
+          credential_scope: request.providerApiKey ? 'organization' : 'platform',
+        },
       };
     } catch (err: any) {
-      return { success: false, documentId: 'err_mx_' + request.quoteId, error: err?.message || 'fallo de red con Facturapi' };
+      return {
+        success: false,
+        provider: 'facturapi',
+        documentId: 'err_mx_' + request.quoteId,
+        error: err?.message || 'fallo de red con Facturapi',
+        // La petición pudo haber llegado al PAC aunque Cord no recibiera la
+        // respuesta. El siguiente intento conserva la misma llave oficial de
+        // idempotencia, por lo que no crea otro CFDI.
+        rawProviderData: {
+          delivery_uncertain: true,
+          retry_safe: true,
+          idempotency_key: request.idempotencyKey,
+          error_kind: err?.name === 'TimeoutError' ? 'timeout' : 'network',
+        },
+      };
     }
   }
 

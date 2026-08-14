@@ -2,7 +2,8 @@
 
 > Cédulas presupuestales (motor de fórmulas), Presupuesto vs. Real, wizard de plan
 > financiero completo, herramientas de análisis (VPN/TIR/EOQ/variaciones), y desempeño
-> por vendedor. Extraído de `historial.md`. Orden: más reciente arriba.
+> por vendedor. Módulo eliminado; este archivo se conserva únicamente como referencia
+> histórica y no describe una superficie activa.
 
 ---
 

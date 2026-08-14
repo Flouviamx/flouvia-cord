@@ -17,7 +17,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { trackExternalUsage } from '../../../lib/external-usage';
 import { getProductos } from '../../../lib/queries';
 import { getActiveOrgId } from '../../../lib/db';
-import { reportUsage, checkQuota } from '../../../lib/billing';
+import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../lib/billing';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { McpClientManager } from '../../../lib/mcp/client-manager';
 import { getDefaultAgentId } from '../../../lib/agents/governance';
@@ -134,18 +134,24 @@ export const POST: APIRoute = async ({ request }) => {
     const byId = new Map(productos.map((p) => [p.id, p]));
 
     const orgId = await getActiveOrgId();
-    // Rate limit por org + cuota de plan ANTES de gastar en Anthropic (evita abuso
-    // y gasto runaway: el free se corta en su tope, los de pago en el techo de seguridad).
+    // Rate limit por org ANTES de preparar la llamada externa.
     const rl = await rateLimit(`ai:${orgId}`, 20, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
-    const quota = await checkQuota(orgId, 'ia');
-    if (!quota.ok) return json({ error: quota.reason }, 429);
     // Agente por defecto de la org → resuelve sus permisos sobre servidores MCP.
     const agenteId = await getDefaultAgentId(orgId);
     const mcpManager = new McpClientManager(orgId, agenteId);
     const { tools: mcpTools, toolMap } = await mcpManager.getAnthropicTools();
     
     const allTools = [TOOL, ...mcpTools];
+
+    // Reserva atómica ANTES de Anthropic. Si Neon no puede demostrar cupo, la
+    // llamada no sale; si Stripe falla después, el outbox durable la reintenta.
+    const usage = await reserveUsage(orgId, 'ia', 1);
+    if (!usage.ok || !usage.id) {
+        await mcpManager.disconnectAll();
+        const unavailable = /verificar|registrar/i.test(usage.reason || '');
+        return json({ error: usage.reason }, unavailable ? 503 : 429);
+    }
     
     const client = new Anthropic({ apiKey: API_KEY });
     const textBlock = { type: 'text', text: `Catálogo:\n${catalogoTexto}\n\nMensaje del cliente${file ? ' (puede acompañar el documento/foto adjunta)' : ''}:\n"""${text || '(sin texto — lee el documento/foto adjunta)'}"""` };
@@ -178,6 +184,8 @@ export const POST: APIRoute = async ({ request }) => {
                 metadata: { model: MODEL, iteration: i + 1 },
             });
         } catch (err: any) {
+            await cancelUsage(orgId, usage.id);
+            await mcpManager.disconnectAll();
             await trackExternalUsage({ orgId, provider: 'anthropic', category: 'ai', operation: 'quote_draft_turn', status: 'failure', metadata: { model: MODEL, iteration: i + 1 } });
             console.error(err);
             return json({ error: 'La IA no pudo procesar el pedido. Revisa tu llave o intenta de nuevo.' }, 502);
@@ -247,10 +255,12 @@ export const POST: APIRoute = async ({ request }) => {
         return { id: null, nombre: String(it.descripcion || '').trim() || 'Concepto', unidad: 'pieza', lista: precio, negociado: null, cantidad };
     }).filter((it) => it.nombre);
 
-    if (!items.length) return json({ error: 'No identifiqué productos en el mensaje ni se generó la cotización.' }, 422);
+    if (!items.length) {
+        await cancelUsage(orgId, usage.id);
+        return json({ error: 'No identifiqué productos en el mensaje ni se generó la cotización.' }, 422);
+    }
 
-    // Mide el consumo de IA del periodo (UI en vivo + cobro de excedente vía Stripe).
-    try { await reportUsage(orgId, 'ia', 1); } catch { /* nunca bloquea */ }
+    void flushUsageReservation(orgId, usage.id);
 
     return json({ items });
 };

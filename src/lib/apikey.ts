@@ -14,8 +14,9 @@ import { createHash } from 'node:crypto';
 import type { APIRoute } from 'astro';
 import { sql, resolveSandboxOrgId } from './db';
 import { reqContext } from './context';
-import { checkQuota, reportUsage } from './billing';
+import { flushUsageReservation, reserveUsage } from './billing';
 import { rateLimit, tooMany } from './ratelimit';
+import { apiKeyLimit } from './permissions';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -70,18 +71,35 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
     let row: any;
     try {
         [row] = await sql`
+            with ranked as (
+                select k.*,
+                       row_number() over (
+                           partition by k.org_id
+                           order by k.created_at asc, k.id asc
+                       )::int as active_rank
+                  from api_keys k
+                 where k.revoked_at is null
+            )
             select k.id, k.org_id, k.scope, k.mode, k.type, k.revoked_at,
-                   coalesce(o.plan, 'free') as plan, o.sandbox_of, o.embed_domains
-            from api_keys k
-            join orgs o on o.id = k.org_id
-            where k.hash = ${hash}
-            limit 1`;
+                   cord_effective_plan(o.id) as effective_plan,
+                   k.active_rank, o.sandbox_of, o.embed_domains
+              from ranked k
+              join orgs o on o.id = k.org_id
+             where k.hash = ${hash}
+             limit 1`;
     } catch {
         return jsonError('No se pudo validar la llave.', 'server_error', 500);
     }
 
     if (!row || row.revoked_at) {
         return jsonError('API key inválida o revocada.', 'invalid_key', 401);
+    }
+    if (Number(row.active_rank) > apiKeyLimit(String(row.effective_plan || 'free'))) {
+        return jsonError(
+            'Esta llave excede el número incluido en la suscripción actual. Revoca llaves anteriores o sube de plan.',
+            'subscription_key_limit',
+            402,
+        );
     }
 
     const mode: ApiMode = row.mode === 'test' ? 'test' : 'live';
@@ -175,7 +193,8 @@ export function withApiAuth(
         if (auth instanceof Response) return auth;
         const limited = await checkApiKeyRateLimit(auth);
         if (limited) return limited;
-        meterApiUsage(auth);
+        const meteringError = await meterApiUsage(auth);
+        if (meteringError) return meteringError;
         // userId null → el carril de usuario queda inactivo; orgId manda la tenancy.
         const t0 = Date.now();
         const res = await reqContext.run({ userId: null, orgId: auth.orgId }, () => handler(ctx, auth));
@@ -191,20 +210,25 @@ export async function checkApiKeyRateLimit(auth: ApiAuth): Promise<Response | nu
     const maxReqs = auth.type === 'publishable' ? 120 : 600; // pk_ 120/min vs sk_ 600/min
     const keyRl = await rateLimit(`apikey:${auth.keyId}`, maxReqs, 60);
     if (!keyRl.ok) return tooMany(keyRl.retryAfter);
-    // Las llaves live también respetan el tope mensual del plan. Free se corta
-    // al llegar a su cuota; los planes con overage conservan el techo de
-    // emergencia 10x definido en billing.ts para frenar una llave comprometida.
-    if (auth.mode === 'live') {
-        const quota = await checkQuota(auth.orgId, 'api');
-        if (!quota.ok) return jsonError(quota.reason || 'Límite mensual de API alcanzado.', 'api_quota_exceeded', 429);
-    }
     return null;
 }
 
-// Mide la llamada a la API pública (solo llaves en vivo se facturan).
-// Fire-and-forget: reportUsage nunca lanza y no debe frenar la respuesta.
-export function meterApiUsage(auth: ApiAuth): void {
-    if (auth.mode === 'live') void reportUsage(auth.orgId, 'api', 1);
+// Reserva el uso ANTES de ejecutar trabajo de negocio. La reserva y el outbox
+// quedan en Neon de forma atómica; entregar el evento a Stripe sí es asíncrono.
+// Las llaves de prueba no consumen ni generan cargos reales.
+export async function meterApiUsage(auth: ApiAuth): Promise<Response | null> {
+    if (auth.mode !== 'live') return null;
+    const reservation = await reserveUsage(auth.orgId, 'api', 1);
+    if (!reservation.ok || !reservation.id) {
+        const unavailable = /verificar|registrar/i.test(reservation.reason || '');
+        return jsonError(
+            reservation.reason || 'Límite mensual de API alcanzado.',
+            unavailable ? 'subscription_verification_unavailable' : 'api_quota_exceeded',
+            unavailable ? 503 : 429,
+        );
+    }
+    void flushUsageReservation(auth.orgId, reservation.id);
+    return null;
 }
 
 // Registra la llamada en api_requests para el "Log de actividad" de Developers.

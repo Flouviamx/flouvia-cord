@@ -25,6 +25,7 @@ export const WEBHOOK_EVENTS = [
     { id: 'quote.paid', label: 'Pago recibido' },
     { id: 'payment.partial', label: 'Pago parcial recibido' },
     { id: 'payment.failed', label: 'Cobro recurrente fallido' },
+    { id: 'invoice.issued', label: 'Factura comercial emitida' },
     { id: 'invoice.stamped', label: 'CFDI timbrado' },
 ] as const;
 
@@ -109,7 +110,25 @@ export async function dispatchPaymentPartial(orgId: string, cotizacionId: string
 async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSummary, extra?: Record<string, unknown>): Promise<void> {
     let hooks: any[] = [];
     try {
-        hooks = await sql`select id, eventos from webhooks where org_id = ${orgId} and activo = true`;
+        // En downgrade conservamos la configuración, pero solo los endpoints
+        // más antiguos cubiertos por el plan efectivo reciben eventos. El
+        // ranking en el momento de uso impide que endpoints excedentes sigan
+        // operando por haber sido creados antes del cambio de plan.
+        hooks = await sql`
+            with ranked as (
+                select id, eventos,
+                       row_number() over (order by created_at asc, id asc)::int as position,
+                       case cord_effective_plan(org_id)
+                           when 'starter' then 3
+                           when 'pro' then 10
+                           when 'scale' then 25
+                           when 'developer' then 100
+                           else 1
+                       end as allowance
+                  from webhooks
+                 where org_id = ${orgId} and activo = true
+            )
+            select id, eventos from ranked where position <= allowance`;
     } catch { return; } // tabla aún no migrada → no-op
     const subs = hooks.filter((h) => {
         const evs = Array.isArray(h.eventos) ? h.eventos : [];

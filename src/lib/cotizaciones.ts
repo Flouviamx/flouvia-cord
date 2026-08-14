@@ -9,8 +9,11 @@ import { notifyQuoteSent } from './email';
 import { dispatchQuoteEvent } from './webhooks';
 import { FXService } from './fx/FXService';
 import { currentUserId } from './context';
+import { assertResourceCapacity, checkEntitlement, parsedResourceLimit, ResourceLimitReachedError } from './org-entitlements';
+import { after } from './after';
+import { trackServer } from './posthog-server';
 
-import { num, sanitizeItem, calculateTotals } from '../../packages/elements/src/engine';
+import { sanitizeItem, calculateTotals } from '../../packages/elements/src/engine';
 
 const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(Math.round(n));
 
@@ -99,11 +102,24 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
         : await sql`select id from clientes where org_id = ${orgId} and lower(empresa) = lower(${empresa}) limit 1`;
     if (existing) return existing.id as string;
 
-    const [created] = await sql`
-        insert into clientes (org_id, empresa, email, contacto, telefono, rfc, origen)
-        values (${orgId}, ${empresa}, ${email}, ${input.cliente?.contacto || null}, ${input.cliente?.telefono || null}, ${input.cliente?.rfc || null}, 'embed')
-        returning id`;
-    return created.id as string;
+    try {
+        await assertResourceCapacity(orgId, 'clients');
+    } catch (error) {
+        if (error instanceof ResourceLimitReachedError) throw new QuoteError(error.message, 402);
+        throw error;
+    }
+
+    try {
+        const [created] = await sql`
+            insert into clientes (org_id, empresa, email, contacto, telefono, rfc, origen)
+            values (${orgId}, ${empresa}, ${email}, ${input.cliente?.contacto || null}, ${input.cliente?.telefono || null}, ${input.cliente?.rfc || null}, 'embed')
+            returning id`;
+        return created.id as string;
+    } catch (error) {
+        const limit = parsedResourceLimit(error);
+        if (limit) throw new QuoteError(`Tu plan permite ${limit.limit} clientes. Libera espacio o sube de plan para continuar.`, 402);
+        throw error;
+    }
 }
 
 /**
@@ -117,6 +133,12 @@ export async function createCotizacion(
     input: NewQuoteInput,
     opts: { origin: string; ip: string; actor?: string },
 ): Promise<CreateQuoteResult> {
+    try {
+        await assertResourceCapacity(orgId, 'active_quotes');
+    } catch (error) {
+        if (error instanceof ResourceLimitReachedError) throw new QuoteError(error.message, 402);
+        throw error;
+    }
     const rawItems = Array.isArray(input.items) ? input.items : [];
     if (!rawItems.length) throw new QuoteError('Agrega al menos un producto', 400);
     if (rawItems.length > MAX_ITEMS) throw new QuoteError(`Demasiadas líneas (máximo ${MAX_ITEMS} por cotización).`, 400);
@@ -125,6 +147,7 @@ export async function createCotizacion(
 
     // Subtotal server-side (no confiar en el cliente) mediante el engine compartido
     const [org] = await sql`select * from orgs where id = ${orgId}`;
+    const approvalsEnabled = (await checkEntitlement(orgId, 'approvals')).ok;
     const ivaPct = org.iva_pct !== undefined && org.iva_pct !== null ? Number(org.iva_pct) / 100 : 0.16;
     const iva_incluido = Boolean(input.iva_incluido);
     
@@ -155,9 +178,9 @@ export async function createCotizacion(
     }
     if (!hayLineasConCosto) minMargenPct = Infinity;
 
-    const aprobDesc = Number(org.aprob_descuento_max) || 0;
-    const aprobMonto = Number(org.aprob_monto_max) || 0;
-    const aprobMargen = Number(org.aprob_margen_min) || 0;
+    const aprobDesc = approvalsEnabled ? Number(org.aprob_descuento_max) || 0 : 0;
+    const aprobMonto = approvalsEnabled ? Number(org.aprob_monto_max) || 0 : 0;
+    const aprobMargen = approvalsEnabled ? Number(org.aprob_margen_min) || 0 : 0;
     const needsApproval = !!input.send && (
         (aprobDesc > 0 && maxDescPct > aprobDesc) ||
         (aprobMonto > 0 && total > aprobMonto) ||
@@ -213,15 +236,22 @@ export async function createCotizacion(
     // (M2M, sin sesión de usuario); ver "Desempeño por vendedor" en historial.md.
     const creadoPor = currentUserId();
 
-    const [cot] = await sql`
-        insert into cotizaciones
-            (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
-             moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por)
-        values
-            (${orgId}, ${clienteId}, ${folio}, ${status}, ${realSubtotal}, ${iva}, ${total},
-             ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
-             ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor})
-        returning id, public_token`;
+    let cot: any;
+    try {
+        [cot] = await sql`
+            insert into cotizaciones
+                (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
+                 moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por)
+            values
+                (${orgId}, ${clienteId}, ${folio}, ${status}, ${realSubtotal}, ${iva}, ${total},
+                 ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
+                 ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor})
+            returning id, public_token`;
+    } catch (error) {
+        const limit = parsedResourceLimit(error);
+        if (limit) throw new QuoteError(`Tu plan permite ${limit.limit} cotizaciones activas. Cierra una o sube de plan para continuar.`, 402);
+        throw error;
+    }
 
     let orden = 0;
     for (const it of items) {
@@ -266,6 +296,30 @@ export async function createCotizacion(
                       values (${orgId}, ${cot.id}, 'email', 'Correo enviado al cliente')`;
         }
         await dispatchQuoteEvent(orgId, cot.id as string, 'quote.sent');
+    }
+
+    const source = opts.actor?.startsWith('api:') ? 'api'
+        : opts.actor?.startsWith('mcp:') ? 'mcp'
+        : 'manual';
+    after(trackServer('quote_created', orgId, {
+        event_id: cot.id,
+        quote_id: cot.id,
+        total,
+        currency: baseCurrency,
+        source,
+        status,
+        item_count: items.length,
+        sent_on_create: !!input.send && !needsApproval,
+    }, !!org.sandbox_of, !!org.is_demo));
+    if (input.send && !needsApproval) {
+        after(trackServer('quote_sent', orgId, {
+            event_id: `${cot.id}:initial`,
+            quote_id: cot.id,
+            total,
+            currency: baseCurrency,
+            source,
+            send_type: 'initial',
+        }, !!org.sandbox_of, !!org.is_demo));
     }
 
     return { id: cot.id as string, folio, token: cot.public_token as string, needsApproval, motivo: aprobMotivo, email };

@@ -6,9 +6,12 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
+import { requireEntitlement } from '../../../../lib/org-entitlements';
 
 export const GET: APIRoute = async ({ params }) => {
     const orgId = await getActiveOrgId();
+    const subscriptionDenied = await requireEntitlement(orgId, 'live_presence');
+    if (subscriptionDenied) return subscriptionDenied;
     const id = params.id ?? '';
     const [r] = await sql`select viewer_last_seen from cotizaciones where id = ${id} and org_id = ${orgId}`;
     if (!r) return new Response(JSON.stringify({ online: false, convCount: 0 }), { headers: { 'Content-Type': 'application/json' } });

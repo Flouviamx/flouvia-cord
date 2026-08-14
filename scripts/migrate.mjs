@@ -45,13 +45,110 @@ const seedDemo = process.argv.includes('--seed-demo');
 
 // Errores de "ya existe" que ignoramos para que migrate sea re-ejecutable.
 const EXISTS = new Set(['42P07', '42P06', '42710', '42701']);
+const BILLING_LIMIT_TRIGGERS = [
+    ['trg_limit_productos', 'productos', 'insert'],
+    ['trg_limit_clientes', 'clientes', 'insert'],
+    ['trg_limit_cotizaciones', 'cotizaciones', 'insert or update of status'],
+    ['trg_limit_org_members', 'org_members', 'insert or update of estado'],
+];
+
+async function dropBillingLimitTriggers() {
+    for (const [trigger, table] of BILLING_LIMIT_TRIGGERS) {
+        try {
+            await sql.query(`drop trigger if exists ${trigger} on ${table}`);
+        } catch (error) {
+            if (error.code !== '42P01') throw error;
+        }
+    }
+}
+
+async function restoreBillingLimitTriggers() {
+    for (const [trigger, table, events] of BILLING_LIMIT_TRIGGERS) {
+        try {
+            await sql.query(`drop trigger if exists ${trigger} on ${table}`);
+            await sql.query(`create trigger ${trigger} before ${events} on ${table} for each row execute function cord_enforce_resource_limit()`);
+        } catch (error) {
+            // En una base nueva el fallo original puede haber ocurrido antes de
+            // crear tablas o función. No ocultamos el error principal por eso.
+            if (!['42P01', '42883'].includes(error.code)) throw error;
+        }
+    }
+}
+
+// Separa sentencias sin romper funciones `$$ ... ; ... $$`, strings ni
+// identificadores entre comillas. El split ingenuo por `;` dejaba las tablas
+// creadas pero cortaba cualquier función PL/pgSQL antes de sus triggers.
+function splitSqlStatements(source) {
+    const statements = [];
+    let current = '';
+    let quote = null;
+    let dollarTag = null;
+
+    for (let i = 0; i < source.length; i++) {
+        if (dollarTag) {
+            if (source.startsWith(dollarTag, i)) {
+                current += dollarTag;
+                i += dollarTag.length - 1;
+                dollarTag = null;
+            } else {
+                current += source[i];
+            }
+            continue;
+        }
+
+        if (quote) {
+            current += source[i];
+            if (source[i] === quote) {
+                if (source[i + 1] === quote) {
+                    current += source[++i];
+                } else {
+                    quote = null;
+                }
+            }
+            continue;
+        }
+
+        if (source[i] === "'" || source[i] === '"') {
+            quote = source[i];
+            current += source[i];
+            continue;
+        }
+        if (source[i] === '$') {
+            const match = source.slice(i).match(/^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/);
+            if (match) {
+                dollarTag = match[0];
+                current += dollarTag;
+                i += dollarTag.length - 1;
+                continue;
+            }
+        }
+        if (source[i] === ';') {
+            const statement = current.trim();
+            if (statement) statements.push(statement);
+            current = '';
+            continue;
+        }
+        current += source[i];
+    }
+
+    const tail = current.trim();
+    if (tail) statements.push(tail);
+    if (quote || dollarTag) throw new Error('Schema SQL con comillas o bloque dollar sin cerrar');
+    return statements;
+}
 
 async function runDDL() {
+    // Una migración reejecutable contiene backfills anteriores a la definición
+    // final de los triggers. Si ya existen, esos backfills se interpretarían
+    // como acciones del producto y podrían fallar por el plan efectivo. Se
+    // suspenden solo durante DDL y se recrean al final del schema; el catch los
+    // restaura también si una sentencia intermedia falla.
+    await dropBillingLimitTriggers();
     const raw = readFileSync(join(root, 'db', 'schema.sql'), 'utf8');
     // Quita comentarios de línea (-- …) ANTES de partir: algunos comentarios
     // traen ';' adentro y romperían el split. El schema no usa '--' en strings.
     const schema = raw.split('\n').map(l => l.replace(/--.*$/, '')).join('\n');
-    const stmts = schema.split(';').map(s => s.trim()).filter(Boolean);
+    const stmts = splitSqlStatements(schema);
     for (const stmt of stmts) {
         try {
             await sql.query(stmt);
@@ -240,6 +337,8 @@ async function dropAll() {
         else console.log('• Seed demo omitido (usa --seed-demo para crearlo explícitamente).');
         console.log('\n✓ Migración completa. La app ya lee de Neon.\n');
     } catch (e) {
+        try { await restoreBillingLimitTriggers(); }
+        catch (restoreError) { console.error('No se pudieron restaurar los triggers de límites:', restoreError.message); }
         console.error('\n✗ Error en la migración:', e.message, e.code ? `(${e.code})` : '');
         process.exit(1);
     }

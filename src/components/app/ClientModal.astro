@@ -13,6 +13,8 @@
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../lib/sat';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
+import { getOrg } from '../../lib/queries';
+import { getCountryProfile } from '../../lib/countries';
 
 interface Props {
     showDelete?: boolean;
@@ -20,6 +22,9 @@ interface Props {
 }
 const { showDelete = true, saveLabel } = Astro.props;
 const L = currentLocale();
+const ORG = await getOrg();
+const COUNTRY = getCountryProfile(ORG.countryCode, L);
+const isMx = ORG.countryCode === 'MX';
 const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
 ---
 
@@ -60,8 +65,8 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                     <input class="m-input" id="cmTelefono" name="telefono" type="tel" placeholder={t(L, 'cmod.telefono_ph')} />
                 </div>
                 <div class="m-field">
-                    <label for="cmRfc">{t(L, 'cmod.rfc')}</label>
-                    <input class="m-input" id="cmRfc" name="rfc" placeholder="DEZ981123QX1" maxlength="13" />
+                    <label for="cmRfc">{isMx ? t(L, 'cmod.rfc') : COUNTRY.taxIdLabel}</label>
+                    <input class="m-input" id="cmRfc" name="rfc" placeholder={isMx ? 'DEZ981123QX1' : COUNTRY.taxIdLabel} maxlength={isMx ? 13 : 64} />
                 </div>
             </div>
             <div class="m-field">
@@ -98,7 +103,7 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 </div>
             </div>
 
-            <details class="m-fiscal" id="cmFiscal">
+            <details class="m-fiscal" id="cmFiscal" style={isMx ? undefined : 'display:none;'}>
                 <summary>{t(L, 'cmod.fiscal_summary')}</summary>
                 <p class="m-hint" style="margin: 0 0 0.75rem 0;">{t(L, 'cmod.fiscal_hint')}</p>
                 <div class="m-row">

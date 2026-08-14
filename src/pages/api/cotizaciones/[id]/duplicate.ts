@@ -6,6 +6,8 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
 import { currentUserId } from '../../../../lib/context';
+import { after } from '../../../../lib/after';
+import { trackServer } from '../../../../lib/posthog-server';
 
 export const POST: APIRoute = async ({ params }) => {
     const id = params.id ?? '';
@@ -16,7 +18,9 @@ export const POST: APIRoute = async ({ params }) => {
 
     const items = await sql`select * from cotizacion_items where cotizacion_id = ${id} order by orden`;
 
-    const [{ prefix }] = await sql`select quote_prefix as prefix from orgs where id = ${orgId}`;
+    const [{ prefix, is_sandbox, is_demo }] = await sql`
+        select quote_prefix as prefix, (sandbox_of is not null) as is_sandbox, is_demo
+        from orgs where id = ${orgId}`;
     const [{ maxn }] = await sql`
         select coalesce(max(nullif(regexp_replace(folio, '\\D', '', 'g'), '')::int), 0) as maxn
         from cotizaciones where org_id = ${orgId}`;
@@ -44,6 +48,18 @@ export const POST: APIRoute = async ({ params }) => {
 
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
               values (${orgId}, ${cot.id}, 'created', ${'Duplicada de ' + src.folio})`;
+
+    after(trackServer('quote_created', orgId, {
+        event_id: cot.id,
+        quote_id: cot.id,
+        source: 'duplicate',
+        source_quote_id: src.id,
+        total: Number(src.total ?? 0),
+        currency: (src.base_currency as string) || 'MXN',
+        status: 'draft',
+        item_count: items.length,
+        sent_on_create: false,
+    }, !!is_sandbox, !!is_demo));
 
     return json({ id: cot.id, folio });
 };

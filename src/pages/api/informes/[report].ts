@@ -3,6 +3,8 @@ import { REPORT_BY_ID, REPORT_IDS, type ReportId } from '../../../lib/informes';
 import { loadReport } from '../../../lib/informes-data';
 import { requirePerm } from '../../../lib/queries';
 import { addDaysISO, parseRangoParams } from '../../../lib/rango';
+import { getActiveOrgId } from '../../../lib/db';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 
 export const prerender = false;
 
@@ -18,6 +20,12 @@ export const GET: APIRoute = async ({ params, url }) => {
     if (report.perm !== 'analitica') {
         const reportDenied = await requirePerm(report.perm);
         if (reportDenied) return reportDenied;
+    }
+    const premiumFeature = id === 'finanzas' ? 'cfo_dashboard' : id === 'flujo' ? 'cashflow_90' : id === 'cobranza' ? 'collections' : null;
+    if (premiumFeature) {
+        const orgId = await getActiveOrgId();
+        const subscriptionDenied = await requireEntitlement(orgId, premiumFeature);
+        if (subscriptionDenied) return subscriptionDenied;
     }
     const todayISO = new Date().toISOString().slice(0, 10);
     const range = parseRangoParams(url.searchParams, {

@@ -8,9 +8,8 @@
 //
 // Reemplaza el emoji de bandera que vivía antes en countries.ts — ver la
 // Regla 1 de CLAUDE.md / design-reviewer: ya no hay excepción de emoji.
-// Para agregar un país nuevo: copiar su SVG desde
-// `node_modules/circle-flags/flags/<iso2>.svg` (devDependency) a
-// `public/flags/<iso2>.svg` y agregarlo aquí.
+// Las banderas frecuentes viven locales. El catálogo ISO completo usa el CDN
+// oficial del mismo proyecto para no versionar cientos de SVG duplicados.
 export const FLAG_SRC: Record<string, string> = {
     MX: '/flags/mx.svg',
     US: '/flags/us.svg',
@@ -24,8 +23,16 @@ export const FLAG_SRC: Record<string, string> = {
 
 // El selector de moneda (nueva.astro) no tiene un país, tiene una divisa —
 // mapeo divisa → bandera representativa.
-export const CURRENCY_FLAG: Record<string, string> = { MXN: 'MX', USD: 'US', EUR: 'EU' };
+export const CURRENCY_FLAG: Record<string, string> = {
+    ARS: 'AR', AUD: 'AU', BRL: 'BR', CAD: 'CA', CHF: 'CH', CLP: 'CL', CNY: 'CN',
+    COP: 'CO', CRC: 'CR', DOP: 'DO', EUR: 'EU', GBP: 'GB', GTQ: 'GT', HKD: 'HK',
+    IDR: 'ID', ILS: 'IL', INR: 'IN', JPY: 'JP', KRW: 'KR', MXN: 'MX', MYR: 'MY',
+    NOK: 'NO', NZD: 'NZ', PEN: 'PE', PHP: 'PH', PLN: 'PL', PYG: 'PY', SAR: 'SA',
+    SEK: 'SE', SGD: 'SG', TRY: 'TR', TWD: 'TW', USD: 'US', UYU: 'UY', ZAR: 'ZA',
+};
 
 export function flagSrc(code: string): string {
-    return FLAG_SRC[code] || FLAG_SRC.MX;
+    const normalized = String(code || '').toUpperCase();
+    return FLAG_SRC[normalized]
+        || `https://hatscripts.github.io/circle-flags/flags/${normalized.toLowerCase()}.svg`;
 }

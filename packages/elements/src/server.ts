@@ -17,6 +17,7 @@ export type CordWebhookEventType =
     | 'payment.partial'
     | 'payment.failed'
     | 'invoice.stamped'
+    | 'invoice.issued'
     | 'ping';
 
 /** Forma real de `data` en cada entrega (ver dispatchQuoteEvent en src/lib/webhooks.ts). */

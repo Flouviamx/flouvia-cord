@@ -1,10 +1,50 @@
 # Historial — Infraestructura, migraciones e hitos
 
 > Migración de dominio, fixes de schema/RLS, auditorías de seguridad/escala, hitos
-> fundacionales del proyecto, y notas de "listo para producción". Extraído de
-> `historial.md`. Orden: más reciente arriba.
+> fundacionales del proyecto y notas de "listo para producción". Registro
+> acumulativo; cada entrada conserva su fecha y puede ser reemplazada por una
+> decisión posterior.
 
 ---
+
+**Arquitectura documental v2 (13 ago 2026)** — `CLAUDE.md` y `AGENTS.md` dejaron
+de mezclar reglas, estado vigente, runbooks y todo el historial auto-cargado. Ambos
+son ahora entrypoints compactos; `docs/README.md` define la navegación y jerarquía
+de autoridad. `docs/proyecto.md` concentra identidad, stack, comandos, configuración
+y deploy; `docs/estandares-ingenieria.md` preserva las 16 reglas permanentes con
+numeración estable; `docs/cord-ops.md` y `docs/analytics.md` concentran sus contratos
+vigentes. Los historiales temáticos siguen intactos, pero se consultan bajo demanda
+para evitar cargar casi 8,000 líneas de pasado en cualquier tarea. También se
+corrigió drift del índice histórico (Astro 6/Clerk/B2B) y del documento de rutas
+(columnas y UI de Clerk después de la migración). `.env.example` queda como fuente
+única del inventario de variables; los documentos solo mantienen el mapa conceptual.
+
+
+**Medición comercial PostHog aislada de Ops y corregida (ago 2026)** — la
+   actividad interna dejó de mezclarse con el uso real del producto. La allowlist
+   existente de Cord Ops (`andrevalleo13@gmail.com` y `hola@flouvia.com`) es ahora
+   la fuente única: cualquier workspace cuyo dueño o miembro activo pertenezca a
+   Ops queda excluido de captura web, session replay, eventos backend y analítica
+   MCP; los sandboxes heredan la clasificación de su organización padre. Los links
+   públicos de cotizaciones de esos workspaces también se sirven con PostHog
+   apagado antes del primer pageview. Al entrar a la app con Ops se guarda además
+   una marca first-party de navegador para no crear después sesiones anónimas al
+   visitar la landing desde ese mismo navegador. No se filtra por IP porque es una
+   identidad inestable y compartible; la exclusión por cuenta/workspace es
+   determinista.
+   • Localhost (`localhost`, `127.0.0.1`, `::1`) no inicializa el SDK web y el
+     backend/MCP no crea clientes PostHog durante desarrollo. Se agregó
+     `POSTHOG_DISABLE_CAPTURE` como kill switch adicional para previews o pruebas.
+   • El embudo comercial pasó a eventos canónicos de backend con `quote_id`, monto,
+     moneda, fuente, grupo `company`, flags de sandbox/demo y
+     `analytics_version:2`. Se retiraron duplicados client-side de creación,
+     envío, vista, aprobación y pago manual.
+   • `quote_viewed` se emite solo en la primera transición `sent → viewed`; antes
+     cada recarga del link inflaba PostHog, notificaciones y webhooks. Un
+     `checkout_started` representa ahora un PaymentIntent nuevo; una reapertura de
+     uno existente se separa como `checkout_resumed`. Los eventos críticos usan
+     `$insert_id` estable y `payment_received` incluye `payment_id`, `cobro_id` y
+     tipo de pago para deduplicar reintentos de Stripe sin perder trazabilidad.
 
 ✅ **Cord Ops preparado para 10k+ usuarios y tablas de millones de filas (ago 2026)** —
    se eliminó el patrón inicial de cargar hasta 200 registros y ejecutar cuatro a siete

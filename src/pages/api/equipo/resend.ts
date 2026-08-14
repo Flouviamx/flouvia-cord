@@ -11,6 +11,7 @@ import { sha256Hex } from '../../../lib/auth';
 import { sendTeamInviteEmail } from '../../../lib/auth-email';
 import { randomBytes } from 'node:crypto';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -20,6 +21,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
+    const subscriptionDenied = await requireEntitlement(orgId, 'team');
+    if (subscriptionDenied) return subscriptionDenied;
     const rl = await rateLimit(`invite-resend:${orgId}`, 20, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
 

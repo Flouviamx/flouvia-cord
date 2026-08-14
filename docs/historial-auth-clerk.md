@@ -1,10 +1,18 @@
-# Historial — Autenticación y Clerk
+# Historial — Auth propio y migración desde Clerk
 
-> Flujos de sign-in/sign-up custom, Clerk Organizations, SSO, org switcher, 2FA/
-> Passkeys/cuentas conectadas, gestión de equipo y roles. Extraído de `historial.md`.
-> Orden: más reciente arriba.
+> Registro cronológico de sign-in/sign-up, Clerk Organizations, migración al auth
+> propio, SSO, org switcher, 2FA, passkeys, cuentas conectadas, equipo y roles.
+> Orden: más reciente arriba. Las entradas de Clerk son legado, no instrucciones
+> para el stack vigente.
 
 ---
+
+**Nota técnica del legado Clerk:** sus islas React requerían
+`client:only="react"`, nunca `client:load`, porque SSR no tenía `ClerkProvider` y
+producía una pantalla blanca. `Clerk.signOut(cb)` necesitaba callback para evitar la
+navegación automática. Se conserva aquí para explicar implementaciones antiguas;
+Clerk ya no forma parte del proyecto.
+
 
 ✅ **Ops desbloqueado (503 permanente), login sin tarjeta, primera contraseña en cuentas
    OAuth y vinculación de Google desde Ajustes (ago 2026)** — André reportó que ni él

@@ -7,6 +7,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm, normVolumen } from '../../lib/queries';
+import { requireResourceCapacity, resourceLimitError } from '../../lib/org-entitlements';
 
 function clean(body: any) {
     return {
@@ -30,10 +31,17 @@ export const POST: APIRoute = async ({ request }) => {
     if (!p.nombre) return json({ error: 'El nombre del producto es obligatorio' }, 400);
 
     const orgId = await getActiveOrgId();
-    const [[row]] = await withOrgTx(orgId, sql`
-        insert into productos (org_id, sku, nombre, unidad, descripcion, precio_lista, costo, activo, precios_volumen)
-        values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.descripcion}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)})
-        returning id`);
+    const capacityDenied = await requireResourceCapacity(orgId, 'products');
+    if (capacityDenied) return capacityDenied;
+    let row: any;
+    try {
+        [[row]] = await withOrgTx(orgId, sql`
+            insert into productos (org_id, sku, nombre, unidad, descripcion, precio_lista, costo, activo, precios_volumen)
+            values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.descripcion}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)})
+            returning id`);
+    } catch (error) {
+        return resourceLimitError(error) ?? json({ error: 'No se pudo crear el producto.' }, 500);
+    }
     await logAudit(orgId, { accion: 'producto.creado', entidad: 'producto', entidad_id: row.id as string, detalle: p.nombre, ip: reqIp(request) });
     return json({ id: row.id });
 };

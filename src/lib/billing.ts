@@ -6,15 +6,15 @@
 // Los price_id / meter_id NO son secretos (sí lo es STRIPE_SECRET_KEY), por eso
 // viven aquí en claro. Si André crea nuevos precios en Stripe, se cambian AQUÍ.
 
-import type { PlanId } from './precios';
-import { sql } from './db';
+import { randomUUID } from 'node:crypto';
+import type { PlanId, PaidPlan } from './entitlements';
+import { sql, withOrgTx, withSystemTx } from './db';
+import { getEntitlementContext } from './org-entitlements';
 
 export const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
 export type Cycle = 'mensual' | 'anual';
 export type MeterDim = 'api' | 'usuario' | 'ia' | 'timbrado';
-export type PaidPlan = Exclude<PlanId, 'free'>;
-
 const isTest = (STRIPE_KEY || '').startsWith('sk_test_') || (STRIPE_KEY || '').startsWith('rk_test_');
 
 // ── Precio base de suscripción por plan y ciclo (recurring flat) ──────────────
@@ -41,7 +41,7 @@ export const METER_PRICES: Record<PaidPlan, Partial<Record<MeterDim, string>>> =
 } : {
     starter:   { api: 'price_1Tie8yQuD2ZBXFA95QlmfbIj',                                       ia: 'price_1TidsnQuD2ZBXFA9uGEPbBhF', timbrado: 'price_1TiduZQuD2ZBXFA91xtzCz0B' },
     pro:       { api: 'price_1Tie1sQuD2ZBXFA98nejH9l4', usuario: 'price_1TidxsQuD2ZBXFA9t1S7Uang', ia: 'price_1TidyJQuD2ZBXFA9CXUvMZIs', timbrado: 'price_1TidylQuD2ZBXFA9WIRLTZ0L' },
-    scale:     { api: 'price_1Tie7OQuD2ZBXFA9RtEcbu8s', usuario: 'price_1Tie4zQuD2ZBXFA9kuhdEOIb', ia: 'price_1Tie5VQuD2ZBXFA9JUizxrkk', timbrado: 'price_1Tie5wQuD2ZBXFA9hLTY2QKi' },
+    scale:     { api: 'price_1Tie7OQuD2ZBXFA9RtEcbu8s', usuario: 'price_1U45ebQuD2ZBXFA97TI8pA55', ia: 'price_1Tie5VQuD2ZBXFA9JUizxrkk', timbrado: 'price_1Tie5wQuD2ZBXFA9hLTY2QKi' },
     developer: { api: 'price_1TieClQuD2ZBXFA9dNGVeRox', usuario: 'price_1TieA8QuD2ZBXFA9ZmaQ58oj', ia: 'price_1TieAmQuD2ZBXFA9NZ9980yq', timbrado: 'price_1TieBOQuD2ZBXFA9WJhCjCkG' },
 };
 
@@ -70,8 +70,14 @@ export const INCLUDED: Record<PlanId, { ia: number | null; cfdi: number; api: nu
     developer: { ia: null, cfdi: 1000, api: 50000, usuarios: null },
 };
 
-// Planes donde el excedente se COBRA (los demás son tope duro).
-export const OVERAGE_PLANS: PlanId[] = ['pro', 'scale', 'developer', 'starter'];
+// Matriz de excedentes del contrato comercial. Starter permite excedente de
+// IA/CFDI/API, pero su asiento único sí es tope duro; desde Pro los cuatro
+// medidores tienen overage.
+export function allowsOverage(plan: PlanId, dim: MeterDim): boolean {
+    if (plan === 'free') return false;
+    if (dim === 'usuario') return plan === 'pro' || plan === 'scale' || plan === 'developer';
+    return true;
+}
 
 // dim del medidor → columna en uso_periodo
 export const DIM_COL: Record<MeterDim, 'ia' | 'cfdi' | 'api' | 'usuarios'> = {
@@ -87,22 +93,22 @@ const OVERAGE_SAFETY_MULTIPLIER = 10;
  * Verifica ANTES de una llamada externa costosa (IA/CFDI) si la org está dentro
  * de su cuota. Planes de tope duro (free) se bloquean al llegar al incluido;
  * planes con excedente se permiten hasta un techo de seguridad (10× incluido).
- * NUNCA lanza: ante cualquier fallo devuelve ok (no bloquear por un error de DB).
+ * Fail-closed: si no se puede demostrar cuota disponible, no se autoriza una
+ * llamada externa costosa. `reserveUsage()` es el gate atómico definitivo.
  */
 export async function checkQuota(orgId: string, dim: MeterDim): Promise<{ ok: boolean; reason?: string }> {
     const col = DIM_COL[dim];
     const periodo = new Date().toISOString().slice(0, 7); // YYYY-MM (UTC)
     try {
-        const [row] = await sql`
-            select coalesce(o.plan, 'free') as plan, up.ia, up.cfdi, up.api, up.usuarios
-            from orgs o
-            left join uso_periodo up on up.org_id = o.id and up.periodo = ${periodo}
-            where o.id = ${orgId}`;
-        const plan = ((row?.plan as PlanId) ?? 'free');
+        const context = await getEntitlementContext(orgId);
+        const [[row]] = await withOrgTx(orgId, sql`
+            select ia, cfdi, api, usuarios from uso_periodo
+             where org_id = ${orgId} and periodo = ${periodo}`);
+        const plan = context.effectivePlan;
         const limit = INCLUDED[plan]?.[col];
         if (limit === null || limit === undefined) return { ok: true }; // ilimitado
         const used = Number(row?.[col] ?? 0);
-        const isOverage = OVERAGE_PLANS.includes(plan);
+        const isOverage = allowsOverage(plan, dim);
         if (!isOverage) {
             if (used >= limit) return { ok: false, reason: `Alcanzaste el límite de tu plan (${limit} este mes). Sube de plan para seguir usando esta función.` };
             return { ok: true };
@@ -111,8 +117,9 @@ export async function checkQuota(orgId: string, dim: MeterDim): Promise<{ ok: bo
             return { ok: false, reason: 'Uso excepcionalmente alto este periodo. Contáctanos para desbloquear.' };
         }
         return { ok: true };
-    } catch {
-        return { ok: true }; // fail-open: un error de cuota jamás debe romper la operación
+    } catch (error) {
+        console.error(`[billing] no se pudo verificar cuota ${dim} para ${orgId}`, error);
+        return { ok: false, reason: 'No pudimos verificar tu cuota. Intenta de nuevo.' };
     }
 }
 
@@ -186,7 +193,7 @@ export async function getOrCreateCustomer(orgId: string, email?: string, nombre?
         ...(email ? { email } : {}),
         ...(nombre ? { name: nombre } : {}),
         'metadata[org_id]': orgId,
-    });
+    }, 'POST', { idempotencyKey: `billing-customer:${orgId}` });
     await sql`update orgs set stripe_customer_id = ${cus.id} where id = ${orgId}`;
     return cus.id as string;
 }
@@ -200,42 +207,247 @@ async function meterEventName(dim: MeterDim): Promise<string> {
     return m.event_name as string;
 }
 
-// Reporta consumo: incrementa el contador del periodo en Neon (para la UI en
-// vivo) y manda el meter event a Stripe (para el cobro de excedente). NUNCA
-// lanza: medir el uso jamás debe romper la operación que lo originó.
-export async function reportUsage(orgId: string, dim: MeterDim, value = 1): Promise<void> {
-    const col = DIM_COL[dim];
-    const periodo = new Date().toISOString().slice(0, 7); // YYYY-MM (UTC)
-    try {
-        // Upsert del contador del periodo. neon-serverless no tiene sql.unsafe, así
-        // que cada columna tiene su propia sentencia (segura, sin interpolar).
-        if (col === 'ia') {
-            await sql`insert into uso_periodo (org_id, periodo, ia) values (${orgId}, ${periodo}, ${value})
-                      on conflict (org_id, periodo) do update set ia = uso_periodo.ia + ${value}, updated_at = now()`;
-        } else if (col === 'cfdi') {
-            await sql`insert into uso_periodo (org_id, periodo, cfdi) values (${orgId}, ${periodo}, ${value})
-                      on conflict (org_id, periodo) do update set cfdi = uso_periodo.cfdi + ${value}, updated_at = now()`;
-        } else if (col === 'api') {
-            await sql`insert into uso_periodo (org_id, periodo, api) values (${orgId}, ${periodo}, ${value})
-                      on conflict (org_id, periodo) do update set api = uso_periodo.api + ${value}, updated_at = now()`;
-        } else {
-            await sql`insert into uso_periodo (org_id, periodo, usuarios) values (${orgId}, ${periodo}, ${value})
-                      on conflict (org_id, periodo) do update set usuarios = uso_periodo.usuarios + ${value}, updated_at = now()`;
-        }
-    } catch { /* tabla aún no migrada: no bloquear la operación */ }
+export interface UsageReservation {
+    ok: boolean;
+    id?: string;
+    reason?: string;
+}
 
-    if (!STRIPE_KEY) return;
+/**
+ * Reserva y contabiliza consumo en una única sentencia bloqueada por org/dim.
+ * La fila de outbox queda COMMITTED antes de ejecutar el proveedor externo: si
+ * el worker muere después, el cron aún puede entregar el meter event a Stripe.
+ */
+export async function reserveUsage(orgId: string, dim: MeterDim, rawValue = 1): Promise<UsageReservation> {
+    const value = Math.trunc(Number(rawValue));
+    if (!Number.isFinite(value) || value <= 0 || value > 10_000) {
+        return { ok: false, reason: 'Cantidad de consumo inválida.' };
+    }
+
     try {
-        const [o] = await sql`select stripe_customer_id from orgs where id = ${orgId}`;
-        const cus = o?.stripe_customer_id as string | undefined;
-        if (!cus) return; // sin suscripción de pago → no se reporta a Stripe
-        const event_name = await meterEventName(dim);
-        await stripe('/v1/billing/meter_events', {
-            event_name,
-            'payload[stripe_customer_id]': cus,
-            'payload[value]': String(value),
-        });
-    } catch { /* best-effort: Stripe reintenta vía dashboard si hace falta */ }
+        const context = await getEntitlementContext(orgId);
+        const plan = context.effectivePlan;
+        const col = DIM_COL[dim];
+        const included = INCLUDED[plan][col];
+        const hardCap = included === null
+            ? 2_147_483_647
+            : (allowsOverage(plan, dim) ? included * OVERAGE_SAFETY_MULTIPLIER : included);
+        const periodo = new Date().toISOString().slice(0, 7);
+        const id = randomUUID();
+        const meterEligible = !context.isSandbox && plan !== 'free' && !!context.stripeCustomerId
+            && included !== null && allowsOverage(plan, dim);
+        const includedForMeter = included ?? 2_147_483_647;
+
+        const queryFor = (column: 'ia' | 'cfdi' | 'api' | 'usuarios') => {
+            if (column === 'ia') return sql`
+                with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
+                consumed as (
+                  insert into uso_periodo (org_id, periodo, ia)
+                  select ${orgId}, ${periodo}, ${value} from locked
+                  where ${value} <= ${hardCap}
+                  on conflict (org_id, periodo) do update
+                    set ia = uso_periodo.ia + ${value}, updated_at = now()
+                    where uso_periodo.ia + ${value} <= ${hardCap}
+                  returning ia
+                ), reserved as (
+                  insert into usage_reservations
+                    (id, org_id, billing_org_id, dimension, value, meter_value, periodo, status,
+                     meter_status, stripe_customer_id, committed_at)
+                  select ${id}, ${orgId}, ${context.billingOrgId}, ${dim}, ${value},
+                         case when ${meterEligible} then greatest(0, least(${value}, consumed.ia - ${includedForMeter})) else 0 end,
+                         ${periodo}, 'committed',
+                         case when ${meterEligible} and consumed.ia > ${includedForMeter} then 'pending' else 'skipped' end,
+                         ${context.stripeCustomerId}, now()
+                  from consumed returning id
+                )
+                select exists(select 1 from consumed) as ok`;
+            if (column === 'cfdi') return sql`
+                with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
+                consumed as (
+                  insert into uso_periodo (org_id, periodo, cfdi)
+                  select ${orgId}, ${periodo}, ${value} from locked
+                  where ${value} <= ${hardCap}
+                  on conflict (org_id, periodo) do update
+                    set cfdi = uso_periodo.cfdi + ${value}, updated_at = now()
+                    where uso_periodo.cfdi + ${value} <= ${hardCap}
+                  returning cfdi
+                ), reserved as (
+                  insert into usage_reservations
+                    (id, org_id, billing_org_id, dimension, value, meter_value, periodo, status,
+                     meter_status, stripe_customer_id, committed_at)
+                  select ${id}, ${orgId}, ${context.billingOrgId}, ${dim}, ${value},
+                         case when ${meterEligible} then greatest(0, least(${value}, consumed.cfdi - ${includedForMeter})) else 0 end,
+                         ${periodo}, 'committed',
+                         case when ${meterEligible} and consumed.cfdi > ${includedForMeter} then 'pending' else 'skipped' end,
+                         ${context.stripeCustomerId}, now()
+                  from consumed returning id
+                )
+                select exists(select 1 from consumed) as ok`;
+            if (column === 'api') return sql`
+                with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
+                consumed as (
+                  insert into uso_periodo (org_id, periodo, api)
+                  select ${orgId}, ${periodo}, ${value} from locked
+                  where ${value} <= ${hardCap}
+                  on conflict (org_id, periodo) do update
+                    set api = uso_periodo.api + ${value}, updated_at = now()
+                    where uso_periodo.api + ${value} <= ${hardCap}
+                  returning api
+                ), reserved as (
+                  insert into usage_reservations
+                    (id, org_id, billing_org_id, dimension, value, meter_value, periodo, status,
+                     meter_status, stripe_customer_id, committed_at)
+                  select ${id}, ${orgId}, ${context.billingOrgId}, ${dim}, ${value},
+                         case when ${meterEligible} then greatest(0, least(${value}, consumed.api - ${includedForMeter})) else 0 end,
+                         ${periodo}, 'committed',
+                         case when ${meterEligible} and consumed.api > ${includedForMeter} then 'pending' else 'skipped' end,
+                         ${context.stripeCustomerId}, now()
+                  from consumed returning id
+                )
+                select exists(select 1 from consumed) as ok`;
+            return sql`
+                with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
+                consumed as (
+                  insert into uso_periodo (org_id, periodo, usuarios)
+                  select ${orgId}, ${periodo}, greatest(
+                    (select count(*)::int from org_members where org_id = ${orgId} and estado = 'activo'), 0
+                  ) + ${value} from locked
+                  where greatest((select count(*)::int from org_members where org_id = ${orgId} and estado = 'activo'), 0) + ${value} <= ${hardCap}
+                  on conflict (org_id, periodo) do update
+                    set usuarios = greatest(uso_periodo.usuarios,
+                          (select count(*)::int from org_members where org_id = ${orgId} and estado = 'activo')) + ${value},
+                        updated_at = now()
+                    where greatest(uso_periodo.usuarios,
+                          (select count(*)::int from org_members where org_id = ${orgId} and estado = 'activo')) + ${value} <= ${hardCap}
+                  returning usuarios
+                ), reserved as (
+                  insert into usage_reservations
+                    (id, org_id, billing_org_id, dimension, value, meter_value, periodo, status,
+                     meter_status, stripe_customer_id, committed_at)
+                  select ${id}, ${orgId}, ${context.billingOrgId}, ${dim}, ${value},
+                         case when ${meterEligible} then greatest(0, least(${value}, consumed.usuarios - ${includedForMeter})) else 0 end,
+                         ${periodo}, 'committed',
+                         case when ${meterEligible} and consumed.usuarios > ${includedForMeter} then 'pending' else 'skipped' end,
+                         ${context.stripeCustomerId}, now()
+                  from consumed returning id
+                )
+                select exists(select 1 from consumed) as ok`;
+        };
+
+        const [[result]] = await withOrgTx(orgId, queryFor(col));
+        if (!result?.ok) {
+            return { ok: false, reason: `Alcanzaste el límite de tu plan para ${dim}. Sube de plan para continuar.` };
+        }
+        return { ok: true, id };
+    } catch (error) {
+        console.error(`[billing] no se pudo reservar ${dim} para ${orgId}`, error);
+        return { ok: false, reason: 'No pudimos verificar ni registrar tu consumo. Intenta de nuevo.' };
+    }
+}
+
+/** Revierte una reserva que definitivamente no produjo el resultado facturable. */
+export async function cancelUsage(orgId: string, reservationId: string): Promise<boolean> {
+    try {
+        const [[result]] = await withOrgTx(orgId, sql`
+            with canceled as (
+              update usage_reservations
+                 set status = 'canceled', canceled_at = now(), updated_at = now()
+               where id = ${reservationId} and org_id = ${orgId}
+                 and status = 'committed' and meter_status not in ('sending','sent')
+              returning dimension, value, periodo
+            ), reverted as (
+              update uso_periodo u set
+                ia = greatest(0, u.ia - coalesce((select value from canceled where dimension = 'ia'), 0)),
+                cfdi = greatest(0, u.cfdi - coalesce((select value from canceled where dimension = 'timbrado'), 0)),
+                api = greatest(0, u.api - coalesce((select value from canceled where dimension = 'api'), 0)),
+                usuarios = greatest(0, u.usuarios - coalesce((select value from canceled where dimension = 'usuario'), 0)),
+                updated_at = now()
+              where u.org_id = ${orgId} and u.periodo = (select periodo from canceled)
+              returning u.org_id
+            )
+            select exists(select 1 from canceled) as ok`);
+        return result?.ok === true;
+    } catch (error) {
+        console.error(`[billing] no se pudo cancelar reserva ${reservationId}`, error);
+        return false;
+    }
+}
+
+async function sendUsageRow(row: any): Promise<void> {
+    const dim = String(row.dimension) as MeterDim;
+    const eventName = await meterEventName(dim);
+    await stripe('/v1/billing/meter_events', {
+        event_name: eventName,
+        identifier: String(row.id),
+        timestamp: String(Math.floor(new Date(row.committed_at || row.created_at).getTime() / 1000)),
+        'payload[stripe_customer_id]': String(row.stripe_customer_id),
+        'payload[value]': String(row.meter_value),
+    }, 'POST', { idempotencyKey: `usage:${row.id}` });
+}
+
+/** Intenta entregar una reserva; si Stripe falla, permanece durable para el cron. */
+export async function flushUsageReservation(orgId: string, reservationId: string): Promise<boolean> {
+    if (!STRIPE_KEY) return false;
+    const [[row]] = await withOrgTx(orgId, sql`
+        update usage_reservations
+           set meter_status = 'sending', attempt_count = attempt_count + 1, updated_at = now()
+         where id = ${reservationId} and org_id = ${orgId} and status = 'committed'
+           and meter_status in ('pending','failed')
+        returning *`);
+    if (!row) return false;
+    try {
+        await sendUsageRow(row);
+        await withOrgTx(orgId, sql`update usage_reservations set meter_status = 'sent', sent_at = now(), last_error = null, updated_at = now() where id = ${reservationId} and org_id = ${orgId}`);
+        return true;
+    } catch (error) {
+        const message = error instanceof Error ? error.message.slice(0, 500) : 'error desconocido';
+        await withOrgTx(orgId, sql`update usage_reservations set meter_status = 'failed', last_error = ${message}, next_attempt_at = now() + interval '5 minutes', updated_at = now() where id = ${reservationId} and org_id = ${orgId}`);
+        return false;
+    }
+}
+
+/** Barrido cross-org para /api/cron/billing-reconcile. Requiere contexto cron. */
+export async function flushPendingUsage(limit = 100): Promise<{ sent: number; failed: number }> {
+    if (!STRIPE_KEY) throw new Error('Stripe Billing no está configurado');
+    const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 500);
+    const [rows] = await withSystemTx(sql`
+        with candidates as (
+          select id from usage_reservations
+           where status = 'committed'
+             and (meter_status in ('pending','failed') or (meter_status = 'sending' and updated_at < now() - interval '10 minutes'))
+             and (next_attempt_at is null or next_attempt_at <= now())
+           order by created_at asc
+           limit ${safeLimit}
+           for update skip locked
+        )
+        update usage_reservations u
+           set meter_status = 'sending', attempt_count = attempt_count + 1, updated_at = now()
+          from candidates c where u.id = c.id
+        returning u.*`);
+    let sent = 0;
+    let failed = 0;
+    for (const row of rows) {
+        try {
+            await sendUsageRow(row);
+            await withSystemTx(sql`update usage_reservations set meter_status = 'sent', sent_at = now(), last_error = null, updated_at = now() where id = ${row.id}`);
+            sent++;
+        } catch (error) {
+            const message = error instanceof Error ? error.message.slice(0, 500) : 'error desconocido';
+            const delayMinutes = Math.min(360, 2 ** Math.min(Number(row.attempt_count || 1), 8));
+            await withSystemTx(sql`update usage_reservations set meter_status = 'failed', last_error = ${message}, next_attempt_at = now() + (${delayMinutes} * interval '1 minute'), updated_at = now() where id = ${row.id}`);
+            failed++;
+        }
+    }
+    return { sent, failed };
+}
+
+// Compatibilidad para consumidores existentes: primero persiste el consumo y
+// luego intenta entregarlo. Un fallo de Stripe no pierde la fila ni deshace la
+// operación; un fallo de Neon sí se propaga para que el caller falle cerrado.
+export async function reportUsage(orgId: string, dim: MeterDim, value = 1): Promise<void> {
+    const reservation = await reserveUsage(orgId, dim, value);
+    if (!reservation.ok || !reservation.id) throw new Error(reservation.reason || 'No se pudo registrar el consumo');
+    await flushUsageReservation(orgId, reservation.id);
 }
 
 // ── Stripe Connect Custom (Pagos directos a la cuenta del dueño) ────────────────
@@ -326,7 +538,7 @@ export async function stripeUpload(
         body = Buffer.concat([
             body,
             Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"; filename="${safeName}"\r\nContent-Type: ${mime}\r\n\r\n`),
-            Buffer.from(fileBytes),
+            Buffer.from(fileBytes instanceof ArrayBuffer ? new Uint8Array(fileBytes) : fileBytes),
             Buffer.from('\r\n')
         ]);
     };

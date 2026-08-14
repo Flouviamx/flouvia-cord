@@ -7,6 +7,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
+import { requireResourceCapacity, resourceLimitError } from '../../lib/org-entitlements';
 
 const TERMINOS = ['contado', 'net30', 'net60'];
 const NIVELES = ['estandar', 'plata', 'oro', 'distribuidor'];
@@ -37,10 +38,17 @@ export const POST: APIRoute = async ({ request }) => {
     if (!c.empresa) return json({ error: 'El nombre de la empresa es obligatorio' }, 400);
 
     const orgId = await getActiveOrgId();
-    const [[row]] = await withOrgTx(orgId, sql`
-        insert into clientes (org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito, nivel, descuento_pct, regimen_fiscal, uso_cfdi, cp_fiscal)
-        values (${orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite}, ${c.nivel}, ${c.descuento}, ${c.regimen_fiscal}, ${c.uso_cfdi}, ${c.cp_fiscal})
-        returning id`);
+    const capacityDenied = await requireResourceCapacity(orgId, 'clients');
+    if (capacityDenied) return capacityDenied;
+    let row: any;
+    try {
+        [[row]] = await withOrgTx(orgId, sql`
+            insert into clientes (org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito, nivel, descuento_pct, regimen_fiscal, uso_cfdi, cp_fiscal)
+            values (${orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite}, ${c.nivel}, ${c.descuento}, ${c.regimen_fiscal}, ${c.uso_cfdi}, ${c.cp_fiscal})
+            returning id`);
+    } catch (error) {
+        return resourceLimitError(error) ?? json({ error: 'No se pudo crear el cliente.' }, 500);
+    }
     await logAudit(orgId, { accion: 'cliente.creado', entidad: 'cliente', entidad_id: row.id as string, detalle: c.empresa, ip: reqIp(request) });
     return json({ id: row.id });
 };

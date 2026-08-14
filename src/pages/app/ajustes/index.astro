@@ -19,9 +19,8 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
     for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
     return s;
 };
-const SETTINGS_CATEGORIES = localizeCategories(L);
-
 const [ORG, SETUP, ME] = await Promise.all([getOrg(), getSetupProgress(), getMyMembership()]);
+const SETTINGS_CATEGORIES = localizeCategories(L, ORG.countryCode);
 const hasAccess = memberCan(ME, 'ajustes');
 // Anillo SVG: circunferencia = 2πr (r=26) ≈ 163.36
 const R = 26, C = 2 * Math.PI * R;

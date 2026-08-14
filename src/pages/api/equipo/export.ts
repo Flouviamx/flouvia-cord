@@ -9,10 +9,14 @@ import type { APIRoute } from 'astro';
 import { getMembers, requirePerm } from '../../../lib/queries';
 import { csvCell, csvFilename } from '../../../lib/csv';
 import { ROL_LABEL } from '../../../lib/permissions';
+import { getActiveOrgId } from '../../../lib/db';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 
 export const GET: APIRoute = async () => {
     const denied = await requirePerm('equipo');
     if (denied) return denied;
+    const subscriptionDenied = await requireEntitlement(await getActiveOrgId(), 'team');
+    if (subscriptionDenied) return subscriptionDenied;
 
     const members = await getMembers();
     const head = ['nombre', 'email', 'rol', 'estado', 'desde', 'ultima_sesion', 'cotizaciones_30d', 'gestionado_por_sso'];

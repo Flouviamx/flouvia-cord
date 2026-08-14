@@ -13,10 +13,11 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, logAudit, reqIp } from '../../../lib/db';
+import { sql, logAudit, reqIp, getActiveOrgId } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
-import { COUNTRY_CODES } from '../../../lib/countries';
+import { COUNTRY_CODES, getCountryProfile } from '../../../lib/countries';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -26,7 +27,7 @@ const json = (data: unknown, status = 200) =>
 // fiscal real (ver FiscalFactory: solo MexicoSatProvider timbra de verdad).
 // Fuente única: countries.ts (antes este Set vivía duplicado a mano aquí y
 // podía desincronizarse si se agregaba un país nuevo en un solo lugar).
-const SUPPORTED_COUNTRIES = new Set(COUNTRY_CODES);
+const SUPPORTED_COUNTRIES = new Set<string>(COUNTRY_CODES);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const POST: APIRoute = async ({ request }) => {
@@ -35,6 +36,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     const rl = await rateLimit(`orgs-create:${userId}`, 10, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
+
+    const activeOrgId = await getActiveOrgId();
+    const entitlementDenied = await requireEntitlement(activeOrgId, 'multi_org');
+    if (entitlementDenied) return entitlementDenied;
 
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
@@ -45,6 +50,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!SUPPORTED_COUNTRIES.has(countryCode)) return json({ error: 'País no soportado' }, 400);
     if (parentOrgId && !UUID_RE.test(parentOrgId)) return json({ error: 'parentOrgId inválido' }, 400);
+    const countryProfile = getCountryProfile(countryCode);
+    const appLocale = countryProfile.locale.startsWith('es') ? 'es-MX' : 'en-US';
 
     try {
         // Si se pide anidar bajo otra org, el usuario DEBE ser miembro ACTIVO de
@@ -61,8 +68,9 @@ export const POST: APIRoute = async ({ request }) => {
         }
 
         const [org] = await sql`
-            insert into orgs (owner_id, nombre, country_code, parent_org_id)
-            values (${userId}, ${name}, ${countryCode}, ${parentOrgId})
+            insert into orgs (owner_id, nombre, country_code, parent_org_id, moneda, zona_horaria, idioma, iva_pct)
+            values (${userId}, ${name}, ${countryCode}, ${parentOrgId}, ${countryProfile.currency},
+                    ${countryProfile.timeZone}, ${appLocale}, ${countryCode === 'MX' ? 16 : 0})
             returning id, nombre
         `;
         const orgId = org.id as string;

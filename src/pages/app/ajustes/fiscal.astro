@@ -3,28 +3,83 @@
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
+import { getCountryProfile } from '../../../lib/countries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
 const L = currentLocale();
-// La facturación fiscal REAL (CSD + timbrado ante un PAC) solo existe para
-// México hoy (MexicoSatProvider vía Facturapi). El resto de países pueden
-// cotizar/cobrar/usar el CRM normal — solo el timbrado fiscal no aplica todavía.
 const isMx = ORG.countryCode === 'MX';
+const PROFILE = getCountryProfile(ORG.countryCode, L);
+const FM = ORG.fiscalMetadata || {};
 ---
 
 <SettingsShell title="Datos fiscales — Ajustes" tab="fiscal" perm="ajustes"
-    intro={t(L, 'set.fiscal.intro')} save>
+    intro={isMx
+        ? t(L, 'set.fiscal.intro')
+        : (L === 'en'
+            ? `Configure the identity shown on invoices issued in ${PROFILE.name}.`
+            : `Configura la identidad que aparecerá en tus facturas emitidas en ${PROFILE.name}.`)} save>
     {!isMx && (
-        <div class="fiscal-notice">
+        <div class="fiscal-capability">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <div>
-                <strong>Por ahora, la facturación fiscal (CFDI/timbrado) solo está disponible en México.</strong>
-                <p>Puedes cotizar, cobrar y usar el CRM normalmente en tu país — el timbrado ante una autoridad fiscal local todavía no está conectado. Escríbenos si quieres que lo prioricemos para tu país.</p>
+                <strong>{L === 'en' ? 'Commercial invoices are active for your country.' : 'Las facturas comerciales ya están activas para tu país.'}</strong>
+                <p>{L === 'en'
+                    ? 'Cord assigns the number, preserves an immutable copy, and generates the PDF. Submission or clearance by your local tax authority is not connected yet.'
+                    : 'Cord asigna el folio, conserva una copia inmutable y genera el PDF. La presentación o autorización ante tu autoridad fiscal local todavía no está conectada.'}</p>
             </div>
         </div>
     )}
-    <div class="s-block" style={isMx ? undefined : 'opacity:0.5; pointer-events:none;'}>
+
+    {!isMx && (
+        <div class="s-block">
+            <h3>{L === 'en' ? 'Invoice identity' : 'Identidad de facturación'}</h3>
+            <div class="s-body">
+                <div class="s-row">
+                    <div class="s-field">
+                        <label for="fLegalName">{L === 'en' ? 'Legal name' : 'Razón social o nombre legal'}</label>
+                        <input class="s-input" id="fLegalName" data-field="fiscal_legal_name" value={FM.legal_name || ORG.razonSocial || ORG.nombre} maxlength="200" />
+                    </div>
+                    <div class="s-field">
+                        <label for="fTaxId">{PROFILE.taxIdLabel}</label>
+                        <input class="s-input" id="fTaxId" data-field="fiscal_tax_id" value={FM.tax_id || ORG.rfc} maxlength="64" autocomplete="off" />
+                    </div>
+                </div>
+                <div class="s-field">
+                    <label for="fAddress1">{L === 'en' ? 'Address' : 'Domicilio fiscal'}</label>
+                    <input class="s-input" id="fAddress1" data-field="fiscal_address_line1" value={FM.address_line1 || ORG.direccion} maxlength="200" />
+                </div>
+                <div class="s-field">
+                    <label for="fAddress2">{L === 'en' ? 'Suite, floor, or additional details' : 'Interior, piso o datos adicionales'}</label>
+                    <input class="s-input" id="fAddress2" data-field="fiscal_address_line2" value={FM.address_line2 || ''} maxlength="200" />
+                </div>
+                <div class="s-row">
+                    <div class="s-field">
+                        <label for="fCity">{L === 'en' ? 'City' : 'Ciudad'}</label>
+                        <input class="s-input" id="fCity" data-field="fiscal_city" value={FM.city || ''} maxlength="100" />
+                    </div>
+                    <div class="s-field">
+                        <label for="fRegion">{L === 'en' ? 'State or region' : 'Estado, provincia o región'}</label>
+                        <input class="s-input" id="fRegion" data-field="fiscal_region" value={FM.region || ''} maxlength="100" />
+                    </div>
+                </div>
+                <div class="s-row">
+                    <div class="s-field">
+                        <label for="fPostal">{L === 'en' ? 'Postal code' : 'Código postal'}</label>
+                        <input class="s-input" id="fPostal" data-field="fiscal_postal_code" value={FM.postal_code || ''} maxlength="20" />
+                    </div>
+                    <div class="s-field">
+                        <label for="fPrefix">{L === 'en' ? 'Invoice prefix' : 'Prefijo de factura'}</label>
+                        <input class="s-input" id="fPrefix" data-field="fiscal_invoice_prefix" value={FM.invoice_prefix || PROFILE.invoicePrefix} maxlength="12" />
+                        <span class="s-hint">{L === 'en' ? 'Example: INV-000001' : 'Ejemplo: INV-000001'}</span>
+                    </div>
+                </div>
+                <a class="fact-link" href="/app/ajustes/facturas">{L === 'en' ? 'View issued invoices' : 'Ver facturas emitidas'}</a>
+            </div>
+        </div>
+    )}
+
+    <div class="s-block" style={isMx ? undefined : 'display:none;'}>
         <h3>{t(L, 'set.fiscal.identificacion')}</h3>
         <div class="s-body">
             <div class="s-row">
@@ -62,7 +117,7 @@ const isMx = ORG.countryCode === 'MX';
         </div>
     </div>
 
-    <div class="s-block" style={isMx ? undefined : 'opacity:0.5; pointer-events:none;'}>
+    <div class="s-block" style={isMx ? undefined : 'display:none;'}>
         <h3>{t(L, 'set.fiscal.csd')}</h3>
         <p class="csd-intro">{t(L, 'set.fiscal.csd_intro')}</p>
 
@@ -113,11 +168,11 @@ const isMx = ORG.countryCode === 'MX';
 </SettingsShell>
 
 <style>
-    .fiscal-notice { display: flex; gap: 12px; align-items: flex-start; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.22); border-radius: 14px; padding: 14px 16px; margin-bottom: 1.6rem; color: #92400e; }
-    html[data-theme="dark"] .fiscal-notice { color: #fcd34d; }
-    .fiscal-notice svg { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
-    .fiscal-notice strong { display: block; font-size: 0.88rem; margin-bottom: 4px; }
-    .fiscal-notice p { margin: 0; font-size: 0.82rem; line-height: 1.5; opacity: 0.9; }
+    .fiscal-capability { display: flex; gap: 12px; align-items: flex-start; background: rgba(10,25,47,0.045); border: 1px solid rgba(10,25,47,0.1); border-radius: 16px; padding: 15px 17px; margin-bottom: 1.8rem; color: var(--color-blue-deep); }
+    html[data-theme="dark"] .fiscal-capability { color: #b9cff8; background: rgba(127,176,255,0.08); border-color: rgba(127,176,255,0.16); }
+    .fiscal-capability svg { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
+    .fiscal-capability strong { display: block; font-size: 0.88rem; margin-bottom: 4px; }
+    .fiscal-capability p { margin: 0; font-size: 0.82rem; line-height: 1.5; color: var(--color-text-muted); }
     .csd-intro { font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.55; margin: 0 0 1.1rem; }
     .csd-intro b { color: var(--color-text); font-weight: 600; }
     .csd-files { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }

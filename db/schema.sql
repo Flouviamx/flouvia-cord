@@ -195,10 +195,24 @@ create table if not exists documentos_fiscales (
   document_type   text        not null,              -- 'invoice', 'cfdi_40', 'dian_einvoice'
   fiscal_id       text,                              -- UUID SAT o identificador externo
   status          text        not null default 'pending', -- pending | issued | cancelled | error
+  provider        text        not null default 'cord',
+  provider_document_id text,
+  invoice_number  text,
+  currency        text,
+  subtotal        numeric,
+  tax_total       numeric,
+  total           numeric,
+  issuer_snapshot jsonb       not null default '{}'::jsonb,
+  recipient_snapshot jsonb    not null default '{}'::jsonb,
+  line_items_snapshot jsonb   not null default '[]'::jsonb,
+  idempotency_key text,
+  schema_version  text        not null default 'cord.invoice.v1',
   provider_data   jsonb,                             -- Data cruda del PAC/Stripe Tax/Avalara
   pdf_url         text,
   xml_url         text,
-  created_at      timestamptz default now()
+  issued_at       timestamptz,
+  created_at      timestamptz default now(),
+  updated_at      timestamptz default now()
 );
 create index if not exists idx_doc_fiscales_org on documentos_fiscales(org_id, created_at desc);
 
@@ -2079,3 +2093,275 @@ drop policy if exists "rls_cobranza_exclusiones" on cobranza_exclusiones;
 create policy "rls_cobranza_exclusiones" on cobranza_exclusiones
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table cobranza_exclusiones force row level security;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Entitlements y Billing fail-closed (ago 2026)
+-- ════════════════════════════════════════════════════════════════════════════
+-- `orgs.plan` dejó de ser una credencial. Un nivel pagado solo es efectivo si
+-- Stripe está ligado, la suscripción está `active` y el periodo sigue vigente.
+-- Las sandboxes consultan el billing de su org padre, por lo que una cancelación
+-- también les revoca el plan sin copiar ni duplicar ids de Stripe.
+
+alter table orgs add column if not exists billing_last_paid_at timestamptz;
+alter table orgs add column if not exists billing_paid_through timestamptz;
+alter table orgs add column if not exists billing_last_invoice_id text;
+alter table orgs add column if not exists billing_last_amount_paid bigint;
+alter table orgs add column if not exists billing_currency text;
+alter table orgs add column if not exists billing_paid_plan text;
+
+create or replace function cord_effective_plan(p_org uuid)
+returns text
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  with requested as (
+    select coalesce(sandbox_of, id) as billing_org_id
+      from orgs where id = p_org
+  ), billing as (
+    select case
+      when lower(coalesce(o.plan, 'free')) in ('business', 'negocio') then 'pro'
+      when lower(coalesce(o.plan, 'free')) in ('free', 'starter', 'pro', 'scale', 'developer')
+        then lower(coalesce(o.plan, 'free'))
+      else 'free'
+    end as stored_plan,
+    o.subscription_status, o.current_period_end, o.billing_paid_through,
+    case
+      when lower(coalesce(o.billing_paid_plan, 'free')) in ('business', 'negocio') then 'pro'
+      when lower(coalesce(o.billing_paid_plan, 'free')) in ('free', 'starter', 'pro', 'scale', 'developer')
+        then lower(coalesce(o.billing_paid_plan, 'free'))
+      else 'free'
+    end as paid_plan,
+    o.stripe_subscription_id, o.stripe_customer_id
+    from requested r join orgs o on o.id = r.billing_org_id
+  )
+  select case
+    when stored_plan = 'free' then 'free'
+    when subscription_status = 'active'
+      and current_period_end is not null and current_period_end > now()
+      and billing_paid_through is not null and billing_paid_through >= current_period_end
+      and (case paid_plan when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end)
+          >= (case stored_plan when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end)
+      and stripe_subscription_id is not null and stripe_customer_id is not null
+      then stored_plan
+    else 'free'
+  end
+  from billing
+$$;
+revoke all on function cord_effective_plan(uuid) from public;
+
+-- Una sola tentativa de checkout abierta por org. La fila sobrevive a workers
+-- serverless y cierra la carrera de doble click/pestañas concurrentes.
+create table if not exists billing_checkout_attempts (
+  id                     uuid        primary key default gen_random_uuid(),
+  org_id                 uuid        not null references orgs(id) on delete cascade,
+  plan                   text        not null check (plan in ('starter','pro','scale','developer')),
+  cycle                  text        not null check (cycle in ('mensual','anual')),
+  mode                   text        not null check (mode in ('element','checkout')),
+  status                 text        not null default 'creating'
+                                      check (status in ('creating','incomplete','completed','failed','expired','canceled')),
+  stripe_subscription_id text,
+  stripe_session_id      text,
+  idempotency_key        text        not null unique,
+  last_error             text,
+  expires_at             timestamptz not null default (now() + interval '24 hours'),
+  created_at             timestamptz not null default now(),
+  updated_at             timestamptz not null default now()
+);
+create unique index if not exists uq_billing_checkout_open_org
+  on billing_checkout_attempts(org_id)
+  where status in ('creating','incomplete');
+create index if not exists idx_billing_checkout_sub
+  on billing_checkout_attempts(stripe_subscription_id)
+  where stripe_subscription_id is not null;
+
+alter table billing_checkout_attempts enable row level security;
+drop policy if exists "rls_billing_checkout_attempts" on billing_checkout_attempts;
+create policy "rls_billing_checkout_attempts" on billing_checkout_attempts
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+drop policy if exists "system_billing_checkout_attempts" on billing_checkout_attempts;
+create policy "system_billing_checkout_attempts" on billing_checkout_attempts
+  using (current_setting('app.scope', true) = 'system')
+  with check (current_setting('app.scope', true) = 'system');
+alter table billing_checkout_attempts force row level security;
+
+-- Reserva durable de consumo. Primero se incrementa la cuota y se crea esta
+-- fila en la MISMA sentencia; solo después corre Anthropic/Facturapi/API. Una
+-- reserva cancelada revierte el contador. Una comprometida queda en outbox para
+-- enviarse a Stripe con reintentos e idempotencia.
+create table if not exists usage_reservations (
+  id               uuid        primary key,
+  org_id           uuid        not null references orgs(id) on delete cascade,
+  billing_org_id   uuid        not null references orgs(id) on delete cascade,
+  dimension        text        not null check (dimension in ('api','usuario','ia','timbrado')),
+  value            integer     not null check (value > 0),
+  meter_value      integer     not null default 0 check (meter_value >= 0),
+  periodo          text        not null,
+  status           text        not null default 'reserved'
+                               check (status in ('reserved','committed','canceled')),
+  meter_status     text        not null default 'skipped'
+                               check (meter_status in ('skipped','pending','sending','sent','failed')),
+  stripe_customer_id text,
+  attempt_count    integer     not null default 0,
+  next_attempt_at  timestamptz,
+  last_error       text,
+  committed_at     timestamptz,
+  canceled_at      timestamptz,
+  sent_at          timestamptz,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
+);
+alter table usage_reservations add column if not exists meter_value integer not null default 0;
+create index if not exists idx_usage_reservations_outbox
+  on usage_reservations(meter_status, next_attempt_at, created_at)
+  where status = 'committed' and meter_status in ('pending','failed');
+create index if not exists idx_usage_reservations_org
+  on usage_reservations(org_id, periodo, dimension);
+
+alter table usage_reservations enable row level security;
+drop policy if exists "rls_usage_reservations" on usage_reservations;
+create policy "rls_usage_reservations" on usage_reservations
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+drop policy if exists "system_usage_reservations" on usage_reservations;
+create policy "system_usage_reservations" on usage_reservations
+  using (current_setting('app.scope', true) = 'system')
+  with check (current_setting('app.scope', true) = 'system');
+alter table usage_reservations force row level security;
+
+-- Defensa final de límites a nivel DB. La aplicación hace prechecks para dar
+-- errores amables, pero estos triggers son los que cierran carreras paralelas y
+-- cualquier ruta nueva que olvide el helper de aplicación.
+create or replace function cord_resource_limit(p_plan text, p_resource text)
+returns integer
+language sql immutable
+as $$
+  select case p_resource
+    when 'active_quotes' then case p_plan when 'free' then 5 when 'starter' then 50 else null end
+    when 'products'      then case p_plan when 'free' then 50 when 'starter' then 500 else null end
+    when 'clients'       then case p_plan when 'free' then 50 when 'starter' then 500 else null end
+    when 'seats'         then case p_plan when 'free' then 1 when 'starter' then 1 else null end
+    else 0
+  end
+$$;
+
+create or replace function cord_enforce_resource_limit()
+returns trigger
+language plpgsql security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_resource text;
+  v_limit integer;
+  v_used integer;
+  v_old_active boolean := false;
+  v_new_active boolean := true;
+begin
+  if tg_table_name = 'productos' then
+    v_resource := 'products';
+  elsif tg_table_name = 'clientes' then
+    v_resource := 'clients';
+  elsif tg_table_name = 'cotizaciones' then
+    v_resource := 'active_quotes';
+    v_new_active := new.status in ('draft','sent','viewed','approved');
+    if tg_op = 'UPDATE' then
+      v_old_active := old.status in ('draft','sent','viewed','approved');
+    end if;
+    if not v_new_active or v_old_active then return new; end if;
+  elsif tg_table_name = 'org_members' then
+    v_resource := 'seats';
+    v_new_active := new.estado in ('activo','invitado');
+    if tg_op = 'UPDATE' then
+      v_old_active := old.estado in ('activo','invitado');
+    end if;
+    if not v_new_active or v_old_active then return new; end if;
+  else
+    raise exception 'cord_limit:unknown_resource';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(new.org_id::text || ':' || v_resource, 0));
+  v_limit := cord_resource_limit(cord_effective_plan(new.org_id), v_resource);
+  if v_limit is null then return new; end if;
+
+  if v_resource = 'products' then
+    select count(*) into v_used from productos where org_id = new.org_id;
+  elsif v_resource = 'clients' then
+    select count(*) into v_used from clientes where org_id = new.org_id;
+  elsif v_resource = 'active_quotes' then
+    select count(*) into v_used from cotizaciones
+      where org_id = new.org_id and status in ('draft','sent','viewed','approved');
+  else
+    select count(*) into v_used from org_members
+      where org_id = new.org_id and estado in ('activo','invitado');
+  end if;
+
+  if v_used >= v_limit then
+    raise exception using
+      errcode = '23514',
+      message = 'cord_limit:' || v_resource || ':' || v_limit::text;
+  end if;
+  return new;
+end
+$$;
+
+drop trigger if exists trg_limit_productos on productos;
+create trigger trg_limit_productos before insert on productos
+  for each row execute function cord_enforce_resource_limit();
+drop trigger if exists trg_limit_clientes on clientes;
+create trigger trg_limit_clientes before insert on clientes
+  for each row execute function cord_enforce_resource_limit();
+drop trigger if exists trg_limit_cotizaciones on cotizaciones;
+create trigger trg_limit_cotizaciones before insert or update of status on cotizaciones
+  for each row execute function cord_enforce_resource_limit();
+drop trigger if exists trg_limit_org_members on org_members;
+create trigger trg_limit_org_members before insert or update of estado on org_members
+  for each row execute function cord_enforce_resource_limit();
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Núcleo fiscal internacional propiedad de Cord (ago 2026)
+-- ════════════════════════════════════════════════════════════════════════════
+-- El documento canónico y sus snapshots viven en Cord. Facturapi es un rail
+-- intercambiable para CFDI; una factura comercial internacional no depende de
+-- un tercero y puede conectarse después al proveedor regulatorio de cada país.
+
+alter table orgs add column if not exists fiscal_metadata jsonb not null default '{}'::jsonb;
+
+alter table documentos_fiscales add column if not exists provider text not null default 'cord';
+alter table documentos_fiscales add column if not exists provider_document_id text;
+alter table documentos_fiscales add column if not exists invoice_number text;
+alter table documentos_fiscales add column if not exists currency text;
+alter table documentos_fiscales add column if not exists subtotal numeric;
+alter table documentos_fiscales add column if not exists tax_total numeric;
+alter table documentos_fiscales add column if not exists total numeric;
+alter table documentos_fiscales add column if not exists issuer_snapshot jsonb not null default '{}'::jsonb;
+alter table documentos_fiscales add column if not exists recipient_snapshot jsonb not null default '{}'::jsonb;
+alter table documentos_fiscales add column if not exists line_items_snapshot jsonb not null default '[]'::jsonb;
+alter table documentos_fiscales add column if not exists idempotency_key text;
+alter table documentos_fiscales add column if not exists schema_version text not null default 'cord.invoice.v1';
+alter table documentos_fiscales add column if not exists issued_at timestamptz;
+alter table documentos_fiscales add column if not exists updated_at timestamptz default now();
+
+create unique index if not exists uq_documentos_fiscales_idempotency
+  on documentos_fiscales(org_id, idempotency_key)
+  where idempotency_key is not null;
+create unique index if not exists uq_documentos_fiscales_number
+  on documentos_fiscales(org_id, country_code, invoice_number)
+  where invoice_number is not null;
+
+create table if not exists invoice_sequences (
+  org_id         uuid        not null references orgs(id) on delete cascade,
+  country_code   text        not null,
+  document_type  text        not null,
+  prefix         text        not null default 'INV',
+  next_value     bigint      not null default 1 check (next_value > 0),
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+  primary key (org_id, country_code, document_type)
+);
+
+alter table invoice_sequences enable row level security;
+drop policy if exists "rls_invoice_sequences" on invoice_sequences;
+create policy "rls_invoice_sequences" on invoice_sequences
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table invoice_sequences force row level security;

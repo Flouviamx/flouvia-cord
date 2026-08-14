@@ -157,6 +157,7 @@ Esto significa que puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momen
 | `payment.partial` | Se recibe UN cobro parcial (anticipo, saldo o una cuota) sin que la cotización quede totalmente pagada todavía. |
 | `payment.failed` | Falla un cobro recurrente de una iguala/retainer. |
 | `invoice.stamped` | Se timbra el CFDI. |
+| `invoice.issued` | Se emite una factura comercial fuera de México. |
 | `ping` | Solo aparece al usar "Probar" desde el Workbench — nunca lo dispara un evento real. |
 
 > **Nota:** `payment.partial` trae campos extra en `data` que los demás eventos no tienen:

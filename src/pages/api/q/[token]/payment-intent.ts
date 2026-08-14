@@ -7,6 +7,7 @@ import { dueDateFor, isoDay, venceDia, materializeAnticipoCobros } from '../../.
 import { trackServer } from '../../../../lib/posthog-server';
 import { computeFee, isFeeScheduleActive, type PaymentFeeMethod } from '../../../../lib/fees';
 import { payerError } from '../../../../lib/pay-errors';
+import { after } from '../../../../lib/after';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -171,11 +172,6 @@ export const POST: APIRoute = async ({ params, request }) => {
         })
         : computeFee({ amountCents: amount, metodo: 'card', moneda: 'MXN', enabled: false });
 
-    // El pago en línea ya está bloqueado (409, ver arriba) para orgs sandbox —
-    // is_sandbox aquí es defensivo, no debería llegar true en la práctica.
-    await trackServer('checkout_started', c.org_id as string, {
-        quote_id: c.id, amount: amount / 100, cobro_tipo: cobro.tipo,
-    }, !!c.sandbox_of, !!c.is_demo);
     const pubKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
     // Los payment_method_types según la config vigente del vendedor. Se calculan
@@ -227,6 +223,17 @@ export const POST: APIRoute = async ({ params, request }) => {
                         fee_base_cents = ${fee.feeBaseCents}, fee_iva_cents = ${fee.feeIvaCents},
                         fee_total_cents = ${fee.applicationFeeCents}
                         where id = ${cobro.id} and org_id = ${orgId}`);
+                    after(trackServer('checkout_resumed', orgId, {
+                        quote_id: c.id,
+                        cobro_id: cobro.id,
+                        cobro_tipo: cobro.tipo,
+                        checkout_id: current.id,
+                        amount: amount / 100,
+                        currency: String(c.moneda || 'MXN').toUpperCase(),
+                        payment_method: method || 'choice',
+                        checkout_version: checkoutV2 ? 2 : 1,
+                        source: 'public_link',
+                    }, !!c.sandbox_of, !!c.is_demo));
                     if (method === 'spei') {
                         const instructions = bankTransferInstructions(current, c.org_nombre as string);
                         if (!instructions) return json({ error: 'No pudimos generar las instrucciones SPEI. Intenta de nuevo.' }, 502);
@@ -317,6 +324,21 @@ export const POST: APIRoute = async ({ params, request }) => {
             await withOrgTx(orgId, sql`update cotizaciones set stripe_payment_intent_id = ${data.id}
                 where id = ${c.id} and org_id = ${orgId}`);
         }
+
+        // `checkout_started` significa un checkout NUEVO, no cada recarga del
+        // link. Los PaymentIntents reutilizados emiten `checkout_resumed` arriba.
+        after(trackServer('checkout_started', orgId, {
+            event_id: data.id,
+            quote_id: c.id,
+            cobro_id: cobro.id,
+            cobro_tipo: cobro.tipo,
+            checkout_id: data.id,
+            amount: amount / 100,
+            currency: String(c.moneda || 'MXN').toUpperCase(),
+            payment_method: method || 'choice',
+            checkout_version: checkoutV2 ? 2 : 1,
+            source: 'public_link',
+        }, !!c.sandbox_of, !!c.is_demo));
 
         if (method === 'spei') {
             const instructions = bankTransferInstructions(data, c.org_nombre as string);

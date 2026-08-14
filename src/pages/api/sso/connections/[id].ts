@@ -4,9 +4,9 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { getActiveOrgId, logAudit, reqIp, withOrgTx, sql } from '../../../../lib/db';
+import { getActiveOrgId, logAudit, reqIp } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
-import { planTieneSso, planUpsell, minPlanOf, SSO_PLANS } from '../../../../lib/permissions';
+import { requireEntitlement } from '../../../../lib/org-entitlements';
 import { updateConnection, deleteConnection, SamlValidationError, type ConnectionPatch } from '../../../../lib/saml';
 
 export const PATCH: APIRoute = async ({ request, params }) => {
@@ -18,11 +18,8 @@ export const PATCH: APIRoute = async ({ request, params }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
     const orgId = await getActiveOrgId();
-    const [[planRow]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
-    const plan = (planRow?.plan as string) ?? 'free';
-    if (!planTieneSso(plan)) {
-        return json({ error: planUpsell(plan, 'SSO empresarial', SSO_PLANS), plan_required: minPlanOf(SSO_PLANS) }, 402);
-    }
+    const entitlementDenied = await requireEntitlement(orgId, 'sso');
+    if (entitlementDenied) return entitlementDenied;
 
     const patch: ConnectionPatch = {};
     if (typeof body.nombre === 'string') patch.nombre = body.nombre;

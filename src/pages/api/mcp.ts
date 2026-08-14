@@ -83,7 +83,10 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(null, { status: 202, headers: CORS_HEADERS });
     }
 
-    meterApiUsage(auth);
+    const meteringError = await meterApiUsage(auth);
+    if (meteringError) {
+        return new Response(meteringError.body, { status: meteringError.status, headers: { ...Object.fromEntries(meteringError.headers), ...CORS_HEADERS } });
+    }
 
     return reqContext.run({ userId: null, orgId: auth.orgId }, async () => {
         let res: Response;

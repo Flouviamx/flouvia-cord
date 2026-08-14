@@ -8,7 +8,7 @@ const [role] = await sql`select current_user as name, rolbypassrls, rolsuper
 const protectedTables = [
     'orgs', 'org_members', 'cotizaciones', 'cotizacion_cobros', 'comisiones',
     'comision_invoice_batches', 'cobro_reembolsos', 'cobro_disputas',
-    'identity_capture_sessions',
+    'identity_capture_sessions', 'documentos_fiscales', 'invoice_sequences',
 ];
 const tables = await sql`
     select c.relname, c.relrowsecurity, c.relforcerowsecurity

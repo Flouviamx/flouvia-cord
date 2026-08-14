@@ -20,7 +20,12 @@ const docsFiscales = await getDocumentosFiscales(id ?? '');
 // Iguala recurrente: estado de la suscripción de Stripe (para mostrar y cancelar).
 const sus = q.esRecurrente ? await getSuscripcionByCotizacion(id ?? '') : null;
 const susLabel: Record<string, string> = { active: t(L, 'id.sus_active'), trialing: t(L, 'id.sus_trialing'), past_due: t(L, 'id.sus_past_due'), incomplete: t(L, 'id.sus_incomplete'), canceled: t(L, 'id.sus_canceled') };
-const DOC_LABEL: Record<string, string> = { cfdi_40: t(L, 'id.doc_cfdi'), invoice: t(L, 'id.doc_invoice'), dian_einvoice: t(L, 'id.doc_dian') };
+const DOC_LABEL: Record<string, string> = {
+    cfdi_40: t(L, 'id.doc_cfdi'),
+    invoice: t(L, 'id.doc_invoice'),
+    commercial_invoice: L === 'en' ? 'Commercial invoice' : 'Factura comercial',
+    dian_einvoice: t(L, 'id.doc_dian'),
+};
 const canCotizar = memberCan(ME, 'cotizar');
 const canAprobar = memberCan(ME, 'aprobar');
 
@@ -30,8 +35,12 @@ const hasLiveView = ['pro', 'scale', 'developer'].includes(ORG.plan_raw);
 // saber si, sin CSD propio, el timbrado caería en modo de prueba de Facturapi.
 const facturapiGlobalKey = import.meta.env.FACTURAPI_API_KEY || process.env.FACTURAPI_API_KEY || '';
 const isFacturapiGlobalLive = facturapiGlobalKey.startsWith('sk_live_');
-// La facturación fiscal real solo existe para México hoy (ver FiscalFactory).
 const isMx = ORG.countryCode === 'MX';
+const TAX_LABEL = isMx ? t(L, 'id.iva') : (L === 'en' ? 'Tax' : 'Impuesto');
+const TAX_INCLUDED_LABEL = isMx ? t(L, 'id.precios_con_iva') : (L === 'en' ? 'Prices include tax' : 'Precios con impuesto incluido');
+const PARTIAL_TAX_COPY = isMx
+    ? tf('id.de_mas_iva', { subtotal: money(quoteSubtotal(q)) })
+    : (L === 'en' ? `of ${money(quoteSubtotal(q))} plus tax).` : `de ${money(quoteSubtotal(q))} más impuesto).`);
 
 // Stepper de estado (solo flujo positivo; rechazada/expirada lo omiten — basta el pill)
 const STEPS = [
@@ -167,14 +176,14 @@ const dotColor = (tipo: string) =>
                     <div class="di-partial-note">
                         <svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" fill="currentColor" fill-opacity="0.12"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                         {t(L, 'id.aprobacion_parcial')}
-                        (<b class="editorial">{money(q.items.filter((it) => it.aprobado !== false).reduce((s, it) => s + lineTotal(it), 0))}</b> {tf('id.de_mas_iva', { subtotal: money(quoteSubtotal(q)) })}
+                        (<b class="editorial">{money(q.items.filter((it) => it.aprobado !== false).reduce((s, it) => s + lineTotal(it), 0))}</b> {PARTIAL_TAX_COPY}
                     </div>
                 )}
                 <div class="di-totals">
                     <div class="dt-line"><span>{t(L, 'id.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-                    <div class="dt-line"><span>{t(L, 'id.iva')} {ORG.ivaPct ?? 16}%</span><span class="editorial">{money(quoteIva(q))}</span></div>
+                    <div class="dt-line"><span>{TAX_LABEL} {ORG.ivaPct ?? 0}%</span><span class="editorial">{money(quoteIva(q))}</span></div>
                     <div class="dt-line dt-grand">
-                        <span>{t(L, 'id.total_line')} {q.iva_incluido && <span style="font-size: 0.7em; font-weight: 500; color: var(--color-text-muted); margin-left: 0.4rem; background: var(--color-bg-soft); padding: 2px 6px; border-radius: 4px;">{t(L, 'id.precios_con_iva')}</span>}</span>
+                        <span>{t(L, 'id.total_line')} {q.iva_incluido && <span style="font-size: 0.7em; font-weight: 500; color: var(--color-text-muted); margin-left: 0.4rem; background: var(--color-bg-soft); padding: 2px 6px; border-radius: 4px;">{TAX_INCLUDED_LABEL}</span>}</span>
                         <span class="editorial">{money(quoteTotal(q))}</span>
                     </div>
                 </div>
@@ -225,6 +234,7 @@ const dotColor = (tipo: string) =>
                                             {d.status === 'issued' ? t(L, 'id.emitido') : d.status === 'error' ? t(L, 'id.error') : t(L, 'id.pendiente')}
                                         </span>
                                     </div>
+                                    {d.invoiceNumber && <div class="df-uuid">{L === 'en' ? 'Invoice' : 'Folio'}: <code>{d.invoiceNumber}</code></div>}
                                     {d.fiscalId && <div class="df-uuid">UUID: <code>{d.fiscalId}</code></div>}
                                     <div class="df-meta">{d.creado}</div>
                                 </div>
@@ -244,7 +254,7 @@ const dotColor = (tipo: string) =>
 
         <!-- Sidebar: acciones + timeline -->
         <aside class="d-side">
-            <section class="d-actions" data-qid={q.id} data-token={q.token} data-folio={q.folio} data-cliente={q.cliente} data-total={money(quoteTotal(q))} data-live-view={hasLiveView ? '1' : ''} data-fiscal-test={(!ORG.tieneCsdPropio && !isFacturapiGlobalLive) ? '1' : ''}
+            <section class="d-actions" data-qid={q.id} data-token={q.token} data-folio={q.folio} data-cliente={q.cliente} data-total={money(quoteTotal(q))} data-live-view={hasLiveView ? '1' : ''} data-fiscal-country={ORG.countryCode} data-fiscal-test={(isMx && !ORG.tieneCsdPropio && !isFacturapiGlobalLive) ? '1' : ''}
                 data-i18n-no-pudo-procesar={t(L, 'id.no_pudo_procesar')} data-i18n-rechazar-titulo={t(L, 'id.rechazar_solicitud_titulo')} data-i18n-rechazar-body={t(L, 'id.rechazar_solicitud_body')}
                 data-i18n-rechazar={t(L, 'id.rechazar')} data-i18n-cancelar-iguala-titulo={t(L, 'id.cancelar_iguala_titulo')} data-i18n-cancelar-iguala-body={t(L, 'id.cancelar_iguala_body')}
                 data-i18n-cancelar-iguala={t(L, 'id.cancelar_iguala')} data-i18n-no-mantenerla={t(L, 'id.no_mantenerla')} data-i18n-cancelando={t(L, 'id.cancelando')}
@@ -252,6 +262,7 @@ const dotColor = (tipo: string) =>
                 data-i18n-confirm-titulo={t(L, 'id.confirmar_titulo')} data-i18n-continuar={t(L, 'id.continuar')}
                 data-i18n-confirm-reject={t(L, 'id.confirm_reject')} data-i18n-confirm-paid={t(L, 'id.confirm_paid')}
                 data-i18n-confirm-invoiced-test={t(L, 'id.confirm_invoiced_test')} data-i18n-confirm-invoiced-real={t(L, 'id.confirm_invoiced_real')}
+                data-i18n-confirm-invoice-commercial={L === 'en' ? 'Cord will issue a numbered commercial invoice and preserve its immutable copy. Submission to your local tax authority is not included yet.' : 'Cord emitirá una factura comercial numerada y conservará su copia inmutable. La presentación ante tu autoridad fiscal local todavía no está incluida.'}
                 data-i18n-no-pudo-aplicar={t(L, 'id.no_pudo_aplicar')}
                 data-i18n-wa-saludo={t(L, 'id.wa_saludo')} data-i18n-wa-por={t(L, 'id.wa_por')}
                 data-i18n-no-pudo-copiar-link={t(L, 'id.no_pudo_copiar_link')} data-i18n-copiado={t(L, 'id.copiado')} data-i18n-copiar-link={t(L, 'id.copiar_link')}
@@ -301,11 +312,9 @@ const dotColor = (tipo: string) =>
                     </div>
                 )}
                 {(q.status === 'approved' || q.status === 'paid') && canAprobar && (
-                    isMx ? (
-                        <button class="act-cfdi act-do" data-action="invoiced">{t(L, 'id.timbrar_cfdi')}</button>
-                    ) : (
-                        <p class="act-sub-status" title={t(L, 'id.fiscal_proximamente_title')}>{t(L, 'id.fiscal_proximamente')}</p>
-                    )
+                    <button class="act-cfdi act-do" data-action="invoiced">
+                        {isMx ? t(L, 'id.timbrar_cfdi') : (L === 'en' ? 'Issue invoice' : 'Emitir factura')}
+                    </button>
                 )}
 
                 {q.status === 'draft' && canCotizar && (
@@ -859,10 +868,13 @@ const dotColor = (tipo: string) =>
         });
 
         const fiscalTest = panel.dataset.fiscalTest === '1';
+        const fiscalCountry = panel.dataset.fiscalCountry || 'MX';
         const CONFIRM: Record<string, string> = {
             reject: I.i18nConfirmReject!,
             paid: I.i18nConfirmPaid!,
-            invoiced: fiscalTest ? I.i18nConfirmInvoicedTest! : I.i18nConfirmInvoicedReal!,
+            invoiced: fiscalCountry !== 'MX'
+                ? I.i18nConfirmInvoiceCommercial!
+                : (fiscalTest ? I.i18nConfirmInvoicedTest! : I.i18nConfirmInvoicedReal!),
         };
 
         panel.querySelectorAll<HTMLButtonElement>('.act-do').forEach((btn) => {
@@ -879,14 +891,6 @@ const dotColor = (tipo: string) =>
                     });
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || I.i18nNoPudoAplicar);
-                    
-                    if (typeof window.cordTrack === 'function') {
-                        if (action === 'send') window.cordTrack('quote_sent', { quote_id: qid });
-                        if (action === 'approve') window.cordTrack('quote_approved', { quote_id: qid, source: 'manual' });
-                        // `payment_received` is emitted only by Stripe, the source
-                        // of truth. This records the operator's manual status change.
-                        if (action === 'paid') window.cordTrack('quote_marked_paid', { quote_id: qid, source: 'manual' });
-                    }
                     
                     location.reload();
                 } catch (err: any) {
@@ -1014,10 +1018,6 @@ const dotColor = (tipo: string) =>
                 const res = await fetch(`/api/cotizaciones/${qid}/duplicate`, { method: 'POST' });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || I.i18nNoPudoDuplicar);
-                // PostHog: track duplicated quote creation
-                if (typeof window.cordTrack === 'function') {
-                    window.cordTrack('quote_created', { source: 'duplicate' });
-                }
                 location.href = `/app/cotizaciones/${data.id}`;
             } catch (err: any) {
                 errorEl.textContent = err.message;

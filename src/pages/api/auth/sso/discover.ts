@@ -24,6 +24,7 @@ export const GET: APIRoute = async ({ url, request }) => {
         join sso_connections c on c.id = d.connection_id
         join orgs o on o.id = c.org_id
         where d.domain = ${domain} and d.verified_at is not null and c.enabled = true
+          and cord_effective_plan(o.id) in ('scale', 'developer')
         limit 1`;
     if (!rows.length) return json({ sso: false });
 

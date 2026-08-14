@@ -7,7 +7,10 @@
 // Free = gancho · Starter = freelance · Pro = equipos (DESTACADO) ·
 // Scale = corp · Developer = herramientas.
 
-export type PlanId = 'free' | 'starter' | 'pro' | 'scale' | 'developer';
+// El tipo vive junto al contrato ejecutable de acceso. Se re-exporta para no
+// romper consumidores históricos de `precios.ts`.
+import type { PlanId } from './entitlements';
+export type { PlanId } from './entitlements';
 
 export interface Plan {
     id: PlanId;

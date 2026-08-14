@@ -1,7 +1,8 @@
-# Landing, Fases y Support Hub — Cord
+# Landing, páginas públicas y Support Hub — Cord
 
-> Estructura de la landing (componentes, navbar, animaciones GSAP), fases de
-> construcción y arquitectura del Centro de Ayuda. Auto-cargado vía `@import`.
+> Documento de estado actual: estructura de la landing, navegación, animaciones,
+> páginas públicas especiales y arquitectura del Centro de Ayuda. Para decisiones
+> fechadas consulta [`historial-landing-marketing.md`](historial-landing-marketing.md).
 
 ---
 
@@ -101,9 +102,33 @@ Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
 
 ---
 
-## Fases de construcción
+## Página 404 pública
 
-1. **Núcleo** — Clerk + schema + CRUDs + editor de cotizaciones + dashboard
+`src/pages/404.astro` usa navbar y footer globales sobre una composición clara
+Apple/Cord. El hero muestra un `404` vectorial, copy de recuperación, CTA al inicio
+y accesos aireados a producto, precios y soporte.
+
+- El único shader es `src/components/CordDynamicBg.jsx`, el aurora GLSL compartido.
+  No crees otro shader ni lo simules con gradientes CSS animados.
+- `CordDynamicBg` acepta `maskImage`, `maskSize`, `maskPosition` y `maskRepeat`.
+  La máscara vive en el `div` raíz React para recortar canvas, grano y color base
+  sin cambiar a los consumidores que no pasan props.
+- `public/404-mask.svg` usa paths vectoriales, no texto dependiente de una fuente.
+- `.error-number__fallback` conserva la misma máscara y cubre carga inicial,
+  ausencia de WebGL y `prefers-reduced-motion`.
+- La isla usa `client:load`: entrega raíz y fallback en SSR, e inicia WebGL después
+  de hidratar cuando entra en viewport.
+- Fondo `#f5f5f7`, CTA navy en píldora con hover/active/focus; los tres accesos
+  inferiores colapsan a una columna en móvil.
+
+---
+
+## Fases históricas de construcción
+
+> Esta lista conserva la secuencia original del proyecto. Clerk fue reemplazado
+> por auth propio; el estado vigente está en [`proyecto.md`](proyecto.md).
+
+1. **Núcleo** — auth, schema, CRUDs, editor de cotizaciones y dashboard
 2. **Loop completo** — link público `/q/{token}` + tracking `viewed` + PDF + emails (Resend)
 3. **Dinero** — Stripe Billing (límites del free) + pago en línea de cotizaciones
 4. **CFDI + cierre** — timbrado (mismo PAC que la app de Shopify), pulir landing,

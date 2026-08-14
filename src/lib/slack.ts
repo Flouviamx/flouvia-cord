@@ -17,6 +17,7 @@ const EVENT_MSG: Record<string, { verbo: string }> = {
     'quote.approved':    { verbo: '*APROBADA*' },
     'quote.rejected':    { verbo: 'rechazada' },
     'quote.paid':        { verbo: '*PAGADA*' },
+    'invoice.issued':    { verbo: 'facturada' },
     'invoice.stamped':   { verbo: 'facturada (CFDI)' },
     'notify.quote_viewed':    { verbo: 'vista por el cliente' },
     'notify.quote_approved':  { verbo: '*APROBADA*' },

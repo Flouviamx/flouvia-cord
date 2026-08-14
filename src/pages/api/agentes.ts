@@ -17,6 +17,7 @@ import { trackServer } from '../../lib/posthog-server';
 import {
   listMcpServers, addMcpServer, deleteMcpServer, setServerActivo, setServerPermitido,
 } from '../../lib/agents/governance';
+import { requireEntitlement } from '../../lib/org-entitlements';
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -26,6 +27,8 @@ export const GET: APIRoute = async () => {
   const denied = await requirePerm('ajustes');
   if (denied) return denied;
   const orgId = await getActiveOrgId();
+  const entitlementDenied = await requireEntitlement(orgId, 'agent_governance');
+  if (entitlementDenied) return entitlementDenied;
   const [[org]] = await withOrgTx(orgId, sql`select ai_cobranza_activa from orgs where id = ${orgId}`);
   const servers = await listMcpServers(orgId);
   return json({ servers, aiCobranza: !!org?.ai_cobranza_activa });
@@ -39,6 +42,16 @@ export const POST: APIRoute = async ({ request }) => {
   try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
   const orgId = await getActiveOrgId();
   const ip = reqIp(request);
+
+  const enablesPremium = body.action === 'add'
+    || body.action === 'toggle_permiso'
+    || (body.action === 'toggle_activo' && Boolean(body.value))
+    || (body.action === 'cobranza' && Boolean(body.value));
+  if (enablesPremium) {
+    const feature = body.action === 'cobranza' ? 'collections_ai' : 'agent_governance';
+    const entitlementDenied = await requireEntitlement(orgId, feature);
+    if (entitlementDenied) return entitlementDenied;
+  }
 
   switch (body.action) {
     case 'add': {

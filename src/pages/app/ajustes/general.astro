@@ -4,20 +4,30 @@ import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import { listCountries } from '../../../lib/countries';
+import FlagSelect from '../../../components/ui/FlagSelect';
 const ORG = await getOrg();
 const L = currentLocale();
+const COUNTRY_OPTIONS = listCountries(L).map((country) => ({
+    code: country.code,
+    label: country.name,
+    hint: country.tag,
+}));
 
-const MONEDAS = [
-    { v: 'MXN', l: t(L, 'set.general.moneda.mxn') },
-    { v: 'USD', l: t(L, 'set.general.moneda.usd') },
-    { v: 'EUR', l: t(L, 'set.general.moneda.eur') },
-];
-const ZONAS = [
-    { v: 'America/Mexico_City', l: t(L, 'set.general.zona.centro') },
-    { v: 'America/Tijuana',     l: t(L, 'set.general.zona.tijuana') },
-    { v: 'America/Cancun',      l: t(L, 'set.general.zona.cancun') },
-    { v: 'America/Hermosillo',  l: t(L, 'set.general.zona.hermosillo') },
-];
+const displayCurrency = new Intl.DisplayNames([L], { type: 'currency' });
+const priorityCurrencies = ['MXN', 'USD', 'EUR'];
+const currencyCodes = [...new Set([...Intl.supportedValuesOf('currency'), ORG.moneda])]
+    .sort((a, b) => {
+        const ar = priorityCurrencies.indexOf(a), br = priorityCurrencies.indexOf(b);
+        if (ar >= 0 || br >= 0) return (ar >= 0 ? ar : 999) - (br >= 0 ? br : 999);
+        return a.localeCompare(b);
+    });
+const MONEDAS = currencyCodes.map((code) => ({ v: code, l: `${code} — ${displayCurrency.of(code) || code}` }));
+const zoneValues = [...new Set(['UTC', ...Intl.supportedValuesOf('timeZone'), ORG.zonaHoraria])];
+const ZONAS = zoneValues.sort((a, b) => a.localeCompare(b)).map((zone) => ({
+    v: zone,
+    l: zone === 'UTC' ? 'UTC' : zone.replaceAll('_', ' ').replace('/', ' — '),
+}));
 ---
 
 <SettingsShell title="General — Ajustes" tab="general" perm="ajustes"
@@ -84,19 +94,34 @@ const ZONAS = [
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
+                    <label id="oCountryLabel">{L === 'en' ? 'Country of operation' : 'País donde operas'}</label>
+                    <FlagSelect
+                        client:load
+                        ariaLabel={L === 'en' ? 'Country of operation' : 'País donde operas'}
+                        options={COUNTRY_OPTIONS}
+                        defaultValue={ORG.countryCode}
+                        nativeId="oCountry"
+                        nativeName="country_code"
+                        nativeDataField="country_code"
+                    />
+                    <span class="s-hint">{L === 'en'
+                        ? 'Controls the invoicing experience and regulatory rail shown by Cord.'
+                        : 'Define la experiencia de facturación y el carril regulatorio que muestra Cord.'}</span>
+                </div>
+                <div class="s-field">
                     <label for="oZona">{t(L, 'set.general.zona_horaria')}</label>
                     <select class="s-input" id="oZona" data-field="zona_horaria">
                         {ZONAS.map((z) => <option value={z.v} selected={ORG.zonaHoraria === z.v}>{z.l}</option>)}
                     </select>
                     <span class="s-hint">{t(L, 'set.general.zona_horaria_hint')}</span>
                 </div>
-                <div class="s-field">
+            </div>
+            <div class="s-field" style="max-width:50%">
                     <label for="oIdioma">{t(L, 'set.general.idioma')}</label>
                     <select class="s-input" id="oIdioma" data-field="idioma">
                         <option value="es-MX" selected={ORG.idioma === 'es-MX'}>Español (México)</option>
                         <option value="en-US" disabled>English (próximamente)</option>
                     </select>
-                </div>
             </div>
         </div>
     </div>

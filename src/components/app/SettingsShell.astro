@@ -8,7 +8,7 @@
 import AppLayout from '../../layouts/AppLayout.astro';
 import AccessGate from './AccessGate.astro';
 import { localizedCategoryOfTab } from '../../lib/settings';
-import { getMyMembership } from '../../lib/queries';
+import { getMyMembership, getOrg } from '../../lib/queries';
 import { memberCan, type PermKey } from '../../lib/permissions';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
@@ -22,7 +22,8 @@ interface Props {
 }
 const { title, tab, intro, save = false, perm } = Astro.props;
 const L = currentLocale();
-const category = localizedCategoryOfTab(tab, L)!;
+const ORG = await getOrg();
+const category = localizedCategoryOfTab(tab, L, ORG.countryCode)!;
 const single = category.tabs.length <= 1;
 
 const ME = perm ? await getMyMembership() : null;

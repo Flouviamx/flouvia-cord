@@ -7,6 +7,7 @@ import { withApiAuth } from '../../../lib/apikey';
 import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { getProductos } from '../../../lib/queries';
 import { ok, fail, pageParams } from '../../../lib/apiv1';
+import { requireResourceCapacity, resourceLimitError } from '../../../lib/org-entitlements';
 
 export const GET = withApiAuth('read', async ({ url }, auth) => {
     const all = await getProductos();
@@ -36,10 +37,17 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
     };
 
     const orgId = await getActiveOrgId();
-    const [row] = await sql`
-        insert into productos (org_id, sku, nombre, unidad, precio_lista, activo)
-        values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.precio}, ${p.activo})
-        returning id`;
+    const capacityDenied = await requireResourceCapacity(orgId, 'products');
+    if (capacityDenied) return capacityDenied;
+    let row: any;
+    try {
+        [row] = await sql`
+            insert into productos (org_id, sku, nombre, unidad, precio_lista, activo)
+            values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.precio}, ${p.activo})
+            returning id`;
+    } catch (error) {
+        return resourceLimitError(error) ?? fail('No se pudo crear el producto.', 'server_error', 500);
+    }
     await logAudit(orgId, { accion: 'producto.creado', entidad: 'producto', entidad_id: row.id as string, detalle: `${p.nombre} (vía API)`, ip: reqIp(request), actor: `api:${auth.keyId}` });
     return ok({ id: row.id });
 });

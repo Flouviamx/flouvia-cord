@@ -168,17 +168,35 @@ export function categoryOfTab(tabId: string): SettingsCategory | undefined {
  * No muta el original — usar SIEMPRE esta función al renderizar la UI de
  * Ajustes en vez de leer `.label`/`.desc` crudo de SETTINGS_CATEGORIES.
  */
-export function localizeCategories(locale: 'es' | 'en'): SettingsCategory[] {
-    if (locale !== 'en') return SETTINGS_CATEGORIES;
-    return SETTINGS_CATEGORIES.map((c) => ({
+export function localizeCategories(locale: 'es' | 'en', countryCode = 'MX'): SettingsCategory[] {
+    const localized = SETTINGS_CATEGORIES.map((c) => ({
         ...c,
-        label: c.labelEn || c.label,
-        desc: c.descEn || c.desc,
-        tabs: c.tabs.map((tb) => ({ ...tb, label: tb.labelEn || tb.label })),
+        label: locale === 'en' ? (c.labelEn || c.label) : c.label,
+        desc: locale === 'en' ? (c.descEn || c.desc) : c.desc,
+        tabs: c.tabs.map((tb) => ({
+            ...tb,
+            label: locale === 'en' ? (tb.labelEn || tb.label) : tb.label,
+        })),
     }));
+    if (countryCode.toUpperCase() === 'MX') return localized;
+    return localized.map((category) => category.id === 'cotizaciones' ? {
+        ...category,
+        tabs: category.tabs.map((tab) => tab.id === 'cotizaciones'
+            ? { ...tab, label: locale === 'en' ? 'Numbering & taxes' : 'Folio e impuestos' }
+            : tab),
+    } : category.id !== 'facturacion' ? category : {
+        ...category,
+        label: locale === 'en' ? 'Invoicing' : 'Facturación',
+        desc: locale === 'en'
+            ? 'Tax profile, numbering, and commercial invoices for your country.'
+            : 'Perfil fiscal, numeración y facturas comerciales para tu país.',
+        tabs: category.tabs.map((tab) => tab.id === 'fiscal'
+            ? { ...tab, label: locale === 'en' ? 'Tax profile' : 'Perfil fiscal' }
+            : tab),
+    });
 }
 
 /** Categoría (ya localizada) que contiene la pestaña `tabId`. */
-export function localizedCategoryOfTab(tabId: string, locale: 'es' | 'en'): SettingsCategory | undefined {
-    return localizeCategories(locale).find((c) => c.tabs.some((t) => t.id === tabId));
+export function localizedCategoryOfTab(tabId: string, locale: 'es' | 'en', countryCode = 'MX'): SettingsCategory | undefined {
+    return localizeCategories(locale, countryCode).find((c) => c.tabs.some((t) => t.id === tabId));
 }

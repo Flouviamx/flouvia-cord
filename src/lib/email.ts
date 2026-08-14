@@ -6,6 +6,8 @@ import { sql, withOrgTx } from './db';
 import { currentLocale } from './context';
 import { t } from '../i18n/app';
 import { trackExternalUsage } from './external-usage';
+import { getEntitlementContext } from './org-entitlements';
+import { planIncludes } from './entitlements';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@flouvia.com>';
@@ -96,6 +98,9 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
     if (!rows.length) return { sent: false, skipped: 'cotización no encontrada' };
     const r = rows[0] as any;
     if (!r.email) return { sent: false, skipped: 'el cliente no tiene correo' };
+    const entitlement = await getEntitlementContext(orgId);
+    const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
+    const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
 
     const L = currentLocale();
     const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -113,11 +118,11 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
         .replace(/\{folio\}/g, esc(r.folio))
         .replace(/\{total\}/g, moneyFmt(r.total, L))
         .replace(/\{negocio\}/g, esc(r.org_nombre));
-    const intro = (r.email_intro && r.email_intro.trim())
+    const intro = (canCustomizeEmail && r.email_intro && r.email_intro.trim())
         ? fill(r.email_intro)
         : tf('email.intro_default', { org: esc(r.org_nombre), folio: esc(r.folio), total: moneyFmt(r.total, L) });
-    const firma = (r.email_firma && r.email_firma.trim()) ? fill(r.email_firma) : '';
-    const poweredLine = r.portal_powered === false ? esc(r.org_nombre) : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
+    const firma = (canCustomizeEmail && r.email_firma && r.email_firma.trim()) ? fill(r.email_firma) : '';
+    const poweredLine = canRemoveBranding && r.portal_powered === false ? esc(r.org_nombre) : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
     const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
         <div style="max-width:540px;margin:0 auto;">
             <div style="margin-bottom:32px;">
@@ -150,7 +155,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
         to: r.email,
         subject: `${testPrefix}${tf('email.asunto', { folio: r.folio, org: r.org_nombre })}`,
         html,
-        fromName: r.email_from_name || r.org_nombre,
-        replyTo: r.email_reply_to || r.email_contacto || null,
+        fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
+        replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
     });
 }

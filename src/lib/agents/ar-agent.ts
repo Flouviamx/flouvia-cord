@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { sql } from '../db';
 import { splitCuotas, isoDay } from '../cobros';
-import { checkQuota, reportUsage } from '../billing';
+import { cancelUsage, flushUsageReservation, reserveUsage } from '../billing';
 import { trackExternalUsage } from '../external-usage';
 
 const anthropic = new Anthropic({
@@ -214,12 +214,10 @@ export async function runARAgent(context: ARContext): Promise<ARResult> {
     ? `This is a reminder that you have an outstanding balance of $${context.montoAdeudado.toFixed(2)}.${context.payUrl ? ` You can review and pay here: ${context.payUrl}` : ''}`
     : `Le recordamos que tiene un saldo pendiente de $${context.montoAdeudado.toFixed(2)}.${context.payUrl ? ` Puede consultar y pagar aquí: ${context.payUrl}` : ''}`;
 
-  // Sin cuota de IA el agente NO escribe. Antes devolvía este texto genérico
-  // como si fuera del modelo, se enviaba igual y no quedaba registrado en
-  // ningún lado — el usuario no tenía forma de saber que su agente estaba
-  // mudo por cuota agotada.
-  const quota = await checkQuota(context.orgId, 'ia');
-  if (!quota.ok) {
+  // La reserva es el gate definitivo y atómico: evita que dos ejecuciones
+  // concurrentes rebasen la cuota antes de llamar al proveedor.
+  const usage = await reserveUsage(context.orgId, 'ia', 1);
+  if (!usage.ok || !usage.id) {
     return { ok: false, mensaje: fallback, error: 'cuota de IA agotada' };
   }
 
@@ -305,7 +303,7 @@ export async function runARAgent(context: ARContext): Promise<ARResult> {
     }
     if (!finalMessage.trim()) finalMessage = fallback;
 
-    await reportUsage(context.orgId, 'ia', 1);
+    void flushUsageReservation(context.orgId, usage.id);
 
     // ⚠️ La persistencia del mensaje la hace el LLAMADOR (cobranza-run), porque
     // el `estado` depende del modo de la org (borrador vs. enviado) y del
@@ -313,6 +311,7 @@ export async function runARAgent(context: ARContext): Promise<ARResult> {
     return { ok: true, mensaje: finalMessage, plan: captura.plan };
 
   } catch (error: any) {
+    await cancelUsage(context.orgId, usage.id);
     await trackExternalUsage({
       orgId: context.orgId, provider: 'anthropic', category: 'ai',
       operation: 'collection_agent_turn', status: 'failure',

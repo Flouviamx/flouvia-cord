@@ -16,12 +16,12 @@ export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/auth.css';
 import { currentLocale } from '../../lib/context';
-import { COUNTRIES } from '../../lib/countries';
+import { listCountries } from '../../lib/countries';
 import FlagSelect from '../../components/ui/FlagSelect';
 
 const L = currentLocale();
 const isEn = L === 'en';
-const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ code: c.code, label: c.name }));
+const COUNTRY_OPTIONS = listCountries(L).map((c) => ({ code: c.code, label: c.name, hint: c.tag }));
 
 const T = isEn
     ? {
@@ -135,7 +135,7 @@ const T = isEn
             chips: [
                 { v: 'cotizar', l: 'Cotizar más rápido' },
                 { v: 'cobrar', l: 'Cobrar en línea' },
-                { v: 'facturar', l: 'Facturar CFDI' },
+                { v: 'facturar', l: 'Emitir facturas' },
                 { v: 'seguimiento', l: 'Dar seguimiento' },
                 { v: 'margenes', l: 'Controlar márgenes' },
                 { v: 'cobranza_ia', l: 'Automatizar cobranza' },

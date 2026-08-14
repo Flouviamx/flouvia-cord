@@ -13,6 +13,7 @@ import { notifyQuoteEvent } from '../../../lib/notify';
 import { after } from '../../../lib/after';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
+import { trackServer } from '../../../lib/posthog-server';
 
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
 
@@ -32,8 +33,9 @@ export const POST: APIRoute = async ({ params, request }) => {
     const identity = await resolvePublicQuote(token);
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
     const [rows] = await withOrgTx(identity.orgId, sql`
-        select id, org_id, status from cotizaciones
-        where id = ${identity.id} and org_id = ${identity.orgId}`);
+        select c.id, c.org_id, c.status, (o.sandbox_of is not null) as is_sandbox, o.is_demo
+        from cotizaciones c join orgs o on o.id = c.org_id
+        where c.id = ${identity.id} and c.org_id = ${identity.orgId}`);
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
     const c = rows[0];
     const orgId = c.org_id as string;
@@ -117,6 +119,19 @@ export const POST: APIRoute = async ({ params, request }) => {
         // Fondo: el webhook/Slack jamás debe hacer esperar al cliente que aprueba.
         after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved'));
         after(notifyQuoteEvent(c.org_id as string, c.id as string, 'quote_approved'));
+        const [metricRows] = await withOrgTx(orgId, sql`
+            select total, base_currency from cotizaciones
+            where id = ${c.id} and org_id = ${orgId}`);
+        const metric = metricRows[0];
+        after(trackServer('quote_approved', orgId, {
+            event_id: c.id,
+            quote_id: c.id,
+            total: Number(metric?.total ?? 0),
+            currency: (metric?.base_currency as string) || 'MXN',
+            source: 'external',
+            is_partial: isPartial,
+            item_count: firmadas.length,
+        }, !!c.is_sandbox, !!c.is_demo));
         return json({ ok: true, status: 'approved', hash: snapshotHash, partial: isPartial });
     }
 

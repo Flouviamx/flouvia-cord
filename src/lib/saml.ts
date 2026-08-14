@@ -23,7 +23,8 @@ import { sql, withOrgTx } from './db';
 import { siteOrigin } from './email';
 import { validateWebhookUrl } from './ssrf';
 import { sha256Hex } from './auth';
-import { reportUsage } from './billing';
+import { checkEntitlement } from './org-entitlements';
+import { cancelUsage, flushUsageReservation, reserveUsage } from './billing';
 import { trackServer, posthogServer } from './posthog-server';
 import { PRESETS, ALL_PERM_KEYS, type PermMap } from './permissions';
 
@@ -94,7 +95,15 @@ function rowToConnection(r: any): SsoConnection {
 
 /** Carga una conexión por id. Sin contexto de org (carril de auth — sql crudo, mismo patrón que oauth_accounts/sessions; ver RLS sin force en db/schema.sql). */
 export async function getConnection(id: string): Promise<SsoConnection | null> {
-  const rows = await sql`select * from sso_connections where id = ${id} limit 1`;
+  // El id de conexión aparece en URLs públicas y por sí solo no demuestra que
+  // la organización siga pagando SSO. Filtrar aquí cubre login SP/IdP,
+  // metadata y ACS, incluso si alguien conserva una URL después del downgrade.
+  const rows = await sql`
+    select c.*
+      from sso_connections c
+     where c.id = ${id}
+       and cord_effective_plan(c.org_id) in ('scale', 'developer')
+     limit 1`;
   if (!rows.length) return null;
   return rowToConnection(rows[0]);
 }
@@ -832,7 +841,6 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
   const [orgRow] = await sql`select owner_id, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${conn.orgId} limit 1`;
   if (!orgRow) throw new SamlValidationError('org_no_encontrada');
 
-  let becameActive = false;
   // El owner NUNCA se toca — es un override incondicional en memberCan(), y
   // una mala config de IdP no puede degradarlo ni desactivarlo.
   if (orgRow.owner_id !== userId) {
@@ -845,12 +853,19 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
       const m = memberRows[0];
       if (m.estado === 'revocado') throw new SamlValidationError('miembro_revocado');
       if (m.estado === 'invitado') {
-        await sql`
-          update org_members set user_id = ${userId}, estado = 'activo', joined_at = now(),
-            token = null, token_expires_at = null, rol = ${rol},
-            permisos = ${JSON.stringify(resolvedPermisos)}::jsonb, sso_managed = true, sso_connection_id = ${conn.id}
-          where id = ${m.id}`;
-        becameActive = true;
+        const usage = await reserveUsage(conn.orgId, 'usuario', 1);
+        if (!usage.ok || !usage.id) throw new SamlValidationError('limite_de_asientos');
+        try {
+          await sql`
+            update org_members set user_id = ${userId}, estado = 'activo', joined_at = now(),
+              token = null, token_expires_at = null, rol = ${rol},
+              permisos = ${JSON.stringify(resolvedPermisos)}::jsonb, sso_managed = true, sso_connection_id = ${conn.id}
+            where id = ${m.id}`;
+        } catch (error) {
+          await cancelUsage(conn.orgId, usage.id);
+          throw error;
+        }
+        void flushUsageReservation(conn.orgId, usage.id);
       } else if (m.estado === 'activo' && m.sso_managed) {
         // Re-sincroniza SOLO si esta membresía está bajo control del IdP —
         // un admin que fijó el rol a mano (sso_managed=false) no se pisa.
@@ -860,18 +875,23 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
       }
     } else {
       if (!conn.jitProvisioning) throw new SamlValidationError('no_es_miembro');
-      // Sin techo de asientos aquí a propósito — mismo comportamiento que
-      // equipo/join.ts (acepta la membresía + mide el excedente vía
-      // reportUsage; Cord no bloquea altas por cupo, las cobra de más).
-      await sql`
-        insert into org_members (org_id, user_id, email, rol, permisos, estado, joined_at, sso_managed, sso_connection_id)
-        values (${conn.orgId}, ${userId}, ${email}, ${rol}, ${JSON.stringify(resolvedPermisos)}::jsonb, 'activo', now(), true, ${conn.id})`;
-      becameActive = true;
+      // Un SSO ya configurado puede seguir autenticando miembros existentes
+      // para evitar lockout, pero JIT es una capacidad Scale y no puede crear
+      // asientos nuevos después de una baja o impago.
+      const entitlement = await checkEntitlement(conn.orgId, 'sso');
+      if (!entitlement.ok) throw new SamlValidationError('suscripcion_requerida');
+      const usage = await reserveUsage(conn.orgId, 'usuario', 1);
+      if (!usage.ok || !usage.id) throw new SamlValidationError('limite_de_asientos');
+      try {
+        await sql`
+          insert into org_members (org_id, user_id, email, rol, permisos, estado, joined_at, sso_managed, sso_connection_id)
+          values (${conn.orgId}, ${userId}, ${email}, ${rol}, ${JSON.stringify(resolvedPermisos)}::jsonb, 'activo', now(), true, ${conn.id})`;
+      } catch (error) {
+        await cancelUsage(conn.orgId, usage.id);
+        throw error;
+      }
+      void flushUsageReservation(conn.orgId, usage.id);
     }
-  }
-
-  if (becameActive) {
-    await reportUsage(conn.orgId, 'usuario', 1);
   }
 
   await sql`update sso_connections set last_login_at = now() where id = ${conn.id}`;
@@ -913,6 +933,7 @@ export async function ssoRequirementFor(userId: string): Promise<SsoRequirement>
     select o.id as org_id, o.nombre, o.owner_id, o.sso_breakglass_until, c.id as connection_id
     from org_members m
     join orgs o on o.id = m.org_id and o.sandbox_of is null and o.require_sso = true
+      and cord_effective_plan(o.id) in ('scale', 'developer')
     left join sso_connections c on c.org_id = o.id and c.enabled = true
     where m.user_id = ${userId} and m.estado = 'activo'
     order by c.created_at asc

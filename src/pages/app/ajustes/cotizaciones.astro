@@ -6,6 +6,7 @@ import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
 const L = currentLocale();
+const isMx = ORG.countryCode === 'MX';
 const TERMS = [
     { v: 'contado', l: t(L, 'set.cot.term.contado') },
     { v: 'net30', l: t(L, 'set.cot.term.net30') },
@@ -14,7 +15,11 @@ const TERMS = [
 ---
 
 <SettingsShell title="Cotizaciones e impuestos — Ajustes" tab="cotizaciones" perm="ajustes"
-    intro={t(L, 'set.cot.intro')} save>
+    intro={isMx
+        ? t(L, 'set.cot.intro')
+        : (L === 'en'
+            ? 'Numbering, taxes, and defaults used by every new quote. Configure the rate that applies to your business.'
+            : 'Folio, impuestos y valores con los que arranca cada cotización. Configura la tasa que corresponda a tu negocio.')} save>
     <div class="s-block">
         <h3>{t(L, 'set.cot.folio')}</h3>
         <div class="s-body">
@@ -24,7 +29,7 @@ const TERMS = [
                     <input class="s-input" id="oPrefix" data-field="quote_prefix" value={ORG.prefix} maxlength="6" />
                     <span class="s-hint">{t(L, 'set.cot.prefijo_hint').replace('{prefix}', ORG.prefix)}</span>
                 </div>
-                <div class="s-field">
+                <div class="s-field" style={isMx ? undefined : 'display:none;'}>
                     <label for="oSerie">{t(L, 'set.cot.serie')}</label>
                     <input class="s-input" id="oSerie" data-field="serie_folio" value={ORG.serieFolio} maxlength="6" placeholder="A" />
                     <span class="s-hint">{t(L, 'set.cot.serie_hint')}</span>
@@ -38,17 +43,19 @@ const TERMS = [
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oIva">{t(L, 'set.cot.iva')}</label>
+                    <label for="oIva">{isMx ? t(L, 'set.cot.iva') : (L === 'en' ? 'Tax rate (%)' : 'Impuesto (%)')}</label>
                     <input class="s-input" id="oIva" data-field="iva_pct" type="number" min="0" max="100" step="1" value={ORG.ivaPct} />
-                    <span class="s-hint">{t(L, 'set.cot.iva_hint')}</span>
+                    <span class="s-hint">{isMx
+                        ? t(L, 'set.cot.iva_hint')
+                        : (L === 'en' ? 'Applied to quote and commercial-invoice totals. Verify the correct rate for your jurisdiction.' : 'Se aplica a los totales de la cotización y la factura comercial. Verifica la tasa correcta para tu jurisdicción.')}</span>
                 </div>
-                <div class="s-field">
+                <div class="s-field" style={isMx ? undefined : 'display:none;'}>
                     <label for="oRetIva">{t(L, 'set.cot.ret_iva')}</label>
                     <input class="s-input" id="oRetIva" data-field="retencion_iva_pct" type="number" min="0" max="100" step="0.5" value={ORG.retencionIvaPct} />
                     <span class="s-hint">{t(L, 'set.cot.ret_iva_hint')}</span>
                 </div>
             </div>
-            <div class="s-field" style="max-width:50%">
+            <div class="s-field" style={isMx ? 'max-width:50%' : 'display:none;'}>
                 <label for="oRetIsr">{t(L, 'set.cot.ret_isr')}</label>
                 <input class="s-input" id="oRetIsr" data-field="retencion_isr_pct" type="number" min="0" max="100" step="0.5" value={ORG.retencionIsrPct} />
                 <span class="s-hint">{t(L, 'set.cot.ret_isr_hint')}</span>
@@ -88,7 +95,7 @@ const TERMS = [
         <div class="s-body">
             <div class="s-field">
                 <label for="oLegal">{t(L, 'set.cot.texto_legal')}</label>
-                <textarea class="s-input s-textarea" id="oLegal" data-field="texto_legal" rows="2" placeholder="Esta cotización no es un comprobante fiscal. Precios en MXN. Vigencia sujeta a disponibilidad.">{ORG.textoLegal}</textarea>
+                <textarea class="s-input s-textarea" id="oLegal" data-field="texto_legal" rows="2" placeholder={`Esta cotización no es un comprobante fiscal. Precios en ${ORG.moneda}. Vigencia sujeta a disponibilidad.`}>{ORG.textoLegal}</textarea>
                 <span class="s-hint">{t(L, 'set.cot.texto_legal_hint')}</span>
             </div>
         </div>

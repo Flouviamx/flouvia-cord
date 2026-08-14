@@ -8,6 +8,7 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { requirePerm } from '../../../lib/queries';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -18,6 +19,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
+    const entitlementDenied = await requireEntitlement(orgId, 'collections_ai');
+    if (entitlementDenied) return entitlementDenied;
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 

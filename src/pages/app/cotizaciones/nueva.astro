@@ -32,6 +32,9 @@ if (draftId) {
 const preselectCliente = !draftQuote ? (Astro.url.searchParams.get('cliente') || null) : null;
 
 const [productos, CLIENTES, ORG, kits] = await Promise.all([getProductos(), getClientes(), getOrg(), getKitsForEditor()]);
+const isMx = ORG.countryCode === 'MX';
+const TAX_LABEL = isMx ? t(L, 'ed.iva') : (L === 'en' ? 'Tax' : 'Impuesto');
+const TAX_INCLUDED_LABEL = isMx ? t(L, 'ed.iva_incluido') : (L === 'en' ? 'Prices include tax' : 'Precios con impuesto incluido');
 const catalogo = productos.filter(p => p.activo);
 // Suma de lista de UN kit (sin multiplicador) — solo líneas de catálogo, las
 // líneas libres no tienen precio de catálogo contra qué prorratear.
@@ -51,11 +54,14 @@ const DEFAULT_CURRENCY = ((draftQuote as any)?.baseCurrency ?? (draftQuote as an
 // como función mapeadora: este array cruza el límite de hidratación de un
 // island client:load, y Astro serializa las props a JSON (una función no
 // sobrevive ese cruce, ver el comentario de FlagOption en FlagSelect.tsx).
-const CURRENCY_OPTIONS = [
-    { code: 'MXN', label: t(L, 'ed.moneda_mxn'), flag: CURRENCY_FLAG.MXN },
-    { code: 'USD', label: t(L, 'ed.moneda_usd'), flag: CURRENCY_FLAG.USD },
-    { code: 'EUR', label: t(L, 'ed.moneda_eur'), flag: CURRENCY_FLAG.EUR },
-];
+const currencyNames = new Intl.DisplayNames([L], { type: 'currency' });
+const CURRENCY_OPTIONS = [...new Set([DEFAULT_CURRENCY, ...Intl.supportedValuesOf('currency')])]
+    .sort((a, b) => a === DEFAULT_CURRENCY ? -1 : b === DEFAULT_CURRENCY ? 1 : a.localeCompare(b))
+    .map((code) => ({
+        code,
+        label: `${code} — ${currencyNames.of(code) || code}`,
+        flag: CURRENCY_FLAG[code] || ORG.countryCode,
+    }));
 // Vigencia pre-seleccionada: los días RESTANTES del borrador (vigenciaDias) o el
 // default de la org. Si el valor del borrador no es una opción estándar, se agrega.
 const DRAFT_VIG = draftQuote?.vigenciaDias ?? null;
@@ -196,13 +202,13 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 <div class="sum-line"><span>{t(L, 'ed.subtotal')}</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
                 <div class="sum-line sum-save" id="sumSaveLine" hidden><span>{t(L, 'ed.le_descontaste')}</span><span class="editorial" id="sumSave">$0.00</span></div>
                 <div class="sum-field" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 0.5rem; margin-bottom: -0.5rem;">
-                    <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">{t(L, 'ed.iva_incluido')}</label>
-                    <label class="s-toggle" title={t(L, 'ed.iva_incluido_title')}>
+                    <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">{TAX_INCLUDED_LABEL}</label>
+                    <label class="s-toggle" title={isMx ? t(L, 'ed.iva_incluido_title') : TAX_INCLUDED_LABEL}>
                         <input type="checkbox" id="ivaIncluido" checked={draftQuote ? draftQuote.iva_incluido : ORG.ivaIncluidoDefecto} />
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
                 </div>
-                <div class="sum-line"><span>{t(L, 'ed.iva')} {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
+                <div class="sum-line"><span>{TAX_LABEL} {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
                 <input type="hidden" id="cfgIva" value={ORG.ivaPct} />
                 <div class="sum-divider"></div>
                 <div class="sum-line sum-total"><span>{t(L, 'ed.total')}</span><span class="editorial" id="sumTotal">$0.00</span></div>
@@ -892,16 +898,6 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 if (!res.ok) throw new Error(data.error || T.errorGuardar);
                 if (data.needsApproval) showToast(tpl(T.aprobacionSolicitadaTpl, { folio: data.folio }));
                 else showToast(send ? tpl(T.enviadaFolioTpl, { folio: data.folio }) : tpl(T.borradorFolioGuardadoTpl, { folio: data.folio }));
-                // Posthog: track quote creation (only new quotes, not draft updates)
-                if (typeof window.cordTrack === 'function') {
-                    // Solo el trigger "manual" de nueva cotización.
-                    window.cordTrack('quote_created', {
-                        has_items: lines.length > 0,
-                        item_count: lines.length,
-                        currency: payload.base_currency || 'MXN',
-                        source: 'manual'
-                    });
-                }
                 setTimeout(() => { window.location.href = `/app/cotizaciones/${data.id}`; }, 1100);
             }
         } catch (err) {

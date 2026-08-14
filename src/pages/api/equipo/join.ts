@@ -6,7 +6,8 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, logAudit, reqIp } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
-import { reportUsage } from '../../../lib/billing';
+import { requireEntitlement } from '../../../lib/org-entitlements';
+import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../lib/billing';
 import { sha256Hex } from '../../../lib/auth';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { trustedIp } from '../../../lib/ip';
@@ -55,6 +56,8 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const orgId = inv.org_id as string;
+    const subscriptionDenied = await requireEntitlement(orgId, 'team');
+    if (subscriptionDenied) return subscriptionDenied;
 
     // ¿Ya soy miembro de esta org? (evita violar el índice único) → consumo el invite.
     const existing = await sql`select id from org_members where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`;
@@ -63,10 +66,19 @@ export const POST: APIRoute = async ({ request }) => {
         return json({ ok: true, orgId, already: true });
     }
 
-    await sql`update org_members set user_id = ${userId}, estado = 'activo', joined_at = now(), token = null, token_expires_at = null where id = ${inv.id}`;
+    const usage = await reserveUsage(orgId, 'usuario', 1);
+    if (!usage.ok || !usage.id) {
+        const unavailable = /verificar|registrar/i.test(usage.reason || '');
+        return json({ error: usage.reason }, unavailable ? 503 : 429);
+    }
+    try {
+        await sql`update org_members set user_id = ${userId}, estado = 'activo', joined_at = now(), token = null, token_expires_at = null where id = ${inv.id}`;
+    } catch (error) {
+        await cancelUsage(orgId, usage.id);
+        throw error;
+    }
+    void flushUsageReservation(orgId, usage.id);
     await logAudit(orgId, { accion: 'equipo.union', entidad: 'miembro', entidad_id: inv.id, detalle: 'Aceptó la invitación', ip: reqIp(request), userAgent: request.headers.get('user-agent') });
-    // Un miembro activo más cuenta como usuario del sistema (excedente vía Stripe).
-    await reportUsage(orgId, 'usuario', 1);
     const [orgFlags] = await sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`;
     await trackServer('team_member_accepted', orgId, { role: inv.rol }, !!orgFlags?.is_sandbox, !!orgFlags?.is_demo);
 

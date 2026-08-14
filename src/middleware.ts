@@ -178,7 +178,9 @@ const subdomainRewrite = async (context: any, next: any) => {
 import { validateSession, invalidateSession, SESSION_COOKIE, setSessionCookies, clearSessionCookies } from './lib/auth';
 import { OPS_SESSION_COOKIE, validateOpsSession } from './lib/ops-auth';
 import { trustedIp } from './lib/ip';
-import { getAppGates } from './lib/db';
+import { getAppGates, getActiveOrgId } from './lib/db';
+import { checkEntitlement, checkMemberSeatAccess } from './lib/org-entitlements';
+import type { FeatureKey } from './lib/entitlements';
 import { strictLimitResponse, strictRateLimit } from './lib/ratelimit';
 
 const mainHandler = async (context: any, next: any) => {
@@ -419,6 +421,52 @@ const mainHandler = async (context: any, next: any) => {
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
     const response = await reqContext.run({ userId: userId ?? null, sessionId: validatedSessionId, activeOrgId: orgId ?? null, testMode, locale }, async () => {
+        // Un downgrade conserva miembros y datos, pero no puede seguir otorgando
+        // asientos premium. El owner siempre conserva acceso para recuperar el
+        // pago; los miembros fuera del cupo quedan confinados a su propia cuenta.
+        if (userId && (isApp || (isApi && !isPublicApi && !isOpsApi))) {
+            const selfServiceApi = path.startsWith('/api/account/') || path === '/api/account' || path === '/api/auth/logout';
+            const selfServicePage = path === '/app/ajustes/cuenta' || path.startsWith('/app/ajustes/cuenta/');
+            if (!selfServiceApi && !selfServicePage) {
+                try {
+                    const active = await getActiveOrgId();
+                    const seat = await checkMemberSeatAccess(active, userId);
+                    if (!seat.ok) {
+                        if (isApi) {
+                            return new Response(JSON.stringify({
+                                error: 'Este usuario está fuera de los asientos incluidos en la suscripción actual.',
+                                code: 'subscription_seat_required',
+                            }), { status: 402, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+                        }
+                        return context.redirect('/app/ajustes/cuenta?subscription_seat=1');
+                    }
+                } catch (error) {
+                    console.error('[subscription] no se pudo verificar el asiento', error);
+                    if (isApi) return new Response(JSON.stringify({ error: 'No pudimos verificar la suscripción.' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+                    return context.redirect('/app/ajustes/cuenta?subscription_check=1');
+                }
+            }
+        }
+        // Páginas que materializan datos premium directamente durante SSR. Los
+        // endpoints que mutan esas capacidades tienen además su gate local.
+        if (userId && isApp) {
+            const premiumPage: FeatureKey | null =
+                path === '/app/ajustes/auditoria' ? 'audit_log'
+                : path === '/app/ajustes/agentes' ? 'agent_governance'
+                : path === '/app/cobranza/agente' ? 'collections_ai'
+                : path === '/app/cobranza' || path.startsWith('/app/cobranza/') ? 'collections'
+                : null;
+            if (premiumPage) {
+                try {
+                    const active = await getActiveOrgId();
+                    const entitlement = await checkEntitlement(active, premiumPage);
+                    if (!entitlement.ok) return context.redirect(`/app/ajustes/plan?feature=${premiumPage}`);
+                } catch (error) {
+                    console.error(`[subscription] no se pudo verificar ${premiumPage}`, error);
+                    return context.redirect('/app/ajustes/cuenta?subscription_check=1');
+                }
+            }
+        }
         // Gates de entrada a /app, resueltos en una sola query (getAppGates).
         if (isApp && userId) {
             const gatePaths = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];

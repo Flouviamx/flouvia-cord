@@ -8,10 +8,13 @@ import { currentUserId, currentOrgIdOverride, currentLocale } from './context';
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
 import { notifyQuoteEvent } from './notify';
-import { memberCan, seatLimit, type Membership, type PermKey, type PermMap } from './permissions';
+import { memberCan, type Membership, type PermKey, type PermMap } from './permissions';
 import { INCLUDED } from './billing';
+import { checkEntitlement, getEntitlementContext } from './org-entitlements';
+import { planIncludes, resourceLimit } from './entitlements';
 import { cached, invalidate } from './cache';
 import { after } from './after';
+import { trackServer } from './posthog-server';
 import { decryptSecret } from './crypto-secret';
 import { dueDateFor, venceDia } from './cobros';
 import {
@@ -61,7 +64,11 @@ const PLAN_LABEL: Record<string, string> = { free: 'Gratis', starter: 'Starter',
 
 export async function getOrg() {
     const orgId = await getActiveOrgId();
-    const [[o]] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
+    const [context, [[o]]] = await Promise.all([
+        getEntitlementContext(orgId),
+        withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`),
+    ]);
+    const effectivePlan = context.effectivePlan;
     return {
         id: orgId,
         nombre: o.nombre as string,
@@ -71,7 +78,7 @@ export async function getOrg() {
         email: (o.email_contacto as string) ?? '',
         telefono: (o.telefono as string) ?? '',
         direccion: (o.direccion as string) ?? '',
-        plan: PLAN_LABEL[o.plan] ?? 'Gratis',
+        plan: PLAN_LABEL[effectivePlan] ?? 'Gratis',
         prefix: o.quote_prefix as string,
         moneda: o.moneda as string,
         ivaPct: num(o.iva_pct),
@@ -85,7 +92,7 @@ export async function getOrg() {
         aprobMontoMax: num(o.aprob_monto_max),
         aprobMargenMin: num(o.aprob_margen_min),
         interesMoratorioPct: num(o.interes_moratorio_pct),
-        plan_raw: (o.plan as string) || 'free',
+        plan_raw: effectivePlan,
         vigenciaDefaultDias: num(o.vigencia_default_dias) || 30,
         terminosDefault: (o.terminos_default as string) || 'contado',
         anticipoDefaultPct: num(o.anticipo_default_pct),
@@ -104,6 +111,7 @@ export async function getOrg() {
         // el timbrado va a caer a la llave global de prueba en vez del CSD propio.
         tieneCsdPropio: !!(o.facturapi_live_key_enc || o.facturapi_live_key),
         countryCode: (o.country_code as string) || 'MX',
+        fiscalMetadata: (o.fiscal_metadata as Record<string, string>) ?? {},
         idioma: (o.idioma as string) || 'es-MX',
         colorSecundario: (o.color_secundario as string) || '',
         portalBienvenida: (o.portal_bienvenida as string) ?? '',
@@ -669,13 +677,12 @@ export async function getPlantillas() {
 // Uso del plan: cotizaciones "activas" vs límite del plan.
 export async function getPlanUsage() {
     const orgId = await getActiveOrgId();
-    const [[o]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan from orgs where id = ${orgId}`);
-    const plan = (o?.plan as string) || 'free';
+    const plan = (await getEntitlementContext(orgId)).effectivePlan;
     const [[{ activas }]] = await withOrgTx(orgId,
         sql`select count(*)::int as activas from cotizaciones
-            where org_id = ${orgId} and status not in ('rejected', 'expired')`,
+            where org_id = ${orgId} and status in ('draft','sent','viewed','approved')`,
     );
-    const limite = plan === 'free' ? 5 : plan === 'starter' ? 50 : null;
+    const limite = resourceLimit(plan, 'active_quotes');
     const usadas = Number(activas) || 0;
     return {
         plan, usadas, limite, ilimitado: limite === null,
@@ -687,8 +694,12 @@ export async function getPlanUsage() {
 // Consumo del periodo actual (IA / CFDI / API) vs cuota incluida del plan.
 export async function getBillingUsage() {
     const orgId = await getActiveOrgId();
-    const [[o]] = await withOrgTx(orgId, sql`select coalesce(plan,'free') as plan, subscription_status, billing_cycle, current_period_end from orgs where id = ${orgId}`);
-    const plan = (o?.plan as string) || 'free';
+    const context = await getEntitlementContext(orgId);
+    const [[o]] = await withOrgTx(context.billingOrgId, sql`
+        select subscription_status, billing_cycle, current_period_end,
+               (stripe_customer_id is not null) as can_manage_billing
+          from orgs where id = ${context.billingOrgId}`);
+    const plan = context.effectivePlan;
     const inc = INCLUDED[plan as keyof typeof INCLUDED] ?? INCLUDED.free;
     const periodo = new Date().toISOString().slice(0, 7);
     let row: any = {};
@@ -708,6 +719,7 @@ export async function getBillingUsage() {
         status: (o?.subscription_status as string) ?? null,
         cycle: (o?.billing_cycle as string) ?? null,
         periodFin: o?.current_period_end ? fmtDate(o.current_period_end) : null,
+        canManage: !!o?.can_manage_billing,
         ia: dim(Number(row.ia) || 0, inc.ia),
         cfdi: dim(Number(row.cfdi) || 0, inc.cfdi),
         api: dim(Number(row.api) || 0, inc.api),
@@ -1304,7 +1316,8 @@ export async function getCotizacion(id: string): Promise<MockQuote | null> {
 export async function getDocumentosFiscales(cotizacionId: string) {
     const orgId = await getActiveOrgId();
     const [rows] = await withOrgTx(orgId, sql`
-        select id, country_code, document_type, fiscal_id, status, provider_data, pdf_url, xml_url, created_at
+        select id, country_code, document_type, fiscal_id, invoice_number, currency,
+               total, status, provider_data, pdf_url, xml_url, created_at
         from documentos_fiscales
         where cotizacion_id = ${cotizacionId} and org_id = ${orgId}
         order by created_at desc`);
@@ -1312,6 +1325,9 @@ export async function getDocumentosFiscales(cotizacionId: string) {
         id: r.id as string,
         pais: r.country_code as string,
         tipo: r.document_type as string,
+        invoiceNumber: (r.invoice_number as string) || null,
+        currency: (r.currency as string) || null,
+        total: num(r.total),
         fiscalId: (r.fiscal_id as string) || null,
         status: r.status as string,
         simulado: !!(r.provider_data && (r.provider_data.simulado === true)),
@@ -1334,8 +1350,9 @@ export async function getFacturas(limit = 200) {
     const orgId = await getActiveOrgId();
     const [rows] = await withOrgTx(orgId, sql`
         select d.id, d.cotizacion_id, d.country_code, d.document_type, d.fiscal_id,
+               d.invoice_number, d.currency, d.total as invoice_total,
                d.status, d.provider_data, d.pdf_url, d.xml_url, d.created_at,
-               c.folio, c.total, cl.empresa
+               c.folio, c.total as quote_total, cl.empresa
         from documentos_fiscales d
         join cotizaciones c on c.id = d.cotizacion_id
         left join clientes cl on cl.id = c.cliente_id
@@ -1347,7 +1364,9 @@ export async function getFacturas(limit = 200) {
         cotizacionId: r.cotizacion_id as string,
         folio: r.folio as string,
         cliente: (r.empresa as string) || null,
-        total: num(r.total),
+        invoiceNumber: (r.invoice_number as string) || null,
+        currency: (r.currency as string) || null,
+        total: num(r.invoice_total ?? r.quote_total),
         pais: r.country_code as string,
         tipo: r.document_type as string,
         fiscalId: (r.fiscal_id as string) || null,
@@ -1436,6 +1455,8 @@ export async function getCotizacionByToken(token: string) {
             where c.id = ${quoteId} and c.org_id = ${orgId} limit 1`,
     );
     if (!rows.length) return null;
+    const entitlement = await getEntitlementContext(orgId);
+    const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
     
     // Anexar comentarios a sus respectivos items
     const itemsWithComments = items.map((it: any) => ({
@@ -1538,7 +1559,7 @@ export async function getCotizacionByToken(token: string) {
             portalBanner: (rows[0].org_portal_banner as string) ?? '',
             portalBienvenida: (rows[0].org_portal_bienvenida as string) ?? '',
             portalMostrarChat: (rows[0].org_portal_chat as boolean) ?? true,
-            portalPowered: (rows[0].org_portal_powered as boolean) ?? true,
+            portalPowered: canRemoveBranding ? ((rows[0].org_portal_powered as boolean) ?? true) : true,
             // Para el sello de confianza del link público (CFDI 4.0 solo aplica a México).
             paisCode: (rows[0].org_country_code as string) || 'MX',
             // Entorno de PRUEBA: la página pública marca la cotización como de
@@ -1564,19 +1585,36 @@ export async function markViewed(token: string) {
     const identity = await resolvePublicQuote(token);
     if (!identity) return;
     const [[c]] = await withOrgTx(identity.orgId,
-        sql`select id, org_id, status from cotizaciones
-            where id = ${identity.id} and org_id = ${identity.orgId}`,
+        sql`select c.id, c.org_id, c.status, c.total, c.base_currency,
+                   (o.sandbox_of is not null) as is_sandbox, o.is_demo
+            from cotizaciones c
+            join orgs o on o.id = c.org_id
+            where c.id = ${identity.id} and c.org_id = ${identity.orgId}`,
     );
     if (!c) return;
-    await withOrgTx(identity.orgId,
-        sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-            values (${c.org_id}, ${c.id}, 'viewed', 'El cliente abrió el link')`,
-        sql`update cotizaciones set status = 'viewed'
-            where id = ${c.id} and status = 'sent'`,
-    );
+    // `quote_viewed` representa la primera apertura real. Antes se emitía en
+    // cada recarga aunque la cotización ya estuviera viewed/approved/paid, lo
+    // que inflaba tanto PostHog como los webhooks comerciales.
+    const [viewed] = await withOrgTx(identity.orgId, sql`
+        with changed as (
+            update cotizaciones set status = 'viewed'
+            where id = ${c.id} and org_id = ${identity.orgId} and status = 'sent'
+            returning id, org_id
+        )
+        insert into eventos (org_id, cotizacion_id, tipo, detalle)
+        select org_id, id, 'viewed', 'El cliente abrió el link' from changed
+        returning cotizacion_id`);
+    if (!viewed.length) return;
     // Fondo: no bloquear el render del link del cliente con el webhook saliente.
     after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.viewed'));
     after(notifyQuoteEvent(c.org_id as string, c.id as string, 'quote_viewed'));
+    after(trackServer('quote_viewed', c.org_id as string, {
+        event_id: c.id,
+        quote_id: c.id,
+        total: num(c.total),
+        currency: (c.base_currency as string) || 'MXN',
+        source: 'public_link',
+    }, !!c.is_sandbox, !!c.is_demo));
 }
 
 // ── ANALÍTICA (Informes) ──────────────────────────────────────────────────────
@@ -1589,6 +1627,7 @@ export async function getAnalytics() {
 }
 async function getAnalyticsUncached() {
     const orgId = await getActiveOrgId();
+    const advanced = (await checkEntitlement(orgId, 'advanced_forecast')).ok;
 
     const [kRows, meses, margRows, clientes, productos, plRows] = await withOrgTx(orgId,
         sql`select
@@ -1650,11 +1689,14 @@ async function getAnalyticsUncached() {
         },
         meses: meses.map(m => ({ ym: m.ym as string, cotizado: num(m.cotizado), cerrado: num(m.cerrado) })),
         margen: {
-            listaTotal, negoTotal,
-            cedido: Math.max(0, listaTotal - negoTotal),
-            pct: listaTotal > 0 ? ((listaTotal - negoTotal) / listaTotal) * 100 : 0,
+            listaTotal: advanced ? listaTotal : 0,
+            negoTotal: advanced ? negoTotal : 0,
+            cedido: advanced ? Math.max(0, listaTotal - negoTotal) : 0,
+            pct: advanced && listaTotal > 0 ? ((listaTotal - negoTotal) / listaTotal) * 100 : 0,
         },
-        forecast: { sentTotal, viewedTotal, ponderado: sentTotal * 0.3 + viewedTotal * 0.5 },
+        forecast: advanced
+            ? { sentTotal, viewedTotal, ponderado: sentTotal * 0.3 + viewedTotal * 0.5 }
+            : { sentTotal: 0, viewedTotal: 0, ponderado: 0 },
         clientes: clientes.map(c => ({
             empresa: c.empresa as string,
             cerrado: num(c.cerrado),
@@ -1780,6 +1822,7 @@ export async function getAnalyticsDiagnosis(desde: string, hasta: string) {
 }
 
 async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta: string) {
+    const advanced = (await checkEntitlement(orgId, 'advanced_forecast')).ok;
     const [summaryRows, seriesRows, stageRows, stalledRows, lossRows, discountRows, clientRows] = await withOrgTx(orgId,
         sql`select
                 count(*) filter (where status = any(${STATUS_SALIO})) as enviadas,
@@ -1857,7 +1900,7 @@ async function getAnalyticsDiagnosisUncached(orgId: string, desde: string, hasta
         pipeline: ['sent', 'viewed', 'approved', 'paid', 'invoiced'].map((key) => ({ key, ...(stages.get(key) ?? { n: 0, monto: 0 }) })),
         stalled: stalledRows.map((r: any) => ({ id: r.id as string, folio: r.folio as string, empresa: r.empresa as string, total: num(r.total), status: r.status as string, vigencia: r.vigencia ? String(r.vigencia).slice(0, 10) : null, dias: num(r.dias_sin_movimiento) })),
         losses: { rejected: losses.get('rejected') ?? { n: 0, monto: 0 }, expired: losses.get('expired') ?? { n: 0, monto: 0 } },
-        discounts: discountRows.map((r: any) => {
+        discounts: (advanced ? discountRows : []).map((r: any) => {
             const lista = num(r.lista), negociado = num(r.negociado);
             return { nombre: r.nombre as string, cedido: Math.max(0, lista - negociado), pct: lista ? ((lista - negociado) / lista) * 100 : 0, cotizaciones: num(r.cotizaciones) };
         }),
@@ -2145,6 +2188,7 @@ async function getPayBehaviorUncached() {
 // trabajo pesado en JS por cotización en cada carga de /app.
 export async function getCobranza() {
     const orgId = await getActiveOrgId();
+    if (!(await checkEntitlement(orgId, 'collections')).ok) throw new Error('subscription_required:collections');
     return cached(`cobranza:${orgId}`, 30, getCobranzaUncached);
 }
 async function getCobranzaUncached() {
@@ -2280,7 +2324,10 @@ async function getCobranzaUncached() {
 // días promedio a cierre (created→approved) y días a cobro (approved→paid).
 export async function getCFO() {
     const orgId = await getActiveOrgId();
-    return cached(`cfo:${orgId}`, 30, getCFOUncached);
+    if (!(await checkEntitlement(orgId, 'cfo_dashboard')).ok) throw new Error('subscription_required:cfo_dashboard');
+    const full = await cached(`cfo:${orgId}`, 30, getCFOUncached);
+    if ((await checkEntitlement(orgId, 'cashflow_90')).ok) return full;
+    return { ...full, semanas: [], dias: [], fueraDeHorizonte: { n: 0, valorEsperado: 0, conservador: 0, optimista: 0 } };
 }
 async function getCFOUncached() {
     const orgId = await getActiveOrgId();
@@ -2565,6 +2612,7 @@ export async function getTareas() {
 // ── AUDIT LOG (lectura) ────────────────────────────────────────────────────────
 export async function getAuditLog() {
     const orgId = await getActiveOrgId();
+    if (!(await checkEntitlement(orgId, 'audit_log')).ok) return [];
     try {
         const [rows] = await withOrgTx(orgId, sql`
             select actor, accion, entidad, detalle, ip, created_at
@@ -2726,13 +2774,13 @@ export async function getMembers(): Promise<MemberRow[]> {
  *  reserva su lugar; si no, se podría invitar a 50 personas con 5 asientos). */
 export async function getSeatUsage(): Promise<{ usados: number; limite: number; plan: string }> {
     const orgId = await getActiveOrgId();
+    const context = await getEntitlementContext(orgId);
     const [[row]] = await withOrgTx(orgId, sql`
-        select coalesce(o.plan, 'free') as plan,
-               (select count(*) from org_members
+        select (select count(*) from org_members
                 where org_id = ${orgId} and estado in ('activo', 'invitado')) as usados
         from orgs o where o.id = ${orgId}`);
-    const plan = (row?.plan as string) || 'free';
-    return { usados: Number(row?.usados ?? 0), limite: seatLimit(plan), plan };
+    const plan = context.effectivePlan;
+    return { usados: Number(row?.usados ?? 0), limite: INCLUDED[plan].usuarios ?? Infinity, plan };
 }
 
 export async function getMyMembership(): Promise<Membership> {
@@ -2816,11 +2864,10 @@ export function invalidateMoneyCaches(orgId: string): void {
     ]) invalidate(prefix);
 }
 
-// Plan crudo de la org activa.
+// Plan EFECTIVO de la org activa. El valor crudo nunca autoriza funciones.
 export async function getOrgPlan(): Promise<string> {
     const orgId = await getActiveOrgId();
-    const [[org]] = await withOrgTx(orgId, sql`select coalesce(plan, 'free') as plan from orgs where id = ${orgId}`);
-    return (org?.plan as string) || 'free';
+    return (await getEntitlementContext(orgId)).effectivePlan;
 }
 
 // ── DASHBOARD DE COBROS (/app/cobros) ──────────────────────────────────────────
@@ -3140,6 +3187,9 @@ const PRICING_TARGET_WIN_RATE = 0.6; // banda mínima aceptable al elegir el des
 
 export async function getPricingSuggestion(opts: { productoId?: string | null; clienteId?: string | null; precioLista: number }): Promise<PricingSuggestion> {
     const orgId = await getActiveOrgId();
+    if (!(await checkEntitlement(orgId, 'advanced_forecast')).ok) {
+        return { scope: null, confidence: null, sampleSize: 0, bands: [], suggestedDiscountPct: null, suggestedPrice: null };
+    }
     const productoId = opts.productoId || null;
     const clienteId = opts.clienteId || null;
     const key = `pricing:${orgId}:${productoId ?? '-'}:${clienteId ?? '-'}`;
@@ -3309,6 +3359,7 @@ export interface CobranzaIAHilo {
 
 export async function getCobranzaIA() {
     const orgId = await getActiveOrgId();
+    if (!(await checkEntitlement(orgId, 'collections_ai')).ok) throw new Error('subscription_required:collections_ai');
     return cached(`cobranza-ia:${orgId}`, 30, getCobranzaIAUncached);
 }
 

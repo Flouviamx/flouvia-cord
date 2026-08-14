@@ -10,6 +10,7 @@ import { getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 import { runCobranzaOrg } from '../../../lib/agents/cobranza-run';
 import { rateLimit } from '../../../lib/ratelimit';
+import { requireEntitlement } from '../../../lib/org-entitlements';
 
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -20,6 +21,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
+    const entitlementDenied = await requireEntitlement(orgId, 'collections_ai');
+    if (entitlementDenied) return entitlementDenied;
     let body: any = {};
     try { body = await request.json(); } catch { /* body opcional */ }
     const dryRun = !!body.dryRun;

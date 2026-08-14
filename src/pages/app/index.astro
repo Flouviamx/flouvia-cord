@@ -7,6 +7,8 @@ import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
+import { getActiveOrgId } from '../../lib/db';
+import { checkEntitlement } from '../../lib/org-entitlements';
 
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -18,12 +20,14 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
 const ME = await getMyMembership();
 const canAnalytics = memberCan(ME, 'analitica');
 const canCobranza = memberCan(ME, 'cobranza');
+const canCfo = canAnalytics && (await checkEntitlement(await getActiveOrgId(), 'cfo_dashboard')).ok;
+const canCollections = canCobranza && (await checkEntitlement(await getActiveOrgId(), 'collections')).ok;
 const EMPTY_CFO = { kpis: { dso: 0, concentracion: 0, totalEsperado: 0, totalPipeline: 0 }, semanas: [], silenciadas: [] } as any;
 const EMPTY_ANALYTICS = { funnel: { enviadas: 0, vistas: 0, aprobadas: 0, pagadas: 0 }, kpis: { ticketPromedio: 0 }, margen: { pct: 0 }, clientes: [], productos: [] } as any;
 const EMPTY_COBRANZA = { aging: [] } as any;
 const [dash, TAREAS, CFO, ANALYTICS, ORG, SERIE, COBRANZA] = await Promise.all([
-    getDashboard(), getTareas(), canAnalytics ? getCFO() : EMPTY_CFO, canAnalytics ? getAnalytics() : EMPTY_ANALYTICS,
-    getOrg(), getSerieDiaria(), canCobranza ? getCobranza() : EMPTY_COBRANZA,
+    getDashboard(), getTareas(), canCfo ? getCFO() : EMPTY_CFO, canAnalytics ? getAnalytics() : EMPTY_ANALYTICS,
+    getOrg(), getSerieDiaria(), canCollections ? getCobranza() : EMPTY_COBRANZA,
 ]);
 // Aviso único para invitar a configurar cobros a quien aún no conecta su cuenta
 // (existentes o nuevos). Se oculta permanentemente al conectar (server-side) o al

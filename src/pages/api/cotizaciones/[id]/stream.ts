@@ -10,6 +10,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
+import { requireEntitlement } from '../../../../lib/org-entitlements';
 
 const encoder = new TextEncoder();
 const POLL_MS = 3000;
@@ -18,6 +19,8 @@ const MAX_MS = 270000;
 
 export const GET: APIRoute = async ({ params, request }) => {
     const orgId = await getActiveOrgId();
+    const subscriptionDenied = await requireEntitlement(orgId, 'live_presence');
+    if (subscriptionDenied) return subscriptionDenied;
     const id = params.id ?? '';
     const [row] = await sql`select id from cotizaciones where id = ${id} and org_id = ${orgId}`;
     if (!row) return new Response('not found', { status: 404 });

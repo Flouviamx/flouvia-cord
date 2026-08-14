@@ -37,6 +37,8 @@ export interface FlagSelectProps {
    */
   nativeId?: string;
   nativeName?: string;
+  /** Integra el select espejo con formularios genéricos basados en data-field. */
+  nativeDataField?: string;
   className?: string;
   disabled?: boolean;
 }
@@ -55,6 +57,7 @@ export default function FlagSelect({
   id,
   nativeId,
   nativeName,
+  nativeDataField,
   className = '',
   disabled = false,
 }: FlagSelectProps) {
@@ -228,6 +231,7 @@ export default function FlagSelect({
           ref={nativeRef}
           id={nativeId}
           name={nativeName}
+          data-field={nativeDataField}
           defaultValue={current}
           hidden
           aria-hidden="true"
