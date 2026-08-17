@@ -1547,6 +1547,15 @@ export async function getCotizacionByToken(token: string) {
             mine: e.tipo === 'comment' || e.tipo === 'counter',
         })),
         org: {
+            // El DTO público NO exponía el org_id, así que `analyticsOrgId` en
+            // /q/[token] era siempre '' y isInternalAnalyticsOrg() devolvía false
+            // sin consultar nada: el tráfico del propio equipo sobre links
+            // públicos nunca se excluyó de PostHog. Además, pasar ese '' a
+            // resolveViewer() comparaba `org_id = ''` contra una columna uuid
+            // (22P02) y tiraba la página con 500.
+            // No es un dato sensible: el token ya identifica a la org, y el
+            // resto del DTO (marca, banco, Stripe) es mucho más revelador.
+            id: orgId,
             nombre: rows[0].org_nombre as string,
             inicial: initials(rows[0].org_nombre),
             rfc: (rows[0].org_rfc as string) ?? '',

@@ -44,6 +44,8 @@ export interface PublicViewer {
 
 export const VISITOR_COOKIE = 'cord_q_visitor';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Un año: el objetivo es reconocer al mismo cliente entre aperturas del mismo
 // link a lo largo de una negociación, no perfilarlo entre sitios.
 const VISITOR_MAX_AGE = 60 * 60 * 24 * 365;
@@ -115,23 +117,35 @@ export async function resolveViewer(
     const ua = (request.headers.get('user-agent') ?? '').slice(0, 400) || null;
     const ipHash = hashIp(trustedIp(request), orgId);
 
+    // Identificar al vendedor es una MEJORA, nunca un requisito para servir el
+    // link: aquí es donde el cliente aprueba y paga. Si esta comprobación falla
+    // —org_id vacío o malformado, blip de Neon— se degrada a 'client' en vez de
+    // propagar el error. Un orgId vacío llegó a producción una vez y comparar
+    // `org_id = ''` contra una columna uuid (22P02) devolvía 500 en /q/[token].
     const userId = currentUserId();
-    if (userId) {
-        const [rows] = await withOrgTx(orgId, sql`
-            select nombre, email from org_members
-            where org_id = ${orgId} and user_id = ${userId} and estado = 'activo'
-            limit 1`);
-        if (rows.length) {
-            const m = rows[0] as { nombre: string | null; email: string | null };
-            return {
-                rol: 'seller',
-                actorKey: `u:${userId}`,
-                nombre: m.nombre || m.email || null,
-                ipHash,
-                userAgent: ua,
-            };
+    if (userId && UUID_RE.test(orgId)) {
+        try {
+            const [rows] = await withOrgTx(orgId, sql`
+                select nombre, email from org_members
+                where org_id = ${orgId} and user_id = ${userId} and estado = 'activo'
+                limit 1`);
+            if (rows.length) {
+                const m = rows[0] as { nombre: string | null; email: string | null };
+                return {
+                    rol: 'seller',
+                    actorKey: `u:${userId}`,
+                    nombre: m.nombre || m.email || null,
+                    ipHash,
+                    userAgent: ua,
+                };
+            }
+            // Sesión de OTRA org: es un cliente que además usa Cord. Cuenta como cliente.
+        } catch (e) {
+            // Degradar, no romper. Lo único que se pierde es el banner de vista
+            // previa; la vista NO se marca aquí (eso vive en el heartbeat, que
+            // sí recibe un org_id resuelto por resolvePublicQuote).
+            console.error('[public-viewer] no se pudo resolver la membresía:', (e as Error)?.message);
         }
-        // Sesión de OTRA org: es un cliente que además usa Cord. Cuenta como cliente.
     }
 
     if (isBotRequest(request)) {
