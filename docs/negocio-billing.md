@@ -30,6 +30,36 @@ Scale a Starter para quedar en el mismo peldaño que `cfdi` — mismo carril de
 facturación electrónica, distinto solo por país (Regla 10). `collections_ai`
 (la cobranza *autónoma*) sigue siendo exclusiva de Scale.
 
+### Qué es "en vivo" en cada plan
+
+El link público del cliente **nunca** se gatea; lo que se cobra es lo que ve el
+vendedor. Eso hace que en Gratis el tiempo real sea asimétrico, y conviene tenerlo
+explícito porque es fácil leerlo como un bug:
+
+| Señal | Superficie | Gratis / Starter | Pro y superiores |
+|---|---|---|---|
+| Cambios de contenido (`patch`) | link del cliente | en vivo | en vivo |
+| Respuesta del vendedor (chat y por partida) | link del cliente | en vivo | en vivo |
+| "El vendedor está en línea" | link del cliente | solo si el vendedor tiene abierto el **link público**; no si está en su página de la app | en vivo en ambos casos |
+| Mensajes del cliente | detalle del vendedor | **hay que recargar** | en vivo |
+| "Viendo ahora" del cliente | detalle del vendedor | no | en vivo |
+| Atención por sección | detalle del vendedor | no | sí |
+
+El vendedor en Gratis no recibe nada en vivo: `/api/cotizaciones/[id]/stream`,
+`/presence` y `/atencion` devuelven **402**, y el fallback de polling apunta a
+`/presence`, así que también cae. Debe recargar para ver mensajes nuevos.
+
+La fila de "el vendedor está en línea" tiene **dos escritores** y solo uno está
+gateado: el stream del vendedor (Pro) mientras tiene el detalle abierto, y el
+heartbeat del link público (sin gate) cuando el propio vendedor abre el link en
+modo vista previa. De ahí la casilla partida de la tabla.
+
+Esta asimetría es deliberada en su mitad —gatear el carril público dejaría a una org
+en Gratis sin poder cobrar por su propio link— pero la otra mitad es una decisión de
+packaging abierta: sacar la **entrega de mensajes** del gate y cobrar solo presencia
+y atención es un `if` en cada stream. Mientras no se haga, el copy no debe prometer
+"chat en tiempo real" en Gratis.
+
 `quote_attention` (ago 2026) nace en Pro, en paridad con `live_presence`: son la
 misma promesa comercial —"sabes qué pasa con tu propuesta"— separadas en dos gates
 porque una es el estado instantáneo (¿la está viendo ahora?) y la otra el

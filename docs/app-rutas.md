@@ -291,6 +291,14 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    También ESCRIBE la presencia del vendedor mientras la conexión vive:
                    es lo que hace que el cliente lo vea en línea en /q/[token]. Al cerrar,
                    retrocede su last_seen para apagarse sin esperar la ventana de 30s.
+                   ⚠️ Gateado con live_presence: en Gratis/Starter devuelve 402, y el
+                   fallback de polling apunta a /presence, que tiene el mismo gate. Así
+                   que en esos planes el vendedor NO recibe nada en vivo — recarga.
+                   El carril público del cliente nunca se gatea, de ahí la asimetría;
+                   ver "Qué es en vivo en cada plan" en negocio-billing.md.
+                   La presencia del vendedor tiene DOS escritores y solo este está
+                   gateado: el otro es el heartbeat de /api/q/[token], que corre cuando
+                   el propio vendedor abre el link público en vista previa.
 /api/cotizaciones/[id]/atencion → resumen de atención del cliente (ago 2026). Personas,
                    aperturas, primera/última vez y segundos por sección. Gated con
                    requireEntitlement(orgId,'quote_attention') EN EL ENDPOINT — ocultar

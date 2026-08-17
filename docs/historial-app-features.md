@@ -39,12 +39,23 @@
 
 * **Asimetría pendiente, es decisión de precios.** El stream del vendedor está
   gateado con `live_presence` (Pro) desde jul 2026, así que en Gratis devuelve 402 —
-  y el fallback de polling contra `/presence` también. El carril público no se gatea.
+  y el fallback de polling contra `/presence` también, y `/atencion` con su propio
+  gate. Verificado con una sesión real en la org Gratis: los tres endpoints del
+  vendedor dan 402 y los dos públicos 200. El carril público no se gatea.
   Resultado: en Gratis el cliente ve la respuesta del vendedor al instante, pero el
   vendedor no ve la del cliente sin recargar. No es regresión —el stream ya estaba
   gateado— pero la asimetría es justo lo que hace sentir roto un chat. Mover
   `line_message` fuera del gate es un `if` en cada stream; no se tocó porque cambiar
-  un gate es decisión de packaging, no de implementación.
+  un gate es decisión de packaging, no de implementación. La tabla plan por plan
+  quedó en `negocio-billing.md` → "Qué es en vivo en cada plan".
+
+  Matiz que costó ver: "el vendedor está en línea" tiene **dos** escritores y solo
+  uno está gateado. El stream del vendedor lo escribe mientras tiene el detalle
+  abierto (Pro), pero el heartbeat de `/api/q/[token]` también lo escribe —sin
+  gate— cuando el propio vendedor abre el link público en vista previa, porque
+  `recordHeartbeat` persiste el `rol` que resolvió `public-viewer.ts` sea cual sea.
+  Así que en Gratis el cliente sí puede ver al vendedor en línea, pero solo cuando
+  está mirando el link, no su página de la app.
 
 **El link público como documento vivo, con actor delimitado (16 ago 2026)** — el link
    `/q/[token]` tenía tres problemas encadenados: no distinguía quién lo abría, su
