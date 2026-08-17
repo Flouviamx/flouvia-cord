@@ -1,12 +1,13 @@
 // GET /api/q/[token]/stream — SSE del link público. El documento en vivo.
 //
 // Empuja:
-//   event: ready     {}                          — conexión establecida
-//   event: patch     { rev, status, total, ... } — el contenido cambió
-//   event: presence  { vendedor, escribiendo }   — quién está del otro lado
-//   event: message   { detalle }                 — respuesta nueva del vendedor
-//   event: status    { status }                  — estado terminal (paid/rejected)
-//   event: ping      {}                          — heartbeat, mantiene vivos los proxies
+//   event: ready        {}                          — conexión establecida
+//   event: patch        { rev, status, total, ... } — el contenido cambió
+//   event: presence     { vendedor, escribiendo }   — quién está del otro lado
+//   event: message      { detalle }                 — respuesta nueva del vendedor (chat general)
+//   event: line_message { item_id, contenido }      — respuesta del vendedor en UNA línea
+//   event: status       { status }                  — estado terminal (paid/rejected)
+//   event: ping         {}                          — heartbeat, mantiene vivos los proxies
 //
 // Sin auth: el token es el secreto, mismo patrón que el resto de /api/q/[token].
 //
@@ -63,6 +64,11 @@ export const GET: APIRoute = async ({ params, request }) => {
             send('ready', {});
 
             let lastMsgTs: string = new Date().toISOString();
+            // Los hilos por línea viven en cotizacion_comentarios, no en eventos,
+            // y no viajaban por aquí: el vendedor respondía en una partida y el
+            // cliente con la página abierta no se enteraba nunca. El hilo se veía
+            // como un monólogo del propio cliente.
+            let lastLineTs: string = lastMsgTs;
             let lastStatus = c.status;
             let lastRev = Number(c.rev) || 1;
             let lastPresencia = '';
@@ -75,13 +81,20 @@ export const GET: APIRoute = async ({ params, request }) => {
             while (!closed && !request.signal.aborted && Date.now() - started < MAX_MS) {
                 try {
                     // ── Ciclo barato: un entero y la presencia ──
-                    const [cab, presRows, msgs] = await withOrgTx(c.org_id,
+                    const [cab, presRows, msgs, lineas] = await withOrgTx(c.org_id,
                         sql`select rev, status from cotizaciones
                              where id = ${c.id} and org_id = ${c.org_id}`,
                         presenciaQuery(c.id, c.org_id),
                         sql`select detalle, created_at from eventos
                              where cotizacion_id = ${c.id} and org_id = ${c.org_id}
                                and tipo = 'reply' and created_at > ${lastMsgTs}
+                             order by created_at asc limit 20`,
+                        // Solo 'usuario': los del propio cliente ya los pintó su
+                        // envío optimista, reenviarlos los duplicaría.
+                        sql`select item_id, contenido, created_at from cotizacion_comentarios
+                             where cotizacion_id = ${c.id} and org_id = ${c.org_id}
+                               and autor_tipo = 'usuario' and item_id is not null
+                               and created_at > ${lastLineTs}
                              order by created_at asc limit 20`,
                     );
 
@@ -91,6 +104,10 @@ export const GET: APIRoute = async ({ params, request }) => {
                     if (msgs.length) {
                         lastMsgTs = String(msgs[msgs.length - 1].created_at);
                         for (const m of msgs) send('message', { detalle: m.detalle });
+                    }
+                    if (lineas.length) {
+                        lastLineTs = String(lineas[lineas.length - 1].created_at);
+                        for (const l of lineas) send('line_message', { item_id: l.item_id, contenido: l.contenido });
                     }
 
                     // Presencia: solo se empuja cuando cambia algo visible, para

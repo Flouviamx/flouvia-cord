@@ -5,6 +5,47 @@
 > de prueba, chat y tiempo real. Registro acumulativo: cada entrada conserva su fecha,
 > pero migraciones anteriores pueden haber dejado bloques fuera de orden estricto.
 
+**Atribución de autor en los hilos, y entrega en las dos direcciones (17 ago 2026)** —
+   reporte de André: "el primer hola es del cliente y yo lo veo como si lo hubiera
+   mandado yo". La atribución estaba bien calculada; lo que faltaba era decirla.
+
+* **El diagnóstico no fue el evidente.** Renderizando las dos vistas de la misma
+  cotización se confirmó que el `mine`/`theirs` era correcto en las cuatro
+  superficies: la vista del cliente daba `qi-msg mine` ×2 y la del vendedor
+  `di-msg theirs` ×2 para los mismos dos mensajes. Los dos "hola" eran **ambos del
+  cliente** (`autor_tipo='cliente'`, 12 segundos de diferencia). No había bug de lado.
+
+* **Lo que sí faltaba, y es la Regla 20.** Ninguna burbuja decía su autor: posición y
+  color identifican el *lado*, no la *persona*. Con dos mensajes seguidos del mismo
+  lado el lector ya no distingue, y lee los ajenos como propios. Ahora cada burbuja
+  lleva autor junto a la hora — `Tú` para el propio, el nombre real de la contraparte
+  para el otro (el nombre del negocio en el link, el del cliente en la app) — en el
+  chat general y en el hilo por línea, de los dos lados. Se unificó el constructor de
+  burbujas por superficie (`burbuja()` en QuoteCard, `appendBubble()` en el detalle):
+  antes había uno por camino (envío optimista, llegada por SSE, render de servidor) y
+  cada uno pintaba la clase a mano.
+
+* **El hueco funcional que causó la confusión.** `cotizacion_comentarios` no viajaba
+  por **ningún** stream: el vendedor respondía en una partida y el cliente con la
+  página abierta no se enteraba nunca; el del vendedor solo usaba esa tabla para
+  contar `convCount` y encender el badge "Nuevo" del chat general, que ni siquiera es
+  donde estaba el mensaje. Con dos mensajes propios en pantalla y ninguno del otro
+  lado, el hilo se leía como un monólogo. Ambos streams empujan ahora
+  `event: line_message {item_id, contenido}`, cada uno filtrando el `autor_tipo`
+  contrario para no duplicar lo que el envío optimista ya pintó.
+
+  Verificado en vivo: con el stream público abierto, un comentario del vendedor
+  llegó como `line_message` con su `item_id` correcto.
+
+* **Asimetría pendiente, es decisión de precios.** El stream del vendedor está
+  gateado con `live_presence` (Pro) desde jul 2026, así que en Gratis devuelve 402 —
+  y el fallback de polling contra `/presence` también. El carril público no se gatea.
+  Resultado: en Gratis el cliente ve la respuesta del vendedor al instante, pero el
+  vendedor no ve la del cliente sin recargar. No es regresión —el stream ya estaba
+  gateado— pero la asimetría es justo lo que hace sentir roto un chat. Mover
+  `line_message` fuera del gate es un `if` en cada stream; no se tocó porque cambiar
+  un gate es decisión de packaging, no de implementación.
+
 **El link público como documento vivo, con actor delimitado (16 ago 2026)** — el link
    `/q/[token]` tenía tres problemas encadenados: no distinguía quién lo abría, su
    "tiempo real" recargaba la página, y el vendedor no veía nada útil sobre la lectura

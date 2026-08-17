@@ -119,7 +119,7 @@ const waDigits = vWa.replace(/\D/g, '');
 const hayContacto = !!(vEmail || vWa || vTel);
 ---
 
-<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-pais={ORG.paisCode || 'MX'} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
+<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
     {ORG.esPrueba && (
         <div class="q-test-ribbon" role="status">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
@@ -230,9 +230,12 @@ const hayContacto = !!(vEmail || vWa || vTel);
                     <div class="qi-thread ql-hidden" id={`thread-${it.id}`}>
                         <div class="qi-thread-inner">
                             {(it.comentarios || []).map((c: any) => (
-                                <div class={`qi-msg ${c.tipo === 'cliente' ? 'mine' : 'theirs'}`}>
+                                <div class={`qi-msg ${c.tipo === 'cliente' ? 'mine' : 'theirs'}`} data-item-thread={it.id}>
                                     <span class="qi-msg-text">{c.contenido}</span>
-                                    <span class="qi-msg-time">{c.cuando}</span>
+                                    <span class="qi-msg-meta">
+                                        <span class="qi-msg-who">{c.tipo === 'cliente' ? t(L, 'q.chat_tu') : ORG.nombre}</span>
+                                        <span class="qi-msg-time">{c.cuando}</span>
+                                    </span>
                                 </div>
                             ))}
                             {!yaAprobada && !yaRechazada && (
@@ -500,7 +503,10 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 {conversacion.map((m) => (
                     <div class:list={['q-msg', m.mine ? 'mine' : 'theirs', { counter: m.tipo === 'counter' }]}>
                         <span class="q-msg-text">{m.detalle}</span>
-                        <span class="q-msg-time">{m.cuando}</span>
+                        <span class="q-msg-meta">
+                            <span class="q-msg-who">{m.mine ? t(L, 'q.chat_tu') : ORG.nombre}</span>
+                            <span class="q-msg-time">{m.cuando}</span>
+                        </span>
                     </div>
                 ))}
             </div>
@@ -841,15 +847,34 @@ const hayContacto = !!(vEmail || vWa || vTel);
     const msgEl = document.getElementById('qMsg') as HTMLTextAreaElement | null;
     const propEl = document.getElementById('qProp') as HTMLInputElement | null;
 
+    // Nombre del vendedor para etiquetar sus burbujas. La posición y el color
+    // no bastan: en cuanto llegan dos mensajes seguidos del mismo lado, el
+    // lector ya no sabe quién escribió cuál. Cada burbuja dice su autor.
+    const NOMBRE_VENDEDOR = card?.dataset.org || '';
+    const YO = I18NQ.tu || 'Tú';
+
+    // Constructor único de burbujas: mientras existía uno por camino (envío
+    // optimista, SSE, hilo por línea) era fácil que uno se quedara sin etiqueta
+    // o con el lado equivocado.
+    const burbuja = (text: string, mine: boolean, opts: { counter?: boolean; small?: boolean } = {}) => {
+        const p = opts.small ? 'qi' : 'q';
+        const div = document.createElement('div');
+        div.className = `${p}-msg ` + (mine ? 'mine' : 'theirs') + (opts.counter ? ' counter' : '');
+        const t = document.createElement('span'); t.className = `${p}-msg-text`; t.textContent = text;
+        const meta = document.createElement('span'); meta.className = `${p}-msg-meta`;
+        const who = document.createElement('span'); who.className = `${p}-msg-who`;
+        who.textContent = mine ? YO : NOMBRE_VENDEDOR;
+        const time = document.createElement('span'); time.className = `${p}-msg-time`;
+        time.textContent = I18NQ.ahora || 'ahora';
+        meta.append(who, time);
+        div.append(t, meta);
+        return div;
+    };
+
     const appendMsg = (text: string, kind: 'comment' | 'counter') => {
         if (!thread) return;
         thread.hidden = false;
-        const div = document.createElement('div');
-        div.className = 'q-msg mine' + (kind === 'counter' ? ' counter' : '');
-        const t = document.createElement('span'); t.className = 'q-msg-text'; t.textContent = text;
-        const time = document.createElement('span'); time.className = 'q-msg-time'; time.textContent = I18NQ.ahora || 'ahora';
-        div.append(t, time);
-        thread.appendChild(div);
+        thread.appendChild(burbuja(text, true, { counter: kind === 'counter' }));
         requestAnimationFrame(() => { thread.scrollTop = thread.scrollHeight; });
     };
 
@@ -857,13 +882,25 @@ const hayContacto = !!(vEmail || vWa || vTel);
     const appendIncoming = (text: string) => {
         if (!thread) return;
         thread.hidden = false;
-        const div = document.createElement('div');
-        div.className = 'q-msg theirs';
-        const t = document.createElement('span'); t.className = 'q-msg-text'; t.textContent = text;
-        const time = document.createElement('span'); time.className = 'q-msg-time'; time.textContent = I18NQ.ahora || 'ahora';
-        div.append(t, time);
-        thread.appendChild(div);
+        thread.appendChild(burbuja(text, false));
         requestAnimationFrame(() => { thread.scrollTop = thread.scrollHeight; });
+    };
+
+    // Respuesta del vendedor en el hilo de UNA LÍNEA (vía SSE). Antes esto no
+    // llegaba nunca: cotizacion_comentarios no viajaba por el stream, así que
+    // el cliente con la página abierta veía su propio mensaje y nada más — y el
+    // hilo parecía un monólogo suyo.
+    const appendIncomingLinea = (itemId: string, text: string) => {
+        const wrap = document.getElementById(`thread-${itemId}`);
+        const inner = wrap?.querySelector('.qi-thread-inner');
+        if (!wrap || !inner) return;
+        wrap.classList.remove('ql-hidden');
+        const caja = inner.querySelector('.qi-reply-box');
+        const div = burbuja(text, false, { small: true });
+        if (caja) inner.insertBefore(div, caja); else inner.appendChild(div);
+        // El contador del botón de chat de esa línea también debe moverse.
+        const btn = document.querySelector<HTMLElement>(`.qi-chat-btn[data-item-id="${CSS.escape(itemId)}"]`);
+        if (btn) btn.textContent = String((parseInt(btn.textContent || '0', 10) || 0) + 1);
     };
 
     // ── Auto-resize del compose textarea ──
@@ -930,13 +967,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 
                 // Agregarlo a la UI localmente
                 const threadInner = target.closest('.qi-thread-inner');
-                const div = document.createElement('div');
-                div.className = 'qi-msg mine';
-                const t = document.createElement('span'); t.className = 'qi-msg-text'; t.textContent = mensaje;
-                const time = document.createElement('span'); time.className = 'qi-msg-time'; time.textContent = I18NQ.ahora || 'ahora';
-                div.append(t, time);
-                threadInner?.insertBefore(div, target.closest('.qi-reply-box'));
-                
+                threadInner?.insertBefore(burbuja(mensaje, true, { small: true }), target.closest('.qi-reply-box'));
+
                 input.value = '';
                 emit('cord:item_comment', { item_id: itemId, mensaje });
             } catch (err: any) {
@@ -1166,6 +1198,12 @@ const hayContacto = !!(vEmail || vWa || vTel);
             });
             es.addEventListener('patch', (e: MessageEvent) => {
                 try { applyPatch(JSON.parse(e.data)); } catch { /* ignora */ }
+            });
+            es.addEventListener('line_message', (e: MessageEvent) => {
+                try {
+                    const d = JSON.parse(e.data);
+                    if (d?.item_id && d?.contenido) appendIncomingLinea(String(d.item_id), String(d.contenido));
+                } catch { /* ignora */ }
             });
             es.addEventListener('presence', (e: MessageEvent) => {
                 try { applyPresence(JSON.parse(e.data)); } catch { /* ignora */ }
@@ -1845,11 +1883,18 @@ const hayContacto = !!(vEmail || vWa || vTel);
 .q-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-radius: 14px 14px 3px 14px; }
 .q-msg.counter { background: rgba(245,158,11,0.09); border: 1px solid rgba(245,158,11,0.25); color: #111; border-radius: 14px 14px 3px 14px; align-self: flex-end; }
 .q-msg-text { line-height: 1.5; }
-.q-msg-time { font-size: 0.58rem; opacity: 0.42; margin-top: 2px; }
+/* Autor + hora. El autor va SIEMPRE: la posición y el color no alcanzan —
+   en cuanto llegan dos mensajes seguidos del mismo lado, quien lee ya no sabe
+   quién escribió cuál. Es lo que hacía parecer propios los del vendedor. */
+.q-msg-meta { display: flex; align-items: baseline; gap: 5px; margin-top: 2px; }
+.q-msg-who { font-size: 0.58rem; font-weight: 700; opacity: 0.66; letter-spacing: 0.01em; }
+.q-msg-time { font-size: 0.58rem; opacity: 0.42; }
 
 .qi-msg { display: inline-flex; flex-direction: column; gap: 2px; font-size: 0.78rem; max-width: 90%; padding: 0.5rem 0.7rem; border-radius: 10px; }
 .qi-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-bottom-right-radius: 4px; }
 .qi-msg.theirs { align-self: flex-start; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-bottom-left-radius: 4px; }
+.qi-msg-meta { display: flex; align-items: baseline; gap: 5px; }
+.qi-msg-who { font-size: 0.55rem; font-weight: 700; opacity: 0.72; }
 .qi-msg-time { font-size: 0.55rem; opacity: 0.6; }
 
 /* Sello de firma legal — GLOBAL a propósito: la firma en vivo lo inyecta por JS

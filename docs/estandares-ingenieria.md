@@ -133,6 +133,29 @@ superficie pública se lo dice, y los términos lo describen. Las IP de estas se
 se guardan hasheadas; la excepción es la evidencia de firma, que las conserva
 íntegras a propósito.
 
+### 20. Una burbuja de chat dice quién la escribió
+
+En una conversación de dos partes, la posición y el color **no** identifican al autor:
+identifican el lado. En cuanto dos mensajes seguidos caen del mismo lado —el cliente
+escribe dos veces, o el vendedor todavía no responde— quien lee ya no sabe quién
+escribió cuál, y lee los ajenos como propios.
+
+Toda burbuja lleva su autor junto a la hora, en las cuatro superficies del hilo
+(chat general y por línea, del lado del cliente y del vendedor): `Tú` para el propio
+y el nombre real de la contraparte para el otro. El nombre viene del dato, no de una
+etiqueta genérica: el nombre del negocio en el link público, el del cliente en la app.
+
+Corolario operativo: un hilo debe entregarse **en las dos direcciones**. Si un lado
+tiene entrega en vivo y el otro exige recargar, la conversación se ve incompleta y
+parece un monólogo. El caso que originó la regla: `cotizacion_comentarios` no viajaba
+por ningún stream, así que el vendedor respondía en una partida y el cliente con la
+página abierta no se enteraba nunca; con dos mensajes propios en pantalla y ninguno
+del otro lado, el hilo se leía como si lo hubiera escrito él solo.
+
+Un constructor único de burbujas por superficie, no uno por camino (envío optimista,
+llegada por stream, render de servidor): con uno por camino es cuestión de tiempo que
+alguno se quede sin etiqueta o con el lado invertido.
+
 ## Diseño, interacción y accesibilidad
 
 ### 2. Sin saltos de línea embebidos

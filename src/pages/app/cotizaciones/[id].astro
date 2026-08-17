@@ -166,7 +166,10 @@ const dotColor = (tipo: string) =>
                                 {(it.comentarios || []).map((c) => (
                                     <div class:list={['di-msg', c.mine ? 'mine' : 'theirs']}>
                                         <span class="di-msg-text">{c.contenido}</span>
-                                        <span class="di-msg-time">{c.cuando}</span>
+                                        <span class="di-msg-meta">
+                                            <span class="di-msg-who">{c.mine ? t(L, 'id.chat_tu') : q.cliente}</span>
+                                            <span class="di-msg-time">{c.cuando}</span>
+                                        </span>
                                     </div>
                                 ))}
                                 {(!it.comentarios || it.comentarios.length === 0) && (
@@ -283,7 +286,7 @@ const dotColor = (tipo: string) =>
                 data-i18n-no-pudo-duplicar={t(L, 'id.no_pudo_duplicar')}
                 data-i18n-eliminar-borrador-titulo={t(L, 'id.eliminar_borrador_titulo')} data-i18n-eliminar-borrador-body={t(L, 'id.eliminar_borrador_body')}
                 data-i18n-eliminar={t(L, 'id.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'id.no_pudo_eliminar')}
-                data-i18n-locale={L === 'en' ? 'en-US' : 'es-MX'}
+                data-i18n-locale={L === 'en' ? 'en-US' : 'es-MX'} data-i18n-tu={t(L, 'id.chat_tu')}
                 data-i18n-at-persona={t(L, 'id.atencion.persona')} data-i18n-at-personas={t(L, 'id.atencion.personas')}
                 data-i18n-at-apertura={t(L, 'id.atencion.apertura')} data-i18n-at-aperturas={t(L, 'id.atencion.aperturas')}
                 data-i18n-at-pdf={t(L, 'id.atencion.pdf')} data-i18n-at-tiempo-total={t(L, 'id.atencion.tiempo_total')}>
@@ -426,7 +429,10 @@ const dotColor = (tipo: string) =>
                     {(q.conversacion ?? []).map((m) => (
                         <div class:list={['dc-msg', m.mine ? 'mine' : 'theirs', { counter: m.tipo === 'counter' }]}>
                             <span class="dc-msg-text">{m.detalle}</span>
-                            <span class="dc-msg-time">{m.cuando}</span>
+                            <span class="dc-msg-meta">
+                                <span class="dc-msg-who">{m.mine ? t(L, 'id.chat_tu') : q.cliente}</span>
+                                <span class="dc-msg-time">{m.cuando}</span>
+                            </span>
                         </div>
                     ))}
                     {(!q.conversacion || q.conversacion.length === 0) && (
@@ -722,6 +728,8 @@ const dotColor = (tipo: string) =>
     .dc-msg.mine { align-self: flex-end; background: var(--color-blue-deep); color: #fff; border-radius: 14px 14px 3px 14px; }
     .dc-msg.counter { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.28); color: var(--color-text); }
     .dc-msg-text { white-space: pre-wrap; }
+    .dc-msg-meta { display: flex; align-items: baseline; gap: 5px; }
+    .dc-msg-who { font-size: 0.6rem; font-weight: 700; opacity: 0.7; }
     .dc-msg-time { font-size: 0.6rem; opacity: 0.55; }
 
     .dc-compose { display: flex; align-items: flex-end; gap: 7px; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 12px; padding: 6px 6px 6px 12px; }
@@ -756,6 +764,8 @@ const dotColor = (tipo: string) =>
     .di-thread-empty { font-size: 0.76rem; color: var(--color-text-muted); margin: 0 0 0.7rem; }
     .di-msg { display: flex; flex-direction: column; gap: 2px; max-width: 85%; padding: 6px 10px; font-size: 0.78rem; line-height: 1.4; border-radius: 12px 12px 12px 3px; background: var(--surface); color: var(--color-text); align-self: flex-start; }
     .di-msg.mine { align-self: flex-end; background: var(--color-blue-deep); color: #fff; border-radius: 12px 12px 3px 12px; }
+    .di-msg-meta { display: flex; align-items: baseline; gap: 5px; }
+    .di-msg-who { font-size: 0.58rem; font-weight: 700; opacity: 0.72; }
     .di-msg-time { font-size: 0.58rem; opacity: 0.55; }
     .di-thread-reply { display: flex; gap: 6px; }
     .di-thread-input {
@@ -893,6 +903,12 @@ const dotColor = (tipo: string) =>
                 });
                 es.addEventListener('message', () => {
                     if (tlNew) tlNew.hidden = false;
+                });
+                es.addEventListener('line_message', (e: MessageEvent) => {
+                    try {
+                        const d = JSON.parse(e.data);
+                        if (d?.item_id && d?.contenido) appendLineaEntrante(String(d.item_id), String(d.contenido));
+                    } catch { /* ignora */ }
                 });
                 es.onerror = () => {
                     es?.close();
@@ -1104,15 +1120,35 @@ const dotColor = (tipo: string) =>
         const replyTa = document.getElementById('replyMsg') as HTMLTextAreaElement | null;
         const btnReply = document.getElementById('btnReply') as HTMLButtonElement | null;
 
+        // Cada burbuja lleva SIEMPRE su autor. La posición y el color no bastan:
+        // con dos mensajes seguidos del mismo lado ya no se sabe quién escribió
+        // cuál, y los del cliente se leían como propios.
         const appendBubble = (thread: HTMLElement, text: string, mine: boolean, small = false) => {
             thread.querySelector('.dc-thread-empty, .di-thread-empty')?.remove();
+            const p = small ? 'di' : 'dc';
             const div = document.createElement('div');
-            div.className = (small ? 'di-msg' : 'dc-msg') + (mine ? ' mine' : '');
-            const t = document.createElement('span'); t.className = small ? 'di-msg-text' : 'dc-msg-text'; t.textContent = text;
-            const time = document.createElement('span'); time.className = small ? 'di-msg-time' : 'dc-msg-time'; time.textContent = I.i18nAhora || 'ahora';
-            div.append(t, time);
+            div.className = `${p}-msg ` + (mine ? 'mine' : 'theirs');
+            const t = document.createElement('span'); t.className = `${p}-msg-text`; t.textContent = text;
+            const meta = document.createElement('span'); meta.className = `${p}-msg-meta`;
+            const who = document.createElement('span'); who.className = `${p}-msg-who`;
+            who.textContent = mine ? (I.i18nTu || 'Tú') : (panel.dataset.cliente || '');
+            const time = document.createElement('span'); time.className = `${p}-msg-time`;
+            time.textContent = I.i18nAhora || 'ahora';
+            meta.append(who, time);
+            div.append(t, meta);
             thread.appendChild(div);
             thread.scrollTop = thread.scrollHeight;
+        };
+
+        // Comentario del CLIENTE en el hilo de una línea, llegado por SSE. Antes
+        // solo encendía el badge "Nuevo" del chat general, que ni siquiera es
+        // donde estaba el mensaje.
+        const appendLineaEntrante = (itemId: string, texto: string) => {
+            const wrap = document.getElementById(`di-thread-${itemId}`);
+            const msgs = wrap?.querySelector<HTMLElement>('.di-thread-msgs');
+            if (!wrap || !msgs) return;
+            wrap.hidden = false;
+            appendBubble(msgs, texto, false, true);
         };
 
         // Auto-resize + Enter para enviar (Shift+Enter = salto de línea) — se siente como chat real.

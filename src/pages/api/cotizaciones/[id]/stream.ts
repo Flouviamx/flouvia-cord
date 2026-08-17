@@ -3,9 +3,10 @@
 // pero por push en vez de por intervalo, y además el texto del último mensaje
 // nuevo para poder mostrarlo sin recargar. Requiere sesión (misma protección que
 // el resto de /api/cotizaciones/*, gated por middleware — no público).
-//   event: presence { online, convCount, seccion, escribiendo }
-//   event: message  { detalle }   — nueva línea de conversación (comment/counter/reply)
-//   event: ping     {}
+//   event: presence     { online, convCount, seccion, escribiendo }
+//   event: message      { detalle }              — nueva línea del chat general (comment/counter)
+//   event: line_message { item_id, contenido }   — comentario del cliente en UNA línea
+//   event: ping         {}
 //
 // Además ESCRIBE la presencia del vendedor: mientras esta conexión vive, el
 // miembro del equipo está "en el documento", y el link público del cliente lo
@@ -56,6 +57,11 @@ export const GET: APIRoute = async ({ params, request }) => {
             let lastOnline: boolean | null = null;
             let lastConvCount: number | null = null;
             let lastMsgTs: string = new Date().toISOString();
+            // Los hilos por línea viven en cotizacion_comentarios. Antes solo
+            // alimentaban el contador convCount (que enciende el badge "Nuevo"
+            // del chat general, ni siquiera donde está el mensaje); ahora el
+            // comentario aterriza en su propia línea, en vivo.
+            let lastLineTs: string = lastMsgTs;
             let lastHeartbeat = Date.now();
             const started = Date.now();
 
@@ -76,7 +82,7 @@ export const GET: APIRoute = async ({ params, request }) => {
                                 last_seen  = now()`);
                     }
 
-                    const [presRows, ev, cm, msgs] = await withOrgTx(orgId,
+                    const [presRows, ev, cm, msgs, lineas] = await withOrgTx(orgId,
                         presenciaQuery(id, orgId),
                         sql`select count(*)::int as n from eventos
                              where cotizacion_id = ${id} and org_id = ${orgId}
@@ -86,6 +92,13 @@ export const GET: APIRoute = async ({ params, request }) => {
                         sql`select detalle, created_at from eventos
                              where cotizacion_id = ${id} and org_id = ${orgId}
                                and tipo in ('comment','counter') and created_at > ${lastMsgTs}
+                             order by created_at asc limit 20`,
+                        // Solo 'cliente': los propios ya los pintó el envío
+                        // optimista del vendedor, reenviarlos los duplicaría.
+                        sql`select item_id, contenido, created_at from cotizacion_comentarios
+                             where cotizacion_id = ${id} and org_id = ${orgId}
+                               and autor_tipo = 'cliente' and item_id is not null
+                               and created_at > ${lastLineTs}
                              order by created_at asc limit 20`,
                     );
 
@@ -106,6 +119,10 @@ export const GET: APIRoute = async ({ params, request }) => {
                     if (msgs.length) {
                         lastMsgTs = String(msgs[msgs.length - 1].created_at);
                         for (const m of msgs) send('message', { detalle: m.detalle });
+                    }
+                    if (lineas.length) {
+                        lastLineTs = String(lineas[lineas.length - 1].created_at);
+                        for (const l of lineas) send('line_message', { item_id: l.item_id, contenido: l.contenido });
                     }
                 } catch { /* fallo transitorio de BD — reintenta el siguiente ciclo */ }
 

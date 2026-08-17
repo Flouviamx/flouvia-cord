@@ -267,7 +267,13 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    El payload del latido NO es de confianza: claves de vocabulario
                    cerrado y techo de 60s por clave/tick (src/lib/atencion.ts).
 /api/q/[token]/stream        → SSE público (jul 2026, sin auth — token = secreto).
-                   event: ready | patch | presence | message | status | ping.
+                   event: ready | patch | presence | message | line_message | status | ping.
+                   `line_message {item_id, contenido}` entrega la respuesta del
+                   vendedor en el hilo de UNA partida (cotizacion_comentarios, tabla
+                   distinta de eventos). Antes no viajaba por ningún stream: el
+                   vendedor respondía en una línea y el cliente con la página abierta
+                   no se enteraba nunca (Regla 20). Filtra autor_tipo='usuario' — los
+                   del propio cliente ya los pintó su envío optimista.
                    Sigue siendo polling a Neon DENTRO de la conexión larga, sin infra
                    nueva. Lo barato lo hace `cotizaciones.rev`: el ciclo normal lee un
                    entero y solo paga el snapshot completo (getLiveSnapshot) cuando ese
@@ -276,8 +282,10 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    ocultar la pestaña. `lastRev` avanza DESPUÉS del snapshot: adelantarlo
                    convertía un fallo transitorio de BD en un parche perdido para siempre.
 /api/cotizaciones/[id]/stream → SSE con sesión (jul 2026). Empuja presencia
-                   (event:presence {online,convCount,seccion,escribiendo}) y mensajes
-                   nuevos del cliente (event:message) al detalle del vendedor — reemplaza
+                   (event:presence {online,convCount,seccion,escribiendo}), mensajes
+                   nuevos del cliente (event:message) y sus comentarios por partida
+                   (event:line_message, filtrando autor_tipo='cliente') al detalle
+                   del vendedor — reemplaza
                    el polling de 8s a /api/cotizaciones/[id]/presence (endpoint que sigue
                    vivo como fallback si el navegador no abre SSE).
                    También ESCRIBE la presencia del vendedor mientras la conexión vive:
