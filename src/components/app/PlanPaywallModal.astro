@@ -1,0 +1,203 @@
+---
+// PlanPaywallModal — el popup que se abre cuando el PLAN no alcanza (no el
+// permiso: eso lo resuelve AccessGate, que además cubre la página detrás de
+// este modal con el mismo motivo — la página nunca se queda en blanco). Este
+// modal muestra SOLO el plan que de verdad desbloquea la función y, si existe,
+// el siguiente peldaño — nunca la lista completa: ofrecer un plan que ya
+// incluye la función junto a otro que la super-incluye es ruido, no ayuda a
+// decidir (paywall-upgrade-cro: "Show, don't just tell").
+//
+// Requiere que la página importe src/styles/modal.css (Regla 12: AppLayout no
+// lo carga por defecto).
+import { PLANES, precioAnualMensualizado } from '../../lib/precios';
+import { PLAN_RANK, type PlanId } from '../../lib/entitlements';
+
+interface Props {
+    id?: string;
+    title: string;
+    desc: string;
+    requiredPlan: PlanId;
+    locale?: 'es' | 'en';
+    /** A dónde navegar cuando se cierra el modal (Esc o ✕) — nunca se deja al
+     *  usuario varado en una página bloqueada sin salida. Default: /app. */
+    returnHref?: string;
+}
+const { id = 'planPaywallModal', title, desc, requiredPlan, locale = 'es', returnHref = '/app' } = Astro.props;
+const es = locale !== 'en';
+const money = (n: number) => '$' + new Intl.NumberFormat(es ? 'es-MX' : 'en-US').format(n);
+
+// PLANES ya está en orden ascendente de rank (starter…developer): el primer
+// elemento que alcanza el rank requerido ES el más barato que desbloquea la
+// función. Como máximo dos tarjetas: esa, y la inmediata superior si existe.
+const options = PLANES
+    .filter((p) => p.id !== 'free' && PLAN_RANK[p.id] >= PLAN_RANK[requiredPlan])
+    .slice(0, 2);
+---
+
+<dialog class="modal modal-lg ppm" id={id} data-ppm-auto="1" data-ppm-return={returnHref}>
+    <div class="m-head">
+        <h2>{title}</h2>
+        <button type="button" class="m-close" data-ppm-close aria-label={es ? 'Cerrar' : 'Close'}>✕</button>
+    </div>
+    <div class="m-body">
+        <p class="ppm-desc">{desc}</p>
+
+        {options.some((p) => !p.custom) && (
+            <div class="ppm-toggle">
+                <label class="ppm-switch">
+                    <input type="checkbox" class="ppm-toggle-check" />
+                    <span class="ppm-slider"></span>
+                </label>
+                <span class="ppm-toggle-label">
+                    {es ? 'Cobro anual' : 'Billed yearly'}
+                    <i class="ppm-toggle-save">{es ? '2 meses gratis' : '2 months free'}</i>
+                </span>
+            </div>
+        )}
+
+        <div class="ppm-grid" data-count={options.length}>
+            {options.map((p) => {
+                const anual = precioAnualMensualizado(p.precioMensual);
+                return (
+                    <article class:list={['ppm-card', { featured: p.id === requiredPlan }]}>
+                        {p.id === requiredPlan && <span class="ppm-ribbon">{es ? 'Desbloquea esto' : 'Unlocks this'}</span>}
+                        <span class="ppm-name">{p.nombre}</span>
+                        {p.custom ? (
+                            <div class="ppm-price">
+                                <span class="editorial ppm-amount">{es ? 'A tu medida' : 'Custom'}</span>
+                            </div>
+                        ) : (
+                            <div class="ppm-price" data-monthly={money(p.precioMensual)} data-annual={money(anual)}>
+                                <span class="editorial ppm-amount ppm-amount-val">{money(p.precioMensual)}</span>
+                                <span class="ppm-cycle">{es ? '/mes' : '/mo'}</span>
+                            </div>
+                        )}
+                        <p class="ppm-tagline">{p.tagline}</p>
+                        <ul class="ppm-feats">
+                            {p.feats.slice(0, 4).map((f) => (
+                                <li>
+                                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    <span>{f}</span>
+                                </li>
+                            ))}
+                        </ul>
+                        {p.custom ? (
+                            <a href={p.ctaHref} class="ppm-cta">{p.ctaLabel}</a>
+                        ) : (
+                            <a
+                                href={`/app/checkout?plan=${p.id}&cycle=mensual`}
+                                data-ppm-cta-base={`/app/checkout?plan=${p.id}`}
+                                class="ppm-cta"
+                            >{es ? 'Elegir' : 'Choose'} {p.nombre}</a>
+                        )}
+                    </article>
+                );
+            })}
+        </div>
+    </div>
+    <div class="m-foot">
+        <a href={`/app/ajustes/plan?plan=${requiredPlan}`} class="ppm-all">{es ? 'Ver comparación completa de planes' : 'See full plan comparison'}</a>
+    </div>
+</dialog>
+
+<script>
+    // Regla 13: los <script> de Astro son módulos diferidos que corren en orden
+    // de documento tras el parseo — se difiere a DOMContentLoaded para no
+    // depender de si este módulo corrió antes o después de otros de la página.
+    function initPaywallModals() {
+        document.querySelectorAll<HTMLDialogElement>('dialog[data-ppm-auto]').forEach((dlg) => {
+            (window as any).cordWireModal?.(dlg);
+
+            // Cerrar (✕ o Esc, que dispara 'close' de forma nativa en <dialog>)
+            // siempre navega a un lugar usable — nunca deja la página bloqueada
+            // sin salida detrás del backdrop.
+            const goBack = () => {
+                const returnHref = dlg.getAttribute('data-ppm-return') || '/app';
+                // replace(), no href=: cerrar el paywall no debe dejar la URL
+                // bloqueada en el historial — "atrás" no debe regresar a ella.
+                window.location.replace(returnHref);
+            };
+            dlg.querySelector('[data-ppm-close]')?.addEventListener('click', () => dlg.close());
+            dlg.addEventListener('close', goBack, { once: true });
+
+            // Toggle mensual/anual: recalcula precio mostrado + cycle del CTA.
+            const toggle = dlg.querySelector<HTMLInputElement>('.ppm-toggle-check');
+            toggle?.addEventListener('change', () => {
+                const cycle = toggle.checked ? 'anual' : 'mensual';
+                dlg.querySelectorAll<HTMLElement>('.ppm-price').forEach((priceDiv) => {
+                    const v = toggle.checked ? priceDiv.dataset.annual : priceDiv.dataset.monthly;
+                    const val = priceDiv.querySelector<HTMLElement>('.ppm-amount-val');
+                    if (v && val) val.textContent = v;
+                });
+                dlg.querySelectorAll<HTMLAnchorElement>('[data-ppm-cta-base]').forEach((cta) => {
+                    const base = cta.getAttribute('data-ppm-cta-base');
+                    if (base) cta.href = `${base}&cycle=${cycle}`;
+                });
+            });
+
+            if (!dlg.open) dlg.showModal();
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPaywallModals);
+    else initPaywallModals();
+</script>
+
+<style>
+    .ppm-desc { font-size: 0.86rem; line-height: 1.55; color: var(--color-text-muted); margin: 0 0 0.5rem; }
+
+    .ppm-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 0.2rem; }
+    .ppm-switch { position: relative; display: inline-block; width: 34px; height: 19px; flex-shrink: 0; }
+    .ppm-switch input { opacity: 0; width: 0; height: 0; }
+    .ppm-slider { position: absolute; cursor: pointer; inset: 0; background: var(--color-border); transition: 0.3s; border-radius: 20px; }
+    .ppm-slider:before {
+        position: absolute; content: ""; height: 13px; width: 13px;
+        left: 3px; bottom: 3px; background: #fff;
+        transition: 0.25s var(--ease-spring); border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .ppm-toggle-check:checked + .ppm-slider { background: var(--color-blue-deep); }
+    .ppm-toggle-check:checked + .ppm-slider:before { transform: translateX(15px); }
+    .ppm-toggle-label { font-size: 0.78rem; color: var(--color-text-muted); font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .ppm-toggle-save {
+        font-style: normal; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.3px;
+        padding: 2px 7px; border-radius: 100px; background: rgba(16,185,129,0.14); color: #059669;
+    }
+
+    .ppm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; }
+    .ppm-grid[data-count="1"] { grid-template-columns: minmax(200px, 260px); }
+    .ppm-card {
+        position: relative; display: flex; flex-direction: column; gap: 0.55rem;
+        border: 1px solid var(--color-border); border-radius: 16px; padding: 1.2rem 1rem 1.1rem;
+        background: var(--color-bg-soft);
+    }
+    .ppm-card.featured { background: var(--surface); box-shadow: 0 0 0 1.5px var(--color-blue-deep), 0 16px 32px -18px rgba(10,25,47,0.3); }
+    .ppm-ribbon {
+        position: absolute; top: -10px; left: 1rem; font-size: 0.6rem; font-weight: 800;
+        letter-spacing: 0.04em; text-transform: uppercase; color: #fff;
+        background: var(--color-blue-deep); border-radius: 999px; padding: 3px 10px;
+    }
+    .ppm-name { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
+    .ppm-price { display: flex; align-items: baseline; gap: 3px; min-height: 1.7rem; }
+    .ppm-amount { font-size: 1.3rem; color: var(--color-text); }
+    .ppm-cycle { font-size: 0.68rem; color: var(--color-text-muted); }
+    .ppm-tagline { font-size: 0.72rem; color: var(--color-text-muted); margin: 0; line-height: 1.35; min-height: 2.2em; }
+    .ppm-feats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; flex-grow: 1; }
+    .ppm-feats li { display: flex; align-items: flex-start; gap: 6px; font-size: 0.72rem; line-height: 1.35; color: var(--color-text-muted); }
+    .ppm-feats li svg { flex-shrink: 0; margin-top: 2px; color: var(--color-blue-deep); }
+    .ppm-cta {
+        margin-top: 0.3rem; text-align: center; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600;
+        color: #fff; background: var(--color-blue-deep); text-decoration: none;
+        border-radius: 999px; padding: 9px 12px;
+        transition: transform 0.25s var(--ease-spring), box-shadow 0.25s;
+    }
+    .ppm-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(10,25,47,0.5); }
+    .ppm-all { font-size: 0.78rem; font-weight: 500; color: var(--color-text-muted); text-decoration: none; }
+    .ppm-all:hover { color: var(--color-blue-deep); text-decoration: underline; }
+
+    @media (max-width: 560px) {
+        .ppm-grid { grid-template-columns: 1fr; }
+        .ppm-grid[data-count="1"] { grid-template-columns: 1fr; }
+    }
+</style>

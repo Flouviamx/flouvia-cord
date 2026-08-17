@@ -35,7 +35,11 @@ export const PRESETS: Record<string, { label: string; desc: string; permisos: Pe
 };
 export const PRESET_KEYS = Object.keys(PRESETS);
 
-export interface Membership { rol: string; permisos: PermMap; esOwner: boolean; }
+// widgetPrefs: layout de widgets por grid ({ order, hidden, sizes, rev, at }),
+// persistido en org_members.widget_prefs (ver src/pages/api/app/widget-prefs.ts
+// y src/components/app/WidgetGrid.astro). Opcional porque los principals sin
+// fila real (anon, M2M, sandbox) nunca tienen layout guardado — caen a localStorage.
+export interface Membership { rol: string; permisos: PermMap; esOwner: boolean; widgetPrefs?: Record<string, unknown>; }
 
 /** ¿Este miembro puede ejecutar acciones de `key`? Owner siempre sí. */
 export function memberCan(m: Membership | null | undefined, key: PermKey): boolean {
@@ -66,24 +70,16 @@ export const planTieneApi = (plan: string) => API_PLANS.includes(plan);
 // planes (incluido free) los tienen, pero LIMITADOS por cantidad — free = prueba
 // real (muy poquito), de pago = progresivamente más. El CONSUMO de la API además
 // se mide por uso (Stripe Billing) de Pro en adelante.
+//
+// Los números viven en src/lib/entitlements.ts (API_KEY_LIMITS/WEBHOOK_LIMITS) —
+// única fuente, para no repetir la tabla en dos módulos que pueden desincronizarse.
+export { apiKeyLimit, webhookLimit } from './entitlements';
+
 export const PLAN_LABELS: Record<string, string> = {
     free: 'Gratis', starter: 'Starter', pro: 'Profesional', scale: 'Scale',
     developer: 'Developer', business: 'Negocio', negocio: 'Negocio',
 };
 export const planLabel = (plan: string): string => PLAN_LABELS[plan] ?? 'Gratis';
-
-// Máximo de endpoints de webhook por plan.
-export const WEBHOOK_LIMITS: Record<string, number> = {
-    free: 1, starter: 3, pro: 10, scale: 25, developer: 100, business: 10, negocio: 10,
-};
-export const webhookLimit = (plan: string): number => WEBHOOK_LIMITS[plan] ?? WEBHOOK_LIMITS.free;
-
-// Máximo de API keys ACTIVAS (no revocadas) por plan. Las de prueba y en vivo
-// cuentan igual; el consumo se mide aparte.
-export const APIKEY_LIMITS: Record<string, number> = {
-    free: 2, starter: 5, pro: 20, scale: 50, developer: 200, business: 20, negocio: 20,
-};
-export const apiKeyLimit = (plan: string): number => APIKEY_LIMITS[plan] ?? APIKEY_LIMITS.free;
 
 // SSO empresarial (SAML 2.0): tier alto — Scale y Developer. NO incluye los
 // alias legacy 'business'/'negocio' (mapean a cuentas Pro grandfathered).
@@ -93,16 +89,11 @@ export const apiKeyLimit = (plan: string): number => APIKEY_LIMITS[plan] ?? APIK
 export const SSO_PLANS = ['scale', 'developer'];
 export const planTieneSso = (plan: string) => SSO_PLANS.includes(plan);
 
-// ── Asientos de equipo por plan (ago 2026) ──
-// La matriz de /precios prometía "Pro (5), Scale (15), Developer ilimitados" desde
-// jun 2026, pero el número no existía en código: `POST /api/equipo` solo verificaba
-// `planTieneEquipo` y nunca contaba miembros. Ahora sí se aplica.
-// ⚠️ Grandfathering: una cuenta que YA rebasa su límite conserva a todos sus
-// miembros — el tope solo impide invitar a uno más. Nunca se expulsa a nadie.
-export const SEAT_LIMITS: Record<string, number> = {
-    free: 1, starter: 1, pro: 5, scale: 15, developer: Infinity, business: 5, negocio: 5,
-};
-export const seatLimit = (plan: string): number => SEAT_LIMITS[plan] ?? SEAT_LIMITS.free;
+// Los asientos de equipo (Pro 5 / Scale 15 / Developer ilimitados incluidos, con
+// excedente facturable) se aplican vía requireResourceCapacity(orgId, 'seats')
+// en src/lib/org-entitlements.ts — RESOURCE_LIMITS.seats en entitlements.ts es
+// la única fuente. (Existió aquí una tabla SEAT_LIMITS paralela sin un solo
+// consumidor real que contradecía ese contrato; se eliminó.)
 
 /** El plan MÍNIMO que desbloquea una lista de planes (el primero de la lista, que
  *  siempre se declara de menor a mayor). Sirve para el CTA `/app/ajustes/plan?plan=`. */

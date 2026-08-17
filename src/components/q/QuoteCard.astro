@@ -174,7 +174,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
     {bienvenida && <p class="q-welcome">{bienvenida}</p>}
 
     <!-- Total protagonista -->
-    <div class="q-total-hero">
+    <div class="q-total-hero" data-sec="resumen">
         <div class="q-total-inner">
             <span class="q-total-eyebrow">{t(L, 'q.total_eyebrow')}</span>
             <span class="editorial q-total-amount" style={`color:${color}`} data-countup={quoteTotal(q)}>{total}</span>
@@ -183,8 +183,19 @@ const hayContacto = !!(vEmail || vWa || vTel);
         </div>
     </div>
 
+    <!-- Aviso de cambio en vivo. Se renderiza en servidor (oculto) a propósito:
+         inyectarlo desde JS lo dejaría fuera del <style> scopeado de este
+         componente, que no lleva data-astro-cid en DOM creado en runtime. -->
+    {viva && (
+        <div class="q-changed" id="qChanged" hidden role="status">
+            <span class="q-changed-dot"></span>
+            <span class="q-changed-text">{t(L, 'q.cambio_aviso')}</span>
+            <button type="button" class="q-changed-btn" id="qChangedBtn">{t(L, 'q.cambio_ver')}</button>
+        </div>
+    )}
+
     <!-- Tabla de conceptos -->
-    <div class="q-items">
+    <div class="q-items" data-sec="partidas">
         <div class="qi-head">
             <span>{t(L, 'q.th_concepto')}</span>
             <span class="qi-center">{t(L, 'q.th_cant')}</span>
@@ -242,11 +253,11 @@ const hayContacto = !!(vEmail || vWa || vTel);
         </div>
     </div>
 
-    {q.notas && <p class="q-notes">{q.notas}</p>}
+    {q.notas && <p class="q-notes" data-sec="notas">{q.notas}</p>}
 
     {viva && (
         <div class="q-trust">
-            <span class="q-trust-live"><span class="q-live-dot"></span> {t(L, 'q.conectado_vivo')}</span>
+            <span class="q-trust-live" id="qLive"><span class="q-live-dot"></span> <span id="qLiveText">{t(L, 'q.conectado_vivo')}</span></span>
             <span class="q-trust-secure">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 {t(L, 'q.cifrado_firma')}{ORG.paisCode === 'MX' ? t(L, 'q.cfdi_suffix') : ''}
@@ -257,7 +268,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
     <!-- ──────────────────────────────────────────
          ÁREA DE ACCIÓN — flujo de aprobación en pasos
     ────────────────────────────────────────── -->
-    <div class="q-actions-area">
+    <div class="q-actions-area" data-sec="pago">
 
         <!-- Paso: review (default si cotización viva) -->
         <div class="ql-step" id="stepReview">
@@ -483,7 +494,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
     <!-- Conversación + chat directo -->
     {mostrarChat && (
-        <div class="q-chat">
+        <div class="q-chat" data-sec="conversacion">
             <div class="q-thread" id="qThread" hidden={conversacion.length === 0}>
                 <div class="q-chat-eyebrow">{t(L, 'q.conversacion')}</div>
                 {conversacion.map((m) => (
@@ -590,6 +601,18 @@ const hayContacto = !!(vEmail || vWa || vTel);
     const emit = (name: string, detail: Record<string, unknown> = {}) =>
         window.dispatchEvent(new CustomEvent(name, { detail: { token, folio, ...detail } }));
 
+    // ── Estado del documento vivo ──
+    // Declarados ARRIBA a propósito: refreshSelection() los lee y se ejecuta
+    // durante la inicialización, mucho antes del bloque de tiempo real. Con
+    // `let` más abajo caerían en la zona muerta temporal y el primer
+    // refreshSelection() lanzaría ReferenceError, matando todo el script.
+    //
+    // `revActual` es el contador de contenido que vio este navegador; viaja con
+    // la firma para que el servidor pueda rechazar (409) una aprobación hecha
+    // sobre una propuesta que el vendedor ya cambió.
+    let revActual = 0;
+    let cambioPendiente = false;
+
     // ── Pasos ──
     const showStep = (id: string) => {
         document.querySelectorAll<HTMLElement>('.ql-step').forEach(s => {
@@ -622,7 +645,13 @@ const hayContacto = !!(vEmail || vWa || vTel);
             body: JSON.stringify({ action, ...extra }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || I18NQ.errorInesperado);
+        if (!res.ok) {
+            const err: any = new Error(data.error || I18NQ.errorInesperado);
+            // El 409 de firma obsoleta necesita más que un texto: quien llama
+            // tiene que poder devolver al cliente a revisar los cambios.
+            err.data = data;
+            throw err;
+        }
         return data;
     };
 
@@ -652,7 +681,11 @@ const hayContacto = !!(vEmail || vWa || vTel);
             const w = p.closest('.qi-row-wrapper') as HTMLElement | null;
             if (w) w.classList.toggle('qi-deseleccionada', true);
         });
-        if (approveBtn) approveBtn.disabled = n === 0;
+        // `cambioPendiente` manda sobre la selección: si el vendedor actualizó
+        // la propuesta, tocar una casilla no debe rearmar el botón de firmar
+        // (el servidor responde 409 igual, pero ofrecer el botón es mentirle
+        // al cliente sobre lo que va a pasar).
+        if (approveBtn) approveBtn.disabled = n === 0 || cambioPendiente;
         // Solo mostramos la nota cuando es una selección PARCIAL (no todas).
         if (partialNote) {
             if (n > 0 && n < total) {
@@ -697,7 +730,10 @@ const hayContacto = !!(vEmail || vWa || vTel);
         confirmSignBtn.disabled = true;
         confirmSignBtn.textContent = I18NQ.firmando || 'Firmando…';
         try {
-            const res = await api('approve', { signed_by: signedBy, email, accepted_items: acceptedIds() });
+            // `rev` viaja con la firma: si el vendedor tocó la propuesta entre
+            // que el cliente la leyó y la firmó, el servidor responde 409 y la
+            // firma no ocurre sobre un total que el cliente nunca vio.
+            const res = await api('approve', { signed_by: signedBy, email, accepted_items: acceptedIds(), rev: revActual || undefined });
             const stamp = document.getElementById('qSignedStamp');
             if (stamp && signedBy) {
                 // MISMO markup que el render del servidor (.ql-audit-stamp). Sus
@@ -720,7 +756,21 @@ const hayContacto = !!(vEmail || vWa || vTel);
             emit('cord:approved', { signed_by: signedBy, hash: res.hash });
             emit('cord:signed', { signed_by: signedBy, hash: res.hash });
         } catch (err: any) {
-            if (errEl) errEl.textContent = (err as Error).message;
+            // La propuesta cambió entre la lectura y la firma: se regresa al
+            // paso de revisión con el aviso encendido, en vez de dejar al
+            // cliente reintentando una firma que el servidor va a seguir
+            // rechazando. El siguiente parche del SSE trae ya los valores nuevos.
+            if (err?.data?.stale) {
+                if (err.data.rev) revActual = Number(err.data.rev) || revActual;
+                if (errEl) errEl.textContent = '';
+                showStep('stepReview');
+                marcaCambio();
+                if (typeof (window as any).cordToast === 'function') {
+                    (window as any).cordToast(I18NQ.desactualizado, 'info');
+                }
+            } else if (errEl) {
+                errEl.textContent = (err as Error).message;
+            }
             confirmSignBtn.disabled = false;
             confirmSignBtn.textContent = I18NQ.confirmarFirmar || 'Confirmar y firmar';
         }
@@ -897,24 +947,216 @@ const hayContacto = !!(vEmail || vWa || vTel);
         });
     });
 
-    // ── Heartbeat de presencia ──
+    // ══════════════════════════════════════════════════════════════════════
+    //  DOCUMENTO VIVO
+    //  El latido reporta presencia y atención; el SSE trae los cambios del
+    //  vendedor y se aplican como parches al DOM. Nada de recargar: el cliente
+    //  puede estar a media firma y perder el estado del formulario.
+    // ══════════════════════════════════════════════════════════════════════
+
+    // ── Atención: en qué sección está y cuánto lleva ──
+    const dwell: Record<string, number> = {};
+    let seccionActual: string | null = null;
+    let seccionDesde = Date.now();
+
+    const acumulaDwell = () => {
+        if (!seccionActual) return;
+        const seg = Math.round((Date.now() - seccionDesde) / 1000);
+        if (seg > 0) dwell[`sec:${seccionActual}`] = (dwell[`sec:${seccionActual}`] ?? 0) + seg;
+        seccionDesde = Date.now();
+    };
+
+    if (token && 'IntersectionObserver' in window) {
+        const visibles = new Map<string, number>();
+        const io = new IntersectionObserver((entries) => {
+            for (const en of entries) {
+                const sec = (en.target as HTMLElement).dataset.sec;
+                if (!sec) continue;
+                if (en.isIntersecting) visibles.set(sec, en.intersectionRatio);
+                else visibles.delete(sec);
+            }
+            // La sección "activa" es la más visible en pantalla.
+            let mejor: string | null = null; let ratio = 0;
+            visibles.forEach((r, s) => { if (r > ratio) { ratio = r; mejor = s; } });
+            if (mejor !== seccionActual) { acumulaDwell(); seccionActual = mejor; }
+        }, { threshold: [0.25, 0.5, 0.75] });
+        document.querySelectorAll<HTMLElement>('[data-sec]').forEach(el => io.observe(el));
+    }
+
+    // ── Latido ──
+    let escribiendo = false;
     if (token) {
+        // Una apertura = una pestaña. sessionStorage muere con la pestaña, que es
+        // exactamente la granularidad que el vendedor entiende por "la abrió otra vez".
+        let nuevaSesion = false;
+        try {
+            const k = `cord.q.${token}`;
+            if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); nuevaSesion = true; }
+        } catch { /* modo privado sin sessionStorage: no cuenta la apertura */ }
+
         const ping = () => {
             if (document.visibilityState !== 'visible') return;
+            acumulaDwell();
+            const payload = {
+                action: 'ping',
+                seccion: seccionActual,
+                dwell: { ...dwell },
+                typing: escribiendo,
+                nueva_sesion: nuevaSesion,
+            };
+            nuevaSesion = false;
+            escribiendo = false;
+            for (const k of Object.keys(dwell)) delete dwell[k]; // deltas, no totales
             fetch(`/api/q/${token}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'ping' }), keepalive: true,
-            }).catch(() => {});
+                body: JSON.stringify(payload), keepalive: true,
+            }).then(r => r.ok ? r.json() : null)
+              .then(d => { if (d?.rev) revActual = Number(d.rev) || revActual; })
+              .catch(() => {});
         };
         ping();
         setInterval(ping, 10000);
-        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ping(); });
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') { seccionDesde = Date.now(); ping(); }
+            else acumulaDwell();
+        });
+        // Último latido al cerrar: rescata los segundos de la última sección.
+        window.addEventListener('pagehide', () => {
+            acumulaDwell();
+            if (!Object.keys(dwell).length) return;
+            try {
+                navigator.sendBeacon(`/api/q/${token}`, new Blob(
+                    [JSON.stringify({ action: 'ping', seccion: seccionActual, dwell })],
+                    { type: 'application/json' },
+                ));
+            } catch { /* mejor esfuerzo */ }
+        });
+
+        // Hitos discretos: abrir el PDF, expandir una línea.
+        const hito = (clave: string) => {
+            fetch(`/api/q/${token}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'hito', clave }), keepalive: true,
+            }).catch(() => {});
+        };
+        document.querySelectorAll<HTMLElement>('.qi-chat-btn').forEach(b => {
+            b.addEventListener('click', () => { const id = b.dataset.itemId; if (id) hito(`item:${id}`); });
+        });
+        document.querySelectorAll<HTMLAnchorElement>('a[href*="/pdf"], .q-pdf-link').forEach(a => {
+            a.addEventListener('click', () => hito('pdf'));
+        });
+        // "Escribiendo…" para el vendedor. Solo marca la bandera; el latido la manda.
+        document.querySelector('.q-compose-ta')?.addEventListener('input', () => { escribiendo = true; });
     }
 
-    // ── Tiempo real: respuestas del vendedor en vivo (SSE, sin recargar) ──
+    // ── Aplicar un parche del servidor al DOM ──
+    const flash = (el: HTMLElement | null) => {
+        if (!el) return;
+        el.classList.remove('q-flash');
+        void el.offsetWidth;
+        el.classList.add('q-flash');
+        el.addEventListener('animationend', () => el.classList.remove('q-flash'), { once: true });
+    };
+
+    const marcaCambio = () => {
+        cambioPendiente = true;
+        const aviso = document.getElementById('qChanged');
+        const texto = aviso?.querySelector('.q-changed-text') as HTMLElement | null;
+        const btn = document.getElementById('qChangedBtn') as HTMLButtonElement | null;
+        if (texto) texto.textContent = I18NQ.cambioAviso || 'Se actualizó la propuesta';
+        if (btn) btn.textContent = I18NQ.cambioVer || 'Ver cambios';
+        if (aviso) aviso.hidden = false;
+        // Firmar algo que ya cambió no es válido: se bloquea hasta reconocerlo.
+        if (approveBtn) { approveBtn.disabled = true; approveBtn.title = I18NQ.aprobarBloqueado || ''; }
+        const sticky = document.getElementById('qStickyApprove') as HTMLButtonElement | null;
+        if (sticky) sticky.disabled = true;
+    };
+
+    document.getElementById('qChangedBtn')?.addEventListener('click', () => {
+        cambioPendiente = false;
+        const aviso = document.getElementById('qChanged');
+        if (aviso) aviso.hidden = true;
+        if (approveBtn) { approveBtn.title = ''; }
+        const sticky = document.getElementById('qStickyApprove') as HTMLButtonElement | null;
+        if (sticky) sticky.disabled = false;
+        refreshSelection();
+        document.querySelector('.q-items')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    function applyPatch(p: any) {
+        if (!p || typeof p !== 'object') return;
+        const primera = revActual === 0;
+        const cambioReal = !primera && Number(p.rev) !== revActual;
+        revActual = Number(p.rev) || revActual;
+
+        // ── Líneas ──
+        const vistos = new Set<string>();
+        for (const it of (Array.isArray(p.items) ? p.items : [])) {
+            vistos.add(String(it.id));
+            const fila = document.querySelector<HTMLElement>(`[data-line-id="${CSS.escape(String(it.id))}"]`);
+            if (!fila) continue;
+            const importeViejo = Number(fila.dataset.importe ?? 0);
+            const precioEl = fila.querySelector('.qi-price') as HTMLElement | null;
+            const totalEl = fila.querySelector('.qi-total') as HTMLElement | null;
+            const qtyEl = fila.querySelector('.qi-qty') as HTMLElement | null;
+
+            if (Math.abs(importeViejo - Number(it.importe)) > 0.005) {
+                if (precioEl) precioEl.textContent = moneyFmt(Number(it.precio));
+                if (totalEl) totalEl.textContent = moneyFmt(Number(it.importe));
+                if (qtyEl) {
+                    const n = Number(it.cantidad).toLocaleString(I18NQ.localeIntl || 'es-MX');
+                    qtyEl.textContent = `${n} ${it.unidad ?? ''}`.trim();
+                }
+                fila.dataset.importe = String(it.importe);
+                if (cambioReal) {
+                    flash(fila);
+                    // Rótulo efímero con el importe anterior: el cliente ve QUÉ cambió,
+                    // no solo que algo cambió.
+                    const prev = fila.querySelector('.q-was');
+                    if (prev) prev.remove();
+                    const was = document.createElement('span');
+                    was.className = 'q-was';
+                    was.textContent = (I18NQ.cambioEra || 'antes {monto}').replace('{monto}', moneyFmt(importeViejo));
+                    totalEl?.appendChild(was);
+                    setTimeout(() => was.remove(), 8000);
+                }
+            }
+        }
+        // Líneas que ya no existen: se atenúan (quitarlas movería el layout bajo el dedo).
+        document.querySelectorAll<HTMLElement>('[data-line-id]').forEach(fila => {
+            const id = fila.dataset.lineId ?? '';
+            if (vistos.has(id)) { fila.classList.remove('qi-eliminada'); return; }
+            fila.classList.add('qi-eliminada');
+            const cb = fila.querySelector('.qi-pick-cb') as HTMLInputElement | null;
+            if (cb) { cb.checked = false; cb.disabled = true; }
+        });
+
+        // ── Totales ──
+        const filas = document.querySelectorAll('.qi-subtotals .qt-row .editorial');
+        if (filas.length >= 3) {
+            filas[0].textContent = moneyFmt(Number(p.subtotal));
+            filas[1].textContent = moneyFmt(Number(p.iva));
+            filas[2].textContent = moneyFmt(Number(p.total));
+        }
+        const heroEl = document.querySelector('.q-total-amount') as HTMLElement | null;
+        if (heroEl) {
+            const viejo = parseFloat(heroEl.dataset.countup ?? '0');
+            heroEl.dataset.countup = String(p.total);
+            countUp(heroEl, viejo, Number(p.total));
+        }
+        const stickyTotal = document.querySelector('.q-sticky-total') as HTMLElement | null;
+        if (stickyTotal) stickyTotal.textContent = moneyFmt(Number(p.total));
+
+        refreshSelection();
+        if (cambioReal) marcaCambio();
+    }
+
+    // ── SSE ──
     if (token && typeof EventSource !== 'undefined') {
         let es: EventSource | null = null;
+        const cerrar = () => { es?.close(); es = null; };
         const connect = () => {
+            if (es) return;
             es = new EventSource(`/api/q/${token}/stream`);
             es.addEventListener('message', (e: MessageEvent) => {
                 try {
@@ -922,21 +1164,69 @@ const hayContacto = !!(vEmail || vWa || vTel);
                     if (d?.detalle) appendIncoming(d.detalle);
                 } catch { /* ignora */ }
             });
+            es.addEventListener('patch', (e: MessageEvent) => {
+                try { applyPatch(JSON.parse(e.data)); } catch { /* ignora */ }
+            });
+            es.addEventListener('presence', (e: MessageEvent) => {
+                try { applyPresence(JSON.parse(e.data)); } catch { /* ignora */ }
+            });
             es.addEventListener('status', () => {
-                // El estado cambió del lado del vendedor (ej. se marcó pagada) —
-                // el snapshot vivo de este script no cubre todos los estados,
-                // así que la forma segura de reflejarlo es recargar.
+                // Estado TERMINAL (pagada, rechazada, vencida): cambia demasiado
+                // markup para parchearlo con confianza. Aquí sí toca recargar.
                 location.reload();
             });
-            es.onerror = () => { es?.close(); setTimeout(connect, 4000); };
+            es.onerror = () => { cerrar(); setTimeout(connect, 4000); };
         };
         connect();
+        // Con la pestaña oculta no hay nada que mirar: cerrar libera la función
+        // del servidor en vez de dejarla viva durante horas.
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && es?.readyState === EventSource.CLOSED) connect();
+            if (document.visibilityState === 'visible') connect();
+            else cerrar();
         });
     }
 
+    // ── Presencia del vendedor ──
+    function applyPresence(d: any) {
+        const wrap = document.getElementById('qLive');
+        const txt = document.getElementById('qLiveText');
+        if (!wrap || !txt) return;
+        const nombre = typeof d?.vendedor === 'string' ? d.vendedor : '';
+        if (d?.escribiendo) {
+            txt.textContent = nombre
+                ? (I18NQ.vendedorEscribiendo || '{nombre} está escribiendo…').replace('{nombre}', nombre)
+                : (I18NQ.equipoEscribiendo || 'Escribiendo…');
+        } else if (d?.enLinea) {
+            txt.textContent = nombre
+                ? (I18NQ.vendedorEnLinea || '{nombre} está en línea').replace('{nombre}', nombre)
+                : (I18NQ.equipoEnLinea || 'El equipo está en línea');
+        } else {
+            txt.textContent = I18NQ.conectado || 'Conectado en tiempo real';
+        }
+        wrap.classList.toggle('q-live-on', !!(d?.enLinea));
+    }
+
     // ── Micro-lujo: count-up del total ──
+    // Nombrado (ya no un IIFE) porque applyPatch lo reutiliza: cuando el
+    // vendedor cambia un precio en vivo, el total no salta — se desliza del
+    // importe anterior al nuevo, que es lo que hace legible el cambio.
+    function countUp(el: HTMLElement, desde: number, hasta: number) {
+        const fmt = (n: number) => '$' + new Intl.NumberFormat(I18NQ.localeIntl || 'es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+        if (!isFinite(hasta)) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            el.textContent = fmt(hasta);
+            return;
+        }
+        const dur = 1000; let t0 = 0;
+        const tick = (t: number) => {
+            if (!t0) t0 = t;
+            const p = Math.min((t - t0) / dur, 1);
+            el.textContent = fmt(desde + (hasta - desde) * (1 - Math.pow(1 - p, 3)));
+            if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+
     (() => {
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         const el = document.querySelector('.q-total-amount') as HTMLElement | null;
@@ -944,15 +1234,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         if (!el || !raw) return;
         const target = parseFloat(raw);
         if (!isFinite(target) || target <= 0) return;
-        const fmt = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
-        const dur = 1000; let t0 = 0;
-        const tick = (t: number) => {
-            if (!t0) t0 = t;
-            const p = Math.min((t - t0) / dur, 1);
-            el.textContent = fmt(target * (1 - Math.pow(1 - p, 3)));
-            if (p < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
+        countUp(el, 0, target);
     })();
 
     // ── Micro-lujo: reveal escalonado de las líneas ──
@@ -1341,6 +1623,61 @@ const hayContacto = !!(vEmail || vWa || vTel);
 @keyframes qLivePulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
 .q-trust-secure { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 500; color: #9ca3af; }
 @media (prefers-reduced-motion: reduce) { .q-live-dot { animation: none; } }
+
+/* Alguien del equipo está del otro lado AHORA. Es el estado que más mueve la
+   aguja del cliente: si hay alguien, pregunta en vez de cerrar la pestaña. */
+.q-trust-live.q-live-on { color: #065f46; }
+.q-trust-live.q-live-on .q-live-dot { background: #10b981; }
+
+/* ── Documento vivo: la propuesta cambió mientras el cliente la leía ── */
+.q-changed {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 0 0 0.9rem; padding: 0.7rem 1rem;
+    background: rgba(245,158,11,0.09);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 12px;
+    font-size: 0.8rem; font-weight: 600; color: #92400e;
+    animation: qChangedIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.q-changed-dot { width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
+.q-changed-text { flex: 1; min-width: 0; }
+.q-changed-btn {
+    border: 0; cursor: pointer;
+    background: #92400e; color: #fff;
+    font-size: 0.74rem; font-weight: 700; font-family: inherit;
+    padding: 6px 14px; border-radius: 100px;
+    transition: transform 0.16s var(--ease-ios, ease), opacity 0.16s;
+    /* Móvil táctil: blanco de toque completo (estándar 16). */
+    min-height: 34px;
+}
+.q-changed-btn:hover { opacity: 0.88; }
+.q-changed-btn:active { transform: scale(0.97); }
+@keyframes qChangedIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* Flash sobre la línea que acaba de cambiar: señala QUÉ se movió sin que el
+   cliente tenga que comparar de memoria. */
+.q-flash { animation: qFlash 1.2s ease-out both; }
+@keyframes qFlash {
+    0%   { background: rgba(245,158,11,0.22); }
+    100% { background: transparent; }
+}
+.q-was {
+    display: block; margin-top: 2px;
+    font-size: 0.62rem; font-weight: 600; color: #b45309;
+    text-decoration: line-through; text-decoration-color: rgba(180,83,9,0.4);
+    animation: qWasOut 8s linear both;
+}
+@keyframes qWasOut { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Línea que el vendedor quitó en vivo. No se elimina del DOM: hacerlo movería
+   el layout justo bajo el dedo del cliente. */
+.qi-row-wrapper.qi-eliminada { opacity: 0.38; }
+.qi-row-wrapper.qi-eliminada .qi-name,
+.qi-row-wrapper.qi-eliminada .qi-total { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.3); }
+
+@media (prefers-reduced-motion: reduce) {
+    .q-changed, .q-flash, .q-was { animation: none; }
+}
 
 /* ── Pago pulido ── */
 .ql-pay-options { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; margin-bottom: 0.5rem; }

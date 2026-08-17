@@ -10,21 +10,46 @@
 
 Freemium tipo la app de Shopify: gratis hasta 5 cotizaciones activas con
 "Powered by Cord" en el link público; planes de pago vía Stripe Billing.
-**Matriz maestra de 5 niveles (jun 2026)** — MXN/mes, IVA incluido, **Pro = el
-ancla** (destacado en la landing):
+**Matriz maestra de 5 niveles (delimitación ago 2026)** — MXN/mes, IVA incluido,
+**Pro = el ancla** (destacado en la landing). Precios base SIN cambios respecto
+a jun 2026: el movimiento fue de packaging (qué feature vive en qué plan), no
+de precio — los price ID de Stripe LIVE ya tienen suscripciones activas.
 
 | Plan | Precio | Posición | Incluye (resumen) |
 |------|--------|----------|-------------------|
-| Gratis | $0 | gancho | 5 cotizaciones, 50 prod/cli, 3 IA/mes, "Powered by Cord" |
-| Starter | $240 | freelance | 50 cotizaciones, 500 prod/cli, 20 IA + 3 CFDI/mes, tu marca, CSV |
-| **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 20 CFDI/mes, seguimiento en vivo, analítica, audit log |
-| Scale | $1,390 | corp | + 15 usuarios, 500 IA + 100 CFDI/mes, aprobaciones, cobranza, SMTP propio |
-| Developer | $2,990 | infra | + usuarios/IA ilimitados, 1,000 CFDI + 50,000 API/mes, excedentes más baratos |
+| Gratis | $0 | gancho | 5 cotizaciones activas, 5 **enviadas/mes**, 50 prod/cli, 3 IA/mes, "Powered by Cord" |
+| Starter | $240 | freelance | 50 cotizaciones, 500 prod/cli, 20 IA + 3 facturas/mes (MX o resto del mundo), tu marca, CSV |
+| **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 20 facturas/mes, **cobranza + flujo a 90 días**, seguimiento en vivo, analítica |
+| Scale | $1,390 | automatización | + 15 usuarios, 500 IA + 100 facturas/mes, aprobaciones, **cobranza autónoma con IA**, SMTP propio, SSO |
+| Developer | — | **sin autoservicio** | + usuarios/IA ilimitados, 1,000 facturas + 50,000 API/mes, excedentes al menor costo. Se contrata hablando con ventas (`/contacto/ventas`); `/api/billing/subscribe` rechaza `plan=developer` |
 
-Cada plan de pago trae cuota mensual (IA/CFDI/API/usuarios); el **excedente se
+Movimientos de gate respecto a la matriz de jun 2026 (`FEATURE_MIN_PLAN` en
+`src/lib/entitlements.ts`): `collections` y `cashflow_90` bajan de Scale a Pro
+(van con `cfo_dashboard`, que ya vivía ahí); `international_invoicing` baja de
+Scale a Starter para quedar en el mismo peldaño que `cfdi` — mismo carril de
+facturación electrónica, distinto solo por país (Regla 10). `collections_ai`
+(la cobranza *autónoma*) sigue siendo exclusiva de Scale.
+
+`quote_attention` (ago 2026) nace en Pro, en paridad con `live_presence`: son la
+misma promesa comercial —"sabes qué pasa con tu propuesta"— separadas en dos gates
+porque una es el estado instantáneo (¿la está viendo ahora?) y la otra el
+comportamiento acumulado (¿qué leyó y por cuánto tiempo?). Lo que se cobra es el
+**panel del vendedor**, nunca el link del cliente: el carril público
+(`/api/q/[token]` y su stream) no lleva `requireEntitlement` por diseño, y
+`billing-security-check.mjs` lo verifica — gatearlo dejaría a una org en Gratis sin
+poder cobrar por su propio link.
+
+Tope nuevo de Gratis: **envíos mensuales** (`INCLUDED.envios`, `uso_periodo.envios`),
+distinto de "cotizaciones activas" — activas es un stock reciclable (cerrar un
+trato libera cupo), envíos se reinicia cada mes sin importar cuántas cierres. Sin
+meter de Stripe: nunca se cobra, solo bloquea (`reserveUsage(orgId, 'envios', 1)`
+en el `action: 'send'` de `/api/cotizaciones/[id].ts`).
+
+Cada plan de pago trae cuota mensual (IA/facturas/API/usuarios); el **excedente se
 cobra por uso** vía Stripe Billing Meters. Gratis tiene topes duros; Starter cobra
-excedente de IA/CFDI/API pero conserva un asiento duro; Pro y Scale cobran los cuatro
-medidores; Developer mantiene usuarios e IA ilimitados según la matriz pública.
+excedente de IA/facturas/API pero conserva un asiento duro; Pro y Scale cobran los
+cuatro medidores; Developer mantiene usuarios e IA ilimitados según la matriz pública,
+pero sin camino de autoservicio para entrar a ese plan.
 Código de plan almacenado: `free|starter|pro|scale|developer`.
 Cuotas incluidas y mapping de price_id/meter en **`src/lib/billing.ts`**.
 
@@ -65,6 +90,11 @@ Flujo:
   customer, Subscription y Checkout usan Idempotency-Key estable.
   **Sin periodo de prueba** (eliminado jun 2026): Stripe exige tarjeta en el
   checkout y cobra desde el alta. El CTA de los planes dice "Empezar ahora".
+  El lock de tentativa **no** es un castigo por cambiar de opinión: un intento que
+  demostrablemente no cobró nada (`creating` sin id de Stripe, suscripción terminal, o
+  `incomplete` de otro plan/ciclo) se abandona y libera; uno `active`/`past_due` sigue
+  bloqueando y se resuelve en el Portal. Se cancela en Stripe ANTES de liberar el lock
+  local; si Stripe falla, 503 conservando el bloqueo. Ver historial (16 ago 2026).
 - **Gestionar:** `POST /api/billing/portal` → Customer Portal de Stripe.
 - **Cambiar plan/ciclo:** el mismo `POST /api/billing/subscribe` detecta la suscripción
   activa. Un upgrade crea un pending update, factura el prorrateo y conserva el plan
@@ -110,8 +140,13 @@ Flujo:
 - Resto de códigos ISO: factura comercial propia de Cord, con folio por organización,
   snapshots inmutables y PDF interno. No equivale a clearance o presentación ante la
   autoridad tributaria local.
-- El feature de plan `international_invoicing` habilita la emisión fuera de México; `cfdi`
-  conserva el gate y medidor de timbrado mexicano.
+- El feature de plan `international_invoicing` habilita la emisión fuera de México y
+  requiere **Starter** (bajó de Scale en la delimitación ago 2026, para quedar en el
+  mismo peldaño que `cfdi` — mismo carril de facturación electrónica, distinto solo
+  por país). `cfdi` conserva su propio gate (también Starter) y el medidor de
+  timbrado mexicano; ninguno de los dos consume la cuota del otro
+  (`scripts/billing-security-check.mjs` lo verifica sobre el ternario
+  `isMexico ? 'cfdi' : 'international_invoicing'` en `/api/cotizaciones/[id].ts`).
 - Persistencia: `documentos_fiscales`, `invoice_sequences` y `orgs.fiscal_metadata`, todas
   aisladas por organización; las dos primeras usan RLS y la secuencia usa `FORCE RLS`.
 - Los adapters regulatorios futuros deben implementar `FiscalProvider` y registrarse antes

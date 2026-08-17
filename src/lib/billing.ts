@@ -14,7 +14,13 @@ import { getEntitlementContext } from './org-entitlements';
 export const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
 export type Cycle = 'mensual' | 'anual';
+// Dimensiones que SÍ tienen meter de Stripe y pueden generar excedente cobrado.
 export type MeterDim = 'api' | 'usuario' | 'ia' | 'timbrado';
+// 'envios' es un tope duro de Gratis (cotizaciones enviadas/mes) sin meter: no
+// se le cobra a nadie, solo cierra el hueco de que "cotizaciones activas" es un
+// stock reciclable (cerrar un trato libera cupo, así que un vendedor disciplinado
+// nunca tocaba el límite). Nunca se agrega a METER_PRICES/METERS/allowsOverage.
+export type UsageDim = MeterDim | 'envios';
 const isTest = (STRIPE_KEY || '').startsWith('sk_test_') || (STRIPE_KEY || '').startsWith('rk_test_');
 
 // ── Precio base de suscripción por plan y ciclo (recurring flat) ──────────────
@@ -62,26 +68,32 @@ export const METERS: Record<MeterDim, string> = isTest ? {
 
 // ── Cuotas mensuales INCLUIDAS por plan (consumo sin costo extra) ─────────────
 // null = ilimitado. Alimenta el medidor de uso y la lógica de "tope duro".
-export const INCLUDED: Record<PlanId, { ia: number | null; cfdi: number; api: number; usuarios: number | null }> = {
-    free:      { ia: 3,    cfdi: 0,    api: 100,   usuarios: 1 },
-    starter:   { ia: 20,   cfdi: 3,    api: 1000,  usuarios: 1 },
-    pro:       { ia: 50,   cfdi: 20,   api: 5000,  usuarios: 5 },
-    scale:     { ia: 500,  cfdi: 100,  api: 10000, usuarios: 15 },
-    developer: { ia: null, cfdi: 1000, api: 50000, usuarios: null },
+// `envios` solo tiene número en Free (5); en el resto de los planes es null
+// (sin tope) porque las cotizaciones activas/ilimitadas de Starter+ ya son la
+// palanca de negocio — el tope de envíos es puramente el gancho de conversión
+// de Gratis.
+export const INCLUDED: Record<PlanId, { ia: number | null; cfdi: number; api: number; usuarios: number | null; envios: number | null }> = {
+    free:      { ia: 3,    cfdi: 0,    api: 100,   usuarios: 1,    envios: 5 },
+    starter:   { ia: 20,   cfdi: 3,    api: 1000,  usuarios: 1,    envios: null },
+    pro:       { ia: 50,   cfdi: 20,   api: 5000,  usuarios: 5,    envios: null },
+    scale:     { ia: 500,  cfdi: 100,  api: 10000, usuarios: 15,   envios: null },
+    developer: { ia: null, cfdi: 1000, api: 50000, usuarios: null, envios: null },
 };
 
 // Matriz de excedentes del contrato comercial. Starter permite excedente de
 // IA/CFDI/API, pero su asiento único sí es tope duro; desde Pro los cuatro
-// medidores tienen overage.
-export function allowsOverage(plan: PlanId, dim: MeterDim): boolean {
+// medidores tienen overage. 'envios' nunca tiene overage: es tope duro puro
+// de Gratis, sin meter de Stripe detrás.
+export function allowsOverage(plan: PlanId, dim: UsageDim): boolean {
+    if (dim === 'envios') return false;
     if (plan === 'free') return false;
     if (dim === 'usuario') return plan === 'pro' || plan === 'scale' || plan === 'developer';
     return true;
 }
 
-// dim del medidor → columna en uso_periodo
-export const DIM_COL: Record<MeterDim, 'ia' | 'cfdi' | 'api' | 'usuarios'> = {
-    ia: 'ia', timbrado: 'cfdi', api: 'api', usuario: 'usuarios',
+// dim de uso → columna en uso_periodo
+export const DIM_COL: Record<UsageDim, 'ia' | 'cfdi' | 'api' | 'usuarios' | 'envios'> = {
+    ia: 'ia', timbrado: 'cfdi', api: 'api', usuario: 'usuarios', envios: 'envios',
 };
 
 // Techo de seguridad para planes con excedente: aunque el overage se cobra, un
@@ -218,7 +230,7 @@ export interface UsageReservation {
  * La fila de outbox queda COMMITTED antes de ejecutar el proveedor externo: si
  * el worker muere después, el cron aún puede entregar el meter event a Stripe.
  */
-export async function reserveUsage(orgId: string, dim: MeterDim, rawValue = 1): Promise<UsageReservation> {
+export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1): Promise<UsageReservation> {
     const value = Math.trunc(Number(rawValue));
     if (!Number.isFinite(value) || value <= 0 || value > 10_000) {
         return { ok: false, reason: 'Cantidad de consumo inválida.' };
@@ -238,7 +250,26 @@ export async function reserveUsage(orgId: string, dim: MeterDim, rawValue = 1): 
             && included !== null && allowsOverage(plan, dim);
         const includedForMeter = included ?? 2_147_483_647;
 
-        const queryFor = (column: 'ia' | 'cfdi' | 'api' | 'usuarios') => {
+        const queryFor = (column: 'ia' | 'cfdi' | 'api' | 'usuarios' | 'envios') => {
+            if (column === 'envios') return sql`
+                with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
+                consumed as (
+                  insert into uso_periodo (org_id, periodo, envios)
+                  select ${orgId}, ${periodo}, ${value} from locked
+                  where ${value} <= ${hardCap}
+                  on conflict (org_id, periodo) do update
+                    set envios = uso_periodo.envios + ${value}, updated_at = now()
+                    where uso_periodo.envios + ${value} <= ${hardCap}
+                  returning envios
+                ), reserved as (
+                  insert into usage_reservations
+                    (id, org_id, billing_org_id, dimension, value, meter_value, periodo, status,
+                     meter_status, stripe_customer_id, committed_at)
+                  select ${id}, ${orgId}, ${context.billingOrgId}, ${dim}, ${value},
+                         0, ${periodo}, 'committed', 'skipped', ${context.stripeCustomerId}, now()
+                  from consumed returning id
+                )
+                select exists(select 1 from consumed) as ok`;
             if (column === 'ia') return sql`
                 with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
                 consumed as (
@@ -361,6 +392,7 @@ export async function cancelUsage(orgId: string, reservationId: string): Promise
                 cfdi = greatest(0, u.cfdi - coalesce((select value from canceled where dimension = 'timbrado'), 0)),
                 api = greatest(0, u.api - coalesce((select value from canceled where dimension = 'api'), 0)),
                 usuarios = greatest(0, u.usuarios - coalesce((select value from canceled where dimension = 'usuario'), 0)),
+                envios = greatest(0, u.envios - coalesce((select value from canceled where dimension = 'envios'), 0)),
                 updated_at = now()
               where u.org_id = ${orgId} and u.periodo = (select periodo from canceled)
               returning u.org_id

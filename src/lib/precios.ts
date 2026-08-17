@@ -3,9 +3,14 @@
 // La usan el home (components/landing/Pricing.astro) y la página /precios.
 // ⚠️ Si André ajusta precios, cámbialos AQUÍ (un solo lugar).
 //
-// Matriz maestra (jun 2026): 5 niveles. Pro es el plan ANCLA (el que se empuja).
-// Free = gancho · Starter = freelance · Pro = equipos (DESTACADO) ·
-// Scale = corp · Developer = herramientas.
+// Matriz ago 2026 (delimitación de planes): 5 niveles. Pro es el plan ANCLA (el
+// que se empuja). Free = gancho, con tope de envíos además de activas · Starter
+// = freelance, ya con facturación electrónica (MX y resto del mundo) · Pro =
+// equipos (DESTACADO), ahora también cobranza y flujo de caja a 90 días ·
+// Scale = automatización (aprobaciones, cobranza autónoma con IA, SSO) ·
+// Developer = sin precio de autoservicio — capacidad y condiciones a medida,
+// "Hablar con ventas" (ver `custom` abajo). Precios base SIN cambios: los price
+// ID de Stripe LIVE ya tienen suscripciones activas.
 
 // El tipo vive junto al contrato ejecutable de acceso. Se re-exporta para no
 // romper consumidores históricos de `precios.ts`.
@@ -16,9 +21,14 @@ export interface Plan {
     id: PlanId;
     nombre: string;
     tagline: string;
-    precioMensual: number;        // MXN/mes (0 = gratis)
+    precioMensual: number;        // MXN/mes (0 = gratis). Developer conserva su
+                                   // valor real (Stripe sigue cobrando a las
+                                   // suscripciones vigentes) pero no se muestra:
+                                   // `custom` lo saca del autoservicio.
     destacado?: boolean;
     ribbon?: string;
+    /** Sin precio de autoservicio: "A tu medida" + CTA a ventas, sin checkout. */
+    custom?: boolean;
     ctaLabel: string;
     ctaHref: string;
     feats: string[];              // bullets de la card
@@ -41,9 +51,9 @@ export const PLANES: Plan[] = [
         ctaHref: '/registro',
         feats: [
             '5 cotizaciones activas',
+            '5 cotizaciones enviadas al mes',
             '50 productos y 50 clientes',
             '3 armados con IA al mes',
-            'Link público + PDF',
             'Marca “Powered by Cord”',
         ],
     },
@@ -58,9 +68,9 @@ export const PLANES: Plan[] = [
         feats: [
             '50 cotizaciones activas',
             '500 productos y clientes',
-            '20 armados con IA + 3 CFDI al mes',
+            '20 armados con IA + 3 facturas al mes',
+            'Facturación electrónica (México y resto del mundo)',
             'Tu marca (sin “Powered by”)',
-            'Importación por CSV',
         ],
     },
     {
@@ -76,9 +86,9 @@ export const PLANES: Plan[] = [
         feats: [
             'Cotizaciones ilimitadas',
             'Hasta 5 usuarios',
-            '50 armados con IA + 20 CFDI al mes',
+            '50 armados con IA + 20 facturas al mes',
+            'Cobranza y flujo de caja a 90 días',
             'Seguimiento en vivo y analítica',
-            'Audit log inmutable',
         ],
     },
     {
@@ -92,25 +102,26 @@ export const PLANES: Plan[] = [
         feats: [
             'Todo lo de Profesional',
             'Hasta 15 usuarios',
-            '500 armados con IA + 100 CFDI al mes',
-            'Flujos de aprobación y cobranza',
-            'Correos desde tu dominio (SMTP)',
+            '500 armados con IA + 100 facturas al mes',
+            'Cobranza autónoma con IA y aprobaciones',
+            'Correos desde tu dominio (SMTP) y SSO',
         ],
     },
     {
         id: 'developer',
         nombre: 'Developer',
-        tagline: 'Para integrar a tu stack.',
+        tagline: 'Capacidad y condiciones a tu medida.',
         precioMensual: 2990,
-        ctaLabel: 'Empezar ahora',
-        ctaHref: '/registro',
+        custom: true,
+        ctaLabel: 'Hablar con ventas',
+        ctaHref: '/contacto/ventas',
         stripeProductId: 'prod_Ui4Iff1aimaK0y',
         feats: [
             'Todo lo de Scale',
             'Usuarios e IA ilimitados',
-            '1,000 CFDI + 50,000 API al mes',
+            '1,000 facturas + 50,000 API al mes',
             'Excedentes al menor costo',
-            'Herramientas para integrar',
+            'Condiciones y onboarding a tu medida',
         ],
     },
 ];
@@ -144,8 +155,9 @@ export const COMPARATIVA: CompareGroup[] = [
     {
         titulo: 'Consumo mensual incluido',
         rows: [
+            { label: 'Cotizaciones enviadas', free: '5 / mes', starter: 'Ilimitadas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas' },
             { label: 'Armado de cotizaciones con IA', free: '3 / mes', starter: '20 / mes', pro: '50 / mes', scale: '500 / mes', developer: 'Ilimitado' },
-            { label: 'Timbrado CFDI 4.0 (SAT)', free: false, starter: '3 / mes', pro: '20 / mes', scale: '100 / mes', developer: '1,000 / mes' },
+            { label: 'Facturas electrónicas emitidas', free: false, starter: '3 / mes', pro: '20 / mes', scale: '100 / mes', developer: '1,000 / mes', hint: 'CFDI 4.0 en México, factura comercial en el resto del mundo.' },
             { label: 'Llamadas a la API pública', free: '100 / mes', starter: '1,000 / mes', pro: '5,000 / mes', scale: '10,000 / mes', developer: '50,000 / mes' },
         ],
     },
@@ -189,10 +201,9 @@ export const COMPARATIVA: CompareGroup[] = [
     {
         titulo: 'Fiscal y multi-divisa',
         rows: [
-            { label: 'CFDI 4.0 automático ante el SAT', free: false, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Tu propio CSD (sello digital)', free: false, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Facturación electrónica automática', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 ante el SAT en México; factura comercial propia en el resto del mundo.' },
+            { label: 'Tu propio CSD (sello digital, México)', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Multi-divisa con cobertura cambiaria (FX lock)', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Facturación internacional (US / EU)', free: false, starter: false, pro: false, scale: true, developer: true },
         ],
     },
     {
@@ -210,11 +221,11 @@ export const COMPARATIVA: CompareGroup[] = [
     {
         titulo: 'Riesgo y tesorería',
         rows: [
+            { label: 'Módulo de cobranza (aging de cartera)', free: false, starter: false, pro: true, scale: true, developer: true },
+            { label: 'Pronóstico de flujo de caja a 90 días', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Flujos de aprobación (tope descuento/monto/margen)', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Auditor silencioso de márgenes', free: false, starter: false, pro: false, scale: true, developer: true },
-            { label: 'Módulo de cobranza (aging de cartera)', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Interés moratorio automático', free: false, starter: false, pro: false, scale: true, developer: true },
-            { label: 'Pronóstico de flujo de caja a 90 días', free: false, starter: false, pro: false, scale: true, developer: true },
         ],
     },
     {
@@ -267,7 +278,7 @@ export const COMPARATIVA: CompareGroup[] = [
         rows: [
             { label: 'Usuario adicional', free: 'Tope duro', starter: 'Tope duro', pro: '$300 / u', scale: '$300 / u', developer: '$200 / u' },
             { label: 'Armado con IA extra', free: 'Tope duro', starter: '$4.00 / uso', pro: '$3.50 / uso', scale: '$3.00 / uso', developer: '$2.50 / uso' },
-            { label: 'Timbrado CFDI extra', free: false, starter: '$3.00 / folio', pro: '$3.00 / folio', scale: '$2.00 / folio', developer: '$1.50 / folio' },
+            { label: 'Factura adicional', free: false, starter: '$3.00 / folio', pro: '$3.00 / folio', scale: '$2.00 / folio', developer: '$1.50 / folio' },
             { label: 'API extra (por 100 req)', free: 'Tope duro', starter: '$0.03 USD', pro: '$0.03 USD', scale: '$0.02 USD', developer: '$0.02 USD' },
         ],
     },
@@ -280,11 +291,11 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Qué cuenta como “cotización activa”?',
-        a: 'Una cotización que sigue viva en tu pipeline (borrador, enviada, vista o aprobada sin cerrar). Las cerradas, pagadas o vencidas no consumen tu límite, así que el plan rinde más de lo que parece.',
+        a: 'Una cotización que sigue viva en tu pipeline (borrador, enviada, vista o aprobada sin cerrar). Las cerradas, pagadas o vencidas no consumen tu límite, así que el plan rinde más de lo que parece. En Gratis, además de las 5 activas hay un tope de 5 cotizaciones ENVIADAS al mes — ese sí se reinicia cada mes, sin importar cuántas cierres.',
     },
     {
         q: '¿Qué pasa si me paso del consumo incluido?',
-        a: 'Depende del plan. En Gratis y Starter algunos límites son topes duros (se pausan hasta el siguiente ciclo o hasta que subas de plan). De Profesional en adelante, el excedente se cobra por uso al final del mes vía Stripe: armados con IA, timbres CFDI, usuarios y llamadas a la API. Sin sorpresas: ves el consumo en tiempo real dentro de la app.',
+        a: 'Depende del plan. En Gratis y Starter algunos límites son topes duros (se pausan hasta el siguiente ciclo o hasta que subas de plan). De Profesional en adelante, el excedente se cobra por uso al final del mes vía Stripe: armados con IA, facturas emitidas, usuarios y llamadas a la API. Sin sorpresas: ves el consumo en tiempo real dentro de la app.',
     },
     {
         q: '¿Puedo cambiar de plan cuando quiera?',
@@ -295,8 +306,8 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
         a: 'Sí. Todos los precios están en pesos mexicanos y con IVA incluido. Lo que ves es lo que pagas.',
     },
     {
-        q: '¿Cómo funciona el CFDI 4.0?',
-        a: 'Desde el plan Starter conectas tu Certificado de Sello Digital (CSD) una vez y, al cerrar una cotización, Cord timbra el CFDI 4.0 ante el SAT con los mismos datos. Sin recapturar en otro portal.',
+        q: '¿Cómo funciona la facturación electrónica?',
+        a: 'Depende del país de tu negocio, desde el plan Starter. En México conectas tu Certificado de Sello Digital (CSD) una vez y, al cerrar una cotización, Cord timbra el CFDI 4.0 ante el SAT con los mismos datos. Fuera de México, Cord emite una factura comercial propia con folio y PDF — no es un timbre ante una autoridad fiscal local, pero documenta la venta con los mismos datos de la cotización, sin recapturar en otro sistema.',
     },
     {
         q: '¿Puedo probar Cord sin pagar?',
@@ -304,7 +315,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿El plan Developer es para integrar Cord a mi sistema?',
-        a: 'Exacto. Developer incluye 50,000 llamadas a la API al mes, los excedentes más baratos, usuarios e IA ilimitados y el cotizador embebible. Es la base para conectar Cord a tu ERP, e-commerce o portal de clientes.',
+        a: 'Exacto. Developer incluye 50,000 llamadas a la API al mes, los excedentes más baratos, usuarios e IA ilimitados y el cotizador embebible — es la base para conectar Cord a tu ERP, e-commerce o portal de clientes. No tiene precio de autoservicio: se contrata hablando con ventas, para dejar la capacidad y las condiciones a la medida de tu integración.',
     },
     {
         q: '¿Necesito ser cliente de Flouvia para contratar un plan?',

@@ -179,8 +179,7 @@ import { validateSession, invalidateSession, SESSION_COOKIE, setSessionCookies, 
 import { OPS_SESSION_COOKIE, validateOpsSession } from './lib/ops-auth';
 import { trustedIp } from './lib/ip';
 import { getAppGates, getActiveOrgId } from './lib/db';
-import { checkEntitlement, checkMemberSeatAccess } from './lib/org-entitlements';
-import type { FeatureKey } from './lib/entitlements';
+import { checkMemberSeatAccess } from './lib/org-entitlements';
 import { strictLimitResponse, strictRateLimit } from './lib/ratelimit';
 
 const mainHandler = async (context: any, next: any) => {
@@ -447,26 +446,13 @@ const mainHandler = async (context: any, next: any) => {
                 }
             }
         }
-        // Páginas que materializan datos premium directamente durante SSR. Los
-        // endpoints que mutan esas capacidades tienen además su gate local.
-        if (userId && isApp) {
-            const premiumPage: FeatureKey | null =
-                path === '/app/ajustes/auditoria' ? 'audit_log'
-                : path === '/app/ajustes/agentes' ? 'agent_governance'
-                : path === '/app/cobranza/agente' ? 'collections_ai'
-                : path === '/app/cobranza' || path.startsWith('/app/cobranza/') ? 'collections'
-                : null;
-            if (premiumPage) {
-                try {
-                    const active = await getActiveOrgId();
-                    const entitlement = await checkEntitlement(active, premiumPage);
-                    if (!entitlement.ok) return context.redirect(`/app/ajustes/plan?feature=${premiumPage}`);
-                } catch (error) {
-                    console.error(`[subscription] no se pudo verificar ${premiumPage}`, error);
-                    return context.redirect('/app/ajustes/cuenta?subscription_check=1');
-                }
-            }
-        }
+        // Las páginas que materializan datos premium (auditoría, agentes,
+        // cobranza y cobranza/agente) verifican su propio entitlement en el
+        // frontmatter y muestran el paywall de AccessGate — ya no se resuelve
+        // aquí. Antes este bloque redirigía duro a /app/ajustes/plan antes de
+        // que la página cargara, así que un clic en "Cobranza" desde el sidebar
+        // aterrizaba en Planes sin explicar qué se estaba bloqueando ni ofrecer
+        // el paywall persuasivo; el usuario solo veía "me mandó a Planes".
         // Gates de entrada a /app, resueltos en una sola query (getAppGates).
         if (isApp && userId) {
             const gatePaths = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];

@@ -1,0 +1,24 @@
+---
+// Estado vacío rico para widgets renderizados en SSR (listas, feeds).
+// Espejo de renderEmpty() en src/lib/empty-state.ts, que hace lo mismo para
+// DOM inyectado en runtime (gráficas) — mismo markup, mismas clases (.wx-empty),
+// para que ambos caminos se vean idénticos y el CSS viva una sola vez en
+// src/styles/widgets.css (Regla 11: este componente no lo renderiza la página
+// anfitriona, así que su CSS no puede vivir en un <style> scopeado).
+import { GLASS_ICON_PATHS, type GlassIcon } from '../../lib/glass-icons';
+
+interface Props {
+    icon: GlassIcon;
+    title: string;
+    desc?: string;
+    ctaLabel?: string;
+    ctaHref?: string;
+}
+const { icon, title, desc, ctaLabel, ctaHref } = Astro.props;
+---
+<div class="wx-empty">
+    <svg class="wx-empty-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={GLASS_ICON_PATHS[icon]}></svg>
+    <strong class="wx-empty-title">{title}</strong>
+    {desc && <p class="wx-empty-desc">{desc}</p>}
+    {ctaLabel && ctaHref && <a class="wx-empty-cta" href={ctaHref}>{ctaLabel}</a>}
+</div>

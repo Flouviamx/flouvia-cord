@@ -36,7 +36,11 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
                                 <h3 class="plan-name">{p.nombre}</h3>
                             </div>
                             <div class="plan-visual-bottom">
-                                {p.precioMensual === 0 ? (
+                                {p.custom ? (
+                                    <div class="plan-price">
+                                        <span class="editorial plan-amount">{isEn ? 'Custom' : 'A tu medida'}</span>
+                                    </div>
+                                ) : p.precioMensual === 0 ? (
                                     <div class="plan-price">
                                         <span class="editorial plan-amount">$0</span>
                                         <span class="plan-cycle">{isEn ? 'forever' : 'siempre'}</span>
@@ -53,7 +57,7 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
 
                         {/* ── Body: toggle + CTA + features ── */}
                         <div class="plan-body">
-                            {p.precioMensual > 0 && (
+                            {p.precioMensual > 0 && !p.custom && (
                                 <div class="plan-billing-toggle">
                                     <label class="toggle-switch">
                                         <input type="checkbox" class="billing-toggle-checkbox" />
@@ -64,12 +68,14 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
                             )}
 
                             <a
-                                href={p.precioMensual === 0
+                                href={p.custom
                                     ? p.ctaHref
-                                    : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
+                                    : p.precioMensual === 0
+                                        ? p.ctaHref
+                                        : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
                                 class="plan-cta plan-cta-solid"
                                 data-plan-id={p.id}
-                                data-base-href={`/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
+                                data-base-href={p.custom ? undefined : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
                             >{p.ctaLabel}</a>
 
                             <div class="plan-feats-wrap">

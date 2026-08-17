@@ -17,16 +17,23 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import '../../../styles/modal.css';
 import AccessGate from '../../../components/app/AccessGate.astro';
+import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
 import WidgetGrid from '../../../components/app/WidgetGrid.astro';
 import { getCobranzaIA, getMyMembership, getOrg, money } from '../../../lib/queries';
-import { memberCan } from '../../../lib/permissions';
+import { memberCan, planLabel } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import { getActiveOrgId } from '../../../lib/db';
+import { checkEntitlement } from '../../../lib/org-entitlements';
 
 const L = currentLocale();
 const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 const ME = await getMyMembership();
-const hasAccess = memberCan(ME, 'cobranza');
+const hasPerm = memberCan(ME, 'cobranza');
+// Bloqueo por plan resuelto aquí (no en middleware): ver el mismo comentario en
+// /app/cobranza/index.astro.
+const entitlementCheck = hasPerm ? await checkEntitlement(await getActiveOrgId(), 'collections_ai') : null;
+const hasAccess = hasPerm && (entitlementCheck?.ok ?? false);
 const canConfig = hasAccess && memberCan(ME, 'ajustes');
 const [D, ORG] = hasAccess ? await Promise.all([getCobranzaIA(), getOrg()]) : [null, null];
 
@@ -101,7 +108,24 @@ const MOTIVO_LABEL: Record<string, string> = {
         )}
     </Fragment>
 
-    {!hasAccess && <AccessGate title={t(L, 'cia.sin_acceso_titulo')} desc={t(L, 'cia.sin_acceso_desc')} />}
+    {!hasPerm && <AccessGate title={t(L, 'cia.sin_acceso_titulo')} desc={t(L, 'cia.sin_acceso_desc')} />}
+    {hasPerm && !hasAccess && entitlementCheck && (
+        <>
+            <AccessGate reason="plan" title={t(L, 'cia.plan_titulo')} desc={t(L, 'cia.plan_desc')
+                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
+                .replace('{current}', planLabel(entitlementCheck.plan))} />
+            <PlanPaywallModal
+                id="ciaPlanModal"
+                title={t(L, 'cia.plan_titulo')}
+                desc={t(L, 'cia.plan_desc')
+                    .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
+                    .replace('{current}', planLabel(entitlementCheck.plan))}
+                requiredPlan={entitlementCheck.requiredPlan}
+                locale={L === 'en' ? 'en' : 'es'}
+                returnHref="/app/cobranza"
+            />
+        </>
+    )}
 
     {hasAccess && D && (
     <div data-cia-shell data-t={JSON.stringify(CIA_T)}>
@@ -156,6 +180,8 @@ const MOTIVO_LABEL: Record<string, string> = {
 
         <WidgetGrid
             id="ciaWidgets" storageKey="cord.cobranza-ia.v1"
+            serverPrefs={ME.widgetPrefs?.['cord.cobranza-ia.v1'] as Record<string, unknown> | undefined}
+            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
             editButtonId="ciaEditBtn" doneButtonId="ciaDoneBtn" resetButtonId="ciaResetBtn"
             trayTitle={t(L, 'cia.widgets_ocultos')} resetConfirm={t(L, 'cia.reset_confirm')}
             labels={widgetLabels}

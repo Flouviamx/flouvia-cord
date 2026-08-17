@@ -38,6 +38,7 @@ export type FeatureKey =
     | 'roles'
     | 'multi_org'
     | 'live_presence'
+    | 'quote_attention'
     | 'cfo_dashboard'
     | 'audit_log'
     | 'webhook_replay'
@@ -51,32 +52,43 @@ export type FeatureKey =
     | 'sso'
     | 'agent_governance';
 
-/** Plan mínimo de cada capacidad que NO está incluida en Gratis. */
+/** Plan mínimo de cada capacidad que NO está incluida en Gratis.
+ *
+ * Matriz ago 2026 (delimitación de planes): `collections` y `cashflow_90` bajan
+ * de Scale a Pro (van con `cfo_dashboard`, que ya vivía en Pro — separarlos no
+ * respondía a ninguna lógica de valor). `international_invoicing` baja de Scale
+ * a Starter para quedar en el mismo peldaño que `cfdi`: son el mismo carril de
+ * facturación electrónica, distinto solo por país (Regla 10, posicionamiento
+ * horizontal). Ver docs/negocio-billing.md. */
 export const FEATURE_MIN_PLAN: Record<FeatureKey, PaidPlan> = {
     cfdi: 'starter',
     remove_branding: 'starter',
     custom_email: 'starter',
     advanced_forecast: 'starter',
+    international_invoicing: 'starter',
     team: 'pro',
     roles: 'pro',
     multi_org: 'pro',
     live_presence: 'pro',
+    quote_attention: 'pro',
     cfo_dashboard: 'pro',
     audit_log: 'pro',
     webhook_replay: 'pro',
+    collections: 'pro',
+    cashflow_90: 'pro',
     approvals: 'scale',
-    collections: 'scale',
     collections_ai: 'scale',
     late_interest: 'scale',
-    cashflow_90: 'scale',
-    international_invoicing: 'scale',
     smtp: 'scale',
     sso: 'scale',
     agent_governance: 'scale',
 };
 
+// Vocabulario de facturación: "Facturación electrónica" es el término neutro
+// (CFDI 4.0 en México, factura comercial en el resto). "CFDI" a secas solo
+// sobrevive en superficies que ya son inequívocamente mexicanas por contexto.
 export const FEATURE_LABEL: Record<FeatureKey, string> = {
-    cfdi: 'Timbrado CFDI 4.0',
+    cfdi: 'Facturación electrónica',
     remove_branding: 'Quitar la marca de Cord',
     custom_email: 'Personalización de correos',
     advanced_forecast: 'Pronóstico y margen cedido',
@@ -84,6 +96,7 @@ export const FEATURE_LABEL: Record<FeatureKey, string> = {
     roles: 'Roles y permisos personalizados',
     multi_org: 'Espacios de trabajo adicionales',
     live_presence: 'Presencia en vivo',
+    quote_attention: 'Atención del cliente',
     cfo_dashboard: 'CFO Dashboard',
     audit_log: 'Auditoría inmutable',
     webhook_replay: 'Reintento de webhooks',
@@ -117,6 +130,26 @@ export function planIncludes(plan: PlanId, feature: FeatureKey): boolean {
 
 export function resourceLimit(plan: PlanId, resource: LimitedResource): number | null {
     return RESOURCE_LIMITS[plan][resource];
+}
+
+// Máximo de API keys ACTIVAS (no revocadas) por plan. Siempre acotado — a
+// diferencia de RESOURCE_LIMITS, ningún plan lo vuelve ilimitado. Se aceptan
+// los códigos legacy 'business'/'negocio' porque algunos call-sites todavía
+// leen el plan crudo de `orgs.plan` (p.ej. `ORG.plan_raw` en wb/[tab].astro)
+// en vez del efectivo normalizado.
+export const API_KEY_LIMITS: Record<string, number> = {
+    free: 2, starter: 5, pro: 20, scale: 50, developer: 200, business: 20, negocio: 20,
+};
+export function apiKeyLimit(plan: string): number {
+    return API_KEY_LIMITS[plan] ?? API_KEY_LIMITS.free;
+}
+
+// Máximo de endpoints de webhook por plan. Mismo criterio que API_KEY_LIMITS.
+export const WEBHOOK_LIMITS: Record<string, number> = {
+    free: 1, starter: 3, pro: 10, scale: 25, developer: 100, business: 10, negocio: 10,
+};
+export function webhookLimit(plan: string): number {
+    return WEBHOOK_LIMITS[plan] ?? WEBHOOK_LIMITS.free;
 }
 
 export function minimumPlan(feature: FeatureKey): PaidPlan {

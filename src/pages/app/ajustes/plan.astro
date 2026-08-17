@@ -92,16 +92,24 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                                 <span class="pcard-name">{p.nombre}</span>
                             </div>
                             <div class="pcard-visual-bottom">
-                                <div class="pcard-price" data-mensual={String(p.precioMensual)} data-anual={String(anual)}>
-                                    <span class="editorial pcard-amount pcard-amount-val">{money(p.precioMensual)}</span>
-                                    <span class="pcard-cycle">{t(L, 'set.plan.mxn_mes')}</span>
-                                </div>
+                                {p.custom ? (
+                                    <div class="pcard-price">
+                                        <span class="editorial pcard-amount">{t(L, 'set.plan.a_tu_medida')}</span>
+                                    </div>
+                                ) : (
+                                    <div class="pcard-price" data-mensual={String(p.precioMensual)} data-anual={String(anual)}>
+                                        <span class="editorial pcard-amount pcard-amount-val">{money(p.precioMensual)}</span>
+                                        <span class="pcard-cycle">{t(L, 'set.plan.mxn_mes')}</span>
+                                    </div>
+                                )}
                                 <p class="pcard-tagline">{p.tagline}</p>
                             </div>
                         </div>
                         <div class="pcard-body">
                             {actual ? (
                                 <span class="pcard-current">{t(L, 'set.plan.actual')}</span>
+                            ) : p.custom ? (
+                                <a class="pcard-cta" href={p.ctaHref}>{p.ctaLabel}</a>
                             ) : isTestEnv ? (
                                 <span class="pcard-current muted" title={t(L, 'set.plan.no_disponible_prueba_title')}>{t(L, 'set.plan.no_disponible_prueba')}</span>
                             ) : (
@@ -142,6 +150,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         </div>
 
         {[
+            { k: 'envios', label: t(L, 'set.plan.envios_mes'), m: BILL.envios },
             { k: 'ia', label: t(L, 'set.plan.armados_ia'), m: BILL.ia },
             { k: 'cfdi', label: t(L, 'set.plan.timbres_cfdi'), m: BILL.cfdi },
             { k: 'api', label: t(L, 'set.plan.llamadas_api'), m: BILL.api },

@@ -250,6 +250,17 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     }
 
     if (action.to === 'sent') {
+        // Tope de Gratis: 5 cotizaciones ENVIADAS al mes (distinto de "activas",
+        // que es un stock reciclable — cerrar un trato libera cupo). Solo el envío
+        // inicial cuenta; reenviar una cotización que ya salió no consume cupo de
+        // nuevo. En planes de pago esto es un no-op (INCLUDED.envios = null).
+        if (body.action === 'send') {
+            const envioUsage = await reserveUsage(orgId, 'envios', 1);
+            if (!envioUsage.ok) {
+                const unavailable = /verificar|registrar/i.test(envioUsage.reason || '');
+                return json({ error: envioUsage.reason, code: unavailable ? 'usage_verification_unavailable' : 'plan_limit_reached' }, unavailable ? 503 : 402);
+            }
+        }
         await sql`update cotizaciones set status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`;
     } else if (action.to === 'approved') {
         await sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id}`;

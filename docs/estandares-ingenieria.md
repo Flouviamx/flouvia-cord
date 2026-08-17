@@ -82,6 +82,57 @@ incluida, nunca el consumo total.
 Al modificar Billing ejecuta `npm run test:payments`, `npm run security:billing-live`,
 `npm run security:billing-db` y `npm run build`.
 
+### 18. Un límite es hard limit, soft limit o feature gate — nunca los tres a la vez
+
+Todo límite de plan se declara en exactamente una de tres formas, con una sola fuente
+para cada una:
+
+- **Hard limit** (capacidad de stock, no se excede ni pagando): `RESOURCE_LIMITS` en
+  `src/lib/entitlements.ts`, con espejo obligatorio en `cord_resource_limit()` y su
+  trigger en `db/schema.sql`. `null` = sin tope desde ese plan.
+- **Soft limit** (cuota mensual de flujo, incluida y facturable por excedente):
+  `INCLUDED` en `src/lib/billing.ts`, reservada con `reserveUsage()`.
+- **Feature gate** (capacidad binaria): `FEATURE_MIN_PLAN` en `src/lib/entitlements.ts`.
+
+Un límite nuevo que no encaje limpio en uno de los tres es una señal de diseño confuso,
+no una razón para mezclarlos. La tabla pública de precios (`src/lib/precios.ts`) describe
+el contrato; nunca lo define — un número que solo existe ahí y no en uno de los tres
+lugares de arriba no se aplica en ningún lado, por diseño o por descuido.
+
+### 19. Una señal del cliente se mide en el cliente, y con actor
+
+Un GET al SSR de una superficie pública no prueba nada: lo hace el propio vendedor
+revisando su link, el bot de WhatsApp/Slack/Gmail generando la tarjeta del enlace y
+el prefetch del navegador. Toda señal que el negocio va a **leer como comportamiento
+del cliente** —vista, presencia, tiempo de lectura, aperturas— se registra desde una
+petición que exige JavaScript ejecutándose con la pestaña visible, nunca desde el
+render del servidor.
+
+Además, esa señal se escribe **con actor**, no anónima. `src/lib/public-viewer.ts`
+resuelve tres roles en cada petición al link público:
+
+- `seller` — sesión válida y membresía activa en la org dueña; ve la superficie en
+  modo vista previa y no genera señal;
+- `bot` — crawler o generador de preview; se ignora por completo;
+- `client` — el único que cuenta.
+
+Una columna de señal sin columna de actor es un bug esperando a ocurrir. El caso que
+originó la regla: `markViewed()` corría en el SSR de `/q/[token]`, así que el botón
+"Abrir link" del propio vendedor marcaba la cotización como `viewed`, escribía "El
+cliente abrió el link", disparaba el webhook `quote.viewed`, el correo al owner y el
+evento de PostHog. El heartbeat de presencia tenía el mismo defecto: el vendedor
+previsualizando encendía su propio badge "viendo ahora".
+
+La lista de User-Agent de bots es defensa secundaria y siempre estará incompleta; la
+defensa real es **dónde** se mide. Los contadores que alimenta un cliente sin sesión
+se acotan en servidor (claves de un vocabulario cerrado, techo por tick): el emisor
+no es de confianza.
+
+Corolario de transparencia: si el negocio ve la actividad del destinatario, la
+superficie pública se lo dice, y los términos lo describen. Las IP de estas señales
+se guardan hasheadas; la excepción es la evidencia de firma, que las conserva
+íntegras a propósito.
+
 ## Diseño, interacción y accesibilidad
 
 ### 2. Sin saltos de línea embebidos

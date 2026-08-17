@@ -30,6 +30,18 @@ const canCotizar = memberCan(ME, 'cotizar');
 const canAprobar = memberCan(ME, 'aprobar');
 
 const hasLiveView = ['pro', 'scale', 'developer'].includes(ORG.plan_raw);
+// Atención del cliente comparte el mismo escalón de plan que la presencia. Esto
+// solo decide si se PINTA el bloque: la autorización real vive en
+// /api/cotizaciones/[id]/atencion con requireEntitlement (estándar 17).
+const hasAtencion = hasLiveView;
+// Vocabulario de secciones del link público, para rotular las barras.
+const SEC_LABEL: Record<string, string> = {
+    resumen: t(L, 'q.atencion.sec_resumen'),
+    partidas: t(L, 'q.atencion.sec_partidas'),
+    notas: t(L, 'q.atencion.sec_notas'),
+    pago: t(L, 'q.atencion.sec_pago'),
+    conversacion: t(L, 'q.atencion.sec_conversacion'),
+};
 
 // Solo se checa el PREFIJO de la llave global (nunca se expone al cliente) para
 // saber si, sin CSD propio, el timbrado caería en modo de prueba de Facturapi.
@@ -114,7 +126,7 @@ const dotColor = (tipo: string) =>
                             <span class="version-badge">V{q.version}</span>
                             {hasLiveView && (
                                 <span class="lv-badge" id="liveViewing" hidden>
-                                    <span class="lv-dot"></span> {t(L, 'id.viendo_ahora')}
+                                    <span class="lv-dot"></span> {t(L, 'id.viendo_ahora')}<span class="lv-sec"></span>
                                 </span>
                             )}
                         </h2>
@@ -270,7 +282,11 @@ const dotColor = (tipo: string) =>
                 data-i18n-ahora={t(L, 'id.ahora')} data-i18n-no-pudo-enviar={t(L, 'id.no_pudo_enviar')}
                 data-i18n-no-pudo-duplicar={t(L, 'id.no_pudo_duplicar')}
                 data-i18n-eliminar-borrador-titulo={t(L, 'id.eliminar_borrador_titulo')} data-i18n-eliminar-borrador-body={t(L, 'id.eliminar_borrador_body')}
-                data-i18n-eliminar={t(L, 'id.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'id.no_pudo_eliminar')}>
+                data-i18n-eliminar={t(L, 'id.eliminar')} data-i18n-no-pudo-eliminar={t(L, 'id.no_pudo_eliminar')}
+                data-i18n-locale={L === 'en' ? 'en-US' : 'es-MX'}
+                data-i18n-at-persona={t(L, 'id.atencion.persona')} data-i18n-at-personas={t(L, 'id.atencion.personas')}
+                data-i18n-at-apertura={t(L, 'id.atencion.apertura')} data-i18n-at-aperturas={t(L, 'id.atencion.aperturas')}
+                data-i18n-at-pdf={t(L, 'id.atencion.pdf')} data-i18n-at-tiempo-total={t(L, 'id.atencion.tiempo_total')}>
                 <div class="section-head" style="margin-bottom: 0.5rem;"><h2>{t(L, 'id.acciones')}</h2></div>
 
                 <!-- PRIMARY ACTIONS -->
@@ -358,6 +374,31 @@ const dotColor = (tipo: string) =>
                 )}
                 <p class="act-error" id="actError"></p>
             </section>
+
+            {hasAtencion && q.status !== 'draft' && (
+                <section class="d-atencion" data-sec-labels={JSON.stringify(SEC_LABEL)}>
+                    <div class="section-head"><h2>{t(L, 'id.atencion.titulo')}</h2></div>
+
+                    <p class="at-empty" id="atEmpty">{t(L, 'id.atencion.vacio')}</p>
+
+                    <div class="at-wrap" id="atWrap" hidden>
+                        <div class="at-sumario">
+                            <span class="at-personas" id="atPersonas"></span>
+                            <span class="at-sep">·</span>
+                            <span class="at-aperturas" id="atAperturas"></span>
+                        </div>
+                        <div class="at-fechas">
+                            <span><b>{t(L, 'id.atencion.primera')}</b> <span id="atPrimera">—</span></span>
+                            <span><b>{t(L, 'id.atencion.ultima')}</b> <span id="atUltima">—</span></span>
+                        </div>
+
+                        <div class="at-barras" id="atBarras"></div>
+
+                        <p class="at-nota" id="atPdf" hidden></p>
+                        <p class="at-nota at-total" id="atTotal" hidden></p>
+                    </div>
+                </section>
+            )}
 
             <section class="d-timeline">
                 <div class="section-head"><h2>{t(L, 'id.actividad')}</h2></div>
@@ -634,6 +675,30 @@ const dotColor = (tipo: string) =>
     .act-sub-status { font-size: 0.76rem; color: var(--color-text-muted); margin: 0; line-height: 1.5; }
     .act-sub .act-danger { margin-top: 2px; }
 
+    /* ── Atención del cliente ──
+       Barras hairline sobre la superficie, sin card-dentro-de-card (estándar 3).
+       Lo que se compara es el contraste entre secciones, así que la barra se
+       normaliza contra la sección más leída, no contra el total. */
+    .d-atencion { display: flex; flex-direction: column; margin-bottom: 2rem; }
+    .at-empty { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.55; margin: 0; }
+    .at-wrap { display: flex; flex-direction: column; gap: 0.9rem; }
+    .at-sumario { font-size: 0.86rem; font-weight: 600; color: var(--color-text); display: flex; align-items: center; gap: 0.4rem; }
+    .at-sep { color: var(--color-border); }
+    .at-fechas { display: flex; flex-wrap: wrap; gap: 0.2rem 1.2rem; font-size: 0.72rem; color: var(--color-text-muted); }
+    .at-fechas b { font-weight: 600; color: var(--color-text-muted); }
+
+    .at-barras { display: flex; flex-direction: column; gap: 0.55rem; margin-top: 0.2rem; }
+    .at-fila { display: grid; grid-template-columns: minmax(84px, 0.9fr) 1fr auto; align-items: center; gap: 0.7rem; }
+    .at-label { font-size: 0.74rem; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .at-track { height: 6px; border-radius: 100px; background: var(--chart-track, rgba(10,25,47,0.07)); overflow: hidden; }
+    .at-fill { display: block; height: 100%; border-radius: 100px; background: var(--color-blue-deep); transition: width 0.5s var(--ease-spring); }
+    .at-val { font-size: 0.72rem; color: var(--color-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .at-nota { font-size: 0.72rem; color: var(--color-text-muted); margin: 0; }
+    .at-total { padding-top: 0.55rem; border-top: 1px solid var(--color-border); }
+
+    .lv-sec { font-weight: 500; opacity: 0.85; }
+
     .d-timeline { display: flex; flex-direction: column; }
     .tl { display: flex; flex-direction: column; gap: 1rem; position: relative; }
     .tl::before { content: ''; position: absolute; left: 3.5px; top: 8px; bottom: 8px; width: 1px; background: var(--color-border); }
@@ -781,11 +846,27 @@ const dotColor = (tipo: string) =>
         const tlNew = document.getElementById('tlNew');
         let convBaseline: number | null = null;
 
-        const applyPresence = (d: { online?: boolean; convCount?: number }) => {
-            if (lv && hasLiveView) lv.hidden = !d.online;
+        let lastOnline: boolean | null = null;
+        const applyPresence = (d: { online?: boolean; convCount?: number; seccion?: string | null; escribiendo?: boolean }) => {
+            if (lv && hasLiveView) {
+                lv.hidden = !d.online;
+                // "Viendo ahora — Partidas": saber DÓNDE está el cliente es la
+                // diferencia entre un indicador decorativo y uno accionable.
+                const detalle = lv.querySelector('.lv-sec') as HTMLElement | null;
+                if (detalle) {
+                    const SEC = JSON.parse(document.querySelector<HTMLElement>('.d-atencion')?.dataset.secLabels || '{}');
+                    const sec = d.seccion ? (SEC[d.seccion] || '') : '';
+                    detalle.textContent = sec ? ` — ${sec}` : '';
+                }
+            }
             const count = Number(d.convCount) || 0;
             if (convBaseline === null) convBaseline = count;
             else if (tlNew && count > convBaseline) tlNew.hidden = false;
+            // El bloque de atención se recarga cuando el cliente entra o sale.
+            if (d.online !== lastOnline) {
+                lastOnline = !!d.online;
+                window.dispatchEvent(new CustomEvent('cord:presence', { detail: d }));
+            }
         };
 
         // Fallback si el navegador no soporta EventSource (rarísimo hoy) o la
@@ -827,6 +908,93 @@ const dotColor = (tipo: string) =>
             startPollingFallback();
         }
         tlNew?.addEventListener('click', () => location.reload());
+
+        // ── Atención del cliente ──
+        // Se refresca al abrir y cada vez que la presencia cambia (el cliente
+        // acaba de entrar o de salir), más un intervalo lento mientras está
+        // dentro. No hace falta más: los segundos llegan en lotes de 10s desde
+        // el latido del link público.
+        const atSec = document.querySelector<HTMLElement>('.d-atencion');
+        if (atSec) {
+            const SEC = JSON.parse(atSec.dataset.secLabels || '{}') as Record<string, string>;
+            const wrap = document.getElementById('atWrap')!;
+            const vacio = document.getElementById('atEmpty')!;
+            const barras = document.getElementById('atBarras')!;
+
+            const fmtDwell = (s: number) => {
+                if (!s || s <= 0) return '—';
+                if (s < 60) return `${s}s`;
+                const m = Math.floor(s / 60), r = s % 60;
+                return r ? `${m}m ${r}s` : `${m}m`;
+            };
+            const fmtFecha = (iso: string | null) => {
+                if (!iso) return '—';
+                const d = new Date(iso);
+                return isNaN(d.getTime()) ? '—' : d.toLocaleString(I.i18nLocale || 'es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+            };
+            const plural = (n: number, uno: string, muchos: string) =>
+                (n === 1 ? uno : (muchos || '').replace('{n}', String(n)));
+
+            const pintarAtencion = (a: any) => {
+                if (!a || !a.personas) { wrap.hidden = true; vacio.hidden = false; return; }
+                vacio.hidden = true; wrap.hidden = false;
+
+                document.getElementById('atPersonas')!.textContent =
+                    plural(a.personas, I.i18nAtPersona || '', I.i18nAtPersonas || '');
+                document.getElementById('atAperturas')!.textContent =
+                    plural(a.aperturas, I.i18nAtApertura || '', I.i18nAtAperturas || '');
+                document.getElementById('atPrimera')!.textContent = fmtFecha(a.primeraVez);
+                document.getElementById('atUltima')!.textContent = fmtFecha(a.ultimaVez);
+
+                // Barras proporcionales a la sección más leída, no al total: lo
+                // que importa es el contraste entre secciones, no el absoluto.
+                const secs = Array.isArray(a.secciones) ? a.secciones : [];
+                const max = secs.reduce((m: number, s: any) => Math.max(m, Number(s.segundos) || 0), 0) || 1;
+                barras.replaceChildren();
+                for (const s of secs) {
+                    const seg = Number(s.segundos) || 0;
+                    const fila = document.createElement('div');
+                    fila.className = 'at-fila';
+                    const label = document.createElement('span');
+                    label.className = 'at-label';
+                    label.textContent = SEC[s.clave] || s.clave;
+                    const track = document.createElement('span');
+                    track.className = 'at-track';
+                    const fill = document.createElement('span');
+                    fill.className = 'at-fill';
+                    fill.style.width = `${Math.round((seg / max) * 100)}%`;
+                    track.appendChild(fill);
+                    const val = document.createElement('span');
+                    val.className = 'editorial at-val';
+                    val.textContent = fmtDwell(seg);
+                    fila.append(label, track, val);
+                    barras.appendChild(fila);
+                }
+
+                const pdfEl = document.getElementById('atPdf')!;
+                if (a.pdf > 0) {
+                    pdfEl.textContent = (I.i18nAtPdf || '').replace('{n}', String(a.pdf));
+                    pdfEl.hidden = false;
+                } else pdfEl.hidden = true;
+
+                const totEl = document.getElementById('atTotal')!;
+                if (a.totalSegundos > 0) {
+                    totEl.textContent = `${I.i18nAtTiempoTotal || ''} ${fmtDwell(a.totalSegundos)}`;
+                    totEl.hidden = false;
+                } else totEl.hidden = true;
+            };
+
+            const cargarAtencion = async () => {
+                try {
+                    const r = await fetch(`/api/cotizaciones/${qid}/atencion`);
+                    if (!r.ok) return; // sin plan o sin permiso: el bloque queda en vacío
+                    pintarAtencion(await r.json());
+                } catch { /* ignora */ }
+            };
+            cargarAtencion();
+            setInterval(() => { if (document.visibilityState === 'visible') cargarAtencion(); }, 30000);
+            window.addEventListener('cord:presence', () => cargarAtencion());
+        }
 
         // ── Flujo de aprobación (gerencia) ──
         const apAction = async (action: string, btn: HTMLButtonElement) => {

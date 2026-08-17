@@ -181,8 +181,22 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
 /q/[token]       → vista PÚBLICA — aprobar/rechazar REALES via POST /api/q/[token]
                    (token = secreto, sin auth); muestra estado si ya se decidió;
                    "Descargar PDF" = window.print con @media print; color de marca
-                   de la org. Token demo: /q/demo. Chat en VIVO (jul 2026, SSE) via
-                   GET /api/q/[token]/stream — ver "API Pública" abajo.
+                   de la org. Token demo: /q/demo.
+                   DOCUMENTO VIVO (ago 2026): el SSE empuja `patch` y el card aplica
+                   los cambios del vendedor al DOM sin recargar (importes con
+                   count-up, flash en la línea que cambió, rótulo "antes $X").
+                   Solo un estado TERMINAL (paid/rejected/expired/invoiced) recarga.
+                   Presencia mutua: el cliente ve "Ana está en línea".
+                   ACTOR (Regla 19): el SSR ya NO marca la vista. La marca el
+                   heartbeat (POST action:'ping'), que exige JS + pestaña visible.
+                   src/lib/public-viewer.ts resuelve seller | bot | client; el
+                   vendedor ve un banner de vista previa y no genera señal.
+                   Cookie `cord_q_visitor` (httpOnly, 1 año) = personas y aperturas.
+/embed/[token]   → mismo QuoteCard dentro de un iframe de terceros (Cord Elements).
+                   Mismo tratamiento de actor. Ojo: la cookie es SameSite=Lax, así
+                   que en un iframe cross-site no viaja y el actor cae al
+                   identificador derivado de IP+org — suficiente para no contar al
+                   equipo como cliente, insuficiente para distinguir dispositivos.
 /desarrolladores/[slug] → páginas de desarrolladores (jun 2026, prerender, mismo
                    sistema que /producto/*): api (terminal curl + JSON response) y
                    mcp (chat UI con tool call). Contenido en src/lib/desarrolladores.ts.
@@ -242,15 +256,38 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
 
 # API Pública (REST + MCP)
 /api/notificaciones  → GET feed de actividad reciente (reusa tabla eventos; último ts para punto rojo)
-/api/q/[token]/stream        → SSE público (jul 2026, sin auth — token = secreto). Empuja
-                   respuestas del vendedor (event:message) y cambios de estado
-                   (event:status) al chat de /q/[token] en vivo, sin recargar. Ver
-                   "Tiempo real de verdad vía SSE" en historial.md.
+/api/q/[token]   → acciones del CLIENTE (sin auth). approve | reject | comment |
+                   counter | item_comment | ping | hito.
+                   `ping` es el latido del documento vivo: marca la vista (una sola
+                   vez, solo si el actor es cliente), escribe presencia CON ACTOR y
+                   acumula atención por sección. `hito` cuenta abrir el PDF o
+                   expandir una línea. `approve` acepta `rev` y responde 409
+                   {stale:true} si la propuesta cambió mientras el cliente la leía —
+                   la firma nunca cae sobre un total que el cliente no vio.
+                   El payload del latido NO es de confianza: claves de vocabulario
+                   cerrado y techo de 60s por clave/tick (src/lib/atencion.ts).
+/api/q/[token]/stream        → SSE público (jul 2026, sin auth — token = secreto).
+                   event: ready | patch | presence | message | status | ping.
+                   Sigue siendo polling a Neon DENTRO de la conexión larga, sin infra
+                   nueva. Lo barato lo hace `cotizaciones.rev`: el ciclo normal lee un
+                   entero y solo paga el snapshot completo (getLiveSnapshot) cuando ese
+                   entero avanza. Cadencia adaptativa 1s (vendedor y cliente juntos) /
+                   2.5s (solo cliente) / 5s (reposo); el cliente CIERRA la conexión al
+                   ocultar la pestaña. `lastRev` avanza DESPUÉS del snapshot: adelantarlo
+                   convertía un fallo transitorio de BD en un parche perdido para siempre.
 /api/cotizaciones/[id]/stream → SSE con sesión (jul 2026). Empuja presencia
-                   (event:presence {online,convCount}) y mensajes nuevos del cliente
-                   (event:message) al detalle del vendedor — reemplaza el polling de 8s
-                   a /api/cotizaciones/[id]/presence (endpoint que sigue vivo como
-                   fallback si el navegador no abre SSE).
+                   (event:presence {online,convCount,seccion,escribiendo}) y mensajes
+                   nuevos del cliente (event:message) al detalle del vendedor — reemplaza
+                   el polling de 8s a /api/cotizaciones/[id]/presence (endpoint que sigue
+                   vivo como fallback si el navegador no abre SSE).
+                   También ESCRIBE la presencia del vendedor mientras la conexión vive:
+                   es lo que hace que el cliente lo vea en línea en /q/[token]. Al cerrar,
+                   retrocede su last_seen para apagarse sin esperar la ventana de 30s.
+/api/cotizaciones/[id]/atencion → resumen de atención del cliente (ago 2026). Personas,
+                   aperturas, primera/última vez y segundos por sección. Gated con
+                   requireEntitlement(orgId,'quote_attention') EN EL ENDPOINT — ocultar
+                   el bloque no es autorización (Regla 17). Excluye a propósito las
+                   visitas del propio equipo: mezclarlas vuelve ruido el panel.
 /api/v1/me           → whoami (scope any)
 /api/v1/cotizaciones → GET list (filtros status/limit/offset) + POST crear
 /api/v1/cotizaciones/[id] → GET detalle (items + eventos)

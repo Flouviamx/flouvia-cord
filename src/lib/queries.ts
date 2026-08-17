@@ -17,6 +17,7 @@ import { after } from './after';
 import { trackServer } from './posthog-server';
 import { decryptSecret } from './crypto-secret';
 import { dueDateFor, venceDia } from './cobros';
+import type { PublicViewer } from './public-viewer';
 import {
     STATUS_ABIERTA, STATUS_GANADA, STATUS_PERDIDA, STATUS_SALIO,
 } from './metrics';
@@ -723,6 +724,7 @@ export async function getBillingUsage() {
         ia: dim(Number(row.ia) || 0, inc.ia),
         cfdi: dim(Number(row.cfdi) || 0, inc.cfdi),
         api: dim(Number(row.api) || 0, inc.api),
+        envios: dim(Number(row.envios) || 0, inc.envios),
     };
 }
 
@@ -1579,30 +1581,108 @@ export async function getCotizacionByToken(token: string) {
     };
 }
 
-// Marca 'viewed' la primera vez que el cliente abre el link.
-// Fase 1: resuelve por token con superficie mínima. Fase 2: escribe por org_id.
-export async function markViewed(token: string) {
-    const identity = await resolvePublicQuote(token);
-    if (!identity) return;
-    const [[c]] = await withOrgTx(identity.orgId,
+// ── Snapshot vivo del link público ───────────────────────────────────────────
+// Lo consume el SSE de /api/q/[token]/stream cuando detecta que `rev` avanzó.
+// Deliberadamente NO reutiliza getCotizacionByToken(): ese hace 7 queries más
+// una resolución de entitlements para armar el DTO completo (marca, banco,
+// Stripe, textos del portal). Nada de eso cambia mientras la pestaña está
+// abierta. Aquí solo viaja lo volátil: importes, líneas, estado y plan de cobro.
+export interface LiveSnapshot {
+    rev: number;
+    status: string;
+    subtotal: number;
+    iva: number;
+    total: number;
+    vigencia: string;
+    notas: string;
+    items: Array<{
+        id: string;
+        descripcion: string;
+        cantidad: number;
+        unidad: string;
+        precio: number;
+        importe: number;
+    }>;
+    cobros: Array<{ id: string; tipo: string; monto: number; status: string; vence: string }>;
+}
+
+export async function getLiveSnapshot(orgId: string, cotizacionId: string): Promise<LiveSnapshot | null> {
+    const [cabecera, items, cobros] = await withOrgTx(orgId,
+        sql`select rev, status, subtotal, iva, total, vigencia, notas
+              from cotizaciones where id = ${cotizacionId} and org_id = ${orgId}`,
+        // `ci.*` y no una lista de columnas: cotizacion_items NO tiene `unidad`
+        // (vive en productos). El SSR usa la misma forma y cae a 'pieza' en
+        // rowToQuote; el parche debe producir EXACTAMENTE el mismo texto o
+        // "cambiaría" la unidad de cada línea en la primera actualización.
+        sql`select ci.* from cotizacion_items ci
+             where ci.cotizacion_id = ${cotizacionId} order by ci.orden`,
+        sql`select id, tipo, monto, status, vence
+              from cotizacion_cobros where cotizacion_id = ${cotizacionId} and org_id = ${orgId}
+             order by numero_cuota, tipo`,
+    );
+    const c = cabecera[0];
+    if (!c) return null;
+
+    return {
+        rev: num(c.rev) || 1,
+        status: c.status as string,
+        subtotal: num(c.subtotal),
+        iva: num(c.iva),
+        total: num(c.total),
+        vigencia: c.vigencia ? fmtDate(c.vigencia as string) : '',
+        notas: (c.notas as string) ?? '',
+        items: items.map((it: any) => {
+            const precio = it.precio_negociado === null ? num(it.precio_unitario) : num(it.precio_negociado);
+            return {
+                id: String(it.id),
+                descripcion: (it.descripcion as string) ?? '',
+                cantidad: num(it.cantidad),
+                unidad: (it.unidad as string) ?? 'pieza',
+                precio,
+                importe: num(it.cantidad) * precio,
+            };
+        }),
+        cobros: cobros.map((co: any) => ({
+            id: String(co.id),
+            tipo: co.tipo as string,
+            monto: num(co.monto),
+            status: co.status as string,
+            vence: co.vence ? fmtDate(co.vence as string) : '',
+        })),
+    };
+}
+
+// Marca 'viewed' la primera vez que el CLIENTE abre el link.
+//
+// Ya NO se llama desde el SSR de /q/[token] ni de /embed/[token]. Vive en el
+// heartbeat del navegador (/api/q/[token] action:'ping'), que solo se alcanza
+// con JavaScript corriendo y la pestaña visible — así los generadores de
+// preview de enlaces (WhatsApp, Slack, Gmail) y los prefetchers dejaron de
+// marcar cotizaciones como vistas antes de que ningún humano las abriera.
+//
+// El actor lo resuelve src/lib/public-viewer.ts: un miembro del equipo que abre
+// su propio link es 'seller' y aquí no escribe nada.
+export async function markViewed(orgId: string, cotizacionId: string, viewer: PublicViewer) {
+    if (viewer.rol !== 'client') return;
+    const [[c]] = await withOrgTx(orgId,
         sql`select c.id, c.org_id, c.status, c.total, c.base_currency,
                    (o.sandbox_of is not null) as is_sandbox, o.is_demo
             from cotizaciones c
             join orgs o on o.id = c.org_id
-            where c.id = ${identity.id} and c.org_id = ${identity.orgId}`,
+            where c.id = ${cotizacionId} and c.org_id = ${orgId}`,
     );
     if (!c) return;
     // `quote_viewed` representa la primera apertura real. Antes se emitía en
     // cada recarga aunque la cotización ya estuviera viewed/approved/paid, lo
     // que inflaba tanto PostHog como los webhooks comerciales.
-    const [viewed] = await withOrgTx(identity.orgId, sql`
+    const [viewed] = await withOrgTx(orgId, sql`
         with changed as (
             update cotizaciones set status = 'viewed'
-            where id = ${c.id} and org_id = ${identity.orgId} and status = 'sent'
+            where id = ${c.id} and org_id = ${orgId} and status = 'sent'
             returning id, org_id
         )
         insert into eventos (org_id, cotizacion_id, tipo, detalle)
-        select org_id, id, 'viewed', 'El cliente abrió el link' from changed
+        select org_id, id, 'viewed', 'Abierta por el cliente desde el link' from changed
         returning cotizacion_id`);
     if (!viewed.length) return;
     // Fondo: no bloquear el render del link del cliente con el webhook saliente.
@@ -2791,15 +2871,15 @@ export async function getMyMembership(): Promise<Membership> {
     // un handler alcanzado sin sesión), NO asumir owner: devolver un principal sin
     // permisos para que requirePerm() deniegue en vez de autorizar como dueño.
     if (!userId) {
-        if (currentOrgIdOverride()) return { rol: 'owner', permisos: {}, esOwner: true };
-        return { rol: 'anon', permisos: {}, esOwner: false };
+        if (currentOrgIdOverride()) return { rol: 'owner', permisos: {}, esOwner: true, widgetPrefs: {} };
+        return { rol: 'anon', permisos: {}, esOwner: false, widgetPrefs: {} };
     }
     const orgId = await getActiveOrgId();
     try {
-        const [rows] = await withOrgTx(orgId, sql`select rol, permisos from org_members where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`);
+        const [rows] = await withOrgTx(orgId, sql`select rol, permisos, widget_prefs from org_members where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`);
         if (rows.length) {
             const m = rows[0];
-            return { rol: m.rol as string, permisos: (m.permisos as PermMap) ?? {}, esOwner: m.rol === 'owner' };
+            return { rol: m.rol as string, permisos: (m.permisos as PermMap) ?? {}, esOwner: m.rol === 'owner', widgetPrefs: (m.widget_prefs as Record<string, unknown>) ?? {} };
         }
         // Sin fila de membresía: la ÚNICA vez que esto es legítimo es cuando la
         // org resuelta es la SANDBOX espejo del entorno de prueba —
@@ -2812,10 +2892,10 @@ export async function getMyMembership(): Promise<Membership> {
         // request cuyo getActiveOrgId() resolviera a una org de la que el
         // usuario no fuera miembro activo quedaba autorizado como su dueño.
         const [sandboxRow] = await withOrgTx(orgId, sql`select 1 from orgs where id = ${orgId} and sandbox_of is not null limit 1`);
-        if (sandboxRow.length) return { rol: 'owner', permisos: {}, esOwner: true };
-        return { rol: 'anon', permisos: {}, esOwner: false };
+        if (sandboxRow.length) return { rol: 'owner', permisos: {}, esOwner: true, widgetPrefs: {} };
+        return { rol: 'anon', permisos: {}, esOwner: false, widgetPrefs: {} };
     } catch {
-        return { rol: 'anon', permisos: {}, esOwner: false };
+        return { rol: 'anon', permisos: {}, esOwner: false, widgetPrefs: {} };
     }
 }
 

@@ -7,6 +7,7 @@ import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
+import WidgetEmpty from '../../components/app/WidgetEmpty.astro';
 import { getActiveOrgId } from '../../lib/db';
 import { checkEntitlement } from '../../lib/org-entitlements';
 
@@ -69,15 +70,18 @@ const diasSerie = SERIE.dias;
 const heroTotal = diasSerie.slice(-30).reduce((s, d) => s + d.cerrado, 0);
 
 // ── Ciclo de venta: embudo + pipeline por estado (segmentado) ──
+// href de drill-down: mapea al filtro más fino que /app/cotizaciones realmente
+// soporta (sus pills no distinguen enviada/vista, ambas caen en "open").
 const funnelSteps = [
-    { label: t(L, 'dash.funnel_enviadas'), value: ANALYTICS.funnel.enviadas },
-    { label: t(L, 'dash.funnel_vistas'), value: ANALYTICS.funnel.vistas },
-    { label: t(L, 'dash.funnel_aprobadas'), value: ANALYTICS.funnel.aprobadas },
-    { label: t(L, 'dash.funnel_pagadas'), value: ANALYTICS.funnel.pagadas },
+    { label: t(L, 'dash.funnel_enviadas'), value: ANALYTICS.funnel.enviadas, href: '/app/cotizaciones?f=open' },
+    { label: t(L, 'dash.funnel_vistas'), value: ANALYTICS.funnel.vistas, href: '/app/cotizaciones?f=open' },
+    { label: t(L, 'dash.funnel_aprobadas'), value: ANALYTICS.funnel.aprobadas, href: '/app/cotizaciones?f=approved' },
+    { label: t(L, 'dash.funnel_pagadas'), value: ANALYTICS.funnel.pagadas, href: '/app/cotizaciones?f=paid' },
 ];
+const PIPELINE_FILTER: Record<string, string> = { draft: 'open', sent: 'open', viewed: 'open', approved: 'approved', paid: 'paid' };
 const pipelineSegments = (['draft', 'sent', 'viewed', 'approved', 'paid'] as const).map((st) => {
     const stat = dash.statusStats.find((row) => row.status === st);
-    return { key: st, label: `${STATUS_META[st].label} · ${stat?.n ?? 0}`, value: stat?.total ?? 0, color: STATUS_META[st].color };
+    return { key: st, label: `${STATUS_META[st].label} · ${stat?.n ?? 0}`, value: stat?.total ?? 0, color: STATUS_META[st].color, href: `/app/cotizaciones?f=${PIPELINE_FILTER[st]}` };
 });
 
 // Nota: la tendencia mensual se deriva 100% en el cliente de la MISMA serie diaria de
@@ -175,6 +179,8 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     <WidgetGrid
         id="dashWidgets"
         storageKey="cord.dash.v1"
+        serverPrefs={ME.widgetPrefs?.['cord.dash.v1'] as Record<string, unknown> | undefined}
+        librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
         editButtonId="dashEditBtn"
         doneButtonId="dashDoneBtn"
         resetButtonId="dashResetBtn"
@@ -187,7 +193,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
         }}
     >
 
-        <article class="dash-widget" data-widget="kpi-por-cerrar" data-title={t(L, 'dash.w_kpi_por_cerrar')} data-size-sm="1" data-size-lg="2" data-span="1">
+        <article class="dash-widget" data-widget="kpi-por-cerrar" data-title={t(L, 'dash.w_kpi_por_cerrar')} data-group={t(L, 'widgets.grupo_kpis')} data-size-sm="1" data-size-lg="2" data-span="1">
             <div class="dash-card kpi-card">
                 <span class="kpi-label">{t(L, 'dash.kpi_por_cerrar')}</span>
                 <span class="editorial kpi-num" data-countup={porCerrar.toFixed(2)}>{money(porCerrar)}</span>
@@ -196,7 +202,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="kpi-tasa" data-title={t(L, 'dash.w_kpi_tasa')} data-size-sm="1" data-size-lg="2" data-span="1" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="kpi-tasa" data-title={t(L, 'dash.w_kpi_tasa')} data-group={t(L, 'widgets.grupo_kpis')} data-size-sm="1" data-size-lg="2" data-span="1" hidden={!canAnalytics}>
             <div class="dash-card kpi-card kpi-card-gauge">
                 <span class="kpi-label">{t(L, 'dash.kpi_tasa_cierre')}</span>
                 <div class="kpi-gauge" id="kpiTasaGauge" data-value={tasaCierre} data-tone={tasaCierre >= 40 ? 'ok' : tasaCierre >= 20 ? 'warn' : 'danger'}></div>
@@ -204,15 +210,18 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="kpi-ticket" data-title={t(L, 'dash.w_kpi_ticket')} data-size-sm="1" data-size-lg="2" data-span="1" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="kpi-ticket" data-title={t(L, 'dash.w_kpi_ticket')} data-group={t(L, 'widgets.grupo_kpis')} data-size-sm="1" data-size-lg="2" data-span="1" hidden={!canAnalytics}>
             <div class="dash-card kpi-card">
                 <span class="kpi-label">{t(L, 'dash.kpi_ticket_promedio')}</span>
                 <span class="editorial kpi-num">{money(ANALYTICS.kpis.ticketPromedio, 0)}</span>
-                <span class="kpi-sub">{t(L, 'dash.kpi_ticket_sub')}</span>
+                <div class="wx-kpi-foot">
+                    <span class="kpi-sub">{t(L, 'dash.kpi_ticket_sub')}</span>
+                    {ANALYTICS.funnel.aprobadas > 0 && <span class="kpi-sub">{tf('dash.kpi_ticket_n', { n: String(ANALYTICS.funnel.aprobadas) })}</span>}
+                </div>
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="kpi-seguimiento" data-title={t(L, 'dash.w_kpi_seguimiento')} data-size-sm="1" data-size-lg="2" data-span="1">
+        <article class="dash-widget" data-widget="kpi-seguimiento" data-title={t(L, 'dash.w_kpi_seguimiento')} data-group={t(L, 'widgets.grupo_kpis')} data-size-sm="1" data-size-lg="2" data-span="1">
             <a class="dash-card kpi-card kpi-link" href="/app/cotizaciones">
                 <span class="kpi-label">{t(L, 'dash.kpi_por_seguimiento')}</span>
                 <span class:list={['editorial', 'kpi-num', { 'kpi-warn': seguimiento > 0 }]}>{seguimiento}</span>
@@ -220,7 +229,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </a>
         </article>
 
-        <article class="dash-widget" data-widget="funnel" data-title={t(L, 'dash.w_funnel')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="funnel" data-title={t(L, 'dash.w_funnel')} data-group={t(L, 'widgets.grupo_pipeline')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.funnel_titulo')}</h2></div>
                 <div class="chart-host" id="funnelChart" data-steps={JSON.stringify(funnelSteps)}
@@ -232,7 +241,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="pipeline" data-title={t(L, 'dash.w_pipeline')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="pipeline" data-title={t(L, 'dash.w_pipeline')} data-group={t(L, 'widgets.grupo_pipeline')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.pipeline_titulo')}</h2>
@@ -242,7 +251,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="tendencia" data-title={t(L, 'dash.w_tendencia')} data-size-sm="4" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="tendencia" data-title={t(L, 'dash.w_tendencia')} data-group={t(L, 'widgets.grupo_pipeline')} data-size-sm="4" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tendencia_titulo')}</h2></div>
                 <div class="chart-host chart-host-tall" id="tendenciaChart"
@@ -251,14 +260,14 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="aging" data-title={t(L, 'dash.w_aging')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canCobranza}>
+        <article class="dash-widget" data-widget="aging" data-title={t(L, 'dash.w_aging')} data-group={t(L, 'widgets.grupo_finanzas')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canCobranza}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.aging_titulo')}</h2></div>
                 <div class="chart-host" id="agingChart" data-slices={JSON.stringify(COBRANZA.aging.map(a => ({ key: a.key, label: a.label, value: a.monto, color: a.color })))}></div>
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="flujo" data-title={t(L, 'dash.w_flujo')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="flujo" data-title={t(L, 'dash.w_flujo')} data-group={t(L, 'widgets.grupo_finanzas')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.flujo_titulo')}</h2>
@@ -270,7 +279,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="salud" data-title={t(L, 'dash.w_salud')} data-size-sm="4" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="salud" data-title={t(L, 'dash.w_salud')} data-group={t(L, 'widgets.grupo_finanzas')} data-size-sm="4" data-size-lg="4" data-span="4" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.salud_titulo')}</h2>
@@ -301,25 +310,25 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="rank-clientes" data-title={t(L, 'dash.w_rank_clientes')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="rank-clientes" data-title={t(L, 'dash.w_rank_clientes')} data-group={t(L, 'widgets.grupo_rankings')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_clientes_titulo')}</h2></div>
                 {clientesTasa.length > 0
                     ? <div class="chart-host" id="rankClientesChart" data-items={JSON.stringify(clientesTasa.map(c => ({ label: c.empresa, value: c.tasa })))} data-format="pct"></div>
-                    : <p class="rank-empty">{t(L, 'dash.rank_sin_historial')}</p>}
+                    : <WidgetEmpty icon="clients" title={t(L, 'dash.rank_sin_historial')} />}
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="rank-productos" data-title={t(L, 'dash.w_rank_productos')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
+        <article class="dash-widget" data-widget="rank-productos" data-title={t(L, 'dash.w_rank_productos')} data-group={t(L, 'widgets.grupo_rankings')} data-size-sm="2" data-size-lg="4" data-span="2" hidden={!canAnalytics}>
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.rank_productos_titulo')}</h2></div>
                 {topProductos.length > 0
                     ? <div class="chart-host" id="rankProductosChart" data-items={JSON.stringify(topProductos.map(p => ({ label: p.nombre, value: p.importe })))} data-format="money" data-color="ok"></div>
-                    : <p class="rank-empty">{t(L, 'dash.rank_sin_productos')}</p>}
+                    : <WidgetEmpty icon="products" title={t(L, 'dash.rank_sin_productos')} />}
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="seguimiento-lista" data-title={t(L, 'dash.w_seguimiento_lista')} data-size-sm="2" data-size-lg="4" data-span="2">
+        <article class="dash-widget" data-widget="seguimiento-lista" data-title={t(L, 'dash.w_seguimiento_lista')} data-group={t(L, 'widgets.grupo_actividad')} data-size-sm="2" data-size-lg="4" data-span="2">
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.seguimiento_titulo')}</h2>
@@ -340,56 +349,61 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
                         ))}
                     </div>
                 ) : (
-                    <div class="silence-empty">
-                        <span class="silence-empty-ico">✓</span>
-                        <p>{t(L, 'dash.sin_silenciadas')}</p>
-                    </div>
+                    <WidgetEmpty icon="check" title={t(L, 'dash.sin_silenciadas')} />
                 )}
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="recientes" data-title={t(L, 'dash.w_recientes')} data-size-sm="2" data-size-lg="4" data-span="2">
+        <article class="dash-widget" data-widget="recientes" data-title={t(L, 'dash.w_recientes')} data-group={t(L, 'widgets.grupo_actividad')} data-size-sm="2" data-size-lg="4" data-span="2">
             <div class="dash-card">
                 <div class="sec-head">
                     <h2 class="sec-title">{t(L, 'dash.recientes_titulo')}</h2>
                     <a href="/app/cotizaciones" class="sec-link">{t(L, 'dash.ver_todas')}</a>
                 </div>
-                <div class="quote-list">
-                    {recientes.map((q) => (
-                        <a href={`/app/cotizaciones/${q.id}`} class="quote-row">
-                            <div class="qr-avatar">{q.clienteInicial}</div>
-                            <div class="qr-info">
-                                <span class="qr-folio">{q.folio}</span>
-                                <span class="qr-client">{q.cliente}</span>
-                            </div>
-                            <span class="editorial qr-amount">{money(q.total ?? 0, 0)}</span>
-                            <span class="status-pill" style={`color:${STATUS_META[q.status].color}; background:${STATUS_META[q.status].bg}`}>
-                                {STATUS_META[q.status].label}
-                            </span>
-                        </a>
-                    ))}
-                </div>
+                {recientes.length > 0 ? (
+                    <div class="quote-list">
+                        {recientes.map((q) => (
+                            <a href={`/app/cotizaciones/${q.id}`} class="quote-row">
+                                <div class="qr-avatar">{q.clienteInicial}</div>
+                                <div class="qr-info">
+                                    <span class="qr-folio">{q.folio}</span>
+                                    <span class="qr-client">{q.cliente}</span>
+                                </div>
+                                <span class="editorial qr-amount">{money(q.total ?? 0, 0)}</span>
+                                <span class="status-pill" style={`color:${STATUS_META[q.status].color}; background:${STATUS_META[q.status].bg}`}>
+                                    {STATUS_META[q.status].label}
+                                </span>
+                            </a>
+                        ))}
+                    </div>
+                ) : (
+                    <WidgetEmpty icon="list" title={t(L, 'dash.recientes_vacio')} desc={t(L, 'dash.recientes_vacio_sub')} ctaLabel={t(L, 'dash.recientes_cta')} ctaHref="/app/cotizaciones/nueva" />
+                )}
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="actividad" data-title={t(L, 'dash.w_actividad')} data-size-sm="4" data-size-lg="4" data-span="4">
+        <article class="dash-widget" data-widget="actividad" data-title={t(L, 'dash.w_actividad')} data-group={t(L, 'widgets.grupo_actividad')} data-size-sm="4" data-size-lg="4" data-span="4">
             <div class="dash-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.actividad_titulo')}</h2></div>
-                <div class="feed">
-                    {eventosFeed.map((e) => (
-                        <a href={`/app/cotizaciones/${e.id}`} class="feed-item">
-                            <span class="feed-dot" style={`background:${dotColor(e.tipo)}`}></span>
-                            <div class="feed-body">
-                                <span class="feed-text">{e.detalle}</span>
-                                <span class="feed-meta">{e.folio} · {e.cuando}</span>
-                            </div>
-                        </a>
-                    ))}
-                </div>
+                {eventosFeed.length > 0 ? (
+                    <div class="feed">
+                        {eventosFeed.map((e) => (
+                            <a href={`/app/cotizaciones/${e.id}`} class="feed-item">
+                                <span class="feed-dot" style={`background:${dotColor(e.tipo)}`}></span>
+                                <div class="feed-body">
+                                    <span class="feed-text">{e.detalle}</span>
+                                    <span class="feed-meta">{e.folio} · {e.cuando}</span>
+                                </div>
+                            </a>
+                        ))}
+                    </div>
+                ) : (
+                    <WidgetEmpty icon="inbox" title={t(L, 'dash.actividad_vacio')} desc={t(L, 'dash.actividad_vacio_sub')} />
+                )}
             </div>
         </article>
 
-        <article class="dash-widget" data-widget="tareas" data-title={t(L, 'dash.w_tareas')} data-size-sm="4" data-size-lg="4" data-span="4">
+        <article class="dash-widget" data-widget="tareas" data-title={t(L, 'dash.w_tareas')} data-group={t(L, 'widgets.grupo_actividad')} data-size-sm="4" data-size-lg="4" data-span="4">
             <div class="dash-card tasks-card">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'dash.tareas_titulo')}</h2></div>
                 <form class="task-add" id="taskAdd">
@@ -590,10 +604,6 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     .silence-total { font-size: 0.92rem; color: var(--color-blue-deep); }
     .silence-go { color: var(--color-text-muted); font-weight: 700; transition: transform 0.25s var(--ease-spring), color 0.25s; }
     .silence-row:hover .silence-go { transform: translateX(3px); color: var(--color-blue-deep); }
-    .silence-empty { display: flex; align-items: center; gap: 12px; padding: 0.4rem; }
-    .silence-empty-ico { width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; background: rgba(16,185,129,0.12); color: var(--color-ok); display: flex; align-items: center; justify-content: center; font-weight: 800; }
-    .silence-empty p { margin: 0; font-size: 0.82rem; color: var(--color-text-muted); }
-    .rank-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.4rem 0; }
 
     /* ── Recientes / actividad ── */
     .quote-list { display: flex; flex-direction: column; }
@@ -838,11 +848,13 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     const rangoCache = new Map<string, typeof todoData>();
 
     function buildFunnelSteps(funnel: any) {
+        // Mismo mapeo que el SSR (ver funnelSteps en el frontmatter): las pills de
+        // /app/cotizaciones no distinguen enviada/vista, ambas caen en "open".
         return [
-            { label: funnelLabels.enviadas || 'Enviadas', value: funnel.enviadas || 0 },
-            { label: funnelLabels.vistas || 'Vistas', value: funnel.vistas || 0 },
-            { label: funnelLabels.aprobadas || 'Aprobadas', value: funnel.aprobadas || 0 },
-            { label: funnelLabels.pagadas || 'Pagadas', value: funnel.pagadas || 0 },
+            { label: funnelLabels.enviadas || 'Enviadas', value: funnel.enviadas || 0, href: '/app/cotizaciones?f=open' },
+            { label: funnelLabels.vistas || 'Vistas', value: funnel.vistas || 0, href: '/app/cotizaciones?f=open' },
+            { label: funnelLabels.aprobadas || 'Aprobadas', value: funnel.aprobadas || 0, href: '/app/cotizaciones?f=approved' },
+            { label: funnelLabels.pagadas || 'Pagadas', value: funnel.pagadas || 0, href: '/app/cotizaciones?f=paid' },
         ];
     }
     function applyRangoData(data: typeof todoData) {
@@ -937,7 +949,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     const pipeSegEl = document.getElementById('pipeSegChart');
     if (pipeSegEl) {
         onVisible(pipeSegEl, () => {
-            let segments: { key: string; label: string; value: number; color: string }[] = [];
+            let segments: { key: string; label: string; value: number; color: string; href?: string }[] = [];
             try { segments = JSON.parse(pipeSegEl.dataset.segments || '[]'); } catch { segments = []; }
             mountSegBar(pipeSegEl, { segments, formatY: (v) => moneyFmt(v), emptyMessage: emptyMsg });
         });

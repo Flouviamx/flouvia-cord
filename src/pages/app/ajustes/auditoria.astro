@@ -1,11 +1,21 @@
 ---
-// Ajustes › Auditoría
+// Ajustes › Auditoría — feature_min_plan `audit_log`. El gate por plan se
+// resuelve aquí (no en middleware, que antes redirigía duro a
+// /app/ajustes/plan antes de que la página cargara). SettingsShell ya resuelve
+// el gate por PERMISO (perm="ajustes"); este es el segundo gate, por PLAN.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
+import '../../../styles/modal.css';
+import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
 import { getAuditLog } from '../../../lib/queries';
+import { getActiveOrgId } from '../../../lib/db';
+import { checkEntitlement } from '../../../lib/org-entitlements';
+import { planLabel } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
-const AUDIT = await getAuditLog();
+
 const L = currentLocale();
+const entitlementCheck = await checkEntitlement(await getActiveOrgId(), 'audit_log');
+const AUDIT = entitlementCheck.ok ? await getAuditLog() : [];
 ---
 
 <SettingsShell title="Auditoría — Ajustes" tab="auditoria" perm="ajustes"
@@ -22,6 +32,18 @@ const L = currentLocale();
             ))}
         </div>
     </div>
+    {!entitlementCheck.ok && (
+        <PlanPaywallModal
+            id="auditoriaPlanModal"
+            title={t(L, 'set.aud.plan_titulo')}
+            desc={t(L, 'set.aud.plan_desc')
+                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
+                .replace('{current}', planLabel(entitlementCheck.plan))}
+            requiredPlan={entitlementCheck.requiredPlan}
+            locale={L === 'en' ? 'en' : 'es'}
+            returnHref="/app/ajustes"
+        />
+    )}
 </SettingsShell>
 
 <style>

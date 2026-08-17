@@ -9,18 +9,28 @@
 // Snapshot de hoy: sin selector de fechas — una cartera "de la semana pasada" no significa
 // nada. Se usa el mismo `snapshot-chip` que los informes con scope !== 'rango'.
 import AppLayout from '../../../layouts/AppLayout.astro';
+import '../../../styles/modal.css';
 import AccessGate from '../../../components/app/AccessGate.astro';
+import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
 import WidgetGrid from '../../../components/app/WidgetGrid.astro';
+import WidgetEmpty from '../../../components/app/WidgetEmpty.astro';
 import { getCobranza, getMyMembership, money } from '../../../lib/queries';
-import { memberCan } from '../../../lib/permissions';
+import { memberCan, planLabel } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { dateFull } from '../../../lib/fmt';
+import { getActiveOrgId } from '../../../lib/db';
+import { checkEntitlement } from '../../../lib/org-entitlements';
 
 const L = currentLocale();
 const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 const ME = await getMyMembership();
-const hasAccess = memberCan(ME, 'cobranza');
+const hasPerm = memberCan(ME, 'cobranza');
+// El bloqueo por plan se resuelve AQUÍ, no en middleware: antes middleware
+// redirigía duro a /app/ajustes/plan antes de que la página cargara — un clic
+// en "Cobranza" aterrizaba en Planes sin paywall ni contexto de qué se bloqueó.
+const entitlementCheck = hasPerm ? await checkEntitlement(await getActiveOrgId(), 'collections') : null;
+const hasAccess = hasPerm && (entitlementCheck?.ok ?? false);
 const C = hasAccess ? await getCobranza() : null;
 const hay = (C?.items.length ?? 0) > 0;
 
@@ -86,8 +96,25 @@ const CBZ_T = {
         </div>
     </Fragment>
 
-    {!hasAccess && (
+    {!hasPerm && (
         <AccessGate title={t(L, 'cob.sin_acceso_titulo')} desc={t(L, 'cob.sin_acceso_desc')} />
+    )}
+    {hasPerm && !hasAccess && entitlementCheck && (
+        <>
+            <AccessGate reason="plan" title={t(L, 'cob.plan_titulo')} desc={t(L, 'cob.plan_desc')
+                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
+                .replace('{current}', planLabel(entitlementCheck.plan))} />
+            <PlanPaywallModal
+                id="cobranzaPlanModal"
+                title={t(L, 'cob.plan_titulo')}
+                desc={t(L, 'cob.plan_desc')
+                    .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
+                    .replace('{current}', planLabel(entitlementCheck.plan))}
+                requiredPlan={entitlementCheck.requiredPlan}
+                locale={L === 'en' ? 'en' : 'es'}
+                returnHref="/app"
+            />
+        </>
     )}
     {hasAccess && !hay && (
         <section class="empty">
@@ -102,6 +129,8 @@ const CBZ_T = {
         <div data-cbz-shell>
         <WidgetGrid
             id="cobranzaWidgets" storageKey="cord.cobranza.v1"
+            serverPrefs={ME.widgetPrefs?.['cord.cobranza.v1'] as Record<string, unknown> | undefined}
+            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
             editButtonId="cbzEditBtn" doneButtonId="cbzDoneBtn" resetButtonId="cbzResetBtn"
             trayTitle={t(L, 'cob.widgets_ocultos')} resetConfirm={t(L, 'cob.reset_confirm')}
             labels={widgetLabels}
@@ -190,6 +219,25 @@ const CBZ_T = {
                             </div>
                         ))}
                     </div>
+                </div>
+            </article>
+
+            <!-- 6b · Tasa de cumplimiento de promesas (D1 — sin query nueva, ya la calcula getCobranza()) -->
+            <article class="dash-widget" data-widget="cbz-cumplimiento" data-title={t(L, 'cob.w_cumplimiento')} data-group={t(L, 'widgets.grupo_finanzas')} data-span="2" data-size-sm="2" data-size-lg="4">
+                <div class="dash-card">
+                    <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cob.cumplimiento_titulo')}</h2><p>{t(L, 'cob.cumplimiento_sub')}</p></div></div>
+                    {C.promesas.total > 0 ? (
+                        <div class="cbz-cumplimiento-body">
+                            <div class="chart-host" data-chart="gauge" data-value={C.promesas.cumplimientoPct} data-max="100"
+                                data-tone={C.promesas.cumplimientoPct >= 70 ? 'ok' : C.promesas.cumplimientoPct >= 40 ? 'warn' : 'danger'}
+                                data-chart-options={JSON.stringify({ size: 96 })}></div>
+                            <p class="cbz-cumplimiento-detalle">{tpl(t(L, 'cob.cumplimiento_detalle'), {
+                                cumplidas: String(C.promesas.cumplidas), incumplidas: String(C.promesas.incumplidas), vencidas: String(C.promesas.pendientesVencidas),
+                            })}</p>
+                        </div>
+                    ) : (
+                        <WidgetEmpty icon="check" title={t(L, 'cob.cumplimiento_vacio')} desc={t(L, 'cob.cumplimiento_vacio_sub')} />
+                    )}
                 </div>
             </article>
 
@@ -612,6 +660,9 @@ const CBZ_T = {
     /* Este markup lo renderiza ESTA página → el scopeado sí lo alcanza. El vocabulario
        compartido (.report-kpi, .report-list, .snapshot-tag) vive en
        styles/report-widgets.css, y el grid en styles/widgets.css — Regla 11. */
+    .cbz-cumplimiento-body { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap; }
+    .cbz-cumplimiento-detalle { flex: 1; min-width: 180px; margin: 0; color: var(--color-text-muted); font-size: .8rem; line-height: 1.5; }
+
     .cbz-top-actions { display: flex; align-items: center; justify-content: flex-end; margin-left: auto; gap: .55rem; flex-wrap: wrap; }
     .snapshot-chip { min-height: 42px; display: inline-flex; align-items: center; gap: .55rem; padding: .62rem .9rem; border: 0; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: .78rem; font-weight: 650; white-space: nowrap; }
     .snapshot-chip svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }

@@ -2,9 +2,12 @@
 // Link público — Quiet Luxury edition.
 import Layout from '../../layouts/Layout.astro';
 import QuoteCard from '../../components/q/QuoteCard.astro';
-import { getCotizacionByToken, markViewed } from '../../lib/queries';
+import { getCotizacionByToken } from '../../lib/queries';
 import { findQuoteByToken, ORG as mockOrg } from '../../lib/mock';
 import { isInternalAnalyticsOrg } from '../../lib/analytics-internal';
+import { resolveViewer } from '../../lib/public-viewer';
+import { t } from '../../i18n/app';
+import { currentLocale } from '../../lib/context';
 
 const { token } = Astro.params;
 let result;
@@ -93,10 +96,22 @@ if (token === 'demo') {
 if (!result) return Astro.redirect('/');
 const { quote: q, org: ORG, conversacion } = result;
 
-if (token !== 'demo') {
-    await markViewed(token ?? '');
-}
 const analyticsOrgId = String((ORG as any).id || '');
+
+// ── ¿Quién está abriendo esto? ────────────────────────────────────────────────
+// La vista YA NO se marca aquí. Un GET al SSR lo hace cualquiera: el propio
+// vendedor con su botón "Abrir link", el bot de WhatsApp generando la tarjeta
+// del enlace, un prefetch del navegador. Marcar aquí convertía todos esos casos
+// en "El cliente abrió el link" + webhook + correo al owner.
+// Ahora la vista la marca el heartbeat (/api/q/[token] action:'ping'), que exige
+// JavaScript y pestaña visible. Aquí solo se resuelve el actor para (a) fijar la
+// cookie de visitante, que necesita una respuesta con Set-Cookie, y (b) mostrar
+// el aviso de vista previa cuando quien abre es del equipo.
+const L = currentLocale();
+const viewer = token === 'demo'
+    ? null
+    : await resolveViewer(analyticsOrgId, Astro, { crearCookie: true });
+const esVistaPrevia = viewer?.rol === 'seller';
 const analyticsInternal = token === 'demo' || await isInternalAnalyticsOrg(analyticsOrgId);
 
 const yaAprobada = ['approved', 'paid', 'invoiced'].includes(q.status);
@@ -140,6 +155,12 @@ const color = ORG.colorMarca || '#0a192f';
     </div>
 
     <main class="qp-main">
+        {esVistaPrevia && (
+            <div class="qp-preview" role="status">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" fill="currentColor" fill-opacity="0.13"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>{t(L, 'q.vista_previa')}</span>
+            </div>
+        )}
         {regresoDePago && (
             <div class="qp-payback" role="status">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.1"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg>
@@ -155,6 +176,9 @@ const color = ORG.colorMarca || '#0a192f';
             puedePagar={puedePagar}
             standalone={true}
         />
+        {!esVistaPrevia && token !== 'demo' && (
+            <p class="qp-aviso">{t(L, 'q.aviso_actividad')}</p>
+        )}
     </main>
 </Layout>
 
@@ -193,13 +217,33 @@ const color = ORG.colorMarca || '#0a192f';
     @keyframes qp-payback-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
     @media (prefers-reduced-motion: reduce) { .qp-payback { animation: none; } }
 
+    /* Aviso para el propio equipo: este link no cuenta como vista del cliente. */
+    .qp-preview {
+        display: flex; align-items: flex-start; gap: 10px;
+        max-width: 560px; width: 100%;
+        background: #ffffff; border-radius: 16px;
+        padding: 13px 16px;
+        font-size: 0.82rem; color: #555556; line-height: 1.5;
+        box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 18px 40px -14px rgba(10,25,47,0.12);
+        border: 1px solid rgba(10,25,47,0.1);
+    }
+    .qp-preview svg { flex-shrink: 0; margin-top: 1px; color: #0a192f; }
+
+    /* Transparencia: el cliente debe saber que su actividad es visible. */
+    .qp-aviso {
+        max-width: 560px; width: 100%;
+        margin-top: -0.6rem;
+        font-size: 0.72rem; color: #8a8a8e; line-height: 1.5;
+        text-align: center; text-wrap: balance;
+    }
+
     @media (max-width: 600px) {
         .qp-main { justify-content: flex-start; gap: 1rem; padding: max(1rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-right)) max(5rem, env(safe-area-inset-bottom)) max(.75rem, env(safe-area-inset-left)); }
-        .qp-payback { border-radius: 14px; padding: 12px; }
+        .qp-payback, .qp-preview { border-radius: 14px; padding: 12px; }
     }
 
     @media print {
-        .qp-bg, .qp-payback { display: none !important; }
+        .qp-bg, .qp-payback, .qp-preview, .qp-aviso { display: none !important; }
         .qp-main { min-height: 0; padding: 0; display: block; }
     }
 </style>

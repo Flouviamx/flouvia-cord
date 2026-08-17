@@ -5,6 +5,74 @@
 > de prueba, chat y tiempo real. Registro acumulativo: cada entrada conserva su fecha,
 > pero migraciones anteriores pueden haber dejado bloques fuera de orden estricto.
 
+**El link público como documento vivo, con actor delimitado (16 ago 2026)** — el link
+   `/q/[token]` tenía tres problemas encadenados: no distinguía quién lo abría, su
+   "tiempo real" recargaba la página, y el vendedor no veía nada útil sobre la lectura
+   del cliente.
+
+* **La vista salió del SSR (Regla 19, nueva).** `markViewed()` corría en el render de
+  `/q/[token]`, así que un GET cualquiera la disparaba: el propio botón "Abrir link"
+  del vendedor marcaba la cotización como `viewed`, escribía "El cliente abrió el
+  link", disparaba el webhook `quote.viewed`, el correo al owner y el evento de
+  PostHog; los bots de preview de WhatsApp/Slack/Gmail hacían lo mismo antes de que
+  ningún humano abriera nada. Ahora la vista vive en el heartbeat
+  (`POST /api/q/[token]` action `ping`), que exige JavaScript con la pestaña visible —
+  eso elimina bots y prefetchers sin depender de una lista negra. `src/lib/public-viewer.ts`
+  resuelve `seller | bot | client` (sesión + membresía activa en la org dueña, lista de
+  UA como defensa secundaria, cookie `cord_q_visitor` httpOnly de un año). El vendedor
+  ve un banner de vista previa y no genera señal; el evento pasó a decir "Abierta por
+  el cliente desde el link". El mismo tratamiento se aplicó a `/embed/[token]`, que
+  también llamaba `markViewed` en su SSR.
+
+* **`cotizaciones.rev` y el fin de `location.reload()`.** El SSE del link solo empujaba
+  `message`/`status` y cualquier cambio de estado recargaba, perdiendo el formulario a
+  medio llenar. Ahora un contador `rev` (trigger `before update` en `cotizaciones` más
+  triggers hijos en `cotizacion_items`, `cotizacion_cobros`, `eventos` y
+  `cotizacion_comentarios`) hace barato el polling: el ciclo normal lee un entero y solo
+  paga `getLiveSnapshot()` cuando avanza. El card aplica `event: patch` como parches al
+  DOM — count-up del total desde el importe anterior, flash ámbar en la línea que cambió,
+  rótulo "antes $X". Solo un estado terminal recarga. Cadencia adaptativa 1s/2.5s/5s
+  según quién esté presente, y el cliente cierra el `EventSource` al ocultar la pestaña
+  (antes seguía abierto quemando función durante horas).
+
+  Requisito no obvio: la presencia NO puede escribirse en `cotizaciones`. Si
+  `viewer_last_seen` siguiera actualizándose cada 10s, cada latido bumpearía `rev` y el
+  stream haría un snapshot completo por ciclo. Por eso la presencia vive en
+  `cotizacion_visitantes` y esa columna quedó como legacy sin escritores.
+
+* **Presencia mutua y atención por sección.** `cotizacion_visitantes` (identidad,
+  aperturas, presencia) y `cotizacion_atencion` (segundos por clave) alimentan las dos
+  direcciones: el cliente ve "Ana está en línea" —la palanca de conversión más directa
+  del cambio— y el vendedor ve un panel con personas, aperturas, primera/última vez y
+  barras de tiempo por sección, gated con `quote_attention: 'pro'` **en el endpoint**
+  (`/api/cotizaciones/[id]/atencion`), no ocultando la UI. El resumen excluye a propósito
+  las visitas del equipo. El stream del vendedor escribe su propia presencia mientras la
+  conexión vive y la apaga al cerrar. El payload del latido no es de confianza: vocabulario
+  cerrado de claves y techo de 60s por clave/tick en `src/lib/atencion.ts`.
+
+* **Integridad de la firma.** Con el vendedor pudiendo editar mientras el cliente lee,
+  apareció un riesgo que antes no existía: firmar un total que el cliente nunca vio. El
+  card manda el `rev` que tenía en pantalla y el servidor responde **409 {stale:true}** si
+  ya no es el vigente; la UI bloquea el botón y pide revisar los cambios, pero eso es
+  cortesía — la autorización real es el 409.
+
+* **Tres bugs encontrados construyendo esto.** (1) `cotizacion_items` no tiene columna
+  `unidad` —vive en `productos`, y el SSR cae a `'pieza'` vía `rowToQuote`—, así que
+  `getLiveSnapshot` fallaba y el `catch` del stream se lo tragaba; ahora usa `ci.*` con
+  el mismo fallback para que el parche no "cambie" la unidad de cada línea. (2) El stream
+  avanzaba `lastRev` antes del `await` que podía fallar, convirtiendo un error transitorio
+  de BD en un parche perdido para siempre; ahora avanza después. (3) `cambioPendiente` se
+  declaró con `let` después de que `refreshSelection()` corre en la inicialización — zona
+  muerta temporal, `ReferenceError` que habría matado el script entero del card.
+
+* **Transparencia.** El link se lo dice al destinatario y `terminos.astro` lo describe.
+  Las IP de estas señales se guardan hasheadas con el `org_id` como sal; la excepción
+  sigue siendo `cotizacion_firmas`, que las conserva íntegras como evidencia.
+
+  Pendiente conocido, fuera de alcance: `public_token` no tiene rotación ni revocación —
+  no existe un solo `UPDATE` sobre esa columna en el repo, así que un link reenviado o
+  filtrado sirve para siempre.
+
 **Refactor mobile-first completo de la app y superficies transaccionales (ago 2026)** —
    la estructura móvil de Cord se revisó de extremo a extremo sin modificar reglas de
    negocio, llamadas de red, validaciones ni estados. `src/styles/mobile-app.css` quedó

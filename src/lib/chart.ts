@@ -15,10 +15,23 @@
 // - DOM inyectado en runtime (tooltip, tal cual el SVG) no lleva data-astro-cid-*, así que
 //   sus estilos viven en <style is:global> en la página que lo usa (ver sistema-de-diseno.md).
 
+import { renderEmpty } from './empty-state';
+import type { GlassIcon } from './glass-icons';
+
 export type ChartPoint = { x: string; y: number };
 
 export interface ChartHandle {
     destroy(): void;
+}
+
+/** Campos de estado vacío compartidos por las 7 gráficas que pueden quedar sin datos. */
+export interface ChartEmptyOpts {
+    emptyMessage?: string; // compat: título de respaldo si no viene emptyTitle
+    emptyTitle?: string;
+    emptyDesc?: string;
+    emptyIcon?: GlassIcon;
+    emptyCta?: string;
+    emptyCtaHref?: string;
 }
 
 // ── Helpers compartidos ─────────────────────────────────────────────────────
@@ -196,18 +209,44 @@ function tooltipRow(dotColor: string | null, label: string, value: string, dashe
     return `<div class="cd-tt-row">${dot}<span class="cd-tt-lbl">${label}</span><span class="cd-tt-val editorial">${value}</span></div>`;
 }
 
-function emptyState(container: HTMLElement, msg: string) {
-    const div = document.createElement('div');
-    div.className = 'chx-empty';
-    div.textContent = msg;
-    container.appendChild(div);
+/** Fila de "ver detalle" dentro del tooltip — el ÚNICO target que navega en
+ *  móvil (el primer tap muestra el dato; navegar de una habría descartado la
+ *  lectura del valor antes de verlo). En desktop el propio segmento/barra
+ *  navega directo al clic — ver attachDrill(). */
+function tooltipDrillRow(href: string): string {
+    const runtime = (typeof window !== 'undefined' && (window as any).CORD_I18N) || {};
+    const label = runtime.chartDrillLabel || 'Ver detalle →';
+    return `<a class="cd-tt-drill" href="${href}">${label}</a>`;
+}
+
+/** Comportamiento de clic para un segmento/barra: en móvil SIEMPRE muestra el
+ *  tooltip primero (con o sin href — mantiene el contrato previo de "tap
+ *  muestra el dato"); el enlace "ver detalle" dentro del tooltip es el único
+ *  target que navega ahí. En desktop, si hay href, el clic navega directo. */
+function attachDrill(el: HTMLElement, href: string | undefined, show: () => void) {
+    el.addEventListener('click', (event) => {
+        if (mobileChart()) { show(); return; }
+        if (href) { event.preventDefault(); location.href = href; }
+    });
+}
+
+function emptyState(container: HTMLElement, opts: ChartEmptyOpts) {
+    const runtime = (typeof window !== 'undefined' && (window as any).CORD_I18N) || {};
+    const el = renderEmpty(container, {
+        icon: opts.emptyIcon ?? 'chart',
+        title: opts.emptyTitle || opts.emptyMessage || runtime.emptyDefaultTitle || 'Sin datos',
+        desc: opts.emptyDesc,
+        ctaLabel: opts.emptyCta,
+        ctaHref: opts.emptyCtaHref,
+    });
+    el.classList.add('chx-empty');
 }
 
 const isEmptySeries = (vals: number[]) => vals.every((v) => !v);
 
 // ── 1. Line / Area chart — hero de ingreso ─────────────────────────────────
 
-export interface LineChartOptions {
+export interface LineChartOptions extends ChartEmptyOpts {
     points: ChartPoint[];
     comparePoints?: ChartPoint[]; // mismo largo que points, alineado por índice (día N de este periodo vs día N del anterior)
     height?: number;
@@ -218,7 +257,6 @@ export interface LineChartOptions {
     compareLabel?: string;
     color?: string;
     ariaLabel?: string;
-    emptyMessage?: string;
 }
 export interface LineChartHandle extends ChartHandle {
     setPoints(points: ChartPoint[], comparePoints?: ChartPoint[]): void;
@@ -298,7 +336,7 @@ export function mountLineChart(container: HTMLElement, opts: LineChartOptions): 
         if (!n) {
             gridG.innerHTML = ''; xAxisG.innerHTML = '';
             areaPath.setAttribute('d', ''); linePath.setAttribute('d', ''); comparePath.setAttribute('d', '');
-            if (!container.querySelector('.chx-empty')) emptyState(container, opts.emptyMessage ?? '');
+            if (!container.querySelector('.chx-empty')) emptyState(container, opts);
             return;
         }
         container.querySelector('.chx-empty')?.remove();
@@ -438,7 +476,7 @@ export function mountLineChart(container: HTMLElement, opts: LineChartOptions): 
 
 // ── 2. Combo chart (barras + línea) — tendencia mensual ────────────────────
 
-export interface ComboChartOptions {
+export interface ComboChartOptions extends ChartEmptyOpts {
     labels: string[];
     barValues: number[];
     lineValues: number[];
@@ -449,7 +487,6 @@ export interface ComboChartOptions {
     formatYAxis?: (v: number) => string;
     barColor?: string;
     lineColor?: string;
-    emptyMessage?: string;
 }
 
 export function mountComboChart(container: HTMLElement, opts: ComboChartOptions): ChartHandle {
@@ -476,7 +513,7 @@ export function mountComboChart(container: HTMLElement, opts: ComboChartOptions)
         // Igual que en mountLineChart: con datos en cero se dibuja la gráfica en el piso, no
         // un hueco en blanco. Solo sin ninguna columna se muestra el estado vacío.
         if (!n) {
-            if (!container.querySelector('.chx-empty')) emptyState(container, opts.emptyMessage ?? '');
+            if (!container.querySelector('.chx-empty')) emptyState(container, opts);
             return;
         }
         container.querySelector('.chx-empty')?.remove();
@@ -567,13 +604,12 @@ export function mountComboChart(container: HTMLElement, opts: ComboChartOptions)
 // ── 3. Bar chart vertical con ejes — flujo esperado ─────────────────────────
 
 export interface BarItem { label: string; value: number; sub?: string }
-export interface BarChartOptions {
+export interface BarChartOptions extends ChartEmptyOpts {
     items: BarItem[];
     height?: number;
     formatY?: (v: number) => string;
     formatYAxis?: (v: number) => string;
     color?: string;
-    emptyMessage?: string;
 }
 
 export function mountBarChart(container: HTMLElement, opts: BarChartOptions): ChartHandle {
@@ -594,7 +630,7 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
         container.querySelectorAll('svg').forEach((s) => s.remove());
         // Igual que line/combo: valores en cero se dibujan en el piso, no en blanco.
         if (!n) {
-            if (!container.querySelector('.chx-empty')) emptyState(container, opts.emptyMessage ?? '');
+            if (!container.querySelector('.chx-empty')) emptyState(container, opts);
             return;
         }
         container.querySelector('.chx-empty')?.remove();
@@ -676,12 +712,11 @@ export function mountBarChart(container: HTMLElement, opts: BarChartOptions): Ch
 // esta capa de interacción real con tooltip clamped y destroy().
 
 export interface HBarItem { label: string; value: number; color?: string }
-export interface HBarChartOptions {
+export interface HBarChartOptions extends ChartEmptyOpts {
     items: HBarItem[];
     formatY?: (v: number) => string;
     color?: string;
     maxValue?: number;
-    emptyMessage?: string;
 }
 
 export function mountHBarChart(container: HTMLElement, opts: HBarChartOptions): ChartHandle {
@@ -692,7 +727,7 @@ export function mountHBarChart(container: HTMLElement, opts: HBarChartOptions): 
     clear(container);
     const tooltip = ensureTooltip(container);
 
-    if (!opts.items.length) { emptyState(container, opts.emptyMessage ?? ''); return { destroy() { container.innerHTML = ''; } }; }
+    if (!opts.items.length) { emptyState(container, opts); return { destroy() { container.innerHTML = ''; } }; }
 
     const max = opts.maxValue ?? Math.max(1, ...opts.items.map((i) => i.value));
     const wrap = document.createElement('div');
@@ -757,12 +792,11 @@ export function mountHBarChart(container: HTMLElement, opts: HBarChartOptions): 
 
 // ── 5. Embudo de conversión ──────────────────────────────────────────────────
 
-export interface FunnelStep { label: string; value: number }
-export interface FunnelOptions {
+export interface FunnelStep { label: string; value: number; href?: string }
+export interface FunnelOptions extends ChartEmptyOpts {
     steps: FunnelStep[];
     formatY?: (v: number) => string;
     color?: string;
-    emptyMessage?: string;
 }
 
 export function mountFunnel(container: HTMLElement, opts: FunnelOptions): ChartHandle {
@@ -774,7 +808,7 @@ export function mountFunnel(container: HTMLElement, opts: FunnelOptions): ChartH
 
     const steps = opts.steps;
     // Con todos los pasos en 0 el embudo SÍ se dibuja (estructura visible + "0"), no en blanco.
-    if (!steps.length) { emptyState(container, opts.emptyMessage ?? ''); return { destroy() { container.innerHTML = ''; } }; }
+    if (!steps.length) { emptyState(container, opts); return { destroy() { container.innerHTML = ''; } }; }
     const total = steps[0].value || 1;
 
     const wrap = document.createElement('div');
@@ -827,10 +861,12 @@ export function mountFunnel(container: HTMLElement, opts: FunnelOptions): ChartH
 
     steps.forEach((s, i) => {
         const bar = bars[i];
+        if (s.href) bar.classList.add('is-drillable');
         const show = () => {
             const pctTotal = Math.round((s.value / total) * 100);
             let html = tooltipRow(color, s.label, formatY(s.value));
             html += `<div class="cd-tt-delta">${pctTotal}% del total</div>`;
+            if (s.href) html += tooltipDrillRow(s.href);
             tooltip.innerHTML = html;
             const r = bar.getBoundingClientRect(); const hr = container.getBoundingClientRect();
             placeTooltip(tooltip, container, r.left - hr.left + r.width / 2, r.top - hr.top);
@@ -839,7 +875,7 @@ export function mountFunnel(container: HTMLElement, opts: FunnelOptions): ChartH
         const unshow = () => { hideTooltip(tooltip); clearBars(); };
         bar.addEventListener('pointerenter', show); bar.addEventListener('pointermove', show);
         bar.addEventListener('pointerleave', unshow); bar.addEventListener('focus', show); bar.addEventListener('blur', unshow);
-        bar.addEventListener('click', () => { if (mobileChart()) show(); });
+        attachDrill(bar, s.href, show);
         listeners.push(() => {
             bar.removeEventListener('pointerenter', show); bar.removeEventListener('pointermove', show);
             bar.removeEventListener('pointerleave', unshow); bar.removeEventListener('focus', show); bar.removeEventListener('blur', unshow);
@@ -853,12 +889,11 @@ export function mountFunnel(container: HTMLElement, opts: FunnelOptions): ChartH
 // ── 6. Dona (aging de cartera) ───────────────────────────────────────────────
 
 export interface DonutSlice { key: string; label: string; value: number; color: string }
-export interface DonutOptions {
+export interface DonutOptions extends ChartEmptyOpts {
     slices: DonutSlice[];
     formatY?: (v: number) => string;
     centerLabel?: string;
     size?: number;
-    emptyMessage?: string;
 }
 
 export function mountDonut(container: HTMLElement, opts: DonutOptions): ChartHandle {
@@ -870,7 +905,7 @@ export function mountDonut(container: HTMLElement, opts: DonutOptions): ChartHan
 
     const slices = opts.slices.filter((s) => s.value > 0);
     const total = slices.reduce((s, sl) => s + sl.value, 0);
-    if (!slices.length || total <= 0) { emptyState(container, opts.emptyMessage ?? ''); return { destroy() { container.innerHTML = ''; } }; }
+    if (!slices.length || total <= 0) { emptyState(container, opts); return { destroy() { container.innerHTML = ''; } }; }
 
     const r = size / 2 - 14;
     const cx = size / 2, cy = size / 2;
@@ -900,6 +935,10 @@ export function mountDonut(container: HTMLElement, opts: DonutOptions): ChartHan
         circle.style.cursor = 'pointer';
         circle.style.transition = reducedMotion() ? 'none' : 'stroke-width 0.15s var(--ease-ios, ease), opacity 0.2s var(--ease-ios, ease)';
         circle.tabIndex = 0;
+        // Estampado SIEMPRE, sin costo si nadie lo usa: habilita cross-filter
+        // (src/lib/widget-filter.ts) sin que chart.ts conozca esa capa.
+        circle.setAttribute('data-filter-key', sl.key);
+        circle.setAttribute('data-filter-label', sl.label);
         circles.push(circle);
         svg.appendChild(circle);
         acc += dash;
@@ -921,6 +960,8 @@ export function mountDonut(container: HTMLElement, opts: DonutOptions): ChartHan
         const item = document.createElement('div');
         item.className = 'chx-legend-item';
         item.tabIndex = 0;
+        item.dataset.filterKey = sl.key;
+        item.dataset.filterLabel = sl.label;
         item.innerHTML = `<span class="chx-legend-dot" style="background:${sl.color}"></span><span class="chx-legend-label">${sl.label}</span><span class="chx-legend-val editorial">${formatY(sl.value)}</span>`;
         legend.appendChild(item);
         legendItems.push(item);
@@ -959,11 +1000,10 @@ export function mountDonut(container: HTMLElement, opts: DonutOptions): ChartHan
 
 // ── 7. Barra 100% segmentada + leyenda — pipeline por estado ────────────────
 
-export interface SegBarSegment { key: string; label: string; value: number; color: string }
-export interface SegBarOptions {
+export interface SegBarSegment { key: string; label: string; value: number; color: string; href?: string }
+export interface SegBarOptions extends ChartEmptyOpts {
     segments: SegBarSegment[];
     formatY?: (v: number) => string;
-    emptyMessage?: string;
 }
 
 export function mountSegBar(container: HTMLElement, opts: SegBarOptions): ChartHandle {
@@ -974,7 +1014,7 @@ export function mountSegBar(container: HTMLElement, opts: SegBarOptions): ChartH
 
     const segs = opts.segments;
     const total = segs.reduce((s, sg) => s + sg.value, 0);
-    if (!segs.length || total <= 0) { emptyState(container, opts.emptyMessage ?? ''); return { destroy() { container.innerHTML = ''; } }; }
+    if (!segs.length || total <= 0) { emptyState(container, opts); return { destroy() { container.innerHTML = ''; } }; }
 
     const wrap = document.createElement('div');
     wrap.className = 'chx-segbar-wrap';
@@ -1010,9 +1050,12 @@ export function mountSegBar(container: HTMLElement, opts: SegBarOptions): ChartH
     const dimLegend = makeDimGroup(legendItems);
     segs.forEach((sg, i) => {
         const seg = segEls[i], legendItem = legendItems[i];
+        if (sg.href) { seg.classList.add('is-drillable'); legendItem.classList.add('is-drillable'); }
         const pct = (sg.value / total) * 100;
         const show = () => {
-            tooltip.innerHTML = tooltipRow(sg.color, sg.label, formatY(sg.value)) + `<div class="cd-tt-delta">${Math.round(pct)}%</div>`;
+            let html = tooltipRow(sg.color, sg.label, formatY(sg.value)) + `<div class="cd-tt-delta">${Math.round(pct)}%</div>`;
+            if (sg.href) html += tooltipDrillRow(sg.href);
+            tooltip.innerHTML = html;
             const r = seg.getBoundingClientRect(); const hr = container.getBoundingClientRect();
             placeTooltip(tooltip, container, r.left - hr.left + r.width / 2, r.top - hr.top);
             dimSegs.focus(seg); dimLegend.focus(legendItem);
@@ -1021,7 +1064,7 @@ export function mountSegBar(container: HTMLElement, opts: SegBarOptions): ChartH
         [seg, legendItem].forEach((el) => {
             el.addEventListener('pointerenter', show); el.addEventListener('pointermove', show);
             el.addEventListener('pointerleave', unshow); el.addEventListener('focus', show); el.addEventListener('blur', unshow);
-            el.addEventListener('click', () => { if (mobileChart()) show(); });
+            attachDrill(el, sg.href, show);
             listeners.push(() => {
                 el.removeEventListener('pointerenter', show); el.removeEventListener('pointermove', show);
                 el.removeEventListener('pointerleave', unshow); el.removeEventListener('focus', show); el.removeEventListener('blur', unshow);

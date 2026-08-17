@@ -1,8 +1,16 @@
 // /api/q/[token] — acciones del CLIENTE final sobre el link público.
 // No requiere auth: el token (random de 16 bytes) es el secreto.
-//   POST { action: 'approve' | 'reject' | 'comment' | 'counter',
-//          comentario?, mensaje?, propuesta? }  → { ok, status? }
+//   POST { action: 'approve' | 'reject' | 'comment' | 'counter' | 'ping' | 'hito',
+//          comentario?, mensaje?, propuesta?, rev? }  → { ok, status? }
 // approve/reject cambian el estado; comment/counter NO (alimentan la conversación).
+//
+// 'ping' es el latido del documento vivo y hace TRES cosas que antes no hacía:
+//   1) marca la vista — se movió aquí desde el SSR de /q/[token], porque un GET
+//      al SSR lo hace cualquiera (el propio vendedor, el bot de WhatsApp
+//      generando la tarjeta del enlace, un prefetch). Llegar hasta aquí exige
+//      JavaScript corriendo con la pestaña visible;
+//   2) registra presencia CON ACTOR, distinguiendo al equipo del cliente;
+//   3) acumula la atención por sección.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
@@ -14,10 +22,13 @@ import { after } from '../../../lib/after';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
 import { trackServer } from '../../../lib/posthog-server';
+import { resolveViewer } from '../../../lib/public-viewer';
+import { recordHeartbeat, recordHito } from '../../../lib/atencion';
+import { markViewed } from '../../../lib/queries';
 
 const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
 
-export const POST: APIRoute = async ({ params, request }) => {
+export const POST: APIRoute = async ({ params, request, cookies }) => {
     const token = params.token ?? '';
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
@@ -27,13 +38,14 @@ export const POST: APIRoute = async ({ params, request }) => {
     // Rate limit por token (el link es público, sin sesión): el 'ping' de presencia
     // es frecuente (límite alto); las acciones que ESCRIBEN (comentar/contraofertar/
     // aprobar/rechazar) van más apretadas para frenar el spam de filas en 'eventos'.
-    const rl = await rateLimit(`q:${action === 'ping' ? 'ping:' : ''}${token}`, action === 'ping' ? 120 : 30, 60);
+    const ligero = action === 'ping' || action === 'hito';
+    const rl = await rateLimit(`q:${ligero ? 'ping:' : ''}${token}`, ligero ? 120 : 30, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
 
     const identity = await resolvePublicQuote(token);
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
     const [rows] = await withOrgTx(identity.orgId, sql`
-        select c.id, c.org_id, c.status, (o.sandbox_of is not null) as is_sandbox, o.is_demo
+        select c.id, c.org_id, c.status, c.rev, (o.sandbox_of is not null) as is_sandbox, o.is_demo
         from cotizaciones c join orgs o on o.id = c.org_id
         where c.id = ${identity.id} and c.org_id = ${identity.orgId}`);
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
@@ -41,16 +53,50 @@ export const POST: APIRoute = async ({ params, request }) => {
     const orgId = c.org_id as string;
     const alive = ['sent', 'viewed'].includes(c.status as string);
 
-    // ── Heartbeat de presencia (el cliente tiene el link abierto AHORA) ──
+    // ── Latido del documento vivo ──
+    // Presencia con actor + atención por sección + (una sola vez) la vista.
     if (action === 'ping') {
-        await withOrgTx(orgId, sql`update cotizaciones set viewer_last_seen = now()
-            where id = ${c.id} and org_id = ${orgId}`);
+        const viewer = await resolveViewer(orgId, { request, cookies });
+        if (viewer.rol === 'bot') return json({ ok: true, rol: 'bot' });
+
+        await recordHeartbeat(orgId, c.id as string, viewer, {
+            seccion: body.seccion,
+            dwell: body.dwell,
+            typing: body.typing,
+            nuevaSesion: body.nueva_sesion,
+        });
+
+        // Solo cuando puede cambiar algo: markViewed hace su propia comprobación
+        // idempotente (status = 'sent'), pero llamarlo en cada latido costaría
+        // dos queries extra cada 10s durante toda la vida de la pestaña.
+        if (c.status === 'sent' && viewer.rol === 'client') {
+            after(markViewed(orgId, c.id as string, viewer));
+        }
+        return json({ ok: true, rol: viewer.rol, rev: Number(c.rev) || 1 });
+    }
+
+    // ── Hito discreto: abrió el PDF, expandió una línea ──
+    if (action === 'hito') {
+        const viewer = await resolveViewer(orgId, { request, cookies });
+        if (viewer.rol === 'bot') return json({ ok: true });
+        await recordHito(orgId, c.id as string, viewer, body.clave);
         return json({ ok: true });
     }
 
     // ── Aprobar ──
     if (action === 'approve') {
         if (!alive) return json({ error: 'Esta cotización ya no se puede modificar', status: c.status }, 409);
+        // Integridad de la firma. Ahora que el vendedor puede editar mientras el
+        // cliente lee, el cliente podría estar firmando un snapshot viejo: vio
+        // $45,500, el vendedor lo subió a $48,000, y la firma quedaría sobre un
+        // total que el cliente nunca aceptó. El card manda el `rev` que tenía en
+        // pantalla; si ya no es el vigente, se rechaza y se le piden revisar los
+        // cambios. La UI también bloquea el botón, pero eso es cortesía — la
+        // autorización real es este 409.
+        const revCliente = Number(body.rev);
+        if (Number.isFinite(revCliente) && revCliente > 0 && revCliente !== Number(c.rev)) {
+            return json({ error: 'La cotización cambió mientras la revisabas', stale: true, rev: Number(c.rev) }, 409);
+        }
         const signedBy = String(body.signed_by ?? '').trim().slice(0, 200);
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'desconocida';
         const ua = request.headers.get('user-agent') ?? 'desconocido';

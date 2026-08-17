@@ -11,9 +11,9 @@ export const PLANES_EN: Plan[] = [
         ctaHref: '/registro',
         feats: [
             '5 active quotes',
+            '5 sent quotes per month',
             '50 products and 50 clients',
             '3 AI generations per month',
-            'Public link + PDF',
             '"Powered by Cord" branding',
         ],
     },
@@ -28,9 +28,9 @@ export const PLANES_EN: Plan[] = [
         feats: [
             '50 active quotes',
             '500 products and clients',
-            '20 AI generations + 3 e-invoices/mo',
+            '20 AI generations + 3 invoices/mo',
+            'E-invoicing (Mexico and the rest of the world)',
             'Your brand (no "Powered by")',
-            'CSV import',
         ],
     },
     {
@@ -46,9 +46,9 @@ export const PLANES_EN: Plan[] = [
         feats: [
             'Unlimited quotes',
             'Up to 5 users',
-            '50 AI generations + 20 e-invoices/mo',
+            '50 AI generations + 20 invoices/mo',
+            'Collections and 90-day cash flow forecast',
             'Live tracking and analytics',
-            'Immutable audit log',
         ],
     },
     {
@@ -62,25 +62,26 @@ export const PLANES_EN: Plan[] = [
         feats: [
             'Everything in Professional',
             'Up to 15 users',
-            '500 AI generations + 100 e-invoices/mo',
-            'Approval flows and collections',
-            'Emails from your domain (SMTP)',
+            '500 AI generations + 100 invoices/mo',
+            'Autonomous AI collections and approval flows',
+            'Emails from your domain (SMTP) and SSO',
         ],
     },
     {
         id: 'developer',
         nombre: 'Developer',
-        tagline: 'To integrate into your stack.',
+        tagline: 'Capacity and terms tailored to you.',
         precioMensual: 150,
-        ctaLabel: 'Start now',
-        ctaHref: '/registro',
+        custom: true,
+        ctaLabel: 'Talk to sales',
+        ctaHref: '/en/contacto/ventas',
         stripeProductId: 'prod_Ui4Iff1aimaK0y',
         feats: [
             'Everything in Scale',
             'Unlimited users and AI',
-            '1,000 e-invoices + 50,000 API reqs/mo',
+            '1,000 invoices + 50,000 API reqs/mo',
             'Overage at the lowest cost',
-            'Infrastructure to integrate',
+            'Custom terms and onboarding',
         ],
     },
 ];
@@ -98,8 +99,9 @@ export const COMPARATIVA_EN: CompareGroup[] = [
     {
         titulo: 'Included Monthly Consumption',
         rows: [
+            { label: 'Sent quotes', free: '5 / mo', starter: 'Unlimited', pro: 'Unlimited', scale: 'Unlimited', developer: 'Unlimited' },
             { label: 'AI quote generation', free: '3 / mo', starter: '20 / mo', pro: '50 / mo', scale: '500 / mo', developer: 'Unlimited' },
-            { label: 'E-invoicing CFDI 4.0 (SAT)', free: false, starter: '3 / mo', pro: '20 / mo', scale: '100 / mo', developer: '1,000 / mo' },
+            { label: 'E-invoices issued', free: false, starter: '3 / mo', pro: '20 / mo', scale: '100 / mo', developer: '1,000 / mo', hint: 'CFDI 4.0 in Mexico, commercial invoice everywhere else.' },
             { label: 'Public API calls', free: '100 / mo', starter: '1,000 / mo', pro: '5,000 / mo', scale: '10,000 / mo', developer: '50,000 / mo' },
         ],
     },
@@ -143,10 +145,9 @@ export const COMPARATIVA_EN: CompareGroup[] = [
     {
         titulo: 'Tax and Multi-currency',
         rows: [
-            { label: 'Automated E-invoicing CFDI 4.0 (SAT)', free: false, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Your own CSD (digital seal)', free: false, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Automated e-invoicing', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 with the SAT in Mexico; Cord’s own commercial invoice everywhere else.' },
+            { label: 'Your own CSD (digital seal, Mexico)', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Multi-currency with FX hedging (rate lock)', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'International invoicing (US / EU)', free: false, starter: false, pro: false, scale: true, developer: true },
         ],
     },
     {
@@ -166,11 +167,11 @@ export const COMPARATIVA_EN: CompareGroup[] = [
     {
         titulo: 'Risk and Treasury',
         rows: [
+            { label: 'Collections module (AR aging)', free: false, starter: false, pro: true, scale: true, developer: true },
+            { label: '90-day cash flow forecast', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Approval flows (discount/amount/margin limits)', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Silent margin auditor', free: false, starter: false, pro: false, scale: true, developer: true },
-            { label: 'Collections module (AR aging)', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Automated late-payment interest', free: false, starter: false, pro: false, scale: true, developer: true },
-            { label: '90-day cash flow forecast', free: false, starter: false, pro: false, scale: true, developer: true },
         ],
     },
     {
@@ -223,7 +224,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
         rows: [
             { label: 'Additional user', free: 'Hard limit', starter: 'Hard limit', pro: '$15 / u', scale: '$15 / u', developer: '$10 / u' },
             { label: 'Extra AI generation', free: 'Hard limit', starter: '$0.20 / use', pro: '$0.18 / use', scale: '$0.15 / use', developer: '$0.13 / use' },
-            { label: 'Extra E-invoice (CFDI)', free: false, starter: '$0.15 / file', pro: '$0.15 / file', scale: '$0.10 / file', developer: '$0.08 / file' },
+            { label: 'Extra invoice', free: false, starter: '$0.15 / file', pro: '$0.15 / file', scale: '$0.10 / file', developer: '$0.08 / file' },
             { label: 'Extra API (per 100 req)', free: 'Hard limit', starter: '$0.03 USD', pro: '$0.03 USD', scale: '$0.02 USD', developer: '$0.02 USD' },
         ],
     },
@@ -236,11 +237,11 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'What counts as an "active quote"?',
-        a: 'A quote that is still alive in your pipeline (draft, sent, viewed, or approved without closing). Closed, paid, or expired quotes do not consume your limit, so the plan goes further than it seems.',
+        a: 'A quote that is still alive in your pipeline (draft, sent, viewed, or approved without closing). Closed, paid, or expired quotes do not consume your limit, so the plan goes further than it seems. On Free, on top of the 5 active quotes there is a cap of 5 SENT quotes per month — that one does reset every month, regardless of how many you close.',
     },
     {
         q: 'What happens if I exceed the included consumption?',
-        a: 'It depends on the plan. In Free and Starter, some limits are hard caps (they pause until the next cycle or until you upgrade). From Professional onwards, overages are charged per use at the end of the month via Stripe: AI generations, e-invoices, users, and API calls. No surprises: you can see your consumption in real time inside the app.',
+        a: 'It depends on the plan. In Free and Starter, some limits are hard caps (they pause until the next cycle or until you upgrade). From Professional onwards, overages are charged per use at the end of the month via Stripe: AI generations, invoices issued, users, and API calls. No surprises: you can see your consumption in real time inside the app.',
     },
     {
         q: 'Can I change plans anytime?',
@@ -251,8 +252,8 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
         a: 'Yes. All prices are in Mexican Pesos (MXN) and include IVA. What you see is what you pay.',
     },
     {
-        q: 'How does CFDI 4.0 e-invoicing work?',
-        a: 'From the Starter plan, you connect your Digital Seal Certificate (CSD) once, and when you close a quote, Cord stamps the CFDI 4.0 with the SAT using the exact same data. No retyping in another portal.',
+        q: 'How does e-invoicing work?',
+        a: "It depends on your business's country, from the Starter plan onwards. In Mexico, you connect your Digital Seal Certificate (CSD) once, and when you close a quote, Cord stamps the CFDI 4.0 with the SAT using the exact same data. Outside Mexico, Cord issues its own commercial invoice with a sequential number and PDF — not a stamp with a local tax authority, but it documents the sale with the same quote data, with no retyping in another system.",
     },
     {
         q: 'Can I test Cord without paying?',
@@ -260,7 +261,7 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'Is the Developer plan for integrating Cord into my system?',
-        a: 'Exactly. Developer includes 50,000 API calls per month, the cheapest overages, unlimited users and AI, and the embeddable quoter. It is the foundation for connecting Cord to your ERP, e-commerce, or client portal.',
+        a: "Exactly. Developer includes 50,000 API calls per month, the cheapest overages, unlimited users and AI, and the embeddable quoter — the foundation for connecting Cord to your ERP, e-commerce, or client portal. It has no self-serve price: you sign up by talking to sales, so capacity and terms match your integration.",
     },
     {
         q: 'Do I need to be a Flouvia customer to sign up for a plan?',

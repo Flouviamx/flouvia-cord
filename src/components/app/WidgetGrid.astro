@@ -11,10 +11,17 @@ interface Props {
     trayTitle: string;
     resetConfirm: string;
     labels: { drag: string; up: string; down: string; resize: string; remove: string };
+    /** Layout guardado en servidor para ESTE grid (ME.widgetPrefs?.[storageKey]), si existe. */
+    serverPrefs?: Record<string, unknown>;
+    /** Copy del catálogo — solo se usa cuando hay ≥6 widgets ocultos (modo biblioteca). */
+    librarySearchPlaceholder?: string;
+    libraryNoResults?: string;
+    libraryAddLabel?: string;
 }
 const {
     id, storageKey, class: className, editButtonId = '', doneButtonId = '', resetButtonId = '',
-    trayTitle, resetConfirm, labels,
+    trayTitle, resetConfirm, labels, serverPrefs,
+    librarySearchPlaceholder = '', libraryNoResults = '', libraryAddLabel = '+',
 } = Astro.props;
 ---
 <div
@@ -26,6 +33,10 @@ const {
     data-done-button={doneButtonId}
     data-reset-button={resetButtonId}
     data-reset-confirm={resetConfirm}
+    data-server-prefs={serverPrefs && Object.keys(serverPrefs).length ? JSON.stringify(serverPrefs) : ''}
+    data-library-search-ph={librarySearchPlaceholder}
+    data-library-no-results={libraryNoResults}
+    data-library-add-label={libraryAddLabel}
 >
     <slot />
     <section class="dash-card widget-tray" data-widget-tray hidden>
@@ -37,11 +48,26 @@ const {
 <script is:inline>
     // Pre-paint sincronico. La clave siempre sale del dataset del grid, nunca
     // queda hardcodeada en el componente ni en el modulo interactivo.
+    //
+    // Merge servidor↔localStorage: last-writer-wins por grid COMPLETO usando el
+    // reloj `at` que viaja en el propio prefs (nunca merge campo a campo — fusionar
+    // dos reordenamientos produce un layout que nadie pidió). Si gana el servidor,
+    // se escribe a localStorage en esta misma pasada (converge sin red). Si gana
+    // local, se marca prefsDirty para que el módulo interactivo lo empuje al montar.
     (function () {
         var host = document.currentScript && document.currentScript.previousElementSibling;
         if (!host || !host.matches('[data-widget-grid]')) return;
         try {
-            var raw = JSON.parse(localStorage.getItem(host.dataset.storageKey) || '{}');
+            var local = JSON.parse(localStorage.getItem(host.dataset.storageKey) || '{}');
+            var serverRaw = host.dataset.serverPrefs;
+            var server = serverRaw ? JSON.parse(serverRaw) : null;
+            var raw = local;
+            if (server && (Number(server.at) || 0) > (Number(local.at) || 0)) {
+                raw = server;
+                try { localStorage.setItem(host.dataset.storageKey, JSON.stringify(server)); } catch (e) {}
+            } else if (server) {
+                host.dataset.prefsDirty = '1';
+            }
             var order = Array.isArray(raw.order) ? raw.order : [];
             var hidden = Array.isArray(raw.hidden) ? raw.hidden : [];
             var sizes = raw.sizes && typeof raw.sizes === 'object' ? raw.sizes : {};
@@ -69,12 +95,50 @@ const {
 </script>
 
 <script>
-    type Prefs = { order: string[]; hidden: string[]; sizes: Record<string, 'sm' | 'lg'> };
+    type Prefs = { order: string[]; hidden: string[]; sizes: Record<string, 'sm' | 'lg'>; rev?: number; at?: number };
+
+    // Debounce compartido por TODOS los grids de la página: cada uno empuja bajo
+    // su propia storageKey, pero un solo timer evita ráfagas de PUT si el usuario
+    // reordena varios widgets seguidos en el mismo grid.
+    const pushTimers = new Map<string, ReturnType<typeof setTimeout>>();
+    const pendingPush = new Map<string, Prefs>();
+    function pushNow(key: string, prefs: Prefs) {
+        fetch('/api/app/widget-prefs', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key, prefs }),
+            keepalive: true,
+        }).catch(() => {}); // sin red o sin sesión: localStorage ya guardó, no hay nada que romper
+    }
+    function queuePush(key: string, prefs: Prefs) {
+        pendingPush.set(key, prefs);
+        const existing = pushTimers.get(key);
+        if (existing) clearTimeout(existing);
+        pushTimers.set(key, setTimeout(() => { pendingPush.delete(key); pushNow(key, prefs); }, 800));
+    }
+    // Red de seguridad: si la pestaña se cierra antes de que el debounce dispare,
+    // sendBeacon manda lo pendiente (solo admite POST — el endpoint acepta ambos).
+    addEventListener('pagehide', () => {
+        pendingPush.forEach((prefs, key) => {
+            navigator.sendBeacon?.('/api/app/widget-prefs', new Blob([JSON.stringify({ key, prefs })], { type: 'application/json' }));
+        });
+    });
 
     function mountGrid(host: HTMLElement) {
         if (host.dataset.widgetReady === '1') return;
         host.dataset.widgetReady = '1';
         const key = host.dataset.storageKey || '';
+
+        // El pre-paint (is:inline) ya decidió quién ganó el merge servidor↔local.
+        // Si ganó local, el servidor se quedó atrás — empújalo una vez al montar,
+        // sin esperar a que el usuario toque algo.
+        if (host.dataset.prefsDirty === '1') {
+            delete host.dataset.prefsDirty;
+            try {
+                const current = JSON.parse(localStorage.getItem(key) || '{}');
+                if (current && typeof current === 'object') queuePush(key, current);
+            } catch {}
+        }
         const tray = host.querySelector<HTMLElement>('[data-widget-tray]');
         const trayList = host.querySelector<HTMLElement>('[data-widget-tray-list]');
         const template = host.querySelector<HTMLTemplateElement>('[data-widget-edit-template]');
@@ -94,10 +158,20 @@ const {
         const getPrefs = (): Prefs => {
             try {
                 const value = JSON.parse(localStorage.getItem(key) || '{}');
-                return { order: Array.isArray(value.order) ? value.order : [], hidden: Array.isArray(value.hidden) ? value.hidden : [], sizes: value.sizes && typeof value.sizes === 'object' ? value.sizes : {} };
-            } catch { return { order: [], hidden: [], sizes: {} }; }
+                return {
+                    order: Array.isArray(value.order) ? value.order : [],
+                    hidden: Array.isArray(value.hidden) ? value.hidden : [],
+                    sizes: value.sizes && typeof value.sizes === 'object' ? value.sizes : {},
+                    rev: typeof value.rev === 'number' ? value.rev : 0,
+                    at: typeof value.at === 'number' ? value.at : 0,
+                };
+            } catch { return { order: [], hidden: [], sizes: {}, rev: 0, at: 0 }; }
         };
-        const setPrefs = (prefs: Prefs) => { try { localStorage.setItem(key, JSON.stringify(prefs)); } catch {} };
+        const setPrefs = (prefs: Prefs) => {
+            const stamped: Prefs = { ...prefs, rev: (prefs.rev ?? 0) + 1, at: Date.now() };
+            try { localStorage.setItem(key, JSON.stringify(stamped)); } catch {}
+            queuePush(key, stamped);
+        };
         const persistOrder = () => { const prefs = getPrefs(); prefs.order = widgets().map((w) => w.dataset.widget!); setPrefs(prefs); };
 
         widgets().forEach((widget) => {
@@ -120,17 +194,104 @@ const {
                 w.addEventListener('transitionend', () => { w.style.transition = ''; }, { once: true });
             }));
         }
+        // Catálogo de widgets ocultos. Con pocos (<6) es una fila de pills simple.
+        // Con más, se vuelve una mini-biblioteca: buscador + agrupado por
+        // data-group + preview real del widget (clonado del DOM, sin montar sus
+        // gráficas — mountAll() nunca ve el clon porque no se le pasa como root).
+        // Nunca es un <dialog>: Regla 12, AppLayout no carga modal.css en estas páginas.
+        let librarySearch = '';
         function renderTray() {
             if (!tray || !trayList) return;
             const prefs = getPrefs();
             const hidden = widgets().filter((w) => prefs.hidden.includes(w.dataset.widget!));
             tray.hidden = hidden.length === 0; trayList.innerHTML = '';
-            hidden.forEach((w) => {
-                const item = document.createElement('div'); item.className = 'widget-tray-item';
-                const label = document.createElement('span'); label.textContent = w.dataset.title || w.dataset.widget || '';
-                const add = document.createElement('button'); add.type = 'button'; add.className = 'widget-tray-add'; add.textContent = '+'; add.setAttribute('aria-label', label.textContent || '');
-                add.addEventListener('click', () => setHidden(w.dataset.widget!, false)); item.append(label, add); trayList.appendChild(item);
-            });
+            if (!hidden.length) { librarySearch = ''; return; }
+
+            const asLibrary = hidden.length >= 6;
+            tray.classList.toggle('wx-library', asLibrary);
+
+            if (asLibrary) {
+                const search = document.createElement('label');
+                search.className = 'wx-lib-search';
+                search.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
+                const input = document.createElement('input');
+                input.type = 'search'; input.autocomplete = 'off';
+                input.placeholder = host.dataset.librarySearchPh || '';
+                input.value = librarySearch;
+                input.addEventListener('input', () => { librarySearch = input.value; renderRows(); });
+                search.appendChild(input);
+                trayList.appendChild(search);
+            }
+
+            const rowsHost = document.createElement('div');
+            rowsHost.className = asLibrary ? 'wx-lib-rows' : 'widget-tray-list';
+            trayList.appendChild(rowsHost);
+
+            function renderRows() {
+                rowsHost.innerHTML = '';
+                const q = librarySearch.trim().toLocaleLowerCase();
+                const visible = hidden.filter((w) => {
+                    if (!q) return true;
+                    const hay = `${w.dataset.title || ''} ${w.dataset.desc || ''}`.toLocaleLowerCase();
+                    return hay.includes(q);
+                });
+                if (!asLibrary) {
+                    visible.forEach((w) => rowsHost.appendChild(pillItem(w)));
+                    return;
+                }
+                const groups = Array.from(new Set(visible.map((w) => w.dataset.group || '')));
+                const hasGroups = groups.some((g) => g) && groups.length > 1;
+                if (!hasGroups) {
+                    visible.forEach((w) => rowsHost.appendChild(libraryRow(w)));
+                } else {
+                    groups.forEach((g) => {
+                        const inGroup = visible.filter((w) => (w.dataset.group || '') === g);
+                        if (!inGroup.length) return;
+                        if (g) {
+                            const label = document.createElement('p');
+                            label.className = 'wx-lib-group-label';
+                            label.textContent = g;
+                            rowsHost.appendChild(label);
+                        }
+                        inGroup.forEach((w) => rowsHost.appendChild(libraryRow(w)));
+                    });
+                }
+                if (!visible.length) {
+                    const empty = document.createElement('p');
+                    empty.className = 'wx-lib-noresults';
+                    empty.textContent = host.dataset.libraryNoResults || '';
+                    rowsHost.appendChild(empty);
+                }
+            }
+            renderRows();
+        }
+        function pillItem(w: HTMLElement) {
+            const item = document.createElement('div'); item.className = 'widget-tray-item';
+            const label = document.createElement('span'); label.textContent = w.dataset.title || w.dataset.widget || '';
+            const add = document.createElement('button'); add.type = 'button'; add.className = 'widget-tray-add'; add.textContent = '+'; add.setAttribute('aria-label', label.textContent || '');
+            add.addEventListener('click', () => setHidden(w.dataset.widget!, false)); item.append(label, add); return item;
+        }
+        function libraryRow(w: HTMLElement) {
+            const row = document.createElement('div'); row.className = 'wx-lib-row';
+            const preview = document.createElement('div'); preview.className = 'wx-lib-preview';
+            const card = w.querySelector('.dash-card, .surface-card');
+            if (card) {
+                const clone = card.cloneNode(true) as HTMLElement;
+                clone.removeAttribute('id');
+                clone.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+                clone.setAttribute('inert', '');
+                preview.appendChild(clone);
+            }
+            const info = document.createElement('div'); info.className = 'wx-lib-info';
+            const strong = document.createElement('strong'); strong.textContent = w.dataset.title || w.dataset.widget || '';
+            info.appendChild(strong);
+            if (w.dataset.desc) { const small = document.createElement('small'); small.textContent = w.dataset.desc; info.appendChild(small); }
+            const add = document.createElement('button'); add.type = 'button'; add.className = 'wx-lib-add';
+            add.textContent = host.dataset.libraryAddLabel || '+';
+            add.setAttribute('aria-label', `${host.dataset.libraryAddLabel || '+'} ${strong.textContent}`);
+            add.addEventListener('click', () => setHidden(w.dataset.widget!, false));
+            row.append(preview, info, add);
+            return row;
         }
         function setHidden(id: string, hidden: boolean) {
             const prefs = getPrefs();

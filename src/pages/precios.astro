@@ -51,14 +51,21 @@ const productSchema = {
         ? 'Independent platform to quote and collect, with automated CFDI 4.0 e-invoicing for Mexican businesses. Open to any business, anywhere.'
         : 'Plataforma independiente para cotizar y cobrar, con CFDI 4.0 automático para negocios en México. Abierto a cualquier negocio en cualquier país.',
     brand: { '@type': 'Brand', name: 'Cord' },
+    // Los planes `custom` (Developer) no tienen precio de autoservicio — no se
+    // publica un precio inventado en datos estructurados. Solo se anuncia el
+    // plan; el precio real se negocia por ventas.
     offers: PLANES.map((p) => ({
         '@type': 'Offer',
         name: `Cord ${p.nombre}`,
-        price: String(p.precioMensual),
         priceCurrency: currency,
-        url: `${SITE}/registro`,
+        url: p.custom ? `${SITE}${p.ctaHref}` : `${SITE}/registro`,
         description: p.tagline,
-        ...(p.precioMensual > 0 ? { priceSpecification: { '@type': 'UnitPriceSpecification', price: String(p.precioMensual), priceCurrency: currency, billingDuration: 'P1M' } } : {}),
+        ...(p.custom
+            ? {}
+            : {
+                price: String(p.precioMensual),
+                ...(p.precioMensual > 0 ? { priceSpecification: { '@type': 'UnitPriceSpecification', price: String(p.precioMensual), priceCurrency: currency, billingDuration: 'P1M' } } : {}),
+            }),
     })),
 };
 
@@ -112,7 +119,11 @@ const faqSchema = {
                                     <h3 class="plan-name">{p.nombre}</h3>
                                 </div>
                                 <div class="plan-visual-bottom">
-                                    {p.precioMensual === 0 ? (
+                                    {p.custom ? (
+                                        <div class="plan-price">
+                                            <span class="editorial plan-amount">{isEn ? 'Custom' : 'A tu medida'}</span>
+                                        </div>
+                                    ) : p.precioMensual === 0 ? (
                                         <div class="plan-price">
                                             <span class="editorial plan-amount">$0</span>
                                             <span class="plan-cycle">{isEn ? 'forever' : 'siempre'}</span>
@@ -129,7 +140,7 @@ const faqSchema = {
 
                             {/* ── Body: toggle + CTA + features ── */}
                             <div class="plan-body">
-                                {p.precioMensual > 0 && (
+                                {p.precioMensual > 0 && !p.custom && (
                                     <div class="plan-billing-toggle">
                                         <label class="toggle-switch">
                                             <input type="checkbox" class="billing-toggle-checkbox" />
@@ -140,14 +151,16 @@ const faqSchema = {
                                 )}
 
                                 <a
-                                    href={p.precioMensual === 0
+                                    href={p.custom
                                         ? p.ctaHref
-                                        : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
-                                    data-cta-plan={p.precioMensual === 0 ? undefined : p.id}
-                                    data-base-href={`/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
+                                        : p.precioMensual === 0
+                                            ? p.ctaHref
+                                            : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
+                                    data-cta-plan={p.custom || p.precioMensual === 0 ? undefined : p.id}
+                                    data-base-href={p.custom ? undefined : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
                                     class="plan-cta plan-cta-solid"
                                 >{p.ctaLabel}</a>
-                                {(p.id === 'scale' || p.id === 'developer') && (
+                                {p.id === 'scale' && (
                                     <a href="mailto:hola@flouvia.com" class="plan-sales-link">
                                         {isEn ? 'or contact sales' : 'o hablar con ventas'}
                                     </a>
@@ -258,7 +271,7 @@ const faqSchema = {
                             {PLANES.map((p) => (
                                 <th class:list={['pr-th-plan', { 'is-featured': p.destacado }]}>
                                     <b>{p.nombre}</b>
-                                    <span>{p.precioMensual === 0 ? (isEn ? 'Free' : 'Gratis') : `${money0(p.precioMensual)}${isEn ? '/mo' : '/mes'}`}</span>
+                                    <span>{p.custom ? (isEn ? 'Custom' : 'A tu medida') : p.precioMensual === 0 ? (isEn ? 'Free' : 'Gratis') : `${money0(p.precioMensual)}${isEn ? '/mo' : '/mes'}`}</span>
                                 </th>
                             ))}
                         </tr>
@@ -294,14 +307,16 @@ const faqSchema = {
                             {PLANES.map((p) => (
                                 <td class:list={['pr-tfoot-cell', { 'is-featured': p.destacado }]}>
                                     <a
-                                        href={p.precioMensual === 0
+                                        href={p.custom
                                             ? p.ctaHref
-                                            : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
-                                        data-base-href={`/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
-                                        data-cta-plan={p.precioMensual === 0 ? undefined : p.id}
+                                            : p.precioMensual === 0
+                                                ? p.ctaHref
+                                                : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
+                                        data-base-href={p.custom ? undefined : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
+                                        data-cta-plan={p.custom || p.precioMensual === 0 ? undefined : p.id}
                                         class="pr-tfoot-btn pr-tfoot-btn-solid"
-                                    >{isEn ? 'Get started' : 'Empezar'}</a>
-                                    {(p.id === 'scale' || p.id === 'developer') && (
+                                    >{p.custom ? (isEn ? 'Talk to sales' : 'Hablar con ventas') : (isEn ? 'Get started' : 'Empezar')}</a>
+                                    {p.id === 'scale' && (
                                         <a href="mailto:hola@flouvia.com" class="pr-tfoot-sales">
                                             {isEn ? 'or contact sales' : 'o hablar con ventas'}
                                         </a>

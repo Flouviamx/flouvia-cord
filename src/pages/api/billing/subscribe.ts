@@ -150,6 +150,11 @@ export const POST: APIRoute = async ({ request }) => {
     const cycle: Cycle = body.cycle === 'anual' ? 'anual' : 'mensual';
     const useElement = body.ui === 'element';
     if (!isPaidPlan(plan)) return json({ error: 'Plan inválido' }, 400);
+    // Developer no tiene precio de autoservicio (ago 2026): capacidad y
+    // condiciones se acuerdan hablando con ventas, no vía checkout self-serve.
+    // Las suscripciones YA activas siguen renovando solas — esto solo bloquea
+    // ABRIR una suscripción nueva a este plan por esta vía.
+    if (plan === 'developer') return json({ error: 'El plan Developer se contrata hablando con ventas.', code: 'developer_contact_sales' }, 400);
 
     const orgId = await getActiveOrgId();
 
@@ -178,22 +183,90 @@ export const POST: APIRoute = async ({ request }) => {
              where org_id = ${orgId} and status in ('creating','incomplete')
              order by created_at desc limit 1`);
         if (open) {
-            if (open.mode === 'element' && open.stripe_subscription_id) {
-                const existing = await stripe(`/v1/subscriptions/${open.stripe_subscription_id}`, {
-                    'expand[0]': 'latest_invoice.confirmation_secret',
-                }, 'GET', { version: STRIPE_VERSION });
-                const clientSecret = existing?.latest_invoice?.confirmation_secret?.client_secret;
-                if (clientSecret && ['incomplete', 'active', 'past_due'].includes(String(existing.status)) && open.plan === plan && open.cycle === cycle) {
-                    return json({ client_secret: clientSecret, resumed: true });
+            // El lock existe para que no nazcan dos suscripciones a la vez, no para
+            // castigar a quien cambió de opinión. Se libera cuando el intento previo
+            // demostrablemente no cobró nada; se conserva cuando sí hay dinero de por
+            // medio (`active`/`past_due`), que se resuelve en el portal.
+            const sameSelection = open.plan === plan && open.cycle === cycle;
+            const TERMINAL = new Set(['canceled', 'incomplete_expired']);
+            // `release` = liberar el lock local. `cancelFirst` = además hay algo vivo
+            // en Stripe que hay que matar ANTES, para no dejarlo huérfano y cobrando.
+            let release = false;
+            let cancelFirst = false;
+
+            if (open.mode === 'element') {
+                if (!open.stripe_subscription_id) {
+                    // Quedó en 'creating': murió antes de crear nada en Stripe. No hay
+                    // qué cancelar y no puede reanudarse — es basura que bloquea 24 h.
+                    release = true;
+                } else {
+                    const existing = await stripe(`/v1/subscriptions/${open.stripe_subscription_id}`, {
+                        'expand[0]': 'latest_invoice.confirmation_secret',
+                    }, 'GET', { version: STRIPE_VERSION });
+                    const clientSecret = existing?.latest_invoice?.confirmation_secret?.client_secret;
+                    const existingStatus = String(existing?.status || '');
+                    if (clientSecret && ['incomplete', 'active', 'past_due'].includes(existingStatus) && sameSelection) {
+                        return json({ client_secret: clientSecret, resumed: true });
+                    }
+                    if (TERMINAL.has(existingStatus)) {
+                        release = true;              // ya está muerta en Stripe
+                    } else if (existingStatus === 'incomplete' && !sameSelection) {
+                        release = true;              // nunca se cobró y quiere otro plan
+                        cancelFirst = true;
+                    }
                 }
             }
-            if (open.mode === 'checkout' && open.stripe_session_id) {
-                const existing = await stripe(`/v1/checkout/sessions/${open.stripe_session_id}`, undefined, 'GET');
-                if (existing?.url && existing?.status === 'open' && open.plan === plan && open.cycle === cycle) {
-                    return json({ url: existing.url, resumed: true });
+
+            if (open.mode === 'checkout') {
+                if (!open.stripe_session_id) {
+                    release = true;
+                } else {
+                    const existing = await stripe(`/v1/checkout/sessions/${open.stripe_session_id}`, undefined, 'GET');
+                    const sessionStatus = String(existing?.status || '');
+                    if (existing?.url && sessionStatus === 'open' && sameSelection) {
+                        return json({ url: existing.url, resumed: true });
+                    }
+                    if (sessionStatus !== 'open') {
+                        release = true;              // expirada o ya completada
+                    } else if (!sameSelection) {
+                        release = true;
+                        cancelFirst = true;
+                    }
                 }
             }
-            return json({ error: 'Ya hay un pago de suscripción en proceso. Complétalo o gestiona tu suscripción actual.' }, 409);
+
+            if (release) {
+                if (cancelFirst) {
+                    // Si Stripe falla aquí NO se libera el lock: preferimos dejar al
+                    // usuario bloqueado un rato antes que soltar una suscripción viva
+                    // sin registro local que la reclame.
+                    try {
+                        if (open.mode === 'element') {
+                            await stripe(`/v1/subscriptions/${open.stripe_subscription_id}`, undefined, 'DELETE', { version: STRIPE_VERSION });
+                        } else {
+                            await stripe(`/v1/checkout/sessions/${open.stripe_session_id}/expire`, undefined, 'POST');
+                        }
+                    } catch {
+                        return json({ error: 'No pudimos liberar tu intento de pago anterior. Intenta de nuevo en un momento.' }, 503);
+                    }
+                }
+                await withOrgTx(orgId,
+                    sql`update billing_checkout_attempts
+                           set status = 'canceled', last_error = 'abandoned_for_new_selection', updated_at = now()
+                         where id = ${open.id} and org_id = ${orgId}`,
+                    // Solo limpia la proyección local si sigue apuntando a la
+                    // suscripción que acabamos de descartar (el webhook pudo haberla
+                    // reemplazado por otra en el intertanto).
+                    sql`update orgs
+                           set subscription_status = 'canceled', stripe_subscription_id = null,
+                               current_period_end = null, billing_paid_through = null, billing_paid_plan = null
+                         where id = ${orgId} and stripe_subscription_id is not distinct from ${open.stripe_subscription_id}
+                           and ${open.stripe_subscription_id}::text is not null`,
+                );
+                await logAudit(orgId, { accion: 'billing.intento_abandonado', entidad: 'org', entidad_id: orgId, detalle: `${open.plan}/${open.cycle} → ${plan}/${cycle}`, ip: reqIp(request) });
+            } else {
+                return json({ error: 'Ya hay un pago de suscripción en proceso. Complétalo o gestiona tu suscripción actual.' }, 409);
+            }
         }
 
         // Una deuda, pausa o alta incompleta se recupera sobre la suscripción

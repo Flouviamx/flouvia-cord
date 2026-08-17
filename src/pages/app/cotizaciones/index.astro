@@ -373,6 +373,16 @@ const pendingCount = countFor('approval');
         });
     });
 
+    // Drill-down desde otros widgets (embudo/pipeline del dashboard, etc.):
+    // ?f=<key> preselecciona la pill igual que un clic real, reusando su propio
+    // listener — sin duplicar la lógica de mostrar/ocultar filas.
+    (function applyFilterFromUrl() {
+        const key = new URLSearchParams(location.search).get('f');
+        if (!key) return;
+        const target = Array.from(pills).find((p) => p.dataset.filter === key);
+        target?.click();
+    })();
+
     // ── Toggle Lista / Tablero ──
     const vtBtns = document.querySelectorAll<HTMLButtonElement>('.vt-btn');
     const filtersBar = document.getElementById('filters');

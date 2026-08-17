@@ -25,6 +25,14 @@
 .cd-tt-delta.is-down { color: #fca5a5; }
 html[data-theme="dark"] .cd-tooltip { background: var(--surface-2); box-shadow: 0 10px 24px -8px rgba(0,0,0,0.6); }
 
+/* Drill-down desde el tooltip: único target que navega en móvil (el tap sobre
+   el segmento ya mostró el dato — navegar ahí lo habría descartado sin leerlo). */
+.cd-tt-drill { display: block; margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.16); color: #fff; font-size: 0.72rem; font-weight: 650; text-decoration: none; pointer-events: auto; white-space: nowrap; }
+.cd-tt-drill:hover, .cd-tt-drill:focus-visible { text-decoration: underline; }
+@media (max-width: 880px) {
+    .cd-tt-drill { min-height: 32px; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+}
+
 .chx-bar.is-dim, .chx-hbar-fill.is-dim, .chx-segbar-seg.is-dim,
 circle.is-dim, .chx-legend-item.is-dim { opacity: 0.35; transition: opacity 0.2s var(--ease-ios, ease); }
 .chx-bar.is-focus, .chx-hbar-fill.is-focus, .chx-segbar-seg.is-focus,

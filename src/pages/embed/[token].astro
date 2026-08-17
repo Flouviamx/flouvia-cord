@@ -10,7 +10,8 @@ export const prerender = false;
 
 import EmbedLayout from '../../layouts/EmbedLayout.astro';
 import QuoteCard from '../../components/q/QuoteCard.astro';
-import { getCotizacionByToken, markViewed } from '../../lib/queries';
+import { getCotizacionByToken } from '../../lib/queries';
+import { readVisitorId } from '../../lib/public-viewer';
 
 const { token } = Astro.params;
 const result = await getCotizacionByToken(token ?? '');
@@ -21,8 +22,13 @@ if (!result) {
 
 const { quote: q, org: ORG, conversacion } = result;
 
-// Registra la apertura del cliente (igual que /q).
-await markViewed(token ?? '');
+// La apertura ya NO se marca aquí (igual que /q): la registra el heartbeat del
+// QuoteCard, que exige JavaScript y pestaña visible. Aquí solo se siembra la
+// cookie de visitante para que el actor sea reconocible desde el primer ping.
+// Nota de embed: la cookie es SameSite=Lax, así que dentro de un iframe de otro
+// dominio no viaja; ahí el actor cae al identificador derivado de IP+org que
+// resuelve public-viewer.ts. Es suficiente para no contar al equipo como cliente.
+readVisitorId(Astro.cookies, true);
 
 // ── Appearance API ──
 const appearanceParam = Astro.url.searchParams.get('appearance');

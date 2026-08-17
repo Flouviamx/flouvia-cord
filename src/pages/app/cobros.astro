@@ -97,6 +97,8 @@ const CBR_T = {
     bancoGenerico: es ? 'tu banco' : 'your bank',
     refund: es ? 'Reembolsar' : 'Refund',
     canRefund,
+    filtroPor: es ? 'Filtrando la tabla por: {label}' : 'Filtering the table by: {label}',
+    filtroLimpiar: es ? 'Limpiar' : 'Clear',
 };
 ---
 
@@ -122,6 +124,8 @@ const CBR_T = {
         <div data-cobros-shell data-locale={L} data-connected={conectado ? '1' : ''}>
         <WidgetGrid
             id="cobrosWidgets" storageKey="cord.cobros.v1"
+            serverPrefs={ME.widgetPrefs?.['cord.cobros.v1'] as Record<string, unknown> | undefined}
+            librarySearchPlaceholder={t(L, 'widgets.buscar_ph')} libraryNoResults={t(L, 'widgets.sin_resultados')} libraryAddLabel={t(L, 'widgets.agregar')}
             editButtonId="cbrEditBtn" doneButtonId="cbrDoneBtn" resetButtonId="cbrResetBtn"
             trayTitle={t(L, 'cbr.widgets_ocultos')} resetConfirm={t(L, 'cbr.reset_confirm')}
             labels={widgetLabels}
@@ -139,8 +143,8 @@ const CBR_T = {
                 <article class="dash-widget" data-widget="cbr-disponible" data-title={t(L, 'cbr.saldo_disponible')} data-span="2" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
                     <div class="dash-card report-kpi cbr-balance-primary" data-cbr-stripe="saldo" aria-busy="true">
                         <span class="kpi-label">{t(L, 'cbr.saldo_disponible')}<span class="snapshot-tag">{t(L, 'cbr.en_vivo')}</span></span>
-                        <strong class="editorial report-kpi-value" data-cbr-bind="disponible">—</strong>
-                        <small data-cbr-bind="disponible-sub">&nbsp;</small>
+                        <strong class="editorial report-kpi-value" data-cbr-bind="disponible" data-skel>&nbsp;</strong>
+                        <small data-cbr-bind="disponible-sub" data-skel>&nbsp;</small>
                     </div>
                 </article>
 
@@ -189,8 +193,8 @@ const CBR_T = {
                 <article class="dash-widget" data-widget="cbr-neto" data-title={t(L, 'cbr.neto')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
                     <div class="dash-card report-kpi cbr-kpi-tile" data-cbr-stripe="neto" aria-busy="true">
                         <span class="kpi-label">{t(L, 'cbr.neto')}</span>
-                        <strong class="editorial report-kpi-value" data-cbr-bind="neto">—</strong>
-                        <small data-cbr-bind="neto-sub">{t(L, 'cbr.neto_cargando')}</small>
+                        <strong class="editorial report-kpi-value" data-cbr-bind="neto" data-skel>&nbsp;</strong>
+                        <small data-cbr-bind="neto-sub" data-skel>&nbsp;</small>
                     </div>
                 </article>
 
@@ -206,8 +210,8 @@ const CBR_T = {
                 <article class="dash-widget" data-widget="cbr-disputas" data-title={t(L, 'cbr.disputas')} data-span="1" data-size-sm="1" data-size-lg="2" hidden={!conectado}>
                     <div class="dash-card report-kpi cbr-kpi-tile" data-cbr-stripe="disputas" aria-busy="true">
                         <span class="kpi-label">{t(L, 'cbr.disputas')}</span>
-                        <strong class="editorial report-kpi-value" data-cbr-bind="disputas">—</strong>
-                        <small data-cbr-bind="disputas-sub">&nbsp;</small>
+                        <strong class="editorial report-kpi-value" data-cbr-bind="disputas" data-skel>&nbsp;</strong>
+                        <small data-cbr-bind="disputas-sub" data-skel>&nbsp;</small>
                         <div class="report-list cbr-disp-list" data-cbr-bind="disputas-list"></div>
                     </div>
                 </article>
@@ -246,7 +250,7 @@ const CBR_T = {
                 <article class="dash-widget" data-widget="cbr-destino" data-title={t(L, 'cbr.destino')} data-span="2" data-size-sm="2" data-size-lg="4" hidden={!conectado}>
                     <div class="dash-card cbr-detail-card" data-cbr-stripe="destino" aria-busy="true">
                         <div class="sec-head"><div><h2 class="sec-title">{t(L, 'cbr.destino')}</h2><p>{t(L, 'cbr.destino_sub')}</p></div></div>
-                        <div class="chart-host report-chart cbr-segbar-chart" data-chart="segbar" data-format="pct" data-empty-msg={t(L, 'cbr.neto_cargando')} data-segments="[]"></div>
+                        <div class="chart-host report-chart cbr-segbar-chart" data-chart="segbar" data-format="pct" data-segments="[]"></div>
                         <div class="cbr-destino-rows" data-cbr-bind="destino-rows"></div>
                         <p class="report-empty" data-cbr-bind="destino-nota" hidden></p>
                     </div>
@@ -272,8 +276,9 @@ const CBR_T = {
                             <span class="t-right">{t(L, 'cbr.th_monto')}</span><span></span>
                         </div>
                         {D.neon.recent.length === 0 && <p class="report-empty cbr-table-empty">{t(L, 'cbr.sin_datos')}</p>}
+                        <p class="cbr-filter-note" data-cbr-filter-note hidden></p>
                         {D.neon.recent.map((r) => (
-                            <div class="t-row">
+                            <div class="t-row" data-method={r.method}>
                                 <a class="t-folio" href={`/app/cotizaciones/${r.id}`}>{r.folio}</a>
                                 <span class="t-client">{r.empresa}</span>
                                 <span class="t-method"><span class="m-dot" style={`background:${metodoColor(r.method)}`}></span>{metodoLabel(r.method)}</span>
@@ -320,6 +325,7 @@ const CBR_T = {
 <script>
     import { mountAll, remount } from '../../lib/chart-mount';
     import { money as fmtMoney, intlLocale } from '../../lib/fmt';
+    import { wireFilterSource, registerFilterSink } from '../../lib/widget-filter';
 
     const shell = document.querySelector<HTMLElement>('[data-cobros-shell]');
     if (shell) {
@@ -344,6 +350,36 @@ const CBR_T = {
                 if (on) el.setAttribute('aria-busy', 'true'); else el.removeAttribute('aria-busy');
             });
         };
+
+        // Cross-filter: clic en un método del donut filtra la tabla de recientes por
+        // ese método (alterna `hidden`, no reconsulta el servidor — ver widget-filter.ts).
+        // Toggle: clicar el mismo método otra vez limpia.
+        const gridEl = document.getElementById('cobrosWidgets');
+        const donutHost = widget('cbr-metodos')?.querySelector<HTMLElement>('[data-chart="donut"]');
+        const filterSource = donutHost ? wireFilterSource(donutHost, 'metodo') : null;
+        if (gridEl) {
+            registerFilterSink(gridEl, 'metodo', (value, label) => {
+                const table = bind('recientes');
+                const note = table?.querySelector<HTMLElement>('[data-cbr-filter-note]');
+                let visible = 0;
+                table?.querySelectorAll<HTMLElement>('.t-row').forEach((row) => {
+                    const show = !value || row.dataset.method === value;
+                    row.hidden = !show; if (show) visible++;
+                });
+                const empty = table?.querySelector<HTMLElement>('.cbr-table-empty');
+                if (empty) empty.hidden = visible > 0 || !!value;
+                if (note) {
+                    note.hidden = !value; note.innerHTML = '';
+                    if (value) {
+                        note.append(tpl(T.filtroPor, { label }) + ' ');
+                        const clearBtn = document.createElement('button');
+                        clearBtn.type = 'button'; clearBtn.className = 'cbr-filter-clear'; clearBtn.textContent = T.filtroLimpiar;
+                        clearBtn.addEventListener('click', () => filterSource?.clear());
+                        note.append(clearBtn);
+                    }
+                }
+            });
+        }
 
         function row(title: string, sub: string, amount: string, tone = '') {
             const line = document.createElement('div');
@@ -577,7 +613,7 @@ const CBR_T = {
                     tabla.append(p);
                 }
                 for (const r of n.recent) {
-                    const div = document.createElement('div'); div.className = 't-row';
+                    const div = document.createElement('div'); div.className = 't-row'; div.dataset.method = r.method;
                     const a = document.createElement('a'); a.className = 't-folio'; a.href = `/app/cotizaciones/${r.id}`; a.textContent = r.folio;
                     const cli = document.createElement('span'); cli.className = 't-client'; cli.textContent = r.empresa;
                     const met = document.createElement('span'); met.className = 't-method';
@@ -687,6 +723,9 @@ const CBR_T = {
             if (detail?.initial || location.pathname !== '/app/cobros') return;
             request?.abort(); request = new AbortController();
             shell!.setAttribute('aria-busy', 'true');
+            // La tabla se reconstruye desde cero con el nuevo rango — un filtro de
+            // cross-filter aplicado sobre las filas viejas ya no significa nada.
+            filterSource?.clear();
             try {
                 const res = await fetch(`/api/cobros${location.search}`, { signal: request.signal });
                 if (!res.ok) throw new Error(String(res.status));
@@ -796,9 +835,8 @@ const CBR_T = {
         .cbr-refund-actions button { min-height: 46px; }
     }
 
-    .cbr-delta { font-size: .72rem; font-weight: 650; }
-    .cbr-delta.is-up { color: var(--color-ok); }
-    .cbr-delta.is-down { color: var(--color-danger); }
+    /* .cbr-delta vive ahora en src/styles/report-widgets.css como alias de
+       .wx-delta (Regla 11: se comparte con los KPI de informes). */
 
     .cbr-manage { font-size: .74rem; font-weight: 650; color: var(--color-blue-deep); text-decoration: none; white-space: nowrap; }
     .cbr-manage:hover { text-decoration: underline; }
@@ -891,6 +929,8 @@ const CBR_T = {
     [data-cobros-shell] .cbr-table .t-right { text-align: right; }
     [data-cobros-shell] .cbr-table .t-amount { font-size: .88rem; color: var(--color-text); }
     [data-cobros-shell] .cbr-table-empty { padding: 1.2rem 0; }
+    [data-cobros-shell] .cbr-filter-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 .7rem; padding: .55rem .8rem; border-radius: 12px; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: .74rem; }
+    [data-cobros-shell] .cbr-filter-clear { appearance: none; border: none; cursor: pointer; min-height: 28px; padding: 0 .7rem; border-radius: 100px; background: var(--color-blue-deep); color: #fff; font-size: .7rem; font-weight: 650; touch-action: manipulation; }
 
     @media (max-width: 800px) {
         [data-cobros-shell] .cbr-table .t-head { display: none; }

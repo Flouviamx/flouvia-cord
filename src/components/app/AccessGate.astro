@@ -1,17 +1,18 @@
 ---
-// AccessGate — el ÚNICO bloqueo de la app. Antes existían 7 variantes visuales
-// distintas para decir "no puedes ver esto" (5 copias literales del mismo hairline
-// con candado, una card de border-radius:40px en informes, una línea de texto muted
-// en el Workbench, y un .de-empty en disputas idéntico al estado 404). Solo una de
-// las siete ofrecía salida.
+// AccessGate — el ÚNICO bloqueo INLINE de la app, para `perm` (tu rol no
+// alcanza — no hay nada que puedas hacer solo, por eso no lleva CTA). Antes
+// existían 7 variantes visuales distintas para decir "no puedes ver esto" (5
+// copias literales del mismo hairline con candado, una card de
+// border-radius:40px en informes, una línea de texto muted en el Workbench, y
+// un .de-empty en disputas idéntico al estado 404). Solo una de las siete
+// ofrecía salida.
 //
-// Dos motivos, un solo lenguaje visual: `perm` (tu rol no alcanza — no hay nada que
-// puedas hacer solo, por eso NO lleva CTA) y `plan` (tu plan no alcanza — sí hay
-// salida, por eso lleva CTA a /app/ajustes/plan).
-//
-// El copy NO vive aquí: cada página pasa sus propias claves i18n, que ya son
-// específicas ("Tu rol no tiene permiso para consultar analítica" dice más que un
-// genérico). El componente aporta la forma, no el texto.
+// `reason="plan"` (tu plan no alcanza) YA NO se resuelve aquí: la página se
+// queda visible en su estado vacío normal (WidgetEmpty, sin materializar datos
+// premium) y el popup real vive en PlanPaywallModal.astro, con las tarjetas de
+// plan y precio. Este componente conserva `reason="plan"` como fallback simple
+// (mismo icono, sin CTA especial) por si algún bloqueo futuro no amerita el
+// popup completo, pero ningún caller actual lo usa así.
 //
 // CSS scopeado a propósito: este componente SÍ renderiza su propio markup, así que
 // la Regla 11 (CSS de markup ajeno → hoja global) no aplica. Todo sale de tokens,

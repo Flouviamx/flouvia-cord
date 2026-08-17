@@ -520,12 +520,17 @@ create table if not exists uso_periodo (
   org_id     uuid        not null references orgs(id) on delete cascade,
   periodo    text        not null,                 -- 'YYYY-MM' (UTC)
   ia         int         not null default 0,       -- armados con IA (Claude)
-  cfdi       int         not null default 0,       -- timbres CFDI 4.0
+  cfdi       int         not null default 0,       -- facturas electrónicas emitidas
   api        int         not null default 0,       -- llamadas a la API pública
   usuarios   int         not null default 0,       -- usuarios extra activos
   updated_at timestamptz not null default now(),
   primary key (org_id, periodo)
 );
+-- Tope duro de Gratis: cotizaciones ENVIADAS al mes (distinto de "activas",
+-- que es un stock reciclable — cerrar un trato libera cupo). Sin meter de
+-- Stripe: solo Gratis tiene número (INCLUDED.envios en src/lib/billing.ts);
+-- el resto de los planes queda sin tope.
+alter table uso_periodo add column if not exists envios int not null default 0;
 
 -- Telemetría interna de proveedores que pueden generar costo variable. Nunca
 -- guarda prompts, correos, payloads, tokens ni secretos: solo proveedor,
@@ -2193,7 +2198,7 @@ create table if not exists usage_reservations (
   id               uuid        primary key,
   org_id           uuid        not null references orgs(id) on delete cascade,
   billing_org_id   uuid        not null references orgs(id) on delete cascade,
-  dimension        text        not null check (dimension in ('api','usuario','ia','timbrado')),
+  dimension        text        not null check (dimension in ('api','usuario','ia','timbrado','envios')),
   value            integer     not null check (value > 0),
   meter_value      integer     not null default 0 check (meter_value >= 0),
   periodo          text        not null,
@@ -2212,6 +2217,11 @@ create table if not exists usage_reservations (
   updated_at       timestamptz not null default now()
 );
 alter table usage_reservations add column if not exists meter_value integer not null default 0;
+-- 'envios' (tope duro de Gratis, sin meter) se agregó ago 2026 — re-declarar el
+-- check permite que db:migrate siga siendo re-ejecutable sobre una tabla ya creada.
+alter table usage_reservations drop constraint if exists usage_reservations_dimension_check;
+alter table usage_reservations add constraint usage_reservations_dimension_check
+  check (dimension in ('api','usuario','ia','timbrado','envios'));
 create index if not exists idx_usage_reservations_outbox
   on usage_reservations(meter_status, next_attempt_at, created_at)
   where status = 'committed' and meter_status in ('pending','failed');
@@ -2365,3 +2375,146 @@ create policy "rls_invoice_sequences" on invoice_sequences
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
   with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table invoice_sequences force row level security;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Layout de widgets por usuario, persistido en servidor (ago 2026)
+-- ════════════════════════════════════════════════════════════════════════════
+-- Antes vivía solo en localStorage: se perdía al cambiar de navegador/dispositivo.
+-- Granularidad natural (org, user) — org_members.uq_members_org_user ya la
+-- garantiza, así que no hace falta una tabla nueva. Forma: un objeto por grid,
+-- { "cord.dash.v1": { order:[], hidden:[], sizes:{}, rev, at }, ... }.
+--
+-- ⚠️ RLS sobre org_members es de fachada (ver nota más arriba, "el driver
+-- conecta con el rol dueño de la BD"): CUALQUIER query contra widget_prefs debe
+-- filtrar por org_id AND user_id en la aplicación. Validación de forma/tamaño
+-- vive en src/pages/api/app/widget-prefs.ts, no aquí — un CHECK produciría un
+-- error de Postgres feo y sin i18n en vez de un 400 claro.
+alter table org_members add column if not exists widget_prefs jsonb not null default '{}'::jsonb;
+alter table org_members add column if not exists widget_prefs_at timestamptz;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Link público en vivo: revisión, visitantes y atención (ago 2026)
+-- ════════════════════════════════════════════════════════════════════════════
+-- El link /q/[token] se vuelve un documento vivo: el cliente ve los cambios del
+-- vendedor sin recargar, ambos lados se ven en línea, y el vendedor entiende qué
+-- leyó realmente el cliente. Tres piezas:
+--
+--   1) cotizaciones.rev — contador monótono que hace barato el polling del SSE.
+--   2) cotizacion_visitantes — quién abrió, cuántas veces, y quién está aquí AHORA.
+--   3) cotizacion_atencion — cuánto tiempo pasó el cliente en cada sección.
+--
+-- Nota de diseño sobre `rev`: NO se usa `viewer_last_seen` ni ninguna columna de
+-- presencia dentro de `cotizaciones` para esto. Si la presencia siguiera
+-- escribiéndose ahí, cada heartbeat (~10s por visitante) bumpearía `rev` y el
+-- stream creería que el CONTENIDO cambió, forzando un snapshot completo cada
+-- ciclo. Por eso la presencia vive en su propia tabla y `viewer_last_seen` queda
+-- como columna legacy sin escritores nuevos.
+
+-- ── 1) Contador de revisión ─────────────────────────────────────────────────
+alter table cotizaciones add column if not exists rev bigint not null default 1;
+
+-- Bump en la propia cotización. BEFORE UPDATE sobre NEW: no emite otro UPDATE,
+-- así que no hay recursión con los triggers de las tablas hijas de abajo.
+create or replace function cord_bump_quote_rev()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.rev := coalesce(old.rev, 1) + 1;
+  return new;
+end
+$$;
+
+drop trigger if exists trg_bump_rev_cotizaciones on cotizaciones;
+create trigger trg_bump_rev_cotizaciones before update on cotizaciones
+  for each row execute function cord_bump_quote_rev();
+
+-- Bump desde las tablas hijas. Toca la cotización padre, lo que dispara el
+-- trigger de arriba (que es quien fija el valor final de `rev`; el `+ 1` de
+-- aquí solo hace explícita la intención).
+create or replace function cord_bump_quote_rev_child()
+returns trigger
+language plpgsql
+as $$
+declare
+  v_cotizacion_id uuid;
+begin
+  v_cotizacion_id := case tg_op when 'DELETE' then old.cotizacion_id else new.cotizacion_id end;
+  if v_cotizacion_id is not null then
+    update cotizaciones set rev = rev + 1 where id = v_cotizacion_id;
+  end if;
+  return case tg_op when 'DELETE' then old else new end;
+end
+$$;
+
+drop trigger if exists trg_bump_rev_items on cotizacion_items;
+create trigger trg_bump_rev_items after insert or update or delete on cotizacion_items
+  for each row execute function cord_bump_quote_rev_child();
+drop trigger if exists trg_bump_rev_cobros on cotizacion_cobros;
+create trigger trg_bump_rev_cobros after insert or update or delete on cotizacion_cobros
+  for each row execute function cord_bump_quote_rev_child();
+drop trigger if exists trg_bump_rev_eventos on eventos;
+create trigger trg_bump_rev_eventos after insert or update or delete on eventos
+  for each row execute function cord_bump_quote_rev_child();
+drop trigger if exists trg_bump_rev_comentarios on cotizacion_comentarios;
+create trigger trg_bump_rev_comentarios after insert or update or delete on cotizacion_comentarios
+  for each row execute function cord_bump_quote_rev_child();
+
+-- ── 2) Visitantes: identidad, aperturas y presencia ─────────────────────────
+-- Una fila por (cotización, actor). Fila durable con columnas calientes
+-- (last_seen, seccion, typing_until) que se actualizan cada ~10s por heartbeat.
+--   actor_key = 'u:{userId}'    → miembro del equipo abriendo su propio link
+--               'v:{visitorId}' → cliente real, cookie cord_q_visitor
+-- La IP se guarda HASHEADA con sal: aquí no es evidencia legal (para eso está
+-- cotizacion_firmas, que sí la guarda en claro), solo desempate de visitantes.
+create table if not exists cotizacion_visitantes (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  cotizacion_id   uuid        not null references cotizaciones(id) on delete cascade,
+  actor_key       text        not null,
+  rol             text        not null default 'client', -- 'seller' | 'client'
+  nombre          text,                                  -- del miembro; null para el cliente
+  aperturas       int         not null default 0,
+  primera_vez     timestamptz not null default now(),
+  ultima_vez      timestamptz not null default now(),
+  last_seen       timestamptz not null default now(),
+  seccion         text,
+  typing_until    timestamptz,
+  ip_hash         text,
+  user_agent      text
+);
+create unique index if not exists uq_cot_visitantes on cotizacion_visitantes(cotizacion_id, actor_key);
+create index if not exists idx_cot_visitantes_org on cotizacion_visitantes(org_id);
+create index if not exists idx_cot_visitantes_live on cotizacion_visitantes(cotizacion_id, last_seen desc);
+
+alter table cotizacion_visitantes enable row level security;
+drop policy if exists "rls_cotizacion_visitantes" on cotizacion_visitantes;
+create policy "rls_cotizacion_visitantes" on cotizacion_visitantes
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table cotizacion_visitantes force row level security;
+
+-- ── 3) Atención: dwell e interacción por clave ──────────────────────────────
+-- `clave` es un espacio plano y acotado por la aplicación:
+--   'sec:resumen' | 'sec:partidas' | 'sec:notas' | 'sec:pago' | 'pdf' | 'item:{uuid}'
+-- Los segundos se ACUMULAN por upsert; el cliente manda deltas, no totales.
+create table if not exists cotizacion_atencion (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  cotizacion_id   uuid        not null references cotizaciones(id) on delete cascade,
+  actor_key       text        not null,
+  clave           text        not null,
+  segundos        int         not null default 0,
+  veces           int         not null default 0,
+  ultima_vez      timestamptz not null default now()
+);
+create unique index if not exists uq_cot_atencion on cotizacion_atencion(cotizacion_id, actor_key, clave);
+create index if not exists idx_cot_atencion_org on cotizacion_atencion(org_id);
+create index if not exists idx_cot_atencion_cot on cotizacion_atencion(cotizacion_id);
+
+alter table cotizacion_atencion enable row level security;
+drop policy if exists "rls_cotizacion_atencion" on cotizacion_atencion;
+create policy "rls_cotizacion_atencion" on cotizacion_atencion
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table cotizacion_atencion force row level security;

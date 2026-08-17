@@ -1,6 +1,8 @@
 ---
 import AppLayout from '../../layouts/AppLayout.astro';
+import '../../styles/modal.css';
 import AccessGate from '../../components/app/AccessGate.astro';
+import PlanPaywallModal from '../../components/app/PlanPaywallModal.astro';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import ReportPicker from '../../components/app/ReportPicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
@@ -21,6 +23,7 @@ import { t } from '../../i18n/app';
 import { dateFull } from '../../lib/fmt';
 import { getActiveOrgId } from '../../lib/db';
 import { checkEntitlement } from '../../lib/org-entitlements';
+import { planLabel } from '../../lib/permissions';
 
 const L = currentLocale();
 const es = L !== 'en';
@@ -30,8 +33,16 @@ const hasAnalytics = memberCan(ME, 'analitica');
 const reportId = parseReportId(Astro.url.searchParams.get('r'));
 const report = REPORT_BY_ID[reportId];
 const premiumFeature = reportId === 'finanzas' ? 'cfo_dashboard' : reportId === 'flujo' ? 'cashflow_90' : reportId === 'cobranza' ? 'collections' : null;
-const subscriptionAccess = premiumFeature ? (await checkEntitlement(await getActiveOrgId(), premiumFeature)).ok : true;
-const hasReportAccess = hasAnalytics && memberCan(ME, report.perm) && subscriptionAccess;
+const entitlementCheck = premiumFeature ? await checkEntitlement(await getActiveOrgId(), premiumFeature) : null;
+const subscriptionAccess = entitlementCheck ? entitlementCheck.ok : true;
+// Los tres motivos de bloqueo se distinguen explícitamente porque cada uno pide
+// una acción distinta: sin `analitica`/`report.perm` hay que pedírselo a un admin
+// (AccessGate reason="perm", sin CTA); sin el plan hay que subir de plan (reason="plan",
+// con CTA a /app/ajustes/plan). Antes los tres colapsaban en un solo mensaje genérico
+// de "pídeselo al administrador" — confuso para un owner al que le falta el PLAN, no el
+// permiso (él mismo es el administrador).
+const hasPerm = hasAnalytics && memberCan(ME, report.perm);
+const hasReportAccess = hasPerm && subscriptionAccess;
 const allowed = hasAnalytics
     ? REPORTS.filter((item) => memberCan(ME, item.perm)).map((item) => item.id)
     : [];
@@ -68,11 +79,30 @@ const widgetLabels = {
     </Fragment>
 
     {!hasAnalytics && <AccessGate title={t(L, 'an.sin_acceso_titulo')} desc={t(L, 'an.sin_acceso_desc')} />}
-    {hasAnalytics && !hasReportAccess && <AccessGate title={t(L, 'an.informe_restringido_titulo')} desc={t(L, 'an.informe_restringido_desc')} />}
+    {hasAnalytics && !hasPerm && <AccessGate reason="perm" title={t(L, 'an.informe_restringido_titulo')} desc={t(L, 'an.informe_restringido_desc')} />}
+    {hasAnalytics && hasPerm && !subscriptionAccess && entitlementCheck && (
+        <>
+            <AccessGate reason="plan" title={t(L, 'an.informe_plan_titulo')} desc={t(L, 'an.informe_plan_desc')
+                .replace('{report}', reportLabel(report, L))
+                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
+                .replace('{current}', planLabel(entitlementCheck.plan))} />
+            <PlanPaywallModal
+                id="informesPlanModal"
+                title={t(L, 'an.informe_plan_titulo')}
+                desc={t(L, 'an.informe_plan_desc')
+                    .replace('{report}', reportLabel(report, L))
+                    .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
+                    .replace('{current}', planLabel(entitlementCheck.plan))}
+                requiredPlan={entitlementCheck.requiredPlan}
+                locale={L === 'en' ? 'en' : 'es'}
+                returnHref="/app/informes"
+            />
+        </>
+    )}
 
     {hasReportAccess && data && (
         <div data-report-shell data-report-id={reportId} data-locale={L}>
-        <WidgetGrid id="reportWidgets" storageKey={`cord.report.${reportId}.v1`} editButtonId="reportEditBtn" doneButtonId="reportDoneBtn" resetButtonId="reportResetBtn" trayTitle={es ? 'Widgets ocultos' : 'Hidden widgets'} resetConfirm={es ? '¿Restablecer este informe?' : 'Reset this report?'} labels={widgetLabels}>
+        <WidgetGrid id="reportWidgets" storageKey={`cord.report.${reportId}.v1`} serverPrefs={ME.widgetPrefs?.[`cord.report.${reportId}.v1`] as Record<string, unknown> | undefined} editButtonId="reportEditBtn" doneButtonId="reportDoneBtn" resetButtonId="reportResetBtn" trayTitle={es ? 'Widgets ocultos' : 'Hidden widgets'} resetConfirm={es ? '¿Restablecer este informe?' : 'Reset this report?'} labels={widgetLabels} librarySearchPlaceholder={es ? 'Buscar widgets…' : 'Search widgets…'} libraryNoResults={es ? 'Sin resultados' : 'No results'} libraryAddLabel={es ? 'Agregar' : 'Add'}>
             {reportId === 'resumen' && <ResumenReport data={data} L={L} />}
             {reportId === 'comercial' && <ComercialReport data={data} L={L} />}
             {reportId === 'finanzas' && <FinanzasReport data={data} L={L} />}

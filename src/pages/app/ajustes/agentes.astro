@@ -13,10 +13,14 @@
 // Ahora: la cobranza es una tarjeta de ESTADO que enlaza a su página, y las
 // conexiones se explican por lo que hacen, no por el protocolo que usan.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
+import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
+import AccessGate from '../../../components/app/AccessGate.astro';
 import '../../../styles/modal.css';
 import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
 import { listMcpServers } from '../../../lib/agents/governance';
 import { getCobranzaConfig } from '../../../lib/agents/cobranza-run';
+import { checkEntitlement } from '../../../lib/org-entitlements';
+import { planLabel } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -28,16 +32,22 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
     return s;
 };
 
-const [cfg, servers] = await Promise.all([getCobranzaConfig(orgId), listMcpServers(orgId)]);
+// Página entera gateada por `agent_governance` — antes lo resolvía middleware
+// con un redirect duro a /app/ajustes/plan antes de cargar la página; ahora se
+// resuelve aquí y muestra el paywall en vez de redirigir.
+const entitlementCheck = await checkEntitlement(orgId, 'agent_governance');
+const [cfg, servers] = entitlementCheck.ok
+    ? await Promise.all([getCobranzaConfig(orgId), listMcpServers(orgId)])
+    : [null, []];
 // Estado real del agente, para que la tarjeta diga algo verdadero y no solo
 // "encendido/apagado".
-const [[pend]] = await withOrgTx(orgId, sql`
+const pend = entitlementCheck.ok ? (await withOrgTx(orgId, sql`
     select count(*) filter (where estado = 'borrador') as borradores,
            count(*) filter (where estado = 'enviado' and created_at >= now() - interval '30 days') as enviados30
-    from cobranza_conversaciones where org_id = ${orgId}`);
+    from cobranza_conversaciones where org_id = ${orgId}`))[0][0] : null;
 const borradores = Number(pend?.borradores ?? 0);
 const enviados30 = Number(pend?.enviados30 ?? 0);
-const enAprobacion = cfg.modo === 'aprobacion';
+const enAprobacion = cfg?.modo === 'aprobacion';
 
 const conectados = servers.filter((s: any) => s.activo).length;
 const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
@@ -45,33 +55,51 @@ const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
 
 <SettingsShell title="Inteligencia artificial — Ajustes" tab="agentes" perm="ajustes">
 
+    {!entitlementCheck.ok ? (
+        <>
+            <AccessGate reason="plan" class="is-inset" title={t(L, 'set.ag.plan_titulo')} desc={t(L, 'set.ag.plan_desc')
+                .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
+                .replace('{current}', planLabel(entitlementCheck.plan))} />
+            <PlanPaywallModal
+                id="agentesPlanModal"
+                title={t(L, 'set.ag.plan_titulo')}
+                desc={t(L, 'set.ag.plan_desc')
+                    .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
+                    .replace('{current}', planLabel(entitlementCheck.plan))}
+                requiredPlan={entitlementCheck.requiredPlan}
+                locale={L === 'en' ? 'en' : 'es'}
+                returnHref="/app/ajustes"
+            />
+        </>
+    ) : <Fragment>
+
     <!-- ── Cobranza con IA: tarjeta de estado, NO un segundo interruptor ── -->
     <div class="s-block">
         <h3>{t(L, 'set.ag.cobranza_titulo')}</h3>
         <div class="s-body">
             <div class="ag-card">
                 <div class="ag-card-top">
-                    <span class:list={['ag-state', cfg.activa ? (enAprobacion ? 'is-review' : 'is-auto') : 'is-off']}>
+                    <span class:list={['ag-state', cfg!.activa ? (enAprobacion ? 'is-review' : 'is-auto') : 'is-off']}>
                         <i aria-hidden="true"></i>
-                        {!cfg.activa
+                        {!cfg!.activa
                             ? t(L, 'set.ag.estado_apagado')
                             : enAprobacion ? t(L, 'set.ag.estado_aprobacion') : t(L, 'set.ag.estado_automatico')}
                     </span>
                     <a class="ag-cta" href="/app/cobranza/agente">
-                        {cfg.activa ? t(L, 'set.ag.abrir_agente') : t(L, 'set.ag.configurar_agente')}
+                        {cfg!.activa ? t(L, 'set.ag.abrir_agente') : t(L, 'set.ag.configurar_agente')}
                     </a>
                 </div>
 
                 <p class="ag-card-desc">
-                    {cfg.activa
+                    {cfg!.activa
                         ? (enAprobacion ? t(L, 'set.ag.desc_aprobacion') : t(L, 'set.ag.desc_automatico'))
                         : t(L, 'set.ag.desc_apagado')}
                 </p>
 
-                {cfg.activa && (
+                {cfg!.activa && (
                     <div class="ag-facts">
-                        <span><b class="editorial">{cfg.graciaDias}</b>{tf('set.ag.fact_gracia', { n: String(cfg.graciaDias) })}</span>
-                        <span><b class="editorial">{cfg.cadenciaDias}</b>{tf('set.ag.fact_cadencia', { n: String(cfg.cadenciaDias) })}</span>
+                        <span><b class="editorial">{cfg!.graciaDias}</b>{tf('set.ag.fact_gracia', { n: String(cfg!.graciaDias) })}</span>
+                        <span><b class="editorial">{cfg!.cadenciaDias}</b>{tf('set.ag.fact_cadencia', { n: String(cfg!.cadenciaDias) })}</span>
                         <span><b class="editorial">{enviados30}</b>{tf('set.ag.fact_enviados', { n: String(enviados30) })}</span>
                         {borradores > 0 && (
                             <a class="ag-fact-alert" href="/app/cobranza/agente">
@@ -163,6 +191,7 @@ const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
             </details>
         </div>
     </div>
+    </Fragment>}
 </SettingsShell>
 
 <dialog class="modal" id="addModal">

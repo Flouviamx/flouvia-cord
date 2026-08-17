@@ -98,6 +98,39 @@
 .widget-tray-list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .widget-tray-item { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; color: var(--color-text); background: var(--color-bg-soft); border-radius: 100px; padding: 7px 8px 7px 14px; }
 .widget-tray-add { appearance: none; border: none; cursor: pointer; background: var(--color-blue-deep); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.9rem; line-height: 1; }
+
+/* ══ Catálogo de widgets (modo biblioteca) — se activa en renderTray() cuando
+   hay ≥6 widgets ocultos: buscador + filas con preview real (clon del propio
+   widget oculto, inert, sin gráficas montadas). Con menos de 6, sigue usando
+   la fila simple de pills de arriba. ══ */
+.wx-lib-search { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.7rem; padding: 0.68rem 0.85rem; border-radius: 14px; background: var(--color-bg-soft); }
+.wx-lib-search svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--color-text-muted); }
+.wx-lib-search input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--color-text); font: inherit; font-size: 0.84rem; }
+.wx-lib-rows { display: flex; flex-direction: column; gap: 0.3rem; max-height: 420px; overflow-y: auto; }
+.wx-lib-group-label { margin: 0.6rem 0 0.1rem; padding: 0 0.3rem; color: var(--color-text-muted); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.wx-lib-group-label:first-child { margin-top: 0; }
+.wx-lib-row { display: flex; align-items: center; gap: 0.85rem; padding: 0.55rem 0.6rem; border-radius: 16px; transition: background 0.15s; }
+.wx-lib-row:hover { background: var(--row-hover); }
+.wx-lib-preview { position: relative; flex: 0 0 auto; width: 92px; height: 60px; overflow: hidden; border-radius: 10px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--color-border); pointer-events: none; }
+.wx-lib-preview > * { position: absolute; top: 0; left: 0; width: 340px; transform: scale(0.27); transform-origin: top left; }
+.wx-lib-info { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
+.wx-lib-info strong { overflow: hidden; font-size: 0.82rem; font-weight: 650; color: var(--color-text); text-overflow: ellipsis; white-space: nowrap; }
+.wx-lib-info small { overflow: hidden; color: var(--color-text-muted); font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
+.wx-lib-add { flex-shrink: 0; appearance: none; border: none; cursor: pointer; min-height: 36px; padding: 0 1rem; border-radius: 100px; background: var(--color-blue-deep); color: #fff; font-size: 0.76rem; font-weight: 650; touch-action: manipulation; }
+.wx-lib-add:active { transform: scale(0.96); }
+.wx-lib-noresults { padding: 1.2rem 0.5rem; color: var(--color-text-muted); font-size: 0.8rem; text-align: center; }
+
+@media (max-width: 880px) {
+    [data-widget-grid] > .widget-tray.wx-library {
+        position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column;
+        margin: 0; padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+        border-radius: 0; background: var(--surface);
+    }
+    .wx-lib-row { min-height: 64px; padding: 0.6rem; }
+    .wx-lib-preview { width: 72px; height: 48px; }
+    .wx-lib-preview > * { width: 260px; transform: scale(0.24); }
+    .wx-lib-rows { flex: 1; max-height: none; }
+}
 .widget-editbar { display: none; position: absolute; top: 8px; right: 8px; z-index: 6; align-items: center; gap: 2px; padding: 3px; background: var(--surface); border-radius: 100px; box-shadow: 0 2px 6px rgba(10,25,47,0.1), 0 8px 20px -6px rgba(10,25,47,0.25); }
 [data-widget-grid][data-editing="1"] > .dash-widget .widget-editbar { display: flex; }
 [data-widget-grid][data-editing="1"] > [data-widget-zone] > .dash-widget .widget-editbar { display: flex; }
@@ -108,3 +141,26 @@
 .we-drag { cursor: grab; }
 .we-remove:hover { background: rgba(239,68,68,0.1); color: var(--color-danger); }
 .we-resize.is-lg svg { transform: rotate(180deg); }
+
+/* ══ Estado vacío rico — compartido por listas SSR (WidgetEmpty.astro) y
+   gráficas inyectadas en runtime (empty-state.ts / chart.ts emptyState()).
+   Regla 11: ninguno de los dos caminos lo renderiza la página anfitriona. ══ */
+.wx-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.55rem; height: 100%; min-height: 160px; padding: 1.2rem 1rem; text-align: center; }
+.wx-empty-ico { width: 30px; height: 30px; flex-shrink: 0; color: var(--color-text-muted); opacity: 0.85; }
+.wx-empty-title { font-size: 0.84rem; font-weight: 650; color: var(--color-text); }
+.wx-empty-desc { margin: 0; max-width: 32ch; font-size: 0.74rem; line-height: 1.5; color: var(--color-text-muted); }
+.wx-empty-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 0.15rem; padding: 0 1.1rem; border-radius: 100px; background: var(--color-bg-soft); color: var(--color-blue-deep); font-size: 0.78rem; font-weight: 650; text-decoration: none; touch-action: manipulation; transition: background 0.15s, transform 0.15s; }
+.wx-empty-cta:hover { background: var(--row-hover); }
+.wx-empty-cta:active { transform: scale(0.97); }
+
+/* ══ Skeleton/shimmer — widgets con aria-busy="true" mientras cargan datos
+   async (Stripe, etc). Se aplica al nodo destino, no a la tarjeta entera,
+   para no ocultar la etiqueta ni el layout. ══ */
+[aria-busy="true"] [data-skel] { position: relative; display: inline-block; min-width: 64px; color: transparent !important; border-radius: 6px; background: linear-gradient(100deg, var(--color-bg-soft) 30%, var(--row-hover) 50%, var(--color-bg-soft) 70%); background-size: 200% 100%; animation: wx-shimmer 1.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+    [aria-busy="true"] [data-skel] { animation: none; background: var(--color-bg-soft); }
+}
+@keyframes wx-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}

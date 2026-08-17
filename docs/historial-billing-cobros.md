@@ -7,6 +7,98 @@
 
 ---
 
+**Delimitación de planes, paywall y vocabulario de facturación (16 ago 2026)** — los
+precios base NO cambiaron ($240/$590/$1,390): los price ID LIVE ya tienen suscripciones
+activas y todo el movimiento fue de *packaging*. El disparador fueron tres problemas
+conectados: el plan Gratis no tenía cómo forzar una conversión, el paywall dejaba la
+página en blanco detrás del modal, y el copy hablaba de CFDI como si fuera el único
+carril fiscal aunque la factura comercial internacional ya existía en código.
+
+* **Vocabulario de límites (Regla 18, nueva).** Los límites vivían en tres archivos que
+  se contradecían. Ahora cada límite se declara en exactamente una forma: *hard limit*
+  (`RESOURCE_LIMITS` + espejo en `cord_resource_limit()`), *soft limit* (`INCLUDED`, con
+  excedente medido) o *feature gate* (`FEATURE_MIN_PLAN`). Se absorbieron `API_KEY_LIMITS`
+  y `WEBHOOK_LIMITS` a `entitlements.ts` (mismos valores, `permissions.ts` los reexporta)
+  y se eliminó `SEAT_LIMITS`/`seatLimit()`: declaraba Pro 5 / Scale 15 como tope duro,
+  contradecía `RESOURCE_LIMITS.seats = null` (donde son cuota incluida con excedente
+  facturable) y no tenía un solo consumidor en el repo.
+* **Tope de envíos en Gratis.** El único límite que empujaba el upgrade eran "5
+  cotizaciones activas", pero es un stock reciclable: cerrar un trato libera cupo, así
+  que un vendedor disciplinado nunca lo tocaba. Se añadió `uso_periodo.envios` con 5
+  envíos/mes solo en Gratis (`INCLUDED.envios`; `null` en los demás planes), reservado
+  con `reserveUsage(orgId, 'envios', 1)` en el `action: 'send'` de
+  `/api/cotizaciones/[id].ts` — solo el envío inicial consume cupo, reenviar no. Es una
+  dimensión de uso **sin meter de Stripe**: nunca se cobra, solo bloquea, así que
+  `METER_PRICES`/`METERS` quedaron intactos y el tipo se dividió en `MeterDim` (facturable)
+  y `UsageDim`.
+* **Tres movimientos de gate.** `collections` y `cashflow_90` bajaron de Scale a Pro
+  (van con `cfo_dashboard`, que ya vivía ahí — separarlos no respondía a ninguna lógica
+  de valor, y dejaba el aging de cartera a $1,390). `international_invoicing` bajó de
+  Scale a Starter para quedar en el mismo peldaño que `cfdi`: un negocio fuera de México
+  pagaba 5.8× más que uno mexicano por el equivalente funcional, contra la Regla 10.
+  Scale conserva la *automatización*: aprobaciones, cobranza autónoma con IA, interés
+  moratorio, SMTP, SSO, gobernanza de agentes.
+* **Developer sale del autoservicio.** No tenía una sola feature exclusiva
+  (`FEATURE_MIN_PLAN` no exigía `developer` en ninguna clave), así que su valor declarado
+  pasó a ser capacidad y condiciones comerciales, sin inventar un gate nuevo que violaría
+  la Regla 15. Se bloquea en tres capas: `custom: true` en `precios.ts` (tarjeta "A tu
+  medida" + CTA a ventas), redirect en `/app/checkout`, y rechazo server-side en
+  `/api/billing/subscribe`. `PLAN_PRICES.developer` y su price ID **no se tocaron**: las
+  suscripciones vigentes siguen renovando y `PRICE_TO_PLAN` las sigue resolviendo.
+* **Paywall.** La página bloqueada renderizaba un `WidgetEmpty` suelto — `.wx-empty` no
+  tiene fondo ni borde porque está diseñado para vivir dentro de una tarjeta, de ahí el
+  blanco bajo el backdrop. Las cinco páginas gateadas pasaron a `AccessGate reason="plan"`.
+  `PlanPaywallModal` ganó `returnHref`: cerrar con ✕ o `Esc` (ambos disparan `close` de
+  forma nativa) hace `location.replace()` a una página usable en vez de dejar al usuario
+  varado sin forma de reabrir el modal. Muestra máximo dos tarjetas — el plan que
+  desbloquea (destacado, ribbon "Desbloquea esto") y el siguiente — con toggle
+  mensual/anual. Sin prueba social: `.agents/product-marketing-context.md` marca los proof
+  points como pendientes y no hay clientes ni métricas reales que citar.
+* **Vocabulario de facturación.** "Facturación electrónica" / "Facturas emitidas" es el
+  término neutro; "CFDI 4.0 (México)" y "factura comercial" son los carriles. Se corrigió
+  `precios.ts`/`.en.ts` (las dos filas fiscales se fusionaron en una sola disponible desde
+  Starter), `i18n/ui.ts` (trust bar ES y EN — el inglés decía "CFDI 4.0 validated with the
+  SAT" mientras el resto ya estaba traducido a "E-invoicing"—, chip del hero, card 3 de
+  Features, sección Story, mega-menú), `FEATURE_LABEL.cfdi` (alimenta todos los 402 y
+  paywalls para orgs de cualquier país), `i18n/app.ts` (pantalla de plan y uso, FAQ in-app)
+  y `terminos.astro`. "CFDI" a secas sobrevive solo donde el contexto ya es inequívocamente
+  mexicano: Ajustes › Fiscal, `/producto/cfdi`, blog y documentación técnica.
+* `scripts/billing-security-check.mjs` afirmaba que la emisión internacional debía exigir
+  Scale; se actualizó junto con la matriz y ganó aserciones para el tope de envíos y para
+  que `envios` nunca tenga excedente facturable. 61 verificaciones en verde.
+
+**El lock de checkout dejaba la cuenta sin poder contratar nada (16 ago 2026)** — se
+detectó en una cuenta real: un intento de pago de Scale quedó `incomplete` (nunca se
+confirmó el pago) y, al elegir después Starter, `/api/billing/subscribe` respondía 409
+"Ya hay un pago de suscripción en proceso". Como `billing_checkout_attempts.expires_at`
+es `now() + 24 hours`, la organización quedaba **sin poder contratar ningún plan durante
+un día entero**, sin salida desde la UI.
+
+El candado existe para que no nazcan dos suscripciones simultáneas, pero confundía dos
+casos distintos: "hay dinero de por medio" y "cambiaste de opinión sobre un pago que
+nunca se cobró". Ahora se distinguen explícitamente, y el lock se libera cuando el intento
+previo demostrablemente no cobró nada:
+
+* Intento `creating` sin id de Stripe (murió antes de crear nada) → se libera; no hay qué
+  cancelar y no puede reanudarse.
+* Suscripción terminal en Stripe (`canceled`/`incomplete_expired`) → se libera; ya está
+  muerta. Antes bloqueaba igual pese a no haber nada vivo.
+* Suscripción `incomplete` de OTRO plan/ciclo → se cancela en Stripe y se libera. Una
+  suscripción `incomplete` nunca se cobró, así que no hay deuda que evadir.
+* Suscripción `active` o `past_due` → **sigue bloqueando**. Ahí sí hay dinero o servicio
+  vigente y se resuelve en el Customer Portal, no abriendo una segunda suscripción.
+
+Orden deliberado: primero se cancela en Stripe y solo después se libera el lock local. Si
+Stripe falla, se devuelve 503 conservando el bloqueo — es preferible dejar al usuario
+esperando que soltar una suscripción viva sin registro local que la reclame. La limpieza
+de `orgs` usa `is not distinct from` contra el id descartado, para no pisar una suscripción
+distinta que el webhook haya escrito en el intertanto. Queda traza en auditoría como
+`billing.intento_abandonado`. Tres aserciones nuevas en `billing-security-check.mjs`
+(64 en verde) fijan las dos mitades del contrato: que el intento sin cobro se pueda
+abandonar, y que el que sí tiene dinero siga bloqueando.
+
+---
+
 **Cadencia diaria del reconciliador de Billing (14 ago 2026)** — el despliegue que
 introdujo `/api/cron/billing-reconcile` fue rechazado por Vercel porque su expresión
 horaria excedía el límite del plan Hobby. La programación pasó a una ejecución diaria
