@@ -172,13 +172,18 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
             </div>
 
             <section class="table-card">
-                <div class="t-head">
+                <div class="t-head t-line">
+                    <span class="t-check-cell">
+                        <input type="checkbox" id="facCheckAll" aria-label={t(L, 'fact.bulk_sel_todas')} />
+                    </span>
+                    <span class="t-head-inner">
                     <span>{t(L, 'fact.th_folio')}</span>
                     <span>{t(L, 'fact.th_cliente')}</span>
                     <span>{t(L, 'fact.th_vence')}</span>
                     <span class="t-right">{t(L, 'fact.th_total')}</span>
                     <span class="t-right">{t(L, 'fact.th_saldo')}</span>
                     <span>{t(L, 'fact.th_estado')}</span>
+                    </span>
                 </div>
 
                 {data.facturas.map((f) => {
@@ -189,7 +194,16 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
                     const href = f.estado === 'draft' && !f.invoiceNumber
                         ? `/app/facturas/nueva?draft=${f.id}`
                         : `/app/facturas/${f.id}`;
+                    // Solo se puede mandar lo que ya está emitido y abierto.
+                    // La casilla se deshabilita, pero el servidor vuelve a
+                    // filtrar: la UI no autoriza (regla 17).
+                    const enviable = f.estadoFiscal === 'issued' && ['open', 'uncollectible'].includes(f.estado);
                     return (
+                        <div class="t-line">
+                        <span class="t-check-cell">
+                            <input type="checkbox" class="t-check" value={f.id} disabled={!enviable}
+                                aria-label={t(L, 'fact.bulk_sel_una')} />
+                        </span>
                         <a href={href} class="t-row">
                             <span class="t-folio">{f.invoiceNumber ?? t(L, 'fact.st_draft')}</span>
                             <span class="t-client">
@@ -209,6 +223,7 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
                                 {!f.simulado && f.testMode && <span class="t-badge">{t(L, 'fact.badge_prueba')}</span>}
                             </span>
                         </a>
+                        </div>
                     );
                 })}
 
@@ -216,6 +231,22 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
                     <div class="t-empty"><p>{t(L, 'fact.sin_filtro')}</p></div>
                 )}
             </section>
+
+            <div class="fac-bulk" id="facBulk" hidden
+                 data-i18n={JSON.stringify({
+                     sel: t(L, 'fact.bulk_sel'),
+                     enviando: t(L, 'fact.bulk_enviando'),
+                     enviar: t(L, 'fact.bulk_enviar'),
+                     ok: t(L, 'fact.bulk_ok'),
+                     parcial: t(L, 'fact.bulk_parcial'),
+                     ninguna: t(L, 'fact.bulk_ninguna'),
+                 })}>
+                <span class="fac-bulk-count" id="facBulkCount"></span>
+                <div class="fac-bulk-acts">
+                    <button type="button" class="fac-bulk-ghost" id="facBulkClear">{t(L, 'fact.bulk_limpiar')}</button>
+                    <button type="button" class="fac-bulk-send" id="facBulkSend">{t(L, 'fact.bulk_enviar')}</button>
+                </div>
+            </div>
 
             {data.nextCursor && (
                 <div class="t-more">
@@ -226,7 +257,110 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
     )}
 </AppLayout>
 
+<script>
+    // Envío masivo. El artículo de soporte lo describía desde antes de que
+    // existiera, con una navegación inventada y sin endpoint detrás (regla 15).
+    const bulk = document.getElementById('facBulk') as HTMLElement | null;
+    if (bulk) {
+        const T = JSON.parse(bulk.dataset.i18n || '{}');
+        const checkAll = document.getElementById('facCheckAll') as HTMLInputElement | null;
+        const countEl = document.getElementById('facBulkCount');
+        const sendBtn = document.getElementById('facBulkSend') as HTMLButtonElement | null;
+        const checks = () => Array.from(document.querySelectorAll<HTMLInputElement>('.t-check:not(:disabled)'));
+        const seleccionadas = () => checks().filter((c) => c.checked);
+
+        const refrescar = () => {
+            const n = seleccionadas().length;
+            bulk.hidden = n === 0;
+            if (countEl) countEl.textContent = String(T.sel || '{n}').replace('{n}', String(n));
+            if (checkAll) {
+                const todas = checks();
+                checkAll.checked = todas.length > 0 && n === todas.length;
+                checkAll.indeterminate = n > 0 && n < todas.length;
+            }
+        };
+
+        document.addEventListener('change', (e) => {
+            const el = e.target as HTMLElement;
+            if (el === checkAll) {
+                checks().forEach((c) => { c.checked = !!checkAll?.checked; });
+                refrescar();
+            } else if (el.classList?.contains('t-check')) {
+                refrescar();
+            }
+        });
+
+        document.getElementById('facBulkClear')?.addEventListener('click', () => {
+            checks().forEach((c) => { c.checked = false; });
+            refrescar();
+        });
+
+        sendBtn?.addEventListener('click', async () => {
+            const ids = seleccionadas().map((c) => c.value);
+            if (!ids.length) return;
+            sendBtn.disabled = true;
+            sendBtn.textContent = T.enviando;
+            try {
+                const res = await fetch('/api/facturas/bulk', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'send', ids }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || 'Error');
+                // Se dice cuántas NO salieron y por qué. Contar solo los éxitos
+                // deja al vendedor creyendo que mandó 20 cuando mandó 17.
+                const msg = d.enviadas === 0
+                    ? T.ninguna
+                    : (d.fallidas > 0
+                        ? String(T.parcial).replace('{n}', String(d.enviadas)).replace('{f}', String(d.fallidas))
+                        : String(T.ok).replace('{n}', String(d.enviadas)));
+                (window as any).cordToast?.(msg, d.enviadas === 0 ? 'error' : 'ok', 6000);
+                if (d.enviadas > 0) setTimeout(() => location.reload(), 900);
+            } catch (err: any) {
+                (window as any).cordToast?.(err.message || 'Error', 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = T.enviar;
+            }
+        });
+
+        refrescar();
+    }
+</script>
+
 <style>
+    /* Envío masivo: casilla + fila. La fila sigue siendo un <a>; la casilla vive
+       fuera de él para no anidar dos elementos interactivos. */
+    .t-line { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; }
+    .t-check-cell { display: flex; align-items: center; justify-content: center; }
+    .t-check-cell input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-blue-deep); }
+    .t-check-cell input:disabled { cursor: not-allowed; opacity: 0.35; }
+    .t-head.t-line .t-head-inner { display: grid; grid-template-columns: 130px 1.6fr 0.9fr 1fr 1fr 150px; gap: inherit; }
+
+    .fac-bulk {
+        position: sticky; bottom: 1rem; z-index: 5;
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        margin-top: 1.2rem; padding: 0.85rem 1.1rem;
+        background: #fff; border: 1px solid var(--color-border); border-radius: 14px;
+        box-shadow: 0 18px 40px -22px rgba(10, 25, 47, 0.45);
+    }
+    .fac-bulk-count { font-size: 0.85rem; font-weight: 600; color: var(--color-text); }
+    .fac-bulk-acts { display: flex; gap: 0.6rem; }
+    .fac-bulk-ghost, .fac-bulk-send {
+        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
+        border-radius: 999px; padding: 9px 18px; cursor: pointer; white-space: nowrap;
+    }
+    .fac-bulk-ghost { color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); }
+    .fac-bulk-send { color: #fff; background: var(--color-blue-deep); border: none; }
+    .fac-bulk-send:disabled { opacity: 0.6; cursor: wait; }
+
+    @media (max-width: 880px) {
+        .fac-bulk { flex-direction: column; align-items: stretch; gap: 0.7rem; }
+        .fac-bulk-acts { display: grid; grid-template-columns: 1fr 1fr; }
+        .fac-bulk-ghost, .fac-bulk-send { min-height: 44px; }
+        .t-line { grid-template-columns: 30px minmax(0, 1fr); }
+    }
+
     /* Acceso a las recurrentes desde la bandeja. */
     .fac-rec-link {
         font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600;

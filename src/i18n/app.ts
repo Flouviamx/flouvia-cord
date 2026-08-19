@@ -3167,6 +3167,16 @@ export const appStrings = {
         "cdet.ec_90mas": "+90 días",
         "cdet.ec_vence": "Vence",
         "cdet.ec_al_corriente": "Al corriente",
+        // Facturas — envío masivo
+        "fact.bulk_sel": "{n} seleccionadas",
+        "fact.bulk_enviar": "Enviar por correo",
+        "fact.bulk_enviando": "Enviando…",
+        "fact.bulk_limpiar": "Quitar selección",
+        "fact.bulk_ok": "{n} facturas enviadas.",
+        "fact.bulk_parcial": "{n} enviadas · {f} sin enviar (sin correo del cliente o no enviables).",
+        "fact.bulk_ninguna": "Ninguna de las seleccionadas se pudo enviar. Revisa que estén emitidas y que el cliente tenga correo.",
+        "fact.bulk_sel_todas": "Seleccionar todas",
+        "fact.bulk_sel_una": "Seleccionar factura",
     },
     en: {
         // Sidebar — groups
@@ -6312,6 +6322,16 @@ export const appStrings = {
         "cdet.ec_90mas": "90+ days",
         "cdet.ec_vence": "Due",
         "cdet.ec_al_corriente": "Current",
+        // Facturas — envío masivo
+        "fact.bulk_sel": "{n} selected",
+        "fact.bulk_enviar": "Send by email",
+        "fact.bulk_enviando": "Sending…",
+        "fact.bulk_limpiar": "Clear selection",
+        "fact.bulk_ok": "{n} invoices sent.",
+        "fact.bulk_parcial": "{n} sent · {f} not sent (no client email or not sendable).",
+        "fact.bulk_ninguna": "None of the selected could be sent. Check they're issued and the client has an email.",
+        "fact.bulk_sel_todas": "Select all",
+        "fact.bulk_sel_una": "Select invoice",
     },
 } as const;
 
