@@ -13,6 +13,7 @@ import type { APIRoute } from 'astro';
 import { sql, resolvePublicInvoice, withOrgTx } from '../../../lib/db';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { resolveViewer } from '../../../lib/public-viewer';
+import { logInvoiceEvent } from '../../../lib/fiscal/timeline';
 
 export const POST: APIRoute = async ({ params, request, cookies }) => {
     const token = params.token ?? '';
@@ -33,12 +34,21 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     // es dónde y con qué actor se mide.
     if (viewer.rol !== 'client') return json({ ok: true });
 
-    await withOrgTx(identity.orgId, sql`
+    const [tocada] = await withOrgTx(identity.orgId, sql`
         update documentos_fiscales
            set first_viewed_at = coalesce(first_viewed_at, now()),
                last_viewed_at = now()
          where id = ${identity.id} and org_id = ${identity.orgId}
-           and lifecycle <> 'draft'`);
+           and lifecycle <> 'draft'
+        returning (first_viewed_at = now()) as primera`);
+
+    // El timeline registra la PRIMERA vista, no cada latido: un feed con
+    // cincuenta "el cliente abrió el link" no dice nada que el vendedor pueda
+    // usar. Y llega aquí solo cuando el actor es el cliente — el vendedor
+    // revisando su propio link no escribe historia (regla 19).
+    if (tocada?.[0]?.primera) {
+        await logInvoiceEvent(identity.orgId, identity.id, 'viewed', 'El cliente abrió la factura');
+    }
     return json({ ok: true });
 };
 

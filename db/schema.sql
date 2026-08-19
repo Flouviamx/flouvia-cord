@@ -2751,3 +2751,50 @@ alter table documentos_fiscales add column if not exists retencion_total numeric
 -- declararlas una por una en vez de mostrar un total sin origen.
 alter table cotizaciones        add column if not exists retenciones_snapshot jsonb not null default '[]'::jsonb;
 alter table documentos_fiscales add column if not exists retenciones_snapshot jsonb not null default '[]'::jsonb;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- LA FACTURA COMO OBJETO VIVO (ago 2026)
+-- ═══════════════════════════════════════════════════════════════════════════
+-- `eventos` es el timeline que alimenta "tu cliente vio la cotización" y el
+-- feed de actividad del detalle. Solo apuntaba a `cotizaciones`, así que la
+-- página de una factura no tenía historia: ni cuándo se envió, ni cuándo la
+-- abrió el cliente, ni cuándo entró un pago. Una factura independiente —sin
+-- cotización detrás— era un documento sin pasado.
+alter table eventos add column if not exists documento_id uuid references documentos_fiscales(id) on delete cascade;
+create index if not exists idx_eventos_documento on eventos(documento_id, created_at desc);
+
+-- Las tareas del CRM tampoco podían colgar de una factura.
+alter table tareas add column if not exists documento_id uuid references documentos_fiscales(id) on delete set null;
+create index if not exists idx_tareas_documento on tareas(documento_id) where documento_id is not null;
+
+-- ── Escalera de recordatorios con deduplicación real ────────────────────────
+-- `cron/recordatorios.ts` mandaba UN correo en la ventana
+-- `due_date - current_date between -1 and 3`, y su propio comentario admitía que
+-- la no-duplicación dependía de que el cron corriera exactamente una vez al día.
+-- Dos ejecuciones el mismo día mandaban dos correos al mismo cliente; una
+-- ejecución perdida se saltaba el aviso para siempre.
+--
+-- Con esta tabla la dedup es un hecho de la base y no del calendario: cada etapa
+-- se manda UNA vez por documento, sin importar cuántas veces corra el cron.
+create table if not exists documento_recordatorios (
+  id            uuid        default gen_random_uuid() primary key,
+  org_id        uuid        not null references orgs(id) on delete cascade,
+  documento_id  uuid        not null references documentos_fiscales(id) on delete cascade,
+  -- Días respecto al vencimiento: -7 y -1 son avisos; 0, 3, 7, 14 y 30 son
+  -- cobranza. El signo es parte de la identidad de la etapa.
+  etapa         int         not null,
+  enviado_at    timestamptz not null default now(),
+  canal         text        not null default 'email',
+  unique (documento_id, etapa)
+);
+create index if not exists idx_doc_recordatorios_org on documento_recordatorios(org_id, enviado_at desc);
+
+alter table documento_recordatorios enable row level security;
+drop policy if exists "rls_documento_recordatorios" on documento_recordatorios;
+create policy "rls_documento_recordatorios" on documento_recordatorios
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table documento_recordatorios force row level security;
+
+-- Cadencia configurable por organización. `null` = la escalera por defecto.
+alter table orgs add column if not exists recordatorio_etapas int[] not null default '{-7,-1,3,7,14,30}';

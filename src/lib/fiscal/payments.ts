@@ -12,6 +12,7 @@
 
 import { sql, withOrgTx } from '../db';
 import { normalizeCurrency } from '../currency';
+import { logInvoiceEvent } from './timeline';
 
 export interface ApplyPaymentInput {
   monto: number;
@@ -126,6 +127,12 @@ export async function applyPayment(
   if (!row) return { ok: false, error: 'No se pudo actualizar el saldo de la factura.' };
 
   const lifecycle = String(row.lifecycle);
+  const justPaidNow = !duplicate && lifecycle === 'paid' && money(Number(doc.amount_paid) || 0) < total;
+  if (!duplicate) {
+    await logInvoiceEvent(orgId, documentoId, 'payment', `Abono de ${money(monto)} ${String(doc.currency || '')}`.trim());
+    if (justPaidNow) await logInvoiceEvent(orgId, documentoId, 'paid', 'Saldo liquidado');
+  }
+
   return {
     ok: true,
     duplicate,
@@ -134,7 +141,7 @@ export async function applyPayment(
     lifecycle,
     // Solo la transición cuenta: sin esto, cada reintento de Stripe sobre una
     // factura ya saldada dispararía `invoice.paid` otra vez.
-    justPaid: !duplicate && lifecycle === 'paid' && money(Number(doc.amount_paid) || 0) < total,
+    justPaid: justPaidNow,
   };
 }
 

@@ -139,40 +139,86 @@ export const GET: APIRoute = async ({ request }) => {
     // términos. Una factura tiene `due_date` propio, y desde ago 2026 puede no
     // tener cotización detrás (standalone) — así que necesita su propio barrido
     // o esas facturas nunca recibirían recordatorio.
+    // Escalera completa, no una ventana de 5 días.
+    //
+    // Antes: un solo correo cuando `due_date - current_date` caía entre -1 y 3,
+    // y la no-duplicación dependía de que el cron corriera EXACTAMENTE una vez
+    // al día (su propio comentario lo admitía). Dos corridas el mismo día
+    // mandaban dos correos por el mismo dinero; una corrida perdida se saltaba
+    // el aviso para siempre, porque la ventana ya había pasado.
+    //
+    // Ahora la etapa alcanzada se calcula del vencimiento y se registra en
+    // `documento_recordatorios`. La dedup es un hecho de la base: cada etapa se
+    // manda una vez por documento, corra el cron las veces que corra. Y una
+    // corrida perdida se recupera sola — la etapa sigue pendiente mañana.
     const facturas = await sql`
         select d.id, d.org_id, d.due_date, d.cotizacion_id,
-               (d.due_date - current_date) as dias
+               (current_date - d.due_date) as dias_vencida,
+               coalesce(o.recordatorio_etapas, '{-7,-1,3,7,14,30}'::int[]) as etapas,
+               (select array_agg(r.etapa) from documento_recordatorios r where r.documento_id = d.id) as enviadas
           from documentos_fiscales d
           join orgs o on o.id = d.org_id
          where d.lifecycle = 'open'
            and d.due_date is not null
            and d.amount_remaining > 0
            and o.sandbox_of is null
-           and (d.due_date - current_date) between -1 and 3`;
+           and (current_date - d.due_date) between -30 and 120`;
 
-    // Dedup: si la factura viene de una cotización que ya recibió recordatorio
-    // arriba, no se manda dos veces el mismo aviso por el mismo dinero.
+    // Dedup contra la cartera de cotizaciones: si la factura viene de una que ya
+    // recibió recordatorio arriba, no se manda dos veces por el mismo dinero.
     const yaAvisadas = new Set(candidatos.map((c) => c.id));
     let facturasEnviadas = 0;
     let vencidasFactura = 0;
     for (const f of facturas) {
-        const dias = Number(f.dias);
+        const diasVencida = Number(f.dias_vencida);   // >0 = ya venció
         const docId = f.id as string;
         const orgId = f.org_id as string;
-        if (dias === -1) {
-            // Cruzó el vencimiento hoy: se avisa una sola vez, sin tabla de
-            // dedup, porque el cron corre una vez al día y el match es exacto.
+
+        if (diasVencida === 1) {
+            // Cruzó el vencimiento ayer: el webhook se dispara una sola vez.
             vencidasFactura++;
             await dispatchInvoiceEvent(orgId, docId, 'invoice.overdue');
         }
+
+        // La etapa que TOCA hoy: la mayor de la cadencia que ya se alcanzó y
+        // todavía no se ha mandado. Tomar la mayor (y no la primera pendiente)
+        // evita que una factura recuperada después de semanas dispare toda la
+        // escalera de golpe en un solo día.
+        const etapas: number[] = Array.isArray(f.etapas) ? f.etapas.map(Number) : [];
+        const enviadas = new Set<number>(Array.isArray(f.enviadas) ? f.enviadas.map(Number) : []);
+        const alcanzadas = etapas
+            .filter((e) => diasVencida >= e && !enviadas.has(e))
+            .sort((a, b) => b - a);
+        const etapa = alcanzadas[0];
+        if (etapa === undefined) continue;
+
         if (f.cotizacion_id && yaAvisadas.has(f.cotizacion_id as string)) continue;
-        const sent = await notifyInvoiceReminder(orgId, docId, dias < 0);
+
+        // Se REGISTRA antes de mandar. Al revés, un fallo entre el envío y la
+        // escritura repetiría el correo en la siguiente corrida — y repetir un
+        // cobro es la queja más cara que puede generar esta función.
+        const [marca] = await sql`
+            insert into documento_recordatorios (org_id, documento_id, etapa)
+            values (${orgId}, ${docId}, ${etapa})
+            on conflict (documento_id, etapa) do nothing
+            returning id`;
+        if (!marca) continue;   // otra corrida ganó la carrera
+
+        const sent = await notifyInvoiceReminder(orgId, docId, diasVencida > 0);
         if (sent) {
             facturasEnviadas++;
             await logAudit(orgId, {
                 accion: 'factura.recordatorio_enviado', entidad: 'factura',
-                entidad_id: docId, detalle: `vence ${f.due_date}`,
+                entidad_id: docId, detalle: `etapa ${etapa > 0 ? `+${etapa}` : etapa} · vence ${f.due_date}`,
             });
+            await sql`insert into eventos (org_id, documento_id, tipo, detalle)
+                      values (${orgId}, ${docId}, 'reminder', ${etapa > 0
+                          ? `Recordatorio de cobro (${etapa} días vencida)`
+                          : `Aviso de vencimiento (${Math.abs(etapa)} días antes)`})`;
+        } else {
+            // No salió: se libera la etapa para reintentar mañana en vez de
+            // darla por consumida.
+            await sql`delete from documento_recordatorios where documento_id = ${docId} and etapa = ${etapa}`;
         }
     }
 

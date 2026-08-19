@@ -16,6 +16,8 @@ import { memberCan } from '../../../lib/permissions';
 import { siteOrigin } from '../../../lib/email';
 import { getCountryProfile } from '../../../lib/countries';
 import { currentLocale } from '../../../lib/context';
+import { getInvoiceTimeline } from '../../../lib/fiscal/timeline';
+import { fmtRelative } from '../../../lib/fmt-server';
 import { t } from '../../../i18n/app';
 
 export const prerender = false;
@@ -42,6 +44,21 @@ const meta = f ? (ESTADO_META[f.estado] ?? ESTADO_META.open) : ESTADO_META.open;
 const perfilPais = f ? getCountryProfile(f.pais) : null;
 const taxIdLabel = perfilPais?.taxIdLabel ?? 'Tax ID';
 const linkPublico = f?.publicToken ? `${siteOrigin()}/i/${f.publicToken}` : null;
+
+// Historia de la factura. Antes esta pantalla no la tenía: `eventos` solo
+// apuntaba a cotizaciones, así que una factura independiente era un documento
+// sin pasado y el vendedor no sabía si el cliente ya la había abierto.
+const TIMELINE = f ? await getInvoiceTimeline(f.orgId ?? '', f.id) : [];
+const EV_LABEL: Record<string, string> = {
+    created: t(L, 'fact.ev.created'), issued: t(L, 'fact.ev.issued'),
+    sent: t(L, 'fact.ev.sent'), viewed: t(L, 'fact.ev.viewed'),
+    payment: t(L, 'fact.ev.payment'), paid: t(L, 'fact.ev.paid'),
+    reminder: t(L, 'fact.ev.reminder'), void: t(L, 'fact.ev.void'),
+    credit_note: t(L, 'fact.ev.credit_note'), uncollectible: t(L, 'fact.ev.uncollectible'),
+};
+const waLink = f && linkPublico
+    ? `https://wa.me/?text=${encodeURIComponent(`${f.invoiceNumber ?? ''} — ${linkPublico}`.trim())}`
+    : null;
 
 // Desglose por tasa a partir de las líneas del snapshot: es la forma de que una
 // factura con conceptos exentos y gravados cuadre a la vista.
@@ -191,6 +208,30 @@ const METODOS = [
                             </div>
                         )}
 
+                        {waLink && (
+                            <a class="fd-wa" href={waLink} target="_blank" rel="noopener noreferrer">{t(L, 'fact.d_wa')}</a>
+                        )}
+
+                        <div class="fd-timeline">
+                            <h3>{t(L, 'fact.d_actividad')}</h3>
+                            {TIMELINE.length === 0
+                                ? <p class="fd-tl-empty">{t(L, 'fact.d_actividad_vacia')}</p>
+                                : (
+                                    <ol class="fd-tl-list">
+                                        {TIMELINE.map((e) => (
+                                            <li class={`fd-tl-item is-${e.tipo}`}>
+                                                <span class="fd-tl-dot" aria-hidden="true"></span>
+                                                <span class="fd-tl-body">
+                                                    <strong>{EV_LABEL[e.tipo] ?? e.tipo}</strong>
+                                                    {e.detalle && <span class="fd-tl-det">{e.detalle}</span>}
+                                                    <time class="fd-tl-when">{fmtRelative(e.cuando)}</time>
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ol>
+                                )}
+                        </div>
+
                         <div class="fd-dl">
                             <a href={`/api/fiscal/documents/${f.id}/pdf`} target="_blank" rel="noopener">{t(L, 'fact.d_pdf')}</a>
                             {f.pais === 'MX' && f.fiscalId && (
@@ -324,6 +365,34 @@ const METODOS = [
 </script>
 
 <style>
+    /* Actividad de la factura. Markup propio de esta página, así que el CSS
+       scopeado sí matchea (la regla 11 aplica al markup ajeno o inyectado). */
+    .fd-wa {
+        display: block; text-align: center; margin-top: 1rem;
+        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
+        color: var(--color-text-muted); text-decoration: none;
+        border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 14px;
+        transition: border-color 0.25s, color 0.25s;
+    }
+    .fd-wa:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
+    .fd-timeline { margin-top: 1.6rem; padding-top: 1.2rem; border-top: 1px solid var(--color-border); }
+    .fd-timeline h3 { font-size: 0.8rem; font-weight: 600; color: var(--color-text); margin: 0 0 0.9rem; }
+    .fd-tl-empty { font-size: 0.8rem; color: var(--color-text-muted); margin: 0; line-height: 1.5; }
+    .fd-tl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.9rem; }
+    .fd-tl-item { display: grid; grid-template-columns: 10px 1fr; gap: 0.7rem; align-items: start; }
+    .fd-tl-dot {
+        width: 7px; height: 7px; border-radius: 50%; margin-top: 6px;
+        background: var(--color-text-muted); opacity: 0.5;
+    }
+    .fd-tl-item.is-paid .fd-tl-dot, .fd-tl-item.is-payment .fd-tl-dot { background: var(--color-ok); opacity: 1; }
+    .fd-tl-item.is-viewed .fd-tl-dot { background: var(--color-blue-deep); opacity: 1; }
+    .fd-tl-item.is-reminder .fd-tl-dot { background: #b45309; opacity: 1; }
+    .fd-tl-item.is-void .fd-tl-dot, .fd-tl-item.is-uncollectible .fd-tl-dot { background: var(--color-danger); opacity: 1; }
+    .fd-tl-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .fd-tl-body strong { font-size: 0.82rem; font-weight: 600; color: var(--color-text); }
+    .fd-tl-det { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
+    .fd-tl-when { font-size: 0.7rem; color: var(--color-text-muted); opacity: 0.8; }
+
     .fd-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.86rem; color: var(--color-text-muted); margin: -0.4rem 0 1.6rem; }
     .fd-sub a { color: var(--color-blue-deep); text-decoration: none; font-weight: 600; }
     .fd-late { font-size: 0.74rem; font-weight: 700; color: var(--color-danger); }

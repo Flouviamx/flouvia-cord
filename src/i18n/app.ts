@@ -3107,6 +3107,21 @@ export const appStrings = {
         "set.cot.retenciones_vacio": "Tu catálogo no tiene retenciones marcadas como predeterminadas, así que no se resta ninguna del total.",
         "set.cot.retenciones_nota": "Se restan del total de cada documento. Se administran junto con el resto de tus tasas.",
         "set.cot.ir_impuestos": "Administrar impuestos",
+        // Factura — timeline y acciones
+        "fact.d_actividad": "Actividad",
+        "fact.d_actividad_vacia": "Todavía no hay actividad en esta factura.",
+        "fact.d_wa": "Compartir por WhatsApp",
+        "fact.d_duplicar": "Volver a facturar",
+        "fact.ev.created": "Borrador creado",
+        "fact.ev.issued": "Emitida",
+        "fact.ev.sent": "Enviada al cliente",
+        "fact.ev.viewed": "El cliente la abrió",
+        "fact.ev.payment": "Pago aplicado",
+        "fact.ev.paid": "Saldo liquidado",
+        "fact.ev.reminder": "Recordatorio enviado",
+        "fact.ev.void": "Anulada",
+        "fact.ev.credit_note": "Nota de crédito",
+        "fact.ev.uncollectible": "Marcada incobrable",
     },
     en: {
         // Sidebar — groups
@@ -6192,6 +6207,21 @@ export const appStrings = {
         "set.cot.retenciones_vacio": "Your catalog has no withholding profiles marked as default, so none is subtracted from the total.",
         "set.cot.retenciones_nota": "They are subtracted from each document's total. They're managed alongside the rest of your rates.",
         "set.cot.ir_impuestos": "Manage taxes",
+        // Factura — timeline y acciones
+        "fact.d_actividad": "Activity",
+        "fact.d_actividad_vacia": "No activity on this invoice yet.",
+        "fact.d_wa": "Share on WhatsApp",
+        "fact.d_duplicar": "Bill again",
+        "fact.ev.created": "Draft created",
+        "fact.ev.issued": "Issued",
+        "fact.ev.sent": "Sent to the client",
+        "fact.ev.viewed": "The client opened it",
+        "fact.ev.payment": "Payment applied",
+        "fact.ev.paid": "Balance settled",
+        "fact.ev.reminder": "Reminder sent",
+        "fact.ev.void": "Voided",
+        "fact.ev.credit_note": "Credit note",
+        "fact.ev.uncollectible": "Marked uncollectible",
     },
 } as const;
 

@@ -9,6 +9,7 @@ import { trackExternalUsage } from './external-usage';
 import { getEntitlementContext } from './org-entitlements';
 import { planIncludes } from './entitlements';
 import { currencyDecimals, normalizeCurrency } from './currency';
+import { buildInvoicePdfAttachment } from './fiscal/invoice-attachment';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@flouvia.com>';
@@ -58,7 +59,13 @@ function fromWith(name?: string | null): string {
 }
 
 /** Envía un correo crudo. Devuelve el resultado sin lanzar. */
-export async function sendEmail(opts: { to: string; subject: string; html: string; fromName?: string | null; replyTo?: string | null; orgId?: string | null; operation?: string }): Promise<SendResult> {
+export interface EmailAttachment {
+    filename: string;
+    /** Contenido binario. Se codifica a base64 aquí, no en el llamador. */
+    content: Uint8Array;
+}
+
+export async function sendEmail(opts: { to: string; subject: string; html: string; fromName?: string | null; replyTo?: string | null; orgId?: string | null; operation?: string; attachments?: EmailAttachment[] }): Promise<SendResult> {
     if (!RESEND_KEY) {
         await trackExternalUsage({ orgId: opts.orgId, provider: 'resend', category: 'email', operation: opts.operation || 'transactional_email', status: 'skipped' });
         return { sent: false, skipped: 'sin RESEND_API_KEY' };
@@ -69,6 +76,19 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
             from: fromWith(opts.fromName), to: opts.to, subject: opts.subject, html: opts.html,
         };
         if (opts.replyTo) payload.reply_to = opts.replyTo;
+        // Un adjunto grande hace que Resend rechace el correo entero. Más vale
+        // mandar la factura con su link que no mandarla: el PDF siempre se
+        // puede descargar desde ahí.
+        if (opts.attachments?.length) {
+            const MAX_BYTES = 8 * 1024 * 1024;
+            const cabe = opts.attachments.filter((a) => a.content.byteLength <= MAX_BYTES);
+            if (cabe.length) {
+                payload.attachments = cabe.map((a) => ({
+                    filename: a.filename,
+                    content: Buffer.from(a.content).toString('base64'),
+                }));
+            }
+        }
         const res = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
@@ -203,6 +223,9 @@ interface InvoiceEmailRow {
     portal_powered: boolean | null;
     sandbox_of: string | null;
     moneda: string | null;
+    email_intro: string | null;
+    email_firma: string | null;
+    pdf_mensaje: string | null;
 }
 
 async function loadInvoiceEmail(orgId: string, documentoId: string): Promise<InvoiceEmailRow | null> {
@@ -213,7 +236,8 @@ async function loadInvoiceEmail(orgId: string, documentoId: string): Promise<Inv
                coalesce(cl.empresa, cq.empresa) as empresa,
                o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
                o.email_from_name, o.email_reply_to, o.email_contacto,
-               o.portal_powered, o.sandbox_of, o.moneda
+               o.portal_powered, o.sandbox_of, o.moneda,
+               o.email_intro, o.email_firma, o.pdf_mensaje
           from documentos_fiscales d
           join orgs o on o.id = d.org_id
           left join clientes cl on cl.id = d.cliente_id
@@ -231,6 +255,10 @@ function invoiceEmailHtml(r: InvoiceEmailRow, opts: {
     cuerpo: string;
     cta: string;
     poweredLine: string;
+    /** Texto propio del vendedor (Ajustes › Correo), ya sustituido y escapado. */
+    intro?: string;
+    firma?: string;
+    mensaje?: string;
 }): string {
     const color = /^#[0-9a-fA-F]{6}$/.test(r.color) ? r.color : '#0a192f';
     const currency = normalizeCurrency((r.currency as string) || (r.moneda as string));
@@ -251,7 +279,7 @@ function invoiceEmailHtml(r: InvoiceEmailRow, opts: {
             </div>
 
             <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${esc(r.empresa || t(L, 'fact.e_hola'))}</p>
-            <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${opts.cuerpo}</p>
+            <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${opts.intro || opts.cuerpo}</p>
 
             <table style="width:100%;border-collapse:collapse;margin:32px 0;border-top:1px solid #F3F4F6;border-bottom:1px solid #F3F4F6;padding:8px 0;">
                 <tr><td style="padding:6px 0;font-size:14px;color:#6B7280;">${t(L, 'fact.e_factura')}</td>
@@ -266,6 +294,9 @@ function invoiceEmailHtml(r: InvoiceEmailRow, opts: {
             </div>
 
             <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">${t(L, 'email.copie_enlace')}<br><a href="${opts.link}" style="color:#2563EB;text-decoration:none;">${opts.link}</a></p>
+
+            ${opts.mensaje ? `<div style="margin-top:40px;padding-top:32px;border-top:1px solid #F3F4F6;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">${opts.mensaje}</p></div>` : ''}
+            ${opts.firma ? `<div style="margin-top:32px;"><p style="font-size:15px;color:#374151;line-height:1.6;margin:0;">${t(L, 'email.atentamente')}<br>${opts.firma}</p></div>` : ''}
 
             <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
                 <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${opts.poweredLine}</p>
@@ -293,6 +324,16 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
         ? esc(r.org_nombre)
         : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
 
+    // El texto propio del vendedor (Ajustes › Correo) se ignoraba en las
+    // facturas: solo lo honraba el correo de cotización. Un negocio que
+    // personalizó su intro y su firma veía su copy en un correo y no en el otro,
+    // sin nada que lo explicara.
+    const fill = (txt: string) => esc(txt)
+        .replace(/\{cliente\}/g, esc(r.empresa || t(L, 'email.cliente_generico')))
+        .replace(/\{folio\}/g, esc(r.invoice_number || ''))
+        .replace(/\{total\}/g, moneyFmt(Number(r.total || 0), L, currency))
+        .replace(/\{negocio\}/g, esc(r.org_nombre));
+
     const html = invoiceEmailHtml(r, {
         locale: L, link, saldo, poweredLine,
         titulo: '',
@@ -302,7 +343,16 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
             total: moneyFmt(Number(r.total || 0), L, currency),
         }),
         cta: t(L, 'fact.e_cta_ver'),
+        intro: (canCustomizeEmail && r.email_intro?.trim()) ? fill(r.email_intro) : undefined,
+        firma: (canCustomizeEmail && r.email_firma?.trim()) ? fill(r.email_firma) : undefined,
+        mensaje: r.pdf_mensaje?.trim() ? esc(r.pdf_mensaje) : undefined,
     });
+
+    // El PDF va adjunto. Para un área de cuentas por pagar el archivo ES el
+    // trámite: un correo con solo un botón obliga a entrar al link, descargar y
+    // reenviar a mano. `buildInvoicePdfAttachment` nunca lanza — si el PDF
+    // falla, el correo sale igual con su link.
+    const pdf = await buildInvoicePdfAttachment(orgId, documentoId);
 
     const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
     const result = await sendEmail({
@@ -313,6 +363,7 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
         html,
         fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
         replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+        attachments: pdf ? [pdf] : undefined,
     });
     return result.sent;
 }

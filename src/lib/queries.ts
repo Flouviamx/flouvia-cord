@@ -1671,6 +1671,9 @@ export async function getFacturaDetalle(id: string) {
     if (!r) return null;
     return {
         ...rowToFactura(r),
+        // La org va en el DTO para que la página pueda pedir el timeline sin
+        // volver a resolverla.
+        orgId,
         clienteEmail: (r.cliente_email as string) || null,
         notas: (r.notes as string) || null,
         ledgerCurrency: (r.ledger_currency as string) || null,

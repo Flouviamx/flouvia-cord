@@ -16,6 +16,7 @@ import { requireEntitlement } from '../../../lib/org-entitlements';
 import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../lib/billing';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notifyInvoiceIssued } from '../../../lib/email';
+import { logInvoiceEvent } from '../../../lib/fiscal/timeline';
 import { invoicingFeatureFor, orgCountry } from '../../../lib/fiscal/gate';
 import { currentUserId } from '../../../lib/context';
 import { after } from '../../../lib/after';
@@ -158,6 +159,7 @@ async function send(orgId: string, id: string, request: Request) {
         accion: 'factura.enviada', entidad: 'factura', entidad_id: id,
         detalle: factura.clienteEmail, ip: reqIp(request),
     });
+    await logInvoiceEvent(orgId, id, 'sent', `Enviada a ${factura.clienteEmail}`);
     after(dispatchInvoiceEvent(orgId, id, 'invoice.sent'));
     return json({ ok: true });
 }

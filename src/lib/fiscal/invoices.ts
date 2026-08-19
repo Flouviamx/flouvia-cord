@@ -18,6 +18,7 @@
 import { sql, withOrgTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
 import { getCountryProfile } from '../countries';
+import { logInvoiceEvent } from './timeline';
 import { normalizeCurrency } from '../currency';
 import { dueDateFor, isoDay } from '../cobros';
 import { FXService, FXUnavailableError } from '../fx/FXService';
@@ -309,6 +310,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
     returning id, public_token`);
   const row = rows[0];
   if (!row) return { ok: false, error: 'No se pudo crear el borrador.' };
+  await logInvoiceEvent(orgId, String(row.id), 'created', 'Borrador creado');
   return { ok: true, documentId: String(row.id), publicToken: String(row.public_token) };
 }
 
@@ -581,6 +583,12 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
            updated_at = now()
      where id = ${documentId} and org_id = ${orgId}`);
 
+  await logInvoiceEvent(
+    orgId, documentId,
+    response.success ? 'issued' : 'created',
+    response.success ? `Factura ${invoiceNumber} emitida` : `Error al emitir: ${response.error || 'desconocido'}`,
+  );
+
   return {
     emitted: response.success,
     documentId,
@@ -668,6 +676,7 @@ export async function voidInvoice(
            provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify({ cancelacion: cancel.rawProviderData ?? {} })}::jsonb,
            updated_at = now()
      where id = ${documentId} and org_id = ${orgId}`);
+  await logInvoiceEvent(orgId, documentId, 'void', reason ? `Anulada: ${reason}` : 'Anulada');
   return { ok: true };
 }
 
