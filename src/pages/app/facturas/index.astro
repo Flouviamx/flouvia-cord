@@ -332,10 +332,18 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
     /* Envío masivo: casilla + fila. La fila sigue siendo un <a>; la casilla vive
        fuera de él para no anidar dos elementos interactivos. */
     .t-line { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; }
+    /* El encabezado lleva las DOS clases, y `.t-head` más abajo declara la
+       rejilla de seis columnas: sin esta regla más específica el head aplicaría
+       seis columnas a dos hijos y la cabecera quedaría desalineada de sus filas. */
+    .t-head.t-line { grid-template-columns: 36px minmax(0, 1fr); gap: 0; padding-left: 0; padding-right: 0; }
+    .t-head.t-line .t-head-inner {
+        display: grid; grid-template-columns: 130px 1.6fr 0.9fr 1fr 1fr 150px;
+        gap: 1rem; align-items: center; padding: 0 0.75rem;
+    }
+    .t-line > .t-row { padding-left: 0.35rem; }
     .t-check-cell { display: flex; align-items: center; justify-content: center; }
     .t-check-cell input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-blue-deep); }
     .t-check-cell input:disabled { cursor: not-allowed; opacity: 0.35; }
-    .t-head.t-line .t-head-inner { display: grid; grid-template-columns: 130px 1.6fr 0.9fr 1fr 1fr 150px; gap: inherit; }
 
     .fac-bulk {
         position: sticky; bottom: 1rem; z-index: 5;
@@ -505,7 +513,10 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
         .ph-search input { font-size: 16px; }
         .ph-search-clear { width: 36px; height: 36px; }
 
-        .t-head { display: none; }
+        /* .t-head.t-line tiene más especificidad que .t-head, así que el
+           ocultado en móvil se declara con la misma llave o la cabecera vuelve
+           a aparecer sobre las tarjetas apiladas. */
+        .t-head, .t-head.t-line { display: none; }
         .t-row {
             grid-template-columns: minmax(0, 1fr) auto;
             grid-template-areas:
