@@ -1,8 +1,8 @@
 // GET /api/cron/intereses — aplica interés moratorio mensual.
 // Corre el día 1 de cada mes (ver vercel.json). Para cada org con
-// interes_moratorio_pct > 0, busca cotizaciones vencidas (approved|invoiced)
-// y registra el cargo mensual en intereses_moratorios. Idempotente por
-// (cotizacion_id, periodo): correr dos veces en el mismo mes no duplica.
+// interes_moratorio_pct > 0, recorre la vista `cuentas_por_cobrar` —que une
+// cotizaciones y facturas— y registra el cargo del mes. Idempotente por riel:
+// (cotizacion_id, periodo) o (documento_id, periodo).
 // Protegido con CRON_SECRET igual que /api/cron/recordatorios.
 export const prerender = false;
 
@@ -14,7 +14,6 @@ import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
 const RESEND_KEY  = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cobranza@flouvia.com>';
 
-const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 // El resumen de intereses lo lee el DUEÑO: va en la divisa de su negocio.
 const money = (n: number, currency?: string) => {
     const code = normalizeCurrency(currency);
@@ -33,8 +32,6 @@ export const GET: APIRoute = async ({ request }) => {
     // Periodo = mes actual ('YYYY-MM'). El cron corre el día 1, así que el
     // interés corresponde al mes que recién arrancó (deuda sigue sin pagarse).
     const periodo = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-    const today = new Date(now); today.setHours(0, 0, 0, 0);
-    const MS = 86400000;
 
     // Orgs con tasa de interés configurada (cualquier plan que lo habilite).
     const orgs = await sql`
@@ -53,39 +50,53 @@ export const GET: APIRoute = async ({ request }) => {
         const tasa  = Number(org.interes_moratorio_pct);
         const orgCurrency = normalizeCurrency(org.moneda as string);
 
+        // Cartera de los DOS rieles. Antes esta consulta hacía `from cotizaciones`
+        // y una factura independiente —sin cotización detrás— nunca acumulaba
+        // interés por más que se venciera. Además cobraba el interés sobre el
+        // TOTAL y no sobre el saldo: un cliente que ya había abonado el 80%
+        // seguía pagando interés sobre el 100%.
         const rows = await sql`
-            select c.id, c.folio, c.total, c.terminos,
-                   coalesce(c.approved_at, c.created_at) as base_date,
+            select cxc.origen, cxc.ref_id, cxc.folio, cxc.saldo, cxc.dias_vencido,
                    cl.empresa
-            from cotizaciones c
-            left join clientes cl on cl.id = c.cliente_id
-            where c.org_id = ${orgId}
-              and c.status in ('approved', 'invoiced')
-              and c.es_recurrente is not true`; // igualas se cobran solas cada mes — no acumulan interés moratorio
+            from cuentas_por_cobrar cxc
+            left join clientes cl on cl.id = cxc.cliente_id
+            where cxc.org_id = ${orgId}
+              and cxc.dias_vencido > 0
+              and cxc.saldo > 0`;
 
         const cargos: { folio: string; empresa: string; monto: number; diasVencido: number }[] = [];
 
         for (const r of rows) {
-            const base = new Date(r.base_date as string);
-            const due  = new Date(base);
-            due.setDate(due.getDate() + (DAYS[r.terminos as string] ?? 0));
+            const diasVencido = Number(r.dias_vencido);
+            if (diasVencido <= 0) continue;
 
-            const diasVencido = Math.floor((today.getTime() - due.getTime()) / MS);
-            if (diasVencido <= 0) continue; // no vencida aún
-
-            const saldo = Number(r.total);
+            const saldo = Number(r.saldo);
+            if (!(saldo > 0)) continue;
             const monto = parseFloat((saldo * tasa / 100).toFixed(2));
+            if (!(monto > 0)) continue;
+
+            const esFactura = r.origen === 'factura';
+            const refId = r.ref_id as string;
 
             try {
-                // ON CONFLICT DO NOTHING = idempotente
-                await sql`
-                    insert into intereses_moratorios
-                        (org_id, cotizacion_id, periodo, tasa_pct, saldo_base, monto, dias_vencido)
-                    values
-                        (${orgId}, ${r.id as string}, ${periodo}, ${tasa}, ${saldo}, ${monto}, ${diasVencido})
-                    on conflict (cotizacion_id, periodo) do nothing`;
+                // ON CONFLICT DO NOTHING = idempotente, por riel.
+                if (esFactura) {
+                    await sql`
+                        insert into intereses_moratorios
+                            (org_id, documento_id, periodo, tasa_pct, saldo_base, monto, dias_vencido)
+                        values
+                            (${orgId}, ${refId}, ${periodo}, ${tasa}, ${saldo}, ${monto}, ${diasVencido})
+                        on conflict (documento_id, periodo) where documento_id is not null do nothing`;
+                } else {
+                    await sql`
+                        insert into intereses_moratorios
+                            (org_id, cotizacion_id, periodo, tasa_pct, saldo_base, monto, dias_vencido)
+                        values
+                            (${orgId}, ${refId}, ${periodo}, ${tasa}, ${saldo}, ${monto}, ${diasVencido})
+                        on conflict (cotizacion_id, periodo) do nothing`;
+                }
 
-                cargos.push({ folio: r.folio as string, empresa: (r.empresa as string) ?? '—', monto, diasVencido });
+                cargos.push({ folio: (r.folio as string) ?? '—', empresa: (r.empresa as string) ?? '—', monto, diasVencido });
             } catch { /* continúa con el resto */ }
         }
 

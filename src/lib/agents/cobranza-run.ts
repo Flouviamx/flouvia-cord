@@ -169,38 +169,42 @@ export async function runCobranzaOrg(
     // de intereses y el de recordatorios — coalesce(approved_at, created_at) + los
     // días del término. `es_recurrente` se excluye: una iguala al corriente no es
     // cartera vencida (bug ya documentado en historial-billing-cobros.md).
+    // Cartera de los DOS rieles, desde la vista `cuentas_por_cobrar`. Esta
+    // consulta hacía `from cotizaciones`, así que una factura independiente
+    // —sin cotización detrás— era invisible para el agente entero: no se
+    // cobraba sola, no se podía excluir y no admitía promesa de pago.
+    //
+    // `cotizacion_id` se conserva en el shape de salida por compatibilidad con
+    // el resto del módulo; para una factura lleva su documento_id, y `origen`
+    // dice de qué riel viene.
     const [candidatas] = await withOrgTx(orgId, sql`
         select
-          c.id as cotizacion_id, c.folio, c.total, c.public_token, c.cliente_id,
+          cxc.origen,
+          cxc.ref_id as cotizacion_id,
+          cxc.folio, cxc.total, cxc.token as public_token, cxc.cliente_id,
+          cxc.saldo, cxc.pagado, cxc.dias_vencido,
           cl.empresa as cliente_nombre, cl.email as cliente_email,
           (o.stripe_charges_enabled and o.stripe_account_id is not null
            and (o.acepta_tarjeta or o.cobro_spei_auto)) as cobra_online,
-          floor(date_part('day', now() - (
-            coalesce(c.approved_at, c.created_at)
-            + make_interval(days => case coalesce(c.terminos, cl.terminos_default, 'contado')
-                when 'net30' then 30 when 'net60' then 60 else 0 end)
-          )))::int as dias_vencido,
-          coalesce((select sum(monto) from cotizacion_cobros
-                    where cotizacion_id = c.id and status = 'pagado'), 0) as pagado,
           exists(select 1 from cobranza_exclusiones x
-                 where x.org_id = c.org_id
-                   and (x.cotizacion_id = c.id or x.cliente_id = c.cliente_id)) as excluida,
+                 where x.org_id = cxc.org_id
+                   and (x.cliente_id = cxc.cliente_id
+                        or (cxc.origen = 'cotizacion' and x.cotizacion_id = cxc.ref_id)
+                        or (cxc.origen = 'factura'    and x.documento_id  = cxc.ref_id))) as excluida,
           (select max(coalesce(cc.enviado_at, cc.created_at)) from cobranza_conversaciones cc
-           where cc.cotizacion_id = c.id and cc.estado = 'enviado') as ultimo_envio,
+            where cc.estado = 'enviado'
+              and ((cxc.origen = 'cotizacion' and cc.cotizacion_id = cxc.ref_id)
+                or (cxc.origen = 'factura'    and cc.documento_id  = cxc.ref_id))) as ultimo_envio,
           exists(select 1 from cobranza_conversaciones cc
-                 where cc.cotizacion_id = c.id and cc.estado = 'borrador') as tiene_borrador
-        from cotizaciones c
-        join clientes cl on c.cliente_id = cl.id
-        join orgs o on o.id = c.org_id
-        where c.org_id = ${orgId}
-          and c.status in ('approved', 'invoiced')
-          and c.es_recurrente is not true
-          and c.paid_at is null
-          and coalesce(c.approved_at, c.created_at)
-              + make_interval(days => case coalesce(c.terminos, cl.terminos_default, 'contado')
-                  when 'net30' then 30 when 'net60' then 60 else 0 end)
-              < now() - make_interval(days => ${cfg.graciaDias})
-        order by dias_vencido desc`);
+                 where cc.estado = 'borrador'
+                   and ((cxc.origen = 'cotizacion' and cc.cotizacion_id = cxc.ref_id)
+                     or (cxc.origen = 'factura'    and cc.documento_id  = cxc.ref_id))) as tiene_borrador
+        from cuentas_por_cobrar cxc
+        join clientes cl on cl.id = cxc.cliente_id
+        join orgs o on o.id = cxc.org_id
+        where cxc.org_id = ${orgId}
+          and cxc.dias_vencido > ${cfg.graciaDias}
+        order by cxc.dias_vencido desc`);
 
     const limite = Math.min(opts.limit ?? cfg.maxCorrida, cfg.maxCorrida);
     const cadenciaMs = cfg.cadenciaDias * 24 * 60 * 60 * 1000;
@@ -210,7 +214,9 @@ export async function runCobranzaOrg(
 
     const elegibles: any[] = [];
     for (const q of candidatas) {
-        const saldo = Math.max(0, Number(q.total) - Number(q.pagado ?? 0));
+        // El saldo lo calcula la vista: para una factura es `amount_remaining`,
+        // que ya descuenta abonos parciales y notas de crédito.
+        const saldo = Math.max(0, Number(q.saldo ?? (Number(q.total) - Number(q.pagado ?? 0))));
         // Saldado por cobros parciales: el flip del webhook a 'paid' va en camino.
         if (saldo <= 0) { omitir(q, 'saldado'); continue; }
         if (q.excluida) { omitir(q, 'exclusion'); continue; }
@@ -230,13 +236,22 @@ export async function runCobranzaOrg(
     const aProcesar = elegibles.slice(0, limite);
 
     for (const q of aProcesar) {
+        // De qué riel viene esta cuenta por cobrar. La vista une facturas y
+        // cotizaciones; cada tabla de cobranza guarda el id en su propia columna.
+        const esFactura = q.origen === 'factura';
+
         const [[planVigente]] = await withOrgTx(orgId, sql`
             select id from planes_pago_negociados
-            where cotizacion_id = ${q.cotizacion_id} and estado in ('propuesto', 'activo') limit 1`);
+            where estado in ('propuesto', 'activo')
+              and case when ${esFactura} then documento_id = ${q.cotizacion_id}
+                                         else cotizacion_id = ${q.cotizacion_id} end
+            limit 1`);
 
         // Lo COBRABLE hoy en un clic: el siguiente cobro pendiente ya vencido. Con
         // plan de cuotas es la cuota exigible, no el saldo completo.
-        const [[proxCobro]] = await withOrgTx(orgId, sql`
+        // `cotizacion_cobros` es del riel de cotizaciones; en una factura el
+        // saldo exigible es directamente `amount_remaining`, que ya trae la vista.
+        const [[proxCobro]] = esFactura ? [[null]] : await withOrgTx(orgId, sql`
             select monto from cotizacion_cobros
             where cotizacion_id = ${q.cotizacion_id} and status = 'pendiente'
               and (vence is null or vence <= current_date)
@@ -250,15 +265,19 @@ export async function runCobranzaOrg(
 
         const diasVencido = Math.max(0, Number(q.dias_vencido) || 0);
         const cobraOnline = !!q.cobra_online;
-        const payUrl = cobraOnline
-            ? `${origin}/q/${q.public_token}/pay`
-            : `${origin}/q/${q.public_token}`;
+        // El link de cobro es el del DOCUMENTO que se está cobrando: la página
+        // de la factura lleva SU saldo, que no es el de la cotización cuando ya
+        // hubo abonos o una nota de crédito.
+        const payUrl = esFactura
+            ? `${origin}/i/${q.public_token}`
+            : (cobraOnline ? `${origin}/q/${q.public_token}/pay` : `${origin}/q/${q.public_token}`);
         const montoBoton = proxCobro ? Number(proxCobro.monto) : q.saldo;
 
         const [historial] = await withOrgTx(orgId, sql`
             select autor_tipo, mensaje from cobranza_conversaciones
-            where cotizacion_id = ${q.cotizacion_id}
-              and estado in ('enviado', 'aprobado')
+            where estado in ('enviado', 'aprobado')
+              and case when ${esFactura} then documento_id = ${q.cotizacion_id}
+                                         else cotizacion_id = ${q.cotizacion_id} end
             order by created_at asc`);
 
         // El agente habla; el cliente y el vendedor son el "otro turno". Mapear
@@ -297,16 +316,18 @@ export async function runCobranzaOrg(
 
         if (!res.ok) {
             await withOrgTx(orgId, sql`
-                insert into cobranza_conversaciones (org_id, cotizacion_id, autor_tipo, mensaje, estado, error)
-                values (${orgId}, ${q.cotizacion_id}, 'agente_ia', ${res.mensaje}, 'fallido', ${res.error ?? 'error'})`);
+                insert into cobranza_conversaciones (org_id, cotizacion_id, documento_id, autor_tipo, mensaje, estado, error)
+                values (${orgId}, ${esFactura ? null : q.cotizacion_id}, ${esFactura ? q.cotizacion_id : null},
+                        'agente_ia', ${res.mensaje}, 'fallido', ${res.error ?? 'error'})`);
             out.fallidos++;
             continue;
         }
 
         if (cfg.modo === 'aprobacion') {
             await withOrgTx(orgId, sql`
-                insert into cobranza_conversaciones (org_id, cotizacion_id, autor_tipo, mensaje, estado)
-                values (${orgId}, ${q.cotizacion_id}, 'agente_ia', ${res.mensaje}, 'borrador')`);
+                insert into cobranza_conversaciones (org_id, cotizacion_id, documento_id, autor_tipo, mensaje, estado)
+                values (${orgId}, ${esFactura ? null : q.cotizacion_id}, ${esFactura ? q.cotizacion_id : null},
+                        'agente_ia', ${res.mensaje}, 'borrador')`);
             out.borradores++;
             continue;
         }
@@ -326,8 +347,9 @@ export async function runCobranzaOrg(
 
         await withOrgTx(orgId, sql`
             insert into cobranza_conversaciones
-              (org_id, cotizacion_id, autor_tipo, mensaje, estado, enviado_at, message_id, error)
-            values (${orgId}, ${q.cotizacion_id}, 'agente_ia', ${res.mensaje},
+              (org_id, cotizacion_id, documento_id, autor_tipo, mensaje, estado, enviado_at, message_id, error)
+            values (${orgId}, ${esFactura ? null : q.cotizacion_id}, ${esFactura ? q.cotizacion_id : null},
+                    'agente_ia', ${res.mensaje},
                     ${envio.sent ? 'enviado' : 'fallido'},
                     ${envio.sent ? new Date().toISOString() : null},
                     ${(envio as any).messageId ?? null},

@@ -2798,3 +2798,118 @@ alter table documento_recordatorios force row level security;
 
 -- Cadencia configurable por organización. `null` = la escalera por defecto.
 alter table orgs add column if not exists recordatorio_etapas int[] not null default '{-7,-1,3,7,14,30}';
+
+-- ── Cobranza sobre los DOS rieles ───────────────────────────────────────────
+-- Toda la maquinaria de cuentas por cobrar —el agente de cobranza IA, los
+-- intereses moratorios, las exclusiones, las promesas y los planes de pago
+-- negociados— hacía `from cotizaciones`. Una factura independiente, sin
+-- cotización detrás, era invisible para el negocio entero de cobrar: no entraba
+-- al agente, no acumulaba interés, no se podía excluir y no admitía una promesa
+-- de pago.
+--
+-- Cada tabla gana `documento_id` con la misma regla de exclusividad que ya usa
+-- `documentos_fiscales`: el registro cuelga de una cotización O de una factura,
+-- nunca de las dos ni de ninguna.
+alter table cobranza_conversaciones add column if not exists documento_id uuid references documentos_fiscales(id) on delete cascade;
+alter table cobranza_exclusiones    add column if not exists documento_id uuid references documentos_fiscales(id) on delete cascade;
+alter table planes_pago_negociados  add column if not exists documento_id uuid references documentos_fiscales(id) on delete cascade;
+alter table promesas_pago           add column if not exists documento_id uuid references documentos_fiscales(id) on delete cascade;
+alter table intereses_moratorios    add column if not exists documento_id uuid references documentos_fiscales(id) on delete cascade;
+
+create index if not exists idx_cob_conv_documento  on cobranza_conversaciones(documento_id) where documento_id is not null;
+create index if not exists idx_cob_excl_documento  on cobranza_exclusiones(documento_id)    where documento_id is not null;
+create index if not exists idx_planes_documento    on planes_pago_negociados(documento_id)  where documento_id is not null;
+create index if not exists idx_promesas_documento  on promesas_pago(documento_id)           where documento_id is not null;
+create index if not exists idx_intereses_documento on intereses_moratorios(documento_id)    where documento_id is not null;
+
+-- Vista única de cuentas por cobrar. Une los dos rieles con UNA forma común
+-- para que el agente de cobranza, el cron de intereses y los informes consulten
+-- un solo lugar en vez de duplicar la aritmética del vencimiento — que en
+-- cotizaciones se deriva de los términos y en facturas es una columna.
+--
+-- `origen` distingue el riel; `ref_id` es el id dentro de ese riel. Una factura
+-- emitida DESDE una cotización aparece solo como factura: el documento fiscal
+-- es el que manda el saldo real, y contar ambos duplicaría la cartera.
+create or replace view cuentas_por_cobrar as
+  select
+    'factura'::text                              as origen,
+    d.id                                         as ref_id,
+    d.org_id,
+    d.cliente_id,
+    d.invoice_number                             as folio,
+    d.currency                                   as moneda,
+    d.total,
+    coalesce(d.amount_paid, 0)                   as pagado,
+    coalesce(d.amount_remaining, d.total)        as saldo,
+    d.due_date                                   as vence,
+    (current_date - d.due_date)                  as dias_vencido,
+    d.public_token                               as token,
+    d.cotizacion_id
+  from documentos_fiscales d
+  where d.lifecycle = 'open'
+    and d.due_date is not null
+    and coalesce(d.amount_remaining, d.total) > 0
+
+  union all
+
+  select
+    'cotizacion'::text                           as origen,
+    c.id                                         as ref_id,
+    c.org_id,
+    c.cliente_id,
+    c.folio,
+    c.base_currency                              as moneda,
+    c.total,
+    coalesce((select sum(cc.monto) from cotizacion_cobros cc
+               where cc.cotizacion_id = c.id and cc.status = 'pagado'), 0) as pagado,
+    c.total - coalesce((select sum(cc.monto) from cotizacion_cobros cc
+               where cc.cotizacion_id = c.id and cc.status = 'pagado'), 0)  as saldo,
+    (coalesce(c.approved_at, c.created_at)
+      + make_interval(days => case coalesce(c.terminos, 'contado')
+          when 'net30' then 30 when 'net60' then 60 else 0 end))::date      as vence,
+    (current_date - (coalesce(c.approved_at, c.created_at)
+      + make_interval(days => case coalesce(c.terminos, 'contado')
+          when 'net30' then 30 when 'net60' then 60 else 0 end))::date)     as dias_vencido,
+    c.public_token                               as token,
+    c.id                                         as cotizacion_id
+  from cotizaciones c
+  where c.status in ('approved', 'invoiced')
+    and c.es_recurrente is not true
+    and c.paid_at is null
+    -- Si ya se emitió una factura ABIERTA de esta cotización, el saldo real lo
+    -- lleva la factura: contarla en los dos rieles duplicaría la cartera.
+    and not exists (
+      select 1 from documentos_fiscales d2
+       where d2.cotizacion_id = c.id and d2.lifecycle = 'open'
+    );
+
+-- `intereses_moratorios.cotizacion_id` era NOT NULL: literalmente no cabía un
+-- cargo sobre una factura independiente. Se relaja y la unicidad se declara por
+-- riel, para que un mismo periodo no pueda cobrarse dos veces en ninguno.
+alter table intereses_moratorios alter column cotizacion_id drop not null;
+create unique index if not exists uq_intereses_documento_periodo
+  on intereses_moratorios(documento_id, periodo) where documento_id is not null;
+alter table intereses_moratorios drop constraint if exists chk_intereses_origen;
+alter table intereses_moratorios add constraint chk_intereses_origen
+  check (cotizacion_id is not null or documento_id is not null);
+
+-- Las tres tablas de cobranza exigían `cotizacion_id`: literalmente no cabía un
+-- hilo, un plan de pago ni una promesa sobre una factura independiente.
+alter table cobranza_conversaciones alter column cotizacion_id drop not null;
+alter table planes_pago_negociados  alter column cotizacion_id drop not null;
+alter table promesas_pago           alter column cotizacion_id drop not null;
+
+alter table cobranza_conversaciones drop constraint if exists chk_cob_conv_origen;
+alter table cobranza_conversaciones add constraint chk_cob_conv_origen
+  check (cotizacion_id is not null or documento_id is not null);
+alter table planes_pago_negociados drop constraint if exists chk_planes_origen;
+alter table planes_pago_negociados add constraint chk_planes_origen
+  check (cotizacion_id is not null or documento_id is not null);
+alter table promesas_pago drop constraint if exists chk_promesas_origen;
+alter table promesas_pago add constraint chk_promesas_origen
+  check (cotizacion_id is not null or documento_id is not null);
+
+-- La exclusión ya admitía solo-cliente; ahora también solo-factura.
+alter table cobranza_exclusiones drop constraint if exists cobranza_exclusiones_target;
+alter table cobranza_exclusiones add constraint cobranza_exclusiones_target
+  check (cliente_id is not null or cotizacion_id is not null or documento_id is not null);
