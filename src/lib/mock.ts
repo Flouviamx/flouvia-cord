@@ -1,5 +1,11 @@
 // src/lib/mock.ts
 // Datos mock de la app de Cord — simulan lo que vendrá de Neon (PostgreSQL).
+import { currentCurrency, currentLocale } from './context';
+import { currencyDecimals } from './currency';
+
+/** Locale de formato del request (es-MX / en-US). */
+const intlLocale = () => (currentLocale() === 'en' ? 'en-US' : 'es-MX');
+
 // Cuando se conecte la DB real, las páginas cambian este import por queries
 // y el shape de los datos se mantiene (mismo modelo que db/schema.sql).
 
@@ -40,12 +46,19 @@ export interface MockQuote {
     conversacion?: { tipo: string; detalle: string; cuando: string; mine: boolean }[];
     notas?: string;
     total?: number;   // total de la columna DB (la lista no carga items; usa esto)
+    /** Divisa en la que se VENDE (la que el cliente ve y paga). Regla 21. */
+    baseCurrency?: string;
+    /** Divisa contable de la cotización; puede diferir de la de venta. */
+    fiscalCurrency?: string;
     version?: number;
     versiones?: { version: number; total: number; fecha: string; items: any[] }[];
     firma?: { nombre: string; ip: string; hash: string; cuando: string } | null;
     iva_incluido?: boolean;
     vigenciaDias?: number | null; // días restantes de vigencia (pre-llenar el editor al editar borradores)
     anticipoPct?: number | null;
+    /** Estado del flujo de aprobación interna; null si la org no lo usa. */
+    aprobEstado?: string | null;
+    aprobMotivo?: string | null;
     esRecurrente?: boolean; // iguala/retainer: se cobra el total automáticamente cada mes vía Stripe Subscription
 }
 
@@ -72,8 +85,32 @@ export const STATUS_META: Record<QuoteStatus, { label: string; color: string; bg
 
 export const IVA = 0.16;
 
-export const money = (n: number, dec = 2) =>
-    '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
+/**
+ * Formateo de dinero del RENDER DE SERVIDOR (lo re-exporta lib/queries y lo usa
+ * casi toda la app y el link público).
+ *
+ * La divisa sale del contexto del request: la del negocio en /app, la de la
+ * cotización en /q/[token]. Antes era un `'$'` literal con locale es-MX fijo, así
+ * que un negocio en España mostraba "$1.000,00" donde debía decir "1.000,00 €" y
+ * uno en Japón inventaba dos decimales que el yen no tiene.
+ *
+ * `dec` sigue existiendo para los pocos call-sites que piden enteros (dec = 0),
+ * pero por defecto manda la divisa: JPY/CLP/COP nunca llevan decimales.
+ */
+export const money = (n: number, dec?: number) => {
+    const currency = currentCurrency();
+    const decimals = dec ?? currencyDecimals(currency);
+    try {
+        return new Intl.NumberFormat(intlLocale(), {
+            style: 'currency', currency,
+            minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+        }).format(n);
+    } catch {
+        return new Intl.NumberFormat(intlLocale(), {
+            minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+        }).format(n);
+    }
+};
 
 export const lineTotal = (it: MockItem) => (it.precioNegociado ?? it.precioLista) * it.cantidad;
 export const quoteSubtotal = (q: MockQuote) => {

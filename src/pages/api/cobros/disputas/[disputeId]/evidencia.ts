@@ -9,6 +9,7 @@ import { strictLimitResponse, strictRateLimit } from '../../../../../lib/ratelim
 import { parseJsonBody } from '../../../../../lib/validation';
 import { stripe } from '../../../../../lib/billing';
 import { merchantError } from '../../../../../lib/pay-errors';
+import { log } from '../../../../../lib/log';
 
 const evidenceSchema = z.object({
     customer_name: z.string().trim().max(200).optional(),
@@ -79,7 +80,7 @@ export const POST: APIRoute = async ({ request, params }) => {
         return json({ ok: true, status: updated.status || dispute.status });
     } catch (error) {
         const safe = merchantError(error);
-        console.error('[dispute-evidence] proveedor rechazó operación', { orgId, disputeId, reference: safe.reference });
+        log.error('proveedor rechazó operación', { route: 'dispute-evidence', orgId, disputeId, reference: safe.reference });
         return json({ error: safe.message, reference: safe.reference }, 502);
     }
 };

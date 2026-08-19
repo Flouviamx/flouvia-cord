@@ -5,7 +5,7 @@ category: "Cuenta y Equipo"
 order: 4
 ---
 
-Cord es un SaaS con modelo freemium: pagas una cuota mensual por usar la plataforma. Los cobros procesados por Cord Pagos tienen una tarifa separada por método, visible y aceptada antes de activarlos.
+Cord es un SaaS con modelo freemium: pagas una cuota mensual por usar la plataforma. Los cobros procesados por Cord Payments tienen una tarifa separada por método, visible y aceptada antes de activarlos.
 
 ### Los planes
 

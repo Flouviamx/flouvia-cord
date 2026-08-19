@@ -7,15 +7,27 @@
 import { sql, logAudit } from './db';
 import { notifyQuoteSent } from './email';
 import { dispatchQuoteEvent } from './webhooks';
-import { FXService } from './fx/FXService';
+import { FXService, FXUnavailableError } from './fx/FXService';
 import { currentUserId } from './context';
 import { assertResourceCapacity, checkEntitlement, parsedResourceLimit, ResourceLimitReachedError } from './org-entitlements';
 import { after } from './after';
 import { trackServer } from './posthog-server';
 
 import { sanitizeItem, calculateTotals } from '../../packages/elements/src/engine';
+import { normalizeCurrency } from './currency';
 
-const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(Math.round(n));
+// El motivo de aprobación lo lee el aprobador: el tope y el total van con la
+// divisa real de la cotización, no con un '$' que puede significar otra cosa.
+const money0 = (n: number, currency: string) => {
+    const code = normalizeCurrency(currency);
+    try {
+        return new Intl.NumberFormat('es-MX', {
+            style: 'currency', currency: code, maximumFractionDigits: 0,
+        }).format(Math.round(n));
+    } catch {
+        return new Intl.NumberFormat('es-MX').format(Math.round(n));
+    }
+};
 
 // Máximo de líneas por cotización — evita que un POST con miles de items dispare
 // miles de INSERT secuenciales (DoS + latencia).
@@ -154,6 +166,12 @@ export async function createCotizacion(
     const { subtotal, iva, total } = calculateTotals(items as any[], ivaPct, iva_incluido);
     const realSubtotal = subtotal;
 
+    // Divisas de la cotización, resueltas temprano porque el motivo de aprobación
+    // ya necesita formatear importes. `base` = en la que se le vende al cliente;
+    // `fiscal` = en la que se factura y contabiliza (la del negocio por default).
+    const baseCurrency = normalizeCurrency(input.base_currency, normalizeCurrency(org.moneda));
+    const fiscalCurrency = normalizeCurrency(input.fiscal_currency, baseCurrency);
+
     const [{ maxn }] = await sql`
         select coalesce(max(nullif(regexp_replace(folio, '\\D', '', 'g'), '')::int), 0) as maxn
         from cotizaciones where org_id = ${orgId}`;
@@ -191,7 +209,7 @@ export async function createCotizacion(
     if (needsApproval) {
         const reasons: string[] = [];
         if (aprobDesc > 0 && maxDescPct > aprobDesc) reasons.push(`descuento ${Math.round(maxDescPct)}% supera el ${aprobDesc}% permitido`);
-        if (aprobMonto > 0 && total > aprobMonto) reasons.push(`total ${money0(total)} supera el tope de ${money0(aprobMonto)}`);
+        if (aprobMonto > 0 && total > aprobMonto) reasons.push(`total ${money0(total, baseCurrency)} supera el tope de ${money0(aprobMonto, baseCurrency)}`);
         if (aprobMargen > 0 && hayLineasConCosto && minMargenPct < aprobMargen) reasons.push(`margen bruto ${Math.round(minMargenPct)}% está por debajo del mínimo de ${aprobMargen}%`);
         aprobEstado = 'pendiente';
         aprobMotivo = reasons.join(' y ');
@@ -214,22 +232,29 @@ export async function createCotizacion(
     const status = needsApproval ? 'draft' : (input.send ? 'sent' : 'draft');
     const sentAt = (!needsApproval && input.send) ? new Date().toISOString() : null;
 
-    // Multi-divisa con cobertura: si la moneda de presentación difiere de la
-    // fiscal, congelamos la tasa (spot + buffer) por 30 días para proteger el
-    // margen entre la aprobación y la facturación.
-    const baseCurrency = (input.base_currency || 'MXN').toUpperCase();
-    const fiscalCurrency = (input.fiscal_currency || baseCurrency).toUpperCase();
+    // Multi-divisa con cobertura: si la moneda en que se vende difiere de la
+    // contable, se congela la tasa (spot + buffer) por 30 días para proteger el
+    // margen entre la aprobación y la facturación. Esa tasa NO es decorativa:
+    // la factura la declara como tipo de cambio (ver lib/fiscal/emit.ts).
+    //
+    // Si no hay tasa real, la cotización NO se crea: guardar un fx_rate = 1
+    // inventado significaba facturar meses después con el número equivocado.
     let fxRate = 1;
-    let fxSource = 'spot';
+    let fxSource = 'same';
     let fxLockedUntil: string | null = null;
     if (baseCurrency !== fiscalCurrency) {
-        const fx = await FXService.getExchangeRate({
-            baseCurrency, fiscalCurrency, amount: total,
-            bufferPct: Number(input.fx_buffer_pct) || 0,
-        });
-        fxRate = fx.appliedRate;
-        fxSource = fx.source;
-        fxLockedUntil = fx.lockedUntil ? fx.lockedUntil.toISOString() : null;
+        try {
+            const fx = await FXService.getExchangeRate({
+                baseCurrency, fiscalCurrency, amount: total,
+                bufferPct: Number(input.fx_buffer_pct) || 0,
+            });
+            fxRate = fx.appliedRate;
+            fxSource = fx.source;
+            fxLockedUntil = fx.lockedUntil ? fx.lockedUntil.toISOString() : null;
+        } catch (error) {
+            if (error instanceof FXUnavailableError) throw new QuoteError(error.message, 503);
+            throw error;
+        }
     }
 
     // Quién la creó (user_id de la sesión) — null en creación vía API key

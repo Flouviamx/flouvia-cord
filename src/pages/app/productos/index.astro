@@ -431,6 +431,7 @@ const fCount = {
 </script>
 
 <script>
+    import { createMoney } from '../../../lib/money-client';
     // Importador CSV: archivo → mapeo de columnas → preview → carga masiva.
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('importModal') as HTMLDialogElement | null;
@@ -548,7 +549,7 @@ const fCount = {
             }));
             const valid = prepared.filter(p => p.nombre);
             const skipped = prepared.length - valid.length;
-            const money = (n: number) => '$' + new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(n);
+            const money = createMoney();
 
             $('impSummary').innerHTML =
                 `<div><span class="is-num">${valid.length}</span><small>${I.i18nProductosAImportar || 'productos a importar'}</small></div>` +

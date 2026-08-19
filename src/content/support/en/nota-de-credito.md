@@ -1,7 +1,7 @@
 ---
 title: "Issue Credit Note (Expense)"
 description: "Apply legal refunds and bonuses."
-category: "Billing & CFDI"
+category: "Invoicing"
 ---
 
 Credit Notes (Expense type CFDI) are the SAT's fiscal mechanism to apply refunds, bonuses, or correct errors in invoice balances.

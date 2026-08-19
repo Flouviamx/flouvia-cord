@@ -3,6 +3,7 @@ Allow: /
 Disallow: /app/
 Disallow: /api/
 Disallow: /embed/
+Disallow: /i/
 Disallow: /sign-in
 Disallow: /sign-up
 Disallow: /forgot-password
@@ -30,6 +31,7 @@ Allow: /
 Disallow: /app/
 Disallow: /api/
 Disallow: /embed/
+Disallow: /i/
 Disallow: /sign-in
 Disallow: /sign-up
 Disallow: /forgot-password

@@ -14,7 +14,8 @@ export interface DevStat {
 
 export interface DevBlock {
     eyebrow: string;
-    titulo: string;       // admite     copy: string;
+    titulo: string;       // admite HTML
+    copy: string;
     bullets: string[];
     code?: { label: string; body: string };   // snippet opcional como visual del bloque
 }

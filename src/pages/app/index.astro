@@ -976,11 +976,12 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 
 
 <script>
+    import { createMoney } from '../../lib/money-client';
+
     // Count-up ligero de los KPIs (vanilla, sin GSAP — la app no carga GSAP)
     document.addEventListener('DOMContentLoaded', () => {
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        const localeIntl = document.documentElement.lang === 'en' ? 'en-US' : 'es-MX';
-        const fmt = (n: number) => '$' + new Intl.NumberFormat(localeIntl, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+        const fmt = createMoney();
         document.querySelectorAll<HTMLElement>('[data-countup]').forEach((el) => {
             const target = parseFloat(el.dataset.countup || '0');
             const t0 = performance.now();

@@ -212,24 +212,26 @@ Selling on credit is standard, but controlling that risk usually requires consta
             en: 'Multi-currency & FX'
         },
         shortDesc: {
-            es: 'Cotiza en dólares, cobra en pesos. Tipo de cambio actualizado en tiempo real según el Banco de México (Banxico). Protégete de la volatilidad cambiaria.',
-            en: 'Quote in USD, charge in MXN. Exchange rates updated in real-time based on the Central Bank (Banxico). Protect your margins from volatility.'
+            es: 'Cotiza y cobra en la moneda de tu cliente, lleva tus libros en la tuya. El tipo de cambio se congela 30 días al cotizar y la factura lo declara.',
+            en: 'Quote and charge in your client currency, keep your books in yours. The exchange rate locks for 30 days at quote time and the invoice states it.'
         },
         content: {
-            es: `## Operaciones transfronterizas fluidas
-Muchos distribuidores en México compran su inventario en dólares pero venden a sus clientes finales en pesos. La volatilidad del tipo de cambio (FX) puede destruir los márgenes si las cotizaciones no se actualizan rápido.
+            es: `## Vender en otra moneda, sin sorpresas
+Cuando el ciclo de venta dura semanas, el tipo de cambio del día que cotizaste y el del día que cobras no son el mismo. Cord separa dos monedas y las mantiene consistentes de punta a punta: la moneda en la que le vendes a tu cliente, y la de tu contabilidad.
 
 ### Beneficios clave:
-- **Sincronización Banxico:** El tipo de cambio se actualiza automáticamente según la tasa oficial del día.
-- **Flexibilidad al timbrar:** Genera la cotización en USD para fijar el valor comercial, pero emite el CFDI 4.0 y realiza el cobro en MXN usando la tasa del momento del pago.
-- **Protección de márgenes:** Evita pérdidas por fluctuaciones cambiarias en cotizaciones que tardan días en aprobarse.`,
-            en: `## Seamless cross-border operations
-Many distributors in Mexico buy inventory in dollars but sell to end clients in pesos. Exchange rate volatility (FX) can destroy margins if quotes aren't updated quickly.
+- **Tipo de cambio congelado 30 días:** al guardar la cotización, la tasa del día queda fija. Puedes añadir un colchón sobre ella para absorber la volatilidad de la ventana de crédito.
+- **La factura lo declara:** el comprobante se emite en la moneda de la venta e imprime el tipo de cambio aplicado y el total convertido a tu moneda contable. En México es el TipoCambio que exige el SAT en un CFDI que no está en pesos.
+- **Cobro en la moneda correcta:** el cliente paga con tarjeta en la moneda de la cotización, no en una convertida a última hora.
+- **Sin tasas inventadas:** si el tipo de cambio no se puede obtener en ese momento, Cord no guarda la cotización y te lo dice, en vez de usar un número aproximado que después aparece en una factura.`,
+            en: `## Selling in another currency, without surprises
+When a sales cycle takes weeks, the exchange rate on the day you quoted and the day you get paid aren't the same. Cord keeps two currencies apart and consistent end to end: the one you sell in, and the one your books use.
 
 ### Key benefits:
-- **Banxico synchronization:** The exchange rate updates automatically based on the official daily rate.
-- **Flexible stamping:** Generate the quote in USD to fix the commercial value, but issue the CFDI 4.0 and collect payment in MXN using the rate at the time of payment.
-- **Margin protection:** Prevent losses from currency fluctuations on quotes that take days to get approved.`
+- **Rate locked for 30 days:** saving the quote fixes that day's rate. You can add a cushion on top to absorb volatility during the credit window.
+- **The invoice states it:** the document is issued in the selling currency and prints the applied exchange rate plus the total converted to your accounting currency. In Mexico that's the TipoCambio the SAT requires on a CFDI that isn't in pesos.
+- **Charged in the right currency:** your client pays by card in the quote's currency, not one converted at the last minute.
+- **No invented rates:** if the exchange rate can't be retrieved at that moment, Cord won't save the quote and tells you, instead of using an approximate number that shows up on an invoice later.`
         },
         area: 'finanzas',
         status: 'live',
@@ -306,23 +308,27 @@ Not every sale is paid all at once. Many businesses collect a percentage up fron
         id: '8',
         slug: 'cfdi-automatico',
         title: {
-            es: 'Timbrado CFDI 4.0 automático',
-            en: 'Automated CFDI 4.0 Stamping'
+            es: 'Cord Invoicing — CFDI 4.0 (México)',
+            en: 'Cord Invoicing — CFDI 4.0 (Mexico)'
         },
         shortDesc: {
-            es: 'Directo al SAT. Cuando una cotización es aprobada, se convierte en pedido y se timbra la factura PUE o PPD con su respectivo complemento de pago.',
-            en: 'Directly to the SAT. When a quote is approved, it becomes an order and the PUE or PPD invoice is stamped automatically. No retyping required.'
+            es: 'El carril mexicano de Cord Invoicing: timbrado directo ante el SAT. Al aprobarse la cotización se emite la factura PUE sin recapturar nada. Exclusivo de México.',
+            en: 'The Mexican rail of Cord Invoicing: stamped directly with the SAT. Approving the quote issues the PUE invoice with zero retyping. Mexico-only.'
         },
         content: {
             es: `## Facturación invisible
-La facturación electrónica en México (CFDI 4.0) puede ser un dolor de cabeza administrativo. En Cord, hemos integrado el timbrado directamente en el flujo de ventas para que ocurra mágicamente en segundo plano.
+Este es el carril de **México** dentro de Cord Invoicing. El CFDI 4.0 es una obligación mexicana: si vendes desde otro país, Cord emite tu factura por el carril comercial y no verás nada de esto.
+
+La facturación electrónica en México puede ser un dolor de cabeza administrativo. En Cord, el timbrado está integrado directamente en el flujo de ventas para que ocurra en segundo plano.
 
 ### Beneficios clave:
 - **Cero recaptura:** Todo lo que se negoció en la cotización (clave de producto SAT, unidades, impuestos) se transfiere directamente a la factura.
 - **Timbrado PUE automático:** Si el trato fue de contado, al aprobarse la cotización se emite un CFDI de Ingreso PUE sin recapturar nada. Para ventas a crédito (Net 30) marcamos la cotización como PPD; el Complemento de Recepción de Pagos (REP) automático está en nuestro roadmap.
 - **Almacenamiento seguro XML/PDF:** Todos tus comprobantes fiscales se resguardan en la nube, accesible tanto para ti como para tu cliente desde su portal.`,
             en: `## Invisible invoicing
-Electronic invoicing in Mexico (CFDI 4.0) can be an administrative headache. In Cord, we have integrated stamping directly into the sales flow so it happens magically in the background.
+This is the **Mexico** rail inside Cord Invoicing. CFDI 4.0 is a Mexican obligation: if you sell from another country, Cord issues your invoice on the commercial rail and you will never see any of this.
+
+Electronic invoicing in Mexico can be an administrative headache. In Cord, stamping is integrated directly into the sales flow so it happens in the background.
 
 ### Key benefits:
 - **Zero retyping:** Everything negotiated on the quote (SAT product code, units, taxes) transfers directly to the invoice.
@@ -368,31 +374,39 @@ With CFDI 4.0, the SAT requires the receiver's Name, Zip Code, and Tax Regime to
         id: '10',
         slug: 'facturacion-internacional',
         title: {
-            es: 'Facturación internacional',
-            en: 'International Invoicing'
+            es: 'Cord Invoicing',
+            en: 'Cord Invoicing'
         },
         shortDesc: {
-            es: 'Emite facturas de comercio exterior con cumplimiento de regulaciones locales para ventas transfronterizas. Arquitectura fiscal preparada para escala global.',
-            en: 'Issue foreign trade invoices with local compliance regulations for sales in the US and Latin America. Global tax architecture.'
+            es: 'Factura en el país donde vendes y en la moneda de la venta. CFDI 4.0 ante el SAT en México; en el resto del mundo, una factura con tu marca, folio propio y el tipo de cambio declarado.',
+            en: 'Invoice in the country where you sell and in the currency of the sale. CFDI 4.0 with the SAT in Mexico; everywhere else, an invoice with your brand, its own numbering, and the exchange rate stated on it.'
         },
         content: {
-            es: `## Expande tus fronteras
-Vender a otros países desde México requiere procesos fiscales muy específicos, como el Complemento de Comercio Exterior (CCE) o el uso de facturas proforma para aduanas. Cord simplifica estas complejidades.
+            es: `## Una sola forma de facturar, en cualquier país
+El carril regulatorio cambia según dónde estés; tu flujo de trabajo no. Apruebas la cotización, presionas facturar y Cord elige el carril correcto por ti.
 
 ### Beneficios clave:
-- **CFDI de Exportación:** Emite comprobantes con las claves requeridas para exportación definitiva o temporal.
-- **Idiomas duales:** Genera la representación impresa (PDF) en inglés y español para que tanto la autoridad mexicana como tu cliente en Estados Unidos puedan comprender el documento.
-- **Integración logística:** Conecta el valor de la mercancía con la carta porte para un despacho aduanal sin demoras.`,
-            en: `## Expand your borders
-Selling to other countries from Mexico requires highly specific tax processes, such as the Foreign Trade Complement (CCE) or using proforma invoices for customs. Cord simplifies these complexities.
+- **México — CFDI 4.0 real:** timbrado ante el SAT, con tu propio CSD si lo subiste, y XML + PDF descargables. Este carril es exclusivo de México: es la regulación mexicana, no la de todos.
+- **Resto del mundo — factura de Cord:** folio propio por organización, datos congelados en el momento de emitir, y un PDF con el logo y el color de tu negocio. Es una factura comercial: no afirma haber sido presentada ante la autoridad fiscal local.
+- **En la moneda de la venta:** el documento se emite en la moneda en que le vendiste al cliente. Si tu contabilidad va en otra, la factura declara el tipo de cambio aplicado y el total convertido.
+- **Numeración por país:** cada país lleva su propia serie, así que un cambio de mercado no rompe tu secuencia de folios.
+
+### Lo que todavía no hace:
+Fuera de México, la factura no se presenta automáticamente ante la autoridad local. Los rieles de facturación electrónica obligatoria de otros países —Verifactu en España, DIAN en Colombia, SII en Chile— están en la lista, y la arquitectura ya está preparada para conectarlos.`,
+            en: `## One way to invoice, in any country
+The regulatory rail changes depending on where you are; your workflow does not. Approve the quote, hit invoice, and Cord picks the right rail for you.
 
 ### Key benefits:
-- **Export CFDI:** Issue receipts with the required codes for definitive or temporary export.
-- **Dual languages:** Generate the printed representation (PDF) in both English and Spanish so both the Mexican authority and your US client can understand the document.
-- **Logistics integration:** Connect the value of the merchandise with the waybill (Carta Porte) for delay-free customs clearance.`
+- **Mexico — real CFDI 4.0:** stamped with the SAT, using your own CSD if you uploaded it, with downloadable XML + PDF. This rail is Mexico-only: it is Mexican regulation, not everyone's.
+- **Everywhere else — a Cord invoice:** its own numbering per organization, data frozen at issue time, and a PDF carrying your business's logo and color. It is a commercial invoice: it does not claim to have been filed with the local tax authority.
+- **In the currency of the sale:** the document is issued in the currency you sold in. If your books are in a different one, the invoice states the exchange rate applied and the converted total.
+- **Numbering per country:** each country keeps its own series, so entering a new market never breaks your folio sequence.
+
+### What it does not do yet:
+Outside Mexico, the invoice is not automatically filed with the local authority. Mandatory e-invoicing rails in other countries — Verifactu in Spain, DIAN in Colombia, SII in Chile — are on the list, and the architecture is already prepared to connect them.`
         },
         area: 'fiscal',
-        status: 'next',
+        status: 'live',
         api: true
     },
     {
@@ -439,14 +453,14 @@ A matrix of 7 events by 2 channels (email and Slack) under Settings › Notifica
         },
         content: {
             es: `## Tus facturas, juntas por fin
-Antes solo se veía un CFDI a la vez, dentro de cada cotización. Ajustes › Facturación y CFDI › Facturas emitidas las junta todas.
+Antes solo se veía un CFDI a la vez, dentro de cada cotización. Ajustes › Facturación › Facturas emitidas las junta todas.
 
 ### Beneficios clave:
 - **Una tabla, todo el mes:** folio, cliente, monto, fecha y estado (timbrada/pendiente/error/cancelada) de cada CFDI que has emitido.
 - **PDF y XML a un clic:** cada fila enlaza directo a sus archivos, listos para descargar o reenviar.
 - **Contexto honesto:** las facturas generadas en un entorno de prueba se marcan explícitamente, para que nunca se confundan con un CFDI real ante el SAT.`,
             en: `## Your invoices, together at last
-Before, you could only see one CFDI at a time, inside each quote. Settings › Invoicing & CFDI › Issued invoices brings them all together.
+Before, you could only see one CFDI at a time, inside each quote. Settings › Invoicing › Issued invoices brings them all together.
 
 ### Key benefits:
 - **One table, the whole month:** folio, client, amount, date, and status (stamped/pending/error/cancelled) for every CFDI you've issued.
@@ -456,5 +470,120 @@ Before, you could only see one CFDI at a time, inside each quote. Settings › I
         area: 'fiscal',
         status: 'live',
         api: false
+    },
+    {
+        id: '15',
+        slug: 'integraciones-y-flujos',
+        title: {
+            es: 'Integraciones y flujos',
+            en: 'Integrations & flows'
+        },
+        shortDesc: {
+            es: 'Conecta Cord con las herramientas donde ya trabajas y encadena acciones automáticas: cuando pasa X en una cotización, que ocurra Y — sin escribir código.',
+            en: 'Connect Cord to the tools you already work in and chain automatic actions: when X happens on a quote, make Y happen — without writing code.'
+        },
+        content: {
+            es: `## Que el cierre dispare el resto del trabajo
+Hoy Cord ya avisa lo que pasa (correo, Slack, webhooks) y su API pública permite construir lo que quieras encima. Lo que falta es el paso intermedio: encadenar acciones sin escribir código.
+
+### Qué estamos construyendo:
+- **Catálogo de integraciones:** conexiones listas con las herramientas donde ya vive tu operación, en vez de un webhook que alguien tiene que programar.
+- **Flujos con condiciones:** "si la cotización supera cierto monto, pide aprobación y avisa al canal de dirección"; "si el cliente no abre el link en 3 días, manda el recordatorio". Reglas visibles, editables y auditables.
+- **Acciones encadenadas:** que aprobar dispare la factura, el alta del cliente y la tarea de seguimiento, sin que nadie las haga a mano.
+
+### Por qué todavía no está:
+Una automatización que falla en silencio es peor que no tenerla. Antes de abrirla queremos que cada flujo deje registro de qué se disparó, cuándo y con qué resultado — y que se pueda reintentar.`,
+            en: `## Let the close trigger the rest of the work
+Cord already tells you what happens (email, Slack, webhooks) and its public API lets you build anything on top. What's missing is the middle step: chaining actions without writing code.
+
+### What we're building:
+- **Integration catalog:** ready-made connections to the tools your operation already lives in, instead of a webhook someone has to program.
+- **Conditional flows:** "if the quote is above a certain amount, request approval and notify the leadership channel"; "if the client doesn't open the link in 3 days, send the reminder." Rules that are visible, editable, and auditable.
+- **Chained actions:** approval triggering the invoice, the client record, and the follow-up task, without anyone doing them by hand.
+
+### Why it isn't here yet:
+An automation that fails silently is worse than not having one. Before opening it up, we want every flow to record what fired, when, and with what result — and to be retryable.`
+        },
+        area: 'cotizaciones',
+        status: 'next',
+        api: true
+    },
+    {
+        id: '16',
+        slug: 'ciclo-de-vida-contrato',
+        title: {
+            es: 'Ciclo de vida del contrato',
+            en: 'Contract lifecycle'
+        },
+        shortDesc: {
+            es: 'Una venta no termina al cobrar: vence, se renueva y se vuelve a negociar. Renovaciones en un clic, duplicar y ajustar, y aviso antes de que expire.',
+            en: 'A sale does not end at payment: it expires, renews, and gets renegotiated. One-click renewals, duplicate and adjust, and a heads-up before it expires.'
+        },
+        content: {
+            es: `## El trato después del trato
+La mayoría de las herramientas de cotización terminan en "Pagada". Pero el contrato que firmaste tiene vigencia, y la siguiente venta al mismo cliente casi siempre es la anterior con ajustes.
+
+### Qué estamos construyendo:
+- **Renovación en un clic:** desde una cotización cerrada, generar la del siguiente periodo con los términos ya cargados y solo tocar lo que cambió.
+- **Duplicar y ajustar:** partir de un trato existente para el mismo cliente u otro, conservando líneas, precios negociados y condiciones.
+- **Vigencia y avisos:** saber qué contratos vencen el mes que entra, con tiempo para renegociar en vez de enterarte cuando el cliente ya se fue.
+- **Historial del cliente en una línea de tiempo:** qué se le vendió, a qué precio y bajo qué condiciones, cada vez.
+
+### Por qué todavía no está:
+Renovar bien exige decidir qué se congela y qué se recalcula: precios de lista que cambiaron, impuestos, tipo de cambio, descuentos que eran excepcionales. Copiar el documento es la parte fácil.`,
+            en: `## The deal after the deal
+Most quoting tools end at "Paid." But the contract you signed has a term, and the next sale to that client is almost always the previous one with adjustments.
+
+### What we're building:
+- **One-click renewal:** from a closed quote, generate the next period's with the terms already loaded, touching only what changed.
+- **Duplicate and adjust:** start from an existing deal for the same or another client, keeping lines, negotiated prices, and conditions.
+- **Terms and reminders:** know which contracts expire next month, with time to renegotiate instead of finding out once the client is gone.
+- **Client history as a timeline:** what was sold, at what price, and under what conditions, every time.
+
+### Why it isn't here yet:
+Renewing properly means deciding what freezes and what recalculates: list prices that moved, taxes, exchange rate, discounts that were one-offs. Copying the document is the easy part.`
+        },
+        area: 'cotizaciones',
+        status: 'next',
+        api: true
+    },
+    {
+        id: '17',
+        slug: 'pagos-por-milestones',
+        title: {
+            es: 'Estructuras de pago personalizadas',
+            en: 'Custom payment structures'
+        },
+        shortDesc: {
+            es: 'Cronogramas de pago a tu medida: entregables, avance de obra o fechas propias. Cada hito con su monto, su condición y su cobro.',
+            en: 'Payment schedules your way: deliverables, project milestones, or your own dates. Each milestone with its amount, condition, and charge.'
+        },
+        content: {
+            es: `## Cobrar como de verdad se cerró el trato
+Cord ya cobra por anticipo y saldo, y en cuotas parejas. Lo que falta es el caso real de proyectos e implementaciones: pagos atados a **hitos**, no a un calendario uniforme.
+
+### Qué estamos construyendo:
+- **Cronograma por hitos:** define cada etapa con su nombre, su porcentaje o monto y su condición ("al entregar el diseño", "al arrancar producción"), en vez de dividir el total en partes iguales.
+- **Liberación por evento:** que el cobro de un hito se habilite cuando ese hito se marca cumplido, no cuando llega una fecha arbitraria.
+- **Visible para el cliente:** el link público muestra el cronograma completo — qué ya pagó, qué sigue y qué falta por cumplirse — sin que nadie tenga que explicarlo por correo.
+- **Ajustes a medio camino:** un proyecto que cambia de alcance debe poder re-negociar los hitos pendientes sin romper los ya cobrados.
+
+### Por qué todavía no está:
+Un hito que se puede cobrar antes de cumplirse es un problema de dinero, no de interfaz. El orden correcto es primero la condición y su evidencia, después el botón de pago.`,
+            en: `## Charging the way the deal was actually closed
+Cord already charges deposit-and-balance, and in even installments. What's missing is the real case for projects and implementations: payments tied to **milestones**, not a uniform calendar.
+
+### What we're building:
+- **Milestone schedule:** define each stage with its name, its percentage or amount, and its condition ("on design delivery", "at production start"), instead of splitting the total into equal parts.
+- **Event-based release:** a milestone's charge unlocks when that milestone is marked complete, not when an arbitrary date arrives.
+- **Visible to the client:** the public link shows the full schedule — what's paid, what's next, and what's still pending — without anyone explaining it over email.
+- **Mid-flight adjustments:** a project that changes scope should be able to renegotiate pending milestones without breaking the ones already charged.
+
+### Why it isn't here yet:
+A milestone that can be charged before it's met is a money problem, not an interface one. The right order is the condition and its evidence first, the payment button second.`
+        },
+        area: 'finanzas',
+        status: 'next',
+        api: true
     }
 ];

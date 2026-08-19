@@ -13,6 +13,7 @@
 import { sql } from './db';
 import { sendEmail, siteOrigin } from './email';
 import { postToSlack } from './slack';
+import { currencyDecimals, normalizeCurrency } from './currency';
 
 export type NotifyEvent =
     | 'quote_viewed' | 'quote_approved' | 'quote_rejected' | 'quote_paid'
@@ -38,10 +39,21 @@ interface NotifyData {
     link?: string;
     /** Texto libre adicional para el cuerpo del correo (ej. nombre de quien se unió). */
     detalle?: string;
+    /** Divisa ISO del monto. Sin ella se cae a la de la organización. */
+    moneda?: string;
 }
 
 const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
-const money = (n: number, en: boolean) => '$' + new Intl.NumberFormat(en ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(Number(n ?? 0));
+// La divisa viaja SIEMPRE con el monto. Un '$' pegado al número le decía
+// "dólares" al dueño de un negocio en Bogotá que cobró en pesos colombianos.
+const money = (n: number, en: boolean, currency: string) => {
+    const code = normalizeCurrency(currency);
+    const decimals = currencyDecimals(code);
+    return new Intl.NumberFormat(en ? 'en-US' : 'es-MX', {
+        style: 'currency', currency: code,
+        minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+    }).format(Number(n ?? 0));
+};
 
 const COPY: Record<NotifyEvent, { es: { asunto: string; linea: string; cta: string }; en: { asunto: string; linea: string; cta: string } }> = {
     quote_viewed: {
@@ -80,12 +92,12 @@ function fill(txt: string, vars: Record<string, string>): string {
     return s;
 }
 
-function renderEmail(evento: NotifyEvent, en: boolean, orgNombre: string, color: string, data: NotifyData, link: string): { subject: string; html: string } {
+function renderEmail(evento: NotifyEvent, en: boolean, orgNombre: string, color: string, data: NotifyData, link: string, currency: string): { subject: string; html: string } {
     const c = en ? COPY[evento].en : COPY[evento].es;
     const vars: Record<string, string> = {
         cliente: esc(data.cliente || (en ? 'Your client' : 'Tu cliente')),
         folio: esc(data.folio || ''),
-        total: data.total != null ? money(data.total, en) : '',
+        total: data.total != null ? money(data.total, en, currency) : '',
         detalle: esc(data.detalle || ''),
     };
     const subject = fill(c.asunto, vars);
@@ -116,7 +128,7 @@ export async function notify(orgId: string, evento: NotifyEvent, data: NotifyDat
     try {
         const [org] = await sql`
             select o.notif_prefs, o.slack_webhook_url, o.sandbox_of, o.is_demo,
-                   o.nombre, coalesce(o.idioma, 'es-MX') as idioma,
+                   o.nombre, o.moneda, coalesce(o.idioma, 'es-MX') as idioma,
                    coalesce(o.color_marca, '#0a192f') as color,
                    u.email as owner_email
             from orgs o
@@ -132,14 +144,17 @@ export async function notify(orgId: string, evento: NotifyEvent, data: NotifyDat
 
         const en = String(org.idioma).toLowerCase().startsWith('en');
         const link = data.link || siteOrigin();
+        // La divisa del dato manda (una cotización puede estar en otra divisa
+        // que la default del negocio); la de la org es el respaldo.
+        const currency = normalizeCurrency(data.moneda || (org.moneda as string));
 
         if (pref.email && org.owner_email) {
-            const { subject, html } = renderEmail(evento, en, org.nombre as string, org.color as string, data, link);
+            const { subject, html } = renderEmail(evento, en, org.nombre as string, org.color as string, data, link, currency);
             await sendEmail({ orgId, operation: `notify_${evento}`, to: org.owner_email as string, subject, html });
         }
         if (pref.slack && org.slack_webhook_url && data.folio) {
             await postToSlack(org.slack_webhook_url as string, `notify.${evento}`, {
-                folio: data.folio, cliente: data.cliente ?? null, total: data.total ?? 0, link,
+                folio: data.folio, cliente: data.cliente ?? null, total: data.total ?? 0, link, moneda: currency,
             });
         }
     } catch { /* nunca romper la operación que originó el evento */ }
@@ -154,7 +169,7 @@ export async function notify(orgId: string, evento: NotifyEvent, data: NotifyDat
 export async function notifyQuoteEvent(orgId: string, cotizacionId: string, evento: 'quote_viewed' | 'quote_approved' | 'quote_rejected' | 'quote_paid'): Promise<void> {
     try {
         const [q] = await sql`
-            select c.id, c.folio, c.total, cl.empresa
+            select c.id, c.folio, c.total, c.base_currency, cl.empresa
             from cotizaciones c left join clientes cl on cl.id = c.cliente_id
             where c.id = ${cotizacionId} and c.org_id = ${orgId}`;
         if (!q) return;
@@ -162,6 +177,7 @@ export async function notifyQuoteEvent(orgId: string, cotizacionId: string, even
             folio: q.folio as string,
             cliente: (q.empresa as string) ?? null,
             total: Number(q.total ?? 0),
+            moneda: (q.base_currency as string) || undefined,
             link: `${siteOrigin()}/app/cotizaciones/${q.id}`,
         });
     } catch { /* nunca romper la operación que originó el evento */ }

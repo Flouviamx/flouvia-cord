@@ -30,13 +30,49 @@ To discourage late B2B payments, Cord includes a configurable financial penalty 
 - **Compound interest:** if you configured a late-payment interest rate above 0%, the system applies that monthly interest to the outstanding capital.
 - **Instant reflection:** the new outstanding balance updates on the client's portal and in the Cord Payments checkout transparently — the client sees the correct amount to pay, interest already included.
 
-## Currency Coverage (FX Lock)
+## Currency coverage (FX Lock)
 
-Selling internationally or in USD shouldn't be a game of chance. Cord implements a robust `FXService` system to protect your profit margins on multi-currency operations.
+Selling in another currency shouldn't be a gamble. When you quote in a currency other
+than the one your books use, Cord locks the exchange rate and carries it all the way
+through to the invoice.
 
-### 30-Day FX Lock
+### Which currency applies where
 
-When you issue a B2B quote in a currency different from your base currency, the system **freezes the spot exchange rate (FX Lock)** for 30 days.
+Cord keeps two currencies apart, end to end:
 
-- **Protection buffer:** Cord adds a minimum spread to mitigate currency volatility during the credit window.
-- **Financial certainty:** your client knows exactly how much they'll pay in their local currency, and you have the guarantee of the amount that will land in your account, eliminating the risk of loss from market fluctuations during the sales cycle.
+- **The selling currency** is the one you enter prices in. It's what your client sees on
+  the link, what the email says, and what their card is charged in.
+- **Your accounting currency** is your business's own (Settings › General). It's the one
+  your books are kept in.
+
+If they're the same — the normal case — there's nothing to set up. If you pick a
+different selling currency in the quote editor, the currency coverage panel appears.
+
+### 30-day FX Lock
+
+When you save a quote in another currency, Cord takes that day's exchange rate and
+**locks it for 30 days**:
+
+- **Protection cushion:** you can add a margin on top of the day's rate to absorb
+  volatility during the credit window. You choose how much.
+- **Certainty on both sides:** your client knows exactly what they pay in their
+  currency, and you know the rate your books will see even if the market moves between
+  approval and payment.
+- **The invoice states it:** the document is issued in the selling currency and prints
+  the exchange rate applied plus the total converted to your accounting currency. In
+  Mexico that's the TipoCambio the SAT requires on a CFDI that isn't in pesos.
+
+### No exchange rate, no quote
+
+The exchange rate comes from a dated market source. If it can't be retrieved at that
+moment — the source is down, or that currency pair isn't available — Cord **won't save
+the quote**, and tells you why.
+
+That may look strict, and it's deliberate: a made-up exchange rate isn't visible when
+you save, it's visible weeks later on an invoice with the wrong amount. If it happens,
+try again in a moment or quote in your business's own currency.
+
+### Online payments and currencies
+
+Card payments work in the quote's currency. SPEI transfer is a Mexican rail and is only
+available in pesos: if you quote in another currency, your client pays by card.

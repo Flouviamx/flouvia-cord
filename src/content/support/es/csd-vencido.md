@@ -1,7 +1,7 @@
 ---
 title: "Qué hacer si tu CSD caducó"
 description: "Pasos para subir tu nuevo Certificado de Sello Digital."
-category: "Facturación y CFDI"
+category: "Facturación"
 ---
 
 Para que Cord (o cualquier PAC) pueda emitir facturas legales en tu nombre, requieres cargar tu **Certificado de Sello Digital (CSD)**. ¡Atención! El CSD no es la FIEL (e.firma).

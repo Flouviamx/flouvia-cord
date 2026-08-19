@@ -16,6 +16,7 @@ import { sendTeamInviteEmail } from '../../lib/auth-email';
 import { randomBytes } from 'node:crypto';
 import { rateLimit, tooMany } from '../../lib/ratelimit';
 import { trackServer } from '../../lib/posthog-server';
+import { log } from '../../lib/log';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -93,7 +94,7 @@ export const POST: APIRoute = async (context) => {
     if (email) {
         const sendRes = await sendTeamInviteEmail(email, org.nombre as string, token);
         emailed = sendRes.sent;
-        if (!sendRes.sent) console.warn('[equipo] no se pudo enviar la invitación:', sendRes.error || sendRes.skipped);
+        if (!sendRes.sent) log.warn('no se pudo enviar la invitación', { route: 'equipo', err: sendRes.error || sendRes.skipped });
     }
 
     // El link SIEMPRE va en la respuesta (respaldo copiable para el admin) —

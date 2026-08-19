@@ -1,7 +1,7 @@
 ---
 title: "Invoicing Foreign Customers"
 description: "Usage of the generic foreign RFC and Tax ID."
-category: "Billing & CFDI"
+category: "Invoicing"
 ---
 
 Selling services or software licenses to customers outside of Mexico requires the issuance of a service export CFDI.

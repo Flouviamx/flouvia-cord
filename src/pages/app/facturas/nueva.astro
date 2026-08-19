@@ -1,0 +1,995 @@
+---
+// Editor de facturas. La contraparte de `/app/cotizaciones/nueva` para el
+// documento que sí se cobra.
+//
+// Antes crear una factura era un <dialog> con tres inputs clonados: sin
+// catálogo, sin totales en vivo, sin divisas y sin impuestos. Esta pantalla
+// hereda el lenguaje completo del editor de cotizaciones —combobox con captura
+// en ráfaga, kits, precios por volumen, resumen sticky, panel FX— y agrega lo
+// que solo una factura necesita: tasa de impuesto POR LÍNEA y vencimiento propio.
+//
+// Dos diferencias deliberadas con el molde:
+//   • Sin margen. Es una métrica de negociación; una factura ya no se negocia.
+//   • Sin `define:vars`/`is:inline`. Los datos viajan en un <script type="json">
+//     y el script es un módulo bundleado, así que importa de verdad el formateo
+//     de dinero y el motor de totales en vez de reimplementarlos.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import ClientModal from '../../../components/app/ClientModal.astro';
+import DatePicker from '../../../components/app/DatePicker.astro';
+import AccessGate from '../../../components/app/AccessGate.astro';
+import FlagSelect from '../../../components/ui/FlagSelect';
+import {
+    getProductos, getClientes, getOrg, getKitsForEditor, getImpuestos,
+    getFacturaDetalle, getMyMembership,
+} from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+import { getActiveOrgId } from '../../../lib/db';
+import { checkEntitlement } from '../../../lib/org-entitlements';
+import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
+import { getCountryProfile } from '../../../lib/countries';
+import { CURRENCY_FLAG } from '../../../lib/flags';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+import '../../../styles/modal.css';
+import '../../../styles/editor.css';
+
+export const prerender = false;
+
+const L = currentLocale();
+const ME = await getMyMembership();
+const hasPerm = memberCan(ME, 'cotizar');
+const orgId = await getActiveOrgId();
+const feature = await invoicingFeatureFor(orgId);
+// Regla 17: se gatea aquí igual que en el endpoint. Ocultar el editor no
+// autoriza nada, pero abrirlo sin plan es prometer algo que el POST rechaza.
+const entitlementCheck = hasPerm ? await checkEntitlement(orgId, feature) : null;
+const hasAccess = hasPerm && (entitlementCheck?.ok ?? false);
+
+// Edición de borrador. Una factura ya emitida es inmutable: se redirige a su
+// detalle en vez de abrir un editor que el servidor va a rechazar.
+const draftId = Astro.url.searchParams.get('draft');
+let draft = null;
+if (hasAccess && draftId) {
+    draft = await getFacturaDetalle(draftId);
+    if (!draft) return Astro.redirect('/app/facturas/nueva');
+    if (draft.estado !== 'draft' || draft.invoiceNumber) return Astro.redirect(`/app/facturas/${draftId}`);
+}
+const preselectCliente = !draft ? (Astro.url.searchParams.get('cliente') || null) : null;
+
+const [productos, CLIENTES, ORG, kits, IMPUESTOS] = hasAccess
+    ? await Promise.all([getProductos(), getClientes(), getOrg(), getKitsForEditor(), getImpuestos()])
+    : [[], [], await getOrg(), [], []];
+
+const country = String(ORG.countryCode || 'MX').toUpperCase();
+const profile = getCountryProfile(country);
+const isMx = country === 'MX';
+// El vocabulario fiscal sale del país del EMISOR, no de un default mexicano:
+// un negocio en Madrid factura con "NIF" e "IVA"; uno en Austin, con "Tax ID".
+const TAX_ID_LABEL = profile.taxIdLabel;
+// No es "IVA" en todos lados: es VAT en la UE, GST en Australia/Canadá/India,
+// Sales tax en EE.UU. El nombre sale del perfil del país del emisor.
+const TAX_LABEL = profile.taxLabel;
+const TAX_INCLUDED_LABEL = isMx ? t(L, 'ed.iva_incluido') : (L === 'en' ? 'Prices include tax' : 'Precios con impuesto incluido');
+
+const catalogo = productos.filter((p: any) => p.activo);
+const kitSumaLista = (k: any) => k.items.reduce((s: number, it: any) => s + (it.productoId && it.precio ? it.precio * it.cantidad : 0), 0);
+
+// Catálogo de impuestos: los perfiles reales de la org (Ajustes › Impuestos),
+// más "Exento" siempre disponible — que es justo el caso que un impuesto único
+// global no podía representar.
+const orgTaxRate = Number(ORG.ivaPct) || 0;
+const TAX_OPTIONS = [
+    ...IMPUESTOS.filter((i: any) => i.activo && !String(i.tipo).startsWith('ret_'))
+        .map((i: any) => ({ label: `${i.tipoLabel} ${i.tasa}%`, rate: Number(i.tasa) / 100 })),
+];
+if (!TAX_OPTIONS.some((o) => o.rate === 0)) {
+    TAX_OPTIONS.push({ label: L === 'en' ? 'Exempt' : 'Exento', rate: 0 });
+}
+if (orgTaxRate > 0 && !TAX_OPTIONS.some((o) => o.rate === orgTaxRate / 100)) {
+    TAX_OPTIONS.unshift({ label: `${TAX_LABEL} ${orgTaxRate}%`, rate: orgTaxRate / 100 });
+}
+TAX_OPTIONS.sort((a, b) => a.rate - b.rate);
+const DEFAULT_TAX_RATE = orgTaxRate / 100;
+
+const DEFAULT_CURRENCY = String(draft?.currency || ORG.moneda || profile.currency);
+const currencyNames = new Intl.DisplayNames([L], { type: 'currency' });
+// `flag` viaja como dato plano: este array cruza el límite de hidratación de un
+// island y Astro serializa las props a JSON — una función no sobrevive el cruce.
+const CURRENCY_OPTIONS = [...new Set([DEFAULT_CURRENCY, ...Intl.supportedValuesOf('currency')])]
+    .sort((a, b) => (a === DEFAULT_CURRENCY ? -1 : b === DEFAULT_CURRENCY ? 1 : a.localeCompare(b)))
+    .map((code) => ({
+        code,
+        label: `${code} — ${currencyNames.of(code) || code}`,
+        flag: CURRENCY_FLAG[code] || country,
+    }));
+
+const TERM_CODES = ['contado', 'net30', 'net60'] as const;
+const TERM_DEFAULT_CODE = ORG.terminosDefault || 'contado';
+// `toISOString()` es UTC: en cualquier huso al oeste de Greenwich, de tarde en
+// adelante devuelve el día SIGUIENTE. El vencimiento es una fecha de calendario
+// local, no un instante, así que se arma con los componentes locales.
+const isoLocal = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const hoy = new Date();
+const defaultDue = draft?.venceISO
+    || isoLocal(new Date(hoy.getTime() + (TERM_DEFAULT_CODE === 'net60' ? 60 : TERM_DEFAULT_CODE === 'net30' ? 30 : 0) * 86400000));
+
+// Payload para el script. Va como JSON en el DOM y no por `define:vars` para
+// que el script pueda ser un módulo bundleado y así importar de verdad.
+const BOOT = {
+    draftId: draft?.id ?? null,
+    orgCurrency: String(ORG.moneda || profile.currency),
+    orgCountry: country,
+    defaultTaxRate: DEFAULT_TAX_RATE,
+    taxOptions: TAX_OPTIONS,
+    ivaIncluido: false,
+    preselectCliente,
+    catalogo: catalogo.map((p: any) => ({
+        id: p.id, nombre: p.nombre, sku: p.sku ?? null, unidad: p.unidad ?? 'pieza',
+        precio: Number(p.precio) || 0,
+        volumen: p.preciosVolumen ?? null,
+    })),
+    kits: kits.map((k: any) => ({
+        id: k.id, nombre: k.nombre, precioCombo: Number(k.precioCombo) || 0,
+        sumaLista: kitSumaLista(k),
+        items: k.items.map((it: any) => ({
+            productoId: it.productoId ?? null,
+            descripcion: it.descripcion ?? '',
+            cantidad: Number(it.cantidad) || 1,
+            unidad: it.unidad ?? 'pieza',
+            precio: Number(it.precio) || 0,
+        })),
+    })),
+    lineas: (draft?.lineas ?? []).map((l: any) => ({
+        id: null,
+        nombre: l.descripcion,
+        unidad: 'pieza',
+        lista: l.precioUnitario,
+        negociado: null,
+        cantidad: l.cantidad,
+        taxRate: l.subtotal > 0 ? l.impuesto / l.subtotal : DEFAULT_TAX_RATE,
+    })),
+    i18n: {
+        sinResultados: L === 'en' ? 'No products match' : 'Ningún producto coincide',
+        usaLineaLibre: L === 'en' ? 'Use “Free line” to add it by hand' : 'Usa “Línea libre” para capturarlo a mano',
+        concepto: L === 'en' ? 'Concept' : 'Concepto',
+        guardando: L === 'en' ? 'Saving…' : 'Guardando…',
+        emitiendo: L === 'en' ? 'Issuing…' : 'Emitiendo…',
+        eligeCliente: L === 'en' ? 'Choose a client first' : 'Elige un cliente primero',
+        agregaConcepto: L === 'en' ? 'Add at least one concept' : 'Agrega al menos un concepto',
+        faltaDescripcion: L === 'en' ? 'A line is missing its description' : 'Una línea no tiene descripción',
+        guardado: L === 'en' ? 'Draft saved' : 'Borrador guardado',
+        errorGenerico: L === 'en' ? "Couldn't save. Try again." : 'No se pudo guardar. Intenta de nuevo.',
+        kitAgregado: L === 'en' ? 'Kit added' : 'Kit agregado',
+        fxNoDisponible: L === 'en' ? 'Exchange rate unavailable' : 'Tipo de cambio no disponible',
+        analizando: L === 'en' ? 'Reading…' : 'Leyendo…',
+        piezas: L === 'en' ? 'units' : 'piezas',
+        conceptos: L === 'en' ? 'concepts' : 'conceptos',
+    },
+};
+---
+
+<AppLayout
+    title={draft ? (L === 'en' ? 'Edit invoice' : 'Editar factura') : (L === 'en' ? 'New invoice' : 'Nueva factura')}
+    page="facturas"
+    heading={draft ? (L === 'en' ? 'Editar factura' : 'Editar factura') : (L === 'en' ? 'New invoice' : 'Nueva factura')}
+    crumbs={[{ label: L === 'en' ? 'Invoices' : 'Facturas', href: '/app/facturas' }]}>
+
+    {hasAccess && (
+        <span slot="topbar-actions" class="draft-tag">{L === 'en' ? 'Draft' : 'Borrador'}</span>
+    )}
+
+    {!hasPerm && (
+        <AccessGate
+            title={L === 'en' ? "You can't create invoices" : 'No puedes crear facturas'}
+            desc={L === 'en'
+                ? 'Ask an administrator for the quoting permission.'
+                : 'Pídele a un administrador el permiso de cotizar.'} />
+    )}
+    {hasPerm && !hasAccess && entitlementCheck && (
+        <AccessGate reason="plan"
+            title={L === 'en' ? 'Cord Invoicing is not in your plan' : 'Cord Invoicing no está en tu plan'}
+            desc={L === 'en'
+                ? 'Issuing invoices requires the Starter plan or above.'
+                : 'Emitir facturas requiere el plan Starter o superior.'} />
+    )}
+
+    {hasAccess && (
+    <div data-editor="invoice">
+        <script type="application/json" id="edBoot" is:inline set:html={JSON.stringify(BOOT)} />
+
+        <div class="editor-grid">
+            <div class="ed-main">
+                <!-- Armar con IA — el mismo endpoint que el editor de cotizaciones:
+                     empareja texto/PDF/foto contra el catálogo y devuelve líneas. -->
+                <section class="ed-block ai-block">
+                    <h2 class="ai-title">{L === 'en' ? 'Build with AI' : 'Armar con IA'}</h2>
+                    <p class="ai-sub">
+                        {L === 'en'
+                            ? 'Paste the order, or attach a PDF or a photo of it. Cord matches it against your catalog.'
+                            : 'Pega el pedido, o adjunta un PDF o una foto. Cord lo empareja contra tu catálogo.'}
+                    </p>
+                    <div class="ai-textarea-wrap">
+                        <textarea id="aiText" class="ed-textarea ai-textarea" rows="3"
+                            placeholder={L === 'en' ? '40 industrial valves, 25 flanged couplings…' : '40 válvulas industriales, 25 acoples bridados…'}></textarea>
+                        <button type="button" class="ai-attach-btn" id="aiAttachBtn"
+                            aria-label={L === 'en' ? 'Attach file' : 'Adjuntar archivo'}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        </button>
+                        <input type="file" id="aiFile" hidden accept="application/pdf,image/jpeg,image/png,image/webp" />
+                    </div>
+                    <div class="ai-file-chip" id="aiFileChip" hidden>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span id="aiFileName"></span>
+                        <button type="button" id="aiFileClear" aria-label={L === 'en' ? 'Remove' : 'Quitar'}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                    <div class="ai-actions">
+                        <button type="button" class="ai-btn" id="aiBtn">{L === 'en' ? 'Build' : 'Armar'}</button>
+                        <span class="ai-status" id="aiStatus"></span>
+                    </div>
+                </section>
+
+                <div class="ed-or"><span>{L === 'en' ? 'or capture it manually' : 'o captúrala manualmente'}</span></div>
+
+                <!-- Paso 1 — Cliente -->
+                <section class="ed-block">
+                    <div class="step-head">
+                        <span class="step-num">1</span>
+                        <div class="step-text">
+                            <h2>{L === 'en' ? 'Who are you invoicing?' : '¿A quién le facturas?'}</h2>
+                            <p class="step-hint">
+                                {L === 'en'
+                                    ? `Their ${TAX_ID_LABEL} and tax details come from their record.`
+                                    : `Su ${TAX_ID_LABEL} y datos fiscales salen de su ficha.`}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="client-row">
+                        <select id="clientSelect" class="ed-select" aria-label={L === 'en' ? 'Client' : 'Cliente'}>
+                            <option value="">{L === 'en' ? 'Choose a client' : 'Elige un cliente'}</option>
+                            {CLIENTES.map((c: any) => (
+                                <option value={c.id} data-desc={c.descuentoPct ?? 0} data-term={c.terminosCode ?? ''}>{c.empresa}</option>
+                            ))}
+                            <option value="__NEW__" class="opt-action">{L === 'en' ? '+ New client' : '+ Crear cliente'}</option>
+                        </select>
+                        <div class="term-chips" id="termChips">
+                            {TERM_CODES.map((code) => (
+                                <button type="button" class:list={['chip', { active: code === TERM_DEFAULT_CODE }]} data-term={code}>
+                                    {t(L, `ed.term_${code}` as any)}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <p class="desc-note" id="descNote" hidden></p>
+                </section>
+
+                <!-- Paso 2 — Conceptos -->
+                <section class="ed-block">
+                    <div class="step-head">
+                        <span class="step-num">2</span>
+                        <div class="step-text">
+                            <h2>{L === 'en' ? 'What are you charging for?' : '¿Qué le estás cobrando?'}</h2>
+                            <p class="step-hint">
+                                {L === 'en'
+                                    ? 'Search your catalog and press Enter, or add a free line. Each concept carries its own tax rate.'
+                                    : 'Busca en tu catálogo y pulsa Enter, o agrega una línea libre. Cada concepto lleva su propia tasa.'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="lines-head">
+                        <span>{L === 'en' ? 'Concept' : 'Concepto'}</span>
+                        <span>{L === 'en' ? 'Qty' : 'Cant.'}</span>
+                        <span>{L === 'en' ? 'List' : 'Lista'}</span>
+                        <span>{L === 'en' ? 'Price' : 'Precio'}</span>
+                        <span>{TAX_LABEL}</span>
+                        <span class="lh-right">{L === 'en' ? 'Amount' : 'Importe'}</span>
+                        <span></span>
+                    </div>
+
+                    <div id="lines"></div>
+
+                    <div class="lines-empty" id="linesEmpty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+                        <b>{L === 'en' ? 'No concepts yet' : 'Todavía no hay conceptos'}</b>
+                        <span>{L === 'en' ? 'Search your catalog below or add a free line.' : 'Busca en tu catálogo abajo o agrega una línea libre.'}</span>
+                    </div>
+
+                    <div class="add-actions">
+                        <div class="prod-search">
+                            <svg class="prod-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="text" id="prodInput" class="prod-input" autocomplete="off"
+                                role="combobox" aria-expanded="false" aria-controls="prodDrop" aria-autocomplete="list"
+                                placeholder={L === 'en' ? 'Search your catalog…' : 'Busca en tu catálogo…'} />
+                            <div class="prod-drop" id="prodDrop" role="listbox" hidden></div>
+                        </div>
+                        <button type="button" class="btn-free-line" id="btnFreeLine">
+                            {L === 'en' ? '+ Free line' : '+ Línea libre'}
+                        </button>
+                        {kits.length > 0 && (
+                            <div class="kit-insert-wrap">
+                                <button type="button" class="btn-free-line" id="btnKitInsert">
+                                    {L === 'en' ? 'Insert kit' : 'Insertar kit'}
+                                </button>
+                                <div class="kit-insert-drop" id="kitDrop" hidden>
+                                    {kits.map((k: any) => (
+                                        <div class="kit-insert-row" data-kit={k.id}>
+                                            <span class="kit-insert-name">
+                                                {k.nombre}
+                                                <small>{k.items.length} {L === 'en' ? 'items' : 'partidas'}</small>
+                                            </span>
+                                            <input type="number" class="kit-insert-qty" min="1" step="1" value="1" />
+                                            <button type="button" class="kit-insert-add">{L === 'en' ? 'Add' : 'Agregar'}</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <p class="add-hint">
+                        {L === 'en' ? 'Type, then press' : 'Escribe y pulsa'} <kbd>Enter</kbd>
+                        {L === 'en' ? ' to add without leaving the keyboard.' : ' para agregar sin soltar el teclado.'}
+                    </p>
+                </section>
+
+                <!-- Notas -->
+                <section class="ed-block">
+                    <div class="section-head">
+                        <h2>{L === 'en' ? 'Note for your client' : 'Nota para tu cliente'} <span class="opt">({L === 'en' ? 'optional' : 'opcional'})</span></h2>
+                    </div>
+                    <textarea id="notas" class="ed-textarea" rows="2" maxlength="1000"
+                        placeholder={L === 'en' ? 'Appears on the PDF and on the invoice page.' : 'Aparece en el PDF y en la página de la factura.'}>{draft?.notas ?? ''}</textarea>
+                </section>
+            </div>
+
+            <!-- Resumen -->
+            <aside class="ed-side">
+                <section class="ed-summary">
+                    <div class="section-head"><h2>{L === 'en' ? 'Review and issue' : 'Revisa y emite'}</h2></div>
+                    <p class="sum-count" id="sumCount"></p>
+
+                    <div class="sum-line">
+                        <span>{L === 'en' ? 'Subtotal' : 'Subtotal'}</span>
+                        <span class="editorial" id="sumSubtotal">—</span>
+                    </div>
+                    <div id="sumTaxes"></div>
+
+                    <div class="sum-field sum-field-row">
+                        <label for="ivaIncluido">{TAX_INCLUDED_LABEL}</label>
+                        <label class="s-toggle" title={TAX_INCLUDED_LABEL}>
+                            <input type="checkbox" id="ivaIncluido" />
+                            <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
+                        </label>
+                    </div>
+
+                    <div class="sum-divider"></div>
+                    <div class="sum-line sum-total">
+                        <span>Total</span>
+                        <span class="editorial" id="sumTotal">—</span>
+                    </div>
+
+                    <div class="sum-field">
+                        <span class="sum-lbl">{L === 'en' ? 'Due date' : 'Vencimiento'}</span>
+                        <DatePicker id="dueDate" value={defaultDue}
+                            ariaLabel={L === 'en' ? 'Due date' : 'Fecha de vencimiento'} />
+                    </div>
+
+                    <div class="sum-field">
+                        <label for="fxBaseTrigger">{L === 'en' ? 'Invoice currency' : 'Divisa de la factura'}</label>
+                        <FlagSelect
+                            client:load
+                            id="fxBaseTrigger"
+                            ariaLabel={L === 'en' ? 'Invoice currency' : 'Divisa de la factura'}
+                            options={CURRENCY_OPTIONS}
+                            defaultValue={DEFAULT_CURRENCY}
+                            nativeId="fxBase"
+                            className="fx-flagselect"
+                        />
+                    </div>
+
+                    <div class="fx-cover" id="fxCover" hidden>
+                        <p class="fx-explain" id="fxExplain"></p>
+                        <div class="fx-stepper">
+                            <div class="fx-step">
+                                <span class="fx-step-lbl">{L === 'en' ? 'Rate today' : 'Tipo de cambio hoy'}</span>
+                                <b class="fx-step-val editorial" id="fxSpot">—</b>
+                            </div>
+                            <span class="fx-arrow">→</span>
+                            <div class="fx-step fx-step-on">
+                                <span class="fx-step-lbl" id="fxAppliedLbl">{L === 'en' ? 'Protected rate' : 'Tasa protegida'}</span>
+                                <b class="fx-step-val editorial" id="fxApplied">—</b>
+                            </div>
+                        </div>
+                        <span class="fx-cushion-lbl">{L === 'en' ? 'Hedge buffer' : 'Colchón de cobertura'}</span>
+                        <div class="fx-cushion">
+                            <button type="button" class="fx-cush-chip" data-buffer="1"><b>+1%</b><small>{L === 'en' ? 'Light' : 'Poco'}</small></button>
+                            <button type="button" class="fx-cush-chip active" data-buffer="2"><b>+2%</b><small>{L === 'en' ? 'Normal' : 'Normal'}</small></button>
+                            <button type="button" class="fx-cush-chip" data-buffer="5"><b>+5%</b><small>{L === 'en' ? 'Cautious' : 'Cauto'}</small></button>
+                        </div>
+                        <input type="hidden" id="fxBuffer" value="2" />
+                        <p class="fx-client-sees" id="fxPreview"></p>
+                        <div class="fx-lock-row">
+                            <svg class="fx-lock-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                            <span>{L === 'en' ? 'The rate is stated on the invoice.' : 'La tasa queda declarada en la factura.'}</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-send" id="btnIssue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7"/></svg>
+                        <span>{L === 'en' ? 'Save and review' : 'Guardar y revisar'}</span>
+                    </button>
+                    <button type="button" class="btn-draft" id="btnDraft">{L === 'en' ? 'Save draft' : 'Guardar borrador'}</button>
+                    <p class="sum-note">
+                        {L === 'en'
+                            ? 'Saving does not stamp anything. You issue it from the invoice detail.'
+                            : 'Guardar no timbra nada. La emites desde el detalle de la factura.'}
+                    </p>
+                    <p class="sum-kbd"><kbd>⌘</kbd><kbd>Enter</kbd> {L === 'en' ? 'to save' : 'para guardar'}</p>
+                </section>
+            </aside>
+        </div>
+
+        <ClientModal showDelete={false} />
+    </div>
+    )}
+</AppLayout>
+
+<script>
+    import { createMoney } from '../../../lib/money-client';
+    import { calculateInvoiceTotals } from '../../../../packages/elements/src/engine';
+
+    const raiz = document.querySelector('[data-editor="invoice"]') as HTMLElement | null;
+    const bootEl = document.getElementById('edBoot');
+    if (raiz && bootEl) {
+        const BOOT = JSON.parse(bootEl.textContent || '{}');
+        const T = BOOT.i18n;
+
+        // ── Estado ──────────────────────────────────────────────────────────
+        interface Linea {
+            id: string | null; nombre: string; unidad: string;
+            baseLista: number; lista: number; negociado: number | null;
+            cantidad: number; taxRate: number; negoTouched: boolean;
+            volumen?: any;
+        }
+        const lines: Linea[] = (BOOT.lineas || []).map((l: any) => ({
+            id: l.id, nombre: l.nombre, unidad: l.unidad,
+            baseLista: l.lista, lista: l.lista, negociado: l.negociado,
+            cantidad: l.cantidad, taxRate: l.taxRate, negoTouched: false,
+        }));
+
+        // El formateo lee la divisa elegida en el editor, no la del documento:
+        // el usuario puede cambiarla y todos los importes deben reformatearse.
+        let currency = (document.getElementById('fxBase') as HTMLSelectElement | null)?.value || BOOT.orgCurrency;
+        let fmt = createMoney({ currency });
+        const refmt = () => { fmt = createMoney({ currency }); };
+
+        const $ = (id: string) => document.getElementById(id);
+        const $lines = $('lines')!;
+        const $empty = $('linesEmpty')!;
+
+        // ── Toast ───────────────────────────────────────────────────────────
+        let toastEl: HTMLElement | null = null;
+        let toastTimer = 0;
+        const toast = (msg: string, ms = 2200) => {
+            if (!toastEl) {
+                toastEl = document.createElement('div');
+                toastEl.className = 'toast';
+                toastEl.innerHTML = '<span class="toast-dot"></span><span></span>';
+                raiz.appendChild(toastEl);
+            }
+            (toastEl.lastElementChild as HTMLElement).textContent = msg;
+            toastEl.hidden = false;
+            clearTimeout(toastTimer);
+            toastTimer = window.setTimeout(() => { if (toastEl) toastEl.hidden = true; }, ms);
+        };
+
+        // ── Precio por volumen ──────────────────────────────────────────────
+        // Mismo criterio que el editor de cotizaciones: gana el tramo más alto
+        // que la cantidad ya alcanzó.
+        const volUnit = (l: Linea): number | null => {
+            const tramos = Array.isArray(l.volumen) ? l.volumen : [];
+            let mejor: number | null = null;
+            let mejorMin = 0;
+            for (const t of tramos) {
+                const min = Number(t?.min) || 0;
+                const precio = Number(t?.precio) || 0;
+                if (l.cantidad >= min && min >= mejorMin && precio > 0) { mejor = precio; mejorMin = min; }
+            }
+            return mejor;
+        };
+
+        const precioFinal = (l: Linea) => (l.negociado ?? l.lista) || 0;
+
+        // ── Render ──────────────────────────────────────────────────────────
+        const taxSelect = (l: Linea, i: number) => {
+            const opts = (BOOT.taxOptions || []).map((o: any) =>
+                `<option value="${o.rate}"${Math.abs(o.rate - l.taxRate) < 1e-9 ? ' selected' : ''}>${o.label}</option>`).join('');
+            return `<select class="lr-tax${l.taxRate === 0 ? ' is-exento' : ''}" data-i="${i}" aria-label="${T.concepto}">${opts}</select>`;
+        };
+
+        const render = () => {
+            $empty.hidden = lines.length > 0;
+            $lines.innerHTML = lines.map((l, i) => {
+                const vol = volUnit(l);
+                const nota = vol && vol < l.baseLista ? `<small class="lr-volnote">${fmt(vol)} · vol.</small>` : '';
+                const nombre = l.id
+                    ? `<span class="lr-name">${escapeHtml(l.nombre)}${nota}</span>`
+                    : `<input class="lr-input lr-desc-input" data-k="desc" data-i="${i}" value="${escapeHtml(l.nombre)}" placeholder="${T.concepto}" />`;
+                const esDeal = l.negociado !== null && l.negociado < l.lista;
+                return `<div class="line-row" data-i="${i}">
+                    ${nombre}
+                    <input class="lr-input lr-qty" type="number" min="0" step="any" data-k="qty" data-i="${i}" value="${l.cantidad}" />
+                    <span class="lr-lista">${l.id ? fmt(l.lista) : ''}</span>
+                    <input class="lr-input lr-nego${esDeal ? ' is-deal' : ''}" type="number" min="0" step="any" data-k="nego" data-i="${i}" value="${precioFinal(l)}" />
+                    ${taxSelect(l, i)}
+                    <span class="lr-importe">${fmt(precioFinal(l) * l.cantidad)}</span>
+                    <button type="button" class="lr-del" data-i="${i}" aria-label="Quitar">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>`;
+            }).join('');
+            recalc();
+        };
+
+        const escapeHtml = (s: string) => String(s ?? '').replace(/[&<>"]/g, (c) =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[c]);
+
+        // ── Totales ─────────────────────────────────────────────────────────
+        // El MISMO motor que corre en el servidor al guardar: si el total del
+        // resumen y el guardado salieran de dos implementaciones, tarde o
+        // temprano difieren por un centavo y nadie sabe cuál es el bueno.
+        const ivaIncluidoEl = $('ivaIncluido') as HTMLInputElement;
+        let ultimoTotal = 0;
+
+        const recalc = () => {
+            const totals = calculateInvoiceTotals(
+                lines.map((l) => ({
+                    descripcion: l.nombre,
+                    cantidad: l.cantidad,
+                    precio_unitario: l.lista,
+                    precio_negociado: l.negociado,
+                    tax_rate: l.taxRate,
+                })),
+                { ivaIncluido: ivaIncluidoEl.checked },
+            );
+            ultimoTotal = totals.total;
+
+            $('sumSubtotal')!.textContent = fmt(totals.subtotal);
+            $('sumTotal')!.textContent = fmt(totals.total);
+            // Desglose por tasa: una línea por tipo. Con una sola tasa se ve
+            // igual que antes; con varias es la única forma de cuadrar.
+            $('sumTaxes')!.innerHTML = totals.porTasa
+                .filter((t: any) => t.impuesto > 0)
+                .map((t: any) => `<div class="sum-line sum-tax"><span>${Math.round(t.tasa * 10000) / 100}%</span><span class="editorial">${fmt(t.impuesto)}</span></div>`)
+                .join('');
+
+            const piezas = lines.reduce((s, l) => s + l.cantidad, 0);
+            $('sumCount')!.textContent = lines.length
+                ? `${lines.length} ${T.conceptos} · ${Math.round(piezas * 100) / 100} ${T.piezas}`
+                : '';
+            scheduleFx();
+        };
+
+        ivaIncluidoEl.addEventListener('change', recalc);
+
+        // ── Edición in-place de la fila (no re-render: no pierde el foco) ────
+        $lines.addEventListener('input', (e) => {
+            const el = e.target as HTMLInputElement;
+            const i = Number(el.dataset.i);
+            const l = lines[i];
+            if (!l) return;
+            if (el.dataset.k === 'qty') {
+                l.cantidad = Math.max(0, Number(el.value) || 0);
+                const vol = volUnit(l);
+                if (vol && !l.negoTouched) { l.lista = vol; }
+                const fila = el.closest('.line-row');
+                const imp = fila?.querySelector('.lr-importe');
+                if (imp) imp.textContent = fmt(precioFinal(l) * l.cantidad);
+                recalc();
+            } else if (el.dataset.k === 'nego') {
+                l.negociado = el.value === '' ? null : Math.max(0, Number(el.value) || 0);
+                l.negoTouched = true;
+                el.classList.toggle('is-deal', l.negociado !== null && l.negociado < l.lista);
+                const fila = el.closest('.line-row');
+                const imp = fila?.querySelector('.lr-importe');
+                if (imp) imp.textContent = fmt(precioFinal(l) * l.cantidad);
+                recalc();
+            } else if (el.dataset.k === 'desc') {
+                l.nombre = el.value;
+            }
+        });
+
+        $lines.addEventListener('change', (e) => {
+            const el = e.target as HTMLSelectElement;
+            if (!el.classList.contains('lr-tax')) return;
+            const l = lines[Number(el.dataset.i)];
+            if (!l) return;
+            l.taxRate = Number(el.value) || 0;
+            el.classList.toggle('is-exento', l.taxRate === 0);
+            recalc();
+        });
+
+        $lines.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest('.lr-del') as HTMLElement | null;
+            if (!btn) return;
+            lines.splice(Number(btn.dataset.i), 1);
+            render();
+        });
+
+        // ── Buscador de catálogo ────────────────────────────────────────────
+        const $prod = $('prodInput') as HTMLInputElement;
+        const $drop = $('prodDrop')!;
+        let activo = 0;
+        const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+        const buscar = (q: string) => {
+            const n = norm(q.trim());
+            const base = BOOT.catalogo || [];
+            if (!n) return base.slice(0, 8);
+            return base.filter((p: any) => norm(p.nombre).includes(n) || norm(p.sku || '').includes(n)).slice(0, 8);
+        };
+
+        const pintarDrop = () => {
+            const res = buscar($prod.value);
+            activo = Math.min(activo, Math.max(res.length - 1, 0));
+            if (!res.length) {
+                $drop.innerHTML = `<div class="prod-empty">${T.sinResultados}<br><small>${T.usaLineaLibre}</small></div>`;
+                return;
+            }
+            $drop.innerHTML = res.map((p: any, i: number) => `
+                <button type="button" class="prod-item${i === activo ? ' is-active' : ''}" role="option" aria-selected="${i === activo}" data-id="${p.id}">
+                    <span class="prod-item-name">${escapeHtml(p.nombre)}${p.sku ? `<small>${escapeHtml(p.sku)}</small>` : ''}</span>
+                    <span class="prod-item-price">${fmt(p.precio)}<small>/${escapeHtml(p.unidad)}</small></span>
+                </button>`).join('');
+        };
+
+        const abrirDrop = () => { pintarDrop(); $drop.hidden = false; $prod.setAttribute('aria-expanded', 'true'); };
+        const cerrarDrop = () => { $drop.hidden = true; $prod.setAttribute('aria-expanded', 'false'); };
+
+        const agregarProducto = (p: any) => {
+            const desc = currentDesc();
+            lines.push({
+                id: p.id, nombre: p.nombre, unidad: p.unidad,
+                baseLista: p.precio,
+                lista: desc > 0 ? Math.round(p.precio * (1 - desc / 100) * 100) / 100 : p.precio,
+                negociado: null, cantidad: 1,
+                taxRate: BOOT.defaultTaxRate, negoTouched: false, volumen: p.volumen,
+            });
+            render();
+            // Flash sobre la fila nueva: el feedback de "ya se agregó" que
+            // permite seguir capturando sin mirar la lista.
+            const fila = $lines.lastElementChild as HTMLElement | null;
+            if (fila) { fila.classList.add('line-added'); setTimeout(() => fila.classList.remove('line-added'), 900); }
+        };
+
+        $prod.addEventListener('focus', abrirDrop);
+        $prod.addEventListener('input', () => { activo = 0; pintarDrop(); $drop.hidden = false; });
+        $prod.addEventListener('keydown', (e) => {
+            const res = buscar($prod.value);
+            if (e.key === 'ArrowDown') { e.preventDefault(); activo = Math.min(activo + 1, res.length - 1); pintarDrop(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); activo = Math.max(activo - 1, 0); pintarDrop(); }
+            else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (res[activo]) {
+                    agregarProducto(res[activo]);
+                    // Se limpia y se deja abierto: captura en ráfaga, sin sacar
+                    // la mano del teclado.
+                    $prod.value = ''; activo = 0; pintarDrop();
+                }
+            } else if (e.key === 'Escape') { cerrarDrop(); $prod.blur(); }
+        });
+        // mousedown con preventDefault para no perder el foco del input.
+        $drop.addEventListener('mousedown', (e) => e.preventDefault());
+        $drop.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest('.prod-item') as HTMLElement | null;
+            if (!btn) return;
+            const p = (BOOT.catalogo || []).find((x: any) => x.id === btn.dataset.id);
+            if (p) { agregarProducto(p); $prod.value = ''; activo = 0; pintarDrop(); $prod.focus(); }
+        });
+        document.addEventListener('click', (e) => {
+            if (!(e.target as HTMLElement).closest('.prod-search')) cerrarDrop();
+        });
+
+        // ── Línea libre ─────────────────────────────────────────────────────
+        $('btnFreeLine')!.addEventListener('click', () => {
+            lines.push({
+                id: null, nombre: '', unidad: 'pieza', baseLista: 0, lista: 0,
+                negociado: null, cantidad: 1, taxRate: BOOT.defaultTaxRate, negoTouched: false,
+            });
+            render();
+            const input = $lines.querySelector('.line-row:last-child .lr-desc-input') as HTMLInputElement | null;
+            input?.focus();
+        });
+
+        // ── Kits ────────────────────────────────────────────────────────────
+        const $kitBtn = $('btnKitInsert');
+        const $kitDrop = $('kitDrop');
+        if ($kitBtn && $kitDrop) {
+            $kitBtn.addEventListener('click', () => { $kitDrop.hidden = !$kitDrop.hidden; });
+            document.addEventListener('click', (e) => {
+                if (!(e.target as HTMLElement).closest('.kit-insert-wrap')) $kitDrop.hidden = true;
+            });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $kitDrop.hidden = true; });
+            $kitDrop.addEventListener('click', (e) => {
+                const btn = (e.target as HTMLElement).closest('.kit-insert-add') as HTMLElement | null;
+                if (!btn) return;
+                const fila = btn.closest('.kit-insert-row') as HTMLElement;
+                const kit = (BOOT.kits || []).find((k: any) => k.id === fila.dataset.kit);
+                if (!kit) return;
+                const mult = Math.max(1, Number((fila.querySelector('.kit-insert-qty') as HTMLInputElement).value) || 1);
+                // Prorrateo del precio combo entre las líneas de catálogo: el
+                // descuento del kit se reparte proporcional al precio de lista.
+                const ratio = kit.precioCombo > 0 && kit.sumaLista > 0 ? kit.precioCombo / kit.sumaLista : 1;
+                for (const it of kit.items) {
+                    const lista = it.precio || 0;
+                    lines.push({
+                        id: it.productoId, nombre: it.descripcion || '', unidad: it.unidad,
+                        baseLista: lista,
+                        lista,
+                        negociado: ratio !== 1 && it.productoId ? Math.round(lista * ratio * 100) / 100 : null,
+                        negoTouched: ratio !== 1,
+                        cantidad: it.cantidad * mult,
+                        taxRate: BOOT.defaultTaxRate,
+                    });
+                }
+                render();
+                $kitDrop.hidden = true;
+                toast(T.kitAgregado);
+            });
+        }
+
+        // ── Cliente ─────────────────────────────────────────────────────────
+        const $client = $('clientSelect') as HTMLSelectElement;
+        const currentDesc = () => Number($client.selectedOptions[0]?.dataset.desc || 0);
+
+        $client.addEventListener('change', () => {
+            if ($client.value === '__NEW__') {
+                $client.value = '';
+                document.dispatchEvent(new CustomEvent('clientmodal:open'));
+                return;
+            }
+            const desc = currentDesc();
+            // El descuento por nivel se re-aplica a las líneas de catálogo que
+            // el usuario NO tocó a mano: un precio que él escribió es una
+            // decisión suya y no se pisa.
+            for (const l of lines) {
+                if (l.id && !l.negoTouched) {
+                    l.lista = desc > 0 ? Math.round(l.baseLista * (1 - desc / 100) * 100) / 100 : l.baseLista;
+                }
+            }
+            const nota = $('descNote')!;
+            if (desc > 0) { nota.textContent = `−${desc}% por nivel de cliente aplicado al catálogo.`; nota.hidden = false; }
+            else nota.hidden = true;
+
+            const term = $client.selectedOptions[0]?.dataset.term;
+            if (term) {
+                document.querySelectorAll('#termChips .chip').forEach((c) =>
+                    c.classList.toggle('active', (c as HTMLElement).dataset.term === term));
+                aplicarTermino(term);
+            }
+            render();
+        });
+
+        document.addEventListener('clientmodal:saved', ((e: CustomEvent) => {
+            const detail = e.detail || {};
+            const c = detail.cliente || {};
+            const id = detail.id;
+            if (!id) return;
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = c.contacto ? `${c.empresa} — ${c.contacto}` : (c.empresa || '');
+            opt.dataset.desc = String(Number(c.descuento_pct) || 0);
+            opt.dataset.term = c.terminos || 'contado';
+            $client.insertBefore(opt, $client.querySelector('option[value="__NEW__"]'));
+            $client.value = id;
+            $client.dispatchEvent(new Event('change'));
+        }) as EventListener);
+
+        // ── Términos → vencimiento ──────────────────────────────────────────
+        const DIAS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
+        const aplicarTermino = (code: string) => {
+            const d = DIAS[code] ?? 0;
+            const fecha = new Date(Date.now() + d * 86400000);
+            const campo = $('dueDate') as HTMLInputElement;
+            // Local, no UTC: con toISOString() los términos "contado" fijaban
+            // mañana a partir de las 18:00 en México.
+            campo.value = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+            // El DatePicker mantiene su etiqueta visible escuchando `change`:
+            // escribir `.value` a secas dejaría el campo diciendo la fecha vieja.
+            campo.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        document.querySelectorAll('#termChips .chip').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('#termChips .chip').forEach((c) => c.classList.remove('active'));
+                chip.classList.add('active');
+                aplicarTermino((chip as HTMLElement).dataset.term || 'contado');
+            });
+        });
+
+        // ── Multi-divisa ────────────────────────────────────────────────────
+        const $fxBase = $('fxBase') as HTMLSelectElement | null;
+        const $fxCover = $('fxCover')!;
+        let fxTimer = 0;
+
+        const scheduleFx = () => {
+            if ($fxCover.hidden) return;
+            clearTimeout(fxTimer);
+            fxTimer = window.setTimeout(refreshFx, 250);
+        };
+
+        const refreshFx = async () => {
+            const base = currency;
+            const fiscal = BOOT.orgCurrency;
+            if (base === fiscal) { $fxCover.hidden = true; return; }
+            $fxCover.hidden = false;
+            const buffer = Number(($('fxBuffer') as HTMLInputElement).value) || 0;
+            $('fxExplain')!.innerHTML = `Le facturas en <b>${base}</b> y tus libros están en <b>${fiscal}</b>. La factura declara el tipo de cambio.`;
+            try {
+                const res = await fetch(`/api/fx/quote?base=${base}&fiscal=${fiscal}&amount=${ultimoTotal}&buffer=${buffer}`);
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || T.fxNoDisponible);
+                $('fxSpot')!.textContent = String(Math.round(d.spotRate * 10000) / 10000);
+                $('fxApplied')!.textContent = String(Math.round(d.appliedRate * 10000) / 10000);
+                // Multiplica: de la divisa de VENTA a la CONTABLE. Dividir aquí
+                // y multiplicar en el servidor es cómo dos capas dan números
+                // distintos para la misma venta.
+                const enLibros = ultimoTotal * d.appliedRate;
+                const fmtFiscal = createMoney({ currency: fiscal });
+                $('fxPreview')!.innerHTML = `Tu cliente paga <b>${fmt(ultimoTotal)}</b> · en tus libros ≈ <b>${fmtFiscal(enLibros)}</b>`;
+            } catch (err) {
+                // Regla 22: sin tasa real no se pinta una vista previa inventada.
+                $('fxSpot')!.textContent = '—';
+                $('fxApplied')!.textContent = '—';
+                $('fxPreview')!.textContent = err instanceof Error ? err.message : T.fxNoDisponible;
+            }
+        };
+
+        $fxBase?.addEventListener('change', () => {
+            currency = $fxBase.value;
+            refmt();
+            render();          // todos los importes se reformatean
+            refreshFx();
+        });
+        document.querySelectorAll('.fx-cush-chip').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.fx-cush-chip').forEach((c) => c.classList.remove('active'));
+                chip.classList.add('active');
+                ($('fxBuffer') as HTMLInputElement).value = (chip as HTMLElement).dataset.buffer || '2';
+                refreshFx();
+            });
+        });
+
+        // ── Armar con IA ────────────────────────────────────────────────────
+        // Reutiliza el endpoint del editor de cotizaciones: empareja contra el
+        // mismo catálogo y devuelve el mismo shape de líneas.
+        let aiFile: { mediaType: string; data: string; name: string } | null = null;
+        $('aiAttachBtn')?.addEventListener('click', () => ($('aiFile') as HTMLInputElement).click());
+        $('aiFileClear')?.addEventListener('click', () => {
+            aiFile = null;
+            ($('aiFile') as HTMLInputElement).value = '';
+            $('aiFileChip')!.hidden = true;
+        });
+        $('aiFile')?.addEventListener('change', async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+            const buf = await file.arrayBuffer();
+            let bin = '';
+            const bytes = new Uint8Array(buf);
+            for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+            aiFile = { mediaType: file.type, data: btoa(bin), name: file.name };
+            $('aiFileName')!.textContent = file.name;
+            $('aiFileChip')!.hidden = false;
+        });
+        $('aiBtn')?.addEventListener('click', async (ev) => {
+            const btn = ev.currentTarget as HTMLButtonElement;
+            const texto = ($('aiText') as HTMLTextAreaElement).value.trim();
+            if (!texto && !aiFile) return;
+            btn.disabled = true;
+            $('aiStatus')!.textContent = T.analizando;
+            try {
+                const res = await fetch('/api/cotizaciones/ai-draft', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: texto || undefined, file: aiFile || undefined }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || T.errorGenerico);
+                lines.length = 0;
+                for (const it of d.items || []) {
+                    lines.push({
+                        id: it.id ?? null, nombre: it.nombre, unidad: it.unidad || 'pieza',
+                        baseLista: Number(it.lista) || 0, lista: Number(it.lista) || 0,
+                        negociado: it.negociado === null || it.negociado === undefined ? null : Number(it.negociado),
+                        cantidad: Number(it.cantidad) || 1,
+                        taxRate: BOOT.defaultTaxRate, negoTouched: false,
+                    });
+                }
+                render();
+                $('aiStatus')!.textContent = '';
+            } catch (err) {
+                $('aiStatus')!.textContent = err instanceof Error ? err.message : T.errorGenerico;
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // ── Guardar ─────────────────────────────────────────────────────────
+        const payload = () => ({
+            cliente_id: $client.value,
+            currency,
+            due_date: ($('dueDate') as HTMLInputElement).value || undefined,
+            notas: ($('notas') as HTMLTextAreaElement).value.trim() || undefined,
+            iva_incluido: ivaIncluidoEl.checked,
+            fx_buffer_pct: currency === BOOT.orgCurrency ? 0 : Number(($('fxBuffer') as HTMLInputElement).value) || 0,
+            items: lines.map((l) => ({
+                producto_id: l.id,
+                descripcion: l.nombre,
+                cantidad: l.cantidad,
+                precio_unitario: l.lista,
+                precio_negociado: l.negociado,
+                tax_rate: l.taxRate,
+            })),
+        });
+
+        const guardar = async (irADetalle: boolean, btn: HTMLButtonElement) => {
+            if (!$client.value) { toast(T.eligeCliente); $client.focus(); return; }
+            if (!lines.length) { toast(T.agregaConcepto); $prod.focus(); return; }
+            const vacia = lines.findIndex((l) => !l.nombre.trim());
+            if (vacia >= 0) {
+                toast(T.faltaDescripcion);
+                ($lines.querySelectorAll('.lr-desc-input')[0] as HTMLInputElement | null)?.focus();
+                return;
+            }
+
+            const etiqueta = btn.innerHTML;
+            btn.disabled = true;
+            toast(T.guardando, 6000);
+            try {
+                const res = BOOT.draftId
+                    ? await fetch(`/api/facturas/${BOOT.draftId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'update_draft', ...payload() }),
+                    })
+                    : await fetch('/api/facturas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload()),
+                    });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || T.errorGenerico);
+                const id = d.id || BOOT.draftId;
+                toast(T.guardado, 1500);
+                setTimeout(() => {
+                    window.location.href = irADetalle ? `/app/facturas/${id}` : '/app/facturas';
+                }, 700);
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = etiqueta;
+                toast(err instanceof Error ? err.message : T.errorGenerico, 3200);
+            }
+        };
+
+        $('btnIssue')!.addEventListener('click', (e) => guardar(true, e.currentTarget as HTMLButtonElement));
+        $('btnDraft')!.addEventListener('click', (e) => guardar(false, e.currentTarget as HTMLButtonElement));
+
+        // ⌘/Ctrl+Enter guarda. Regla 16: en móvil no hay atajos.
+        document.addEventListener('keydown', (e) => {
+            if (window.matchMedia('(max-width: 880px)').matches) return;
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                e.preventDefault();
+                ($('btnIssue') as HTMLButtonElement).click();
+            }
+        });
+
+        // ── Arranque ────────────────────────────────────────────────────────
+        if (BOOT.preselectCliente) {
+            $client.value = BOOT.preselectCliente;
+            $client.dispatchEvent(new Event('change'));
+        }
+        render();
+        if (currency !== BOOT.orgCurrency) refreshFx();
+    }
+</script>

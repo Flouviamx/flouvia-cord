@@ -8,10 +8,14 @@
 import { getActiveOrgId, reqIp, sql } from './db';
 import {
     getCotizaciones, getCotizacion, getCobranza, getAnalytics, getPlanUsage,
+    getFacturas, getFacturaDetalle,
 } from './queries';
 import { createCotizacion, QuoteError } from './cotizaciones';
 import type { ApiScope } from './apikey';
 import { checkEntitlement } from './org-entitlements';
+import { createInvoiceDraft } from './fiscal/invoices';
+import { invoicingFeatureFor } from './fiscal/gate';
+import { invoiceListItem, invoiceDetail } from './apiv1';
 
 // Anotaciones estándar de MCP — le dicen a un cliente si puede AUTO-APROBAR
 // una llamada sin confirmación humana (readOnlyHint) o si debe pedir
@@ -296,6 +300,95 @@ export const MCP_TOOLS: McpToolDef[] = [
                 if (e instanceof QuoteError) throw new McpToolError(e.message);
                 throw e;
             }
+        },
+    },
+    {
+        name: 'listar_facturas',
+        description: 'Lista las facturas del negocio con su SALDO y su estado. Filtra por estado (draft, open, paid, void, uncollectible, overdue), por cliente o por texto (folio, UUID fiscal, nombre del cliente). Úsalo para responder "¿qué facturas están sin pagar?" o "¿cuánto me deben?". Paginado: si viene `next_cursor`, repite la llamada con `cursor` para la siguiente página.',
+        inputSchema: obj({
+            estado: { type: 'string', description: 'draft | open | paid | void | uncollectible | overdue (opcional)' },
+            cliente_id: { type: 'string', description: 'ID del cliente (opcional)' },
+            query: { type: 'string', description: 'Folio, UUID fiscal o nombre del cliente (opcional)' },
+            limit: { type: 'number', description: 'Máximo por página (default 50, tope 200)' },
+            cursor: { type: 'string', description: 'Cursor de la página siguiente (opcional)' },
+        }),
+        outputSchema: obj({ facturas: { type: 'array' }, next_cursor: { type: 'string' } }),
+        annotations: { title: 'Listar facturas', readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+        scope: 'read',
+        handler: async (args) => {
+            const page = await getFacturas({
+                estado: typeof args?.estado === 'string' ? args.estado : null,
+                clienteId: typeof args?.cliente_id === 'string' ? args.cliente_id : null,
+                q: typeof args?.query === 'string' ? args.query : null,
+                cursor: typeof args?.cursor === 'string' ? args.cursor : null,
+                limit: Number(args?.limit) || 50,
+            });
+            return { facturas: page.facturas.map(invoiceListItem), next_cursor: page.nextCursor };
+        },
+    },
+    {
+        name: 'detalle_factura',
+        description: 'Detalle completo de UNA factura: conceptos, emisor, receptor, impuestos, tipo de cambio declarado, saldo y los pagos recibidos. Usa el id que devuelve listar_facturas.',
+        inputSchema: obj({ id: { type: 'string', description: 'ID de la factura' } }, ['id']),
+        outputSchema: obj({}),
+        annotations: { title: 'Detalle de factura', readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+        scope: 'read',
+        handler: async (args) => {
+            const f = await getFacturaDetalle(String(args?.id ?? ''));
+            if (!f) throw new McpToolError('Factura no encontrada.');
+            return invoiceDetail(f);
+        },
+    },
+    {
+        name: 'crear_factura_borrador',
+        description: 'Crea una factura en BORRADOR para un cliente, sin necesidad de una cotización previa. NO la timbra ni la envía: emitirla es una acción irreversible que cuesta un timbrado y se hace desde la app o con la API. Devuelve el id del borrador.',
+        inputSchema: obj({
+            cliente_id: { type: 'string', description: 'ID del cliente (úsalo de buscar_cliente)' },
+            items: {
+                type: 'array',
+                description: 'Conceptos de la factura',
+                items: obj({
+                    descripcion: { type: 'string' },
+                    cantidad: { type: 'number' },
+                    precio_unitario: { type: 'number' },
+                }, ['descripcion', 'cantidad', 'precio_unitario']),
+            },
+            moneda: { type: 'string', description: 'Divisa de la venta, ISO 4217 (opcional; default la contable del negocio)' },
+            vence: { type: 'string', description: 'Fecha de vencimiento YYYY-MM-DD (opcional)' },
+            notas: { type: 'string', description: 'Notas para el cliente (opcional)' },
+        }, ['cliente_id', 'items']),
+        outputSchema: obj({ id: { type: 'string' }, estado: { type: 'string' } }),
+        // Escritura acotada a 'draft' A PROPÓSITO: timbrar es dinero real e
+        // irreversible, y no es algo que deba poder disparar un modelo sin un
+        // humano mirando. Ver Regla 17.
+        annotations: { title: 'Crear factura (borrador)', readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+        scope: 'write',
+        handler: async (args) => {
+            const orgId = await getActiveOrgId();
+            const entitlement = await checkEntitlement(orgId, await invoicingFeatureFor(orgId));
+            if (!entitlement.ok) throw new McpToolError('Cord Invoicing requiere el plan Starter o superior.');
+
+            const items = (Array.isArray(args?.items) ? args.items : []).map((i: any) => ({
+                descripcion: String(i?.descripcion ?? '').trim().slice(0, 500),
+                cantidad: Math.max(0, Number(i?.cantidad) || 0),
+                precioUnitario: Math.max(0, Number(i?.precio_unitario) || 0),
+            })).filter((i: any) => i.descripcion && i.cantidad > 0);
+            if (!items.length) throw new McpToolError('La factura necesita al menos un concepto con cantidad.');
+
+            const vence = typeof args?.vence === 'string' ? args.vence.trim() : '';
+            if (vence && !/^\d{4}-\d{2}-\d{2}$/.test(vence)) {
+                throw new McpToolError('La fecha de vencimiento debe ser YYYY-MM-DD.');
+            }
+
+            const result = await createInvoiceDraft(orgId, {
+                clienteId: String(args?.cliente_id ?? ''),
+                items,
+                currency: typeof args?.moneda === 'string' ? args.moneda : undefined,
+                dueDate: vence || null,
+                notes: typeof args?.notas === 'string' ? args.notas.slice(0, 1000) : null,
+            });
+            if (!result.ok) throw new McpToolError(result.error || 'No se pudo crear el borrador.');
+            return { id: result.documentId, estado: 'borrador' };
         },
     },
 ];

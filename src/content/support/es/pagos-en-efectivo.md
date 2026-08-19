@@ -4,7 +4,7 @@ description: "Disponibilidad actual de cobros en efectivo."
 category: "Pagos y Depósitos"
 ---
 
-Cord Pagos no admite actualmente vouchers para OXXO ni pagos en tiendas de conveniencia. El link público ofrece tarjeta o transferencia SPEI cuando esos métodos están habilitados para la organización.
+Cord Payments no admite actualmente vouchers para OXXO ni pagos en tiendas de conveniencia. El link público ofrece tarjeta o transferencia SPEI cuando esos métodos están habilitados para la organización.
 
 ### Registrar un pago recibido fuera de Cord
 

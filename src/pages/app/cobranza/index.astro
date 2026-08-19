@@ -390,6 +390,7 @@ const CBZ_T = {
 </script>
 
 <script>
+    import { createMoney0 } from '../../../lib/money-client';
     // Cobranza operativa: promesa de pago (modal), recordatorio por WhatsApp y marcar
     // cobrada. La lógica de negocio es EXACTAMENTE la de antes; lo que cambia es cómo se
     // enganchan los eventos (delegación en vez de un listener por fila) y que al cobrar
@@ -404,7 +405,7 @@ const CBZ_T = {
         const err = document.getElementById('cobErr');
         const E = err ? err.dataset : ({} as DOMStringMap);
         const tpl = (s: string, vars: Record<string, string>) => String(s ?? '').replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
-        const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+        const money = createMoney0();
         const cleanPhone = (t: string) => {
             const d = (t || '').replace(/\D/g, '');
             if (!d) return '';

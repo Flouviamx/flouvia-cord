@@ -11,6 +11,8 @@ import { strictLimitResponse, strictRateLimit } from '../../../../lib/ratelimit'
 import { parseJsonBody } from '../../../../lib/validation';
 import { stripe } from '../../../../lib/billing';
 import { merchantError } from '../../../../lib/pay-errors';
+import { fromMinorUnits, normalizeCurrency, toMinorUnits } from '../../../../lib/currency';
+import { log } from '../../../../lib/log';
 
 const requestSchema = z.object({
     nonce: z.string().min(24).max(200),
@@ -31,13 +33,19 @@ export const GET: APIRoute = async ({ params }) => {
 
     const [[cobro]] = await withOrgTx(orgId, sql`
         select c.id, c.monto, c.payment_method, c.metodo_pago,
+               coalesce(q.base_currency, o.moneda, 'MXN') as moneda,
                coalesce(sum(r.amount_cents) filter (where r.status in ('pending','succeeded','pending_manual')), 0) as refunded
           from cotizacion_cobros c
+          join cotizaciones q on q.id = c.cotizacion_id
+          join orgs o on o.id = c.org_id
           left join cobro_reembolsos r on r.cobro_id = c.id
          where c.id = ${cobroId} and c.org_id = ${orgId} and c.status = 'pagado'
-         group by c.id`);
+         group by c.id, q.base_currency, o.moneda`);
     if (!cobro) return json({ error: 'Cobro pagado no encontrado' }, 404);
-    const maxAmountCents = Math.max(0, Math.round(Number(cobro.monto) * 100) - Number(cobro.refunded || 0));
+    // El reembolso se calcula en la unidad mínima de la divisa del cobro: con
+    // ×100 fijo, devolver un cobro en yenes reembolsaba cien veces el importe.
+    const refundCurrency = normalizeCurrency(cobro.moneda as string);
+    const maxAmountCents = Math.max(0, toMinorUnits(Number(cobro.monto), refundCurrency) - Number(cobro.refunded || 0));
     if (!maxAmountCents) return json({ error: 'Este cobro ya fue reembolsado por completo' }, 409);
 
     const nonce = randomBytes(32).toString('base64url');
@@ -46,7 +54,7 @@ export const GET: APIRoute = async ({ params }) => {
           (org_id, cobro_id, nonce_hash, max_amount_cents, expires_at, created_by)
         values (${orgId}, ${cobroId}, ${hashNonce(nonce)}, ${maxAmountCents},
                 now() + interval '10 minutes', ${currentUserId()})`);
-    return json({ nonce, maxAmountCents, method: cobro.metodo_pago || cobro.payment_method || 'tarjeta', expiresIn: 600 });
+    return json({ nonce, maxAmountCents, currency: refundCurrency, method: cobro.metodo_pago || cobro.payment_method || 'tarjeta', expiresIn: 600 });
 };
 
 export const POST: APIRoute = async ({ request, params }) => {
@@ -70,17 +78,21 @@ export const POST: APIRoute = async ({ request, params }) => {
             returning id`,
         sql`select c.id, c.cotizacion_id, c.monto, c.payment_method, c.metodo_pago,
                    c.stripe_payment_intent_id, o.stripe_account_id,
+                   coalesce(q.base_currency, o.moneda, 'MXN') as moneda,
                    coalesce((select sum(r.amount_cents) from cobro_reembolsos r
                              where r.cobro_id = c.id and r.status in ('pending','succeeded','pending_manual')), 0) as refunded
-              from cotizacion_cobros c join orgs o on o.id = c.org_id
+              from cotizacion_cobros c
+              join cotizaciones q on q.id = c.cotizacion_id
+              join orgs o on o.id = c.org_id
              where c.id = ${cobroId} and c.org_id = ${orgId} and c.status = 'pagado'`);
     if (!nonce) return json({ error: 'La autorización de reembolso venció o ya fue utilizada' }, 409);
     if (!cobro) return json({ error: 'Cobro pagado no encontrado' }, 404);
-    const available = Math.max(0, Math.round(Number(cobro.monto) * 100) - Number(cobro.refunded || 0));
+    const refundCurrency = normalizeCurrency(cobro.moneda as string);
+    const available = Math.max(0, toMinorUnits(Number(cobro.monto), refundCurrency) - Number(cobro.refunded || 0));
     if (parsed.data.amountCents > available) return json({ error: 'El monto supera el saldo reembolsable' }, 409);
 
     const method = String(cobro.metodo_pago || cobro.payment_method || 'tarjeta');
-    const auditDetail = `${(parsed.data.amountCents / 100).toFixed(2)} MXN${parsed.data.reason ? `; ${parsed.data.reason}` : ''}`;
+    const auditDetail = `${fromMinorUnits(parsed.data.amountCents, refundCurrency)} ${refundCurrency}${parsed.data.reason ? `; ${parsed.data.reason}` : ''}`;
     if (method === 'spei') {
         if (!parsed.data.manual) {
             return json({ error: 'Los reembolsos SPEI requieren una transferencia manual y su registro posterior' }, 422);
@@ -91,7 +103,7 @@ export const POST: APIRoute = async ({ request, params }) => {
                 values (${nonce.id}, ${orgId}, ${cobroId}, ${parsed.data.amountCents}, 'pending_manual',
                         ${parsed.data.reason || null}, true, ${currentUserId()})`,
             sql`insert into tareas (org_id, cotizacion_id, titulo)
-                values (${orgId}, ${cobro.cotizacion_id}, ${`Transferir reembolso SPEI por ${(parsed.data.amountCents / 100).toFixed(2)} MXN`})`,
+                values (${orgId}, ${cobro.cotizacion_id}, ${`Transferir reembolso SPEI por ${fromMinorUnits(parsed.data.amountCents, refundCurrency)} ${refundCurrency}`})`,
         );
         await logAudit(orgId, { accion: 'cord_pagos.reembolso_manual_solicitado', entidad: 'cobro', entidad_id: cobroId, detalle: auditDetail, ip: reqIp(request) });
         return json({ ok: true, status: 'pending_manual' }, 202);
@@ -129,7 +141,7 @@ export const POST: APIRoute = async ({ request, params }) => {
         await withOrgTx(orgId, sql`
             update cobro_reembolsos set status = 'failed', failure_reason = ${safe.reference}, updated_at = now()
              where id = ${nonce.id} and org_id = ${orgId}`);
-        console.error('[refund] proveedor rechazó operación', { orgId, cobroId, reference: safe.reference });
+        log.error('proveedor rechazó operación', { route: 'refund', orgId, cobroId, reference: safe.reference });
         return json({ error: safe.message, reference: safe.reference }, 502);
     }
 };

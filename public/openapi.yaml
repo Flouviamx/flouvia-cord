@@ -190,3 +190,156 @@ paths:
       responses:
         '200':
           description: Producto creado.
+  /facturas:
+    get:
+      summary: Listar facturas
+      description: >
+        Devuelve las facturas de la organización con su saldo. Pagina por
+        CURSOR, no por offset: si `meta.next_cursor` viene con valor, repite la
+        llamada con `?cursor=` para la siguiente página.
+      parameters:
+        - in: query
+          name: estado
+          schema:
+            type: string
+            enum: [draft, open, paid, void, uncollectible, overdue]
+          description: >
+            Estado COMERCIAL de la factura. `overdue` no es un estado guardado:
+            es `open` con vencimiento pasado.
+        - in: query
+          name: cliente
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Folio, UUID fiscal o nombre del cliente.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de facturas con `meta.next_cursor`.
+    post:
+      summary: Crear factura (borrador)
+      description: >
+        Crea una factura en borrador. NO la timbra ni consume el medidor: eso
+        ocurre al emitirla con la acción `finalize`. Requiere alcance de
+        escritura (write) y el plan Starter o superior.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cliente_id, items]
+              properties:
+                cliente_id:
+                  type: string
+                  format: uuid
+                currency:
+                  type: string
+                  description: >
+                    Divisa de la VENTA (ISO 4217). Por defecto la divisa contable
+                    del negocio. Si difiere, la factura declara el tipo de cambio.
+                due_date:
+                  type: string
+                  format: date
+                notas:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [descripcion, cantidad, precio_unitario]
+                    properties:
+                      descripcion:
+                        type: string
+                      cantidad:
+                        type: number
+                      precio_unitario:
+                        type: number
+      responses:
+        '200':
+          description: Borrador creado.
+        '402':
+          description: El plan no incluye Cord Invoicing.
+        '503':
+          description: >
+            No se pudo obtener un tipo de cambio real. La factura NO se crea con
+            una tasa inventada; reintenta.
+  /facturas/{id}:
+    get:
+      summary: Detalle de factura
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Factura con conceptos, emisor, receptor, saldo y pagos.
+        '404':
+          description: No encontrada.
+    post:
+      summary: Acción sobre una factura
+      description: >
+        `finalize` reserva folio y timbra (irreversible, consume medidor).
+        `send` manda la factura al cliente con su PDF y su link de pago.
+        `payment` registra un pago manual contra el saldo.
+        `void` cancela ante el proveedor fiscal.
+        `credit_note` crea la nota de crédito, que es el camino correcto cuando
+        la factura ya tiene pagos aplicados.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [finalize, send, payment, void, credit_note]
+                monto:
+                  type: number
+                  description: Solo para `payment` y `credit_note` parcial.
+                moneda:
+                  type: string
+                  description: >
+                    Solo para `payment`. Debe coincidir con la divisa de la
+                    factura; un pago en otra divisa se rechaza en vez de
+                    convertirse con una tasa inventada.
+                metodo:
+                  type: string
+                referencia:
+                  type: string
+                motivo:
+                  type: string
+      responses:
+        '200':
+          description: Acción aplicada.
+        '409':
+          description: >
+            El estado de la factura no admite la acción. Al intentar `void`
+            sobre una factura con pagos, `code` es `credit_note_required`.
+        '502':
+          description: El proveedor fiscal rechazó la emisión.

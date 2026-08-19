@@ -5,9 +5,11 @@ import { sql, resolvePublicQuote, withOrgTx } from '../../../../lib/db';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { dueDateFor, isoDay, venceDia, materializeAnticipoCobros } from '../../../../lib/cobros';
 import { trackServer } from '../../../../lib/posthog-server';
+import { fromMinorUnits, normalizeCurrency, stripeCurrency, stripeSupportsCurrency, toMinorUnits } from '../../../../lib/currency';
 import { computeFee, isFeeScheduleActive, type PaymentFeeMethod } from '../../../../lib/fees';
 import { payerError } from '../../../../lib/pay-errors';
 import { after } from '../../../../lib/after';
+import { log } from '../../../../lib/log';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -30,7 +32,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     const identity = await resolvePublicQuote(token);
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
     const [rows] = await withOrgTx(identity.orgId, sql`
-        select c.id, c.org_id, c.folio, c.total, c.status, c.anticipo_pct,
+        select c.id, c.org_id, c.folio, c.total, c.status, c.anticipo_pct, c.base_currency,
                coalesce(c.terminos, cl.terminos_default) as terminos,
                coalesce(c.approved_at, c.created_at) as base_date,
                o.sandbox_of, o.stripe_account_id, o.stripe_charges_enabled,
@@ -70,7 +72,19 @@ export const POST: APIRoute = async ({ params, request }) => {
         }
     }
 
-    const totalCents = Math.round(Number(c.total) * 100);
+    // Divisa canónica de ESTE cobro: la de la cotización. Todo el endpoint
+    // (montos, reutilización de PaymentIntent, comisión y analytics) la usa.
+    const currency = normalizeCurrency((c.base_currency as string) || (c.moneda as string));
+    if (!stripeSupportsCurrency(currency)) {
+        return json({ error: 'El pago en línea todavía no está disponible para la moneda de esta cotización.' }, 409);
+    }
+    // SPEI es un riel EXCLUSIVO de México y solo liquida en MXN. Ofrecerlo en
+    // otra divisa produce una CLABE que el banco del cliente rechaza.
+    if (method === 'spei' && currency !== 'MXN') {
+        return json({ error: 'La transferencia SPEI solo está disponible para cobros en pesos mexicanos.' }, 409);
+    }
+    const toCents = (value: unknown) => toMinorUnits(Number(value), currency);
+    const totalCents = toCents(c.total);
     const hoyISO = new Date().toISOString().slice(0, 10);
     const acct = c.stripe_account_id as string;
     const connectHeaders = {
@@ -95,7 +109,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     // algún PI no se puede cancelar (p. ej. SPEI 'processing'), se ABORTA la
     // regeneración — mejor un desglose desactualizado que un pago sin rastro.
     const activos = cobros.filter((co: any) => co.status !== 'cancelado');
-    const sumCents = activos.reduce((s: number, co: any) => s + Math.round(Number(co.monto) * 100), 0);
+    const sumCents = activos.reduce((s: number, co: any) => s + toCents(co.monto), 0);
     const nadaPagado = cobros.every((co: any) => co.status !== 'pagado');
     if (cobros.length && nadaPagado && sumCents !== totalCents) {
         let cancelablesOk = true;
@@ -161,27 +175,35 @@ export const POST: APIRoute = async ({ params, request }) => {
         return json({ error: `Este pago aún no está disponible — se habilita el ${venceDia(cobro.vence)}.` }, 409);
     }
 
-    const amount = Math.round(Number(cobro.monto) * 100); // centavos
+    let amount: number; // unidad mínima de la divisa (no siempre /100)
+    try { amount = toCents(cobro.monto); }
+    catch { return json({ error: 'Monto de cobro inválido' }, 500); }
     if (!(amount > 0)) return json({ error: 'Monto de cobro inválido' }, 500);
     const fee = method
         ? computeFee({
             amountCents: amount,
             metodo: method,
-            moneda: String(c.moneda || 'MXN'),
+            moneda: currency,
             enabled: isFeeScheduleActive(c.fee_enabled, c.fee_terms_version),
         })
-        : computeFee({ amountCents: amount, metodo: 'card', moneda: 'MXN', enabled: false });
+        : computeFee({ amountCents: amount, metodo: 'card', moneda: currency, enabled: false });
 
     const pubKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
     // Los payment_method_types según la config vigente del vendedor. Se calculan
     // aquí porque también deciden si un PI previo sigue siendo reutilizable.
+    // SPEI (customer_balance + mx_bank_transfer) solo existe en MXN: fuera de esa
+    // divisa el vendedor cobra con tarjeta aunque tenga SPEI activado.
+    const speiDisponible = currency === 'MXN';
     const pmTypes: string[] = [];
     if (method === 'card') pmTypes.push('card');
     else if (method === 'spei') pmTypes.push('customer_balance');
     else {
         if (c.acepta_tarjeta) pmTypes.push('card');
-        if (c.cobro_spei_auto) pmTypes.push('customer_balance');
+        if (c.cobro_spei_auto && speiDisponible) pmTypes.push('customer_balance');
+    }
+    if (!pmTypes.length) {
+        return json({ error: 'El vendedor no tiene un método de pago disponible para la moneda de esta cotización.' }, 409);
     }
 
     try {
@@ -228,8 +250,8 @@ export const POST: APIRoute = async ({ params, request }) => {
                         cobro_id: cobro.id,
                         cobro_tipo: cobro.tipo,
                         checkout_id: current.id,
-                        amount: amount / 100,
-                        currency: String(c.moneda || 'MXN').toUpperCase(),
+                        amount: fromMinorUnits(amount, currency),
+                        currency,
                         payment_method: method || 'choice',
                         checkout_version: checkoutV2 ? 2 : 1,
                         source: 'public_link',
@@ -249,7 +271,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         // Un customer POR COBRO (no por cotización): la CLABE de SPEI se asigna
         // por customer, y cada cobro necesita la suya para conciliarse solo.
         let customerId = '';
-        if (method === 'spei' || (!checkoutV2 && c.cobro_spei_auto)) {
+        if (method === 'spei' || (!checkoutV2 && c.cobro_spei_auto && speiDisponible)) {
             const cusForm = new URLSearchParams();
             cusForm.set('metadata[cotizacion_id]', c.id as string);
             cusForm.set('metadata[cobro_id]', cobro.id as string);
@@ -260,7 +282,7 @@ export const POST: APIRoute = async ({ params, request }) => {
             const cus: any = await cusRes.json();
             if (!cusRes.ok || !cus?.id) {
                 const safe = payerError(cus?.error);
-                console.error(`[cord-pagos:${safe.reference}]`, cus?.error);
+                log.error('el proveedor rechazó la creación del customer', { route: 'cord-pagos', reference: safe.reference, err: cus?.error });
                 return json({ error: `${safe.message} Ref: ${safe.reference}` }, 502);
             }
             customerId = cus.id;
@@ -276,7 +298,7 @@ export const POST: APIRoute = async ({ params, request }) => {
             : '';
         const form = new URLSearchParams();
         form.set('amount', String(amount));
-        form.set('currency', 'mxn');
+        form.set('currency', stripeCurrency(currency));
         form.set('description', `Cotización ${c.folio}${tipoDesc} — ${c.org_nombre}`);
         form.set('metadata[token]', token);
         form.set('metadata[cotizacion_id]', c.id as string);
@@ -284,7 +306,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         form.set('metadata[cobro_id]', cobro.id as string);
         form.set('metadata[cobro_tipo]', String(cobro.tipo ?? 'total'));
         pmTypes.forEach((t, i) => form.set(`payment_method_types[${i}]`, t));
-        if (method === 'spei' || (!checkoutV2 && c.cobro_spei_auto)) {
+        if (method === 'spei' || (!checkoutV2 && c.cobro_spei_auto && speiDisponible)) {
             form.set('payment_method_options[customer_balance][funding_type]', 'bank_transfer');
             form.set('payment_method_options[customer_balance][bank_transfer][type]', 'mx_bank_transfer');
         }
@@ -306,7 +328,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         const data: any = await res.json();
         if (!res.ok) {
             const safe = payerError(data?.error);
-            console.error(`[cord-pagos:${safe.reference}]`, data?.error);
+            log.error('el proveedor rechazó el payment intent', { route: 'cord-pagos', reference: safe.reference, err: data?.error });
             return json({ error: `${safe.message} Ref: ${safe.reference}` }, 502);
         }
 
@@ -333,8 +355,8 @@ export const POST: APIRoute = async ({ params, request }) => {
             cobro_id: cobro.id,
             cobro_tipo: cobro.tipo,
             checkout_id: data.id,
-            amount: amount / 100,
-            currency: String(c.moneda || 'MXN').toUpperCase(),
+            amount: fromMinorUnits(amount, currency),
+            currency,
             payment_method: method || 'choice',
             checkout_version: checkoutV2 ? 2 : 1,
             source: 'public_link',
@@ -347,7 +369,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         }
         return json({ metodo: method, clientSecret: data.client_secret, publishableKey: pubKey, accountId: acct, amount, cobroId: cobro.id, cobroTipo: cobro.tipo });
     } catch (e) {
-        console.error(e);
+        log.error('error no controlado', { route: 'cord-pagos', err: e });
         return json({ error: 'No pudimos conectar con el procesador de pagos' }, 502);
     }
 };

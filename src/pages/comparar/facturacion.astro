@@ -1,0 +1,229 @@
+---
+// /comparar/facturacion — captura de intención: quien busca "cómo facturar en
+// línea" o "CFDI 4.0 en línea" no está buscando una feature, está comparando su
+// método actual contra algo mejor. Esta página compara honestamente contra el
+// método real que usa la mayoría (portal del PAC + hoja de cálculo + correo) y
+// es explícita sobre lo que Cord NO hace.
+export const prerender = true;
+
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/landing/Nav.astro';
+import Footer from '../../components/landing/Footer.astro';
+import FaqAccordion from '../../components/landing/FaqAccordion.astro';
+import PageAnims from '../../components/landing/PageAnims.astro';
+import { getLangFromUrl } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const isEn = lang === 'en';
+
+const metaTitle = isEn
+    ? 'Online invoicing vs. the PAC portal and a spreadsheet — Cord'
+    : 'Facturación en línea vs. el portal del PAC y una hoja de cálculo — Cord';
+const metaDesc = isEn
+    ? 'What changes when the invoice carries its own state, its own payment link and its own balance, instead of living as a PDF in an email thread and a row in a spreadsheet.'
+    : 'Qué cambia cuando la factura lleva su propio estado, su propio link de pago y su propio saldo, en vez de vivir como un PDF en un correo y una fila en una hoja de cálculo.';
+
+const SITE = 'https://cordhq.app';
+const base = isEn ? `${SITE}/en` : SITE;
+
+// Cada fila compara el MÉTODO, no un competidor con nombre. Comparar contra un
+// producto de un tercero exige mantener sus features al día, y una tabla
+// desactualizada sobre otra empresa es una afirmación falsa con su logo al lado.
+const FILAS = isEn ? [
+    { q: 'Where the invoice lives', hoy: 'A PDF in an email thread, plus a row in a spreadsheet', cord: 'A record with its own state: draft, open, paid, void or uncollectible' },
+    { q: 'How the client pays it', hoy: 'They read the PDF, then look for your bank details somewhere else', cord: 'The invoice has its own page with a card checkout for the balance' },
+    { q: 'How you know the balance', hoy: 'Someone reconciles the bank statement against the spreadsheet by hand', cord: 'Card payments and wires you record both reduce the same balance automatically' },
+    { q: 'Numbering', hoy: 'A counter someone maintains, easy to skip or duplicate', cord: 'Sequential per country and document type, reserved transactionally at issue time' },
+    { q: 'Stamping (Mexico)', hoy: 'You log into the PAC portal and re-key the invoice there', cord: 'CFDI 4.0 stamped from Cord under your own digital seal certificate' },
+    { q: 'Cancelling', hoy: 'Back to the portal, and the spreadsheet may never find out', cord: 'Cancelled with the SAT and only marked void once the SAT confirms' },
+    { q: 'Reminders', hoy: 'Someone remembers. Or does not.', cord: 'Each invoice carries its own due date and Cord emails before and after it' },
+    { q: 'Another currency', hoy: 'A rate someone typed in, from a day nobody recorded', cord: 'Issued in the currency of the sale, with a dated rate stated on the document' },
+    { q: 'From your own systems', hoy: 'Copy and paste', cord: 'v1 API, webhooks per state change, and an MCP server' },
+] : [
+    { q: 'Dónde vive la factura', hoy: 'Un PDF en un hilo de correo, más una fila en una hoja de cálculo', cord: 'Un registro con su propio estado: borrador, abierta, pagada, anulada o incobrable' },
+    { q: 'Cómo la paga el cliente', hoy: 'Lee el PDF y luego busca tus datos bancarios en otro lado', cord: 'La factura tiene su propia página con cobro del saldo con tarjeta' },
+    { q: 'Cómo sabes el saldo', hoy: 'Alguien concilia el estado de cuenta contra la hoja de cálculo a mano', cord: 'Los pagos con tarjeta y las transferencias que registras bajan el mismo saldo' },
+    { q: 'La numeración', hoy: 'Un contador que alguien mantiene, fácil de saltar o duplicar', cord: 'Consecutiva por país y tipo de documento, reservada transaccionalmente al emitir' },
+    { q: 'El timbrado (México)', hoy: 'Entras al portal del PAC y recapturas ahí la factura', cord: 'CFDI 4.0 timbrado desde Cord con tu propio Certificado de Sello Digital' },
+    { q: 'Cancelar', hoy: 'De vuelta al portal, y la hoja de cálculo puede no enterarse nunca', cord: 'Se cancela ante el SAT y solo se marca anulada cuando el SAT lo confirma' },
+    { q: 'Los recordatorios', hoy: 'Alguien se acuerda. O no.', cord: 'Cada factura tiene su vencimiento y Cord manda correo antes y después' },
+    { q: 'Otra divisa', hoy: 'Una tasa que alguien tecleó, de un día que nadie registró', cord: 'Se emite en la divisa de la venta, con una tasa fechada declarada en el documento' },
+    { q: 'Desde tus sistemas', hoy: 'Copiar y pegar', cord: 'API v1, webhooks por cambio de estado y servidor MCP' },
+];
+
+// Lo que Cord NO hace. Va en la página a propósito: una comparación que solo
+// enumera ventajas no es una comparación, es un anuncio — y la Regla 15 aplica
+// igual aquí que en la app.
+const LIMITES = isEn ? [
+    'Outside Mexico, Cord issues a commercial invoice: it does not file or clear anything with your local tax authority.',
+    'Invoice payments are card-only for now. SPEI is a Mexico-only rail with per-client CLABE requirements and is not wired into the invoice page yet.',
+    'There is no recurring invoicing yet: a Cord subscription charges the card each cycle, but does not issue an invoice per period.',
+] : [
+    'Fuera de México, Cord emite una factura comercial: no presenta ni autoriza nada ante la autoridad fiscal de tu país.',
+    'El pago de facturas es con tarjeta por ahora. SPEI es un riel exclusivo de México y exige CLABE por cliente; todavía no está conectado a la página de la factura.',
+    'Todavía no hay facturación recurrente: una suscripción de Cord cobra la tarjeta cada ciclo, pero no emite una factura por periodo.',
+];
+
+const FAQS = isEn ? [
+    {
+        q: 'Do I still need a PAC to stamp CFDI?',
+        a: 'Cord stamps through an authorized certification provider on your behalf, so you do not log into a separate portal. You upload your digital seal certificate once in Cord and every CFDI is stamped under your own tax ID, not a shared account.',
+    },
+    {
+        q: 'Can I move my existing numbering to Cord?',
+        a: 'Yes. Cord keeps a sequence per country and document type with a prefix you choose, so you can continue your current series instead of restarting at one.',
+    },
+    {
+        q: 'What happens to invoices I already issued elsewhere?',
+        a: 'They stay where they are. Cord does not import historical invoices from another system; it takes over from the moment you start issuing here, and your balance in Cord reflects only what Cord issued.',
+    },
+] : [
+    {
+        q: '¿Sigo necesitando un PAC para timbrar CFDI?',
+        a: 'Cord timbra a través de un Proveedor Autorizado de Certificación por ti, así que no entras a un portal aparte. Subes tu Certificado de Sello Digital una vez en Cord y cada CFDI se timbra bajo tu propio RFC, no bajo una cuenta compartida.',
+    },
+    {
+        q: '¿Puedo conservar mi numeración actual en Cord?',
+        a: 'Sí. Cord lleva una secuencia por país y tipo de documento con el prefijo que tú elijas, así que puedes continuar tu serie actual en vez de empezar de nuevo en uno.',
+    },
+    {
+        q: '¿Qué pasa con las facturas que ya emití en otro lado?',
+        a: 'Se quedan donde están. Cord no importa facturas históricas de otro sistema; toma el relevo desde el momento en que empiezas a emitir aquí, y el saldo que ves en Cord refleja únicamente lo que Cord emitió.',
+    },
+];
+
+const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQS.map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+};
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+        { '@type': 'ListItem', position: 2, name: isEn ? 'Invoicing comparison' : 'Comparar facturación', item: `${base}/comparar/facturacion` },
+    ],
+};
+---
+
+<Layout title={metaTitle} description={metaDesc}>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <Nav />
+
+    <main class="cmp-main">
+        <header class="cmp-hero">
+            <span class="cmp-eyebrow">{isEn ? 'INVOICING, COMPARED' : 'FACTURACIÓN, COMPARADA'}</span>
+            <h1 class="cmp-title">
+                {isEn
+                    ? 'A PDF in an email is not an invoicing system.'
+                    : 'Un PDF en un correo no es un sistema de facturación.'}
+            </h1>
+            <p class="cmp-sub">
+                {isEn
+                    ? 'It works right up until someone asks how much a client still owes, or which invoice that wire belongs to. This is what changes when the invoice carries its own state, its own link and its own balance.'
+                    : 'Funciona hasta que alguien pregunta cuánto debe todavía un cliente, o a qué factura corresponde esa transferencia. Esto es lo que cambia cuando la factura lleva su propio estado, su propio link y su propio saldo.'}
+            </p>
+            <div class="cmp-actions">
+                <a href="/sign-up" class="cmp-btn">{isEn ? 'Start for free' : 'Empezar gratis'}</a>
+                <a href={isEn ? '/en/producto/facturacion' : '/producto/facturacion'} class="cmp-link">
+                    {isEn ? 'See Cord Invoicing' : 'Ver Cord Invoicing'}
+                </a>
+            </div>
+        </header>
+
+        <section class="cmp-table" aria-label={isEn ? 'Comparison' : 'Comparación'}>
+            <div class="cmp-row cmp-row-head">
+                <span></span>
+                <span>{isEn ? 'PAC portal + spreadsheet + email' : 'Portal del PAC + hoja de cálculo + correo'}</span>
+                <span>{isEn ? 'Cord Invoicing' : 'Cord Invoicing'}</span>
+            </div>
+            {FILAS.map((f) => (
+                <div class="cmp-row">
+                    <span class="cmp-q">{f.q}</span>
+                    <span class="cmp-hoy">{f.hoy}</span>
+                    <span class="cmp-cord">{f.cord}</span>
+                </div>
+            ))}
+        </section>
+
+        <section class="cmp-limites">
+            <h2>{isEn ? 'What Cord does not do' : 'Lo que Cord no hace'}</h2>
+            <ul>
+                {LIMITES.map((l) => <li>{l}</li>)}
+            </ul>
+        </section>
+
+        <FaqAccordion
+            faqs={FAQS}
+            eyebrow={isEn ? 'QUESTIONS' : 'PREGUNTAS'}
+            title={isEn ? 'Before you switch' : 'Antes de cambiarte'} />
+    </main>
+
+    <Footer
+        ctaTitle={isEn ? 'Issue, send and collect. In one place.' : 'Emite, manda y cobra. En un solo lugar.'}
+        ctaSub={isEn
+            ? 'Invoice with your own numbering, send it with its payment link, and watch the balance drop.'
+            : 'Factura con folio propio, mándala con su link de pago y mira cómo baja el saldo.'} />
+    <PageAnims />
+</Layout>
+
+<style>
+    .cmp-main { max-width: 1040px; margin: 0 auto; padding: 140px 24px 0; }
+
+    .cmp-hero { max-width: 720px; margin-bottom: 88px; }
+    .cmp-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.12em; color: #6b7280; }
+    .cmp-title {
+        font-size: clamp(38px, 6vw, 62px); letter-spacing: -0.04em; line-height: 1.1;
+        color: #050505; margin: 18px 0 0; text-wrap: balance;
+    }
+    .cmp-sub { font-size: 19px; line-height: 1.6; color: #4b5563; margin: 24px 0 0; max-width: 620px; }
+    .cmp-actions { display: flex; align-items: center; gap: 24px; margin-top: 36px; flex-wrap: wrap; }
+    .cmp-btn {
+        display: inline-block; background: #0a192f; color: #fff; text-decoration: none;
+        font-size: 15px; font-weight: 500; padding: 14px 28px; border-radius: 999px;
+        transition: transform 0.15s ease;
+    }
+    .cmp-btn:hover { transform: scale(1.02); }
+    .cmp-btn:active { transform: scale(0.98); }
+    .cmp-link { font-size: 15px; color: #0a192f; text-decoration: none; border-bottom: 1px solid rgba(10, 25, 47, 0.2); }
+
+    /* Divisores hairline y aire, no cajas: Regla 3. */
+    .cmp-table { border-top: 1px solid #eceff3; }
+    .cmp-row {
+        display: grid; grid-template-columns: 210px 1fr 1fr; gap: 32px;
+        padding: 26px 0; border-bottom: 1px solid #eceff3; align-items: start;
+    }
+    .cmp-row-head {
+        padding: 0 0 14px; border-bottom: 1px solid #eceff3;
+        font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9ca3af;
+    }
+    .cmp-q { font-size: 15px; font-weight: 500; color: #050505; }
+    .cmp-hoy { font-size: 15px; line-height: 1.55; color: #9ca3af; }
+    .cmp-cord { font-size: 15px; line-height: 1.55; color: #111827; }
+
+    .cmp-limites { margin: 88px 0 0; max-width: 720px; }
+    .cmp-limites h2 { font-size: 26px; letter-spacing: -0.03em; color: #050505; margin: 0 0 20px; }
+    .cmp-limites ul { list-style: none; margin: 0; padding: 0; }
+    .cmp-limites li {
+        font-size: 16px; line-height: 1.6; color: #4b5563;
+        padding: 14px 0 14px 22px; border-bottom: 1px solid #f2f4f7; position: relative;
+    }
+    .cmp-limites li::before {
+        content: ''; position: absolute; left: 0; top: 23px;
+        width: 6px; height: 1px; background: #9ca3af;
+    }
+
+    @media (max-width: 880px) {
+        .cmp-main { padding: 110px 18px 0; }
+        .cmp-row { grid-template-columns: 1fr; gap: 8px; padding: 22px 0; }
+        .cmp-row-head { display: none; }
+        .cmp-hoy::before { content: '· '; }
+        .cmp-cord { font-weight: 500; }
+    }
+</style>

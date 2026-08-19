@@ -3,6 +3,7 @@ import { sql } from '../db';
 import { splitCuotas, isoDay } from '../cobros';
 import { cancelUsage, flushUsageReservation, reserveUsage } from '../billing';
 import { trackExternalUsage } from '../external-usage';
+import { log } from '../log';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || '',
@@ -316,7 +317,7 @@ export async function runARAgent(context: ARContext): Promise<ARResult> {
       orgId: context.orgId, provider: 'anthropic', category: 'ai',
       operation: 'collection_agent_turn', status: 'failure',
     });
-    console.error('Error running AR Agent:', error);
+    log.error('Error running AR Agent', { err: error });
     return { ok: false, mensaje: fallback, error: error?.message ?? 'fallo del modelo', plan: captura.plan };
   }
 }

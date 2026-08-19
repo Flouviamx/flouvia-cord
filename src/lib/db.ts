@@ -6,21 +6,22 @@
 // parametriza automáticamente (a prueba de inyección). Para queries dinámicas
 // usar sql.query('... $1 ...', [params]).
 
-import { neon } from '@neondatabase/serverless';
+import { neon, type NeonQueryPromise } from '@neondatabase/serverless';
 import { createHash } from 'node:crypto';
-import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope } from './context';
+import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope, setRequestCurrency, setRequestLocale } from './context';
+import { log } from './log';
 
 const url = import.meta.env.DATABASE_URL || process.env.DATABASE_URL;
 
 if (!url) {
     // No tiramos en build (las páginas SSR sólo tocan la DB en runtime), pero
     // dejamos un error claro si alguna query corre sin la variable.
-    console.warn('[db] DATABASE_URL no está definida — las queries fallarán en runtime.');
+    log.warn('DATABASE_URL no está definida — las queries fallarán en runtime.', { route: 'db' });
 } else if (!/-pooler\./.test(url)) {
     // El driver HTTP abre una conexión por query. Sin el endpoint POOLED de Neon
     // (host con "-pooler"), un pico de concurrencia agota las conexiones directas
     // y la app tira 500s. Es la causa #1 de caídas al pasar de 1 a miles de users.
-    console.warn('[db] DATABASE_URL NO usa el endpoint pooled de Neon (host sin "-pooler"). Bajo carga concurrente puede agotar las conexiones directas de Neon. Usa el connection string "Pooled" del dashboard de Neon.');
+    log.warn('DATABASE_URL NO usa el endpoint pooled de Neon (host sin "-pooler"). Bajo carga concurrente puede agotar las conexiones directas de Neon. Usa el connection string "Pooled" del dashboard de Neon.', { route: 'db' });
 }
 
 // ⚠️ El fallback tiene que ser una URL BIEN FORMADA. `neon()` valida el formato al
@@ -103,12 +104,20 @@ export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; 
     try {
         const orgId = await getActiveOrgId();
         const [rows] = await withOrgTx(orgId, sql`
-            select o.require_2fa, o.onboarded_at, o.owner_id, o.session_timeout_min, u.totp_enabled
+            select o.require_2fa, o.onboarded_at, o.owner_id, o.session_timeout_min,
+                   o.moneda, o.idioma, u.totp_enabled
             from orgs o cross join users u
             where o.id = ${orgId} and u.id = ${userId}
             limit 1`);
         if (!rows.length) return NONE;
         const r = rows[0] as any;
+        // La divisa de la org viaja en esta MISMA query (sin round-trip extra) y
+        // se fija en el contexto del request para que money()/moneyFull() no
+        // tengan que asumir MXN en cada página de /app. Ver lib/currency.ts.
+        setRequestCurrency(r.moneda as string);
+        // El idioma de la app sale del país que eligió el negocio, no del
+        // navegador de quien entra. Misma query, sin round-trip extra.
+        setRequestLocale(r.idioma as string);
         return {
             needs2fa: !!r.require_2fa && !r.totp_enabled,
             needsOnboarding: r.owner_id === userId && !r.onboarded_at,
@@ -242,6 +251,23 @@ export async function logAudit(orgId: string, e: AuditEvent): Promise<void> {
 // no spoofeables por el cliente — x-forwarded-for solo es el último recurso).
 export { trustedIp as reqIp } from './ip';
 
+// ── Tipos del carril de datos ───────────────────────────────────────────────
+// `Record<string, any>` es deliberado, no pereza: el driver devuelve columnas
+// dinámicas y el valor de una columna es genuinamente `any` hasta que alguien
+// declara su forma. Lo importante es que la ESTRUCTURA (arreglo de arreglos de
+// filas, uno por query) sí queda tipada, y que cada llamador pueda declarar sus
+// filas cuando le importe:
+//
+//   const [rows] = await withOrgTx(orgId, sql`...`);                 // DbRow[]
+//   const [cots, cls] = await withOrgTx<[CotRow[], ClienteRow[]]>(   // tipadas
+//       orgId, sql`...`, sql`...`);
+
+/** Una fila cruda del driver: columnas dinámicas, valores sin declarar. */
+export type DbRow = Record<string, any>;
+
+/** Una query construida con el tagged-template `sql`. */
+export type DbQuery = NeonQueryPromise<false, false>;
+
 // ── RLS batch helpers ────────────────────────────────────────────────────────
 // Ejecutan queries en una sola transacción HTTP de Neon con app.org_id seteado.
 // Esto satisface las políticas RLS sin modificar cada query individualmente.
@@ -253,24 +279,30 @@ export { trustedIp as reqIp } from './ip';
 //   const [rows] = await withOrgTx(orgId, sql`SELECT ...`);
 //   const [a, b, c] = await withOrgTx(orgId, sql`...`, sql`...`, sql`...`);
 //   const identity = await resolvePublicQuote(token);
-export async function withOrgTx(orgId: string, ...queries: any[]): Promise<any[][]> {
+export async function withOrgTx<T extends DbRow[][] = DbRow[][]>(
+    orgId: string, ...queries: DbQuery[]
+): Promise<T> {
     const userId = currentUserId() || '';
-    const results = await (sql as any).transaction([
+    const results = await sql.transaction([
         sql`select set_config('app.user_id', ${userId}, true)`,
         sql`select set_config('app.org_id', ${orgId}, true)`,
         ...queries,
     ]);
-    return (results as any[][]).slice(2);
+    // Se descartan los dos set_config: el llamador recibe una entrada por query
+    // suya, en el mismo orden. El cast es el único punto donde T se asume.
+    return results.slice(2) as T;
 }
 
 // Bootstrap de organización: permite resolver membresías antes de conocer el
 // org_id, pero limita RLS al user_id autenticado de la sesión.
-export async function withUserTx(userId: string, ...queries: any[]): Promise<any[][]> {
-    const results = await (sql as any).transaction([
+export async function withUserTx<T extends DbRow[][] = DbRow[][]>(
+    userId: string, ...queries: DbQuery[]
+): Promise<T> {
+    const results = await sql.transaction([
         sql`select set_config('app.user_id', ${userId}, true)`,
         ...queries,
     ]);
-    return (results as any[][]).slice(1);
+    return results.slice(1) as T;
 }
 
 // Resuelve solo la identidad mínima del link público con una función SQL
@@ -282,15 +314,23 @@ export async function resolvePublicQuote(token: string): Promise<{ id: string; o
     return row ? { id: row.id as string, orgId: row.org_id as string } : null;
 }
 
+/** Equivalente para la hosted invoice page (`/i/[token]`). Un borrador no resuelve. */
+export async function resolvePublicInvoice(token: string): Promise<{ id: string; orgId: string } | null> {
+    const [row] = await sql`select id, org_id from cord_resolve_public_invoice(${token})`;
+    return row ? { id: row.id as string, orgId: row.org_id as string } : null;
+}
+
 // Carril público para la captura móvil de identidad. La credencial cruda nunca
 // se persiste ni se coloca en app.capture_token; Postgres solo compara sha256.
-export async function withCaptureToken(token: string, ...queries: any[]): Promise<any[][]> {
+export async function withCaptureToken<T extends DbRow[][] = DbRow[][]>(
+    token: string, ...queries: DbQuery[]
+): Promise<T> {
     const tokenHash = createHash('sha256').update(token).digest('hex');
-    const results = await (sql as any).transaction([
+    const results = await sql.transaction([
         sql`select set_config('app.capture_token_hash', ${tokenHash}, true)`,
         ...queries,
     ]);
-    return (results as any[][]).slice(1);
+    return results.slice(1) as T;
 }
 
 // ── Carril de SISTEMA (crons cross-org) ──────────────────────────────────────
@@ -316,11 +356,13 @@ export function assertCronContext(): void {
  * así una ruta de usuario normal jamás puede tocar el carril de sistema por
  * accidente, aunque alguien importe withSystemTx sin querer.
  */
-export async function withSystemTx(...queries: any[]): Promise<any[][]> {
+export async function withSystemTx<T extends DbRow[][] = DbRow[][]>(
+    ...queries: DbQuery[]
+): Promise<T> {
     assertCronContext();
-    const results = await (sql as any).transaction([
+    const results = await sql.transaction([
         sql`select set_config('app.scope', 'system', true)`,
         ...queries,
     ]);
-    return (results as any[][]).slice(1);
+    return results.slice(1) as T;
 }

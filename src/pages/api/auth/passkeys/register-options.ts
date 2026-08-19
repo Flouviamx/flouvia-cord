@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { generateRegistrationOptions } from '@simplewebauthn/server';
 import { sql } from '../../../../lib/db';
 import { validateSession, SESSION_COOKIE } from '../../../../lib/auth';
+import { log } from '../../../../lib/log';
 
 export const prerender = false;
 
@@ -56,7 +57,7 @@ export const POST: APIRoute = async ({ cookies }) => {
 
     return new Response(JSON.stringify(options), { status: 200 });
   } catch (error) {
-    console.error('Error en register-options:', error);
+    log.error('Error en register-options', { err: error });
     return new Response(JSON.stringify({ error: 'Error interno' }), { status: 500 });
   }
 };

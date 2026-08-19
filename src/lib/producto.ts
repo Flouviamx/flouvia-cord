@@ -13,7 +13,8 @@ export interface FeatureStat {
 
 export interface FeatureBlock {
     eyebrow: string;
-    titulo: string;      // admite     copy: string;
+    titulo: string;      // admite HTML
+    copy: string;
     bullets: string[];
 }
 
@@ -32,7 +33,8 @@ export interface Feature {
     slug: string;
     nav: string;             // nombre corto (cross-links, megamenú)
     eyebrow: string;
-    titulo: string;          // H1, admite     sub: string;
+    titulo: string;          // H1, admite HTML
+    sub: string;
     metaTitle?: string;      // <title>/OG — keyword-rich (cae a `${nav} — Cord`)
     metaDescription?: string;// meta description (cae a `sub`)
     plan: string;            // en qué plan vive
@@ -282,85 +284,6 @@ export const FEATURES: Feature[] = [
         cta: { titulo: 'Deja de perseguir. Empieza a saber.', sub: 'Tu primera notificación de "la vio" no tiene precio.' },
     },
     {
-        slug: 'cfdi',
-        nav: 'CFDI 4.0',
-        eyebrow: 'FACTURACIÓN CFDI 4.0',
-        titulo: 'De propuesta aprobada a factura timbrada, automático.',
-        sub: 'Cuando se aprueba la propuesta, el CFDI 4.0 se timbra ante el SAT automáticamente. Sin volver a capturar datos en otro portal, sin errores de transcripción.',
-        metaTitle: 'CFDI 4.0 automático desde la cotización aprobada — Cord',
-        metaDescription: 'Cord timbra el CFDI 4.0 automáticamente ante el SAT en cuanto se aprueba la cotización, sin recapturar datos en otro portal. Facturación electrónica real para cualquier negocio en México.',
-        plan: 'Disponible desde el plan Starter',
-        stats: [
-            { valor: '1', countup: 1, suffix: ' clic', label: 'de la cotización aprobada al CFDI' },
-            { valor: '0', countup: 0, label: 'capturas dobles — los datos viajan solos' },
-            { valor: '5', countup: 5, suffix: ' min', label: 'para conectar tu CSD la primera vez' },
-        ],
-        blocks: [
-            {
-                eyebrow: 'SIN RECAPTURAR',
-                titulo: 'Los datos ya están. Úsalos.',
-                copy: 'La cotización ya tiene los productos, las cantidades, los precios negociados y el RFC del cliente. Timbrar es un clic: Cord arma el CFDI 4.0 con esos mismos datos y lo manda al PAC. Cero transcripción, cero errores de dedo.',
-                bullets: [
-                    'CFDI 4.0 con los datos exactos de la cotización',
-                    'RFC y datos fiscales del cliente guardados en su ficha',
-                    'UUID, XML y PDF disponibles al instante',
-                ],
-            },
-            {
-                eyebrow: 'TU CSD, SEGURO',
-                titulo: 'Conecta tu sello una vez y olvídate.',
-                copy: 'Subes tu Certificado de Sello Digital (CSD) una sola vez, protegido y aislado en tu cuenta. A partir de ahí, cada timbrado usa tu sello sin que vuelvas a tocar archivos .cer y .key.',
-                bullets: [
-                    'CSD cifrado y aislado por negocio',
-                    'Timbrado con PAC autorizado por el SAT',
-                    'Solo para México — como debe ser',
-                ],
-            },
-            {
-                eyebrow: 'CICLO COMPLETO',
-                titulo: 'La cotización, el pago y la factura: un solo hilo.',
-                copy: 'La factura no vive en otro sistema: queda ligada a su cotización, con su evento en el timeline. Cuando contabilidad pregunte, todo está en el mismo lugar — quién aprobó, cuándo pagó y qué UUID le tocó.',
-                bullets: [
-                    'Factura ligada a su cotización y su timeline',
-                    'Estado "facturada" visible en tu pipeline',
-                    'Historial listo para conciliar',
-                ],
-            },
-        ],
-        showcase: [
-            {
-                eyebrow: 'EL RIESGO DE RECAPTURAR',
-                titulo: 'Cada vez que vuelves a escribir un dato, hay una oportunidad de error fiscal.',
-                copy: 'El RFC, los productos, los montos — ya están en la cotización aprobada. Cord los usa tal cual para timbrar el CFDI. Cero transcripción, cero multas por un dedo torcido.',
-            },
-            {
-                eyebrow: '5 MINUTOS, UNA SOLA VEZ',
-                titulo: 'Conecta tu sello digital hoy. No lo vuelvas a tocar.',
-                copy: 'Subes tu CSD una vez, cifrado y aislado en tu cuenta. A partir de ahí, cada cotización aprobada se convierte en factura con un clic — no con una cita en la agenda de tu contador.',
-            },
-            {
-                eyebrow: 'TODO EN UN SOLO HILO',
-                titulo: 'Cuando contabilidad pregunte, todo está en el mismo lugar.',
-                copy: 'La factura queda ligada a su cotización, con su UUID y su timeline completo. Nada de buscar en dos sistemas distintos para reconciliar quién pagó qué.',
-            },
-        ],
-        faqs: [
-            {
-                q: '¿Cómo timbra el CFDI automáticamente Cord?',
-                a: 'Cuando el cliente aprueba una cotización en Cord, el sistema arma el CFDI 4.0 con los datos exactos de la cotización: productos, cantidades, precios, RFC del cliente y datos fiscales del emisor. Lo envía al PAC autorizado y devuelve el UUID, XML y PDF timbrado ante el SAT. Todo sin salir de Cord ni recapturar datos en otro portal.',
-            },
-            {
-                q: '¿Qué necesito para activar el CFDI en Cord?',
-                a: 'Solo se necesita el Certificado de Sello Digital (CSD) del SAT: los archivos .cer y .key con su contraseña. Se cargan una sola vez en la sección de ajustes de Cord y quedan cifrados y aislados en la cuenta. El proceso tarda menos de 5 minutos. Disponible para negocios con RFC en México desde el plan Starter.',
-            },
-            {
-                q: '¿El CFDI de Cord es válido ante el SAT?',
-                a: 'Sí. Cord timbra CFDI 4.0 real a través de un Proveedor Autorizado de Certificación (PAC) autorizado por el SAT. El comprobante generado tiene UUID válido, incluye el sello digital del emisor y cumple con la versión 4.0 del estándar del Comprobante Fiscal Digital por Internet vigente en México.',
-            },
-        ],
-        cta: { titulo: 'Factura sin salir del trato.', sub: 'CFDI 4.0 automático desde el plan Starter.' },
-    },
-    {
         slug: 'clientes-credito',
         nav: 'Clientes y crédito',
         eyebrow: 'CLIENTES Y CRÉDITO',
@@ -598,83 +521,103 @@ export const FEATURES: Feature[] = [
         cta: { titulo: 'Vende en dólares sin perder en el cambio.', sub: 'Cotiza en USD o EUR, factura en pesos y deja que Cord proteja tu margen. Gratis para empezar.' },
     },
     {
-        slug: 'internacional',
-        nav: 'Facturación internacional',
-        eyebrow: 'FACTURACIÓN INTERNACIONAL (US/MX)',
-        titulo: 'Propuestas en dólares. Factura como debe ser.',
-        sub: 'Vende a clientes en Estados Unidos sin perder el margen al tipo de cambio: propuestas en USD, tasa blindada por 30 días y factura en MXN con CFDI 4.0. Una sola plataforma para el negocio que ya no cabe en una frontera.',
-        metaTitle: 'Facturación internacional US/MX: cotiza en dólares, factura CFDI 4.0 en pesos — Cord',
-        metaDescription: 'Cord cotiza en USD con cobertura cambiaria (tasa congelada 30 días) y factura en MXN con CFDI 4.0 timbrado ante el SAT vía Facturapi. Arquitectura multi-país lista para crecer. Para empresas mexicanas que exportan o venden en dólares.',
-        plan: 'Cobertura cambiaria y multi-divisa en todos los planes (incluido el gratuito); el timbrado CFDI 4.0 ante el SAT desde el plan Starter',
+        slug: 'facturacion',
+        nav: 'Cord Invoicing',
+        eyebrow: 'CORD INVOICING',
+        titulo: 'La factura deja de ser un PDF que mandas por correo.',
+        sub: 'Cord emite la factura, le pone folio propio, la timbra donde hay que timbrarla, se la manda a tu cliente con su propio link de pago y te dice cuánto falta por cobrar. En México es CFDI 4.0 real ante el SAT; en el resto del mundo, factura comercial con tu marca y el tipo de cambio declarado.',
+        metaTitle: 'Cord Invoicing: facturación en línea con link de pago y CFDI 4.0 — Cord',
+        metaDescription: 'Emite facturas con folio propio, mándalas con su link de pago y sigue el saldo hasta que se cobren. CFDI 4.0 timbrado ante el SAT en México, factura comercial en el resto del mundo, en la divisa de la venta.',
+        plan: 'Emisión de facturas desde el plan Starter — CFDI 4.0 en México y factura comercial en el resto; multi-divisa en todos los planes, incluido el gratuito',
         stats: [
-            { valor: '30', countup: 30, suffix: ' días', label: 'que congelas el tipo de cambio de la cotización (FX lock)' },
-            { valor: '2', countup: 2, label: 'divisas por trato: una para cotizar, otra para facturar' },
+            { valor: '5', countup: 5, label: 'estados del ciclo: borrador, emitida, pagada, anulada e incobrable' },
+            { valor: '1', countup: 1, label: 'link por factura, con su saldo vivo y su propio cobro' },
             { valor: '4.0', label: 'versión del CFDI que Cord timbra real ante el SAT' },
         ],
         blocks: [
             {
-                eyebrow: 'COBERTURA CAMBIARIA',
-                titulo: 'El dólar se mueve. Tu margen no.',
-                copy: 'Entre que tu cliente aprueba en dólares y tú facturas semanas después, el tipo de cambio puede comerse tu utilidad. Cord toma la tasa spot real del Banco Central Europeo, le suma el buffer de cobertura que tú definas y congela ese tipo de cambio por 30 días. El margen que prometiste es el margen que cobras.',
+                eyebrow: 'CICLO DE VIDA COMPLETO',
+                titulo: 'Una factura no es un archivo. Es un estado.',
+                copy: 'La armas como borrador y la revisas sin comprometer nada: el folio no se quema hasta que la emites. Al emitirla queda inmutable y timbrada. Cuando entra dinero, el saldo baja solo. Si te equivocaste antes de cobrar, se anula ante el proveedor fiscal; si ya cobraste, el camino correcto es una nota de crédito, y Cord no te deja confundirlos.',
                 bullets: [
-                    'Tasa spot en vivo (USD a MXN, EUR a MXN) desde fuente del BCE',
-                    'Buffer de cobertura configurable para absorber la volatilidad',
-                    'FX lock de 30 días: la tasa queda guardada con la cotización',
+                    'Borrador editable que no consume folio ni timbre',
+                    'Anulación real ante el SAT, no solo un cambio de color en pantalla',
+                    'Nota de crédito cuando la factura ya tiene pagos aplicados',
                 ],
             },
             {
-                eyebrow: 'DOS DIVISAS, UN TRATO',
-                titulo: 'Cotizas en la divisa que tu cliente entiende.',
-                copy: 'En el editor eliges la divisa de presentación —la que ve tu cliente en el extranjero— y la divisa fiscal con la que vas a facturar. Cord guarda ambas en la cotización junto con la tasa congelada, así el documento que aprueba el cliente y el CFDI que entra a tu contabilidad nunca se contradicen.',
+                eyebrow: 'LINK DE PAGO POR FACTURA',
+                titulo: 'Tu cliente abre la factura y la paga ahí mismo.',
+                copy: 'Cada factura tiene su propia página con tu marca: los conceptos, el vencimiento, los pagos que ya entraron y el saldo que falta. Desde ahí se paga con tarjeta, directo a tu cuenta. Se descarga el PDF y, en México, el XML. Tú ves cuándo la abrió tu cliente — y solo cuando la abre tu cliente, no cuando revisas tu propio link.',
                 bullets: [
-                    'Divisa de presentación (USD) separada de la divisa fiscal (MXN)',
-                    'Vista previa del monto convertido antes de enviar',
-                    'Tasa, fuente y vigencia quedan registradas en el trato',
+                    'Página pública por factura, con tu logo y tu color',
+                    'Cobro del saldo con tarjeta, a tu cuenta conectada',
+                    'PDF siempre, XML timbrado en México',
                 ],
             },
             {
-                eyebrow: 'CFDI REAL + ARQUITECTURA GLOBAL',
-                titulo: 'México timbra de verdad. El resto, ya está cableado.',
-                copy: 'Cuando el trato se cierra en México, Cord emite CFDI 4.0 real ante el SAT a través de Facturapi: UUID, XML y PDF timbrados. Por dentro, un patrón de proveedores fiscales enruta cada emisión según el país del negocio y la centraliza en un solo registro: la base lista para sumar más países conforme crezcas.',
+                eyebrow: 'EL CARRIL CAMBIA POR PAÍS',
+                titulo: 'México timbra ante el SAT. El resto factura con tu folio.',
+                copy: 'Cuando el negocio es mexicano, Cord timbra CFDI 4.0 real a través de un PAC autorizado: UUID, XML y PDF válidos, bajo tu propio CSD. Fuera de México emite una factura comercial con folio consecutivo tuyo y tu marca — y lo dice así, sin fingir que la presentó ante una autoridad que todavía no está conectada. El flujo de trabajo es el mismo en los dos casos.',
                 bullets: [
-                    'CFDI 4.0 real timbrado ante el SAT (México) vía Facturapi',
-                    'Registro fiscal unificado por país en un solo lugar',
-                    'Arquitectura multi-país preparada para expandirse',
+                    'CFDI 4.0 timbrado ante el SAT con el CSD de tu empresa',
+                    'Factura comercial con folio consecutivo propio fuera de México',
+                    'La factura se emite en la divisa de la venta, con el tipo de cambio declarado',
                 ],
             },
         ],
         showcase: [
             {
-                eyebrow: 'VENDER SIN FRONTERA',
-                titulo: 'El negocio que ya no cabe en un solo país no debería usar herramientas de un solo país.',
-                copy: 'Cotiza en dólares a un cliente en Texas y factura en pesos en Guadalajara — desde la misma cuenta, el mismo catálogo, el mismo sistema.',
+                eyebrow: 'DEL TRATO A LA FACTURA',
+                titulo: 'Factura desde una cotización cerrada o desde cero, sin cambiar de herramienta.',
+                copy: 'Si el trato ya vivía en Cord, la factura hereda cliente, líneas y divisa. Si no, la creas directo: es el caso más común de un negocio y no debería exigir inventarse una cotización.',
             },
             {
-                eyebrow: 'COBERTURA REAL',
-                titulo: 'El tipo de cambio ya no es una apuesta.',
-                copy: 'Buffer de cobertura configurable más tasa congelada 30 días. Sabes exactamente cuánto vas a cobrar en pesos desde el momento en que el cliente aprueba en dólares.',
+                eyebrow: 'EL SALDO SE ACTUALIZA SOLO',
+                titulo: 'Dejas de preguntarte cuánto falta por cobrar de cada factura.',
+                copy: 'Un pago con tarjeta desde el link, una transferencia que registras a mano: los dos bajan el saldo de la misma factura. Cuando llega a cero, se marca pagada y sale de la cartera vencida.',
             },
             {
-                eyebrow: 'MÉXICO TIMBRA DE VERDAD',
-                titulo: 'CFDI 4.0 real, no una simulación con apariencia de factura.',
-                copy: 'Cuando el trato se cierra en México, el UUID, el XML y el PDF salen timbrados ante el SAT — con una arquitectura ya lista para sumar más países.',
+                eyebrow: 'FACTURACIÓN POR API',
+                titulo: 'Todo lo anterior también sirve sin abrir Cord.',
+                copy: 'La API v1 crea borradores, emite, envía, registra pagos y anula. Los webhooks avisan cuando una factura se emite, se paga, falla el cobro o se vence.',
             },
         ],
         faqs: [
             {
-                q: '¿Cord permite cotizar en dólares y facturar en pesos?',
-                a: 'Sí. En el editor de Cord defines dos divisas: la divisa de presentación con la que tu cliente ve la cotización (por ejemplo USD) y la divisa fiscal con la que vas a facturar (por ejemplo MXN). Cord obtiene la tasa de cambio spot real, le aplica el buffer de cobertura que configures y la congela por 30 días junto con la cotización. Al cerrar el trato en México, la factura se emite como CFDI 4.0 en pesos.',
+                q: '¿Puedo emitir una factura sin haber hecho una cotización?',
+                a: 'Sí. En Cord la factura es un objeto propio: entras a Facturas, eliges cliente, capturas los conceptos y la guardas como borrador. No necesitas una cotización previa. Si el trato sí venía de una cotización aprobada, la factura hereda cliente, líneas y divisa automáticamente y quedan ligadas.',
             },
             {
-                q: '¿Cómo protege Cord mi margen ante movimientos del tipo de cambio?',
-                a: 'Cord usa cobertura cambiaria. Toma la tasa spot en vivo (datos del Banco Central Europeo vía Frankfurter), le suma un porcentaje de buffer que tú defines para absorber la volatilidad, y bloquea ese tipo de cambio por 30 días (FX lock). Así, aunque el dólar se mueva entre la aprobación y la facturación, tú facturas a la tasa que pactaste y conservas el margen. La cobertura cambiaria y la multi-divisa están disponibles en todos los planes, incluido el gratuito.',
+                q: '¿Cord timbra CFDI 4.0 real ante el SAT?',
+                a: 'Sí, en México. Cord timbra CFDI 4.0 a través de un Proveedor Autorizado de Certificación, usando el Certificado de Sello Digital de tu propia empresa: el comprobante sale bajo tu RFC, con UUID, XML y PDF válidos ante el SAT. Subes tu CSD una vez en Ajustes y cada factura se timbra bajo tu cuenta, no bajo una cuenta compartida.',
             },
             {
-                q: '¿Cord factura clientes en Estados Unidos igual que en México?',
-                a: 'No de la misma forma, y es importante ser claros. En México, Cord timbra CFDI 4.0 real ante el SAT a través de un Proveedor Autorizado de Certificación (Facturapi), con UUID, XML y PDF válidos. Para Estados Unidos no existe un timbre del gobierno equivalente: la emisión de facturas comerciales (Commercial Invoice) en EE.UU. está en la arquitectura como módulo en desarrollo, no como timbrado real equivalente al CFDI. Hoy, lo que cierra de verdad el ciclo fiscal es México; la base multi-país ya está construida para crecer hacia otros países.',
+                q: '¿Cómo cancelo una factura ya timbrada?',
+                a: 'Desde el detalle de la factura, con el botón Anular. Cord manda la cancelación al SAT con tu propio certificado y solo la marca como anulada cuando el SAT la confirma; si el SAT la rechaza, te lo dice en vez de mostrarte una factura "cancelada" que sigue viva. Si la factura ya tiene pagos aplicados no se anula: Cord te pide emitir una nota de crédito, que es el documento correcto para ese caso.',
+            },
+            {
+                q: '¿Qué es la página de factura y qué ve mi cliente ahí?',
+                a: 'Es un link propio de cada factura, con tu logo y tu color. Tu cliente ve los conceptos, el total, la fecha de vencimiento, los pagos que ya entraron y el saldo que falta, y puede pagarlo con tarjeta en ese mismo momento; el dinero llega a tu cuenta conectada. También puede descargar el PDF y, en México, el XML timbrado.',
+            },
+            {
+                q: '¿Puedo facturar en dólares si mi contabilidad está en pesos?',
+                a: 'Sí. La factura se emite en la divisa de la venta —la que tu cliente aprobó y paga— y declara el tipo de cambio hacia tu divisa contable, que es exactamente lo que el SAT exige como TipoCambio. Cord toma la tasa de una fuente real y fechada. Si no puede obtener una tasa, la emisión falla con un mensaje claro en vez de inventarse un número: una factura con un tipo de cambio falso es un problema fiscal, no un detalle.',
+            },
+            {
+                q: '¿Cord me avisa cuando una factura se vence?',
+                a: 'Sí. Cada factura tiene su propia fecha de vencimiento, y Cord manda recordatorio al cliente antes y después de que llegue. En la bandeja ves cuánto tienes por cobrar, cuánto está vencido y cuántos días lleva cada factura. Los webhooks también disparan un evento cuando una factura se vence, se paga o falla su cobro.',
+            },
+            {
+                q: '¿Puedo facturar desde mi propio sistema, sin entrar a Cord?',
+                a: 'Sí. La API v1 expone facturas completas: crear borrador, emitir, enviar al cliente, registrar un pago, anular y emitir nota de crédito, además de consultarlas con su saldo. Los webhooks avisan de cada cambio de estado. Cord también expone un servidor MCP, así que un asistente de IA puede consultar tus facturas y preparar borradores.',
+            },
+            {
+                q: '¿Qué pasa si mi negocio no está en México?',
+                a: 'Cord emite una factura comercial con folio consecutivo propio, tus datos fiscales y tu marca, en la divisa de la venta. Es un documento comercial válido para cobrar y para tu contabilidad, y Cord lo dice tal cual: no afirma haberlo presentado ante la autoridad fiscal local, porque ese carril todavía no está conectado fuera de México. La arquitectura por país ya está construida para irlos sumando.',
             },
         ],
-        cta: { titulo: 'Vende sin frontera. Factura sin sorpresas.', sub: 'Cotiza en dólares con la tasa blindada y timbra tu CFDI 4.0 en pesos. Empieza gratis.' },
+        cta: { titulo: 'Emite, manda y cobra. En un solo lugar.', sub: 'Factura con folio propio, mándala con su link de pago y mira cómo baja el saldo. Empieza gratis.' },
     },
     {
         slug: 'finanzas',

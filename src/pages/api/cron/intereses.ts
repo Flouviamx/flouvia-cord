@@ -9,12 +9,21 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit } from '../../../lib/db';
+import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
 
 const RESEND_KEY  = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cobranza@flouvia.com>';
 
 const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
-const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
+// El resumen de intereses lo lee el DUEÑO: va en la divisa de su negocio.
+const money = (n: number, currency?: string) => {
+    const code = normalizeCurrency(currency);
+    const decimals = currencyDecimals(code);
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency', currency: code,
+        minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+    }).format(n);
+};
 
 export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
@@ -29,7 +38,7 @@ export const GET: APIRoute = async ({ request }) => {
 
     // Orgs con tasa de interés configurada (cualquier plan que lo habilite).
     const orgs = await sql`
-        select id, nombre, interes_moratorio_pct,
+        select id, nombre, interes_moratorio_pct, moneda,
                (select email from org_members where org_id = orgs.id and rol = 'owner' limit 1) as owner_email
         from orgs
         where interes_moratorio_pct > 0
@@ -42,6 +51,7 @@ export const GET: APIRoute = async ({ request }) => {
     for (const org of orgs) {
         const orgId = org.id as string;
         const tasa  = Number(org.interes_moratorio_pct);
+        const orgCurrency = normalizeCurrency(org.moneda as string);
 
         const rows = await sql`
             select c.id, c.folio, c.total, c.terminos,
@@ -100,7 +110,7 @@ export const GET: APIRoute = async ({ request }) => {
                     <td style="padding:6px 0;border-bottom:1px solid #e8eaed">${esc(c.folio)}</td>
                     <td style="padding:6px 0;border-bottom:1px solid #e8eaed">${esc(c.empresa)}</td>
                     <td style="padding:6px 0;border-bottom:1px solid #e8eaed;text-align:right">${c.diasVencido}d</td>
-                    <td style="padding:6px 0;border-bottom:1px solid #e8eaed;text-align:right;font-weight:600">${money(c.monto)}</td>
+                    <td style="padding:6px 0;border-bottom:1px solid #e8eaed;text-align:right;font-weight:600">${money(c.monto, orgCurrency)}</td>
                 </tr>`).join('');
 
             const html = `<div style="font-family:system-ui,Arial,sans-serif;color:#0f1729;max-width:560px">
@@ -118,7 +128,7 @@ export const GET: APIRoute = async ({ request }) => {
                     <tfoot>
                         <tr>
                             <td colspan="3" style="padding:10px 0 0;font-weight:600">Total cargado</td>
-                            <td style="padding:10px 0 0;font-weight:700;text-align:right">${money(total)}</td>
+                            <td style="padding:10px 0 0;font-weight:700;text-align:right">${money(total, orgCurrency)}</td>
                         </tr>
                     </tfoot>
                 </table>

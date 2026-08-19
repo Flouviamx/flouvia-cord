@@ -1,7 +1,7 @@
 ---
 title: "SAT Catalogs and Product Keys"
 description: "Learn how to map your internal products with the official SAT keys for error-free billing."
-category: "Billing & CFDI"
+category: "Invoicing"
 order: 2
 ---
 

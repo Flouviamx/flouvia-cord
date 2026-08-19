@@ -33,7 +33,7 @@ export const PATCH: APIRoute = async ({ request }) => {
 
     if (data.tos_acceptance) {
         if (data?.legal_consents?.payments_terms !== FEE_TERMS_VERSION || data?.legal_consents?.privacy !== true) {
-            return new Response(JSON.stringify({ error: 'Debes aceptar los términos de Cord Pagos y el Aviso de Privacidad vigentes' }), { status: 400 });
+            return new Response(JSON.stringify({ error: 'Debes aceptar los términos de Cord Payments y el Aviso de Privacidad vigentes' }), { status: 400 });
         }
         fields['tos_acceptance[date]'] = Math.floor(Date.now() / 1000).toString();
         fields['tos_acceptance[ip]'] = reqIp(request) || '127.0.0.1';

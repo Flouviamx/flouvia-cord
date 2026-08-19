@@ -181,6 +181,7 @@ import { trustedIp } from './lib/ip';
 import { getAppGates, getActiveOrgId } from './lib/db';
 import { checkMemberSeatAccess } from './lib/org-entitlements';
 import { strictLimitResponse, strictRateLimit } from './lib/ratelimit';
+import { log } from './lib/log';
 
 const mainHandler = async (context: any, next: any) => {
     const path = context.url.pathname;
@@ -241,7 +242,7 @@ const mainHandler = async (context: any, next: any) => {
         const originHeader = context.request.headers.get("origin");
         if (!isAllowedMutationOrigin(path, originHeader, context.url.origin, import.meta.env.SITE as string | undefined)) {
             if (!originHeader && context.request.headers.get('sec-fetch-site') === 'same-origin') {
-                console.warn(`[csrf] escritura same-origin sin Origin bloqueada: ${method} ${path}`);
+                log.warn('escritura same-origin sin Origin bloqueada', { route: 'csrf', method, path });
             }
             return new Response(JSON.stringify({ error: "Invalid Origin (CSRF)" }), {
                 status: 403,
@@ -408,10 +409,15 @@ const mainHandler = async (context: any, next: any) => {
     // carril de API key (sk_test_) tienen su propia resolución.
     const testMode = !csrfExempt && context.cookies.get("cord_test_mode")?.value === "1";
 
-    // Idioma: detectado del header Accept-Language del navegador — sin toggle
-    // manual (decisión del producto). Aplica a /app/**, /q/[token] y correos
-    // transaccionales (que reciben el locale ya resuelto). Nunca afecta la
-    // landing pública, que usa su propio sistema de rutas /en/*.
+    // Idioma: este es el VALOR INICIAL, detectado del header Accept-Language del
+    // navegador. Dentro de /app y de las APIs internas lo sobrescribe el idioma
+    // de la ORGANIZACIÓN (orgs.idioma, derivado del país al crear la cuenta) en
+    // cuanto se resuelve — ver setRequestLocale() en lib/context.ts, invocado
+    // desde getAppGates() y getOrg(). Así una cuenta creada en Estados Unidos ve
+    // la app en inglés aunque el navegador venga en español, y viceversa.
+    // Sigue siendo el valor efectivo donde no hay organización todavía: el wizard
+    // de /onboarding (aún no hay país elegido) y el link público /q/[token].
+    // Nunca afecta la landing, que usa su propio sistema de rutas /en/*.
     const acceptLang = context.request.headers.get("accept-language") ?? "";
     const firstLang = acceptLang.split(",")[0]?.trim().toLowerCase() ?? "";
     const locale: "es" | "en" = firstLang.startsWith("en") ? "en" : "es";
@@ -440,7 +446,7 @@ const mainHandler = async (context: any, next: any) => {
                         return context.redirect('/app/ajustes/cuenta?subscription_seat=1');
                     }
                 } catch (error) {
-                    console.error('[subscription] no se pudo verificar el asiento', error);
+                    log.error('no se pudo verificar el asiento', { route: 'subscription', err: error });
                     if (isApi) return new Response(JSON.stringify({ error: 'No pudimos verificar la suscripción.' }), { status: 503, headers: { 'Content-Type': 'application/json' } });
                     return context.redirect('/app/ajustes/cuenta?subscription_check=1');
                 }

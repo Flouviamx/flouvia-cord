@@ -80,7 +80,8 @@ queda en el outbox durable para Stripe. El meter recibe solo el excedente sobre 
 incluida, nunca el consumo total.
 
 Al modificar Billing ejecuta `npm run test:payments`, `npm run security:billing-live`,
-`npm run security:billing-db` y `npm run build`.
+`npm run security:billing-db` y `npm run build`. `test:payments` incluye
+`security:currency`, que cubre las reglas 21 y 22.
 
 ### 18. Un límite es hard limit, soft limit o feature gate — nunca los tres a la vez
 
@@ -155,6 +156,80 @@ del otro lado, el hilo se leía como si lo hubiera escrito él solo.
 Un constructor único de burbujas por superficie, no uno por camino (envío optimista,
 llegada por stream, render de servidor): con uno por camino es cuestión de tiempo que
 alguno se quede sin etiqueta o con el lado invertido.
+
+### 21. Un monto sin divisa es un número, no dinero
+
+Todo importe que Cord muestre, guarde o cobre viaja **con su divisa**. No hay un
+"$" por defecto ni un `MXN` implícito: el símbolo es parte del dato, no de la
+plantilla.
+
+Tres decisiones distintas, tres fuentes, y no se mezclan:
+
+- **Divisa de venta** (`cotizaciones.base_currency`): en la que se capturan los
+  precios, en la que el cliente ve el link, en la que se cobra y en la que se
+  emite la factura. Manda en toda superficie del cliente.
+- **Divisa contable** (`cotizaciones.fiscal_currency`, default `orgs.moneda`): en
+  la que el negocio lleva sus libros. Cuando difiere de la de venta, el documento
+  fiscal declara el tipo de cambio; nunca se reetiquetan los importes.
+- **Divisa de la plataforma**: los precios de los planes de Cord. Es de Cord, no
+  del cliente — `/precios`, el checkout de suscripción y el paywall no heredan la
+  divisa de la organización.
+
+Contratos ejecutables:
+
+- Formato de servidor: `money()`/`moneyFull()` (`lib/mock.ts`, re-exportado por
+  `lib/queries.ts`) leen la divisa del request. La fija el middleware desde
+  `orgs.moneda` (`getAppGates`) y la sobrescribe el link público con la de la
+  cotización (`getCotizacionByToken`).
+- Formato de cliente: `lib/money-client.ts`, leyendo `<body data-currency>` que
+  publica `AppLayout`. Un `<script is:inline>` no puede importarlo: replica la
+  misma lectura del DOM, nunca un símbolo fijo.
+- Unidad mínima hacia Stripe: `toMinorUnits()` de `lib/currency.ts`. **Nunca
+  `Math.round(x * 100)`**: JPY, CLP, KRW y VND no tienen decimales (×100 cobra
+  cien veces de más) y KWD/BHD tienen tres.
+- Rieles con país: SPEI/CLABE son de México. Una capacidad de un solo país se
+  detecta y se dice, no se ofrece y falla en el proveedor.
+
+Casos que originaron la regla (ago 2026): `money()` era `'$' + Intl(es-MX)`, así
+que un negocio en Madrid le mostraba "$1.000,00" a su cliente y uno en Tokio
+inventaba dos decimales; `payment-intent.ts` y `checkout.ts` mandaban
+`currency: 'mxn'` fijo, de modo que una venta de USD 1,000 se cobraba como MXN
+1,000; `createConnectAccount` fijaba `country: 'MX'`, así que ningún negocio de
+otro país completaba el alta de cobros.
+
+### 22. Una tasa que no se puede demostrar no se inventa
+
+El tipo de cambio es un dato de un tercero, con fecha. Cuando no se puede
+obtener, la operación **falla cerrado** con un mensaje accionable; jamás se
+sustituye por `1.0`, por una tabla de constantes ni por una estimación.
+
+`FXService` lanza `FXUnavailableError` y sus llamadores lo traducen: la creación
+de cotización responde 503 y `/api/fx/quote` también. Una tasa cacheada y fechada
+sí es un respaldo válido (es un dato real), acotada a 24 horas; un número inventado
+no lo es nunca.
+
+Corolario de cobertura: **una sola fuente no cubre el mundo, y su hueco no es una
+caída**. El BCE publica ~30 divisas; para COP, CLP, PEN, ARS, UYU o GTQ responde
+404. Por eso `FXService` consulta fuentes en cadena — BCE primero por ser la
+referencia que declara el CFDI, luego dos de cobertura amplia — y distingue dos
+respuestas que se veían iguales: *esta fuente no cubre el par* cede el turno a la
+siguiente, *no hubo respuesta* es falla de red. Sólo cuando ninguna publica el par
+se falla cerrado. Confundirlas dejaba a media Latinoamérica sin poder cotizar con
+un mensaje que invitaba a reintentar algo que nunca iba a funcionar; y el mensaje
+mostraba el código HTTP crudo al vendedor, contra la regla 14.
+
+La tasa congelada al cotizar (`cotizaciones.fx_rate`) **debe tener consumidor**:
+la declara el documento fiscal como tipo de cambio y con ella se calcula el total
+contable (`documentos_fiscales.fx_rate` / `ledger_total`). Guardar una tasa que
+nadie lee es la regla 15 aplicada al dinero — y es peor, porque parece que el
+producto cubre multi-divisa.
+
+Corolario de dirección: la conversión va **de la divisa de venta a la contable**
+(multiplica). Si la vista previa del editor divide y la base de datos multiplica,
+una de las dos miente. El caso real: `fx_rate` se calculaba, se guardaba y no lo
+leía nadie; con la red caída se congelaba `1.0` durante 30 días, y el panel de FX
+dividía el total tratándolo como si ya estuviera en la divisa contable — tres
+capas con tres respuestas distintas para la misma venta.
 
 ## Diseño, interacción y accesibilidad
 

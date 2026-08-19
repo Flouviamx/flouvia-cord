@@ -25,8 +25,18 @@ import { trackServer } from '../../../lib/posthog-server';
 import { resolveViewer } from '../../../lib/public-viewer';
 import { recordHeartbeat, recordHito } from '../../../lib/atencion';
 import { markViewed } from '../../../lib/queries';
+import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
 
-const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
+// Los eventos que escribe el link público (firma parcial, contrapropuesta) los
+// lee el vendedor en su historial: el importe va con la divisa de la cotización.
+const money = (n: number, currency?: string) => {
+    const code = normalizeCurrency(currency);
+    const decimals = currencyDecimals(code);
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency', currency: code,
+        minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+    }).format(n);
+};
 
 export const POST: APIRoute = async ({ params, request, cookies }) => {
     const token = params.token ?? '';
@@ -45,11 +55,14 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     const identity = await resolvePublicQuote(token);
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
     const [rows] = await withOrgTx(identity.orgId, sql`
-        select c.id, c.org_id, c.status, c.rev, (o.sandbox_of is not null) as is_sandbox, o.is_demo
+        select c.id, c.org_id, c.status, c.rev, c.base_currency, o.moneda,
+               (o.sandbox_of is not null) as is_sandbox, o.is_demo
         from cotizaciones c join orgs o on o.id = c.org_id
         where c.id = ${identity.id} and c.org_id = ${identity.orgId}`);
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
     const c = rows[0];
+    // Divisa de la cotización: la comparten los eventos que escribe este endpoint.
+    const quoteCurrency = normalizeCurrency((c.base_currency as string) || (c.moneda as string));
     const orgId = c.org_id as string;
     const alive = ['sent', 'viewed'].includes(c.status as string);
 
@@ -131,7 +144,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         const snapshotHash = createHash('sha256').update(payload).digest('hex');
 
         const detalle = isPartial
-            ? `Firmado por "${signedBy || 'Anónimo'}" — aprobó ${firmadas.length} de ${allItems.length} líneas (${money(subAceptado)} de ${money(subTotal)}) (IP ${ip})`
+            ? `Firmado por "${signedBy || 'Anónimo'}" — aprobó ${firmadas.length} de ${allItems.length} líneas (${money(subAceptado, quoteCurrency)} de ${money(subTotal, quoteCurrency)}) (IP ${ip})`
             : (signedBy ? `Firmado digitalmente por "${signedBy}" (IP ${ip})` : 'El cliente aprobó la cotización desde el link');
 
         // El driver HTTP de Neon NO soporta sql.begin(callback); usa sql.transaction([...]).
@@ -217,7 +230,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         const propuesta = Number(body.propuesta) > 0 ? Number(body.propuesta) : null;
         if (!mensaje && !propuesta) return json({ error: 'Indica tu propuesta o escribe un mensaje' }, 400);
         const detalle = propuesta
-            ? `Propuesta: ${money(propuesta)}${mensaje ? ` — ${mensaje}` : ''}`
+            ? `Propuesta: ${money(propuesta, quoteCurrency)}${mensaje ? ` — ${mensaje}` : ''}`
             : mensaje;
         await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
             values (${orgId}, ${c.id}, 'counter', ${detalle})`);

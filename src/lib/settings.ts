@@ -3,7 +3,7 @@
 // pestaña y muestra una barra de pestañas horizontal (NO un rail lateral).
 //
 // Reorganizado jun 2026 → "centro de mando Enterprise" (7 secciones spine +
-// extras): General · Branding · Cotizaciones · Facturación y CFDI · Planes y
+// extras): General · Branding · Cotizaciones · Facturación · Planes y
 // cobranza · Notificaciones · Equipo · Developers · Avanzado · Tu cuenta.
 //
 // i18n (jul 2026): cada categoría/pestaña lleva `label`/`desc` en español (default)
@@ -48,9 +48,13 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         ],
     },
     {
-        id: 'facturacion', label: 'Facturación y CFDI', labelEn: 'Invoicing & CFDI',
-        desc: 'Datos fiscales, certificado de sello (CSD) y timbrado.',
-        descEn: 'Tax details, digital seal certificate (CSD), and stamping.',
+        // "Facturación" a secas: el nombre de la sección describe la capacidad,
+        // no el carril de un país. CFDI es el rail mexicano y se nombra dentro de
+        // la sección cuando aplica, igual que factura comercial en el resto —
+        // regla 10 (posicionamiento horizontal).
+        id: 'facturacion', label: 'Facturación', labelEn: 'Invoicing',
+        desc: 'Datos fiscales, certificado de sello y emisión de facturas.',
+        descEn: 'Tax details, digital seal certificate, and invoice issuing.',
         icon: '<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
         tabs: [
             { id: 'fiscal', label: 'Datos fiscales', labelEn: 'Tax details', href: '/app/ajustes/fiscal' },
@@ -186,7 +190,8 @@ export function localizeCategories(locale: 'es' | 'en', countryCode = 'MX'): Set
             : tab),
     } : category.id !== 'facturacion' ? category : {
         ...category,
-        label: locale === 'en' ? 'Invoicing' : 'Facturación',
+        // El nombre de la categoría ya es neutro; fuera de México solo cambia la
+        // descripción y el nombre de la pestaña fiscal (no hay CSD que subir).
         desc: locale === 'en'
             ? 'Tax profile, numbering, and commercial invoices for your country.'
             : 'Perfil fiscal, numeración y facturas comerciales para tu país.',

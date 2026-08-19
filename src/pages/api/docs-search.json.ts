@@ -7,7 +7,10 @@ export const GET: APIRoute = async () => {
 
     const searchIndex = allDocs.map((doc) => {
       const lang = doc.id.startsWith('en/') ? 'en' : 'es';
-      const cleanSlug = doc.slug ? doc.slug.replace(/^(en|es)\//, '') : '';
+      // El id de la colección es `${lang}/${slug}` (así lo resuelve
+      // /docs/[...slug].astro con getEntry). `doc.slug` no existe en Astro 7:
+      // era undefined, así que TODAS las URLs del índice quedaban en /docs/.
+      const cleanSlug = doc.id.replace(/^(en|es)\//, '');
       const url = lang === 'en' ? `/en/docs/${cleanSlug}` : `/docs/${cleanSlug}`;
 
       return {
@@ -18,7 +21,6 @@ export const GET: APIRoute = async () => {
         lang: lang
       };
     });
-    console.log("Found", allDocs.length, "docs");
 
     return new Response(JSON.stringify(searchIndex), {
       status: 200,

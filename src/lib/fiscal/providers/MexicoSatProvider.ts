@@ -1,4 +1,4 @@
-import type { FiscalProvider, FiscalDocumentRequest, FiscalDocumentResponse } from '../index';
+import type { FiscalProvider, FiscalCancelRequest, FiscalCancelResponse, FiscalDocumentRequest, FiscalDocumentResponse } from '../index';
 
 // Proveedor fiscal de México: timbra CFDI 4.0 vía Facturapi (facturapi.io).
 //
@@ -70,9 +70,29 @@ export class MexicoSatProvider implements FiscalProvider {
     // Uso del CFDI: "público en general" (RFC genérico) EXIGE S01 (sin efectos
     // fiscales); con RFC real se usa el uso configurado o G03 por defecto.
     const cfdiUse = generico ? 'S01' : (request.cfdi?.use || 'G03');
+    // Divisa y tipo de cambio del comprobante. Facturapi asume MXN cuando no se
+    // manda `currency`: un CFDI de una venta en USD se timbraba con los importes
+    // en dólares pero etiquetados como pesos. El SAT exige `exchange` (TipoCambio)
+    // en cuanto la moneda no es la nacional.
+    //
+    // OJO con la semántica: el TipoCambio del SAT es SIEMPRE moneda del
+    // comprobante → MXN. Si la contabilidad de la organización lleva una tercera
+    // divisa (una org mexicana con libros en USD, por ejemplo), la tasa que trae
+    // el documento apunta a esa divisa y NO sirve como TipoCambio. En ese caso no
+    // se manda un número que el SAT interpretaría mal: se omite y el timbrado
+    // falla del lado del PAC con un error explícito, en vez de sellar un CFDI con
+    // un tipo de cambio incorrecto.
+    const currency = String(request.totals.currency || 'MXN').toUpperCase();
+    const ledger = String(request.totals.ledgerCurrency || 'MXN').toUpperCase();
+    const rate = Number(request.totals.exchangeRate);
+    const exchange = ledger === 'MXN' ? rate : Number.NaN;
     const body = {
       customer,
       items,
+      currency,
+      ...(currency !== 'MXN' && Number.isFinite(exchange) && exchange > 0
+        ? { exchange }
+        : {}),
       use: cfdiUse,
       payment_form: request.cfdi?.paymentForm || '03', // 03 = Transferencia electrónica
       payment_method: request.cfdi?.paymentMethod || 'PUE',
@@ -123,6 +143,8 @@ export class MexicoSatProvider implements FiscalProvider {
           facturapi_id: data.id,
           uuid: data.uuid,
           total: data.total,
+          currency,
+          exchange: currency !== 'MXN' && Number.isFinite(exchange) && exchange > 0 ? exchange : undefined,
           status: data.status,
           livemode: data.livemode,
           idempotency_key: request.idempotencyKey,
@@ -148,19 +170,45 @@ export class MexicoSatProvider implements FiscalProvider {
     }
   }
 
-  async cancelDocument(documentId: string, reason?: string): Promise<boolean> {
-    // Nota: cancelar usa la llave global (la interfaz no recibe el contexto de org).
-    if (!FACTURAPI_KEY) return true; // simulado
+  /**
+   * Cancela un CFDI ante el SAT. La llave de la ORGANIZACIÓN emisora manda: un
+   * CFDI timbrado bajo el CSD del cliente no existe en la cuenta global, así
+   * que cancelar con la global devolvía 404 y dejaba el comprobante vivo en el
+   * SAT mientras Cord lo pintaba como cancelado.
+   */
+  async cancelDocument(documentId: string, request?: FiscalCancelRequest): Promise<FiscalCancelResponse> {
+    const key = request?.providerApiKey || FACTURAPI_KEY;
+    // Sin llave no hubo timbrado real: el documento era simulado y anularlo es
+    // un hecho local. Se dice explícitamente en provider_data.
+    if (!key) return { success: true, rawProviderData: { simulado: true, motive: request?.reason || '02' } };
+    // Facturapi: DELETE /invoices/{id}?motive=02 (02 = comprobante con errores sin relación).
+    const motive = MexicoSatProvider.cancelMotive(request?.reason);
     try {
-      // Facturapi: DELETE /invoices/{id}?motive=02 (02 = comprobante con errores sin relación).
-      const res = await fetch(`${FACTURAPI_BASE}/invoices/${documentId}?motive=${encodeURIComponent(reason || '02')}`, {
+      const res = await fetch(`${FACTURAPI_BASE}/invoices/${documentId}?motive=${encodeURIComponent(motive)}`, {
         method: 'DELETE',
-        headers: { Authorization: authHeader(FACTURAPI_KEY) },
+        headers: { Authorization: authHeader(key) },
         signal: AbortSignal.timeout(25000),
       });
-      return res.ok;
-    } catch {
-      return false;
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        return {
+          success: false,
+          error: `El SAT rechazó la cancelación (${res.status}).`,
+          rawProviderData: { cancel_status: res.status, cancel_detail: detail.slice(0, 500), motive },
+        };
+      }
+      return { success: true, rawProviderData: { cancel_status: res.status, motive, livemode: !key.startsWith('sk_test_') } };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'no se pudo contactar al proveedor fiscal',
+        rawProviderData: { motive, retry_safe: true },
+      };
     }
+  }
+
+  /** Motivos válidos de cancelación del SAT. Cualquier otro valor es 02. */
+  private static cancelMotive(reason?: string): string {
+    return ['01', '02', '03', '04'].includes(String(reason || '')) ? String(reason) : '02';
   }
 }

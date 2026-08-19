@@ -1,7 +1,7 @@
 ---
 title: "Cancelar facturas y notas de crédito"
 description: "Proceso para cancelar un CFDI timbrado y las diferencias con la emisión de Notas de Crédito."
-category: "Facturación y CFDI"
+category: "Facturación"
 order: 4
 ---
 

@@ -11,7 +11,7 @@ Welcome to Cord. This guide gets you operating —quoting, collecting, and invoi
 The core of Cord is your tax and brand profile.
 
 1. Go to **Settings > General** and enter your legal name, contact, and basic details.
-2. In **Settings > Billing & CFDI**, enter your RFC and tax regime, and upload your **CSD (Digital Seal Certificate)**: the `.cer` and `.key` files the SAT gives you, with their password. *Without the CSD you can quote, but not stamp CFDI.*
+2. In **Settings > Invoicing**, enter your RFC and tax regime, and upload your **CSD (Digital Seal Certificate)**: the `.cer` and `.key` files the SAT gives you, with their password. *Without the CSD you can quote, but not stamp CFDI.*
 
 ## Step 2: (Optional) Activate Cord Payments
 To collect card or automatic SPEI payments from the quote link, activate **Cord Payments** in Settings. You will see the method-specific fee, register the bank account that receives deposits, and complete verification. For manual transfers, show your usual bank details and mark the payment after it arrives.

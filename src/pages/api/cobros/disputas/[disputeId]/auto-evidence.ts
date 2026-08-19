@@ -9,6 +9,7 @@ import { stripeUpload } from '../../../../../lib/billing';
 import { merchantError } from '../../../../../lib/pay-errors';
 import { createTextPdf } from '../../../../../lib/simple-pdf';
 import { parseJsonBody } from '../../../../../lib/validation';
+import { log } from '../../../../../lib/log';
 
 const fileId = z.string().regex(/^file_[A-Za-z0-9]+$/);
 const schema = z.object({
@@ -83,7 +84,7 @@ export const POST: APIRoute = async ({ request, params }) => {
             const amount = new Intl.NumberFormat('es-MX', {
                 style: 'currency', currency: String(row.currency || 'MXN').toUpperCase(),
             }).format(Number(row.amount_cents || 0) / 100);
-            const receiptPdf = createTextPdf('Cord Pagos - Comprobante de operacion', [
+            const receiptPdf = createTextPdf('Cord Payments - Comprobante de operacion', [
                 `Negocio: ${row.org_nombre || ''}`,
                 `Cotizacion: ${row.folio || ''}`,
                 `Cliente: ${row.cliente_nombre || ''}`,
@@ -109,7 +110,7 @@ export const POST: APIRoute = async ({ request, params }) => {
         }
 
         if (communicationText && (!communicationFile || parsed.data.forceCommunication)) {
-            const communicationPdf = createTextPdf('Cord Pagos - Comunicacion con el cliente', [
+            const communicationPdf = createTextPdf('Cord Payments - Comunicacion con el cliente', [
                 `Cotizacion: ${row.folio || ''}`,
                 `Cliente: ${row.cliente_nombre || ''}`,
                 '',
@@ -133,7 +134,7 @@ export const POST: APIRoute = async ({ request, params }) => {
         return json({ ok: true, ...generated });
     } catch (error) {
         const safe = merchantError(error);
-        console.error('[dispute-auto-files] no se pudo preparar evidencia', { orgId, disputeId, reference: safe.reference });
+        log.error('no se pudo preparar evidencia', { route: 'dispute-auto-files', orgId, disputeId, reference: safe.reference });
         return json({ error: safe.message, reference: safe.reference }, 502);
     }
 };

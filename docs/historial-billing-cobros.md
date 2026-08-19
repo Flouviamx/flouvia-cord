@@ -7,6 +7,231 @@
 
 ---
 
+**Un plan guardado no desbloqueaba nada, y estaba bien (18 ago 2026)** — la org
+interna Flouvia tenía `plan='developer'` y la app seguía en Gratis. Diagnóstico:
+`plan` era lo ÚNICO puesto; `stripe_subscription_id`, `stripe_customer_id`,
+`subscription_status`, `current_period_end`, `billing_paid_through` y
+`billing_paid_plan` estaban en NULL, así que `cord_effective_plan()` devolvía
+`free` con `accessReason='missing_subscription'`. La Regla 17 funcionando como
+se diseñó.
+
+* **Causa 1:** la suscripción se creó a mano en el dashboard de Stripe, así que
+  su `metadata` venía vacía. Cord liga por `metadata.org_id` (checkout propio) o
+  por `cord_resolve_org_for_billing`, que necesita un customer/subscription ya
+  guardado. No había ninguno: el webhook no tenía a quién aplicarla.
+* **Causa 2:** la factura estaba `paid` con `amount_paid = 0` (comped). Con
+  líneas de plan reconocidas y cero cobrado, `syncPaidBillingInvoice` manda
+  alerta a Ops y NO sella `billing_paid_through`. Ligarla no habría bastado.
+* **Fix:** `scripts/set-plan.mjs --comp --org= --sub=`, que lee la suscripción
+  viva, valida estado/periodo/precio y sella las seis columnas. Se decidió NO
+  relajar la guarda de `amount_paid > 0`: aflojarla para cubrir cortesías
+  dejaría que una factura de $0 conceda un plan pagado en cuentas de clientes.
+* Aplicado a Flouvia: efectivo `developer` hasta 2027-08-18. `security:billing-db`
+  pasó de `ligadas=1, active=0, evidencia=0` a `ligadas=2, active=1, evidencia=1`.
+
+---
+
+**Cord Invoicing: la factura deja de colgar de la cotización (18 ago 2026)** — hasta
+hoy `documentos_fiscales.cotizacion_id` era `NOT NULL`, así que era
+*estructuralmente* imposible emitir una factura suelta; el único disparador en todo
+el repo era `PATCH /api/cotizaciones/[id] { to: 'invoiced' }`. La factura tampoco
+sabía si estaba pagada (no había `amount_paid`/`amount_remaining` ni conciliación),
+`cancelled` existía en el schema sin que ningún código lo escribiera, y el cliente
+nunca recibía su factura: `email.ts` solo sabía notificar cotizaciones.
+
+* **Dos ejes, no uno.** `status` = rail fiscal; `lifecycle` = estado comercial
+  (`draft|open|paid|void|uncollectible`). Colapsarlos habría sido la Regla 18
+  aplicada al revés: "timbrada" y "pagada" cambian por causas distintas.
+* **El folio se reserva al emitir**, no al crear el borrador — un borrador
+  descartado no deja hueco en la numeración. Mismo `pg_advisory_xact_lock` y misma
+  `invoice_sequences` que el carril de cotización, que no se tocó: `emitFiscalDocument`
+  conserva su comportamiento y solo gana los campos nuevos.
+* **El saldo se recalcula desde el ledger** (`documento_pagos`), nunca se
+  incrementa. Un contador y un ledger son dos fuentes para el mismo número, y en
+  cuanto divergen el saldo miente sin avisar. Idempotente por PaymentIntent con
+  índice único: Stripe reintenta sus webhooks por diseño.
+* **`cancelDocument` tenía un bug multi-tenant y ningún llamador.** Usaba la llave
+  GLOBAL de Facturapi, así que cancelar un CFDI timbrado bajo el CSD del cliente
+  devolvía 404 y dejaba el comprobante vivo en el SAT mientras Cord lo pintaba como
+  cancelado. Ahora el contrato recibe `providerApiKey` y devuelve
+  `FiscalCancelResponse`; `voidInvoice` falla cerrada si el SAT no confirma, y con
+  pagos aplicados exige nota de crédito en vez de anular.
+* **Hosted invoice page `/i/[token]`** con saldo vivo, historial de pagos y cobro
+  con tarjeta del saldo por Connect. Regla 19: la vista la marca el heartbeat con la
+  pestaña visible y actor `client`, nunca el SSR — el mismo GET lo hacen el vendedor
+  revisando su link y el bot de WhatsApp armando la preview. `Disallow: /i/` en robots.
+* **Superficies:** `/app/facturas` (bandeja con filtros, keyset y acciones; la de
+  Ajustes queda como 301), correos de factura y recordatorio, `/api/v1/facturas`,
+  webhooks `invoice.*` con payload de FACTURA (`dispatchInvoiceEvent`) y tres tools
+  MCP. La escritura por MCP llega solo hasta `draft`: timbrar es dinero real e
+  irreversible.
+* **Marketing:** `/producto/internacional` → `/producto/facturacion` (301). El slug
+  viejo era herencia de cuando la página vendía FX — 2 de sus 3 bloques hablaban de
+  cobertura cambiaria y pisaban `/producto/divisas`. Copy reescrito sobre lo que
+  ahora existe, más `/comparar/facturacion`, schema `SoftwareApplication` + `HowTo`,
+  y arreglo del slug huérfano `'cfdi'` en `RELATED`/`DOCS_PATH` que descartaba en
+  silencio un cross-link en cuatro páginas.
+* ⚠️ Correr `npm run db:migrate`: `cotizacion_id` pasa a nullable, ~14 columnas
+  nuevas en `documentos_fiscales`, tabla `documento_pagos` y función
+  `cord_resolve_public_invoice`. El backfill deja las filas existentes en `open`
+  con su total como saldo, y en `paid` las de cotizaciones ya pagadas.
+* **Pendiente conocido:** el pago de la hosted page es solo con tarjeta (SPEI exige
+  CLABE por customer y es MX-only), y una suscripción recurrente sigue sin emitir una
+  factura por periodo.
+
+---
+
+**FX multi-fuente: el 404 del BCE no era una caída (18 ago 2026)** — `FXService`
+consultaba una sola fuente, Frankfurter, que publica las tasas de referencia del
+BCE: unas 30 divisas. COP, CLP, PEN, ARS, UYU, GTQ, DOP o NGN no existen ahí y la
+API responde 404; el código lo leía como "el proveedor falló" y se lo mostraba al
+vendedor con el código HTTP incluido. El efecto era un bloqueo permanente disfrazado
+de intermitencia: quien cotizaba en esas divisas veía "intenta de nuevo" y reintentar
+jamás iba a servir.
+
+* **Cadena de fuentes, no una sola.** BCE vía Frankfurter sigue primero por ser la
+  referencia oficial que después declara el CFDI; detrás, `open.er-api.com` (~160
+  divisas) y `currency-api` sobre CDN con host de respaldo. Ninguna pide API key y
+  todas publican fecha, así que `asOf` sigue siendo un dato real de un tercero.
+* **Dos fallas que se veían iguales, ahora separadas.** Una fuente que no cubre el
+  par devuelve `null` y cede el turno; sólo timeout/DNS/TLS cuenta como falla de red.
+  El mensaje final distingue "ninguna fuente publica el par COP/MXN" de "no pudimos
+  consultar las fuentes", y ya no expone códigos HTTP (regla 14).
+* **La regla 22 no se aflojó.** Si ninguna fuente publica el par, sigue lanzando
+  `FXUnavailableError` → 503 en `/api/fx/quote` y en la creación de cotización. No
+  hay `1.0`, tabla de constantes ni estimación en ningún camino nuevo.
+* **Caché por tabla completa y respaldo acotado.** Cada respuesta trae todas las
+  tasas desde la divisa origen, así que se cachean juntas (tope de 4000 entradas):
+  el editor pide el mismo origen contra varias divisas mientras se arma la
+  cotización y ahora eso es una sola llamada. El respaldo con tasa rancia, que antes
+  se reusaba sin límite de edad, se acotó a 24 horas — es un dato real, pero un día
+  después ya no describe la venta.
+
+Verificado con 14 pares reales (COP, CLP, PEN, ARS, UYU, GTQ, DOP, NGN más JPY, KWD
+y VND por sus decimales), `ZZZ` fallando cerrado, `npm run test:payments` completo y
+`npm run build`.
+
+---
+
+**Factura rediseñada, "Cord Payments" y idioma por país (17 ago 2026)** — cuatro
+cambios de producto sobre la base multi-divisa del mismo día:
+
+* **El PDF de factura se reconstruyó.** Era texto plano renglón por renglón,
+  normalizado a ASCII: "España" salía "Espana", los guiones largos salían `?`, los
+  conceptos no formaban columnas y no había ni logo ni color. Se escribió
+  `src/lib/pdf/writer.ts` (escritor PDF vectorial propio, sin dependencias, con
+  WinAnsi, métricas reales de Helvetica e incrustación de PNG/JPEG — el PNG con
+  alfa se separa en imagen + SMask vía `node:zlib`) y `invoice-pdf.ts` se rehízo
+  encima: cabecera de marca, tabla con columnas, desglose de impuestos por tasa,
+  bloque de total en el color del negocio, vencimiento, condiciones, referencia,
+  cómo pagar, notas, multipágina con encabezado repetido y folio `n / total`.
+* **"Cord Pagos" → "Cord Payments"** en las 209 apariciones de producto, copy,
+  docs y soporte, en los dos idiomas: es un nombre de marca, no se traduce. NO se
+  tocaron los identificadores internos — el ancla `/terminos#cord-pagos` y
+  `FEE_TERMS_VERSION = 'cord-pagos-2026-08-11'`: cambiar la versión de términos
+  obligaría a cada organización a volver a aceptar la tarifa.
+* **"Facturación y CFDI" → "Facturación"** en Ajustes, hub de soporte, categorías
+  de artículos (30 archivos) y docs. El nombre de la sección describe la
+  capacidad, no el carril de un país (regla 10); CFDI se nombra dentro cuando
+  aplica. La categoría de soporte se filtra por nombre exacto, así que el
+  frontmatter de cada artículo se migró en el mismo cambio.
+* **Toda la facturación se llama "Cord Invoicing".** Existían dos páginas de
+  producto — `/producto/cfdi` y `/producto/internacional` — que describían la
+  misma capacidad partida por país, y el roadmap marcaba "Facturación
+  internacional" como *Próximamente* cuando lleva meses emitiendo (regla de
+  honestidad de copy). Ahora: una sola página (`/producto/internacional`,
+  titulada Cord Invoicing en ES y EN), `/producto/cfdi` eliminada con 301 hacia
+  ella en `vercel.json`, la entrada de roadmap pasada a *Disponible* con copy
+  real (se borró la promesa de Complemento de Comercio Exterior y Carta Porte,
+  que no existen), y el timbrado CFDI retitulado "Cord Invoicing — CFDI 4.0
+  (México)" para dejar explícito que ese carril es solo mexicano. `FEATURE_LABEL`
+  de `cfdi` e `international_invoicing` comparten ahora la etiqueta Cord
+  Invoicing; las FeatureKey no se tocaron (son identificadores con consumidores
+  en BD, cron, API y MCP).
+* **El idioma de la app sale del país de la cuenta.** `orgs.idioma` ya se
+  derivaba del país en el onboarding y en `/api/orgs`, pero el middleware
+  resolvía el locale SOLO del `Accept-Language` del navegador, así que ese campo
+  no lo leía nadie (regla 15). Ahora `setRequestLocale()` lo aplica desde
+  `getAppGates()` y `getOrg()`: una cuenta creada en Estados Unidos ve la app en
+  inglés aunque el navegador venga en español, y una mexicana en español aunque
+  la laptop esté en inglés. Cambiar de país en Ajustes arrastra el idioma con el
+  mismo criterio que la divisa (solo si nunca se personalizó). El wizard de
+  `/onboarding` y el link público `/q/[token]` siguen en el idioma del navegador:
+  ahí todavía no hay país elegido, o quien lee es el cliente, no el negocio.
+
+---
+
+**Multi-divisa real y tipo de cambio con consumidor (17 ago 2026)** — Cord decía operar
+en cualquier país, pero por debajo todo el dinero era mexicano. Una auditoría de las
+tres capas (presentación, cobro y factura) encontró que las tres asumían MXN de forma
+independiente, y que el módulo de FX era una promesa sin consumidor. Dos frentes:
+
+**1. El producto era MXN-only por debajo.**
+
+* `money()` (en `lib/mock.ts`, re-exportado por `queries.ts` y usado por ~175 call-sites)
+  era `'$' + Intl.NumberFormat('es-MX')`. Ninguno de esos call-sites pasaba divisa: el
+  link público de un negocio en Madrid mostraba "$1.000,00" en vez de "1.000,00 €" y uno
+  en Tokio inventaba dos decimales que el yen no tiene. Se volvió consciente del request:
+  la divisa la fija el middleware desde `orgs.moneda` dentro de `getAppGates` (sin query
+  extra) y el link público la sobrescribe con la de la cotización.
+* `lib/fmt.ts` quedó ISOMÓRFICO a propósito: lo importan `<script>` del navegador
+  (chart-mount, dashboard, informes, cobros), así que no puede importar `lib/context`
+  (`AsyncHooks` rompería el bundle del cliente). Lee la divisa del DOM. Para los scripts
+  se creó `lib/money-client.ts` sobre `<body data-currency>`, que publica `AppLayout`.
+* `payment-intent.ts` y `checkout.ts` mandaban `currency: 'mxn'` **literal**: una venta de
+  USD 1,000 se cobraba como MXN 1,000 — el cliente pagaba una fracción y el vendedor
+  recibía de menos. Ahora usan la divisa de la cotización. Lo mismo en
+  `subscription-intent.ts` (igualas), que además guardaba `'MXN'` fijo en
+  `cotizacion_suscripciones`.
+* `Math.round(monto * 100)` estaba en todas las rutas de cobro. JPY, CLP, KRW y VND no
+  tienen decimales: ese ×100 cobraba **cien veces** el precio acordado. KWD/BHD son de
+  tres decimales y Stripe exige último dígito 0. Se centralizó en `toMinorUnits()`
+  (`lib/currency.ts`), que además LANZA si el monto no se puede expresar, en vez de
+  redondear en silencio.
+* `createConnectAccount` fijaba `country: 'MX'` y pedía siempre
+  `mx_bank_transfer_payments`: ningún negocio fuera de México podía completar el alta de
+  cobros (Stripe valida el KYC contra el país de la cuenta). Ahora toma
+  `orgs.country_code` y `orgs.moneda`, y solo pide SPEI en México.
+* SPEI se acotó a cobros en MXN; con otra divisa se ofrece tarjeta aunque el vendedor lo
+  tenga activado. `connect/external-account` (que captura una CLABE, formato exclusivo de
+  México) responde 409 explicando la limitación en vez de mandar 18 dígitos a un banco
+  que no los usa. Generalizar payouts sigue pendiente y así está documentado.
+* Correos, Slack, crons de recordatorios e intereses y los eventos que escribe el link
+  público llevaban `'$'` pegado al número; ahora todos formatean con la divisa del dato.
+* Cambiar de país en Ajustes ahora arrastra divisa y zona horaria **solo si la org nunca
+  las personalizó** (siguen siendo las del país anterior): antes una cuenta que se mudaba
+  a US/ES se quedaba con MXN y horario de CDMX para siempre.
+
+**2. El FX se calculaba, se guardaba y no lo leía nadie.**
+
+* `FXService` devolvía `1.0` en silencio cuando la red fallaba o el par no estaba en una
+  tabla mock de tres filas (USD→MXN, EUR→MXN, y nada más — ni COP, ni CLP, ni PEN, ni
+  ARS). Ese `1.0` se congelaba 30 días en `cotizaciones.fx_rate` como si fuera una tasa
+  real. Ahora lanza `FXUnavailableError` (regla 22): la creación de cotización responde
+  503 y `/api/fx/quote` también. Se conserva caché fechada por proceso como respaldo —
+  una tasa real y vieja no es lo mismo que una inventada.
+* `fx_rate` no tenía **un solo consumidor** fuera del INSERT. `emit.ts` tomaba
+  `subtotal/iva/total` (que están en `base_currency`) y los etiquetaba con
+  `fiscal_currency` sin convertir: una venta de USD 1,000 se facturaba como "MXN 1,000".
+  Se resolvió el modelo: la factura se emite **en la divisa de la venta** y declara el
+  tipo de cambio a la contable. `MexicoSatProvider` ahora manda `currency` y `exchange`
+  (Facturapi asumía MXN al no recibirlos; el SAT exige TipoCambio en cuanto la moneda no
+  es la nacional). `documentos_fiscales` ganó `ledger_currency`, `fx_rate` y
+  `ledger_total`, y el PDF imprime la línea de tipo de cambio y el total convertido.
+* Facturar una cotización multi-divisa sin tasa utilizable ya no procede: devuelve un
+  error pidiendo recalcularla.
+* El panel de FX del editor **dividía** el total (lo trataba como si ya estuviera en la
+  divisa contable) mientras la BD lo guardaba como divisa de venta: tres capas, tres
+  respuestas para la misma venta. Ahora multiplica, dice "tu cliente paga X · en tus
+  libros ≈ Y", y muestra el error real en vez de una vista previa inventada. El editor
+  también reformatea toda la cotización al cambiar de divisa.
+
+Reglas nuevas: **21** (un monto sin divisa es un número) y **22** (una tasa que no se
+puede demostrar no se inventa). Verificación: `scripts/currency-check.mjs`, integrado a
+`npm run test:payments`.
+
+---
+
 **Delimitación de planes, paywall y vocabulario de facturación (16 ago 2026)** — los
 precios base NO cambiaron ($240/$590/$1,390): los price ID LIVE ya tienen suscripciones
 activas y todo el movimiento fue de *packaging*. El disparador fueron tres problemas

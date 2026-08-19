@@ -10,6 +10,7 @@ import { sendVerificationEmail } from '../../../../lib/auth-email';
 import { resetRequestSchema, parseJsonBody } from '../../../../lib/validation';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
+import { log } from '../../../../lib/log';
 
 export const POST: APIRoute = async ({ request }) => {
     const ip = trustedIp(request);
@@ -29,7 +30,7 @@ export const POST: APIRoute = async ({ request }) => {
         }
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (error) {
-        console.error('[verify-email/request]', error);
+        log.error('error no controlado', { route: 'verify-email/request', err: error });
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     }
 };

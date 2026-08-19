@@ -619,71 +619,65 @@ const { slug, index } = Astro.props as { slug: string; index: number };
     </div>
   )}
 
-  {/* ═══════════════════════════════ INTERNACIONAL ═══════════════════════════════ */}
-  {slug === 'internacional' && index === 0 && (
+  {/* ═══════════════════════════════ CORD INVOICING ═══════════════════════════════ */}
+  {slug === 'facturacion' && index === 0 && (
     <div class="shwm-frame">
       <div class="shwm-app">
         <div class="shwm-bar">
-          <span class="shwm-bar-t">Trato transfronterizo · COT-0151</span>
-          <span class="shwm-badge shwm-badge-blue">US → MX</span>
+          <span class="shwm-bar-t">Nueva factura</span>
+          <span class="shwm-badge shwm-badge-blue">Borrador</span>
         </div>
         <div class="shwm-border">
           <div class="shwm-border-node">
-            <span class="shwm-flag shwm-flag-lg">US</span>
-            <b>Pacific Hardware</b>
-            <em>Austin, Texas · cliente</em>
-            <span class="shwm-badge shwm-badge-blue">Cotiza en USD</span>
+            <span class="shwm-flag shwm-flag-lg">COT</span>
+            <b>Desde una cotización</b>
+            <em>COT-0151 aprobada · hereda cliente, líneas y divisa</em>
+            <span class="shwm-badge shwm-badge-blue">Ligadas</span>
           </div>
           <div class="shwm-border-link" aria-hidden="true">
             <div class="shwm-border-doc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v15H6z" fill="currentColor" fill-opacity="0.08"/><path d="M15 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></div>
-            <span class="shwm-border-cap">un solo trato</span>
+            <span class="shwm-border-cap">una sola factura</span>
           </div>
           <div class="shwm-border-node">
-            <span class="shwm-flag shwm-flag-lg mx">MX</span>
-            <b>Materiales del Valle</b>
-            <em>Guadalajara · tu negocio</em>
-            <span class="shwm-badge shwm-badge-green">Factura en MXN</span>
+            <span class="shwm-flag shwm-flag-lg mx">+</span>
+            <b>O desde cero</b>
+            <em>Eliges cliente y capturas los conceptos</em>
+            <span class="shwm-badge shwm-badge-green">Sin cotización</span>
           </div>
         </div>
-        <div class="shwm-foot"><span>El negocio que ya no cabe en una frontera</span><b>Misma cuenta · mismo catálogo</b></div>
+        <div class="shwm-foot"><span>El folio se reserva al emitir, no al empezar</span><b>Borrador editable</b></div>
       </div>
     </div>
   )}
 
-  {slug === 'internacional' && index === 1 && (
+  {slug === 'facturacion' && index === 1 && (
     <div class="shwm-frame">
       <div class="shwm-app shwm-app-narrow">
         <div class="shwm-bar">
-          <span class="shwm-bar-t">Cobertura cambiaria</span>
-          <span class="shwm-badge shwm-badge-green">FX lock 30 días</span>
+          <span class="shwm-bar-t">A-001048 · saldo</span>
+          <span class="shwm-badge shwm-badge-blue">Abierta</span>
         </div>
-        <div class="shwm-buffer">
-          <div class="shwm-buffer-row"><span>Tasa spot (BCE)</span><b class="editorial">$18.42</b></div>
-          <div class="shwm-buffer-ctrl">
-            <div class="shwm-buffer-label"><span>Buffer de cobertura</span><b class="editorial shwm-g">+2%</b></div>
-            <div class="shwm-buffer-track">
-              <div class="shwm-buffer-fill" style="width:40%"></div>
-              <div class="shwm-buffer-knob" style="left:40%"></div>
-            </div>
-            <div class="shwm-buffer-scale"><span>1%</span><span>2%</span><span>5%</span></div>
-          </div>
-          <div class="shwm-buffer-row shwm-buffer-out"><span>Tasa aplicada y congelada</span><b class="editorial shwm-g">$18.79</b></div>
+        <div class="shwm-plist">
+          <div class="shwm-pl"><span>Total facturado</span><b class="editorial">$230,880.00</b></div>
+          <div class="shwm-pl"><span>15 ago · tarjeta desde el link</span><b class="editorial shwm-g">−$60,000.00</b></div>
+          <div class="shwm-pl"><span>22 ago · transferencia registrada</span><b class="editorial shwm-g">−$36,000.00</b></div>
+          <div class="shwm-pl"><span>Saldo</span><b class="editorial">$134,880.00</b></div>
         </div>
         <div class="shwm-lock-strip">
-          <span class="shwm-lock-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
-          <div><b>Tasa bloqueada 30 días</b><em>Congelada hasta 24 ago 2026 · guardada con el trato</em></div>
+          <span class="shwm-lock-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div><b>Al llegar a cero se marca pagada</b><em>Y sale de la cartera vencida, sin que nadie la toque</em></div>
         </div>
-        <div class="shwm-foot"><span>Sabes cuánto vas a cobrar en pesos desde que aprueban</span><b>Cobertura real</b></div>
+        <div class="shwm-foot"><span>Tarjeta y transferencia bajan el mismo saldo</span><b>Una sola cuenta</b></div>
       </div>
     </div>
   )}
 
-  {slug === 'internacional' && index === 2 && (
+  {slug === 'facturacion' && index === 2 && (
     <div class="shwm-frame">
       <div class="shwm-app">
         <div class="shwm-bar">
-          <span class="shwm-bar-t">CFDI 4.0 · timbrado real</span>
-          <span class="shwm-badge shwm-badge-green">SAT ✓</span>
+          <span class="shwm-bar-t">API v1 · facturas</span>
+          <span class="shwm-badge shwm-badge-green">200 OK</span>
         </div>
         <div class="shwm-stamp">
           <div class="shwm-stamp-doc">
@@ -691,21 +685,21 @@ const { slug, index } = Astro.props as { slug: string; index: number };
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div class="shwm-stamp-tx">
-              <b>Comprobante timbrado ante el SAT</b>
-              <em>CFDI 4.0 · Serie A · Folio 1048 · Facturapi</em>
+              <b>POST /v1/facturas/&#123;id&#125; · finalize</b>
+              <em>Emitida y timbrada · CFDI 4.0 · Serie A · Folio 1048</em>
             </div>
           </div>
           <div class="shwm-plist">
             <div class="shwm-pl"><span>UUID (Folio Fiscal)</span><b class="editorial shwm-uuid">a1b2c3d4-9f01-4e22-b7aa</b></div>
-            <div class="shwm-pl"><span>Emisor</span><b>MVA240611AB3</b></div>
-            <div class="shwm-pl"><span>Total facturado</span><b class="editorial">$230,880.00 MXN</b></div>
+            <div class="shwm-pl"><span>invoice.finalized</span><b>webhook entregado</b></div>
+            <div class="shwm-pl"><span>invoice.paid</span><b>webhook entregado</b></div>
           </div>
           <div class="shwm-stamp-cta">
             <span class="shwm-stamp-btn">Ver PDF</span>
             <span class="shwm-stamp-btn">Descargar XML</span>
           </div>
         </div>
-        <div class="shwm-foot"><span>CFDI real, no una simulación con apariencia de factura</span><b>México timbra de verdad</b></div>
+        <div class="shwm-foot"><span>Crear, emitir, enviar, cobrar y anular por API</span><b>Y por MCP</b></div>
       </div>
     </div>
   )}

@@ -1,5 +1,5 @@
 import { isCountryCode } from '../../countries';
-import type { FiscalDocumentRequest, FiscalDocumentResponse, FiscalProvider } from '../index';
+import type { FiscalCancelRequest, FiscalCancelResponse, FiscalDocumentRequest, FiscalDocumentResponse, FiscalProvider } from '../index';
 
 // Emisor propio de Cord para cualquier país fuera de México. Genera un folio,
 // conserva snapshots inmutables y sirve un PDF desde Cord. Es una factura
@@ -25,7 +25,9 @@ export class CommercialInvoiceProvider implements FiscalProvider {
     };
   }
 
-  async cancelDocument(_documentId: string, _reason?: string): Promise<boolean> {
-    return true;
+  // Una factura comercial no se transmitió a ninguna autoridad, así que
+  // anularla es un hecho puramente local: no hay tercero al que avisarle.
+  async cancelDocument(_documentId: string, _request?: FiscalCancelRequest): Promise<FiscalCancelResponse> {
+    return { success: true, rawProviderData: { regulatory_status: 'commercial_only' } };
   }
 }

@@ -3,7 +3,7 @@
 // App Router (Server Components por default) rompe con "You're importing a
 // component that needs useState/useEffect..." en cuanto alguien importa
 // CordProvider/CordBuilder/CordCotizador desde un Server Component.
-import React, { useRef, useEffect, useMemo, useContext, ReactNode } from 'react';
+import React, { useRef, useEffect, useMemo, useContext, type ReactNode } from 'react';
 import { mountCotizador } from './core.js';
 import { getCordConfig } from './config.js';
 import { injectBaseStyles } from './styles.js';

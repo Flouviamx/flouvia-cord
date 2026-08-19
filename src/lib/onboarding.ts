@@ -1,5 +1,6 @@
 import { sql, withOrgTx } from './db';
 import { createCotizacion } from './cotizaciones';
+import { log } from './log';
 
 export async function seedDemoData(orgId: string, userId: string) {
     try {
@@ -36,6 +37,6 @@ export async function seedDemoData(orgId: string, userId: string) {
             actor: 'onboarding'
         });
     } catch (e) {
-        console.error('[onboarding] Error al sembrar datos:', e);
+        log.error('Error al sembrar datos', { route: 'onboarding', err: e });
     }
 }

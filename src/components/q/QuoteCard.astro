@@ -119,7 +119,7 @@ const waDigits = vWa.replace(/\D/g, '');
 const hayContacto = !!(vEmail || vWa || vTel);
 ---
 
-<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
+<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
     {ORG.esPrueba && (
         <div class="q-test-ribbon" role="status">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
@@ -604,6 +604,29 @@ const hayContacto = !!(vEmail || vWa || vTel);
     const token = card?.dataset.token ?? '';
     const I18NQ = (window as any).CORD_I18N_Q || {};
 
+    // Formateador ÚNICO de dinero del link público. Lee la divisa de la propia
+    // cotización (data-currency), no un '$' hardcodeado: el cliente de un
+    // negocio en Madrid ve "1.000,00 €" y el de uno en Tokio "¥1,000".
+    // Un solo constructor por superficie — ver regla 21 de estándares.
+    const QCURRENCY = (card?.dataset.currency || 'MXN').toUpperCase();
+    const qCurrencyFmt = (minimumFractionDigits: number, maximumFractionDigits: number) => {
+        try {
+            return new Intl.NumberFormat(I18NQ.localeIntl || 'es-MX', {
+                style: 'currency', currency: QCURRENCY, minimumFractionDigits, maximumFractionDigits,
+            });
+        } catch {
+            return new Intl.NumberFormat(I18NQ.localeIntl || 'es-MX', { minimumFractionDigits, maximumFractionDigits });
+        }
+    };
+    // Las divisas sin decimales (JPY, CLP, COP…) no deben mostrar ",00".
+    const QDECIMALS = (() => {
+        try {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: QCURRENCY })
+                .resolvedOptions().maximumFractionDigits ?? 2;
+        } catch { return 2; }
+    })();
+    const qMoney = (n: number) => qCurrencyFmt(QDECIMALS, QDECIMALS).format(Number(n) || 0);
+
     const emit = (name: string, detail: Record<string, unknown> = {}) =>
         window.dispatchEvent(new CustomEvent(name, { detail: { token, folio, ...detail } }));
 
@@ -663,7 +686,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
     // ── Aprobación parcial: selección de líneas + total en vivo ──
     const ivaPct = Number((document.querySelector('.q-card') as HTMLElement)?.dataset.iva ?? '16') / 100;
-    const moneyFmt = (n: number) => '$' + new Intl.NumberFormat(I18NQ.localeIntl || 'es-MX', { minimumFractionDigits: 2 }).format(n);
+    const moneyFmt = qMoney;
     const picks = Array.from(document.querySelectorAll<HTMLInputElement>('.qi-pick-cb'));
     const approveBtn = document.getElementById('qApproveBtn') as HTMLButtonElement | null;
     const partialNote = document.getElementById('qPartialNote');
@@ -924,7 +947,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         try {
             await api(action, { mensaje, propuesta });
             const label = action === 'counter' && propuesta
-                ? `${(I18NQ.propuestaLabel || 'Propuesta: ${monto}').replace('${monto}', propuesta.toLocaleString(I18NQ.localeIntl || 'es-MX'))}${mensaje ? ` — ${mensaje}` : ''}`
+                ? `${(I18NQ.propuestaLabel || 'Propuesta: ${monto}').replace('${monto}', qMoney(propuesta))}${mensaje ? ` — ${mensaje}` : ''}`
                 : mensaje;
             appendMsg(label, action);
             if (msgEl) msgEl.value = '';
@@ -1249,7 +1272,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
     // vendedor cambia un precio en vivo, el total no salta — se desliza del
     // importe anterior al nuevo, que es lo que hace legible el cambio.
     function countUp(el: HTMLElement, desde: number, hasta: number) {
-        const fmt = (n: number) => '$' + new Intl.NumberFormat(I18NQ.localeIntl || 'es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+        const fmt = qMoney;
         if (!isFinite(hasta)) return;
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             el.textContent = fmt(hasta);

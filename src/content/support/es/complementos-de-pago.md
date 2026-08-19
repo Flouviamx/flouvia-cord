@@ -1,7 +1,7 @@
 ---
 title: "Complementos de pago (REP)"
 description: "Guía para registrar abonos y generar Recibos Electrónicos de Pago en facturas PPD."
-category: "Facturación y CFDI"
+category: "Facturación"
 order: 3
 ---
 

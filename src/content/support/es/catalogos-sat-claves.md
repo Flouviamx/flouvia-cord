@@ -1,7 +1,7 @@
 ---
 title: "Catálogos SAT y claves de producto"
 description: "Aprende a mapear tus productos internos con las claves oficiales del SAT para una facturación libre de errores."
-category: "Facturación y CFDI"
+category: "Facturación"
 order: 2
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: "Configure withholdings (ISR/IVA)"
 description: "Automatically apply withholdings according to the tax regime."
-category: "Billing & CFDI"
+category: "Invoicing"
 ---
 
 Invoicing professional services or fees to Legal Entities (Personas Morales) requires applying specific tax withholdings (Income Tax and VAT withholdings) to the subtotal.

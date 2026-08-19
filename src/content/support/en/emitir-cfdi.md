@@ -1,7 +1,7 @@
 ---
 title: "Configure automatic billing (CFDI 4.0)"
 description: "Learn how to enable automatic billing so your clients receive their CFDI 4.0 as soon as they make a payment."
-category: "Billing & CFDI"
+category: "Invoicing"
 order: 1
 ---
 

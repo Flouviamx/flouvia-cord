@@ -18,6 +18,7 @@ import {
 import { resetConfirmSchema, parseJsonBody } from '../../../../lib/validation';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
+import { log } from '../../../../lib/log';
 
 export const POST: APIRoute = async ({ request }) => {
     const ip = trustedIp(request);
@@ -53,7 +54,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (error) {
-        console.error('[reset/confirm]', error);
+        log.error('error no controlado', { route: 'reset/confirm', err: error });
         return new Response(JSON.stringify({ error: 'Ocurrió un error inesperado' }), { status: 500 });
     }
 };

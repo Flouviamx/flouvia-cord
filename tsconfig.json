@@ -7,6 +7,10 @@
   "exclude": [
     "dist",
     "packages/*/dist",
+    "packages/*/node_modules",
+    // Código de MUESTRA para la documentación: importa next/navigation y
+    // un CRM ficticio a propósito. No se compila ni se publica.
+    "packages/elements/examples",
     "node_modules",
     "node_modules.nosync",
     "node_modules 2"

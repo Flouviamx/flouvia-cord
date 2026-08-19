@@ -29,6 +29,7 @@ manual, changelog ni depósito de decisiones. La documentación canónica vive e
 | Auth, sesiones, equipo o SSO | [`docs/app-rutas.md`](docs/app-rutas.md) + [`docs/historial-auth-clerk.md`](docs/historial-auth-clerk.md) |
 | Schema, queries, RLS o multi-tenant | [`docs/app-rutas.md`](docs/app-rutas.md) + `db/schema.sql` |
 | Billing, planes, cobros, CFDI o Connect | [`docs/negocio-billing.md`](docs/negocio-billing.md) + [`docs/historial-billing-cobros.md`](docs/historial-billing-cobros.md) + contrato ejecutable en `src/lib/entitlements.ts` |
+| Cualquier importe, divisa o tipo de cambio | Reglas 21 y 22 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + contrato ejecutable en `src/lib/currency.ts` y `src/lib/fx/FXService.ts` |
 | API pública, MCP, webhooks o Elements | [`docs/app-rutas.md`](docs/app-rutas.md) + [`docs/historial-platform-api.md`](docs/historial-platform-api.md) |
 | Cord Ops, seguridad o escala | [`docs/cord-ops.md`](docs/cord-ops.md) + [`docs/historial-infra-hitos.md`](docs/historial-infra-hitos.md) |
 | Analytics o Growth | [`docs/analytics.md`](docs/analytics.md) + historial de app/infra relevante |

@@ -55,3 +55,60 @@ export function quoteDetail(q: MockQuote) {
         eventos: q.eventos.map((e) => ({ tipo: e.tipo, detalle: e.detalle, cuando: e.cuando })),
     };
 }
+
+/**
+ * Serializador de factura. Expone el saldo y el ciclo de vida —lo que un
+ * integrador necesita para conciliar— y NUNCA el `public_token`, que es la
+ * única credencial de la hosted invoice page: publicarlo en un listado de API
+ * convertiría cualquier llave de solo lectura en un repartidor de links de pago.
+ */
+export function invoiceListItem(f: any) {
+    return {
+        id: f.id,
+        numero: f.invoiceNumber,
+        folio_fiscal: f.fiscalId,
+        cliente: f.cliente,
+        estado: f.estado,
+        estado_fiscal: f.estadoFiscal,
+        pais: f.pais,
+        tipo: f.tipo,
+        moneda: f.currency,
+        total: f.total,
+        pagado: f.pagado,
+        saldo: f.saldo,
+        vence: f.venceISO,
+        vencida: f.vencida,
+        cotizacion_id: f.cotizacionId,
+        creada: f.creado,
+    };
+}
+
+export function invoiceDetail(f: any) {
+    return {
+        ...invoiceListItem(f),
+        subtotal: f.subtotal,
+        impuestos: f.impuestos,
+        moneda_contable: f.ledgerCurrency,
+        tipo_cambio: f.fxRate,
+        total_contable: f.ledgerTotal,
+        notas: f.notas,
+        nota_credito_de: f.notaCreditoDe,
+        emisor: f.emisor,
+        receptor: f.receptor,
+        conceptos: (f.lineas ?? []).map((l: any) => ({
+            descripcion: l.descripcion,
+            cantidad: l.cantidad,
+            precio_unitario: l.precioUnitario,
+            subtotal: l.subtotal,
+            impuesto: l.impuesto,
+            total: l.total,
+        })),
+        pagos: (f.pagos ?? []).map((p: any) => ({
+            monto: p.monto,
+            moneda: p.currency,
+            metodo: p.metodo,
+            referencia: p.referencia,
+            cuando: p.cuando,
+        })),
+    };
+}

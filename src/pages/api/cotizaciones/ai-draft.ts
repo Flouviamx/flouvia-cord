@@ -21,6 +21,7 @@ import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../lib/b
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { McpClientManager } from '../../../lib/mcp/client-manager';
 import { getDefaultAgentId } from '../../../lib/agents/governance';
+import { log } from '../../../lib/log';
 
 const API_KEY = import.meta.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
 const MODEL = import.meta.env.AI_MODEL || process.env.AI_MODEL || 'claude-haiku-4-5-20251001';
@@ -187,7 +188,7 @@ export const POST: APIRoute = async ({ request }) => {
             await cancelUsage(orgId, usage.id);
             await mcpManager.disconnectAll();
             await trackExternalUsage({ orgId, provider: 'anthropic', category: 'ai', operation: 'quote_draft_turn', status: 'failure', metadata: { model: MODEL, iteration: i + 1 } });
-            console.error(err);
+            log.error('error no controlado', { route: 'cotizaciones/ai-draft', err });
             return json({ error: 'La IA no pudo procesar el pedido. Revisa tu llave o intenta de nuevo.' }, 502);
         }
 

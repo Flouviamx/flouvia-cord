@@ -7,6 +7,7 @@ import { parseJsonBody } from '../../../../lib/validation';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { stripe } from '../../../../lib/billing';
 import { sendEmail } from '../../../../lib/email';
+import { log } from '../../../../lib/log';
 
 const schema = z.object({ cobro_id: z.string().uuid() }).strict();
 const esc = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] || char);
@@ -58,7 +59,7 @@ export const POST: APIRoute = async ({ request, params }) => {
         if (!sent.sent) return json({ error: 'No pudimos enviar las instrucciones en este momento' }, 502);
         return json({ ok: true });
     } catch (error) {
-        console.error('[spei-email]', error);
+        log.error('error no controlado', { route: 'spei-email', err: error });
         return json({ error: 'No pudimos enviar las instrucciones en este momento' }, 502);
     }
 };

@@ -1,7 +1,7 @@
 ---
 title: "Cancel Invoices and Credit Notes"
 description: "Process to cancel a stamped CFDI and the differences with issuing Credit Notes."
-category: "Billing & CFDI"
+category: "Invoicing"
 order: 4
 ---
 

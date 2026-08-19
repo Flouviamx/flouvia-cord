@@ -467,6 +467,7 @@ const fCount = {
 </script>
 
 <script>
+    import { createMoney0 } from '../../../lib/money-client';
     // Importador CSV de clientes: archivo → mapeo → preview → carga masiva.
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('importModal') as HTMLDialogElement | null;
@@ -507,7 +508,7 @@ const fCount = {
             if (s.includes('net') || s.includes('credito')) return 'net30';
             return 'contado';
         };
-        const money = (n: number) => '$' + new Intl.NumberFormat(document.documentElement.lang === 'en' ? 'en-US' : 'es-MX').format(n);
+        const money = createMoney0();
         const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
 
         function parseCSV(text: string): string[][] {

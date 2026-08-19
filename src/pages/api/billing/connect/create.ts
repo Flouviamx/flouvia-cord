@@ -16,7 +16,7 @@ export const POST: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const limited = await limitConnectMutation(request, 'create', orgId, 6);
     if (limited) return limited;
-    const [org] = await sql`select sandbox_of, stripe_account_id from orgs where id = ${orgId}`;
+    const [org] = await sql`select sandbox_of, stripe_account_id, country_code, moneda from orgs where id = ${orgId}`;
     if (org?.sandbox_of) {
         return new Response(JSON.stringify({ error: 'Connect no está disponible en el entorno de prueba' }), { status: 409 });
     }
@@ -48,7 +48,13 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     if (!accountId) {
-        accountId = await createConnectAccount(orgId, business_type);
+        // País y divisa de la ORGANIZACIÓN: Stripe fija ambos al crear la cuenta
+        // y ya no se pueden cambiar. Ver docs/negocio-billing.md → cobros.
+        accountId = await createConnectAccount(
+            orgId, business_type,
+            String(org?.country_code || 'MX'),
+            String(org?.moneda || '') || undefined,
+        );
         await sql`update orgs set stripe_account_id = ${accountId}, stripe_account_type = 'custom', stripe_business_type = ${business_type} where id = ${orgId}`;
         account = await retrieveAccount(accountId);
         await auditConnect(orgId, request, 'cuenta_creada', { entityId: accountId, detail: business_type });

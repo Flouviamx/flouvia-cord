@@ -201,7 +201,10 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
             .org-list-item:active { transform: scale(0.98) !important; }
         </style>
     </head>
-    <body>
+    <!-- data-currency: divisa del negocio, leída por lib/money-client.ts en
+         todos los <script> de /app. Publicarla una sola vez aquí evita que cada
+         página vuelva a inventar un '$' fijo. -->
+    <body data-currency={ORG.moneda || 'MXN'}>
         <div class="app-shell">
             <!-- ── SIDEBAR (componente independiente) ── -->
             <Sidebar page={page} />
@@ -251,6 +254,12 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                                         <a href="/app/cotizaciones/nueva" class="tb-create-item" role="menuitem">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                                             <span>{t(L, 'layout.crear.cotizacion')}</span><kbd>C</kbd>
+                                        </a>
+                                    )}
+                                    {canCotizar && (
+                                        <a href="/app/facturas/nueva" class="tb-create-item" role="menuitem">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+                                            <span>{t(L, 'layout.crear.factura')}</span><kbd>F</kbd>
                                         </a>
                                     )}
                                     {canClientes && (
@@ -489,13 +498,15 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
                 <div class="kbd-help-body">
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.buscar_menu')}</span><span><kbd>⌘</kbd><kbd>K</kbd> · <kbd>/</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.armar_ia')}</span><span><kbd>C</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.crear_factura')}</span><span><kbd>F</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_dashboard')}</span><span><kbd>G</kbd> <kbd>D</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_cotizaciones')}</span><span><kbd>G</kbd> <kbd>C</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_clientes')}</span><span><kbd>G</kbd> <kbd>L</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_productos')}</span><span><kbd>G</kbd> <kbd>P</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_cobranza')}</span><span><kbd>G</kbd> <kbd>B</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_analitica')}</span><span><kbd>G</kbd> <kbd>A</kbd></span></div>
-                    <div class="kbd-row"><span>{t(L, 'layout.kbd.fijar_quitar')}</span><span><kbd>F</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.ir_facturas')}</span><span><kbd>G</kbd> <kbd>F</kbd></span></div>
+                    <div class="kbd-row"><span>{t(L, 'layout.kbd.fijar_quitar')}</span><span><kbd>X</kbd></span></div>
                     <div class="kbd-row"><span>{t(L, 'layout.kbd.mostrar_atajos')}</span><span><kbd>?</kbd></span></div>
                 </div>
             </div>
@@ -1786,6 +1797,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             chart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
             gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
             plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+            receipt: '<path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7"/><path d="M9 13h6"/><path d="M9 17h4"/>',
             sparkle: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
             check: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
             external: '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
@@ -2159,7 +2171,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             return;
         }
         document.getElementById('kbdHelpBackdrop')?.addEventListener('click', () => { if (help) (help as HTMLElement).hidden = true; });
-        const ROUTES: any = { d: '/app', c: '/app/cotizaciones', l: '/app/clientes', p: '/app/productos', b: '/app/cobranza', a: '/app/informes' };
+        const ROUTES: any = { d: '/app', c: '/app/cotizaciones', l: '/app/clientes', p: '/app/productos', b: '/app/cobranza', a: '/app/informes', f: '/app/facturas' };
         const typing = (el: any) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
         let gPending = false; let gTimer = 0;
         document.addEventListener('keydown', (e) => {
@@ -2176,7 +2188,11 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             if (k === 'g') { gPending = true; gTimer = window.setTimeout(() => { gPending = false; }, 1200); return; }
             if (k === '/') { e.preventDefault(); document.getElementById('cmdkOpen')?.click(); return; }
             if (k === 'c') { e.preventDefault(); window.location.href = '/app/cotizaciones/nueva'; return; }
-            if (k === 'f') { e.preventDefault(); (window as any).__cordTogglePin?.(); return; }
+            // `f` = crear factura, en paralelo exacto a `c` = crear cotización.
+            // Fijar/quitar la página del menú se mudó a `x`: crear un documento
+            // es una acción primaria y merece la tecla obvia; fijar no.
+            if (k === 'f') { e.preventDefault(); window.location.href = '/app/facturas/nueva'; return; }
+            if (k === 'x') { e.preventDefault(); (window as any).__cordTogglePin?.(); return; }
         });
     }
 

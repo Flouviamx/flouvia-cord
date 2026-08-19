@@ -8,6 +8,7 @@ import { t } from '../i18n/app';
 import { trackExternalUsage } from './external-usage';
 import { getEntitlementContext } from './org-entitlements';
 import { planIncludes } from './entitlements';
+import { currencyDecimals, normalizeCurrency } from './currency';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
 const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@flouvia.com>';
@@ -27,7 +28,17 @@ export function siteOrigin(): string {
 // VENDEDOR enviando la cotización desde su sesión) — no existe hoy una señal
 // fiable del idioma del CLIENTE receptor (no hay locale por cliente en el
 // schema). Es el mismo criterio "sin toggle" del resto de la app.
-const moneyFmt = (n: number, locale: 'es' | 'en') => '$' + new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(Number(n ?? 0));
+// El correo que recibe el CLIENTE lleva la divisa de la cotización. Antes decía
+// "$1,000.00" a secas: el cliente de un negocio en Londres leía dólares donde
+// había libras, y el importe del correo no cuadraba con el del link.
+const moneyFmt = (n: number, locale: 'es' | 'en', currency?: string) => {
+    const code = normalizeCurrency(currency);
+    const decimals = currencyDecimals(code);
+    return new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-MX', {
+        style: 'currency', currency: code,
+        minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+    }).format(Number(n ?? 0));
+};
 const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');
 
 // `messageId` = el id que devuelve Resend. Lo consume la cobranza con IA para
@@ -86,11 +97,11 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
  */
 export async function notifyQuoteSent(orgId: string, cotizacionId: string, origin: string): Promise<SendResult> {
     const [rows] = await withOrgTx(orgId, sql`
-        select c.folio, c.total, c.public_token, cl.empresa, cl.email,
+        select c.folio, c.total, c.public_token, c.base_currency, cl.empresa, cl.email,
                o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
                coalesce(o.pdf_mensaje, '') as mensaje,
                o.email_from_name, o.email_reply_to, o.email_intro, o.email_firma,
-               o.email_contacto, o.portal_powered, o.sandbox_of
+               o.email_contacto, o.portal_powered, o.sandbox_of, o.moneda
         from cotizaciones c
         join orgs o on o.id = c.org_id
         left join clientes cl on cl.id = c.cliente_id
@@ -103,6 +114,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
     const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
 
     const L = currentLocale();
+    const quoteCurrency = normalizeCurrency((r.base_currency as string) || (r.moneda as string));
     const tf = (key: string, vars: Record<string, string> = {}) => {
         let s = t(L, key as any);
         for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
@@ -116,11 +128,11 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
     const fill = (txt: string) => esc(txt)
         .replace(/\{cliente\}/g, esc(r.empresa || t(L, 'email.cliente_generico')))
         .replace(/\{folio\}/g, esc(r.folio))
-        .replace(/\{total\}/g, moneyFmt(r.total, L))
+        .replace(/\{total\}/g, moneyFmt(r.total, L, quoteCurrency))
         .replace(/\{negocio\}/g, esc(r.org_nombre));
     const intro = (canCustomizeEmail && r.email_intro && r.email_intro.trim())
         ? fill(r.email_intro)
-        : tf('email.intro_default', { org: esc(r.org_nombre), folio: esc(r.folio), total: moneyFmt(r.total, L) });
+        : tf('email.intro_default', { org: esc(r.org_nombre), folio: esc(r.folio), total: moneyFmt(r.total, L, quoteCurrency) });
     const firma = (canCustomizeEmail && r.email_firma && r.email_firma.trim()) ? fill(r.email_firma) : '';
     const poweredLine = canRemoveBranding && r.portal_powered === false ? esc(r.org_nombre) : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
     const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
@@ -158,4 +170,193 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
         fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
         replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
     });
+}
+
+// ── Correos de factura ──────────────────────────────────────────────────────
+// Antes el cliente NUNCA recibía su factura: `email.ts` solo sabía notificar
+// cotizaciones. El vendedor timbraba y después mandaba el PDF a mano por su
+// cuenta, fuera de Cord — que es exactamente el punto donde el ciclo "de la
+// propuesta al pago" se rompía.
+
+/** t() con sustitución de {vars}, como el `tf` de notifyQuoteSent. */
+function tv(locale: 'es' | 'en', key: string, vars: Record<string, string> = {}): string {
+    let out = t(locale, key as any);
+    for (const k in vars) out = out.split(`{${k}}`).join(vars[k]);
+    return out;
+}
+
+interface InvoiceEmailRow {
+    invoice_number: string | null;
+    total: number;
+    currency: string | null;
+    amount_remaining: number | null;
+    due_date: string | null;
+    public_token: string | null;
+    lifecycle: string;
+    email: string | null;
+    empresa: string | null;
+    org_nombre: string;
+    color: string;
+    email_from_name: string | null;
+    email_reply_to: string | null;
+    email_contacto: string | null;
+    portal_powered: boolean | null;
+    sandbox_of: string | null;
+    moneda: string | null;
+}
+
+async function loadInvoiceEmail(orgId: string, documentoId: string): Promise<InvoiceEmailRow | null> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select d.invoice_number, d.total, d.currency, d.amount_remaining, d.due_date,
+               d.public_token, d.lifecycle,
+               coalesce(cl.email, cq.email) as email,
+               coalesce(cl.empresa, cq.empresa) as empresa,
+               o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
+               o.email_from_name, o.email_reply_to, o.email_contacto,
+               o.portal_powered, o.sandbox_of, o.moneda
+          from documentos_fiscales d
+          join orgs o on o.id = d.org_id
+          left join clientes cl on cl.id = d.cliente_id
+          left join cotizaciones c on c.id = d.cotizacion_id
+          left join clientes cq on cq.id = c.cliente_id
+         where d.id = ${documentoId} and d.org_id = ${orgId}`);
+    return (rows[0] as unknown as InvoiceEmailRow) || null;
+}
+
+function invoiceEmailHtml(r: InvoiceEmailRow, opts: {
+    locale: 'es' | 'en';
+    link: string;
+    saldo: number;
+    titulo: string;
+    cuerpo: string;
+    cta: string;
+    poweredLine: string;
+}): string {
+    const color = /^#[0-9a-fA-F]{6}$/.test(r.color) ? r.color : '#0a192f';
+    const currency = normalizeCurrency((r.currency as string) || (r.moneda as string));
+    const L = opts.locale;
+    const vence = r.due_date
+        ? new Date(String(r.due_date)).toLocaleDateString(L === 'en' ? 'en-US' : 'es-MX', {
+            day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+        })
+        : null;
+    const filaVence = vence
+        ? `<tr><td style="padding:6px 0;font-size:14px;color:#6B7280;">${t(L, 'fact.e_vence')}</td>
+             <td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;">${esc(vence)}</td></tr>`
+        : '';
+    return `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <div style="max-width:540px;margin:0 auto;">
+            <div style="margin-bottom:32px;">
+                <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord" style="display:block;">
+            </div>
+
+            <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${esc(r.empresa || t(L, 'fact.e_hola'))}</p>
+            <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${opts.cuerpo}</p>
+
+            <table style="width:100%;border-collapse:collapse;margin:32px 0;border-top:1px solid #F3F4F6;border-bottom:1px solid #F3F4F6;padding:8px 0;">
+                <tr><td style="padding:6px 0;font-size:14px;color:#6B7280;">${t(L, 'fact.e_factura')}</td>
+                    <td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;">${esc(r.invoice_number || '—')}</td></tr>
+                ${filaVence}
+                <tr><td style="padding:6px 0;font-size:15px;color:#111827;font-weight:600;">${t(L, 'fact.e_saldo')}</td>
+                    <td style="padding:6px 0;font-size:15px;color:#111827;text-align:right;font-weight:600;">${moneyFmt(opts.saldo, L, currency)}</td></tr>
+            </table>
+
+            <div style="margin:40px 0;">
+                <a href="${opts.link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">${esc(opts.cta)}</a>
+            </div>
+
+            <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">${t(L, 'email.copie_enlace')}<br><a href="${opts.link}" style="color:#2563EB;text-decoration:none;">${opts.link}</a></p>
+
+            <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
+                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${opts.poweredLine}</p>
+            </div>
+        </div>
+    </div>`;
+}
+
+/**
+ * Manda la factura al cliente con su link de pago propio (`/i/[token]`), no el
+ * de la cotización: el saldo que se cobra ahí es el de ESTA factura.
+ */
+export async function notifyInvoiceIssued(orgId: string, documentoId: string): Promise<boolean> {
+    const r = await loadInvoiceEmail(orgId, documentoId);
+    if (!r || !r.email || !r.public_token) return false;
+
+    const entitlement = await getEntitlementContext(orgId);
+    const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
+    const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
+    const L = currentLocale();
+    const currency = normalizeCurrency((r.currency as string) || (r.moneda as string));
+    const saldo = Number(r.amount_remaining ?? r.total ?? 0);
+    const link = `${siteOrigin()}/i/${r.public_token}`;
+    const poweredLine = canRemoveBranding && r.portal_powered === false
+        ? esc(r.org_nombre)
+        : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
+
+    const html = invoiceEmailHtml(r, {
+        locale: L, link, saldo, poweredLine,
+        titulo: '',
+        cuerpo: tv(L, 'fact.e_emitida', {
+            org: esc(r.org_nombre),
+            numero: esc(r.invoice_number || ''),
+            total: moneyFmt(Number(r.total || 0), L, currency),
+        }),
+        cta: t(L, 'fact.e_cta_ver'),
+    });
+
+    const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
+    const result = await sendEmail({
+        orgId,
+        operation: 'invoice_issued',
+        to: r.email,
+        subject: `${testPrefix}${tv(L, 'fact.e_asunto', { numero: r.invoice_number || '', org: r.org_nombre })}`.trim(),
+        html,
+        fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
+        replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+    });
+    return result.sent;
+}
+
+/** Recordatorio de una factura por vencer o vencida. */
+export async function notifyInvoiceReminder(orgId: string, documentoId: string, vencida: boolean): Promise<boolean> {
+    const r = await loadInvoiceEmail(orgId, documentoId);
+    if (!r || !r.email || !r.public_token) return false;
+    // Solo se recuerda lo que sigue abierto: una factura pagada o anulada que
+    // recibe recordatorio es la queja más cara que puede generar un cobro.
+    if (r.lifecycle !== 'open') return false;
+
+    const entitlement = await getEntitlementContext(orgId);
+    const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
+    const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
+    const L = currentLocale();
+    const saldo = Number(r.amount_remaining ?? r.total ?? 0);
+    const link = `${siteOrigin()}/i/${r.public_token}`;
+    const poweredLine = canRemoveBranding && r.portal_powered === false
+        ? esc(r.org_nombre)
+        : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
+
+    const cuerpo = tv(L, vencida ? 'fact.e_vencida_cuerpo' : 'fact.e_porvencer_cuerpo', {
+        numero: esc(r.invoice_number || ''),
+        org: esc(r.org_nombre),
+    });
+
+    const html = invoiceEmailHtml(r, {
+        locale: L, link, saldo, poweredLine, titulo: '', cuerpo,
+        cta: t(L, 'fact.e_cta_pagar'),
+    });
+
+    const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
+    const asunto = tv(L, vencida ? 'fact.e_asunto_vencida' : 'fact.e_asunto_porvencer', {
+        numero: r.invoice_number || '',
+    });
+    const result = await sendEmail({
+        orgId,
+        operation: 'invoice_reminder',
+        to: r.email,
+        subject: `${testPrefix}${asunto} — ${r.org_nombre}`,
+        html,
+        fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
+        replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+    });
+    return result.sent;
 }

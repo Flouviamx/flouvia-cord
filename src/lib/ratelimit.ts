@@ -11,6 +11,7 @@
 
 import { createHash } from 'node:crypto';
 import { sql } from './db';
+import { log } from './log';
 
 const UP_URL = import.meta.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_REDIS_REST_URL;
 const UP_TOKEN = import.meta.env.UPSTASH_REDIS_REST_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -153,7 +154,7 @@ export async function strictRateLimit(key: string, limit: number, windowSec = 60
     try {
         return await postgresAllow(key, limit, windowSec);
     } catch (error) {
-        console.error('[ratelimit/postgres]', error);
+        log.error('error no controlado', { route: 'ratelimit/postgres', err: error });
         if (import.meta.env.PROD) {
             return { ok: false, remaining: 0, retryAfter: 60, unavailable: true };
         }

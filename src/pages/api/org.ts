@@ -18,7 +18,7 @@ import { decryptSecret, encryptRequiredSecret } from '../../lib/crypto-secret';
 import { requireFreshAuth } from '../../lib/step-up';
 import { requireEntitlement } from '../../lib/org-entitlements';
 import type { FeatureKey } from '../../lib/entitlements';
-import { isCountryCode } from '../../lib/countries';
+import { getCountryProfile, isCountryCode } from '../../lib/countries';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
@@ -189,11 +189,32 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (!isCountryCode(countryCode)) return json({ error: 'País no soportado.' }, 400);
 
     // ── Centro de mando Enterprise (jun 2026) ──
+    // Cambiar de país arrastra la divisa y la zona horaria SOLO si la org nunca
+    // las personalizó (siguen siendo las del país anterior). Sin esto una cuenta
+    // que se mudaba a US/ES seguía con MXN y horario de CDMX para siempre: la
+    // divisa es una decisión del negocio, pero heredar la del país viejo no lo es.
+    const paisCambio = String(actual.country_code || 'MX').toUpperCase() !== countryCode;
+    const perfilAnterior = getCountryProfile(String(actual.country_code || 'MX'));
+    const perfilNuevo = getCountryProfile(countryCode);
+    const monedaHeredada = paisCambio
+        && String(actual.moneda || '').toUpperCase() === perfilAnterior.currency.toUpperCase();
+    const zonaHeredada = paisCambio && String(actual.zona_horaria || '') === perfilAnterior.timeZone;
+
     const moneda = body.moneda !== undefined
         ? (SUPPORTED_CURRENCIES.has(String(body.moneda).toUpperCase()) ? String(body.moneda).toUpperCase() : actual.moneda)
-        : actual.moneda;
-    const zona = body.zona_horaria !== undefined ? (str(body.zona_horaria, 40) || 'America/Mexico_City') : actual.zona_horaria;
-    const idioma = body.idioma !== undefined ? (str(body.idioma, 10) || 'es-MX') : actual.idioma;
+        : (monedaHeredada ? perfilNuevo.currency : actual.moneda);
+    const zona = body.zona_horaria !== undefined
+        ? (str(body.zona_horaria, 40) || 'America/Mexico_City')
+        : (zonaHeredada ? perfilNuevo.timeZone : actual.zona_horaria);
+    // El idioma sigue al país con el mismo criterio que la divisa: se hereda solo
+    // si nunca se personalizó. Un país hispanohablante deja la app en español;
+    // cualquier otro, en inglés.
+    const idiomaDelPais = (code: string) => getCountryProfile(code).locale.startsWith('es') ? 'es-MX' : 'en-US';
+    const idiomaHeredado = paisCambio
+        && String(actual.idioma || '') === idiomaDelPais(String(actual.country_code || 'MX'));
+    const idioma = body.idioma !== undefined
+        ? (str(body.idioma, 10) || 'es-MX')
+        : (idiomaHeredado ? idiomaDelPais(countryCode) : actual.idioma);
     const colorSec = body.color_secundario !== undefined
         ? (String(body.color_secundario) === '' ? null : (HEX.test(String(body.color_secundario).trim()) ? String(body.color_secundario).trim() : actual.color_secundario))
         : actual.color_secundario;

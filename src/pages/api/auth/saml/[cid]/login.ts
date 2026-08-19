@@ -11,6 +11,7 @@ import { trustedIp } from '../../../../../lib/ip';
 import { rateLimit, tooMany } from '../../../../../lib/ratelimit';
 import { safeRelativeRedirect } from '../../../../../lib/safe-redirect';
 import { getConnection, buildSamlInstance } from '../../../../../lib/saml';
+import { log } from '../../../../../lib/log';
 
 export const GET: APIRoute = async ({ params, url, request, redirect }) => {
   const ip = trustedIp(request);
@@ -31,7 +32,7 @@ export const GET: APIRoute = async ({ params, url, request, redirect }) => {
     const authorizeUrl = await saml.getAuthorizeUrlAsync(relayState, url.host, {});
     return redirect(authorizeUrl);
   } catch (err) {
-    console.error('[saml/login] Error:', err);
+    log.error('Error', { route: 'saml/login', err });
     return redirect('/sign-in?sso_error=connection');
   }
 };

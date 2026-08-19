@@ -40,7 +40,7 @@ export const ui = {
     'nav.mega.prod.6.desc': 'Un agente que persigue tu cartera',
     'nav.mega.prod.7.title': 'Multi-divisa y FX',
     'nav.mega.prod.7.desc': 'Cotiza en dólares, factura en pesos',
-    'nav.mega.prod.8.title': 'Facturación internacional',
+    'nav.mega.prod.8.title': 'Cord Invoicing',
     'nav.mega.prod.8.desc': 'CFDI 4.0 en México, factura comercial en el resto',
     'nav.mega.prod.9.title': 'Finanzas y CFO',
     'nav.mega.prod.9.desc': 'Flujo de caja predictivo y riesgo',
@@ -80,7 +80,6 @@ export const ui = {
     'nav.mega.rec.4.desc': 'Lo que estamos construyendo',
     'nav.mega.rec.foot': 'Conoce Flouvia, la casa de Cord',
 
-    'nav.mobile.menu': 'Menú',
     'nav.mobile.plans': 'Ver planes',
     'nav.mobile.footer.op': 'CDMX — OP. GLOBAL',
 
@@ -291,7 +290,7 @@ export const ui = {
     'nav.mega.prod.6.desc': 'An agent that chases your receivables',
     'nav.mega.prod.7.title': 'Multi-currency & FX',
     'nav.mega.prod.7.desc': 'Quote in USD, bill in MXN',
-    'nav.mega.prod.8.title': 'International billing',
+    'nav.mega.prod.8.title': 'Cord Invoicing',
     'nav.mega.prod.8.desc': 'CFDI 4.0 in Mexico, commercial invoice everywhere else',
     'nav.mega.prod.9.title': 'Finance & CFO',
     'nav.mega.prod.9.desc': 'Predictive cash flow and risk',
@@ -332,7 +331,6 @@ export const ui = {
     'nav.mega.rec.4.desc': 'See what we are building',
     'nav.mega.rec.foot': 'Meet Flouvia, the home of Cord',
 
-    'nav.mobile.menu': 'Menu',
     'nav.mobile.plans': 'View plans',
     'nav.mobile.footer.op': 'CDMX — GLOBAL OP.',
 

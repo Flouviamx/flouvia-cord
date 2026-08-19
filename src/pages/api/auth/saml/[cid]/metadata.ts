@@ -4,6 +4,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getConnection, buildSamlInstance, generateMetadata } from '../../../../../lib/saml';
+import { log } from '../../../../../lib/log';
 
 export const GET: APIRoute = async ({ params }) => {
   const cid = params.cid;
@@ -17,7 +18,7 @@ export const GET: APIRoute = async ({ params }) => {
     const xml = generateMetadata(saml);
     return new Response(xml, { headers: { 'Content-Type': 'application/samlmetadata+xml' } });
   } catch (err) {
-    console.error('[saml/metadata] Error:', err);
+    log.error('Error', { route: 'saml/metadata', err });
     return new Response('Error generando metadata', { status: 500 });
   }
 };

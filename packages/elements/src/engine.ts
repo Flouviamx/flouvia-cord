@@ -95,3 +95,105 @@ export function calculateTotals(items: EngineItemInput[], ivaPct: number, ivaInc
 
     return { subtotal, iva, total, sumPrecios, ivaIncluido, ivaPct };
 }
+
+// ── Facturación: una tasa POR LÍNEA ─────────────────────────────────────────
+// `calculateTotals` aplana una sola tasa para toda la cotización, que es lo
+// correcto ahí: se está negociando un precio, no emitiendo un documento fiscal.
+// Una factura es otra cosa. Vender mezclando tasas —un concepto exento junto a
+// uno con IVA, o servicios y bienes con tratamiento distinto— es normal en
+// cuanto sales de un solo país, y aplanarlo produce un documento que no cuadra
+// con lo que la autoridad espera.
+//
+// Esta función NO reemplaza a la de arriba: la de arriba la usan cotizaciones y
+// /api/v1 para escribir totales ya guardados en producción, y tocarla
+// reescribiría su aritmética en silencio.
+
+export interface InvoiceItemInput extends EngineItemInput {
+    /** Fracción, no porcentaje: 0.16, nunca 16. */
+    tax_rate?: number | string | null;
+}
+
+export interface InvoiceItem extends EngineItem {
+    tax_rate: number;
+    /** Precio efectivo por unidad: negociado si existe, si no el de lista. */
+    precio_final: number;
+    base: number;
+    impuesto: number;
+    total: number;
+}
+
+export interface TaxBreakdown {
+    tasa: number;
+    base: number;
+    impuesto: number;
+}
+
+export interface InvoiceTotals {
+    lineas: InvoiceItem[];
+    subtotal: number;
+    impuestos: number;
+    total: number;
+    /** Base imponible e impuesto agrupados por tasa — lo que imprime el PDF. */
+    porTasa: TaxBreakdown[];
+    ivaIncluido: boolean;
+}
+
+/**
+ * Totales de una factura con impuesto por línea.
+ *
+ * `ivaIncluido = true` significa que los precios capturados YA traen el
+ * impuesto dentro: cada línea se desagrega con su propia tasa
+ * (`base = precio / (1 + tasa)`), no con una tasa promedio — promediar tasas
+ * distintas devuelve una base que no corresponde a ninguna de ellas.
+ */
+export function calculateInvoiceTotals(
+    items: InvoiceItemInput[],
+    opts: { ivaIncluido?: boolean } = {},
+): InvoiceTotals {
+    const ivaIncluido = opts.ivaIncluido === true;
+    const lineas: InvoiceItem[] = items.map((raw) => {
+        const it = sanitizeItem(raw);
+        const rate = Number(raw.tax_rate ?? 0);
+        // Mismo criterio que calculateTotals: una tasa fuera de rango es un
+        // error de programación, y un 500 explícito le gana a una factura con
+        // impuestos mal calculados que nadie audita hasta la auditoría.
+        if (!Number.isFinite(rate) || rate < 0 || rate > 1) {
+            throw new RangeError(`calculateInvoiceTotals: tax_rate debe estar entre 0 y 1 (recibido: ${raw.tax_rate}).`);
+        }
+        const precioFinal = it.precio_negociado ?? it.precio_unitario ?? 0;
+        const bruto = precioFinal * it.cantidad;
+        const base = ivaIncluido ? bruto / (1 + rate) : bruto;
+        const impuesto = ivaIncluido ? bruto - base : base * rate;
+        return {
+            ...it,
+            tax_rate: rate,
+            precio_final: precioFinal,
+            base,
+            impuesto,
+            total: base + impuesto,
+        };
+    });
+
+    const subtotal = lineas.reduce((sum, l) => sum + l.base, 0);
+    const impuestos = lineas.reduce((sum, l) => sum + l.impuesto, 0);
+
+    // Agrupado por tasa, en orden ascendente: el exento primero, como se lee en
+    // cualquier factura. Se agrupa sobre el número crudo, no sobre el
+    // redondeado, para que el desglose sume exactamente el total.
+    const mapa = new Map<number, TaxBreakdown>();
+    for (const l of lineas) {
+        const acc = mapa.get(l.tax_rate) ?? { tasa: l.tax_rate, base: 0, impuesto: 0 };
+        acc.base += l.base;
+        acc.impuesto += l.impuesto;
+        mapa.set(l.tax_rate, acc);
+    }
+
+    return {
+        lineas,
+        subtotal,
+        impuestos,
+        total: subtotal + impuestos,
+        porTasa: [...mapa.values()].sort((a, b) => a.tasa - b.tasa),
+        ivaIncluido,
+    };
+}

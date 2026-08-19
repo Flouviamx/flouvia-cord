@@ -84,11 +84,14 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PaidPlan> = {
     agent_governance: 'scale',
 };
 
-// Vocabulario de facturación: "Facturación electrónica" es el término neutro
-// (CFDI 4.0 en México, factura comercial en el resto). "CFDI" a secas solo
-// sobrevive en superficies que ya son inequívocamente mexicanas por contexto.
+// Vocabulario de facturación: la capacidad se llama **Cord Invoicing** en los
+// dos idiomas. `cfdi` e `international_invoicing` son dos CARRILES de la misma
+// capacidad (México ante el SAT, factura comercial en el resto), por eso
+// comparten etiqueta: al usuario le decimos qué producto necesita, no qué
+// regulación le toca. Las FeatureKey NO se renombran — son identificadores con
+// consumidores en BD, cron, API pública y MCP.
 export const FEATURE_LABEL: Record<FeatureKey, string> = {
-    cfdi: 'Facturación electrónica',
+    cfdi: 'Cord Invoicing',
     remove_branding: 'Quitar la marca de Cord',
     custom_email: 'Personalización de correos',
     advanced_forecast: 'Pronóstico y margen cedido',
@@ -105,7 +108,7 @@ export const FEATURE_LABEL: Record<FeatureKey, string> = {
     collections_ai: 'Cobranza autónoma con IA',
     late_interest: 'Interés moratorio automático',
     cashflow_90: 'Pronóstico de flujo a 90 días',
-    international_invoicing: 'Facturación internacional',
+    international_invoicing: 'Cord Invoicing',
     smtp: 'Correo desde tu dominio',
     sso: 'SSO empresarial',
     agent_governance: 'Gobernanza de agentes de IA',

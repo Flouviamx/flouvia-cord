@@ -1,7 +1,7 @@
 ---
 title: "Client Catalog and RFC"
 description: "Management and validation of RFCs in the client list."
-category: "Billing & CFDI"
+category: "Invoicing"
 ---
 
 Client management in Cord is designed to avoid SAT rejections when issuing CFDI 4.0.

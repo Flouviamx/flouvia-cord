@@ -151,7 +151,7 @@ export const SOLUCIONES: Solution[] = [
         stats: [
             { valor: '99.9', countup: 99.9, decimals: 1, suffix: '%', label: 'de uptime histórico en nuestra infraestructura' },
             { valor: '10x', label: 'más velocidad en aprobaciones internas' },
-            { valor: '0', countup: 0, label: 'fugas de margen por errores de cálculo' },
+            { valor: '0', label: 'fugas de margen por errores de cálculo' },
         ],
         blocks: [
             {
@@ -313,14 +313,14 @@ export const SOLUCIONES: Solution[] = [
                 titulo: 'Facturación automática',
                 desc: 'Genera el CFDI automáticamente al aceptar la propuesta, sin tocar el portal del SAT.',
                 link: 'Explorar',
-                href: '/producto/cfdi'
+                href: '/producto/facturacion'
             }
         ],
 
         stats: [
-            { valor: '2', countup: 2, suffix: ' min', label: 'para enviar una propuesta pulida' },
-            { valor: '1', countup: 1, suffix: ' clic', label: 'para que tu cliente apruebe y pague' },
-            { valor: '0', countup: 0, label: 'horas desperdiciadas facturando a mano' },
+            { valor: '2', suffix: ' min', label: 'para enviar una propuesta pulida' },
+            { valor: '1', suffix: ' clic', label: 'para que tu cliente apruebe y pague' },
+            { valor: '0', label: 'horas desperdiciadas facturando a mano' },
         ],
         blocks: [
             {
@@ -359,7 +359,7 @@ export const SOLUCIONES: Solution[] = [
             metricas: [
                 { valor: '3x', label: 'más velocidad en ciclo de ventas' },
                 { valor: '100%', label: 'de facturación automatizada post-cierre' },
-                { valor: '0', countup: 0, label: 'fricción en onboarding de ventas' },
+                { valor: '0', label: 'fricción en onboarding de ventas' },
             ],
             nota: 'Con un equipo de solo 4 personas, Acme AI utiliza Cord para manejar todas sus suscripciones anuales empresariales, luciendo como una corporación y operando con la agilidad de una startup.',
         },
@@ -381,7 +381,7 @@ export const SOLUCIONES: Solution[] = [
                 a: 'No. Cord automatiza la emisión del CFDI 4.0 al momento de la aprobación del cliente. Solo conectas tus sellos digitales (CSD) una vez, y nosotros nos encargamos de timbrar y enviar la factura correctamente formada.',
             },
         ],
-        interlink: { href: '/producto/cfdi', label: 'facturación automatizada CFDI' },
+        interlink: { href: '/producto/facturacion', label: 'facturación automatizada CFDI' },
         cta: { titulo: 'La herramienta secreta para crecer sin burocracia.', sub: 'Crea tu cuenta gratis hoy. Cierra tu primer trato mañana.' },
     },
 ];

@@ -96,6 +96,7 @@ const L = currentLocale();
 </dialog>
 
 <script>
+    import { createMoney } from '../../lib/money-client';
     // CRUD de productos contra /api/productos, disparado por 'prodmodal:open' y
     // notificando 'prodmodal:saved'/'prodmodal:deleted'.
     (function () {
@@ -121,7 +122,7 @@ const L = currentLocale();
             chips.forEach((c) => c.classList.toggle('active', Boolean(c.dataset.v) === v));
         };
 
-        const moneyFmt = (n: number) => '$' + new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(n);
+        const moneyFmt = createMoney();
         const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
         const updateMargin = () => {
             const precio = parseFloat(input('pmPrecio').value) || 0;

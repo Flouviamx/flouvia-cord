@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { generateAuthenticationOptions } from '@simplewebauthn/server';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
+import { log } from '../../../../lib/log';
 
 export const prerender = false;
 
@@ -27,7 +28,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     return new Response(JSON.stringify(options), { status: 200 });
   } catch (error) {
-    console.error('Error en auth-options:', error);
+    log.error('Error en auth-options', { err: error });
     return new Response(JSON.stringify({ error: 'Error interno' }), { status: 500 });
   }
 };

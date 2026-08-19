@@ -174,7 +174,18 @@ export async function safeFetch(
 // Lee como máximo `maxBytes` del cuerpo. El AbortController de safeFetch sigue
 // activo mientras esto corre, así que una respuesta que gotea bytes sin fin
 // también se corta por el timeout (no solo por el tope de bytes).
-async function readCapped(res: Response, maxBytes: number): Promise<string> {
+// Acepta cualquier Response con cuerpo legible: el fetch de undici devuelve su
+// propia clase Response, incompatible nominalmente con la global de lib.dom.
+type ReadableResponse = {
+    text(): Promise<string>;
+    body: {
+        getReader(): {
+            read(): Promise<{ done: boolean; value?: Uint8Array }>;
+            cancel(): Promise<void>;
+        };
+    } | null;
+};
+async function readCapped(res: ReadableResponse, maxBytes: number): Promise<string> {
     if (!res.body) {
         try { return await res.text(); } catch { return ''; }
     }

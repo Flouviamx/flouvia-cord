@@ -136,7 +136,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
     </div>
 </AppLayout>
 
-<script is:inline define:vars={{ catalogo, aprobMargenMin: ORG.aprobMargenMin, qItems: q.items, qId: q.id, qStatus: q.status, T: EVT }}>
+<script is:inline define:vars={{ catalogo, aprobMargenMin: ORG.aprobMargenMin, qItems: q.items, qId: q.id, qStatus: q.status, T: EVT, quoteCurrency: q.baseCurrency || ORG.moneda || 'MXN', quoteFiscalCurrency: q.fiscalCurrency || ORG.moneda || 'MXN' }}>
     const lines = [...qItems].map(it => ({
         id: it.producto_id || null, // Nota: el rowToQuote no incluye producto_id nativamente, requeriría arreglo si es vital, pero se asume nombre
         nombre: it.descripcion,
@@ -150,7 +150,28 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
     const $lines = document.getElementById('lines');
     const $empty = document.getElementById('linesEmpty');
     const $select = document.getElementById('productSelect');
-    const fmt = (n) => '$' + new Intl.NumberFormat(T.localeIntl, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    // Divisa de ESTA cotización, no la default del negocio: se está editando un
+    // documento que ya se vendió en una divisa concreta. Con la del negocio, una
+    // cotización en USD/JPY se releía con el símbolo y los decimales equivocados
+    // justo mientras el vendedor renegocia los precios.
+    const CORD_CURRENCY = String(quoteCurrency || 'MXN').toUpperCase();
+    const CORD_DECIMALS = (() => {
+        try {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: CORD_CURRENCY })
+                .resolvedOptions().maximumFractionDigits ?? 2;
+        } catch { return 2; }
+    })();
+    const cordMoney = (n) => {
+        try {
+            return new Intl.NumberFormat(T.localeIntl, {
+                style: 'currency', currency: CORD_CURRENCY,
+                minimumFractionDigits: CORD_DECIMALS, maximumFractionDigits: CORD_DECIMALS,
+            }).format(Number(n) || 0);
+        } catch {
+            return new Intl.NumberFormat(T.localeIntl).format(Number(n) || 0);
+        }
+    };
+    const fmt = cordMoney;
     const fmtPct = (n) => Number.isFinite(n) ? Math.round(n) + '%' : '—';
     const margenPct = (costo, precio) => (costo > 0 && precio > 0) ? (precio - costo) / precio * 100 : null;
 

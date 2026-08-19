@@ -10,7 +10,7 @@ export const PERMISOS = [
     { key: 'productos', label: 'Productos',    desc: 'Crear y editar el catálogo' },
     { key: 'analitica', label: 'Analítica',    desc: 'Ver métricas, forecast y reportes' },
     { key: 'ajustes',   label: 'Ajustes',      desc: 'Cambiar marca, fiscal, PDF y reglas del negocio' },
-    { key: 'cobros_config', label: 'Configurar cobros', desc: 'Cambiar cuenta bancaria y configuración de Cord Pagos' },
+    { key: 'cobros_config', label: 'Configurar cobros', desc: 'Cambiar cuenta bancaria y configuración de Cord Payments' },
     { key: 'reembolsar', label: 'Reembolsos', desc: 'Solicitar reembolsos de pagos conciliados' },
     { key: 'equipo',    label: 'Equipo',       desc: 'Invitar miembros y gestionar permisos' },
 ] as const;

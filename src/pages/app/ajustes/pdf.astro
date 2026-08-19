@@ -230,7 +230,26 @@ const tpl = ORG.pdfTemplate || 'clasico';
             { d: SAMPLE_ITEMS[2], q: 2400, lista: 16.5, nego: 14.2 },
         ];
         const SUBTOTAL = SAMPLE.reduce((s, it) => s + it.nego * it.q, 0);
-        const money = (n) => '$' + new Intl.NumberFormat(LOCALE_INTL, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    // Divisa del negocio (AppLayout la publica en <body data-currency>).
+    // Script is:inline: no puede importar lib/money-client, misma fuente igual.
+    const CORD_CURRENCY = (document.body.dataset.currency || 'MXN').toUpperCase();
+    const CORD_DECIMALS = (() => {
+        try {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: CORD_CURRENCY })
+                .resolvedOptions().maximumFractionDigits ?? 2;
+        } catch { return 2; }
+    })();
+    const cordMoney = (n) => {
+        try {
+            return new Intl.NumberFormat(LOCALE_INTL, {
+                style: 'currency', currency: CORD_CURRENCY,
+                minimumFractionDigits: CORD_DECIMALS, maximumFractionDigits: CORD_DECIMALS,
+            }).format(Number(n) || 0);
+        } catch {
+            return new Intl.NumberFormat(LOCALE_INTL).format(Number(n) || 0);
+        }
+    };
+        const money = cordMoney;
         const pct = (l, n) => (l > 0 ? Math.round((1 - n / l) * 100) : 0);
         const TPL_NAME = TPL_NAMES;
         const el = (id) => document.getElementById(id);

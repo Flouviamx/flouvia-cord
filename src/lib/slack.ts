@@ -6,7 +6,18 @@
 // REGLA DE ORO (igual que webhooks): nunca lanza. Un fallo de Slack jamás rompe la
 // operación de negocio.
 
-const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(Number(n ?? 0));
+import { currencyDecimals, normalizeCurrency } from './currency';
+
+// El monto siempre se postea CON su divisa: el canal de Slack de un negocio
+// que vende en varias monedas necesita distinguir 1,000 USD de 1,000 MXN.
+const money = (n: number, currency?: string) => {
+    const code = normalizeCurrency(currency);
+    const decimals = currencyDecimals(code);
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency', currency: code,
+        minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+    }).format(Number(n ?? 0));
+};
 
 // Texto por evento (sin emojis — Regla 1 de CLAUDE.md). `notify.*` son los
 // eventos que dispara src/lib/notify.ts (matriz de Ajustes › Notificaciones);
@@ -33,6 +44,8 @@ export interface SlackPayload {
     cliente: string | null;
     total: number;
     link?: string | null;
+    /** Divisa ISO del total (MXN si no se especifica). */
+    moneda?: string;
 }
 
 /** Construye y envía el mensaje. Devuelve ok/status sin lanzar. */
@@ -40,7 +53,7 @@ export async function postToSlack(webhookUrl: string, evento: string, data: Slac
     const meta = EVENT_MSG[evento] || { verbo: evento };
     const lineas = [
         `Cotización *${data.folio}* ${meta.verbo}`,
-        `Cliente: ${data.cliente || '—'} · Total: *${money(data.total)}*`,
+        `Cliente: ${data.cliente || '—'} · Total: *${money(data.total, data.moneda)}*`,
     ];
     if (data.link) lineas.push(`<${data.link}|Ver cotización>`);
     const body = JSON.stringify({ text: lineas.join('\n') });

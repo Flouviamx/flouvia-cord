@@ -18,6 +18,7 @@ import { currentUserId } from '../../../lib/context';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { COUNTRY_CODES, getCountryProfile } from '../../../lib/countries';
 import { requireEntitlement } from '../../../lib/org-entitlements';
+import { log } from '../../../lib/log';
 
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -91,7 +92,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         return json({ ok: true, orgId, name: org.nombre });
     } catch (error) {
-        console.error('[api/orgs] error creando org:', error);
+        log.error('error creando org', { route: 'api/orgs', err: error });
         return json({ error: 'internal_error' }, 500);
     }
 };

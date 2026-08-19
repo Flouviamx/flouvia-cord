@@ -10,6 +10,7 @@ import { emailVerifyConfirmSchema, parseJsonBody } from '../../../../lib/validat
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
 import { posthogServer } from '../../../../lib/posthog-server';
+import { log } from '../../../../lib/log';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
     const ip = trustedIp(request);
@@ -46,7 +47,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
         return new Response(JSON.stringify({ success: true, email: result.email }), { status: 200 });
     } catch (error) {
-        console.error('[verify-email/confirm]', error);
+        log.error('error no controlado', { route: 'verify-email/confirm', err: error });
         return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
     }
 };

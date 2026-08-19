@@ -1,7 +1,7 @@
 ---
 title: "What to do if your CSD expired"
 description: "Steps to upload your new Digital Seal Certificate."
-category: "Billing & CFDI"
+category: "Invoicing"
 ---
 
 For Cord (or any PAC) to issue legal invoices on your behalf, you need to upload your **Digital Seal Certificate (CSD)**. Attention! The CSD is not the FIEL (e.firma).

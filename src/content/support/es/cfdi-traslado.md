@@ -1,7 +1,7 @@
 ---
 title: "Emitir CFDI de Traslado (Carta Porte)"
 description: "Configuración para empresas de logística o mercancías."
-category: "Facturación y CFDI"
+category: "Facturación"
 ---
 
 Actualmente, la plataforma principal de Cord está enfocada en empresas de tecnología, servicios B2B y agencias, por lo que **los CFDI de Traslado (Carta Porte) no están soportados de forma nativa en el dashboard**.

@@ -1,7 +1,7 @@
 ---
 title: "Configurar retenciones (ISR/IVA)"
 description: "Aplica retenciones automáticamente según el régimen."
-category: "Facturación y CFDI"
+category: "Facturación"
 ---
 
 Facturar servicios profesionales u honorarios a Personas Morales requiere aplicar retenciones de impuestos específicos (ISR e IVA retenido) sobre el subtotal.

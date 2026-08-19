@@ -1,7 +1,7 @@
 ---
 title: "Cancelación con CFDI Relacionado (01)"
 description: "Sustituye facturas con errores correctamente."
-category: "Facturación y CFDI"
+category: "Facturación"
 ---
 
 El SAT es muy estricto cuando intentas cancelar una factura (Ingreso) que ya tiene documentos relacionados, como Notas de Crédito (Egreso) o Complementos de Pago (REP). El SAT arrojará un error 400 indicando que el CFDI no es cancelable.

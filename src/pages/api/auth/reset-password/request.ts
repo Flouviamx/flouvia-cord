@@ -10,6 +10,7 @@ import { sendPasswordResetEmail } from '../../../../lib/auth-email';
 import { resetRequestSchema, parseJsonBody } from '../../../../lib/validation';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
+import { log } from '../../../../lib/log';
 
 export const POST: APIRoute = async ({ request }) => {
     const ip = trustedIp(request);
@@ -30,12 +31,12 @@ export const POST: APIRoute = async ({ request }) => {
             const token = await createPasswordResetToken(userId);
             const sendRes = await sendPasswordResetEmail(email, token);
             if (!sendRes.sent) {
-                console.warn('[reset/request] Resend no envió el correo:', sendRes.error || sendRes.skipped);
+                log.warn('Resend no envió el correo', { route: 'reset/request', err: sendRes.error || sendRes.skipped });
             }
         }
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (error) {
-        console.error('[reset/request]', error);
+        log.error('error no controlado', { route: 'reset/request', err: error });
         // Incluso ante un error interno, no revelar más que un 200 genérico —
         // el estado de la cuenta no debe filtrarse por la forma de la respuesta.
         return new Response(JSON.stringify({ success: true }), { status: 200 });

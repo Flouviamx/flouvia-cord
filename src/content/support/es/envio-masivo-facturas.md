@@ -1,7 +1,7 @@
 ---
 title: "Envío masivo de facturas por correo"
 description: "Reenvía el PDF y XML a múltiples clientes."
-category: "Facturación y CFDI"
+category: "Facturación"
 ---
 
 Si tienes decenas o cientos de facturas recurrentes o generadas mediante la API y quieres asegurarte de que tus clientes las reciban y las paguen rápido, no tienes que enviar correos manuales.

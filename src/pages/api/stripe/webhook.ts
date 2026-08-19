@@ -12,7 +12,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { randomUUID } from 'node:crypto';
 import { sql, logAudit, withOrgTx } from '../../../lib/db';
-import { dispatchQuoteEvent, dispatchPaymentPartial } from '../../../lib/webhooks';
+import { dispatchQuoteEvent, dispatchPaymentPartial, dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notifyQuoteEvent } from '../../../lib/notify';
 import { METER_PRICES, PRICE_TO_PLAN, stripe } from '../../../lib/billing';
 import { trackPaymentReceived, trackServer } from '../../../lib/posthog-server';
@@ -22,6 +22,9 @@ import { sanitizeStripeRequirements } from '../../../lib/connect-fields';
 import { sendOpsAlert } from '../../../lib/ops-alert';
 import { sendEmail, siteOrigin } from '../../../lib/email';
 import { computeSubscriptionFee } from '../../../lib/fees';
+import { applyPayment } from '../../../lib/fiscal/payments';
+import { fromMinorUnits, normalizeCurrency, toMinorUnits } from '../../../lib/currency';
+import { log } from '../../../lib/log';
 
 const WH_SECRET = import.meta.env.STRIPE_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
 const CONNECT_WH_SECRET = import.meta.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
@@ -73,7 +76,7 @@ export const POST: APIRoute = async ({ request }) => {
     try {
         claim = await claimStripeEvent(event.id, event.type);
     } catch (error) {
-        console.error('[stripe-webhook] no se pudo reclamar el evento', error);
+        log.error('no se pudo reclamar el evento', { route: 'stripe-webhook', err: error });
         return new Response('idempotencia no disponible', { status: 500 });
     }
     if (claim.state === 'processed') return ok();
@@ -91,12 +94,12 @@ export const POST: APIRoute = async ({ request }) => {
         if (!committed.length) throw new Error(`claim perdido para ${event.id}`);
         return ok();
     } catch (error) {
-        console.error(`[stripe-webhook] fallo procesando ${event.id} (${event.type})`, error);
+        log.error('fallo procesando el evento', { route: 'stripe-webhook', eventId: event.id, eventType: event.type, err: error });
         try {
             await sql`delete from stripe_events
                        where id = ${event.id} and claim_token = ${claim.token} and processed_at is null`;
         } catch (cleanupError) {
-            console.error(`[stripe-webhook] no se pudo liberar ${event.id}`, cleanupError);
+            log.error('no se pudo liberar el claim del evento', { route: 'stripe-webhook', eventId: event.id, err: cleanupError });
         }
         return new Response('fallo temporal procesando evento', { status: 500 });
     }
@@ -146,10 +149,14 @@ async function handleStripeEvent(event: any): Promise<void> {
         }
         case 'payment_intent.succeeded': {
             await markQuotePaid(obj, event.account, event.type);
+            // Y, por separado, el saldo de la FACTURA. Son dos ledgers: el de
+            // la cotización (cotizacion_cobros) y el del documento fiscal.
+            await settleInvoiceFromIntent(obj, event.account);
             break;
         }
         case 'payment_intent.payment_failed': {
             await markPaymentFailed(obj, event.account);
+            await failInvoiceFromIntent(obj, event.account);
             break;
         }
         // ── Alta / cambio de plan / renovación ────────────────────────────────
@@ -239,6 +246,73 @@ async function orgForBilling(subscription: string | undefined, customer: string 
     return (row?.id as string | undefined) ?? null;
 }
 
+/**
+ * Aplica un pago exitoso al saldo de una factura.
+ *
+ * Dos orígenes, un solo camino:
+ *   • `metadata.documento_id` — el cliente pagó desde la hosted invoice page.
+ *   • `metadata.cotizacion_id` — pagó desde el link de la cotización y esa
+ *     cotización ya tiene factura abierta; el saldo del documento tiene que
+ *     bajar igual, o el aging seguiría cobrando algo que ya se cobró.
+ *
+ * Idempotente por PaymentIntent (índice único en documento_pagos): Stripe
+ * reintenta sus webhooks por diseño, y sin esa garantía un reintento aplicaría
+ * el mismo dinero dos veces.
+ */
+async function settleInvoiceFromIntent(intent: any, account?: string): Promise<void> {
+    const docId = intent?.metadata?.documento_id as string | undefined;
+    const quoteId = intent?.metadata?.cotizacion_id as string | undefined;
+    if (!docId && !quoteId) return;
+
+    const orgId = docId
+        ? await orgForConnectedAccount(account)
+        : await orgForQuote(quoteId as string, account);
+    if (!orgId) return;
+
+    const currency = normalizeCurrency(String(intent?.currency || 'MXN'));
+    const monto = fromMinorUnits(Number(intent?.amount_received ?? intent?.amount ?? 0), currency);
+    if (!(monto > 0)) return;
+
+    // Sin documento explícito se busca la factura ABIERTA de esa cotización.
+    // Si no hay ninguna, no pasa nada: la cotización se cobró sin facturar.
+    let targetId = docId || '';
+    if (!targetId) {
+        const [rows] = await withOrgTx(orgId, sql`
+            select id from documentos_fiscales
+             where org_id = ${orgId} and cotizacion_id = ${quoteId}
+               and lifecycle = 'open'
+             order by created_at desc limit 1`);
+        if (!rows.length) return;
+        targetId = String(rows[0].id);
+    }
+
+    const result = await applyPayment(orgId, targetId, {
+        monto,
+        currency,
+        metodo: 'stripe',
+        stripePaymentIntentId: String(intent?.id || ''),
+        referencia: String(intent?.id || ''),
+    });
+    if (!result.ok) {
+        await sendOpsAlert('Pago sin aplicar a factura',
+            `Organización ${orgId}; documento ${targetId}; PI ${intent?.id}; ${result.error}`);
+        return;
+    }
+    if (result.justPaid) after(dispatchInvoiceEvent(orgId, targetId, 'invoice.paid'));
+}
+
+/** Un intento fallido no toca el saldo, pero sí avisa a quien escucha facturas. */
+async function failInvoiceFromIntent(intent: any, account?: string): Promise<void> {
+    const docId = intent?.metadata?.documento_id as string | undefined;
+    if (!docId) return;
+    const orgId = await orgForConnectedAccount(account);
+    if (!orgId) return;
+    const [rows] = await withOrgTx(orgId, sql`
+        select id from documentos_fiscales where id = ${docId} and org_id = ${orgId}`);
+    if (!rows.length) return;
+    after(dispatchInvoiceEvent(orgId, docId, 'invoice.payment_failed'));
+}
+
 async function markPaymentFailed(intent: any, account?: string): Promise<void> {
     const cid = intent?.metadata?.cotizacion_id;
     if (!cid) return;
@@ -269,8 +343,8 @@ async function markPaymentFailed(intent: any, account?: string): Promise<void> {
 async function recordPayoutStatus(payout: any, account: string | undefined, eventType: string): Promise<void> {
     const orgId = await orgForConnectedAccount(account);
     if (!orgId) return;
-    const amount = Number(payout?.amount ?? 0) / 100;
     const currency = String(payout?.currency || 'mxn').toUpperCase();
+    const amount = fromMinorUnits(Number(payout?.amount ?? 0), currency);
     const failed = eventType === 'payout.failed';
     await logAudit(orgId, {
         accion: failed ? 'cord_pagos.deposito_fallido' : 'cord_pagos.deposito_pagado',
@@ -326,7 +400,7 @@ async function recordRefundEvent(refundOrCharge: any, account: string | undefine
     await logAudit(orgId, {
         accion: status === 'failed' ? 'cord_pagos.reembolso_fallido' : 'cord_pagos.reembolso_actualizado',
         entidad: 'refund', entidad_id: refundId,
-        detalle: `${(amount / 100).toFixed(2)} ${currency}; ${status}`,
+        detalle: `${fromMinorUnits(amount, currency)} ${currency}; ${status}`,
     });
 }
 
@@ -358,7 +432,7 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
               evidence_due_at = excluded.evidence_due_at, updated_at = now()`,
         ...(eventType === 'charge.dispute.created'
             ? [sql`insert into tareas (org_id, titulo, due_date)
-                    values (${orgId}, ${`Responder contracargo ${(amount / 100).toFixed(2)} ${currency}`},
+                    values (${orgId}, ${`Responder contracargo ${fromMinorUnits(amount, currency)} ${currency}`},
                             ${dueAt ? dueAt.slice(0, 10) : null})`]
             : []),
     );
@@ -366,10 +440,10 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
         accion: eventType === 'charge.dispute.created' ? 'cord_pagos.disputa_creada' : 'cord_pagos.disputa_actualizada',
         entidad: 'dispute',
         entidad_id: disputeId,
-        detalle: `${(amount / 100).toFixed(2)} ${currency}; ${status}`,
+        detalle: `${fromMinorUnits(amount, currency)} ${currency}; ${status}`,
     });
     if (eventType === 'charge.dispute.created') {
-        const amountText = `${(amount / 100).toFixed(2)} ${currency}`;
+        const amountText = `${fromMinorUnits(amount, currency)} ${currency}`;
         after(sendOpsAlert('Contracargo nuevo', `${amountText}; organización ${orgId}; referencia ${disputeId}`));
         const [[owner]] = await withOrgTx(orgId, sql`
             select u.email, o.nombre from orgs o join users u on u.id = o.owner_id
@@ -378,7 +452,7 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
             after(sendEmail({
                 to: owner.email as string,
                 subject: `Acción requerida: contracargo por ${amountText}`,
-                html: `<p>Recibiste un contracargo por <strong>${amountText}</strong>.</p><p>Prepara y revisa la evidencia antes de la fecha límite.</p><p><a href="${siteOrigin()}/app/cobros">Abrir Cord Pagos</a></p>`,
+                html: `<p>Recibiste un contracargo por <strong>${amountText}</strong>.</p><p>Prepara y revisa la evidencia antes de la fecha límite.</p><p><a href="${siteOrigin()}/app/cobros">Abrir Cord Payments</a></p>`,
                 orgId, operation: 'dispute_created', fromName: owner.nombre as string,
             }));
         }
@@ -488,7 +562,7 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 const [existe] = await withOrgTx(orgId, sql`
                     select 1 from cotizacion_cobros where id = ${cobroId} and org_id = ${orgId}`);
                 if (!existe.length) {
-                    const monto = Number(sessionOrIntent?.amount ?? 0) / 100;
+                    const monto = fromMinorUnits(Number(sessionOrIntent?.amount ?? 0), String(sessionOrIntent?.currency || 'MXN'));
                     await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                         values (${orgId}, ${cid}, 'paid', ${`Pago de $${monto.toFixed(2)} recibido para un cobro ya no vigente; revisar conciliación`})`);
                     await logAudit(orgId, { accion: 'cotizacion.pago_no_conciliado', entidad: 'cotizacion', entidad_id: cid, detalle: `PI ${sessionOrIntent?.id ?? ''} sin cobro vigente` });
@@ -522,13 +596,13 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                       where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pendiente')
                 returning id`);
 
-            const amountPaid = Number(sessionOrIntent?.amount ?? 0) / 100;
             const currency = (sessionOrIntent?.currency ?? 'MXN').toUpperCase();
+            const amountPaid = fromMinorUnits(Number(sessionOrIntent?.amount ?? 0), currency);
 
             if (flipped.length) {
                 await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                    values (${orgId}, ${cid}, 'paid', 'Pago recibido con Cord Pagos; cotización saldada')`);
-                await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea con Cord Pagos' });
+                    values (${orgId}, ${cid}, 'paid', 'Pago recibido con Cord Payments; cotización saldada')`);
+                await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea con Cord Payments' });
                 await trackPaymentReceived(
                     orgId, amountPaid, currency, paymentMethod, false, cid,
                     !!rows[0].is_sandbox, !!rows[0].is_demo,
@@ -545,11 +619,11 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                     : co.tipo === 'saldo' ? 'Saldo'
                     : co.tipo === 'cuota' ? `Cuota ${co.numero_cuota}`
                     : 'Pago';
-                const monto = Number(co.monto).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+                const monto = money(Number(co.monto), String(sessionOrIntent?.currency || 'MXN'));
                 const sufijo = rows[0].status === 'paid' ? ' (la cotización ya estaba marcada como pagada — verificar)' : ' — saldo pendiente';
                 await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                    values (${orgId}, ${cid}, 'paid', ${`${label} de ${monto} pagado con Cord Pagos${sufijo}`})`);
-                await logAudit(orgId, { accion: 'cotizacion.cobro_pagado', entidad: 'cotizacion', entidad_id: cid, detalle: `${label} pagado en línea con Cord Pagos` });
+                    values (${orgId}, ${cid}, 'paid', ${`${label} de ${monto} pagado con Cord Payments${sufijo}`})`);
+                await logAudit(orgId, { accion: 'cotizacion.cobro_pagado', entidad: 'cotizacion', entidad_id: cid, detalle: `${label} pagado en línea con Cord Payments` });
                 await trackPaymentReceived(
                     orgId, amountPaid, currency, paymentMethod, false, cid,
                     !!rows[0].is_sandbox, !!rows[0].is_demo,
@@ -575,13 +649,13 @@ async function markQuotePaid(sessionOrIntent: any, account?: string, eventType?:
                 sql`update cotizacion_cobros set status = 'cancelado'
                     where org_id = ${orgId} and cotizacion_id = ${cid} and status = 'pendiente'`,
                 sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                    values (${orgId}, ${cid}, 'paid', 'Pago recibido con Cord Pagos')`,
+                    values (${orgId}, ${cid}, 'paid', 'Pago recibido con Cord Payments')`,
             );
             if (!updated.length) throw new Error(`Cotización ${cid} no se actualizó después del pago`);
-            await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea con Cord Pagos' });
+            await logAudit(orgId, { accion: 'cotizacion.paid', entidad: 'cotizacion', entidad_id: cid, detalle: 'Pago en línea con Cord Payments' });
             
-            const amountPaid = Number(sessionOrIntent?.amount ?? 0) / 100;
             const currency = (sessionOrIntent?.currency ?? 'MXN').toUpperCase();
+            const amountPaid = fromMinorUnits(Number(sessionOrIntent?.amount ?? 0), currency);
             await trackPaymentReceived(
                 orgId, amountPaid, currency, paymentMethod, false, cid,
                 !!rows[0].is_sandbox, !!rows[0].is_demo,
@@ -946,7 +1020,16 @@ async function updateAccountStatus(account: any) {
 // La fila dueña se resuelve por stripe_subscription_id; se valida que el evento
 // provenga de la MISMA cuenta conectada (defensa multi-tenant, como markQuotePaid).
 
-const money = (n: number) => Number(n).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+// El webhook corre sin sesión: la divisa viene SIEMPRE del objeto de Stripe, que
+// es la autoridad de en qué se cobró realmente.
+const money = (n: number, currency = 'MXN') => {
+    const code = normalizeCurrency(currency);
+    try {
+        return Number(n).toLocaleString('es-MX', { style: 'currency', currency: code });
+    } catch {
+        return `${Number(n).toLocaleString('es-MX')} ${code}`;
+    }
+};
 
 // El id de la suscripción en una factura: `invoice.subscription` (API clásica) o
 // `invoice.parent.subscription_details.subscription` (Basil 2025-06-30+, donde se movió).
@@ -994,8 +1077,14 @@ async function recurringInvoicePaid(invoice: any, account: string) {
     const piId = typeof pi === 'string' ? pi : String(pi?.id || '');
     if (!piId) throw new Error(`Factura recurrente ${String(invoice?.id || '')} sin PaymentIntent conciliable`);
 
-    const montoNum = Number(invoice?.amount_paid ?? pi?.amount_received ?? pi?.amount ?? 0) / 100;
-    const monto = money(montoNum);
+    const invoiceCurrency = normalizeCurrency(invoice?.currency || pi?.currency || 'MXN');
+    // fromMinorUnits respeta las divisas sin decimales: /100 sobre un cobro en
+    // JPY registraba una centésima del dinero que de verdad entró.
+    const montoNum = fromMinorUnits(
+        Number(invoice?.amount_paid ?? pi?.amount_received ?? pi?.amount ?? 0),
+        invoiceCurrency,
+    );
+    const monto = money(montoNum, invoiceCurrency);
 
     // Registra el cobro mensual como fila 'pagado' en cotizacion_cobros para que
     // el dinero SÍ aparezca en el dashboard "Mi dinero" (getCobros). No dispara el
@@ -1004,7 +1093,7 @@ async function recurringInvoicePaid(invoice: any, account: string) {
     // igualas). Idempotente: dedup por el PaymentIntent de la factura.
     if (piId && montoNum > 0) {
         try {
-            const amountCents = Math.round(montoNum * 100);
+            const amountCents = toMinorUnits(montoNum, invoiceCurrency);
             const fee = computeSubscriptionFee(amountCents, row.application_fee_percent != null);
             const [created] = await withOrgTx(orgId, sql`
                 insert into cotizacion_cobros
@@ -1031,7 +1120,7 @@ async function recurringInvoicePaid(invoice: any, account: string) {
 
     await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
         values (${orgId}, ${row.cotizacion_id}, 'paid', ${`Cobro mensual de ${monto} recibido (iguala)`})`);
-    await logAudit(orgId, { accion: 'cotizacion.iguala_cobrada', entidad: 'cotizacion', entidad_id: row.cotizacion_id as string, detalle: `Cobro recurrente ${monto} con Cord Pagos` });
+    await logAudit(orgId, { accion: 'cotizacion.iguala_cobrada', entidad: 'cotizacion', entidad_id: row.cotizacion_id as string, detalle: `Cobro recurrente ${monto} con Cord Payments` });
     
     const currency = (invoice?.currency ?? 'MXN').toUpperCase();
     const [[orgFlags]] = await withOrgTx(orgId, sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);

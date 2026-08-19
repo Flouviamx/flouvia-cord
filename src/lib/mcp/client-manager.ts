@@ -4,6 +4,7 @@ import { sql } from "../db";
 import { assertSafeWebhookTarget } from "../ssrf";
 import { decryptSecret } from "../crypto-secret";
 import { checkEntitlement } from "../org-entitlements";
+import { log } from '../log';
 
 export interface AllowedTool {
   serverName: string;
@@ -143,7 +144,7 @@ export class McpClientManager {
           }
         }
       } catch (err) {
-        console.error(`Error conectando al MCP server ${server.nombre}:`, err);
+        log.error('no se pudo conectar al MCP server', { route: 'mcp/client-manager', server: server.nombre, err });
       }
     }
 

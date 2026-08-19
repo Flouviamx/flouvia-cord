@@ -1,0 +1,372 @@
+---
+// Hosted invoice page — el equivalente Cord de la página de factura de Stripe.
+//
+// Antes no existía: la única superficie pública era /q/[token], que es de
+// COTIZACIÓN. El cliente que recibía una factura no tenía dónde verla, dónde
+// ver su saldo ni cómo pagarla; el vendedor le mandaba el PDF a mano.
+//
+// Regla 19: aquí NO se marca nada como visto. El SSR solo resuelve el actor
+// para (a) fijar la cookie de visitante y (b) mostrar el aviso de vista previa
+// al vendedor. La señal la manda el heartbeat de /api/i/[token].
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import { getFacturaByToken } from '../../lib/queries';
+import { resolveViewer } from '../../lib/public-viewer';
+// moneyFull lee la divisa del request, que getFacturaByToken fija con la de la
+// FACTURA (Regla 21). Un símbolo fijo aquí mostraría "$" a un cliente en Madrid.
+import { moneyFull } from '../../lib/fmt';
+import { getCountryProfile } from '../../lib/countries';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+const { token } = Astro.params;
+const f = await getFacturaByToken(token ?? '');
+if (!f) return Astro.redirect('/404');
+
+const L = currentLocale();
+// El vocabulario fiscal sale del país del DOCUMENTO: quien recibe esta página
+// puede estar en otro país que el emisor, y "RFC" no significa nada fuera de
+// México.
+const taxIdLabel = getCountryProfile(f.pais).taxIdLabel;
+const viewer = await resolveViewer(f.orgId, Astro, { crearCookie: true });
+const esVistaPrevia = viewer.rol === 'seller';
+
+const color = /^#[0-9a-fA-F]{6}$/.test(f.org.color ?? '') ? f.org.color! : '#0a192f';
+const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
+const puedePagar = pagoActivo && f.pagoDisponible && f.aceptaTarjeta && !f.esPrueba;
+const regresoDePago = Astro.url.searchParams.get('pagado') === '1' && f.estado !== 'paid';
+
+const ESTADO: Record<string, { label: string; tone: string }> = {
+    open: { label: t(L, 'fact.p_estado_open'), tone: 'wait' },
+    paid: { label: t(L, 'fact.p_estado_paid'), tone: 'ok' },
+    void: { label: t(L, 'fact.p_estado_void'), tone: 'off' },
+    uncollectible: { label: t(L, 'fact.p_estado_uncollectible'), tone: 'off' },
+};
+const estado = ESTADO[f.estado] ?? { label: t(L, 'fact.p_emitida'), tone: 'wait' };
+const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_factura');
+---
+
+<Layout
+    title={`${titulo} ${f.numero ?? ''} — ${f.org.nombre}`}
+    noindex={true}
+>
+    <div class="iv-bg" aria-hidden="true">
+        <div class="iv-orb" style={`background: radial-gradient(circle, ${color}14 0%, transparent 70%)`}></div>
+    </div>
+
+    <main class="iv-main" data-i18n={JSON.stringify({
+        preparando: t(L, 'fact.p_preparando'),
+        procesando: t(L, 'fact.p_procesando'),
+        reintentar: t(L, 'fact.p_reintentar'),
+        confirmar: t(L, 'fact.p_confirmar'),
+        errorPago: t(L, 'fact.p_error_pago'),
+        errorConfirmar: t(L, 'fact.p_error_confirmar'),
+    })}>
+        {esVistaPrevia && (
+            <div class="iv-note" role="status">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" fill="currentColor" fill-opacity="0.13"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>{t(L, 'fact.p_vista_previa')}</span>
+            </div>
+        )}
+        {regresoDePago && (
+            <div class="iv-note iv-note-ok" role="status">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.1"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg>
+                <span>{t(L, 'fact.p_pago_recibido')}</span>
+            </div>
+        )}
+
+        <article class="iv-card">
+            <header class="iv-head">
+                <div class="iv-brand">
+                    {f.org.logoUrl
+                        ? <img src={f.org.logoUrl} alt={f.org.nombre} class="iv-logo" />
+                        : <span class="iv-brand-name">{f.org.nombre}</span>}
+                </div>
+                <div class="iv-headmeta">
+                    <span class={`iv-chip iv-chip-${estado.tone}`}>{estado.label}</span>
+                    {f.vencida && <span class="iv-chip iv-chip-late">{t(L, 'fact.p_vencida')}</span>}
+                    {f.esPrueba && <span class="iv-chip iv-chip-off">{t(L, 'fact.p_prueba')}</span>}
+                </div>
+            </header>
+
+            <div class="iv-title">
+                <h1>{titulo} {f.numero}</h1>
+                <p class="iv-sub">
+                    {t(L, 'fact.p_emitida')} {f.emitida}{f.venceLegible ? ` · ${t(L, 'fact.p_vence_el')} ${f.venceLegible}` : ''}
+                </p>
+            </div>
+
+            <section class="iv-parties">
+                <div>
+                    <span class="iv-label">{t(L, 'fact.p_de')}</span>
+                    <p class="iv-party">{f.emisor?.legalName ?? f.org.nombre}</p>
+                    {f.emisor?.taxId && <p class="iv-party-sub">{taxIdLabel} {f.emisor.taxId}</p>}
+                </div>
+                <div>
+                    <span class="iv-label">{t(L, 'fact.p_para')}</span>
+                    <p class="iv-party">{f.receptor?.legalName ?? '—'}</p>
+                    {f.receptor?.taxId && <p class="iv-party-sub">{taxIdLabel} {f.receptor.taxId}</p>}
+                </div>
+            </section>
+
+            <section class="iv-lines">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{t(L, 'fact.p_concepto')}</th>
+                            <th class="iv-num">{t(L, 'fact.p_cant')}</th>
+                            <th class="iv-num">{t(L, 'fact.p_precio')}</th>
+                            <th class="iv-num">{t(L, 'fact.p_importe')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {f.lineas.map((l) => (
+                            <tr>
+                                <td>{l.descripcion}</td>
+                                <td class="iv-num">{l.cantidad}</td>
+                                <td class="iv-num editorial">{moneyFull(l.precioUnitario)}</td>
+                                <td class="iv-num editorial">{moneyFull(l.subtotal)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="iv-totals">
+                <div class="iv-row"><span>{t(L, 'fact.p_subtotal')}</span><span class="editorial">{moneyFull(f.subtotal)}</span></div>
+                {f.impuestos > 0 && (
+                    <div class="iv-row"><span>{t(L, 'fact.p_impuestos')}</span><span class="editorial">{moneyFull(f.impuestos)}</span></div>
+                )}
+                <div class="iv-row iv-row-total"><span>{t(L, 'fact.p_total')}</span><span class="editorial">{moneyFull(f.total)}</span></div>
+                {f.pagado > 0 && (
+                    <div class="iv-row"><span>{t(L, 'fact.p_pagado')}</span><span class="editorial">−{moneyFull(f.pagado)}</span></div>
+                )}
+                <div class="iv-row iv-row-due"><span>{t(L, 'fact.p_saldo')}</span><span class="editorial">{moneyFull(f.saldo)}</span></div>
+                {f.fxRate && f.fxRate !== 1 && f.ledgerCurrency && (
+                    <p class="iv-fx">
+                        {t(L, 'fact.p_tc')}: 1 {f.currency} = {f.fxRate} {f.ledgerCurrency}
+                    </p>
+                )}
+            </section>
+
+            {f.pagos.length > 0 && (
+                <section class="iv-pagos">
+                    <span class="iv-label">{t(L, 'fact.p_pagos')}</span>
+                    <ul>
+                        {f.pagos.map((p) => (
+                            <li><span>{p.cuando}</span><span class="editorial">{moneyFull(p.monto)}</span></li>
+                        ))}
+                    </ul>
+                </section>
+            )}
+
+            {f.notas && <p class="iv-notas">{f.notas}</p>}
+
+            <footer class="iv-foot">
+                {puedePagar && (
+                    <button type="button" class="iv-pay" id="ivPay" style={`background:${color}`}>
+                        {t(L, 'fact.p_pagar')} {moneyFull(f.saldo)}
+                    </button>
+                )}
+                <div class="iv-dl">
+                    <a href={`/api/fiscal/documents/${f.id}/pdf`}>{t(L, 'fact.p_pdf')}</a>
+                    {f.pais === 'MX' && f.fiscalId && (
+                        <a href={`/api/fiscal/documents/${f.id}/xml`}>{t(L, 'fact.p_xml')}</a>
+                    )}
+                </div>
+                {f.fiscalId && <p class="iv-uuid">{t(L, 'fact.p_folio_fiscal')} {f.fiscalId}</p>}
+                {f.org.powered && <p class="iv-powered">{f.org.nombre} · {t(L, 'fact.p_enviado_con')}</p>}
+            </footer>
+        </article>
+
+        {!esVistaPrevia && (
+            <p class="iv-aviso">
+                {t(L, 'fact.p_aviso')}
+            </p>
+        )}
+
+        <div class="iv-paywrap" id="ivPayWrap" hidden>
+            <div class="iv-payinner">
+                <div id="ivPayEl"></div>
+                <button type="button" class="iv-pay" id="ivPayConfirm" style={`background:${color}`}>{t(L, 'fact.p_confirmar')}</button>
+                <p class="iv-payerr" id="ivPayErr" hidden></p>
+            </div>
+        </div>
+    </main>
+</Layout>
+
+<script define:vars={{ token: token }}>
+    // Regla 19: la vista se registra DESDE AQUÍ, con la pestaña visible, no en
+    // el render del servidor. Un GET al SSR lo hacen también el vendedor, el
+    // bot de WhatsApp generando la preview y el prefetch del navegador.
+    const ping = () => {
+        if (document.visibilityState !== 'visible') return;
+        fetch(`/api/i/${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'ping' }),
+            keepalive: true,
+        }).catch(() => {});
+    };
+    if (document.visibilityState === 'visible') ping();
+    document.addEventListener('visibilitychange', ping, { once: true });
+</script>
+
+<script>
+    const boton = document.getElementById('ivPay') as HTMLButtonElement | null;
+    if (boton) {
+        const T = JSON.parse((document.querySelector('.iv-main') as HTMLElement)?.dataset.i18n || '{}');
+        const wrap = document.getElementById('ivPayWrap');
+        const errEl = document.getElementById('ivPayErr');
+        const confirmar = document.getElementById('ivPayConfirm') as HTMLButtonElement | null;
+        const token = location.pathname.split('/').filter(Boolean).pop();
+        let elements: any = null;
+        let stripe: any = null;
+
+        const fallar = (msg: string) => {
+            if (!errEl) return;
+            errEl.textContent = msg;
+            errEl.hidden = false;
+        };
+
+        boton.addEventListener('click', async () => {
+            boton.disabled = true;
+            boton.textContent = T.preparando;
+            try {
+                const res = await fetch(`/api/i/${token}/payment-intent`, { method: 'POST' });
+                const data = await res.json();
+                if (data.alreadyPaid) { location.reload(); return; }
+                if (!res.ok || !data.clientSecret) throw new Error(data.error || T.errorPago);
+
+                // Stripe.js se carga bajo demanda: la hosted page se sirve
+                // igual sin él, y quien solo viene a leer la factura no paga
+                // el costo de descargarlo.
+                if (!(window as any).Stripe) {
+                    await new Promise<void>((ok, no) => {
+                        const s = document.createElement('script');
+                        s.src = 'https://js.stripe.com/v3/';
+                        s.onload = () => ok(); s.onerror = no;
+                        document.head.appendChild(s);
+                    });
+                }
+                stripe = (window as any).Stripe(data.publishableKey, { stripeAccount: data.accountId });
+                elements = stripe.elements({ clientSecret: data.clientSecret });
+                elements.create('payment').mount('#ivPayEl');
+                if (wrap) wrap.hidden = false;
+                boton.hidden = true;
+            } catch (e) {
+                boton.disabled = false;
+                boton.textContent = T.reintentar;
+                fallar(e instanceof Error ? e.message : T.errorPago);
+            }
+        });
+
+        confirmar?.addEventListener('click', async () => {
+            if (!stripe || !elements) return;
+            confirmar.disabled = true;
+            confirmar.textContent = T.procesando;
+            const { error } = await stripe.confirmPayment({
+                elements,
+                confirmParams: { return_url: `${location.origin}${location.pathname}?pagado=1` },
+            });
+            if (error) {
+                confirmar.disabled = false;
+                confirmar.textContent = T.confirmar;
+                fallar(error.message || T.errorConfirmar);
+            }
+        });
+    }
+</script>
+
+<style>
+    .iv-bg { position: fixed; inset: 0; z-index: -1; background: #f5f5f7; overflow: hidden; }
+    .iv-orb { position: absolute; top: -18vh; right: -12vw; width: 60vw; height: 60vw; border-radius: 50%; }
+
+    .iv-main { max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; }
+
+    .iv-note {
+        display: flex; align-items: center; gap: 10px;
+        background: #fff; border-radius: 14px; padding: 12px 16px; margin-bottom: 20px;
+        font-size: 14px; color: #4b5563; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04);
+    }
+    .iv-note-ok { color: #14683f; }
+
+    .iv-card {
+        background: #fff; border-radius: 32px; padding: 40px;
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04), 0 12px 40px rgba(10, 25, 47, 0.06);
+    }
+
+    .iv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+    .iv-logo { max-height: 34px; width: auto; display: block; }
+    .iv-brand-name { font-weight: 600; font-size: 16px; color: #050505; }
+    .iv-headmeta { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .iv-chip { font-size: 12px; font-weight: 500; padding: 5px 11px; border-radius: 999px; white-space: nowrap; }
+    .iv-chip-wait { background: rgba(10, 25, 47, 0.06); color: #0a192f; }
+    .iv-chip-ok { background: rgba(20, 104, 63, 0.1); color: #14683f; }
+    .iv-chip-off { background: rgba(10, 25, 47, 0.05); color: #6b7280; }
+    .iv-chip-late { background: rgba(180, 35, 24, 0.09); color: #b42318; }
+
+    .iv-title { margin: 32px 0 36px; }
+    .iv-title h1 { font-size: 30px; letter-spacing: -0.04em; line-height: 1.1; color: #050505; margin: 0; }
+    .iv-sub { font-size: 14px; color: #6b7280; margin: 8px 0 0; }
+
+    .iv-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9ca3af; }
+    .iv-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 36px; }
+    .iv-party { font-size: 15px; color: #111827; margin: 6px 0 0; font-weight: 500; }
+    .iv-party-sub { font-size: 13px; color: #6b7280; margin: 2px 0 0; }
+
+    .iv-lines { overflow-x: auto; }
+    .iv-lines table { width: 100%; border-collapse: collapse; min-width: 420px; }
+    .iv-lines th {
+        text-align: left; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+        color: #9ca3af; font-weight: 500; padding: 0 0 10px; border-bottom: 1px solid #eceff3;
+    }
+    .iv-lines td { padding: 14px 0; font-size: 14px; color: #374151; border-bottom: 1px solid #f5f6f8; }
+    .iv-num { text-align: right; }
+
+    .iv-totals { margin-top: 28px; margin-left: auto; max-width: 320px; }
+    .iv-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 14px; color: #4b5563; }
+    .iv-row-total { border-top: 1px solid #eceff3; margin-top: 6px; padding-top: 13px; color: #111827; font-weight: 500; }
+    .iv-row-due {
+        border-top: 1px solid #0a192f; margin-top: 6px; padding-top: 13px;
+        color: #050505; font-size: 18px; font-weight: 600;
+    }
+    .iv-fx { font-size: 12px; color: #9ca3af; margin: 12px 0 0; text-align: right; }
+
+    .iv-pagos { margin-top: 32px; }
+    .iv-pagos ul { list-style: none; margin: 10px 0 0; padding: 0; }
+    .iv-pagos li { display: flex; justify-content: space-between; padding: 7px 0; font-size: 14px; color: #4b5563; }
+
+    .iv-notas { margin-top: 32px; padding-top: 24px; border-top: 1px solid #f5f6f8; font-size: 14px; color: #4b5563; line-height: 1.6; }
+
+    .iv-foot { margin-top: 40px; padding-top: 28px; border-top: 1px solid #eceff3; }
+    .iv-pay {
+        display: block; width: 100%; border: none; border-radius: 999px;
+        color: #fff; font-size: 15px; font-weight: 500; padding: 15px 24px; cursor: pointer;
+        transition: transform 0.15s ease;
+    }
+    .iv-pay:hover { transform: scale(1.01); }
+    .iv-pay:active { transform: scale(0.99); }
+    .iv-pay:disabled { opacity: 0.6; cursor: default; transform: none; }
+    .iv-dl { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
+    .iv-dl a { font-size: 14px; color: #0a192f; text-decoration: none; border-bottom: 1px solid rgba(10, 25, 47, 0.2); }
+    .iv-uuid { font-size: 12px; color: #9ca3af; margin: 18px 0 0; word-break: break-all; }
+    .iv-powered { font-size: 12px; color: #9ca3af; margin: 8px 0 0; }
+
+    .iv-aviso { font-size: 12px; color: #9ca3af; text-align: center; margin: 22px auto 0; max-width: 460px; line-height: 1.5; }
+
+    .iv-paywrap { margin-top: 20px; }
+    .iv-payinner { background: #fff; border-radius: 24px; padding: 28px; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04); }
+    .iv-payinner .iv-pay { margin-top: 20px; }
+    .iv-payerr { color: #b42318; font-size: 13px; margin: 12px 0 0; }
+
+    @media (max-width: 640px) {
+        .iv-main { padding: 24px 14px 60px; }
+        .iv-card { padding: 26px 20px; border-radius: 26px; }
+        .iv-parties { grid-template-columns: 1fr; gap: 18px; }
+        .iv-title h1 { font-size: 25px; }
+        .iv-totals { max-width: none; }
+    }
+</style>

@@ -26,6 +26,7 @@ import { stripe, getBalance, retrieveAccount } from './billing';
 import { cached } from './cache';
 import { rateLimit } from './ratelimit';
 
+import { log } from './log';
 /** Centavos → pesos. Único punto de conversión de todo el módulo. */
 const toMajor = (cents: unknown): number => Math.round(Number(cents || 0)) / 100;
 
@@ -362,7 +363,7 @@ export async function loadCobrosStripe(
     const take = <T>(res: PromiseSettledResult<T>, tag: DegradedPart, fallback: T): T => {
         if (res.status === 'fulfilled') return res.value;
         degraded.push(tag);
-        console.error(`[stripe-cobros] ${tag} falló para org ${orgId}:`, res.reason?.message || res.reason);
+        log.error('parte degradada del panel de cobros', { route: 'stripe-cobros', part: tag, orgId, err: res.reason?.message || res.reason });
         return fallback;
     };
 

@@ -255,11 +255,11 @@ const SLIDES = {
     { label: '03', title: 'La tasa se congela 30 días', sub: 'Una vez creada la cotización, el tipo de cambio queda congelado 30 días. Aprueba hoy o factura en tres semanas — el número que cerraste es el que cobras.', icon: 'lock' },
     { label: '04', title: 'Buffer que protege tu margen', sub: 'Cord suma un porcentaje extra a la tasa spot (ajustable) para absorber la volatilidad. El margen prometido sobrevive al movimiento del dólar.', icon: 'shield' },
   ],
-  internacional: [
-    { label: '01', title: 'El dólar se mueve. Tu margen no.', sub: 'Tasa spot real del BCE más el buffer de cobertura que configures, congelada 30 días. El margen pactado sobrevive a la volatilidad del tipo de cambio.', icon: 'shield' },
-    { label: '02', title: 'Cotizas en la moneda del cliente', sub: 'Divisa de presentación para el cliente extranjero y divisa fiscal para facturar en la tuya (en México, vía CFDI 4.0). Cord guarda ambas y la tasa congelada en la misma cotización.', icon: 'globe' },
-    { label: '03', title: 'México timbra de verdad', sub: 'Cuando el trato cierra en México, Cord emite CFDI 4.0 real ante el SAT vía Facturapi: UUID, XML y PDF timbrados. El ciclo fiscal resuelto de punta a punta.', icon: 'receipt' },
-    { label: '04', title: 'Arquitectura lista para crecer', sub: 'Un patrón de proveedores fiscales enruta cada emisión según el país. Las emisiones se centralizan en un registro unificado — preparado para sumar mercados.', icon: 'layers' },
+  facturacion: [
+    { label: '01', title: 'El borrador no quema folio', sub: 'Armas la factura, la revisas y la corriges sin comprometer nada. El folio fiscal se reserva en el momento de emitir, así un borrador descartado no deja un hueco en tu numeración.', icon: 'layers' },
+    { label: '02', title: 'Cada factura tiene su propio link', sub: 'Una página con tu marca donde el cliente ve conceptos, vencimiento, pagos recibidos y saldo — y paga con tarjeta ahí mismo, directo a tu cuenta.', icon: 'globe' },
+    { label: '03', title: 'El saldo baja solo', sub: 'Un pago con tarjeta desde el link y una transferencia que registras a mano descuentan del mismo saldo. Al llegar a cero la factura se marca pagada y sale de la cartera vencida.', icon: 'chart' },
+    { label: '04', title: 'Anular y acreditar no son lo mismo', sub: 'Sin pagos aplicados, Cord cancela ante el SAT con tu certificado y solo lo marca anulado cuando el SAT confirma. Con pagos aplicados exige nota de crédito, que es el documento correcto.', icon: 'shield' },
   ],
   finanzas: [
     { label: '01', title: 'El retraso real, no el teórico', sub: 'Cord no asume que Net 30 se paga al día 30. Analiza el historial de cada cliente y proyecta con el retraso efectivo — no con la promesa del contrato.', icon: 'chart' },

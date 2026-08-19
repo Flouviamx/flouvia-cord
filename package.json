@@ -9,6 +9,9 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "astro preview",
     "astro": "astro",
     "db:migrate": "node scripts/migrate.mjs",
@@ -24,10 +27,11 @@
     "security:disputes": "node --experimental-strip-types scripts/dispute-safety-check.mjs",
     "security:fiscal": "node --experimental-strip-types scripts/fiscal-core-check.mjs",
     "security:billing": "node --experimental-strip-types scripts/billing-security-check.mjs",
+    "security:currency": "node --experimental-strip-types scripts/currency-check.mjs",
     "security:billing-live": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-stripe-billing.mjs",
     "security:billing-db": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-billing-db.mjs",
     "security:rls": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/rls-audit.mjs",
-    "test:payments": "npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes && npm run security:billing"
+    "test:payments": "npm run test && npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes && npm run security:billing && npm run security:currency"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
@@ -69,7 +73,8 @@
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.6",
-    "circle-flags": "^2.8.3"
+    "circle-flags": "^2.8.3",
+    "vitest": "^4.1.10"
   },
   "overrides": {
     "@vercel/routing-utils": {

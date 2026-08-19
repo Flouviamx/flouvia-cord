@@ -1,7 +1,7 @@
 ---
 title: "Catálogo de clientes y RFC"
 description: "Gestión y validación de RFCs en la lista de clientes."
-category: "Facturación y CFDI"
+category: "Facturación"
 ---
 
 El manejo de clientes en Cord está pensado para evitar rechazos del SAT al emitir CFDI 4.0.

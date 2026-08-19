@@ -78,6 +78,9 @@ Technical articles from the Cord engineering team:
 - [Pricing](https://cordhq.app/precios): 5 plans (Free through Developer), starting at $0
 - [Pricing data (machine-readable)](https://cordhq.app/pricing.md): structured pricing for AI agents
 - [Product overview](https://cordhq.app/producto/editor): the quote editor and full feature set
+- [Invoicing (Cord Invoicing)](https://cordhq.app/producto/facturacion): issue invoices with your own numbering, a payment link per invoice, and a live balance; real CFDI 4.0 stamped with the SAT in Mexico, commercial invoices elsewhere
+- [Multi-currency and FX](https://cordhq.app/producto/divisas): quote in one currency and keep your books in another, with a dated exchange rate
+- [Invoicing vs. the PAC portal + spreadsheet](https://cordhq.app/comparar/facturacion): what changes when the invoice carries its own state, link and balance
 - [Solutions by industry](https://cordhq.app/soluciones/empresas): enterprise and startup use cases
 - [Use cases](https://cordhq.app/casos-de-uso/saas): SaaS, agencies, distributors, software factories
 

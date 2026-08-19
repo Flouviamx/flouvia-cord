@@ -15,6 +15,7 @@ import { reqIp } from '../db';
 import { MCP_TOOLS, findTool, McpToolError } from '../mcp';
 import { PostHogMCP } from '@posthog/mcp';
 import { isInternalAnalyticsOrg } from '../analytics-internal';
+import { log } from '../log';
 
 export const SERVER_INFO = { name: 'cord', title: 'Cord — Cotizaciones', version: '1.0.0' };
 export const DEFAULT_PROTOCOL = '2025-06-18';
@@ -74,12 +75,7 @@ const _captureDisabled = _isDev || String(
 ).toLowerCase() === 'true';
 
 if (!_phToken && _isDev) {
-    // eslint-disable-next-line no-console
-    console.warn(
-        '[PostHog] PUBLIC_POSTHOG_KEY variable required by PostHog is missing or ' +
-        'un-configured, this causes $mcp_* events to be silently missed. ' +
-        'This error stops appearing once PUBLIC_POSTHOG_KEY is configured.'
-    );
+    log.warn('falta la llave de PostHog: los eventos $mcp_* se pierden en silencio', { route: 'mcp/rpc' });
 }
 
 // Exported so route handlers can await flush() after each serverless request.

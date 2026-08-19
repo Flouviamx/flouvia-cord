@@ -1,16 +1,16 @@
 ---
 title: "Métodos de cobro"
-description: "Descubre cómo funciona la arquitectura de cobros de Cord Pagos: SPEI dinámico, tarjeta y transferencia manual, y cómo elige el método el cliente."
+description: "Descubre cómo funciona la arquitectura de cobros de Cord Payments: SPEI dinámico, tarjeta y transferencia manual, y cómo elige el método el cliente."
 ---
 
 <header class="content-header">
   <h1 class="page-title">Métodos de cobro</h1>
-  <p class="page-subtitle">Descubre cómo funciona la arquitectura de Cord Pagos: SPEI dinámico, tarjeta y transferencia manual.</p>
+  <p class="page-subtitle">Descubre cómo funciona la arquitectura de Cord Payments: SPEI dinámico, tarjeta y transferencia manual.</p>
 </header>
 
 ## Arquitectura de cobros
 
-Cord Pagos está diseñado para que el cobro no sea una fricción al final del proyecto. Al activar Cord Pagos (ver [Conectar tu cuenta](/docs/pagos/onboarding)), tu negocio puede aceptar tres métodos — tarjeta, SPEI dinámico y transferencia manual — cada uno con su propia tarifa (ver [Tarifas y ventajas](/docs/pagos/condiciones)) y su propio nivel de automatización.
+Cord Payments está diseñado para que el cobro no sea una fricción al final del proyecto. Al activar Cord Payments (ver [Conectar tu cuenta](/docs/pagos/onboarding)), tu negocio puede aceptar tres métodos — tarjeta, SPEI dinámico y transferencia manual — cada uno con su propia tarifa (ver [Tarifas y ventajas](/docs/pagos/condiciones)) y su propio nivel de automatización.
 
 En el link público de la cotización, el cliente **elige el método explícitamente antes de continuar** — nunca se le asigna uno por defecto sin que lo sepa. Si tu negocio solo activó un método, ese es el único que se muestra.
 
@@ -19,12 +19,12 @@ En el link público de la cotización, el cliente **elige el método explícitam
 Este es el método pensado para B2B en México: elimina la conciliación manual de facturas.
 
 **¿Cómo funciona?**
-En lugar de darle a todos tus clientes la misma CLABE de tu empresa, Cord Pagos genera **una CLABE virtual única, temporal y exclusiva por cada cobro**.
+En lugar de darle a todos tus clientes la misma CLABE de tu empresa, Cord Payments genera **una CLABE virtual única, temporal y exclusiva por cada cobro**.
 
 Cuando el cliente elige "Transferencia SPEI":
-1. Cord Pagos genera una CLABE virtual asignada únicamente a ese cobro específico, y la muestra en una pantalla de instrucciones propia de Cord — sin salir del link de la cotización ni redirigir a un sitio externo.
+1. Cord Payments genera una CLABE virtual asignada únicamente a ese cobro específico, y la muestra en una pantalla de instrucciones propia de Cord — sin salir del link de la cotización ni redirigir a un sitio externo.
 2. El cliente transfiere desde su app bancaria a esa CLABE.
-3. En cuanto los fondos entran a la red interbancaria, Cord Pagos los identifica automáticamente (porque la CLABE era única para ese cobro).
+3. En cuanto los fondos entran a la red interbancaria, Cord Payments los identifica automáticamente (porque la CLABE era única para ese cobro).
 4. El sistema marca la cotización como **Pagada** en tiempo real y te envía la confirmación.
 
 <Callout type="info">
@@ -32,6 +32,12 @@ Cuando el cliente elige "Transferencia SPEI":
 </Callout>
 
 Tarifa: 1% + $7.00 MXN + IVA, con un tope de $588.12 MXN por cobro (ver el detalle en [Tarifas y ventajas](/docs/pagos/condiciones)).
+
+<Callout type="info">
+**SPEI es un riel mexicano y solo cobra en pesos.** Si cotizas en otra moneda, tu
+cliente paga con tarjeta aunque tengas SPEI activado — una CLABE no puede recibir
+dólares ni euros. Ver [Tesorería y FX Lock](/docs/pagos/tesoreria-fx).
+</Callout>
 
 ### 2. Tarjeta de crédito y débito
 
@@ -43,18 +49,19 @@ El método más rápido y de menor fricción. Se presenta directamente en el che
 - **Autorización casi instantánea:** en cuanto el cliente confirma el pago, la cotización pasa a estado Pagado en cuestión de segundos.
 - Es el único método que soporta [igualas recurrentes](/docs/pagos/igualas) — un cobro que se domicilia y se repite cada mes sin que el cliente vuelva a intervenir.
 
-Tarifa: 4% + $3.00 MXN + IVA por transacción.
+Tarifa: 4% + $3.00 MXN + IVA por transacción. El cobro se hace en la moneda de la
+cotización; la tarifa de Cord aplica a cobros en pesos mexicanos.
 
 ### 3. Transferencia bancaria manual
 
-Si prefieres no usar los cobros automatizados de Cord Pagos — o la cotización es de un monto donde prefieres evitar cualquier comisión — puedes dejar activa la transferencia manual como único método.
+Si prefieres no usar los cobros automatizados de Cord Payments — o la cotización es de un monto donde prefieres evitar cualquier comisión — puedes dejar activa la transferencia manual como único método.
 
 **El flujo manual:**
 1. El cliente ve tus datos bancarios tradicionales (Banco, CLABE, Beneficiario) configurados en Ajustes.
 2. El cliente hace la transferencia por fuera de Cord.
 3. Tú, como vendedor, entras a la cotización y presionas "Marcar como pagado" manualmente una vez que verificaste que el dinero llegó a tu cuenta.
 
-Tarifa: $0.00 — no pasa por Cord Pagos, así que no genera ninguna comisión, pero tampoco tiene conciliación automática ni protección ante contracargos.
+Tarifa: $0.00 — no pasa por Cord Payments, así que no genera ninguna comisión, pero tampoco tiene conciliación automática ni protección ante contracargos.
 
 <Callout type="info">
 Puedes activar los tres métodos a la vez, o solo los que te convengan, desde **Ajustes › Cobros**. El cliente solo verá las opciones que tú tengas encendidas.

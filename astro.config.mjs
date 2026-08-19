@@ -26,6 +26,12 @@ export default defineConfig({
     // desarrolladores.ts porque /elements reutiliza sus blocks+faqs (fuente única).
     '/desarrolladores/elements': '/elements',
     '/en/desarrolladores/elements': '/en/elements',
+    // Cord Invoicing vivía en /producto/internacional, un slug heredado de
+    // cuando la página vendía multi-país y FX (2 de sus 3 bloques hablaban de
+    // cobertura cambiaria, pisando /producto/divisas). La página ahora vende
+    // facturación y la URL lo dice; el 301 conserva el SEO acumulado.
+    '/producto/internacional': '/producto/facturacion',
+    '/en/producto/internacional': '/en/producto/facturacion',
   },
   // El sitemap NO usa @astrojs/sitemap (auto-genera /sitemap-index.xml con TODAS las
   // rutas SSR, incluidas las privadas de /app/*) — usamos el curado a mano en

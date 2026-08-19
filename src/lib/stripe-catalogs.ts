@@ -1,3 +1,5 @@
+import { log } from './log';
+
 export const STRIPE_MX_STATES = [
     { codigo: 'AGU', nombre: 'Aguascalientes' },
     { codigo: 'BCN', nombre: 'Baja California' },
@@ -153,7 +155,7 @@ export function translateRequirement(req: string): { mensaje: string, paso: numb
         }
     }
 
-    console.warn('[connect] requisito sin traducción', req);
+    log.warn('requisito de Connect sin traducción', { route: 'connect', requisito: req });
     return { mensaje: 'Requisito adicional de verificación', paso: 1 };
 }
 
@@ -278,6 +280,6 @@ export function translateStripeError(err: any): string {
     if (type && STRIPE_ERROR_TYPES[type]) return STRIPE_ERROR_TYPES[type];
 
     const ref = globalThis.crypto?.randomUUID?.().slice(0, 8).toUpperCase() || 'ERROR';
-    console.error(`[connect:${ref}]`, message);
+    log.error('error de Connect sin traducción', { route: 'connect', ref, providerMessage: message });
     return `No pudimos completar la operación (ref: ${ref})`;
 }

@@ -17,6 +17,9 @@ import { MAX_ITEMS } from '../../../lib/cotizaciones';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
 import { sanitizeItem } from '../../../../packages/elements/src/engine';
 import { trackServer } from '../../../lib/posthog-server';
+import { normalizeCurrency } from '../../../lib/currency';
+import { FXService, FXUnavailableError } from '../../../lib/fx/FXService';
+import { log } from '../../../lib/log';
 
 // Evento interno (eventos.tipo) → evento público de webhook.
 const WH_MAP: Record<string, WebhookEvent> = {
@@ -123,7 +126,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (!action) return json({ error: 'Acción no válida' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`select id, status, version from cotizaciones where id = ${id} and org_id = ${orgId}`;
+    const rows = await sql`select id, status, version, base_currency, fiscal_currency, fx_rate
+                             from cotizaciones where id = ${id} and org_id = ${orgId}`;
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
 
     const actual = rows[0].status as string;
@@ -158,13 +162,56 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             const antRaw = Number(body.anticipo_pct);
             const anticipoPct = esRecurrente ? null
                 : (Number.isFinite(antRaw) && antRaw >= 1 && antRaw <= 99 ? Math.round(antRaw * 100) / 100 : null);
+
+            // Divisas: se CONSERVAN las de la cotización cuando el body no las
+            // manda. Un `|| 'MXN'` aquí reescribía a pesos un borrador creado en
+            // otra divisa (el editor de /editar no envía estos campos) y dejaba
+            // el fx_rate viejo intacto: la factura salía con importes en USD
+            // etiquetados como MXN. Ver regla 21 y regla 22.
+            const prevBase = normalizeCurrency(rows[0].base_currency as string);
+            const baseCurrency = normalizeCurrency(body.base_currency, prevBase);
+            const fiscalCurrency = normalizeCurrency(
+                body.fiscal_currency,
+                normalizeCurrency(rows[0].fiscal_currency as string, baseCurrency),
+            );
+
+            // Si cambia el par de divisas (o el total con cobertura vigente), la
+            // tasa congelada deja de corresponder: se vuelve a cotizar. Sin tasa
+            // real la operación falla cerrado en vez de guardar un número viejo.
+            let fxRate = Number(rows[0].fx_rate);
+            let fxSource: string | null = null;
+            let fxLockedUntil: string | null = null;
+            const parChanged = baseCurrency !== prevBase
+                || fiscalCurrency !== normalizeCurrency(rows[0].fiscal_currency as string, prevBase);
+            if (baseCurrency === fiscalCurrency) {
+                fxRate = 1; fxSource = 'same'; fxLockedUntil = null;
+            } else if (parChanged || !Number.isFinite(fxRate) || fxRate <= 0) {
+                try {
+                    const fx = await FXService.getExchangeRate({
+                        baseCurrency, fiscalCurrency, amount: total,
+                        bufferPct: Number(body.fx_buffer_pct) || 0,
+                    });
+                    fxRate = fx.appliedRate;
+                    fxSource = fx.source;
+                    fxLockedUntil = fx.lockedUntil ? fx.lockedUntil.toISOString() : null;
+                } catch (error) {
+                    if (error instanceof FXUnavailableError) return json({ error: error.message, code: 'fx_unavailable' }, 503);
+                    throw error;
+                }
+            }
+
             await sql`update cotizaciones set
                         cliente_id = ${body.cliente_id || null},
                         terminos = ${terminos},
                         vigencia = (current_date + (${vigDias} * interval '1 day'))::date,
                         notas = ${body.notas || null},
-                        base_currency = ${body.base_currency || 'MXN'},
-                        fiscal_currency = ${body.fiscal_currency || 'MXN'},
+                        base_currency = ${baseCurrency},
+                        moneda = ${baseCurrency},
+                        fiscal_currency = ${fiscalCurrency},
+                        fx_rate = ${fxRate},
+                        fx_rate_source = coalesce(${fxSource}, fx_rate_source),
+                        fx_locked_until = case when ${fxSource !== null} then ${fxLockedUntil}
+                                               else fx_locked_until end,
                         subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         version = ${nextVersion}, iva_incluido = ${iva_incluido},
                         anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente}
@@ -360,7 +407,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
     return json({ ok: true, status: action.to, email, fiscal });
     } catch (err: any) {
-        console.error('[PATCH cotizacion]', err);
+        log.error('error no controlado', { route: 'PATCH cotizacion', err });
         return json({ error: err?.message || 'Error interno' }, 500);
     }
 };

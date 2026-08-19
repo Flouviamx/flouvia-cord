@@ -11,6 +11,7 @@ import { sendVerificationEmail } from '../../../lib/auth-email';
 import { registerSchema, parseJsonBody } from '../../../lib/validation';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { trustedIp } from '../../../lib/ip';
+import { log } from '../../../lib/log';
 
 export const POST: APIRoute = async ({ request }) => {
     const ip = trustedIp(request);
@@ -43,12 +44,12 @@ export const POST: APIRoute = async ({ request }) => {
         const token = await createEmailVerificationToken(user.id as string, email);
         const sendRes = await sendVerificationEmail(email, token);
         if (!sendRes.sent) {
-            console.warn('[register] no se pudo enviar el correo de verificación:', sendRes.error || sendRes.skipped);
+            log.warn('no se pudo enviar el correo de verificación', { route: 'register', err: sendRes.error || sendRes.skipped });
         }
 
         return new Response(JSON.stringify({ success: true, requiresVerification: true, emailed: sendRes.sent }), { status: 200 });
     } catch (error) {
-        console.error('[auth/register]', error);
+        log.error('error no controlado', { route: 'auth/register', err: error });
         return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
     }
 };

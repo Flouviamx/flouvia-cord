@@ -307,7 +307,7 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
           ? `Connecting ${provider} from settings is not available yet.`
           : `Conectar ${provider} desde ajustes todavía no está disponible.`,
       };
-      toast(messages[linkError] || (locale === 'en' ? 'Could not connect the account' : 'No se pudo conectar la cuenta'), 'error');
+      toast((linkError && messages[linkError]) || (locale === 'en' ? 'Could not connect the account' : 'No se pudo conectar la cuenta'), 'error');
     }
 
     // Limpia los parámetros para que un F5 no repita el aviso.

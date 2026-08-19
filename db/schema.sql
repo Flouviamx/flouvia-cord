@@ -198,7 +198,10 @@ create table if not exists documentos_fiscales (
   provider        text        not null default 'cord',
   provider_document_id text,
   invoice_number  text,
-  currency        text,
+  currency        text,                              -- divisa de subtotal/tax_total/total
+  ledger_currency text,                              -- divisa contable del emisor
+  fx_rate         numeric,                           -- currency -> ledger_currency
+  ledger_total    numeric,                           -- total convertido al ledger
   subtotal        numeric,
   tax_total       numeric,
   total           numeric,
@@ -2340,6 +2343,13 @@ alter table documentos_fiscales add column if not exists provider text not null 
 alter table documentos_fiscales add column if not exists provider_document_id text;
 alter table documentos_fiscales add column if not exists invoice_number text;
 alter table documentos_fiscales add column if not exists currency text;
+-- Multi-divisa (ago 2026): la factura se emite en la divisa de la VENTA y lleva
+-- el tipo de cambio a la divisa contable del emisor. Antes los importes en USD
+-- se etiquetaban con la divisa fiscal (MXN) sin convertir ni declarar la tasa:
+-- la factura decía "MXN 1,000" para una venta de USD 1,000. Ver docs/negocio-billing.md.
+alter table documentos_fiscales add column if not exists ledger_currency text;
+alter table documentos_fiscales add column if not exists fx_rate numeric;
+alter table documentos_fiscales add column if not exists ledger_total numeric;
 alter table documentos_fiscales add column if not exists subtotal numeric;
 alter table documentos_fiscales add column if not exists tax_total numeric;
 alter table documentos_fiscales add column if not exists total numeric;
@@ -2518,3 +2528,161 @@ create policy "rls_cotizacion_atencion" on cotizacion_atencion
   using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
   with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
 alter table cotizacion_atencion force row level security;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Cord Invoicing: la factura como objeto de primera clase (ago 2026)
+-- ════════════════════════════════════════════════════════════════════════════
+-- Hasta ahora una factura era un subproducto de la cotización: `cotizacion_id`
+-- era NOT NULL, así que era ESTRUCTURALMENTE imposible emitir una factura
+-- suelta, y el único disparador en todo el repo era
+-- `PATCH /api/cotizaciones/[id] { to: 'invoiced' }`.
+--
+-- Dos ejes nuevos, deliberadamente separados:
+--
+--   status     — el rail FISCAL     (pending | issued | cancelled | error)
+--   lifecycle  — el estado COMERCIAL (draft | open | paid | void | uncollectible)
+--
+-- No se colapsan en una sola columna: "timbrada ante el SAT" y "pagada por el
+-- cliente" son hechos distintos que cambian por causas distintas. Una factura
+-- puede estar `issued` + `open` (timbrada, sin cobrar) o `issued` + `paid`.
+
+alter table documentos_fiscales alter column cotizacion_id drop not null;
+
+alter table documentos_fiscales add column if not exists cliente_id uuid references clientes(id) on delete set null;
+alter table documentos_fiscales add column if not exists lifecycle text not null default 'issued';
+alter table documentos_fiscales add column if not exists due_date date;
+alter table documentos_fiscales add column if not exists amount_paid numeric not null default 0;
+alter table documentos_fiscales add column if not exists amount_remaining numeric;
+alter table documentos_fiscales add column if not exists public_token text;
+alter table documentos_fiscales add column if not exists voided_at timestamptz;
+alter table documentos_fiscales add column if not exists void_reason text;
+alter table documentos_fiscales add column if not exists credit_note_of uuid references documentos_fiscales(id) on delete set null;
+alter table documentos_fiscales add column if not exists sent_at timestamptz;
+alter table documentos_fiscales add column if not exists notes text;
+alter table documentos_fiscales add column if not exists created_by uuid;
+-- PaymentIntent vivo del cobro del SALDO desde la hosted invoice page. Se
+-- reutiliza entre recargas: sin él, cada visita abre un intento nuevo y el
+-- cliente termina con varios cobros en vuelo por la misma factura.
+alter table documentos_fiscales add column if not exists stripe_payment_intent_id text;
+-- Regla 19: la vista del cliente se mide EN EL CLIENTE y con actor. Estas dos
+-- columnas las escribe únicamente el heartbeat de /api/i/[token] cuando el
+-- actor resuelto es 'client' con la pestaña visible — nunca el SSR, que lo
+-- dispara igual el propio vendedor revisando su link o el bot de WhatsApp
+-- generando la tarjeta del enlace.
+alter table documentos_fiscales add column if not exists first_viewed_at timestamptz;
+alter table documentos_fiscales add column if not exists last_viewed_at timestamptz;
+create index if not exists idx_documentos_fiscales_pi
+  on documentos_fiscales(stripe_payment_intent_id)
+  where stripe_payment_intent_id is not null;
+
+-- Toda factura tiene receptor: o cuelga de una cotización (y el cliente sale de
+-- ahí) o trae su propio `cliente_id`. Una factura sin ninguno de los dos no
+-- tiene a quién cobrarle.
+do $$ begin
+  alter table documentos_fiscales add constraint chk_documentos_fiscales_origen
+    check (cotizacion_id is not null or cliente_id is not null);
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  alter table documentos_fiscales add constraint chk_documentos_fiscales_lifecycle
+    check (lifecycle in ('draft', 'open', 'paid', 'void', 'uncollectible'));
+exception when duplicate_object then null; end $$;
+
+-- El token de la hosted invoice page. Único global (es una URL pública), no por
+-- org: dos orgs no pueden compartir token o una vería la factura de la otra.
+create unique index if not exists uq_documentos_fiscales_public_token
+  on documentos_fiscales(public_token)
+  where public_token is not null;
+
+-- Bandeja y aging: "qué está abierto y qué venció", el acceso dominante.
+create index if not exists idx_documentos_fiscales_bandeja
+  on documentos_fiscales(org_id, lifecycle, due_date);
+create index if not exists idx_documentos_fiscales_cliente
+  on documentos_fiscales(org_id, cliente_id);
+create index if not exists idx_documentos_fiscales_creado
+  on documentos_fiscales(org_id, created_at desc, id desc);
+
+-- Backfill de las filas que ya existían: nacieron todas timbradas y sin saldo
+-- conocido. Se marcan `open` con el total pendiente para que el aging las vea;
+-- las de cotizaciones ya pagadas se cierran abajo.
+update documentos_fiscales
+   set amount_remaining = coalesce(total, 0)
+ where amount_remaining is null;
+
+update documentos_fiscales d
+   set lifecycle = 'open'
+ where d.lifecycle = 'issued' and d.status = 'issued';
+
+update documentos_fiscales d
+   set lifecycle = 'void'
+ where d.status = 'cancelled' and d.lifecycle <> 'void';
+
+update documentos_fiscales d
+   set lifecycle = 'draft'
+ where d.status in ('pending', 'error') and d.lifecycle = 'issued';
+
+update documentos_fiscales d
+   set lifecycle = 'paid',
+       amount_paid = coalesce(d.total, 0),
+       amount_remaining = 0
+  from cotizaciones c
+ where c.id = d.cotizacion_id
+   and c.status = 'paid'
+   and d.lifecycle = 'open';
+
+-- ── Ledger de pagos aplicados a una factura ─────────────────────────────────
+-- `cotizacion_cobros` es el ledger de cobros contra la COTIZACIÓN (anticipo,
+-- saldo, cuotas). Esta tabla es el ledger contra el DOCUMENTO: es la que
+-- responde "¿cuánto le queda a esta factura?". Se relacionan por `cobro_id`
+-- cuando el pago entró por el carril de la cotización, y esa fila es nullable
+-- porque un pago manual (transferencia, efectivo) no tiene cobro asociado.
+create table if not exists documento_pagos (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  documento_id    uuid        not null references documentos_fiscales(id) on delete cascade,
+  cobro_id        uuid        references cotizacion_cobros(id) on delete set null,
+  monto           numeric     not null check (monto > 0),
+  currency        text        not null,
+  metodo          text        not null default 'manual',
+  referencia      text,
+  stripe_payment_intent_id text,
+  nota            text,
+  registrado_por  uuid,
+  aplicado_at     timestamptz not null default now(),
+  created_at      timestamptz not null default now()
+);
+
+create index if not exists idx_documento_pagos_doc on documento_pagos(documento_id, aplicado_at desc);
+create index if not exists idx_documento_pagos_org on documento_pagos(org_id);
+-- Idempotencia del webhook de Stripe: un PaymentIntent se aplica UNA vez a una
+-- factura. Sin esto, un reintento de Stripe (que reintenta por diseño) cobraría
+-- dos veces contra el saldo y dejaría la factura en `paid` con la mitad cobrada.
+create unique index if not exists uq_documento_pagos_pi
+  on documento_pagos(documento_id, stripe_payment_intent_id)
+  where stripe_payment_intent_id is not null;
+
+alter table documento_pagos enable row level security;
+drop policy if exists "rls_documento_pagos" on documento_pagos;
+create policy "rls_documento_pagos" on documento_pagos
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table documento_pagos force row level security;
+
+-- Resolutor del token de la hosted invoice page. Mismo patrón, mismas razones
+-- que cord_resolve_public_quote: la página pública necesita traducir un token
+-- opaco a (documento, organización) ANTES de poder abrir una transacción con
+-- contexto de org, y no existe —ni debe existir— una política RLS basada en el
+-- token. SECURITY DEFINER acotado a esa única traducción; nada más se expone.
+--
+-- Un borrador nunca resuelve: todavía no es un documento para el cliente.
+create or replace function cord_resolve_public_invoice(p_token text)
+returns table(id uuid, org_id uuid)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select d.id, d.org_id from documentos_fiscales d
+   where p_token is not null and p_token <> ''
+     and d.public_token = p_token
+     and d.lifecycle <> 'draft'
+   limit 1
+$$;

@@ -6,6 +6,7 @@ import { sql } from '../../../lib/db';
 import { strictLimitResponse, strictRateLimit } from '../../../lib/ratelimit';
 import { trustedIp } from '../../../lib/ip';
 import { sendOpsLoginAlertEmail } from '../../../lib/auth-email';
+import { log } from '../../../lib/log';
 import {
     OPS_PASSKEY_CHALLENGE_COOKIE,
     OPS_SESSION_COOKIE,
@@ -40,7 +41,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     try {
         challengedOperatorId = await consumeOpsPasskeyChallenge(expectedChallenge);
     } catch (error) {
-        console.error('[ops/auth/passkey-challenge]', error);
+        log.error('error no controlado', { route: 'ops/auth/passkey-challenge', err: error });
         return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
     }
     if (!expectedChallenge || !challengedOperatorId) {
@@ -158,7 +159,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         sendOpsLoginAlertEmail(email, ip, userAgent).catch(() => null);
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (error) {
-        console.error('[ops/auth/passkey]', error);
+        log.error('error no controlado', { route: 'ops/auth/passkey', err: error });
         return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
     }
 };

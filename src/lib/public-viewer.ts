@@ -28,6 +28,7 @@ import type { APIContext, AstroCookies } from 'astro';
 import { sql, withOrgTx } from './db';
 import { currentUserId } from './context';
 import { trustedIp } from './ip';
+import { log } from './log';
 
 export type ViewerRole = 'seller' | 'client' | 'bot';
 
@@ -144,7 +145,7 @@ export async function resolveViewer(
             // Degradar, no romper. Lo único que se pierde es el banner de vista
             // previa; la vista NO se marca aquí (eso vive en el heartbeat, que
             // sí recibe un org_id resuelto por resolvePublicQuote).
-            console.error('[public-viewer] no se pudo resolver la membresía:', (e as Error)?.message);
+            log.error('no se pudo resolver la membresía', { route: 'public-viewer', err: (e as Error)?.message });
         }
     }
 

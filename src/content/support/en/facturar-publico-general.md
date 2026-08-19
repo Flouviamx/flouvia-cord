@@ -1,7 +1,7 @@
 ---
 title: "General Public Invoicing"
 description: "Issuance of daily or monthly global CFDI."
-category: "Billing & CFDI"
+category: "Invoicing"
 ---
 
 All sales and income you receive that are not individually invoiced to a specific RFC must be declared to the SAT through a **General Public Global Invoice**.

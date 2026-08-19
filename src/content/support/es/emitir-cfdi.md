@@ -1,7 +1,7 @@
 ---
 title: "Configurar facturación automática (CFDI 4.0)"
 description: "Aprende cómo habilitar la facturación automática para que tus clientes reciban su CFDI 4.0 en cuanto realicen el pago."
-category: "Facturación y CFDI"
+category: "Facturación"
 order: 1
 ---
 

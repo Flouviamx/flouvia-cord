@@ -25,15 +25,18 @@ const isEn = Astro.props.isEn || lang === 'en';
 const currentFeature = Astro.props.feature || Astro.props.feature;
 const feature = isEn && currentFeature ? FEATURES_EN.find((f) => f.slug === currentFeature.slug) || currentFeature : currentFeature;
 // Mapa de 3 features relacionados por feature — curados por contexto
+// ⚠️ Todo slug listado aquí DEBE existir en FEATURES. El `.filter(Boolean)` de
+// abajo descarta en silencio los que no, así que un slug muerto no rompe el
+// build: simplemente deja la página con dos cross-links en vez de tres. Ya pasó
+// con 'cfdi', que quedó huérfano cuando el feature se renombró a 'facturacion'.
 const RELATED: Record<string, string[]> = {
-    'editor':          ['link-publico', 'seguimiento', 'cfdi'],
+    'editor':          ['link-publico', 'seguimiento', 'facturacion'],
     'link-publico':    ['editor', 'seguimiento', 'negociacion'],
     'seguimiento':     ['link-publico', 'editor', 'cobranza-ia'],
-    'cfdi':            ['editor', 'clientes-credito', 'finanzas'],
-    'clientes-credito':['cfdi', 'cobranza-ia', 'finanzas'],
+    'clientes-credito':['facturacion', 'cobranza-ia', 'finanzas'],
     'cobranza-ia':     ['clientes-credito', 'seguimiento', 'finanzas'],
-    'divisas':         ['internacional', 'editor', 'cfdi'],
-    'internacional':   ['divisas', 'editor', 'cfdi'],
+    'divisas':         ['facturacion', 'editor', 'clientes-credito'],
+    'facturacion':     ['divisas', 'cobranza-ia', 'clientes-credito'],
     'finanzas':        ['cobranza-ia', 'clientes-credito'],
     'aprobaciones':    ['editor', 'equipo', 'negociacion'],
     'equipo':          ['aprobaciones', 'editor', 'clientes-credito'],
@@ -48,11 +51,10 @@ const DOCS_PATH: Record<string, string> = {
     'editor':           'cotizacion/resumen',
     'link-publico':     'cotizacion/envio',
     'seguimiento':      'gestion/cotizaciones',
-    'cfdi':             'cotizacion/timbrado',
     'clientes-credito': 'pagos/credito',
     'cobranza-ia':      'pagos/cobranza-ia',
     'divisas':          'pagos/tesoreria-fx',
-    'internacional':    'pagos/facturacion',
+    'facturacion':      'pagos/facturacion',
     'finanzas':         'gestion/dashboard',
     'aprobaciones':     'cuenta/configuracion',
     'equipo':           'cuenta/resumen',
@@ -98,6 +100,66 @@ const breadcrumbSchema = {
         { '@type': 'ListItem', position: 2, name: feature.nav, item: `${base}/producto/${feature.slug}` },
     ],
 };
+
+// SoftwareApplication por feature (ago 2026). `/index` ya lo declaraba para el
+// producto completo, pero cada página de feature es la que compite por su
+// keyword y llegaba sin ninguna señal de "esto es software con un precio".
+// `featureList` sale de los bullets reales, no de una lista aparte que se
+// desincronizaría del copy a la primera edición.
+const appSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: `Cord — ${feature.nav}`,
+    applicationCategory: 'BusinessApplication',
+    applicationSubCategory: feature.slug === 'facturacion' ? 'Invoicing' : undefined,
+    operatingSystem: 'Web',
+    url: `${base}/producto/${feature.slug}`,
+    description: feature.metaDescription ?? feature.sub,
+    featureList: feature.blocks.flatMap((b) => b.bullets ?? []),
+    offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'MXN',
+        description: isEn ? 'Free plan available' : 'Plan gratuito disponible',
+        url: `${base}/precios`,
+    },
+};
+
+// HowTo solo donde hay un procedimiento REAL que el producto ejecuta. Un HowTo
+// genérico ("cómo usar la función") es exactamente el marcado que Google
+// penaliza por no describir una tarea. Hoy solo facturación lo tiene.
+const HOWTO: Record<string, { name: string; steps: { name: string; text: string }[] }> = {
+    facturacion: isEn ? {
+        name: 'How to issue an invoice in Cord',
+        steps: [
+            { name: 'Create the draft', text: 'Open Invoices, pick the client and enter the line items. The draft consumes no invoice number and no stamp.' },
+            { name: 'Issue it', text: 'Issuing reserves the next sequential number and stamps the document: real CFDI 4.0 with the SAT in Mexico, a commercial invoice with your own numbering elsewhere.' },
+            { name: 'Send it to your client', text: 'Cord emails the invoice with its PDF and a link to its own page, where the client sees the balance and can pay by card.' },
+            { name: 'Follow the balance', text: 'Card payments from the link and wires you record by hand both reduce the same balance. At zero the invoice is marked paid.' },
+        ],
+    } : {
+        name: 'Cómo emitir una factura en Cord',
+        steps: [
+            { name: 'Crea el borrador', text: 'Entra a Facturas, elige el cliente y captura los conceptos. El borrador no consume folio ni timbre.' },
+            { name: 'Emítela', text: 'Al emitir se reserva el folio consecutivo y se timbra el documento: CFDI 4.0 real ante el SAT en México, factura comercial con folio propio en el resto.' },
+            { name: 'Mándala a tu cliente', text: 'Cord envía la factura por correo con su PDF y el link a su propia página, donde el cliente ve el saldo y puede pagar con tarjeta.' },
+            { name: 'Sigue el saldo', text: 'Los pagos con tarjeta desde el link y las transferencias que registras a mano bajan el mismo saldo. Al llegar a cero, la factura se marca pagada.' },
+        ],
+    },
+};
+const howto = HOWTO[feature.slug];
+const howtoSchema = howto ? {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: howto.name,
+    description: feature.metaDescription ?? feature.sub,
+    step: howto.steps.map((step, i) => ({
+        '@type': 'HowToStep',
+        position: i + 1,
+        name: step.name,
+        text: step.text,
+    })),
+} : null;
 ---
 
 <Layout
@@ -116,6 +178,20 @@ const breadcrumbSchema = {
         is:inline
         set:html={JSON.stringify(breadcrumbSchema)}
     />
+    <script
+        slot="head"
+        type="application/ld+json"
+        is:inline
+        set:html={JSON.stringify(appSchema)}
+    />
+    {howtoSchema && (
+        <script
+            slot="head"
+            type="application/ld+json"
+            is:inline
+            set:html={JSON.stringify(howtoSchema)}
+        />
+    )}
     <Nav />
     <main>
         <!-- ── HERO ── -->
@@ -126,7 +202,7 @@ const breadcrumbSchema = {
                     <h1 class="pp-title masked-title" set:html={feature.titulo} />
                     <p class="pp-sub reveal">{feature.sub}</p>
                     <div class="pp-actions reveal">
-                        <a href="/registro" class="pp-btn-primary">
+                        <a href="/sign-up" class="pp-btn-primary">
                             <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
@@ -365,24 +441,24 @@ const breadcrumbSchema = {
                             </div>
                         )}
 
-                        {feature.slug === 'internacional' && (
+                        {feature.slug === 'facturacion' && (
                             <div class="mk-window mk-intl" id="intlHero">
                                 <div class="mk-bar">
                                     <span class="mk-dots"><i></i><i></i><i></i></span>
-                                    <span class="mk-bar-title">COT-0151 · Pacific Hardware (US)</span>
-                                    <span class="mk-badge mk-badge-sent">● USD → MXN</span>
+                                    <span class="mk-bar-title">A-001048 · Materiales del Valle</span>
+                                    <span class="mk-badge mk-badge-sent">● {isEn ? 'Open' : 'Abierta'}</span>
                                 </div>
-                                <div class="mk-intl-pill" id="intlPill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Tasa blindada</div>
+                                <div class="mk-intl-pill" id="intlPill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.15"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg> {isEn ? 'Stamped with the SAT' : 'Timbrada ante el SAT'}</div>
                                 <div class="mk-intl-body">
                                     <div class="mk-rows mk-rows-intl">
-                                        <div class="mk-row mk-row-head"><span>{isEn ? 'Product' : 'Producto'}</span><span>{isEn ? 'Qty' : 'Cant.'}</span><span>{isEn ? 'Price' : 'Precio'} USD</span><span>{isEn ? 'Amount' : 'Importe'}</span></div>
-                                        <div class="mk-row"><span>Válvula industrial 4"</span><span>40</span><span class="editorial">$182.00</span><span class="editorial">$7,280.00</span></div>
-                                        <div class="mk-row"><span>Acople bridado 6"</span><span>25</span><span class="editorial">$208.02</span><span class="editorial">$5,200.50</span></div>
+                                        <div class="mk-row mk-row-head"><span>{isEn ? 'Item' : 'Concepto'}</span><span>{isEn ? 'Qty' : 'Cant.'}</span><span>{isEn ? 'Price' : 'Precio'}</span><span>{isEn ? 'Amount' : 'Importe'}</span></div>
+                                        <div class="mk-row"><span>Válvula industrial 4"</span><span>40</span><span class="editorial">$3,367.00</span><span class="editorial">$134,680.00</span></div>
+                                        <div class="mk-row"><span>Acople bridado 6"</span><span>25</span><span class="editorial">$2,848.00</span><span class="editorial">$71,200.00</span></div>
                                     </div>
                                     <div class="mk-intl-totals">
-                                        <div class="mk-intl-tot"><span>{isEn ? 'Total' : 'Total'} (USD) · presentación</span><b class="editorial">USD 12,480.00</b></div>
-                                        <div class="mk-intl-tot mk-intl-tot-fiscal" id="intlFiscal"><span>{isEn ? 'Total' : 'Total'} fiscal (MXN) · se factura</span><b class="editorial">$230,880.00</b></div>
-                                        <span class="mk-intl-rate">Tasa 18.50 · congelada 30 días</span>
+                                        <div class="mk-intl-tot"><span>{isEn ? 'Total invoiced' : 'Total facturado'}</span><b class="editorial">$230,880.00</b></div>
+                                        <div class="mk-intl-tot mk-intl-tot-fiscal" id="intlFiscal"><span>{isEn ? 'Balance due' : 'Saldo por cobrar'}</span><b class="editorial">$134,880.00</b></div>
+                                        <span class="mk-intl-rate">{isEn ? 'Due 14 Sep · client link with card checkout' : 'Vence 14 sep · link del cliente con pago con tarjeta'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1827,7 +1903,7 @@ const breadcrumbSchema = {
                     });
                 }
 
-                // Facturación internacional Animation (pill "Tasa blindada" + flash del total fiscal)
+                // Cord Invoicing Animation (pill "Timbrada" + flash del saldo por cobrar)
                 const intlHero = document.getElementById('intlHero');
                 if (intlHero) {
                     const fiscal = document.getElementById('intlFiscal');

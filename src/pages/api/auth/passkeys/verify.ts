@@ -5,6 +5,7 @@ import { createSession, setSessionCookies } from '../../../../lib/auth';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
 import { ssoRequirementFor } from '../../../../lib/saml';
+import { log } from '../../../../lib/log';
 
 export const prerender = false;
 
@@ -63,7 +64,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         },
       });
     } catch (error: any) {
-      console.error('Error verificando autenticación:', error.message);
+      log.error('Error verificando autenticación', { err: error.message });
       return new Response(JSON.stringify({ error: error.message }), { status: 400 });
     }
 
@@ -100,7 +101,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     setSessionCookies(cookies, sessionToken);
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (error) {
-    console.error('Error en verify:', error);
+    log.error('Error en verify', { err: error });
     return new Response(JSON.stringify({ error: 'Error interno' }), { status: 500 });
   }
 };

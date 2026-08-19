@@ -398,52 +398,52 @@ const { slug, index } = Astro.props;
     </div>
   )}
 
-  {/* ────────────────── FACTURACIÓN INTERNACIONAL ────────────────── */}
-  {slug === 'internacional' && index === 0 && (
+  {/* ────────────────── CORD INVOICING ────────────────── */}
+  {slug === 'facturacion' && index === 0 && (
     <div class="bm-stage bm-intl-m0">
       <div class="bm-app">
         <div class="bm-app-bar">
-          <span class="bm-app-title">Cobertura cambiaria</span>
-          <span class="bm-app-badge bm-badge-green">FX lock 30 días</span>
+          <span class="bm-app-title">A-001048 · Materiales del Valle</span>
+          <span class="bm-app-badge bm-badge-green">Emitida</span>
         </div>
-        <div class="bm-kv"><span>Tasa spot (BCE)</span><b class="editorial">$18.42</b></div>
-        <div class="bm-kv"><span>Buffer de cobertura</span><div class="bm-cbar" style="width:120px;"><i style="width:55%;background:#059669;"></i></div></div>
-        <div class="bm-kv bm-active" style="border-radius:0;"><span>Tasa aplicada</span><b class="editorial" style="color:#059669;">$18.79 <span class="bm-tg bm-tg-green">+2%</span></b></div>
-        <div class="bm-kv"><span>USD → MXN · EUR → MXN</span><span class="bm-tg bm-tg-blue">Congelada</span></div>
-        <div class="bm-app-foot"><span>El dólar se mueve, tu margen no</span><b>Guardada con la cotización</b></div>
+        <div class="bm-kv"><span>Borrador</span><span class="bm-tg bm-tg-gray">14 ago</span></div>
+        <div class="bm-kv bm-active" style="border-radius:0;"><span>Emitida · CFDI timbrado</span><span class="bm-tg bm-tg-green">15 ago</span></div>
+        <div class="bm-kv"><span>Pago recibido</span><b class="editorial g">$96,000.00</b></div>
+        <div class="bm-kv"><span>Saldo</span><b class="editorial">$134,880.00</b></div>
+        <div class="bm-app-foot"><span>El folio se asigna al emitir, no antes</span><b>Abierta</b></div>
       </div>
     </div>
   )}
 
-  {slug === 'internacional' && index === 1 && (
+  {slug === 'facturacion' && index === 1 && (
     <div class="bm-stage bm-intl-m1">
       <div class="bm-app">
         <div class="bm-app-bar">
-          <span class="bm-app-title">COT-0151 · Pacific Hardware (US)</span>
-          <span class="bm-app-badge bm-badge-blue">USD → MXN</span>
+          <span class="bm-app-title">cordhq.app/i/k4m2xq…</span>
+          <span class="bm-app-badge bm-badge-blue">Vista del cliente</span>
         </div>
-        <div class="bm-kv"><span>Divisa de presentación</span><span class="bm-tg bm-tg-blue">USD · cliente</span></div>
-        <div class="bm-kv"><span>Divisa fiscal</span><span class="bm-tg bm-tg-green">MXN · factura</span></div>
+        <div class="bm-kv"><span>Factura A-001048</span><span class="bm-tg bm-tg-gray">Vence 14 sep</span></div>
         <div class="bm-2col">
-          <div class="bm-stat"><span>Presentación</span><b class="editorial">US$12,480.00</b></div>
-          <div class="bm-stat"><span>Convertido (MXN)</span><b class="editorial g">$230,880.00</b></div>
+          <div class="bm-stat"><span>Total</span><b class="editorial">$230,880.00</b></div>
+          <div class="bm-stat"><span>Saldo</span><b class="editorial g">$134,880.00</b></div>
         </div>
-        <div class="bm-app-foot"><span>Tasa, fuente y vigencia registradas</span><b>Tasa 18.50</b></div>
+        <div class="bm-kv"><span>Pagar con tarjeta</span><span class="bm-tg bm-tg-green">Disponible</span></div>
+        <div class="bm-app-foot"><span>PDF y XML descargables</span><b>Tu marca</b></div>
       </div>
     </div>
   )}
 
-  {slug === 'internacional' && index === 2 && (
+  {slug === 'facturacion' && index === 2 && (
     <div class="bm-stage bm-intl-m2">
       <div class="bm-app">
         <div class="bm-app-bar">
-          <span class="bm-app-title">Registro fiscal por país</span>
+          <span class="bm-app-title">Carril fiscal por país</span>
           <span class="bm-app-badge bm-badge-green">Multi-país</span>
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2" style="border-radius:8px;">MX</span><div class="bm-uid-tx"><b>México · CFDI 4.0</b><span>timbrado real vía Facturapi</span></div></div><span class="bm-tg bm-tg-green">Timbrado</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;">US</span><div class="bm-uid-tx"><b>EE.UU. · Commercial Invoice</b><span>arquitectura cableada</span></div></div><span class="bm-tg bm-tg-gray">Próximo</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2" style="border-radius:8px;">MX</span><div class="bm-uid-tx"><b>México · CFDI 4.0</b><span>timbrado ante el SAT con tu CSD</span></div></div><span class="bm-tg bm-tg-green">Timbrado</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4" style="border-radius:8px;">ES</span><div class="bm-uid-tx"><b>España · Factura comercial</b><span>folio propio, sin presentación local</span></div></div><span class="bm-tg bm-tg-gray">Comercial</span></div>
         <div class="bm-code" style="border-top:1px solid rgba(10,25,47,0.05);border-bottom:none;">UUID <b>a1b2c3d4-9f01-4e22-b7aa</b> · SAT ✓</div>
-        <div class="bm-app-foot"><span>Un solo lugar por país</span><b>$230,880.00 MXN</b></div>
+        <div class="bm-app-foot"><span>Mismo flujo, distinto carril</span><b>$230,880.00 MXN</b></div>
       </div>
     </div>
   )}

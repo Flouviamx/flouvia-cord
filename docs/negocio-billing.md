@@ -183,6 +183,185 @@ Flujo:
   de `CommercialInvoiceProvider`; no deben sustituir el documento canónico de Cord.
 
 
+### Documento de factura — ago 2026
+
+Fuera de México, el PDF que genera Cord **es** la factura que ve el comprador, así
+que se trata como pieza de marca del negocio emisor, no como un volcado de datos.
+
+- Se dibuja con `src/lib/pdf/writer.ts`, un escritor PDF vectorial propio y sin
+  dependencias: rectángulos, líneas, color, imágenes y medición real de texto con
+  las métricas de Helvetica.
+- **Codificación WinAnsi**, no ASCII. El generador anterior (`simple-pdf.ts`)
+  normalizaba todo: "España" se imprimía "Espana" y un guion largo salía como
+  `?`. `simple-pdf.ts` sigue vivo solo para evidencia interna de disputas.
+- Toma del negocio su **logo** (PNG con alfa o JPEG, incrustado de verdad) y su
+  **color de marca**; sin logo, el nombre legal funciona como wordmark y se
+  encoge para caber entero antes de recortarse. La tinta sobre el color se
+  decide por luminancia: una marca clara nunca lleva texto blanco.
+- Incluye lo que una factura necesita y antes no estaba: vencimiento derivado de
+  los términos de crédito, condiciones, referencia, **desglose de impuestos por
+  tasa** (base imponible de cada tipo), cómo pagar con el link público, notas, y
+  numeración `n / total` en todas las páginas.
+- Multipágina con encabezado de tabla repetido; los totales nunca se parten.
+- El pie legal se conserva palabra por palabra y cambia según el país: en México
+  aclara que la validez la determina el CFDI timbrado y su XML; fuera, que es un
+  documento comercial no presentado ante ninguna autoridad (reglas 10 y 14).
+
+Marca y condiciones se leen **en vivo** al descargar; los importes y las partes
+salen del snapshot inmutable de `documentos_fiscales`. Cambiar el logo actualiza
+descargas futuras sin reescribir un documento ya emitido.
+
+### Cortesías internas: `set-plan.mjs --comp` — ago 2026
+
+`orgs.plan` es una proyección (Regla 17), así que `set-plan.mjs --plan=...` **no
+desbloquea nada**: deja la org con `plan='developer'` y el resto de columnas de
+billing en NULL, y `cord_effective_plan()` responde `free`. Es el
+comportamiento correcto y es la confusión que motivó esta sección.
+
+Una suscripción creada **a mano en el dashboard de Stripe** tampoco se liga
+sola: no trae `metadata.org_id`, y `cord_resolve_org_for_billing()` solo
+encuentra la org por un `stripe_customer_id`/`stripe_subscription_id` **ya
+guardado**. El webhook llega y no sabe a quién aplicarla.
+
+```bash
+node scripts/set-plan.mjs --comp --org=<uuid> --sub=sub_...
+```
+
+Lee la suscripción real de Stripe, exige `status = 'active'`, resuelve el plan
+desde el price contra `PLAN_PRICES` (parseado de `billing.ts`, no copiado) y
+sella las seis columnas que exige `hasPaidBillingEvidence()`:
+`stripe_subscription_id`, `stripe_customer_id`, `subscription_status`,
+`current_period_end`, `billing_paid_through` y `billing_paid_plan`. A partir de
+ahí el webhook la mantiene sincronizada sola.
+
+Rechaza sandboxes (heredan el estado de su padre), suscripciones no activas,
+periodos vencidos y precios fuera del catálogo — el caso típico de cruzar
+test/live.
+
+**Lo que deliberadamente NO hace: relajar la evidencia de pago.**
+`syncPaidBillingInvoice` sigue exigiendo `amount_paid > 0` para todas las orgs.
+Una factura de Stripe con `status='paid'` pero importe cero (cortesía, cupón del
+100%) **no** escribe `billing_paid_through`: manda alerta a Ops y se detiene. Las
+cortesías se conceden por este carril explícito y auditable, no aflojando la
+regla que autoriza a los clientes de verdad.
+
+### La factura como objeto de primera clase — ago 2026
+
+Hasta esta entrega, una factura era un subproducto de la cotización:
+`documentos_fiscales.cotizacion_id` era `NOT NULL` y el único disparador de
+emisión en todo el repo era `PATCH /api/cotizaciones/[id] { to: 'invoiced' }`.
+No había ciclo de vida, la factura no sabía si estaba pagada, y el cliente
+nunca la recibía.
+
+**Dos ejes, deliberadamente separados.** `status` describe el rail fiscal
+(`pending | issued | cancelled | error`); `lifecycle` describe el estado
+comercial (`draft | open | paid | void | uncollectible`). "Timbrada ante el
+SAT" y "pagada por el cliente" son hechos distintos que cambian por causas
+distintas, y colapsarlos en una columna es cómo se cobra dos veces.
+
+- **Borrador** (`createInvoiceDraft`, `src/lib/fiscal/invoices.ts`): se arma sin
+  tocar al proveedor y **sin consumir el medidor `timbrado`**. El folio se
+  reserva al emitir, no al crear: un borrador descartado no deja hueco en la
+  numeración fiscal.
+- **Emitir** (`finalizeInvoice`): mismo `pg_advisory_xact_lock` que el carril de
+  cotización, asigna folio desde `invoice_sequences`, llama al provider y solo
+  entonces pasa a `open`. Si el proveedor falla, el documento **sigue siendo
+  borrador** — no entra al aging ni a cobranza.
+- **Cobrar** (`src/lib/fiscal/payments.ts` + `documento_pagos`): el saldo nunca
+  se incrementa, se **recalcula desde la suma del ledger**. Idempotente por
+  `stripe_payment_intent_id`, porque Stripe reintenta sus webhooks por diseño.
+- **Anular** (`voidInvoice`): por fin llama a `provider.cancelDocument()`, que
+  llevaba meses implementada sin un solo llamador. Falla cerrada: si el SAT no
+  confirma, la factura NO se pinta como anulada. Con pagos aplicados no se
+  anula — devuelve `requiresCreditNote`.
+- **Nota de crédito** (`createCreditNote`): CFDI de egreso en México, ligado al
+  original por `credit_note_of`, con el impuesto prorrateado.
+
+**Corrección multi-tenant en la cancelación.** `MexicoSatProvider.cancelDocument`
+usaba la llave GLOBAL de Facturapi. Un CFDI timbrado bajo el CSD del cliente no
+existe en esa cuenta: la cancelación devolvía 404 y el comprobante seguía vivo
+en el SAT mientras Cord lo mostraba cancelado. El contrato `FiscalProvider`
+ahora recibe `providerApiKey` y devuelve `FiscalCancelResponse` en vez de un
+booleano.
+
+**Superficies nuevas.** `/app/facturas` (bandeja con filtros, keyset y acciones;
+la de Ajustes queda como 301), `/i/[token]` (hosted invoice page con saldo,
+historial de pagos y cobro con tarjeta del saldo vía Connect),
+`notifyInvoiceIssued`/`notifyInvoiceReminder` en `src/lib/email.ts`,
+`/api/v1/facturas` y las tools MCP `listar_facturas`, `detalle_factura` y
+`crear_factura_borrador` (escritura acotada a borrador a propósito).
+
+**Regla 19 en la hosted page.** La vista NO se marca en el SSR: la registra el
+heartbeat de `/api/i/[token]` con la pestaña visible y solo cuando
+`resolveViewer` resuelve `client`. El mismo GET lo hace el vendedor revisando su
+link y el bot de WhatsApp armando la preview.
+
+**Webhooks propios de factura.** `invoice.finalized`, `.sent`, `.paid`,
+`.payment_failed`, `.voided`, `.marked_uncollectible`, `.overdue`, con payload
+de factura vía `dispatchInvoiceEvent`. Los viejos `invoice.issued`/`.stamped` se
+conservan por compatibilidad y siguen llevando payload de cotización — que era
+justamente el defecto: un consumidor de facturas recibía la cotización.
+
+### Multi-divisa y tipo de cambio — ago 2026
+
+Cord opera en cualquier país (regla 10), y desde agosto de 2026 el dinero también:
+la divisa dejó de ser un default `MXN` repartido por el código y pasó a ser un dato
+que viaja con cada importe. La regla permanente es la 21; aquí vive el contrato
+operativo.
+
+**Las tres divisas, y por qué no se mezclan**
+
+| Divisa | Dónde vive | Qué gobierna |
+|---|---|---|
+| De venta | `cotizaciones.base_currency` (default `orgs.moneda`) | Captura de precios, link público, correo al cliente, cobro en Stripe y divisa del documento fiscal. |
+| Contable | `cotizaciones.fiscal_currency` (default `orgs.moneda`) | Los libros del negocio. Si difiere de la de venta, la factura declara el tipo de cambio y `documentos_fiscales.ledger_total` guarda el total convertido. |
+| De la plataforma | `src/lib/billing.ts` | Los planes de Cord. No hereda la divisa de la organización. |
+
+**Resolución en runtime**
+
+- Servidor: `money()`/`moneyFull()` leen la divisa del request. La fija el
+  middleware desde `orgs.moneda` (dentro de `getAppGates`, sin query extra) y la
+  sobrescribe el link público con la de la cotización (`getCotizacionByToken`).
+- Navegador: `src/lib/money-client.ts` sobre `<body data-currency>` que publica
+  `AppLayout`. El editor de cotizaciones usa la divisa del selector, no la de la
+  organización: los precios se capturan en la divisa de venta.
+- Stripe: `toMinorUnits()` de `src/lib/currency.ts`. JPY, CLP, KRW, VND y compañía
+  no llevan decimales; KWD/BHD llevan tres y exigen último dígito 0.
+
+**Cobros por país**
+
+- `createConnectAccount` usa `orgs.country_code` y `orgs.moneda`. Stripe fija ambos
+  al crear la cuenta y **no se pueden cambiar después**.
+- La capacidad `mx_bank_transfer_payments` (SPEI) solo se solicita en México.
+- SPEI se ofrece únicamente en cobros MXN; con otra divisa el vendedor cobra con
+  tarjeta aunque tenga SPEI activado.
+- El alta de cuenta bancaria (`connect/external-account`) sigue siendo CLABE, es
+  decir México. Fuera de México responde 409 con un mensaje claro en vez de mandar
+  18 dígitos a un banco que no los usa. Generalizar payouts (IBAN, routing+account,
+  sort code) es trabajo pendiente, no una promesa de la UI.
+- La tarifa de `src/lib/fees.ts` es la tabla publicada de México y solo aplica a
+  cobros en MXN; fuera de esa divisa Cord no cobra comisión de transacción.
+
+**Tipo de cambio**
+
+`FXService` consulta la tasa real en cadena y **falla cerrado**: sin tasa
+demostrable lanza `FXUnavailableError`, la creación de cotización responde 503 y
+`/api/fx/quote` también. Las fuentes van en orden de autoridad — BCE vía
+Frankfurter primero, porque es la referencia que después declara el CFDI; luego
+`open.er-api.com` y `currency-api`, que sí cubren COP, CLP, PEN, ARS y el resto de
+las divisas fuera del BCE. Todas publican fecha (`asOf`) y ninguna pide API key. La tasa se congela 30 días al cotizar
+(`cotizaciones.fx_rate`) y tiene consumidores reales:
+
+- el CFDI la manda como `exchange` (TipoCambio) junto con `currency`;
+- `documentos_fiscales` guarda `currency`, `ledger_currency`, `fx_rate` y
+  `ledger_total`;
+- el PDF de la factura imprime la línea de tipo de cambio y el total convertido.
+
+Facturar una cotización multi-divisa sin tasa utilizable no procede: devuelve un
+error pidiendo recalcularla, en vez de inventar el importe contable.
+
+Verificación: `npm run security:currency` (dentro de `npm run test:payments`).
+
 ### Stripe Connect Custom (Cobros B2B directos) — jul 2026, auditado y endurecido jul 2026
 
 Implementación nativa ("Quiet Luxury") para que los clientes cobren sus cotizaciones directamente a su banco, sin salir de la experiencia de la app. Reemplaza el esquema viejo de cuentas Express y Hosted Checkout.

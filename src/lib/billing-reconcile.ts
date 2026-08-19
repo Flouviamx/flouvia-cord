@@ -9,6 +9,7 @@ import { sql, withOrgTx, withSystemTx } from './db';
 import { sendOpsAlert } from './ops-alert';
 import { PLAN_RANK, type PaidPlan } from './entitlements';
 
+import { log } from './log';
 const STRIPE_VERSION = '2025-06-30.basil';
 const NON_TERMINAL = new Set(['active', 'trialing', 'past_due', 'unpaid', 'paused', 'incomplete']);
 
@@ -117,7 +118,7 @@ async function recoverCheckoutAttempts(): Promise<number> {
                 recovered++;
             }
         } catch (error) {
-            console.error(`[billing-reconcile] tentativa ${attempt.id}`, error);
+            log.error('tentativa de reconciliación falló', { route: 'billing-reconcile', attemptId: attempt.id, err: error });
         }
     }
     return recovered;

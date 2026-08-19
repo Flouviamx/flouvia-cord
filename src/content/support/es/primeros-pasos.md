@@ -11,10 +11,10 @@ Bienvenido a Cord. Esta guía te deja operando —cotizando, cobrando y facturan
 El núcleo de Cord es tu perfil fiscal y de marca.
 
 1. Ve a **Ajustes > General** y captura tu razón social, contacto y datos básicos.
-2. En **Ajustes > Facturación y CFDI** ingresa tu RFC y régimen fiscal, y sube tu **CSD (Certificado de Sello Digital)**: los archivos `.cer` y `.key` que te da el SAT, con su contraseña. *Sin el CSD podrás cotizar, pero no timbrar CFDI.*
+2. En **Ajustes > Facturación** ingresa tu RFC y régimen fiscal, y sube tu **CSD (Certificado de Sello Digital)**: los archivos `.cer` y `.key` que te da el SAT, con su contraseña. *Sin el CSD podrás cotizar, pero no timbrar CFDI.*
 
-## Paso 2: (Opcional) Activa Cord Pagos
-Para cobrar con tarjeta o SPEI automático desde el link, activa **Cord Pagos** en Ajustes. Ahí verás la tarifa por método, registrarás la cuenta bancaria donde recibirás los depósitos y completarás la verificación. Si prefieres transferencia manual, puedes mostrar la CLABE de tu negocio y marcar el pago cuando lo recibas.
+## Paso 2: (Opcional) Activa Cord Payments
+Para cobrar con tarjeta o SPEI automático desde el link, activa **Cord Payments** en Ajustes. Ahí verás la tarifa por método, registrarás la cuenta bancaria donde recibirás los depósitos y completarás la verificación. Si prefieres transferencia manual, puedes mostrar la CLABE de tu negocio y marcar el pago cuando lo recibas.
 
 ## Paso 3: Crea tu primer cliente
 1. Ve a **Clientes > Nuevo cliente**.
@@ -25,7 +25,7 @@ Para cobrar con tarjeta o SPEI automático desde el link, activa **Cord Pagos** 
 ## Paso 4: Envía tu primera cotización
 1. Ve a **Cotizaciones > Nueva**.
 2. Elige el cliente, agrega líneas (de tu catálogo o líneas libres) y revisa el total.
-3. Al enviarla, Cord genera un **link público** y, si configuraste correo, lo manda al cliente. El cliente lo abre, revisa, aprueba y, si activaste Cord Pagos, paga en línea.
+3. Al enviarla, Cord genera un **link público** y, si configuraste correo, lo manda al cliente. El cliente lo abre, revisa, aprueba y, si activaste Cord Payments, paga en línea.
 
 ## Paso 5: (Para devs) Conecta la API
 Si vas a usar Cord programáticamente:

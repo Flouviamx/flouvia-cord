@@ -1,0 +1,411 @@
+---
+// /app/facturas/[id] — detalle y acciones de UNA factura.
+//
+// Las acciones que antes no existían en ningún lado: emitir un borrador,
+// enviarla al cliente, registrar un pago manual, anularla y emitir nota de
+// crédito. `cancelDocument()` llevaba meses implementada en los providers sin
+// que ninguna ruta la llamara; esta pantalla es la que por fin la usa.
+//
+// Vocabulario del resto de la app: .surface-card, .t-head/.t-row, .status-pill,
+// .editorial y columna lateral sticky, igual que el detalle de cotización.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import '../../../styles/modal.css';
+import AccessGate from '../../../components/app/AccessGate.astro';
+import { getFacturaDetalle, getMyMembership, money } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+import { siteOrigin } from '../../../lib/email';
+import { getCountryProfile } from '../../../lib/countries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+
+export const prerender = false;
+
+const L = currentLocale();
+const ME = await getMyMembership();
+const hasPerm = memberCan(ME, 'cobranza');
+const f = hasPerm ? await getFacturaDetalle(Astro.params.id ?? '') : null;
+if (hasPerm && !f) return Astro.redirect('/app/facturas');
+// Un borrador se edita, no se contempla: su sitio es el editor.
+if (f && f.estado === 'draft' && !f.invoiceNumber) {
+    return Astro.redirect(`/app/facturas/nueva?draft=${f.id}`);
+}
+
+const ESTADO_META: Record<string, { label: string; color: string; bg: string }> = {
+    draft: { label: t(L, 'fact.st_draft'), color: '#5b6472', bg: 'rgba(91,100,114,0.1)' },
+    open: { label: t(L, 'fact.st_open'), color: '#b45309', bg: 'rgba(245,158,11,0.12)' },
+    paid: { label: t(L, 'fact.st_paid'), color: '#059669', bg: 'rgba(16,185,129,0.12)' },
+    void: { label: t(L, 'fact.st_void'), color: '#5b6472', bg: 'rgba(91,100,114,0.1)' },
+    uncollectible: { label: t(L, 'fact.st_uncollectible'), color: '#dc2626', bg: 'rgba(239,68,68,0.1)' },
+};
+const meta = f ? (ESTADO_META[f.estado] ?? ESTADO_META.open) : ESTADO_META.open;
+// Vocabulario fiscal del país del documento, no un default mexicano.
+const perfilPais = f ? getCountryProfile(f.pais) : null;
+const taxIdLabel = perfilPais?.taxIdLabel ?? 'Tax ID';
+const linkPublico = f?.publicToken ? `${siteOrigin()}/i/${f.publicToken}` : null;
+
+// Desglose por tasa a partir de las líneas del snapshot: es la forma de que una
+// factura con conceptos exentos y gravados cuadre a la vista.
+const porTasa = new Map<number, { base: number; impuesto: number }>();
+for (const l of f?.lineas ?? []) {
+    const tasa = l.subtotal > 0 ? Math.round((l.impuesto / l.subtotal) * 10000) / 10000 : 0;
+    const acc = porTasa.get(tasa) ?? { base: 0, impuesto: 0 };
+    acc.base += l.subtotal; acc.impuesto += l.impuesto;
+    porTasa.set(tasa, acc);
+}
+const tasas = [...porTasa.entries()].sort((a, b) => a[0] - b[0]).filter(([, v]) => v.impuesto > 0);
+
+const METODOS = [
+    { v: 'transferencia', l: t(L, 'fact.d_m_transferencia') },
+    { v: 'efectivo', l: t(L, 'fact.d_m_efectivo') },
+    { v: 'cheque', l: t(L, 'fact.d_m_cheque') },
+    { v: 'otro', l: t(L, 'fact.d_m_otro') },
+];
+---
+
+<AppLayout
+    title={f ? `${f.invoiceNumber ?? t(L, 'fact.st_draft')} — Cord` : 'Cord'}
+    page="facturas"
+    heading={f?.invoiceNumber ?? t(L, 'fact.heading')}
+    crumbs={[{ label: t(L, 'fact.heading'), href: '/app/facturas' }]}>
+
+    {!hasPerm && (
+        <AccessGate title={t(L, 'fact.sin_acceso_titulo')} desc={t(L, 'fact.sin_acceso_desc')} />
+    )}
+
+    {f && (
+        <Fragment>
+            <span slot="topbar-actions" class="status-pill" style={`color:${meta.color}; background:${meta.bg}`}>{meta.label}</span>
+
+            <div class="fd" data-id={f.id} data-currency={f.currency ?? ''}
+                 data-i18n={JSON.stringify({
+                     procesando: t(L, 'fact.d_procesando'),
+                     error: t(L, 'fact.d_error'),
+                     usaNota: t(L, 'fact.d_usa_nota'),
+                     confAnular: t(L, 'fact.d_conf_anular'),
+                     confIncobrable: t(L, 'fact.d_conf_incobrable'),
+                     montoInvalido: t(L, 'fact.d_monto_invalido'),
+                     copiar: t(L, 'fact.d_copiar'),
+                     copiado: t(L, 'fact.d_copiado'),
+                 })}>
+
+                <div class="fd-sub">
+                    <span>{f.cliente ?? '—'}</span>
+                    {f.folio && (
+                        <Fragment> · {t(L, 'fact.d_desde_cot')} <a href={`/app/cotizaciones/${f.cotizacionId}`}>{f.folio}</a></Fragment>
+                    )}
+                    {f.vencida && <b class="fd-late">+{f.diasVencida}d</b>}
+                    {f.notaCreditoDe && <span class="t-badge">{t(L, 'fact.d_nota_credito')}</span>}
+                    {f.simulado && <span class="t-badge">{t(L, 'fact.badge_simulado')}</span>}
+                    {!f.simulado && f.testMode && <span class="t-badge">{t(L, 'fact.badge_prueba')}</span>}
+                </div>
+
+                {f.estadoFiscal === 'error' && (
+                    <div class="fd-alert">{t(L, 'fact.d_error_fiscal')}</div>
+                )}
+
+                <div class="fd-grid">
+                    <section class="surface-card">
+                        <div class="t-head">
+                            <span>{t(L, 'fact.d_concepto')}</span>
+                            <span class="t-right">{t(L, 'fact.d_cant')}</span>
+                            <span class="t-right">{t(L, 'fact.d_precio')}</span>
+                            <span class="t-right">{t(L, 'fact.d_importe')}</span>
+                        </div>
+                        {f.lineas.map((l) => (
+                            <div class="t-row">
+                                <span class="fd-desc">{l.descripcion}</span>
+                                <span class="t-right t-muted">{l.cantidad}</span>
+                                <span class="t-right editorial">{money(l.precioUnitario)}</span>
+                                <span class="t-right editorial fd-imp">{money(l.subtotal)}</span>
+                            </div>
+                        ))}
+
+                        <div class="fd-totals">
+                            <div class="fd-tline"><span>{t(L, 'fact.d_subtotal')}</span><span class="editorial">{money(f.subtotal)}</span></div>
+                            {tasas.map(([tasa, v]) => (
+                                <div class="fd-tline fd-tax"><span>{Math.round(tasa * 10000) / 100}%</span><span class="editorial">{money(v.impuesto)}</span></div>
+                            ))}
+                            <div class="fd-tline fd-total"><span>{t(L, 'fact.d_total')}</span><span class="editorial">{money(f.total)}</span></div>
+                            {f.pagado > 0 && (
+                                <div class="fd-tline"><span>{t(L, 'fact.d_pagado')}</span><span class="editorial">−{money(f.pagado)}</span></div>
+                            )}
+                            <div class="fd-tline fd-due"><span>{t(L, 'fact.d_saldo')}</span><span class="editorial">{money(f.saldo)}</span></div>
+                        </div>
+
+                        {f.fxRate && f.fxRate !== 1 && f.ledgerCurrency && (
+                            <p class="fd-fx">
+                                {t(L, 'fact.d_tc')}: 1 {f.currency} = {f.fxRate} {f.ledgerCurrency}
+                                {f.ledgerTotal !== null && <> · {t(L, 'fact.d_total_contable')} {f.ledgerTotal} {f.ledgerCurrency}</>}
+                            </p>
+                        )}
+
+                        {f.pagos.length > 0 && (
+                            <div class="fd-pagos">
+                                <h2 class="sec-title">{t(L, 'fact.d_pagos')}</h2>
+                                {f.pagos.map((p) => (
+                                    <div class="fd-pago">
+                                        <span class="t-muted">{p.cuando} · {p.metodo}{p.referencia ? ` · ${p.referencia}` : ''}</span>
+                                        <span class="editorial">{money(p.monto)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    <aside class="fd-side">
+                        <div class="fd-actions">
+                            {f.estado !== 'draft' && (
+                                <button type="button" class="fd-btn fd-btn-primary" data-act="send">
+                                    {f.enviada ? t(L, 'fact.d_reenviar') : t(L, 'fact.d_enviar')}
+                                </button>
+                            )}
+                            {f.estado === 'open' && (
+                                <Fragment>
+                                    <button type="button" class="fd-btn" data-act="payment">{t(L, 'fact.d_pago')}</button>
+                                    <button type="button" class="fd-btn" data-act="uncollectible">{t(L, 'fact.d_incobrable')}</button>
+                                </Fragment>
+                            )}
+                            {f.estado === 'open' && f.pagado === 0 && (
+                                <button type="button" class="fd-btn fd-btn-danger" data-act="void">{t(L, 'fact.d_anular')}</button>
+                            )}
+                            {f.estadoFiscal === 'issued' && !f.notaCreditoDe && (
+                                <button type="button" class="fd-btn" data-act="credit_note">{t(L, 'fact.d_nota_credito')}</button>
+                            )}
+                        </div>
+
+                        <div class="fd-meta">
+                            <div><span>{t(L, 'fact.d_emitida')}</span><span>{f.creado}</span></div>
+                            <div><span>{t(L, 'fact.d_vence')}</span><span>{f.vence ?? '—'}</span></div>
+                            <div><span>{t(L, 'fact.d_pais')}</span><span>{f.pais}</span></div>
+                            <div><span>{t(L, 'fact.d_divisa')}</span><span>{f.currency ?? '—'}</span></div>
+                            {f.receptor?.taxId && <div><span>{taxIdLabel}</span><span>{f.receptor.taxId}</span></div>}
+                            {f.fiscalId && <div><span>{t(L, 'fact.d_folio_fiscal')}</span><span class="fd-uuid">{f.fiscalId}</span></div>}
+                            {f.anuladaEn && <div><span>{t(L, 'fact.d_anulada')}</span><span>{f.anuladaEn}</span></div>}
+                        </div>
+
+                        {linkPublico && (
+                            <div class="fd-link">
+                                <span class="fd-lbl">{t(L, 'fact.d_link')}</span>
+                                <input type="text" readonly value={linkPublico} id="fdLink" />
+                                <button type="button" id="fdCopy">{t(L, 'fact.d_copiar')}</button>
+                            </div>
+                        )}
+
+                        <div class="fd-dl">
+                            <a href={`/api/fiscal/documents/${f.id}/pdf`} target="_blank" rel="noopener">{t(L, 'fact.d_pdf')}</a>
+                            {f.pais === 'MX' && f.fiscalId && (
+                                <a href={`/api/fiscal/documents/${f.id}/xml`} target="_blank" rel="noopener">{t(L, 'fact.d_xml')}</a>
+                            )}
+                        </div>
+                    </aside>
+                </div>
+
+                <p class="fd-err" id="fdErr" hidden></p>
+
+                <dialog class="modal" id="fdPagoModal">
+                    <form method="dialog">
+                        <div class="m-head">
+                            <h2>{t(L, 'fact.d_pago')}</h2>
+                            <button type="button" class="m-close" data-close aria-label="×">&times;</button>
+                        </div>
+                        <div class="m-body">
+                            <label class="fd-field">
+                                <span>{t(L, 'fact.d_monto')} ({f.currency})</span>
+                                <input type="number" id="fdMonto" min="0" step="any" value={f.saldo} />
+                            </label>
+                            <label class="fd-field">
+                                <span>{t(L, 'fact.d_metodo')}</span>
+                                <select id="fdMetodo">
+                                    {METODOS.map((m) => <option value={m.v}>{m.l}</option>)}
+                                </select>
+                            </label>
+                            <label class="fd-field">
+                                <span>{t(L, 'fact.d_referencia')}</span>
+                                <input type="text" id="fdRef" maxlength="120" />
+                            </label>
+                        </div>
+                        <div class="m-foot">
+                            <button type="button" class="fd-btn" data-close>{t(L, 'fact.d_cancelar')}</button>
+                            <button type="button" class="fd-btn fd-btn-primary" id="fdPagoOk">{t(L, 'fact.d_registrar')}</button>
+                        </div>
+                    </form>
+                </dialog>
+            </div>
+        </Fragment>
+    )}
+</AppLayout>
+
+<script>
+    const raiz = document.querySelector('.fd') as HTMLElement | null;
+    if (raiz) {
+        const id = raiz.dataset.id;
+        const T = JSON.parse(raiz.dataset.i18n || '{}');
+        const errEl = document.getElementById('fdErr');
+        const pagoModal = document.getElementById('fdPagoModal') as HTMLDialogElement | null;
+
+        const fallar = (msg: string) => {
+            if (!errEl) return;
+            errEl.textContent = msg;
+            errEl.hidden = false;
+            errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const llamar = async (payload: Record<string, unknown>, boton?: HTMLButtonElement) => {
+            if (errEl) errEl.hidden = true;
+            const etiqueta = boton?.textContent ?? '';
+            if (boton) { boton.disabled = true; boton.textContent = T.procesando; }
+            try {
+                const res = await fetch(`/api/facturas/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    // Anular una factura con pagos no es un error de captura: el
+                    // siguiente paso correcto es la nota de crédito, y hay que
+                    // decirlo en vez de dejar al usuario reintentando.
+                    if (data.requires_credit_note) throw new Error(`${data.error} ${T.usaNota}`);
+                    throw new Error(data.error || T.error);
+                }
+                if (payload.action === 'credit_note' && data.id) {
+                    location.href = `/app/facturas/${data.id}`;
+                    return;
+                }
+                location.reload();
+            } catch (e) {
+                if (boton) { boton.disabled = false; boton.textContent = etiqueta; }
+                fallar(e instanceof Error ? e.message : T.error);
+            }
+        };
+
+        raiz.querySelectorAll('[data-act]').forEach((el) => {
+            el.addEventListener('click', (ev) => {
+                const boton = ev.currentTarget as HTMLButtonElement;
+                const act = boton.dataset.act ?? '';
+                if (act === 'payment') { pagoModal?.showModal(); return; }
+                if (act === 'void' && !confirm(T.confAnular)) return;
+                if (act === 'uncollectible' && !confirm(T.confIncobrable)) return;
+                llamar({ action: act }, boton);
+            });
+        });
+
+        pagoModal?.querySelectorAll('[data-close]').forEach((el) => {
+            el.addEventListener('click', () => pagoModal.close());
+        });
+
+        document.getElementById('fdPagoOk')?.addEventListener('click', (ev) => {
+            const monto = Number((document.getElementById('fdMonto') as HTMLInputElement | null)?.value ?? 0);
+            if (!(monto > 0)) { fallar(T.montoInvalido); return; }
+            pagoModal?.close();
+            llamar({
+                action: 'payment',
+                monto,
+                // La divisa la manda la FACTURA: registrar un pago en otra el
+                // servidor lo rechaza en vez de convertirlo con una tasa
+                // inventada (Regla 21).
+                currency: raiz.dataset.currency || '',
+                metodo: (document.getElementById('fdMetodo') as HTMLSelectElement | null)?.value,
+                referencia: (document.getElementById('fdRef') as HTMLInputElement | null)?.value,
+            }, ev.currentTarget as HTMLButtonElement);
+        });
+
+        document.getElementById('fdCopy')?.addEventListener('click', async (ev) => {
+            const input = document.getElementById('fdLink') as HTMLInputElement | null;
+            if (!input) return;
+            const boton = ev.currentTarget as HTMLButtonElement;
+            try {
+                await navigator.clipboard.writeText(input.value);
+                boton.textContent = T.copiado;
+                setTimeout(() => { boton.textContent = T.copiar; }, 1600);
+            } catch { input.select(); }
+        });
+    }
+</script>
+
+<style>
+    .fd-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.86rem; color: var(--color-text-muted); margin: -0.4rem 0 1.6rem; }
+    .fd-sub a { color: var(--color-blue-deep); text-decoration: none; font-weight: 600; }
+    .fd-late { font-size: 0.74rem; font-weight: 700; color: var(--color-danger); }
+    .t-badge { font-size: 0.6rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; color: #b45309; background: rgba(245, 158, 11, 0.1); }
+
+    .fd-alert { background: rgba(239, 68, 68, 0.08); color: var(--color-danger); border-radius: 12px; padding: 12px 16px; font-size: 0.84rem; margin-bottom: 1.4rem; }
+
+    .fd-grid { display: grid; grid-template-columns: 1fr 300px; gap: 2.5rem; align-items: start; }
+
+    .t-head, .t-row { display: grid; grid-template-columns: 1fr 70px 110px 120px; gap: 1rem; align-items: center; padding: 0.85rem 0; }
+    .t-head {
+        font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+        color: var(--color-text-muted); border-bottom: 1px solid var(--color-border);
+        padding-top: 0; padding-bottom: 0.7rem;
+    }
+    .t-row { border-bottom: 1px solid var(--color-border); }
+    .t-row:last-of-type { border-bottom: none; }
+    .t-right { text-align: right; }
+    .t-muted { font-size: 0.8rem; color: var(--color-text-muted); }
+    .fd-desc { font-size: 0.86rem; color: var(--color-text); }
+    .fd-imp { color: var(--color-blue-deep); }
+
+    .fd-totals { margin: 1.4rem 0 0 auto; max-width: 280px; }
+    .fd-tline { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; font-size: 0.85rem; color: var(--color-text-muted); }
+    .fd-tax { padding-left: 0.6rem; font-size: 0.8rem; }
+    .fd-total { border-top: 1px solid var(--color-border); margin-top: 0.3rem; padding-top: 0.65rem; color: var(--color-text); font-weight: 600; }
+    .fd-due { border-top: 2px solid var(--color-blue-deep); margin-top: 0.3rem; padding-top: 0.65rem; color: var(--color-text); font-size: 1.05rem; font-weight: 700; }
+    .fd-fx { font-size: 0.76rem; color: var(--color-text-muted); text-align: right; margin: 0.8rem 0 0; }
+
+    .fd-pagos { margin-top: 2rem; padding-top: 1.4rem; border-top: 1px solid var(--color-border); }
+    .fd-pago { display: flex; justify-content: space-between; gap: 1rem; padding: 0.5rem 0; font-size: 0.84rem; }
+
+    .fd-side { position: sticky; top: 76px; }
+    .fd-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.8rem; }
+    .fd-btn {
+        border: none; border-radius: 100px; background: var(--color-bg-soft); color: var(--color-text);
+        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; padding: 0.65rem 1.1rem; cursor: pointer;
+        transition: transform 0.25s var(--ease-spring), background 0.2s;
+    }
+    .fd-btn:hover { transform: translateY(-1px); }
+    .fd-btn:active { transform: scale(0.98); }
+    .fd-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+    .fd-btn-primary { background: var(--color-blue-deep); color: #fff; box-shadow: 0 4px 14px -4px rgba(10, 25, 47, 0.4); }
+    .fd-btn-danger { color: var(--color-danger); }
+
+    .fd-meta { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.6rem; }
+    .fd-meta div { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.8rem; }
+    .fd-meta span:first-child { color: var(--color-text-muted); }
+    .fd-uuid { word-break: break-all; text-align: right; font-size: 0.72rem; }
+
+    .fd-link { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.6rem; }
+    .fd-lbl { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #99a2af; }
+    .fd-link input { border: none; background: var(--color-bg-soft); border-radius: 10px; padding: 0.55rem 0.8rem; font-size: 0.76rem; color: var(--color-text); }
+    .fd-link button { border: none; background: none; color: var(--color-blue-deep); font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; cursor: pointer; align-self: flex-start; padding: 0; }
+
+    .fd-dl { display: flex; flex-direction: column; gap: 0.5rem; }
+    .fd-dl a { font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
+
+    .fd-err { color: var(--color-danger); font-size: 0.84rem; margin-top: 1.4rem; }
+
+    .fd-field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
+    .fd-field span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #99a2af; }
+    .fd-field input, .fd-field select {
+        border: none; background: var(--color-bg-soft); border-radius: 10px;
+        padding: 0.6rem 0.8rem; font-size: 0.86rem; color: var(--color-text); font-family: inherit;
+    }
+    .fd-field input:focus, .fd-field select:focus { outline: none; box-shadow: 0 0 0 2px rgba(10, 25, 47, 0.15); }
+
+    @media (max-width: 880px) {
+        .fd-grid { grid-template-columns: 1fr; gap: 2rem; }
+        .fd-side { position: static; }
+        .fd-totals { max-width: none; margin-left: 0; }
+        .fd-btn { min-height: 44px; }
+        .t-head { display: none; }
+        .t-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas: "desc importe" "cant precio";
+            gap: 0.3rem 1rem;
+        }
+        .fd-desc { grid-area: desc; }
+        .t-row > .t-muted { grid-area: cant; }
+        .t-row > .editorial:not(.fd-imp) { grid-area: precio; justify-self: end; }
+        .fd-imp { grid-area: importe; }
+    }
+</style>

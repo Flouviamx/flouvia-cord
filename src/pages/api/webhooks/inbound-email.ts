@@ -3,6 +3,7 @@ import { sql, withOrgTx } from '../../../lib/db';
 import { runARAgent } from '../../../lib/agents/ar-agent';
 import { getCobranzaConfig, renderCollectionEmail } from '../../../lib/agents/cobranza-run';
 import { sendEmail, siteOrigin } from '../../../lib/email';
+import { log } from '../../../lib/log';
 
 export const prerender = false;
 
@@ -183,7 +184,7 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ success: true, replied: envio.sent }), { status: 200 });
 
   } catch (error) {
-    console.error('Error procesando inbound email:', error);
+    log.error('Error procesando inbound email', { err: error });
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
   }
 };

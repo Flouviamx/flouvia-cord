@@ -1,7 +1,7 @@
 ---
 title: "Cancellation with Related CFDI (01)"
 description: "Properly replace invoices with errors."
-category: "Billing & CFDI"
+category: "Invoicing"
 ---
 
 The SAT is very strict when you attempt to cancel an invoice (Income) that already has related documents, such as Credit Notes (Expense) or Payment Receipt Supplements (REP). The SAT will throw a 400 error indicating that the CFDI is not cancellable.

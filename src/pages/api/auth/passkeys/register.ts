@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import { sql } from '../../../../lib/db';
 import { validateSession, SESSION_COOKIE } from '../../../../lib/auth';
+import { log } from '../../../../lib/log';
 
 export const prerender = false;
 
@@ -35,7 +36,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         expectedRPID: rpID,
       });
     } catch (error: any) {
-      console.error('Error verificando registro:', error.message);
+      log.error('Error verificando registro', { err: error.message });
       return new Response(JSON.stringify({ error: error.message }), { status: 400 });
     } finally {
       // Challenge de un solo uso: se borra tanto en éxito como en fallo — un
@@ -69,7 +70,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     return new Response(JSON.stringify({ error: 'Verificación fallida' }), { status: 400 });
   } catch (error) {
-    console.error('Error en register:', error);
+    log.error('Error en register', { err: error });
     return new Response(JSON.stringify({ error: 'Error interno' }), { status: 500 });
   }
 };

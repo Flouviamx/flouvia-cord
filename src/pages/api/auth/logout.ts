@@ -10,6 +10,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { invalidateSession, SESSION_COOKIE, clearSessionCookies } from '../../../lib/auth';
+import { log } from '../../../lib/log';
 
 export const POST: APIRoute = async ({ cookies }) => {
     try {
@@ -21,7 +22,7 @@ export const POST: APIRoute = async ({ cookies }) => {
         cookies.delete('cord_active_org', { path: '/' });
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (error) {
-        console.error('[auth/logout]', error);
+        log.error('error no controlado', { route: 'auth/logout', err: error });
         return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
     }
 };

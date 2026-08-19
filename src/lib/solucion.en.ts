@@ -60,7 +60,7 @@ export const SOLUCIONES_EN: Solution[] = [
         stats: [
             { valor: '99.9', countup: 99.9, decimals: 1, suffix: '%', label: 'historical uptime on our infrastructure' },
             { valor: '10x', label: 'faster internal approvals' },
-            { valor: '0', countup: 0, label: 'margin leaks due to calculation errors' },
+            { valor: '0', label: 'margin leaks due to calculation errors' },
         ],
         blocks: [
             {
@@ -177,9 +177,9 @@ export const SOLUCIONES_EN: Solution[] = [
             }
         ],
         stats: [
-            { valor: '2', countup: 2, suffix: ' min', label: 'to send a polished proposal' },
-            { valor: '1', countup: 1, suffix: ' click', label: 'for your client to approve and pay' },
-            { valor: '0', countup: 0, label: 'hours wasted billing by hand' },
+            { valor: '2', suffix: ' min', label: 'to send a polished proposal' },
+            { valor: '1', suffix: ' click', label: 'for your client to approve and pay' },
+            { valor: '0', label: 'hours wasted billing by hand' },
         ],
         blocks: [
             {
@@ -218,7 +218,7 @@ export const SOLUCIONES_EN: Solution[] = [
             metricas: [
                 { valor: '3x', label: 'faster sales cycle speed' },
                 { valor: '100%', label: 'automated post-close billing' },
-                { valor: '0', countup: 0, label: 'friction in sales onboarding' },
+                { valor: '0', label: 'friction in sales onboarding' },
             ],
             nota: 'With a team of only 4 people, Acme AI uses Cord to handle all their annual enterprise subscriptions, looking like a corporation while operating with the agility of a startup.',
         },
@@ -240,7 +240,7 @@ export const SOLUCIONES_EN: Solution[] = [
                 a: 'No. Cord automates invoice generation upon client approval. You just connect your digital seals (CSD) once, and we handle stamping and sending the properly formed invoice.',
             },
         ],
-        interlink: { href: '/producto/cfdi', label: 'automated invoicing' },
+        interlink: { href: '/producto/facturacion', label: 'automated invoicing' },
         cta: { titulo: 'The secret tool to grow without bureaucracy.', sub: 'Create your free account today. Close your first deal tomorrow.' },
     },
 ];

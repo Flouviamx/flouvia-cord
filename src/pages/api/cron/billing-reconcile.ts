@@ -7,6 +7,7 @@ import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { reqContext } from '../../../lib/context';
 import { reconcileBilling } from '../../../lib/billing-reconcile';
+import { log } from '../../../lib/log';
 
 export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
@@ -17,7 +18,7 @@ export const GET: APIRoute = async ({ request }) => {
             headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
         });
     } catch (error) {
-        console.error('[billing-reconcile]', error);
+        log.error('error no controlado', { route: 'billing-reconcile', err: error });
         return new Response(JSON.stringify({ error: 'No se pudo reconciliar Billing.' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },

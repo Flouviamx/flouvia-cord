@@ -1,7 +1,7 @@
 ---
 title: "Facturar anticipos"
 description: "El tratamiento fiscal de cobrar un porcentaje por adelantado y el resto después."
-category: "Facturación y CFDI"
+category: "Facturación"
 ---
 
 Cobrar un porcentaje por adelantado y el resto a la entrega es común en proyectos B2B, pero requiere un manejo fiscal cuidadoso ante el SAT.

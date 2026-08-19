@@ -6,6 +6,8 @@
 import { sql, withOrgTx, withSystemTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
 import { getCountryProfile } from '../countries';
+import { normalizeCurrency } from '../currency';
+import { dueDateFor, isoDay } from '../cobros';
 import { FiscalFactory } from './FiscalFactory';
 import type {
   FiscalDocumentRequest,
@@ -19,31 +21,43 @@ export interface EmitResult {
   documentId?: string;
   fiscalId?: string;
   invoiceNumber?: string;
+  publicToken?: string;
   reused?: boolean;
   billable?: boolean;
   status: 'issued' | 'error';
   error?: string;
 }
 
-const money = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+export const money = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 
-function cleanPrefix(value: unknown, fallback: string): string {
+export function cleanPrefix(value: unknown, fallback: string): string {
   const cleaned = String(value || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 12);
   return cleaned || fallback;
 }
 
-function metadata(value: unknown): Record<string, string> {
+export function metadata(value: unknown): Record<string, string> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return Object.fromEntries(Object.entries(value as Record<string, unknown>)
     .filter(([, item]) => typeof item === 'string')
     .map(([key, item]) => [key, String(item)]));
 }
 
-function documentTypeFor(country: string): string {
+export function documentTypeFor(country: string): string {
   return country.toUpperCase() === 'MX' ? 'cfdi_40' : 'commercial_invoice';
 }
 
-function isBillableCfdi(country: string, providerData: unknown): boolean {
+/**
+ * Token de la hosted invoice page (`/i/[token]`). Alfabeto sin caracteres
+ * ambiguos y 32 chars de entropía: la URL es la única credencial de esa página,
+ * así que no puede ser adivinable ni derivable del id del documento.
+ */
+export function newInvoiceToken(): string {
+  const alphabet = 'abcdefghijkmnpqrstuvwxyz23456789';
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+}
+
+export function isBillableCfdi(country: string, providerData: unknown): boolean {
   if (country.toUpperCase() !== 'MX' || !providerData || typeof providerData !== 'object') return false;
   const data = providerData as Record<string, unknown>;
   return data.simulado !== true && data.livemode !== false && typeof data.facturapi_id === 'string';
@@ -153,7 +167,10 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
           o.telefono as org_telefono, o.direccion as org_direccion,
           o.fiscal_metadata, o.serie_folio,
           o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of,
-          c.folio as quote_folio, c.subtotal, c.iva, c.total, c.fiscal_currency,
+          c.folio as quote_folio, c.subtotal, c.iva, c.total,
+          c.cliente_id, c.terminos as quote_terminos, c.created_at as quote_created,
+          c.base_currency, c.fiscal_currency, c.fx_rate, c.fx_rate_source, c.fx_locked_until,
+          o.moneda as org_moneda,
           cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
           cl.email as cliente_email, cl.contacto as cliente_contacto,
           cl.regimen_fiscal as cliente_regimen, cl.uso_cfdi as cliente_uso,
@@ -233,13 +250,63 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
       postalCode: head.cliente_cp ? String(head.cliente_cp) : undefined,
     },
   };
-  const currency = String(head.fiscal_currency || profile.currency).toUpperCase();
+  // ── Divisa del comprobante ────────────────────────────────────────────────
+  // La factura se emite en la divisa de la VENTA (`base_currency`): sus importes
+  // son exactamente los que el cliente aprobó y paga. Cuando la contabilidad del
+  // negocio lleva otra divisa (`fiscal_currency`), el documento declara el tipo
+  // de cambio congelado al cotizar — que es lo que el SAT exige como TipoCambio.
+  //
+  // Antes se tomaba `fiscal_currency` como etiqueta de importes que seguían en
+  // `base_currency` y `fx_rate` no se leía en ningún lado: una venta de USD 1,000
+  // se facturaba como "MXN 1,000". Ver docs/historial-billing-cobros.md.
+  const currency = normalizeCurrency(
+    (head.base_currency as string) || (head.org_moneda as string) || profile.currency,
+  );
+  const ledgerCurrency = normalizeCurrency(
+    (head.fiscal_currency as string) || (head.org_moneda as string) || profile.currency,
+    currency,
+  );
+  const storedRate = Number(head.fx_rate);
+  const fxRate = currency === ledgerCurrency
+    ? 1
+    : (Number.isFinite(storedRate) && storedRate > 0 ? storedRate : 0);
+  if (!fxRate) {
+    // Una cotización multi-divisa sin tasa utilizable no se factura a ciegas:
+    // el importe contable sería inventado. Se pide re-cotizar el tipo de cambio.
+    return {
+      emitted: false,
+      status: 'error',
+      error: `Esta cotización está en ${currency} y tu contabilidad en ${ledgerCurrency}, pero no tiene un tipo de cambio válido. Vuelve a guardarla para recalcularlo.`,
+    };
+  }
+  const ledgerTotal = money(total * fxRate);
+
+  // CFDI: el TipoCambio del SAT es siempre "moneda del comprobante → MXN". Si el
+  // comprobante no va en pesos y la contabilidad de la organización tampoco, no
+  // existe la tasa que el SAT pide. Se dice aquí, con un mensaje accionable, en
+  // vez de mandar el timbrado a fallar contra el PAC con un error críptico.
+  if (country === 'MX' && currency !== 'MXN' && ledgerCurrency !== 'MXN') {
+    return {
+      emitted: false,
+      status: 'error',
+      error: `Un CFDI en ${currency} necesita su tipo de cambio a pesos mexicanos, y tu contabilidad está configurada en ${ledgerCurrency}. Cambia la moneda contable a MXN en Ajustes para poder timbrar.`,
+    };
+  }
   const prefix = cleanPrefix(
     fiscalMetadata.invoice_prefix || (country === 'MX' ? head.serie_folio : ''),
     profile.invoicePrefix,
   );
   const idempotencyKey = `quote:${cotizacionId}:invoice:v1`;
   const issuedAt = new Date().toISOString();
+  // La factura estrena vencimiento PROPIO. Se siembra de los términos de la
+  // cotización (contado/net30/net60) porque es el dato que ya pactaron las
+  // partes, pero a partir de aquí vive en la factura: el aging y los
+  // recordatorios leen `due_date`, no vuelven a derivarlo de la cotización.
+  const dueDate = isoDay(dueDateFor(
+    (head.quote_created as string) || issuedAt,
+    (head.quote_terminos as string) || null,
+  ));
+  const publicToken = newInvoiceToken();
 
   // El advisory lock serializa dos clicks/pestañas del mismo documento. Dentro
   // de esa misma transacción se revisa idempotencia, se incrementa la secuencia
@@ -247,7 +314,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   const [, reservedRows] = await withOrgTx(orgId,
     sql`select pg_advisory_xact_lock(hashtextextended(${`${orgId}:${idempotencyKey}`}, 0))`,
     sql`with existing as (
-          select id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, created_at, updated_at
+          select id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, public_token, created_at, updated_at
             from documentos_fiscales
            where org_id = ${orgId} and idempotency_key = ${idempotencyKey}
            limit 1
@@ -262,19 +329,24 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
           returning next_value - 1 as sequence_value
         ), inserted as (
           insert into documentos_fiscales (
-            org_id, cotizacion_id, country_code, document_type, status, provider,
-            invoice_number, currency, subtotal, tax_total, total,
+            org_id, cotizacion_id, cliente_id, country_code, document_type, status, provider,
+            invoice_number, currency, ledger_currency, fx_rate, ledger_total,
+            subtotal, tax_total, total,
+            lifecycle, due_date, amount_paid, amount_remaining, public_token,
             issuer_snapshot, recipient_snapshot, line_items_snapshot,
             idempotency_key, schema_version, provider_data, updated_at
           )
-          select ${orgId}, ${cotizacionId}, ${country}, ${docType}, 'pending',
+          select ${orgId}, ${cotizacionId}, ${(head.cliente_id as string) || null},
+                 ${country}, ${docType}, 'pending',
                  ${country === 'MX' ? 'facturapi' : 'cord'},
                  ${prefix} || '-' || lpad(sequence_value::text, 6, '0'),
-                 ${currency}, ${subtotal}, ${taxes}, ${total},
+                 ${currency}, ${ledgerCurrency}, ${fxRate}, ${ledgerTotal},
+                 ${subtotal}, ${taxes}, ${total},
+                 'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
                  ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
                  ${idempotencyKey}, 'cord.invoice.v1', '{}'::jsonb, now()
             from next_number
-          returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, created_at, updated_at
+          returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, public_token, created_at, updated_at
         ), claimed as (
           update documentos_fiscales d
              set status = 'pending', updated_at = now()
@@ -283,7 +355,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
                d.status = 'error'
                or (d.status = 'pending' and d.updated_at < now() - interval '2 minutes')
              )
-          returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, created_at, updated_at
+          returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, public_token, created_at, updated_at
         )
         select inserted.*, true as created from inserted
         union all
@@ -297,6 +369,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   if (!reserved) return { emitted: false, status: 'error', error: 'no se pudo reservar el folio fiscal' };
   const localDocumentId = String(reserved.id);
   const invoiceNumber = String(reserved.invoice_number || '');
+  const token = (reserved.public_token as string) || publicToken;
 
   if (!reserved.created && reserved.status === 'issued') {
     return {
@@ -304,6 +377,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
       documentId: localDocumentId,
       fiscalId: reserved.fiscal_id ? String(reserved.fiscal_id) : undefined,
       invoiceNumber,
+      publicToken: token,
       reused: true,
       billable: isBillableCfdi(country, reserved.provider_data),
       status: 'issued',
@@ -328,7 +402,10 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
     issuer,
     recipient,
     lines,
-    totals: { subtotal, taxes, total, currency },
+    totals: {
+      subtotal, taxes, total, currency,
+      ...(fxRate !== 1 ? { exchangeRate: fxRate, ledgerCurrency } : {}),
+    },
     issuedAt,
     providerApiKey: decryptSecret(head.facturapi_live_key_enc as string)
       || (head.facturapi_live_key as string)
@@ -380,6 +457,11 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   await withOrgTx(orgId, sql`
     update documentos_fiscales
        set status = ${status},
+           -- lifecycle solo avanza a 'open' cuando el rail fiscal confirmó.
+           -- Si el proveedor falló, el documento sigue siendo un borrador y no
+           -- entra al aging ni a cobranza: cobrar una factura que nunca se
+           -- timbró es exactamente el error que esta separación evita.
+           lifecycle = ${response.success ? 'open' : 'draft'},
            provider = ${response.provider},
            provider_document_id = ${response.documentId || null},
            fiscal_id = ${response.fiscalId ?? null},
@@ -395,6 +477,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
     documentId: localDocumentId,
     fiscalId: response.fiscalId,
     invoiceNumber,
+    publicToken: token,
     billable: response.success && isBillableCfdi(country, providerData),
     status,
     error: response.error,

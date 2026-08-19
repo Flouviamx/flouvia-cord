@@ -11,6 +11,7 @@
 import { randomBytes } from 'node:crypto';
 import { sql } from './db';
 import { sha256Hex } from './auth';
+import { log } from './log';
 
 export const OPS_ALLOWED_EMAILS = [
     'andrevalleo13@gmail.com',
@@ -109,7 +110,7 @@ export async function logOpsAudit(event: OpsAuditEvent): Promise<void> {
     } catch (error) {
         // La auditoría no debe revelar detalles al cliente ni convertir un
         // logout en 500. Sí dejamos una señal server-side para observabilidad.
-        console.error('[ops/audit]', error);
+        log.error('error no controlado', { route: 'ops/audit', err: error });
     }
 }
 
@@ -291,7 +292,7 @@ export async function validateOpsSession(
         };
     } catch (error) {
         // Fail closed: caída o drift de schema jamás convierte Ops en público.
-        console.error('[ops/session]', error);
+        log.error('error no controlado', { route: 'ops/session', err: error });
         return null;
     }
 }

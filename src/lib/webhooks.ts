@@ -27,6 +27,16 @@ export const WEBHOOK_EVENTS = [
     { id: 'payment.failed', label: 'Cobro recurrente fallido' },
     { id: 'invoice.issued', label: 'Factura comercial emitida' },
     { id: 'invoice.stamped', label: 'CFDI timbrado' },
+    // Ciclo de vida de la factura como objeto propio (ago 2026). Los dos de
+    // arriba se conservan por compatibilidad y siguen llevando payload de
+    // cotización; estos llevan payload de FACTURA (ver dispatchInvoiceEvent).
+    { id: 'invoice.finalized', label: 'Factura emitida' },
+    { id: 'invoice.sent', label: 'Factura enviada al cliente' },
+    { id: 'invoice.paid', label: 'Factura pagada' },
+    { id: 'invoice.payment_failed', label: 'Pago de factura fallido' },
+    { id: 'invoice.voided', label: 'Factura anulada' },
+    { id: 'invoice.marked_uncollectible', label: 'Factura marcada incobrable' },
+    { id: 'invoice.overdue', label: 'Factura vencida' },
 ] as const;
 
 export type WebhookEvent = typeof WEBHOOK_EVENTS[number]['id'];
@@ -108,6 +118,62 @@ export async function dispatchPaymentPartial(orgId: string, cotizacionId: string
 // eventos como payment.partial pueden llevar campos propios sin que
 // dispatchQuoteEvent tenga que conocerlos.
 async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSummary, extra?: Record<string, unknown>): Promise<void> {
+    const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
+    return emitToSubscribers(orgId, evento, {
+        id: q.id,
+        folio: q.folio,
+        status: q.status,
+        total: Number(q.total ?? 0),
+        cliente: q.empresa ?? null,
+        link_publico: `${base}/q/${q.public_token}`,
+        ...extra,
+    });
+}
+
+/**
+ * Notifica un evento de FACTURA. Payload propio: quien consume facturas
+ * necesita folio fiscal, saldo y vencimiento, no el resumen de la cotización
+ * que la originó (que además no existe cuando la factura es standalone).
+ *
+ * Mismo contrato de oro que dispatchQuoteEvent: nunca lanza.
+ */
+export async function dispatchInvoiceEvent(orgId: string, documentoId: string, evento: WebhookEvent): Promise<void> {
+    try {
+        const [d] = await sql`
+            select d.id, d.invoice_number, d.fiscal_id, d.lifecycle, d.status,
+                   d.currency, d.total, d.amount_paid, d.amount_remaining, d.due_date,
+                   d.public_token, d.country_code, d.document_type, d.cotizacion_id,
+                   cl.empresa
+              from documentos_fiscales d
+              left join clientes cl on cl.id = d.cliente_id
+             where d.id = ${documentoId} and d.org_id = ${orgId}`;
+        if (!d) return;
+        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
+        await emitToSubscribers(orgId, evento, {
+            id: d.id,
+            object: 'invoice',
+            numero: d.invoice_number ?? null,
+            folio_fiscal: d.fiscal_id ?? null,
+            estado: d.lifecycle,
+            estado_fiscal: d.status,
+            pais: d.country_code,
+            tipo: d.document_type,
+            // Regla 21: el importe viaja con su divisa, siempre.
+            moneda: d.currency ?? null,
+            total: Number(d.total ?? 0),
+            pagado: Number(d.amount_paid ?? 0),
+            saldo: Number(d.amount_remaining ?? 0),
+            vence: d.due_date ?? null,
+            cliente: d.empresa ?? null,
+            cotizacion_id: d.cotizacion_id ?? null,
+            link_publico: d.public_token ? `${base}/i/${d.public_token}` : null,
+        });
+    } catch {
+        /* nunca romper la operación principal por un webhook */
+    }
+}
+
+async function emitToSubscribers(orgId: string, evento: string, data: Record<string, unknown>): Promise<void> {
     let hooks: any[] = [];
     try {
         // En downgrade conservamos la configuración, pero solo los endpoints
@@ -136,11 +202,6 @@ async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSumm
     });
     if (!subs.length) return;
 
-    // Absoluto: dispatchQuoteEvent corre también desde crons/background sin
-    // request en curso, así que no hay `origin` que leer — mismo fallback
-    // que ya usa dispatchSlack() abajo. Un link relativo obligaba a quien
-    // recibe el webhook a adivinar el dominio para armar el link real.
-    const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
     // El event_id se genera AQUÍ (antes de serializar) para poder incluirlo
     // como campo `id` dentro del JSON que se firma — así el receptor puede
     // deduplicar leyendo el body, sin depender solo del header. El MISMO
@@ -151,15 +212,7 @@ async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSumm
         id: eventId,
         event: evento,
         created_at: new Date().toISOString(),
-        data: {
-            id: q.id,
-            folio: q.folio,
-            status: q.status,
-            total: Number(q.total ?? 0),
-            cliente: q.empresa ?? null,
-            link_publico: `${base}/q/${q.public_token}`,
-            ...extra,
-        },
+        data,
     });
 
     // Encolar es DURABLE (se espera aquí — si esta invocación muere justo

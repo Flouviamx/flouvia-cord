@@ -11,6 +11,6 @@ Dado que Cord no retiene fondos, los tiempos en los que el dinero llega a tu cue
 Si el cliente te paga manualmente haciendo una transferencia bancaria a la CLABE que pusiste en los Ajustes de Cord, el dinero **entra directo a tu banco de forma inmediata**. Cord no está en medio de esta transacción. Tú debes entrar a Cord y marcar la cotización como pagada.
 
 ### 2. Cobros en línea
-Si activaste Cord Pagos y el cliente paga con tarjeta o SPEI, el dinero entra a tu cuenta de pagos conectada.
+Si activaste Cord Payments y el cliente paga con tarjeta o SPEI, el dinero entra a tu cuenta de pagos conectada.
 - El plazo depende del método, país, revisión de riesgo e historial de la cuenta; no debe asumirse una fecha universal.
 - Ve a **Cobros** para consultar el estado y la fecha estimada de cada depósito. Un cobro exitoso puede aparecer antes que su depósito bancario.

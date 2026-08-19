@@ -12,7 +12,7 @@ description: "Dónde ver la predicción de flujo de caja de tu negocio, cómo fu
 
 Este documento cubre tres herramientas financieras distintas de Cord que a veces se confunden entre sí porque todas tocan "dinero", pero viven en lugares distintos de la app:
 
-- **La predicción de flujo de caja** (a 90 días, con el AI CFO Insight) vive en **`/app/informes`**, no en Mis cobros. Es un informe de análisis, separado del [dashboard de Cord Pagos](/docs/pagos/dashboard) que muestra lo que ya cobraste.
+- **La predicción de flujo de caja** (a 90 días, con el AI CFO Insight) vive en **`/app/informes`**, no en Mis cobros. Es un informe de análisis, separado del [dashboard de Cord Payments](/docs/pagos/dashboard) que muestra lo que ya cobraste.
 - **Los intereses moratorios** se configuran en **Ajustes › Aprobaciones**.
 - **El FX Lock** es una propiedad de cada cotización en el editor, no un panel aparte.
 
@@ -28,15 +28,52 @@ Para desincentivar el retraso en pagos B2B, Cord incluye un motor de penalizaci�
 
 - **Cron mensual:** el primer día de cada mes, un proceso automático revisa todas las cotizaciones vencidas de tu cartera.
 - **Interés compuesto:** si configuraste una tasa de interés moratorio mayor a 0%, el sistema aplica ese interés mensual al capital adeudado.
-- **Reflejo inmediato:** el nuevo saldo adeudado se actualiza en el portal del cliente y en el checkout de Cord Pagos de forma transparente — el cliente ve el monto correcto a pagar, con el interés ya incluido.
+- **Reflejo inmediato:** el nuevo saldo adeudado se actualiza en el portal del cliente y en el checkout de Cord Payments de forma transparente — el cliente ve el monto correcto a pagar, con el interés ya incluido.
 
 ## Cobertura Cambiaria (FX Lock)
 
-Vender internacionalmente o en USD no debería ser un juego de azar. Cord implementa un sistema robusto de `FXService` para proteger tus márgenes de utilidad en operaciones multi-divisa.
+Vender en otra moneda no debería ser un juego de azar. Cuando cotizas en una divisa
+distinta a la de tu contabilidad, Cord congela el tipo de cambio y lo arrastra hasta
+la factura.
+
+### Qué moneda usa cada cosa
+
+Cord distingue dos monedas, y las mantiene separadas de punta a punta:
+
+- **La moneda de venta** es en la que capturas los precios. Es la que tu cliente ve en
+  el link, la que dice el correo, y en la que se le cobra con tarjeta.
+- **La moneda de tu contabilidad** es la de tu negocio (Ajustes › General). Es en la
+  que llevas tus libros.
+
+Si son la misma —el caso normal— no hay nada que configurar. Si eliges otra moneda de
+venta en el editor de cotizaciones, aparece el panel de cobertura cambiaria.
 
 ### FX Lock a 30 días
 
-Cuando emites una cotización B2B con un tipo de cambio distinto a tu moneda base, el sistema **congela el tipo de cambio spot (FX Lock)** durante 30 días. 
+Al guardar una cotización en otra moneda, Cord toma el tipo de cambio del día y lo
+**congela por 30 días**:
 
-- **Buffer de Protección:** Cord añade un spread mínimo para mitigar la volatilidad cambiaria durante la ventana de crédito.
-- **Certeza Financiera:** Tu cliente sabe exactamente cuánto pagará en su moneda local y tú tienes la garantía del monto que ingresará a tu cuenta, eliminando el riesgo de pérdida por fluctuaciones del mercado durante el ciclo de venta.
+- **Colchón de protección:** puedes añadir un margen sobre el tipo de cambio del día
+  para absorber la volatilidad durante la ventana de crédito. Tú eliges cuánto.
+- **Certeza en los dos lados:** tu cliente sabe exactamente cuánto paga en su moneda, y
+  tú sabes con qué tipo de cambio va a entrar a tus libros aunque el mercado se mueva
+  entre la aprobación y el cobro.
+- **La factura lo declara:** el comprobante se emite en la moneda de la venta y lleva
+  impreso el tipo de cambio aplicado y el total convertido a tu moneda contable. En
+  México eso es el TipoCambio que el SAT exige en un CFDI que no está en pesos.
+
+### Si no hay tipo de cambio, no hay cotización
+
+El tipo de cambio viene de una fuente de mercado con fecha. Si en ese momento no se
+puede obtener —la fuente no responde, o ese par de monedas no está disponible— Cord
+**no guarda la cotización** y te lo dice.
+
+Puede parecer estricto, y es a propósito: un tipo de cambio inventado no se nota al
+guardar, se nota semanas después en una factura con el monto equivocado. Si te pasa,
+vuelve a intentar en un momento o cotiza en la moneda de tu negocio.
+
+### Cobro en línea y monedas
+
+El cobro con tarjeta funciona en la moneda de la cotización. La transferencia SPEI es
+un riel mexicano y solo está disponible en pesos: si cotizas en otra moneda, tu cliente
+paga con tarjeta.

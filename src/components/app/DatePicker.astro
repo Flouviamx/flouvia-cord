@@ -1,0 +1,292 @@
+---
+// DatePicker — selector de UNA fecha, con el calendario de Cord.
+//
+// El `<input type="date">` nativo dibuja su propio panel y CSS no lo alcanza:
+// de él solo se puede estilar `::-webkit-calendar-picker-indicator`. El
+// resultado es un calendario distinto en cada navegador y sistema, con azules
+// de Chrome en medio de una pantalla navy.
+//
+// Este componente reusa las clases `.dp-*` de `src/styles/daterange.css` —la
+// misma hoja que ya carga AppLayout para el DateRangePicker del dashboard e
+// informes— así que el calendario de una factura y el de un informe son
+// literalmente el mismo. Lo único propio es `.dpx-*`: el disparador con forma
+// de campo y el ancla del panel (el del rango se posiciona con JS porque vive
+// en la topbar; este cuelga de su campo).
+//
+// El valor sigue viviendo en un `<input type="hidden">` con el `id` que se pase,
+// así que quien lo consuma lee y escribe `.value` como con el nativo. Al
+// escribirlo desde fuera hay que disparar un `change` para que la etiqueta
+// visible se entere.
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+interface Props {
+    /** id del input oculto — el que lee el formulario. */
+    id: string;
+    /** ISO yyyy-mm-dd. */
+    value?: string;
+    name?: string;
+    /** ISO yyyy-mm-dd; los días anteriores quedan deshabilitados. */
+    min?: string;
+    max?: string;
+    ariaLabel?: string;
+}
+
+const { id, value = '', name, min = '', max = '', ariaLabel } = Astro.props;
+const L = currentLocale();
+---
+
+<div class="dpx-wrap" data-datepicker data-min={min} data-max={max} data-locale={L}
+     data-i18n={JSON.stringify({
+         hoy: t(L, 'dash.dp_hoy'),
+         mesAnterior: L === 'en' ? 'Previous month' : 'Mes anterior',
+         mesSiguiente: L === 'en' ? 'Next month' : 'Mes siguiente',
+         elegir: L === 'en' ? 'Choose a date' : 'Elegir fecha',
+         vacio: L === 'en' ? 'No date' : 'Sin fecha',
+         // Semana empezando en lunes, como el DateRangePicker.
+         dias: L === 'en' ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'] : ['L', 'M', 'M', 'J', 'V', 'S', 'D'],
+     })}>
+    <button type="button" class="ed-input dpx-trigger" aria-haspopup="dialog" aria-expanded="false"
+            aria-label={ariaLabel ?? (L === 'en' ? 'Choose a date' : 'Elegir fecha')}>
+        <span class="dpx-value"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/></svg>
+    </button>
+
+    <input type="hidden" id={id} name={name} value={value} />
+
+    <div class="dp-panel dpx-panel" hidden role="dialog" aria-modal="false">
+        <div class="dp-main">
+            <div class="dp-cal">
+                <div class="dp-cal-head">
+                    <button type="button" class="dp-cal-nav" data-dpx-prev>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <span class="dp-cal-title"></span>
+                    <button type="button" class="dp-cal-nav" data-dpx-next>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                </div>
+                <div class="dp-cal-grid"></div>
+                <div class="dpx-actions">
+                    <button type="button" class="dpx-today" data-dpx-today></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Un solo init para todos los DatePicker de la página.
+    document.querySelectorAll<HTMLElement>('[data-datepicker]').forEach((raiz) => {
+        if (raiz.dataset.dpxReady) return;
+        raiz.dataset.dpxReady = '1';
+
+        const T = JSON.parse(raiz.dataset.i18n || '{}');
+        const locale = raiz.dataset.locale === 'en' ? 'en-US' : 'es-MX';
+        const input = raiz.querySelector('input[type="hidden"]') as HTMLInputElement;
+        const trigger = raiz.querySelector('.dpx-trigger') as HTMLButtonElement;
+        const valorEl = raiz.querySelector('.dpx-value') as HTMLElement;
+        const panel = raiz.querySelector('.dpx-panel') as HTMLElement;
+        const grid = raiz.querySelector('.dp-cal-grid') as HTMLElement;
+        const titulo = raiz.querySelector('.dp-cal-title') as HTMLElement;
+        const btnHoy = raiz.querySelector('[data-dpx-today]') as HTMLButtonElement;
+        if (!input || !trigger || !panel || !grid) return;
+
+        btnHoy.textContent = T.hoy;
+        (raiz.querySelector('[data-dpx-prev]') as HTMLElement).setAttribute('aria-label', T.mesAnterior);
+        (raiz.querySelector('[data-dpx-next]') as HTMLElement).setAttribute('aria-label', T.mesSiguiente);
+
+        const minISO = raiz.dataset.min || '';
+        const maxISO = raiz.dataset.max || '';
+
+        // Fechas en local, NUNCA `new Date(iso)`: eso parsea yyyy-mm-dd como UTC
+        // y en cualquier huso al oeste de Greenwich devuelve el día anterior.
+        const parse = (iso: string): Date | null => {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+            return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+        };
+        const iso = (d: Date) =>
+            `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+        const fmtLargo = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+        const fmtMes = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
+
+        const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+        let cursor = parse(input.value) ?? new Date(hoy);
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+
+        const pintarValor = () => {
+            const d = parse(input.value);
+            valorEl.textContent = d ? fmtLargo.format(d) : T.vacio;
+            trigger.classList.toggle('is-empty', !d);
+        };
+
+        const pintarCalendario = () => {
+            const sel = parse(input.value);
+            const mes = cursor.getMonth();
+            const anio = cursor.getFullYear();
+            titulo.textContent = fmtMes.format(cursor);
+
+            grid.innerHTML = '';
+            for (const d of T.dias) {
+                const el = document.createElement('div');
+                el.className = 'dp-weekday';
+                el.textContent = d;
+                grid.appendChild(el);
+            }
+
+            // Semana de lunes a domingo: getDay() da 0=domingo, así que el
+            // desplazamiento del día 1 es (getDay() + 6) % 7.
+            const primero = new Date(anio, mes, 1);
+            const offset = (primero.getDay() + 6) % 7;
+            const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+
+            for (let i = 0; i < offset; i++) {
+                const hueco = document.createElement('div');
+                hueco.className = 'dp-day is-out';
+                grid.appendChild(hueco);
+            }
+            for (let dia = 1; dia <= diasEnMes; dia++) {
+                const fecha = new Date(anio, mes, dia);
+                const val = iso(fecha);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'dp-day';
+                btn.dataset.iso = val;
+                btn.textContent = String(dia);
+                if (minISO && val < minISO) btn.disabled = true;
+                if (maxISO && val > maxISO) btn.disabled = true;
+                if (iso(hoy) === val) btn.classList.add('is-today');
+                // `is-start`+`is-end` es como el rango pinta un día único
+                // seleccionado: reutilizarlo mantiene el mismo azul y radio.
+                if (sel && iso(sel) === val) btn.classList.add('is-start', 'is-end');
+                grid.appendChild(btn);
+            }
+        };
+
+        const abrir = () => {
+            cursor = parse(input.value) ?? new Date(hoy);
+            cursor = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+            pintarCalendario();
+            panel.hidden = false;
+            trigger.setAttribute('aria-expanded', 'true');
+            (panel.querySelector('.dp-day.is-start:not(:disabled)') as HTMLButtonElement
+                ?? panel.querySelector('.dp-day:not(:disabled)') as HTMLButtonElement)?.focus();
+        };
+        const cerrar = (devolverFoco = false) => {
+            panel.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+            if (devolverFoco) trigger.focus();
+        };
+
+        const elegir = (val: string) => {
+            input.value = val;
+            pintarValor();
+            // `change` para que el formulario anfitrión se entere, igual que
+            // haría el input nativo.
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            cerrar(true);
+        };
+
+        trigger.addEventListener('click', () => (panel.hidden ? abrir() : cerrar()));
+
+        raiz.querySelector('[data-dpx-prev]')?.addEventListener('click', () => {
+            cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+            pintarCalendario();
+        });
+        raiz.querySelector('[data-dpx-next]')?.addEventListener('click', () => {
+            cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+            pintarCalendario();
+        });
+        btnHoy.addEventListener('click', () => elegir(iso(hoy)));
+
+        grid.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest('.dp-day') as HTMLButtonElement | null;
+            if (btn?.dataset.iso && !btn.disabled) elegir(btn.dataset.iso);
+        });
+
+        // Teclado dentro del calendario: flechas mueven día a día y de semana en
+        // semana, cruzando de mes cuando hace falta.
+        panel.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); cerrar(true); return; }
+            const foco = document.activeElement as HTMLElement | null;
+            const actual = foco?.classList.contains('dp-day') ? parse(foco.dataset.iso || '') : null;
+            if (!actual) return;
+            const saltos: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+            if (e.key in saltos) {
+                e.preventDefault();
+                const destino = new Date(actual.getFullYear(), actual.getMonth(), actual.getDate() + saltos[e.key]);
+                if (destino.getMonth() !== cursor.getMonth() || destino.getFullYear() !== cursor.getFullYear()) {
+                    cursor = new Date(destino.getFullYear(), destino.getMonth(), 1);
+                    pintarCalendario();
+                }
+                requestAnimationFrame(() => {
+                    (panel.querySelector(`.dp-day[data-iso="${iso(destino)}"]:not(:disabled)`) as HTMLButtonElement)?.focus();
+                });
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                elegir(iso(actual));
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!panel.hidden && !raiz.contains(e.target as Node)) cerrar();
+        });
+
+        // Cuando otro script escribe el valor (ej. los chips de términos de pago
+        // del editor), la etiqueta visible se actualiza sola.
+        input.addEventListener('change', pintarValor);
+
+        pintarValor();
+    });
+</script>
+
+<style is:global>
+    /* Solo lo propio del selector de UNA fecha. El calendario (.dp-cal, .dp-day,
+       .dp-weekday, .dp-panel…) sale tal cual de src/styles/daterange.css, que
+       AppLayout ya carga — por eso no se redefine aquí. */
+    .dpx-wrap { position: relative; }
+
+    .dpx-trigger {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        text-align: left; cursor: pointer;
+    }
+    .dpx-trigger svg { width: 15px; height: 15px; color: var(--color-text-muted); flex-shrink: 0; }
+    .dpx-trigger:hover svg { color: var(--color-text); }
+    .dpx-trigger[aria-expanded="true"] {
+        border-color: var(--color-blue-deep);
+        box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08);
+        background: var(--surface);
+    }
+    .dpx-trigger.is-empty .dpx-value { color: var(--color-text-muted); }
+
+    /* El panel del rango es `position: fixed` y lo coloca su JS porque vive en la
+       topbar. Este cuelga de su propio campo, así que se ancla y se ahorra el
+       cálculo — y el reposicionamiento al hacer scroll.
+       Se alinea por la DERECHA: el calendario mide 320 px y el campo vive en una
+       columna de ~256 px, así que anclarlo a la izquierda lo hacía asomarse
+       fuera de la tarjeta. Creciendo hacia la izquierda cae sobre el área libre
+       de la página. */
+    .dpx-panel {
+        position: absolute; top: calc(100% + 6px); right: 0; left: auto;
+        width: min(320px, calc(100vw - 2rem));
+    }
+
+    .dpx-panel .dp-main { padding: 0.9rem 1rem; }
+    .dpx-panel .dp-cal-head { margin-bottom: 0.5rem; }
+    .dpx-actions { display: flex; justify-content: flex-end; margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1px solid var(--color-border); }
+    .dpx-today {
+        appearance: none; border: none; background: transparent; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
+        color: var(--color-blue-deep); padding: 6px 10px; border-radius: 8px;
+        transition: background 0.15s var(--ease-ios);
+    }
+    .dpx-today:hover { background: var(--row-hover); }
+
+    /* Regla 16: bajo 880 px los días se tocan con el dedo, no con el cursor. */
+    @media (max-width: 880px) {
+        .dpx-panel { width: min(340px, calc(100vw - 2rem)); }
+        .dpx-panel .dp-day { min-height: 40px; font-size: 0.86rem; }
+        .dpx-today { min-height: 44px; }
+    }
+</style>

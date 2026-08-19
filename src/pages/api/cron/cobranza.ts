@@ -9,6 +9,7 @@
 import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { orgsConCobranzaActiva, runCobranzaOrg, type RunResult } from '../../../lib/agents/cobranza-run';
+import { log } from '../../../lib/log';
 
 export const prerender = false;
 
@@ -24,7 +25,7 @@ export const GET: APIRoute = async ({ request }) => {
         results.push(await runCobranzaOrg(orgId));
       } catch (e: any) {
         // Una org que falla no puede tumbar la corrida de las demás.
-        console.error(`cobranza: org ${orgId} falló`, e);
+        log.error('la corrida de cobranza falló para una org', { route: 'cron/cobranza', orgId, err: e });
         results.push({ orgId, error: e?.message ?? 'error', procesadas: 0, borradores: 0, enviados: 0, fallidos: 0, omitidas: [] });
       }
     }
@@ -43,7 +44,7 @@ export const GET: APIRoute = async ({ request }) => {
     }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
   } catch (error) {
-    console.error('Error en cron de cobranza:', error);
+    log.error('Error en cron de cobranza', { err: error });
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
   }
 };

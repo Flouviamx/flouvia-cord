@@ -18,6 +18,7 @@ import { strictLimitResponse, strictRateLimit } from '../../../lib/ratelimit';
 import { trustedIp } from '../../../lib/ip';
 import { decryptSecret } from '../../../lib/crypto-secret';
 import { sendOpsLoginAlertEmail } from '../../../lib/auth-email';
+import { log } from '../../../lib/log';
 import {
     OPS_CHALLENGE_COOKIE,
     OPS_PASSKEY_CHALLENGE_COOKIE,
@@ -179,7 +180,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         cookies.set(OPS_CHALLENGE_COOKIE, challenge, opsChallengeCookieOptions());
         return new Response(JSON.stringify({ success: true, mfaRequired: true }), { status: 200 });
     } catch (error) {
-        console.error('[ops/auth/password]', error);
+        log.error('error no controlado', { route: 'ops/auth/password', err: error });
         return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
     }
 };
@@ -198,7 +199,7 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
     try {
         operatorId = await consumeOpsChallenge(challengeToken);
     } catch (error) {
-        console.error('[ops/auth/totp-challenge]', error);
+        log.error('error no controlado', { route: 'ops/auth/totp-challenge', err: error });
         return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
     }
     if (!operatorId) {
@@ -262,7 +263,7 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
         sendOpsLoginAlertEmail(email, ip, userAgent).catch(() => null);
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (error) {
-        console.error('[ops/auth/totp]', error);
+        log.error('error no controlado', { route: 'ops/auth/totp', err: error });
         return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
     }
 };

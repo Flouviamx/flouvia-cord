@@ -1,0 +1,474 @@
+/* ── Vocabulario visual del editor de documentos ─────────────────────────────
+ *
+ * Lo estrena el editor de facturas (`/app/facturas/nueva`). El de cotizaciones
+ * (`/app/cotizaciones/nueva`) sigue con su copia embebida: migrarlo es un
+ * refactor puro sobre una pantalla en producción y merece su propio pase con
+ * comparación visual, no venir de contrabando en una entrega de facturación.
+ *
+ * TODO va llaveado por `[data-editor]` (Regla 11): buena parte de estos nodos
+ * los inyecta JavaScript —las filas de línea, el dropdown del buscador— así que
+ * un `<style>` scopeado de Astro no los alcanzaría, y una hoja global sin llave
+ * filtraría `.chip` o `.line-row` al resto de la app.
+ */
+
+[data-editor] .editor-grid { display: grid; grid-template-columns: 1fr 320px; gap: 3rem; align-items: start; }
+[data-editor] .ed-main { display: flex; flex-direction: column; gap: 2.5rem; min-width: 0; }
+[data-editor] .ed-block { padding: 0; min-width: 0; }
+[data-editor] .opt { font-size: 0.75rem; font-weight: 400; color: var(--color-text-muted); }
+
+[data-editor] .draft-tag {
+    font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted);
+    background: var(--color-bg-soft); border: 1px solid var(--color-border);
+    padding: 4px 10px; border-radius: 6px;
+}
+
+[data-editor] .section-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+[data-editor] .section-head h2 { font-size: 0.85rem; font-weight: 600; color: var(--color-text); margin: 0; }
+
+/* Pasos numerados — la guía visual del flujo */
+[data-editor] .step-head { display: flex; align-items: flex-start; gap: 0.7rem; margin-bottom: 1.1rem; }
+[data-editor] .step-num {
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px;
+    background: var(--color-blue-deep); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-weight: 700; margin-top: 1px;
+}
+[data-editor] .step-text h2 { font-size: 0.95rem; font-weight: 600; color: var(--color-text); margin: 0 0 2px; }
+[data-editor] .step-hint { font-size: 0.78rem; color: var(--color-text-muted); margin: 0; line-height: 1.45; }
+[data-editor] .step-hint b { color: var(--color-text); font-weight: 600; }
+
+/* ── Hero de IA (card navy plana, sin degradado) ── */
+[data-editor] .ai-block {
+    padding: 1.25rem 1.4rem; border: none; border-radius: 16px; position: relative; overflow: hidden;
+    background: var(--color-blue-deep);
+    box-shadow: 0 24px 50px -30px rgba(10, 25, 47, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+[data-editor] .ai-title { font-size: 0.96rem; font-weight: 650; margin: 0 0 2px; color: #fff; letter-spacing: -0.01em; }
+[data-editor] .ai-sub { font-size: 0.79rem; color: rgba(255, 255, 255, 0.55); margin: 0 0 0.75rem; line-height: 1.4; }
+[data-editor] .ai-textarea-wrap { position: relative; }
+[data-editor] .ai-block .ed-textarea.ai-textarea { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.14); color: #fff; padding-right: 42px; }
+[data-editor] .ai-block .ed-textarea.ai-textarea::placeholder { color: rgba(255, 255, 255, 0.4); }
+[data-editor] .ai-block .ed-textarea.ai-textarea:focus { border-color: rgba(255, 255, 255, 0.5); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1); }
+[data-editor] .ai-actions { display: flex; align-items: center; gap: 1rem; margin-top: 0.7rem; flex-wrap: wrap; }
+[data-editor] .ai-btn {
+    font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    background: #fff; color: #0a192f; border: none; border-radius: 9px; padding: 9px 18px;
+    transition: transform 0.2s var(--ease-spring), box-shadow 0.2s, opacity 0.2s;
+}
+[data-editor] .ai-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.5); }
+[data-editor] .ai-btn:disabled { opacity: 0.6; cursor: wait; }
+[data-editor] .ai-status { font-size: 0.78rem; color: rgba(255, 255, 255, 0.7); font-weight: 400; }
+[data-editor] .ai-attach-btn {
+    all: unset; position: absolute; top: 9px; right: 9px; width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    color: rgba(255, 255, 255, 0.45); border-radius: 7px; transition: background 0.15s, color 0.15s;
+}
+[data-editor] .ai-attach-btn svg { width: 15px; height: 15px; }
+[data-editor] .ai-attach-btn:hover { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.85); }
+[data-editor] .ai-file-chip {
+    display: flex; align-items: center; gap: 7px; margin-top: 0.55rem; padding: 5px 9px;
+    background: rgba(255, 255, 255, 0.07); border-radius: 8px; color: rgba(255, 255, 255, 0.85); font-size: 0.76rem;
+}
+[data-editor] .ai-file-chip[hidden] { display: none; }
+[data-editor] .ai-file-chip svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.6; }
+[data-editor] .ai-file-chip span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-editor] .ai-file-chip button { all: unset; cursor: pointer; display: flex; opacity: 0.55; padding: 2px; }
+[data-editor] .ai-file-chip button:hover { opacity: 1; }
+[data-editor] .ai-file-chip button svg { width: 11px; height: 11px; opacity: 1; }
+
+[data-editor] .ed-or { display: flex; align-items: center; gap: 1rem; margin: 0.3rem 0; color: var(--color-text-muted); }
+[data-editor] .ed-or::before,
+[data-editor] .ed-or::after { content: ''; flex: 1; height: 1px; background: var(--color-border); }
+[data-editor] .ed-or span { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; white-space: nowrap; }
+
+/* ── Controles ── */
+[data-editor] .client-row { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
+[data-editor] .ed-select {
+    font-family: var(--font-sans); font-size: 0.85rem; font-weight: 400;
+    color: var(--color-text); background: #f5f5f7;
+    border: 1.5px solid transparent; border-radius: 10px;
+    padding: 10px 32px 10px 14px; min-width: 260px; cursor: pointer;
+    transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2399a2af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+[data-editor] .ed-select:hover { background-color: #ececee; }
+[data-editor] .ed-select:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); background-color: #fff; }
+
+/* Campo de texto/fecha: mismas proporciones que `.ed-select` pero SIN la flecha
+   del dropdown, que un <input type="date"> no debe tener. */
+[data-editor] .ed-input {
+    font-family: var(--font-sans); font-size: 0.85rem; font-weight: 400;
+    color: var(--color-text); background: #f5f5f7;
+    border: 1.5px solid transparent; border-radius: 10px;
+    padding: 10px 14px; width: 100%;
+    transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
+}
+[data-editor] .ed-input:hover { background: #ececee; }
+[data-editor] .ed-input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); background: #fff; }
+
+[data-editor] .ed-textarea {
+    font-family: var(--font-sans); font-size: 0.85rem; width: 100%;
+    color: var(--color-text); background: #f5f5f7;
+    border: 1.5px solid transparent; border-radius: 10px;
+    padding: 10px 14px; resize: vertical; line-height: 1.5;
+    transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
+}
+[data-editor] .ed-textarea:hover { background: #ececee; }
+[data-editor] .ed-textarea:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); background: #fff; }
+
+[data-editor] .term-chips { display: flex; gap: 0.35rem; }
+[data-editor] .chip {
+    font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
+    color: var(--color-text-muted); background: #f5f5f7;
+    border: 1.5px solid transparent; border-radius: 999px;
+    padding: 7px 16px; cursor: pointer;
+    transition: all 0.3s var(--ease-ios);
+}
+[data-editor] .chip:hover { background: #e8e8ec; }
+[data-editor] .chip.active { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); box-shadow: 0 2px 8px -2px rgba(10, 25, 47, 0.3); }
+[data-editor] .desc-note { font-size: 0.76rem; font-weight: 500; color: #059669; margin: 0.6rem 0 0; }
+[data-editor] .desc-note[hidden] { display: none; }
+
+/* ── Líneas ── */
+/* 7 columnas: concepto · cant · lista · precio · impuesto · importe · borrar.
+   La de margen del editor de cotizaciones no aplica aquí: el margen es una
+   métrica de negociación, y una factura ya no se negocia. */
+[data-editor] .lines-head,
+[data-editor] .line-row {
+    display: grid;
+    grid-template-columns: 1.8fr 70px 90px 110px 92px 1fr 30px;
+    gap: 0.8rem;
+}
+[data-editor] .lines-head {
+    font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted);
+    padding: 0 0 0.5rem; border-bottom: 1px solid var(--color-border);
+}
+[data-editor] .lh-right { text-align: right; }
+[data-editor] .lh-i {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--color-border);
+    font-size: 0.6rem; color: var(--color-text-muted); cursor: help; margin-left: 3px; font-weight: 700;
+}
+[data-editor] .line-row { align-items: center; padding: 0.8rem 0; border-bottom: 1px solid var(--color-border); }
+[data-editor] .line-row:last-child { border-bottom: none; }
+[data-editor] .lr-name { font-size: 0.86rem; font-weight: 500; color: var(--color-text); display: flex; flex-direction: column; min-width: 0; }
+[data-editor] .lr-name small { font-size: 0.68rem; color: var(--color-text-muted); font-weight: 500; }
+[data-editor] .lr-volnote { color: #059669; font-weight: 600; }
+[data-editor] .lr-lista { font-size: 0.82rem; color: var(--color-text-muted); text-decoration: line-through; }
+[data-editor] .lr-input {
+    font-family: var(--font-sans); font-size: 0.85rem; font-weight: 500;
+    color: var(--color-text); background: #f5f5f7;
+    border: 1.5px solid transparent; border-radius: 8px;
+    padding: 7px 10px; width: 100%;
+    transition: border-color 0.3s var(--ease-ios), background 0.2s, box-shadow 0.3s var(--ease-ios);
+}
+[data-editor] .lr-input:hover { background: #ececee; }
+[data-editor] .lr-input:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); }
+[data-editor] .lr-desc-input { border-color: var(--color-border); }
+[data-editor] .lr-nego.is-deal { color: #059669; font-weight: 600; }
+[data-editor] .lr-importe { font-size: 0.95rem; color: var(--color-text); text-align: right; font-weight: 500; }
+/* Selector de impuesto por línea: mismo control que el resto, más compacto. */
+[data-editor] .lr-tax {
+    font-family: var(--font-sans); font-size: 0.78rem; color: var(--color-text);
+    background: #f5f5f7; border: 1.5px solid transparent; border-radius: 8px;
+    padding: 7px 6px; width: 100%; cursor: pointer;
+    -webkit-appearance: none; appearance: none; text-align: center;
+    transition: border-color 0.3s var(--ease-ios), background 0.2s;
+}
+[data-editor] .lr-tax:hover { background: #ececee; }
+[data-editor] .lr-tax:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; }
+[data-editor] .lr-tax.is-exento { color: var(--color-text-muted); }
+[data-editor] .lr-del {
+    background: none; border: none; cursor: pointer;
+    color: #94a3b8; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; padding: 4px;
+    transition: color 0.2s, background 0.2s;
+}
+[data-editor] .lr-del:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+[data-editor] .line-row.line-added { animation: line-added-flash 0.9s var(--ease-ios); }
+@keyframes line-added-flash {
+    0% { background: rgba(16, 185, 129, 0.12); }
+    100% { background: transparent; }
+}
+
+[data-editor] .lines-empty {
+    display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
+    font-size: 0.82rem; color: var(--color-text-muted); padding: 2.8rem 1.5rem;
+    text-align: center; border-bottom: 1px solid rgba(0, 0, 0, 0.05); line-height: 1.5;
+    background: #fafafa; border-radius: 12px; margin: 0.5rem 0;
+}
+[data-editor] .lines-empty svg { width: 36px; height: 36px; color: #d1d5db; }
+[data-editor] .lines-empty b { color: var(--color-text); font-weight: 600; }
+[data-editor] .lines-empty[hidden] { display: none; }
+
+/* ── Buscador de catálogo (combobox) ── */
+[data-editor] .add-actions { display: flex; gap: 0.6rem; margin-top: 1rem; align-items: center; flex-wrap: wrap; }
+[data-editor] .add-hint { font-size: 0.72rem; color: #99a2af; margin: 0.5rem 0 0; }
+[data-editor] .add-hint kbd,
+[data-editor] .sum-kbd kbd {
+    font-family: var(--font-sans); font-size: 0.64rem; font-weight: 600;
+    color: var(--color-text-muted); background: #f5f5f7; border-radius: 5px;
+    padding: 2px 6px; box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.06);
+}
+[data-editor] .btn-free-line {
+    font-family: var(--font-sans); font-size: 0.82rem; font-weight: 500; cursor: pointer;
+    background: #f5f5f7; color: var(--color-text-muted); border: none; border-radius: 10px; padding: 9px 16px;
+    transition: all 0.3s var(--ease-ios);
+}
+[data-editor] .btn-free-line:hover { color: var(--color-text); background: #e8e8ec; }
+
+[data-editor] .prod-search { position: relative; flex: 1; min-width: 240px; max-width: 460px; }
+[data-editor] .prod-search-ic { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #99a2af; pointer-events: none; }
+[data-editor] .prod-input {
+    font-family: var(--font-sans); font-size: 0.85rem; font-weight: 400;
+    color: var(--color-text); background: #f5f5f7;
+    border: 1.5px solid transparent; border-radius: 10px;
+    padding: 10px 14px 10px 36px; width: 100%;
+    transition: border-color 0.3s var(--ease-ios), box-shadow 0.3s var(--ease-ios), background 0.2s;
+}
+[data-editor] .prod-input:hover { background: #ececee; }
+[data-editor] .prod-input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08); background: #fff; }
+[data-editor] .prod-input::placeholder { color: #99a2af; }
+[data-editor] .prod-drop {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60;
+    background: #fff; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.05), 0 12px 32px -8px rgba(10, 25, 47, 0.18), 0 4px 12px -4px rgba(10, 25, 47, 0.08);
+    max-height: 320px; overflow-y: auto;
+    animation: prod-drop-in 0.18s var(--ease-ios);
+}
+[data-editor] .prod-drop::-webkit-scrollbar { display: none; }
+@keyframes prod-drop-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+[data-editor] .prod-drop[hidden] { display: none; }
+[data-editor] .prod-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    width: 100%; text-align: left; cursor: pointer;
+    font-family: var(--font-sans); background: none; border: none;
+    padding: 10px 14px; transition: background 0.15s;
+}
+[data-editor] .prod-item:hover,
+[data-editor] .prod-item.is-active { background: #f5f5f7; }
+[data-editor] .prod-item-name { font-size: 0.84rem; font-weight: 500; color: var(--color-text); display: flex; flex-direction: column; min-width: 0; }
+[data-editor] .prod-item-name small { font-size: 0.66rem; color: #99a2af; font-weight: 500; }
+[data-editor] .prod-item-price { font-size: 0.82rem; color: var(--color-text); white-space: nowrap; flex-shrink: 0; }
+[data-editor] .prod-item-price small { font-size: 0.68rem; color: #99a2af; font-weight: 400; }
+[data-editor] .prod-empty { padding: 14px; font-size: 0.8rem; color: var(--color-text-muted); text-align: center; line-height: 1.5; }
+[data-editor] .prod-empty small { font-size: 0.72rem; color: #99a2af; }
+
+/* ── Kits ── */
+[data-editor] .kit-insert-wrap { position: relative; }
+[data-editor] .kit-insert-drop {
+    position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 60;
+    width: min(360px, 86vw);
+    background: #fff; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.05), 0 12px 32px -8px rgba(10, 25, 47, 0.18), 0 4px 12px -4px rgba(10, 25, 47, 0.08);
+    max-height: 320px; overflow-y: auto;
+}
+[data-editor] .kit-insert-drop[hidden] { display: none; }
+[data-editor] .kit-insert-row { display: flex; align-items: center; gap: 0.6rem; padding: 9px 12px; border-bottom: 1px solid var(--color-border); }
+[data-editor] .kit-insert-row:last-child { border-bottom: none; }
+[data-editor] .kit-insert-name { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 0.84rem; font-weight: 500; color: var(--color-text); }
+[data-editor] .kit-insert-name small { font-size: 0.66rem; color: #99a2af; font-weight: 500; }
+[data-editor] .kit-insert-qty {
+    width: 44px; text-align: center; font-family: var(--font-sans); font-size: 0.82rem; color: var(--color-text);
+    background: #f5f5f7; border: 1px solid transparent; border-radius: 8px; padding: 6px 2px; flex-shrink: 0;
+    -moz-appearance: textfield;
+}
+[data-editor] .kit-insert-qty::-webkit-outer-spin-button,
+[data-editor] .kit-insert-qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+[data-editor] .kit-insert-qty:focus { outline: none; border-color: var(--color-blue-deep); background: #fff; }
+[data-editor] .kit-insert-add {
+    font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: #fff; background: var(--color-blue-deep);
+    border: none; border-radius: 8px; padding: 7px 12px; cursor: pointer; flex-shrink: 0;
+    transition: transform 0.25s var(--ease-spring);
+}
+[data-editor] .kit-insert-add:hover { transform: translateY(-1px); }
+
+/* ── Panel de cobertura cambiaria ── */
+[data-editor] .fx-cover { margin-top: 0.6rem; padding: 0.9rem; background: var(--color-bg-soft); border: 1px solid var(--color-border); border-radius: 12px; display: flex; flex-direction: column; gap: 0.7rem; }
+[data-editor] .fx-cover[hidden] { display: none; }
+[data-editor] .fx-explain { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
+[data-editor] .fx-explain b { color: var(--color-text); font-weight: 600; }
+[data-editor] .fx-stepper { display: flex; align-items: stretch; gap: 0.45rem; }
+[data-editor] .fx-step { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--color-border); background: var(--color-bg); }
+[data-editor] .fx-step-on { border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.07); }
+[data-editor] .fx-step-lbl { font-size: 0.62rem; font-weight: 600; color: var(--color-text-muted); line-height: 1.25; }
+[data-editor] .fx-step-on .fx-step-lbl { color: #059669; }
+[data-editor] .fx-step-val { font-size: 0.98rem; color: var(--color-text); }
+[data-editor] .fx-arrow { align-self: center; font-size: 0.9rem; color: var(--color-text-muted); }
+[data-editor] .fx-cushion-lbl { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
+[data-editor] .fx-cushion { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+[data-editor] .fx-cush-chip {
+    font-family: var(--font-sans); display: flex; flex-direction: column; align-items: center; gap: 1px;
+    cursor: pointer; padding: 7px 4px; border: 1px solid var(--color-border); border-radius: 8px;
+    background: var(--color-bg); transition: all 0.2s;
+}
+[data-editor] .fx-cush-chip b { font-size: 0.74rem; font-weight: 600; color: var(--color-text); }
+[data-editor] .fx-cush-chip small { font-size: 0.64rem; color: var(--color-text-muted); }
+[data-editor] .fx-cush-chip:hover { border-color: #cbd5e1; }
+[data-editor] .fx-cush-chip.active { border-color: var(--color-blue-deep); background: var(--color-blue-deep); }
+[data-editor] .fx-cush-chip.active b,
+[data-editor] .fx-cush-chip.active small { color: #fff; }
+[data-editor] .fx-client-sees { font-size: 0.8rem; color: var(--color-text); margin: 0; line-height: 1.4; }
+[data-editor] .fx-client-sees b { font-weight: 600; }
+[data-editor] .fx-lock-row { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--color-text-muted); }
+[data-editor] .fx-lock-svg { flex-shrink: 0; color: var(--color-text-muted); }
+
+/* ── Resumen lateral ── */
+[data-editor] .ed-side { position: sticky; top: 76px; }
+[data-editor] .ed-summary {
+    padding: 1.6rem; background: #fff; border-radius: 20px; border: none;
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 16px 40px -8px rgba(10, 25, 47, 0.1);
+    display: flex; flex-direction: column; gap: 0.8rem;
+}
+[data-editor] .ed-summary .section-head { margin-bottom: 0.2rem; }
+[data-editor] .ed-summary .section-head h2 { font-size: 0.92rem; font-weight: 700; letter-spacing: -0.02em; }
+[data-editor] .sum-count { font-size: 0.74rem; color: var(--color-text-muted); margin: -0.2rem 0 0.3rem; }
+[data-editor] .sum-line { display: flex; justify-content: space-between; gap: 0.8rem; font-size: 0.85rem; color: var(--color-text-muted); }
+[data-editor] .sum-line .editorial { color: var(--color-text); font-size: 0.95rem; }
+/* Desglose por tasa: una línea por tipo de impuesto, sangrada bajo el subtotal. */
+[data-editor] .sum-tax { font-size: 0.78rem; padding-left: 0.6rem; }
+[data-editor] .sum-tax .editorial { font-size: 0.85rem; }
+[data-editor] .sum-divider { height: 1px; background: rgba(0, 0, 0, 0.06); margin: 0.5rem 0; }
+[data-editor] .sum-total { font-weight: 700; color: var(--color-text); }
+[data-editor] .sum-total .editorial { font-size: 1.6rem; letter-spacing: -0.03em; }
+[data-editor] .sum-field { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+/* Variante en fila: etiqueta a la izquierda, switch a la derecha. Va DESPUÉS de
+   `.sum-field` a propósito — misma especificidad, así que el orden es lo único
+   que decide, y antes perdía contra `flex-direction: column`. */
+[data-editor] .sum-field.sum-field-row {
+    flex-direction: row; align-items: center; justify-content: space-between;
+    gap: 0.8rem; margin-top: 0.8rem;
+}
+[data-editor] .sum-field-row > label:first-child {
+    margin: 0; cursor: pointer; color: var(--color-text);
+    font-size: 0.85rem; font-weight: 400;
+}
+[data-editor] .sum-field-row .s-toggle { flex-shrink: 0; }
+[data-editor] .sum-field label,
+[data-editor] .sum-field .sum-lbl { font-size: 0.72rem; font-weight: 500; color: var(--color-text-muted); }
+[data-editor] .sum-note { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.4rem 0 0; line-height: 1.4; text-align: center; }
+[data-editor] .sum-kbd { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.68rem; color: #99a2af; margin: 0.1rem 0 0; }
+
+/* El island de React no lleva data-astro-cid; hereda las proporciones del select. */
+[data-editor] .fx-flagselect .fs-btn { font-size: 0.85rem; padding: 10px 14px; border-radius: 10px; }
+
+[data-editor] .btn-send {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-family: var(--font-sans); font-size: 0.88rem; font-weight: 600;
+    background: var(--color-blue-deep); color: #fff;
+    border: none; border-radius: 999px; padding: 12px 20px; cursor: pointer;
+    transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-ios), background 0.2s;
+    margin-top: 0.8rem; box-shadow: 0 4px 14px -4px rgba(10, 25, 47, 0.4);
+}
+[data-editor] .btn-send svg { width: 16px; height: 16px; }
+[data-editor] .btn-send:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -6px rgba(10, 25, 47, 0.5); }
+[data-editor] .btn-send:active { transform: translateY(0) scale(0.97); }
+[data-editor] .btn-draft {
+    font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;
+    color: var(--color-text); background: #f5f5f7;
+    border: none; border-radius: 999px; padding: 11px 20px; cursor: pointer;
+    transition: all 0.25s var(--ease-ios);
+}
+[data-editor] .btn-draft:hover { background: #e8e8ec; }
+[data-editor] .btn-draft:active { transform: scale(0.97); }
+
+/* ── Toast ── */
+[data-editor] .toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(5, 5, 5, 0.85);
+    backdrop-filter: blur(16px) saturate(1.8); -webkit-backdrop-filter: blur(16px) saturate(1.8);
+    color: #fff; font-size: 0.85rem; font-weight: 500;
+    padding: 11px 20px; border-radius: 999px;
+    box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 8px 24px -6px rgba(0, 0, 0, 0.35);
+    z-index: 200; animation: toast-in 0.4s var(--ease-spring);
+}
+@keyframes toast-in {
+    from { opacity: 0; transform: translate(-50%, 12px) scale(0.95); }
+    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+[data-editor] .toast-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
+
+/* ── Responsive (Regla 16: se reordena, no se esconde) ── */
+@media (max-width: 980px) {
+    [data-editor] .editor-grid { grid-template-columns: 1fr; gap: 2rem; }
+    [data-editor] .ed-side { position: static; }
+}
+@media (max-width: 880px) {
+    [data-editor] .sum-kbd,
+    [data-editor] .add-hint { display: none; }
+}
+@media (max-width: 720px) {
+    [data-editor] .editor-grid { gap: 1.75rem; }
+    [data-editor] .ed-main { gap: 1.75rem; }
+    [data-editor] .ai-block { padding: 1rem; border-radius: 14px; }
+    [data-editor] .ai-btn { width: 100%; min-height: 44px; }
+    [data-editor] .ai-attach-btn { top: 3px; right: 3px; width: 44px; height: 44px; }
+    [data-editor] .ai-file-chip button { min-width: 44px; min-height: 44px; justify-content: center; align-items: center; }
+    [data-editor] .client-row { flex-direction: column; align-items: stretch; }
+    [data-editor] .ed-select,
+    [data-editor] .ed-input { width: 100%; min-width: 0; min-height: 46px; font-size: 16px; }
+    [data-editor] .term-chips {
+        margin-inline: calc(var(--mobile-gutter) * -1);
+        padding-inline: var(--mobile-gutter);
+        overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none;
+    }
+    [data-editor] .term-chips::-webkit-scrollbar { display: none; }
+    [data-editor] .chip { flex: 0 0 auto; min-height: 44px; }
+    [data-editor] .lines-head { display: none; }
+    [data-editor] .lines-empty { padding: 2rem 1rem; }
+    [data-editor] .add-actions { align-items: stretch; }
+    [data-editor] .prod-search { flex: 1 1 100%; min-width: 0; max-width: none; }
+    [data-editor] .prod-input { min-height: 46px; font-size: 16px; }
+    [data-editor] .prod-drop { max-height: 42dvh; }
+    [data-editor] .btn-free-line { flex: 1 1 140px; min-height: 44px; }
+    [data-editor] .kit-insert-wrap { flex: 1 1 140px; }
+    [data-editor] .kit-insert-wrap > .btn-free-line { width: 100%; }
+    [data-editor] .kit-insert-drop { left: auto; right: 0; width: min(360px, calc(100vw - (var(--mobile-gutter) * 2))); }
+    [data-editor] .kit-insert-row { min-height: 56px; }
+    [data-editor] .kit-insert-qty,
+    [data-editor] .kit-insert-add { min-height: 44px; }
+    [data-editor] .ed-textarea { font-size: 16px; }
+    [data-editor] .fx-stepper { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+    [data-editor] .fx-step { min-width: 0; }
+    [data-editor] .fx-cush-chip { min-height: 52px; }
+    [data-editor] .ed-summary { padding: 1.2rem; border-radius: 18px; }
+    [data-editor] .btn-send,
+    [data-editor] .btn-draft { width: 100%; min-height: 48px; }
+    [data-editor] .toast {
+        bottom: calc(0.9rem + env(safe-area-inset-bottom));
+        width: calc(100vw - (var(--mobile-gutter) * 2));
+        justify-content: center; text-align: center;
+    }
+
+    /* La fila se reordena en tres renglones. Ningún dato se oculta: cantidad,
+       precio, impuesto e importe siguen visibles y editables. */
+    [data-editor] .line-row {
+        grid-template-columns: minmax(0, 1fr) minmax(92px, 0.72fr) 44px;
+        grid-template-areas:
+            "name name delete"
+            "quantity price price"
+            "list tax amount";
+        gap: 0.65rem 0.75rem;
+        padding: 1rem 0;
+    }
+    [data-editor] .line-row > :is(.lr-name, .lr-desc-input) { grid-area: name; min-width: 0; }
+    [data-editor] .line-row > .lr-qty { grid-area: quantity; }
+    [data-editor] .line-row > .lr-lista { grid-area: list; display: block; align-self: center; }
+    [data-editor] .line-row > .lr-nego { grid-area: price; }
+    [data-editor] .line-row > .lr-tax { grid-area: tax; align-self: center; }
+    [data-editor] .line-row > .lr-importe { grid-area: amount; display: block; justify-self: end; align-self: center; }
+    [data-editor] .line-row > .lr-del { grid-area: delete; width: 44px; height: 44px; padding: 0; justify-self: end; }
+    [data-editor] .lr-input,
+    [data-editor] .lr-tax { min-height: 44px; font-size: 16px; }
+}
+@media (max-width: 420px) {
+    [data-editor] .fx-stepper { grid-template-columns: 1fr; }
+    [data-editor] .fx-arrow { display: none; }
+    [data-editor] .kit-insert-row { flex-wrap: wrap; }
+    [data-editor] .kit-insert-name { flex-basis: calc(100% - 56px); }
+}

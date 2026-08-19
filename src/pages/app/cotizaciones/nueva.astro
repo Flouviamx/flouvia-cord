@@ -330,7 +330,43 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     }
     const $lines = document.getElementById('lines');
     const $empty = document.getElementById('linesEmpty');
-    const fmt = (n) => '$' + new Intl.NumberFormat(T.localeIntl, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    // Divisa del EDITOR: la del selector de divisa si el vendedor eligió otra,
+    // si no la del negocio (<body data-currency>, que publica AppLayout).
+    //
+    // Los precios se capturan en la divisa de VENTA y así se guardan en
+    // `cotizaciones.base_currency`: el editor tiene que mostrar esa misma
+    // divisa o el vendedor teclea dólares y lee pesos. Script is:inline (no
+    // puede importar lib/money-client), misma fuente de verdad.
+    const fmtCache = new Map();
+    const editorCurrency = () => {
+        const picked = document.getElementById('fxBase')?.value;
+        const code = String(picked || document.body.dataset.currency || 'MXN').toUpperCase();
+        return /^[A-Z]{3}$/.test(code) ? code : 'MXN';
+    };
+    const cordMoney = (n) => {
+        const currency = editorCurrency();
+        let formatter = fmtCache.get(currency);
+        if (!formatter) {
+            let decimals = 2;
+            try {
+                decimals = new Intl.NumberFormat('en-US', { style: 'currency', currency })
+                    .resolvedOptions().maximumFractionDigits ?? 2;
+            } catch { /* divisa rara: 2 decimales */ }
+            try {
+                formatter = new Intl.NumberFormat(T.localeIntl, {
+                    style: 'currency', currency,
+                    minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+                });
+            } catch {
+                formatter = new Intl.NumberFormat(T.localeIntl, {
+                    minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+                });
+            }
+            fmtCache.set(currency, formatter);
+        }
+        return formatter.format(Number(n) || 0);
+    };
+    const fmt = cordMoney;
     const fmtPct = (n) => Number.isFinite(n) ? Math.round(n) + '%' : '—';
     const margenPct = (costo, precio) => (costo > 0 && precio > 0) ? (precio - costo) / precio * 100 : null;
 
@@ -971,16 +1007,29 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         try {
             const res = await fetch(`/api/fx/quote?base=${base}&fiscal=${orgCurrency}&amount=${amount}&buffer=${buffer}`);
             const fx = await res.json();
+            // Sin tasa real no hay preview inventado: el endpoint responde 503 y
+            // aquí se dice por qué. Guardar tampoco va a funcionar hasta que haya
+            // tipo de cambio, así que mentir en la vista previa solo confunde.
+            if (!res.ok) {
+                if ($fxPreview) $fxPreview.textContent = fx?.error || T.noSePudoObtenerFx;
+                if ($fxSpot) $fxSpot.textContent = '—';
+                if ($fxApplied) $fxApplied.textContent = '—';
+                return;
+            }
             const spot = Number(fx.spotRate || 0);
             const applied = Number(fx.appliedRate || 0);
             // Tasas: hoy vs. protegida (con tu colchón)
             if ($fxSpot) $fxSpot.textContent = symFx(orgCurrency) + nfFx.format(spot);
             if ($fxApplied) $fxApplied.textContent = symFx(orgCurrency) + nfFx.format(applied);
-            // Lo que el cliente verá en SU moneda = total fiscal ÷ tasa protegida
-            const clientSees = applied > 0 ? amount / applied : 0;
+            // Los precios se capturan en la divisa de VENTA (base): es lo que el
+            // cliente paga y lo que se guarda en la cotización. La conversión va
+            // base → fiscal (MULTIPLICA). Antes dividía, tratando el total
+            // capturado como si ya estuviera en la divisa fiscal: la vista previa
+            // contradecía tanto a la BD como a la factura.
+            const enLibros = applied > 0 ? amount * applied : 0;
             if ($fxPreview) {
                 $fxPreview.innerHTML = amount > 0
-                    ? tpl(T.clienteVeraTpl, { sym: symFx(base), monto: nfFx.format(clientSees), sym2: symFx(orgCurrency), fiscal: nfFx.format(amount), fiscalCode: orgCurrency })
+                    ? tpl(T.clienteVeraTpl, { sym: symFx(base), monto: nfFx.format(amount), sym2: symFx(orgCurrency), fiscal: nfFx.format(enLibros), fiscalCode: orgCurrency })
                     : tpl(T.agregaProductosDivisaTpl, { base });
             }
         } catch {
@@ -988,7 +1037,9 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         }
     }
     function scheduleFx() { clearTimeout(fxTimer); fxTimer = setTimeout(refreshFx, 250); }
-    $fxBase?.addEventListener('change', refreshFx);
+    // Cambiar de divisa reformatea TODA la cotización, no solo el panel de FX:
+    // los importes ya capturados pasan a leerse en la divisa elegida.
+    $fxBase?.addEventListener('change', () => { render(); refreshFx(); });
     // Si la moneda inicial (default de la org o del borrador) no es la fiscal,
     // el panel de cobertura FX debe aparecer desde el primer render.
     if ($fxBase && $fxBase.value !== orgCurrency) refreshFx();

@@ -30,14 +30,14 @@ Cord extrae automáticamente la información del perfil individual del cliente (
 
 ### Timbrado Automático y Transparente
 
-1. En cuanto se confirma el cobro (por Tarjeta o SPEI dinámico a través de Cord Pagos), el sistema notifica al servidor de Cord.
+1. En cuanto se confirma el cobro (por Tarjeta o SPEI dinámico a través de Cord Payments), el sistema notifica al servidor de Cord.
 2. El sistema ensambla el *payload* con los conceptos de la cotización y los datos fiscales exactos del cliente (Régimen, CP, Uso CFDI).
 3. Se invoca a la `FiscalFactory` que timbra el documento ante el SAT (CFDI 4.0 nominativo).
 4. El archivo XML y PDF final se envían directamente al correo del cliente junto con su recibo de pago, cerrando el ciclo comercial sin intervención manual de tu equipo.
 
-## El CFDI de la comisión de Cord Pagos
+## El CFDI de la comisión de Cord Payments
 
-Además del CFDI que timbras tú a tus propios clientes, Cord emite su **propio CFDI de ingreso** por la comisión que cobra en cada transacción de Cord Pagos (ver [Tarifas y ventajas](/docs/pagos/condiciones)) — es el comprobante fiscal del servicio de procesamiento de pagos que Cord te presta, no el de tu venta.
+Además del CFDI que timbras tú a tus propios clientes, Cord emite su **propio CFDI de ingreso** por la comisión que cobra en cada transacción de Cord Payments (ver [Tarifas y ventajas](/docs/pagos/condiciones)) — es el comprobante fiscal del servicio de procesamiento de pagos que Cord te presta, no el de tu venta.
 
 Este comprobante se emite de forma **consolidada, en lotes periódicos** (no uno por cada transacción individual) contra el RFC y los datos fiscales que tengas registrados en tu cuenta.
 

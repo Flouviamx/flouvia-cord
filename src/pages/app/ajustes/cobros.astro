@@ -188,7 +188,7 @@ const pasos = [
 
     {conectado && !tarifaVigenteAceptada && !ORG.sandboxOf && (
         <section class="fee-accept" id="feeAccept" data-version={FEE_TERMS_VERSION}>
-            <h3>Tarifa de Cord Pagos</h3>
+            <h3>Tarifa de Cord Payments</h3>
             <p>La versión actual todavía no está aceptada. Hasta que la aceptes, Cord no añadirá su comisión.</p>
             <div class="fee-lines">
                 <span><strong>Tarjeta</strong>{describeFee('card')}</span>
@@ -197,7 +197,7 @@ const pasos = [
             </div>
             <label class="fee-check">
                 <input type="checkbox" id="feeTermsCheck" />
-                <span>Acepto los <a href="/terminos#cord-pagos" target="_blank" rel="noreferrer">términos de comisión de Cord Pagos</a>. Entiendo que el dinero sigue llegando directo a mi cuenta.</span>
+                <span>Acepto los <a href="/terminos#cord-pagos" target="_blank" rel="noreferrer">términos de comisión de Cord Payments</a>. Entiendo que el dinero sigue llegando directo a mi cuenta.</span>
             </label>
             <button type="button" class="fee-accept-btn" id="feeAcceptBtn" disabled>Activar tarifa actual</button>
         </section>
@@ -514,8 +514,8 @@ const pasos = [
         const cc = (window as any).cordConfirm;
         const ct = (window as any).cordToast;
         const ok = cc
-          ? await cc({ title: M.i18nDescTitulo || 'Desactivar Cord Pagos', body: M.i18nDescBody || 'Dejarás de recibir pagos en línea. Tus datos de transferencia manual se conservan. ¿Continuar?', danger: true, confirmText: M.i18nDescConfirm || 'Desactivar' })
-          : confirm(M.i18nDescNative || '¿Seguro que deseas desactivar Cord Pagos? Dejarás de recibir pagos en línea.');
+          ? await cc({ title: M.i18nDescTitulo || 'Desactivar Cord Payments', body: M.i18nDescBody || 'Dejarás de recibir pagos en línea. Tus datos de transferencia manual se conservan. ¿Continuar?', danger: true, confirmText: M.i18nDescConfirm || 'Desactivar' })
+          : confirm(M.i18nDescNative || '¿Seguro que deseas desactivar Cord Payments? Dejarás de recibir pagos en línea.');
         if (!ok) return;
         try {
             const send = () => fetch('/api/billing/connect/disconnect', { method: 'POST' });
@@ -551,7 +551,7 @@ const pasos = [
             }
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'No se pudo activar la tarifa');
-            (window as any).cordToast?.('Tarifa de Cord Pagos activada', 'ok');
+            (window as any).cordToast?.('Tarifa de Cord Payments activada', 'ok');
             setTimeout(() => location.reload(), 700);
         } catch (error: any) {
             (window as any).cordToast?.(error.message || 'No se pudo activar la tarifa', 'error');

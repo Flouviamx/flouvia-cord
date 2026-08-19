@@ -8,6 +8,7 @@ import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
 import { sendEmail } from '../../../lib/email';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
+import { log } from '../../../lib/log';
 
 const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 
@@ -38,7 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
         // Si la tabla no existe aún (pre-migración), respondemos ok igual —
         // no rompemos la UI. El admin puede correr db:migrate después.
         if (err?.code === '42P01') {
-            console.warn('[blog/subscribe] Tabla blog_subscribers no existe — corre npm run db:migrate');
+            log.warn('Tabla blog_subscribers no existe — corre npm run db:migrate', { route: 'blog/subscribe' });
             return json({ ok: true, warning: 'tabla pendiente de migración' });
         }
         throw err;

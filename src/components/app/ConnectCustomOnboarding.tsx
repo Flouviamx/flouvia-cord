@@ -499,7 +499,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                             <span className="co-spinner co-spinner-lg" aria-hidden="true"></span>
                             <h3>Tus datos están en revisión</h3>
                             <p>
-                                Cord Pagos está verificando tu información. Normalmente toma un par de minutos.
+                                Cord Payments está verificando tu información. Normalmente toma un par de minutos.
                                 Esta página se actualizará sola en cuanto tus cobros estén activos.
                             </p>
                             {disabledReason && disabledReason !== 'requirements.pending_verification' && (
@@ -624,7 +624,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
 
                 {step === 3 && (
                     <div className="co-step">
-                        <p className="co-sub">{businessType === 'individual' ? 'Como persona física, necesitamos verificar tu identidad para activar Cord Pagos.' : 'Persona autorizada para operar la cuenta bancaria de la empresa.'}</p>
+                        <p className="co-sub">{businessType === 'individual' ? 'Como persona física, necesitamos verificar tu identidad para activar Cord Payments.' : 'Persona autorizada para operar la cuenta bancaria de la empresa.'}</p>
                         <div className="s-row">
                             <div className="s-field">
                                 <label>Nombre(s)</label>
@@ -844,8 +844,8 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                         <label className="co-attest co-legal-consent">
                             <input type="checkbox" checked={legalConsent} onChange={event => setLegalConsent(event.target.checked)} />
                             <span className="co-attest-text">
-                                <strong>Acepto expresamente el tratamiento de datos y las condiciones de Cord Pagos</strong>
-                                <span>Confirmo que leí el <a href="/privacidad" target="_blank" rel="noopener noreferrer">Aviso de Privacidad</a>, los <a href="/terminos#cord-pagos" target="_blank" rel="noopener noreferrer">Términos de Cord Pagos</a> y el acuerdo de Stripe. Autorizo el tratamiento y las transferencias descritas de mis datos financieros, patrimoniales y de verificación de identidad.</span>
+                                <strong>Acepto expresamente el tratamiento de datos y las condiciones de Cord Payments</strong>
+                                <span>Confirmo que leí el <a href="/privacidad" target="_blank" rel="noopener noreferrer">Aviso de Privacidad</a>, los <a href="/terminos#cord-pagos" target="_blank" rel="noopener noreferrer">Términos de Cord Payments</a> y el acuerdo de Stripe. Autorizo el tratamiento y las transferencias descritas de mis datos financieros, patrimoniales y de verificación de identidad.</span>
                             </span>
                         </label>
                         <p className="co-tos-note">Tu aceptación se registra con fecha, dirección IP y versión de términos.</p>

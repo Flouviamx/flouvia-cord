@@ -11,6 +11,7 @@ import type { PlanId, PaidPlan } from './entitlements';
 import { sql, withOrgTx, withSystemTx } from './db';
 import { getEntitlementContext } from './org-entitlements';
 
+import { log } from './log';
 export const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
 export type Cycle = 'mensual' | 'anual';
@@ -130,7 +131,7 @@ export async function checkQuota(orgId: string, dim: MeterDim): Promise<{ ok: bo
         }
         return { ok: true };
     } catch (error) {
-        console.error(`[billing] no se pudo verificar cuota ${dim} para ${orgId}`, error);
+        log.error('no se pudo verificar cuota', { route: 'billing', dim, orgId, err: error });
         return { ok: false, reason: 'No pudimos verificar tu cuota. Intenta de nuevo.' };
     }
 }
@@ -371,7 +372,7 @@ export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1): 
         }
         return { ok: true, id };
     } catch (error) {
-        console.error(`[billing] no se pudo reservar ${dim} para ${orgId}`, error);
+        log.error('no se pudo reservar consumo', { route: 'billing', dim, orgId, err: error });
         return { ok: false, reason: 'No pudimos verificar ni registrar tu consumo. Intenta de nuevo.' };
     }
 }
@@ -400,7 +401,7 @@ export async function cancelUsage(orgId: string, reservationId: string): Promise
             select exists(select 1 from canceled) as ok`);
         return result?.ok === true;
     } catch (error) {
-        console.error(`[billing] no se pudo cancelar reserva ${reservationId}`, error);
+        log.error('no se pudo cancelar la reserva', { route: 'billing', reservationId, err: error });
         return false;
     }
 }
@@ -484,17 +485,31 @@ export async function reportUsage(orgId: string, dim: MeterDim, value = 1): Prom
 
 // ── Stripe Connect Custom (Pagos directos a la cuenta del dueño) ────────────────
 
-export async function createConnectAccount(orgId: string, businessType: 'company' | 'individual'): Promise<string> {
+export async function createConnectAccount(
+    orgId: string,
+    businessType: 'company' | 'individual',
+    countryCode = 'MX',
+    currency?: string,
+): Promise<string> {
     // `type: 'custom'` ya implica control TOTAL de la plataforma (plataforma
     // responsable de pérdidas, sin dashboard de Stripe, la plataforma recolecta el
     // KYC). NO se combina con `controller[...]` — Stripe rechaza pasar ambos.
+    //
+    // El país sale de la organización, no de una constante: `country: 'MX'` fijo
+    // impedía que un negocio de EE. UU., España o Colombia completara el alta —
+    // Stripe valida el KYC contra el país de la cuenta y rechazaba los datos.
+    // El país es INMUTABLE en Stripe una vez creada la cuenta.
+    const country = String(countryCode || 'MX').toUpperCase();
     const acc = await stripe('/v1/accounts', {
         type: 'custom',
-        country: 'MX',
+        country,
         business_type: businessType,
+        ...(currency ? { default_currency: String(currency).toLowerCase() } : {}),
         'capabilities[card_payments][requested]': 'true',
         'capabilities[transfers][requested]': 'true',
-        'capabilities[mx_bank_transfer_payments][requested]': 'true',
+        // SPEI es una capacidad EXCLUSIVA de México; pedirla en otro país hace
+        // fallar la creación completa de la cuenta.
+        ...(country === 'MX' ? { 'capabilities[mx_bank_transfer_payments][requested]': 'true' } : {}),
         'metadata[org_id]': orgId,
     });
     return acc.id;

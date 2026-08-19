@@ -22,11 +22,23 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit } from '../../../lib/db';
-import { sendEmail, siteOrigin } from '../../../lib/email';
+import { sendEmail, siteOrigin, notifyInvoiceReminder } from '../../../lib/email';
+import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
+import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
 
 const DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
-const money = (n: number) => '$' + new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2 }).format(n);
+// Cada recordatorio se formatea con la divisa de SU cotización: este cron
+// barre la cartera de TODAS las orgs, así que un formateador fijo mezclaba
+// pesos, dólares y euros bajo el mismo "$".
+const money = (n: number, currency?: string) => {
+    const code = normalizeCurrency(currency);
+    const decimals = currencyDecimals(code);
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency', currency: code,
+        minimumFractionDigits: decimals, maximumFractionDigits: decimals,
+    }).format(n);
+};
 
 export const GET: APIRoute = async ({ request }) => {
     // Auth del cron (si está configurado el secreto).
@@ -37,7 +49,7 @@ export const GET: APIRoute = async ({ request }) => {
     // solo approved/invoiced con email y vencimiento próximo). Las orgs sandbox
     // (entorno de prueba) y la demo quedan fuera.
     const rows = await sql`
-        select c.id, c.folio, c.total, c.terminos, c.public_token,
+        select c.id, c.folio, c.total, c.terminos, c.public_token, c.base_currency, o.moneda,
                coalesce(c.approved_at, c.created_at) as base,
                cl.empresa, cl.email,
                o.id as org_id, o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
@@ -62,6 +74,11 @@ export const GET: APIRoute = async ({ request }) => {
             orgId: r.org_id as string, orgNombre: (r.org_nombre as string) || 'Cord',
             color: /^#[0-9a-fA-F]{6}$/.test(r.color as string) ? (r.color as string) : '#0a192f',
             poweredOff: r.powered_off === true,
+            // La query trae base_currency y moneda, pero este map los TIRABA: río
+            // abajo `c.base_currency` era undefined, normalizeCurrency caía a MXN
+            // y TODO recordatorio se formateaba en pesos — a un cliente que cotizó
+            // en euros le llegaba su importe rotulado como MXN (regla 21).
+            moneda: normalizeCurrency(r.base_currency ?? r.moneda),
             vence: due, dias,
         };
     });
@@ -85,7 +102,7 @@ export const GET: APIRoute = async ({ request }) => {
                 </div>
 
                 <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">Hola, equipo de ${esc(c.empresa)}</p>
-                <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">Les recordamos que la cotización <b>${esc(c.folio)}</b> por <b>${money(c.total)}</b> vence el <b>${venceTxt}</b>.</p>
+                <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">Les recordamos que la cotización <b>${esc(c.folio)}</b> por <b>${money(c.total, c.moneda)}</b> vence el <b>${venceTxt}</b>.</p>
 
                 <div style="margin:40px 0;">
                     <a href="${link}" style="display:inline-block;background-color:${c.color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">Ver y pagar ${esc(c.folio)}</a>
@@ -112,11 +129,57 @@ export const GET: APIRoute = async ({ request }) => {
     for (const c of vencidasHoy) {
         await notify(c.orgId, 'payment_overdue', {
             folio: c.folio, cliente: c.empresa, total: c.total,
+            moneda: c.moneda,
             link: `${origin}/app/cobranza`,
         });
     }
 
-    return json({ enviados, candidatos: candidatos.length, vencidasHoy: vencidasHoy.length });
+    // ── Facturas ────────────────────────────────────────────────────────────
+    // La cartera de arriba es de COTIZACIONES y deriva el vencimiento de los
+    // términos. Una factura tiene `due_date` propio, y desde ago 2026 puede no
+    // tener cotización detrás (standalone) — así que necesita su propio barrido
+    // o esas facturas nunca recibirían recordatorio.
+    const facturas = await sql`
+        select d.id, d.org_id, d.due_date, d.cotizacion_id,
+               (d.due_date - current_date) as dias
+          from documentos_fiscales d
+          join orgs o on o.id = d.org_id
+         where d.lifecycle = 'open'
+           and d.due_date is not null
+           and d.amount_remaining > 0
+           and o.sandbox_of is null
+           and (d.due_date - current_date) between -1 and 3`;
+
+    // Dedup: si la factura viene de una cotización que ya recibió recordatorio
+    // arriba, no se manda dos veces el mismo aviso por el mismo dinero.
+    const yaAvisadas = new Set(candidatos.map((c) => c.id));
+    let facturasEnviadas = 0;
+    let vencidasFactura = 0;
+    for (const f of facturas) {
+        const dias = Number(f.dias);
+        const docId = f.id as string;
+        const orgId = f.org_id as string;
+        if (dias === -1) {
+            // Cruzó el vencimiento hoy: se avisa una sola vez, sin tabla de
+            // dedup, porque el cron corre una vez al día y el match es exacto.
+            vencidasFactura++;
+            await dispatchInvoiceEvent(orgId, docId, 'invoice.overdue');
+        }
+        if (f.cotizacion_id && yaAvisadas.has(f.cotizacion_id as string)) continue;
+        const sent = await notifyInvoiceReminder(orgId, docId, dias < 0);
+        if (sent) {
+            facturasEnviadas++;
+            await logAudit(orgId, {
+                accion: 'factura.recordatorio_enviado', entidad: 'factura',
+                entidad_id: docId, detalle: `vence ${f.due_date}`,
+            });
+        }
+    }
+
+    return json({
+        enviados, candidatos: candidatos.length, vencidasHoy: vencidasHoy.length,
+        facturas: { enviados: facturasEnviadas, candidatas: facturas.length, vencidasHoy: vencidasFactura },
+    });
 };
 
 const num = (v: unknown) => Number(v ?? 0);

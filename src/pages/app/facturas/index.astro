@@ -1,0 +1,382 @@
+---
+// /app/facturas — la bandeja de facturas.
+//
+// Adopta el arquetipo "lista" del resto de la app (mismo vocabulario que
+// `/app/cotizaciones`: .cot-summary, .filters, .t-head/.t-row, .status-pill,
+// .editorial). La primera versión inventó sus propias clases `.fx-*` y al lado
+// de Cotizaciones se notaba que era de otra mano.
+//
+// A diferencia de las otras listas, esta pagina por CURSOR en servidor: una
+// bandeja de facturas crece sin techo y cargar todo en el SSR es una bomba de
+// tiempo. Por eso los filtros son enlaces (el estado vive en la URL) y no
+// botones que filtran en memoria.
+//
+// Crear ya no es un modal: vive en `/app/facturas/nueva`, el editor completo.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import AccessGate from '../../../components/app/AccessGate.astro';
+import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
+import { getFacturas, getFacturasResumen, getMyMembership, money } from '../../../lib/queries';
+import { memberCan, planLabel } from '../../../lib/permissions';
+import { getActiveOrgId } from '../../../lib/db';
+import { checkEntitlement } from '../../../lib/org-entitlements';
+import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
+
+export const prerender = false;
+
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
+
+const ME = await getMyMembership();
+const hasPerm = memberCan(ME, 'cobranza');
+const canCrear = memberCan(ME, 'cotizar');
+const orgId = await getActiveOrgId();
+const feature = await invoicingFeatureFor(orgId);
+// Regla 17: el gate se evalúa aquí también, no solo en el endpoint.
+const entitlementCheck = hasPerm ? await checkEntitlement(orgId, feature) : null;
+const hasAccess = hasPerm && (entitlementCheck?.ok ?? false);
+
+const url = Astro.url;
+const filtros = {
+    estado: url.searchParams.get('estado'),
+    q: url.searchParams.get('q'),
+    cursor: url.searchParams.get('cursor'),
+};
+const data = hasAccess ? await getFacturas(filtros) : { facturas: [], nextCursor: null };
+const resumen = hasAccess ? await getFacturasResumen() : null;
+
+const FILTERS = [
+    { key: '', label: t(L, 'fact.filter.all') },
+    { key: 'draft', label: t(L, 'fact.filter.draft') },
+    { key: 'open', label: t(L, 'fact.filter.open') },
+    { key: 'overdue', label: t(L, 'fact.filter.overdue') },
+    { key: 'paid', label: t(L, 'fact.filter.paid') },
+    { key: 'void', label: t(L, 'fact.filter.void') },
+];
+const activo = filtros.estado ?? '';
+
+// Mismo contrato visual que STATUS_META de cotizaciones: color + fondo por
+// estado, aplicados inline sobre `.status-pill`.
+const ESTADO_META: Record<string, { label: string; color: string; bg: string }> = {
+    draft: { label: t(L, 'fact.st_draft'), color: '#5b6472', bg: 'rgba(91,100,114,0.1)' },
+    open: { label: t(L, 'fact.st_open'), color: '#b45309', bg: 'rgba(245,158,11,0.12)' },
+    paid: { label: t(L, 'fact.st_paid'), color: '#059669', bg: 'rgba(16,185,129,0.12)' },
+    void: { label: t(L, 'fact.st_void'), color: '#5b6472', bg: 'rgba(91,100,114,0.1)' },
+    uncollectible: { label: t(L, 'fact.st_uncollectible'), color: '#dc2626', bg: 'rgba(239,68,68,0.1)' },
+};
+
+const qs = (patch: Record<string, string | null>) => {
+    const p = new URLSearchParams();
+    // El cursor se descarta al cambiar de filtro o búsqueda: conservarlo
+    // paginaría desde un punto que ya no pertenece al nuevo conjunto.
+    const base: Record<string, string | null> = { estado: filtros.estado, q: filtros.q, cursor: null, ...patch };
+    for (const [k, v] of Object.entries(base)) if (v) p.set(k, String(v));
+    const s = p.toString();
+    return s ? `/app/facturas?${s}` : '/app/facturas';
+};
+
+const inicial = (nombre: string | null) => (nombre || '—').trim().slice(0, 2).toUpperCase();
+const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
+---
+
+<AppLayout title="Facturas — Cord" page="facturas" heading={t(L, 'fact.heading')}>
+    {hasAccess && (
+        <div slot="topbar-actions" class="topbar-btns">
+            <form class:list={['ph-search', { 'has-q': !!filtros.q }]} method="get" action="/app/facturas" role="search">
+                {filtros.estado && <input type="hidden" name="estado" value={filtros.estado} />}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="searchFacturas" type="search" name="q" value={filtros.q ?? ''}
+                    placeholder={t(L, 'fact.buscar')} autocomplete="off" spellcheck="false" />
+                <a class="ph-search-clear" id="searchClearFac" href={qs({ q: null })} aria-label={t(L, 'fact.limpiar')}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </a>
+            </form>
+        </div>
+    )}
+
+    {!hasPerm && (
+        <AccessGate title={t(L, 'fact.sin_acceso_titulo')} desc={t(L, 'fact.sin_acceso_desc')} />
+    )}
+    {hasPerm && !hasAccess && entitlementCheck && (
+        <Fragment>
+            <AccessGate reason="plan"
+                title={t(L, 'fact.plan_titulo')}
+                desc={tf('fact.plan_desc', {
+                    plan: planLabel(entitlementCheck.requiredPlan),
+                    current: planLabel(entitlementCheck.plan),
+                })} />
+            <PlanPaywallModal
+                id="facturasPlanModal"
+                title={t(L, 'fact.plan_titulo')}
+                desc={tf('fact.plan_desc', {
+                    plan: planLabel(entitlementCheck.requiredPlan),
+                    current: planLabel(entitlementCheck.plan),
+                })}
+                requiredPlan={entitlementCheck.requiredPlan}
+                locale={L === 'en' ? 'en' : 'es'}
+                returnHref="/app" />
+        </Fragment>
+    )}
+
+    {hasAccess && vacia && (
+        <div class="cot-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+            <h3>{t(L, 'fact.empty_titulo')}</h3>
+            <p>{t(L, 'fact.empty_desc')}</p>
+            {canCrear && (
+                <a href="/app/facturas/nueva" class="cot-empty-cta">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    {t(L, 'fact.crear_primera')}
+                </a>
+            )}
+        </div>
+    )}
+
+    {hasAccess && !vacia && (
+        <Fragment>
+            {resumen && (
+                <div class="cot-summary">
+                    <div class="cs-item">
+                        <span class="cs-val editorial">{money(resumen.porCobrar, 0)}</span>
+                        <span class="cs-lbl">{t(L, 'fact.cs_por_cobrar')}</span>
+                    </div>
+                    <div class:list={['cs-item', { 'cs-warn': resumen.vencido > 0 }]}>
+                        <span class="cs-val editorial">{money(resumen.vencido, 0)}</span>
+                        <span class="cs-lbl">
+                            {t(L, 'fact.cs_vencido')}{resumen.vencidas > 0 ? ` · ${resumen.vencidas}` : ''}
+                        </span>
+                    </div>
+                    <div class="cs-item">
+                        <span class="cs-val editorial">{money(resumen.cobradoMes, 0)}</span>
+                        <span class="cs-lbl">{t(L, 'fact.cs_cobrado_mes')}</span>
+                    </div>
+                    {resumen.borradores > 0 && (
+                        <div class="cs-item">
+                            <span class="cs-val editorial">{resumen.borradores}</span>
+                            <span class="cs-lbl">{t(L, 'fact.cs_borradores')}</span>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <div class="filters">
+                {FILTERS.map((f) => (
+                    <a href={qs({ estado: f.key || null })} class:list={['filter-pill', { active: activo === f.key }]}>{f.label}</a>
+                ))}
+            </div>
+
+            <section class="table-card">
+                <div class="t-head">
+                    <span>{t(L, 'fact.th_folio')}</span>
+                    <span>{t(L, 'fact.th_cliente')}</span>
+                    <span>{t(L, 'fact.th_vence')}</span>
+                    <span class="t-right">{t(L, 'fact.th_total')}</span>
+                    <span class="t-right">{t(L, 'fact.th_saldo')}</span>
+                    <span>{t(L, 'fact.th_estado')}</span>
+                </div>
+
+                {data.facturas.map((f) => {
+                    const meta = ESTADO_META[f.estado] ?? ESTADO_META.open;
+                    // Un borrador se abre en el editor; una emitida, en su
+                    // detalle. Mandar el borrador al detalle read-only sería
+                    // cobrarle al usuario un clic extra por lo obvio.
+                    const href = f.estado === 'draft' && !f.invoiceNumber
+                        ? `/app/facturas/nueva?draft=${f.id}`
+                        : `/app/facturas/${f.id}`;
+                    return (
+                        <a href={href} class="t-row">
+                            <span class="t-folio">{f.invoiceNumber ?? t(L, 'fact.st_draft')}</span>
+                            <span class="t-client">
+                                <span class="t-avatar">{inicial(f.cliente)}</span>
+                                {f.cliente ?? '—'}
+                            </span>
+                            <span class="t-muted">
+                                {f.vence ?? '—'}
+                                {f.vencida && <b class="t-late">+{f.diasVencida}d</b>}
+                            </span>
+                            <span class="editorial t-amount t-right">{money(f.total, 0)}</span>
+                            <span class="editorial t-right t-saldo">{f.saldo > 0 ? money(f.saldo, 0) : '—'}</span>
+                            <span class="t-status">
+                                <span class="status-pill" style={`color:${meta.color}; background:${meta.bg}`}>{meta.label}</span>
+                                {f.estadoFiscal === 'error' && <span class="t-badge">{t(L, 'fact.badge_error')}</span>}
+                                {f.simulado && <span class="t-badge">{t(L, 'fact.badge_simulado')}</span>}
+                                {!f.simulado && f.testMode && <span class="t-badge">{t(L, 'fact.badge_prueba')}</span>}
+                            </span>
+                        </a>
+                    );
+                })}
+
+                {data.facturas.length === 0 && (
+                    <div class="t-empty"><p>{t(L, 'fact.sin_filtro')}</p></div>
+                )}
+            </section>
+
+            {data.nextCursor && (
+                <div class="t-more">
+                    <a href={qs({ cursor: data.nextCursor })}>{t(L, 'fact.cargar_mas')}</a>
+                </div>
+            )}
+        </Fragment>
+    )}
+</AppLayout>
+
+<style>
+    /* Mismo vocabulario que /app/cotizaciones. Va scopeado porque esta página SÍ
+       renderiza su propio markup en servidor (Regla 11). */
+    .cot-summary { display: flex; flex-wrap: wrap; gap: 2rem; padding: 0 0 1.1rem; margin-bottom: 1.1rem; border-bottom: 1px solid var(--color-border); }
+    .cs-item { display: flex; flex-direction: column; gap: 4px; }
+    .cs-val { font-size: 1.6rem; color: var(--color-blue-deep); line-height: 1; letter-spacing: -0.02em; }
+    .cs-lbl { font-size: 0.76rem; color: var(--color-text-muted); }
+    .cs-warn .cs-val { color: var(--color-danger); }
+
+    .cot-empty { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 4rem 1rem; text-align: center; }
+    .cot-empty svg { width: 42px; height: 42px; color: #cbd5e1; margin-bottom: 0.3rem; }
+    .cot-empty h3 { font-size: 1.05rem; font-weight: 600; color: var(--color-text); margin: 0; }
+    .cot-empty p { font-size: 0.85rem; color: var(--color-text-muted); margin: 0; max-width: 380px; line-height: 1.5; }
+    .cot-empty-cta {
+        margin-top: 0.7rem; font-size: 0.84rem; font-weight: 600; text-decoration: none;
+        background: var(--color-blue-deep); color: #fff; padding: 9px 18px; border-radius: 9px;
+        box-shadow: 0 6px 18px -8px rgba(10, 25, 47, 0.5);
+        transition: transform 0.4s var(--ease-spring);
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .cot-empty-cta:hover { transform: translateY(-2px); }
+
+    /* `.filters`/`.filter-pill` son globales del layout; aquí son <a> en vez de
+       <button> porque el filtro vive en la URL (paginación por cursor). */
+    .filters { margin-bottom: 1rem; }
+    .filter-pill { text-decoration: none; display: inline-flex; align-items: center; }
+
+    /* Barra de la topbar — calcada de /app/clientes para que la búsqueda se vea
+       y se comporte igual en las dos pantallas (incluida la expansión al
+       enfocar). Crear NO vive aquí: vive en el menú Crear de la topbar. */
+    .topbar-btns { display: flex; gap: 0.6rem; align-items: center; }
+    .ph-search {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: var(--color-surface, #f5f5f7);
+        border: 1.5px solid transparent;
+        border-radius: 9px;
+        padding: 0 0.8rem;
+        height: 36px;
+        width: 240px;
+        transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+                    border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+    .ph-search:focus-within {
+        width: 320px;
+        border-color: var(--color-blue-deep, #0a192f);
+        box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08);
+        background: #fff;
+    }
+    .ph-search svg { width: 15px; height: 15px; color: #999; flex-shrink: 0; transition: color 0.15s; }
+    .ph-search:focus-within svg { color: var(--color-blue-deep, #0a192f); }
+    .ph-search input {
+        flex: 1; min-width: 0; border: none; background: transparent;
+        outline: none; font-size: 0.85rem; color: var(--color-text, #111);
+        font-family: inherit; letter-spacing: -0.01em;
+    }
+    .ph-search input::placeholder { color: #bbb; }
+    .ph-search-clear {
+        display: none; background: none; border: none; cursor: pointer;
+        padding: 2px; border-radius: 50%; color: #bbb; line-height: 1;
+        flex-shrink: 0; transition: color 0.12s, background 0.12s;
+    }
+    .ph-search-clear svg { width: 12px; height: 12px; display: block; }
+    .ph-search-clear:hover { color: var(--color-blue-deep, #0a192f); background: rgba(10, 25, 47, 0.07); }
+    /* Aquí la búsqueda es de servidor, así que el botón de limpiar solo tiene
+       sentido cuando hay una búsqueda activa en la URL. */
+    .ph-search.has-q .ph-search-clear { display: flex; align-items: center; justify-content: center; }
+
+    .table-card { display: block; }
+    .t-head, .t-row {
+        display: grid;
+        grid-template-columns: 130px 1.6fr 0.9fr 1fr 1fr 150px;
+        gap: 1rem; align-items: center;
+        padding: 0.95rem 0.75rem;
+    }
+    .t-head {
+        font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+        color: var(--color-text-muted); border-bottom: 1px solid var(--color-border);
+        padding-top: 0; padding-bottom: 0.7rem;
+    }
+    .t-row {
+        text-decoration: none;
+        border-bottom: 1px solid var(--color-border);
+        border-radius: 10px;
+        transition: background 0.25s var(--ease-ios);
+    }
+    .t-row:last-of-type { border-bottom: none; }
+    .t-row:hover { background: var(--color-bg-soft); }
+
+    .t-folio { font-size: 0.84rem; font-weight: 700; color: var(--color-text); }
+    .t-client { display: flex; align-items: center; gap: 9px; font-size: 0.84rem; font-weight: 500; color: var(--color-text); min-width: 0; }
+    .t-avatar {
+        width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+        background: var(--color-blue-deep); color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.6rem; font-weight: 800;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+    .t-muted { font-size: 0.8rem; color: var(--color-text-muted); }
+    .t-late { margin-left: 5px; font-size: 0.72rem; font-weight: 700; color: var(--color-danger); }
+    .t-amount { font-size: 1rem; color: var(--color-blue-deep); }
+    .t-saldo { font-size: 0.9rem; color: var(--color-text); }
+    .t-right { text-align: right; }
+    .t-status { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .t-badge {
+        font-size: 0.6rem; font-weight: 700; padding: 2px 7px; border-radius: 100px;
+        color: #b45309; background: rgba(245, 158, 11, 0.1); white-space: nowrap;
+    }
+
+    .t-empty { padding: 2.5rem; text-align: center; }
+    .t-empty p { font-size: 0.85rem; color: var(--color-text-muted); margin: 0; }
+
+    .t-more { display: flex; justify-content: center; padding: 1.4rem 0 0.4rem; }
+    .t-more a {
+        font-size: 0.82rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none;
+        background: var(--color-bg-soft); padding: 9px 18px; border-radius: 100px;
+        transition: background 0.25s var(--ease-ios);
+    }
+    .t-more a:hover { background: #e8e8ec; }
+
+    /* Regla 16: la fila se reordena, no se esconde. Total y saldo siguen a la
+       vista — son justamente las columnas por las que se abre esta pantalla. */
+    @media (max-width: 880px) {
+        .cot-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem 1rem; }
+        .cs-item { min-width: 0; }
+        .cs-val { font-size: clamp(1.3rem, 7vw, 1.6rem); overflow-wrap: anywhere; }
+        .filters { flex-wrap: wrap; }
+        .filter-pill { min-height: 44px; }
+        .topbar-btns { display: grid; grid-template-columns: 1fr; width: 100%; min-width: 0; gap: 0.6rem; }
+        .topbar-btns .ph-search,
+        .topbar-btns .ph-search:focus-within { width: 100%; min-width: 0; max-width: 100%; height: 44px; }
+        .ph-search input { font-size: 16px; }
+        .ph-search-clear { width: 36px; height: 36px; }
+
+        .t-head { display: none; }
+        .t-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas:
+                "folio total"
+                "client status"
+                "due saldo";
+            gap: 0.5rem 1rem;
+            padding: 1rem 0;
+            border-radius: 0;
+        }
+        .t-folio { grid-area: folio; }
+        .t-amount { grid-area: total; align-self: start; }
+        .t-client { grid-area: client; overflow-wrap: anywhere; }
+        .t-status { grid-area: status; justify-self: end; align-self: center; }
+        .t-row > .t-muted { grid-area: due; display: block; font-size: 0.72rem; }
+        .t-saldo { grid-area: saldo; justify-self: end; }
+        .t-more a { min-height: 44px; display: inline-flex; align-items: center; }
+    }
+</style>

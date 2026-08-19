@@ -29,6 +29,7 @@ const STATIC_PATHS = [
     { path: '/casos-de-uso/agencias', priority: '0.6', changefreq: 'monthly' },
     { path: '/casos-de-uso/comercializadoras', priority: '0.6', changefreq: 'monthly' },
     { path: '/casos-de-uso/software-factory', priority: '0.6', changefreq: 'monthly' },
+    { path: '/comparar/facturacion', priority: '0.6', changefreq: 'monthly' },
     { path: '/desarrolladores/status', priority: '0.3', changefreq: 'daily' },
     { path: '/privacidad', priority: '0.2', changefreq: 'yearly' },
     { path: '/terminos', priority: '0.2', changefreq: 'yearly' },

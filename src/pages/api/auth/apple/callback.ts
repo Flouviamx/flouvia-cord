@@ -19,6 +19,7 @@ import { trustedIp } from '../../../../lib/ip';
 import { posthogServer } from '../../../../lib/posthog-server';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 import { ssoRequirementFor } from '../../../../lib/saml';
+import { log } from '../../../../lib/log';
 
 export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
     const ip = trustedIp(request);
@@ -53,7 +54,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
         const idToken = await exchangeAppleCode(code, `${url.origin}/api/auth/apple/callback`);
         claims = await verifyAppleIdToken(idToken, savedNonce);
     } catch (err) {
-        console.error('[apple/callback] verificación falló:', err instanceof AppleTokenVerificationError ? err.message : err);
+        log.error('verificación falló', { route: 'apple/callback', err: err instanceof AppleTokenVerificationError ? err.message : err });
         return redirect('/sign-in?sso_error=1');
     }
 
@@ -145,7 +146,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
         setSessionCookies(cookies, sessionToken);
         return redirect(dest);
     } catch (err) {
-        console.error('[apple/callback] Error:', err);
+        log.error('Error', { route: 'apple/callback', err });
         return redirect('/sign-in?sso_error=1');
     }
 };

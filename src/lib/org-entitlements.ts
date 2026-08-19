@@ -7,6 +7,7 @@
 // pagado después de una cancelación.
 
 import { sql, withOrgTx } from './db';
+import { log } from './log';
 import {
     FEATURE_LABEL,
     PLAN_RANK,
@@ -156,7 +157,7 @@ export async function requireEntitlement(orgId: string, feature: FeatureKey): Pr
             subscription_status: result.context.subscriptionStatus,
         }, 402);
     } catch (error) {
-        console.error(`[entitlements] no se pudo verificar ${feature} para ${orgId}`, error);
+        log.error('no se pudo verificar el entitlement', { route: 'entitlements', feature, orgId, err: error });
         return json({
             error: 'No pudimos verificar tu suscripción. Intenta de nuevo.',
             code: 'subscription_verification_unavailable',
@@ -191,7 +192,7 @@ export async function requireResourceCapacity(orgId: string, resource: LimitedRe
         if (error instanceof ResourceLimitReachedError) {
             return resourceLimitJson(error.resource, error.limit, error.plan);
         }
-        console.error(`[entitlements] no se pudo verificar el límite ${resource} para ${orgId}`, error);
+        log.error('no se pudo verificar el límite de recurso', { route: 'entitlements', resource, orgId, err: error });
         return json({
             error: 'No pudimos verificar los límites de tu plan. Intenta de nuevo.',
             code: 'subscription_verification_unavailable',

@@ -11,6 +11,7 @@ import { posthogServer } from '../../../../lib/posthog-server';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 import { ssoRequirementFor } from '../../../../lib/saml';
 import { completeOAuthLink, consumeOAuthLink, linkRedirect } from '../../../../lib/oauth-link';
+import { log } from '../../../../lib/log';
 
 export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
   const ip = trustedIp(request);
@@ -59,7 +60,7 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
     });
 
     if (!tokenRes.ok) {
-      console.error('[google/callback] Token exchange failed:', await tokenRes.text());
+      log.error('Token exchange failed', { route: 'google/callback', err: await tokenRes.text() });
       return redirect('/sign-in?sso_error=1');
     }
 
@@ -180,7 +181,7 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
 
     return redirect(dest);
   } catch (err) {
-    console.error('[google/callback] Error:', err);
+    log.error('Error', { route: 'google/callback', err });
     return redirect('/sign-in?sso_error=1');
   }
 };

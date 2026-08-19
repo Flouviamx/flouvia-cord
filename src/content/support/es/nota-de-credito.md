@@ -1,7 +1,7 @@
 ---
 title: "Emitir Nota de Crédito (Egreso)"
 description: "Aplica devoluciones y bonificaciones legales."
-category: "Facturación y CFDI"
+category: "Facturación"
 ---
 
 Las Notas de Crédito (CFDI tipo Egreso) son el mecanismo fiscal del SAT para aplicar devoluciones, bonificaciones o corregir errores en saldos de facturas.

@@ -15,6 +15,8 @@ import { sql, resolvePublicQuote, withOrgTx } from '../../../../lib/db';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { isFeeScheduleActive, SUBSCRIPTION_APPLICATION_FEE_PERCENT } from '../../../../lib/fees';
 import { payerError } from '../../../../lib/pay-errors';
+import { normalizeCurrency, stripeCurrency, stripeSupportsCurrency, toMinorUnits } from '../../../../lib/currency';
+import { log } from '../../../../lib/log';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -28,6 +30,7 @@ export const POST: APIRoute = async ({ params }) => {
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
     const [rows] = await withOrgTx(identity.orgId, sql`
         select c.id, c.org_id, c.folio, c.total, c.status, c.es_recurrente, c.cliente_id,
+               c.base_currency, o.moneda,
                o.sandbox_of, o.stripe_account_id, o.stripe_charges_enabled,
                o.acepta_tarjeta, o.nombre as org_nombre, o.fee_enabled, o.fee_terms_version
         from cotizaciones c
@@ -52,7 +55,14 @@ export const POST: APIRoute = async ({ params }) => {
         return json({ error: 'El cobro recurrente requiere pago con tarjeta.' }, 403);
     }
 
-    const amount = Math.round(Number(c.total) * 100); // centavos
+    // La iguala se cobra en la divisa de la cotización, igual que el pago único.
+    const currency = normalizeCurrency((c.base_currency as string) || (c.moneda as string));
+    if (!stripeSupportsCurrency(currency)) {
+        return json({ error: 'El cobro recurrente todavía no está disponible para la moneda de esta cotización.' }, 409);
+    }
+    let amount: number; // unidad mínima de la divisa (JPY/CLP no se multiplican)
+    try { amount = toMinorUnits(Number(c.total), currency); }
+    catch { return json({ error: 'Monto inválido' }, 500); }
     if (!(amount > 0)) return json({ error: 'Monto inválido' }, 500);
 
     const acct = c.stripe_account_id as string;
@@ -107,7 +117,7 @@ export const POST: APIRoute = async ({ params }) => {
         if (!sub) {
             const [ins] = await withOrgTx(orgId, sql`
                 insert into cotizacion_suscripciones (org_id, cotizacion_id, cliente_id, stripe_account_id, monto, moneda, estado)
-                values (${c.org_id}, ${c.id}, ${c.cliente_id || null}, ${acct}, ${Number(c.total)}, 'MXN', 'incomplete')
+                values (${c.org_id}, ${c.id}, ${c.cliente_id || null}, ${acct}, ${Number(c.total)}, ${currency}, 'incomplete')
                 on conflict (cotizacion_id) do nothing
                 returning *`);
             if (ins.length) sub = ins[0];
@@ -184,12 +194,14 @@ export const POST: APIRoute = async ({ params }) => {
         let priceId = sub.stripe_price_id as string | null;
         if (priceId) {
             const { ok, data } = await sfetch(`/v1/prices/${priceId}`, undefined, 'GET');
-            if (!ok || Number(data?.unit_amount) !== amount || data?.recurring?.interval !== 'month') priceId = null;
+            if (!ok || Number(data?.unit_amount) !== amount
+                || String(data?.currency || '').toLowerCase() !== stripeCurrency(currency)
+                || data?.recurring?.interval !== 'month') priceId = null;
         }
         if (!priceId) {
             const prf = new URLSearchParams();
             prf.set('unit_amount', String(amount));
-            prf.set('currency', 'mxn');
+            prf.set('currency', stripeCurrency(currency));
             prf.set('recurring[interval]', 'month');
             prf.set('product', productId as string);
             const { ok, data } = await sfetch('/v1/prices', prf, 'POST', `sub-price-${cid}-${amount}`);
@@ -256,14 +268,14 @@ export const POST: APIRoute = async ({ params }) => {
 
         return json({ clientSecret, publishableKey: pubKey, accountId: acct, amount, subscription: true });
     } catch (e) {
-        console.error('[subscription-intent]', e);
+        log.error('error no controlado', { route: 'subscription-intent', err: e });
         return payFailure(e);
     }
 };
 
 function payFailure(error: unknown) {
     const safe = payerError(error);
-    console.error('[subscription-intent] error de proveedor', { reference: safe.reference });
+    log.error('error de proveedor', { route: 'subscription-intent', reference: safe.reference });
     return json({ error: safe.message, reference: safe.reference }, 502);
 }
 

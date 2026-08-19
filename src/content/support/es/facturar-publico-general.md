@@ -1,7 +1,7 @@
 ---
 title: "Facturación al Público en General"
 description: "Emisión de CFDI global diario o mensual."
-category: "Facturación y CFDI"
+category: "Facturación"
 ---
 
 Todas las ventas e ingresos que recibas que no sean facturados individualmente a un RFC específico, deben declararse ante el SAT mediante una **Factura Global de Público en General**.

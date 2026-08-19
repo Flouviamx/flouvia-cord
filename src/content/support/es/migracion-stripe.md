@@ -1,11 +1,11 @@
 ---
 title: "Migrar tus cobros a Cord"
-description: "Cómo activar Cord Pagos y traer clientes, productos y procesos actuales."
+description: "Cómo activar Cord Payments y traer clientes, productos y procesos actuales."
 category: "Desarrolladores"
 order: 5
 ---
 
-Cord Pagos integra la propuesta, la aceptación y el pago en un solo link. Los fondos llegan a tu cuenta de pagos conectada; Cord no conserva saldos ni actúa como banco.
+Cord Payments integra la propuesta, la aceptación y el pago en un solo link. Los fondos llegan a tu cuenta de pagos conectada; Cord no conserva saldos ni actúa como banco.
 
 La migración consiste en activar cobros, importar tus datos comerciales y mover gradualmente tus nuevos flujos a Cord. Las tarjetas guardadas en otro sistema no se copian: cada cliente autoriza su método de pago dentro del nuevo flujo seguro.
 
@@ -19,7 +19,7 @@ La migración consiste en activar cobros, importar tus datos comerciales y mover
 
 Las igualas mensuales pueden configurarse como cotizaciones recurrentes. El cliente autoriza su tarjeta una vez y Cord registra cada cobro mensual en el historial de la cuenta.
 
-### Paso 1: Activa Cord Pagos
+### Paso 1: Activa Cord Payments
 
 Ve a **Ajustes › Cobros** y completa el onboarding embebido para conectar tu cuenta de pagos. Sin una cuenta activa, el link público de tus cotizaciones sigue funcionando, pero no permitirá el cobro en línea.
 

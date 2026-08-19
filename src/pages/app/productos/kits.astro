@@ -347,7 +347,25 @@ const KIT_T = {
         let items = []; // { id?, productoId, descripcion, cantidad, unidad, sku, precio, persisted }
         let removedIds = [];
 
-        const money = (n) => '$' + new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 2 }).format(n || 0);
+        // Script inline (define:vars): no puede importar lib/money-client, así
+        // que lee la misma fuente — la divisa que AppLayout publica en <body>.
+        const KIT_CURRENCY = (document.body.dataset.currency || 'MXN').toUpperCase();
+        const KIT_DECIMALS = (() => {
+            try {
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: KIT_CURRENCY })
+                    .resolvedOptions().maximumFractionDigits ?? 2;
+            } catch { return 2; }
+        })();
+        const money = (n) => {
+            try {
+                return new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX', {
+                    style: 'currency', currency: KIT_CURRENCY,
+                    minimumFractionDigits: KIT_DECIMALS, maximumFractionDigits: KIT_DECIMALS,
+                }).format(Number(n) || 0);
+            } catch {
+                return new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX').format(Number(n) || 0);
+            }
+        };
         const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
         function renderItems() {

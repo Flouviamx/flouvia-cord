@@ -20,8 +20,20 @@ export const POST: APIRoute = async ({ request }) => {
     if (limited) return limited;
     const staleAuth = await requireFreshAuth();
     if (staleAuth) return staleAuth;
-    const [org] = await sql`select stripe_account_id, stripe_business_type, banco_clabe_last4 from orgs where id = ${orgId}`;
+    const [org] = await sql`select stripe_account_id, stripe_business_type, banco_clabe_last4, country_code from orgs where id = ${orgId}`;
     if (!org?.stripe_account_id) return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
+
+    // Este endpoint captura una CLABE: un formato de cuenta EXCLUSIVO de México.
+    // Cada país usa el suyo (IBAN, routing + account, sort code), con validaciones
+    // y campos distintos. Mientras solo esté implementado el carril mexicano se
+    // dice con claridad, en vez de aceptar 18 dígitos de un banco que no los usa
+    // y fallar del lado de Stripe con un error incomprensible.
+    if (String(org.country_code || 'MX').toUpperCase() !== 'MX') {
+        return new Response(JSON.stringify({
+            error: 'Por ahora solo podemos registrar cuentas bancarias de México desde aquí. Escríbenos y damos de alta la tuya.',
+            code: 'payout_country_unsupported',
+        }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+    }
 
     const data = await request.json().catch(() => ({}));
     const clabe = String(data.clabe || '').replace(/\D/g, '');

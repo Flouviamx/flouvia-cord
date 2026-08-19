@@ -24,6 +24,7 @@ import { loginSchema, parseJsonBody } from '../../../lib/validation';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { trustedIp } from '../../../lib/ip';
 import { ssoRequirementFor } from '../../../lib/saml';
+import { log } from '../../../lib/log';
 
 const CHALLENGE_COOKIE = 'cord_2fa_challenge';
 
@@ -117,7 +118,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         setSessionCookies(cookies, sessionToken);
         return new Response(JSON.stringify({ success: true }), { status: 200 });
     } catch (error) {
-        console.error('[auth/login]', error);
+        log.error('error no controlado', { route: 'auth/login', err: error });
         return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
     }
 };

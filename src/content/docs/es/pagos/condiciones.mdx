@@ -1,23 +1,23 @@
 ---
-title: "Tarifas de Cord Pagos"
-description: "La tabla de tarifas real de Cord Pagos por método de cobro, cómo se calcula el IVA, el tope en SPEI y qué pasa con la comisión si reembolsas un pago."
+title: "Tarifas de Cord Payments"
+description: "La tabla de tarifas real de Cord Payments por método de cobro, cómo se calcula el IVA, el tope en SPEI y qué pasa con la comisión si reembolsas un pago."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Tarifas de Cord Pagos</h1>
+  <h1 class="page-title">Tarifas de Cord Payments</h1>
   <p class="page-subtitle">Cuánto cobra Cord por procesar un pago, cómo se calcula, y las reglas que aplican a reembolsos y disputas.</p>
 </header>
 
 ## La tarifa por método
 
-Cord Pagos cobra una comisión por transacción que **ya incluye** el costo de procesamiento — no hay una segunda tarifa oculta de un tercero que se sume después. La tarifa depende del método de cobro:
+Cord Payments cobra una comisión por transacción que **ya incluye** el costo de procesamiento — no hay una segunda tarifa oculta de un tercero que se sume después. La tarifa depende del método de cobro:
 
 | Método | Tarifa | Ejemplo sobre $10,000 |
 |---|---|---|
 | **Tarjeta** (crédito/débito) | 4% + $3.00 MXN + IVA | $46.40 |
 | **SPEI** (transferencia automática) | 1% + $7.00 MXN + IVA, con un **tope de $588.12 MXN** por cobro | $11.60 |
 | **Igualas** (cobro recurrente mensual) | 4% + $3.00 MXN + IVA por cada cargo mensual | — |
-| **Transferencia manual** | $0.00 — no pasa por Cord Pagos | $0.00 |
+| **Transferencia manual** | $0.00 — no pasa por Cord Payments | $0.00 |
 
 <Callout type="info">
 El IVA (16%) se calcula sobre el componente porcentual + el componente fijo de la tarifa, nunca sobre el monto total del cobro. La cifra que ves arriba ya lo incluye.
@@ -41,22 +41,22 @@ Una iguala (retainer mensual) se cobra siempre con tarjeta — es la única form
 
 ### Transferencia manual — sigue siendo gratis
 
-Si prefieres compartir tu CLABE directamente y que el cliente te transfiera fuera de Cord Pagos (subiendo su comprobante para que tú marques el cobro a mano), esa opción sigue costando **$0.00**. No pasa por Cord Pagos, así que no genera ninguna comisión — pero tampoco tiene conciliación automática ni protección ante contracargos.
+Si prefieres compartir tu CLABE directamente y que el cliente te transfiera fuera de Cord Payments (subiendo su comprobante para que tú marques el cobro a mano), esa opción sigue costando **$0.00**. No pasa por Cord Payments, así que no genera ninguna comisión — pero tampoco tiene conciliación automática ni protección ante contracargos.
 
 ## Cómo se activa tu tabla de tarifas
 
-Cord Pagos exige que aceptes explícitamente la tabla de tarifas vigente antes de empezar a cobrar. Hay dos momentos donde esto pasa:
+Cord Payments exige que aceptes explícitamente la tabla de tarifas vigente antes de empezar a cobrar. Hay dos momentos donde esto pasa:
 
 - **Cuenta nueva:** la aceptación es el último paso del asistente de conexión (ver [Conectar tu cuenta](/docs/pagos/onboarding), paso "Términos") — no puedes terminar de conectar tu cuenta sin marcar la casilla que acepta la tabla de tarifas vigente.
 - **Cuenta ya conectada, o si la tabla cambia:** ve a **Ajustes › Cobros** (necesitas el permiso *Configurar cobros*), revisa la tabla de tarifas actual y marca la casilla de aceptación.
 
-Hasta que no aceptes, tu cuenta puede seguir conectada y recibiendo cobros manuales, pero **no puede procesar tarjeta ni SPEI** a través de Cord Pagos.
+Hasta que no aceptes, tu cuenta puede seguir conectada y recibiendo cobros manuales, pero **no puede procesar tarjeta ni SPEI** a través de Cord Payments.
 
 <Callout type="warning">
-**Cuentas anteriores al lanzamiento de Cord Pagos:** si tu negocio ya cobraba en línea desde antes de que existiera esta tabla de tarifas, tus cobros existentes quedan protegidos a **0% de comisión** hasta que tú, de forma voluntaria, aceptes la tabla vigente en Ajustes › Cobros. Nadie te cambia la tarifa sin que tú lo confirmes primero.
+**Cuentas anteriores al lanzamiento de Cord Payments:** si tu negocio ya cobraba en línea desde antes de que existiera esta tabla de tarifas, tus cobros existentes quedan protegidos a **0% de comisión** hasta que tú, de forma voluntaria, aceptes la tabla vigente en Ajustes › Cobros. Nadie te cambia la tarifa sin que tú lo confirmes primero.
 </Callout>
 
-Si en algún momento cambiamos la tabla de tarifas, no se aplica de forma retroactiva a una aceptación ya hecha — tendrás que volver a aceptar la nueva versión antes de que te cobre distinto. El texto legal completo vive en [Términos y condiciones, sección Cord Pagos](/terminos#cord-pagos).
+Si en algún momento cambiamos la tabla de tarifas, no se aplica de forma retroactiva a una aceptación ya hecha — tendrás que volver a aceptar la nueva versión antes de que te cobre distinto. El texto legal completo vive en [Términos y condiciones, sección Cord Payments](/terminos#cord-pagos).
 
 ## Qué pasa con la comisión si reembolsas
 
@@ -64,19 +64,19 @@ Si le regresas dinero a un cliente desde **Mis cobros › Reembolsar**, el monto
 
 ## Qué pasa con la comisión si hay una disputa (contracargo)
 
-Si un cliente desconoce el cargo con su banco (un contracargo/chargeback), verás el caso en **Mis cobros › Disputas**. Mientras la disputa está abierta, el monto queda retenido; si la pierdes, ese dinero (más una cuota de disputa) sale de tu saldo — la comisión original de Cord Pagos tampoco se devuelve en este caso. Ver [Disputas y contracargos](/docs/pagos/disputas) para el detalle completo del proceso de defensa.
+Si un cliente desconoce el cargo con su banco (un contracargo/chargeback), verás el caso en **Mis cobros › Disputas**. Mientras la disputa está abierta, el monto queda retenido; si la pierdes, ese dinero (más una cuota de disputa) sale de tu saldo — la comisión original de Cord Payments tampoco se devuelve en este caso. Ver [Disputas y contracargos](/docs/pagos/disputas) para el detalle completo del proceso de defensa.
 
-## Ventajas de cobrar con Cord Pagos
+## Ventajas de cobrar con Cord Payments
 
 1. **Conciliación 100% automática.** Cada cobro se asocia a su cotización y el estado cambia a pagado en tiempo real — no hay que cazar depósitos en el portal del banco.
-2. **El dinero es tuyo, directo a tu cuenta.** Cord Pagos nunca retiene tus fondos ni actúa como intermediario del dinero — tú eres el comerciante de registro de cada cobro.
+2. **El dinero es tuyo, directo a tu cuenta.** Cord Payments nunca retiene tus fondos ni actúa como intermediario del dinero — tú eres el comerciante de registro de cada cobro.
 3. **Checkout con tu marca.** Tu cliente paga en una pantalla incrustada en el documento, con tu nombre y tus colores — sin redirecciones a sitios externos ni logos de terceros.
 4. **Anticipos, saldos e igualas.** El mismo sistema cobra un anticipo hoy y el saldo después (Net 30/60), o una iguala mensual automática, sin que tengas que perseguir el cobro a mano.
 
 ## Consideraciones antes de activar
 
 1. **Tiempo de depósito.** El dinero no llega a tu banco al instante — los depósitos siguen un calendario que normalmente tarda entre 2 y 7 días hábiles después de cada cobro.
-2. **Verificación de identidad (KYC).** Para activar Cord Pagos necesitas pasar una verificación — identificación oficial, RFC, y datos de tu negocio. Es un requisito regulatorio, no una decisión de Cord.
+2. **Verificación de identidad (KYC).** Para activar Cord Payments necesitas pasar una verificación — identificación oficial, RFC, y datos de tu negocio. Es un requisito regulatorio, no una decisión de Cord.
 3. **Contracargos.** Si un cliente desconoce un cargo, el dinero puede quedar retenido mientras se resuelve la disputa. Cord te da las herramientas para defenderte con evidencia, pero la responsabilidad del contracargo es del negocio que cobró.
 
 <Callout type="info">

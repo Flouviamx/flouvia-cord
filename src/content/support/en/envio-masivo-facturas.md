@@ -1,7 +1,7 @@
 ---
 title: "Mass email delivery of invoices"
 description: "Forward the PDF and XML to multiple clients."
-category: "Billing & CFDI"
+category: "Invoicing"
 ---
 
 If you have dozens or hundreds of recurring or API-generated invoices and want to ensure your clients receive and pay them quickly, you don't have to send manual emails.

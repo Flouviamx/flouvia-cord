@@ -3,8 +3,8 @@
 // src/lib/mock.ts para que las páginas sólo cambien el import + un `await`.
 // Re-exporta los helpers puros y STATUS_META del mock (no se duplican).
 
-import { sql, getActiveOrgId, resolvePublicQuote, withOrgTx } from './db';
-import { currentUserId, currentOrgIdOverride, currentLocale } from './context';
+import { sql, getActiveOrgId, resolvePublicQuote, resolvePublicInvoice, withOrgTx } from './db';
+import { currentUserId, currentOrgIdOverride, currentLocale, setRequestCurrency, setRequestLocale } from './context';
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
 import { notifyQuoteEvent } from './notify';
@@ -16,6 +16,7 @@ import { cached, invalidate } from './cache';
 import { after } from './after';
 import { trackServer } from './posthog-server';
 import { decryptSecret } from './crypto-secret';
+import { normalizeCurrency } from './currency';
 import { dueDateFor, venceDia } from './cobros';
 import type { PublicViewer } from './public-viewer';
 import {
@@ -70,6 +71,10 @@ export async function getOrg() {
         withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`),
     ]);
     const effectivePlan = context.effectivePlan;
+    // Toda superficie que arma ORG queda con la divisa del negocio en el
+    // contexto del request; money() la lee sin recibirla por parámetro.
+    setRequestCurrency(o.moneda as string);
+    setRequestLocale(o.idioma as string);
     return {
         id: orgId,
         nombre: o.nombre as string,
@@ -1227,6 +1232,12 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
         aprobEstado: (c.aprob_estado as string) ?? null,
         aprobMotivo: (c.aprob_motivo as string) ?? null,
         total: num(c.total),
+        // Divisas de la cotización. Viajan SIEMPRE en el DTO: sin ellas, el
+        // editor y la reanudación de borradores caían a la divisa default del
+        // negocio, así que una cotización vendida en USD se releía (y se volvía
+        // a guardar) como si fuera en pesos. Ver regla 21.
+        baseCurrency: normalizeCurrency(c.base_currency, 'MXN'),
+        fiscalCurrency: normalizeCurrency(c.fiscal_currency, normalizeCurrency(c.base_currency, 'MXN')),
         version: num(c.version) || 1,
         iva_incluido: Boolean(c.iva_incluido),
         anticipoPct: c.anticipo_pct != null ? num(c.anticipo_pct) : null,
@@ -1343,42 +1354,308 @@ export async function getDocumentosFiscales(cotizacionId: string) {
     }));
 }
 
-// Bandeja de "Facturas emitidas" (Ajustes › Facturación y CFDI) — todos los
-// documentos fiscales de la org, no solo los de una cotización (a diferencia
-// de getDocumentosFiscales de arriba). Antes no existía ninguna pantalla que
-// listara los CFDI juntos: solo se veían uno por uno dentro de cada
-// cotización. Mismo criterio simulado/testMode que getDocumentosFiscales.
-export async function getFacturas(limit = 200) {
-    const orgId = await getActiveOrgId();
-    const [rows] = await withOrgTx(orgId, sql`
-        select d.id, d.cotizacion_id, d.country_code, d.document_type, d.fiscal_id,
-               d.invoice_number, d.currency, d.total as invoice_total,
-               d.status, d.provider_data, d.pdf_url, d.xml_url, d.created_at,
-               c.folio, c.total as quote_total, cl.empresa
-        from documentos_fiscales d
-        join cotizaciones c on c.id = d.cotizacion_id
-        left join clientes cl on cl.id = c.cliente_id
-        where d.org_id = ${orgId}
-        order by d.created_at desc
-        limit ${limit}`);
-    return rows.map((r: any) => ({
+// ── Bandeja de facturas ─────────────────────────────────────────────────────
+// Antes era un `limit 200` fijo sin filtros ni saldo, y hacía `join` a
+// cotizaciones — lo que dejaba fuera cualquier factura standalone. Ahora:
+// `left join`, filtros, paginación keyset y el saldo real de cada documento.
+
+export interface FacturaFilters {
+    /** draft | open | paid | void | uncollectible | overdue */
+    estado?: string | null;
+    clienteId?: string | null;
+    desde?: string | null;
+    hasta?: string | null;
+    q?: string | null;
+    limit?: number;
+    /** Keyset: created_at del último registro de la página anterior. */
+    cursor?: string | null;
+}
+
+function rowToFactura(r: any) {
+    const total = num(r.invoice_total ?? r.quote_total);
+    const pagado = num(r.amount_paid);
+    return {
         id: r.id as string,
-        cotizacionId: r.cotizacion_id as string,
-        folio: r.folio as string,
+        cotizacionId: (r.cotizacion_id as string) || null,
+        clienteId: (r.cliente_id as string) || null,
+        folio: (r.folio as string) || null,
         cliente: (r.empresa as string) || null,
         invoiceNumber: (r.invoice_number as string) || null,
         currency: (r.currency as string) || null,
-        total: num(r.invoice_total ?? r.quote_total),
+        total,
+        pagado,
+        saldo: r.amount_remaining !== null && r.amount_remaining !== undefined
+            ? num(r.amount_remaining)
+            : Math.max(total - pagado, 0),
+        // `estado` es el ciclo COMERCIAL y `estadoFiscal` el rail regulatorio.
+        // La UI los muestra por separado a propósito: "timbrada" y "pagada" son
+        // hechos distintos y confundirlos es cómo se cobra dos veces.
+        estado: (r.lifecycle as string) || 'open',
+        estadoFiscal: r.status as string,
+        vence: r.due_date ? fmtDate(r.due_date as string) : null,
+        venceISO: r.due_date ? String(r.due_date).slice(0, 10) : null,
+        vencida: !!r.vencida,
+        diasVencida: r.dias_vencida !== null && r.dias_vencida !== undefined ? Number(r.dias_vencida) : null,
         pais: r.country_code as string,
         tipo: r.document_type as string,
         fiscalId: (r.fiscal_id as string) || null,
+        notaCreditoDe: (r.credit_note_of as string) || null,
+        publicToken: (r.public_token as string) || null,
+        enviada: !!r.sent_at,
         status: r.status as string,
         simulado: !!(r.provider_data && (r.provider_data as any).simulado === true),
         testMode: !!(r.provider_data && (r.provider_data as any).livemode === false),
         pdfUrl: (r.pdf_url as string) || null,
         xmlUrl: (r.xml_url as string) || null,
         creado: fmtDate(r.created_at as string),
-    }));
+        creadoISO: String(r.created_at),
+    };
+}
+
+export async function getFacturas(filters: FacturaFilters = {}) {
+    const orgId = await getActiveOrgId();
+    const limit = Math.min(Math.max(Number(filters.limit) || 50, 1), 200);
+    // Vocabulario cerrado: el filtro viene de la URL y no es de confianza.
+    const estado = ['draft', 'open', 'paid', 'void', 'uncollectible', 'overdue'].includes(String(filters.estado))
+        ? String(filters.estado)
+        : null;
+    const busqueda = filters.q ? `%${String(filters.q).trim().slice(0, 80)}%` : null;
+
+    const [rows] = await withOrgTx(orgId, sql`
+        select d.id, d.cotizacion_id, d.cliente_id, d.country_code, d.document_type,
+               d.fiscal_id, d.invoice_number, d.currency, d.total as invoice_total,
+               d.lifecycle, d.status, d.amount_paid, d.amount_remaining, d.due_date,
+               d.public_token, d.sent_at, d.credit_note_of,
+               d.provider_data, d.pdf_url, d.xml_url, d.created_at,
+               (d.lifecycle = 'open' and d.due_date is not null and d.due_date < current_date) as vencida,
+               case when d.lifecycle = 'open' and d.due_date is not null and d.due_date < current_date
+                    then current_date - d.due_date else null end as dias_vencida,
+               c.folio, c.total as quote_total,
+               coalesce(cl.empresa, cq.empresa) as empresa
+          from documentos_fiscales d
+          left join cotizaciones c on c.id = d.cotizacion_id
+          left join clientes cl on cl.id = d.cliente_id
+          left join clientes cq on cq.id = c.cliente_id
+         where d.org_id = ${orgId}
+           and (${estado}::text is null
+                or (${estado}::text = 'overdue'
+                    and d.lifecycle = 'open' and d.due_date is not null and d.due_date < current_date)
+                or (${estado}::text <> 'overdue' and d.lifecycle = ${estado}))
+           and (${filters.clienteId || null}::uuid is null or d.cliente_id = ${filters.clienteId || null}::uuid)
+           and (${filters.desde || null}::date is null or d.created_at >= ${filters.desde || null}::date)
+           and (${filters.hasta || null}::date is null or d.created_at < (${filters.hasta || null}::date + interval '1 day'))
+           and (${busqueda}::text is null
+                or d.invoice_number ilike ${busqueda}
+                or d.fiscal_id ilike ${busqueda}
+                or c.folio ilike ${busqueda}
+                or coalesce(cl.empresa, cq.empresa) ilike ${busqueda})
+           and (${filters.cursor || null}::timestamptz is null or d.created_at < ${filters.cursor || null}::timestamptz)
+         order by d.created_at desc, d.id desc
+         limit ${limit + 1}`);
+
+    const page = rows.slice(0, limit).map(rowToFactura);
+    return {
+        facturas: page,
+        // El cursor sale de la fila real, no de un offset: con `offset` una
+        // factura nueva desplaza la página y esconde un registro sin avisar.
+        nextCursor: rows.length > limit && page.length ? page[page.length - 1].creadoISO : null,
+    };
+}
+
+/** Totales de cabecera de la bandeja: por cobrar, vencido y cobrado del mes. */
+export async function getFacturasResumen() {
+    const orgId = await getActiveOrgId();
+    const [rows] = await withOrgTx(orgId, sql`
+        select
+          coalesce(sum(amount_remaining) filter (where lifecycle = 'open'), 0) as por_cobrar,
+          coalesce(sum(amount_remaining) filter (
+            where lifecycle = 'open' and due_date is not null and due_date < current_date), 0) as vencido,
+          coalesce(sum(amount_paid) filter (
+            where date_trunc('month', updated_at) = date_trunc('month', current_date)), 0) as cobrado_mes,
+          count(*) filter (where lifecycle = 'draft') as borradores,
+          count(*) filter (
+            where lifecycle = 'open' and due_date is not null and due_date < current_date) as vencidas
+        from documentos_fiscales
+       where org_id = ${orgId}`);
+    const r = rows[0] || {};
+    return {
+        porCobrar: num(r.por_cobrar),
+        vencido: num(r.vencido),
+        cobradoMes: num(r.cobrado_mes),
+        borradores: Number(r.borradores || 0),
+        vencidas: Number(r.vencidas || 0),
+    };
+}
+
+/**
+ * Factura por su token público, para la hosted invoice page (`/i/[token]`).
+ *
+ * Carril público: no hay sesión, así que el token se traduce primero a
+ * (documento, organización) con `cord_resolve_public_invoice` y a partir de ahí
+ * todo corre con contexto de org. Un borrador no resuelve.
+ */
+export async function getFacturaByToken(token: string) {
+    const identity = await resolvePublicInvoice(token);
+    if (!identity) return null;
+    const { id, orgId } = identity;
+    const [rows, pagos] = await withOrgTx(orgId,
+        sql`select d.id, d.org_id, d.cotizacion_id, d.invoice_number, d.fiscal_id,
+                   d.lifecycle, d.status, d.country_code, d.document_type,
+                   d.currency, d.ledger_currency, d.fx_rate, d.ledger_total,
+                   d.subtotal, d.tax_total, d.total, d.amount_paid, d.amount_remaining,
+                   d.due_date, d.notes, d.issued_at, d.created_at, d.public_token,
+                   d.issuer_snapshot, d.recipient_snapshot, d.line_items_snapshot,
+                   d.provider_data, d.pdf_url, d.xml_url, d.credit_note_of,
+                   c.public_token as quote_token, c.folio as quote_folio,
+                   o.nombre as org_nombre, o.logo_url as org_logo_url,
+                   o.color_marca as org_color, o.email_contacto as org_email,
+                   o.telefono as org_tel, o.moneda as org_moneda,
+                   o.portal_powered as org_portal_powered,
+                   (o.sandbox_of is not null) as org_es_prueba,
+                   o.stripe_account_id as org_stripe_account_id,
+                   o.stripe_charges_enabled as org_stripe_charges_enabled,
+                   o.acepta_tarjeta as org_acepta_tarjeta,
+                   o.acepta_transferencia as org_acepta_transferencia
+              from documentos_fiscales d
+              join orgs o on o.id = d.org_id
+              left join cotizaciones c on c.id = d.cotizacion_id
+             where d.id = ${id} and d.org_id = ${orgId}
+             limit 1`,
+        sql`select monto, currency, metodo, aplicado_at
+              from documento_pagos
+             where documento_id = ${id} and org_id = ${orgId}
+             order by aplicado_at asc`);
+    const r = rows[0];
+    if (!r) return null;
+
+    // Regla 21: el cliente lee los importes en la divisa en que se le facturó,
+    // no en la del negocio. Sin esta línea money() pinta el símbolo de la org.
+    const currency = normalizeCurrency((r.currency as string) || (r.org_moneda as string));
+    setRequestCurrency(currency);
+
+    const total = num(r.total);
+    const pagado = num(r.amount_paid);
+    const saldo = r.amount_remaining !== null && r.amount_remaining !== undefined
+        ? num(r.amount_remaining) : Math.max(total - pagado, 0);
+    const vence = r.due_date ? String(r.due_date).slice(0, 10) : null;
+    const hoy = new Date().toISOString().slice(0, 10);
+
+    return {
+        orgId,
+        id: r.id as string,
+        token: r.public_token as string,
+        numero: (r.invoice_number as string) || null,
+        fiscalId: (r.fiscal_id as string) || null,
+        estado: r.lifecycle as string,
+        estadoFiscal: r.status as string,
+        pais: r.country_code as string,
+        tipo: r.document_type as string,
+        esNotaCredito: !!r.credit_note_of,
+        currency,
+        ledgerCurrency: (r.ledger_currency as string) || null,
+        fxRate: r.fx_rate !== null && r.fx_rate !== undefined ? num(r.fx_rate) : null,
+        subtotal: num(r.subtotal),
+        impuestos: num(r.tax_total),
+        total,
+        pagado,
+        saldo,
+        vence,
+        venceLegible: r.due_date ? fmtDate(r.due_date as string) : null,
+        vencida: !!vence && r.lifecycle === 'open' && vence < hoy,
+        emitida: r.issued_at ? fmtDate(r.issued_at as string) : fmtDate(r.created_at as string),
+        notas: (r.notes as string) || null,
+        emisor: (r.issuer_snapshot as any) || {},
+        receptor: (r.recipient_snapshot as any) || {},
+        lineas: ((r.line_items_snapshot as any[]) || []).map((l: any) => ({
+            descripcion: String(l.description || ''),
+            cantidad: num(l.quantity),
+            precioUnitario: num(l.unitPrice),
+            subtotal: num(l.subtotal),
+            impuesto: num(l.taxAmount),
+            total: num(l.total),
+        })),
+        pagos: pagos.map((pg: any) => ({
+            monto: num(pg.monto),
+            currency: (pg.currency as string) || currency,
+            metodo: (pg.metodo as string) || 'manual',
+            cuando: fmtDate(pg.aplicado_at as string),
+        })),
+        pdfUrl: (r.pdf_url as string) || null,
+        xmlUrl: (r.xml_url as string) || null,
+        // Solo hay pago en línea si queda saldo, el negocio tiene Connect
+        // habilitado y la factura no está anulada.
+        pagoDisponible: saldo > 0
+            && r.lifecycle === 'open'
+            && !!r.org_stripe_account_id
+            && !!r.org_stripe_charges_enabled,
+        aceptaTarjeta: !!r.org_acepta_tarjeta,
+        aceptaTransferencia: !!r.org_acepta_transferencia,
+        quoteToken: (r.quote_token as string) || null,
+        quoteFolio: (r.quote_folio as string) || null,
+        simulado: !!(r.provider_data && (r.provider_data as any).simulado === true),
+        testMode: !!(r.provider_data && (r.provider_data as any).livemode === false),
+        esPrueba: !!r.org_es_prueba,
+        org: {
+            nombre: (r.org_nombre as string) || 'Cord',
+            logoUrl: (r.org_logo_url as string) || null,
+            color: (r.org_color as string) || null,
+            email: (r.org_email as string) || null,
+            telefono: (r.org_tel as string) || null,
+            powered: r.org_portal_powered !== false,
+        },
+    };
+}
+
+/** Detalle de una factura para el vendedor, con sus snapshots y pagos. */
+export async function getFacturaDetalle(id: string) {
+    const orgId = await getActiveOrgId();
+    const [rows, pagos] = await withOrgTx(orgId,
+        sql`select d.*, c.folio,
+                   coalesce(cl.empresa, cq.empresa) as empresa,
+                   coalesce(cl.email, cq.email) as cliente_email
+              from documentos_fiscales d
+              left join cotizaciones c on c.id = d.cotizacion_id
+              left join clientes cl on cl.id = d.cliente_id
+              left join clientes cq on cq.id = c.cliente_id
+             where d.id = ${id} and d.org_id = ${orgId}
+             limit 1`,
+        sql`select id, monto, currency, metodo, referencia, nota, aplicado_at
+              from documento_pagos
+             where documento_id = ${id} and org_id = ${orgId}
+             order by aplicado_at asc`);
+    const r = rows[0];
+    if (!r) return null;
+    return {
+        ...rowToFactura(r),
+        clienteEmail: (r.cliente_email as string) || null,
+        notas: (r.notes as string) || null,
+        ledgerCurrency: (r.ledger_currency as string) || null,
+        fxRate: r.fx_rate !== null && r.fx_rate !== undefined ? num(r.fx_rate) : null,
+        ledgerTotal: r.ledger_total !== null && r.ledger_total !== undefined ? num(r.ledger_total) : null,
+        subtotal: num(r.subtotal),
+        impuestos: num(r.tax_total),
+        emisor: (r.issuer_snapshot as any) || {},
+        receptor: (r.recipient_snapshot as any) || {},
+        lineas: ((r.line_items_snapshot as any[]) || []).map((l: any) => ({
+            descripcion: String(l.description || ''),
+            cantidad: num(l.quantity),
+            precioUnitario: num(l.unitPrice),
+            subtotal: num(l.subtotal),
+            impuesto: num(l.taxAmount),
+            total: num(l.total),
+        })),
+        anuladaEn: r.voided_at ? fmtDate(r.voided_at as string) : null,
+        motivoAnulacion: (r.void_reason as string) || null,
+        pagos: pagos.map((pg: any) => ({
+            id: pg.id as string,
+            monto: num(pg.monto),
+            currency: (pg.currency as string) || null,
+            metodo: (pg.metodo as string) || 'manual',
+            referencia: (pg.referencia as string) || null,
+            nota: (pg.nota as string) || null,
+            cuando: fmtDate(pg.aplicado_at as string),
+        })),
+    };
 }
 
 // Suscripción recurrente (iguala) de una cotización, para el detalle del vendedor.
@@ -1474,6 +1751,15 @@ export async function getCotizacionByToken(token: string) {
     }));
 
     const quote = rowToQuote(rows[0], itemsWithComments, []);
+
+    // El cliente lee los montos en la divisa en que se le VENDIÓ, no en la del
+    // vendedor: una cotización en USD de un negocio mexicano se muestra en USD.
+    // Esta línea es la que hace que money() en QuoteCard formatee bien; sin
+    // ella toda superficie pública decía "MX$" sin importar el país.
+    const quoteCurrency = normalizeCurrency(
+        (rows[0].base_currency as string) || (rows[0].moneda as string),
+    );
+    setRequestCurrency(quoteCurrency);
 
     // Días restantes de vigencia (para la cuenta regresiva del link público).
     if (rows[0].vigencia) {
@@ -1586,6 +1872,10 @@ export async function getCotizacionByToken(token: string) {
             bancoNombre: (rows[0].org_banco_nombre as string) || '',
             bancoClabe: decryptSecret(rows[0].org_banco_clabe_enc as string) || (rows[0].org_banco_clabe as string) || '',
             bancoBeneficiario: (rows[0].org_banco_beneficiario as string) || '',
+            // Divisa de ESTA cotización — la que el cliente ve y en la que se
+            // le cobra. Viaja en el DTO para que los scripts del link público
+            // formateen igual que el render de servidor.
+            moneda: quoteCurrency,
         },
     };
 }
@@ -3386,7 +3676,7 @@ export async function getSetupProgress() {
         { group: 'venta',    id: 'cotizacion',    label: 'Crea tu primera cotización',  desc: 'El corazón de Cord — elige un cliente, agrega líneas y guarda. Puedes armarla con IA pegando el pedido. Te toma 2 minutos.', href: '/app/cotizaciones/nueva', done: Number(nq) > 0 },
         { group: 'venta',    id: 'enviar',        label: 'Envía tu primera cotización', desc: 'Compártela por link, correo o WhatsApp y mira EN VIVO cuándo tu cliente la abre y la aprueba con firma electrónica.', href: '/app/cotizaciones',       done: Number(nsent) > 0 },
         { group: 'dinero',   id: 'online_cobros', label: 'Activa los cobros en línea',  desc: 'Conecta tu cuenta bancaria de forma segura para recibir pagos con tarjeta o SPEI directo a tu banco — incluye anticipos.', href: '/app/ajustes/cobros',     done: !!o?.stripe_charges_enabled },
-        { group: 'dinero',   id: 'cobro',         label: 'Cobra y factura',             desc: 'Cobra en línea con Cord Pagos o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
+        { group: 'dinero',   id: 'cobro',         label: 'Cobra y factura',             desc: 'Cobra en línea con Cord Payments o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
         { group: 'equipo',   id: 'equipo',        label: 'Invita a tu equipo',          desc: 'Suma vendedores y define permisos por rol (cotizar, aprobar, cobranza…) para trabajar en conjunto.', href: '/app/ajustes/equipo',     done: Number(nmem) > 1 },
 
     ];

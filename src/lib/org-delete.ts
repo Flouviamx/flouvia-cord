@@ -8,6 +8,7 @@
 import { sql } from './db';
 import { stripe } from './billing';
 
+import { log } from './log';
 interface OrgToDelete {
     id: string;
     nombre: string;
@@ -20,14 +21,14 @@ export async function deleteOrgCascade(org: OrgToDelete): Promise<void> {
         try {
             await stripe(`/v1/subscriptions/${org.stripe_subscription_id}`, {}, 'DELETE');
         } catch (e) {
-            console.error(`[org-delete] no se pudo cancelar la suscripción ${org.stripe_subscription_id} de la org ${org.id}:`, e);
+            log.error('no se pudo cancelar la suscripción al borrar la org', { route: 'org-delete', orgId: org.id, subscriptionId: org.stripe_subscription_id, err: e });
         }
     }
     if (org.stripe_account_id) {
         // No se intenta borrar la cuenta Connect vía API — un audit_log atado
         // a esta org desaparecería con ella (cascade), así que la constancia
         // real vive en los logs del servidor (Vercel), no en la BD.
-        console.warn(`[org-delete] org ${org.id} (${org.nombre}) eliminada con cuenta Connect activa (${org.stripe_account_id}) — revisar manualmente en el dashboard de Stripe.`);
+        log.warn('org eliminada con cuenta Connect activa — revisar manualmente en el proveedor', { route: 'org-delete', orgId: org.id, orgNombre: org.nombre, connectAccountId: org.stripe_account_id });
     }
     await sql`delete from orgs where id = ${org.id}`;
 }

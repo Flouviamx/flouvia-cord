@@ -20,11 +20,21 @@ export const GET: APIRoute = async ({ params }) => {
 
   const [[doc]] = await withOrgTx(orgId, sql`
     select d.id, d.document_type, d.country_code, d.invoice_number, d.currency,
+           d.ledger_currency, d.fx_rate, d.ledger_total,
            d.subtotal, d.tax_total, d.total, d.issuer_snapshot,
            d.recipient_snapshot, d.line_items_snapshot, d.provider_data,
-           d.status, d.issued_at, o.facturapi_live_key, o.facturapi_live_key_enc
+           d.status, d.issued_at, d.cotizacion_id,
+           d.public_token as invoice_token, d.due_date as invoice_due,
+           o.facturapi_live_key, o.facturapi_live_key_enc,
+           -- Marca y condiciones: son PRESENTACIÓN, no datos fiscales, así que se
+           -- leen en vivo (el snapshot inmutable sigue mandando en importes y
+           -- partes). Un cambio de logo debe reflejarse al re-descargar.
+           o.logo_url, o.color_marca, o.pdf_condiciones, o.moneda,
+           c.terminos, c.vigencia, c.public_token,
+           coalesce(c.approved_at, c.created_at) as base_date
       from documentos_fiscales d
       join orgs o on o.id = d.org_id
+      left join cotizaciones c on c.id = d.cotizacion_id
      where d.id = ${id} and d.org_id = ${orgId}
      limit 1`);
   if (!doc || doc.status !== 'issued') return new Response('Documento no encontrado', { status: 404 });
@@ -70,7 +80,25 @@ export const GET: APIRoute = async ({ params }) => {
   return invoicePdf(doc, Boolean(doc.provider_data?.simulado));
 };
 
+/** Vencimiento del pago según los términos de crédito de la cotización. */
+function dueDateFrom(terminos: unknown, baseDate: unknown): Date | null {
+  const days: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
+  const term = String(terminos || 'contado');
+  const offset = days[term];
+  if (offset === undefined || !baseDate) return null;
+  const due = new Date(baseDate as string);
+  if (!Number.isFinite(due.getTime())) return null;
+  due.setDate(due.getDate() + offset);
+  return due;
+}
+
+const TERM_LABEL: Record<string, string> = {
+  contado: 'Contado', net30: 'Net 30', net60: 'Net 60',
+};
+
 function invoicePdf(doc: any, simulated: boolean): Response {
+  const origin = (process.env.PUBLIC_SITE_URL || 'https://cordhq.app').replace(/\/$/, '');
+  const term = String(doc.terminos || '');
   const pdf = createInvoicePdf({
     invoiceNumber: String(doc.invoice_number || 'INV'),
     countryCode: String(doc.country_code || 'US'),
@@ -82,7 +110,27 @@ function invoicePdf(doc: any, simulated: boolean): Response {
     issuer: doc.issuer_snapshot || { legalName: 'Emisor' },
     recipient: doc.recipient_snapshot || { legalName: 'Cliente' },
     lines: Array.isArray(doc.line_items_snapshot) ? doc.line_items_snapshot : [],
+    ledgerCurrency: doc.ledger_currency ? String(doc.ledger_currency) : null,
+    fxRate: doc.fx_rate !== null && doc.fx_rate !== undefined ? Number(doc.fx_rate) : null,
+    ledgerTotal: doc.ledger_total !== null && doc.ledger_total !== undefined ? Number(doc.ledger_total) : null,
     simulated,
+    logo: (doc.logo_url as string) || null,
+    brandColor: (doc.color_marca as string) || null,
+    // El vencimiento propio de la factura manda; derivarlo de los términos de
+    // la cotización es solo el respaldo de los documentos anteriores a que la
+    // factura tuviera `due_date`, y no existe para una factura standalone.
+    dueDate: doc.invoice_due
+      ? new Date(doc.invoice_due as string)
+      : dueDateFrom(doc.terminos, doc.base_date),
+    paymentTerms: TERM_LABEL[term] || null,
+    // El "cómo pagar" es la página de LA FACTURA: ahí está el saldo real de
+    // este documento. El link de la cotización queda como respaldo para los
+    // documentos emitidos antes de que la factura tuviera token propio; una
+    // factura standalone nunca tuvo uno.
+    paymentInstructions: doc.invoice_token
+      ? `${origin}/i/${doc.invoice_token}`
+      : (doc.public_token ? `${origin}/q/${doc.public_token}` : null),
+    notes: (doc.pdf_condiciones as string) || null,
   });
   return new Response(new Uint8Array(pdf), {
     status: 200,

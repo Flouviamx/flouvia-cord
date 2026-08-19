@@ -3,6 +3,7 @@
 // workspaces para que también queden fuera los links públicos y eventos backend.
 import { sql } from './db';
 import { OPS_ALLOWED_EMAILS } from './ops-auth';
+import { log } from './log';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const orgCache = new Map<string, { internal: boolean; expiresAt: number }>();
@@ -46,7 +47,7 @@ export async function isInternalAnalyticsOrg(orgId: string): Promise<boolean> {
         orgCache.set(orgId, { internal, expiresAt: Date.now() + CACHE_TTL_MS });
         return internal;
     } catch (error) {
-        console.error('[analytics] No se pudo resolver si la organización es interna', error);
+        log.error('No se pudo resolver si la organización es interna', { route: 'analytics', err: error });
         return false;
     }
 }

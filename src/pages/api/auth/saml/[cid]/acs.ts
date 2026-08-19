@@ -8,6 +8,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, logAudit, reqIp } from '../../../../../lib/db';
 import { rateLimit, tooMany } from '../../../../../lib/ratelimit';
+import { log } from '../../../../../lib/log';
 import {
   getConnection, buildSamlInstance, peekResponseAttr, assertNameIdFormatAllowed,
   assertDestinationAndRecipient, extractAssertionIdAndExpiry, claimAssertionOnce,
@@ -96,7 +97,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
     // validación a un atacante iterando el ataque a través de la barra de
     // direcciones/historial del navegador.
     const slug = err instanceof SamlValidationError ? err.message : 'validacion';
-    console.error('[saml/acs] Error:', err);
+    log.error('Error', { route: 'saml/acs', err });
     await sql`update sso_connections set last_error = ${slug}, last_error_at = now() where id = ${cid}`;
     return redirect(`/sign-in?sso_error=${encodeURIComponent(slug)}`);
   }

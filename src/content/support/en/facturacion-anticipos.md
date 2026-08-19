@@ -1,7 +1,7 @@
 ---
 title: "Invoice advance payments"
 description: "The tax treatment of charging a percentage up front and the rest later."
-category: "Billing & CFDI"
+category: "Invoicing"
 ---
 
 Charging a percentage up front and the rest on delivery is common in B2B projects, but it requires careful tax handling with the SAT.

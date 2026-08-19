@@ -1,7 +1,7 @@
 ---
 title: "Payment supplements (REP)"
 description: "Guide to recording installments and generating Payment Receipts for PPD invoices."
-category: "Billing & CFDI"
+category: "Invoicing"
 order: 3
 ---
 

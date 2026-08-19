@@ -1,16 +1,46 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    { "path": "/api/cron/recordatorios", "schedule": "0 15 * * *" },
-    { "path": "/api/cron/intereses",     "schedule": "0 6 1 * *"  },
-    { "path": "/api/cron/cobranza",      "schedule": "0 16 * * *" },
-    { "path": "/api/cron/webhooks",      "schedule": "0 5 * * *"  },
-    { "path": "/api/cron/webhooks-limpieza", "schedule": "0 4 * * *" },
-    { "path": "/api/cron/limpieza-capturas", "schedule": "20 4 * * *" },
-    { "path": "/api/cron/stripe-webhook-health", "schedule": "30 4 * * *" },
-    { "path": "/api/cron/billing-reconcile", "schedule": "15 5 * * *" },
-    { "path": "/api/cron/comisiones-mensuales", "schedule": "0 8 2 * *" },
-    { "path": "/api/cron/expirar-cotizaciones", "schedule": "0 7 * * *" }
+    {
+      "path": "/api/cron/recordatorios",
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/intereses",
+      "schedule": "0 6 1 * *"
+    },
+    {
+      "path": "/api/cron/cobranza",
+      "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/cron/webhooks",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/webhooks-limpieza",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/limpieza-capturas",
+      "schedule": "20 4 * * *"
+    },
+    {
+      "path": "/api/cron/stripe-webhook-health",
+      "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/billing-reconcile",
+      "schedule": "15 5 * * *"
+    },
+    {
+      "path": "/api/cron/comisiones-mensuales",
+      "schedule": "0 8 2 * *"
+    },
+    {
+      "path": "/api/cron/expirar-cotizaciones",
+      "schedule": "0 7 * * *"
+    }
   ],
   "redirects": [
     {
@@ -22,6 +52,16 @@
         }
       ],
       "destination": "https://cordhq.app/$1",
+      "permanent": true
+    },
+    {
+      "source": "/producto/cfdi",
+      "destination": "/producto/internacional",
+      "permanent": true
+    },
+    {
+      "source": "/en/producto/cfdi",
+      "destination": "/en/producto/internacional",
       "permanent": true
     }
   ]

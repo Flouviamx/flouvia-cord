@@ -1,7 +1,7 @@
 ---
 title: "Issue Transfer CFDI (Waybill / Carta Porte)"
 description: "Configuration for logistics or merchandise companies."
-category: "Billing & CFDI"
+category: "Invoicing"
 ---
 
 Currently, Cord's main platform is focused on technology companies, B2B services, and agencies, so **Transfer CFDIs (Waybill / Carta Porte) are not natively supported in the dashboard**.

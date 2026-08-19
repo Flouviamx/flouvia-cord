@@ -4,7 +4,7 @@ description: "Disponibilidad actual de pagos a meses en Cord."
 category: "Pagos y Depósitos"
 ---
 
-Cord Pagos actualmente admite **tarjeta en un solo pago** y **transferencia SPEI**. Los Meses Sin Intereses todavía no están disponibles en el link de pago.
+Cord Payments actualmente admite **tarjeta en un solo pago** y **transferencia SPEI**. Los Meses Sin Intereses todavía no están disponibles en el link de pago.
 
 ### Qué verá el cliente
 

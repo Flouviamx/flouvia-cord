@@ -7,6 +7,7 @@ import type { APIRoute } from 'astro';
 import { sql, resolvePublicQuote, withOrgTx } from '../../../../lib/db';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { payerError } from '../../../../lib/pay-errors';
+import { normalizeCurrency, stripeCurrency, stripeSupportsCurrency, toMinorUnits } from '../../../../lib/currency';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -19,9 +20,9 @@ export const POST: APIRoute = async ({ params, request }) => {
     const identity = await resolvePublicQuote(token);
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
     const [rows] = await withOrgTx(identity.orgId, sql`
-        select c.id, c.org_id, c.folio, c.total, c.status,
+        select c.id, c.org_id, c.folio, c.total, c.status, c.base_currency,
                o.sandbox_of, o.stripe_account_id, o.stripe_charges_enabled, 
-               o.acepta_tarjeta, o.cobro_spei_auto, o.checkout_v2
+               o.acepta_tarjeta, o.cobro_spei_auto, o.checkout_v2, o.moneda
         from cotizaciones c join orgs o on o.id = c.org_id
         where c.id = ${identity.id} and c.org_id = ${identity.orgId}`);
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
@@ -41,14 +42,25 @@ export const POST: APIRoute = async ({ params, request }) => {
         return json({ error: 'El vendedor no acepta pagos en línea' }, 403);
     }
 
+    // La divisa del cobro es la de la COTIZACIÓN (en la que se le vendió al
+    // cliente), no un 'mxn' fijo. Antes una venta de USD 1,000 se cobraba como
+    // MXN 1,000 — el cliente pagaba una fracción y el vendedor recibía de menos.
+    const currency = normalizeCurrency((c.base_currency as string) || (c.moneda as string));
+    if (!stripeSupportsCurrency(currency)) {
+        return json({ error: 'El pago en línea todavía no está disponible para la moneda de esta cotización.' }, 409);
+    }
     const origin = new URL(request.url).origin;
-    const amount = Math.round(Number(c.total) * 100); // centavos
+    // toMinorUnits respeta las divisas sin decimales (JPY, CLP, COP): ×100 ahí
+    // multiplicaba el cobro por cien.
+    let amount: number;
+    try { amount = toMinorUnits(Number(c.total), currency); }
+    catch { return json({ error: 'Monto de cobro inválido' }, 500); }
     const form = new URLSearchParams();
     form.set('mode', 'payment');
     form.set('success_url', `${origin}/q/${token}?pagado=1`);
     form.set('cancel_url', `${origin}/q/${token}`);
     form.set('line_items[0][quantity]', '1');
-    form.set('line_items[0][price_data][currency]', 'mxn');
+    form.set('line_items[0][price_data][currency]', stripeCurrency(currency));
     form.set('line_items[0][price_data][unit_amount]', String(amount));
     form.set('line_items[0][price_data][product_data][name]', `Cotización ${c.folio}`);
     form.set('metadata[token]', token);

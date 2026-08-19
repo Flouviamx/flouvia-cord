@@ -1,7 +1,7 @@
 ---
 title: "Facturar a clientes en el extranjero"
 description: "Uso del RFC genérico extranjero y Tax ID."
-category: "Facturación y CFDI"
+category: "Facturación"
 ---
 
 Vender servicios o licencias de software a clientes fuera de México requiere la emisión de un CFDI de exportación de servicios.
