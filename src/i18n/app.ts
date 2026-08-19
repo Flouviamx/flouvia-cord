@@ -3153,6 +3153,20 @@ export const appStrings = {
         "fact.p_monto_invalido": "Escribe una cantidad mayor a cero y menor o igual al saldo.",
         "fact.p_continuar": "Continuar",
         "fact.p_cancelar": "Cancelar",
+        // Ficha de cliente — estado de cuenta
+        "cdet.estado_cuenta": "Estado de cuenta",
+        "cdet.ec_vacio": "Este cliente no tiene saldo pendiente.",
+        "cdet.ec_saldo": "Saldo total",
+        "cdet.ec_vencido": "Vencido",
+        "cdet.ec_mas_viejo": "Atraso máximo",
+        "cdet.ec_dias": "{n} días",
+        "cdet.ec_corriente": "Corriente",
+        "cdet.ec_1_30": "1–30 días",
+        "cdet.ec_31_60": "31–60 días",
+        "cdet.ec_61_90": "61–90 días",
+        "cdet.ec_90mas": "+90 días",
+        "cdet.ec_vence": "Vence",
+        "cdet.ec_al_corriente": "Al corriente",
     },
     en: {
         // Sidebar — groups
@@ -6284,6 +6298,20 @@ export const appStrings = {
         "fact.p_monto_invalido": "Enter an amount greater than zero and no more than the balance.",
         "fact.p_continuar": "Continue",
         "fact.p_cancelar": "Cancel",
+        // Ficha de cliente — estado de cuenta
+        "cdet.estado_cuenta": "Account statement",
+        "cdet.ec_vacio": "This client has no outstanding balance.",
+        "cdet.ec_saldo": "Total balance",
+        "cdet.ec_vencido": "Overdue",
+        "cdet.ec_mas_viejo": "Oldest overdue",
+        "cdet.ec_dias": "{n} days",
+        "cdet.ec_corriente": "Current",
+        "cdet.ec_1_30": "1–30 days",
+        "cdet.ec_31_60": "31–60 days",
+        "cdet.ec_61_90": "61–90 days",
+        "cdet.ec_90mas": "90+ days",
+        "cdet.ec_vence": "Due",
+        "cdet.ec_al_corriente": "Current",
     },
 } as const;
 

@@ -4,7 +4,7 @@
 // redirect si no existe, crumbs, .detail-grid con sidebar sticky.
 import AppLayout from '../../../layouts/AppLayout.astro';
 import ClientModal from '../../../components/app/ClientModal.astro';
-import { getCliente, getMyMembership, STATUS_META, money } from '../../../lib/queries';
+import { getCliente, getEstadoCuentaCliente, getMyMembership, STATUS_META, money } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
@@ -18,7 +18,9 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
 };
 
 const { id } = Astro.params;
-const [c, ME] = await Promise.all([getCliente(id ?? ''), getMyMembership()]);
+const [c, ME, EC] = await Promise.all([
+    getCliente(id ?? ''), getMyMembership(), getEstadoCuentaCliente(id ?? ''),
+]);
 if (!c) return Astro.redirect('/app/clientes');
 const canEdit = memberCan(ME, 'clientes');
 
@@ -92,6 +94,60 @@ const metaBits = [c.contacto, c.email, c.telefono].filter(Boolean);
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'cdet.actividad_titulo')}</h2></div>
                 <div id="dcSpark" class="dc-spark" data-values={JSON.stringify(c.meses.map((mm) => mm.cotizado))}></div>
             </section>
+
+            {EC.docs.length > 0 && (
+                <section class="dc-statement">
+                    <div class="sec-head"><h2 class="sec-title">{t(L, 'cdet.estado_cuenta')}</h2></div>
+
+                    <div class="ec-kpis">
+                        <div class="ec-kpi">
+                            <span class="ec-lbl">{t(L, 'cdet.ec_saldo')}</span>
+                            <span class="editorial ec-val">{money(EC.saldoTotal)}</span>
+                        </div>
+                        <div class="ec-kpi">
+                            <span class="ec-lbl">{t(L, 'cdet.ec_vencido')}</span>
+                            <span class:list={['editorial', 'ec-val', { 'is-bad': EC.vencido > 0 }]}>{money(EC.vencido)}</span>
+                        </div>
+                        <div class="ec-kpi">
+                            <span class="ec-lbl">{t(L, 'cdet.ec_mas_viejo')}</span>
+                            <span class:list={['editorial', 'ec-val', { 'is-bad': EC.masViejo > 30 }]}>
+                                {EC.masViejo > 0 ? tf('cdet.ec_dias', { n: String(EC.masViejo) }) : t(L, 'cdet.ec_al_corriente')}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="ec-aging">
+                        {[
+                            { k: 'corriente', l: t(L, 'cdet.ec_corriente'), v: EC.bandas.corriente },
+                            { k: 'd1', l: t(L, 'cdet.ec_1_30'), v: EC.bandas.d1_30 },
+                            { k: 'd31', l: t(L, 'cdet.ec_31_60'), v: EC.bandas.d31_60 },
+                            { k: 'd61', l: t(L, 'cdet.ec_61_90'), v: EC.bandas.d61_90 },
+                            { k: 'd90', l: t(L, 'cdet.ec_90mas'), v: EC.bandas.d90mas },
+                        ].map((b) => (
+                            <div class:list={['ec-band', { 'is-empty': b.v <= 0, 'is-late': b.k !== 'corriente' && b.v > 0 }]}>
+                                <span class="ec-band-l">{b.l}</span>
+                                <span class="editorial ec-band-v">{money(b.v)}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div class="dc-list">
+                        {EC.docs.map((d) => (
+                            <a class="dc-qrow ec-row" href={d.origen === 'factura' ? `/app/facturas/${d.id}` : `/app/cotizaciones/${d.id}`}>
+                                <span class="dc-qfolio">{d.folio}</span>
+                                <span class:list={['status-pill', { 'is-late': d.diasVencido > 0 }]}>
+                                    {d.diasVencido > 0
+                                        ? tf('cdet.ec_dias', { n: String(d.diasVencido) })
+                                        : t(L, 'cdet.ec_al_corriente')}
+                                </span>
+                                <span class="editorial dc-qtotal">{money(d.saldo)}</span>
+                                <span class="dc-qdate">{d.vence ? `${t(L, 'cdet.ec_vence')} ${d.vence}` : '—'}</span>
+                                <svg class="dc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                            </a>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <section class="dc-quotes">
                 <div class="sec-head"><h2 class="sec-title">{t(L, 'cdet.cotizaciones_titulo')}</h2></div>
@@ -231,6 +287,31 @@ const metaBits = [c.contacto, c.email, c.telefono].filter(Boolean);
 </script>
 
 <style>
+    /* Estado de cuenta. Va ANTES del historial de cotizaciones a propósito: lo
+       que este cliente debe hoy pesa más para decidir que lo que compró el año
+       pasado. */
+    .dc-statement { margin-bottom: 2.4rem; }
+    .ec-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem; margin-bottom: 1.4rem; }
+    .ec-kpi { display: flex; flex-direction: column; gap: 2px; }
+    .ec-lbl { font-size: 0.72rem; color: var(--color-text-muted); }
+    .ec-val { font-size: 1.15rem; color: var(--color-blue-deep); }
+    .ec-val.is-bad { color: var(--color-danger); }
+    .ec-aging { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--color-border); border-radius: 12px; overflow: hidden; margin-bottom: 1.4rem; }
+    .ec-band { display: flex; flex-direction: column; gap: 2px; padding: 0.8rem 0.9rem; background: var(--color-bg-soft); }
+    .ec-band-l { font-size: 0.68rem; color: var(--color-text-muted); }
+    .ec-band-v { font-size: 0.9rem; color: var(--color-text); }
+    .ec-band.is-empty .ec-band-v { color: var(--color-text-muted); opacity: 0.6; }
+    .ec-band.is-late .ec-band-v { color: #b45309; }
+    .ec-row .status-pill { color: var(--color-text-muted); background: rgba(0,0,0,0.05); }
+    .ec-row .status-pill.is-late { color: #b45309; background: rgba(245,158,11,0.12); }
+
+    @media (max-width: 880px) {
+        /* Ni los importes ni las bandas se ocultan: son información comercial
+           (regla 16). La rejilla se apila. */
+        .ec-kpis { grid-template-columns: 1fr; gap: 0.9rem; }
+        .ec-aging { grid-template-columns: repeat(2, 1fr); }
+    }
+
     .detail-grid { display: grid; grid-template-columns: 1fr 300px; gap: 3rem; align-items: start; }
     .d-main { display: flex; flex-direction: column; min-width: 0; gap: 2.2rem; }
     .d-side { display: flex; flex-direction: column; gap: 2.2rem; position: sticky; top: 76px; }

@@ -465,3 +465,69 @@ que un ISO → bloquea todo pago. Usar SIEMPRE el helper **`venceDia()`** de `co
 getMonth/getDate) para comparar/mostrar fechas `date` leídas de la BD.
 
 ---
+
+## Impuestos, cartera y recurrencia (ago 2026)
+
+### Impuestos por línea
+
+La tasa viaja con **cada concepto**, no con el documento. El catálogo por
+organización (`impuestos`) declara qué cobra ese negocio; `kind`
+(`consumo | retencion | exento`) es la clasificación neutra que decide la
+aritmética y `tipo` es el subcódigo local que solo México usa para el CFDI.
+
+`cotizacion_items.tax_rate` es un **snapshot al capturar** y es NULLABLE a
+propósito: `null` = línea anterior al impuesto por línea (cae a la tasa de la
+organización), `0` = exenta por decisión del vendedor.
+
+Las retenciones se **restan** del total, se calculan sobre el subtotal y salen de
+los perfiles predeterminados del catálogo. Se persisten en
+`cotizaciones.retencion_total` / `retenciones_snapshot` y sus equivalentes en
+`documentos_fiscales`.
+
+Motor único: `calculateDocumentTotals()`. `calculateTotals()` queda como camino
+heredado y **no se toca** — escribió los totales que hoy viven en producción.
+
+`TAX_PRESETS` (`src/lib/countries.ts`) siembra las tasas estándar de ~35 países al
+crear la cuenta. Estados Unidos y Brasil nacen sin preset: no hay tasa nacional
+que sugerir.
+
+### Cartera: un solo lugar para los dos rieles
+
+La vista `cuentas_por_cobrar` une cotizaciones y facturas con una forma común
+(`origen`, `ref_id`, `saldo`, `vence`, `dias_vencido`). La consultan el agente de
+cobranza IA, el cron de intereses y el estado de cuenta del cliente.
+
+Una cotización con factura **abierta** aparece solo como factura: el documento
+fiscal lleva el saldo real y contarla dos veces duplicaría la cartera.
+
+El interés moratorio se calcula sobre el **saldo**, no sobre el total.
+
+### Escalera de recordatorios
+
+Cadencia configurable por organización (`orgs.recordatorio_etapas`, por defecto
+`-7, -1, +3, +7, +14, +30`). La deduplicación vive en `documento_recordatorios`
+con unicidad `(documento_id, etapa)`: se registra **antes** de mandar y se libera
+si el envío falla.
+
+### Facturas recurrentes
+
+`documento_recurrencias` guarda qué se factura; cada emisión congela sus propios
+importes, impuestos y folio. `next_run_at` avanza **antes** de emitir y el día del
+mes se topa en 28.
+
+Gate: `recurring_invoices` en **Pro**, con espejo obligatorio en
+`scripts/billing-security-check.mjs`. Pausar se permite siempre, incluso sin
+plan — dejar a alguien sin poder detener una emisión automática porque bajó de
+plan es un cobro que no puede parar.
+
+### Rieles de cobro por país
+
+`src/lib/payout-fields.ts` define el formato de la cuenta de depósito por país
+(CLABE, IBAN, routing+account, sort code, transit, BSB) y verifica sus dígitos de
+control en Cord. SPEI solo se ofrece en México y solo liquida MXN.
+
+### Verificación
+
+Además de `npm run test:payments`, este dominio corre `npm run security:tax`, que
+cubre impuesto por línea, retenciones, presets por país, rieles de cobro y que la
+zona horaria tenga consumidor.

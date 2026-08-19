@@ -965,3 +965,87 @@ siguen siendo pasos operativos de despliegue.
    cero directo en el código, no vino de ese stash. Seguro hacer `git stash drop` de ese stash si estorba.
    Sigue pendiente la confirmación legal Ley Fintech/IFPE y la **activación de la plataforma en live por
    parte de Stripe** (estaba en "submitted").
+
+## Agosto 2026 — Internacionalización real y Cord Invoicing como objeto vivo
+
+Bloque de trabajo en seis fases. Cada una cerró con `npm run build` y
+`npm run test:payments` en verde.
+
+### Impuestos por línea y retenciones con consumidor
+
+El catálogo `impuestos` existía por organización desde hacía meses y el editor de
+cotizaciones lo ignoraba: leía la columna plana `orgs.iva_pct`, que
+`/api/impuestos` sincronizaba desde el perfil predeterminado. Configurar "IVA 8%
+frontera" o "Exento" en Ajustes no cambiaba nada en el documento.
+
+Peor: `quoteIva()` y `quoteTotal()` (`src/lib/mock.ts`) calculaban con la
+constante `IVA = 0.16` sin importar la organización, mientras la etiqueta sí
+decía la tasa real. El link público de un negocio en Madrid mostraba "IVA 21%"
+junto a un importe que era el 16% del subtotal — el número que lee el cliente. Un
+negocio con tasa 0% veía un impuesto que no cobra.
+
+Y `orgs.retencion_iva_pct` / `retencion_isr_pct` se capturaban en Ajustes, se
+guardaban en `/api/org` y no los leía nadie: ni los totales, ni el PDF, ni el
+CFDI.
+
+Había **tres** copias de la aritmética —`mock.ts`, el editor y el PATCH de
+`/api/cotizaciones/[id]`— cada una con su propio `|| 0.16` de respaldo.
+
+Cambios: `impuestos.kind` (`consumo|retencion|exento`) como clasificación neutra;
+`cotizacion_items.tax_rate` NULLABLE (null = anterior al impuesto por línea,
+0 = exenta a propósito); `calculateDocumentTotals()` como motor único;
+`TAX_PRESETS` con las tasas estándar de ~35 países sembradas al crear la cuenta;
+validación en servidor de la tasa que manda el cliente. El editor de cotizaciones
+migró de `<script is:inline define:vars>` a módulo bundleado — era la única forma
+de que importara el motor en vez de reimplementarlo. Ver regla 23.
+
+### Zona horaria, rieles de cobro e idioma
+
+`orgs.zona_horaria` se guardaba y ningún formateador la pasaba a `Intl`: todo se
+renderizaba en la zona del servidor. `src/lib/fmt-server.ts` centraliza el
+formateo con locale y zona del request.
+
+`/api/billing/connect/external-account` solo sabía capturar CLABE y respondía 409
+a cualquier otro país: un negocio en Madrid completaba su alta de Connect y no
+tenía cómo decir a dónde mandarle su dinero. `src/lib/payout-fields.ts` cubre
+CLABE, IBAN (mod-97), routing+account, sort code, transit y BSB, con los dígitos
+de control verificados en Cord.
+
+El selector de idioma decía "English (próximamente)" con ~5,800 llaves ya
+servidas por `orgs.idioma`. Ver regla 24.
+
+### La app responde en inglés
+
+De 113 strings sin traducción a 4 falsos positivos. Lo que faltaba eran las islas
+de React, que no podían llamar a `t()` porque importar `src/i18n/app.ts` mandaría
+373 KB al navegador; cada una recibe sus textos resueltos en servidor o los
+declara en un diccionario local.
+
+Dos bugs de la superficie del comprador salieron en el camino: `/q/[token]/pay`
+formateaba todo con `currency: 'MXN'` fijo (una venta en euros se mostraba como
+"MX$5,000.00" mientras Stripe cobraba EUR), y `PaymentIsland` fijaba el locale
+del Payment Element en `'es-419'`.
+
+El alta de cobros dejó de estar escrita solo para México: preguntaba cómo estaba
+registrado el negocio "ante el SAT", validaba el formato mexicano del RFC y
+ofrecía los 32 estados en un `<select>` cerrado.
+
+### Cord Invoicing como objeto vivo
+
+- **PDF adjunto**: el comentario de `/api/facturas/[id].ts:139` prometía mandar
+  la factura "con su PDF" desde el día uno; `createInvoicePdf` solo se llamaba
+  desde la ruta de descarga. En CFDI timbrado no se adjunta a propósito.
+- **Timeline** (`eventos.documento_id`): una factura independiente era un
+  documento sin pasado.
+- **Escalera de cobranza**: el cron mandaba un correo en una ventana de 5 días y
+  su propio comentario admitía que la dedup dependía del calendario.
+  `documento_recordatorios` la mueve a la base.
+- **Cartera unificada**: la vista `cuentas_por_cobrar` une los dos rieles. El
+  interés moratorio pasó a calcularse sobre el **saldo** y no sobre el total —un
+  cliente con 80% abonado seguía pagando interés sobre el 100%.
+- **Recurrentes**: `documento_recurrencias` + cron diario.
+  `recurring_invoices` entra a `FEATURE_MIN_PLAN` en Pro.
+- **Abono parcial** en la hosted invoice page, acotado en servidor.
+- **Estado de cuenta** por cliente, leído de la misma vista que la cobranza.
+
+Ver reglas 23, 24 y 25 de `estandares-ingenieria.md`.

@@ -385,3 +385,105 @@ El componente debe diferir su emisión inicial a `DOMContentLoaded`, cuando todo
 los módulos diferidos ya registraron listeners. Este contrato evita la regresión
 que dejó vacíos el hero y el embudo al inicializar `DateRangePicker` en `/app` y
 `/app/informes`.
+
+### 23. Una tasa de impuesto es un dato de la línea, no de la organización
+
+El impuesto viaja **con cada concepto**, no con el documento. En cuanto sales de
+un solo giro es normal mezclar un servicio gravado con un producto exento, o dos
+tasas distintas en la misma venta; aplanarlas a una sola produce un documento que
+no cuadra con lo que la autoridad —o el cliente— espera.
+
+Tres fuentes, y no se mezclan:
+
+- **Catálogo por organización** (`impuestos`): las tasas que ese negocio cobra.
+  `kind` (`consumo` | `retencion` | `exento`) es la clasificación NEUTRA y es la
+  que decide la aritmética; `tipo` es el subcódigo local y **solo México lo usa**
+  para mapear a los impuestos trasladados/retenidos del CFDI 4.0.
+- **Tasa de la línea** (`cotizacion_items.tax_rate`): fracción, no porcentaje, y
+  **snapshot al capturar**. Editar el catálogo después no puede reescribir la
+  aritmética de un documento ya enviado o firmado. `null` significa "anterior al
+  impuesto por línea" y cae a la tasa de la organización; `0` significa "exenta a
+  propósito". Con `not null default 0` los documentos existentes habrían pasado a
+  cero impuesto de un día para otro.
+- **Retenciones**: se **restan** del total, se calculan sobre el subtotal y se
+  toman de los perfiles predeterminados del catálogo. Donde el país no tiene
+  retenciones, el catálogo no tiene filas de ese tipo y el renglón no se dibuja —
+  no hace falta apagarlo con un `if (isMx)`.
+
+Contratos ejecutables: `calculateDocumentTotals()` en
+`packages/elements/src/engine.ts` es el motor ÚNICO (`calculateTotals` queda como
+camino heredado y no se toca: escribió los totales que hoy viven en producción);
+`buildTaxOptions()` en `src/lib/impuestos.ts` es el constructor único del
+selector; `taxCatalogFor()` en `src/lib/impuestos-db.ts` **valida en servidor** la
+tasa que manda el cliente contra el catálogo real — un POST a `/api/v1` no puede
+declarar `tax_rate: 0` en una venta gravada.
+
+El nombre del impuesto sale del país (`taxKindLabel()` + `getCountryProfile()`):
+IVA en México, VAT en Reino Unido, GST en Australia, Moms en Suecia. Nunca un
+ternario `isMx ? 'IVA' : 'Tax'`, que le decía "Tax" genérico a medio mundo.
+
+Casos que originaron la regla (ago 2026): el catálogo `impuestos` existía por
+organización y el editor de cotizaciones lo ignoraba —leía la columna plana
+`orgs.iva_pct`—, así que capturar "IVA 8% frontera" o "Exento" no cambiaba nada;
+`quoteIva()`/`quoteTotal()` calculaban con la constante `IVA = 0.16` mientras la
+etiqueta sí decía la tasa real, de modo que el link público de un negocio en
+Madrid mostraba "IVA 21%" junto a un importe que era el 16% del subtotal; y
+`orgs.retencion_iva_pct`/`retencion_isr_pct` se capturaban, se guardaban y no los
+leía nadie.
+
+### 24. Una preferencia de país no es de presentación: se aplica
+
+Lo que el negocio elige de su país tiene que llegar hasta el dato. No basta con
+guardarlo ni con mostrarlo en Ajustes.
+
+- **Zona horaria** (`orgs.zona_horaria`): todo formateo de fecha en servidor pasa
+  por `src/lib/fmt-server.ts`, que lee locale **y** zona del request. La zona
+  viaja por el mismo camino que la divisa (`getAppGates` → contexto). Sin ella
+  todo se renderizaba en la del servidor: un negocio en Tokio veía sus
+  cotizaciones fechadas un día antes, y "hoy"/"ayer" se calculaban contra un día
+  que no era el suyo.
+- **Rieles de cobro**: el formato de la cuenta de depósito sale de
+  `src/lib/payout-fields.ts` (CLABE, IBAN con mod-97, routing+account, sort code,
+  transit, BSB). Los dígitos de control se verifican en Cord, no en Stripe: una
+  cuenta mal tecleada rebotaba con un error del proveedor que no le dice nada al
+  vendedor (regla 14). SPEI es de México y solo liquida MXN — no se ofrece fuera.
+- **Vocabulario fiscal e identidad**: `taxIdLabel` del perfil del país. "RFC" es
+  de México; en Madrid es "NIF / CIF" y en Austin "EIN / Tax ID". Un `<select>`
+  con los 32 estados mexicanos deja sin capturar su provincia a todo el resto.
+- **Catálogos de arranque**: una cuenta nueva nace con las tasas estándar de su
+  país (`TAX_PRESETS`). Estados Unidos y Brasil nacen **sin** preset a propósito:
+  no hay tasa nacional que sugerir, e inventarla sería peor que dejarla vacía.
+
+Verificación mínima: crea una organización fuera de México y recorre el flujo
+completo. Si en algún punto lees "RFC", "SAT", "IVA" impuesto por el código, un
+estado mexicano o una fecha corrida un día, la preferencia no llegó al dato.
+
+### 25. La factura es un objeto vivo, no un PDF con folio
+
+Todo lo que la cotización tiene para sostener una conversación comercial, la
+factura lo necesita para sostener un cobro. Cuando una capacidad existe en un
+riel y no en el otro, el que falta no es "todavía no": es una factura que nadie
+puede perseguir.
+
+- **Historia**: `eventos.documento_id`. Sin timeline, el vendedor no sabe si el
+  cliente ya abrió la factura o si el correo se perdió. La vista se registra solo
+  cuando `resolveViewer()` dice `client` y **solo la primera vez** (regla 19).
+- **Cobranza**: la cartera se lee de la vista `cuentas_por_cobrar`, que une los
+  dos rieles con una forma común. El agente de cobranza IA, los intereses
+  moratorios, las exclusiones, las promesas y los planes negociados hacían `from
+  cotizaciones`, y las tres tablas centrales tenían `cotizacion_id NOT NULL`: no
+  es que estuviera sin implementar, es que no cabía el dato.
+- **Recordatorios**: la dedup vive en `documento_recordatorios`, no en el
+  calendario. Se registra la etapa **antes** de mandar y se libera si el envío
+  falla; al revés, un fallo entre el envío y la escritura repite el cobro.
+- **Recurrencia**: `next_run_at` avanza **antes** de emitir. Al revés, un fallo a
+  medio camino deja la recurrencia elegible otra vez y el cliente recibe la misma
+  factura dos veces. El día del mes se topa en 28: un "31" se salta febrero en
+  silencio, y una factura que no se emite no se cobra.
+- **Correo**: lleva el PDF adjunto y el copy propio del negocio
+  (`email_intro`/`email_firma`/`pdf_mensaje`). Para un área de cuentas por pagar
+  el archivo ES el trámite.
+- **Pago parcial**: el monto lo propone el cliente y por eso se acota en servidor
+  contra el saldo real. Sin abono parcial, quien quiere pagar la mitad transfiere
+  por fuera y el ledger se queda mudo mientras la cobranza persigue dinero que ya
+  entró.

@@ -3982,3 +3982,63 @@ async function getCobranzaIAUncached() {
 
     return { config, pendientes, hilos, planes, exclusiones, enLaMira, metricas };
 }
+
+/**
+ * Estado de cuenta de un cliente: sus facturas abiertas y su antigüedad.
+ *
+ * La ficha del cliente mostraba cotizaciones y nada más. Un cliente que debe
+ * dinero se ve igual que uno que no, y para decidir si le vendes otra vez
+ * necesitas exactamente lo contrario: cuánto debe, desde cuándo, y si eso ya
+ * pasó de tarde a incobrable.
+ *
+ * Se lee de `cuentas_por_cobrar`, la misma vista que alimenta la cobranza, para
+ * que el saldo que ve el vendedor aquí sea el mismo que persigue el agente.
+ */
+export async function getEstadoCuentaCliente(clienteId: string) {
+    const orgId = await getActiveOrgId();
+    try {
+        const [rows] = await withOrgTx(orgId, sql`
+            select origen, ref_id, folio, moneda, total, pagado, saldo, vence, dias_vencido, token
+              from cuentas_por_cobrar
+             where org_id = ${orgId} and cliente_id = ${clienteId}
+             order by dias_vencido desc, vence asc nulls last
+             limit 100`);
+
+        const docs = rows.map((r: any) => ({
+            origen: String(r.origen) as 'factura' | 'cotizacion',
+            id: String(r.ref_id),
+            folio: (r.folio as string) || '—',
+            moneda: normalizeCurrency(r.moneda),
+            total: num(r.total),
+            pagado: num(r.pagado),
+            saldo: num(r.saldo),
+            vence: r.vence ? fmtDate(r.vence) : null,
+            diasVencido: Math.trunc(num(r.dias_vencido)),
+            token: (r.token as string) || null,
+        }));
+
+        // Antigüedad estándar de cartera. Las bandas se calculan sobre el SALDO,
+        // no sobre el total: un documento abonado al 80% pertenece a su banda con
+        // lo que queda, no con lo que costó.
+        const bandas = { corriente: 0, d1_30: 0, d31_60: 0, d61_90: 0, d90mas: 0 };
+        for (const d of docs) {
+            if (d.diasVencido <= 0) bandas.corriente += d.saldo;
+            else if (d.diasVencido <= 30) bandas.d1_30 += d.saldo;
+            else if (d.diasVencido <= 60) bandas.d31_60 += d.saldo;
+            else if (d.diasVencido <= 90) bandas.d61_90 += d.saldo;
+            else bandas.d90mas += d.saldo;
+        }
+
+        return {
+            docs,
+            bandas,
+            saldoTotal: docs.reduce((s, d) => s + d.saldo, 0),
+            vencido: docs.filter((d) => d.diasVencido > 0).reduce((s, d) => s + d.saldo, 0),
+            masViejo: docs.reduce((m, d) => Math.max(m, d.diasVencido), 0),
+        };
+    } catch {
+        // La vista puede no existir todavía en una base sin migrar: la ficha del
+        // cliente no debe caerse por eso.
+        return { docs: [], bandas: { corriente: 0, d1_30: 0, d31_60: 0, d61_90: 0, d90mas: 0 }, saldoTotal: 0, vencido: 0, masViejo: 0 };
+    }
+}
