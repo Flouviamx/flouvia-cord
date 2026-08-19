@@ -5,13 +5,44 @@ import { resetUser } from '../../lib/posthog';
 import CreateWorkspaceModal from './CreateWorkspaceModal';
 import type { CreateWorkspaceSubmit } from './CreateWorkspaceModal';
 
-export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: { orgLogoUrl?: string, user?: any, activeOrg?: any }) {
+
+// Textos de la isla. Locales por la misma razón que en las demás: el
+// diccionario de la app pesa ~373 KB y no tiene por qué viajar al navegador.
+const SW_STRINGS = {
+  es: {
+    espaciosTrabajo: 'Espacios de trabajo',
+    sinEspacios: 'Aún no tienes otros espacios de equipo — estás en tu workspace personal.',
+    crearEspacio: 'Crear espacio de trabajo',
+    configEquipo: 'Configuración del equipo',
+    entornoPrueba: 'Entorno de prueba',
+    cerrarSesion: 'Cerrar sesión',
+    workspacePersonal: 'Workspace personal',
+    errorCrear: 'No se pudo crear la cuenta.',
+    usuario: 'Usuario',
+    roles: { owner: 'Dueño', admin: 'Admin', vendedor: 'Vendedor', lectura: 'Lectura', miembro: 'Miembro' } as Record<string, string>,
+  },
+  en: {
+    espaciosTrabajo: 'Workspaces',
+    sinEspacios: "You don't have other team workspaces yet — you're in your personal workspace.",
+    crearEspacio: 'Create workspace',
+    configEquipo: 'Team settings',
+    entornoPrueba: 'Test environment',
+    cerrarSesion: 'Sign out',
+    workspacePersonal: 'Personal workspace',
+    errorCrear: "We couldn't create the account.",
+    usuario: 'User',
+    roles: { owner: 'Owner', admin: 'Admin', vendedor: 'Sales', lectura: 'Read only', miembro: 'Member' } as Record<string, string>,
+  },
+} as const;
+
+export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, locale = 'es' }: { orgLogoUrl?: string, user?: any, activeOrg?: any, locale?: 'es' | 'en' }) {
+  const S = SW_STRINGS[locale] ?? SW_STRINGS.es;
   const organization = activeOrg;
   const isTestMode = useStore($isTestMode);
   
   const safeUser = user || {
     firstName: 'U',
-    fullName: 'Usuario',
+    fullName: SW_STRINGS[locale === 'en' ? 'en' : 'es'].usuario,
     emailAddresses: [{ emailAddress: 'usuario@flouvia.com' }],
     organizationMemberships: []
   };
@@ -44,7 +75,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
   }, [isOpen]);
 
   // Initial del Workspace activo
-  const activeName = organization?.nombre || 'Personal Workspace';
+  const activeName = organization?.nombre || S.workspacePersonal;
   const initial = activeName.charAt(0).toUpperCase();
   const memberships = safeUser.organizationMemberships ?? [];
 
@@ -83,7 +114,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
 
       if (!res.ok || !data.orgId) {
         const cc = (window as any).cordToast;
-        const msg = data.error || 'No se pudo crear la cuenta.';
+        const msg = data.error || S.errorCrear;
         if (cc) cc(msg, 'error'); else alert(msg);
         return;
       }
@@ -93,15 +124,15 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
     } catch (e) {
       console.error(e);
       const cc = (window as any).cordToast;
-      if (cc) cc('Error al crear la cuenta', 'error');
-      else alert('Error al crear la cuenta');
+      if (cc) cc(S.errorCrear, 'error');
+      else alert(S.errorCrear);
     }
   };
 
   const ROLE_LABEL: Record<string, string> = {
     owner: 'Dueño', admin: 'Admin', vendedor: 'Vendedor', lectura: 'Lectura', miembro: 'Miembro',
   };
-  const roleLabel = (rol?: string) => ROLE_LABEL[rol || ''] || 'Miembro';
+  const roleLabel = (rol?: string) => S.roles[rol || ''] || S.roles.miembro;
 
   const membershipsByParent: Record<string, any[]> = {};
   const rootMemberships: any[] = [];
@@ -187,10 +218,10 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
         <div className="org-dropdown" role="menu" style={{ backgroundColor: 'var(--sb-menu-solid-bg, #ffffff)', backdropFilter: 'none', WebkitBackdropFilter: 'none', backgroundImage: 'none' }}>
           <span className="orgd-sheen" aria-hidden="true"></span>
 
-          <span className="orgd-section-label">Espacios de trabajo</span>
+          <span className="orgd-section-label">{S.espaciosTrabajo}</span>
           <div className="orgd-group org-list">
             {memberships.length === 0 && (
-              <p className="orgd-empty">Aún no tienes otros espacios de equipo — estás en tu workspace personal.</p>
+              <p className="orgd-empty">{S.sinEspacios}</p>
             )}
             {rootMemberships.map((mem: any) => {
               const selected = organization?.id === mem.organization.id;
@@ -270,7 +301,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
               </span>
-              <span className="orgd-label">Crear espacio de trabajo</span>
+              <span className="orgd-label">{S.crearEspacio}</span>
             </button>
 
             <a href="/app/ajustes/equipo" className="dropdown-action-btn">
@@ -282,7 +313,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
                   <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
               </span>
-              <span className="orgd-label">Configuración del equipo</span>
+              <span className="orgd-label">{S.configEquipo}</span>
               <svg className="orgd-chevron" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
@@ -296,7 +327,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
                   <path d="M8.5 2h7"></path>
                 </svg>
               </span>
-              <span className="orgd-label flex-1">Entorno de prueba</span>
+              <span className="orgd-label flex-1">{S.entornoPrueba}</span>
               <div className={`toggle-switch ${isTestMode ? 'on' : ''}`}>
                 <div className="toggle-thumb"></div>
               </div>
@@ -319,7 +350,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
                   <line x1="21" y1="12" x2="9" y2="12"></line>
                 </svg>
               </span>
-              <span className="orgd-label">Cerrar sesión</span>
+              <span className="orgd-label">{S.cerrarSesion}</span>
             </button>
           </div>
         </div>
@@ -778,6 +809,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg }: 
         parentOrg={createModalParentOrg}
         siblings={createModalSiblings}
         onSubmit={handleModalSubmit}
+        locale={locale}
       />
     </div>
   );

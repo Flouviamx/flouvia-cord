@@ -41,7 +41,7 @@ const STATUS_LABEL: Record<string, string> = {
 const planActual = PLANES.find((p) => p.id === planRaw);
 ---
 
-<SettingsShell title="Plan y facturación — Ajustes" tab="plan" perm="ajustes"
+<SettingsShell title={t(L, 'ajustes.titulo_plan')} tab="plan" perm="ajustes"
     intro={t(L, 'set.plan.intro')}>
 
     {isTestEnv && (

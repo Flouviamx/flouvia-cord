@@ -61,7 +61,7 @@ const NAV_GROUPS = [
     <!-- Cuenta — arriba -->
     <div class="sb-account">
         <!-- Custom Org Switcher (full custom B2B motor) -->
-        <CustomOrgSwitcher client:load orgLogoUrl={orgLogoUrl} user={userProfile} activeOrg={ORG} />
+        <CustomOrgSwitcher client:load orgLogoUrl={orgLogoUrl} user={userProfile} activeOrg={ORG} locale={L} />
     </div>
 
     <!-- Acciones móviles (solo en drawer) — crear / ayuda / config -->
@@ -116,7 +116,7 @@ const NAV_GROUPS = [
         <img class="sb-foot-logo sb-foot-logo-navy" src="/imgs/logo-cord-navy.png" alt="Cord" />
         <img class="sb-foot-logo sb-foot-logo-white" src="/imgs/logo-cord-white.png" alt="Cord" />
         <!-- Toggle estilo panel (Linear/VSCode) — colapsar/expandir -->
-        <button class="sb-toggle" id="sbToggleFloating" type="button" aria-label="Alternar menú">
+        <button class="sb-toggle" id="sbToggleFloating" type="button" aria-label={t(L, 'sidebar.alternar_menu')}>
             <svg class="sb-toggle-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="4" y="5" width="16" height="14" rx="2.5"></rect>
                 <rect class="sb-toggle-fill" x="4" y="5" width="7" height="14" rx="2.5" fill="currentColor" stroke="none"></rect>

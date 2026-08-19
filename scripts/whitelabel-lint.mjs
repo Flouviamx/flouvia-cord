@@ -17,7 +17,11 @@ const extensions = new Set(['.ts', '.tsx', '.astro', '.md', '.mdx']);
 // Allowlist deliberada. Cada excepción debe explicar por qué el nombre del
 // proveedor es técnico o contractual y no copy visible de Cord Pagos.
 const allowed = [
-    { path: /ConnectCustomOnboarding\.tsx$/, line: /Connected Account Agreement|stripe\.com\/mx\/connect-account\/legal|términos legales de Stripe|Stripe procesa los pagos|procesamiento de pagos provistos por Stripe|identificación y selfie se envían directamente a Stripe|acuerdo de Stripe/, reason: 'texto contractual y de privacidad obligatorio de la cuenta conectada' },
+    // El texto contractual de la cuenta conectada ahora vive en el diccionario
+    // CO_STRINGS del propio componente (una entrada por idioma), así que la
+    // excepción cubre las dos versiones. Sigue siendo texto que Stripe EXIGE
+    // mostrar literalmente, no copy de Cord Pagos.
+    { path: /ConnectCustomOnboarding\.tsx$/, line: /Connected Account Agreement|Acuerdo de Cuenta Conectada de Stripe|stripe\.com\/mx\/connect-account\/legal|términos legales de Stripe|Términos de Servicio de Stripe|Stripe's Terms of Service|Stripe procesa los pagos|Stripe processes payments|procesamiento de pagos provistos por Stripe|payment processing services provided by Stripe|identificación y selfie se envían directamente a Stripe|sent directly to Stripe|acuerdo de Stripe|the Stripe agreement/, reason: 'texto contractual y de privacidad obligatorio de la cuenta conectada (es + en)' },
     { path: /.*/, line: /@stripe\//, reason: 'import técnico del SDK' },
     { path: /.*/, line: /theme\s*:\s*['"]stripe['"]/, reason: 'nombre técnico del preset Appearance' },
     { path: /src\/i18n\/app\.ts$/, line: /"(?:q\.suscripcion_stripe|set\.plan\.gestion_stripe)"\s*:/, reason: 'clave de traducción legacy; el valor visible ya es white-label' },

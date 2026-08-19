@@ -1,12 +1,14 @@
 import React, { useRef, useState, useEffect } from 'react';
 
 interface LiveCaptureProps {
+    locale?: 'es' | 'en';
     onCapture: (file: File) => void;
     onCancel: () => void;
     side: 'front' | 'back' | 'selfie';
 }
 
-export default function LiveCapture({ onCapture, onCancel, side }: LiveCaptureProps) {
+export default function LiveCapture({ onCapture, onCancel, side, locale = 'es' }: LiveCaptureProps) {
+    const en = locale === 'en';
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
@@ -90,7 +92,7 @@ export default function LiveCapture({ onCapture, onCancel, side }: LiveCapturePr
     return (
         <div style={{ position: 'fixed', inset: 0, minHeight: '100dvh', background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: 'calc(12px + env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left))', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', zIndex: 10 }}>
-                <button type="button" onClick={onCancel} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1rem', cursor: 'pointer', padding: '10px' }}>Cancelar</button>
+                <button type="button" onClick={onCancel} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1rem', cursor: 'pointer', padding: '10px' }}>{en ? 'Cancel' : 'Cancelar'}</button>
                 <span style={{ fontSize: '1rem', fontWeight: 600 }}>{side === 'front' ? 'Frente INE' : side === 'back' ? 'Reverso INE' : 'Selfie'}</span>
                 <div style={{ width: '80px' }}></div>
             </div>
@@ -99,7 +101,7 @@ export default function LiveCapture({ onCapture, onCancel, side }: LiveCapturePr
                 {error ? (
                     <div style={{ color: '#fff', textAlign: 'center', padding: '20px' }}>
                         <p>{error}</p>
-                        <button type="button" onClick={startCamera} style={{ padding: '10px 20px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', marginTop: '10px' }}>Reintentar</button>
+                        <button type="button" onClick={startCamera} style={{ padding: '10px 20px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', marginTop: '10px' }}>{en ? 'Retry' : 'Reintentar'}</button>
                     </div>
                 ) : (
                     <>
@@ -148,7 +150,7 @@ export default function LiveCapture({ onCapture, onCancel, side }: LiveCapturePr
                     </button>
                 ) : (
                     <>
-                        <button type="button" onClick={retake} style={{ padding: '14px 24px', background: '#333', color: '#fff', border: 'none', borderRadius: '30px', fontSize: '1rem', cursor: 'pointer' }}>Tomar otra</button>
+                        <button type="button" onClick={retake} style={{ padding: '14px 24px', background: '#333', color: '#fff', border: 'none', borderRadius: '30px', fontSize: '1rem', cursor: 'pointer' }}>{en ? 'Retake' : 'Tomar otra'}</button>
                         <button type="button" onClick={confirmPhoto} disabled={loading} style={{ padding: '14px 24px', background: '#fff', color: '#000', border: 'none', borderRadius: '30px', fontSize: '1rem', fontWeight: 600, cursor: 'pointer' }}>
                             {loading ? 'Subiendo...' : 'Usar foto'}
                         </button>

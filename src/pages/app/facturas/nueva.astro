@@ -162,6 +162,8 @@ const BOOT = {
         errorGenerico: L === 'en' ? "Couldn't save. Try again." : 'No se pudo guardar. Intenta de nuevo.',
         kitAgregado: L === 'en' ? 'Kit added' : 'Kit agregado',
         fxNoDisponible: L === 'en' ? 'Exchange rate unavailable' : 'Tipo de cambio no disponible',
+        fxExplica: t(L, 'fact.fx_explica'),
+        fxPreview: t(L, 'fact.fx_preview'),
         analizando: L === 'en' ? 'Reading…' : 'Leyendo…',
         piezas: L === 'en' ? 'units' : 'piezas',
         conceptos: L === 'en' ? 'concepts' : 'conceptos',
@@ -830,7 +832,7 @@ const BOOT = {
             if (base === fiscal) { $fxCover.hidden = true; return; }
             $fxCover.hidden = false;
             const buffer = Number(($('fxBuffer') as HTMLInputElement).value) || 0;
-            $('fxExplain')!.innerHTML = `Le facturas en <b>${base}</b> y tus libros están en <b>${fiscal}</b>. La factura declara el tipo de cambio.`;
+            $('fxExplain')!.innerHTML = T.fxExplica.replace('{base}', base).replace('{fiscal}', fiscal);
             try {
                 const res = await fetch(`/api/fx/quote?base=${base}&fiscal=${fiscal}&amount=${ultimoTotal}&buffer=${buffer}`);
                 const d = await res.json();
@@ -842,7 +844,7 @@ const BOOT = {
                 // distintos para la misma venta.
                 const enLibros = ultimoTotal * d.appliedRate;
                 const fmtFiscal = createMoney({ currency: fiscal });
-                $('fxPreview')!.innerHTML = `Tu cliente paga <b>${fmt(ultimoTotal)}</b> · en tus libros ≈ <b>${fmtFiscal(enLibros)}</b>`;
+                $('fxPreview')!.innerHTML = T.fxPreview.replace('{monto}', fmt(ultimoTotal)).replace('{libros}', fmtFiscal(enLibros));
             } catch (err) {
                 // Regla 22: sin tasa real no se pinta una vista previa inventada.
                 $('fxSpot')!.textContent = '—';

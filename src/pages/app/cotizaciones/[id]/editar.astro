@@ -212,7 +212,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
             const row = document.createElement('div');
             row.className = 'line-row';
             
-            const nameHtml = `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="Descripción de la línea..." />`;
+            const nameHtml = `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="${T.descLineaPh}" />`;
 
             row.innerHTML = `
                 ${nameHtml}

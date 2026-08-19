@@ -124,7 +124,7 @@ const showIntro = !hasPlan || connections.length > 0;
             <div class="modal-body">
                 <div class="form-group">
                     <label>{t(L, 'set.sso.modal_nombre')}</label>
-                    <input type="text" id="ssoNewNombre" class="form-control" placeholder="Okta producción" maxlength="120" />
+                    <input type="text" id="ssoNewNombre" class="form-control" placeholder={t(L, 'set.sso.nombre_ph')} maxlength="120" />
                 </div>
                 <div class="form-group">
                     <label>{t(L, 'set.sso.modal_metadata')}</label>

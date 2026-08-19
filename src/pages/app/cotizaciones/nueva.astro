@@ -581,7 +581,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
             // Si es línea libre, el nombre es editable.
             const nameHtml = l.id
                 ? `<span class="lr-name">${l.nombre}<small>${nameNote(l, idx)}</small></span>`
-                : `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="Descripción de la línea..." />`;
+                : `<input type="text" class="lr-input lr-desc-input" value="${l.nombre}" data-idx="${idx}" data-field="nombre" placeholder="${T.descLineaPh}" />`;
 
             row.innerHTML = `
                 ${nameHtml}

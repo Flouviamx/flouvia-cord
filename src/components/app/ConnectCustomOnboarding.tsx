@@ -2,21 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { STRIPE_MX_STATES, STRIPE_COMPANY_STRUCTURES, STRIPE_MCC_B2B, translateRequirement } from '../../lib/stripe-catalogs';
 import { FEE_TERMS_VERSION } from '../../lib/fees';
 import { payoutSpecFor, validatePayout } from '../../lib/payout-fields';
+import { getCountryProfile } from '../../lib/countries';
 
 interface ConnectCustomOnboardingProps {
     org?: any;
+    locale?: 'es' | 'en';
 }
 
-const STEP_LABELS = [
-    'Tipo de entidad',
-    'Datos del negocio',
-    'Dirección fiscal',
-    'Identidad',
-    'Dueños',
-    'Verificación',
-    'Cuenta bancaria',
-    'Términos',
-];
+// Los nombres de los pasos viven en CO_STRINGS.pasos (traducidos).
 
 // El formato de la cuenta de depósito y su dígito de control salen de
 // lib/payout-fields.ts, la MISMA fuente que valida el endpoint. Este archivo
@@ -24,7 +17,172 @@ const STEP_LABELS = [
 // formato, así que fuera de México el paso 6 pedía 18 dígitos que ningún banco
 // local usa.
 
-export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboardingProps) {
+
+// Textos del alta de cobros.
+//
+// Locales al componente por la misma razón que en las demás islas: el
+// diccionario de la app pesa ~373 KB y no tiene por qué viajar al navegador.
+//
+// Este paso además estaba escrito para México y solo para México: preguntaba
+// cómo estaba registrado el negocio "ante el SAT", pedía RFC y CURP por su
+// nombre, ofrecía los 32 estados mexicanos en un <select> y hablaba de la INE.
+// Un negocio en Madrid o en Austin veía todo eso y no tenía dónde poner sus
+// propios datos. Lo que es de México ahora se muestra SOLO en México; el resto
+// usa el vocabulario de su país (getCountryProfile) o uno neutro.
+const CO_STRINGS = {
+  es: {
+    requisitosPendientes: 'Requisitos pendientes',
+    completar: 'Completar →',
+    consultando: 'Consultando el estado de tu cuenta…',
+    cambiar: 'Cambiar',
+    editarCuenta: 'Editar cuenta bancaria',
+    enRevision: 'Tus datos están en revisión',
+    comoRegistrado: '¿Cómo está registrado legalmente tu negocio?',
+    comoRegistradoMx: '¿Cómo está registrado legalmente tu negocio ante el SAT?',
+    personaMoral: 'Empresa',
+    personaMoralDesc: 'Sociedad, corporación o asociación registrada',
+    personaMoralDescMx: 'Empresa, S.A. de C.V., S. de R.L., Asociación',
+    personaFisica: 'Persona física',
+    personaFisicaDesc: 'Trabajas por tu cuenta o como propietario único',
+    personaFisicaDescMx: 'Propietario único, RESICO, PFAE',
+    taxIdHint: 'Lo usamos para verificar la identidad de tu negocio.',
+    giro: 'Giro del negocio (MCC)',
+    selecciona: 'Selecciona…',
+    giroHint: 'Selecciona el código que más se acerque a tu actividad principal.',
+    estructuraLegal: 'Estructura legal',
+    sitioWeb: 'Sitio web o link social',
+    telefonoSoporte: 'Teléfono de soporte',
+    calleNumero: 'Calle, número exterior e interior',
+    codigoPostal: 'Código postal',
+    ciudadMunicipio: 'Ciudad / Municipio',
+    estado: 'Estado o provincia',
+    seleccionaEstado: 'Selecciona estado…',
+    nombres: 'Nombre(s)',
+    apellidos: 'Apellidos',
+    idPersonal: 'Identificación fiscal personal',
+    idPersonalMx: 'CURP o RFC personal',
+    fechaNacimiento: 'Fecha de nacimiento',
+    emailPersonal: 'Email personal',
+    telefono: 'Teléfono',
+    calle: 'Calle y número',
+    ciudad: 'Ciudad',
+    duenosNota: 'Por regulaciones financieras, se debe declarar si hay dueños con más del 25% de participación.',
+    duenosConfirmo: 'Confirmo que he agregado a todos los dueños con ≥25%',
+    duenosDetalle: 'El representante que agregaste ya fue marcado como dueño y directivo. Activa esto para declarar que la lista está completa.',
+    identidadNota: 'Necesitamos una foto clara de una identificación oficial vigente y una selfie de verificación.',
+    recomendado: 'Recomendado',
+    qrNota: 'Escanea el código con tu celular y toma las fotos con su cámara. Tendrás mejor luz y enfoque; también te pedimos una selfie para reforzar la verificación.',
+    generando: 'Generando…',
+    copiar: 'Copiar',
+    frente: 'Frente',
+    reverso: 'Reverso',
+    selfie: 'Selfie',
+    esperandoTelefono: 'Esperando a que termines desde tu teléfono…',
+    codigoExpiro: 'El código expiró por seguridad (duran 10 minutos).',
+    generarNuevo: 'Generar uno nuevo',
+    frenteId: 'Frente de la identificación',
+    quitar: 'Quitar',
+    reversoId: 'Reverso (omite si tu identificación es un pasaporte)',
+    selfieNota: '¿Quieres agregar también tu selfie de verificación? Usa la opción "Con tu teléfono" de arriba.',
+    cuentaNota: 'Ingresa la cuenta donde recibirás los cobros. Debe estar a nombre del negocio o representante.',
+    titular: 'Nombre del titular de la cuenta',
+    valido: 'válido',
+    tosIntro: 'Stripe procesa los pagos para este servicio. Al continuar, aceptas el',
+    tosAcuerdo: 'Acuerdo de Cuenta Conectada de Stripe',
+    tosCierre: ', que incluye los Términos de Servicio de Stripe.',
+    tosCondicion: 'Como condición para que Cord habilite los servicios de procesamiento de pagos a través de Stripe, aceptas proporcionar a Cord información precisa y completa sobre ti y tu negocio, y autorizas a Cord a compartirla junto con los datos de transacciones relacionados con tu uso de los servicios de procesamiento de pagos provistos por Stripe.',
+    tosDatos: 'Las imágenes de identificación y selfie se envían directamente a Stripe y CORD no las almacena de forma persistente. Tu cuenta de depósito se conserva cifrada para operar y mostrarte a dónde llegan los cobros.',
+    consentTitulo: 'Acepto expresamente el tratamiento de datos y las condiciones de Cord Payments',
+    consentLei: 'Confirmo que leí el',
+    consentPrivacidad: 'Aviso de Privacidad',
+    consentComa: ', los',
+    consentTerminos: 'Términos de Cord Payments',
+    consentCierre: 'y el acuerdo de Stripe. Autorizo el tratamiento y las transferencias descritas de mis datos financieros, patrimoniales y de verificación de identidad.',
+    consentRegistro: 'Tu aceptación se registra con fecha, dirección IP y versión de términos.',
+    atras: 'Atrás',
+    pasos: ['Tipo de entidad', 'Datos del negocio', 'Dirección fiscal', 'Identidad', 'Dueños', 'Verificación', 'Cuenta bancaria', 'Términos'],
+  },
+  en: {
+    requisitosPendientes: 'Pending requirements',
+    completar: 'Complete →',
+    consultando: 'Checking your account status…',
+    cambiar: 'Change',
+    editarCuenta: 'Edit bank account',
+    enRevision: 'Your details are under review',
+    comoRegistrado: 'How is your business legally registered?',
+    comoRegistradoMx: 'How is your business legally registered with the SAT?',
+    personaMoral: 'Company',
+    personaMoralDesc: 'Registered corporation, partnership or association',
+    personaMoralDescMx: 'Company, S.A. de C.V., S. de R.L., Association',
+    personaFisica: 'Individual',
+    personaFisicaDesc: 'You work for yourself or as a sole proprietor',
+    personaFisicaDescMx: 'Sole proprietor, RESICO, PFAE',
+    taxIdHint: "We use it to verify your business's identity.",
+    giro: 'Business category (MCC)',
+    selecciona: 'Select…',
+    giroHint: 'Pick the code closest to your main activity.',
+    estructuraLegal: 'Legal structure',
+    sitioWeb: 'Website or social link',
+    telefonoSoporte: 'Support phone',
+    calleNumero: 'Street and number',
+    codigoPostal: 'Postal code',
+    ciudadMunicipio: 'City',
+    estado: 'State or province',
+    seleccionaEstado: 'Select a state…',
+    nombres: 'First name(s)',
+    apellidos: 'Last name(s)',
+    idPersonal: 'Personal tax ID',
+    idPersonalMx: 'CURP or personal RFC',
+    fechaNacimiento: 'Date of birth',
+    emailPersonal: 'Personal email',
+    telefono: 'Phone',
+    calle: 'Street and number',
+    ciudad: 'City',
+    duenosNota: 'Financial regulations require declaring any owner with more than 25% ownership.',
+    duenosConfirmo: "I confirm I've added every owner with ≥25%",
+    duenosDetalle: 'The representative you added is already marked as owner and director. Turn this on to declare the list is complete.',
+    identidadNota: 'We need a clear photo of a valid government ID and a verification selfie.',
+    recomendado: 'Recommended',
+    qrNota: "Scan the code with your phone and take the photos with its camera — better light and focus. We'll also ask for a selfie to strengthen verification.",
+    generando: 'Generating…',
+    copiar: 'Copy',
+    frente: 'Front',
+    reverso: 'Back',
+    selfie: 'Selfie',
+    esperandoTelefono: 'Waiting for you to finish on your phone…',
+    codigoExpiro: 'The code expired for security (they last 10 minutes).',
+    generarNuevo: 'Generate a new one',
+    frenteId: 'Front of the ID',
+    quitar: 'Remove',
+    reversoId: 'Back (skip if your ID is a passport)',
+    selfieNota: 'Want to add your verification selfie too? Use the "With your phone" option above.',
+    cuentaNota: 'Enter the account where you\'ll receive payouts. It must be under the business or representative name.',
+    titular: 'Account holder name',
+    valido: 'valid',
+    tosIntro: 'Stripe processes payments for this service. By continuing, you accept the',
+    tosAcuerdo: 'Stripe Connected Account Agreement',
+    tosCierre: ", which includes Stripe's Terms of Service.",
+    tosCondicion: 'As a condition of Cord enabling payment processing services through Stripe, you agree to provide Cord with accurate and complete information about you and your business, and you authorize Cord to share it along with transaction data related to your use of the payment processing services provided by Stripe.',
+    tosDatos: "ID and selfie images are sent directly to Stripe and CORD does not store them persistently. Your payout account is kept encrypted so we can operate and show you where payments land.",
+    consentTitulo: 'I expressly accept the data processing and the Cord Payments terms',
+    consentLei: 'I confirm I read the',
+    consentPrivacidad: 'Privacy Notice',
+    consentComa: ', the',
+    consentTerminos: 'Cord Payments Terms',
+    consentCierre: "and the Stripe agreement. I authorize the described processing and transfers of my financial, asset and identity-verification data.",
+    consentRegistro: 'Your acceptance is recorded with date, IP address and terms version.',
+    atras: 'Back',
+    pasos: ['Entity type', 'Business details', 'Registered address', 'Identity', 'Owners', 'Verification', 'Bank account', 'Terms'],
+  },
+} as const;
+
+export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectCustomOnboardingProps) {
+    const S = CO_STRINGS[locale] ?? CO_STRINGS.es;
+    const PAIS = String(org?.countryCode || 'MX').toUpperCase();
+    const esMx = PAIS === 'MX';
+    // El nombre de la identificación fiscal sale del país: RFC en México, NIF en
+    // España, EIN en Estados Unidos. Preguntar "RFC" en Madrid no tiene respuesta.
+    const TAX_ID_LABEL = getCountryProfile(PAIS, locale).taxIdLabel;
     const [step, setStep] = useState(0);
     const [booting, setBooting] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -257,7 +415,11 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
             } else if (step === 1) {
                 if (!name || !taxId || !mcc) throw new Error('Faltan datos obligatorios');
                 const rfcRegex = /^[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}$/i;
-                if (!rfcRegex.test(taxId)) throw new Error('El RFC no tiene un formato válido (12 o 13 caracteres, formato oficial)');
+                // El formato del RFC es mexicano. Validar 12–13 caracteres en
+                // España o Estados Unidos rechaza identificadores perfectamente
+                // válidos, así que fuera de México solo se exige que exista.
+                if (esMx && !rfcRegex.test(taxId)) throw new Error('El RFC no tiene un formato válido (12 o 13 caracteres, formato oficial)');
+                if (!esMx && taxId.trim().length < 5) throw new Error(`Captura tu ${TAX_ID_LABEL}`);
 
                 const payload: any = {
                     business_profile: { mcc, url, support_phone: phone, support_email: email },
@@ -444,7 +606,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
         if (!dueList.length) return null;
         return (
             <div className="co-requirements">
-                <div className="co-req-header">Requisitos pendientes</div>
+                <div className="co-req-header">{S.requisitosPendientes}</div>
                 <ul className="co-req-list">
                     {dueList.map((req: string) => {
                         const tr = translateRequirement(req);
@@ -453,7 +615,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fillOpacity="0.1"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                 {tr.mensaje}
                             </span>
-                            <span className="co-req-action">Completar →</span>
+                            <span className="co-req-action">{S.completar}</span>
                         </li>;
                     })}
                 </ul>
@@ -466,7 +628,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
             <div className="connect-custom-onboarding">
                 <div className="co-boot">
                     <span className="co-spinner" aria-hidden="true"></span>
-                    <span>Consultando el estado de tu cuenta…</span>
+                    <span>{S.consultando}</span>
                 </div>
             </div>
         );
@@ -486,11 +648,11 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                     <strong>{bankInfo.bank_name || 'Cuenta bancaria'}</strong>
                                     <span>{payoutSpec.label} terminación •••• {bankInfo.last4}. Aquí llegan tus depósitos.</span>
                                 </div>
-                                <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Cambiar</button>
+                                <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>{S.cambiar}</button>
                             </div>
                         )}
                         {!bankInfo?.last4 && (
-                            <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Editar cuenta bancaria</button>
+                            <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>{S.editarCuenta}</button>
                         )}
                     </div>
                 </div>
@@ -503,7 +665,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                     {dueList.length === 0 ? (
                         <div className="co-review">
                             <span className="co-spinner co-spinner-lg" aria-hidden="true"></span>
-                            <h3>Tus datos están en revisión</h3>
+                            <h3>{S.enRevision}</h3>
                             <p>
                                 Cord Payments está verificando tu información. Normalmente toma un par de minutos.
                                 Esta página se actualizará sola en cuanto tus cobros estén activos.
@@ -518,14 +680,14 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
         );
     }
 
-    const totalSteps = STEP_LABELS.length;
+    const totalSteps = S.pasos.length;
     const progressPct = Math.round(((step + 1) / totalSteps) * 100);
 
     return (
         <div className="connect-custom-onboarding">
             <div className="co-header">
                 <div className="co-header-text">
-                    <h3>{STEP_LABELS[step]}</h3>
+                    <h3>{S.pasos[step]}</h3>
                     <span className="co-step-count">Paso {step + 1} de {totalSteps}</span>
                 </div>
                 {accountId && <span className="co-account-id">{accountId}</span>}
@@ -539,20 +701,20 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
             <div className="co-step-content" key={step}>
                 {step === 0 && (
                     <div className="co-step">
-                        <p className="co-sub">¿Cómo está registrado legalmente tu negocio ante el SAT?</p>
+                        <p className="co-sub">{esMx ? S.comoRegistradoMx : S.comoRegistrado}</p>
                         <div className="co-radio-list">
                             <label className={`co-card-radio ${businessType === 'company' ? 'active' : ''}`}>
                                 <input type="radio" name="btype" checked={businessType === 'company'} onChange={() => setBusinessType('company')} />
                                 <div className="cr-text">
-                                    <strong>Persona Moral</strong>
-                                    <span>Empresa, S.A. de C.V., S. de R.L., Asociación</span>
+                                    <strong>{S.personaMoral}</strong>
+                                    <span>{esMx ? S.personaMoralDescMx : S.personaMoralDesc}</span>
                                 </div>
                             </label>
                             <label className={`co-card-radio ${businessType === 'individual' ? 'active' : ''}`}>
                                 <input type="radio" name="btype" checked={businessType === 'individual'} onChange={() => setBusinessType('individual')} />
                                 <div className="cr-text">
-                                    <strong>Persona Física</strong>
-                                    <span>Propietario único, RESICO, PFAE</span>
+                                    <strong>{S.personaFisica}</strong>
+                                    <span>{esMx ? S.personaFisicaDescMx : S.personaFisicaDesc}</span>
                                 </div>
                             </label>
                         </div>
@@ -567,35 +729,35 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                         </div>
                         <div className="s-row">
                             <div className="s-field">
-                                <label>RFC</label>
+                                <label>{TAX_ID_LABEL}</label>
                                 <input className="s-input" value={taxId} onChange={e => setTaxId(e.target.value.toUpperCase())} maxLength={13} autoCapitalize="characters" />
-                                <span className="s-hint">Lo usamos para verificar tu identidad ante el SAT.</span>
+                                <span className="s-hint">{S.taxIdHint}</span>
                             </div>
                             <div className="s-field">
-                                <label>Giro del negocio (MCC)</label>
+                                <label>{S.giro}</label>
                                 <select className="s-input" value={mcc} onChange={e => setMcc(e.target.value)}>
-                                    <option value="">Selecciona...</option>
+                                    <option value="">{S.selecciona}</option>
                                     {STRIPE_MCC_B2B.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
                                 </select>
-                                <span className="s-hint">Selecciona el código que más se acerque a tu actividad principal.</span>
+                                <span className="s-hint">{S.giroHint}</span>
                             </div>
                         </div>
                         {businessType === 'company' && (
                             <div className="s-field">
-                                <label>Estructura Legal</label>
+                                <label>{S.estructuraLegal}</label>
                                 <select className="s-input" value={structure} onChange={e => setStructure(e.target.value)}>
-                                    <option value="">Selecciona...</option>
+                                    <option value="">{S.selecciona}</option>
                                     {STRIPE_COMPANY_STRUCTURES.map(s => <option key={s.codigo} value={s.codigo}>{s.nombre}</option>)}
                                 </select>
                             </div>
                         )}
                         <div className="s-row">
                             <div className="s-field">
-                                <label>Sitio web o Link social</label>
+                                <label>{S.sitioWeb}</label>
                                 <input className="s-input" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://" type="url" />
                             </div>
                             <div className="s-field">
-                                <label>Teléfono de soporte</label>
+                                <label>{S.telefonoSoporte}</label>
                                 <input className="s-input" value={phone} onChange={e => setPhone(e.target.value)} type="tel" />
                             </div>
                         </div>
@@ -605,25 +767,32 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                 {step === 2 && (
                     <div className="co-step">
                         <div className="s-field">
-                            <label>Calle, número exterior e interior</label>
+                            <label>{S.calleNumero}</label>
                             <input className="s-input" value={address.line1} onChange={e => setAddress({...address, line1: e.target.value})} />
                         </div>
                         <div className="s-row">
                             <div className="s-field">
-                                <label>Código Postal</label>
+                                <label>{S.codigoPostal}</label>
                                 <input className="s-input" value={address.postal_code} onChange={e => setAddress({...address, postal_code: e.target.value.replace(/\D/g, '')})} maxLength={5} inputMode="numeric" />
                             </div>
                             <div className="s-field">
-                                <label>Ciudad / Municipio</label>
+                                <label>{S.ciudadMunicipio}</label>
                                 <input className="s-input" value={address.city} onChange={e => setAddress({...address, city: e.target.value})} />
                             </div>
                         </div>
                         <div className="s-field">
-                            <label>Estado</label>
-                            <select className="s-input" value={address.state} onChange={e => setAddress({...address, state: e.target.value})}>
-                                <option value="">Selecciona estado...</option>
-                                {STRIPE_MX_STATES.map(s => <option key={s.codigo} value={s.codigo}>{s.nombre}</option>)}
-                            </select>
+                            <label>{S.estado}</label>
+                            {/* Los 32 estados mexicanos solo existen en México. Fuera,
+                                un <select> cerrado deja al negocio sin poder capturar
+                                su provincia, condado o comunidad autónoma. */}
+                            {esMx ? (
+                                <select className="s-input" value={address.state} onChange={e => setAddress({...address, state: e.target.value})}>
+                                    <option value="">{S.seleccionaEstado}</option>
+                                    {STRIPE_MX_STATES.map(s => <option key={s.codigo} value={s.codigo}>{s.nombre}</option>)}
+                                </select>
+                            ) : (
+                                <input className="s-input" value={address.state} onChange={e => setAddress({...address, state: e.target.value})} maxLength={60} />
+                            )}
                         </div>
                     </div>
                 )}
@@ -633,21 +802,21 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                         <p className="co-sub">{businessType === 'individual' ? 'Como persona física, necesitamos verificar tu identidad para activar Cord Payments.' : 'Persona autorizada para operar la cuenta bancaria de la empresa.'}</p>
                         <div className="s-row">
                             <div className="s-field">
-                                <label>Nombre(s)</label>
+                                <label>{S.nombres}</label>
                                 <input className="s-input" value={person.first_name} onChange={e => setPerson({...person, first_name: e.target.value})} autoComplete="given-name" />
                             </div>
                             <div className="s-field">
-                                <label>Apellidos</label>
+                                <label>{S.apellidos}</label>
                                 <input className="s-input" value={person.last_name} onChange={e => setPerson({...person, last_name: e.target.value})} autoComplete="family-name" />
                             </div>
                         </div>
                         <div className="s-row">
                             <div className="s-field">
-                                <label>CURP o RFC personal</label>
+                                <label>{esMx ? S.idPersonalMx : S.idPersonal}</label>
                                 <input className="s-input" value={person.id_number} onChange={e => setPerson({...person, id_number: e.target.value.toUpperCase()})} autoCapitalize="characters" />
                             </div>
                             <div className="s-field">
-                                <label>Fecha de nacimiento</label>
+                                <label>{S.fechaNacimiento}</label>
                                 <div className="co-dob">
                                     <input className="s-input" placeholder="DD" value={person.dob_day} onChange={e => setPerson({...person, dob_day: e.target.value.replace(/\D/g, '')})} maxLength={2} inputMode="numeric" aria-label="Día" />
                                     <span className="co-dob-sep">/</span>
@@ -659,31 +828,35 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                         </div>
                         <div className="s-row">
                             <div className="s-field">
-                                <label>Email personal</label>
+                                <label>{S.emailPersonal}</label>
                                 <input className="s-input" value={person.email} onChange={e => setPerson({...person, email: e.target.value})} type="email" autoComplete="email" />
                             </div>
                             <div className="s-field">
-                                <label>Teléfono</label>
+                                <label>{S.telefono}</label>
                                 <input className="s-input" value={person.phone} onChange={e => setPerson({...person, phone: e.target.value})} type="tel" autoComplete="tel" />
                             </div>
                         </div>
                         <div className="co-divider"></div>
                         <p className="co-sub co-sub-strong">{businessType === 'individual' ? 'Tu dirección personal' : 'Dirección personal del representante'}</p>
                         <div className="s-field">
-                            <label>Calle y número</label>
+                            <label>{S.calle}</label>
                             <input className="s-input" value={person.address_line1} onChange={e => setPerson({...person, address_line1: e.target.value})} />
                         </div>
                         <div className="s-row s-row-3">
                             <div className="s-field">
-                                <label>Ciudad</label>
+                                <label>{S.ciudad}</label>
                                 <input className="s-input" value={person.address_city} onChange={e => setPerson({...person, address_city: e.target.value})} />
                             </div>
                             <div className="s-field">
-                                <label>Estado</label>
-                                <select className="s-input" value={person.address_state} onChange={e => setPerson({...person, address_state: e.target.value})}>
-                                    <option value="">Selecciona...</option>
-                                    {STRIPE_MX_STATES.map(s => <option key={s.codigo} value={s.codigo}>{s.nombre}</option>)}
-                                </select>
+                                <label>{S.estado}</label>
+                                {esMx ? (
+                                    <select className="s-input" value={person.address_state} onChange={e => setPerson({...person, address_state: e.target.value})}>
+                                        <option value="">{S.selecciona}</option>
+                                        {STRIPE_MX_STATES.map(s => <option key={s.codigo} value={s.codigo}>{s.nombre}</option>)}
+                                    </select>
+                                ) : (
+                                    <input className="s-input" value={person.address_state} onChange={e => setPerson({...person, address_state: e.target.value})} maxLength={60} />
+                                )}
                             </div>
                             <div className="s-field co-field-cp">
                                 <label>CP</label>
@@ -695,15 +868,15 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
 
                 {step === 4 && (
                     <div className="co-step">
-                        <p className="co-sub">Por regulaciones financieras, se debe declarar si hay dueños con más del 25% de participación.</p>
+                        <p className="co-sub">{S.duenosNota}</p>
                         <label className="co-attest">
                             <span className="s-toggle">
                                 <input type="checkbox" checked={ownersProvided} onChange={e => setOwnersProvided(e.target.checked)} />
                                 <span className="s-toggle-track"><span className="s-toggle-thumb"></span></span>
                             </span>
                             <span className="co-attest-text">
-                                <strong>Confirmo que he agregado a todos los dueños con ≥25%</strong>
-                                <span>El representante que agregaste ya fue marcado como dueño y directivo. Activa esto para declarar que la lista está completa.</span>
+                                <strong>{S.duenosConfirmo}</strong>
+                                <span>{S.duenosDetalle}</span>
                             </span>
                         </label>
                     </div>
@@ -711,13 +884,13 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
 
                 {step === 5 && (
                     <div className="co-step">
-                        <p className="co-sub">Necesitamos una foto clara de una identificación oficial vigente (INE o Pasaporte) y una selfie de verificación.</p>
+                        <p className="co-sub">{S.identidadNota}</p>
 
                         <div className="co-mode-tabs" role="tablist">
                             <button type="button" role="tab" aria-selected={uploadMode === 'phone'} className={`co-mode-tab ${uploadMode === 'phone' ? 'active' : ''}`} onClick={() => setUploadMode('phone')}>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5" fill="currentColor" fillOpacity="0.12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
                                 Con tu teléfono
-                                <span className="co-mode-tab-tag">Recomendado</span>
+                                <span className="co-mode-tab-tag">{S.recomendado}</span>
                             </button>
                             <button type="button" role="tab" aria-selected={uploadMode === 'file'} className={`co-mode-tab ${uploadMode === 'file' ? 'active' : ''}`} onClick={() => setUploadMode('file')}>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="m7 8 5-5 5 5" fill="currentColor" fillOpacity="0.12"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg>
@@ -732,9 +905,9 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                         <div className="co-phone-ico">
                                             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5" fill="currentColor" fillOpacity="0.1"/><circle cx="12" cy="11" r="2.6" /><line x1="11" y1="17.3" x2="13" y2="17.3" /></svg>
                                         </div>
-                                        <p>Escanea el código con tu celular y toma las fotos con su cámara. Tendrás mejor luz y enfoque; también te pedimos una selfie para reforzar la verificación.</p>
+                                        <p>{S.qrNota}</p>
                                         <button type="button" className="co-btn co-btn-primary" onClick={startPhoneCapture} disabled={captureStatus === 'creating'}>
-                                            {captureStatus === 'creating' ? (<><span className="co-spinner co-spinner-btn" aria-hidden="true"></span> Generando…</>) : 'Generar código QR'}
+                                            {captureStatus === 'creating' ? (<><span className="co-spinner co-spinner-btn" aria-hidden="true"></span> {S.generando}</>) : (locale === 'en' ? 'Generate QR code' : 'Generar código QR')}
                                         </button>
                                     </div>
                                 )}
@@ -744,15 +917,15 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                         {captureQr && <div className="co-phone-qr" dangerouslySetInnerHTML={{ __html: captureQr }} />}
                                         <div className="co-phone-link">
                                             <input readOnly value={captureUrl || ''} onFocus={(e) => e.currentTarget.select()} />
-                                            <button type="button" onClick={() => { if (captureUrl) navigator.clipboard?.writeText(captureUrl); }}>Copiar</button>
+                                            <button type="button" onClick={() => { if (captureUrl) navigator.clipboard?.writeText(captureUrl); }}>{S.copiar}</button>
                                         </div>
                                         <ul className="co-phone-steps">
-                                            <li className={capturedParts.front ? 'done' : ''}><span className="co-phone-step-dot"></span>Frente</li>
-                                            <li className={capturedParts.back ? 'done' : ''}><span className="co-phone-step-dot"></span>Reverso</li>
-                                            <li className={capturedParts.selfie ? 'done' : ''}><span className="co-phone-step-dot"></span>Selfie</li>
+                                            <li className={capturedParts.front ? 'done' : ''}><span className="co-phone-step-dot"></span>{S.frente}</li>
+                                            <li className={capturedParts.back ? 'done' : ''}><span className="co-phone-step-dot"></span>{S.reverso}</li>
+                                            <li className={capturedParts.selfie ? 'done' : ''}><span className="co-phone-step-dot"></span>{S.selfie}</li>
                                         </ul>
                                         {captureStatus === 'waiting' ? (
-                                            <span className="co-phone-waiting"><span className="co-spinner co-spinner-btn" aria-hidden="true"></span> Esperando a que termines desde tu teléfono…</span>
+                                            <span className="co-phone-waiting"><span className="co-spinner co-spinner-btn" aria-hidden="true"></span> {S.esperandoTelefono}</span>
                                         ) : (
                                             <span className="co-phone-done">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -764,15 +937,15 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
 
                                 {captureStatus === 'expired' && (
                                     <div className="co-phone-intro">
-                                        <p>El código expiró por seguridad (duran 10 minutos).</p>
-                                        <button type="button" className="co-btn co-btn-primary" onClick={startPhoneCapture}>Generar uno nuevo</button>
+                                        <p>{S.codigoExpiro}</p>
+                                        <button type="button" className="co-btn co-btn-primary" onClick={startPhoneCapture}>{S.generarNuevo}</button>
                                     </div>
                                 )}
                             </div>
                         ) : (
                             <>
                                 <div className="s-field">
-                                    <label>Frente de la identificación</label>
+                                    <label>{S.frenteId}</label>
                                     {previewFront ? (
                                         <div className="co-doc-preview">
                                             <img src={previewFront} alt="Frente" />
@@ -780,7 +953,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                                 Lista
                                             </span>
-                                            <button type="button" className="co-btn co-btn-ghost co-btn-sm" onClick={() => { setDocFront(null); setPreviewFront(null); }}>Quitar</button>
+                                            <button type="button" className="co-btn co-btn-ghost co-btn-sm" onClick={() => { setDocFront(null); setPreviewFront(null); }}>{S.quitar}</button>
                                         </div>
                                     ) : (
                                         <label className="co-btn co-btn-ghost co-upload co-upload-block">
@@ -794,7 +967,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                 </div>
 
                                 <div className="s-field">
-                                    <label>Reverso (solo INE, omite si es Pasaporte)</label>
+                                    <label>{S.reversoId}</label>
                                     {previewBack ? (
                                         <div className="co-doc-preview">
                                             <img src={previewBack} alt="Reverso" />
@@ -802,7 +975,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                                 Lista
                                             </span>
-                                            <button type="button" className="co-btn co-btn-ghost co-btn-sm" onClick={() => { setDocBack(null); setPreviewBack(null); }}>Quitar</button>
+                                            <button type="button" className="co-btn co-btn-ghost co-btn-sm" onClick={() => { setDocBack(null); setPreviewBack(null); }}>{S.quitar}</button>
                                         </div>
                                     ) : (
                                         <label className="co-btn co-btn-ghost co-upload co-upload-block">
@@ -814,7 +987,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                         </label>
                                     )}
                                 </div>
-                                <p className="co-hint">¿Quieres agregar también tu selfie de verificación? Usa la opción "Con tu teléfono" de arriba.</p>
+                                <p className="co-hint">{S.selfieNota}</p>
                             </>
                         )}
                     </div>
@@ -822,7 +995,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
 
                 {step === 6 && (
                     <div className="co-step">
-                        <p className="co-sub">Ingresa la cuenta donde recibirás los cobros. Debe estar a nombre del negocio o representante.</p>
+                        <p className="co-sub">{S.cuentaNota}</p>
                         {payoutSpec.fields.map((f) => {
                             const valor = bankFields[f.key] || '';
                             // Solo se opina cuando el campo ya tiene su longitud
@@ -848,7 +1021,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                             );
                         })}
                         <div className="s-field">
-                            <label>Nombre del Titular de la cuenta</label>
+                            <label>{S.titular}</label>
                             <input className="s-input" value={accountHolder} onChange={e => setAccountHolder(e.target.value)} />
                         </div>
                     </div>
@@ -858,24 +1031,24 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                     <div className="co-step">
                         <div className="co-tos">
                             <p><strong>Stripe Connected Account Agreement</strong></p>
-                            <p>Stripe procesa los pagos para este servicio. Al continuar, aceptas el <a href="https://stripe.com/mx/connect-account/legal" target="_blank" rel="noopener noreferrer">Acuerdo de Cuenta Conectada de Stripe</a>, que incluye los Términos de Servicio de Stripe.</p>
-                            <p>Como condición para que Cord habilite los servicios de procesamiento de pagos a través de Stripe, aceptas proporcionar a Cord información precisa y completa sobre ti y tu negocio, y autorizas a Cord a compartirla junto con los datos de transacciones relacionados con tu uso de los servicios de procesamiento de pagos provistos por Stripe.</p>
-                            <p>Las imágenes de identificación y selfie se envían directamente a Stripe y CORD no las almacena de forma persistente. Tu cuenta de depósito se conserva cifrada para operar y mostrarte a dónde llegan los cobros.</p>
+                            <p>{S.tosIntro} <a href="https://stripe.com/mx/connect-account/legal" target="_blank" rel="noopener noreferrer">{S.tosAcuerdo}</a>{S.tosCierre}</p>
+                            <p>{S.tosCondicion}</p>
+                            <p>{S.tosDatos}</p>
                         </div>
                         <label className="co-attest co-legal-consent">
                             <input type="checkbox" checked={legalConsent} onChange={event => setLegalConsent(event.target.checked)} />
                             <span className="co-attest-text">
-                                <strong>Acepto expresamente el tratamiento de datos y las condiciones de Cord Payments</strong>
-                                <span>Confirmo que leí el <a href="/privacidad" target="_blank" rel="noopener noreferrer">Aviso de Privacidad</a>, los <a href="/terminos#cord-pagos" target="_blank" rel="noopener noreferrer">Términos de Cord Payments</a> y el acuerdo de Stripe. Autorizo el tratamiento y las transferencias descritas de mis datos financieros, patrimoniales y de verificación de identidad.</span>
+                                <strong>{S.consentTitulo}</strong>
+                                <span>{S.consentLei} <a href="/privacidad" target="_blank" rel="noopener noreferrer">{S.consentPrivacidad}</a>{S.consentComa} <a href="/terminos#cord-pagos" target="_blank" rel="noopener noreferrer">{S.consentTerminos}</a> {S.consentCierre}</span>
                             </span>
                         </label>
-                        <p className="co-tos-note">Tu aceptación se registra con fecha, dirección IP y versión de términos.</p>
+                        <p className="co-tos-note">{S.consentRegistro}</p>
                     </div>
                 )}
             </div>
 
             <div className="co-footer">
-                {step > 0 && <button type="button" className="co-btn co-btn-ghost" onClick={goBack} disabled={loading}>Atrás</button>}
+                {step > 0 && <button type="button" className="co-btn co-btn-ghost" onClick={goBack} disabled={loading}>{S.atras}</button>}
                 <div style={{ flex: 1 }}></div>
                 {!(step === 5 && uploadMode === 'phone' && captureStatus !== 'completed') && (
                     <button type="button" className="co-btn co-btn-primary" onClick={handleNext} disabled={loading || (step === 7 && !legalConsent)}>

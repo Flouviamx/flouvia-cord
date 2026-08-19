@@ -5,6 +5,83 @@ import { payerError } from '../../lib/pay-errors';
 import '../../styles/payment-island.css';
 
 const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
+/**
+ * Textos de la isla de pago.
+ *
+ * Los arma el servidor con `t()` y viajan como prop. No se importa el
+ * diccionario aquí: `src/i18n/app.ts` pesa ~373 KB y esto corre en el navegador
+ * del CLIENTE del vendedor — el que menos motivos tiene para descargarlo.
+ *
+ * Todo este componente estaba en español duro, incluido el locale del Payment
+ * Element de Stripe (`'es-419'` fijo), así que un comprador en Londres leía
+ * "Método de pago" y los campos de la tarjeta en español.
+ */
+export interface PayStrings {
+    metodoPago: string;
+    tarjeta: string;
+    spei: string;
+    eligeMetodo: string;
+    pagoRecibido: string;
+    igualaActivada: string;
+    pagoRecibidoDesc: string;
+    igualaActivadaDesc: string;
+    volverCotizacion: string;
+    instruccionesSpei: string;
+    instruccionesSpeiDesc: string;
+    monto: string;
+    banco: string;
+    beneficiario: string;
+    referencia: string;
+    vigencia: string;
+    copiar: string;
+    copiado: string;
+    imprimirGuardar: string;
+    enviarCorreo: string;
+    enviando: string;
+    instruccionesEnviadas: string;
+    errorCorreo: string;
+    procesando: string;
+    pagarAhora: string;
+    /** '{monto}' se sustituye. */
+    pagarMonto: string;
+    autorizarMensual: string;
+    autorizarMonto: string;
+    errorIniciarPago: string;
+}
+
+/** Fallback en español: si una superficie olvida pasar strings, no se rompe. */
+export const PAY_STRINGS_ES: PayStrings = {
+    metodoPago: 'Método de pago',
+    tarjeta: 'Tarjeta',
+    spei: 'SPEI',
+    eligeMetodo: 'Elige cómo quieres pagar para continuar.',
+    pagoRecibido: 'Pago recibido',
+    igualaActivada: 'Iguala activada',
+    pagoRecibidoDesc: 'Tu pago se procesó correctamente. La confirmación puede tardar unos segundos en reflejarse en la cotización.',
+    igualaActivadaDesc: 'Tu primer cobro se procesó y el cargo se repetirá automáticamente cada mes con esta tarjeta. Puedes cancelar cuando quieras.',
+    volverCotizacion: 'Volver a la cotización →',
+    instruccionesSpei: 'Instrucciones SPEI',
+    instruccionesSpeiDesc: 'Transfiere el monto exacto y usa la referencia indicada. La confirmación es automática.',
+    monto: 'Monto',
+    banco: 'Banco',
+    beneficiario: 'Beneficiario',
+    referencia: 'Referencia',
+    vigencia: 'Vigencia',
+    copiar: 'Copiar',
+    copiado: 'Copiado',
+    imprimirGuardar: 'Imprimir o guardar PDF',
+    enviarCorreo: 'Enviar a mi correo',
+    enviando: 'Enviando…',
+    instruccionesEnviadas: 'Instrucciones enviadas',
+    errorCorreo: 'No pudimos enviar el correo. Puedes imprimir o guardar estas instrucciones.',
+    procesando: 'Procesando…',
+    pagarAhora: 'Pagar ahora',
+    pagarMonto: 'Pagar {monto}',
+    autorizarMensual: 'Autorizar cobro mensual',
+    autorizarMonto: 'Autorizar {monto} / mes',
+    errorIniciarPago: 'No se pudo iniciar el pago. Intenta de nuevo.',
+};
+
 type PaymentMethod = 'card' | 'spei';
 type SpeiInstructions = {
     clabe: string;
@@ -16,7 +93,7 @@ type SpeiInstructions = {
     expiresAt: number | null;
 };
 
-function SuccessView({ token, color, subscription }: { token: string; color?: string; subscription?: boolean }) {
+function SuccessView({ token, color, subscription, T }: { token: string; color?: string; subscription?: boolean; T: PayStrings }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.7rem', padding: '1.6rem 0 0.6rem' }}>
             <svg viewBox="0 0 52 52" width="58" height="58" aria-hidden="true">
@@ -24,33 +101,32 @@ function SuccessView({ token, color, subscription }: { token: string; color?: st
                 <polyline points="14,27 22,35 38,18" fill="none" stroke={color || '#0a192f'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <strong style={{ fontSize: '1.02rem', fontWeight: 600, color: '#050505', letterSpacing: '-0.01em' }}>
-                {subscription ? 'Iguala activada' : 'Pago recibido'}
+                {subscription ? T.igualaActivada : T.pagoRecibido}
             </strong>
             <p style={{ fontSize: '0.84rem', color: '#6b7686', lineHeight: 1.55, margin: 0, maxWidth: '36ch' }}>
-                {subscription
-                    ? 'Tu primer cobro se procesó y el cargo se repetirá automáticamente cada mes con esta tarjeta. Puedes cancelar cuando quieras.'
-                    : 'Tu pago se procesó correctamente. La confirmación puede tardar unos segundos en reflejarse en la cotización.'}
+                {subscription ? T.igualaActivadaDesc : T.pagoRecibidoDesc}
             </p>
             <a href={`/q/${token}?pagado=1`} style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0a192f', textDecoration: 'none', marginTop: '0.4rem' }}>
-                Volver a la cotización →
+                {T.volverCotizacion}
             </a>
         </div>
     );
 }
 
-function MethodSelector({ method, onChange, acceptsCard, acceptsSpei, color }: {
+function MethodSelector({ method, onChange, acceptsCard, acceptsSpei, color, T }: {
     method: PaymentMethod | null;
     onChange: (method: PaymentMethod) => void;
     acceptsCard: boolean;
     acceptsSpei: boolean;
     color?: string;
+    T: PayStrings;
 }) {
     if (!(acceptsCard && acceptsSpei)) return null;
     return (
         <fieldset className="payi-methods" style={{ border: 0, padding: 0, margin: '0 0 20px' }}>
-            <legend style={{ fontSize: '12.5px', fontWeight: 600, color: '#4a5567', marginBottom: '9px' }}>Método de pago</legend>
+            <legend style={{ fontSize: '12.5px', fontWeight: 600, color: '#4a5567', marginBottom: '9px' }}>{T.metodoPago}</legend>
             <div className="payi-method-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '4px', background: '#f5f5f7', borderRadius: '14px' }}>
-                {([['card', 'Tarjeta'], ['spei', 'SPEI']] as const).map(([value, label]) => {
+                {([['card', T.tarjeta], ['spei', T.spei]] as const).map(([value, label]) => {
                     const selected = method === value;
                     return (
                         <button
@@ -77,7 +153,7 @@ function MethodSelector({ method, onChange, acceptsCard, acceptsSpei, color }: {
     );
 }
 
-function SpeiView({ instructions, color, token, cobroId }: { instructions: SpeiInstructions; color?: string; token: string; cobroId: string }) {
+function SpeiView({ instructions, color, token, cobroId, T }: { instructions: SpeiInstructions; color?: string; token: string; cobroId: string; T: PayStrings }) {
     const [copied, setCopied] = useState<string | null>(null);
     const [emailState, setEmailState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
     const money = new Intl.NumberFormat('es-MX', { style: 'currency', currency: instructions.currency }).format(instructions.amountRemaining / 100);
@@ -106,7 +182,7 @@ function SpeiView({ instructions, color, token, cobroId }: { instructions: SpeiI
                 <strong style={{ color: '#050505', fontSize: '0.86rem', fontWeight: 600, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' }}>{value}</strong>
                 {copyable && (
                     <button className="payi-spei-copy" type="button" onClick={() => copy(label, value)} style={{ border: 0, background: 'transparent', color: color || '#0a192f', fontSize: '0.76rem', fontWeight: 650, cursor: 'pointer', padding: '5px 0', flexShrink: 0 }}>
-                        {copied === label ? 'Copiado' : 'Copiar'}
+                        {copied === label ? T.copiado : T.copiar}
                     </button>
                 )}
             </div>
@@ -114,15 +190,15 @@ function SpeiView({ instructions, color, token, cobroId }: { instructions: SpeiI
     );
     return (
         <section className="payi-spei" aria-labelledby="spei-title">
-            <h2 id="spei-title" style={{ fontSize: '1.02rem', letterSpacing: '-0.02em', margin: '0 0 5px', color: '#050505' }}>Instrucciones SPEI</h2>
-            <p style={{ fontSize: '0.82rem', color: '#667085', lineHeight: 1.55, margin: '0 0 9px' }}>Transfiere el monto exacto y usa la referencia indicada. La confirmación es automática.</p>
+            <h2 id="spei-title" style={{ fontSize: '1.02rem', letterSpacing: '-0.02em', margin: '0 0 5px', color: '#050505' }}>{T.instruccionesSpei}</h2>
+            <p style={{ fontSize: '0.82rem', color: '#667085', lineHeight: 1.55, margin: '0 0 9px' }}>{T.instruccionesSpeiDesc}</p>
             <div>
-                {row('Monto', `${money} ${instructions.currency}`)}
+                {row(T.monto, `${money} ${instructions.currency}`)}
                 {row('CLABE', instructions.clabe, true)}
-                {row('Banco', instructions.bankName)}
-                {row('Beneficiario', instructions.beneficiary)}
-                {row('Referencia', instructions.reference, true)}
-                {expiry && row('Vigencia', expiry)}
+                {row(T.banco, instructions.bankName)}
+                {row(T.beneficiario, instructions.beneficiary)}
+                {row(T.referencia, instructions.reference, true)}
+                {expiry && row(T.vigencia, expiry)}
             </div>
             <button
                 className="payi-primary"
@@ -130,18 +206,18 @@ function SpeiView({ instructions, color, token, cobroId }: { instructions: SpeiI
                 onClick={() => window.print()}
                 style={{ width: '100%', marginTop: '18px', background: color || '#0a192f', color: '#ffffff', border: 0, borderRadius: '999px', padding: '14px 20px', fontSize: '0.9rem', fontWeight: 650, cursor: 'pointer' }}
             >
-                Imprimir o guardar PDF
+                {T.imprimirGuardar}
             </button>
             <button className="payi-secondary" type="button" onClick={emailInstructions} disabled={emailState === 'sending' || emailState === 'sent'}
                 style={{ width: '100%', marginTop: '9px', background: '#f5f5f7', color: '#0a192f', border: 0, borderRadius: '999px', padding: '13px 20px', fontSize: '0.86rem', fontWeight: 650, cursor: 'pointer' }}>
-                {emailState === 'sending' ? 'Enviando…' : emailState === 'sent' ? 'Instrucciones enviadas' : 'Enviar a mi correo'}
+                {emailState === 'sending' ? T.enviando : emailState === 'sent' ? T.instruccionesEnviadas : T.enviarCorreo}
             </button>
-            {emailState === 'error' && <p role="alert" style={{ color: '#dc2626', fontSize: '0.78rem', margin: '9px 0 0' }}>No pudimos enviar el correo. Puedes imprimir o guardar estas instrucciones.</p>}
+            {emailState === 'error' && <p role="alert" style={{ color: '#dc2626', fontSize: '0.78rem', margin: '9px 0 0' }}>{T.errorCorreo}</p>}
         </section>
     );
 }
 
-function CheckoutForm({ token, color, amountLabel, subscription, onSuccess }: { token: string; color?: string; amountLabel?: string; subscription?: boolean; onSuccess: () => void }) {
+function CheckoutForm({ token, color, amountLabel, subscription, onSuccess, T }: { token: string; color?: string; amountLabel?: string; subscription?: boolean; onSuccess: () => void; T: PayStrings }) {
     const stripe = useStripe();
     const elements = useElements();
     const [ready, setReady] = useState(false);
@@ -211,13 +287,14 @@ function CheckoutForm({ token, color, amountLabel, subscription, onSuccess }: { 
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
             >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fillOpacity="0.12" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                {loading ? 'Procesando…' : subscription ? (amountLabel ? `Autorizar ${amountLabel} / mes` : 'Autorizar cobro mensual') : amountLabel ? `Pagar ${amountLabel}` : 'Pagar ahora'}
+                {loading ? T.procesando : subscription ? (amountLabel ? T.autorizarMonto.replace('{monto}', amountLabel) : T.autorizarMensual) : amountLabel ? T.pagarMonto.replace('{monto}', amountLabel) : T.pagarAhora}
             </button>
         </form>
     );
 }
 
-export default function PaymentIsland({ token, color, amountLabel, cobroId, subscription, acceptsCard = true, acceptsSpei = false, checkoutV2 = false }: { token: string; color?: string; amountLabel?: string; cobroId?: string; subscription?: boolean; acceptsCard?: boolean; acceptsSpei?: boolean; checkoutV2?: boolean }) {
+export default function PaymentIsland({ token, color, amountLabel, cobroId, subscription, acceptsCard = true, acceptsSpei = false, checkoutV2 = false, strings, locale = 'es' }: { token: string; color?: string; amountLabel?: string; cobroId?: string; subscription?: boolean; acceptsCard?: boolean; acceptsSpei?: boolean; checkoutV2?: boolean; strings?: PayStrings; locale?: 'es' | 'en' }) {
+    const T = strings ?? PAY_STRINGS_ES;
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [stripePromise, setStripePromise] = useState<any>(null);
     const [instructions, setInstructions] = useState<SpeiInstructions | null>(null);
@@ -258,14 +335,17 @@ export default function PaymentIsland({ token, color, amountLabel, cobroId, subs
                 if (!alive) return;
 
                 if (data.alreadyPaid || data.alreadyActive) { setPaid(true); return; }
-                if (!res.ok) throw new Error(data.error || 'Error al iniciar el pago');
+                if (!res.ok) throw new Error(data.error || T.errorIniciarPago);
 
                 if (data.metodo === 'spei' && data.instructions) {
                     setInstructions(data.instructions);
                     setInstructionsCobroId(data.cobroId);
                 } else {
                     setClientSecret(data.clientSecret);
-                    setStripePromise(loadStripe(data.publishableKey, { stripeAccount: data.accountId, locale: 'es-419' as any }));
+                    // El Payment Element se pinta en el idioma del comprador. Estaba fijo en
+                    // 'es-419', así que a un cliente en Londres le salían los campos de la
+                    // tarjeta en español dentro de una página en inglés.
+                    setStripePromise(loadStripe(data.publishableKey, { stripeAccount: data.accountId, locale: (locale === 'en' ? 'en' : 'es-419') as any }));
                 }
             } catch (err: any) {
                 if (alive) setError(err.message);
@@ -277,10 +357,10 @@ export default function PaymentIsland({ token, color, amountLabel, cobroId, subs
         return () => { alive = false; };
     }, [token, retry, method, cobroId, subscription, checkoutV2]);
 
-    if (paid) return <SuccessView token={token} color={color} subscription={subscription} />;
+    if (paid) return <SuccessView token={token} color={color} subscription={subscription} T={T} />;
 
     const selector = checkoutV2 && !subscription ? (
-        <MethodSelector method={method} onChange={setMethod} acceptsCard={acceptsCard} acceptsSpei={acceptsSpei} color={color} />
+        <MethodSelector method={method} onChange={setMethod} acceptsCard={acceptsCard} acceptsSpei={acceptsSpei} color={color} T={T} />
     ) : null;
 
     if (loading) {
@@ -320,12 +400,12 @@ export default function PaymentIsland({ token, color, amountLabel, cobroId, subs
         return (
             <div>
                 {selector}
-                <p style={{ margin: '2px 0 0', color: '#667085', fontSize: '0.82rem', lineHeight: 1.5 }}>Elige cómo quieres pagar para continuar.</p>
+                <p style={{ margin: '2px 0 0', color: '#667085', fontSize: '0.82rem', lineHeight: 1.5 }}>{T.eligeMetodo}</p>
             </div>
         );
     }
 
-    if (instructions && instructionsCobroId) return <div>{selector}<SpeiView instructions={instructions} color={color} token={token} cobroId={instructionsCobroId} /></div>;
+    if (instructions && instructionsCobroId) return <div>{selector}<SpeiView instructions={instructions} color={color} token={token} cobroId={instructionsCobroId} T={T} /></div>;
 
     if (!clientSecret || !stripePromise) return null;
 
@@ -389,7 +469,7 @@ export default function PaymentIsland({ token, color, amountLabel, cobroId, subs
         <div>
             {selector}
             <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-                <CheckoutForm token={token} color={color} amountLabel={amountLabel} subscription={subscription} onSuccess={() => setPaid(true)} />
+                <CheckoutForm token={token} color={color} amountLabel={amountLabel} subscription={subscription} onSuccess={() => setPaid(true)} T={T} />
             </Elements>
         </div>
     );

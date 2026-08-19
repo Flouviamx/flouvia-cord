@@ -14,7 +14,7 @@ const L = currentLocale();
 const userProfile = await getUserProfile();
 ---
 
-<SettingsShell title="Tu cuenta — Ajustes" tab="cuenta"
+<SettingsShell title={t(L, 'ajustes.titulo_cuenta')} tab="cuenta"
     intro={t(L, 'set.cuenta.intro')}>
     {require2fa && (
         <div class="req2fa-notice">

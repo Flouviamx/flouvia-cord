@@ -45,9 +45,9 @@ const hasDomains = (ORG.embedDomains || '').trim().length > 0;
                 <div class="el-frame">
                     <div class="el-frame-bar">
                         <span class="el-frame-dot" /><span class="el-frame-dot" /><span class="el-frame-dot" />
-                        <span class="el-frame-url">tu-sitio.com</span>
+                        <span class="el-frame-url">{t(L, 'set.elements.sitio_ph')}</span>
                     </div>
-                    <iframe class="el-frame-iframe" src={`/embed/${sampleToken}`} title="Preview del cotizador embebido" loading="lazy" />
+                    <iframe class="el-frame-iframe" src={`/embed/${sampleToken}`} title={t(L, 'set.elements.preview_title')} loading="lazy" />
                 </div>
                 <a class="el-preview" href={`/embed/${sampleToken}`} target="_blank" rel="noopener">{t(L, 'set.el.ver_embed')}</a>
             </>

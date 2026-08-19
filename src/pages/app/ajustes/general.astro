@@ -67,7 +67,7 @@ const ZONAS = zoneValues.sort((a, b) => a.localeCompare(b)).map((zone) => ({
             </div>
             <div class="s-field">
                 <label for="oDireccion">{t(L, 'set.general.direccion')}</label>
-                <input class="s-input" id="oDireccion" data-field="direccion" value={ORG.direccion} placeholder="Av. Industria 123, Tlalnepantla, Edo. Méx." />
+                <input class="s-input" id="oDireccion" data-field="direccion" value={ORG.direccion} placeholder={t(L, 'set.general.direccion_ph')} />
             </div>
         </div>
     </div>

@@ -5,6 +5,7 @@ import Layout from '../../layouts/Layout.astro';
 import IdentityCaptureMobile from '../../components/app/IdentityCaptureMobile';
 import { createHash } from 'node:crypto';
 import { sql, withCaptureToken } from '../../lib/db';
+import { currentLocale } from '../../lib/context';
 
 const { token } = Astro.params;
 
@@ -18,9 +19,13 @@ let org: { nombre?: string; logo_url?: string; color_marca?: string } = {};
 if (row) {
     [org] = await sql`select nombre, logo_url, color_marca from orgs where id = ${row.org_id}`;
 }
+
+// Esta pantalla la abre el dueño desde su teléfono: hereda el idioma de su
+// organización, igual que el resto de la app.
+const L = currentLocale();
 ---
 
-<Layout title="Verificación de identidad — Cord" noindex={true}>
+<Layout title={L === 'en' ? 'Identity verification — Cord' : 'Verificación de identidad — Cord'} noindex={true}>
     <div class="idcap-page">
         {token && (
             <IdentityCaptureMobile
@@ -29,6 +34,7 @@ if (row) {
                 orgNombre={org?.nombre}
                 orgLogo={org?.logo_url}
                 orgColor={org?.color_marca}
+                locale={L}
             />
         )}
     </div>

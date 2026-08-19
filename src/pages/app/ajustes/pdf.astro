@@ -63,7 +63,7 @@ const tpl = ORG.pdfTemplate || 'clasico';
                     </div>
                     <div class="s-field">
                         <label for="oPdfMensaje">{t(L, 'set.pdf.mensaje_pie')}</label>
-                        <input class="s-input" id="oPdfMensaje" data-field="pdf_mensaje" value={ORG.pdfMensaje} placeholder="Gracias por su preferencia. Precios sujetos a cambio sin previo aviso." />
+                        <input class="s-input" id="oPdfMensaje" data-field="pdf_mensaje" value={ORG.pdfMensaje} placeholder={t(L, 'set.pdf.mensaje_ph')} />
                     </div>
                     <div class="s-field">
                         <label for="oPdfCond">{t(L, 'set.pdf.condiciones')}</label>

@@ -18,7 +18,7 @@ const entitlementCheck = await checkEntitlement(await getActiveOrgId(), 'audit_l
 const AUDIT = entitlementCheck.ok ? await getAuditLog() : [];
 ---
 
-<SettingsShell title="Auditoría — Ajustes" tab="auditoria" perm="ajustes"
+<SettingsShell title={t(L, 'ajustes.titulo_auditoria')} tab="auditoria" perm="ajustes"
     intro={t(L, 'set.aud.intro')}>
     <div class="s-block full">
         <div class="audit-list">

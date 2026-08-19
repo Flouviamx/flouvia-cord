@@ -14,19 +14,59 @@ export interface CreateWorkspaceSubmit {
 
 const COUNTRY_OPTIONS = COUNTRIES.map((c) => ({ code: c.code, label: c.name, hint: c.tag }));
 
+
+// Textos de la isla. Locales al componente para no arrastrar el diccionario de
+// ~373 KB de `src/i18n/app.ts` al navegador; el idioma llega resuelto desde el
+// servidor por props.
+const WS_STRINGS = {
+  es: {
+    espacioTrabajo: 'Espacio de trabajo',
+    cuentaNueva: 'Cuenta nueva',
+    espaciosTrabajo: 'Espacios de trabajo',
+    cuentaIndependiente: 'Cuenta independiente',
+    nombreCuenta: 'Nombre de la cuenta',
+    nombrePlaceholder: 'Ej. Distribuidora del Valle',
+    paisOperas: 'País donde operas',
+    asiQuedara: 'Así quedará',
+    nueva: 'Nueva',
+    continuar: 'Continuar',
+    atras: 'Atrás',
+    cerrar: 'Cerrar',
+    vistaPreviaEstructura: 'Vista previa de la estructura',
+  },
+  en: {
+    espacioTrabajo: 'Workspace',
+    cuentaNueva: 'New account',
+    espaciosTrabajo: 'Workspaces',
+    cuentaIndependiente: 'Standalone account',
+    nombreCuenta: 'Account name',
+    nombrePlaceholder: 'E.g. Valley Distributors',
+    paisOperas: 'Country you operate in',
+    asiQuedara: "Here's how it will look",
+    nueva: 'New',
+    continuar: 'Continue',
+    atras: 'Back',
+    cerrar: 'Close',
+    vistaPreviaEstructura: 'Structure preview',
+  },
+} as const;
+
 export default function CreateWorkspaceModal({
   isOpen,
   onClose,
   parentOrg,
   siblings = [],
   onSubmit,
+  locale = 'es',
 }: {
+  locale?: 'es' | 'en';
   isOpen: boolean;
   onClose: () => void;
   parentOrg: { id: string; name: string } | null;
   siblings?: string[];
   onSubmit: (opts: CreateWorkspaceSubmit) => Promise<void>;
 }) {
+  const S = WS_STRINGS[locale] ?? WS_STRINGS.es;
   // Sin org padre (workspace personal) no tiene sentido "anidar" → saltamos el
   // paso 1 y creamos una cuenta independiente directamente.
   const canNest = !!parentOrg;
@@ -81,7 +121,7 @@ export default function CreateWorkspaceModal({
         role="dialog"
         aria-modal="true"
       >
-        <button className="cm-close" onClick={onClose} aria-label="Cerrar">
+        <button className="cm-close" onClick={onClose} aria-label={S.cerrar}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
 
@@ -116,7 +156,7 @@ export default function CreateWorkspaceModal({
 
               <span className="cm-graphic">
                 <span className="cm-mock-window">
-                  <span className="cm-mock-eyebrow">Espacio de trabajo</span>
+                  <span className="cm-mock-eyebrow">{S.espacioTrabajo}</span>
 
                   <span className="cm-mock-row cm-mock-row-active">
                     <span className="cm-mock-avatar">{parentInitial}</span>
@@ -129,7 +169,7 @@ export default function CreateWorkspaceModal({
                     <span className="cm-mock-kids">
                       <span className="cm-mock-row cm-mock-row-new">
                         <span className="cm-mock-icon-dashed"><PlusIcon /></span>
-                        <span className="cm-mock-name">Cuenta nueva</span>
+                        <span className="cm-mock-name">{S.cuentaNueva}</span>
                       </span>
                       {visibleSiblings.map((s, i) => (
                         <span key={i} className="cm-mock-row cm-mock-row-dim">
@@ -162,7 +202,7 @@ export default function CreateWorkspaceModal({
 
               <span className="cm-graphic">
                 <span className="cm-mock-window">
-                  <span className="cm-mock-eyebrow">Espacios de trabajo</span>
+                  <span className="cm-mock-eyebrow">{S.espaciosTrabajo}</span>
 
                   <span className="cm-mock-row cm-mock-row-active">
                     <span className="cm-mock-avatar">{parentInitial}</span>
@@ -172,12 +212,12 @@ export default function CreateWorkspaceModal({
 
                   <span className="cm-mock-row cm-mock-row-new">
                     <span className="cm-mock-icon-dashed"><PlusIcon /></span>
-                    <span className="cm-mock-name">Cuenta nueva</span>
+                    <span className="cm-mock-name">{S.cuentaNueva}</span>
                   </span>
                 </span>
               </span>
 
-              <span className="cm-choice-title">Cuenta independiente</span>
+              <span className="cm-choice-title">{S.cuentaIndependiente}</span>
               <span className="cm-choice-desc">
                 Una cuenta completamente aparte, sin agrupar bajo <strong>{parentName}</strong> en tu selector.
               </span>
@@ -190,13 +230,13 @@ export default function CreateWorkspaceModal({
           <div className="cm-body cm-form">
             <div className="cm-form-fields">
               <div className="cm-field">
-                <label className="cm-label" htmlFor="cm-name">Nombre de la cuenta</label>
+                <label className="cm-label" htmlFor="cm-name">{S.nombreCuenta}</label>
                 <input
                   id="cm-name"
                   autoFocus
                   type="text"
                   className="cm-input"
-                  placeholder="Ej. Distribuidora El Zarco"
+                  placeholder={S.nombrePlaceholder}
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
@@ -204,7 +244,7 @@ export default function CreateWorkspaceModal({
               </div>
 
               <div className="cm-field">
-                <label className="cm-label" id="cm-country-label">País donde operas</label>
+                <label className="cm-label" id="cm-country-label">{S.paisOperas}</label>
                 <FlagSelect
                   ariaLabel="País donde operas"
                   options={COUNTRY_OPTIONS}
@@ -220,8 +260,8 @@ export default function CreateWorkspaceModal({
               </div>
             </div>
 
-            <aside className="cm-preview" aria-label="Vista previa de la estructura">
-              <span className="cm-preview-label">Así quedará</span>
+            <aside className="cm-preview" aria-label={S.vistaPreviaEstructura}>
+              <span className="cm-preview-label">{S.asiQuedara}</span>
               <div className="cm-tree">
                 {showNested ? (
                   <>
@@ -233,7 +273,7 @@ export default function CreateWorkspaceModal({
                       <div className="cm-tree-node cm-tree-hl">
                         <span className="cm-tree-flag"><img src={flagSrc(country)} alt="" width={16} height={16} /></span>
                         <span className="cm-tree-txt">{previewName}</span>
-                        <span className="cm-tree-badge">Nueva</span>
+                        <span className="cm-tree-badge">{S.nueva}</span>
                       </div>
                       {siblings.slice(0, 3).map((s, i) => (
                         <div key={i} className="cm-tree-node cm-tree-dim">
@@ -249,7 +289,7 @@ export default function CreateWorkspaceModal({
                   <div className="cm-tree-node cm-tree-root cm-tree-hl">
                     <span className="cm-tree-flag"><img src={flagSrc(country)} alt="" width={16} height={16} /></span>
                     <span className="cm-tree-txt">{previewName}</span>
-                    <span className="cm-tree-badge">Nueva</span>
+                    <span className="cm-tree-badge">{S.nueva}</span>
                   </div>
                 )}
               </div>
@@ -259,11 +299,11 @@ export default function CreateWorkspaceModal({
 
         <div className="cm-footer">
           {step === 1 ? (
-            <button className="cm-btn cm-btn-primary" onClick={() => setStep(2)}>Continuar</button>
+            <button className="cm-btn cm-btn-primary" onClick={() => setStep(2)}>{S.continuar}</button>
           ) : (
             <>
               {canNest && (
-                <button className="cm-btn cm-btn-ghost" onClick={() => setStep(1)} disabled={isSubmitting}>Atrás</button>
+                <button className="cm-btn cm-btn-ghost" onClick={() => setStep(1)} disabled={isSubmitting}>{S.atras}</button>
               )}
               <button
                 className="cm-btn cm-btn-primary"

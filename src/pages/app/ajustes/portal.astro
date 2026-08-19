@@ -24,12 +24,12 @@ const L = currentLocale();
                 <div class="s-body">
                     <div class="s-field">
                         <label for="pBanner">{t(L, 'set.portal.banner_superior')}</label>
-                        <input class="s-input" id="pBanner" data-field="portal_banner" value={ORG.portalBanner} maxlength="200" placeholder="Ej. Precios válidos hasta fin de mes · Envío sin costo en pedidos > $10,000" />
+                        <input class="s-input" id="pBanner" data-field="portal_banner" value={ORG.portalBanner} maxlength="200" placeholder={t(L, 'set.portal.banner_ph')} />
                         <span class="s-hint">{t(L, 'set.portal.banner_hint')}</span>
                     </div>
                     <div class="s-field">
                         <label for="pWelcome">{t(L, 'set.portal.mensaje_bienvenida')}</label>
-                        <textarea class="s-input s-textarea" id="pWelcome" data-field="portal_bienvenida" rows="3" maxlength="280" placeholder="Gracias por considerar a tu negocio. Cualquier duda, escríbenos por aquí mismo.">{ORG.portalBienvenida}</textarea>
+                        <textarea class="s-input s-textarea" id="pWelcome" data-field="portal_bienvenida" rows="3" maxlength="280" placeholder={t(L, 'set.portal.bienvenida_ph')}>{ORG.portalBienvenida}</textarea>
                         <span class="s-hint">{t(L, 'set.portal.mensaje_bienvenida_hint')}</span>
                     </div>
                 </div>

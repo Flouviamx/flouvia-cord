@@ -66,7 +66,7 @@ const L = currentLocale();
         <div class="s-body">
             <div class="s-field">
                 <label for="oPortalBien">{t(L, 'set.branding.mensaje_bienvenida')}</label>
-                <textarea class="s-input s-textarea" id="oPortalBien" data-field="portal_bienvenida" rows="2" placeholder="Gracias por considerarnos. Cualquier duda, contáctanos.">{ORG.portalBienvenida}</textarea>
+                <textarea class="s-input s-textarea" id="oPortalBien" data-field="portal_bienvenida" rows="2" placeholder={t(L, 'set.portal.bienvenida_ph')}>{ORG.portalBienvenida}</textarea>
                 <span class="s-hint">{t(L, 'set.branding.mensaje_bienvenida_hint')}</span>
             </div>
 

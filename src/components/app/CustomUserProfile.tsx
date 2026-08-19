@@ -42,7 +42,90 @@ function fmtDate(d: string, locale: Locale): string {
   } catch { return d; }
 }
 
+
+// Textos de la isla. Viven aquí y no en `src/i18n/app.ts` a propósito: ese
+// diccionario pesa ~373 KB y un componente de cliente que lo importara lo
+// mandaría entero al navegador. El componente ya recibe `locale` del servidor;
+// esto solo le da qué decir en cada uno.
+const STRINGS = {
+    es: {
+        perfil: 'Perfil',
+        perfilDesc: 'Tu nombre y foto, visibles para tu equipo.',
+        nombre: 'Nombre',
+        apellido: 'Apellido',
+        password: 'Contraseña',
+        passwordActual: 'Contraseña actual',
+        passwordNueva: 'Nueva contraseña',
+        confirmar: 'Confirmar',
+        cancelar: 'Cancelar',
+        dosPasos: 'Autenticación de dos pasos',
+        dosPasosDesc: 'Un código adicional de tu teléfono al iniciar sesión.',
+        totpApp: 'App de autenticación (TOTP)',
+        activar2fa: 'Activar 2FA',
+        escanea: 'Escanea este código con Google Authenticator, 1Password o tu app preferida.',
+        copiar: 'Copiar',
+        codigo6: 'Código de 6 dígitos',
+        codigosRespaldo: 'Tus códigos de respaldo',
+        copiarTodos: 'Copiar todos',
+        guardaCodigos: 'Guárdalos en un lugar seguro — no se volverán a mostrar. Cada uno funciona una sola vez si pierdes tu teléfono.',
+        yaGuarde: 'Ya los guardé',
+        regenerar: 'Regenerar códigos de respaldo',
+        desactivar2fa: 'Desactivar 2FA',
+        passkeys: 'Claves de acceso (Passkeys)',
+        sinPasskeys: 'No tienes claves de acceso registradas.',
+        eliminar: 'Eliminar',
+        sesiones: 'Sesiones activas',
+        sesionesDesc: 'Dispositivos donde tu cuenta tiene una sesión abierta.',
+        sinSesiones: 'No hay sesiones activas.',
+        estaSesion: 'Esta sesión',
+        cerrarOtras: 'Cerrar todas las demás',
+        cuentasConectadas: 'Cuentas conectadas',
+        cuentasConectadasDesc: 'Inicia sesión con estas cuentas además de tu contraseña.',
+        desconectar: 'Desconectar',
+        conectar: 'Conectar',
+        noDisponible: 'No disponible',
+    },
+    en: {
+        perfil: 'Profile',
+        perfilDesc: 'Your name and photo, visible to your team.',
+        nombre: 'First name',
+        apellido: 'Last name',
+        password: 'Password',
+        passwordActual: 'Current password',
+        passwordNueva: 'New password',
+        confirmar: 'Confirm',
+        cancelar: 'Cancel',
+        dosPasos: 'Two-step authentication',
+        dosPasosDesc: 'An extra code from your phone when you sign in.',
+        totpApp: 'Authenticator app (TOTP)',
+        activar2fa: 'Turn on 2FA',
+        escanea: 'Scan this code with Google Authenticator, 1Password or your app of choice.',
+        copiar: 'Copy',
+        codigo6: '6-digit code',
+        codigosRespaldo: 'Your backup codes',
+        copiarTodos: 'Copy all',
+        guardaCodigos: "Keep them somewhere safe — they won't be shown again. Each one works once if you lose your phone.",
+        yaGuarde: "I've saved them",
+        regenerar: 'Regenerate backup codes',
+        desactivar2fa: 'Turn off 2FA',
+        passkeys: 'Passkeys',
+        sinPasskeys: "You don't have any passkeys registered.",
+        eliminar: 'Remove',
+        sesiones: 'Active sessions',
+        sesionesDesc: 'Devices where your account has an open session.',
+        sinSesiones: 'No active sessions.',
+        estaSesion: 'This session',
+        cerrarOtras: 'Sign out everywhere else',
+        cuentasConectadas: 'Connected accounts',
+        cuentasConectadasDesc: 'Sign in with these accounts in addition to your password.',
+        desconectar: 'Disconnect',
+        conectar: 'Connect',
+        noDisponible: 'Unavailable',
+    },
+} as const;
+
 export default function CustomUserProfile({ locale = 'es', user: initialUser }: { locale?: Locale; user?: UserProfile | null }) {
+  const S = STRINGS[locale] ?? STRINGS.es;
   const [user, setUser] = useState<UserProfile | null>(initialUser ?? null);
   if (!user) {
     return (
@@ -364,8 +447,8 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
       {/* ── Perfil ── */}
       <section className="cup-section">
         <div className="cup-section-header">
-          <h3 className="cup-section-title">Perfil</h3>
-          <p className="cup-section-desc">Tu nombre y foto, visibles para tu equipo.</p>
+          <h3 className="cup-section-title">{S.perfil}</h3>
+          <p className="cup-section-desc">{S.perfilDesc}</p>
         </div>
         <div className="cup-section-body">
           <div className="cup-avatar-row">
@@ -391,11 +474,11 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
           <form onSubmit={handleUpdateProfile} className="cup-form-container">
             <div className="cup-form-row">
               <div className="cup-group">
-                <label className="s-field">Nombre</label>
+                <label className="s-field">{S.nombre}</label>
                 <input className="s-input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
               </div>
               <div className="cup-group">
-                <label className="s-field">Apellido</label>
+                <label className="s-field">{S.apellido}</label>
                 <input className="s-input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
               </div>
             </div>
@@ -409,24 +492,24 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
       {/* ── Contraseña ── */}
       <section className="cup-section">
         <div className="cup-section-header">
-          <h3 className="cup-section-title">Contraseña</h3>
+          <h3 className="cup-section-title">{S.password}</h3>
           <p className="cup-section-desc">{user.hasPassword ? 'Cambia tu contraseña de acceso.' : 'Todavía no tienes contraseña — entras con Google/Apple. Puedes crear una.'}</p>
         </div>
         <div className="cup-section-body">
           <form onSubmit={handleUpdatePassword} className="cup-form-container">
             {user.hasPassword && (
               <div className="cup-group">
-                <label className="s-field">Contraseña actual</label>
+                <label className="s-field">{S.passwordActual}</label>
                 <input className="s-input" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" />
               </div>
             )}
             <div className="cup-form-row">
               <div className="cup-group">
-                <label className="s-field">Nueva contraseña</label>
+                <label className="s-field">{S.passwordNueva}</label>
                 <input className="s-input" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" minLength={8} />
               </div>
               <div className="cup-group">
-                <label className="s-field">Confirmar</label>
+                <label className="s-field">{S.confirmar}</label>
                 <input className="s-input" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" minLength={8} />
               </div>
             </div>
@@ -440,36 +523,36 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
       {/* ── 2FA ── */}
       <section className="cup-section">
         <div className="cup-section-header">
-          <h3 className="cup-section-title">Autenticación de dos pasos</h3>
-          <p className="cup-section-desc">Un código adicional de tu teléfono al iniciar sesión.</p>
+          <h3 className="cup-section-title">{S.dosPasos}</h3>
+          <p className="cup-section-desc">{S.dosPasosDesc}</p>
         </div>
         <div className="cup-section-body">
           <div className="cup-security-block">
             <div className="cup-security-block-header">
-              <h4>App de autenticación (TOTP)</h4>
+              <h4>{S.totpApp}</h4>
               <span className={`badge ${user.totpEnabled ? 'badge-success' : 'badge-inactive'}`}>{user.totpEnabled ? 'Activa' : 'Inactiva'}</span>
             </div>
 
             {!user.totpEnabled && !totpSetup && (
               <div className="cup-security-actions">
-                <button className="cup-btn-secondary" onClick={startTotpSetup} disabled={totpBusy}>Activar 2FA</button>
+                <button className="cup-btn-secondary" onClick={startTotpSetup} disabled={totpBusy}>{S.activar2fa}</button>
               </div>
             )}
 
             {totpSetup && (
               <div className="totp-setup">
-                <p>Escanea este código con Google Authenticator, 1Password o tu app preferida.</p>
+                <p>{S.escanea}</p>
                 {totpSetup.qrSvg && <div style={{ width: 180, margin: '0 auto 1rem' }} dangerouslySetInnerHTML={{ __html: totpSetup.qrSvg }} />}
                 <div className="totp-secret-box">
                   <span className="totp-secret-key">{totpSetup.secret}</span>
-                  <button type="button" className="cup-btn-secondary small" onClick={() => { navigator.clipboard.writeText(totpSetup.secret); toast('Secreto copiado'); }}>Copiar</button>
+                  <button type="button" className="cup-btn-secondary small" onClick={() => { navigator.clipboard.writeText(totpSetup.secret); toast('Secreto copiado'); }}>{S.copiar}</button>
                 </div>
                 <form onSubmit={verifyTotp} className="totp-verify-form">
                   <div className="cup-group" style={{ flex: 1 }}>
-                    <label className="s-field">Código de 6 dígitos</label>
+                    <label className="s-field">{S.codigo6}</label>
                     <input className="s-input" value={totpCode} onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" maxLength={6} />
                   </div>
-                  <button type="submit" className="cup-btn-primary" disabled={totpBusy || totpCode.length < 6}>Confirmar</button>
+                  <button type="submit" className="cup-btn-primary" disabled={totpBusy || totpCode.length < 6}>{S.confirmar}</button>
                 </form>
               </div>
             )}
@@ -477,23 +560,23 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
             {backupCodes && (
               <div className="totp-backup">
                 <div className="totp-backup-head">
-                  <strong>Tus códigos de respaldo</strong>
-                  <button type="button" className="cup-btn-secondary small" onClick={() => { navigator.clipboard.writeText(backupCodes.join('\n')); toast('Códigos copiados'); }}>Copiar todos</button>
+                  <strong>{S.codigosRespaldo}</strong>
+                  <button type="button" className="cup-btn-secondary small" onClick={() => { navigator.clipboard.writeText(backupCodes.join('\n')); toast('Códigos copiados'); }}>{S.copiarTodos}</button>
                 </div>
-                <p>Guárdalos en un lugar seguro — no se volverán a mostrar. Cada uno funciona una sola vez si pierdes tu teléfono.</p>
+                <p>{S.guardaCodigos}</p>
                 <div className="totp-backup-grid">
                   {backupCodes.map((c) => <code key={c}>{c}</code>)}
                 </div>
                 <div className="cup-actions" style={{ marginTop: '1rem' }}>
-                  <button className="cup-btn-primary" onClick={() => setBackupCodes(null)}>Ya los guardé</button>
+                  <button className="cup-btn-primary" onClick={() => setBackupCodes(null)}>{S.yaGuarde}</button>
                 </div>
               </div>
             )}
 
             {user.totpEnabled && !backupCodes && (
               <div className="cup-security-actions" style={{ display: 'flex', gap: '0.75rem' }}>
-                <button className="cup-btn-secondary" onClick={() => { setConfirmAction('regen'); setConfirmValue(''); }}>Regenerar códigos de respaldo</button>
-                <button className="cup-btn-danger" onClick={() => { setConfirmAction('disable'); setConfirmValue(''); }}>Desactivar 2FA</button>
+                <button className="cup-btn-secondary" onClick={() => { setConfirmAction('regen'); setConfirmValue(''); }}>{S.regenerar}</button>
+                <button className="cup-btn-danger" onClick={() => { setConfirmAction('disable'); setConfirmValue(''); }}>{S.desactivar2fa}</button>
               </div>
             )}
 
@@ -504,8 +587,8 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
                   <div className="cup-group" style={{ flex: 1 }}>
                     <input className="s-input" type={user.hasPassword ? 'password' : 'text'} value={confirmValue} onChange={(e) => setConfirmValue(e.target.value)} placeholder={user.hasPassword ? 'Contraseña actual' : 'Código de 6 dígitos'} />
                   </div>
-                  <button type="submit" className="cup-btn-primary" disabled={totpBusy || !confirmValue}>Confirmar</button>
-                  <button type="button" className="cup-btn-secondary" onClick={() => setConfirmAction(null)}>Cancelar</button>
+                  <button type="submit" className="cup-btn-primary" disabled={totpBusy || !confirmValue}>{S.confirmar}</button>
+                  <button type="button" className="cup-btn-secondary" onClick={() => setConfirmAction(null)}>{S.cancelar}</button>
                 </div>
               </form>
             )}
@@ -514,10 +597,10 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
           {/* Passkeys */}
           <div className="cup-security-block">
             <div className="cup-security-block-header">
-              <h4>Claves de acceso (Passkeys)</h4>
+              <h4>{S.passkeys}</h4>
               <button className="cup-btn-secondary small" onClick={createPasskey} disabled={addingPasskey}>{addingPasskey ? 'Agregando…' : '+ Agregar'}</button>
             </div>
-            {passkeysLoaded && passkeys.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: '0.5rem 0 0' }}>No tienes claves de acceso registradas.</p>}
+            {passkeysLoaded && passkeys.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: '0.5rem 0 0' }}>{S.sinPasskeys}</p>}
             {passkeys.length > 0 && (
               <ul className="cup-list">
                 {passkeys.map((p) => (
@@ -526,7 +609,7 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><circle cx="12" cy="11" r="3" /></svg>
                       {p.name || deviceLabel(p.deviceType)} · agregada el {fmtDate(p.createdAt, locale)}
                     </div>
-                    <button className="cup-btn-danger-text" onClick={() => deletePasskey(p.id)}>Eliminar</button>
+                    <button className="cup-btn-danger-text" onClick={() => deletePasskey(p.id)}>{S.eliminar}</button>
                   </li>
                 ))}
               </ul>
@@ -538,11 +621,11 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
       {/* ── Sesiones ── */}
       <section className="cup-section">
         <div className="cup-section-header">
-          <h3 className="cup-section-title">Sesiones activas</h3>
-          <p className="cup-section-desc">Dispositivos donde tu cuenta tiene una sesión abierta.</p>
+          <h3 className="cup-section-title">{S.sesiones}</h3>
+          <p className="cup-section-desc">{S.sesionesDesc}</p>
         </div>
         <div className="cup-section-body">
-          {sessionsLoaded && sessions.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>No hay sesiones activas.</p>}
+          {sessionsLoaded && sessions.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{S.sinSesiones}</p>}
           {sessions.length > 0 && (
             <div className="cup-session-list">
               {sessions.map((s) => (
@@ -550,7 +633,7 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
                   <div className="cup-session-info">
                     <div className="cup-session-device">
                       {deviceLabel(s.userAgent)}
-                      {s.current && <span className="cup-session-current">Esta sesión</span>}
+                      {s.current && <span className="cup-session-current">{S.estaSesion}</span>}
                     </div>
                     <div className="cup-session-meta">{s.ip || 'IP desconocida'} · última actividad {fmtDate(s.lastUsedAt, locale)}</div>
                   </div>
@@ -561,7 +644,7 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
           )}
           {sessions.filter((s) => !s.current).length > 0 && (
             <div className="cup-actions">
-              <button className="cup-btn-secondary" onClick={revokeAllOtherSessions}>Cerrar todas las demás</button>
+              <button className="cup-btn-secondary" onClick={revokeAllOtherSessions}>{S.cerrarOtras}</button>
             </div>
           )}
         </div>
@@ -570,8 +653,8 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
       {/* ── Cuentas conectadas ── */}
       <section className="cup-section">
         <div className="cup-section-header">
-          <h3 className="cup-section-title">Cuentas conectadas</h3>
-          <p className="cup-section-desc">Inicia sesión con estas cuentas además de tu contraseña.</p>
+          <h3 className="cup-section-title">{S.cuentasConectadas}</h3>
+          <p className="cup-section-desc">{S.cuentasConectadasDesc}</p>
         </div>
         <div className="cup-section-body">
           <ul className="cup-list">
@@ -581,8 +664,8 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
                 Google {googleConn ? `· ${googleConn.email || 'conectado'}` : '· no conectado'}
               </div>
               {googleConn
-                ? <button className="cup-btn-danger-text" onClick={() => disconnectProvider('google')}>Desconectar</button>
-                : <button className="cup-btn-secondary" onClick={() => connectProvider('google')}>Conectar</button>}
+                ? <button className="cup-btn-danger-text" onClick={() => disconnectProvider('google')}>{S.desconectar}</button>
+                : <button className="cup-btn-secondary" onClick={() => connectProvider('google')}>{S.conectar}</button>}
             </li>
             <li className="cup-list-item">
               <div className="cup-account-info">
@@ -590,8 +673,8 @@ export default function CustomUserProfile({ locale = 'es', user: initialUser }: 
                 Apple {appleConn ? `· ${appleConn.email || 'conectado'}` : '· no conectado'}
               </div>
               {appleConn
-                ? <button className="cup-btn-danger-text" onClick={() => disconnectProvider('apple')}>Desconectar</button>
-                : <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>No disponible</span>}
+                ? <button className="cup-btn-danger-text" onClick={() => disconnectProvider('apple')}>{S.desconectar}</button>
+                : <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{S.noDisponible}</span>}
             </li>
           </ul>
         </div>

@@ -8,7 +8,7 @@ const ORG = await getOrg();
 const L = currentLocale();
 ---
 
-<SettingsShell title="Aprobaciones y tesorería — Ajustes" tab="aprobaciones" perm="ajustes"
+<SettingsShell title={t(L, 'ajustes.titulo_aprobaciones')} tab="aprobaciones" perm="ajustes"
     intro={t(L, 'set.aprob.intro')} save>
     <div class="s-block">
         <h3>{t(L, 'set.aprob.umbrales')}</h3>

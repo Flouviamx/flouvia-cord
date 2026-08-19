@@ -33,7 +33,7 @@ const sProducto = [catMap.cotizaciones, catMap.facturacion, catMap.cobros, catMa
 const sDev = [catMap.mcp, catMap.agentes, catMap.elements];
 ---
 
-<AppLayout title="Configuración — Cord" page="ajustes" heading="Ajustes">
+<AppLayout title={t(L, 'ajustes.titulo_index')} page="ajustes" heading="Ajustes">
     {!hasAccess && (
         <AccessGate title={t(L, 'settings.sin_acceso')} desc={t(L, 'settings.sin_acceso_idx_desc')} />
     )}

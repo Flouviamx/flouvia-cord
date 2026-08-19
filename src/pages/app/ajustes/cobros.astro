@@ -73,7 +73,7 @@ const pasos = [
             ))}
         </div>
         <div class="connect-frame">
-            <ConnectCustomOnboarding client:only="react" org={ORG} />
+            <ConnectCustomOnboarding client:only="react" org={ORG} locale={L} />
         </div>
         </>
     ) : (
@@ -108,7 +108,7 @@ const pasos = [
                     </>
                 )}
                 <div class={`connect-frame ${estado === 'activo' ? 'is-active' : ''}`}>
-                    <ConnectCustomOnboarding client:only="react" org={ORG} />
+                    <ConnectCustomOnboarding client:only="react" org={ORG} locale={L} />
                 </div>
             </div>
         </div>
@@ -200,18 +200,18 @@ const pasos = [
 
     {conectado && !tarifaVigenteAceptada && !ORG.sandboxOf && (
         <section class="fee-accept" id="feeAccept" data-version={FEE_TERMS_VERSION}>
-            <h3>Tarifa de Cord Payments</h3>
-            <p>La versión actual todavía no está aceptada. Hasta que la aceptes, Cord no añadirá su comisión.</p>
+            <h3>{t(L, 'set.cobros.tarifa_titulo')}</h3>
+            <p>{t(L, 'set.cobros.tarifa_desc')}</p>
             <div class="fee-lines">
-                <span><strong>Tarjeta</strong>{describeFee('card')}</span>
+                <span><strong>{t(L, 'set.cobros.tarifa_tarjeta')}</strong>{describeFee('card')}</span>
                 {speiDisponible && <span><strong>SPEI</strong>{describeFee('spei')}</span>}
-                <span><strong>Igualas con tarjeta</strong>{describeSubscriptionFee()}</span>
+                <span><strong>{t(L, 'set.cobros.tarifa_igualas')}</strong>{describeSubscriptionFee()}</span>
             </div>
             <label class="fee-check">
                 <input type="checkbox" id="feeTermsCheck" />
-                <span>Acepto los <a href="/terminos#cord-pagos" target="_blank" rel="noreferrer">términos de comisión de Cord Payments</a>. Entiendo que el dinero sigue llegando directo a mi cuenta.</span>
+                <span>{t(L, 'set.cobros.tarifa_acepto_pre')} <a href="/terminos#cord-pagos" target="_blank" rel="noreferrer">{t(L, 'set.cobros.tarifa_acepto_link')}</a>{t(L, 'set.cobros.tarifa_acepto_post')}</span>
             </label>
-            <button type="button" class="fee-accept-btn" id="feeAcceptBtn" disabled>Activar tarifa actual</button>
+            <button type="button" class="fee-accept-btn" id="feeAcceptBtn" disabled>{t(L, 'set.cobros.tarifa_activar')}</button>
         </section>
     )}
 

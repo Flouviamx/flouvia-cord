@@ -16,7 +16,7 @@ const CANAL_META: Record<string, { label: string; color: string; bg: string }> =
 const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigencia}'];
 ---
 
-<SettingsShell title="Plantillas de mensaje — Ajustes" tab="plantillas" perm="ajustes"
+<SettingsShell title={t(L, 'ajustes.titulo_plantillas')} tab="plantillas" perm="ajustes"
     intro={t(L, 'set.pl.intro')}>
 
     <div class="s-block">
@@ -69,7 +69,7 @@ const VARS = ['{cliente}', '{empresa}', '{folio}', '{total}', '{link}', '{vigenc
         <input type="hidden" id="plId" />
         <div class="s-field">
             <label for="plNombre">{t(L, 'set.pl.nombre')}</label>
-            <input class="s-input" id="plNombre" placeholder="Envío estándar" required maxlength="80" />
+            <input class="s-input" id="plNombre" placeholder={t(L, 'set.pl.nombre_ph')} required maxlength="80" />
         </div>
         <div class="s-field">
             <label for="plCanal">{t(L, 'set.pl.canal')}</label>

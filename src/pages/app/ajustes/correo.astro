@@ -52,7 +52,7 @@ const RESEND_ON = !!(import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KE
                     </div>
                     <div class="s-field">
                         <label for="mFirma">{t(L, 'set.correo.firma')}</label>
-                        <textarea class="s-input s-textarea" id="mFirma" data-field="email_firma" rows="2" maxlength="300" placeholder="Equipo de Ventas · {negocio} · 55 1234 5678">{ORG.emailFirma}</textarea>
+                        <textarea class="s-input s-textarea" id="mFirma" data-field="email_firma" rows="2" maxlength="300" placeholder={t(L, 'set.correo.firma_ph')}>{ORG.emailFirma}</textarea>
                         <span class="s-hint">{t(L, 'set.correo.firma_hint')}</span>
                     </div>
                 </div>
