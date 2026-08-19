@@ -3146,6 +3146,13 @@ export const appStrings = {
         "rec.repetir_ok": "Listo. Cord volverá a emitir esta factura cada mes.",
         "rec.ver": "Ver recurrentes",
         "rec.dia": "Día {n} de cada periodo",
+        // Factura pública — abono parcial
+        "fact.p_pagar_otro": "Pagar otra cantidad",
+        "fact.p_monto_abono": "¿Cuánto quieres abonar?",
+        "fact.p_monto_hint": "Puedes abonar una parte. El resto queda como saldo pendiente de esta misma factura.",
+        "fact.p_monto_invalido": "Escribe una cantidad mayor a cero y menor o igual al saldo.",
+        "fact.p_continuar": "Continuar",
+        "fact.p_cancelar": "Cancelar",
     },
     en: {
         // Sidebar — groups
@@ -6270,6 +6277,13 @@ export const appStrings = {
         "rec.repetir_ok": "Done. Cord will issue this invoice again every month.",
         "rec.ver": "View recurring",
         "rec.dia": "Day {n} of each period",
+        // Factura pública — abono parcial
+        "fact.p_pagar_otro": "Pay another amount",
+        "fact.p_monto_abono": "How much would you like to pay?",
+        "fact.p_monto_hint": "You can pay part of it. The rest stays as an outstanding balance on this same invoice.",
+        "fact.p_monto_invalido": "Enter an amount greater than zero and no more than the balance.",
+        "fact.p_continuar": "Continue",
+        "fact.p_cancelar": "Cancel",
     },
 } as const;
 

@@ -62,6 +62,7 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
         confirmar: t(L, 'fact.p_confirmar'),
         errorPago: t(L, 'fact.p_error_pago'),
         errorConfirmar: t(L, 'fact.p_error_confirmar'),
+        montoInvalido: t(L, 'fact.p_monto_invalido'),
     })}>
         {esVistaPrevia && (
             <div class="iv-note" role="status">
@@ -165,9 +166,29 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
 
             <footer class="iv-foot">
                 {puedePagar && (
-                    <button type="button" class="iv-pay" id="ivPay" style={`background:${color}`}>
-                        {t(L, 'fact.p_pagar')} {moneyFull(f.saldo)}
-                    </button>
+                    <Fragment>
+                        <button type="button" class="iv-pay" id="ivPay" style={`background:${color}`}>
+                            {t(L, 'fact.p_pagar')} {moneyFull(f.saldo)}
+                        </button>
+                        {/* Un área de cuentas por pagar liquida a plazos con
+                            mucha más frecuencia de lo que un botón de "pagar
+                            todo" admite. Sin esta opción el cliente que quiere
+                            abonar la mitad transfiere por fuera y el ledger de
+                            la factura se queda mudo. */}
+                        <button type="button" class="iv-pay-partial" id="ivPartial">{t(L, 'fact.p_pagar_otro')}</button>
+                        <div class="iv-partial-box" id="ivPartialBox" hidden>
+                            <label for="ivMonto">{t(L, 'fact.p_monto_abono')}</label>
+                            <div class="iv-partial-row">
+                                <span class="iv-partial-cur">{f.currency}</span>
+                                <input type="number" id="ivMonto" min="0" step="any" max={f.saldo} value={f.saldo} inputmode="decimal" />
+                            </div>
+                            <p class="iv-partial-hint">{t(L, 'fact.p_monto_hint')}</p>
+                            <div class="iv-partial-acts">
+                                <button type="button" class="iv-partial-cancel" id="ivPartialCancel">{t(L, 'fact.p_cancelar')}</button>
+                                <button type="button" class="iv-partial-ok" id="ivPartialOk" style={`background:${color}`}>{t(L, 'fact.p_continuar')}</button>
+                            </div>
+                        </div>
+                    </Fragment>
                 )}
                 <div class="iv-dl">
                     <a href={`/api/fiscal/documents/${f.id}/pdf`}>{t(L, 'fact.p_pdf')}</a>
@@ -230,11 +251,19 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
             errEl.hidden = false;
         };
 
-        boton.addEventListener('click', async () => {
+        // Un solo camino para arrancar el cobro, con o sin monto. Tener dos
+        // (uno para "pagar todo" y otro para el abono) es cómo uno de los dos
+        // se queda sin la reutilización del PaymentIntent y el cliente termina
+        // con varios cobros en vuelo por la misma factura.
+        const iniciarPago = async (monto?: number) => {
             boton.disabled = true;
             boton.textContent = T.preparando;
             try {
-                const res = await fetch(`/api/i/${token}/payment-intent`, { method: 'POST' });
+                const res = await fetch(`/api/i/${token}/payment-intent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(monto !== undefined ? { monto } : {}),
+                });
                 const data = await res.json();
                 if (data.alreadyPaid) { location.reload(); return; }
                 if (!res.ok || !data.clientSecret) throw new Error(data.error || T.errorPago);
@@ -260,6 +289,37 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
                 boton.textContent = T.reintentar;
                 fallar(e instanceof Error ? e.message : T.errorPago);
             }
+        };
+
+        boton.addEventListener('click', () => iniciarPago());
+
+        // ── Abono parcial ────────────────────────────────────────────────
+        const partialBtn = document.getElementById('ivPartial');
+        const partialBox = document.getElementById('ivPartialBox');
+        const montoEl = document.getElementById('ivMonto') as HTMLInputElement | null;
+        const saldoMax = Number(montoEl?.max || 0);
+
+        partialBtn?.addEventListener('click', () => {
+            if (!partialBox) return;
+            partialBox.hidden = false;
+            partialBtn.setAttribute('hidden', '');
+            montoEl?.focus();
+            montoEl?.select();
+        });
+        document.getElementById('ivPartialCancel')?.addEventListener('click', () => {
+            if (partialBox) partialBox.hidden = true;
+            partialBtn?.removeAttribute('hidden');
+        });
+        document.getElementById('ivPartialOk')?.addEventListener('click', () => {
+            const monto = Number(montoEl?.value);
+            // El servidor vuelve a acotar contra el saldo real: esta validación
+            // es cortesía para el cliente, no la defensa.
+            if (!Number.isFinite(monto) || monto <= 0 || (saldoMax > 0 && monto > saldoMax + 1e-9)) {
+                fallar(T.montoInvalido);
+                return;
+            }
+            if (partialBox) partialBox.hidden = true;
+            iniciarPago(monto);
         });
 
         confirmar?.addEventListener('click', async () => {
@@ -280,6 +340,38 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
 </script>
 
 <style>
+    /* Abono parcial. La caja vive en el pie, junto al botón de pago, para que
+       la decisión de "cuánto" esté donde está la de "pagar". */
+    .iv-pay-partial {
+        display: block; width: 100%; margin-top: 0.6rem;
+        font-family: var(--font-sans, inherit); font-size: 0.84rem; font-weight: 600;
+        color: #4a5567; background: none; border: 1px solid #e5e7eb;
+        border-radius: 999px; padding: 12px 20px; cursor: pointer;
+        transition: border-color 0.25s, color 0.25s;
+    }
+    .iv-pay-partial:hover { border-color: #0a192f; color: #0a192f; }
+    .iv-partial-box {
+        margin-top: 0.9rem; padding: 1rem; border: 1px solid #e5e7eb;
+        border-radius: 14px; background: #f5f5f7; text-align: left;
+    }
+    .iv-partial-box label { display: block; font-size: 0.8rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem; }
+    .iv-partial-row { display: flex; align-items: center; gap: 0.5rem; }
+    .iv-partial-cur { font-size: 0.78rem; font-weight: 700; color: #6b7280; letter-spacing: 0.02em; }
+    .iv-partial-row input {
+        flex: 1; min-width: 0; font-family: inherit; font-size: 16px; font-weight: 600;
+        color: #111827; background: #fff; border: 1px solid transparent;
+        border-radius: 10px; padding: 11px 12px; text-align: right;
+    }
+    .iv-partial-row input:focus { outline: none; border-color: rgba(10, 25, 47, 0.15); }
+    .iv-partial-hint { font-size: 0.74rem; color: #6b7280; line-height: 1.5; margin: 0.6rem 0 0.9rem; }
+    .iv-partial-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .iv-partial-acts button {
+        font-family: inherit; font-size: 0.84rem; font-weight: 650;
+        border: 0; border-radius: 999px; padding: 12px 16px; cursor: pointer; min-height: 44px;
+    }
+    .iv-partial-cancel { background: #fff; color: #4a5567; }
+    .iv-partial-ok { color: #fff; }
+
     .iv-bg { position: fixed; inset: 0; z-index: -1; background: #f5f5f7; overflow: hidden; }
     .iv-orb { position: absolute; top: -18vh; right: -12vw; width: 60vw; height: 60vw; border-radius: 50%; }
 

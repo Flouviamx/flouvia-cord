@@ -11,19 +11,23 @@
 // un riel exclusivo de México. Ofrecerlo aquí sin esa maquinaria produciría una
 // CLABE que el banco rechaza — Regla 21, una capacidad de un solo país se dice,
 // no se ofrece y falla en el proveedor.
+//
+// Admite ABONO PARCIAL: el cuerpo puede traer `{ monto }`. El monto lo propone
+// el cliente y por eso se acota contra el saldo real de la base — nunca se
+// confía en el importe que llega del navegador.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, resolvePublicInvoice, withOrgTx } from '../../../../lib/db';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
-import { normalizeCurrency, stripeCurrency, stripeSupportsCurrency, toMinorUnits } from '../../../../lib/currency';
+import { currencyDecimals, normalizeCurrency, stripeCurrency, stripeSupportsCurrency, toMinorUnits } from '../../../../lib/currency';
 import { computeFee, isFeeScheduleActive } from '../../../../lib/fees';
 import { payerError } from '../../../../lib/pay-errors';
 import { log } from '../../../../lib/log';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
-export const POST: APIRoute = async ({ params }) => {
+export const POST: APIRoute = async ({ params, request }) => {
     if (!STRIPE_KEY) return json({ error: 'El pago en línea aún no está disponible.' }, 503);
     const token = params.token ?? '';
     const rl = await rateLimit(`ipi:${token}`, 10, 60);
@@ -67,10 +71,43 @@ export const POST: APIRoute = async ({ params }) => {
 
     const saldo = Number(d.amount_remaining ?? d.total ?? 0);
     if (!(saldo > 0)) return json({ alreadyPaid: true });
+
+    // Pago PARCIAL. Un área de cuentas por pagar liquida a plazos con mucha más
+    // frecuencia de lo que un botón de "pagar todo" admite; sin esta opción el
+    // cliente que quiere abonar la mitad hace la transferencia por fuera y el
+    // ledger de la factura se queda mudo.
+    //
+    // El monto lo propone el CLIENTE, así que no es de confianza: se acota al
+    // saldo real leído de la base y a un mínimo cobrable. Aceptarlo tal cual
+    // permitiría cobrar de más (y luego reembolsar) o cobrar centavos para
+    // ensuciar el ledger.
+    let cobrar = saldo;
+    const body = await request.json().catch(() => ({} as any));
+    if (body?.monto !== undefined && body?.monto !== null && body.monto !== '') {
+        const pedido = Number(body.monto);
+        if (!Number.isFinite(pedido) || pedido <= 0) {
+            return json({ error: 'El monto a pagar no es válido.' }, 400);
+        }
+        cobrar = Math.min(pedido, saldo);
+    }
+
     // toMinorUnits, nunca Math.round(x*100): JPY/CLP/KRW no tienen decimales y
     // KWD/BHD tienen tres.
-    const amount = toMinorUnits(saldo, currency);
-    if (!(amount > 0)) return json({ error: 'El saldo de esta factura es demasiado pequeño para cobrarse en línea.' }, 409);
+    const amount = toMinorUnits(cobrar, currency);
+    if (!(amount > 0)) return json({ error: 'El monto es demasiado pequeño para cobrarse en línea.' }, 409);
+    // Piso del proveedor, en UNIDAD MÍNIMA. Se declara aquí para no dejar al
+    // cliente frente a un rechazo de Stripe sin explicación (regla 14). El
+    // umbral va por decimales de la divisa: 50 centavos donde hay dos, 50
+    // unidades donde no hay ninguna (JPY, CLP), 500 milésimos donde hay tres.
+    const PISO_POR_DECIMALES: Record<number, number> = { 0: 50, 2: 50, 3: 500 };
+    const piso = PISO_POR_DECIMALES[currencyDecimals(currency)] ?? 50;
+    if (amount < piso) {
+        return json({
+            error: cobrar < saldo
+                ? 'El abono es demasiado pequeño para cobrarse en línea. Paga un poco más o liquida el saldo completo.'
+                : 'El saldo de esta factura es demasiado pequeño para cobrarse en línea.',
+        }, 409);
+    }
 
     const fee = computeFee({
         amountCents: amount,
