@@ -1,10 +1,12 @@
 ---
 // Ajustes › Cotizaciones e impuestos — folio, IVA, defaults, retenciones y leyenda.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import { getOrg } from '../../../lib/queries';
+import { getOrg, getImpuestos } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
-const ORG = await getOrg();
+const [ORG, IMPUESTOS] = await Promise.all([getOrg(), getImpuestos()]);
+// Solo las predeterminadas: son las que el motor aplica al documento.
+const RETENCIONES = IMPUESTOS.filter((i) => i.kind === 'retencion' && i.activo && i.esDefault && i.tasa > 0);
 const L = currentLocale();
 const isMx = ORG.countryCode === 'MX';
 const TERMS = [
@@ -43,22 +45,30 @@ const TERMS = [
         <div class="s-body">
             <div class="s-row">
                 <div class="s-field">
-                    <label for="oIva">{isMx ? t(L, 'set.cot.iva') : (L === 'en' ? 'Tax rate (%)' : 'Impuesto (%)')}</label>
-                    <input class="s-input" id="oIva" data-field="iva_pct" type="number" min="0" max="100" step="1" value={ORG.ivaPct} />
-                    <span class="s-hint">{isMx
-                        ? t(L, 'set.cot.iva_hint')
-                        : (L === 'en' ? 'Applied to quote and commercial-invoice totals. Verify the correct rate for your jurisdiction.' : 'Se aplica a los totales de la cotización y la factura comercial. Verifica la tasa correcta para tu jurisdicción.')}</span>
-                </div>
-                <div class="s-field" style={isMx ? undefined : 'display:none;'}>
-                    <label for="oRetIva">{t(L, 'set.cot.ret_iva')}</label>
-                    <input class="s-input" id="oRetIva" data-field="retencion_iva_pct" type="number" min="0" max="100" step="0.5" value={ORG.retencionIvaPct} />
-                    <span class="s-hint">{t(L, 'set.cot.ret_iva_hint')}</span>
+                    <label for="oIva">{t(L, 'set.cot.tasa_default')}</label>
+                    <input class="s-input" id="oIva" data-field="iva_pct" type="number" min="0" max="100" step="0.001" value={ORG.ivaPct} />
+                    <span class="s-hint">{t(L, 'set.cot.tasa_default_hint')}</span>
                 </div>
             </div>
-            <div class="s-field" style={isMx ? 'max-width:50%' : 'display:none;'}>
-                <label for="oRetIsr">{t(L, 'set.cot.ret_isr')}</label>
-                <input class="s-input" id="oRetIsr" data-field="retencion_isr_pct" type="number" min="0" max="100" step="0.5" value={ORG.retencionIsrPct} />
-                <span class="s-hint">{t(L, 'set.cot.ret_isr_hint')}</span>
+
+            <!-- Las retenciones se LEEN del catálogo, no se capturan aquí.
+                 Antes había dos campos (`retencion_iva_pct`, `retencion_isr_pct`)
+                 que el negocio llenaba y que no leía nadie: ni los totales, ni
+                 el PDF, ni el CFDI. Tener dos lugares donde declarar la misma
+                 tasa es exactamente cómo uno de los dos se queda sin consumidor. -->
+            <div class="ret-summary">
+                <h4>{t(L, 'set.cot.retenciones_titulo')}</h4>
+                {RETENCIONES.length === 0
+                    ? <p class="s-hint">{t(L, 'set.cot.retenciones_vacio')}</p>
+                    : (
+                        <ul class="ret-list">
+                            {RETENCIONES.map((r) => (
+                                <li><span>{r.nombre}</span><span class="editorial">−{r.tasa}%</span></li>
+                            ))}
+                        </ul>
+                    )}
+                <p class="s-hint">{t(L, 'set.cot.retenciones_nota')}</p>
+                <a class="ret-link" href="/app/ajustes/impuestos">{t(L, 'set.cot.ir_impuestos')} →</a>
             </div>
         </div>
     </div>
@@ -101,3 +111,14 @@ const TERMS = [
         </div>
     </div>
 </SettingsShell>
+
+<style>
+    .ret-summary { margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px solid var(--color-border); }
+    .ret-summary h4 { font-size: 0.86rem; font-weight: 600; color: var(--color-text); margin: 0 0 0.6rem; }
+    .ret-list { list-style: none; margin: 0 0 0.7rem; padding: 0; display: flex; flex-direction: column; }
+    .ret-list li { display: flex; justify-content: space-between; gap: 1.5rem; padding: 0.55rem 0; border-bottom: 1px solid var(--color-border); font-size: 0.85rem; }
+    .ret-list li:last-child { border-bottom: none; }
+    .ret-list .editorial { color: #b45309; }
+    .ret-link { display: inline-block; margin-top: 0.4rem; font-size: 0.82rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
+    .ret-link:hover { opacity: 0.75; }
+</style>

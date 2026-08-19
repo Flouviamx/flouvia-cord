@@ -3100,6 +3100,13 @@ export const appStrings = {
         "set.pl.nombre_ph": "Envío estándar",
         "set.elements.sitio_ph": "tu-sitio.com",
         "set.elements.preview_title": "Vista previa del cotizador embebido",
+        // Ajustes › Cotizaciones — impuestos como fuente única
+        "set.cot.tasa_default": "Tasa predeterminada (%)",
+        "set.cot.tasa_default_hint": "La que traen las líneas nuevas cuando tu catálogo no tiene un perfil marcado como predeterminado. Las tasas reales, incluidas las de cada línea, se administran en Impuestos.",
+        "set.cot.retenciones_titulo": "Retenciones aplicadas",
+        "set.cot.retenciones_vacio": "Tu catálogo no tiene retenciones marcadas como predeterminadas, así que no se resta ninguna del total.",
+        "set.cot.retenciones_nota": "Se restan del total de cada documento. Se administran junto con el resto de tus tasas.",
+        "set.cot.ir_impuestos": "Administrar impuestos",
     },
     en: {
         // Sidebar — groups
@@ -6178,6 +6185,13 @@ export const appStrings = {
         "set.pl.nombre_ph": "Standard delivery",
         "set.elements.sitio_ph": "your-site.com",
         "set.elements.preview_title": "Embedded quote builder preview",
+        // Ajustes › Cotizaciones — impuestos como fuente única
+        "set.cot.tasa_default": "Default rate (%)",
+        "set.cot.tasa_default_hint": "The rate new lines start with when your catalog has no profile marked as default. The actual rates, including per-line ones, are managed in Taxes.",
+        "set.cot.retenciones_titulo": "Withholding applied",
+        "set.cot.retenciones_vacio": "Your catalog has no withholding profiles marked as default, so none is subtracted from the total.",
+        "set.cot.retenciones_nota": "They are subtracted from each document's total. They're managed alongside the rest of your rates.",
+        "set.cot.ir_impuestos": "Manage taxes",
     },
 } as const;
 
