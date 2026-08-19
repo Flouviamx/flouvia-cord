@@ -136,4 +136,54 @@ for (const code of ['US', 'BR']) {
         'el editor debe calcular con el motor compartido, no con su propia copia');
 }
 
-console.log('security:tax OK');
+
+// ── 9. Rieles de cobro por país ────────────────────────────────────────────
+// CLABE es de México, IBAN de la zona SEPA, routing+account de Estados Unidos.
+// Aceptar 18 dígitos para todos y dejar que Stripe falle produce un error que
+// no le dice nada a quien solo quiere cobrar.
+{
+    const { payoutSpecFor, validatePayout, clabeValida, ibanValido, stripeExternalAccountFields } =
+        await import('../src/lib/payout-fields.ts');
+
+    assert.equal(payoutSpecFor('MX').format, 'clabe');
+    assert.equal(payoutSpecFor('ES').format, 'iban');
+    assert.equal(payoutSpecFor('US').format, 'us_aba');
+    assert.equal(payoutSpecFor('GB').format, 'gb_sort');
+    assert.equal(payoutSpecFor('JP').format, 'generic', 'un país sin riel específico no debe romper');
+
+    // Dígitos de control reales, no solo longitud.
+    assert.ok(ibanValido('DE89370400440532013000'));
+    assert.ok(ibanValido('GB82WEST12345698765432'));
+    assert.ok(!ibanValido('DE89370400440532013001'), 'un IBAN alterado debió rechazarse');
+    assert.ok(!clabeValida('012345678901234567'), 'una CLABE con checksum malo debió rechazarse');
+
+    // Un IBAN español no se cuela como si fuera CLABE.
+    assert.ok(!validatePayout('MX', { clabe: 'ES9121000418450200051332' }).ok);
+    assert.ok(validatePayout('ES', { iban: 'ES91 2100 0418 4502 0005 1332' }).ok,
+        'el IBAN con espacios debe normalizarse');
+
+    // Sintaxis PLANA hacia Stripe: un objeto anidado se codifica "[object Object]".
+    const f = stripeExternalAccountFields('US', 'usd', 'Acme', 'company',
+        { routing_number: '110000000', account_number: '000123456789' });
+    assert.equal(f['external_account[routing_number]'], '110000000');
+    assert.equal(f['external_account[country]'], 'US');
+    assert.equal(f['external_account[currency]'], 'usd');
+    for (const v of Object.values(f)) assert.equal(typeof v, 'string');
+}
+
+// ── 10. La zona horaria del negocio tiene consumidor ───────────────────────
+// `orgs.zona_horaria` se guardaba desde Ajustes y ningún formateador la pasaba a
+// Intl: todo se renderizaba en la zona del servidor.
+{
+    const fmt = readFileSync(new URL('../src/lib/fmt-server.ts', import.meta.url), 'utf8');
+    assert.ok(fmt.includes('currentTimeZone'), 'fmt-server debe leer la zona del request');
+    assert.ok(fmt.includes('timeZone'), 'fmt-server debe pasar timeZone a Intl');
+    const db = readFileSync(new URL('../src/lib/db.ts', import.meta.url), 'utf8');
+    assert.ok(db.includes('setRequestTimeZone'),
+        'getAppGates debe publicar la zona horaria de la org en el request');
+    const queries = readFileSync(new URL('../src/lib/queries.ts', import.meta.url), 'utf8');
+    assert.ok(!/Intl\.DateTimeFormat\('es-MX'/.test(queries),
+        'queries.ts volvió a formatear fechas con un locale mexicano fijo');
+}
+
+console.log('security:tax (impuestos, rieles de cobro y zona horaria) OK');

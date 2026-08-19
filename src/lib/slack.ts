@@ -7,13 +7,16 @@
 // operación de negocio.
 
 import { currencyDecimals, normalizeCurrency } from './currency';
+import { intlLocale } from './fmt-server';
 
 // El monto siempre se postea CON su divisa: el canal de Slack de un negocio
 // que vende en varias monedas necesita distinguir 1,000 USD de 1,000 MXN.
 const money = (n: number, currency?: string) => {
     const code = normalizeCurrency(currency);
     const decimals = currencyDecimals(code);
-    return new Intl.NumberFormat('es-MX', {
+    // El locale sale del request, no de 'es-MX': el separador decimal y el de
+    // miles cambian, y un negocio en Londres no escribe 1.000,00.
+    return new Intl.NumberFormat(intlLocale(), {
         style: 'currency', currency: code,
         minimumFractionDigits: decimals, maximumFractionDigits: decimals,
     }).format(Number(n ?? 0));

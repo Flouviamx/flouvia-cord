@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { STRIPE_MX_STATES, STRIPE_COMPANY_STRUCTURES, STRIPE_MCC_B2B, translateRequirement } from '../../lib/stripe-catalogs';
 import { FEE_TERMS_VERSION } from '../../lib/fees';
+import { payoutSpecFor, validatePayout } from '../../lib/payout-fields';
 
 interface ConnectCustomOnboardingProps {
     org?: any;
@@ -17,16 +18,11 @@ const STEP_LABELS = [
     'Términos',
 ];
 
-// Validación real de CLABE (dígito de control: pesos 3,7,1 sobre los primeros 17).
-function clabeValida(clabe: string): boolean {
-    if (!/^\d{18}$/.test(clabe)) return false;
-    const pesos = [3, 7, 1];
-    let suma = 0;
-    for (let i = 0; i < 17; i++) {
-        suma += (Number(clabe[i]) * pesos[i % 3]) % 10;
-    }
-    return (10 - (suma % 10)) % 10 === Number(clabe[17]);
-}
+// El formato de la cuenta de depósito y su dígito de control salen de
+// lib/payout-fields.ts, la MISMA fuente que valida el endpoint. Este archivo
+// tenía su propia copia del checksum de CLABE y solo sabía capturar ese
+// formato, así que fuera de México el paso 6 pedía 18 dígitos que ningún banco
+// local usa.
 
 export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboardingProps) {
     const [step, setStep] = useState(0);
@@ -95,7 +91,17 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
     const capturePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Bank
-    const [clabe, setClabe] = useState(org?.bancoClabe || '');
+    // Los campos de depósito dependen del país: CLABE, IBAN, routing+account…
+    const payoutSpec = payoutSpecFor(String(org?.countryCode || 'MX'));
+    const [bankFields, setBankFields] = useState<Record<string, string>>(() => {
+        const inicial: Record<string, string> = {};
+        for (const f of payoutSpec.fields) inicial[f.key] = '';
+        // Compatibilidad: una cuenta mexicana ya capturada se precarga.
+        if (payoutSpec.format === 'clabe' && org?.bancoClabe) inicial.clabe = String(org.bancoClabe);
+        return inicial;
+    });
+    const setBankField = (key: string, value: string) =>
+        setBankFields((prev) => ({ ...prev, [key]: value }));
     const [accountHolder, setAccountHolder] = useState(org?.bancoBeneficiario || org?.razonSocial || '');
     const [legalConsent, setLegalConsent] = useState(false);
 
@@ -389,13 +395,13 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                     setStep(6);
                 }
             } else if (step === 6) { // Cuenta Bancaria
-                const cl = String(clabe).replace(/\D/g, '');
-                if (cl.length !== 18) throw new Error('La CLABE debe tener 18 dígitos');
-                if (!clabeValida(cl)) throw new Error('La CLABE no es válida. Revisa que esté bien escrita; el dígito de control no coincide.');
                 if (!accountHolder.trim()) throw new Error('Escribe el nombre del titular de la cuenta');
+                // Misma validación que el servidor, con el formato del país.
+                const check = validatePayout(String(org?.countryCode || 'MX'), bankFields, 'es');
+                if (!check.ok) throw new Error(check.error || 'Revisa los datos de tu cuenta');
                 const send = () => fetch('/api/billing/connect/external-account', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ clabe: cl, account_holder_name: accountHolder, account_holder_type: businessType })
+                    body: JSON.stringify({ ...check.values, account_holder_name: accountHolder, account_holder_type: businessType })
                 });
                 let res = await send();
                 if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
@@ -478,13 +484,13 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                                 </div>
                                 <div className="co-bank-text">
                                     <strong>{bankInfo.bank_name || 'Cuenta bancaria'}</strong>
-                                    <span>CLABE terminación •••• {bankInfo.last4}. Aquí llegan tus depósitos.</span>
+                                    <span>{payoutSpec.label} terminación •••• {bankInfo.last4}. Aquí llegan tus depósitos.</span>
                                 </div>
                                 <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Cambiar</button>
                             </div>
                         )}
                         {!bankInfo?.last4 && (
-                            <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Editar cuenta bancaria (CLABE)</button>
+                            <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>Editar cuenta bancaria</button>
                         )}
                     </div>
                 </div>
@@ -816,16 +822,31 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
 
                 {step === 6 && (
                     <div className="co-step">
-                        <p className="co-sub">Ingresa la cuenta CLABE donde recibirás los cobros. Debe estar a nombre del negocio o representante.</p>
-                        <div className="s-field">
-                            <label>CLABE Interbancaria (18 dígitos)</label>
-                            <input className="s-input co-clabe" value={clabe} onChange={e => setClabe(e.target.value.replace(/\D/g, ''))} maxLength={18} inputMode="numeric" placeholder="000 000 00000000000 0" />
-                            {clabe.length === 18 && (
-                                clabeValida(clabe)
-                                    ? <span className="s-hint co-hint-ok">CLABE válida</span>
-                                    : <span className="s-hint co-hint-bad">El dígito de control no coincide. Revisa la CLABE.</span>
-                            )}
-                        </div>
+                        <p className="co-sub">Ingresa la cuenta donde recibirás los cobros. Debe estar a nombre del negocio o representante.</p>
+                        {payoutSpec.fields.map((f) => {
+                            const valor = bankFields[f.key] || '';
+                            // Solo se opina cuando el campo ya tiene su longitud
+                            // completa: marcar en rojo mientras se teclea es ruido.
+                            const completo = valor.length >= f.minLength;
+                            const check = completo ? validatePayout(String(org?.countryCode || 'MX'), { ...bankFields, [f.key]: valor }, 'es') : null;
+                            return (
+                                <div className="s-field" key={f.key}>
+                                    <label>{f.label}{f.hint ? ` (${f.hint})` : ''}</label>
+                                    <input
+                                        className="s-input co-clabe"
+                                        value={valor}
+                                        onChange={e => setBankField(f.key, f.kind === 'digits'
+                                            ? e.target.value.replace(/\D/g, '')
+                                            : e.target.value.replace(/\s+/g, '').toUpperCase())}
+                                        maxLength={f.maxLength}
+                                        inputMode={f.kind === 'digits' ? 'numeric' : 'text'}
+                                    />
+                                    {completo && check && (check.ok
+                                        ? <span className="s-hint co-hint-ok">{f.label} válido</span>
+                                        : <span className="s-hint co-hint-bad">{check.error}</span>)}
+                                </div>
+                            );
+                        })}
                         <div className="s-field">
                             <label>Nombre del Titular de la cuenta</label>
                             <input className="s-input" value={accountHolder} onChange={e => setAccountHolder(e.target.value)} />
@@ -839,7 +860,7 @@ export default function ConnectCustomOnboarding({ org }: ConnectCustomOnboarding
                             <p><strong>Stripe Connected Account Agreement</strong></p>
                             <p>Stripe procesa los pagos para este servicio. Al continuar, aceptas el <a href="https://stripe.com/mx/connect-account/legal" target="_blank" rel="noopener noreferrer">Acuerdo de Cuenta Conectada de Stripe</a>, que incluye los Términos de Servicio de Stripe.</p>
                             <p>Como condición para que Cord habilite los servicios de procesamiento de pagos a través de Stripe, aceptas proporcionar a Cord información precisa y completa sobre ti y tu negocio, y autorizas a Cord a compartirla junto con los datos de transacciones relacionados con tu uso de los servicios de procesamiento de pagos provistos por Stripe.</p>
-                            <p>Las imágenes de identificación y selfie se envían directamente a Stripe y CORD no las almacena de forma persistente. La CLABE se conserva cifrada para operar y mostrar tu cuenta de depósito.</p>
+                            <p>Las imágenes de identificación y selfie se envían directamente a Stripe y CORD no las almacena de forma persistente. Tu cuenta de depósito se conserva cifrada para operar y mostrarte a dónde llegan los cobros.</p>
                         </div>
                         <label className="co-attest co-legal-consent">
                             <input type="checkbox" checked={legalConsent} onChange={event => setLegalConsent(event.target.checked)} />

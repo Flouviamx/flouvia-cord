@@ -16,17 +16,22 @@ import { trackServer } from './posthog-server';
 import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { normalizeCurrency } from './currency';
 import { taxCatalogFor } from './impuestos-db';
+import { intlLocale } from './fmt-server';
 
 // El motivo de aprobación lo lee el aprobador: el tope y el total van con la
 // divisa real de la cotización, no con un '$' que puede significar otra cosa.
 const money0 = (n: number, currency: string) => {
     const code = normalizeCurrency(currency);
+    // El locale sale del request: quien aprueba lee el motivo en el idioma de su
+    // organización, con sus separadores. Un 'es-MX' fijo le escribía "1.000,00"
+    // a un aprobador en Londres.
+    const locale = intlLocale();
     try {
-        return new Intl.NumberFormat('es-MX', {
+        return new Intl.NumberFormat(locale, {
             style: 'currency', currency: code, maximumFractionDigits: 0,
         }).format(Math.round(n));
     } catch {
-        return new Intl.NumberFormat('es-MX').format(Math.round(n));
+        return new Intl.NumberFormat(locale).format(Math.round(n));
     }
 };
 

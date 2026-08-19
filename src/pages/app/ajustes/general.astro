@@ -119,9 +119,12 @@ const ZONAS = zoneValues.sort((a, b) => a.localeCompare(b)).map((zone) => ({
             <div class="s-field" style="max-width:50%">
                     <label for="oIdioma">{t(L, 'set.general.idioma')}</label>
                     <select class="s-input" id="oIdioma" data-field="idioma">
-                        <option value="es-MX" selected={ORG.idioma === 'es-MX'}>Español (México)</option>
-                        <option value="en-US" disabled>English (próximamente)</option>
+                        <option value="es-MX" selected={ORG.idioma === 'es-MX'}>Español</option>
+                        <option value="en-US" selected={ORG.idioma === 'en-US'}>English</option>
                     </select>
+                    <span class="s-hint">{L === 'en'
+                        ? 'Applies to the app, your public links and the emails Cord sends on your behalf.'
+                        : 'Aplica a la aplicación, a tus links públicos y a los correos que Cord envía en tu nombre.'}</span>
             </div>
         </div>
     </div>

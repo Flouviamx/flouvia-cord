@@ -5,6 +5,7 @@ import { getOrg } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { describeFee, describeSubscriptionFee, FEE_TERMS_VERSION } from '../../../lib/fees';
+import { payoutSpecFor } from '../../../lib/payout-fields';
 const ORG = await getOrg();
 const L = currentLocale();
 
@@ -13,6 +14,12 @@ const conectado = !!ORG.stripeAccountId;
 const activo = conectado && ORG.stripeChargesEnabled;
 const estado = !conectado ? 'nuevo' : activo ? 'activo' : 'pendiente';
 const puedeCobrar = activo; // habilita tarjeta / SPEI (transferencia manual no depende de Stripe)
+// SPEI es el riel interbancario de MÉXICO y solo liquida en MXN. Ofrecerlo a un
+// negocio en Madrid es prometer algo que va a fallar en el proveedor (regla 14).
+const PAIS = String(ORG.countryCode || 'MX').toUpperCase();
+const speiDisponible = PAIS === 'MX';
+// El formato de la cuenta de depósito depende del país: CLABE, IBAN, sort code.
+const PAYOUT = payoutSpecFor(PAIS);
 const marca = ORG.colorMarca || '#0a192f';
 const tarifaVigenteAceptada = ORG.feeEnabled && ORG.feeTermsVersion === FEE_TERMS_VERSION;
 
@@ -134,7 +141,8 @@ const pasos = [
                     </label>
                 </div>
 
-                <!-- SPEI automático -->
+                <!-- SPEI automático (riel de México) -->
+                {speiDisponible && (
                 <div class={`pay-method ${!puedeCobrar ? 'is-locked' : ''}`}>
                     <div class="pm-ico">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11" fill="currentColor" fill-opacity="0.12"/><path d="M9 21v-6h6v6"/></svg>
@@ -148,6 +156,7 @@ const pasos = [
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
                 </div>
+                )}
 
                 <!-- Transferencia manual -->
                 <div class="pay-method pay-method--stack">
@@ -171,8 +180,11 @@ const pasos = [
                                 <input class="s-input" id="oBanco" data-field="banco_nombre" value={ORG.bancoNombre} placeholder="Ej. BBVA" />
                             </div>
                             <div class="s-field">
-                                <label for="oClabe">{t(L, 'set.cobros.clabe')}</label>
-                                <input class="s-input" id="oClabe" data-field="banco_clabe" value={ORG.bancoClabe} placeholder={t(L, 'set.cobros.clabe_placeholder')} maxlength="18" inputmode="numeric" />
+                                <label for="oClabe">{PAYOUT.fields[0] ? (L === 'en' ? PAYOUT.fields[0].labelEn : PAYOUT.fields[0].label) : t(L, 'set.cobros.clabe')}</label>
+                                <input class="s-input" id="oClabe" data-field="banco_clabe" value={ORG.bancoClabe}
+                                    placeholder={PAIS === 'MX' ? t(L, 'set.cobros.clabe_placeholder') : ''}
+                                    maxlength={PAYOUT.fields[0]?.maxLength ?? 34}
+                                    inputmode={PAYOUT.fields[0]?.kind === 'digits' ? 'numeric' : 'text'} />
                             </div>
                         </div>
                         <div class="s-field">
@@ -192,7 +204,7 @@ const pasos = [
             <p>La versión actual todavía no está aceptada. Hasta que la aceptes, Cord no añadirá su comisión.</p>
             <div class="fee-lines">
                 <span><strong>Tarjeta</strong>{describeFee('card')}</span>
-                <span><strong>SPEI</strong>{describeFee('spei')}</span>
+                {speiDisponible && <span><strong>SPEI</strong>{describeFee('spei')}</span>}
                 <span><strong>Igualas con tarjeta</strong>{describeSubscriptionFee()}</span>
             </div>
             <label class="fee-check">

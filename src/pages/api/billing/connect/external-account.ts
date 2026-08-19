@@ -10,6 +10,8 @@ import { auditConnect } from '../../../../lib/connect-audit';
 import { limitConnectMutation } from '../../../../lib/connect-security';
 import { sanitizeStripeRequirements } from '../../../../lib/connect-fields';
 import { requireFreshAuth } from '../../../../lib/step-up';
+import { validatePayout, stripeExternalAccountFields } from '../../../../lib/payout-fields';
+import { currentLocale } from '../../../../lib/context';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('cobros_config');
@@ -20,51 +22,56 @@ export const POST: APIRoute = async ({ request }) => {
     if (limited) return limited;
     const staleAuth = await requireFreshAuth();
     if (staleAuth) return staleAuth;
-    const [org] = await sql`select stripe_account_id, stripe_business_type, banco_clabe_last4, country_code from orgs where id = ${orgId}`;
+    const [org] = await sql`select stripe_account_id, stripe_business_type, banco_clabe_last4, country_code, moneda from orgs where id = ${orgId}`;
     if (!org?.stripe_account_id) return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
 
-    // Este endpoint captura una CLABE: un formato de cuenta EXCLUSIVO de México.
-    // Cada país usa el suyo (IBAN, routing + account, sort code), con validaciones
-    // y campos distintos. Mientras solo esté implementado el carril mexicano se
-    // dice con claridad, en vez de aceptar 18 dígitos de un banco que no los usa
-    // y fallar del lado de Stripe con un error incomprensible.
-    if (String(org.country_code || 'MX').toUpperCase() !== 'MX') {
-        return new Response(JSON.stringify({
-            error: 'Por ahora solo podemos registrar cuentas bancarias de México desde aquí. Escríbenos y damos de alta la tuya.',
-            code: 'payout_country_unsupported',
-        }), { status: 409, headers: { 'Content-Type': 'application/json' } });
-    }
+    // Cada país identifica una cuenta bancaria a su manera: CLABE en México,
+    // IBAN en la zona SEPA, routing + account en Estados Unidos, sort code en
+    // Reino Unido. Este endpoint sabía capturar SOLO la CLABE y respondía 409 a
+    // todos los demás, así que un negocio en Madrid terminaba su alta de Connect
+    // y no tenía cómo decir a dónde mandarle su dinero.
+    const pais = String(org.country_code || 'MX').toUpperCase();
+    const L = currentLocale();
 
     const data = await request.json().catch(() => ({}));
-    const clabe = String(data.clabe || '').replace(/\D/g, '');
     const account_holder_name = String(data.account_holder_name || '').trim().slice(0, 120);
-
-    if (!/^\d{18}$/.test(clabe) || !account_holder_name) {
-        return new Response(JSON.stringify({ error: 'Falta CLABE o titular' }), { status: 400 });
+    if (!account_holder_name) {
+        return new Response(JSON.stringify({
+            error: L === 'en' ? 'Enter the account holder name.' : 'Captura el titular de la cuenta.',
+        }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
     if (data.account_holder_type && !['individual', 'company'].includes(data.account_holder_type)) {
         return new Response(JSON.stringify({ error: 'Tipo de titular inválido' }), { status: 400 });
     }
 
+    // Los dígitos de control se verifican AQUÍ. Dejarlos para Stripe devolvía un
+    // error del proveedor que no le dice nada al vendedor, y con una cuenta mal
+    // tecleada el dinero queda en el limbo hasta que alguien lo note (regla 14).
+    const validation = validatePayout(pais, data, L);
+    if (!validation.ok) {
+        return new Response(JSON.stringify({ error: validation.error }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+    const values = validation.values!;
+    const principal = values.iban ?? values.clabe ?? values.account_number ?? '';
+
     try {
-        const encryptedClabe = encryptRequiredSecret(clabe);
-        // En Stripe MX se pasa el CLABE completo (18 díg.) en `account_number`, con
-        // la sintaxis PLANA `external_account[...]` que entiende URLSearchParams
-        // (un objeto anidado se codificaría como "[object Object]").
-        const reqFields = {
-            'external_account[object]': 'bank_account',
-            'external_account[country]': 'MX',
-            'external_account[currency]': 'mxn',
-            'external_account[account_holder_name]': account_holder_name,
-            'external_account[account_holder_type]': data.account_holder_type || (org.stripe_business_type === 'individual' ? 'individual' : 'company'),
-            'external_account[account_number]': clabe,
-        };
+        const encryptedAccount = encryptRequiredSecret(principal);
+        const reqFields = stripeExternalAccountFields(
+            pais,
+            String(org.moneda || 'MXN'),
+            account_holder_name,
+            (data.account_holder_type as 'individual' | 'company') || (org.stripe_business_type === 'individual' ? 'individual' : 'company'),
+            values,
+        );
 
         const result = await createExternalAccount(org.stripe_account_id as string, reqFields);
-        
+
+        // Las columnas se llaman `banco_clabe*` por herencia mexicana; guardan la
+        // cuenta de depósito sea cual sea su formato. Renombrarlas es una
+        // migración aparte y no cambia lo que hacen.
         await sql`update orgs
-                     set banco_clabe = null, banco_clabe_enc = ${encryptedClabe},
-                         banco_clabe_last4 = ${clabe.slice(-4)}, banco_beneficiario = ${account_holder_name}
+                     set banco_clabe = null, banco_clabe_enc = ${encryptedAccount},
+                         banco_clabe_last4 = ${validation.last4}, banco_beneficiario = ${account_holder_name}
                    where id = ${orgId}`;
 
         const account = await retrieveAccount(org.stripe_account_id as string);
@@ -73,7 +80,7 @@ export const POST: APIRoute = async ({ request }) => {
         await auditConnect(orgId, request, 'cuenta_bancaria_actualizada', {
             entity: 'external_account',
             entityId: result.id,
-            detail: `last4 ${String(org.banco_clabe_last4 || 'ninguna')} -> ${clabe.slice(-4)}`,
+            detail: `last4 ${String(org.banco_clabe_last4 || 'ninguna')} -> ${validation.last4}`,
         });
 
         return new Response(JSON.stringify({ ok: true, external_account: result, requirements }), { headers: { 'Content-Type': 'application/json' } });

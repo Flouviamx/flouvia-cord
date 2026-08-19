@@ -38,6 +38,13 @@ interface ReqCtx {
     // los montos en la divisa en que se le vendió, no en la del vendedor.
     // money()/moneyFull() (lib/fmt.ts) la leen de aquí en vez de asumir MXN.
     currency?: string;
+    // Zona horaria de PRESENTACIÓN de este request (IANA). La resuelve el mismo
+    // camino que `currency`, desde orgs.zona_horaria.
+    //
+    // La columna existía desde hace tiempo y NINGÚN formateador de fecha la
+    // pasaba a Intl: todas las fechas se renderizaban en la zona del servidor,
+    // así que un negocio en Tokio veía sus cotizaciones fechadas un día antes.
+    timeZone?: string;
     // Carril de SISTEMA (crons cross-org, ej. el sweeper de webhooks). Lo marca
     // el propio cron route DESPUÉS de validar CRON_SECRET, envolviendo su
     // handler en reqContext.run({..., cronScope:true}, ...). withSystemTx()
@@ -113,6 +120,29 @@ export function setRequestCurrency(currency: string | null | undefined): void {
     if (!store) return;
     const code = String(currency ?? '').trim().toUpperCase();
     if (/^[A-Z]{3}$/.test(code)) store.currency = code;
+}
+
+/**
+ * Zona horaria de presentación del request. `undefined` = usar la del sistema,
+ * que es lo correcto en scripts y crons sin organización a la vista.
+ */
+export function currentTimeZone(): string | undefined {
+    return reqContext.getStore()?.timeZone;
+}
+
+/**
+ * Fija la zona horaria del request. Se valida contra ICU: una zona inválida
+ * guardada en la base no debe tirar cada `Intl.DateTimeFormat` de la página.
+ */
+export function setRequestTimeZone(zone: string | null | undefined): void {
+    const store = reqContext.getStore();
+    if (!store) return;
+    const tz = String(zone ?? '').trim();
+    if (!tz) return;
+    try {
+        new Intl.DateTimeFormat('en-US', { timeZone: tz });
+        store.timeZone = tz;
+    } catch { /* zona inválida: se conserva la del sistema */ }
 }
 
 /** ¿Este request corre en el carril de SISTEMA de un cron (ver withSystemTx)? */

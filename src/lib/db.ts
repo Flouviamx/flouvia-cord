@@ -8,7 +8,7 @@
 
 import { neon, type NeonQueryPromise } from '@neondatabase/serverless';
 import { createHash } from 'node:crypto';
-import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope, setRequestCurrency, setRequestLocale } from './context';
+import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope, setRequestCurrency, setRequestLocale, setRequestTimeZone } from './context';
 import { log } from './log';
 
 const url = import.meta.env.DATABASE_URL || process.env.DATABASE_URL;
@@ -105,7 +105,7 @@ export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; 
         const orgId = await getActiveOrgId();
         const [rows] = await withOrgTx(orgId, sql`
             select o.require_2fa, o.onboarded_at, o.owner_id, o.session_timeout_min,
-                   o.moneda, o.idioma, u.totp_enabled
+                   o.moneda, o.idioma, o.zona_horaria, u.totp_enabled
             from orgs o cross join users u
             where o.id = ${orgId} and u.id = ${userId}
             limit 1`);
@@ -118,6 +118,10 @@ export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; 
         // El idioma de la app sale del país que eligió el negocio, no del
         // navegador de quien entra. Misma query, sin round-trip extra.
         setRequestLocale(r.idioma as string);
+        // Y la zona horaria, por el mismo camino. Sin ella toda fecha se
+        // renderizaba en la zona del servidor: un negocio en Tokio veía sus
+        // cotizaciones fechadas un día antes de lo que él las creó.
+        setRequestTimeZone(r.zona_horaria as string);
         return {
             needs2fa: !!r.require_2fa && !r.totp_enabled,
             needsOnboarding: r.owner_id === userId && !r.onboarded_at,

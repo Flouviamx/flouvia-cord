@@ -4,7 +4,7 @@
 // Re-exporta los helpers puros y STATUS_META del mock (no se duplican).
 
 import { sql, getActiveOrgId, resolvePublicQuote, resolvePublicInvoice, withOrgTx } from './db';
-import { currentUserId, currentOrgIdOverride, currentLocale, setRequestCurrency, setRequestLocale } from './context';
+import { currentUserId, currentOrgIdOverride, currentLocale, currentTimeZone, setRequestCurrency, setRequestLocale, setRequestTimeZone } from './context';
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
 import { notifyQuoteEvent } from './notify';
@@ -17,7 +17,8 @@ import { after } from './after';
 import { trackServer } from './posthog-server';
 import { decryptSecret } from './crypto-secret';
 import { normalizeCurrency } from './currency';
-import { taxKindLabel } from './countries';
+import { getCountryProfile, taxKindLabel } from './countries';
+import { fmtDate, fmtRelative, intlLocale } from './fmt-server';
 import { calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { dueDateFor, venceDia } from './cobros';
 import type { PublicViewer } from './public-viewer';
@@ -43,25 +44,10 @@ const TERM_LABEL: Record<string, MockQuote['terminos']> = {
 };
 const termLabel = (t: string | null) => TERM_LABEL[t ?? 'contado'] ?? 'Contado';
 
-const fmtDate = (d: string | Date | null) => {
-    if (!d) return '—';
-    const date = typeof d === 'string' ? new Date(d) : d;
-    return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
-        .format(date).replace('.', '');
-};
-
-const fmtRelative = (d: string | Date) => {
-    const date = typeof d === 'string' ? new Date(d) : d;
-    const now = new Date();
-    const hhmm = new Intl.DateTimeFormat('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
-    const sameDay = date.toDateString() === now.toDateString();
-    const yest = new Date(now); yest.setDate(now.getDate() - 1);
-    const isYest = date.toDateString() === yest.toDateString();
-    if (sameDay) return `hoy, ${hhmm}`;
-    if (isYest) return `ayer, ${hhmm}`;
-    const md = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(date).replace('.', '');
-    return `${md}, ${hhmm}`;
-};
+// El formato de fecha vive en lib/fmt-server.ts: lee el locale Y la zona
+// horaria del request. Aquí estaban clavados en 'es-MX' y sin zona, así que un
+// negocio en Londres leía fechas mexicanas y uno en Tokio las leía con un día
+// de diferencia respecto al suyo.
 
 // ── ORG ─────────────────────────────────────────────────────────────────────
 const PLAN_LABEL: Record<string, string> = { free: 'Gratis', starter: 'Starter', basico: 'Básico', pro: 'Profesional', scale: 'Scale', developer: 'Developer', negocio: 'Negocio', business: 'Negocio' };
@@ -77,6 +63,7 @@ export async function getOrg() {
     // contexto del request; money() la lee sin recibirla por parámetro.
     setRequestCurrency(o.moneda as string);
     setRequestLocale(o.idioma as string);
+    setRequestTimeZone(o.zona_horaria as string);
     return {
         id: orgId,
         nombre: o.nombre as string,
@@ -114,13 +101,15 @@ export async function getOrg() {
         ivaIncluidoDefecto: (o.iva_incluido_defecto as boolean) ?? false,
         cpFiscal: (o.cp_fiscal as string) ?? '',
         serieFolio: (o.serie_folio as string) ?? '',
-        zonaHoraria: (o.zona_horaria as string) || 'America/Mexico_City',
+        // Respaldo desde el PERFIL DEL PAÍS, no desde Ciudad de México: una
+        // cuenta sin zona capturada debe caer a la suya, no a la mexicana.
+        zonaHoraria: (o.zona_horaria as string) || getCountryProfile(String(o.country_code || 'MX')).timeZone,
         // Solo el booleano (nunca la llave) — para que la UI pueda avisar cuando
         // el timbrado va a caer a la llave global de prueba en vez del CSD propio.
         tieneCsdPropio: !!(o.facturapi_live_key_enc || o.facturapi_live_key),
         countryCode: (o.country_code as string) || 'MX',
         fiscalMetadata: (o.fiscal_metadata as Record<string, string>) ?? {},
-        idioma: (o.idioma as string) || 'es-MX',
+        idioma: (o.idioma as string) || (getCountryProfile(String(o.country_code || 'MX')).locale.startsWith('es') ? 'es-MX' : 'en-US'),
         colorSecundario: (o.color_secundario as string) || '',
         portalBienvenida: (o.portal_bienvenida as string) ?? '',
         notifPrefs: (o.notif_prefs as Record<string, Record<string, boolean>>) ?? {},
@@ -2901,7 +2890,7 @@ async function getCFOUncached() {
         return date;
     };
     const daysFromToday = (date: Date) => Math.max(1, Math.ceil((date.getTime() - today.getTime()) / MS));
-    const locale = currentLocale() === 'en' ? 'en-US' : 'es-MX';
+    const locale = intlLocale();
     const weekLabel = (index: number) => {
         const from = atOffset(index * 7 + 1);
         const to = atOffset(Math.min(90, index * 7 + 7));
@@ -3137,7 +3126,7 @@ export async function getDashboard() {
 }
 
 // ── EQUIPO Y ROLES ────────────────────────────────────────────────────────────
-const fmtFecha = (d: unknown) => d ? new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d as string)) : '';
+const fmtFecha = (d: unknown) => d ? fmtDate(new Date(d as string)) : '';
 
 export interface MemberRow {
     id: string;

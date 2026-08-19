@@ -204,7 +204,7 @@ export const PATCH: APIRoute = async ({ request }) => {
         ? (SUPPORTED_CURRENCIES.has(String(body.moneda).toUpperCase()) ? String(body.moneda).toUpperCase() : actual.moneda)
         : (monedaHeredada ? perfilNuevo.currency : actual.moneda);
     const zona = body.zona_horaria !== undefined
-        ? (str(body.zona_horaria, 40) || 'America/Mexico_City')
+        ? (str(body.zona_horaria, 40) || perfilNuevo.timeZone)
         : (zonaHeredada ? perfilNuevo.timeZone : actual.zona_horaria);
     // El idioma sigue al país con el mismo criterio que la divisa: se hereda solo
     // si nunca se personalizó. Un país hispanohablante deja la app en español;
@@ -212,8 +212,12 @@ export const PATCH: APIRoute = async ({ request }) => {
     const idiomaDelPais = (code: string) => getCountryProfile(code).locale.startsWith('es') ? 'es-MX' : 'en-US';
     const idiomaHeredado = paisCambio
         && String(actual.idioma || '') === idiomaDelPais(String(actual.country_code || 'MX'));
+    // Vocabulario CERRADO: el idioma decide qué diccionario se sirve y qué
+    // locale usan fechas y montos. Un string libre aquí guardaba 'fr-CA' y
+    // dejaba la app cayendo a español sin que nadie supiera por qué.
+    const IDIOMAS_APP = new Set(['es-MX', 'en-US']);
     const idioma = body.idioma !== undefined
-        ? (str(body.idioma, 10) || 'es-MX')
+        ? (IDIOMAS_APP.has(String(body.idioma)) ? String(body.idioma) : actual.idioma)
         : (idiomaHeredado ? idiomaDelPais(countryCode) : actual.idioma);
     const colorSec = body.color_secundario !== undefined
         ? (String(body.color_secundario) === '' ? null : (HEX.test(String(body.color_secundario).trim()) ? String(body.color_secundario).trim() : actual.color_secundario))
