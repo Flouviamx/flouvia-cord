@@ -29,7 +29,11 @@ manual, changelog ni depósito de decisiones. La documentación canónica vive e
 | Auth, sesiones, equipo o SSO | [`docs/app-rutas.md`](docs/app-rutas.md) + [`docs/historial-auth-clerk.md`](docs/historial-auth-clerk.md) |
 | Schema, queries, RLS o multi-tenant | [`docs/app-rutas.md`](docs/app-rutas.md) + `db/schema.sql` |
 | Billing, planes, cobros, CFDI o Connect | [`docs/negocio-billing.md`](docs/negocio-billing.md) + [`docs/historial-billing-cobros.md`](docs/historial-billing-cobros.md) + contrato ejecutable en `src/lib/entitlements.ts` |
-| Cualquier importe, divisa o tipo de cambio | Reglas 21 y 22 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + contrato ejecutable en `src/lib/currency.ts` y `src/lib/fx/FXService.ts` |
+| Precio de un plan de Cord o su divisa | Reglas 21 y 27 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + contrato ejecutable en `src/lib/plan-currency.ts`, `src/lib/plan-money.ts` y `src/lib/precios.ts` |
+| Superficie de facturación (`billing.cordhq.app`) | Regla 26 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + [`docs/app-rutas.md`](docs/app-rutas.md) + guard en `src/lib/billing-surface.ts` |
+| Cualquier importe, divisa o tipo de cambio del CLIENTE | Reglas 21 y 22 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + contrato ejecutable en `src/lib/currency.ts` y `src/lib/fx/FXService.ts` |
+| Impuestos, retenciones, zona horaria o rieles de cobro por país | Reglas 23 y 24 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + contrato ejecutable en `src/lib/impuestos.ts`, `src/lib/impuestos-db.ts`, `src/lib/countries.ts`, `src/lib/fmt-server.ts` y `src/lib/payout-fields.ts` |
+| Cord Invoicing (facturas, recordatorios, recurrencia, cobranza) | Regla 25 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + [`docs/negocio-billing.md`](docs/negocio-billing.md) + `src/lib/fiscal/` |
 | API pública, MCP, webhooks o Elements | [`docs/app-rutas.md`](docs/app-rutas.md) + [`docs/historial-platform-api.md`](docs/historial-platform-api.md) |
 | Cord Ops, seguridad o escala | [`docs/cord-ops.md`](docs/cord-ops.md) + [`docs/historial-infra-hitos.md`](docs/historial-infra-hitos.md) |
 | Analytics o Growth | [`docs/analytics.md`](docs/analytics.md) + historial de app/infra relevante |

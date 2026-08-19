@@ -34,19 +34,23 @@ consulta [`historial-auth-clerk.md`](historial-auth-clerk.md).
 - `external_usage_events` (ago 2026) — telemetría RLS por organización para proveedores con costo variable. Registra proveedor, categoría, operación, unidades, tokens de entrada/salida y estado; nunca prompts, destinatarios, payloads, respuestas, llaves ni secretos. Complementa `uso_periodo`, `api_requests`, `webhook_deliveries` y `cotizacion_cobros` en `/ops/usage`.
 - `productos` — catálogo de cada org
 - `clientes` — a quién se cotiza (con `terminos_default` y `limite_credito`)
-- `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX. `creado_por` (jul 2026, nullable) = `users.id` de quien la creó/duplicó — alimenta `/app/desempeno`.
-- `cotizacion_items` — líneas (permite línea libre sin producto; `precio_negociado` opcional)
-- `eventos` — timeline + "tu cliente vio la cotización" (**feature estrella**)
-- `documentos_fiscales` — fuente canónica de las emisiones fiscales por país (reemplaza a la tabla legado `facturas_cfdi`). Conserva número, moneda, totales, snapshots inmutables de emisor/receptor/líneas, proveedor y llave de idempotencia. México usa el rail CFDI 4.0 de Facturapi; el resto puede emitir una factura comercial propia de Cord sin afirmar envío a la autoridad local.
+- `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX. `creado_por` (jul 2026, nullable) = `users.id` de quien la creó/duplicó — alimenta `/app/desempeno`. `retencion_total`/`retenciones_snapshot` (ago 2026) — retenciones congeladas al crear el documento, ver regla 23.
+- `cotizacion_items` — líneas (permite línea libre sin producto; `precio_negociado` opcional). `tax_rate` (ago 2026, nullable, fracción 0–1) = tasa de ESA línea, snapshot al capturar; `null` = anterior al impuesto por línea (cae a la tasa de la org), `0` = exenta a propósito. Ver regla 23.
+- `impuestos` — catálogo de tasas por organización. `kind` (`consumo|retencion|exento`, ago 2026) es la clasificación NEUTRA que decide la aritmética; `tipo` es el subcódigo local que solo México usa para el CFDI. `TAX_PRESETS` en `src/lib/countries.ts` siembra las tasas estándar del país al crear la cuenta (US y BR sin preset a propósito). Constructor único de opciones en `src/lib/impuestos.ts` (`buildTaxOptions`); resolutor/validador de servidor en `src/lib/impuestos-db.ts` (`taxCatalogFor`). Ver regla 23.
+- `eventos` — timeline + "tu cliente vio la cotización" (**feature estrella**). `documento_id` (ago 2026, nullable) — mismo timeline para facturas independientes; ver `src/lib/fiscal/timeline.ts`. Regla 19: la vista se registra solo con actor `client` y solo la primera vez.
+- `documentos_fiscales` — fuente canónica de las emisiones fiscales por país (reemplaza a la tabla legado `facturas_cfdi`). Conserva número, moneda, totales, snapshots inmutables de emisor/receptor/líneas, proveedor y llave de idempotencia. México usa el rail CFDI 4.0 de Facturapi; el resto puede emitir una factura comercial propia de Cord sin afirmar envío a la autoridad local. `retencion_total`/`retenciones_snapshot` y `recurrencia_id` (ago 2026, ver `documento_recurrencias` abajo).
 - `invoice_sequences` — consecutivo atómico por `org_id + country_code + document_type`; RLS + FORCE evita cruces entre organizaciones y la llave única de `documentos_fiscales` evita duplicar una emisión por cotización.
+- `documento_recordatorios` (ago 2026) — escalera de cobranza de una factura. Unicidad `(documento_id, etapa)`: cada etapa (`orgs.recordatorio_etapas`, default `-7,-1,3,7,14,30`) se manda UNA vez sin importar cuántas veces corra el cron. Se registra ANTES de mandar y se libera si el envío falla — al revés, un fallo entre el envío y la escritura repite el cobro.
+- `documento_recurrencias` (ago 2026) — facturas recurrentes: guarda QUÉ se factura (`lineas_snapshot`, cadencia, día del mes topado en 28, días de crédito, `next_run_at`). Cada emisión congela sus propios importes; cambiar un precio del catálogo no reescribe lo ya emitido. Motor en `src/lib/fiscal/recurrencias.ts`, cron diario `/api/cron/recurrencias`. `next_run_at` avanza ANTES de emitir. Gate `recurring_invoices` en Pro.
+- `cuentas_por_cobrar` (vista, ago 2026) — une cotizaciones y facturas con una forma común (`origen`, `saldo`, `vence`, `dias_vencido`) para que el agente de cobranza IA, el cron de intereses y el estado de cuenta del cliente consulten un solo lugar. Una cotización con factura abierta aparece solo como factura. Ver regla 25.
 - `org_members` — equipo multi-usuario (rol, permisos JSON, estado y token de invitación); identidad mediante `user_id → users.id`
 - `tareas` — recordatorios CRM del vendedor
 - `audit_log` — registro inmutable de acciones (logAudit/reqIp)
 - `api_keys` — llaves API públicas (hash SHA-256, mode test|live, scope read|write, **type secret|publishable** jul 2026 — ver "Cord Elements: llaves pk_/sk_" en historial.md)
 - `webhooks` — endpoints salientes (HMAC-sha256; salud/auto-desactivación y rotación de secreto con solape — ver `webhook_events` abajo y "Webhooks salientes llevados a nivel Stripe" en `historial-platform-api.md`)
 - `webhook_events` (jul 2026) — outbox DURABLE de webhooks: una fila por evento lógico × endpoint suscrito, `payload` inmutable, calendario de reintentos con backoff exponencial (11 intentos en ~3.6 días). RLS con carril de sistema (`app.scope='system'`) para el claim cross-org del sweeper — ver `withSystemTx` en `db.ts`.
-- `intereses_moratorios` — cargos mensuales de interés moratorio por cotización (cron día 1; idempotente por cotizacion_id+periodo)
-- `promesas_pago` — promesa de pago del cliente para una fecha (cobranza; seguimiento manual, no automatiza). `productos.precios_volumen jsonb` = matriz de precios por volumen `[{min,precio}]`
+- `intereses_moratorios` — cargos mensuales de interés moratorio sobre los DOS rieles (ago 2026, vía `cuentas_por_cobrar`; antes solo cotizaciones). `documento_id` nullable junto a `cotizacion_id`, unicidad por riel. Se calcula sobre el SALDO, no sobre el total — un cliente con 80% abonado no paga interés sobre el 100%. Cron día 1.
+- `promesas_pago` — promesa de pago del cliente para una fecha (cobranza; seguimiento manual, no automatiza). `documento_id` nullable (ago 2026) junto a `cotizacion_id`. `productos.precios_volumen jsonb` = matriz de precios por volumen `[{min,precio}]`
 - `cotizacion_cobros` (jul 2026) — cobros por "rebanadas" de una cotización (`tipo`: total|anticipo|saldo|cuota), cada uno con su propio PaymentIntent de Stripe. RLS por `org_id` O `public_token` + FORCE. Columnas nuevas relacionadas: `cotizaciones.anticipo_pct` (% de anticipo, null = sin anticipo) y `orgs.anticipo_default_pct` (default del negocio). Ver "Cobros por términos de crédito + Anticipo/Saldo + Cuotas" en `negocio-billing.md`. ⚠️ Fechas `date` de la BD se comparan SIEMPRE con `venceDia()` (`src/lib/cobros.ts`), nunca `String(v).slice(0,10)` (Neon devuelve DATE como objeto Date).
 - `cotizacion_suscripciones` (jul 2026) — una fila por cotización marcada `cotizaciones.es_recurrente` (iguala/retainer mensual). Guarda `stripe_subscription_id/customer_id/price_id/product_id` (todos en la cuenta CONECTADA del vendedor, no en la de plataforma), `estado` (incomplete|active|past_due|canceled), `current_period_end`. RLS por `org_id` O `public_token` + FORCE. La cotización recurrente **nunca** llega a `status='paid'` — su ingreso mensual se registra como fila `'cuota'` en `cotizacion_cobros` y se refleja aparte en `getCobros()`. Ver "Cobros recurrentes — igualas/retainers vía Stripe Subscriptions" en `negocio-billing.md` e "Historial" para el detalle completo (incluye 2 bugs de auditoría ya corregidos: igualas tratadas como cartera vencida, y condición de carrera al crear la Subscription).
 
@@ -95,14 +99,51 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    public/embed.js. export const prerender = false.
 
 # Dev Blog (Subdominio dev.cordhq.app)
-/dev-blog/*      → El ecosistema técnico para desarrolladores. Vercel.json gestiona un
-                   rewrite para que las visitas a `dev.cordhq.app` carguen esta ruta 
-                   invisiblemente, y redirects para que accesos a `cordhq.app/dev-blog`
-                   redirijan forzosamente a `dev.cordhq.app`. Los artículos viven en
+/dev-blog/*      → El ecosistema técnico para desarrolladores. El rewrite de host lo
+                   hace ÚNICAMENTE `src/middleware.ts` (`SUBDOMAINS`), no vercel.json:
+                   las visitas a `dev.cordhq.app` cargan esta ruta invisiblemente y los
+                   accesos a `cordhq.app/dev-blog` redirigen a `dev.cordhq.app`. Los artículos viven en
                    `src/content/dev-blog/` (Astro Content Collections) y las vistas en
                    `src/pages/dev-blog/` (`index.astro`, `blog.astro`, `[slug].astro`).
                    Usa el layout 100% independiente `DevBlogLayout.astro` con estética
                    pixel/dark-mode.
+
+# Facturación de la suscripción (Subdominio billing.cordhq.app · ago 2026)
+# Superficie propia, FUERA del chrome de la app: sustituye por completo al Customer
+# Portal del procesador. Ver reglas 26 y 27 de estandares-ingenieria.md.
+/billing         → src/pages/billing/index.astro sobre BillingLayout.astro (layout
+                   independiente, sin sidebar ni topbar, noindex). Suscripción en vivo,
+                   tarjetas, comprobantes, CFDI del pago, datos fiscales y cancelar.
+                   Exige sesión; sin ella redirige al login DEL APEX.
+/billing/entrar  → única ruta sin sesión del subdominio. Canjea el token de traspaso
+                   por una sesión propia de este host. Un solo uso, 90 s.
+                   En PROD, todo /billing responde 404 fuera de billing.cordhq.app.
+
+/api/billing/handoff       GET    emite el token de traspaso (vive en el APEX)
+/api/billing/subscription  GET    la suscripción tal como Stripe la va a cobrar.
+                                  NO deriva de orgs.plan: esa columna es la proyección
+                                  de entitlements y con 100% de descuento dice 'free'
+                                  sobre una suscripción viva.
+/api/billing/methods       GET    tarjetas guardadas + cuál es la predeterminada
+                           POST   SetupIntent para dar de alta una tarjeta
+/api/billing/methods/[id]  PATCH  predeterminada (customer Y suscripción, las dos)
+                           DELETE detach; rechaza la última con suscripción viva
+/api/billing/invoices      GET    historial de cobros, cada uno con SU divisa
+/api/billing/invoices/[id]/pdf  GET  proxy del comprobante (no se enlaza al proveedor)
+/api/billing/datos         GET/PATCH  datos del customer + tax id; etiqueta por país
+/api/billing/cancelar      POST   cancel_at_period_end; { reanudar: true } lo revierte
+/api/billing/pagar         POST   liquida la factura abierta cuando hay past_due
+/api/billing/factura       GET/POST  CFDI del pago de suscripción (solo México)
+/api/billing/portal        POST   ESCAPE DE SOPORTE. Sin superficie: ninguna UI enlaza
+                                  aquí y ninguna debe volver a hacerlo.
+/api/geo                   GET    país por IP (x-vercel-ip-country). Sugerencia de
+                                  presentación para /precios y onboarding, nunca
+                                  autorización. Público (PUBLIC_API_EXACT).
+
+Guard común: src/lib/billing-surface.ts. Cada endpoint recibe un id de objeto de
+Stripe DESDE EL CLIENTE, así que `fetchOwned()` exige pertenencia al customer de la
+org activa y devuelve 404 —no 403— cuando el dueño es otro: confirmar que un id
+existe pero es ajeno ya es filtrar entre negocios.
 
 # App — CONECTADA a Neon (src/lib/queries.ts); usa AppLayout.astro
 /login /registro → formularios propios de acceso y alta; email/password + OAuth nativo
@@ -150,6 +191,12 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                            IMPORTACIÓN CSV (botón → modal archivo/mapeo/preview →
                            POST /api/productos/import [dedupe por SKU] y
                            /api/clientes/import [dedupe por RFC/empresa]).
+/app/clientes/[id]        → ficha con ESTADO DE CUENTA (ago 2026, antes del
+                           historial de cotizaciones): saldo total, vencido,
+                           atraso máximo y bandas de antigüedad (corriente,
+                           1–30, 31–60, 61–90, 90+), leídas de
+                           `cuentas_por_cobrar` — el mismo saldo que persigue la
+                           cobranza. `getEstadoCuentaCliente()` en queries.ts.
 /app/productos/kits       → (jul 2026) sub-pestaña de Productos (page-tabs
                            Catálogo|Kits, NO Ajustes): Kits de cotización — paquetes
                            pre-armados de renglones para insertar de un clic en el
@@ -178,6 +225,40 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    • Tu cuenta: **cuenta** → monta `CustomUserProfile` propio (perfil,
                      sesiones, 2FA, passkeys y cuentas conectadas — identidad del
                      usuario, distinta de los datos del negocio).
+
+/app/facturas            → bandeja de facturas (`documentos_fiscales`, ago 2026).
+                   Paginada por CURSOR en servidor. Casillas + barra de acciones
+                   para ENVÍO MASIVO (hasta 50 por tanda) vía POST
+                   /api/facturas/bulk — el servidor vuelve a filtrar qué es
+                   enviable (emitida + open|uncollectible), la UI no autoriza.
+                   Enlaza a /app/facturas/recurrentes.
+/app/facturas/nueva      → EL EDITOR de facturas — impuesto por línea desde el
+                   catálogo de la org (`buildTaxOptions`), retenciones que se
+                   restan del total, vocabulario fiscal del país del emisor
+                   (`getCountryProfile().taxLabel`/`taxIdLabel`). Módulo
+                   bundleado (no `is:inline`): importa `calculateDocumentTotals`
+                   de `packages/elements/src/engine.ts`, el MISMO motor que
+                   calcula el servidor.
+/app/facturas/[id]       → detalle + ACCIONES REALES (emitir, enviar, registrar
+                   pago manual, anular, nota de crédito) + timeline propio
+                   (`eventos.documento_id`, ver `src/lib/fiscal/timeline.ts`) +
+                   botón "Repetir cada mes" → POST /api/recurrencias con
+                   `fromDocumentoId` (copia el snapshot inmutable de líneas, no
+                   el catálogo, que pudo cambiar de precio).
+/app/facturas/recurrentes → (ago 2026) lista de `documento_recurrencias`: pausar/
+                   reanudar/eliminar. Pausar se permite SIEMPRE, incluso sin
+                   plan — un downgrade no puede dejar a alguien sin poder
+                   detener un cargo automático. Crear vive en el botón "Repetir
+                   cada mes" de una factura ya emitida, no aquí.
+/i/[token]       → hosted invoice page — saldo, historial de pagos, PDF/XML,
+                   pago con tarjeta (Stripe Elements) con REUTILIZACIÓN del
+                   PaymentIntent vivo de la factura, y ABONO PARCIAL (ago 2026):
+                   el monto lo propone el cliente y el servidor lo acota contra
+                   el saldo real y el piso del proveedor
+                   (POST /api/i/[token]/payment-intent con `{monto}` opcional).
+                   Solo tarjeta — SPEI es un riel de México y liquida solo MXN.
+                   Mismo tratamiento de actor que /q (regla 19): la vista se
+                   marca solo la primera vez y solo si el actor es cliente.
 /q/[token]       → vista PÚBLICA — aprobar/rechazar REALES via POST /api/q/[token]
                    (token = secreto, sin auth); muestra estado si ya se decidió;
                    "Descargar PDF" = window.print con @media print; color de marca
@@ -331,6 +412,26 @@ para que `getActiveOrgId()` pueda hacer bootstrap. El link público usa
                    cotización sent/viewed cuya vigencia ya pasó (antes ningún código
                    path escribía ese status); registra evento interno + audit log +
                    dispara el webhook quote.expired.
+/api/cron/recurrencias → (ago 2026) emite las facturas recurrentes que ya tocan
+                   (`src/lib/fiscal/recurrencias.ts`). `next_run_at` avanza ANTES
+                   de emitir — al revés, un fallo a medio camino deja la
+                   recurrencia elegible otra vez y el cliente recibe la misma
+                   factura dos veces. El gate de plan se evalúa EN CADA CORRIDA,
+                   no solo al crear.
+/api/cron/recordatorios → escalera de cobranza de facturas (ago 2026, antes un
+                   correo en una ventana de 5 días). Cadencia configurable por
+                   org (`orgs.recordatorio_etapas`); dedup real en
+                   `documento_recordatorios`, no en el calendario.
+/api/cron/intereses → intereses moratorios sobre los DOS rieles (ago 2026, vía
+                   `cuentas_por_cobrar`), calculados sobre el SALDO.
+/api/recurrencias → CRUD de `documento_recurrencias`. POST admite
+                   `{fromDocumentoId}` para crear desde una factura ya emitida
+                   (copia su `line_items_snapshot`, traduciendo el vocabulario
+                   del documento fiscal al del borrador). PATCH `{activa}` no
+                   exige plan — pausar siempre se permite.
+/api/facturas/bulk → POST `{action:'send', ids:[...]}`, envío secuencial
+                   (nunca en paralelo — el proveedor de correo limita), hasta 50
+                   por tanda. Reporta cuántas NO se enviaron y por qué.
 
 # Entorno de PRUEBA (jul 2026 — ver "Entorno de prueba REAL tipo Stripe" en historial.md)
 /api/test-mode/reset → POST "Vaciar datos de prueba" (interna, requiere sesión). Solo opera si
@@ -370,6 +471,11 @@ usa), `retencion_isr_pct`/`retencion_iva_pct`/`texto_legal`, `sitio_web`/`whatsa
 y fiscales SAT `regimen_fiscal`/`uso_cfdi`/`cp_fiscal`/`serie_folio` (catálogos en
 `src/lib/sat.ts`). ⚠️ **El IVA ahora se respeta de verdad**: el editor y
 `POST /api/cotizaciones` calculan con `orgs.iva_pct` (antes estaba hardcodeado 16%).
+**Superseded ago 2026:** `orgs.iva_pct` quedó como respaldo de compatibilidad; la
+fuente real es el catálogo `impuestos` con tasa **por línea** — ver `eventos` y
+regla 23 arriba, y `retencion_isr_pct`/`retencion_iva_pct` se leen del catálogo
+en vez de capturarse aparte (`/app/ajustes/cotizaciones` ahora los muestra en
+modo lectura con link a Impuestos).
 Medidor de uso real del plan en `getPlanUsage()`. **Jun 2026 (API/Webhooks):** tabla
 `api_keys` (`org_id`, `key_hash` SHA-256, `mode` test|live, `scope` read|write, `label`,
 `last_used_at`, `revoked`); tabla `webhooks` (`org_id`, `url`, `eventos` jsonb, `secret`
@@ -408,5 +514,18 @@ viven en la sección `.sb-mobile-actions` dentro del drawer (oculta en desktop).
 ⚠️ Estilos de contenido inyectado por JS (Cmd+K items, notif panel, toasts, pins)
 DEBEN vivir en `<style is:global>` — Astro scopea por `[data-astro-cid]` y el HTML
 dinámico no lleva ese atributo. NO moverlos al bloque `<style>` scopeado.
+
+**Idioma en las islas de React (ago 2026):** una isla de cliente (`client:load`/
+`client:only`) NUNCA importa `src/i18n/app.ts` — pesa ~373 KB y mandarlo al
+navegador de quien menos lo necesita (el cliente del vendedor, en `PaymentIsland`)
+es el ejemplo real que originó la regla. El patrón: la página `.astro` resuelve
+los textos con `t(L, …)` en servidor y los pasa como prop `strings`/`locale`, o la
+isla declara su propio diccionario local `{ es: {...}, en: {...} }` cuando sus
+textos no se comparten con ninguna página (`ConnectCustomOnboarding.tsx`,
+`CustomOrgSwitcher.tsx`, `CreateWorkspaceModal.tsx`, `CustomUserProfile.tsx`,
+`IdentityCaptureMobile.tsx`). El alta de cobros (`ConnectCustomOnboarding`)
+además dejó de asumir México: el vocabulario SAT/RFC/INE y los 32 estados solo
+se muestran cuando `org.countryCode === 'MX'`; fuera de México usa
+`getCountryProfile()` y campos libres.
 
 ---

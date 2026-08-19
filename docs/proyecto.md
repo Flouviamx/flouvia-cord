@@ -93,6 +93,15 @@ Los scripts especializados de seguridad y operación se descubren en
   repositorio.
 - Las referencias históricas a Clerk se conservan en
   `historial-auth-clerk.md`, pero no describen una dependencia vigente.
+- Internacionalización real (ago 2026): `orgs.idioma` sirve español e inglés en
+  toda la app interna, `/q` y los correos transaccionales — el selector de
+  Ajustes ya no dice "próximamente". `orgs.zona_horaria` tiene consumidor real
+  vía `src/lib/fmt-server.ts`. Los impuestos son por línea y por país
+  (`TAX_PRESETS` en `src/lib/countries.ts` siembra ~35 países al crear la
+  cuenta) y las cuentas de depósito usan el formato del país
+  (`src/lib/payout-fields.ts`: CLABE, IBAN, routing+account, sort code, transit,
+  BSB). Detalle en `negocio-billing.md` y reglas 23–25 de
+  `estandares-ingenieria.md`.
 
 ## Configuración
 
@@ -131,6 +140,13 @@ Neon se recomienda provisionar desde Vercel Marketplace para recibir un
 
 - Plataforma: Vercel, proyecto independiente de `flouvia.com`.
 - Producción: `cordhq.app`; el DNS apunta a Vercel.
+- Subdominios, todos servidos por el MISMO proyecto y ruteados exclusivamente
+  desde `SUBDOMAINS` en `src/middleware.ts` (nunca desde `vercel.json`):
+  `dev.` (dev-blog), `docs.` (documentación), `ops.` (Cord Ops) y
+  `billing.` (facturación de la suscripción, ago 2026). Cada uno necesita darse
+  de alta como dominio del proyecto en Vercel y su CNAME en DNS.
+- `billing.cordhq.app` no comparte la cookie de sesión con el apex: la recibe por
+  traspaso de un solo uso. Ver regla 26 de `estandares-ingenieria.md`.
 - Adaptador: SSR.
 - La landing y otras páginas explícitas pueden usar `prerender: true`.
 - Toda nueva ruta API debe declarar `export const prerender = false`.
