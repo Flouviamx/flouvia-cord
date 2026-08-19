@@ -2913,3 +2913,60 @@ alter table promesas_pago add constraint chk_promesas_origen
 alter table cobranza_exclusiones drop constraint if exists cobranza_exclusiones_target;
 alter table cobranza_exclusiones add constraint cobranza_exclusiones_target
   check (cliente_id is not null or cotizacion_id is not null or documento_id is not null);
+
+-- ── Facturas recurrentes ────────────────────────────────────────────────────
+-- La recurrencia solo existía como iguala DE COTIZACIÓN
+-- (`cotizacion_suscripciones`): el cliente autorizaba un cargo mensual sobre el
+-- link de la propuesta. Eso sirve para un retainer que se vende una vez, no para
+-- un negocio que factura lo mismo cada mes a treinta clientes — ese tenía que
+-- volver a capturar cada factura a mano, cada mes.
+--
+-- La plantilla de líneas se guarda como snapshot: la recurrencia describe QUÉ se
+-- factura, y cada emisión congela sus propios importes e impuestos. Cambiar un
+-- precio del catálogo no debe reescribir las facturas ya emitidas.
+create table if not exists documento_recurrencias (
+  id                uuid        primary key default gen_random_uuid(),
+  org_id            uuid        not null references orgs(id) on delete cascade,
+  cliente_id        uuid        not null references clientes(id) on delete cascade,
+  nombre            text        not null,
+  lineas_snapshot   jsonb       not null default '[]'::jsonb,
+  currency          text        not null default 'MXN',
+  notas             text,
+  -- mensual | trimestral | anual. Un intervalo libre en días invita a cadencias
+  -- que ningún calendario contable reconoce.
+  cadencia          text        not null default 'mensual',
+  -- Día del mes de emisión (1–28). Se topa en 28 a propósito: un "31" se salta
+  -- febrero en silencio, y una factura que no se emite no se cobra.
+  dia_mes           int         not null default 1,
+  -- Días de crédito que se suman a la fecha de emisión para el vencimiento.
+  dias_credito      int         not null default 0,
+  next_run_at       date        not null,
+  end_date          date,
+  activa            boolean     not null default true,
+  -- Cobro automático con el método guardado del cliente. Sin él, la recurrencia
+  -- solo EMITE y ENVÍA: sigue siendo útil, y no promete un cargo que no puede hacer.
+  autopay           boolean     not null default false,
+  stripe_payment_method_id text,
+  stripe_customer_id       text,
+  ultima_emision_at timestamptz,
+  ultimo_error      text,
+  created_by        uuid        references users(id) on delete set null,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  constraint chk_recurrencia_cadencia check (cadencia in ('mensual', 'trimestral', 'anual')),
+  constraint chk_recurrencia_dia check (dia_mes between 1 and 28)
+);
+create index if not exists idx_recurrencias_org on documento_recurrencias(org_id, activa, next_run_at);
+-- El barrido del cron cruza organizaciones: necesita el índice sin org_id.
+create index if not exists idx_recurrencias_due on documento_recurrencias(next_run_at) where activa;
+
+alter table documento_recurrencias enable row level security;
+drop policy if exists "rls_documento_recurrencias" on documento_recurrencias;
+create policy "rls_documento_recurrencias" on documento_recurrencias
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table documento_recurrencias force row level security;
+
+-- Trazabilidad: de qué recurrencia salió cada factura.
+alter table documentos_fiscales add column if not exists recurrencia_id uuid references documento_recurrencias(id) on delete set null;
+create index if not exists idx_documentos_recurrencia on documentos_fiscales(recurrencia_id) where recurrencia_id is not null;

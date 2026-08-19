@@ -19,8 +19,12 @@ const check = (condition, message) => { assertions++; assert.ok(condition, messa
 // a Starter para quedar en el mismo peldaño que `cfdi` — mismo carril de
 // facturación electrónica, distinto solo por país. Ver entitlements.ts y
 // docs/negocio-billing.md.
+// `recurring_invoices` (ago 2026) entra en Pro: la recurrencia es lo que
+// convierte la facturación en operación repetible y va con el resto de la
+// cobranza automática, no con el documento suelto.
 const expectedFeatures = {
-  cfdi: 'starter', remove_branding: 'starter', custom_email: 'starter', advanced_forecast: 'starter',
+  cfdi: 'starter', recurring_invoices: 'pro',
+  remove_branding: 'starter', custom_email: 'starter', advanced_forecast: 'starter',
   international_invoicing: 'starter',
   team: 'pro', roles: 'pro', multi_org: 'pro', live_presence: 'pro', quote_attention: 'pro',
   cfo_dashboard: 'pro',

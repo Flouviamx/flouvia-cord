@@ -103,6 +103,8 @@ const METODOS = [
                      montoInvalido: t(L, 'fact.d_monto_invalido'),
                      copiar: t(L, 'fact.d_copiar'),
                      copiado: t(L, 'fact.d_copiado'),
+                     repetirOk: t(L, 'rec.repetir_ok'),
+                     verRecurrentes: t(L, 'rec.ver'),
                  })}>
 
                 <div class="fd-sub">
@@ -187,6 +189,9 @@ const METODOS = [
                             )}
                             {f.estadoFiscal === 'issued' && !f.notaCreditoDe && (
                                 <button type="button" class="fd-btn" data-act="credit_note">{t(L, 'fact.d_nota_credito')}</button>
+                            )}
+                            {f.estadoFiscal === 'issued' && (
+                                <button type="button" class="fd-btn" id="fdRepetir">{t(L, 'rec.repetir')}</button>
                             )}
                         </div>
 
@@ -283,6 +288,24 @@ const METODOS = [
         const T = JSON.parse(raiz.dataset.i18n || '{}');
         const errEl = document.getElementById('fdErr');
         const pagoModal = document.getElementById('fdPagoModal') as HTMLDialogElement | null;
+
+        document.getElementById('fdRepetir')?.addEventListener('click', async (ev) => {
+            const btn = ev.currentTarget as HTMLButtonElement;
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/recurrencias', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fromDocumentoId: id, cadencia: 'mensual', diaMes: 1, diasCredito: 0 }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || T.error);
+                (window as any).cordToast?.(T.repetirOk, 'ok', 4000);
+                location.href = '/app/facturas/recurrentes';
+            } catch (err: any) {
+                (window as any).cordToast?.(err.message || T.error, 'error');
+                btn.disabled = false;
+            }
+        });
 
         const fallar = (msg: string) => {
             if (!errEl) return;

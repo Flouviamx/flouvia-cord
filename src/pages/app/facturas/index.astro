@@ -96,6 +96,7 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </a>
             </form>
+            <a class="fac-rec-link" href="/app/facturas/recurrentes">{t(L, 'rec.ver')}</a>
         </div>
     )}
 
@@ -226,6 +227,16 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
 </AppLayout>
 
 <style>
+    /* Acceso a las recurrentes desde la bandeja. */
+    .fac-rec-link {
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600;
+        color: var(--color-text-muted); text-decoration: none; white-space: nowrap;
+        border: 1px solid var(--color-border); border-radius: 9px; padding: 8px 13px;
+        transition: border-color 0.25s, color 0.25s;
+    }
+    .fac-rec-link:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
+    @media (max-width: 880px) { .fac-rec-link { min-height: 44px; display: inline-flex; align-items: center; } }
+
     /* Mismo vocabulario que /app/cotizaciones. Va scopeado porque esta página SÍ
        renderiza su propio markup en servidor (Regla 11). */
     .cot-summary { display: flex; flex-wrap: wrap; gap: 2rem; padding: 0 0 1.1rem; margin-bottom: 1.1rem; border-bottom: 1px solid var(--color-border); }

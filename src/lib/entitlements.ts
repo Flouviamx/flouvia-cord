@@ -31,6 +31,7 @@ export function normalizePlan(value: unknown): PlanId {
 
 export type FeatureKey =
     | 'cfdi'
+    | 'recurring_invoices'
     | 'remove_branding'
     | 'custom_email'
     | 'advanced_forecast'
@@ -62,6 +63,9 @@ export type FeatureKey =
  * horizontal). Ver docs/negocio-billing.md. */
 export const FEATURE_MIN_PLAN: Record<FeatureKey, PaidPlan> = {
     cfdi: 'starter',
+    // La recurrencia es lo que convierte la facturación en operación repetible:
+    // vive con el resto de la cobranza automática, no con el documento suelto.
+    recurring_invoices: 'pro',
     remove_branding: 'starter',
     custom_email: 'starter',
     advanced_forecast: 'starter',
@@ -92,6 +96,7 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PaidPlan> = {
 // consumidores en BD, cron, API pública y MCP.
 export const FEATURE_LABEL: Record<FeatureKey, string> = {
     cfdi: 'Cord Invoicing',
+    recurring_invoices: 'Facturas recurrentes',
     remove_branding: 'Quitar la marca de Cord',
     custom_email: 'Personalización de correos',
     advanced_forecast: 'Pronóstico y margen cedido',

@@ -1,0 +1,221 @@
+---
+// /app/facturas/recurrentes — las facturas que Cord emite solo.
+//
+// La recurrencia solo existía como iguala DE COTIZACIÓN: el cliente autorizaba
+// un cargo mensual sobre el link de la propuesta. Eso resuelve un retainer que
+// se vende una vez; no resuelve un negocio que factura lo mismo cada mes a
+// treinta clientes, que tenía que recapturar cada factura a mano.
+//
+// Mismo arquetipo "lista" que /app/facturas: .t-head/.t-row, .status-pill,
+// .editorial. Crear no se hace aquí: se hace desde una factura que ya salió
+// bien ("Repetir cada mes"), que es como realmente nace una recurrencia.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import AccessGate from '../../../components/app/AccessGate.astro';
+import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
+import { getMyMembership } from '../../../lib/queries';
+import { memberCan, planLabel } from '../../../lib/permissions';
+import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
+import { checkEntitlement } from '../../../lib/org-entitlements';
+import { currentLocale } from '../../../lib/context';
+import { fmtDate } from '../../../lib/fmt-server';
+import { t } from '../../../i18n/app';
+
+export const prerender = false;
+
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
+
+const ME = await getMyMembership();
+const hasPerm = memberCan(ME, 'cobranza');
+const orgId = await getActiveOrgId();
+// Regla 17: el gate se evalúa aquí, no solo en el endpoint. Ocultar el botón
+// nunca fue autorización.
+const gate = hasPerm ? await checkEntitlement(orgId, 'recurring_invoices') : null;
+const hasAccess = !!gate?.ok;
+
+let recurrencias: any[] = [];
+if (hasPerm && hasAccess) {
+    const [rows] = await withOrgTx(orgId, sql`
+        select r.id, r.nombre, r.currency, r.cadencia, r.dia_mes,
+               r.next_run_at, r.end_date, r.activa, r.ultimo_error,
+               cl.empresa as cliente,
+               (select count(*)::int from documentos_fiscales d where d.recurrencia_id = r.id) as emitidas
+          from documento_recurrencias r
+          join clientes cl on cl.id = r.cliente_id
+         where r.org_id = ${orgId}
+         order by r.activa desc, r.next_run_at asc`);
+    recurrencias = rows;
+}
+
+const CADENCIA_LABEL: Record<string, string> = {
+    mensual: t(L, 'rec.mensual'), trimestral: t(L, 'rec.trimestral'), anual: t(L, 'rec.anual'),
+};
+---
+
+<AppLayout title={t(L, 'rec.titulo')} active="facturas">
+    <div class="sec-head">
+        <h1 class="sec-title">{t(L, 'rec.titulo')}</h1>
+        <a class="rec-back" href="/app/facturas">{t(L, 'fact.titulo')} →</a>
+    </div>
+
+    {!hasPerm && <AccessGate title={t(L, 'fact.sin_acceso_titulo')} desc={t(L, 'fact.sin_acceso_desc')} />}
+
+    {hasPerm && !hasAccess && gate && (
+        <Fragment>
+            <AccessGate reason="plan"
+                title={t(L, 'rec.titulo')}
+                desc={tf('fact.plan_desc', {
+                    plan: planLabel(gate.requiredPlan),
+                    current: planLabel(gate.plan),
+                })} />
+            <PlanPaywallModal
+                id="recPlanModal"
+                title={t(L, 'rec.titulo')}
+                desc={tf('fact.plan_desc', {
+                    plan: planLabel(gate.requiredPlan),
+                    current: planLabel(gate.plan),
+                })}
+                requiredPlan={gate.requiredPlan}
+            />
+        </Fragment>
+    )}
+
+    {hasPerm && hasAccess && (
+        <div class="rec" data-i18n-del-titulo={t(L, 'rec.eliminar_titulo')}
+             data-i18n-del-body={t(L, 'rec.eliminar_body')}
+             data-i18n-del-ok={t(L, 'rec.eliminar')}>
+            <p class="rec-intro">{t(L, 'rec.intro')}</p>
+
+            {recurrencias.length === 0 ? (
+                <p class="rec-empty">{t(L, 'rec.vacio')}</p>
+            ) : (
+                <div class="rec-table">
+                    <div class="t-head rec-row">
+                        <span>{t(L, 'rec.cliente')}</span>
+                        <span>{t(L, 'rec.cadencia')}</span>
+                        <span>{t(L, 'rec.proxima')}</span>
+                        <span class="rec-num">{t(L, 'rec.emitidas')}</span>
+                        <span>{t(L, 'rec.estado')}</span>
+                        <span></span>
+                    </div>
+                    {recurrencias.map((r) => (
+                        <div class="t-row rec-row" data-id={r.id}>
+                            <span class="rec-name">
+                                <strong>{r.cliente}</strong>
+                                <small>{r.nombre}</small>
+                                {r.ultimo_error && <small class="rec-err">{t(L, 'rec.error_ultima')}: {r.ultimo_error}</small>}
+                            </span>
+                            <span>
+                                {CADENCIA_LABEL[r.cadencia] ?? r.cadencia}
+                                <small class="rec-dia">{tf('rec.dia', { n: String(r.dia_mes) })}</small>
+                            </span>
+                            <span class="editorial">{fmtDate(r.next_run_at)}</span>
+                            <span class="rec-num editorial">{r.emitidas}</span>
+                            <span>
+                                <span class={`status-pill ${r.activa ? 'is-ok' : 'is-off'}`}>
+                                    {r.activa ? t(L, 'rec.activa') : t(L, 'rec.pausada')}
+                                </span>
+                            </span>
+                            <span class="rec-acts">
+                                <button type="button" class="rec-btn" data-toggle={r.id} data-activa={r.activa ? '1' : '0'}>
+                                    {r.activa ? t(L, 'rec.pausar') : t(L, 'rec.reanudar')}
+                                </button>
+                                <button type="button" class="rec-btn rec-btn-danger" data-del={r.id}>{t(L, 'rec.eliminar')}</button>
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    )}
+</AppLayout>
+
+<script>
+    const raiz = document.querySelector('.rec') as HTMLElement | null;
+    if (raiz) {
+        const M = raiz.dataset;
+        const patch = async (body: Record<string, unknown>) => {
+            const res = await fetch('/api/recurrencias', {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Error');
+        };
+
+        raiz.querySelectorAll('[data-toggle]').forEach((b) => b.addEventListener('click', async () => {
+            const el = b as HTMLButtonElement;
+            el.disabled = true;
+            try {
+                await patch({ id: el.dataset.toggle, activa: el.dataset.activa !== '1' });
+                location.reload();
+            } catch (err: any) {
+                (window as any).cordToast?.(err.message, 'error');
+                el.disabled = false;
+            }
+        }));
+
+        raiz.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
+            const el = b as HTMLButtonElement;
+            const ok = await (window as any).cordConfirm({
+                title: M.i18nDelTitulo, body: M.i18nDelBody, danger: true, confirmText: M.i18nDelOk,
+            });
+            if (!ok) return;
+            el.disabled = true;
+            try {
+                const res = await fetch('/api/recurrencias', {
+                    method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: el.dataset.del }),
+                });
+                if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Error');
+                (el.closest('.t-row') as HTMLElement)?.remove();
+            } catch (err: any) {
+                (window as any).cordToast?.(err.message, 'error');
+                el.disabled = false;
+            }
+        }));
+    }
+</script>
+
+<style>
+    .rec-back { font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; }
+    .rec-back:hover { color: var(--color-blue-deep); }
+    .rec-intro { font-size: 0.86rem; color: var(--color-text-muted); line-height: 1.55; max-width: 68ch; margin: 0 0 1.6rem; }
+    .rec-empty { font-size: 0.86rem; color: var(--color-text-muted); line-height: 1.55; max-width: 62ch; padding: 2.5rem 0; }
+    .rec-row {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) 1fr 1fr 80px 110px auto;
+        gap: 1rem; align-items: center;
+    }
+    .rec-name { display: flex; flex-direction: column; min-width: 0; }
+    .rec-name strong { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
+    .rec-name small, .rec-dia { display: block; font-size: 0.72rem; color: var(--color-text-muted); }
+    .rec-err { color: var(--color-danger); }
+    .rec-num { text-align: right; }
+    .rec-acts { display: flex; gap: 0.5rem; justify-content: flex-end; }
+    .rec-btn {
+        font-family: var(--font-sans); font-size: 0.74rem; font-weight: 600;
+        color: var(--color-text-muted); background: none;
+        border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 11px;
+        cursor: pointer; white-space: nowrap; transition: border-color 0.25s, color 0.25s;
+    }
+    .rec-btn:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
+    .rec-btn-danger:hover { border-color: var(--color-danger); color: var(--color-danger); }
+    .status-pill.is-off { color: var(--color-text-muted); background: rgba(0,0,0,0.05); }
+
+    @media (max-width: 880px) {
+        /* Móvil apila, pero no oculta: importes, fechas y estado siguen visibles
+           (regla 16). */
+        .rec-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas: "name state" "cad next" "count acts";
+            gap: 0.5rem 0.8rem; padding: 1rem 0;
+        }
+        .t-head.rec-row { display: none; }
+        .rec-acts { grid-area: acts; }
+        .rec-btn { min-height: 44px; }
+    }
+</style>
