@@ -24,11 +24,11 @@ const allowed = [
     { path: /ConnectCustomOnboarding\.tsx$/, line: /Connected Account Agreement|Acuerdo de Cuenta Conectada de Stripe|stripe\.com\/mx\/connect-account\/legal|términos legales de Stripe|Términos de Servicio de Stripe|Stripe's Terms of Service|Stripe procesa los pagos|Stripe processes payments|procesamiento de pagos provistos por Stripe|payment processing services provided by Stripe|identificación y selfie se envían directamente a Stripe|sent directly to Stripe|acuerdo de Stripe|the Stripe agreement/, reason: 'texto contractual y de privacidad obligatorio de la cuenta conectada (es + en)' },
     { path: /.*/, line: /@stripe\//, reason: 'import técnico del SDK' },
     { path: /.*/, line: /theme\s*:\s*['"]stripe['"]/, reason: 'nombre técnico del preset Appearance' },
-    { path: /src\/i18n\/app\.ts$/, line: /"(?:q\.suscripcion_stripe|set\.plan\.gestion_stripe)"\s*:/, reason: 'clave de traducción legacy; el valor visible ya es white-label' },
-    { path: /.*/, line: /t\([^\n]*['"](?:q\.suscripcion_stripe|set\.plan\.gestion_stripe)['"]/, reason: 'consumo de una clave interna legacy' },
+    { path: /src\/i18n\/app\.ts$/, line: /"(?:q\.suscripcion_stripe)"\s*:/, reason: 'clave de traducción legacy; el valor visible ya es white-label' },
+    { path: /.*/, line: /t\([^\n]*['"](?:q\.suscripcion_stripe)['"]/, reason: 'consumo de una clave interna legacy' },
     { path: /.*/, line: /Stripe-Account|STRIPE_[A-Z_]+|api\.stripe\.com|files\.stripe\.com/, reason: 'API o variable de entorno interna' },
     { path: /.*/, line: /(?:stripe_|stripe[A-Z]|[a-z][A-Za-z0-9]*Stripe|Stripe[A-Z]|\.stripe\b|\bstripe\b|data-[^=\s]*stripe|parts=stripe)/, reason: 'identificador interno no renderizado' },
-    { path: /src\/pages\/app\/checkout\.astro$/, line: /(?:const Stripe|!Stripe|Stripe\(PK\))/, reason: 'constructor global técnico del SDK' },
+    { path: /src\/pages\/(?:app\/checkout|billing\/index)\.astro$/, line: /(?:const Stripe|!Stripe|Stripe\(PK\))/, reason: 'constructor global técnico del SDK; no se renderiza' },
 ];
 
 function isComment(line) {

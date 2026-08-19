@@ -10,6 +10,9 @@ export const prerender = false;
 
 import AppLayout from '../../layouts/AppLayout.astro';
 import { PLANES, precioAnualTotal } from '../../lib/precios';
+import { getActiveOrgId } from '../../lib/db';
+import { platformCurrencyForOrg } from '../../lib/billing';
+import { planMoney, planCycleLabel, planTaxNote } from '../../lib/plan-money';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 
@@ -19,17 +22,22 @@ const tpl = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g,
 const planId = Astro.url.searchParams.get('plan') ?? '';
 const cycle = Astro.url.searchParams.get('cycle') === 'anual' ? 'anual' : 'mensual';
 
+// Divisa de plataforma. Ojo: esta página vive dentro de AppLayout, que publica
+// `<body data-currency>` con la divisa de VENTA del negocio. Son ejes distintos
+// (regla 21) — mezclarlos haría que el mismo DOM afirme dos divisas.
+const CUR = await platformCurrencyForOrg(await getActiveOrgId());
+
 // Validar contra el catálogo (gratis, inexistentes o `custom` no van a checkout
 // — Developer no tiene precio de autoservicio, se contrata hablando con ventas).
-const plan = PLANES.find((p) => p.id === planId && p.precioMensual > 0 && !p.custom);
+const plan = PLANES.find((p) => p.id === planId && p.precio[CUR] > 0 && !p.custom);
 if (!plan) {
     const requested = PLANES.find((p) => p.id === planId);
     if (requested?.custom) return Astro.redirect(requested.ctaHref);
     return Astro.redirect('/app/ajustes/plan');
 }
 
-const money = (n: number) => '$' + new Intl.NumberFormat(L === 'en' ? 'en-US' : 'es-MX').format(n);
-const precio = cycle === 'anual' ? precioAnualTotal(plan.precioMensual) : plan.precioMensual;
+const money = (n: number) => planMoney(n, CUR, L);
+const precio = cycle === 'anual' ? precioAnualTotal(plan.precio[CUR]) : plan.precio[CUR];
 
 const CHK_T = {
     facturacionNoConfig: t(L, 'chk.facturacion_no_config'),
@@ -51,9 +59,9 @@ const CHK_T = {
             <span class="co-eyebrow">{t(L, 'chk.tu_plan')}</span>
             <h2 class="co-name">{plan.nombre}</h2>
             <p class="co-price">
-                <span class="editorial">{money(precio)}</span> MXN / {cycle === 'anual' ? t(L, 'chk.anio') : t(L, 'chk.mes')}
+                <span class="editorial">{money(precio)}</span> {planCycleLabel(CUR, cycle, L)}
             </p>
-            <p class="co-cycle">{cycle === 'anual' ? t(L, 'chk.fact_anual') : t(L, 'chk.fact_mensual')} · {t(L, 'chk.iva_incluido')}</p>
+            <p class="co-cycle">{cycle === 'anual' ? t(L, 'chk.fact_anual') : t(L, 'chk.fact_mensual')} · {planTaxNote(L)}</p>
             <ul class="co-feats">
                 {plan.feats.slice(0, 5).map((f) => (
                     <li><span class="co-check">✓</span> {f}</li>

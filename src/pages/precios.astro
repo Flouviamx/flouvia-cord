@@ -10,6 +10,8 @@ import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import { PLANES as PLANES_ES, COMPARATIVA as COMPARATIVA_ES, FAQ_PRECIOS as FAQ_ES, precioAnualMensualizado } from '../lib/precios';
 import { PLANES_EN, COMPARATIVA_EN, FAQ_PRECIOS_EN } from '../lib/precios.en';
+import { PLATFORM_CURRENCIES, type PlatformCurrency } from '../lib/plan-currency';
+import { planMoney, planCycleLabel } from '../lib/plan-money';
 import { getLangFromUrl } from '../i18n/utils';
 import CordDynamicBg from '../components/CordDynamicBg.jsx';
 
@@ -22,7 +24,13 @@ const isEn = lang === 'en';
 const PLANES = isEn ? PLANES_EN : PLANES_ES;
 const COMPARATIVA = isEn ? COMPARATIVA_EN : COMPARATIVA_ES;
 const FAQ_PRECIOS = isEn ? FAQ_PRECIOS_EN : FAQ_ES;
-const money0 = (n: number) => '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+// La divisa NO se decide por idioma de URL. Un negocio colombiano leyendo en
+// español paga en dólares, y uno mexicano leyendo en inglés paga en pesos: son
+// preguntas distintas (regla 21). La página se prerenderiza con MXN —la divisa
+// que hoy tiene suscripciones— y el script de abajo la corrige antes del primer
+// paint según `localStorage` o el país del visitante.
+const STATIC_CURRENCY: PlatformCurrency = 'MXN';
+const money0 = (n: number, cur: PlatformCurrency) => planMoney(n, cur, lang);
 
 // Título/descripción (jul 2026, auditoría SEO/AI-SEO — mismo criterio que el
 // home): keyword real + precio ancla ("desde $0") + planes correctos (la
@@ -42,7 +50,6 @@ const description = isEn
 // Product+offers es el schema correcto para que Google/IA puedan citar
 // "desde $0" / "planes desde $X" en resultados enriquecidos.
 const SITE = 'https://cordhq.app';
-const currency = isEn ? 'USD' : 'MXN';
 const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -54,19 +61,22 @@ const productSchema = {
     // Los planes `custom` (Developer) no tienen precio de autoservicio — no se
     // publica un precio inventado en datos estructurados. Solo se anuncia el
     // plan; el precio real se negocia por ventas.
-    offers: PLANES.map((p) => ({
+    // Una oferta por plan Y por divisa. Antes se emitía `priceCurrency: 'USD'`
+    // sobre cifras que eran pesos, así que Google indexaba un precio que no
+    // existía. Declarar las dos es lo único cierto: Cord cobra en ambas.
+    offers: PLANES.flatMap((p) => PLATFORM_CURRENCIES.map((cur) => ({
         '@type': 'Offer',
         name: `Cord ${p.nombre}`,
-        priceCurrency: currency,
+        priceCurrency: cur,
         url: p.custom ? `${SITE}${p.ctaHref}` : `${SITE}/registro`,
         description: p.tagline,
         ...(p.custom
             ? {}
             : {
-                price: String(p.precioMensual),
-                ...(p.precioMensual > 0 ? { priceSpecification: { '@type': 'UnitPriceSpecification', price: String(p.precioMensual), priceCurrency: currency, billingDuration: 'P1M' } } : {}),
+                price: String(p.precio[cur]),
+                ...(p.precio[cur] > 0 ? { priceSpecification: { '@type': 'UnitPriceSpecification', price: String(p.precio[cur]), priceCurrency: cur, billingDuration: 'P1M' } } : {}),
             }),
-    })),
+    }))),
 };
 
 // FAQPage — misma fuente (FAQ_PRECIOS) que consume <FaqAccordion /> abajo,
@@ -94,10 +104,15 @@ const faqSchema = {
                 <p class="pp-eyebrow reveal">{isEn ? 'PRICING' : 'PRECIOS'}</p>
                 <h1 class="pr-h1 masked-title" set:html={isEn ? 'Pricing designed to scale your commercial operation.' : 'Precios diseñados para escalar tu operación comercial.'} />
                 <p class="pr-lead reveal">
-                    {isEn ? <Fragment>No contracts. Cancel anytime. Prices in USD. Pay annually and get <b>2 months free</b>.</Fragment> : <Fragment>Sin contratos. Cancela cuando quieras. Precios en pesos, IVA incluido. Paga al año y te llevas <b>2 meses gratis</b>.</Fragment>}
+                    {isEn ? <Fragment>No contracts. Cancel anytime. Taxes included. Pay annually and get <b>2 months free</b>.</Fragment> : <Fragment>Sin contratos. Cancela cuando quieras. Impuestos incluidos. Paga al año y te llevas <b>2 meses gratis</b>.</Fragment>}
                 </p>
 
-                
+                <div class="pr-cur" role="group" aria-label={isEn ? 'Billing currency' : 'Divisa de facturación'}>
+                    {PLATFORM_CURRENCIES.map((cur) => (
+                        <button type="button" class:list={['pr-cur-btn', { 'is-active': cur === STATIC_CURRENCY }]} data-currency-btn={cur} aria-pressed={cur === STATIC_CURRENCY ? 'true' : 'false'}>{cur}</button>
+                    ))}
+                </div>
+                <p class="pr-cur-note">{isEn ? 'Businesses in Mexico are billed in MXN; everywhere else, in USD.' : 'Los negocios en México facturan en MXN; en el resto del mundo, en USD.'}</p>
             </div>
         </section>
 
@@ -105,7 +120,7 @@ const faqSchema = {
         <section class="pr-grid-wrap">
             <div class="pr-grid">
                 {PLANES.map((p) => {
-                    const anual = precioAnualMensualizado(p.precioMensual);
+                    const anual = precioAnualMensualizado(p.precio[STATIC_CURRENCY]);
                     return (
                         <article class:list={['plan reveal', `plan-${p.id}`, { 'plan-featured': p.destacado }]}>
 
@@ -123,15 +138,18 @@ const faqSchema = {
                                         <div class="plan-price">
                                             <span class="editorial plan-amount">{isEn ? 'Custom' : 'A tu medida'}</span>
                                         </div>
-                                    ) : p.precioMensual === 0 ? (
+                                    ) : p.precio[STATIC_CURRENCY] === 0 ? (
                                         <div class="plan-price">
                                             <span class="editorial plan-amount">$0</span>
                                             <span class="plan-cycle">{isEn ? 'forever' : 'siempre'}</span>
                                         </div>
                                     ) : (
-                                        <div class="plan-price" data-monthly={money0(p.precioMensual)} data-annual={money0(anual)}>
-                                            <span class="editorial plan-amount plan-amount-val">{money0(p.precioMensual)}</span>
-                                            <span class="plan-cycle">{isEn ? 'USD / mo' : 'MXN / mes'}</span>
+                                        <div class="plan-price"
+                                            data-monthly={money0(p.precio[STATIC_CURRENCY], STATIC_CURRENCY)} data-annual={money0(anual, STATIC_CURRENCY)}
+                                            data-mxn-monthly={money0(p.precio.MXN, 'MXN')} data-mxn-annual={money0(precioAnualMensualizado(p.precio.MXN), 'MXN')}
+                                            data-usd-monthly={money0(p.precio.USD, 'USD')} data-usd-annual={money0(precioAnualMensualizado(p.precio.USD), 'USD')}>
+                                            <span class="editorial plan-amount plan-amount-val">{money0(p.precio[STATIC_CURRENCY], STATIC_CURRENCY)}</span>
+                                            <span class="plan-cycle" data-cycle-label>{planCycleLabel(STATIC_CURRENCY, 'mensual', lang)}</span>
                                         </div>
                                     )}
                                     <p class="plan-tagline">{p.tagline}</p>
@@ -140,7 +158,7 @@ const faqSchema = {
 
                             {/* ── Body: toggle + CTA + features ── */}
                             <div class="plan-body">
-                                {p.precioMensual > 0 && !p.custom && (
+                                {p.precio[STATIC_CURRENCY] > 0 && !p.custom && (
                                     <div class="plan-billing-toggle">
                                         <label class="toggle-switch">
                                             <input type="checkbox" class="billing-toggle-checkbox" />
@@ -153,10 +171,10 @@ const faqSchema = {
                                 <a
                                     href={p.custom
                                         ? p.ctaHref
-                                        : p.precioMensual === 0
+                                        : p.precio[STATIC_CURRENCY] === 0
                                             ? p.ctaHref
                                             : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
-                                    data-cta-plan={p.custom || p.precioMensual === 0 ? undefined : p.id}
+                                    data-cta-plan={p.custom || p.precio[STATIC_CURRENCY] === 0 ? undefined : p.id}
                                     data-base-href={p.custom ? undefined : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
                                     class="plan-cta plan-cta-solid"
                                 >{p.ctaLabel}</a>
@@ -271,7 +289,7 @@ const faqSchema = {
                             {PLANES.map((p) => (
                                 <th class:list={['pr-th-plan', { 'is-featured': p.destacado }]}>
                                     <b>{p.nombre}</b>
-                                    <span>{p.custom ? (isEn ? 'Custom' : 'A tu medida') : p.precioMensual === 0 ? (isEn ? 'Free' : 'Gratis') : `${money0(p.precioMensual)}${isEn ? '/mo' : '/mes'}`}</span>
+                                    <span data-table-price data-mxn={`${money0(p.precio.MXN, 'MXN')}${isEn ? '/mo' : '/mes'}`} data-usd={`${money0(p.precio.USD, 'USD')}${isEn ? '/mo' : '/mes'}`}>{p.custom ? (isEn ? 'Custom' : 'A tu medida') : p.precio[STATIC_CURRENCY] === 0 ? (isEn ? 'Free' : 'Gratis') : `${money0(p.precio[STATIC_CURRENCY], STATIC_CURRENCY)}${isEn ? '/mo' : '/mes'}`}</span>
                                 </th>
                             ))}
                         </tr>
@@ -309,11 +327,11 @@ const faqSchema = {
                                     <a
                                         href={p.custom
                                             ? p.ctaHref
-                                            : p.precioMensual === 0
+                                            : p.precio[STATIC_CURRENCY] === 0
                                                 ? p.ctaHref
                                                 : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
                                         data-base-href={p.custom ? undefined : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
-                                        data-cta-plan={p.custom || p.precioMensual === 0 ? undefined : p.id}
+                                        data-cta-plan={p.custom || p.precio[STATIC_CURRENCY] === 0 ? undefined : p.id}
                                         class="pr-tfoot-btn pr-tfoot-btn-solid"
                                     >{p.custom ? (isEn ? 'Talk to sales' : 'Hablar con ventas') : (isEn ? 'Get started' : 'Empezar')}</a>
                                     {p.id === 'scale' && (
@@ -373,6 +391,27 @@ const faqSchema = {
     
     .pr-lead { font-size: clamp(1rem, 4vw, 1.1rem); line-height: 1.6; color: var(--color-text-muted); max-width: 560px; margin: 0 auto 2rem; }
     @media (min-width: 860px) { .pr-lead { margin: 0 auto 2.2rem; } }
+
+    /* ── Selector de divisa ──
+       Segmentado sobre fondo gris suave, sin bordes duros: mismo lenguaje que
+       los inputs de la app (contorno navy solo al enfocar). */
+    .pr-cur { display: inline-flex; gap: .25rem; padding: .25rem; border-radius: 999px; background: #f5f5f7; }
+    .pr-cur-btn {
+        appearance: none; border: 0; cursor: pointer;
+        padding: .42rem 1.05rem; border-radius: 999px;
+        font: inherit; font-size: .82rem; font-weight: 600; letter-spacing: .01em;
+        color: var(--color-text-muted); background: transparent;
+        transition: background .18s var(--ease-ios, ease), color .18s var(--ease-ios, ease), transform .12s ease;
+    }
+    .pr-cur-btn:hover { color: var(--color-text, #0f1729); }
+    .pr-cur-btn:active { transform: scale(.97); }
+    .pr-cur-btn:focus-visible { outline: 2px solid rgba(10, 25, 47, .45); outline-offset: 2px; }
+    .pr-cur-btn.is-active {
+        background: #fff; color: #0a192f;
+        box-shadow: 0 1px 2px rgba(10, 25, 47, .09), 0 3px 10px rgba(10, 25, 47, .06);
+    }
+    .pr-cur-note { margin: .7rem auto 0; font-size: .78rem; color: var(--color-text-muted); max-width: 460px; }
+
     .pr-lead b { color: var(--color-text); font-weight: 700; }
 
     /* Toggle mensual/anual (segmented glass) */
@@ -830,6 +869,70 @@ const faqSchema = {
     :global(.pr-faq-acc) { padding: 3rem 5% 7rem; }
     @media (min-width: 860px) { :global(.pr-faq-acc) { padding: 4rem 5% 8rem; } }
 </style>
+
+<script is:inline>
+    // Divisa de los planes. Corre antes del primer paint: `localStorage` es
+    // síncrono, así que un visitante recurrente nunca ve el parpadeo. La primera
+    // visita sí puede repintar una vez, cuando llega el país desde /api/geo —
+    // esa consulta es una SUGERENCIA de presentación, no autorización.
+    (function () {
+        var KEY = 'cord.planCurrency';
+        var VALID = ['MXN', 'USD'];
+
+        function apply(cur, persist) {
+            if (VALID.indexOf(cur) < 0) return;
+            var suffix = cur.toLowerCase();
+            var annual = document.querySelector('.billing-toggle-checkbox');
+            var isAnnual = !!(annual && annual.checked);
+
+            document.querySelectorAll('.plan-price').forEach(function (el) {
+                var m = el.getAttribute('data-' + suffix + '-monthly');
+                var a = el.getAttribute('data-' + suffix + '-annual');
+                if (!m || !a) return;
+                // Se reescriben data-monthly/data-annual para que el toggle
+                // mensual/anual, que ya existía, siga leyendo de un solo lugar.
+                el.setAttribute('data-monthly', m);
+                el.setAttribute('data-annual', a);
+                var val = el.querySelector('.plan-amount-val');
+                if (val) val.textContent = isAnnual ? a : m;
+            });
+
+            document.querySelectorAll('[data-cycle-label]').forEach(function (el) {
+                var en = document.documentElement.lang === 'en';
+                el.textContent = cur + ' / ' + (en ? 'month' : 'mes');
+            });
+
+            document.querySelectorAll('[data-table-price]').forEach(function (el) {
+                var v = el.getAttribute('data-' + suffix);
+                if (v && el.textContent && !/^(Free|Gratis|Custom|A tu medida)$/.test(el.textContent.trim())) el.textContent = v;
+            });
+
+            document.querySelectorAll('[data-currency-btn]').forEach(function (b) {
+                var on = b.getAttribute('data-currency-btn') === cur;
+                b.classList.toggle('is-active', on);
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+
+            if (persist) { try { localStorage.setItem(KEY, cur); } catch (e) {} }
+        }
+
+        var saved = null;
+        try { saved = localStorage.getItem(KEY); } catch (e) {}
+        if (saved) {
+            apply(saved, false);
+        } else {
+            fetch('/api/geo')
+                .then(function (r) { return r.json(); })
+                .then(function (d) { apply(d && d.country === 'MX' ? 'MXN' : 'USD', false); })
+                .catch(function () {});
+        }
+
+        document.addEventListener('click', function (e) {
+            var btn = e.target && e.target.closest ? e.target.closest('[data-currency-btn]') : null;
+            if (btn) apply(btn.getAttribute('data-currency-btn'), true);
+        });
+    })();
+</script>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {

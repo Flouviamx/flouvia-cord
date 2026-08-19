@@ -9,15 +9,21 @@ Cord is a freemium SaaS: you pay a monthly fee to use the platform. Payments han
 
 ### The plans
 
-| Plan | Price (USD/mo) | For whom |
-| :--- | :--- | :--- |
-| **Free** | $0 | Try it: 5 quotes, 50 products/clients, 3 AI drafts per month, "Powered by Cord". |
-| **Starter** | $12 | Solo sellers: 50 quotes, 500 products/clients, 20 AI + 3 CFDI per month, your brand, CSV. |
-| **Professional** | $30 | Teams: unlimited quotes, 5 users, 50 AI + 20 CFDI, live tracking, analytics, audit log. |
-| **Scale** | $70 | Operations: 15 users, 500 AI + 100 CFDI, approvals, collections, custom SMTP. |
-| **Developer** | $150 | Integrate: unlimited users/AI, 1,000 CFDI + 50,000 API per month, cheaper overages. |
+Your currency follows your business's country: **Mexico is billed in pesos (MXN)**,
+everywhere else **in US dollars (USD)**. That's the currency of your Cord
+subscription, not of your sales — you can still quote your own clients in any
+currency you want.
 
-**Annual** billing gives you 2 months free (you pay for 10).
+| Plan | USD/mo | MXN/mo | For whom |
+| :--- | :--- | :--- | :--- |
+| **Free** | $0 | $0 | Try it: 5 quotes, 50 products/clients, 3 AI drafts per month, "Powered by Cord". |
+| **Starter** | $12 | $240 | Solo sellers: 50 quotes, 500 products/clients, 20 AI + 3 CFDI per month, your brand, CSV. |
+| **Professional** | $30 | $590 | Teams: unlimited quotes, 5 users, 50 AI + 20 CFDI, live tracking, analytics, audit log. |
+| **Scale** | $70 | $1,390 | Operations: 15 users, 500 AI + 100 CFDI, approvals, collections, custom SMTP. |
+| **Developer** | $150 | $2,990 | Integrate: unlimited users/AI, 1,000 CFDI + 50,000 API per month, cheaper overages. |
+
+What you see is what you pay: nothing is added at checkout. **Annual** billing
+gives you 2 months free (you pay for 10).
 
 ### Changing plans
 
@@ -25,7 +31,7 @@ Cord is a freemium SaaS: you pay a monthly fee to use the platform. Payments han
 2. Pick the plan and cycle (monthly or annual). The secure billing checkout opens.
 3. The change applies immediately; your included quota adjusts to the new plan.
 
-To change your card, view receipts, or cancel, use the **Manage billing** button, which opens the secure billing portal.
+To change your card, view receipts, update your billing details, or cancel, go to [billing.cordhq.app](https://billing.cordhq.app), your billing portal. You get there from **Settings > Plans & subscription** with the session you already have. If your business is in Mexico, you can also **issue the CFDI** for each subscription payment there.
 
 ### Overages (usage-based)
 

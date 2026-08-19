@@ -158,6 +158,141 @@ export async function emitPlatformInvoice(batchId: string): Promise<EmitResult> 
   };
 }
 
+/**
+ * Timbra el CFDI del pago de suscripción a Cord, con el CSD de Cord.
+ *
+ * Es el gemelo de `emitPlatformInvoice` para el otro concepto que Cord le cobra
+ * al negocio: aquella factura las comisiones de Cord Payments, esta la cuota de
+ * la plataforma. Mismo emisor, mismo proveedor, misma llave.
+ *
+ * Diferencia deliberada con las comisiones: aquí SÍ es autoservicio. El importe
+ * no lo propone nadie —es el de un cobro que ya se liquidó—, el receptor son los
+ * datos fiscales que el propio negocio capturó, y es él quien la pide. Lo que no
+ * cambia es la irreversibilidad: cancelar un CFDI ante el SAT exige aprobación
+ * del receptor, así que el doble timbrado se cierra en el índice único de
+ * `suscripcion_facturas.stripe_invoice_id`, no con un `if`.
+ *
+ * Solo México: el CFDI es un riel mexicano. Fuera, el comprobante del cobro ya
+ * es el documento y esta función ni se ofrece (regla 24).
+ */
+export async function emitSubscriptionInvoice(
+  orgId: string,
+  invoice: { id: string; total: number; currency: string; number?: string | null; created?: number },
+): Promise<EmitResult> {
+  const platformKey = process.env.FACTURAPI_CORD_ORG_KEY || '';
+  if (!platformKey) {
+    return { emitted: false, status: 'error', error: 'La facturación de tu suscripción todavía no está disponible.' };
+  }
+
+  const [[receiver]] = await withOrgTx(orgId, sql`
+    select nombre, razon_social, rfc, regimen_fiscal, cp_fiscal, uso_cfdi, country_code
+      from orgs where id = ${orgId} limit 1`);
+  if (!receiver) return { emitted: false, status: 'error', error: 'organización no encontrada' };
+  if (String(receiver.country_code || 'MX').toUpperCase() !== 'MX') {
+    return { emitted: false, status: 'error', error: 'El CFDI aplica solo a negocios en México. Tu comprobante de pago es tu documento.' };
+  }
+  if (!receiver.rfc || !receiver.regimen_fiscal || !receiver.cp_fiscal) {
+    return {
+      emitted: false,
+      status: 'error',
+      error: 'Faltan tus datos fiscales: RFC, régimen fiscal y código postal.',
+    };
+  }
+
+  // Reserva ANTES de llamar al proveedor. Si el proceso muere a media llamada,
+  // la fila queda y el índice único impide que un reintento timbre dos veces.
+  const [[reserved]] = await withOrgTx(orgId, sql`
+    insert into suscripcion_facturas (org_id, stripe_invoice_id, currency, total_cents, status)
+    values (${orgId}, ${invoice.id}, ${normalizeCurrency(invoice.currency)}, ${Math.round(invoice.total * 100)}, 'pending')
+    on conflict (stripe_invoice_id) do update
+       set updated_at = now()
+     where suscripcion_facturas.status <> 'issued'
+    returning id, status, facturapi_id, fiscal_uuid`);
+
+  if (!reserved) {
+    const [[existing]] = await withOrgTx(orgId, sql`
+      select facturapi_id, fiscal_uuid, invoice_number from suscripcion_facturas
+       where stripe_invoice_id = ${invoice.id} and org_id = ${orgId} limit 1`);
+    return {
+      emitted: true, reused: true, status: 'issued',
+      documentId: existing?.facturapi_id as string,
+      fiscalId: existing?.fiscal_uuid as string,
+      invoiceNumber: existing?.invoice_number as string,
+    };
+  }
+
+  // El precio de Cord se publica con impuesto incluido: 240 es lo que se cobró,
+  // no 240 + IVA. Por eso el subtotal se DESAGREGA del total en vez de sumarle
+  // el impuesto encima, que facturaría un peso que nadie pagó.
+  const IVA = 0.16;
+  const total = money(invoice.total);
+  const subtotal = money(total / (1 + IVA));
+  const taxes = money(total - subtotal);
+  const periodo = invoice.created
+    ? new Date(invoice.created * 1000).toISOString().slice(0, 7)
+    : new Date().toISOString().slice(0, 7);
+
+  let resp: FiscalDocumentResponse;
+  try {
+    resp = await FiscalFactory.getProvider('MX').issueDocument({
+      documentId: String(reserved.id),
+      invoiceNumber: `CORD-SUB-${String(invoice.number || invoice.id).replace(/[^A-Za-z0-9-]/g, '').slice(-16).toUpperCase()}`,
+      idempotencyKey: `subscription:${invoice.id}:invoice:v1`,
+      orgId,
+      quoteId: `cord-sub-${invoice.id}`,
+      countryCode: 'MX',
+      providerApiKey: platformKey,
+      issuer: { legalName: 'CORD', address: { countryCode: 'MX' } },
+      recipient: {
+        legalName: String(receiver.razon_social || receiver.nombre),
+        taxId: String(receiver.rfc),
+        taxSystem: String(receiver.regimen_fiscal),
+        address: { countryCode: 'MX', postalCode: String(receiver.cp_fiscal) },
+      },
+      lines: [{
+        description: `Suscripción a la plataforma Cord ${periodo}`,
+        quantity: 1,
+        unitPrice: subtotal,
+        taxRate: IVA,
+        subtotal,
+        taxAmount: taxes,
+        total,
+      }],
+      totals: { subtotal, taxes, total, currency: normalizeCurrency(invoice.currency) },
+      issuedAt: new Date().toISOString(),
+      cfdi: { use: String(receiver.uso_cfdi || 'G03'), paymentForm: '04', paymentMethod: 'PUE' },
+    });
+  } catch (error: unknown) {
+    resp = {
+      success: false,
+      provider: 'facturapi',
+      documentId: `err-sub-${invoice.id}`,
+      error: error instanceof Error ? error.message : 'fallo del proveedor fiscal',
+    };
+  }
+
+  await withOrgTx(orgId, sql`
+    update suscripcion_facturas
+       set status = ${resp.success ? 'issued' : 'error'},
+           facturapi_id = ${resp.success ? resp.documentId : null},
+           fiscal_uuid = ${resp.fiscalId ?? null},
+           invoice_number = ${resp.success ? (resp.invoiceNumber ?? null) : null},
+           provider_data = ${JSON.stringify(resp.rawProviderData ?? {})},
+           invoice_error = ${resp.success ? null : (resp.error || 'fallo al timbrar')},
+           issued_at = ${resp.success ? new Date() : null},
+           updated_at = now()
+     where id = ${reserved.id} and org_id = ${orgId} and status <> 'issued'`);
+
+  return {
+    emitted: resp.success,
+    documentId: resp.documentId,
+    fiscalId: resp.fiscalId,
+    invoiceNumber: resp.invoiceNumber,
+    status: resp.success ? 'issued' : 'error',
+    error: resp.error,
+  };
+}
+
 export async function emitFiscalDocument(orgId: string, cotizacionId: string): Promise<EmitResult> {
   const [headRows, allItems] = await withOrgTx(orgId,
     sql`select

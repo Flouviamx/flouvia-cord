@@ -1,0 +1,128 @@
+---
+// Superficie de facturación de la suscripción a Cord (billing.cordhq.app).
+//
+// Deliberadamente FUERA del chrome de la app: sin sidebar, sin topbar, sin ⌘K.
+// Quien entra aquí viene a una sola cosa —su tarjeta, sus comprobantes, su
+// factura— y el resto de la aplicación solo sería ruido. Es el mismo criterio con
+// el que el procesador servía esto en su propio dominio; la diferencia es que
+// ahora el dominio, la tipografía y la marca son de Cord.
+//
+// No usa AppLayout ni sus hojas compartidas: no hay gráficas, widgets ni rangos
+// de fecha que justifiquen arrastrarlas. Los tokens se replican abajo, como hace
+// EmbedLayout.
+interface Props {
+    title: string;
+    heading: string;
+    sub?: string;
+    locale?: 'es' | 'en';
+}
+const { title, heading, sub, locale = 'es' } = Astro.props;
+const es = locale !== 'en';
+---
+<!doctype html>
+<html lang={locale}>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <!-- Superficie privada de una cuenta: nunca indexable. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="/favicon.ico" />
+</head>
+<body>
+    <div class="bl-shell">
+        <!-- Panel de marca. En móvil deja de ser columna y se vuelve cabecera:
+             ocupar media pantalla con un logo no ayuda a nadie que viene a pagar. -->
+        <aside class="bl-brand">
+            <div class="bl-brand-top">
+                <img src="/imgs/logo-cord-white.png" alt="Cord" class="bl-logo" />
+            </div>
+            <div class="bl-brand-mid">
+                <h1 class="bl-brand-title">{heading}</h1>
+                {sub && <p class="bl-brand-sub">{sub}</p>}
+            </div>
+            <div class="bl-brand-bottom">
+                <a class="bl-back" href="https://cordhq.app/app">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                    {es ? 'Volver a Cord' : 'Back to Cord'}
+                </a>
+                <p class="bl-legal">{es ? 'Pagos cifrados de extremo a extremo.' : 'End-to-end encrypted payments.'}</p>
+            </div>
+        </aside>
+
+        <main class="bl-main">
+            <div class="bl-main-inner">
+                <slot />
+            </div>
+        </main>
+    </div>
+</body>
+</html>
+
+<style is:global>
+    :root {
+        --bl-navy: #0a192f;
+        --bl-ink: #050505;
+        --bl-text: #0f1729;
+        --bl-muted: #5b6472;
+        --bl-canvas: #f5f5f7;
+        --bl-surface: #fff;
+        --bl-border: rgba(10, 25, 47, .08);
+        --bl-ok: #12855c;
+        --bl-danger: #ef4444;
+        --bl-warn: #c2410c;
+        --bl-font: Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+        --bl-ease: cubic-bezier(.32, .72, 0, 1);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+        font-family: var(--bl-font);
+        color: var(--bl-text);
+        background: var(--bl-surface);
+        -webkit-font-smoothing: antialiased;
+    }
+    /* Montos: Inter 600, tracking cerrado y números tabulares — una columna de
+       importes que no se alinea se lee como un error de captura. */
+    .editorial { font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+
+    .bl-shell { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); min-height: 100vh; }
+
+    .bl-brand {
+        background: var(--bl-navy);
+        color: #fff;
+        padding: 2.6rem 2.6rem 2.2rem;
+        display: flex; flex-direction: column; justify-content: space-between;
+        position: sticky; top: 0; height: 100vh;
+    }
+    .bl-logo { height: 26px; width: auto; display: block; }
+    .bl-brand-mid { padding: 3rem 0; }
+    .bl-brand-title {
+        margin: 0; font-size: clamp(1.6rem, 2.6vw, 2.05rem);
+        line-height: 1.12; letter-spacing: -.04em; font-weight: 600; max-width: 15ch;
+    }
+    .bl-brand-sub { margin: .9rem 0 0; font-size: .92rem; line-height: 1.6; color: rgba(255,255,255,.62); max-width: 34ch; }
+    .bl-back {
+        display: inline-flex; align-items: center; gap: .45rem;
+        color: rgba(255,255,255,.78); text-decoration: none;
+        font-size: .86rem; font-weight: 600;
+        transition: color .18s var(--bl-ease);
+    }
+    .bl-back:hover { color: #fff; }
+    .bl-back:focus-visible { outline: 2px solid rgba(255,255,255,.6); outline-offset: 4px; border-radius: 4px; }
+    .bl-legal { margin: 1.1rem 0 0; font-size: .74rem; color: rgba(255,255,255,.38); }
+
+    .bl-main { background: var(--bl-surface); padding: 3.2rem 3rem 5rem; min-width: 0; }
+    .bl-main-inner { max-width: 620px; }
+
+    @media (max-width: 940px) {
+        .bl-shell { grid-template-columns: 1fr; }
+        .bl-brand { position: static; height: auto; padding: 1.8rem 1.5rem; }
+        .bl-brand-mid { padding: 1.6rem 0 .4rem; }
+        .bl-brand-title { font-size: 1.45rem; max-width: none; }
+        .bl-brand-bottom { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+        .bl-legal { margin: 0; }
+        .bl-main { padding: 2rem 1.5rem 4rem; }
+        .bl-main-inner { max-width: none; }
+    }
+</style>

@@ -10,6 +10,9 @@
 // Requiere que la página importe src/styles/modal.css (Regla 12: AppLayout no
 // lo carga por defecto).
 import { PLANES, precioAnualMensualizado } from '../../lib/precios';
+import { getActiveOrgId } from '../../lib/db';
+import { platformCurrencyForOrg } from '../../lib/billing';
+import { planMoney, planCycleLabel } from '../../lib/plan-money';
 import { PLAN_RANK, type PlanId } from '../../lib/entitlements';
 
 interface Props {
@@ -24,7 +27,11 @@ interface Props {
 }
 const { id = 'planPaywallModal', title, desc, requiredPlan, locale = 'es', returnHref = '/app' } = Astro.props;
 const es = locale !== 'en';
-const money = (n: number) => '$' + new Intl.NumberFormat(es ? 'es-MX' : 'en-US').format(n);
+// La divisa se resuelve AQUÍ y no como prop: este modal se monta en siete
+// páginas y un constructor por call-site es cómo una de ellas termina pintando
+// pesos con símbolo de dólar. Un solo camino (regla 20 aplicada al dinero).
+const CUR = await platformCurrencyForOrg(await getActiveOrgId());
+const money = (n: number) => planMoney(n, CUR, locale);
 
 // PLANES ya está en orden ascendente de rank (starter…developer): el primer
 // elemento que alcanza el rank requerido ES el más barato que desbloquea la
@@ -57,7 +64,7 @@ const options = PLANES
 
         <div class="ppm-grid" data-count={options.length}>
             {options.map((p) => {
-                const anual = precioAnualMensualizado(p.precioMensual);
+                const anual = precioAnualMensualizado(p.precio[CUR]);
                 return (
                     <article class:list={['ppm-card', { featured: p.id === requiredPlan }]}>
                         {p.id === requiredPlan && <span class="ppm-ribbon">{es ? 'Desbloquea esto' : 'Unlocks this'}</span>}
@@ -67,9 +74,9 @@ const options = PLANES
                                 <span class="editorial ppm-amount">{es ? 'A tu medida' : 'Custom'}</span>
                             </div>
                         ) : (
-                            <div class="ppm-price" data-monthly={money(p.precioMensual)} data-annual={money(anual)}>
-                                <span class="editorial ppm-amount ppm-amount-val">{money(p.precioMensual)}</span>
-                                <span class="ppm-cycle">{es ? '/mes' : '/mo'}</span>
+                            <div class="ppm-price" data-monthly={money(p.precio[CUR])} data-annual={money(anual)}>
+                                <span class="editorial ppm-amount ppm-amount-val">{money(p.precio[CUR])}</span>
+                                <span class="ppm-cycle">{planCycleLabel(CUR, 'mensual', locale)}</span>
                             </div>
                         )}
                         <p class="ppm-tagline">{p.tagline}</p>

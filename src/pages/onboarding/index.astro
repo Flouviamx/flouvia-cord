@@ -13,6 +13,14 @@
 // nunca decide idioma.
 export const prerender = false;
 
+// País por defecto del selector. Esta página es SSR, así que sale del header de
+// geolocalización — sin fetch ni parpadeo. Es solo el valor PRESELECCIONADO: el
+// usuario puede cambiarlo y lo que se guarda es lo que él elija.
+//
+// Antes venía fijo en 'MX', y de ahí salían la divisa, la zona horaria, las tasas
+// de impuesto y el vocabulario fiscal de la cuenta (regla 24): un negocio en
+// Bogotá que no lo notara nacía con pesos mexicanos, hora de CDMX e "RFC".
+
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/auth.css';
 import { currentLocale } from '../../lib/context';
@@ -22,6 +30,9 @@ import FlagSelect from '../../components/ui/FlagSelect';
 const L = currentLocale();
 const isEn = L === 'en';
 const COUNTRY_OPTIONS = listCountries(L).map((c) => ({ code: c.code, label: c.name, hint: c.tag }));
+
+const geoCountry = (Astro.request.headers.get('x-vercel-ip-country') || '').toUpperCase();
+const DEFAULT_COUNTRY = COUNTRY_OPTIONS.some((o: any) => o.value === geoCountry) ? geoCountry : 'MX';
 
 const T = isEn
     ? {
@@ -178,7 +189,7 @@ const T = isEn
                                     id="obPaisTrigger"
                                     ariaLabel={T.s1.countryLabel}
                                     options={COUNTRY_OPTIONS}
-                                    defaultValue="MX"
+                                    defaultValue={DEFAULT_COUNTRY}
                                     nativeId="obPais"
                                     nativeName="countryCode"
                                     className="ob-flagselect"

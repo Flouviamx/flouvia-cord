@@ -171,9 +171,22 @@ Tres decisiones distintas, tres fuentes, y no se mezclan:
 - **Divisa contable** (`cotizaciones.fiscal_currency`, default `orgs.moneda`): en
   la que el negocio lleva sus libros. Cuando difiere de la de venta, el documento
   fiscal declara el tipo de cambio; nunca se reetiquetan los importes.
-- **Divisa de la plataforma**: los precios de los planes de Cord. Es de Cord, no
-  del cliente — `/precios`, el checkout de suscripción y el paywall no heredan la
-  divisa de la organización.
+- **Divisa de la plataforma** (`src/lib/plan-currency.ts`): los precios de los
+  planes de Cord. Es de Cord, no del cliente — `/precios`, el checkout de
+  suscripción y el paywall **no** heredan `orgs.moneda`, que el usuario edita
+  libre en Ajustes y por tanto no puede decidir en qué cobra Cord.
+  Es un set **cerrado de dos**: `country_code = 'MX'` → MXN, cualquier otro país
+  → USD. Cada divisa nueva obliga a configurar todos los Price de Stripe (base y
+  medidos), así que ampliarlo es una decisión de negocio, no un `if`.
+  `orgs.billing_currency` —evidencia de una factura real— **gana sobre el país**:
+  Stripe congela `customer.currency` en el primer cobro, y mandar un `currency`
+  que lo contradice es un 400 con el cobro a medias. En Stripe son
+  `currency_options` sobre los MISMOS Price, no precios paralelos: los existentes
+  ya tienen suscripciones vivas y duplicarlos partiría el catálogo en dos.
+  Formato: `planMoney()`/`planCycleLabel()` de `src/lib/plan-money.ts`, único
+  formateador. Los importes viven en `src/lib/precios.ts` como
+  `precio: Record<PlatformCurrency, number>` — la divisa es un DATO, no un
+  comentario.
 
 Contratos ejecutables:
 
@@ -487,3 +500,60 @@ puede perseguir.
   contra el saldo real. Sin abono parcial, quien quiere pagar la mitad transfiere
   por fuera y el ledger se queda mudo mientras la cobranza persigue dinero que ya
   entró.
+
+### 26. Una superficie en otro host no comparte sesión: se traspasa
+
+`cord_session` es **host-only** (`sessionCookieOptions()` no fija `Domain`). Una
+superficie servida desde un subdominio propio —`billing.cordhq.app`— llega sin
+identidad, y la salida fácil, ampliar la cookie a `.cordhq.app`, la mandaría
+también a `ops.`, `docs.` y `dev.`. El aislamiento de Ops es deliberado y no se
+sacrifica por comodidad de ruteo.
+
+El contrato es un **traspaso de un solo uso**: el apex emite un token opaco
+(`GET /api/billing/handoff`, tabla `billing_handoff_tokens`, 90 s de vida, se
+guarda el sha256 y nunca el token), y el host destino lo canjea por una sesión
+**propia** (`/billing/entrar` → `createSession()`). El marcado de "usado" va en el
+mismo `UPDATE` que la lectura: dos pestañas abriendo el link a la vez no pueden
+canjear el mismo token. Revocar sesiones desde Ajustes sigue funcionando, porque
+son sesiones normales en la tabla `sessions`.
+
+Corolarios que ya costaron caro en Ops y se repiten aquí:
+
+- **Pinning de host.** El árbol `/billing` responde 404 en el apex bajo PROD. Una
+  superficie alcanzable por dos hosts es una superficie con dos políticas de
+  cookie, y tarde o temprano divergen.
+- **La API viaja con la página.** `isAllowedMutationOrigin` exige mismo origen,
+  así que un `fetch` de `billing.cordhq.app` al apex se rechaza con 403. Por eso
+  `/api/billing` está en los prefijos del subdominio.
+- **El redirect anti-duplicado es de SEO, no de ruteo**: aplica solo a páginas.
+  Sin la excepción `p.startsWith('/api/')` se llevaba `/api/billing/*` del apex,
+  que es el que usa `/app/checkout`, y rompía el alta de suscripción.
+- La única ruta sin sesión del subdominio es la de canje. Todo lo demás redirige
+  al login **del apex**: una cookie creada en el subdominio no sirve para el
+  resto de la app.
+
+### 27. Cord se factura a sí mismo con su propio motor
+
+Lo que Cord le cobra al negocio —la suscripción y las comisiones de Cord
+Payments— se documenta con el mismo motor fiscal con el que el negocio le factura
+a sus clientes, usando el CSD de Cord (`FACTURAPI_CORD_ORG_KEY`). No hay un
+segundo camino ni un proveedor aparte: `emitSubscriptionInvoice()` y
+`emitPlatformInvoice()` viven juntos en `src/lib/fiscal/emit.ts`.
+
+Tres reglas que no son negociables porque el documento es legal, no un PDF:
+
+- **El doble timbrado se cierra en el índice, no en un `if`.**
+  `suscripcion_facturas.stripe_invoice_id` es `unique`, y la fila se reserva
+  ANTES de llamar al proveedor. Cancelar un CFDI ante el SAT exige aprobación del
+  receptor y no siempre se consigue.
+- **Solo se timbra un cobro liquidado y con importe.** Un CFDI declara ingreso
+  recibido: sobre una factura `open` declararía ingreso inexistente, y sobre una
+  de $0 —descuento del 100 %, crédito que cubre el periodo— no hay nada que
+  declarar. La UI lo dice con un guion, no con un botón que va a fallar.
+- **El subtotal se desagrega del total.** Los precios de Cord se publican con
+  impuesto incluido (`tax_behavior: 'unspecified'`, sin Stripe Tax): sumarle IVA
+  encima facturaría un peso que nadie pagó.
+
+Es capacidad de **México**. Fuera, el comprobante del cobro ya ES el documento y
+la opción ni se ofrece (regla 24).
+

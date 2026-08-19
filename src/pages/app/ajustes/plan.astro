@@ -1,14 +1,20 @@
 ---
-// Ajustes › Plan y facturación — suscripción REAL (Stripe Billing) + medidores
-// de uso del periodo. Subir de plan → /api/billing/subscribe (Checkout).
-// Gestionar → /api/billing/portal (Customer Portal).
+// Ajustes › Plan — QUÉ plan tienes y CUÁNTO consumes.
+//
+// El dinero (tarjetas, comprobantes, datos fiscales, cancelar) vive en la pestaña
+// hermana `facturacion.astro`. Hasta ago 2026 esta página mandaba al Customer
+// Portal de Stripe; ya no sale de Cord ninguna superficie de cobro.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg, getPlanUsage, getBillingUsage } from '../../../lib/queries';
 import { PLANES, precioAnualTotal, precioAnualMensualizado } from '../../../lib/precios';
+import { platformCurrencyForOrg } from '../../../lib/billing';
+import { planMoney, planCycleLabel, planTaxNote } from '../../../lib/plan-money';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
 const ORG = await getOrg();
+// Divisa de los planes de CORD: la del país del negocio, no la de sus ventas.
+const CUR = await platformCurrencyForOrg(ORG.id);
 const USAGE = await getPlanUsage();
 const BILL = await getBillingUsage();
 const L = currentLocale();
@@ -32,7 +38,7 @@ const highlightPlan = PLANES.some((p) => p.id === Astro.url.searchParams.get('pl
 const planRaw = ORG.plan_raw;
 const esPago = planRaw !== 'free';
 const PAID = PLANES.filter((p) => p.id !== 'free');
-const money = (n: number) => '$' + new Intl.NumberFormat(L === 'en' ? 'en-US' : 'es-MX').format(n);
+const money = (n: number) => planMoney(n, CUR, L);
 
 const STATUS_LABEL: Record<string, string> = {
     trialing: t(L, 'set.plan.status.trialing'), active: t(L, 'set.plan.status.active'),
@@ -60,12 +66,12 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                     {BILL.status && <span class={`plan-badge st-${BILL.status}`}>{STATUS_LABEL[BILL.status] ?? BILL.status}</span>}
                 </span>
                 <span class="plan-price">
-                    <span class="editorial">{planActual ? money(planActual.precioMensual) : '$0'}</span> {t(L, 'set.plan.mes_iva')}
+                    <span class="editorial">{money(planActual ? planActual.precio[CUR] : 0)}</span> {planCycleLabel(CUR, 'mensual', L)} · {planTaxNote(L)}
                     {BILL.cycle === 'anual' && t(L, 'set.plan.facturacion_anual')}
                     {BILL.periodFin && <i class="plan-renews">{tf('set.plan.renueva', { fecha: BILL.periodFin })}</i>}
                 </span>
             </div>
-            {BILL.canManage && !isTestEnv && <button class="plan-btn solid" data-portal>{t(L, 'set.plan.gestionar')}</button>}
+            {BILL.canManage && !isTestEnv && <a class="plan-btn solid" href="/api/billing/handoff">{t(L, 'set.plan.gestionar')}</a>}
         </div>
     </div>
 
@@ -79,7 +85,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
 
         <div class="pcard-grid">
             {PAID.map((p) => {
-                const anual = precioAnualMensualizado(p.precioMensual);
+                const anual = precioAnualMensualizado(p.precio[CUR]);
                 const actual = p.id === planRaw;
                 return (
                     <article class:list={['pcard', { featured: p.destacado, current: actual, highlight: p.id === highlightPlan }]} data-pcard data-current={actual ? '1' : undefined}>
@@ -97,9 +103,9 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                                         <span class="editorial pcard-amount">{t(L, 'set.plan.a_tu_medida')}</span>
                                     </div>
                                 ) : (
-                                    <div class="pcard-price" data-mensual={String(p.precioMensual)} data-anual={String(anual)}>
-                                        <span class="editorial pcard-amount pcard-amount-val">{money(p.precioMensual)}</span>
-                                        <span class="pcard-cycle">{t(L, 'set.plan.mxn_mes')}</span>
+                                    <div class="pcard-price" data-mensual={String(p.precio[CUR])} data-anual={String(anual)}>
+                                        <span class="editorial pcard-amount pcard-amount-val">{money(p.precio[CUR])}</span>
+                                        <span class="pcard-cycle">{planCycleLabel(CUR, 'mensual', L)}</span>
                                     </div>
                                 )}
                                 <p class="pcard-tagline">{p.tagline}</p>
@@ -177,7 +183,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         {isTestEnv ? (
             <p class="plan-empty">{t(L, 'set.plan.pagos_no_aplican')}</p>
         ) : BILL.canManage ? (
-            <p class="plan-empty">{t(L, 'set.plan.gestion_stripe')} <button class="link-btn" data-portal>{t(L, 'set.plan.abrir_portal')}</button></p>
+            <p class="plan-empty">{t(L, 'set.plan.gestion_cord')} <a class="link-btn" href="/api/billing/handoff">{t(L, 'set.plan.abrir_facturacion')}</a></p>
         ) : (
             <p class="plan-empty">{t(L, 'set.plan.agrega_metodo')}</p>
         )}
@@ -191,20 +197,19 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         abriendo: t(L, 'set.plan.abriendo'),
         noProcesar: t(L, 'set.plan.no_se_pudo_procesar'),
         localeIntl: L === 'en' ? 'en-US' : 'es-MX',
+        currency: CUR,
     },
 }}></script>
 <script>
-    const post = async (url: string, body?: any) => {
-        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
-        const data = await r.json().catch(() => ({}));
-        if (!r.ok || !data.url) throw new Error(data.error || (window as any).I18N_PLAN?.noContinuar || 'No se pudo continuar');
-        window.location.href = data.url;
-    };
-
     // Toggle de ciclo → cambia precios mostrados y el ciclo que se envía.
     let cycle: 'mensual' | 'anual' = 'mensual';
     const I18N = (window as any).I18N_PLAN || {};
-    const fmt = (n: number) => '$' + new Intl.NumberFormat(I18N.localeIntl || 'es-MX').format(n);
+    // Mismo contrato que `planMoney()` en servidor: un `<script is:inline>` no
+    // puede importarlo, así que replica la lectura — nunca un símbolo fijo (regla 21).
+    const fmt = (n: number) => new Intl.NumberFormat(I18N.localeIntl || 'es-MX', {
+        style: 'currency', currency: I18N.currency || 'MXN',
+        currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0, minimumFractionDigits: 0,
+    }).format(n);
     document.querySelectorAll<HTMLButtonElement>('.cyc-btn').forEach((b) => {
         b.addEventListener('click', () => {
             cycle = (b.dataset.cycle as 'mensual' | 'anual') || 'mensual';
@@ -241,13 +246,6 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         });
     });
 
-    document.querySelectorAll<HTMLButtonElement>('[data-portal]').forEach((b) => {
-        b.addEventListener('click', async () => {
-            const label = b.textContent; b.disabled = true; b.textContent = I18N.abriendo || 'Abriendo…';
-            try { await post('/api/billing/portal'); }
-            catch (e: any) { (window as any).cordToast?.(e.message || I18N.noProcesar || 'No se pudo procesar', 'error'); b.disabled = false; b.textContent = label; }
-        });
-    });
 </script>
 
 <style>

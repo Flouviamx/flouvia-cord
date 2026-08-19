@@ -7,6 +7,62 @@
 
 ---
 
+**Divisa de plataforma real y facturación fuera del portal ajeno (19 ago 2026)** —
+dos entregas que compartían raíz: el billing de la propia plataforma nunca se
+terminó y lo que faltaba se delegó a Stripe.
+
+*Divisa (regla 21).* La divisa de los planes no era un dato: era el comentario
+`// MXN/mes` sobre un `number`. `precios.en.ts` publicaba `$12/$30/$70/$150 USD`
+que **ninguna suscripción cobró jamás** —el checkout usa los Price de Stripe, en
+MXN—, y `/precios` elegía divisa por **idioma de URL**, así que un negocio
+colombiano leyendo en español veía pesos y el JSON-LD indexaba `priceCurrency: USD`
+sobre cifras que eran MXN. Dentro de la app había **seis** formateadores
+`'$' + Intl('es-MX')` independientes, y la traducción al inglés decía literalmente
+`"MXN/month"`.
+
+Ahora: `plan-currency.ts` (MXN a México, USD al resto; `billing_currency` gana
+sobre el país porque Stripe congela `customer.currency` en el primer cobro),
+`plan-money.ts` como formateador único, `precios.ts` con
+`precio: Record<PlatformCurrency, number>`, `subscribe.ts` mandando `currency`,
+y `/precios` con selector + geo (`/api/geo`) en vez de idioma. `precios.en.ts`
+dejó de definir precios: los importa. En Stripe son `currency_options` sobre los
+MISMOS 23 Price (`scripts/add-usd-currency-options.mjs`, idempotente y dry-run por
+defecto); `verify-stripe-billing.mjs` los exige, así que **falla en rojo hasta que
+la migración corra** — el orden es Stripe antes que código.
+
+*Superficie (reglas 26 y 27).* `billing.cordhq.app` sustituye al Customer Portal:
+tarjetas (SetupIntent), comprobantes con PDF proxiado, datos fiscales con la
+etiqueta del país, cancelar/reanudar, **liquidar un cobro vencido** —que el portal
+cubría y sin lo cual retirar el portal dejaba sin salida a quien tuviera la tarjeta
+rechazada— y **CFDI del pago de suscripción** con el CSD de Cord. Cero enlaces a
+`billing.stripe.com`; `/api/billing/portal` sobrevive sin UI como escape de soporte.
+
+La sesión no viaja al subdominio (cookie host-only), así que se traspasa con token
+de un solo uso en vez de ampliar la cookie a `.cordhq.app` y mandarla a `ops.`.
+
+*Tres cosas que el trabajo destapó y valen más que el código:*
+
+- `orgs.plan` **no sirve** para pintar la superficie de facturación. Es la
+  proyección de entitlements: una cuenta con 100 % de descuento resuelve a `free`
+  (correcto, regla 17) sobre una suscripción anual viva. La tarjeta de plan lee
+  `/api/billing/subscription` en vivo, que responde la otra pregunta: qué se cobra.
+- `define:vars` en un `<script is:inline>` envuelve todo en una **clausura**: nada
+  llega a `window`. El patrón que sí funciona es `data-i18n` en el DOM, como
+  `checkout.astro`. Astro también se comía `<script src="js.stripe.com">` sin
+  `is:inline` — sin él, "Agregar tarjeta" nunca hubiera cargado.
+- El redirect anti-duplicado de subdominios es **de SEO**: sin excluir `/api/`, al
+  agregar `billing.` se llevaba `/api/billing/*` del apex y rompía `/app/checkout`.
+
+*Cierre de la historia del 18 ago (abajo):* la cortesía de la org Flouvia volvía a
+`free` porque la suscripción se creó **a mano en el dashboard** con solo el precio
+base, sin los 4 medidores — y `hasRequiredMeterItems()` no otorga plan sin ellos,
+porque una suscripción sin medidores no puede cobrar excedente. Se agregaron los 4
+items (`billing_mode: flexible` ya lo permitía) y se selló con `set-plan.mjs --comp`.
+Con los medidores presentes el webhook la **mantiene**; correr solo `--comp` era un
+parche que el siguiente `customer.subscription.updated` revertía.
+
+Ver reglas 21, 26 y 27 de `estandares-ingenieria.md`.
+
 **Un plan guardado no desbloqueaba nada, y estaba bien (18 ago 2026)** — la org
 interna Flouvia tenía `plan='developer'` y la app seguía en Gratis. Diagnóstico:
 `plan` era lo ÚNICO puesto; `stripe_subscription_id`, `stripe_customer_id`,

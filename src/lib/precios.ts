@@ -16,15 +16,23 @@
 // romper consumidores históricos de `precios.ts`.
 import type { PlanId } from './entitlements';
 export type { PlanId } from './entitlements';
+import type { PlatformCurrency } from './plan-currency';
 
 export interface Plan {
     id: PlanId;
     nombre: string;
     tagline: string;
-    precioMensual: number;        // MXN/mes (0 = gratis). Developer conserva su
-                                   // valor real (Stripe sigue cobrando a las
-                                   // suscripciones vigentes) pero no se muestra:
-                                   // `custom` lo saca del autoservicio.
+    /**
+     * Precio mensual por divisa de plataforma (0 = gratis). La divisa es un
+     * DATO, no un comentario: hasta ago 2026 esto era un `number` con un
+     * "// MXN/mes" al lado, y la landing en inglés publicaba una tabla USD
+     * paralela que el checkout nunca cobró (regla 21).
+     *
+     * Developer conserva su valor real —Stripe sigue cobrando a las
+     * suscripciones vigentes— pero no se muestra: `custom` lo saca del
+     * autoservicio.
+     */
+    precio: Record<PlatformCurrency, number>;
     destacado?: boolean;
     ribbon?: string;
     /** Sin precio de autoservicio: "A tu medida" + CTA a ventas, sin checkout. */
@@ -46,7 +54,7 @@ export const PLANES: Plan[] = [
         id: 'free',
         nombre: 'Gratis',
         tagline: 'Para probar el sistema.',
-        precioMensual: 0,
+        precio: { MXN: 0, USD: 0 },
         ctaLabel: 'Empezar gratis',
         ctaHref: '/registro',
         feats: [
@@ -61,7 +69,7 @@ export const PLANES: Plan[] = [
         id: 'starter',
         nombre: 'Starter',
         tagline: 'Para el que vende solo.',
-        precioMensual: 240,
+        precio: { MXN: 240, USD: 12 },
         ctaLabel: 'Empezar ahora',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui3vQBd5goOHQ1',
@@ -77,7 +85,7 @@ export const PLANES: Plan[] = [
         id: 'pro',
         nombre: 'Profesional',
         tagline: 'Para equipos que venden en serio.',
-        precioMensual: 590,
+        precio: { MXN: 590, USD: 30 },
         destacado: true,
         ribbon: 'MÁS POPULAR',
         ctaLabel: 'Empezar ahora',
@@ -95,7 +103,7 @@ export const PLANES: Plan[] = [
         id: 'scale',
         nombre: 'Scale',
         tagline: 'Para operaciones con control.',
-        precioMensual: 1390,
+        precio: { MXN: 1390, USD: 70 },
         ctaLabel: 'Empezar ahora',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui4AQicrCoCMUt',
@@ -111,7 +119,7 @@ export const PLANES: Plan[] = [
         id: 'developer',
         nombre: 'Developer',
         tagline: 'Capacidad y condiciones a tu medida.',
-        precioMensual: 2990,
+        precio: { MXN: 2990, USD: 150 },
         custom: true,
         ctaLabel: 'Hablar con ventas',
         ctaHref: '/contacto/ventas',
@@ -302,8 +310,8 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
         a: 'Cuando quieras, sin contratos ni penalizaciones. Subes de plan al instante (con prorrateo) y bajas al final de tu ciclo. Si cancelas, tus datos siguen ahí en el plan Gratis.',
     },
     {
-        q: '¿Los precios llevan IVA?',
-        a: 'Sí. Todos los precios están en pesos mexicanos y con IVA incluido. Lo que ves es lo que pagas.',
+        q: '¿Los precios llevan impuestos?',
+        a: 'Sí. Lo que ves es lo que pagas: no se suma nada al cobrar. Los negocios en México facturan en pesos mexicanos (MXN); en el resto del mundo, en dólares (USD).',
     },
     {
         q: '¿Cómo funciona la facturación electrónica?',

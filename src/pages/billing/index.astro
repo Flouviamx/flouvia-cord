@@ -1,0 +1,646 @@
+---
+// billing.cordhq.app — facturación de la suscripción a Cord.
+//
+// Todo lo que hasta ago 2026 vivía en el Customer Portal del procesador —tarjeta,
+// comprobantes, datos de facturación, cancelar— más dos cosas que ese portal
+// nunca hizo: liquidar un cobro vencido sin salir de aquí, y emitir el CFDI del
+// pago con el mismo motor fiscal con el que el negocio le factura a sus clientes.
+//
+// Se sirve bajo su propio host (ver SUBDOMAINS en src/middleware.ts). La sesión
+// llega por el traspaso de `/api/billing/handoff`, no por una cookie compartida.
+export const prerender = false;
+
+import BillingLayout from '../../layouts/BillingLayout.astro';
+import { getOrg, getBillingUsage } from '../../lib/queries';
+import { currentLocale } from '../../lib/context';
+import { getCountryProfile } from '../../lib/countries';
+
+const ORG = await getOrg();
+const BILL = await getBillingUsage();
+const L = currentLocale();
+const es = L !== 'en';
+const profile = getCountryProfile(ORG.countryCode);
+
+
+const pastDue = BILL.status === 'past_due' || BILL.status === 'unpaid';
+// Sin customer no hay nada que gestionar: nunca hubo cobro. Ojo, `plan_raw`
+// NO sirve para esto — una cuenta con 100 % de descuento es `free` y sí tiene
+// suscripción viva que administrar.
+const sinCuenta = !BILL.canManage;
+
+
+const T = {
+    cargando: es ? 'Cargando…' : 'Loading…',
+    sinTarjetas: es ? 'No hay ningún método de pago.' : 'No payment method on file.',
+    sinComprobantes: es ? 'Todavía no tienes cobros. Aquí aparecerán tus comprobantes.' : 'No charges yet. Your receipts will show up here.',
+    predeterminada: es ? 'Predeterminada' : 'Default',
+    usarEsta: es ? 'Usar esta' : 'Use this',
+    eliminar: es ? 'Eliminar' : 'Remove',
+    confirmarEliminar: es ? '¿Eliminar esta tarjeta?' : 'Remove this card?',
+    descargar: es ? 'Comprobante' : 'Receipt',
+    guardado: es ? 'Guardado' : 'Saved',
+    error: es ? 'Algo no salió bien. Intenta de nuevo.' : 'Something went wrong. Try again.',
+    agregando: es ? 'Agregando…' : 'Adding…',
+    guardarTarjeta: es ? 'Guardar tarjeta' : 'Save card',
+    procesando: es ? 'Procesando…' : 'Processing…',
+    noConfig: es ? 'La facturación aún no está disponible.' : 'Billing is not available yet.',
+    pedirFactura: es ? 'Facturar' : 'Get invoice',
+    emitiendo: es ? 'Emitiendo…' : 'Issuing…',
+    facturada: es ? 'Facturado' : 'Invoiced',
+    completaDatos: es ? 'Faltan datos fiscales' : 'Tax details missing',
+    renueva: es ? 'Se renueva el' : 'Renews on',
+    termina: es ? 'Termina el' : 'Ends on',
+    descuento: es ? 'Descuentos activos' : 'Active discounts',
+    sinSuscripcion: es ? 'No tienes una suscripción activa.' : 'No active subscription.',
+    // Encabezados de la tabla de cobros.
+    thFecha: es ? 'Fecha' : 'Date',
+    thEstado: es ? 'Estado' : 'Status',
+    thNumero: es ? 'Número' : 'Number',
+    thConcepto: es ? 'Concepto' : 'Description',
+    thImporte: es ? 'Importe' : 'Amount',
+    thFactura: es ? 'Factura' : 'Invoice',
+    estados: {
+        paid: es ? 'Pagado' : 'Paid',
+        open: es ? 'Pendiente' : 'Due',
+        uncollectible: es ? 'Incobrable' : 'Uncollectible',
+        void: es ? 'Anulado' : 'Void',
+    },
+    subEstados: {
+        active: es ? 'Activa' : 'Active',
+        trialing: es ? 'En prueba' : 'Trialing',
+        past_due: es ? 'Pago pendiente' : 'Past due',
+        canceled: es ? 'Cancelada' : 'Canceled',
+        unpaid: es ? 'Sin pagar' : 'Unpaid',
+        incomplete: es ? 'Incompleta' : 'Incomplete',
+    },
+};
+
+---
+
+<BillingLayout
+    locale={es ? 'es' : 'en'}
+    title={es ? 'Facturación · Cord' : 'Billing · Cord'}
+    heading={es ? 'Tu suscripción a Cord, en un solo lugar.' : 'Your Cord subscription, all in one place.'}
+    sub={es
+        ? 'Tu tarjeta, tus comprobantes y la factura de lo que pagas por la plataforma.'
+        : 'Your card, your receipts, and the invoice for what you pay for the platform.'}>
+
+    {sinCuenta ? (
+        <section class="bl-sec">
+            <h2>{es ? 'Suscripción' : 'Subscription'}</h2>
+            <p class="bl-empty">
+                {es ? 'Estás en el plan Gratis, así que no hay nada que cobrar.' : "You're on the Free plan, so there's nothing to bill."}
+                {' '}<a class="bl-link" href="https://cordhq.app/app/ajustes/plan">{es ? 'Ver planes →' : 'See plans →'}</a>
+            </p>
+        </section>
+    ) : (
+    <div data-billing-root data-i18n={JSON.stringify(T)} data-locale={L === "en" ? "en-US" : "es-MX"}>
+
+        <!-- ── Suscripción ── -->
+        <!-- Se pinta en cliente desde /api/billing/subscription: lo que se cobra
+             sale de la suscripción viva, no de `orgs.plan`, que es la proyección
+             de entitlements y puede diferir (p. ej. con 100 % de descuento). -->
+        <section class="bl-sec">
+            <h2>{es ? 'Suscripción' : 'Subscription'}</h2>
+            <div class="bl-plan" data-sub><p class="bl-loading">{T.cargando}</p></div>
+            <p class="bl-note" data-cancel-note hidden>
+                {es
+                    ? 'Conservas el acceso hasta el final del periodo que ya pagaste. Tus datos y tu configuración se quedan como están; lo que exceda los límites del plan Gratis deja de operar hasta que vuelvas a subir de plan. Vuelve a tocar Cancelar para confirmar.'
+                    : "You keep access until the end of the period you already paid for. Your data and settings stay exactly as they are; anything above the Free plan's limits stops working until you upgrade again. Tap Cancel again to confirm."}
+            </p>
+        </section>
+
+        <!-- ── Cobro pendiente ── -->
+        {pastDue && (
+            <section class="bl-sec bl-due">
+                <h2>{es ? 'Tienes un cobro pendiente' : 'You have a payment due'}</h2>
+                <p class="bl-note">
+                    {es
+                        ? 'No pudimos cobrar tu último recibo. Págalo aquí para que tu plan siga activo.'
+                        : "We couldn't charge your last invoice. Pay it here to keep your plan active."}
+                </p>
+                <div data-due-mount hidden>
+                    <div id="due-element"></div>
+                    <button class="bl-btn solid" data-due-pay disabled>{es ? 'Pagar ahora' : 'Pay now'}</button>
+                </div>
+                <button class="bl-btn solid" data-due-start>{es ? 'Pagar ahora' : 'Pay now'}</button>
+                <p class="bl-err" data-due-err hidden></p>
+            </section>
+        )}
+
+        <!-- ── Método de pago ── -->
+        <section class="bl-sec">
+            <h2>{es ? 'Método de pago' : 'Payment method'}</h2>
+            <ul class="bl-cards" data-methods><li class="bl-loading">{T.cargando}</li></ul>
+            <p class="bl-err" data-methods-err hidden></p>
+            <div class="bl-add" data-add-mount hidden>
+                <div id="add-element"></div>
+                <div class="bl-add-actions">
+                    <button class="bl-btn solid" data-add-save disabled>{T.guardarTarjeta}</button>
+                    <button class="bl-btn ghost" data-add-cancel>{es ? 'Cancelar' : 'Cancel'}</button>
+                </div>
+                <p class="bl-err" data-add-err hidden></p>
+            </div>
+            <button class="bl-btn ghost" data-add-start>{es ? 'Agregar tarjeta' : 'Add card'}</button>
+        </section>
+
+        <!-- ── Comprobantes y facturas ── -->
+        <section class="bl-sec">
+            <h2>{es ? 'Cobros' : 'Charges'}</h2>
+            <p class="bl-note" data-fiscal-note hidden></p>
+            <div class="bl-invoices" data-invoices><p class="bl-loading">{T.cargando}</p></div>
+        </section>
+
+        <!-- ── Datos de facturación ── -->
+        <section class="bl-sec">
+            <h2>{es ? 'Datos de facturación' : 'Billing details'}</h2>
+            <p class="bl-note">
+                {es
+                    ? 'Con estos datos te facturamos la plataforma. No cambian los datos con los que tú le facturas a tus clientes.'
+                    : "We bill you the platform with these details. They don't change the details you invoice your own clients with."}
+            </p>
+            <div class="bl-form" data-datos>
+                <div class="bl-row">
+                    <label class="bl-field"><span>{es ? 'Nombre o razón social' : 'Name or legal entity'}</span>
+                        <input class="bl-input" data-d="nombre" type="text" autocomplete="organization" /></label>
+                    <label class="bl-field"><span>{es ? 'Correo de facturación' : 'Billing email'}</span>
+                        <input class="bl-input" data-d="email" type="email" autocomplete="email" /></label>
+                </div>
+                <div class="bl-row">
+                    <label class="bl-field"><span>{profile.taxIdLabel}</span>
+                        <input class="bl-input" data-d="taxId" type="text" /></label>
+                    <label class="bl-field"><span>{es ? 'País' : 'Country'}</span>
+                        <input class="bl-input" value={profile.name} disabled /></label>
+                </div>
+                <div class="bl-row">
+                    <label class="bl-field wide"><span>{es ? 'Calle y número' : 'Address'}</span>
+                        <input class="bl-input" data-d="linea1" type="text" autocomplete="address-line1" /></label>
+                </div>
+                <div class="bl-row">
+                    <label class="bl-field"><span>{es ? 'Ciudad' : 'City'}</span>
+                        <input class="bl-input" data-d="ciudad" type="text" autocomplete="address-level2" /></label>
+                    <label class="bl-field"><span>{es ? 'Estado o provincia' : 'State or province'}</span>
+                        <input class="bl-input" data-d="estado" type="text" autocomplete="address-level1" /></label>
+                    <label class="bl-field"><span>{es ? 'Código postal' : 'Postal code'}</span>
+                        <input class="bl-input" data-d="cp" type="text" autocomplete="postal-code" /></label>
+                </div>
+                <div class="bl-form-actions">
+                    <button class="bl-btn solid" data-datos-save>{es ? 'Guardar datos' : 'Save details'}</button>
+                    <span class="bl-saved" data-datos-msg hidden></span>
+                </div>
+            </div>
+        </section>
+    </div>
+    )}
+</BillingLayout>
+
+<script is:inline src="https://js.stripe.com/v3/"></script>
+<script>
+    const PK = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    const root = document.querySelector('[data-billing-root]') as HTMLElement | null;
+    // Del DOM, no de una global: `define:vars` en un `is:inline` envuelve todo en
+    // una clausura y nunca llega a `window`. Ese fue el origen de los "undefined".
+    const T: any = JSON.parse(root?.dataset.i18n || '{}');
+    const LOCALE = root?.dataset.locale || 'es-MX';
+    const APPEARANCE = {
+        theme: 'stripe',
+        variables: {
+            colorPrimary: '#0a192f', colorText: '#050505', colorDanger: '#ef4444',
+            fontFamily: 'Inter, system-ui, sans-serif', borderRadius: '12px', spacingUnit: '4px',
+        },
+    };
+
+    if (root) {
+        const $ = (sel: string) => root.querySelector(sel) as HTMLElement | null;
+        const toast = (msg: string) => { const e = $('[data-methods-err]'); if (e) { e.textContent = msg; e.hidden = false; } };
+        const api = async (url: string, init?: RequestInit) => {
+            const r = await fetch(url, init);
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok) throw Object.assign(new Error(data.error || T.error), { code: data.code });
+            return data;
+        };
+        const show = (el: HTMLElement | null, msg: string) => { if (el) { el.textContent = msg; el.hidden = false; } };
+        // Cada importe con SU divisa: un cobro viejo en pesos se muestra en pesos
+        // aunque la cuenta hoy facture en dólares (regla 21).
+        const money = (n: number, cur: string) => new Intl.NumberFormat(LOCALE, {
+            style: 'currency', currency: cur || 'MXN', currencyDisplay: 'narrowSymbol',
+        }).format(n);
+
+        // ── Métodos de pago ──
+        async function loadMethods() {
+            const list = $('[data-methods]');
+            if (!list) return;
+            try {
+                const { methods } = await api('/api/billing/methods');
+                if (!methods.length) { list.innerHTML = `<li class="bl-empty">${T.sinTarjetas}</li>`; return; }
+                list.innerHTML = methods.map((m: any) => `
+                    <li class="bl-card">
+                        <span class="bl-card-brand">${(m.brand || 'card').toUpperCase()}</span>
+                        <span class="bl-card-num">•••• ${m.last4 ?? '····'}</span>
+                        <span class="bl-card-exp">${String(m.expMonth ?? '').padStart(2, '0')}/${String(m.expYear ?? '').slice(-2)}</span>
+                        ${m.isDefault
+                            ? `<span class="bl-card-tag">${T.predeterminada}</span>`
+                            : `<button class="bl-mini" data-default="${m.id}">${T.usarEsta}</button>`}
+                        <button class="bl-mini danger" data-remove="${m.id}">${T.eliminar}</button>
+                    </li>`).join('');
+            } catch (e: any) { list.innerHTML = ''; show($('[data-methods-err]'), e.message); }
+        }
+
+        // ── Suscripción ──
+        async function loadSubscription() {
+            const box = $('[data-sub]');
+            if (!box) return;
+            const planHref = 'https://cordhq.app/app/ajustes/plan';
+            const cambiar = LOCALE === 'en-US' ? 'Change plan' : 'Cambiar de plan';
+            try {
+                const { subscription: sub } = await api('/api/billing/subscription');
+                if (!sub) {
+                    box.innerHTML = `<p class="bl-empty">${T.sinSuscripcion}</p>
+                        <a class="bl-btn ghost" href="${planHref}">${LOCALE === 'en-US' ? 'See plans' : 'Ver planes'}</a>`;
+                    return;
+                }
+                const fin = sub.periodoFin
+                    ? new Date(sub.periodoFin * 1000).toLocaleDateString(LOCALE, { day: 'numeric', month: 'long', year: 'numeric' })
+                    : null;
+                const periodo = LOCALE === 'en-US'
+                    ? (sub.intervalo === 'anual' ? 'year' : 'month')
+                    : (sub.intervalo === 'anual' ? 'año' : 'mes');
+                // El descuento se muestra porque cambia lo que se cobra. Sin él,
+                // un plan de MXN 29,900 que hoy cuesta cero se lee como un error.
+                const desc = sub.descuentos?.length
+                    ? `<span class="bl-chip">${T.descuento}</span>` : '';
+                box.innerHTML = `
+                    <div class="bl-plan-card">
+                        <div class="bl-plan-head">
+                            <div>
+                                <span class="bl-plan-name">${sub.nombre ?? ''}</span>
+                                <span class="bl-badge st-${sub.estado}">${T.subEstados?.[sub.estado] ?? sub.estado}</span>
+                                ${desc}
+                            </div>
+                            <div class="bl-plan-amt">
+                                <span class="editorial">${money(sub.importe, sub.currency)}</span>
+                                <span class="bl-plan-cyc">${sub.currency} / ${periodo}</span>
+                            </div>
+                        </div>
+                        ${fin ? `<p class="bl-plan-renew">${sub.cancelaAlCierre ? T.termina : T.renueva} ${fin}.</p>` : ''}
+                        <div class="bl-plan-actions">
+                            <a class="bl-btn ghost" href="${planHref}">${cambiar}</a>
+                            ${sub.cancelaAlCierre
+                                ? `<button class="bl-btn solid" data-resume>${LOCALE === 'en-US' ? 'Resume' : 'Reanudar'}</button>`
+                                : `<button class="bl-btn ghost danger" data-cancel>${LOCALE === 'en-US' ? 'Cancel' : 'Cancelar'}</button>`}
+                        </div>
+                    </div>`;
+            } catch (e: any) {
+                box.innerHTML = `<p class="bl-err">${e.message}</p>`;
+            }
+        }
+
+        // ── Cobros: comprobante del cargo + CFDI del pago ──
+        // Se piden juntos: sin el estado fiscal no se sabe si la fila lleva
+        // "Facturar", "Facturado" o nada, y pintarla dos veces parpadea.
+        async function loadInvoices() {
+            const box = $('[data-invoices]');
+            if (!box) return;
+            try {
+                const [{ invoices }, fiscal] = await Promise.all([
+                    api('/api/billing/invoices'),
+                    api('/api/billing/factura').catch(() => ({ disponible: false, datosCompletos: false, facturas: {} })),
+                ]);
+
+                const note = $('[data-fiscal-note]');
+                if (note && fiscal.disponible) {
+                    note.textContent = fiscal.datosCompletos
+                        ? (LOCALE === 'en-US'
+                            ? 'You can issue the CFDI for any paid charge.'
+                            : 'Puedes emitir el CFDI de cualquier cobro pagado.')
+                        : (LOCALE === 'en-US'
+                            ? 'Add your tax details below to issue CFDIs for these charges.'
+                            : 'Completa tus datos fiscales abajo para poder facturar estos cobros.');
+                    note.hidden = false;
+                }
+
+                if (!invoices.length) { box.innerHTML = `<p class="bl-empty">${T.sinComprobantes}</p>`; return; }
+
+                const head = `<thead><tr>
+                    <th>${T.thFecha}</th><th>${T.thEstado}</th><th>${T.thNumero}</th>
+                    <th>${T.thConcepto}</th><th class="num">${T.thImporte}</th>
+                    ${fiscal.disponible ? `<th>${T.thFactura}</th>` : ''}<th></th>
+                </tr></thead>`;
+
+                box.innerHTML = `<table class="bl-table">${head}<tbody>${invoices.map((i: any) => {
+                    const f = fiscal.facturas?.[i.id];
+                    let fiscalCell = '';
+                    if (fiscal.disponible) {
+                        if (i.status !== 'paid' || i.total <= 0) {
+                            // Un cobro de cero no es ingreso y no se timbra. Se dice
+                            // con un guion, no con un botón que va a fallar.
+                            fiscalCell = '<span class="bl-dash">—</span>';
+                        } else if (f?.status === 'issued') {
+                            fiscalCell = `<span class="bl-pill ok" title="${f.uuid ?? ''}">${T.facturada}</span>`;
+                        } else if (!fiscal.datosCompletos) {
+                            fiscalCell = `<span class="bl-dash">${T.completaDatos}</span>`;
+                        } else {
+                            fiscalCell = `<button class="bl-mini" data-factura="${i.id}">${T.pedirFactura}</button>`;
+                        }
+                    }
+                    return `
+                    <tr>
+                        <td class="bl-inv-date">${new Date(i.created * 1000).toLocaleDateString(LOCALE, { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                        <td><span class="bl-pill ${i.status === 'paid' ? 'ok' : i.status === 'open' ? 'warn' : ''}">${T.estados?.[i.status] ?? i.status}</span></td>
+                        <td class="bl-inv-num">${i.number ?? '—'}</td>
+                        <td class="bl-inv-desc">${i.concepto ?? '—'}</td>
+                        <td class="bl-inv-amt num"><span class="editorial">${money(i.total, i.currency)}</span> <span class="bl-inv-cur">${i.currency}</span></td>
+                        ${fiscal.disponible ? `<td>${fiscalCell}</td>` : ''}
+                        <td class="bl-inv-dl">${i.hasPdf ? `<a class="bl-mini" href="/api/billing/invoices/${i.id}/pdf">${T.descargar}</a>` : ''}</td>
+                    </tr>`;
+                }).join('')}</tbody></table>`;
+            } catch (e: any) {
+                box.innerHTML = `<p class="bl-err">${e.message}</p>`;
+            }
+        }
+
+        // ── Acciones delegadas ──
+        root.addEventListener('click', async (ev) => {
+            const el = (ev.target as HTMLElement)?.closest('[data-default],[data-remove],[data-factura],[data-cancel],[data-resume]') as HTMLButtonElement | null;
+            if (!el) return;
+            const { default: setDefault, remove, factura } = el.dataset;
+
+            // Cancelar en dos tiempos: el primer clic revela la consecuencia real,
+            // el segundo la ejecuta. Un `confirm()` no cabe la explicación.
+            if (el.hasAttribute('data-cancel')) {
+                const note = $('[data-cancel-note]');
+                if (note && note.hidden) { note.hidden = false; return; }
+                el.disabled = true;
+                try { await api('/api/billing/cancelar', { method: 'POST' }); location.reload(); }
+                catch (e: any) { toast(e.message); el.disabled = false; }
+                return;
+            }
+            if (el.hasAttribute('data-resume')) {
+                el.disabled = true;
+                try {
+                    await api('/api/billing/cancelar', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reanudar: true }),
+                    });
+                    location.reload();
+                } catch (e: any) { toast(e.message); el.disabled = false; }
+                return;
+            }
+            if (remove && !confirm(T.confirmarEliminar)) return;
+            el.disabled = true;
+            const label = el.textContent;
+            if (factura) el.textContent = T.emitiendo;
+            try {
+                if (setDefault) { await api(`/api/billing/methods/${setDefault}`, { method: 'PATCH' }); await loadMethods(); }
+                if (remove) { await api(`/api/billing/methods/${remove}`, { method: 'DELETE' }); await loadMethods(); }
+                if (factura) {
+                    await api('/api/billing/factura', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ invoiceId: factura }),
+                    });
+                    await loadInvoices();
+                }
+            } catch (e: any) {
+                el.disabled = false;
+                el.textContent = label;
+                // Los datos fiscales están en esta misma página: llevar ahí es
+                // más útil que un mensaje que dice qué falta y no dónde.
+                if (e.code === 'datos_fiscales_incompletos') {
+                    root.querySelector('[data-datos]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    (root.querySelector('[data-d="taxId"]') as HTMLInputElement | null)?.focus();
+                }
+                toast(e.message);
+            }
+        });
+
+        // ── Alta de tarjeta ──
+        let addStripe: any = null, addElements: any = null;
+        $('[data-add-start]')?.addEventListener('click', async () => {
+            const Stripe = (window as any).Stripe;
+            const btn = $('[data-add-start]') as HTMLButtonElement | null;
+            if (!Stripe || !PK) return show($('[data-add-err]'), T.noConfig);
+            if (btn) { btn.disabled = true; btn.textContent = T.agregando; }
+            try {
+                const { client_secret } = await api('/api/billing/methods', { method: 'POST' });
+                addStripe = Stripe(PK);
+                addElements = addStripe.elements({ clientSecret: client_secret, appearance: APPEARANCE });
+                const pe = addElements.create('payment', { layout: 'tabs' });
+                pe.mount('#add-element');
+                pe.on('ready', () => { const s = $('[data-add-save]') as HTMLButtonElement | null; if (s) s.disabled = false; });
+                const mount = $('[data-add-mount]'); if (mount) mount.hidden = false;
+                if (btn) btn.hidden = true;
+            } catch (e: any) {
+                show($('[data-add-err]'), e.message);
+                if (btn) { btn.disabled = false; btn.textContent = T.guardarTarjeta; }
+            }
+        });
+        $('[data-add-cancel]')?.addEventListener('click', () => {
+            const mount = $('[data-add-mount]'); if (mount) mount.hidden = true;
+            const btn = $('[data-add-start]') as HTMLButtonElement | null;
+            if (btn) { btn.hidden = false; btn.disabled = false; }
+        });
+        $('[data-add-save]')?.addEventListener('click', async () => {
+            const btn = $('[data-add-save]') as HTMLButtonElement | null;
+            if (!addStripe || !addElements || !btn) return;
+            btn.disabled = true; btn.textContent = T.procesando;
+            const { error } = await addStripe.confirmSetup({
+                elements: addElements, redirect: 'if_required',
+                confirmParams: { return_url: location.origin + '/billing' },
+            });
+            btn.textContent = T.guardarTarjeta;
+            if (error) { show($('[data-add-err]'), error.message || T.error); btn.disabled = false; return; }
+            $('[data-add-cancel]')?.dispatchEvent(new Event('click'));
+            await loadMethods();
+        });
+
+        // ── Datos de facturación ──
+        async function loadDatos() {
+            try {
+                const d = await api('/api/billing/datos');
+                root.querySelectorAll<HTMLInputElement>('[data-d]').forEach((el) => {
+                    const k = el.dataset.d as string;
+                    if (d[k] !== undefined) el.value = d[k] ?? '';
+                });
+            } catch { /* el formulario queda vacío y editable */ }
+        }
+        $('[data-datos-save]')?.addEventListener('click', async () => {
+            const btn = $('[data-datos-save]') as HTMLButtonElement | null;
+            const msg = $('[data-datos-msg]');
+            if (btn) btn.disabled = true;
+            const body: Record<string, string> = {};
+            root.querySelectorAll<HTMLInputElement>('[data-d]').forEach((el) => { body[el.dataset.d as string] = el.value.trim(); });
+            try {
+                await api('/api/billing/datos', {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+                });
+                if (msg) { msg.textContent = T.guardado; msg.hidden = false; setTimeout(() => { msg.hidden = true; }, 2400); }
+                // El RFC vive en Ajustes › Fiscal, no aquí: si acaba de completarlo
+                // allá, esto no lo sabe. Recargar la lista es lo que destraba el
+                // botón de Facturar sin pedirle que recargue la página.
+                await loadInvoices();
+            } catch (e: any) { toast(e.message); }
+            finally { if (btn) btn.disabled = false; }
+        });
+
+        // ── Cobro pendiente ──
+        $('[data-due-start]')?.addEventListener('click', async () => {
+            const Stripe = (window as any).Stripe;
+            const btn = $('[data-due-start]') as HTMLButtonElement | null;
+            if (!Stripe || !PK) return show($('[data-due-err]'), T.noConfig);
+            if (btn) btn.disabled = true;
+            try {
+                const { client_secret } = await api('/api/billing/pagar', { method: 'POST' });
+                const stripe = Stripe(PK);
+                const elements = stripe.elements({ clientSecret: client_secret, appearance: APPEARANCE });
+                const pe = elements.create('payment', { layout: 'tabs' });
+                pe.mount('#due-element');
+                const pay = $('[data-due-pay]') as HTMLButtonElement | null;
+                pe.on('ready', () => { if (pay) pay.disabled = false; });
+                const mount = $('[data-due-mount]'); if (mount) mount.hidden = false;
+                if (btn) btn.hidden = true;
+                pay?.addEventListener('click', async () => {
+                    pay.disabled = true; pay.textContent = T.procesando;
+                    const { error } = await stripe.confirmPayment({
+                        elements, confirmParams: { return_url: location.origin + '/billing' },
+                    });
+                    if (error) { show($('[data-due-err]'), error.message || T.error); pay.disabled = false; }
+                });
+            } catch (e: any) {
+                show($('[data-due-err]'), e.message);
+                if (btn) btn.disabled = false;
+            }
+        });
+
+        loadSubscription();
+        loadMethods();
+        loadInvoices();
+        loadDatos();
+    }
+</script>
+
+<!-- Regla 11: tarjetas y tabla de cobros las inyecta el script, así que un
+     `<style>` scopeado no las matchearía. Global y llaveado por la superficie. -->
+<style is:global>
+    .bl-sec { padding: 0 0 2.2rem; }
+    .bl-sec + .bl-sec { padding-top: 2.2rem; border-top: 1px solid var(--bl-border); }
+    .bl-sec > h2 { margin: 0 0 1rem; font-size: .95rem; font-weight: 650; letter-spacing: -.01em; }
+    .bl-note { margin: .35rem 0 1rem; font-size: .82rem; line-height: 1.55; color: var(--bl-muted); max-width: 60ch; }
+    .bl-empty, .bl-loading { margin: 0; font-size: .86rem; color: var(--bl-muted); }
+    .bl-err { margin: .6rem 0 0; font-size: .82rem; color: var(--bl-danger); }
+    .bl-link { color: var(--bl-navy); font-weight: 600; text-decoration: none; }
+    .bl-link:hover { text-decoration: underline; }
+    .bl-saved { font-size: .8rem; font-weight: 600; color: var(--bl-ok); }
+
+    .bl-btn {
+        appearance: none; border: 0; cursor: pointer; font: inherit; text-decoration: none;
+        font-size: .84rem; font-weight: 600; padding: .58rem 1.1rem; border-radius: 999px;
+        display: inline-flex; align-items: center; gap: .4rem;
+        transition: background .18s var(--bl-ease), transform .12s ease, box-shadow .18s var(--bl-ease);
+    }
+    .bl-btn:active { transform: scale(.97); }
+    .bl-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(10,25,47,.18); }
+    .bl-btn[disabled] { opacity: .5; cursor: default; transform: none; }
+    .bl-btn.solid { background: var(--bl-navy); color: #fff; box-shadow: 0 1px 2px rgba(10,25,47,.18), 0 4px 14px rgba(10,25,47,.12); }
+    .bl-btn.solid:hover { background: #0d2340; }
+    .bl-btn.ghost { background: var(--bl-canvas); color: var(--bl-text); }
+    .bl-btn.ghost:hover { background: #ececf0; }
+    .bl-btn.ghost.danger { color: var(--bl-danger); }
+    .bl-mini {
+        appearance: none; border: 0; background: transparent; cursor: pointer; font: inherit;
+        font-size: .78rem; font-weight: 600; color: var(--bl-navy);
+        padding: .3rem .5rem; border-radius: 8px; text-decoration: none; white-space: nowrap;
+    }
+    .bl-mini:hover { background: rgba(10,25,47,.06); }
+    .bl-mini[disabled] { opacity: .5; cursor: default; }
+    .bl-mini.danger { color: var(--bl-muted); }
+    .bl-mini.danger:hover { color: var(--bl-danger); background: rgba(239,68,68,.08); }
+
+    /* ── Plan: tarjeta con borde hairline. Es el único bloque encuadrado de la
+       página, y se gana el borde porque agrupa cuatro datos que se leen juntos
+       (plan, estado, importe, renovación). El resto son listas (regla 3). ── */
+    .bl-plan-card { border: 1px solid var(--bl-border); border-radius: 14px; padding: 1.1rem 1.2rem; }
+    .bl-plan-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .bl-plan-name { font-size: 1.02rem; font-weight: 650; letter-spacing: -.01em; margin-right: .5rem; }
+    .bl-plan-amt { display: flex; align-items: baseline; gap: .4rem; }
+    .bl-plan-amt .editorial { font-size: 1.35rem; }
+    .bl-plan-cyc { font-size: .78rem; color: var(--bl-muted); font-weight: 600; }
+    .bl-plan-renew { margin: .55rem 0 0; font-size: .82rem; color: var(--bl-muted); }
+    .bl-plan-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1.1rem; }
+    .bl-chip {
+        display: inline-block; font-size: .7rem; font-weight: 600; letter-spacing: .01em;
+        padding: .2rem .55rem; border-radius: 6px; margin-left: .35rem;
+        border: 1px solid var(--bl-border); color: var(--bl-muted);
+    }
+    .bl-badge {
+        font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+        padding: .18rem .5rem; border-radius: 999px; background: rgba(10,25,47,.07); color: var(--bl-muted);
+    }
+    .bl-badge.st-active, .bl-badge.st-trialing { background: rgba(18,133,92,.12); color: var(--bl-ok); }
+    .bl-badge.st-past_due, .bl-badge.st-unpaid { background: rgba(239,68,68,.12); color: var(--bl-warn); }
+    .bl-due > h2 { color: var(--bl-warn); }
+
+    .bl-cards { list-style: none; margin: 0 0 .9rem; padding: 0; }
+    .bl-card {
+        display: flex; align-items: center; gap: .85rem; padding: .7rem 0; font-size: .86rem;
+        border-bottom: 1px solid var(--bl-border);
+    }
+    .bl-card:last-child { border-bottom: 0; }
+    .bl-card-brand { font-size: .68rem; font-weight: 700; letter-spacing: .06em; color: var(--bl-muted); min-width: 3.4rem; }
+    .bl-card-num { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .bl-card-exp { font-variant-numeric: tabular-nums; color: var(--bl-muted); font-size: .8rem; }
+    .bl-card-tag { font-size: .7rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--bl-ok); background: rgba(18,133,92,.12); padding: .18rem .5rem; border-radius: 999px; }
+    .bl-card > :nth-last-child(2) { margin-left: auto; }
+    .bl-add { margin: 0 0 .9rem; }
+    .bl-add-actions { display: flex; gap: .5rem; margin-top: .9rem; }
+
+    .bl-invoices { overflow-x: auto; }
+    .bl-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .bl-table th {
+        text-align: left; font-size: .72rem; font-weight: 600; letter-spacing: .04em;
+        text-transform: uppercase; color: var(--bl-muted);
+        padding: 0 .5rem .55rem; border-bottom: 1px solid var(--bl-border); white-space: nowrap;
+    }
+    .bl-table th.num, .bl-table td.num { text-align: right; }
+    .bl-table td { padding: .72rem .5rem; border-bottom: 1px solid var(--bl-border); white-space: nowrap; }
+    .bl-table tr:last-child td { border-bottom: 0; }
+    .bl-table th:first-child, .bl-table td:first-child { padding-left: 0; }
+    .bl-table th:last-child, .bl-table td:last-child { padding-right: 0; text-align: right; }
+    .bl-inv-date { color: var(--bl-muted); }
+    .bl-inv-num { font-variant-numeric: tabular-nums; color: var(--bl-muted); }
+    .bl-inv-desc { max-width: 18ch; overflow: hidden; text-overflow: ellipsis; }
+    .bl-inv-amt .editorial { font-size: .88rem; }
+    .bl-inv-cur { font-size: .72rem; font-weight: 600; color: var(--bl-muted); letter-spacing: .02em; }
+    .bl-dash { color: var(--bl-muted); font-size: .78rem; }
+    /* Estados como pill, no como texto en mayúsculas: "PAID" gritado en una
+       columna se lee como un error; "Pagado" en verde suave se lee como un dato. */
+    .bl-pill {
+        display: inline-block; font-size: .72rem; font-weight: 600;
+        padding: .16rem .5rem; border-radius: 6px;
+        background: rgba(10,25,47,.06); color: var(--bl-muted);
+    }
+    .bl-pill.ok { background: rgba(18,133,92,.12); color: var(--bl-ok); }
+    .bl-pill.warn { background: rgba(194,65,12,.12); color: var(--bl-warn); }
+
+    .bl-form { display: flex; flex-direction: column; gap: .8rem; }
+    .bl-row { display: flex; gap: .8rem; flex-wrap: wrap; }
+    .bl-field { display: flex; flex-direction: column; gap: .3rem; flex: 1 1 180px; }
+    .bl-field.wide { flex-basis: 100%; }
+    .bl-field > span { font-size: .76rem; font-weight: 600; color: var(--bl-muted); }
+    .bl-input {
+        font: inherit; font-size: .88rem; padding: .58rem .75rem; border-radius: 9px;
+        border: 1px solid transparent; background: var(--bl-canvas); color: var(--bl-text);
+        transition: border-color .18s var(--bl-ease), background .18s var(--bl-ease);
+    }
+    .bl-input:focus { outline: none; background: #fff; border-color: rgba(10, 25, 47, .15); }
+    .bl-input:disabled { color: var(--bl-muted); }
+    .bl-form-actions { display: flex; align-items: center; gap: .7rem; margin-top: .3rem; }
+
+    /* Móvil es táctil, no escritorio encogido (regla 16): 44 px de objetivo. */
+    @media (max-width: 880px) {
+        .bl-sub { flex-direction: column; }
+        .bl-sub-actions { width: 100%; }
+        .bl-btn { min-height: 44px; }
+        .bl-mini { min-height: 44px; padding: .5rem .7rem; }
+    }
+</style>

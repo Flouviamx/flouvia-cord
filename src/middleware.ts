@@ -36,7 +36,7 @@ const OPS_PUBLIC_API_EXACT = [
     "/api/ops/passkey-options",
     "/api/ops/passkey-verify",
 ];
-const PUBLIC_API_EXACT = ["/api/mcp", "/api/docs-search.json", ...OPS_PUBLIC_API_EXACT];
+const PUBLIC_API_EXACT = ["/api/mcp", "/api/docs-search.json", "/api/geo", ...OPS_PUBLIC_API_EXACT];
 
 // Exención CSRF independiente de "API pública". Solo entra aquí una mutación
 // que se autentica con una credencial que el navegador no adjunta por sí solo
@@ -98,6 +98,12 @@ const SUBDOMAINS = [
     // subdominio y llama a esos endpoints. Antes terminaba como
     // /ops/api/ops/auth y el login devolvía 404 en producción.
     { host: "ops.cordhq.app", prefixes: ["/ops", "/api/ops"] },
+    // Facturación de la suscripción a Cord: superficie propia, fuera del chrome
+    // de la app, como la del procesador que sustituye. `/api/billing` viaja con
+    // ella porque la página llama a esos endpoints y la política CSRF exige
+    // mismo origen: servida desde billing.cordhq.app, un fetch al apex sería
+    // cross-origin y se rechazaría con 403.
+    { host: "billing.cordhq.app", prefixes: ["/billing", "/api/billing"] },
 ];
 
 function normalizedHostname(value: string): string {
@@ -159,6 +165,10 @@ const subdomainRewrite = async (context: any, next: any) => {
     if (import.meta.env.PROD) {
         for (const s of SUBDOMAINS) {
             for (const p of s.prefixes) {
+                // Solo páginas. Un endpoint no se indexa, y `/api/billing/*`
+                // SÍ tiene que seguir respondiendo en el apex: es el que usa
+                // /app/checkout. Redirigirlo rompería el alta de suscripción.
+                if (p.startsWith("/api/")) continue;
                 if (path === p || path.startsWith(p + "/")) {
                     // ⚠️ Se PRESERVA el prefijo en el destino (no se recorta). Un deep
                     // link como cordhq.app/docs/pagos/resumen debe caer en
@@ -281,6 +291,21 @@ const mainHandler = async (context: any, next: any) => {
     const isOpsLoginPage = path === "/ops/login";
     const isPublicOpsApi = OPS_PUBLIC_API_EXACT.includes(path);
 
+    // Facturación de la suscripción: superficie propia en billing.cordhq.app.
+    // `/billing/entrar` es su ÚNICA puerta sin sesión — canjea el token de
+    // traspaso que emite el apex por una sesión de este host (ver
+    // `/api/billing/handoff`). El resto exige sesión como /app.
+    const isBillingPage = path === "/billing" || path.startsWith("/billing/");
+    const isBillingEntry = path === "/billing/entrar";
+
+    // El árbol /billing solo existe bajo su host. En el apex es 404: una misma
+    // superficie alcanzable por dos hosts es una superficie con dos políticas de
+    // cookie, y tarde o temprano divergen. Mismo criterio que Ops.
+    if (isBillingPage && import.meta.env.PROD &&
+        normalizedHostname(context.url.hostname || '') !== 'billing.cordhq.app') {
+        return new Response('Not found', { status: 404 });
+    }
+
     // La ruta fisica nunca basta para convertirse en Ops. En produccion debe
     // llegar por el hostname canonico; previews y aliases desconocidos fallan
     // cerrados aun si Vercel o Astro cambian el orden de sus rewrites.
@@ -394,6 +419,16 @@ const mainHandler = async (context: any, next: any) => {
     // (ej. /app/cotizaciones/x) no se pierda tras iniciar sesión.
     if (isApp && !userId) {
         return context.redirect(`/sign-in?redirect_url=${encodeURIComponent(path)}`);
+    }
+    // Sin sesión en billing.cordhq.app se manda al apex a iniciarla, y de vuelta
+    // por el traspaso — no a `/sign-in` de este host, donde la cookie que se
+    // creara no serviría para el resto de la app.
+    if (isBillingPage && !isBillingEntry && !userId) {
+        // En dev todo vive en el mismo origen, así que se resuelve local. En prod
+        // el login está en el apex: mandarlo a `/sign-in` de este host crearía una
+        // cookie que no sirve para el resto de la app.
+        const signIn = `/sign-in?redirect_url=${encodeURIComponent('/api/billing/handoff')}`;
+        return context.redirect(import.meta.env.PROD ? `https://cordhq.app${signIn}` : signIn);
     }
     // Proteger las APIs internas (operan sobre la org del usuario). Las públicas pasan.
     if (isApi && !isPublicApi && !isOpsApi && !userId) {

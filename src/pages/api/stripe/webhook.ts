@@ -857,7 +857,8 @@ async function syncSubscription(sub: any) {
                     billing_cycle = ${cycle},
                     stripe_subscription_id = ${sub.id},
                     stripe_customer_id = coalesce(stripe_customer_id, ${sub.customer}),
-                    current_period_end = ${periodEnd ? new Date(periodEnd * 1000).toISOString() : null}
+                    current_period_end = ${periodEnd ? new Date(periodEnd * 1000).toISOString() : null},
+                    cancel_at_period_end = ${Boolean(sub.cancel_at_period_end)}
                   where id = ${orgId} returning id`);
         if (!updated.length) throw new Error(`Plan no actualizado para organización ${orgId}`);
     } else {
@@ -867,7 +868,8 @@ async function syncSubscription(sub: any) {
                     billing_cycle = ${cycle},
                     stripe_subscription_id = ${sub.id},
                     stripe_customer_id = coalesce(stripe_customer_id, ${sub.customer}),
-                    current_period_end = ${periodEnd ? new Date(periodEnd * 1000).toISOString() : null}
+                    current_period_end = ${periodEnd ? new Date(periodEnd * 1000).toISOString() : null},
+                    cancel_at_period_end = ${Boolean(sub.cancel_at_period_end)}
                   where id = ${orgId} returning id`);
         if (!updated.length) throw new Error(`Suscripción no actualizada para organización ${orgId}`);
     }
@@ -903,7 +905,8 @@ async function downgradeToFree(sub: any) {
     const prevPlan = (rows[0].plan as string) || 'free';
     const [updated] = await withOrgTx(orgId,
         sql`update orgs set plan = 'free', subscription_status = 'canceled', stripe_subscription_id = null,
-            current_period_end = null, billing_paid_through = null, billing_paid_plan = null
+            current_period_end = null, billing_paid_through = null, billing_paid_plan = null,
+            cancel_at_period_end = false
             where id = ${orgId} returning id`,
         sql`update billing_checkout_attempts set status = 'canceled', updated_at = now()
             where org_id = ${orgId} and stripe_subscription_id = ${sub.id}

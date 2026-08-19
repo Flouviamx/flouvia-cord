@@ -14,8 +14,10 @@ import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db
 import { getOrg, requirePerm } from '../../../lib/queries';
 import {
     STRIPE_KEY, PLAN_PRICES, METER_PRICES, isPaidPlan, getOrCreateCustomer, stripe,
-    type Cycle,
+    priceFor, meterPricesFor, platformCurrencyForOrg, type Cycle,
 } from '../../../lib/billing';
+import { normalizePlatformCurrency, type PlatformCurrency } from '../../../lib/plan-currency';
+import { stripeCurrency } from '../../../lib/currency';
 import { siteOrigin } from '../../../lib/email';
 import { PLAN_RANK, type PaidPlan } from '../../../lib/entitlements';
 
@@ -49,12 +51,16 @@ function meterDimension(priceId: string): string | null {
     return null;
 }
 
-function appendDesiredItems(params: Record<string, string>, prefix: string, plan: PaidPlan, cycle: Cycle): void {
-    const prices = [PLAN_PRICES[plan][cycle], ...Object.values(METER_PRICES[plan]).filter(Boolean) as string[]];
+function appendDesiredItems(params: Record<string, string>, prefix: string, plan: PaidPlan, cycle: Cycle, currency: PlatformCurrency): void {
+    const prices = [priceFor(plan, cycle, currency), ...meterPricesFor(plan, currency)];
     prices.forEach((price, index) => { params[`${prefix}[${index}][price]`] = price; });
 }
 
-function subscriptionChangeParams(subscription: any, orgId: string, plan: PaidPlan, cycle: Cycle): Record<string, string> {
+// Ojo: los caminos de CAMBIO (este y `schedulePlanChange`) nunca mandan
+// `currency`. Una suscripción viva conserva la suya y todos sus items deben
+// compartirla; re-derivarla del país aquí es cómo se produce el error duro de
+// Stripe "items must share the subscription currency" a mitad de un upgrade.
+function subscriptionChangeParams(subscription: any, orgId: string, plan: PaidPlan, cycle: Cycle, currency: PlatformCurrency): Record<string, string> {
     const params: Record<string, string> = {
         payment_behavior: 'pending_if_incomplete',
         proration_behavior: 'always_invoice',
@@ -69,7 +75,7 @@ function subscriptionChangeParams(subscription: any, orgId: string, plan: PaidPl
     const base = currentBaseItem(subscription);
     if (base) {
         params[`items[${index}][id]`] = String(base.id);
-        params[`items[${index}][price]`] = PLAN_PRICES[plan][cycle];
+        params[`items[${index}][price]`] = priceFor(plan, cycle, currency);
         used.add(String(base.id));
         index++;
     }
@@ -99,7 +105,7 @@ async function ensureFlexible(subscription: any, idempotencyKey: string): Promis
     }, 'POST', { version: STRIPE_VERSION, idempotencyKey: `${idempotencyKey}:flexible` });
 }
 
-async function schedulePlanChange(subscription: any, orgId: string, plan: PaidPlan, cycle: Cycle, idempotencyKey: string): Promise<any> {
+async function schedulePlanChange(subscription: any, orgId: string, plan: PaidPlan, cycle: Cycle, idempotencyKey: string, currency: PlatformCurrency): Promise<any> {
     const scheduleId = priceIdOf(subscription?.schedule);
     const schedule = scheduleId
         ? await stripe(`/v1/subscription_schedules/${scheduleId}`, undefined, 'GET', { version: STRIPE_VERSION })
@@ -132,7 +138,7 @@ async function schedulePlanChange(subscription: any, orgId: string, plan: PaidPl
             params[`phases[0][items][${index}][quantity]`] = String(item.quantity);
         }
     });
-    appendDesiredItems(params, 'phases[1][items]', plan, cycle);
+    appendDesiredItems(params, 'phases[1][items]', plan, cycle, currency);
     return stripe(`/v1/subscription_schedules/${schedule.id}`, params, 'POST', {
         version: STRIPE_VERSION,
         idempotencyKey: `${idempotencyKey}:schedule-update`,
@@ -169,6 +175,17 @@ export const POST: APIRoute = async ({ request }) => {
 
     try {
         const customer = await getOrCreateCustomer(orgId, org.email, org.nombre);
+
+        // Divisa de plataforma: MXN a México, USD al resto. Se resuelve UNA vez.
+        //
+        // Stripe congela `customer.currency` en la primera factura, así que la del
+        // customer manda sobre la que derivamos del país: mandar un `currency` que
+        // lo contradice es un 400 con el cobro a medias. Un cliente que ya pagó en
+        // pesos sigue en pesos aunque hoy su país diga otra cosa.
+        let currency = await platformCurrencyForOrg(orgId);
+        const cus = await stripe(`/v1/customers/${customer}`, undefined, 'GET');
+        const locked = normalizePlatformCurrency(cus?.currency);
+        if (locked && locked !== currency) currency = locked;
 
         // Expira locks abandonados. Una Subscription `incomplete` queda terminal
         // en Stripe después de su ventana; el webhook/reconciliador sincroniza el
@@ -311,7 +328,7 @@ export const POST: APIRoute = async ({ request }) => {
                 const isUpgrade = PLAN_RANK[plan] > PLAN_RANK[currentPlan];
                 existingSubscription = await ensureFlexible(existingSubscription, idempotencyKey);
                 if (!isUpgrade) {
-                    const schedule = await schedulePlanChange(existingSubscription, orgId, plan, cycle, idempotencyKey);
+                    const schedule = await schedulePlanChange(existingSubscription, orgId, plan, cycle, idempotencyKey, currency);
                     await withOrgTx(orgId, sql`
                         update billing_checkout_attempts set status = 'completed', updated_at = now()
                          where id = ${attemptId} and org_id = ${orgId}`);
@@ -319,7 +336,7 @@ export const POST: APIRoute = async ({ request }) => {
                     return json({ changed: true, scheduled: true, redirect_url: `${origin}/app/ajustes/plan?cambio_programado=1` });
                 }
 
-                const changed = await stripe(`/v1/subscriptions/${existingSubscription.id}`, subscriptionChangeParams(existingSubscription, orgId, plan, cycle), 'POST', {
+                const changed = await stripe(`/v1/subscriptions/${existingSubscription.id}`, subscriptionChangeParams(existingSubscription, orgId, plan, cycle, currency), 'POST', {
                     version: STRIPE_VERSION,
                     idempotencyKey,
                 });
@@ -355,7 +372,8 @@ export const POST: APIRoute = async ({ request }) => {
         if (useElement) {
             const params: Record<string, string> = {
                 customer,
-                'items[0][price]': PLAN_PRICES[plan][cycle],
+                currency: stripeCurrency(currency),
+                'items[0][price]': priceFor(plan, cycle, currency),
                 payment_behavior: 'default_incomplete',
                 'payment_settings[save_default_payment_method]': 'on_subscription',
                 'billing_mode[type]': 'flexible',
@@ -366,8 +384,7 @@ export const POST: APIRoute = async ({ request }) => {
             };
             // Items medidos (overage): sin quantity → uso.
             let i = 1;
-            for (const price of Object.values(METER_PRICES[plan])) {
-                if (!price) continue;
+            for (const price of meterPricesFor(plan, currency)) {
                 params[`items[${i}][price]`] = price;
                 i++;
             }
@@ -402,9 +419,10 @@ export const POST: APIRoute = async ({ request }) => {
         const params: Record<string, string> = {
             mode: 'subscription',
             customer,
+            currency: stripeCurrency(currency),
             success_url: `${origin}/app/ajustes/plan?suscrito=1`,
             cancel_url: `${origin}/app/ajustes/plan`,
-            'line_items[0][price]': PLAN_PRICES[plan][cycle],
+            'line_items[0][price]': priceFor(plan, cycle, currency),
             'line_items[0][quantity]': '1',
             'subscription_data[metadata][org_id]': orgId,
             'subscription_data[metadata][plan]': plan,
@@ -414,8 +432,7 @@ export const POST: APIRoute = async ({ request }) => {
             'metadata[cycle]': cycle,
         };
         let i = 1;
-        for (const price of Object.values(METER_PRICES[plan])) {
-            if (!price) continue;
+        for (const price of meterPricesFor(plan, currency)) {
             params[`line_items[${i}][price]`] = price;
             i++;
         }

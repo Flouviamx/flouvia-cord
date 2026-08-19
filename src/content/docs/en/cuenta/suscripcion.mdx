@@ -1,0 +1,122 @@
+---
+title: "Your Cord subscription"
+description: "Plan, currency, payment method, receipts, and the invoice for what you pay for the platform."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Your Cord subscription</h1>
+  <p class="page-subtitle">Which plan you're on, the currency you're billed in, and where to manage your card, receipts, and invoice.</p>
+</header>
+
+## Two places, two different questions
+
+Your subscription lives across two surfaces, and the split is deliberate:
+
+- **Settings > Plans & subscription** (`/app/ajustes/plan`) answers *which plan you
+  have and how much you've used*: the period's included quotas, the meters for AI,
+  invoices, API and users, and plan changes.
+- **[billing.cordhq.app](https://billing.cordhq.app)** answers *the money*: your
+  card, your receipts, your billing details, the invoice for your payments, and
+  cancellation.
+
+You reach the second from the first, using the session you already have open. No
+second sign-in.
+
+## Which currency Cord bills you in
+
+Your subscription currency follows **your business's country** — not the language
+you browse in, and not the currency you quote your own clients in:
+
+| Business country | Subscription currency |
+| :--- | :--- |
+| Mexico | Mexican pesos (MXN) |
+| Everywhere else | US dollars (USD) |
+
+<Callout type="info">
+**Not the same as your sales currency.** A business in Madrid quotes its clients in
+euros and pays Cord in dollars. Two separate decisions: yours lives in
+**Settings > General**, the platform's is set by your country.
+</Callout>
+
+What you see published is what you're charged: nothing is added at confirmation.
+Paying **annually** costs ten months, so you get two free.
+
+If you already have an active subscription, **your currency doesn't change** even if
+you later change your business's country. It's locked at your first charge and stays
+there; that's a payment-processor constraint, not a preference.
+
+## Payment method
+
+On **billing.cordhq.app** you can store several cards, mark which one is the
+default, and remove the ones you no longer use. The default is the card your next
+renewal charges.
+
+<Callout type="warning">
+You can't remove your only card while a subscription is active. Add the new one
+first, then delete the old one — that way no renewal is left with nothing to charge.
+</Callout>
+
+Your card details never pass through Cord. The payment processor captures them
+directly in an encrypted field, and we only receive the confirmation.
+
+## If a charge didn't go through
+
+When a card declines, your subscription goes to **past due** and you'll see a notice
+at the top of billing.cordhq.app with a button to settle it right there. Your plan
+stays active while the charge is pending, but not indefinitely — resolve it so you
+don't lose your plan's capabilities.
+
+## Receipts and invoices
+
+Two different documents, worth not confusing:
+
+- The **receipt** is the record of the charge. It always exists, in every country,
+  and downloads from the right-hand column of the charges table.
+- The **invoice** is the tax document. In Mexico, Cord issues your **CFDI 4.0**
+  stamped with the SAT.
+
+### Invoicing your subscription (Mexico)
+
+<Steps>
+1. Go to **billing.cordhq.app** and scroll to **Billing details**.
+2. Enter your **RFC**, and make sure your tax regime and postal code are complete
+   under **Settings > Invoicing > Tax details**. Without those three fields nothing
+   can be stamped.
+3. In the **Charges** table, press **Get invoice** on the charge you need.
+4. The row changes to **Invoiced**. Your CFDI is issued to the tax details you
+   entered.
+</Steps>
+
+<Callout type="warning">
+**A charge can only be invoiced once.** Canceling an issued CFDI requires the
+recipient's authorization with the SAT, so double-check your tax details **before**
+pressing Get invoice.
+</Callout>
+
+A $0 charge — fully covered by a discount, for instance — can't be invoiced: there's
+no income to declare. You'll see a dash instead of the button.
+
+Outside Mexico the invoice option doesn't appear, and that isn't a gap: your payment
+receipt **is** the document you record the expense with.
+
+## Changing plans
+
+Done from **Settings > Plans & subscription**:
+
+- **Upgrading** applies immediately. You're charged the prorated difference for what
+  remains of your period, and your quotas adjust right away.
+- **Downgrading** is scheduled for the end of the period you already paid for. You
+  keep your current plan until then.
+
+## Canceling
+
+On billing.cordhq.app, **Cancel** schedules the end of your subscription for the
+close of the period you already paid for. You keep access until that date, and you
+can **resume** any time before it arrives.
+
+When you cancel, your account returns to the Free plan:
+
+- **Your data and settings are kept**, intact. Nothing is deleted.
+- Anything above the Free plan's limits **stops working** until you upgrade again.
+  If you have more active quotes or more users than Free allows, those resources are
+  still there but inoperative.

@@ -2116,6 +2116,64 @@ alter table orgs add column if not exists billing_last_invoice_id text;
 alter table orgs add column if not exists billing_last_amount_paid bigint;
 alter table orgs add column if not exists billing_currency text;
 alter table orgs add column if not exists billing_paid_plan text;
+-- Cancelación programada al cierre del periodo. Se espeja desde
+-- `customer.subscription.updated` porque la UI necesita decir "se cancela el 18
+-- de septiembre" sin llamar a Stripe en cada render del SSR. El resto del detalle
+-- de facturación (tarjetas, comprobantes) SÍ se lee en vivo: no otorga acceso y
+-- espejarlo crearía un segundo estado que se desincroniza.
+alter table orgs add column if not exists cancel_at_period_end boolean not null default false;
+
+-- ── Traspaso de sesión al host de facturación ────────────────────────────────
+-- `cord_session` es host-only a propósito (`sessionCookieOptions()` no fija
+-- Domain), así que NO viaja a billing.cordhq.app. La alternativa —ampliarla a
+-- `.cordhq.app`— la mandaría también a ops./docs./dev. y rompería el aislamiento
+-- deliberado de Ops.
+--
+-- En vez de eso, el apex emite un token de un solo uso y el host de facturación
+-- lo canjea por una sesión PROPIA. Se guarda el sha256, nunca el token: mismo
+-- contrato que `sessions`, reset de contraseña e invitaciones.
+create table if not exists billing_handoff_tokens (
+    id           text primary key,                    -- sha256 del token crudo
+    user_id      uuid not null references users(id) on delete cascade,
+    org_id       uuid references orgs(id) on delete cascade,
+    expires_at   timestamptz not null,
+    used_at      timestamptz,
+    created_at   timestamptz not null default now()
+);
+create index if not exists idx_billing_handoff_expires on billing_handoff_tokens (expires_at);
+
+-- ── CFDI de los pagos de suscripción a Cord ──────────────────────────────────
+-- Cord le factura al negocio lo que le cobró por la plataforma, con su PROPIO
+-- CSD (`FACTURAPI_CORD_ORG_KEY`) — el mismo carril que ya timbra las comisiones
+-- de Cord Payments (`emitPlatformInvoice`).
+--
+-- `stripe_invoice_id` es UNIQUE por diseño: timbrar dos veces el mismo cobro es
+-- un problema fiscal real, no un duplicado cosmético — cancelar un CFDI ante el
+-- SAT exige aprobación del receptor y no siempre se consigue.
+create table if not exists suscripcion_facturas (
+    id                 uuid primary key default gen_random_uuid(),
+    org_id             uuid not null references orgs(id) on delete cascade,
+    stripe_invoice_id  text not null unique,
+    status             text not null default 'pending',   -- pending | issued | error
+    facturapi_id       text,
+    fiscal_uuid        text,
+    invoice_number     text,
+    currency           text not null default 'MXN',
+    total_cents        bigint not null default 0,
+    provider_data      jsonb not null default '{}'::jsonb,
+    invoice_error      text,
+    issued_at          timestamptz,
+    created_at         timestamptz not null default now(),
+    updated_at         timestamptz not null default now()
+);
+create index if not exists idx_suscripcion_facturas_org on suscripcion_facturas (org_id, created_at desc);
+
+alter table suscripcion_facturas enable row level security;
+alter table suscripcion_facturas force row level security;
+drop policy if exists suscripcion_facturas_org on suscripcion_facturas;
+create policy suscripcion_facturas_org on suscripcion_facturas
+    using (org_id = current_setting('app.org_id', true)::uuid)
+    with check (org_id = current_setting('app.org_id', true)::uuid);
 
 create or replace function cord_effective_plan(p_org uuid)
 returns text

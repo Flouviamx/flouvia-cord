@@ -1,5 +1,15 @@
-// POST /api/billing/portal — abre el Customer Portal de Stripe para que la org
-// gestione su suscripción (cambiar plan, método de pago, cancelar, ver recibos).
+// POST /api/billing/portal — ESCAPE DE SOPORTE. No es un camino de producto.
+//
+// Ago 2026: la gestión de la suscripción se trajo a Cord
+// (billing.cordhq.app + `/api/billing/{methods,invoices,datos,cancelar,pagar,factura}`).
+// Ninguna superficie enlaza aquí y ninguna debe volver a hacerlo: mandar al
+// cliente a un dominio del procesador es justo lo que ese trabajo vino a quitar.
+//
+// El endpoint sobrevive a propósito, como red: si la superficie propia tuviera un
+// hueco, soporte todavía puede abrirle el portal a una cuenta concreta en vez de
+// dejarla sin salida. Si algún día se elimina, quita también los asserts de
+// configuración del portal en scripts/verify-stripe-billing.mjs.
+//
 // Ruta INTERNA (el middleware exige sesión).
 // ⚠️ Requiere tener configurado el Customer Portal en el dashboard de Stripe.
 export const prerender = false;

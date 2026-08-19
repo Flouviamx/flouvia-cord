@@ -6,10 +6,17 @@ const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
 
 import { PLANES as PLANES_ES, precioAnualMensualizado } from '../../lib/precios';
 import { PLANES_EN } from '../../lib/precios.en';
+import { type PlatformCurrency } from '../../lib/plan-currency';
+import { planMoney, planCycleLabel } from '../../lib/plan-money';
 
+// El idioma elige la COPY, nunca la divisa: son preguntas distintas (regla 21).
+// El bloque se prerenderiza en MXN y `precios.astro` es quien tiene el selector;
+// aquí basta con que las dos cifras viajen en el DOM para que el mismo script
+// —cuando el visitante llega desde /precios con preferencia guardada— acierte.
 const PLANES = lang === 'es' ? PLANES_ES : PLANES_EN;
 const isEn = lang === 'en';
-const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
+const STATIC_CURRENCY: PlatformCurrency = 'MXN';
+const money0 = (n: number, cur: PlatformCurrency = STATIC_CURRENCY) => planMoney(n, cur, lang);
 ---
 
 <section class="pricing" id="precios">
@@ -22,7 +29,7 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
     <div class="pr-grid-wrap">
         <div class="pr-grid">
             {PLANES.map((p) => {
-                const anual = precioAnualMensualizado(p.precioMensual);
+                const anual = precioAnualMensualizado(p.precio[STATIC_CURRENCY]);
                 return (
                     <article class:list={['plan reveal', `plan-${p.id}`, { 'plan-featured': p.destacado }]}>
 
@@ -40,15 +47,18 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
                                     <div class="plan-price">
                                         <span class="editorial plan-amount">{isEn ? 'Custom' : 'A tu medida'}</span>
                                     </div>
-                                ) : p.precioMensual === 0 ? (
+                                ) : p.precio[STATIC_CURRENCY] === 0 ? (
                                     <div class="plan-price">
                                         <span class="editorial plan-amount">$0</span>
                                         <span class="plan-cycle">{isEn ? 'forever' : 'siempre'}</span>
                                     </div>
                                 ) : (
-                                    <div class="plan-price" data-monthly={money0(p.precioMensual)} data-annual={money0(anual)}>
-                                        <span class="editorial plan-amount plan-amount-val">{money0(p.precioMensual)}</span>
-                                        <span class="plan-cycle">{t("pr.cycle.m")}</span>
+                                    <div class="plan-price"
+                                        data-monthly={money0(p.precio[STATIC_CURRENCY])} data-annual={money0(anual)}
+                                        data-mxn-monthly={money0(p.precio.MXN, 'MXN')} data-mxn-annual={money0(precioAnualMensualizado(p.precio.MXN), 'MXN')}
+                                        data-usd-monthly={money0(p.precio.USD, 'USD')} data-usd-annual={money0(precioAnualMensualizado(p.precio.USD), 'USD')}>
+                                        <span class="editorial plan-amount plan-amount-val">{money0(p.precio[STATIC_CURRENCY])}</span>
+                                        <span class="plan-cycle" data-cycle-label>{planCycleLabel(STATIC_CURRENCY, 'mensual', lang)}</span>
                                     </div>
                                 )}
                                 <p class="plan-tagline">{p.tagline}</p>
@@ -57,7 +67,7 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
 
                         {/* ── Body: toggle + CTA + features ── */}
                         <div class="plan-body">
-                            {p.precioMensual > 0 && !p.custom && (
+                            {p.precio[STATIC_CURRENCY] > 0 && !p.custom && (
                                 <div class="plan-billing-toggle">
                                     <label class="toggle-switch">
                                         <input type="checkbox" class="billing-toggle-checkbox" />
@@ -70,7 +80,7 @@ const money0 = (n: number) => '$' + new Intl.NumberFormat('es-MX').format(n);
                             <a
                                 href={p.custom
                                     ? p.ctaHref
-                                    : p.precioMensual === 0
+                                    : p.precio[STATIC_CURRENCY] === 0
                                         ? p.ctaHref
                                         : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
                                 class="plan-cta plan-cta-solid"

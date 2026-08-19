@@ -1,0 +1,123 @@
+---
+title: "Tu suscripción a Cord"
+description: "Plan, divisa, método de pago, comprobantes y la factura de lo que pagas por la plataforma."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Tu suscripción a Cord</h1>
+  <p class="page-subtitle">Qué plan tienes, en qué divisa se te cobra y dónde gestionas tu tarjeta, tus comprobantes y tu factura.</p>
+</header>
+
+## Dos lugares, dos preguntas distintas
+
+La suscripción se administra desde dos superficies, y la separación es a propósito:
+
+- **Ajustes > Planes y suscripción** (`/app/ajustes/plan`) responde *qué plan tienes
+  y cuánto llevas consumido*: las cuotas incluidas del periodo, los medidores de
+  IA, facturas, API y usuarios, y el cambio de plan.
+- **[billing.cordhq.app](https://billing.cordhq.app)** responde *el dinero*: tu
+  tarjeta, tus comprobantes, tus datos de facturación, la factura de tus pagos y
+  la cancelación.
+
+Entras a la segunda desde la primera, con la sesión que ya tienes abierta. No hay
+que volver a iniciar sesión.
+
+## En qué divisa te cobra Cord
+
+La divisa de tu suscripción la determina **el país de tu negocio**, no el idioma
+en el que navegas ni la moneda con la que le cotizas a tus clientes:
+
+| País del negocio | Divisa de tu suscripción |
+| :--- | :--- |
+| México | Pesos mexicanos (MXN) |
+| Cualquier otro país | Dólares estadounidenses (USD) |
+
+<Callout type="info">
+**No se confunde con tu divisa de venta.** Un negocio en Madrid le cotiza a sus
+clientes en euros y le paga a Cord en dólares. Son dos decisiones separadas: la
+tuya vive en **Ajustes > General**, la de la plataforma la fija tu país.
+</Callout>
+
+Lo que ves publicado es lo que se te cobra: no se suma nada al confirmar. El pago
+**anual** equivale a diez meses, así que te llevas dos gratis.
+
+Si ya tienes una suscripción activa, **tu divisa no cambia** aunque cambies el país
+de tu negocio después. Se fija en tu primer cobro y se queda ahí; es una restricción
+del procesador de pagos, no una preferencia.
+
+## Método de pago
+
+En **billing.cordhq.app** puedes guardar varias tarjetas, marcar cuál es la
+predeterminada y eliminar las que ya no uses. La predeterminada es la que cobra tu
+próxima renovación.
+
+<Callout type="warning">
+No puedes eliminar tu única tarjeta mientras tengas una suscripción activa. Agrega
+la nueva primero y luego borra la anterior: así ninguna renovación se queda sin con
+qué cobrarse.
+</Callout>
+
+Los datos de tu tarjeta nunca pasan por Cord. Los captura directamente el
+procesador de pagos en un campo cifrado, y nosotros solo recibimos la confirmación.
+
+## Si un cobro no pasó
+
+Cuando una tarjeta rechaza el cargo, tu suscripción queda en **pago pendiente** y
+verás un aviso en la parte superior de billing.cordhq.app con un botón para
+liquidarlo ahí mismo. Mientras el cobro siga pendiente tu plan continúa activo, pero
+no indefinidamente: resuélvelo para no perder las capacidades del plan.
+
+## Comprobantes y facturas
+
+Son dos documentos distintos y conviene no confundirlos:
+
+- El **comprobante** es el recibo del cargo. Existe siempre, en cualquier país, y
+  se descarga desde la columna derecha de la tabla de cobros.
+- La **factura** es el documento fiscal. En México, Cord emite tu **CFDI 4.0**
+  timbrado ante el SAT.
+
+### Facturar tu suscripción (México)
+
+<Steps>
+1. Entra a **billing.cordhq.app** y baja a **Datos de facturación**.
+2. Captura tu **RFC**, y verifica que tu régimen fiscal y código postal estén
+   completos en **Ajustes > Facturación > Datos fiscales**. Sin esos tres campos no
+   se puede timbrar.
+3. En la tabla de **Cobros**, presiona **Facturar** en el cargo que necesites.
+4. La fila cambia a **Facturado**. Tu CFDI queda emitido a nombre de los datos
+   fiscales que capturaste.
+</Steps>
+
+<Callout type="warning">
+**Un cargo solo se puede facturar una vez.** Cancelar un CFDI ya emitido requiere la
+autorización del receptor ante el SAT, así que revisa que tus datos fiscales sean los
+correctos **antes** de presionar Facturar.
+</Callout>
+
+Un cargo de $0 —por ejemplo, cubierto al 100% por un descuento— no se puede facturar:
+no hay ingreso que declarar. Verás un guion en lugar del botón.
+
+Fuera de México no aparece la opción de facturar, y no es una carencia: tu
+comprobante de pago **es** el documento con el que se registra el gasto.
+
+## Cambiar de plan
+
+Se hace desde **Ajustes > Planes y suscripción**:
+
+- **Subir de plan** aplica de inmediato. Se cobra la diferencia proporcional a lo que
+  queda de tu periodo, y tus cuotas se ajustan al instante.
+- **Bajar de plan** se programa para el cierre del periodo que ya pagaste. Conservas
+  el plan actual hasta entonces.
+
+## Cancelar
+
+Desde billing.cordhq.app, el botón **Cancelar** programa el fin de tu suscripción
+para el cierre del periodo que ya pagaste. Conservas el acceso hasta esa fecha, y
+puedes **reanudar** en cualquier momento antes de que llegue.
+
+Al cancelar, tu cuenta vuelve al plan Gratis:
+
+- **Tus datos y tu configuración se conservan**, íntegros. No se borra nada.
+- Lo que exceda los límites del plan Gratis **deja de operar** hasta que vuelvas a
+  subir de plan. Por ejemplo, si tienes más cotizaciones activas o más usuarios de
+  los que Gratis permite, esos recursos siguen ahí pero quedan inoperantes.

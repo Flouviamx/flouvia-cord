@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import type { PlanId, PaidPlan } from './entitlements';
 import { sql, withOrgTx, withSystemTx } from './db';
 import { getEntitlementContext } from './org-entitlements';
+import { platformCurrencyFor, type PlatformCurrency } from './plan-currency';
 
 import { log } from './log';
 export const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
@@ -66,6 +67,38 @@ export const METERS: Record<MeterDim, string> = isTest ? {
     ia:       'mtr_61Us1pzxJnZQjNBQO41QuD2ZBXFA9Mnw',
     timbrado: 'mtr_61Us1rkh7y3xexhFN41QuD2ZBXFA9DAW',
 };
+
+// ── Divisa de plataforma y resolución de precios ──────────────────────────────
+// Cord cobra sus planes en MXN a los negocios mexicanos y en USD al resto
+// (`plan-currency.ts`). En Stripe eso son `currency_options` sobre los MISMOS
+// Price: no hay precios USD paralelos, porque los Price de arriba ya tienen
+// suscripciones live y duplicarlos partiría en dos el catálogo.
+//
+// El resolvedor existe para que esa decisión sea reversible en UN lugar. Si en
+// algún momento hiciera falta un Price distinto por divisa, cambia el cuerpo de
+// `priceFor()`/`meterPricesFor()` y ningún llamador se entera.
+
+/** Price base para (plan, ciclo) en la divisa dada. */
+export function priceFor(plan: PaidPlan, cycle: Cycle, _currency: PlatformCurrency): string {
+    return PLAN_PRICES[plan][cycle];
+}
+
+/** Prices medidos del plan en la divisa dada, en orden estable. */
+export function meterPricesFor(plan: PaidPlan, _currency: PlatformCurrency): string[] {
+    return Object.values(METER_PRICES[plan]).filter((id): id is string => Boolean(id));
+}
+
+/**
+ * Divisa en la que se le cobra a ESTA organización.
+ *
+ * `billing_currency` es la evidencia de una factura real y por eso gana sobre el
+ * país: Stripe congela `customer.currency` en el primer cobro. Ver
+ * `plan-currency.ts` para el contrato completo.
+ */
+export async function platformCurrencyForOrg(orgId: string): Promise<PlatformCurrency> {
+    const [o] = await sql`select country_code, billing_currency from orgs where id = ${orgId}`;
+    return platformCurrencyFor(o?.country_code, o?.billing_currency);
+}
 
 // ── Cuotas mensuales INCLUIDAS por plan (consumo sin costo extra) ─────────────
 // null = ilimitado. Alimenta el medidor de uso y la lógica de "tope duro".
@@ -194,7 +227,7 @@ function stripeError(err: any, status: number): Error {
 // Auto-sana: si el id guardado no existe bajo la API key actual (cambio de
 // cuenta o de modo test↔live), se recrea en vez de fallar ("No such customer").
 export async function getOrCreateCustomer(orgId: string, email?: string, nombre?: string): Promise<string> {
-    const [o] = await sql`select stripe_customer_id from orgs where id = ${orgId}`;
+    const [o] = await sql`select stripe_customer_id, country_code, idioma from orgs where id = ${orgId}`;
     const existing = o?.stripe_customer_id as string | undefined;
     if (existing) {
         try {
@@ -202,9 +235,16 @@ export async function getOrCreateCustomer(orgId: string, email?: string, nombre?
             if (c && !c.deleted) return existing;
         } catch { /* no existe bajo esta key → recrear abajo */ }
     }
+    // El país va en el customer, no sólo en nuestra DB: es la señal con la que
+    // Stripe valida la divisa de la suscripción y presenta los recibos. Sin él
+    // todo cliente nacía sin domicilio y la divisa quedaba a merced del default.
+    const country = String(o?.country_code || '').trim().toUpperCase();
+    const locale = String(o?.idioma || '').toLowerCase().startsWith('en') ? 'en' : 'es';
     const cus = await stripe('/v1/customers', {
         ...(email ? { email } : {}),
         ...(nombre ? { name: nombre } : {}),
+        ...(/^[A-Z]{2}$/.test(country) ? { 'address[country]': country } : {}),
+        'preferred_locales[0]': locale,
         'metadata[org_id]': orgId,
     }, 'POST', { idempotencyKey: `billing-customer:${orgId}` });
     await sql`update orgs set stripe_customer_id = ${cus.id} where id = ${orgId}`;

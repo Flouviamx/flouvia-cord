@@ -56,9 +56,25 @@ const expectedBaseAmounts = [24000, 240000, 59000, 590000, 139000, 1390000, 2990
 const expectedBaseIntervals = ['month', 'year', 'month', 'year', 'month', 'year', 'month', 'year'];
 const expectedMeterAmounts = [0.6, 400, 300, 0.6, 30000, 350, 300, 0.4, 30000, 300, 200, 0.4, 20000, 250, 150];
 const expectedProducts = ['prod_Ui3vQBd5goOHQ1', 'prod_Ui45gzUJYA3O2w', 'prod_Ui4AQicrCoCMUt', 'prod_Ui4Iff1aimaK0y'];
+// Paridad 20:1 con la escalera MXN de arriba. Los base cuadran con src/lib/precios.ts
+// (12/30/70/150 al mes, ×10 al año). Un importe que se mueva aquí y no allá deja a
+// la landing anunciando un precio que el cobro no respeta — que es exactamente el
+// bug que este archivo existe para que no vuelva.
+const expectedBaseAmountsUsd = [1200, 12000, 3000, 30000, 7000, 70000, 15000, 150000];
+const expectedMeterAmountsUsd = [0.03, 20, 15, 0.03, 1500, 17.5, 15, 0.02, 1500, 15, 10, 0.02, 1000, 12.5, 7.5];
+// Cord cobra en dos divisas: MXN a México, USD al resto (src/lib/plan-currency.ts).
+// La base sigue siendo MXN —es la divisa original de los Price, con suscripciones
+// vivas— y USD viaja como `currency_options` sobre el MISMO Price. Sin esa opción,
+// una suscripción creada con `currency: 'usd'` falla en el momento del cobro, así
+// que el orden es inamovible: scripts/add-usd-currency-options.mjs ANTES de
+// desplegar el checkout en USD.
 for (const price of prices) {
   assert.equal(price.active, true, `Price ${price.id} inactivo.`);
   assert.equal(price.currency, 'mxn', `Price ${price.id} no está en MXN.`);
+  assert.ok(
+    price.currency_options?.usd,
+    `Price ${price.id} no tiene opción USD. Corre: node scripts/add-usd-currency-options.mjs --apply`,
+  );
   assert.ok(price.recurring, `Price ${price.id} no es recurrente.`);
   const isMeterPrice = meterPriceIds.includes(price.id);
   if (isMeterPrice) {
@@ -76,12 +92,14 @@ for (let index = 0; index < basePriceIds.length; index++) {
   const price = prices[index];
   const planIndex = Math.floor(index / 2);
   assert.equal(Number(price.unit_amount_decimal ?? price.unit_amount), expectedBaseAmounts[index], `Importe base incorrecto en ${price.id}.`);
+  assert.equal(Number(price.currency_options.usd.unit_amount_decimal ?? price.currency_options.usd.unit_amount), expectedBaseAmountsUsd[index], `Importe base USD incorrecto en ${price.id}.`);
   assert.equal(price.recurring.interval, expectedBaseIntervals[index], `Ciclo base incorrecto en ${price.id}.`);
   assert.equal(typeof price.product === 'string' ? price.product : price.product?.id, expectedProducts[planIndex], `Producto base incorrecto en ${price.id}.`);
 }
 for (let index = 0; index < meterPriceIds.length; index++) {
   const price = prices[basePriceIds.length + index];
   assert.equal(Number(price.unit_amount_decimal ?? price.unit_amount), expectedMeterAmounts[index], `Tarifa medida incorrecta en ${price.id}.`);
+  assert.equal(Number(price.currency_options.usd.unit_amount_decimal ?? price.currency_options.usd.unit_amount), expectedMeterAmountsUsd[index], `Tarifa medida USD incorrecta en ${price.id}.`);
 }
 
 const endpointPage = await stripe('/v1/webhook_endpoints', { limit: 100 });

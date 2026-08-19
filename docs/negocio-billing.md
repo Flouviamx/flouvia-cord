@@ -123,14 +123,38 @@ Flujo:
   El lock de tentativa **no** es un castigo por cambiar de opinión: un intento que
   demostrablemente no cobró nada (`creating` sin id de Stripe, suscripción terminal, o
   `incomplete` de otro plan/ciclo) se abandona y libera; uno `active`/`past_due` sigue
-  bloqueando y se resuelve en el Portal. Se cancela en Stripe ANTES de liberar el lock
-  local; si Stripe falla, 503 conservando el bloqueo. Ver historial (16 ago 2026).
-- **Gestionar:** `POST /api/billing/portal` → Customer Portal de Stripe.
+  bloqueando y se resuelve desde Pago y comprobantes. Se cancela en Stripe ANTES de
+  liberar el lock local; si Stripe falla, 503 conservando el bloqueo. Ver historial (16 ago 2026).
+- **Gestionar (ago 2026): `billing.cordhq.app`**, superficie propia fuera del
+  chrome de la app (`src/pages/billing/`, `BillingLayout.astro`). Tarjetas
+  (`/api/billing/methods` + SetupIntent), comprobantes con PDF proxiado
+  (`/api/billing/invoices`), datos de facturación (`/api/billing/datos`),
+  cancelar/reanudar (`/api/billing/cancelar`), liquidar un cobro vencido
+  (`/api/billing/pagar`) y **CFDI del pago de suscripción** (`/api/billing/factura`).
+  Ninguna superficie enlaza ya al Customer Portal; `POST /api/billing/portal`
+  sobrevive sin UI como escape de soporte.
+  El guard común —incluido el check de pertenencia al customer de la org, que es
+  lo que evita leer la factura de otro negocio— vive en `src/lib/billing-surface.ts`.
+- **Sesión en el subdominio:** `cord_session` es host-only y NO viaja a
+  `billing.cordhq.app`. El apex emite un token de un solo uso
+  (`GET /api/billing/handoff`, tabla `billing_handoff_tokens`, 90 s) y
+  `/billing/entrar` lo canjea por una sesión **propia** de ese host. Ampliar la
+  cookie a `.cordhq.app` la habría mandado también a ops./docs./dev.; el
+  aislamiento de Ops es deliberado.
+- **CFDI de la suscripción (solo México):** `emitSubscriptionInvoice()` en
+  `src/lib/fiscal/emit.ts`, gemelo de `emitPlatformInvoice()` — mismo emisor, mismo
+  CSD de Cord (`FACTURAPI_CORD_ORG_KEY`). El precio de Cord se publica con impuesto
+  incluido, así que el subtotal se **desagrega** del total, no se le suma IVA
+  encima. Doble timbrado imposible por el índice único
+  `suscripcion_facturas.stripe_invoice_id`: cancelar un CFDI ante el SAT exige
+  aprobación del receptor. Fuera de México no se ofrece — el comprobante del cobro
+  ya es el documento (regla 24).
 - **Cambiar plan/ciclo:** el mismo `POST /api/billing/subscribe` detecta la suscripción
   activa. Un upgrade crea un pending update, factura el prorrateo y conserva el plan
   anterior hasta confirmar ese pago; un downgrade o cambio lateral se programa con
-  Subscription Schedule para el cierre del periodo. El Portal se limita a método de pago,
-  historial y cancelación porque Stripe no permite modificar ahí suscripciones medidas.
+  Subscription Schedule para el cierre del periodo. Los cambios de plan medidos pasan
+  siempre por este flujo: Stripe no permite modificar una suscripción medida desde el
+  Customer Portal.
 - **Webhook** `POST /api/stripe/webhook` (PÚBLICO, firma HMAC, idempotente vía
   tabla `stripe_events`): `customer.subscription.created/updated` sincroniza
   la proyección local desde el Price real, nunca desde metadata; `.deleted` → free;
@@ -315,7 +339,7 @@ operativo.
 |---|---|---|
 | De venta | `cotizaciones.base_currency` (default `orgs.moneda`) | Captura de precios, link público, correo al cliente, cobro en Stripe y divisa del documento fiscal. |
 | Contable | `cotizaciones.fiscal_currency` (default `orgs.moneda`) | Los libros del negocio. Si difiere de la de venta, la factura declara el tipo de cambio y `documentos_fiscales.ledger_total` guarda el total convertido. |
-| De la plataforma | `src/lib/billing.ts` | Los planes de Cord. No hereda la divisa de la organización. |
+| De la plataforma | `src/lib/plan-currency.ts` | Los planes de Cord. **MXN si `orgs.country_code` es `MX`, USD en cualquier otro país.** No hereda la divisa de la organización (`orgs.moneda` es editable libre y no puede decidir en qué cobra Cord). `orgs.billing_currency` —evidencia de una factura real— gana sobre el país, porque Stripe congela `customer.currency` en el primer cobro. Los importes por divisa viven en `src/lib/precios.ts`; en Stripe son `currency_options` sobre los MISMOS Price (`scripts/add-usd-currency-options.mjs`), no precios paralelos. Formato: `src/lib/plan-money.ts`, único formateador. |
 
 **Resolución en runtime**
 

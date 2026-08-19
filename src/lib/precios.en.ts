@@ -1,12 +1,26 @@
 // src/lib/precios.en.ts
+// SOLO COPY en inglés. Los precios NO viven aquí.
+//
+// Hasta ago 2026 este archivo era un catálogo gemelo con su propia tabla de
+// precios (0/12/30/70/150) que ninguna suscripción cobró jamás: el checkout usa
+// los Price de Stripe, y la landing en inglés publicaba cifras inventadas. La
+// tabla pública describe el contrato, nunca lo define (regla 18) — así que los
+// importes se toman de `precios.ts`, que ahora los tiene por divisa.
 import type { Plan, CompareGroup } from './precios';
+import { PLANES } from './precios';
+
+const precioDe = (id: Plan['id']): Plan['precio'] => {
+    const plan = PLANES.find((p) => p.id === id);
+    if (!plan) throw new Error(`precios.en.ts: no existe el plan ${id} en precios.ts`);
+    return plan.precio;
+};
 
 export const PLANES_EN: Plan[] = [
     {
         id: 'free',
         nombre: 'Free',
         tagline: 'To test the system.',
-        precioMensual: 0,
+        precio: precioDe('free'),
         ctaLabel: 'Start for free',
         ctaHref: '/registro',
         feats: [
@@ -21,7 +35,7 @@ export const PLANES_EN: Plan[] = [
         id: 'starter',
         nombre: 'Starter',
         tagline: 'For solo sellers.',
-        precioMensual: 12,
+        precio: precioDe('starter'),
         ctaLabel: 'Start now',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui3vQBd5goOHQ1',
@@ -37,7 +51,7 @@ export const PLANES_EN: Plan[] = [
         id: 'pro',
         nombre: 'Professional',
         tagline: 'For teams that sell seriously.',
-        precioMensual: 30,
+        precio: precioDe('pro'),
         destacado: true,
         ribbon: 'MOST POPULAR',
         ctaLabel: 'Start now',
@@ -55,7 +69,7 @@ export const PLANES_EN: Plan[] = [
         id: 'scale',
         nombre: 'Scale',
         tagline: 'For operations with control.',
-        precioMensual: 70,
+        precio: precioDe('scale'),
         ctaLabel: 'Start now',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui4AQicrCoCMUt',
@@ -71,7 +85,7 @@ export const PLANES_EN: Plan[] = [
         id: 'developer',
         nombre: 'Developer',
         tagline: 'Capacity and terms tailored to you.',
-        precioMensual: 150,
+        precio: precioDe('developer'),
         custom: true,
         ctaLabel: 'Talk to sales',
         ctaHref: '/en/contacto/ventas',
@@ -248,8 +262,8 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
         a: 'Anytime, with no contracts or penalties. You upgrade instantly (prorated) and downgrade at the end of your cycle. If you cancel, your data remains intact on the Free plan.',
     },
     {
-        q: 'Do prices include tax (IVA)?',
-        a: 'Yes. All prices are in Mexican Pesos (MXN) and include IVA. What you see is what you pay.',
+        q: 'Do prices include tax?',
+        a: 'Yes. What you see is what you pay, with nothing added at checkout. Businesses in Mexico are billed in Mexican pesos (MXN); everywhere else, in US dollars (USD).',
     },
     {
         q: 'How does e-invoicing work?',
