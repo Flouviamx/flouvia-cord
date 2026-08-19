@@ -17,6 +17,8 @@ import { sql, logAudit, reqIp, getActiveOrgId } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { COUNTRY_CODES, getCountryProfile } from '../../../lib/countries';
+import { defaultCountryTaxPct } from '../../../lib/impuestos';
+import { seedTaxCatalog } from '../../../lib/impuestos-db';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { log } from '../../../lib/log';
 
@@ -71,7 +73,7 @@ export const POST: APIRoute = async ({ request }) => {
         const [org] = await sql`
             insert into orgs (owner_id, nombre, country_code, parent_org_id, moneda, zona_horaria, idioma, iva_pct)
             values (${userId}, ${name}, ${countryCode}, ${parentOrgId}, ${countryProfile.currency},
-                    ${countryProfile.timeZone}, ${appLocale}, ${countryCode === 'MX' ? 16 : 0})
+                    ${countryProfile.timeZone}, ${appLocale}, ${defaultCountryTaxPct(countryCode)})
             returning id, nombre
         `;
         const orgId = org.id as string;
@@ -80,6 +82,12 @@ export const POST: APIRoute = async ({ request }) => {
             insert into org_members (org_id, user_id, rol, estado, joined_at)
             values (${orgId}, ${userId}, 'owner', 'activo', now())
             on conflict (org_id, user_id) where user_id is not null do nothing`;
+
+        // El catálogo de impuestos nace con las tasas estándar del país. Sin
+        // esto, una cuenta en España empieza vacía y su primera cotización sale
+        // sin IVA — el negocio no tiene por qué capturar el 21% a mano para
+        // descubrir que Cord ya sabía cuál era.
+        await seedTaxCatalog(orgId, countryCode);
 
         await logAudit(orgId, {
             accion: 'org.creada',

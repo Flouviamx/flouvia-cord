@@ -107,6 +107,133 @@ const PROFILE_DEFAULTS: Partial<Record<CountryCode, Partial<ProfileDefaults>>> =
     ZA: { currency: 'ZAR', locale: 'en-ZA', timeZone: 'Africa/Johannesburg', taxIdLabel: 'Tax / VAT number', taxLabel: 'VAT' },
 };
 
+// ── Presets de impuestos por país ───────────────────────────────────────────
+//
+// Esto NO es una tabla tributaria. Cord no mantiene las reglas fiscales de 200
+// países y no pretende saber qué tasa le toca a cada concepto — eso lo decide
+// el negocio con su contador. Lo que sí puede hacer, y es la diferencia entre
+// una cuenta usable y una cuenta vacía, es que una organización nueva nazca con
+// las tasas ESTÁNDAR de su país ya capturadas y editables, en vez de con un
+// catálogo en blanco o —peor— con el 16% mexicano heredado.
+//
+// Reglas de esta tabla:
+//   · `nombre` va en el vocabulario real del país, no traducido ("Moms", "KDV",
+//     "ITBIS"): es lo que el negocio va a reconocer y lo que imprime la factura.
+//   · Solo se listan países con una tasa NACIONAL única y estable. Estados
+//     Unidos (sales tax por jurisdicción) y Brasil (ICMS estatal + ISS
+//     municipal) nacen sin preset a propósito: inventarles una tasa nacional
+//     sería peor que dejarlos elegir.
+//   · Las tasas cambian. Son un punto de partida editable, no una fuente de
+//     verdad; la UI lo dice así y el negocio manda.
+export interface TaxPreset {
+    /** Nombre en el vocabulario del país. Se muestra e imprime tal cual. */
+    nombre: string;
+    /** Clasificación neutra — es la que decide la aritmética. */
+    kind: TaxKind;
+    /** Subcódigo del país. Solo México lo usa (mapea a los impuestos del CFDI). */
+    tipo: 'iva' | 'ieps' | 'ret_iva' | 'ret_isr' | 'exento';
+    /** Porcentaje 0–100, no fracción. */
+    tasa: number;
+    /** Se aplica a las líneas nuevas del editor. Uno por país. */
+    esDefault?: boolean;
+}
+
+export type TaxKind = 'consumo' | 'retencion' | 'exento';
+
+/** Exento estándar: toda org lo necesita, ningún país lo omite. */
+const EXENTO: TaxPreset = { nombre: 'Exento', kind: 'exento', tipo: 'exento', tasa: 0 };
+const ZERO_RATED: TaxPreset = { nombre: 'Zero-rated', kind: 'exento', tipo: 'exento', tasa: 0 };
+
+const std = (nombre: string, tasa: number): TaxPreset => ({ nombre, kind: 'consumo', tipo: 'iva', tasa, esDefault: true });
+const red = (nombre: string, tasa: number): TaxPreset => ({ nombre, kind: 'consumo', tipo: 'iva', tasa });
+
+export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
+    // Norteamérica
+    MX: [
+        std('IVA 16%', 16),
+        red('IVA 8% región fronteriza', 8),
+        EXENTO,
+        { nombre: 'Retención IVA 10.667%', kind: 'retencion', tipo: 'ret_iva', tasa: 10.667 },
+        { nombre: 'Retención ISR 1.25%', kind: 'retencion', tipo: 'ret_isr', tasa: 1.25 },
+    ],
+    CA: [std('GST 5%', 5), red('HST 13%', 13), red('HST 15%', 15), ZERO_RATED],
+
+    // Latinoamérica
+    AR: [std('IVA 21%', 21), red('IVA 10,5%', 10.5), red('IVA 27%', 27), EXENTO],
+    CL: [std('IVA 19%', 19), EXENTO],
+    CO: [
+        std('IVA 19%', 19),
+        red('IVA 5%', 5),
+        EXENTO,
+        { nombre: 'ReteIVA 15%', kind: 'retencion', tipo: 'ret_iva', tasa: 15 },
+        { nombre: 'ReteFuente 2,5%', kind: 'retencion', tipo: 'ret_isr', tasa: 2.5 },
+    ],
+    CR: [std('IVA 13%', 13), red('IVA 4%', 4), red('IVA 2%', 2), red('IVA 1%', 1), EXENTO],
+    DO: [std('ITBIS 18%', 18), red('ITBIS 16%', 16), EXENTO],
+    GT: [std('IVA 12%', 12), EXENTO],
+    PA: [std('ITBMS 7%', 7), EXENTO],
+    PE: [std('IGV 18%', 18), EXENTO],
+    PY: [std('IVA 10%', 10), red('IVA 5%', 5), EXENTO],
+    UY: [std('IVA 22%', 22), red('IVA 10%', 10), EXENTO],
+
+    // Europa
+    CH: [std('MWST 8.1%', 8.1), red('MWST 3.8%', 3.8), red('MWST 2.6%', 2.6), ZERO_RATED],
+    DE: [std('USt. 19%', 19), red('USt. 7%', 7), ZERO_RATED],
+    ES: [std('IVA 21%', 21), red('IVA 10%', 10), red('IVA 4%', 4), EXENTO],
+    FR: [std('TVA 20%', 20), red('TVA 10%', 10), red('TVA 5,5%', 5.5), red('TVA 2,1%', 2.1), ZERO_RATED],
+    GB: [std('VAT 20%', 20), red('VAT 5%', 5), ZERO_RATED],
+    IE: [std('VAT 23%', 23), red('VAT 13.5%', 13.5), red('VAT 9%', 9), ZERO_RATED],
+    IT: [std('IVA 22%', 22), red('IVA 10%', 10), red('IVA 5%', 5), red('IVA 4%', 4), EXENTO],
+    NL: [std('BTW 21%', 21), red('BTW 9%', 9), ZERO_RATED],
+    NO: [std('MVA 25%', 25), red('MVA 15%', 15), red('MVA 12%', 12), ZERO_RATED],
+    PL: [std('VAT 23%', 23), red('VAT 8%', 8), red('VAT 5%', 5), ZERO_RATED],
+    PT: [std('IVA 23%', 23), red('IVA 13%', 13), red('IVA 6%', 6), EXENTO],
+    SE: [std('Moms 25%', 25), red('Moms 12%', 12), red('Moms 6%', 6), ZERO_RATED],
+    TR: [std('KDV 20%', 20), red('KDV 10%', 10), red('KDV 1%', 1), ZERO_RATED],
+
+    // Asia-Pacífico, África y Medio Oriente
+    AE: [std('VAT 5%', 5), ZERO_RATED],
+    AU: [std('GST 10%', 10), ZERO_RATED],
+    JP: [std('消費税 10%', 10), red('消費税 8% (軽減税率)', 8), ZERO_RATED],
+    KR: [std('VAT 10%', 10), ZERO_RATED],
+    NZ: [std('GST 15%', 15), ZERO_RATED],
+    PH: [std('VAT 12%', 12), ZERO_RATED],
+    SA: [std('VAT 15%', 15), ZERO_RATED],
+    SG: [std('GST 9%', 9), ZERO_RATED],
+    ZA: [std('VAT 15%', 15), ZERO_RATED],
+
+    // Sin preset a propósito:
+    //   US — sales tax por estado/condado/ciudad, no hay tasa nacional.
+    //   BR — ICMS estatal + ISS municipal + PIS/COFINS; una sola tasa mentiría.
+    //   HK — no existe impuesto al consumo general.
+};
+
+/** Presets del país, o solo "Exento" cuando no hay tasa nacional que sugerir. */
+export function taxPresetsFor(code: string): TaxPreset[] {
+    const normalized = code.toUpperCase();
+    const safeCode = isCountryCode(normalized) ? normalized : 'MX';
+    return TAX_PRESETS[safeCode] ?? [EXENTO];
+}
+
+/** ¿Cord tiene tasas estándar que sugerir para este país? */
+export function hasTaxPreset(code: string): boolean {
+    const normalized = code.toUpperCase();
+    return isCountryCode(normalized) && !!TAX_PRESETS[normalized];
+}
+
+/**
+ * Cómo se le llama a cada clase de impuesto EN ESTE PAÍS.
+ *
+ * `kind` es neutro por dentro; hacia afuera nunca se muestra crudo. Un impuesto
+ * de consumo se llama IVA en México, VAT en Reino Unido, GST en Australia y
+ * Moms en Suecia — el nombre sale del perfil del país, no de una constante.
+ */
+export function taxKindLabel(kind: TaxKind, locale: 'es' | 'en', countryCode: string): string {
+    if (kind === 'consumo') return getCountryProfile(countryCode, locale).taxLabel;
+    if (kind === 'retencion') return locale === 'en' ? 'Withholding' : 'Retención';
+    return locale === 'en' ? 'Exempt' : 'Exento';
+}
+
 export function countryName(code: string, locale: 'es' | 'en' = 'es'): string {
     try {
         return new Intl.DisplayNames([locale], { type: 'region' }).of(code.toUpperCase()) || code;

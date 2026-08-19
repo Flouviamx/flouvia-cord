@@ -1,9 +1,16 @@
 ---
-// Ajustes › Cotizaciones › Impuestos. Catálogo de perfiles de impuesto (IVA,
-// IEPS, retenciones, exento). El perfil DEFAULT de cada tipo sincroniza la
-// columna de orgs que el editor lee (iva_pct, retencion_*). CRUD en /api/impuestos.
+// Ajustes › Cotizaciones › Impuestos. Catálogo de tasas de la organización.
+//
+// El vocabulario sale del PAÍS de la org, no de una constante: un impuesto de
+// consumo se llama IVA en México, VAT en Reino Unido, GST en Australia y Moms
+// en Suecia. Antes esta pantalla ofrecía "IEPS" y "Retención ISR" a un negocio
+// en Madrid — conceptos que ahí no existen.
+//
+// Las tasas se aplican POR LÍNEA en los dos editores; la sincronización hacia
+// orgs.iva_pct se conserva solo como compatibilidad con cuentas anteriores.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import { getImpuestos, getOrg, TIPO_IMPUESTO } from '../../../lib/queries';
+import { getImpuestos, getOrg } from '../../../lib/queries';
+import { getCountryProfile, hasTaxPreset, taxKindLabel, type TaxKind } from '../../../lib/countries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
@@ -14,7 +21,13 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
     return s;
 };
 const IMPUESTOS = await getImpuestos();
-const TIPOS = Object.entries(TIPO_IMPUESTO);
+const PAIS = String(ORG.countryCode || 'MX');
+const PROFILE = getCountryProfile(PAIS, L);
+const PUEDE_SEMBRAR = IMPUESTOS.length === 0 && hasTaxPreset(PAIS);
+// Las tres clases neutras, nombradas como se dicen en este país.
+const KINDS: { id: TaxKind; label: string }[] = (['consumo', 'retencion', 'exento'] as TaxKind[])
+    .map((id) => ({ id, label: taxKindLabel(id, L, PAIS) }));
+const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' : '21'}%…`;
 ---
 
 <SettingsShell title="Impuestos — Ajustes" tab="impuestos" perm="ajustes"
@@ -28,11 +41,26 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
             </div>
             <div class="imp-list" id="impList">
                 {IMPUESTOS.length === 0 && (
-                    <p class="imp-empty" id="impEmpty">{tf('set.imp.vacio', { pct: String(ORG.ivaPct) })}</p>
+                    <div class="imp-seed" id="impEmpty">
+                        <p class="imp-empty">
+                            {PUEDE_SEMBRAR
+                                ? (L === 'en'
+                                    ? `Your catalog is empty. Cord knows the standard rates for ${PROFILE.name} and can add them for you — you can edit or delete any of them afterwards.`
+                                    : `Tu catálogo está vacío. Cord conoce las tasas estándar de ${PROFILE.name} y puede capturarlas por ti — después puedes editarlas o borrarlas.`)
+                                : (L === 'en'
+                                    ? `Your catalog is empty. ${PROFILE.name} has no single national rate, so add the ones your business charges.`
+                                    : `Tu catálogo está vacío. En ${PROFILE.name} no hay una tasa nacional única, así que captura las que cobra tu negocio.`)}
+                        </p>
+                        {PUEDE_SEMBRAR && (
+                            <button class="dev-new" id="impSeed">
+                                {L === 'en' ? `Add the standard rates for ${PROFILE.name}` : `Capturar las tasas de ${PROFILE.name}`}
+                            </button>
+                        )}
+                    </div>
                 )}
                 {IMPUESTOS.map((i) => (
                     <div class="imp-row" data-id={i.id}>
-                        <span class={`imp-tipo ${i.tipo}`}>{i.tipoLabel}</span>
+                        <span class={`imp-tipo ${i.kind}`}>{i.kindLabel}</span>
                         <span class="imp-body">
                             <span class="imp-name">{i.nombre}</span>
                             <span class="imp-tasa editorial">{i.tasa}%</span>
@@ -44,7 +72,11 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
                     </div>
                 ))}
             </div>
-            <p class="dev-note">{tf('set.imp.nota', { pct: String(ORG.ivaPct) })}</p>
+            <p class="dev-note">
+                {L === 'en'
+                    ? 'These rates apply per line in quotes and invoices, so a document can mix a taxed item with an exempt one. Withholding profiles marked as default are subtracted from the document total.'
+                    : 'Estas tasas se aplican por línea en cotizaciones y facturas, así que un documento puede mezclar un concepto gravado con uno exento. Las retenciones marcadas como predeterminadas se restan del total del documento.'}
+            </p>
         </div>
     </div>
 
@@ -69,13 +101,13 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
         <h4>{t(L, 'set.imp.dlg_titulo')}</h4>
         <div class="s-field" style="margin-bottom:1rem">
             <label for="iNombre">{t(L, 'set.imp.nombre')}</label>
-            <input class="s-input" id="iNombre" placeholder="IVA 16%, Frontera 8%, Ret. IVA 10.667%…" />
+            <input class="s-input" id="iNombre" placeholder={NOMBRE_PLACEHOLDER} />
         </div>
         <div class="s-row" style="margin-bottom:1rem">
             <div class="s-field">
-                <label for="iTipo">{t(L, 'set.imp.tipo')}</label>
-                <select class="s-input" id="iTipo">
-                    {TIPOS.map(([id, label]) => <option value={id}>{label}</option>)}
+                <label for="iKind">{t(L, 'set.imp.tipo')}</label>
+                <select class="s-input" id="iKind">
+                    {KINDS.map((k) => <option value={k.id}>{k.label}</option>)}
                 </select>
             </div>
             <div class="s-field">
@@ -99,11 +131,12 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
     .imp-actions-row { display: flex; justify-content: flex-end; }
     .dev-new { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 8px 14px; cursor: pointer; transition: transform 0.3s var(--ease-spring); }
     .dev-new:hover { transform: translateY(-1px); }
-    .imp-empty { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; padding: 0.6rem 0; }
+    .imp-empty { font-size: 0.84rem; color: var(--color-text-muted); margin: 0; padding: 0.6rem 0; line-height: 1.55; max-width: 62ch; }
+    .imp-seed { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; padding-bottom: 0.4rem; }
     .imp-list { display: flex; flex-direction: column; margin-top: -0.5rem; }
     .imp-row { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 1rem; padding: 1rem 0.3rem; border-bottom: 1px solid var(--color-border); }
     .imp-tipo { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 9px; border-radius: 100px; white-space: nowrap; color: var(--color-blue-deep); background: rgba(10,25,47,0.08); }
-    .imp-tipo.ret_iva, .imp-tipo.ret_isr { color: #b45309; background: rgba(245,158,11,0.12); }
+    .imp-tipo.retencion { color: #b45309; background: rgba(245,158,11,0.12); }
     .imp-tipo.exento { color: var(--color-text-muted); background: rgba(0,0,0,0.05); }
     .imp-body { display: flex; align-items: baseline; gap: 0.8rem; min-width: 0; }
     .imp-name { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
@@ -150,24 +183,35 @@ const TIPOS = Object.entries(TIPO_IMPUESTO);
 
         newBtn.addEventListener('click', () => {
             (document.getElementById('iNombre') as HTMLInputElement).value = '';
-            (document.getElementById('iTipo') as HTMLSelectElement).value = 'iva';
-            (document.getElementById('iTasa') as HTMLInputElement).value = '16';
+            (document.getElementById('iKind') as HTMLSelectElement).value = 'consumo';
+            (document.getElementById('iTasa') as HTMLInputElement).value = '';
             (document.getElementById('iDefault') as HTMLInputElement).checked = true;
             dlg.showModal();
             (document.getElementById('iNombre') as HTMLInputElement).focus();
         });
         document.getElementById('impCancel')?.addEventListener('click', () => dlg.close());
 
+        document.getElementById('impSeed')?.addEventListener('click', async (ev) => {
+            const btn = ev.currentTarget as HTMLButtonElement;
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/impuestos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'seed' }) });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || M.i18nCrearErr || 'No se pudo crear');
+                location.reload();
+            } catch (err: any) { (window as any).cordToast?.(err.message || M.i18nCrearErr || 'No se pudo crear', 'error'); btn.disabled = false; }
+        });
+
         document.getElementById('impCreate')?.addEventListener('click', async () => {
             const nombre = (document.getElementById('iNombre') as HTMLInputElement).value.trim();
             if (!nombre) { (document.getElementById('iNombre') as HTMLInputElement).focus(); return; }
-            const tipo = (document.getElementById('iTipo') as HTMLSelectElement).value;
+            const kind = (document.getElementById('iKind') as HTMLSelectElement).value;
             const tasa = Number((document.getElementById('iTasa') as HTMLInputElement).value) || 0;
             const es_default = (document.getElementById('iDefault') as HTMLInputElement).checked;
             const btn = document.getElementById('impCreate') as HTMLButtonElement;
             btn.disabled = true;
             try {
-                const res = await fetch('/api/impuestos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, tipo, tasa, es_default }) });
+                const res = await fetch('/api/impuestos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, kind, tasa, es_default }) });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || M.i18nCrearErr || 'No se pudo crear');
                 location.reload();

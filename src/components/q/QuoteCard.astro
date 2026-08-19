@@ -2,7 +2,8 @@
 // QuoteCard — Quiet Luxury edition.
 // Flujo de aprobación en 3 pasos: revisar → firmar digitalmente → confirmado/pagar.
 // Reutilizado por /q/[token] (página pública) y /embed/[token] (CORD Elements).
-import { money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../lib/queries';
+import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../lib/queries';
+import { getCountryProfile } from '../../lib/countries';
 import { splitAnticipo } from '../../lib/cobros';
 import { currentLocale } from '../../lib/context';
 import { t, getQuoteCardRuntimeI18n } from '../../i18n/app';
@@ -35,7 +36,10 @@ const logoUrl = (ORG.logoUrl ?? '').trim();
 const folio = q.folio as string;
 const total = money(quoteTotal(q));
 const viva = !yaAprobada && !yaRechazada;
-const taxLabel = ORG.paisCode === 'MX' ? null : (L === 'en' ? 'Tax' : 'Impuesto');
+// El nombre del impuesto sale del perfil del país del EMISOR. Antes era
+// `paisCode === 'MX' ? null : 'Tax'`, así que a un negocio en Londres le decía
+// "Tax" genérico en vez de "VAT" y a uno en Sídney en vez de "GST".
+const TAX_LABEL = getCountryProfile(ORG.paisCode || 'MX', L).taxLabel;
 
 // Vigencia / urgencia
 const dias: number | undefined = typeof q.diasVigencia === 'number' ? q.diasVigencia : undefined;
@@ -249,10 +253,15 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 )}
             </div>
         ))}
-        <div class="qi-subtotals">
-            <div class="qt-row"><span>{t(L, 'q.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-            <div class="qt-row"><span>{taxLabel ? `${taxLabel} ${ORG.ivaPct}%` : tf('q.iva', { pct: String(ORG.ivaPct) })}</span><span class="editorial">{money(quoteIva(q))}</span></div>
-            <div class="qt-row qt-grand"><span>{t(L, 'q.total')}</span><span class="editorial">{money(quoteTotal(q))}</span></div>
+        <div class="qi-subtotals" data-tax-label={TAX_LABEL}>
+            <div class="qt-row" data-total="subtotal"><span>{t(L, 'q.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
+            {quoteTaxBreakdown(q).map((tr) => (
+                <div class="qt-row" data-total="tax"><span>{TAX_LABEL} {Math.round(tr.tasa * 10000) / 100}%</span><span class="editorial">{money(tr.impuesto)}</span></div>
+            ))}
+            {quoteRetenciones(q).map((r) => (
+                <div class="qt-row qt-ret" data-total="ret"><span>{r.nombre}</span><span class="editorial">−{money(r.monto)}</span></div>
+            ))}
+            <div class="qt-row qt-grand" data-total="grand"><span>{t(L, 'q.total')}</span><span class="editorial">{money(quoteTotal(q))}</span></div>
         </div>
     </div>
 
@@ -1187,11 +1196,48 @@ const hayContacto = !!(vEmail || vWa || vTel);
         });
 
         // ── Totales ──
-        const filas = document.querySelectorAll('.qi-subtotals .qt-row .editorial');
-        if (filas.length >= 3) {
-            filas[0].textContent = moneyFmt(Number(p.subtotal));
-            filas[1].textContent = moneyFmt(Number(p.iva));
-            filas[2].textContent = moneyFmt(Number(p.total));
+        // Por ROL, no por índice: entre el subtotal y el total ahora puede
+        // haber una fila por tasa y una por retención, así que `filas[1]` ya no
+        // es el impuesto. Un parche por posición se vuelve silenciosamente
+        // incorrecto en cuanto la organización cobra dos tasas.
+        const box = document.querySelector('.qi-subtotals');
+        if (box) {
+            const set = (rol: string, valor: number) => {
+                const el = box.querySelector(`[data-total="${rol}"] .editorial`);
+                if (el) el.textContent = moneyFmt(valor);
+            };
+            set('subtotal', Number(p.subtotal));
+            set('grand', Number(p.total));
+
+            // Las filas de impuesto y retención se REEMPLAZAN: su número puede
+            // cambiar si el vendedor edita una línea a otra tasa.
+            const impuestos = Array.isArray(p.impuestos) ? p.impuestos : [];
+            const retenciones = Array.isArray(p.retenciones) ? p.retenciones : [];
+            box.querySelectorAll('[data-total="tax"], [data-total="ret"]').forEach((el) => el.remove());
+            const grand = box.querySelector('[data-total="grand"]');
+            const label = (box as HTMLElement).dataset.taxLabel || '';
+            const nuevas: HTMLElement[] = [];
+            for (const im of impuestos) {
+                const row = document.createElement('div');
+                row.className = 'qt-row';
+                row.dataset.total = 'tax';
+                row.innerHTML = `<span></span><span class="editorial"></span>`;
+                row.children[0].textContent = `${label} ${Math.round(Number(im.tasa) * 10000) / 100}%`;
+                row.children[1].textContent = moneyFmt(Number(im.impuesto));
+                nuevas.push(row);
+            }
+            for (const r of retenciones) {
+                const row = document.createElement('div');
+                row.className = 'qt-row qt-ret';
+                row.dataset.total = 'ret';
+                row.innerHTML = `<span></span><span class="editorial"></span>`;
+                row.children[0].textContent = String(r.nombre ?? '');
+                row.children[1].textContent = '−' + moneyFmt(Number(r.monto));
+                nuevas.push(row);
+            }
+            for (const row of nuevas) {
+                if (grand) box.insertBefore(row, grand); else box.appendChild(row);
+            }
         }
         const heroEl = document.querySelector('.q-total-amount') as HTMLElement | null;
         if (heroEl) {
@@ -1901,6 +1947,17 @@ const hayContacto = !!(vEmail || vWa || vTel);
 </style>
 
 <style is:global>
+/* Filas de impuesto y retención del resumen.
+   El SSR las dibuja y el parche en vivo (SSE) las RE-CREA desde JavaScript
+   cuando el vendedor cambia una línea, así que Astro no puede scopearlas: un
+   `data-astro-cid-*` no existe en un nodo creado con createElement y la regla
+   fallaría sin error de build (regla 11).
+   La retención se pinta distinto a propósito: va pegada a los impuestos y
+   apunta en dirección contraria. */
+.qi-subtotals .qt-row { display: flex; justify-content: space-between; gap: 3rem; min-width: 200px; font-size: 0.82rem; color: #9ca3af; }
+.qi-subtotals .qt-row .editorial { color: #6b7280; font-size: 0.87rem; }
+.qi-subtotals .qt-ret,
+.qi-subtotals .qt-ret .editorial { color: #b45309; }
 .q-msg { display: flex; flex-direction: column; gap: 3px; max-width: 80%; padding: 0.65rem 0.9rem; font-size: 0.86rem; }
 .q-msg.theirs { align-self: flex-start; background: #f3f4f6; color: #111; border-radius: 14px 14px 14px 3px; }
 .q-msg.mine { align-self: flex-end; background: #0a192f; color: #fff; border-radius: 14px 14px 3px 14px; }

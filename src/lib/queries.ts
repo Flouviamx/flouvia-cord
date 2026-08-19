@@ -17,17 +17,19 @@ import { after } from './after';
 import { trackServer } from './posthog-server';
 import { decryptSecret } from './crypto-secret';
 import { normalizeCurrency } from './currency';
+import { taxKindLabel } from './countries';
+import { calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { dueDateFor, venceDia } from './cobros';
 import type { PublicViewer } from './public-viewer';
 import {
     STATUS_ABIERTA, STATUS_GANADA, STATUS_PERDIDA, STATUS_SALIO,
 } from './metrics';
 import {
-    STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal,
+    STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones,
     type QuoteStatus, type MockItem, type MockEvent, type MockQuote,
 } from './mock';
 
-export { STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal };
+export { STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones };
 export type { QuoteStatus, MockItem, MockEvent, MockQuote };
 
 // ── Formatters (Postgres → display, igual que el mock hardcodeaba) ──────────
@@ -644,26 +646,71 @@ export async function getApiLogs(f: ApiLogFilters = {}, limit = 100) {
     }));
 }
 
-// ── IMPUESTOS (perfiles de tasa reutilizables — FASE 3) ──────────────────────
-export const TIPO_IMPUESTO: Record<string, string> = {
-    iva: 'IVA', ieps: 'IEPS', ret_iva: 'Retención IVA', ret_isr: 'Retención ISR', exento: 'Exento',
-};
-export async function getImpuestos() {
-    const orgId = await getActiveOrgId();
-    let rows: any[] = [];
-    try {
-        [rows] = await withOrgTx(orgId, sql`select * from impuestos where org_id = ${orgId} order by es_default desc, tipo, tasa desc`);
-    } catch { return []; }
-    return rows.map((i) => ({
-        id: i.id as string,
-        nombre: i.nombre as string,
-        tipo: (i.tipo as string) || 'iva',
-        tipoLabel: TIPO_IMPUESTO[(i.tipo as string)] || 'IVA',
-        tasa: num(i.tasa),
-        esDefault: !!i.es_default,
-        activo: !!i.activo,
-    }));
+// ── IMPUESTOS (catálogo de tasas reutilizables, país-neutro) ─────────────────
+//
+// `kind` es la clasificación que decide la aritmética (consumo suma, retención
+// resta, exento es 0 explícito) y es la que se muestra, traducida al
+// vocabulario del país. `tipo` es el subcódigo local: solo México lo usa, para
+// mapear a los impuestos trasladados/retenidos del CFDI 4.0.
+//
+// El Record en español duro que vivía aquí —'IVA', 'IEPS', 'Retención ISR'— le
+// ofrecía conceptos mexicanos a un negocio en Madrid o en Sídney.
+export type TaxKind = 'consumo' | 'retencion' | 'exento';
+
+export interface ImpuestoRow {
+    id: string;
+    nombre: string;
+    kind: TaxKind;
+    tipo: string;
+    kindLabel: string;
+    tasa: number;        // porcentaje 0–100
+    rate: number;        // fracción 0–1, lista para el motor
+    esDefault: boolean;
+    activo: boolean;
 }
+
+const normalizeKind = (value: unknown, tipo: string): TaxKind => {
+    const k = String(value ?? '');
+    if (k === 'consumo' || k === 'retencion' || k === 'exento') return k;
+    // Fallback para filas anteriores al backfill: se deriva del subcódigo.
+    if (tipo === 'ret_iva' || tipo === 'ret_isr') return 'retencion';
+    if (tipo === 'exento') return 'exento';
+    return 'consumo';
+};
+
+export async function getImpuestos(): Promise<ImpuestoRow[]> {
+    const orgId = await getActiveOrgId();
+    const locale = currentLocale();
+    let rows: any[] = [];
+    let paisCode = 'MX';
+    try {
+        // El país viaja en el MISMO batch: es una fila más en la transacción
+        // HTTP que ya se estaba haciendo, no un round-trip extra a Neon.
+        const [impuestoRows, orgRows] = await withOrgTx(orgId,
+            sql`select * from impuestos where org_id = ${orgId} order by es_default desc, kind, tasa desc`,
+            sql`select country_code from orgs where id = ${orgId}`,
+        );
+        rows = impuestoRows;
+        paisCode = (orgRows?.[0]?.country_code as string) || 'MX';
+    } catch { return []; }
+    return rows.map((i) => {
+        const tipo = (i.tipo as string) || 'iva';
+        const kind = normalizeKind(i.kind, tipo);
+        const tasa = num(i.tasa);
+        return {
+            id: i.id as string,
+            nombre: i.nombre as string,
+            kind,
+            tipo,
+            kindLabel: taxKindLabel(kind, locale, paisCode),
+            tasa,
+            rate: tasa / 100,
+            esDefault: !!i.es_default,
+            activo: !!i.activo,
+        };
+    });
+}
+
 
 // ── PLANTILLAS DE MENSAJE ─────────────────────────────────────────────────────
 export async function getPlantillas() {
@@ -1240,6 +1287,10 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
         fiscalCurrency: normalizeCurrency(c.fiscal_currency, normalizeCurrency(c.base_currency, 'MXN')),
         version: num(c.version) || 1,
         iva_incluido: Boolean(c.iva_incluido),
+        // Tasa de la org para las líneas anteriores al impuesto por línea. Sin
+        // esto los totales caerían a una constante del 16% (ver mock.ts).
+        taxRateFallback: c.org_iva_pct != null ? num(c.org_iva_pct) / 100 : undefined,
+        retenciones: Array.isArray(c.retenciones_snapshot) ? c.retenciones_snapshot : [],
         anticipoPct: c.anticipo_pct != null ? num(c.anticipo_pct) : null,
         esRecurrente: Boolean(c.es_recurrente),
         items: items.map((it): MockItem => ({
@@ -1250,6 +1301,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
             unidad: it.unidad ?? 'pieza',
             precioLista: num(it.precio_unitario),
             precioNegociado: it.precio_negociado === null ? null : num(it.precio_negociado),
+            taxRate: it.tax_rate != null ? num(it.tax_rate) : undefined,
             aprobado: it.aprobado !== false,   // default true (sin columna o no decidido = incluida)
             comentarios: it.comentarios ?? [],
         })),
@@ -1296,8 +1348,11 @@ export async function getCotizaciones(opts?: { limit?: number; offset?: number }
 export async function getCotizacion(id: string): Promise<MockQuote | null> {
     const orgId = await getActiveOrgId();
     const [rows, items, eventos, versiones, conv, comentarios] = await withOrgTx(orgId,
-        sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos
-            from cotizaciones c left join clientes cl on cl.id = c.cliente_id
+        sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos,
+                   o.iva_pct as org_iva_pct
+            from cotizaciones c
+            left join clientes cl on cl.id = c.cliente_id
+            left join orgs o on o.id = c.org_id
             where c.id = ${id} and c.org_id = ${orgId}`,
         sql`select * from cotizacion_items where cotizacion_id = ${id} order by orden`,
         // Bitácora de auditoría — SOLO cambios de estado del sistema. Los mensajes
@@ -1903,12 +1958,17 @@ export interface LiveSnapshot {
         importe: number;
     }>;
     cobros: Array<{ id: string; tipo: string; monto: number; status: string; vence: string }>;
+    /** Desglose por tasa, para que el parche en vivo dibuje las MISMAS filas que el SSR. */
+    impuestos: Array<{ tasa: number; impuesto: number }>;
+    retenciones: Array<{ nombre: string; monto: number }>;
 }
 
 export async function getLiveSnapshot(orgId: string, cotizacionId: string): Promise<LiveSnapshot | null> {
     const [cabecera, items, cobros] = await withOrgTx(orgId,
-        sql`select rev, status, subtotal, iva, total, vigencia, notas
-              from cotizaciones where id = ${cotizacionId} and org_id = ${orgId}`,
+        sql`select c.rev, c.status, c.subtotal, c.iva, c.total, c.vigencia, c.notas,
+                   c.iva_incluido, c.retenciones_snapshot, o.iva_pct as org_iva_pct
+              from cotizaciones c join orgs o on o.id = c.org_id
+             where c.id = ${cotizacionId} and c.org_id = ${orgId}`,
         // `ci.*` y no una lista de columnas: cotizacion_items NO tiene `unidad`
         // (vive en productos). El SSR usa la misma forma y cae a 'pieza' en
         // rowToQuote; el parche debe producir EXACTAMENTE el mismo texto o
@@ -1921,6 +1981,26 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
     );
     const c = cabecera[0];
     if (!c) return null;
+
+    // El desglose se recalcula con el MISMO motor que usa el SSR. Mandar solo un
+    // `iva` agregado obligaría al cliente a repartirlo entre tasas, y repartir
+    // un agregado entre tasas distintas devuelve números que no corresponden a
+    // ninguna de ellas.
+    const fallbackRate = num(c.org_iva_pct) / 100;
+    const retencionesGuardadas = Array.isArray(c.retenciones_snapshot) ? c.retenciones_snapshot : [];
+    let desglose: { porTasa: any[]; retenciones: any[] } = { porTasa: [], retenciones: [] };
+    try {
+        desglose = calculateDocumentTotals(
+            items.map((it: any) => ({
+                descripcion: (it.descripcion as string) ?? '',
+                cantidad: num(it.cantidad),
+                precio_unitario: num(it.precio_unitario),
+                precio_negociado: it.precio_negociado === null ? null : num(it.precio_negociado),
+                tax_rate: it.tax_rate != null ? num(it.tax_rate) : fallbackRate,
+            })),
+            { ivaIncluido: Boolean(c.iva_incluido), retenciones: retencionesGuardadas },
+        );
+    } catch { /* una tasa corrupta no debe tumbar el stream; se manda sin desglose */ }
 
     return {
         rev: num(c.rev) || 1,
@@ -1948,6 +2028,8 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
             status: co.status as string,
             vence: co.vence ? fmtDate(co.vence as string) : '',
         })),
+        impuestos: desglose.porTasa.filter((t: any) => t.impuesto > 0).map((t: any) => ({ tasa: t.tasa, impuesto: t.impuesto })),
+        retenciones: desglose.retenciones.map((r: any) => ({ nombre: r.nombre, monto: r.monto })),
     };
 }
 

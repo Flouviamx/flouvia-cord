@@ -31,7 +31,8 @@
     "security:billing-live": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-stripe-billing.mjs",
     "security:billing-db": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-billing-db.mjs",
     "security:rls": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/rls-audit.mjs",
-    "test:payments": "npm run test && npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes && npm run security:billing && npm run security:currency"
+    "test:payments": "npm run test && npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes && npm run security:billing && npm run security:currency && npm run security:tax",
+    "security:tax": "node scripts/tax-check.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

@@ -197,3 +197,81 @@ export function calculateInvoiceTotals(
         ivaIncluido,
     };
 }
+
+// ── Retenciones ─────────────────────────────────────────────────────────────
+// Un impuesto de consumo se SUMA a la base; una retención se RESTA del total.
+// Es el mismo dato con signo contrario, y confundirlos no produce un error
+// visible: produce una factura que cuadra consigo misma y no con lo que el
+// cliente realmente debe pagar.
+//
+// Base de cálculo: el SUBTOTAL del documento (suma de bases gravables). Es lo
+// correcto para el caso que originó esto —en México la retención de IVA es
+// 10.667% del valor de los actos, que es exactamente 2/3 del IVA del 16%— y es
+// el criterio que cualquier negocio puede verificar en su propia factura. Cord
+// no modela la base especial de cada régimen de cada país: si un negocio
+// necesita otra base, ajusta la tasa con su contador.
+
+export interface RetencionInput {
+    /** Nombre en el vocabulario del país: 'Retención IVA 10.667%', 'ReteFuente 2,5%'. */
+    nombre: string;
+    /** Fracción, no porcentaje: 0.10667, nunca 10.667. */
+    tasa: number | string;
+    /** Subcódigo del país. Solo México lo usa (lo mapea el CFDI). */
+    tipo?: string;
+}
+
+export interface RetencionApplied {
+    nombre: string;
+    tipo: string;
+    tasa: number;
+    base: number;
+    monto: number;
+}
+
+export interface DocumentTotals extends InvoiceTotals {
+    retenciones: RetencionApplied[];
+    retencionTotal: number;
+}
+
+/**
+ * Totales completos de un documento comercial: impuesto por línea + retenciones.
+ *
+ * Es el motor ÚNICO de cotizaciones y facturas nuevas. `calculateTotals` queda
+ * como camino heredado porque escribió los totales que hoy viven en producción
+ * y cambiar su aritmética los reescribiría en silencio; `calculateInvoiceTotals`
+ * sigue siendo el caso sin retenciones y esta función lo envuelve, no lo repite.
+ *
+ * `total = subtotal + impuestos − retenciones`.
+ */
+export function calculateDocumentTotals(
+    items: InvoiceItemInput[],
+    opts: { ivaIncluido?: boolean; retenciones?: RetencionInput[] } = {},
+): DocumentTotals {
+    const base = calculateInvoiceTotals(items, { ivaIncluido: opts.ivaIncluido });
+
+    const retenciones: RetencionApplied[] = (opts.retenciones ?? []).map((r) => {
+        const tasa = Number(r.tasa);
+        // Mismo criterio que el resto del motor: una tasa fuera de rango es un
+        // error de programación, y un 500 explícito le gana a un documento con
+        // una retención mal calculada que nadie audita hasta la auditoría.
+        if (!Number.isFinite(tasa) || tasa < 0 || tasa > 1) {
+            throw new RangeError(`calculateDocumentTotals: la tasa de retención debe estar entre 0 y 1 (recibido: ${r.tasa}).`);
+        }
+        return {
+            nombre: String(r.nombre ?? '').slice(0, 80),
+            tipo: String(r.tipo ?? 'ret_iva'),
+            tasa,
+            base: base.subtotal,
+            monto: base.subtotal * tasa,
+        };
+    }).filter((r) => r.tasa > 0);
+
+    const retencionTotal = retenciones.reduce((sum, r) => sum + r.monto, 0);
+
+    return {
+        ...base,
+        total: base.total - retencionTotal,
+        retenciones,
+        retencionTotal,
+    };
+}

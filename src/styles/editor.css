@@ -332,6 +332,13 @@
 /* Desglose por tasa: una línea por tipo de impuesto, sangrada bajo el subtotal. */
 [data-editor] .sum-tax { font-size: 0.78rem; padding-left: 0.6rem; }
 [data-editor] .sum-tax .editorial { font-size: 0.85rem; }
+/* Retención: se RESTA del total. El renglón se distingue del impuesto porque
+   van juntos y apuntan en direcciones contrarias — leerlos iguales es cómo un
+   documento termina cuadrando consigo mismo y no con lo que el cliente paga.
+   El markup lo inyecta JS, así que la regla vive aquí y no en un <style>
+   scopeado (regla 11). */
+[data-editor] .sum-ret { font-size: 0.78rem; padding-left: 0.6rem; color: #b45309; }
+[data-editor] .sum-ret .editorial { font-size: 0.85rem; color: #b45309; }
 [data-editor] .sum-divider { height: 1px; background: rgba(0, 0, 0, 0.06); margin: 0.5rem 0; }
 [data-editor] .sum-total { font-weight: 700; color: var(--color-text); }
 [data-editor] .sum-total .editorial { font-size: 1.6rem; letter-spacing: -0.03em; }

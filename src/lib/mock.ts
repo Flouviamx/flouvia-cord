@@ -2,6 +2,7 @@
 // Datos mock de la app de Cord — simulan lo que vendrá de Neon (PostgreSQL).
 import { currentCurrency, currentLocale } from './context';
 import { currencyDecimals } from './currency';
+import { calculateDocumentTotals } from '../../packages/elements/src/engine';
 
 /** Locale de formato del request (es-MX / en-US). */
 const intlLocale = () => (currentLocale() === 'en' ? 'en-US' : 'es-MX');
@@ -20,6 +21,8 @@ export interface MockItem {
     unidad: string;
     precioLista: number;
     precioNegociado: number | null;
+    /** Fracción 0–1. Snapshot de la tasa al capturar, no lectura viva del catálogo. */
+    taxRate?: number;
     aprobado?: boolean;   // false = el cliente NO incluyó esta línea al aprobar (aprobación parcial)
     comentarios?: { autor: string; tipo: string; contenido: string; cuando: string; mine?: boolean }[];
 }
@@ -60,6 +63,14 @@ export interface MockQuote {
     aprobEstado?: string | null;
     aprobMotivo?: string | null;
     esRecurrente?: boolean; // iguala/retainer: se cobra el total automáticamente cada mes vía Stripe Subscription
+    /**
+     * Tasa de la organización (fracción), para las líneas sin `taxRate` propia.
+     * La publica quien carga la cotización; sin ella los totales caerían a una
+     * constante, que es justo el bug que este campo elimina.
+     */
+    taxRateFallback?: number;
+    /** Retenciones congeladas al crear el documento. Se restan del total. */
+    retenciones?: { nombre: string; tipo: string; tasa: number; base: number; monto: number }[];
 }
 
 export const ORG = {
@@ -113,12 +124,41 @@ export const money = (n: number, dec?: number) => {
 };
 
 export const lineTotal = (it: MockItem) => (it.precioNegociado ?? it.precioLista) * it.cantidad;
-export const quoteSubtotal = (q: MockQuote) => {
-    const rawSum = q.items.filter(it => it.aprobado !== false).reduce((s, it) => s + lineTotal(it), 0);
-    return q.iva_incluido ? rawSum / (1 + IVA) : rawSum;
+
+/**
+ * Totales de una cotización, con el MISMO motor que los escribe en la base.
+ *
+ * Estas tres funciones calculaban con la constante `IVA = 0.16` sin importar la
+ * organización. La etiqueta sí decía la tasa real —`IVA 21%`, `VAT 20%`— así
+ * que el link público de un negocio en Madrid mostraba "IVA 21%" junto a un
+ * importe que era el 16% del subtotal, y el cliente leía ese número. Uno con
+ * tasa 0% veía un impuesto que no cobra.
+ *
+ * `taxRate` es `undefined` en las líneas anteriores al impuesto por línea; para
+ * esas se usa la tasa de la organización, que es exactamente con la que se
+ * calcularon en su momento.
+ */
+const documentTotals = (q: MockQuote) => {
+    const fallback = q.taxRateFallback ?? IVA;
+    return calculateDocumentTotals(
+        q.items.filter((it) => it.aprobado !== false).map((it) => ({
+            descripcion: it.descripcion,
+            cantidad: it.cantidad,
+            precio_unitario: it.precioLista,
+            precio_negociado: it.precioNegociado,
+            tax_rate: it.taxRate ?? fallback,
+        })),
+        { ivaIncluido: !!q.iva_incluido, retenciones: q.retenciones ?? [] },
+    );
 };
-export const quoteIva = (q: MockQuote) => quoteSubtotal(q) * IVA;
-export const quoteTotal = (q: MockQuote) => quoteSubtotal(q) * (1 + IVA);
+
+export const quoteSubtotal = (q: MockQuote) => documentTotals(q).subtotal;
+export const quoteIva = (q: MockQuote) => documentTotals(q).impuestos;
+export const quoteTotal = (q: MockQuote) => documentTotals(q).total;
+/** Desglose por tasa — lo que imprime el resumen cuando hay más de una. */
+export const quoteTaxBreakdown = (q: MockQuote) => documentTotals(q).porTasa.filter((t) => t.impuesto > 0);
+/** Retenciones aplicadas, ya con su monto. Se RESTAN del total. */
+export const quoteRetenciones = (q: MockQuote) => documentTotals(q).retenciones;
 
 export const PRODUCTOS = [
     { sku: 'CEM-50',  nombre: 'Cemento gris 50kg',            unidad: 'saco',   precio: 198.0,  activo: true },

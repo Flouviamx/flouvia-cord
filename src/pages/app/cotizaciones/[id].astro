@@ -1,7 +1,8 @@
 ---
 // Detalle de cotización — items, totales, timeline de eventos y acciones. Datos reales (Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
-import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, getSuscripcionByCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../../lib/queries';
+import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, getSuscripcionByCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../../lib/queries';
+import { getCountryProfile } from '../../../lib/countries';
 import { memberCan } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
@@ -48,7 +49,9 @@ const SEC_LABEL: Record<string, string> = {
 const facturapiGlobalKey = import.meta.env.FACTURAPI_API_KEY || process.env.FACTURAPI_API_KEY || '';
 const isFacturapiGlobalLive = facturapiGlobalKey.startsWith('sk_live_');
 const isMx = ORG.countryCode === 'MX';
-const TAX_LABEL = isMx ? t(L, 'id.iva') : (L === 'en' ? 'Tax' : 'Impuesto');
+// El nombre del impuesto sale del perfil del país, no de un ternario que le
+// decía "Tax" genérico a todo negocio fuera de México.
+const TAX_LABEL = getCountryProfile(ORG.countryCode || 'MX', L).taxLabel;
 const TAX_INCLUDED_LABEL = isMx ? t(L, 'id.precios_con_iva') : (L === 'en' ? 'Prices include tax' : 'Precios con impuesto incluido');
 const PARTIAL_TAX_COPY = isMx
     ? tf('id.de_mas_iva', { subtotal: money(quoteSubtotal(q)) })
@@ -196,7 +199,12 @@ const dotColor = (tipo: string) =>
                 )}
                 <div class="di-totals">
                     <div class="dt-line"><span>{t(L, 'id.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-                    <div class="dt-line"><span>{TAX_LABEL} {ORG.ivaPct ?? 0}%</span><span class="editorial">{money(quoteIva(q))}</span></div>
+                    {quoteTaxBreakdown(q).map((tr) => (
+                        <div class="dt-line"><span>{TAX_LABEL} {Math.round(tr.tasa * 10000) / 100}%</span><span class="editorial">{money(tr.impuesto)}</span></div>
+                    ))}
+                    {quoteRetenciones(q).map((r) => (
+                        <div class="dt-line dt-ret"><span>{r.nombre}</span><span class="editorial">−{money(r.monto)}</span></div>
+                    ))}
                     <div class="dt-line dt-grand">
                         <span>{t(L, 'id.total_line')} {q.iva_incluido && <span style="font-size: 0.7em; font-weight: 500; color: var(--color-text-muted); margin-left: 0.4rem; background: var(--color-bg-soft); padding: 2px 6px; border-radius: 4px;">{TAX_INCLUDED_LABEL}</span>}</span>
                         <span class="editorial">{money(quoteTotal(q))}</span>

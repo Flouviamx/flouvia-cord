@@ -1,18 +1,31 @@
-// /api/impuestos — perfiles de impuesto reutilizables de la org (FASE 3).
-//   POST   { nombre, tipo, tasa, es_default? }     → { id }
-//   PATCH  { id, nombre?, tasa?, es_default?, activo? } → { ok }
-//   DELETE { id }                                   → { ok }
-// Al marcar es_default, se desmarca el resto del MISMO tipo y se SINCRONIZA la
-// columna correspondiente de orgs (iva_pct / retencion_iva_pct / retencion_isr_pct)
-// para que el editor de cotizaciones lo use sin refactor. Requiere permiso 'ajustes'.
+// /api/impuestos — catálogo de impuestos de la organización.
+//   POST   { nombre, kind, tipo?, tasa, es_default? }        → { id }
+//   POST   { action: 'seed' }                                → { creados }
+//   PATCH  { id, nombre?, tasa?, es_default?, activo? }      → { ok }
+//   DELETE { id }                                            → { ok }
+//
+// `kind` (consumo | retencion | exento) es la clasificación NEUTRA y la que
+// decide la aritmética. `tipo` es el subcódigo local: solo México lo usa, para
+// mapear a los impuestos trasladados/retenidos del CFDI 4.0.
+//
+// La sincronización hacia orgs.iva_pct / retencion_*_pct se conserva como
+// compatibilidad para cuentas creadas antes del impuesto por línea; ya no es el
+// camino por el que los editores leen la tasa. Requiere permiso 'ajustes'.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm } from '../../lib/queries';
+import { seedTaxCatalog } from '../../lib/impuestos-db';
 
 const TIPOS = new Set(['iva', 'ieps', 'ret_iva', 'ret_isr', 'exento']);
+const KINDS = new Set(['consumo', 'retencion', 'exento']);
 const clampTasa = (v: unknown) => Math.min(100, Math.max(0, Number(v) || 0));
+
+// Deriva la clasificación neutra del subcódigo, para peticiones viejas que solo
+// mandan `tipo` (la API pública y el MCP pueden seguir haciéndolo).
+const kindFromTipo = (tipo: string): string =>
+    tipo === 'ret_iva' || tipo === 'ret_isr' ? 'retencion' : tipo === 'exento' ? 'exento' : 'consumo';
 
 // Mapea el tipo de impuesto default a la columna de orgs que el editor lee.
 const COL_BY_TIPO: Record<string, string> = {
@@ -34,19 +47,25 @@ export const POST: APIRoute = async ({ request }) => {
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
+    if (body.action === 'seed') return seedFromCountry(request);
+
     const nombre = String(body.nombre ?? '').trim().slice(0, 60);
     if (!nombre) return json({ error: 'El nombre es obligatorio' }, 400);
     const tipo = TIPOS.has(String(body.tipo)) ? String(body.tipo) : 'iva';
+    const kind = KINDS.has(String(body.kind)) ? String(body.kind) : kindFromTipo(tipo);
     const tasa = clampTasa(body.tasa);
     const esDefault = !!body.es_default;
 
     const orgId = await getActiveOrgId();
     let row: any;
     try {
-        if (esDefault) await withOrgTx(orgId, sql`update impuestos set es_default = false where org_id = ${orgId} and tipo = ${tipo}`);
+        // El default es único por KIND, no por subcódigo: es la clasificación
+        // que el editor consulta, y dos "predeterminados de consumo" a la vez
+        // dejarían al editor eligiendo en silencio cuál de los dos aplica.
+        if (esDefault) await withOrgTx(orgId, sql`update impuestos set es_default = false where org_id = ${orgId} and kind = ${kind}`);
         [[row]] = await withOrgTx(orgId, sql`
-            insert into impuestos (org_id, nombre, tipo, tasa, es_default)
-            values (${orgId}, ${nombre}, ${tipo}, ${tasa}, ${esDefault})
+            insert into impuestos (org_id, nombre, tipo, kind, tasa, es_default)
+            values (${orgId}, ${nombre}, ${tipo}, ${kind}, ${tasa}, ${esDefault})
             returning id`);
     } catch {
         return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500);
@@ -67,6 +86,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     const [[actual]] = await withOrgTx(orgId, sql`select * from impuestos where id = ${id} and org_id = ${orgId}`);
     if (!actual) return json({ error: 'Impuesto no encontrado' }, 404);
     const tipo = actual.tipo as string;
+    const kind = (actual.kind as string) || kindFromTipo(tipo);
 
     if (body.nombre !== undefined) {
         const nombre = String(body.nombre).trim().slice(0, 60) || (actual.nombre as string);
@@ -79,7 +99,7 @@ export const PATCH: APIRoute = async ({ request }) => {
         await withOrgTx(orgId, sql`update impuestos set activo = ${body.activo} where id = ${id} and org_id = ${orgId}`);
     }
     if (body.es_default === true) {
-        await withOrgTx(orgId, sql`update impuestos set es_default = false where org_id = ${orgId} and tipo = ${tipo}`);
+        await withOrgTx(orgId, sql`update impuestos set es_default = false where org_id = ${orgId} and kind = ${kind}`);
         await withOrgTx(orgId, sql`update impuestos set es_default = true where id = ${id} and org_id = ${orgId}`);
     } else if (body.es_default === false) {
         await withOrgTx(orgId, sql`update impuestos set es_default = false where id = ${id} and org_id = ${orgId}`);
@@ -102,6 +122,31 @@ export const DELETE: APIRoute = async ({ request }) => {
     await logAudit(orgId, { accion: 'impuesto.eliminado', entidad: 'impuesto', entidad_id: id, detalle: rows[0].nombre as string, ip: reqIp(request) });
     return json({ ok: true });
 };
+
+/**
+ * Siembra el catálogo con las tasas estándar del país de la organización.
+ *
+ * No es una tabla tributaria (Cord no mantiene las reglas de 200 países): es el
+ * punto de partida editable que evita que una cuenta nueva en Madrid nazca
+ * vacía o —peor— con el 16% mexicano heredado. Solo siembra si el catálogo está
+ * vacío: nunca pisa lo que el negocio ya configuró con su contador.
+ */
+async function seedFromCountry(request: Request) {
+    const orgId = await getActiveOrgId();
+    const [[existente], [org]] = await withOrgTx(orgId,
+        sql`select count(*)::int as n from impuestos where org_id = ${orgId}`,
+        sql`select country_code from orgs where id = ${orgId}`,
+    );
+    if (Number(existente?.n ?? 0) > 0) {
+        return json({ error: 'Tu catálogo ya tiene perfiles. Elimina los que no uses antes de volver a partir de cero.' }, 409);
+    }
+
+    const pais = String(org?.country_code || 'MX').toUpperCase();
+    const creados = await seedTaxCatalog(orgId, pais);
+    await syncOrg(orgId, 'iva');
+    await logAudit(orgId, { accion: 'impuesto.sembrado', entidad: 'impuesto', detalle: `${creados} perfiles de ${pais}`, ip: reqIp(request) });
+    return json({ creados });
+}
 
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });

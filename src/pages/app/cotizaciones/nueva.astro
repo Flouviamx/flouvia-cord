@@ -4,7 +4,9 @@
 // en vivo con IVA, y al enviar hace POST a /api/cotizaciones (inserta en Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
 import ClientModal from '../../../components/app/ClientModal.astro';
-import { getProductos, getClientes, getOrg, getCotizacion, getKitsForEditor, money } from '../../../lib/queries';
+import { getProductos, getClientes, getOrg, getCotizacion, getKitsForEditor, getImpuestos, money } from '../../../lib/queries';
+import { getCountryProfile } from '../../../lib/countries';
+import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../lib/impuestos';
 import { currentLocale } from '../../../lib/context';
 import { t, getEditorRuntimeI18n } from '../../../i18n/app';
 import FlagSelect from '../../../components/ui/FlagSelect';
@@ -31,10 +33,24 @@ if (draftId) {
 // el flujo de borradores (un draft ya trae su propio cliente).
 const preselectCliente = !draftQuote ? (Astro.url.searchParams.get('cliente') || null) : null;
 
-const [productos, CLIENTES, ORG, kits] = await Promise.all([getProductos(), getClientes(), getOrg(), getKitsForEditor()]);
+const [productos, CLIENTES, ORG, kits, IMPUESTOS] = await Promise.all([
+    getProductos(), getClientes(), getOrg(), getKitsForEditor(), getImpuestos(),
+]);
 const isMx = ORG.countryCode === 'MX';
-const TAX_LABEL = isMx ? t(L, 'ed.iva') : (L === 'en' ? 'Tax' : 'Impuesto');
+const PAIS = String(ORG.countryCode || 'MX');
+// No es "IVA" en todos lados: es VAT en la UE, GST en Australia/Canadá, Moms en
+// Suecia. El nombre sale del perfil del país del emisor, no de un ternario
+// `isMx ? 'IVA' : 'Tax'` que le decía "Tax" genérico a medio mundo.
+const TAX_LABEL = getCountryProfile(PAIS, L).taxLabel;
 const TAX_INCLUDED_LABEL = isMx ? t(L, 'ed.iva_incluido') : (L === 'en' ? 'Prices include tax' : 'Precios con impuesto incluido');
+// Mismo constructor que el editor de facturas. Antes esta pantalla ignoraba el
+// catálogo por completo y leía la columna plana orgs.iva_pct, así que capturar
+// "IVA 8% frontera" o "Exento" en Ajustes no cambiaba nada aquí.
+const orgTaxRate = Number(ORG.ivaPct) || 0;
+const TAX_OPTIONS = buildTaxOptions(IMPUESTOS, { locale: L, countryCode: PAIS, orgTaxRate });
+const DEFAULT_TAX_RATE = defaultTaxRate(IMPUESTOS, orgTaxRate);
+const RETENCIONES = retencionesFrom(IMPUESTOS);
+const MULTI_TAX = TAX_OPTIONS.length > 1;
 const catalogo = productos.filter(p => p.activo);
 // Suma de lista de UN kit (sin multiplicador) — solo líneas de catálogo, las
 // líneas libres no tienen precio de catálogo contra qué prorratear.
@@ -142,10 +158,10 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                     </div>
                 </div>
 
-                <div class="lines-head">
-                    <span>{t(L, 'ed.th_producto')}</span><span>{t(L, 'ed.th_cant')}</span><span>{t(L, 'ed.th_lista')}</span><span>{t(L, 'ed.th_negociado')}</span><span class="lh-right">{t(L, 'ed.th_importe')}</span><span class="lh-margen">{t(L, 'ed.th_margen')} <span class="lh-i" title={t(L, 'ed.th_margen_title')}>?</span></span><span></span>
+                <div class="lines-head" class:list={{ "has-tax": MULTI_TAX }}>
+                    <span>{t(L, 'ed.th_producto')}</span><span>{t(L, 'ed.th_cant')}</span><span>{t(L, 'ed.th_lista')}</span><span>{t(L, 'ed.th_negociado')}</span>{MULTI_TAX && <span class="lh-tax">{TAX_LABEL}</span>}<span class="lh-right">{t(L, 'ed.th_importe')}</span><span class="lh-margen">{t(L, 'ed.th_margen')} <span class="lh-i" title={t(L, 'ed.th_margen_title')}>?</span></span><span></span>
                 </div>
-                <div id="lines"></div>
+                <div id="lines" class:list={{ "has-tax": MULTI_TAX }}></div>
 
                 <div class="lines-empty" id="linesEmpty">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M3 7v14h18V7"/><path d="M9 12h6"/></svg>
@@ -208,8 +224,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
                 </div>
-                <div class="sum-line"><span>{TAX_LABEL} {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
-                <input type="hidden" id="cfgIva" value={ORG.ivaPct} />
+                <div id="sumTaxes"></div>
                 <div class="sum-divider"></div>
                 <div class="sum-line sum-total"><span>{t(L, 'ed.total')}</span><span class="editorial" id="sumTotal">$0.00</span></div>
 
@@ -298,8 +313,36 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     </div>
 </AppLayout>
 
-<script is:inline define:vars={{ catalogo, kits, aprobMargenMin: ORG.aprobMargenMin, draftQuote, preselectCliente, T: ET, orgCurrency: ORG.moneda || 'MXN' }}>
+<script type="application/json" id="edBootQ" is:inline set:html={JSON.stringify({
+    catalogo, kits, aprobMargenMin: ORG.aprobMargenMin, draftQuote, preselectCliente,
+    T: ET, orgCurrency: ORG.moneda || 'MXN',
+    taxOptions: TAX_OPTIONS, defaultTaxRate: DEFAULT_TAX_RATE, retenciones: RETENCIONES,
+    taxLabel: TAX_LABEL, multiTax: MULTI_TAX,
+})} />
+<script>
+    // Módulo bundleado, no `is:inline` + `define:vars`.
+    //
+    // El motivo es aritmético, no estético: `is:inline` no puede importar, así
+    // que este editor calculaba subtotal/impuesto/total con su propia copia de
+    // las fórmulas mientras el servidor los recalculaba con el motor de
+    // packages/elements. Dos implementaciones de la misma aritmética difieren
+    // por un centavo tarde o temprano, y nadie sabe cuál es la buena. Ahora el
+    // resumen en pantalla y lo que se guarda salen de la MISMA función.
+    //
+    // El payload viaja como JSON en el DOM porque `define:vars` obliga a
+    // `is:inline`. Ojo regla de diseño: nada de sintaxis TypeScript aquí que no
+    // sobreviva el bundle — este bloque ya rompió una vez por un `as any`.
+    import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
+
+    const BOOT = JSON.parse(document.getElementById('edBootQ')?.textContent || '{}');
+    const { catalogo, kits, aprobMargenMin, draftQuote, preselectCliente, T, orgCurrency } = BOOT;
+
     const tpl = (s, vars) => { let r = s; for (const k in vars) r = r.split('{' + k + '}').join(vars[k]); return r; };
+    const escapeHtml = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    // Tasa con la que nacen las líneas nuevas: el perfil predeterminado del
+    // catálogo de la org, no una constante.
+    const DEFAULT_TAX = Number(BOOT.defaultTaxRate) || 0;
+    const TAX_OPTIONS = BOOT.taxOptions || [];
     const lines = [];
     const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
     const volUnit = (l) => {
@@ -322,7 +365,8 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 costo: cat ? (cat.costo || 0) : 0,
                 negociado: it.precioNegociado,
                 cantidad: it.cantidad,
-                negoTouched: it.precioNegociado !== null
+                negoTouched: it.precioNegociado !== null,
+                taxRate: it.taxRate != null ? Number(it.taxRate) : DEFAULT_TAX
             };
             if (l.id) l.lista = volUnit(l);
             lines.push(l);
@@ -432,18 +476,40 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     let lastTotal = 0;
     const currentTotal = () => lastTotal;
     function recalc() {
-        const ivaPct = (Number((document.getElementById('cfgIva') || {}).value) || 0) / 100;
         const ivaIncluido = document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false;
-        const subtotal = lines.reduce((s, l) => s + (l.negociado ?? l.lista) * l.cantidad, 0);
 
-        const iva = ivaIncluido ? subtotal - (subtotal / (1 + ivaPct)) : subtotal * ivaPct;
-        const realSubtotal = ivaIncluido ? subtotal / (1 + ivaPct) : subtotal;
-        const total = ivaIncluido ? subtotal : subtotal + iva;
+        // El MISMO motor que usa el servidor para escribir los totales. Con una
+        // sola tasa da exactamente lo que daba la aritmética que vivía aquí;
+        // con varias es la única forma de que el resumen cuadre.
+        const totals = calculateDocumentTotals(
+            lines.map((l) => ({
+                descripcion: l.nombre,
+                cantidad: l.cantidad,
+                precio_unitario: l.lista,
+                precio_negociado: l.negociado,
+                tax_rate: l.taxRate ?? BOOT.defaultTaxRate,
+            })),
+            { ivaIncluido, retenciones: BOOT.retenciones || [] },
+        );
+        const realSubtotal = totals.subtotal;
+        const total = totals.total;
         lastTotal = total;
 
         document.getElementById('sumSubtotal').textContent = fmt(realSubtotal);
-        document.getElementById('sumIva').textContent = fmt(iva);
         document.getElementById('sumTotal').textContent = fmt(total);
+
+        // Desglose por tasa + retenciones. Una retención se RESTA: se dibuja
+        // con el signo a la vista porque va junto a los impuestos y apunta en
+        // dirección contraria.
+        const $taxes = document.getElementById('sumTaxes');
+        if ($taxes) {
+            const filasImpuesto = totals.porTasa
+                .filter((tr) => tr.impuesto > 0)
+                .map((tr) => `<div class="sum-line sum-tax"><span>${escapeHtml(BOOT.taxLabel)} ${Math.round(tr.tasa * 10000) / 100}%</span><span class="editorial">${fmt(tr.impuesto)}</span></div>`);
+            const filasRetencion = (totals.retenciones || [])
+                .map((r) => `<div class="sum-line sum-ret"><span>${escapeHtml(r.nombre)}</span><span class="editorial">−${fmt(r.monto)}</span></div>`);
+            $taxes.innerHTML = [...filasImpuesto, ...filasRetencion].join('');
+        }
 
         // Conteo de líneas/piezas + cuánto le descontaste al cliente (lista vs negociado)
         const nLines = lines.length;
@@ -489,6 +555,19 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         return `<span class="lr-margen ${low ? 'lr-margen-low' : ''}" title="Margen bruto">${fmtPct(m)}</span>`;
     }
 
+    // Selector de impuesto de la línea. Solo aparece cuando la org tiene más de
+    // una tasa: con una sola, una columna con un único valor es ruido — y con
+    // varias, es la diferencia entre poder cotizar un concepto exento y no.
+    function taxSelect(l, idx) {
+        if (!BOOT.multiTax) return '';
+        const actual = l.taxRate ?? DEFAULT_TAX;
+        const opts = TAX_OPTIONS.map((o) => {
+            const sel = Math.abs(o.rate - actual) < 1e-9 ? ' selected' : '';
+            return `<option value="${o.rate}"${sel}>${escapeHtml(o.label)}</option>`;
+        }).join('');
+        return `<select class="lr-tax" data-idx="${idx}" data-field="taxRate" aria-label="${escapeHtml(BOOT.taxLabel)}">${opts}</select>`;
+    }
+
     function render() {
         $empty.hidden = lines.length > 0;
         $lines.innerHTML = '';
@@ -509,6 +588,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 <input type="number" min="1" value="${l.cantidad}" class="lr-input" data-idx="${idx}" data-field="cantidad" />
                 <span class="lr-lista">${l.id ? fmt(l.lista) : '—'}</span>
                 <input type="number" min="0" step="0.01" value="${precioFinal.toFixed(2)}" class="lr-input lr-nego ${l.negociado !== null && l.negociado < l.lista ? 'is-deal' : ''}" data-idx="${idx}" data-field="negociado" />
+                ${taxSelect(l, idx)}
                 <span class="editorial lr-importe">${fmt(importe)}</span>
                 ${margenBadge(l.costo, precioFinal)}
                 <button class="lr-del" data-del="${idx}" aria-label="${T.quitar}">
@@ -527,7 +607,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     let prodActive = -1;
 
     function addProduct(p) {
-        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: 1, negoTouched: false });
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: 1, negoTouched: false, taxRate: DEFAULT_TAX });
         render();
         // Micro-feedback: la fila nueva parpadea suave para ubicarla.
         const rows = $lines.querySelectorAll('.line-row');
@@ -598,7 +678,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     }
 
     document.getElementById('btnFreeLine')?.addEventListener('click', () => {
-        lines.push({ id: null, nombre: '', unidad: 'pieza', baseLista: 0, lista: 0, vol: [], costo: 0, negociado: 0, cantidad: 1, negoTouched: false });
+        lines.push({ id: null, nombre: '', unidad: 'pieza', baseLista: 0, lista: 0, vol: [], costo: 0, negociado: 0, cantidad: 1, negoTouched: false, taxRate: DEFAULT_TAX });
         render();
         // Foco directo a la descripción de la línea recién creada.
         const inputs = $lines.querySelectorAll('.lr-desc-input');
@@ -644,11 +724,11 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
             const qty = (Number(it.cantidad) || 1) * mult;
             const p = it.productoId ? catMap[it.productoId] : null;
             if (p) {
-                lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: qty, negoTouched: false });
+                lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, baseLista: p.precio, lista: p.precio, vol: p.preciosVolumen || [], costo: p.costo || 0, negociado: applyDesc(p.precio), cantidad: qty, negoTouched: false, taxRate: DEFAULT_TAX });
                 catalogIdxs.push(lines.length - 1);
                 sumaListaOne += (Number(it.cantidad) || 1) * p.precio;
             } else {
-                lines.push({ id: null, nombre: it.descripcion, unidad: 'pieza', baseLista: 0, lista: 0, vol: [], costo: 0, negociado: 0, cantidad: qty, negoTouched: false });
+                lines.push({ id: null, nombre: it.descripcion, unidad: 'pieza', baseLista: 0, lista: 0, vol: [], costo: 0, negociado: 0, cantidad: qty, negoTouched: false, taxRate: DEFAULT_TAX });
             }
         });
 
@@ -767,6 +847,17 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
         recalc();
     });
 
+    // El selector de impuesto es un <select>, no un <input>: el handler de
+    // arriba lo descarta por instanceof, así que escucha su propio 'change'.
+    $lines.addEventListener('change', (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLSelectElement) || t.dataset.field !== 'taxRate') return;
+        const l = lines[parseInt(t.dataset.idx, 10)];
+        if (!l) return;
+        l.taxRate = Number(t.value) || 0;
+        recalc();
+    });
+
     $lines.addEventListener('click', (e) => {
         const delBtn = e.target.closest('.lr-del');
         if (delBtn) {
@@ -878,6 +969,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                 precio_unitario: l.lista,
                 precio_negociado: l.negociado,
                 costo_unitario: l.costo || 0,
+                tax_rate: l.taxRate ?? DEFAULT_TAX,
             })),
         };
     }
@@ -1173,6 +1265,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
                         negociado: it.negociado,
                         cantidad: it.cantidad || 1,
                         negoTouched: it.negociado != null,
+                        taxRate: it.taxRate != null ? Number(it.taxRate) : DEFAULT_TAX,
                     };
                     // Ajusta el precio de lista al nivel de volumen de su cantidad.
                     if (l.id) l.lista = volUnit(l);
@@ -1244,6 +1337,23 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
 
 <style is:global>
     /* Estilo Stripe / Linear para el grid de líneas */
+    /* Columna de impuesto: solo existe cuando la org tiene más de una tasa. La
+       rejilla se llavea por `.has-tax` en el contenedor y no por el número de
+       hijos, para que una org con una sola tasa conserve el layout de siempre.
+       Las filas las inyecta JS, así que la regla vive en el <style is:global>
+       (regla 11) y no en un bloque scopeado que nunca haría match. */
+    .lines-head.has-tax,
+    #lines.has-tax .line-row { grid-template-columns: 1.8fr 70px 90px 110px 104px 1fr 58px 30px; }
+    .lr-tax {
+        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 500;
+        color: var(--color-text); background: var(--color-bg-soft, #f5f5f7);
+        border: 1px solid transparent; border-radius: 8px; padding: 6px 8px;
+        width: 100%; min-width: 0; cursor: pointer; appearance: none;
+        transition: border-color 0.25s;
+    }
+    .lr-tax:focus { outline: none; border-color: rgba(10, 25, 47, 0.15); }
+    .lh-tax { text-align: left; }
+
     .line-row {
         display: grid;
         grid-template-columns: 1.8fr 70px 90px 110px 1fr 58px 30px;
@@ -1352,6 +1462,17 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
             gap: 0.65rem 0.75rem;
             padding: 1rem 0;
         }
+        /* La tasa es información comercial: en móvil se apila, no se esconde
+           (regla 16). Un renglón propio de 44px la deja tocable. */
+        #lines.has-tax .line-row {
+            grid-template-columns: minmax(0, 1fr) minmax(92px, 0.72fr) 44px;
+            grid-template-areas:
+                "name name delete"
+                "quantity price price"
+                "tax tax tax"
+                "list margin amount";
+        }
+        .line-row > .lr-tax { grid-area: tax; min-height: 44px; font-size: 16px; }
         .line-row > :is(.lr-name, .lr-desc-input) { grid-area: name; min-width: 0; }
         .line-row > .lr-input:nth-child(2) { grid-area: quantity; }
         .line-row > .lr-lista { grid-area: list; display: block; align-self: center; }

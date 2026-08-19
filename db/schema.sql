@@ -2686,3 +2686,68 @@ as $$
      and d.lifecycle <> 'draft'
    limit 1
 $$;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- IMPUESTOS PAÍS-NEUTROS (ago 2026)
+-- ═══════════════════════════════════════════════════════════════════════════
+-- El catálogo `impuestos` nació mexicano: su `tipo` era el vocabulario del SAT
+-- (iva | ieps | ret_iva | ret_isr | exento) y su único consumidor real era la
+-- sincronización hacia orgs.iva_pct, que el editor de cotizaciones leía como
+-- una tasa PLANA para todo el documento. Dos consecuencias medibles:
+--
+--   1. Configurar "IVA 8% frontera" o "Exento" no cambiaba nada en una
+--      cotización — el catálogo existía sin consumidor (regla 15, sobre dinero).
+--   2. Un negocio en Madrid o en Sídney veía "IEPS" y "Retención ISR" en su
+--      perfil fiscal, conceptos que en su país no existen (regla 10).
+--
+-- `kind` es la clasificación NEUTRA y es la que decide la aritmética. `tipo` se
+-- conserva como subcódigo del país porque MexicoSatProvider lo mapea a los
+-- impuestos trasladados/retenidos del CFDI 4.0; fuera de México no significa
+-- nada y por eso no se muestra.
+alter table impuestos add column if not exists kind text not null default 'consumo';
+-- consumo   → se SUMA a la base (IVA, VAT, GST, ITBIS, IGV, sales tax…)
+-- retencion → se RESTA del total (ret. IVA/ISR en MX, ReteIVA/ReteFuente en CO…)
+-- exento    → tasa 0 explícita; no es lo mismo que "no gravado" en el desglose
+alter table impuestos drop constraint if exists chk_impuestos_kind;
+alter table impuestos add constraint chk_impuestos_kind
+  check (kind in ('consumo', 'retencion', 'exento'));
+
+-- Backfill del vocabulario mexicano preexistente hacia la clasificación neutra.
+update impuestos set kind = case
+  when tipo in ('iva', 'ieps')       then 'consumo'
+  when tipo in ('ret_iva', 'ret_isr') then 'retencion'
+  else 'exento'
+end
+where kind = 'consumo' and tipo <> 'iva';
+
+create index if not exists idx_impuestos_org_kind on impuestos(org_id, kind, es_default);
+
+-- ── Impuesto POR LÍNEA en cotizaciones ──────────────────────────────────────
+-- Vender mezclando tasas —un concepto exento junto a uno gravado, servicios y
+-- bienes con tratamiento distinto— es normal en cuanto sales de un solo país.
+-- La factura ya lo resolvía (calculateInvoiceTotals); la cotización aplanaba
+-- todo a orgs.iva_pct y luego el documento fiscal no cuadraba con ella.
+--
+-- `tax_rate` es SNAPSHOT al capturar, no una lectura viva del catálogo: editar
+-- una tasa después no debe reescribir en silencio la aritmética de una
+-- cotización ya enviada o firmada. Mismo criterio que line_items_snapshot.
+alter table cotizacion_items add column if not exists impuesto_id uuid references impuestos(id) on delete set null;
+-- NULLABLE a propósito: `null` significa "esta línea es anterior al impuesto por
+-- línea" y cae a la tasa de la organización; `0` significa "exenta", que es una
+-- decisión explícita del vendedor. Con `not null default 0` las cotizaciones ya
+-- existentes habrían pasado a mostrar cero impuesto de un día para otro.
+alter table cotizacion_items add column if not exists tax_rate numeric; -- FRACCIÓN (0.16), no porcentaje
+
+-- ── Retenciones con consumidor ──────────────────────────────────────────────
+-- orgs.retencion_iva_pct y retencion_isr_pct se capturaban en Ajustes, se
+-- guardaban en /api/org y no los leía NADIE: ni los totales, ni el PDF, ni el
+-- CFDI. Se guardaba un número que el negocio creía estar aplicando.
+-- El total retenido se persiste con el documento por la misma razón que
+-- tax_rate: es el resultado del cálculo de ESE día, no de la config de hoy.
+alter table cotizaciones        add column if not exists retencion_total numeric not null default 0;
+alter table documentos_fiscales add column if not exists retencion_total numeric not null default 0;
+
+-- Desglose de retenciones aplicadas, para que el PDF y el CFDI puedan
+-- declararlas una por una en vez de mostrar un total sin origen.
+alter table cotizaciones        add column if not exists retenciones_snapshot jsonb not null default '[]'::jsonb;
+alter table documentos_fiscales add column if not exists retenciones_snapshot jsonb not null default '[]'::jsonb;

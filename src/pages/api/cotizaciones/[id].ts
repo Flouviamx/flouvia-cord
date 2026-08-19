@@ -15,7 +15,8 @@ import { requireEntitlement } from '../../../lib/org-entitlements';
 import { emitFiscalDocument } from '../../../lib/fiscal/emit';
 import { MAX_ITEMS } from '../../../lib/cotizaciones';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
-import { sanitizeItem } from '../../../../packages/elements/src/engine';
+import { sanitizeItem, calculateDocumentTotals } from '../../../../packages/elements/src/engine';
+import { taxCatalogFor } from '../../../lib/impuestos-db';
 import { trackServer } from '../../../lib/posthog-server';
 import { normalizeCurrency } from '../../../lib/currency';
 import { FXService, FXUnavailableError } from '../../../lib/fx/FXService';
@@ -139,15 +140,28 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (['resend', 'update_draft', 'send'].includes(body.action) && Array.isArray(body.items)) {
         if (body.items.length > MAX_ITEMS) return json({ error: `Demasiadas líneas (máximo ${MAX_ITEMS}).` }, 400);
         // Saneado: montos finitos no-negativos + descripción acotada (misma lógica que crear).
-        const items = body.items.map(sanitizeItem);
-        let subtotal = 0;
-        for (const it of items) subtotal += Number(it.precio_negociado ?? it.precio_unitario ?? 0) * Number(it.cantidad ?? 1);
-        const [org] = await sql`select iva_pct from orgs where id = ${orgId}`;
-        const ivaPct = org.iva_pct !== undefined && org.iva_pct !== null ? Number(org.iva_pct) / 100 : 0.16;
+        const rawItems = body.items;
         const iva_incluido = Boolean(body.iva_incluido);
-        const iva = iva_incluido ? subtotal - (subtotal / (1 + ivaPct)) : subtotal * ivaPct;
-        const realSubtotal = iva_incluido ? subtotal / (1 + ivaPct) : subtotal;
-        const total = iva_incluido ? subtotal : subtotal + iva;
+
+        // Mismo motor y mismo catálogo que la creación. Aquí vivía una TERCERA
+        // copia de la aritmética —con su propio `|| 0.16` de respaldo— así que
+        // editar un borrador podía darle otro total que crearlo. Y el re-insert
+        // de las líneas más abajo no llevaba `tax_rate`, de modo que una simple
+        // edición borraba el impuesto por línea que el vendedor había elegido.
+        const catalogo = await taxCatalogFor(orgId);
+        const items = rawItems.map((raw: any, i: number) => ({
+            ...sanitizeItem(raw),
+            tax_rate: catalogo.resolve(rawItems[i]?.tax_rate, catalogo.defaultRate),
+        }));
+        const totals = calculateDocumentTotals(items as any[], {
+            ivaIncluido: iva_incluido,
+            retenciones: catalogo.retenciones,
+        });
+        const realSubtotal = totals.subtotal;
+        const iva = totals.impuestos;
+        const total = totals.total;
+        const retencionTotal = totals.retencionTotal;
+        const retencionesSnapshot = JSON.stringify(totals.retenciones);
         
         // resend crea nueva versión, draft update/send sobre draft usa la actual
         const nextVersion = body.action === 'resend' ? Number(rows[0].version || 1) + 1 : Number(rows[0].version || 1);
@@ -213,18 +227,22 @@ export const PATCH: APIRoute = async ({ params, request }) => {
                         fx_locked_until = case when ${fxSource !== null} then ${fxLockedUntil}
                                                else fx_locked_until end,
                         subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
+                        retencion_total = ${retencionTotal},
+                        retenciones_snapshot = ${retencionesSnapshot}::jsonb,
                         version = ${nextVersion}, iva_incluido = ${iva_incluido},
                         anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente}
                       where id = ${id}`;
         } else {
-            await sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`;
+            await sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
+                        retencion_total = ${retencionTotal}, retenciones_snapshot = ${retencionesSnapshot}::jsonb,
+                        version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`;
         }
 
         await sql`delete from cotizacion_items where cotizacion_id = ${id}`;
         let orden = 0;
         for (const it of items) {
-            await sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden)
-                      values (${id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++})`;
+            await sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
+                      values (${id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++}, ${it.tax_rate})`;
         }
         
         if (body.action === 'resend') {
@@ -233,7 +251,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'comment', ${'Versión ' + nextVersion + ' creada'})`;
         } else {
             // Actualizamos la versión existente (borrador)
-            await sql`update cotizacion_versiones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, items = ${JSON.stringify(body.items)}, iva_incluido = ${iva_incluido} where cotizacion_id = ${id} and version = ${nextVersion}`;
+            await sql`update cotizacion_versiones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, items = ${JSON.stringify(items)}, iva_incluido = ${iva_incluido} where cotizacion_id = ${id} and version = ${nextVersion}`;
         }
     }
 

@@ -16,6 +16,8 @@ import { currentUserId } from '../../../lib/context';
 import { parseJsonBody } from '../../../lib/validation';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { COUNTRY_CODES, getCountryProfile } from '../../../lib/countries';
+import { defaultCountryTaxPct } from '../../../lib/impuestos';
+import { seedTaxCatalog } from '../../../lib/impuestos-db';
 
 const PUESTOS = ['dueno', 'ventas', 'finanzas', 'operaciones', 'otro'] as const;
 const INDUSTRIAS = ['distribucion', 'manufactura', 'construccion', 'servicios', 'tecnologia', 'comercio', 'otro'] as const;
@@ -61,7 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
                 moneda = ${countryProfile.currency},
                 zona_horaria = ${countryProfile.timeZone},
                 idioma = ${appLocale},
-                iva_pct = ${countryCode === 'MX' ? 16 : 0},
+                iva_pct = ${defaultCountryTaxPct(countryCode)},
                 industria = ${industria},
                 tamano_equipo = ${tamano},
                 casos_uso = ${JSON.stringify(casosUso)}::jsonb,
@@ -69,6 +71,11 @@ export const POST: APIRoute = async ({ request }) => {
             where id = ${orgId}`,
         sql`update users set puesto = ${puesto} where id = ${userId}`,
     );
+
+    // El país puede haber cambiado respecto al de la creación (el wizard lo
+    // vuelve a preguntar), así que el catálogo se siembra aquí también. Es
+    // idempotente: no toca un catálogo que ya tenga perfiles.
+    await seedTaxCatalog(orgId, countryCode);
 
     await logAudit(orgId, {
         accion: 'org.onboarding_completado',

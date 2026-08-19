@@ -4,7 +4,8 @@
 // condiciones definidos en /app/ajustes (tabla orgs).
 export const prerender = false;
 
-import { getCotizacion, getOrg, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal } from '../../../../lib/queries';
+import { getCotizacion, getOrg, money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../../../lib/queries';
+import { getCountryProfile } from '../../../../lib/countries';
 import { currentLocale } from '../../../../lib/context';
 import { t } from '../../../../i18n/app';
 
@@ -17,6 +18,13 @@ if (!q) return Astro.redirect('/app/cotizaciones');
 const descuentoPct = (lista: number, nego: number) =>
     lista > 0 ? Math.round((1 - nego / lista) * 100) : 0;
 const condiciones = ORG.pdfCondiciones ? ORG.pdfCondiciones.split('\n').filter(Boolean) : [];
+// Vocabulario fiscal del país del emisor: "RFC" es de México, "NIF" de España,
+// "Tax ID" de Estados Unidos. El PDF que ve el cliente no puede decir RFC si su
+// proveedor está en Madrid.
+const PROFILE = getCountryProfile(ORG.countryCode || 'MX', L);
+const TAX_LABEL = PROFILE.taxLabel;
+const TAX_ID_LABEL = PROFILE.taxIdLabel;
+
 const hoy = new Intl.DateTimeFormat(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
 
 // Plantilla del PDF: clasico (acento) | minimal (líneas finas) | detallado (banda de color)
@@ -54,7 +62,7 @@ const headStyle = isBand
                 <div>
                     <h1>{ORG.nombre}</h1>
                     {ORG.razonSocial && <p>{ORG.razonSocial}</p>}
-                    {ORG.rfc && <p>RFC {ORG.rfc}</p>}
+                    {ORG.rfc && <p>{TAX_ID_LABEL} {ORG.rfc}</p>}
                     {ORG.direccion && <p>{ORG.direccion}</p>}
                     {(ORG.email || ORG.telefono) && <p>{[ORG.email, ORG.telefono].filter(Boolean).join(' · ')}</p>}
                 </div>
@@ -119,7 +127,12 @@ const headStyle = isBand
         <!-- Totales -->
         <section class="doc-totals">
             <div><span>{t(L, 'imp.subtotal')}</span><span class="editorial">{money(quoteSubtotal(q))}</span></div>
-            <div><span>{t(L, 'imp.iva')} {ORG.ivaPct}%</span><span class="editorial">{money(quoteIva(q))}</span></div>
+            {quoteTaxBreakdown(q).map((tr) => (
+                <div><span>{TAX_LABEL} {Math.round(tr.tasa * 10000) / 100}%</span><span class="editorial">{money(tr.impuesto)}</span></div>
+            ))}
+            {quoteRetenciones(q).map((r) => (
+                <div><span>{r.nombre}</span><span class="editorial">−{money(r.monto)}</span></div>
+            ))}
             <div class="grand" style={`border-color: ${ORG.colorMarca}`}>
                 <span>{t(L, 'imp.total')}</span>
                 <span class="editorial" style={`color: ${ORG.colorMarca}`}>{money(quoteTotal(q))}</span>

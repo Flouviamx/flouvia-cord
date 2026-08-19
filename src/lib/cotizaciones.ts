@@ -13,8 +13,9 @@ import { assertResourceCapacity, checkEntitlement, parsedResourceLimit, Resource
 import { after } from './after';
 import { trackServer } from './posthog-server';
 
-import { sanitizeItem, calculateTotals } from '../../packages/elements/src/engine';
+import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { normalizeCurrency } from './currency';
+import { taxCatalogFor } from './impuestos-db';
 
 // El motivo de aprobación lo lee el aprobador: el tope y el total van con la
 // divisa real de la cotización, no con un '$' que puede significar otra cosa.
@@ -41,6 +42,8 @@ export interface NewQuoteItem {
     precio_unitario: number;
     precio_negociado?: number | null;
     costo_unitario?: number | null;
+    /** Fracción 0–1 (0.16), no porcentaje. Ausente = tasa default de la org. */
+    tax_rate?: number | null;
 }
 
 export interface NewQuoteInput {
@@ -157,14 +160,32 @@ export async function createCotizacion(
     // Saneado una sola vez → todo lo de abajo opera sobre montos finitos y no-negativos.
     const items = rawItems.map(sanitizeItem);
 
-    // Subtotal server-side (no confiar en el cliente) mediante el engine compartido
+    // Totales server-side (no confiar en el cliente) con el motor compartido.
     const [org] = await sql`select * from orgs where id = ${orgId}`;
     const approvalsEnabled = (await checkEntitlement(orgId, 'approvals')).ok;
-    const ivaPct = org.iva_pct !== undefined && org.iva_pct !== null ? Number(org.iva_pct) / 100 : 0.16;
     const iva_incluido = Boolean(input.iva_incluido);
-    
-    const { subtotal, iva, total } = calculateTotals(items as any[], ivaPct, iva_incluido);
-    const realSubtotal = subtotal;
+
+    // Impuesto POR LÍNEA. La tasa la manda el editor —que la eligió del catálogo
+    // de la org— y el servidor la valida contra ese mismo catálogo: un cliente
+    // no puede inventarse una tasa que el negocio no configuró. Sin tasa
+    // explícita se cae al perfil predeterminado, que es lo que hacía la columna
+    // plana orgs.iva_pct antes de que existiera el impuesto por línea.
+    const catalogo = await taxCatalogFor(orgId);
+    const fallbackRate = catalogo.defaultRate;
+    const itemsConImpuesto = items.map((it, i) => ({
+        ...it,
+        tax_rate: catalogo.resolve(rawItems[i]?.tax_rate, fallbackRate),
+    }));
+
+    const totals = calculateDocumentTotals(itemsConImpuesto as any[], {
+        ivaIncluido: iva_incluido,
+        retenciones: catalogo.retenciones,
+    });
+    const realSubtotal = totals.subtotal;
+    const iva = totals.impuestos;
+    const total = totals.total;
+    const retencionTotal = totals.retencionTotal;
+    const retencionesSnapshot = JSON.stringify(totals.retenciones);
 
     // Divisas de la cotización, resueltas temprano porque el motivo de aprobación
     // ya necesita formatear importes. `base` = en la que se le vende al cliente;
@@ -266,11 +287,13 @@ export async function createCotizacion(
         [cot] = await sql`
             insert into cotizaciones
                 (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
-                 moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por)
+                 moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por,
+                 retencion_total, retenciones_snapshot)
             values
                 (${orgId}, ${clienteId}, ${folio}, ${status}, ${realSubtotal}, ${iva}, ${total},
                  ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
-                 ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor})
+                 ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor},
+                 ${retencionTotal}, ${retencionesSnapshot}::jsonb)
             returning id, public_token`;
     } catch (error) {
         const limit = parsedResourceLimit(error);
@@ -279,23 +302,23 @@ export async function createCotizacion(
     }
 
     let orden = 0;
-    for (const it of items) {
+    for (const it of itemsConImpuesto) {
         await sql`
             insert into cotizacion_items
-                (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden)
+                (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
             values
                 (${cot.id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1},
                  ${Number(it.precio_unitario) || 0},
                  ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)},
                  ${Number(it.costo_unitario) || 0},
-                 ${orden++})`;
+                 ${orden++}, ${it.tax_rate})`;
     }
 
     await sql`
         insert into cotizacion_versiones
             (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
         values
-            (${cot.id}, ${orgId}, 1, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(items)}, ${input.notas || null}, ${iva_incluido})`;
+            (${cot.id}, ${orgId}, 1, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(itemsConImpuesto)}, ${input.notas || null}, ${iva_incluido})`;
 
     await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
               values (${orgId}, ${cot.id}, 'created', 'Borrador creado')`;

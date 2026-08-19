@@ -144,7 +144,11 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
         lista: it.precioLista,
         costo: 0, // No tenemos el costo guardado en el render inicial de mock, pero es tolerable para visualización
         negociado: it.precioNegociado,
-        cantidad: it.cantidad
+        cantidad: it.cantidad,
+        // La tasa viaja con la línea. Sin esto, crear una V2 reseteaba cada
+        // concepto a la tasa default y borraba un "Exento" que el vendedor
+        // había elegido a propósito en la versión anterior.
+        taxRate: it.taxRate
     }));
 
     const $lines = document.getElementById('lines');
@@ -303,6 +307,9 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
                 precio_unitario: l.lista,
                 precio_negociado: l.negociado,
                 costo_unitario: l.costo || 0,
+                // `undefined` en una línea nueva: el servidor le aplica la tasa
+                // predeterminada del catálogo de la organización.
+                tax_rate: l.taxRate,
             }))
         };
 

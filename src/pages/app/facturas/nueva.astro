@@ -27,6 +27,7 @@ import { getActiveOrgId } from '../../../lib/db';
 import { checkEntitlement } from '../../../lib/org-entitlements';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
 import { getCountryProfile } from '../../../lib/countries';
+import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../lib/impuestos';
 import { CURRENCY_FLAG } from '../../../lib/flags';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
@@ -74,22 +75,16 @@ const TAX_INCLUDED_LABEL = isMx ? t(L, 'ed.iva_incluido') : (L === 'en' ? 'Price
 const catalogo = productos.filter((p: any) => p.activo);
 const kitSumaLista = (k: any) => k.items.reduce((s: number, it: any) => s + (it.productoId && it.precio ? it.precio * it.cantidad : 0), 0);
 
-// Catálogo de impuestos: los perfiles reales de la org (Ajustes › Impuestos),
-// más "Exento" siempre disponible — que es justo el caso que un impuesto único
-// global no podía representar.
+// Catálogo de impuestos y retenciones: un constructor ÚNICO compartido con el
+// editor de cotizaciones (src/lib/impuestos.ts). Tenerlo por superficie era
+// cómo el editor de cotizaciones terminó leyendo una tasa plana mientras este
+// leía el catálogo — dos respuestas distintas para el mismo negocio.
 const orgTaxRate = Number(ORG.ivaPct) || 0;
-const TAX_OPTIONS = [
-    ...IMPUESTOS.filter((i: any) => i.activo && !String(i.tipo).startsWith('ret_'))
-        .map((i: any) => ({ label: `${i.tipoLabel} ${i.tasa}%`, rate: Number(i.tasa) / 100 })),
-];
-if (!TAX_OPTIONS.some((o) => o.rate === 0)) {
-    TAX_OPTIONS.push({ label: L === 'en' ? 'Exempt' : 'Exento', rate: 0 });
-}
-if (orgTaxRate > 0 && !TAX_OPTIONS.some((o) => o.rate === orgTaxRate / 100)) {
-    TAX_OPTIONS.unshift({ label: `${TAX_LABEL} ${orgTaxRate}%`, rate: orgTaxRate / 100 });
-}
-TAX_OPTIONS.sort((a, b) => a.rate - b.rate);
-const DEFAULT_TAX_RATE = orgTaxRate / 100;
+const TAX_OPTIONS = buildTaxOptions(IMPUESTOS, { locale: L, countryCode: country, orgTaxRate });
+const DEFAULT_TAX_RATE = defaultTaxRate(IMPUESTOS, orgTaxRate);
+// Las retenciones no se eligen por línea: son una política del negocio y se
+// restan del total del documento.
+const RETENCIONES = retencionesFrom(IMPUESTOS);
 
 const DEFAULT_CURRENCY = String(draft?.currency || ORG.moneda || profile.currency);
 const currencyNames = new Intl.DisplayNames([L], { type: 'currency' });
@@ -122,6 +117,11 @@ const BOOT = {
     orgCountry: country,
     defaultTaxRate: DEFAULT_TAX_RATE,
     taxOptions: TAX_OPTIONS,
+    // Se restan del total. Van al cliente porque el resumen tiene que cuadrar
+    // en vivo con lo que el servidor va a guardar: si el resumen y el guardado
+    // salen de dos aritméticas distintas, tarde o temprano difieren.
+    retenciones: RETENCIONES,
+    taxLabel: TAX_LABEL,
     ivaIncluido: false,
     preselectCliente,
     catalogo: catalogo.map((p: any) => ({
@@ -438,7 +438,7 @@ const BOOT = {
 
 <script>
     import { createMoney } from '../../../lib/money-client';
-    import { calculateInvoiceTotals } from '../../../../packages/elements/src/engine';
+    import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
 
     const raiz = document.querySelector('[data-editor="invoice"]') as HTMLElement | null;
     const bootEl = document.getElementById('edBoot');
@@ -544,7 +544,7 @@ const BOOT = {
         let ultimoTotal = 0;
 
         const recalc = () => {
-            const totals = calculateInvoiceTotals(
+            const totals = calculateDocumentTotals(
                 lines.map((l) => ({
                     descripcion: l.nombre,
                     cantidad: l.cantidad,
@@ -552,7 +552,7 @@ const BOOT = {
                     precio_negociado: l.negociado,
                     tax_rate: l.taxRate,
                 })),
-                { ivaIncluido: ivaIncluidoEl.checked },
+                { ivaIncluido: ivaIncluidoEl.checked, retenciones: BOOT.retenciones },
             );
             ultimoTotal = totals.total;
 
@@ -560,10 +560,15 @@ const BOOT = {
             $('sumTotal')!.textContent = fmt(totals.total);
             // Desglose por tasa: una línea por tipo. Con una sola tasa se ve
             // igual que antes; con varias es la única forma de cuadrar.
-            $('sumTaxes')!.innerHTML = totals.porTasa
+            const filasImpuesto = totals.porTasa
                 .filter((t: any) => t.impuesto > 0)
-                .map((t: any) => `<div class="sum-line sum-tax"><span>${Math.round(t.tasa * 10000) / 100}%</span><span class="editorial">${fmt(t.impuesto)}</span></div>`)
-                .join('');
+                .map((t: any) => `<div class="sum-line sum-tax"><span>${escapeHtml(BOOT.taxLabel)} ${Math.round(t.tasa * 10000) / 100}%</span><span class="editorial">${fmt(t.impuesto)}</span></div>`);
+            // Una retención se RESTA. Se dibuja con el signo a la vista porque
+            // un renglón positivo que en realidad baja el total es la clase de
+            // detalle que nadie audita hasta que el cliente paga de menos.
+            const filasRetencion = totals.retenciones
+                .map((r: any) => `<div class="sum-line sum-ret"><span>${escapeHtml(r.nombre)}</span><span class="editorial">−${fmt(r.monto)}</span></div>`);
+            $('sumTaxes')!.innerHTML = [...filasImpuesto, ...filasRetencion].join('');
 
             const piezas = lines.reduce((s, l) => s + l.cantidad, 0);
             $('sumCount')!.textContent = lines.length
