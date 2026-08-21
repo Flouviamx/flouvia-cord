@@ -612,26 +612,42 @@ const NAV_GROUPS = [
         };
         const settle = () => moveTo(activeItem(), false);
         // Delegación: cubre también los "Fijados" inyectados después.
+        let isHovering = false;
         nav.addEventListener('mouseover', (e) => {
             const it = (e.target as HTMLElement).closest('.sb-item') as HTMLElement | null;
-            if (it && nav.contains(it)) moveTo(it);
+            if (it && nav.contains(it)) {
+                isHovering = true;
+                moveTo(it);
+            }
         });
-        nav.addEventListener('mouseleave', () => moveTo(activeItem()));
+        nav.addEventListener('mouseleave', () => {
+            isHovering = false;
+            moveTo(activeItem());
+        });
         window.addEventListener('resize', settle);
         document.getElementById('sbToggleFloating')?.addEventListener('click', () => setTimeout(settle, 320));
         
         // El acordeón también necesita reposicionar el indicador al animar
         document.querySelectorAll('.sb-group-label').forEach(btn => {
             btn.addEventListener('click', () => {
-                setTimeout(settle, 350);
+                let ticks = 0;
+                const int = setInterval(() => { if (!isHovering) settle(); if (++ticks > 20) clearInterval(int); }, 20); // 400ms tracking
             });
         });
 
-        // Posición inicial (tras pins + fuentes).
-        settle();
+        // ResizeObserver para atrapar cambios de layout (fuentes, expansiones, etc)
+        if (typeof ResizeObserver !== 'undefined') {
+            const obs = new ResizeObserver(() => { if (!isHovering) settle(); });
+            obs.observe(nav);
+        }
+
+        // Posición inicial: poll de alta frecuencia durante 800ms para trackear la animación de entrada (sb-slide-in)
         nav.classList.add('sb-ind-ready');
-        requestAnimationFrame(settle);
-        setTimeout(settle, 120);
+        let initialTicks = 0;
+        const initialInt = setInterval(() => {
+            if (!isHovering) settle();
+            if (++initialTicks > 40) clearInterval(initialInt); // 40 * 20ms = 800ms
+        }, 20);
     }
 
     // ── "Fijados" en el sidebar (localStorage) + botón de fijar en el page-head ──
