@@ -1,29 +1,69 @@
 ---
-title: "Issued invoices"
-description: "See every CFDI you've stamped in one place, with its PDF and XML."
+title: "Create, issue, and collect invoices"
+description: "Create an invoice, assign its number when issuing, deliver it, and track its balance in Cord."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Issued invoices</h1>
-  <p class="page-subtitle">All your CFDI together — folio, client, amount, date, status, and their files — without opening each quote one by one.</p>
+  <h1 class="page-title">Create, issue, and collect invoices</h1>
+  <p class="page-subtitle">Cord brings invoice capture, fiscal issuance, delivery, and collection into one workflow.</p>
 </header>
 
-## Where to find it
+## Where to find invoices
 
-**Settings › Invoicing › Issued invoices.** It's the second tab, next to "Tax details" (where you upload your CSD).
+Open **My money › Invoices**. The inbox shows the invoice number, client, creation date, due date, total, balance, and operational status.
 
-## What each row shows
+Drafts do not have an official number yet. Cord labels them **No number** and adds a temporary `BOR-...` reference so you can recognize them. The sequential number is reserved only when you issue the invoice.
 
-- **Folio** — links straight to that quote's detail page.
-- **Client** and **Total**.
-- **Date** it was stamped.
-- **Status**: Stamped, Pending, Error, or Cancelled.
-- **PDF** and **XML** of the CFDI, ready to download or forward.
+## Create an invoice
 
-<Callout type="info">
-An invoice only shows up here after you stamp it from the quote's detail page (the **"Stamp CFDI 4.0"** button). This isn't a list of quotes — it's exclusively the record of tax documents already issued.
+<Steps>
+1. **Select the client.** Cord reads the email, payment terms, and tax details from the client record.
+2. **Add line items.** Use catalog products, kits, a free-form line, or **Build with AI**. You can set quantity, price, and tax per item.
+3. **Review total and due date.** Confirm taxes, withholdings, currency, exchange rate when applicable, and the payment due date.
+4. **Issue.** Choose **Issue and send** to assign the number and email the invoice in the same flow, or **Issue without sending** if you want to deliver it later.
+</Steps>
+
+<Callout type="warning">
+Issuing is irreversible: it assigns the official number and locks the fiscal document. To correct an issued invoice, use a void or credit note according to its payment state.
 </Callout>
 
-## Context badges
+## What your client receives
 
-If an invoice was generated in a test environment, the row marks it explicitly (so it's never confused with a real CFDI filed with the SAT). See [Test Environments](/docs/desarrolladores/empezar/pruebas) for more on how Cord separates test data from real data.
+The email includes the PDF and the public invoice link. From that page, the client can review the balance and payment history; if your payments account is enabled, they can also pay by card.
+
+The public page presents your business brand, invoice number, balance, parties, line items, and downloads in one view. If the document was created in test mode or without fiscal issuance, Cord displays a clear warning and disables online payment.
+
+If issuance succeeds but email delivery fails, Cord keeps the issued invoice and marks only delivery as pending. Open the invoice detail and use **Send invoice** again without generating another number.
+
+## Inbox statuses
+
+- **Draft**: editable and without an official number.
+- **Open**: issued with a remaining balance.
+- **Overdue**: open and past its due date.
+- **Paid**: fully settled.
+- **Issue error**: the fiscal provider did not confirm issuance; open the detail and use **Retry issuing**.
+- **Void** or **Uncollectible**: no longer in the normal collection flow.
+
+The primary badge always represents financial status. Cord shows delivery and
+environment context separately underneath it, for example **Sent · Test**. This
+keeps **Test** from replacing or contradicting states such as **Open** or **Paid**.
+
+## Actions from the invoice detail
+
+You can resend the email, record manual or partial payments, copy the public link, download PDF and XML when available, void, create a credit note, duplicate as a draft, or start a monthly recurrence.
+
+The progress bar separates five moments: **Draft**, **Issued**, **Sent**, **Viewed**, and **Paid**. The action column provides direct access to open or copy the client link, download the PDF, and share through WhatsApp. Exceptional actions, such as voiding or marking an invoice uncollectible, stay under **More actions**.
+
+After the first delivery, the inbox shows **Sent** and removes that invoice from bulk selection. Resending remains available in the invoice detail next to the recipient's email, which helps prevent accidental duplicate delivery.
+
+<Callout type="warning">
+**Test document** means there was no valid fiscal issuance. In Mexico, it is not a CFDI before the SAT. Configure fiscal issuance and create a new invoice; Cord preserves the previous document without rewriting its history.
+</Callout>
+
+The **Activity** section records issuance, delivery, views, reminders, payments, and status changes, so you can understand what happened without relying on the seller's inbox.
+
+## Bulk delivery and export
+
+Select issued invoices that have not been sent yet to deliver them in a batch. Drafts, previously sent invoices, and non-deliverable documents keep a visible but disabled checkbox; hovering it explains why the invoice is excluded from that delivery. **Export CSV** downloads the current view and respects the active status filter and search.
+
+To automate recurring invoices, open **View recurring**. To configure Mexico's fiscal rail, see [CFDI 4.0 invoicing](/en/docs/pagos/facturacion).

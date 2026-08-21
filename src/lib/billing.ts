@@ -107,7 +107,7 @@ export async function platformCurrencyForOrg(orgId: string): Promise<PlatformCur
 // palanca de negocio — el tope de envíos es puramente el gancho de conversión
 // de Gratis.
 export const INCLUDED: Record<PlanId, { ia: number | null; cfdi: number; api: number; usuarios: number | null; envios: number | null }> = {
-    free:      { ia: 3,    cfdi: 0,    api: 100,   usuarios: 1,    envios: 5 },
+    free:      { ia: 3,    cfdi: 3,    api: 100,   usuarios: 1,    envios: 5 },
     starter:   { ia: 20,   cfdi: 3,    api: 1000,  usuarios: 1,    envios: null },
     pro:       { ia: 50,   cfdi: 20,   api: 5000,  usuarios: 5,    envios: null },
     scale:     { ia: 500,  cfdi: 100,  api: 10000, usuarios: 15,   envios: null },

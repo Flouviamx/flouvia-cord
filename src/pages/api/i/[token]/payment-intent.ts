@@ -39,6 +39,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     const [rows] = await withOrgTx(identity.orgId, sql`
         select d.id, d.org_id, d.invoice_number, d.lifecycle, d.currency,
                d.total, d.amount_remaining, d.stripe_payment_intent_id,
+               d.provider_data,
                o.sandbox_of, o.stripe_account_id, o.stripe_charges_enabled,
                o.acepta_tarjeta, o.nombre as org_nombre, o.moneda,
                o.fee_enabled, o.fee_terms_version
@@ -54,7 +55,10 @@ export const POST: APIRoute = async ({ params, request }) => {
         return json({ error: 'Esta factura no está abierta a pago.' }, 409);
     }
     if (d.sandbox_of) {
-        return json({ error: 'Esta factura es de prueba — el pago en línea está deshabilitado.' }, 409);
+        return json({ error: 'Esta factura es de prueba. El pago en línea está deshabilitado.' }, 409);
+    }
+    if (d.provider_data?.simulado === true || d.provider_data?.livemode === false) {
+        return json({ error: 'Este documento no tiene una emisión fiscal activa. El pago en línea está deshabilitado.' }, 409);
     }
     if (!d.stripe_account_id || !d.stripe_charges_enabled) {
         return json({ error: 'El negocio todavía no tiene configurada su cuenta para recibir pagos.' }, 403);

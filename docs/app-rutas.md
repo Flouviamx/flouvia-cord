@@ -172,7 +172,10 @@ existe pero es ajeno ya es filtrar entre negocios.
                    queries.ts (por cobrar = status approved|invoiced; vence según términos).
 
 /app/cotizaciones        → tabla con filtros por estado (client-side)
-/app/cotizaciones/nueva  → EL EDITOR — POST /api/cotizaciones (real)
+/app/cotizaciones/nueva  → EL EDITOR — POST /api/cotizaciones (real). Comparte
+                           con Facturas el contrato semántico de tema para panel,
+                           campos, hero de IA, estados vacíos, dropdowns y foco
+                           (`--editor-*` en `AppLayout`); ningún panel fija blanco.
 /app/cotizaciones/[id]   → detalle + timeline + ACCIONES REALES (enviar, aprobar,
                            rechazar, pago, facturar, copiar link, eliminar borrador,
                            DUPLICAR → POST /api/cotizaciones/[id]/duplicate,
@@ -227,22 +230,52 @@ existe pero es ajeno ya es filtrar entre negocios.
                      usuario, distinta de los datos del negocio).
 
 /app/facturas            → bandeja de facturas (`documentos_fiscales`, ago 2026).
-                   Paginada por CURSOR en servidor. Casillas + barra de acciones
+                   Paginada por CURSOR en servidor. Distingue "Sin folio" de
+                   los números oficiales, muestra fecha de creación, vencimiento,
+                   saldo y estado operativo (incluidos vencida y error al emitir).
+                   Casillas + barra de acciones
                    para ENVÍO MASIVO (hasta 50 por tanda) vía POST
                    /api/facturas/bulk — el servidor vuelve a filtrar qué es
-                   enviable (emitida + open|uncollectible), la UI no autoriza.
-                   Enlaza a /app/facturas/recurrentes.
+                   enviable (emitida + no enviada + open|uncollectible), la UI
+                   no autoriza. Todas las filas conservan una casilla visible:
+                   borradores, enviadas y no elegibles la muestran deshabilitada
+                   con el motivo en `title`/`aria-label`, en vez de dejar un hueco.
+                   El estado financiero ocupa la insignia principal; entrega y
+                   entorno aparecen como metadato secundario (`Enviada · Prueba`),
+                   para que no compitan tres badges dentro de una columna estrecha.
+                   Exporta la vista filtrada a CSV y enlaza a
+                   /app/facturas/recurrentes.
 /app/facturas/nueva      → EL EDITOR de facturas — impuesto por línea desde el
                    catálogo de la org (`buildTaxOptions`), retenciones que se
                    restan del total, vocabulario fiscal del país del emisor
                    (`getCountryProfile().taxLabel`/`taxIdLabel`). Módulo
                    bundleado (no `is:inline`): importa `calculateDocumentTotals`
                    de `packages/elements/src/engine.ts`, el MISMO motor que
-                   calcula el servidor.
-/app/facturas/[id]       → detalle + ACCIONES REALES (emitir, enviar, registrar
-                   pago manual, anular, nota de crédito) + timeline propio
-                   (`eventos.documento_id`, ver `src/lib/fiscal/timeline.ts`) +
-                   botón "Repetir cada mes" → POST /api/recurrencias con
+                   calcula el servidor. La acción primaria es "Emitir y enviar":
+                   primero muestra una revisión final, guarda el borrador y llama
+                   `finalize_and_send`. El folio solo nace al emitir. También
+                   permite emitir sin enviar o guardar y salir.
+                   Su hoja `src/styles/editor.css` consume los tokens
+                   `--editor-*` de `AppLayout`: resumen, campos y menús mantienen
+                   contraste en dark; el hero de IA usa un navy propio y no el
+                   acento azul claro del tema oscuro.
+/app/facturas/[id]       → detalle con la misma jerarquía operativa que
+                   Cotizaciones: progreso Borrador → Emitida → Enviada → Vista
+                   → Pagada, cabecera cliente/total, partidas y saldos abiertos,
+                   columna sticky de acciones y timeline propio
+                   (`eventos.documento_id`, ver `src/lib/fiscal/timeline.ts`).
+                   ACCIONES REALES: reintentar emisión, enviar, registrar pago
+                   manual, anular, nota de crédito y duplicar como borrador.
+                   Abrir link, copiar, PDF y WhatsApp forman una sola cuadrícula
+                   de utilidades; ambas rutas reutilizan el logo de marca de
+                   `WhatsAppIcon.astro`. Sus superficies consumen `--surface` y
+                   `--surface-2`; no pueden fijar blancos porque el detalle comparte
+                   el mismo contrato de tema claro/oscuro que `AppLayout`. Después
+                   de la primera entrega, el CTA
+                   principal pasa a pago y el envío queda como reenvío contextual
+                   junto al destinatario; las acciones de excepción viven bajo
+                   "Más acciones". El botón "Repetir cada mes"
+                   hace POST /api/recurrencias con
                    `fromDocumentoId` (copia el snapshot inmutable de líneas, no
                    el catálogo, que pudo cambiar de precio).
 /app/facturas/recurrentes → (ago 2026) lista de `documento_recurrencias`: pausar/
@@ -251,7 +284,11 @@ existe pero es ajeno ya es filtrar entre negocios.
                    detener un cargo automático. Crear vive en el botón "Repetir
                    cada mes" de una factura ya emitida, no aquí.
 /i/[token]       → hosted invoice page — saldo, historial de pagos, PDF/XML,
-                   pago con tarjeta (Stripe Elements) con REUTILIZACIÓN del
+                   documento público con la misma jerarquía visual de `/q`:
+                   marca y folio, saldo protagonista, partes, conceptos y
+                   estado. Los documentos simulados o de sandbox muestran una
+                   advertencia explícita y no ofrecen pago en línea.
+                   Incluye pago con tarjeta (Stripe Elements) con REUTILIZACIÓN del
                    PaymentIntent vivo de la factura, y ABONO PARCIAL (ago 2026):
                    el monto lo propone el cliente y el servidor lo acota contra
                    el saldo real y el piso del proveedor
@@ -432,6 +469,10 @@ existe pero es ajeno ya es filtrar entre negocios.
 /api/facturas/bulk → POST `{action:'send', ids:[...]}`, envío secuencial
                    (nunca en paralelo — el proveedor de correo limita), hasta 50
                    por tanda. Reporta cuántas NO se enviaron y por qué.
+/api/facturas/export → GET CSV de la vista filtrada (`estado`, `q`, cliente y
+                   rango de fechas). Consulta ordenada por `created_at,id` y
+                   aplica un techo defensivo de 10,000 filas; neutraliza fórmulas
+                   en celdas de texto antes de abrirse en Excel o Sheets.
 
 # Entorno de PRUEBA (jul 2026 — ver "Entorno de prueba REAL tipo Stripe" en historial.md)
 /api/test-mode/reset → POST "Vaciar datos de prueba" (interna, requiere sesión). Solo opera si

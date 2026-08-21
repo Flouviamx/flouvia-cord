@@ -11,6 +11,7 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import '../../../styles/modal.css';
 import AccessGate from '../../../components/app/AccessGate.astro';
+import WhatsAppIcon from '../../../components/app/WhatsAppIcon.astro';
 import { getFacturaDetalle, getMyMembership, money } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
 import { siteOrigin } from '../../../lib/email';
@@ -39,11 +40,16 @@ const ESTADO_META: Record<string, { label: string; color: string; bg: string }> 
     void: { label: t(L, 'fact.st_void'), color: '#5b6472', bg: 'rgba(91,100,114,0.1)' },
     uncollectible: { label: t(L, 'fact.st_uncollectible'), color: '#dc2626', bg: 'rgba(239,68,68,0.1)' },
 };
-const meta = f ? (ESTADO_META[f.estado] ?? ESTADO_META.open) : ESTADO_META.open;
+const meta = f?.estadoFiscal === 'error'
+    ? { label: L === 'en' ? 'Issue error' : 'Error al emitir', color: '#dc2626', bg: 'rgba(239,68,68,0.1)' }
+    : f?.vencida
+        ? { label: L === 'en' ? 'Overdue' : 'Vencida', color: '#dc2626', bg: 'rgba(239,68,68,0.1)' }
+        : f ? (ESTADO_META[f.estado] ?? ESTADO_META.open) : ESTADO_META.open;
 // Vocabulario fiscal del país del documento, no un default mexicano.
 const perfilPais = f ? getCountryProfile(f.pais) : null;
 const taxIdLabel = perfilPais?.taxIdLabel ?? 'Tax ID';
 const linkPublico = f?.publicToken ? `${siteOrigin()}/i/${f.publicToken}` : null;
+const deliveryFailed = Astro.url.searchParams.get('delivery') === 'failed';
 
 // Historia de la factura. Antes esta pantalla no la tenía: `eventos` solo
 // apuntaba a cotizaciones, así que una factura independiente era un documento
@@ -57,8 +63,21 @@ const EV_LABEL: Record<string, string> = {
     credit_note: t(L, 'fact.ev.credit_note'), uncollectible: t(L, 'fact.ev.uncollectible'),
 };
 const waLink = f && linkPublico
-    ? `https://wa.me/?text=${encodeURIComponent(`${f.invoiceNumber ?? ''} — ${linkPublico}`.trim())}`
+    ? `https://wa.me/?text=${encodeURIComponent(`${f.invoiceNumber ?? ''} · ${linkPublico}`.trim())}`
     : null;
+const clienteInicial = (f?.cliente ?? '')
+    .split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'SC';
+const hasViewed = TIMELINE.some((event) => event.tipo === 'viewed');
+const hasIssued = f?.estadoFiscal === 'issued' || (!!f?.invoiceNumber && f?.estado !== 'draft');
+const stepIdx = !f ? 0
+    : f.estado === 'paid' ? 4
+    : hasViewed ? 3
+    : f.enviada ? 2
+    : hasIssued ? 1
+    : 0;
+const INVOICE_STEPS = L === 'en'
+    ? ['Draft', 'Issued', 'Sent', 'Viewed', 'Paid']
+    : ['Borrador', 'Emitida', 'Enviada', 'Vista', 'Pagada'];
 
 // Desglose por tasa a partir de las líneas del snapshot: es la forma de que una
 // factura con conceptos exentos y gravados cuadre a la vista.
@@ -80,7 +99,7 @@ const METODOS = [
 ---
 
 <AppLayout
-    title={f ? `${f.invoiceNumber ?? t(L, 'fact.st_draft')} — Cord` : 'Cord'}
+    title={f ? `${f.invoiceNumber ?? t(L, 'fact.st_draft')} - Cord` : 'Cord'}
     page="facturas"
     heading={f?.invoiceNumber ?? t(L, 'fact.heading')}
     crumbs={[{ label: t(L, 'fact.heading'), href: '/app/facturas' }]}>
@@ -93,13 +112,16 @@ const METODOS = [
         <Fragment>
             <span slot="topbar-actions" class="status-pill" style={`color:${meta.color}; background:${meta.bg}`}>{meta.label}</span>
 
-            <div class="fd" data-id={f.id} data-currency={f.currency ?? ''}
+            <div class="fd" data-id={f.id} data-currency={f.currency ?? ''} data-link={linkPublico ?? ''}
                  data-i18n={JSON.stringify({
                      procesando: t(L, 'fact.d_procesando'),
                      error: t(L, 'fact.d_error'),
                      usaNota: t(L, 'fact.d_usa_nota'),
                      confAnular: t(L, 'fact.d_conf_anular'),
                      confIncobrable: t(L, 'fact.d_conf_incobrable'),
+                     tituloAnular: L === 'en' ? 'Void invoice' : 'Anular factura',
+                     tituloIncobrable: L === 'en' ? 'Mark as uncollectible' : 'Marcar como incobrable',
+                     continuar: L === 'en' ? 'Continue' : 'Continuar',
                      montoInvalido: t(L, 'fact.d_monto_invalido'),
                      copiar: t(L, 'fact.d_copiar'),
                      copiado: t(L, 'fact.d_copiado'),
@@ -107,118 +129,219 @@ const METODOS = [
                      verRecurrentes: t(L, 'rec.ver'),
                  })}>
 
-                <div class="fd-sub">
-                    <span>{f.cliente ?? '—'}</span>
-                    {f.folio && (
-                        <Fragment> · {t(L, 'fact.d_desde_cot')} <a href={`/app/cotizaciones/${f.cotizacionId}`}>{f.folio}</a></Fragment>
-                    )}
-                    {f.vencida && <b class="fd-late">+{f.diasVencida}d</b>}
-                    {f.notaCreditoDe && <span class="t-badge">{t(L, 'fact.d_nota_credito')}</span>}
-                    {f.simulado && <span class="t-badge">{t(L, 'fact.badge_simulado')}</span>}
-                    {!f.simulado && f.testMode && <span class="t-badge">{t(L, 'fact.badge_prueba')}</span>}
-                </div>
+                <a href="/app/facturas" class="fd-back">{L === 'en' ? '← Invoices' : '← Facturas'}</a>
 
                 {f.estadoFiscal === 'error' && (
                     <div class="fd-alert">{t(L, 'fact.d_error_fiscal')}</div>
                 )}
+                {deliveryFailed && (
+                    <div class="fd-alert fd-alert-warn">
+                        {L === 'en'
+                            ? 'The invoice was issued, but the email could not be delivered. You can safely retry sending it.'
+                            : 'La factura sí fue emitida, pero el correo no pudo entregarse. Puedes reintentar el envío con seguridad.'}
+                    </div>
+                )}
+                {f.simulado && (
+                    <div class="fd-sim-note" role="status">
+                        <span class="fd-sim-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4.5"/><path d="M12 17h.01"/></svg>
+                        </span>
+                        <span>
+                            <strong>{L === 'en' ? 'Not fiscally issued' : 'Sin timbre fiscal'}</strong>
+                            <small>{L === 'en'
+                                ? 'Cord generated this document in test mode because no active fiscal provider issued it. It is not valid before the tax authority.'
+                                : 'Cord generó este documento en modo de prueba porque ningún proveedor fiscal activo lo timbró. No es válido ante el SAT.'}</small>
+                        </span>
+                    </div>
+                )}
+
+                <div class="fd-stepper" aria-label={L === 'en' ? 'Invoice progress' : 'Progreso de la factura'}>
+                    {INVOICE_STEPS.map((label, index) => (
+                        <div class:list={['fd-step', { done: index < stepIdx, current: index === stepIdx }]}
+                             aria-current={index === stepIdx ? 'step' : undefined}>
+                            <span class="fd-step-dot">{index < stepIdx ? '✓' : index + 1}</span>
+                            <span class="fd-step-label">{label}</span>
+                        </div>
+                    ))}
+                </div>
 
                 <div class="fd-grid">
-                    <section class="surface-card">
-                        <div class="t-head">
-                            <span>{t(L, 'fact.d_concepto')}</span>
-                            <span class="t-right">{t(L, 'fact.d_cant')}</span>
-                            <span class="t-right">{t(L, 'fact.d_precio')}</span>
-                            <span class="t-right">{t(L, 'fact.d_importe')}</span>
-                        </div>
-                        {f.lineas.map((l) => (
-                            <div class="t-row">
-                                <span class="fd-desc">{l.descripcion}</span>
-                                <span class="t-right t-muted">{l.cantidad}</span>
-                                <span class="t-right editorial">{money(l.precioUnitario)}</span>
-                                <span class="t-right editorial fd-imp">{money(l.subtotal)}</span>
+                    <main class="fd-main">
+                        <section class="fd-head">
+                            <div class="fd-client">
+                                <div class="fd-avatar">{clienteInicial}</div>
+                                <div class="fd-client-copy">
+                                    <div class="fd-client-title">
+                                        <h2>{f.cliente ?? (L === 'en' ? 'No client' : 'Sin cliente')}</h2>
+                                        {f.vencida && <span class="fd-badge fd-badge-danger">+{f.diasVencida}d</span>}
+                                        {f.notaCreditoDe && <span class="fd-badge">{t(L, 'fact.d_nota_credito')}</span>}
+                                        {f.simulado && <span class="fd-badge fd-badge-test">{L === 'en' ? 'Test document' : 'Documento de prueba'}</span>}
+                                        {!f.simulado && f.testMode && <span class="fd-badge fd-badge-test">{t(L, 'fact.badge_prueba')}</span>}
+                                    </div>
+                                    <p>
+                                        {L === 'en' ? 'Issued' : 'Emitida'} {f.creado}
+                                        <span>·</span>
+                                        {L === 'en' ? 'Due' : 'Vence'} {f.vence ?? (L === 'en' ? 'no due date' : 'sin fecha')}
+                                        <span>·</span>
+                                        {f.enviada ? (L === 'en' ? 'Sent' : 'Enviada') : (L === 'en' ? 'Not sent' : 'Sin enviar')}
+                                    </p>
+                                    {f.folio && f.cotizacionId && (
+                                        <a class="fd-origin" href={`/app/cotizaciones/${f.cotizacionId}`}>
+                                            {t(L, 'fact.d_desde_cot')} {f.folio}
+                                        </a>
+                                    )}
+                                </div>
                             </div>
-                        ))}
+                            <div class="fd-hero-total">
+                                <span>{L === 'en' ? 'TOTAL' : 'TOTAL'}</span>
+                                <strong class="editorial">{money(f.total)}</strong>
+                                {f.saldo !== f.total && <small>{L === 'en' ? 'Balance' : 'Saldo'} {money(f.saldo)}</small>}
+                            </div>
+                        </section>
 
-                        <div class="fd-totals">
-                            <div class="fd-tline"><span>{t(L, 'fact.d_subtotal')}</span><span class="editorial">{money(f.subtotal)}</span></div>
-                            {tasas.map(([tasa, v]) => (
-                                <div class="fd-tline fd-tax"><span>{Math.round(tasa * 10000) / 100}%</span><span class="editorial">{money(v.impuesto)}</span></div>
+                        <section class="fd-items">
+                            <div class="fd-section-head"><h2>{L === 'en' ? 'Details' : 'Detalle'}</h2></div>
+                            <div class="fd-items-head">
+                                <span>{t(L, 'fact.d_concepto')}</span>
+                                <span>{t(L, 'fact.d_cant')}</span>
+                                <span>{t(L, 'fact.d_precio')}</span>
+                                <span>{t(L, 'fact.d_importe')}</span>
+                            </div>
+                            {f.lineas.map((linea) => (
+                                <div class="fd-item-row">
+                                    <span class="fd-desc">{linea.descripcion}</span>
+                                    <span class="fd-qty">{linea.cantidad}</span>
+                                    <span class="editorial fd-price">{money(linea.precioUnitario)}</span>
+                                    <span class="editorial fd-amount">{money(linea.subtotal)}</span>
+                                </div>
                             ))}
-                            <div class="fd-tline fd-total"><span>{t(L, 'fact.d_total')}</span><span class="editorial">{money(f.total)}</span></div>
-                            {f.pagado > 0 && (
-                                <div class="fd-tline"><span>{t(L, 'fact.d_pagado')}</span><span class="editorial">−{money(f.pagado)}</span></div>
-                            )}
-                            <div class="fd-tline fd-due"><span>{t(L, 'fact.d_saldo')}</span><span class="editorial">{money(f.saldo)}</span></div>
-                        </div>
 
-                        {f.fxRate && f.fxRate !== 1 && f.ledgerCurrency && (
-                            <p class="fd-fx">
-                                {t(L, 'fact.d_tc')}: 1 {f.currency} = {f.fxRate} {f.ledgerCurrency}
-                                {f.ledgerTotal !== null && <> · {t(L, 'fact.d_total_contable')} {f.ledgerTotal} {f.ledgerCurrency}</>}
-                            </p>
-                        )}
+                            <div class="fd-totals">
+                                <div class="fd-tline"><span>{t(L, 'fact.d_subtotal')}</span><span class="editorial">{money(f.subtotal)}</span></div>
+                                {tasas.map(([tasa, value]) => (
+                                    <div class="fd-tline fd-tax"><span>{Math.round(tasa * 10000) / 100}%</span><span class="editorial">{money(value.impuesto)}</span></div>
+                                ))}
+                                <div class="fd-tline fd-total"><span>{t(L, 'fact.d_total')}</span><span class="editorial">{money(f.total)}</span></div>
+                                {f.pagado > 0 && (
+                                    <div class="fd-tline"><span>{t(L, 'fact.d_pagado')}</span><span class="editorial">−{money(f.pagado)}</span></div>
+                                )}
+                                <div class="fd-tline fd-due"><span>{t(L, 'fact.d_saldo')}</span><span class="editorial">{money(f.saldo)}</span></div>
+                            </div>
+
+                            {f.fxRate && f.fxRate !== 1 && f.ledgerCurrency && (
+                                <p class="fd-fx">
+                                    {t(L, 'fact.d_tc')}: 1 {f.currency} = {f.fxRate} {f.ledgerCurrency}
+                                    {f.ledgerTotal !== null && <> · {t(L, 'fact.d_total_contable')} {f.ledgerTotal} {f.ledgerCurrency}</>}
+                                </p>
+                            )}
+                        </section>
 
                         {f.pagos.length > 0 && (
-                            <div class="fd-pagos">
-                                <h2 class="sec-title">{t(L, 'fact.d_pagos')}</h2>
-                                {f.pagos.map((p) => (
+                            <section class="fd-pagos">
+                                <div class="fd-section-head"><h2>{t(L, 'fact.d_pagos')}</h2></div>
+                                {f.pagos.map((pago) => (
                                     <div class="fd-pago">
-                                        <span class="t-muted">{p.cuando} · {p.metodo}{p.referencia ? ` · ${p.referencia}` : ''}</span>
-                                        <span class="editorial">{money(p.monto)}</span>
+                                        <span>{pago.cuando} · {pago.metodo}{pago.referencia ? ` · ${pago.referencia}` : ''}</span>
+                                        <strong class="editorial">{money(pago.monto)}</strong>
                                     </div>
                                 ))}
-                            </div>
+                            </section>
                         )}
-                    </section>
+
+                        {f.notas && (
+                            <section class="fd-notes">
+                                <div class="fd-section-head"><h2>{L === 'en' ? 'Notes' : 'Notas'}</h2></div>
+                                <p>{f.notas}</p>
+                            </section>
+                        )}
+                    </main>
 
                     <aside class="fd-side">
-                        <div class="fd-actions">
-                            {f.estado !== 'draft' && (
-                                <button type="button" class="fd-btn fd-btn-primary" data-act="send">
-                                    {f.enviada ? t(L, 'fact.d_reenviar') : t(L, 'fact.d_enviar')}
+                        <section class="fd-actions">
+                            <div class="fd-section-head"><h2>{L === 'en' ? 'Actions' : 'Acciones'}</h2></div>
+                            {f.estadoFiscal === 'error' && f.estado === 'draft' && (
+                                <button type="button" class="fd-btn fd-btn-primary" data-act="finalize">
+                                    {L === 'en' ? 'Retry issuing' : 'Reintentar emisión'}
                                 </button>
                             )}
-                            {f.estado === 'open' && (
-                                <Fragment>
-                                    <button type="button" class="fd-btn" data-act="payment">{t(L, 'fact.d_pago')}</button>
-                                    <button type="button" class="fd-btn" data-act="uncollectible">{t(L, 'fact.d_incobrable')}</button>
-                                </Fragment>
+                            {f.estado !== 'draft' && !f.enviada && (
+                                <button type="button" class="fd-btn fd-btn-primary" data-act="send">
+                                    {t(L, 'fact.d_enviar')}
+                                </button>
                             )}
-                            {f.estado === 'open' && f.pagado === 0 && (
-                                <button type="button" class="fd-btn fd-btn-danger" data-act="void">{t(L, 'fact.d_anular')}</button>
+                            {f.estado === 'open' && f.enviada && (
+                                <button type="button" class="fd-btn fd-btn-ok" data-act="payment">{t(L, 'fact.d_pago')}</button>
                             )}
-                            {f.estadoFiscal === 'issued' && !f.notaCreditoDe && (
-                                <button type="button" class="fd-btn" data-act="credit_note">{t(L, 'fact.d_nota_credito')}</button>
+                            {f.enviada && f.estado !== 'draft' && (
+                                <div class="fd-delivery">
+                                    <span class="fd-delivery-dot" aria-hidden="true"></span>
+                                    <span class="fd-delivery-copy">
+                                        <strong>{L === 'en' ? 'Sent to client' : 'Enviada al cliente'}</strong>
+                                        {f.clienteEmail && <small>{f.clienteEmail}</small>}
+                                    </span>
+                                    <button type="button" data-act="send">{L === 'en' ? 'Resend' : 'Reenviar'}</button>
+                                </div>
                             )}
-                            {f.estadoFiscal === 'issued' && (
-                                <button type="button" class="fd-btn" id="fdRepetir">{t(L, 'rec.repetir')}</button>
+                            {f.estado === 'open' && !f.enviada && (
+                                <button type="button" class="fd-btn fd-btn-secondary" data-act="payment">{t(L, 'fact.d_pago')}</button>
                             )}
-                        </div>
 
-                        <div class="fd-meta">
-                            <div><span>{t(L, 'fact.d_emitida')}</span><span>{f.creado}</span></div>
-                            <div><span>{t(L, 'fact.d_vence')}</span><span>{f.vence ?? '—'}</span></div>
-                            <div><span>{t(L, 'fact.d_pais')}</span><span>{f.pais}</span></div>
-                            <div><span>{t(L, 'fact.d_divisa')}</span><span>{f.currency ?? '—'}</span></div>
-                            {f.receptor?.taxId && <div><span>{taxIdLabel}</span><span>{f.receptor.taxId}</span></div>}
-                            {f.fiscalId && <div><span>{t(L, 'fact.d_folio_fiscal')}</span><span class="fd-uuid">{f.fiscalId}</span></div>}
-                            {f.anuladaEn && <div><span>{t(L, 'fact.d_anulada')}</span><span>{f.anuladaEn}</span></div>}
-                        </div>
+                            {linkPublico && (
+                                <div class="fd-util-grid">
+                                    <a href={linkPublico} class="fd-util" target="_blank" rel="noopener noreferrer" title={L === 'en' ? 'Open client link' : 'Abrir link del cliente'}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        <span>{L === 'en' ? 'Open link' : 'Abrir link'}</span>
+                                    </a>
+                                    <button type="button" class="fd-util" id="fdCopy" title={L === 'en' ? 'Copy client link' : 'Copiar link del cliente'}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        <span class="fd-util-label">{t(L, 'fact.d_copiar')}</span>
+                                    </button>
+                                    <a href={`/api/fiscal/documents/${f.id}/pdf`} class="fd-util" target="_blank" rel="noopener" title={t(L, 'fact.d_pdf')}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        <span>{t(L, 'fact.d_pdf')}</span>
+                                    </a>
+                                    {waLink && (
+                                        <a href={waLink} class="fd-util fd-util-wa" target="_blank" rel="noopener noreferrer" title={t(L, 'fact.d_wa')}>
+                                            <WhatsAppIcon />
+                                            <span>WhatsApp</span>
+                                        </a>
+                                    )}
+                                </div>
+                            )}
 
-                        {linkPublico && (
-                            <div class="fd-link">
-                                <span class="fd-lbl">{t(L, 'fact.d_link')}</span>
-                                <input type="text" readonly value={linkPublico} id="fdLink" />
-                                <button type="button" id="fdCopy">{t(L, 'fact.d_copiar')}</button>
-                            </div>
-                        )}
+                            {f.clienteId && (
+                                <button type="button" class="fd-btn fd-btn-secondary" data-act="duplicate">
+                                    {L === 'en' ? 'Duplicate invoice' : 'Duplicar factura'}
+                                </button>
+                            )}
 
-                        {waLink && (
-                            <a class="fd-wa" href={waLink} target="_blank" rel="noopener noreferrer">{t(L, 'fact.d_wa')}</a>
-                        )}
+                            <details class="fd-more">
+                                <summary>
+                                    <span>{L === 'en' ? 'More actions' : 'Más acciones'}</span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                                </summary>
+                                <div class="fd-more-menu">
+                                    {f.estado === 'open' && (
+                                        <button type="button" class="fd-menu-btn" data-act="uncollectible">{t(L, 'fact.d_incobrable')}</button>
+                                    )}
+                                    {f.estadoFiscal === 'issued' && !f.notaCreditoDe && (
+                                        <button type="button" class="fd-menu-btn" data-act="credit_note">{t(L, 'fact.d_nota_credito')}</button>
+                                    )}
+                                    {f.estadoFiscal === 'issued' && (
+                                        <button type="button" class="fd-menu-btn" id="fdRepetir">{t(L, 'rec.repetir')}</button>
+                                    )}
+                                    {f.pais === 'MX' && f.fiscalId && (
+                                        <a class="fd-menu-btn fd-menu-link" href={`/api/fiscal/documents/${f.id}/xml`} target="_blank" rel="noopener">{t(L, 'fact.d_xml')}</a>
+                                    )}
+                                    {f.estado === 'open' && f.pagado === 0 && (
+                                        <button type="button" class="fd-menu-btn fd-menu-danger" data-act="void">{t(L, 'fact.d_anular')}</button>
+                                    )}
+                                </div>
+                            </details>
+                        </section>
 
-                        <div class="fd-timeline">
-                            <h3>{t(L, 'fact.d_actividad')}</h3>
+                        <section class="fd-timeline">
+                            <div class="fd-section-head"><h2>{t(L, 'fact.d_actividad')}</h2></div>
                             {TIMELINE.length === 0
                                 ? <p class="fd-tl-empty">{t(L, 'fact.d_actividad_vacia')}</p>
                                 : (
@@ -235,14 +358,22 @@ const METODOS = [
                                         ))}
                                     </ol>
                                 )}
-                        </div>
+                        </section>
 
-                        <div class="fd-dl">
-                            <a href={`/api/fiscal/documents/${f.id}/pdf`} target="_blank" rel="noopener">{t(L, 'fact.d_pdf')}</a>
-                            {f.pais === 'MX' && f.fiscalId && (
-                                <a href={`/api/fiscal/documents/${f.id}/xml`} target="_blank" rel="noopener">{t(L, 'fact.d_xml')}</a>
-                            )}
-                        </div>
+                        <section class="fd-meta-section">
+                            <div class="fd-section-head"><h2>{L === 'en' ? 'Invoice details' : 'Datos de la factura'}</h2></div>
+                            <div class="fd-meta">
+                                <div><span>{t(L, 'fact.d_emitida')}</span><span>{f.creado}</span></div>
+                                <div><span>{t(L, 'fact.d_vence')}</span><span>{f.vence ?? (L === 'en' ? 'Not set' : 'Sin fecha')}</span></div>
+                                <div><span>{t(L, 'fact.d_pais')}</span><span>{f.pais}</span></div>
+                                <div><span>{t(L, 'fact.d_divisa')}</span><span>{f.currency ?? (L === 'en' ? 'Not set' : 'Sin definir')}</span></div>
+                                {f.clienteEmail && <div><span>Email</span><span>{f.clienteEmail}</span></div>}
+                                {f.receptor?.taxId && <div><span>{taxIdLabel}</span><span>{f.receptor.taxId}</span></div>}
+                                {f.fiscalId && <div><span>{t(L, 'fact.d_folio_fiscal')}</span><span class="fd-uuid">{f.fiscalId}</span></div>}
+                                {f.anuladaEn && <div><span>{t(L, 'fact.d_anulada')}</span><span>{f.anuladaEn}</span></div>}
+                            </div>
+                        </section>
+
                     </aside>
                 </div>
 
@@ -336,6 +467,10 @@ const METODOS = [
                     location.href = `/app/facturas/${data.id}`;
                     return;
                 }
+                if (payload.action === 'duplicate' && data.id) {
+                    location.href = `/app/facturas/nueva?draft=${data.id}`;
+                    return;
+                }
                 location.reload();
             } catch (e) {
                 if (boton) { boton.disabled = false; boton.textContent = etiqueta; }
@@ -344,12 +479,16 @@ const METODOS = [
         };
 
         raiz.querySelectorAll('[data-act]').forEach((el) => {
-            el.addEventListener('click', (ev) => {
+            el.addEventListener('click', async (ev) => {
                 const boton = ev.currentTarget as HTMLButtonElement;
                 const act = boton.dataset.act ?? '';
                 if (act === 'payment') { pagoModal?.showModal(); return; }
-                if (act === 'void' && !confirm(T.confAnular)) return;
-                if (act === 'uncollectible' && !confirm(T.confIncobrable)) return;
+                if (act === 'void' && !await (window as any).cordConfirm({
+                    title: T.tituloAnular, body: T.confAnular, danger: true, confirmText: T.tituloAnular,
+                })) return;
+                if (act === 'uncollectible' && !await (window as any).cordConfirm({
+                    title: T.tituloIncobrable, body: T.confIncobrable, danger: true, confirmText: T.continuar,
+                })) return;
                 llamar({ action: act }, boton);
             });
         });
@@ -375,129 +514,261 @@ const METODOS = [
         });
 
         document.getElementById('fdCopy')?.addEventListener('click', async (ev) => {
-            const input = document.getElementById('fdLink') as HTMLInputElement | null;
-            if (!input) return;
             const boton = ev.currentTarget as HTMLButtonElement;
+            const link = raiz.dataset.link || '';
+            if (!link) return;
+            const label = boton.querySelector<HTMLElement>('.fd-util-label');
+            const anterior = label?.textContent || T.copiar;
             try {
-                await navigator.clipboard.writeText(input.value);
-                boton.textContent = T.copiado;
-                setTimeout(() => { boton.textContent = T.copiar; }, 1600);
-            } catch { input.select(); }
+                await navigator.clipboard.writeText(link);
+                boton.classList.add('is-copied');
+                if (label) label.textContent = T.copiado;
+                (window as any).cordToast?.(T.copiado, 'ok', 1800);
+                setTimeout(() => {
+                    boton.classList.remove('is-copied');
+                    if (label) label.textContent = anterior;
+                }, 1600);
+            } catch {
+                fallar(T.error);
+            }
         });
     }
 </script>
 
+
 <style>
-    /* Actividad de la factura. Markup propio de esta página, así que el CSS
-       scopeado sí matchea (la regla 11 aplica al markup ajeno o inyectado). */
-    .fd-wa {
-        display: block; text-align: center; margin-top: 1rem;
-        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
-        color: var(--color-text-muted); text-decoration: none;
-        border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 14px;
-        transition: border-color 0.25s, color 0.25s;
+    /* V2: misma gramática visual que el detalle de Cotizaciones. */
+    .fd-alert { margin-bottom: 1.4rem; padding: 12px 16px; border-radius: 12px; background: rgba(239, 68, 68, 0.08); color: var(--color-danger); font-size: 0.84rem; }
+    .fd-alert-warn { background: rgba(245, 158, 11, 0.1); color: #92400e; }
+    .fd-sim-note {
+        display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 0.8rem; align-items: start;
+        margin-bottom: 1.4rem; padding: 0.9rem 1rem; border: 1px solid rgba(180, 83, 9, 0.17);
+        border-radius: 14px; background: rgba(245, 158, 11, 0.065); color: #7c3f0a;
     }
-    .fd-wa:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
-    .fd-timeline { margin-top: 1.6rem; padding-top: 1.2rem; border-top: 1px solid var(--color-border); }
-    .fd-timeline h3 { font-size: 0.8rem; font-weight: 600; color: var(--color-text); margin: 0 0 0.9rem; }
-    .fd-tl-empty { font-size: 0.8rem; color: var(--color-text-muted); margin: 0; line-height: 1.5; }
-    .fd-tl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.9rem; }
-    .fd-tl-item { display: grid; grid-template-columns: 10px 1fr; gap: 0.7rem; align-items: start; }
-    .fd-tl-dot {
-        width: 7px; height: 7px; border-radius: 50%; margin-top: 6px;
-        background: var(--color-text-muted); opacity: 0.5;
+    .fd-sim-icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: rgba(245, 158, 11, 0.12); }
+    .fd-sim-icon svg { width: 16px; height: 16px; }
+    .fd-sim-note > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .fd-sim-note strong { font-size: 0.82rem; font-weight: 700; }
+    .fd-sim-note small { color: #8a5a2b; font-size: 0.76rem; line-height: 1.48; }
+
+    .fd-back {
+        display: inline-flex; margin: 0 0 1.5rem; color: var(--color-text-muted);
+        font-size: 0.82rem; font-weight: 500; text-decoration: none; transition: color 0.2s;
     }
+    .fd-back:hover { color: var(--color-blue-deep); }
+
+    .fd-stepper { display: flex; align-items: center; margin: 0 0 2.2rem; }
+    .fd-step { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    .fd-step:not(:last-child)::after {
+        content: ''; flex: 1; height: 2px; margin: 0 10px; border-radius: 2px;
+        background: var(--color-border); transition: background 0.35s var(--ease-spring);
+    }
+    .fd-step.done:not(:last-child)::after { background: var(--color-ok); }
+    .fd-step-dot {
+        display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+        flex: 0 0 auto; border: 1.5px solid var(--color-border); border-radius: 50%;
+        background: var(--color-bg-soft); color: var(--color-text-muted); font-size: 0.7rem; font-weight: 800;
+    }
+    .fd-step.done .fd-step-dot { border-color: var(--color-ok); background: var(--color-ok); color: #fff; }
+    .fd-step.current .fd-step-dot {
+        border-color: var(--color-blue-deep); background: var(--color-blue-deep); color: #fff;
+        box-shadow: 0 0 0 4px rgba(10, 25, 47, 0.08);
+    }
+    .fd-step-label { color: var(--color-text-muted); font-size: 0.74rem; font-weight: 600; white-space: nowrap; }
+    .fd-step.done .fd-step-label, .fd-step.current .fd-step-label { color: var(--color-text); }
+
+    .fd-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 3rem; align-items: start; }
+    .fd-main { display: flex; flex-direction: column; min-width: 0; }
+    .fd-side { display: flex; flex-direction: column; gap: 2.6rem; position: sticky; top: 76px; }
+    .fd-section-head {
+        display: flex; align-items: baseline; justify-content: space-between;
+        margin-bottom: 1.2rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--color-border);
+    }
+    .fd-section-head h2 { margin: 0; color: var(--color-text); font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; }
+
+    .fd-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
+        margin-bottom: 2.6rem; padding-bottom: 1.8rem; border-bottom: 1px solid var(--color-border);
+    }
+    .fd-client { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .fd-avatar {
+        display: flex; align-items: center; justify-content: center; width: 46px; height: 46px;
+        flex: 0 0 auto; border-radius: 12px; background: var(--color-blue-deep); color: #fff;
+        font-size: 0.9rem; font-weight: 800;
+    }
+    .fd-client-copy { min-width: 0; }
+    .fd-client-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .fd-client-title h2 { margin: 0; color: var(--color-text); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.3px; }
+    .fd-client-copy p {
+        display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+        margin: 3px 0 0; color: var(--color-text-muted); font-size: 0.78rem;
+    }
+    .fd-client-copy p span { color: #c3c8d0; }
+    .fd-origin { display: inline-flex; margin-top: 3px; color: var(--color-blue-deep); font-size: 0.72rem; font-weight: 600; text-decoration: none; }
+    .fd-origin:hover { text-decoration: underline; }
+    .fd-badge { padding: 2px 7px; border-radius: 100px; background: rgba(10, 25, 47, 0.07); color: var(--color-text-muted); font-size: 0.6rem; font-weight: 750; }
+    .fd-badge-test { background: rgba(245, 158, 11, 0.11); color: #b45309; }
+    .fd-badge-danger { background: rgba(239, 68, 68, 0.09); color: var(--color-danger); }
+    .fd-hero-total { display: flex; flex-direction: column; align-items: flex-end; }
+    .fd-hero-total > span { color: #99a2af; font-size: 0.58rem; font-weight: 800; letter-spacing: 1.6px; }
+    .fd-hero-total strong { color: var(--color-blue-deep); font-size: 2rem; line-height: 1.1; }
+    .fd-hero-total small { margin-top: 4px; color: var(--color-text-muted); font-size: 0.7rem; }
+
+    .fd-items { margin-bottom: 2.6rem; }
+    .fd-items-head, .fd-item-row {
+        display: grid; grid-template-columns: minmax(0, 1.8fr) 80px 150px minmax(110px, 1fr);
+        gap: 1rem; align-items: center; padding: 0.8rem 0.6rem;
+    }
+    .fd-items-head {
+        padding-top: 0; padding-bottom: 0.55rem; border-bottom: 1px solid var(--color-border);
+        color: var(--color-text-muted); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .fd-items-head span:not(:first-child) { text-align: right; }
+    .fd-item-row { border-bottom: 1px solid var(--color-border); transition: background 0.2s var(--ease-ios); }
+    .fd-item-row:hover { background: var(--color-bg-soft); }
+    .fd-desc { color: var(--color-text); font-size: 0.86rem; font-weight: 600; }
+    .fd-qty { color: var(--color-text-muted); font-size: 0.84rem; text-align: right; }
+    .fd-price, .fd-amount { color: var(--color-blue-deep); font-size: 0.92rem; text-align: right; }
+    .fd-amount { font-size: 0.98rem; }
+    .fd-totals { display: flex; flex-direction: column; align-items: flex-end; max-width: none; margin: 0; padding: 1.1rem 0.6rem 0; }
+    .fd-tline { display: flex; justify-content: space-between; gap: 3rem; min-width: 250px; padding: 0.3rem 0; color: var(--color-text-muted); font-size: 0.82rem; }
+    .fd-tline .editorial { color: var(--color-blue-deep); font-size: 0.95rem; }
+    .fd-tax { padding-left: 0; font-size: 0.8rem; }
+    .fd-total { margin-top: 0.2rem; padding-top: 0.6rem; border-top: 1px solid var(--color-border); color: var(--color-text); font-weight: 650; }
+    .fd-due { margin-top: 0.25rem; padding-top: 0.65rem; border-top: 2px solid var(--color-blue-deep); color: var(--color-text); font-size: 1rem; font-weight: 750; }
+    .fd-fx { margin: 0.8rem 0 0; color: var(--color-text-muted); font-size: 0.76rem; text-align: right; }
+
+    .fd-pagos, .fd-notes { margin: 0 0 2.6rem; padding: 0; border: 0; }
+    .fd-pago { display: flex; justify-content: space-between; gap: 1rem; padding: 0.75rem 0.6rem; border-bottom: 1px solid var(--color-border); font-size: 0.82rem; }
+    .fd-pago > span { color: var(--color-text-muted); }
+    .fd-notes p { margin: 0; color: var(--color-text); font-size: 0.86rem; line-height: 1.6; white-space: pre-wrap; }
+
+    .fd-actions { display: flex; flex-direction: column; gap: 0.5rem; margin: 0; }
+    .fd-actions .fd-section-head, .fd-timeline .fd-section-head, .fd-meta-section .fd-section-head { margin-bottom: 0.5rem; }
+    .fd-btn {
+        display: flex; align-items: center; justify-content: center; width: 100%; min-height: 42px;
+        padding: 10px; border: 1px solid var(--color-border); border-radius: 10px;
+        background: var(--color-bg-soft); color: var(--color-text); font-family: var(--font-sans);
+        font-size: 0.82rem; font-weight: 650; cursor: pointer; text-decoration: none;
+        transition: transform 0.25s var(--ease-spring), background 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+    .fd-btn:hover { transform: translateY(-1px); }
+    .fd-btn:active { transform: scale(0.985); }
+    .fd-btn:disabled { opacity: 0.55; cursor: wait; transform: none; }
+    .fd-btn-primary { border-color: var(--color-blue-deep); background: var(--color-blue-deep); color: #fff; box-shadow: 0 8px 22px -10px rgba(10, 25, 47, 0.5); }
+    .fd-btn-ok { border-color: #07996c; background: #18b889; color: #fff; box-shadow: 0 8px 22px -10px rgba(16, 185, 129, 0.55); }
+    .fd-btn-secondary { background: var(--surface); }
+
+    .fd-delivery {
+        display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; gap: 0.65rem; align-items: center;
+        padding: 0.65rem 0.2rem; color: var(--color-text);
+    }
+    .fd-delivery-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-ok); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+    .fd-delivery-copy { display: flex; flex-direction: column; min-width: 0; }
+    .fd-delivery-copy strong { font-size: 0.74rem; font-weight: 700; }
+    .fd-delivery-copy small { overflow: hidden; color: var(--color-text-muted); font-size: 0.65rem; text-overflow: ellipsis; white-space: nowrap; }
+    .fd-delivery button { padding: 4px; border: 0; background: none; color: var(--color-blue-deep); font-family: inherit; font-size: 0.69rem; font-weight: 700; cursor: pointer; }
+
+    .fd-util-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; margin-top: 0.5rem; }
+    .fd-util {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+        min-width: 0; padding: 9px 4px 7px; border: 1px solid var(--color-border); border-radius: 11px;
+        background: var(--surface); color: var(--color-text-muted); box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04);
+        font-family: var(--font-sans); cursor: pointer; text-decoration: none;
+        transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-spring), color 0.2s, border-color 0.2s;
+    }
+    .fd-util:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); box-shadow: 0 10px 22px -12px rgba(10, 25, 47, 0.28); transform: translateY(-2px); }
+    .fd-util svg { width: 18px; height: 18px; }
+    .fd-util span { overflow: hidden; max-width: 100%; font-size: 0.59rem; font-weight: 650; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+    .fd-util-wa { color: #0b7a4b; }
+    .fd-util-wa:hover { border-color: rgba(11, 122, 75, 0.3); color: #0b7a4b; }
+    .fd-util.is-copied { border-color: rgba(16, 185, 129, 0.35); color: var(--color-ok); }
+    :global(html[data-theme="dark"]) .fd-util {
+        background: var(--surface-2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 1px 2px rgba(0, 0, 0, 0.22);
+    }
+    :global(html[data-theme="dark"]) .fd-util:hover { background: #202a39; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 22px -12px rgba(0, 0, 0, 0.72); }
+    :global(html[data-theme="dark"]) .fd-util-wa,
+    :global(html[data-theme="dark"]) .fd-util-wa:hover { color: #34d399; border-color: rgba(52, 211, 153, 0.28); }
+
+    .fd-more { margin-top: 0; }
+    .fd-more summary {
+        display: flex; align-items: center; justify-content: space-between; min-height: 40px;
+        padding: 0 0.85rem; border: 1px solid var(--color-border); border-radius: 10px;
+        background: transparent; color: var(--color-text-muted); font-size: 0.79rem; font-weight: 650;
+        list-style: none; cursor: pointer; user-select: none;
+    }
+    .fd-more summary::-webkit-details-marker { display: none; }
+    .fd-more summary svg { width: 14px; height: 14px; transition: transform 0.2s ease; }
+    .fd-more[open] summary svg { transform: rotate(90deg); }
+    .fd-more-menu { display: flex; flex-direction: column; padding: 0.35rem 0.15rem 0; }
+    .fd-menu-btn {
+        width: 100%; padding: 0.62rem 0.7rem; border: 0; border-radius: 9px;
+        background: transparent; color: var(--color-text); font-family: var(--font-sans);
+        font-size: 0.78rem; font-weight: 550; text-align: left; cursor: pointer;
+    }
+    .fd-menu-btn:hover { background: var(--color-bg-soft); }
+    .fd-menu-danger { color: var(--color-danger); }
+    .fd-menu-link { display: block; box-sizing: border-box; text-decoration: none; }
+
+    .fd-timeline, .fd-meta-section { margin: 0; padding: 0; border: 0; }
+    .fd-tl-empty { margin: 0; color: var(--color-text-muted); font-size: 0.8rem; line-height: 1.5; }
+    .fd-tl-list { position: relative; display: flex; flex-direction: column; gap: 1rem; margin: 0; padding: 0; list-style: none; }
+    .fd-tl-list::before { content: ''; position: absolute; top: 8px; bottom: 8px; left: 3px; width: 1px; background: var(--color-border); }
+    .fd-tl-item { position: relative; grid-template-columns: 8px minmax(0, 1fr); gap: 0.8rem; }
+    .fd-tl-item { display: grid; align-items: start; }
+    .fd-tl-dot { z-index: 1; width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--color-text-muted); opacity: 0.5; box-shadow: 0 0 0 3px var(--surface); }
     .fd-tl-item.is-paid .fd-tl-dot, .fd-tl-item.is-payment .fd-tl-dot { background: var(--color-ok); opacity: 1; }
     .fd-tl-item.is-viewed .fd-tl-dot { background: var(--color-blue-deep); opacity: 1; }
     .fd-tl-item.is-reminder .fd-tl-dot { background: #b45309; opacity: 1; }
     .fd-tl-item.is-void .fd-tl-dot, .fd-tl-item.is-uncollectible .fd-tl-dot { background: var(--color-danger); opacity: 1; }
     .fd-tl-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-    .fd-tl-body strong { font-size: 0.82rem; font-weight: 600; color: var(--color-text); }
-    .fd-tl-det { font-size: 0.76rem; color: var(--color-text-muted); line-height: 1.45; overflow-wrap: anywhere; }
-    .fd-tl-when { font-size: 0.7rem; color: var(--color-text-muted); opacity: 0.8; }
-
-    .fd-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.86rem; color: var(--color-text-muted); margin: -0.4rem 0 1.6rem; }
-    .fd-sub a { color: var(--color-blue-deep); text-decoration: none; font-weight: 600; }
-    .fd-late { font-size: 0.74rem; font-weight: 700; color: var(--color-danger); }
-    .t-badge { font-size: 0.6rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; color: #b45309; background: rgba(245, 158, 11, 0.1); }
-
-    .fd-alert { background: rgba(239, 68, 68, 0.08); color: var(--color-danger); border-radius: 12px; padding: 12px 16px; font-size: 0.84rem; margin-bottom: 1.4rem; }
-
-    .fd-grid { display: grid; grid-template-columns: 1fr 300px; gap: 2.5rem; align-items: start; }
-
-    .t-head, .t-row { display: grid; grid-template-columns: 1fr 70px 110px 120px; gap: 1rem; align-items: center; padding: 0.85rem 0; }
-    .t-head {
-        font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
-        color: var(--color-text-muted); border-bottom: 1px solid var(--color-border);
-        padding-top: 0; padding-bottom: 0.7rem;
-    }
-    .t-row { border-bottom: 1px solid var(--color-border); }
-    .t-row:last-of-type { border-bottom: none; }
-    .t-right { text-align: right; }
-    .t-muted { font-size: 0.8rem; color: var(--color-text-muted); }
-    .fd-desc { font-size: 0.86rem; color: var(--color-text); }
-    .fd-imp { color: var(--color-blue-deep); }
-
-    .fd-totals { margin: 1.4rem 0 0 auto; max-width: 280px; }
-    .fd-tline { display: flex; justify-content: space-between; gap: 1rem; padding: 0.35rem 0; font-size: 0.85rem; color: var(--color-text-muted); }
-    .fd-tax { padding-left: 0.6rem; font-size: 0.8rem; }
-    .fd-total { border-top: 1px solid var(--color-border); margin-top: 0.3rem; padding-top: 0.65rem; color: var(--color-text); font-weight: 600; }
-    .fd-due { border-top: 2px solid var(--color-blue-deep); margin-top: 0.3rem; padding-top: 0.65rem; color: var(--color-text); font-size: 1.05rem; font-weight: 700; }
-    .fd-fx { font-size: 0.76rem; color: var(--color-text-muted); text-align: right; margin: 0.8rem 0 0; }
-
-    .fd-pagos { margin-top: 2rem; padding-top: 1.4rem; border-top: 1px solid var(--color-border); }
-    .fd-pago { display: flex; justify-content: space-between; gap: 1rem; padding: 0.5rem 0; font-size: 0.84rem; }
-
-    .fd-side { position: sticky; top: 76px; }
-    .fd-actions { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.8rem; }
-    .fd-btn {
-        border: none; border-radius: 100px; background: var(--color-bg-soft); color: var(--color-text);
-        font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; padding: 0.65rem 1.1rem; cursor: pointer;
-        transition: transform 0.25s var(--ease-spring), background 0.2s;
-    }
-    .fd-btn:hover { transform: translateY(-1px); }
-    .fd-btn:active { transform: scale(0.98); }
-    .fd-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
-    .fd-btn-primary { background: var(--color-blue-deep); color: #fff; box-shadow: 0 4px 14px -4px rgba(10, 25, 47, 0.4); }
-    .fd-btn-danger { color: var(--color-danger); }
-
-    .fd-meta { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.6rem; }
-    .fd-meta div { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.8rem; }
+    .fd-tl-body strong { font-size: 0.8rem; font-weight: 550; }
+    .fd-tl-det { color: var(--color-text-muted); font-size: 0.72rem; line-height: 1.45; overflow-wrap: anywhere; }
+    .fd-tl-when { color: var(--color-text-muted); font-size: 0.68rem; opacity: 0.8; }
+    .fd-meta { display: flex; flex-direction: column; gap: 0.58rem; }
+    .fd-meta div { font-size: 0.78rem; }
+    .fd-meta div { display: flex; justify-content: space-between; gap: 1rem; }
     .fd-meta span:first-child { color: var(--color-text-muted); }
+    .fd-meta div span:last-child { max-width: 62%; overflow-wrap: anywhere; text-align: right; }
     .fd-uuid { word-break: break-all; text-align: right; font-size: 0.72rem; }
 
-    .fd-link { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.6rem; }
-    .fd-lbl { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #99a2af; }
-    .fd-link input { border: none; background: var(--color-bg-soft); border-radius: 10px; padding: 0.55rem 0.8rem; font-size: 0.76rem; color: var(--color-text); }
-    .fd-link button { border: none; background: none; color: var(--color-blue-deep); font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; cursor: pointer; align-self: flex-start; padding: 0; }
-
-    .fd-dl { display: flex; flex-direction: column; gap: 0.5rem; }
-    .fd-dl a { font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
-
-    .fd-err { color: var(--color-danger); font-size: 0.84rem; margin-top: 1.4rem; }
-
+    .fd-err { margin-top: 1.4rem; color: var(--color-danger); font-size: 0.84rem; }
     .fd-field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; }
-    .fd-field span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #99a2af; }
-    .fd-field input, .fd-field select {
-        border: none; background: var(--color-bg-soft); border-radius: 10px;
-        padding: 0.6rem 0.8rem; font-size: 0.86rem; color: var(--color-text); font-family: inherit;
-    }
+    .fd-field span { color: #99a2af; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+    .fd-field input, .fd-field select { padding: 0.6rem 0.8rem; border: 0; border-radius: 10px; background: var(--color-bg-soft); color: var(--color-text); font: inherit; font-size: 0.86rem; }
     .fd-field input:focus, .fd-field select:focus { outline: none; box-shadow: 0 0 0 2px rgba(10, 25, 47, 0.15); }
 
-    @media (max-width: 880px) {
+    @media (max-width: 980px) {
         .fd-grid { grid-template-columns: 1fr; gap: 2rem; }
-        .fd-side { position: static; }
-        .fd-totals { max-width: none; margin-left: 0; }
-        .fd-btn { min-height: 44px; }
-        .t-head { display: none; }
-        .t-row {
+        .fd-side { position: static; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 2rem; }
+        .fd-actions { grid-column: 1 / -1; }
+    }
+    @media (max-width: 680px) {
+        .fd-stepper {
+            overflow-x: auto; margin-inline: calc(var(--mobile-gutter) * -1); padding: 4px var(--mobile-gutter) 8px;
+            overscroll-behavior-inline: contain; scrollbar-width: none;
+        }
+        .fd-stepper::-webkit-scrollbar { display: none; }
+        .fd-step { flex: 0 0 auto; }
+        .fd-step:not(:last-child)::after { width: 28px; flex: 0 0 28px; }
+        .fd-head { align-items: flex-start; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.25rem; }
+        .fd-client { align-items: flex-start; }
+        .fd-client-copy p { overflow-wrap: anywhere; }
+        .fd-hero-total { width: 100%; align-items: flex-start; }
+        .fd-hero-total strong { font-size: clamp(1.7rem, 9vw, 2rem); }
+        .fd-items-head { display: none; }
+        .fd-item-row {
             grid-template-columns: minmax(0, 1fr) auto;
-            grid-template-areas: "desc importe" "cant precio";
-            gap: 0.3rem 1rem;
+            grid-template-areas: 'desc amount' 'qty price'; gap: 0.5rem 1rem; padding: 1rem 0;
         }
         .fd-desc { grid-area: desc; }
-        .t-row > .t-muted { grid-area: cant; }
-        .t-row > .editorial:not(.fd-imp) { grid-area: precio; justify-self: end; }
-        .fd-imp { grid-area: importe; }
+        .fd-qty { grid-area: qty; text-align: left; }
+        .fd-price { grid-area: price; }
+        .fd-amount { grid-area: amount; }
+        .fd-totals { align-items: stretch; padding-inline: 0; }
+        .fd-tline { min-width: 0; }
+        .fd-side { display: flex; gap: 2rem; }
+        .fd-util-grid { grid-template-columns: repeat(4, minmax(62px, 1fr)); overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+        .fd-util-grid::-webkit-scrollbar { display: none; }
     }
 </style>

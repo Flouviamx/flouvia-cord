@@ -341,20 +341,6 @@ export const PATCH: APIRoute = async ({ request }) => {
             banco_clabe_last4 = ${bancoClabeLast4}, banco_beneficiario = ${bancoBen}
         where id = ${orgId}`);
 
-    // El entorno de prueba es un ESPEJO: hereda idioma, divisa y zona horaria al
-    // crearse (resolveSandboxOrgId en lib/db.ts), pero eso solo cubre a las que
-    // nacen después de este cambio. Sin propagar aquí, un negocio que hoy pasa su
-    // cuenta a inglés vería su sandbox —creada la semana pasada— seguir en
-    // español. Son los tres campos de PRESENTACIÓN y nada más: el resto de la
-    // config de la sandbox se edita por su cuenta a propósito.
-    // Solo del padre hacia la hija; editar DENTRO del modo de prueba sigue
-    // escribiendo únicamente en la sandbox.
-    if (!actual.sandbox_of) {
-        await withOrgTx(orgId, sql`
-            update orgs set idioma = ${idioma}, moneda = ${moneda}, zona_horaria = ${zona}
-            where sandbox_of = ${orgId}`);
-    }
-
     const submittedFields = Object.keys(body).filter((key) => key !== 'banco_clabe').sort();
     if (body.banco_clabe !== undefined) submittedFields.push(`banco_clabe(last4:${actual.banco_clabe_last4 || 'ninguna'}->${bancoClabeLast4 || 'ninguna'})`);
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: `Campos: ${submittedFields.join(', ') || 'ninguno'}`, ip: reqIp(request) });

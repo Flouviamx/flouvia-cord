@@ -188,7 +188,7 @@ const subdomainRewrite = async (context: any, next: any) => {
 import { validateSession, invalidateSession, SESSION_COOKIE, setSessionCookies, clearSessionCookies } from './lib/auth';
 import { OPS_SESSION_COOKIE, validateOpsSession } from './lib/ops-auth';
 import { trustedIp } from './lib/ip';
-import { getAppGates, getActiveOrgId } from './lib/db';
+import { getAppGates, getActiveOrgId, resolvePresentationContext } from './lib/db';
 import { checkMemberSeatAccess } from './lib/org-entitlements';
 import { strictLimitResponse, strictRateLimit } from './lib/ratelimit';
 import { log } from './lib/log';
@@ -444,14 +444,15 @@ const mainHandler = async (context: any, next: any) => {
     // carril de API key (sk_test_) tienen su propia resolución.
     const testMode = !csrfExempt && context.cookies.get("cord_test_mode")?.value === "1";
 
-    // Idioma: este es el VALOR INICIAL, detectado del header Accept-Language del
-    // navegador. Dentro de /app y de las APIs internas lo sobrescribe el idioma
-    // de la ORGANIZACIÓN (orgs.idioma, derivado del país al crear la cuenta) en
-    // cuanto se resuelve — ver setRequestLocale() en lib/context.ts, invocado
-    // desde getAppGates() y getOrg(). Así una cuenta creada en Estados Unidos ve
-    // la app en inglés aunque el navegador venga en español, y viceversa.
-    // Sigue siendo el valor efectivo donde no hay organización todavía: el wizard
-    // de /onboarding (aún no hay país elegido) y el link público /q/[token].
+    // Idioma: este es solo el VALOR INICIAL, adivinado del header Accept-Language.
+    // Dentro de /app y de las APIs internas lo pisa el idioma de la ORGANIZACIÓN
+    // unas líneas abajo, en resolvePresentationContext() — que corre como PRIMER
+    // paso del scope, no como efecto secundario de otra función. Así una cuenta
+    // creada en Estados Unidos ve la app en inglés aunque el navegador venga en
+    // español, y viceversa.
+    // Este valor sigue siendo el efectivo donde no hay organización todavía: el
+    // wizard de /onboarding (aún no hay país elegido) y el link público
+    // /q/[token], que además se sobrescribe con el idioma de la cotización.
     // Nunca afecta la landing, que usa su propio sistema de rutas /en/*.
     const acceptLang = context.request.headers.get("accept-language") ?? "";
     const firstLang = acceptLang.split(",")[0]?.trim().toLowerCase() ?? "";
@@ -461,6 +462,20 @@ const mainHandler = async (context: any, next: any) => {
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
     const response = await reqContext.run({ userId: userId ?? null, sessionId: validatedSessionId, activeOrgId: orgId ?? null, testMode, locale }, async () => {
+        // PRIMERO de todo: idioma, divisa y zona horaria de la ORGANIZACIÓN, que
+        // pisan la adivinanza por Accept-Language de arriba. Va antes que
+        // cualquier otra cosa dentro del scope porque hasta las respuestas de
+        // este mismo middleware (el 402 de asiento, los redirects) deben salir
+        // en el idioma del negocio.
+        //
+        // Cubre /app Y las APIs internas: un endpoint interno que responde un
+        // error traducido estaba leyendo el Accept-Language de quien llama.
+        // Se excluyen la API pública y la de Ops — la primera la consume un
+        // servidor ajeno, la segunda es interna de Cord y monolingüe.
+        if (userId && (isApp || (isApi && !isPublicApi && !isOpsApi))) {
+            await resolvePresentationContext();
+        }
+
         // Un downgrade conserva miembros y datos, pero no puede seguir otorgando
         // asientos premium. El owner siempre conserva acceso para recuperar el
         // pago; los miembros fuera del cupo quedan confinados a su propia cuenta.

@@ -444,32 +444,36 @@ A matrix of 7 events by 2 channels (email and Slack) under Settings › Notifica
         id: '14',
         slug: 'facturas-emitidas',
         title: {
-            es: 'Bandeja de facturas emitidas',
-            en: 'Issued invoices inbox'
+            es: 'Cord Invoicing: facturas de principio a fin',
+            en: 'Cord Invoicing: invoices from start to finish'
         },
         shortDesc: {
-            es: 'Todos tus CFDI en una sola tabla — folio, cliente, monto, fecha, estado y sus archivos PDF/XML — sin abrir cada cotización una por una.',
-            en: 'All your CFDI in one table — folio, client, amount, date, status, and their PDF/XML files — without opening each quote one by one.'
+            es: 'Crea, emite, entrega y cobra facturas desde una sola bandeja, con folio, saldo, link del cliente, actividad y documentos fiscales cuando correspondan.',
+            en: 'Create, issue, deliver, and collect invoices from one inbox, with number, balance, client link, activity, and fiscal files when applicable.'
         },
         content: {
-            es: `## Tus facturas, juntas por fin
-Antes solo se veía un CFDI a la vez, dentro de cada cotización. Ajustes › Facturación › Facturas emitidas las junta todas.
+            es: `## De la captura al cobro, sin salir de Cord
+Cord Invoicing reúne el documento comercial, la emisión fiscal que corresponda al país, la entrega y la cobranza. Cada factura conserva un solo historial desde el borrador hasta el pago.
 
 ### Beneficios clave:
-- **Una tabla, todo el mes:** folio, cliente, monto, fecha y estado (timbrada/pendiente/error/cancelada) de cada CFDI que has emitido.
-- **PDF y XML a un clic:** cada fila enlaza directo a sus archivos, listos para descargar o reenviar.
-- **Contexto honesto:** las facturas generadas en un entorno de prueba se marcan explícitamente, para que nunca se confundan con un CFDI real ante el SAT.`,
-            en: `## Your invoices, together at last
-Before, you could only see one CFDI at a time, inside each quote. Settings › Invoicing › Issued invoices brings them all together.
+- **Creación y emisión directa:** arma conceptos, guarda borradores sin folio y emite sólo después de revisar cliente, total, vencimiento y destino.
+- **Entrega con contexto:** envía por correo, comparte el link del cliente, descarga PDF/XML y consulta si la factura fue enviada, vista, vencida o pagada.
+- **Cobranza completa:** registra pagos manuales o parciales, cobra en el link público cuando Stripe Connect está habilitado y convierte una factura en recurrencia mensual.
+- **Operación verificable:** actividad por documento, selección masiva sólo para facturas elegibles, exportación CSV y documentos de prueba marcados sin mezclarlos con estados comerciales.
+- **Automatizable:** lista y administra facturas mediante la API pública de Cord y sus herramientas MCP.`,
+            en: `## From capture to collection, without leaving Cord
+Cord Invoicing brings together the commercial document, the fiscal issuance required for the seller's country, delivery, and collection. Each invoice keeps one history from draft to payment.
 
 ### Key benefits:
-- **One table, the whole month:** folio, client, amount, date, and status (stamped/pending/error/cancelled) for every CFDI you've issued.
-- **PDF and XML one click away:** each row links straight to its files, ready to download or forward.
-- **Honest context:** invoices generated in a test environment are marked explicitly, so they're never confused with a real CFDI filed with the SAT.`
+- **Direct creation and issuance:** build line items, save drafts without a number, and issue only after reviewing the client, total, due date, and recipient.
+- **Delivery with context:** send by email, share the client link, download PDF/XML, and see whether an invoice was sent, viewed, overdue, or paid.
+- **Complete collection:** record manual or partial payments, collect through the public link when Stripe Connect is enabled, and turn an invoice into a monthly recurrence.
+- **Verifiable operations:** per-document activity, bulk selection restricted to eligible invoices, CSV export, and test documents labeled separately from commercial status.
+- **Automatable:** list and manage invoices through Cord's public API and MCP tools.`
         },
         area: 'fiscal',
         status: 'live',
-        api: false
+        api: true
     },
     {
         id: '15',

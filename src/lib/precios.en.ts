@@ -115,7 +115,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
         rows: [
             { label: 'Sent quotes', free: '5 / mo', starter: 'Unlimited', pro: 'Unlimited', scale: 'Unlimited', developer: 'Unlimited' },
             { label: 'AI quote generation', free: '3 / mo', starter: '20 / mo', pro: '50 / mo', scale: '500 / mo', developer: 'Unlimited' },
-            { label: 'E-invoices issued', free: false, starter: '3 / mo', pro: '20 / mo', scale: '100 / mo', developer: '1,000 / mo', hint: 'CFDI 4.0 in Mexico, commercial invoice everywhere else.' },
+            { label: 'E-invoices issued', free: '3 / mo', starter: '3 / mo', pro: '20 / mo', scale: '100 / mo', developer: '1,000 / mo', hint: 'CFDI 4.0 in Mexico, commercial invoice everywhere else.' },
             { label: 'Public API calls', free: '100 / mo', starter: '1,000 / mo', pro: '5,000 / mo', scale: '10,000 / mo', developer: '50,000 / mo' },
         ],
     },
@@ -159,8 +159,8 @@ export const COMPARATIVA_EN: CompareGroup[] = [
     {
         titulo: 'Tax and Multi-currency',
         rows: [
-            { label: 'Automated e-invoicing', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 with the SAT in Mexico; Cord’s own commercial invoice everywhere else.' },
-            { label: 'Your own CSD (digital seal, Mexico)', free: false, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Automated e-invoicing', free: true, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 with the SAT in Mexico; Cord’s own commercial invoice everywhere else.' },
+            { label: 'Your own CSD (digital seal, Mexico)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Multi-currency with FX hedging (rate lock)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },

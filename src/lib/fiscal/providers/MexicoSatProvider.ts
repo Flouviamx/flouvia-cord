@@ -8,8 +8,15 @@ import type { FiscalProvider, FiscalCancelRequest, FiscalCancelResponse, FiscalD
 // para que la app nunca confunda un timbre de prueba con uno real.
 //
 // Facturapi autentica con HTTP Basic: la API key como usuario, password vacío.
-const FACTURAPI_KEY = process.env.FACTURAPI_API_KEY || process.env.FACTURAPI_KEY || '';
-const FACTURAPI_BASE = (process.env.FACTURAPI_URL || 'https://www.facturapi.io/v2').replace(/\/$/, '');
+// Astro/Vite carga `.env` en `import.meta.env`; algunas funciones desplegadas
+// lo exponen además en `process.env`. Leer ambos carriles evita que desarrollo
+// ignore una llave válida y degrade silenciosamente a una emisión simulada.
+const FACTURAPI_KEY = import.meta.env.FACTURAPI_API_KEY
+  || import.meta.env.FACTURAPI_KEY
+  || process.env.FACTURAPI_API_KEY
+  || process.env.FACTURAPI_KEY
+  || '';
+const FACTURAPI_BASE = (import.meta.env.FACTURAPI_URL || process.env.FACTURAPI_URL || 'https://www.facturapi.io/v2').replace(/\/$/, '');
 
 function authHeader(key: string): string {
   return 'Basic ' + Buffer.from(`${key}:`).toString('base64');

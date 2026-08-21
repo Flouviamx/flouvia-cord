@@ -105,23 +105,12 @@ export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; 
         const orgId = await getActiveOrgId();
         const [rows] = await withOrgTx(orgId, sql`
             select o.require_2fa, o.onboarded_at, o.owner_id, o.session_timeout_min,
-                   o.moneda, o.idioma, o.zona_horaria, u.totp_enabled
+                   u.totp_enabled
             from orgs o cross join users u
             where o.id = ${orgId} and u.id = ${userId}
             limit 1`);
         if (!rows.length) return NONE;
         const r = rows[0] as any;
-        // La divisa de la org viaja en esta MISMA query (sin round-trip extra) y
-        // se fija en el contexto del request para que money()/moneyFull() no
-        // tengan que asumir MXN en cada página de /app. Ver lib/currency.ts.
-        setRequestCurrency(r.moneda as string);
-        // El idioma de la app sale del país que eligió el negocio, no del
-        // navegador de quien entra. Misma query, sin round-trip extra.
-        setRequestLocale(r.idioma as string);
-        // Y la zona horaria, por el mismo camino. Sin ella toda fecha se
-        // renderizaba en la zona del servidor: un negocio en Tokio veía sus
-        // cotizaciones fechadas un día antes de lo que él las creó.
-        setRequestTimeZone(r.zona_horaria as string);
         return {
             needs2fa: !!r.require_2fa && !r.totp_enabled,
             needsOnboarding: r.owner_id === userId && !r.onboarded_at,
@@ -130,6 +119,48 @@ export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; 
     } catch {
         // Nunca bloquear /app por un fallo de esta verificación best-effort.
         return NONE;
+    }
+}
+
+/**
+ * Siembra el CONTEXTO DE PRESENTACIÓN del request —idioma, divisa y zona
+ * horaria— desde la organización activa. Lo llama el middleware para /app y
+ * para las APIs internas, ANTES de que corra el frontmatter de cualquier
+ * página, y es la única razón por la que `currentLocale()` puede leerse con
+ * confianza al inicio de un `.astro` sin haber esperado a `getOrg()`.
+ *
+ * Antes esto vivía como efecto secundario dentro de `getAppGates()`, cuyo
+ * trabajo declarado es 2FA y onboarding. Eso tenía dos consecuencias malas:
+ * `getAppGates` nunca corre para `/api/**`, así que una respuesta traducida de
+ * un endpoint interno salía en el idioma del NAVEGADOR y no en el del negocio;
+ * y sus dos salidas mudas (`return NONE` y el `catch`) dejaban la app en
+ * español sin dejar rastro de por qué.
+ *
+ * En modo de prueba la org activa es la SANDBOX, que hereda estas tres
+ * columnas de su padre por trigger — ver `trg_sandbox_inherit_presentation` y
+ * `trg_sandbox_cascade_presentation` en `db/schema.sql`.
+ *
+ * Best-effort por diseño: nunca debe tumbar un request. Pero a diferencia de
+ * antes, un fallo se REGISTRA — un negocio viendo la app en el idioma
+ * equivocado es un bug reportable, no un silencio.
+ */
+export async function resolvePresentationContext(): Promise<void> {
+    try {
+        const orgId = await getActiveOrgId();
+        const [rows] = await withOrgTx(orgId, sql`
+            select idioma, moneda, zona_horaria from orgs where id = ${orgId} limit 1`);
+        if (!rows.length) {
+            log.warn('Organización activa sin fila al resolver la presentación; se usa el idioma del navegador.', { route: 'presentation', orgId });
+            return;
+        }
+        const r = rows[0] as any;
+        // Los tres setters ignoran valores vacíos o inválidos y son idempotentes:
+        // `getOrg()` vuelve a llamarlos más tarde con el mismo resultado.
+        setRequestCurrency(r.moneda as string);
+        setRequestLocale(r.idioma as string);
+        setRequestTimeZone(r.zona_horaria as string);
+    } catch (error) {
+        log.warn('No se pudo resolver el contexto de presentación; se usa el idioma del navegador.', { route: 'presentation', error });
     }
 }
 
@@ -153,21 +184,20 @@ export async function resolveSandboxOrgId(parentId: string): Promise<string> {
 
     // Primera vez: crear la sandbox copiando el snapshot de marca/config del padre.
     // El índice único parcial (sandbox_of) hace el insert idempotente ante carreras.
-    // `idioma`, `moneda` y `zona_horaria` viajan en el snapshot a propósito: el modo
-    // de prueba resuelve ESTA org, así que sin ellas setRequestLocale()/Currency()/
-    // TimeZone() leían los defaults del schema (es-MX, MXN, CDMX) y la app de un
-    // negocio en inglés se volteaba entera al español al encender el toggle.
+    // `idioma`, `moneda` y `zona_horaria` NO se listan aquí a propósito: las pone
+    // el trigger `trg_sandbox_inherit_presentation` (db/schema.sql), que es la
+    // única fuente de esa herencia. Copiarlas también desde aquí sería un segundo
+    // camino que mantener en sincronía — justo lo que hizo fallar el arreglo
+    // anterior.
     const [[created]] = await withOrgTx(parentId, sql`
         insert into orgs (sandbox_of, nombre, logo_url, color_marca, quote_prefix, plan,
                           country_code, iva_pct, vigencia_default_dias, terminos_default,
                           pdf_template, pdf_mensaje, pdf_condiciones, portal_bienvenida,
-                          email_from_name, iva_incluido_defecto,
-                          idioma, moneda, zona_horaria)
+                          email_from_name, iva_incluido_defecto)
         select id, nombre, logo_url, color_marca, quote_prefix, plan,
                country_code, iva_pct, vigencia_default_dias, terminos_default,
                pdf_template, pdf_mensaje, pdf_condiciones, portal_bienvenida,
-               email_from_name, iva_incluido_defecto,
-               idioma, moneda, zona_horaria
+               email_from_name, iva_incluido_defecto
         from orgs where id = ${parentId}
         on conflict (sandbox_of) where sandbox_of is not null
         do update set sandbox_of = excluded.sandbox_of

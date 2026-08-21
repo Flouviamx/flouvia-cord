@@ -49,6 +49,8 @@ const filtros = {
 };
 const data = hasAccess ? await getFacturas(filtros) : { facturas: [], nextCursor: null };
 const resumen = hasAccess ? await getFacturasResumen() : null;
+const hasEnviable = data.facturas.some((f: any) =>
+    f.estadoFiscal === 'issued' && !f.enviada && ['open', 'uncollectible'].includes(f.estado));
 
 const FILTERS = [
     { key: '', label: t(L, 'fact.filter.all') },
@@ -59,6 +61,10 @@ const FILTERS = [
     { key: 'void', label: t(L, 'fact.filter.void') },
 ];
 const activo = filtros.estado ?? '';
+const exportParams = new URLSearchParams();
+if (filtros.estado) exportParams.set('estado', filtros.estado);
+if (filtros.q) exportParams.set('q', filtros.q);
+const exportHref = `/api/facturas/export${exportParams.size ? `?${exportParams.toString()}` : ''}`;
 
 // Mismo contrato visual que STATUS_META de cotizaciones: color + fondo por
 // estado, aplicados inline sobre `.status-pill`.
@@ -80,11 +86,11 @@ const qs = (patch: Record<string, string | null>) => {
     return s ? `/app/facturas?${s}` : '/app/facturas';
 };
 
-const inicial = (nombre: string | null) => (nombre || '—').trim().slice(0, 2).toUpperCase();
+const inicial = (nombre: string | null) => (nombre || '–').trim().slice(0, 2).toUpperCase();
 const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
 ---
 
-<AppLayout title="Facturas — Cord" page="facturas" heading={t(L, 'fact.heading')}>
+<AppLayout title="Facturas - Cord" page="facturas" heading={t(L, 'fact.heading')}>
     {hasAccess && (
         <div slot="topbar-actions" class="topbar-btns">
             <form class:list={['ph-search', { 'has-q': !!filtros.q }]} method="get" action="/app/facturas" role="search">
@@ -96,7 +102,14 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </a>
             </form>
+            <a class="fac-rec-link" href={exportHref}>{L === 'en' ? 'Export CSV' : 'Exportar CSV'}</a>
             <a class="fac-rec-link" href="/app/facturas/recurrentes">{t(L, 'rec.ver')}</a>
+            {canCrear && (
+                <a class="fac-new-link" href="/app/facturas/nueva">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    {L === 'en' ? 'New invoice' : 'Nueva factura'}
+                </a>
+            )}
         </div>
     )}
 
@@ -156,12 +169,6 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
                         <span class="cs-val editorial">{money(resumen.cobradoMes, 0)}</span>
                         <span class="cs-lbl">{t(L, 'fact.cs_cobrado_mes')}</span>
                     </div>
-                    {resumen.borradores > 0 && (
-                        <div class="cs-item">
-                            <span class="cs-val editorial">{resumen.borradores}</span>
-                            <span class="cs-lbl">{t(L, 'fact.cs_borradores')}</span>
-                        </div>
-                    )}
                 </div>
             )}
 
@@ -174,11 +181,12 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
             <section class="table-card">
                 <div class="t-head t-line">
                     <span class="t-check-cell">
-                        <input type="checkbox" id="facCheckAll" aria-label={t(L, 'fact.bulk_sel_todas')} />
+                        <input type="checkbox" id="facCheckAll" disabled={!hasEnviable} aria-label={t(L, 'fact.bulk_sel_todas')} />
                     </span>
                     <span class="t-head-inner">
-                    <span>{t(L, 'fact.th_folio')}</span>
+                    <span>{L === 'en' ? 'Invoice' : 'Factura'}</span>
                     <span>{t(L, 'fact.th_cliente')}</span>
+                    <span>{L === 'en' ? 'Created' : 'Creada'}</span>
                     <span>{t(L, 'fact.th_vence')}</span>
                     <span class="t-right">{t(L, 'fact.th_total')}</span>
                     <span class="t-right">{t(L, 'fact.th_saldo')}</span>
@@ -187,40 +195,78 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
                 </div>
 
                 {data.facturas.map((f) => {
-                    const meta = ESTADO_META[f.estado] ?? ESTADO_META.open;
+                    const meta = f.estadoFiscal === 'error'
+                        ? { label: L === 'en' ? 'Issue error' : 'Error al emitir', color: '#dc2626', bg: 'rgba(239,68,68,0.1)' }
+                        : f.vencida
+                            ? { label: L === 'en' ? 'Overdue' : 'Vencida', color: '#dc2626', bg: 'rgba(239,68,68,0.1)' }
+                            : (ESTADO_META[f.estado] ?? ESTADO_META.open);
                     // Un borrador se abre en el editor; una emitida, en su
                     // detalle. Mandar el borrador al detalle read-only sería
                     // cobrarle al usuario un clic extra por lo obvio.
                     const href = f.estado === 'draft' && !f.invoiceNumber
                         ? `/app/facturas/nueva?draft=${f.id}`
                         : `/app/facturas/${f.id}`;
-                    // Solo se puede mandar lo que ya está emitido y abierto.
-                    // La casilla se deshabilita, pero el servidor vuelve a
-                    // filtrar: la UI no autoriza (regla 17).
-                    const enviable = f.estadoFiscal === 'issued' && ['open', 'uncollectible'].includes(f.estado);
+                    // El envío masivo es para la primera entrega. Una factura
+                    // ya enviada se reenvía desde su detalle, donde el usuario
+                    // ve destinatario e historial antes de repetir la acción.
+                    // El servidor vuelve a filtrar: la UI no autoriza (regla 17).
+                    const enviable = f.estadoFiscal === 'issued' && !f.enviada && ['open', 'uncollectible'].includes(f.estado);
+                    const selectionHint = f.estado === 'draft'
+                        ? (L === 'en'
+                            ? 'Issue this draft before selecting it for bulk delivery.'
+                            : 'Emite este borrador antes de seleccionarlo para envío masivo.')
+                        : f.enviada
+                            ? (L === 'en'
+                                ? 'This invoice was already sent. Resend it from its detail page.'
+                                : 'Esta factura ya fue enviada. Reenvíala desde su detalle.')
+                            : (L === 'en'
+                                ? 'This invoice is not available for bulk delivery.'
+                                : 'Esta factura no está disponible para envío masivo.');
+                    const testDocument = f.simulado || f.testMode;
                     return (
                         <div class="t-line">
-                        <span class="t-check-cell">
-                            <input type="checkbox" class="t-check" value={f.id} disabled={!enviable}
-                                aria-label={t(L, 'fact.bulk_sel_una')} />
+                        <span class="t-check-cell" title={enviable ? undefined : selectionHint}>
+                            <input
+                                type="checkbox"
+                                class="t-check"
+                                value={f.id}
+                                disabled={!enviable}
+                                aria-label={enviable ? t(L, 'fact.bulk_sel_una') : selectionHint}
+                            />
                         </span>
                         <a href={href} class="t-row">
-                            <span class="t-folio">{f.invoiceNumber ?? t(L, 'fact.st_draft')}</span>
+                            <span class="t-folio">
+                                <strong>{f.invoiceNumber ?? (L === 'en' ? 'No number' : 'Sin folio')}</strong>
+                                {!f.invoiceNumber && (
+                                    <small>{L === 'en' ? 'Draft' : 'Borrador'} · BOR-{f.id.slice(0, 6).toUpperCase()}</small>
+                                )}
+                            </span>
                             <span class="t-client">
                                 <span class="t-avatar">{inicial(f.cliente)}</span>
-                                {f.cliente ?? '—'}
+                                {f.cliente ?? '–'}
                             </span>
+                            <span class="t-muted t-created">{f.creado}</span>
                             <span class="t-muted">
-                                {f.vence ?? '—'}
+                                {f.vence ?? '–'}
                                 {f.vencida && <b class="t-late">+{f.diasVencida}d</b>}
                             </span>
                             <span class="editorial t-amount t-right">{money(f.total, 0)}</span>
-                            <span class="editorial t-right t-saldo">{f.saldo > 0 ? money(f.saldo, 0) : '—'}</span>
+                            <span class="editorial t-right t-saldo">{f.saldo > 0 ? money(f.saldo, 0) : '–'}</span>
                             <span class="t-status">
                                 <span class="status-pill" style={`color:${meta.color}; background:${meta.bg}`}>{meta.label}</span>
-                                {f.estadoFiscal === 'error' && <span class="t-badge">{t(L, 'fact.badge_error')}</span>}
-                                {f.simulado && <span class="t-badge">{t(L, 'fact.badge_simulado')}</span>}
-                                {!f.simulado && f.testMode && <span class="t-badge">{t(L, 'fact.badge_prueba')}</span>}
+                                {(f.enviada || testDocument) && (
+                                    <span class="t-status-meta">
+                                        {f.enviada && <span class="t-delivery">{L === 'en' ? 'Sent' : 'Enviada'}</span>}
+                                        {f.enviada && testDocument && <span class="t-status-sep" aria-hidden="true">·</span>}
+                                        {testDocument && (
+                                            <span class="t-test-mode" title={L === 'en'
+                                                ? 'The fiscal provider did not issue this document. It is not valid before the tax authority.'
+                                                : 'El proveedor fiscal no timbró este documento. No es válido ante el SAT.'}>
+                                                {L === 'en' ? 'Test' : 'Prueba'}
+                                            </span>
+                                        )}
+                                    </span>
+                                )}
                             </span>
                         </a>
                         </div>
@@ -337,21 +383,61 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
        seis columnas a dos hijos y la cabecera quedaría desalineada de sus filas. */
     .t-head.t-line { grid-template-columns: 36px minmax(0, 1fr); gap: 0; padding-left: 0; padding-right: 0; }
     .t-head.t-line .t-head-inner {
-        display: grid; grid-template-columns: 130px 1.6fr 0.9fr 1fr 1fr 150px;
+        display: grid; grid-template-columns: 140px minmax(180px, 1.6fr) 0.75fr 0.85fr 0.9fr 0.9fr 140px;
         gap: 1rem; align-items: center; padding: 0 0.75rem;
     }
     .t-line > .t-row { padding-left: 0.35rem; }
-    .t-check-cell { display: flex; align-items: center; justify-content: center; }
-    .t-check-cell input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-blue-deep); }
-    .t-check-cell input:disabled { cursor: not-allowed; opacity: 0.35; }
+    .t-check-cell {
+        --selection-fill: #0a192f;
+        --selection-ink: #fff;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .t-check-cell input {
+        appearance: none; -webkit-appearance: none;
+        position: relative; width: 20px; height: 20px; margin: 0;
+        cursor: pointer; border: 1.5px solid color-mix(in srgb, var(--color-text-muted) 42%, transparent); border-radius: 7px;
+        background: var(--surface);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 1px 2px rgba(10, 25, 47, 0.05);
+        transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s var(--ease-spring), box-shadow 0.18s ease;
+    }
+    .t-check-cell input:hover:not(:disabled) { border-color: var(--color-text-muted); }
+    .t-check-cell input:checked {
+        border-color: var(--selection-fill); background: var(--selection-fill);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 2px 5px rgba(10, 25, 47, 0.18);
+    }
+    .t-check-cell input:checked::after {
+        content: ''; position: absolute; left: 6px; top: 3px;
+        width: 5px; height: 9px; border: solid var(--selection-ink); border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+    .t-check-cell input:indeterminate {
+        border-color: var(--selection-fill); background: var(--selection-fill);
+    }
+    .t-check-cell input:indeterminate::after {
+        content: ''; position: absolute; left: 4px; right: 4px; top: 8px;
+        height: 2px; border-radius: 2px; background: var(--selection-ink);
+    }
+    .t-check-cell input:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(10, 25, 47, 0.12); }
+    .t-check-cell input:active:not(:disabled) { transform: scale(0.92); }
+    .t-check-cell input:disabled {
+        cursor: not-allowed; opacity: 0.48; border-color: var(--color-border);
+        background: var(--color-bg-soft); box-shadow: none;
+    }
+    :global(html[data-theme="dark"]) .t-check-cell {
+        --selection-fill: #6b9bf2;
+        --selection-ink: #0b1018;
+    }
+    :global(html[data-theme="dark"]) .t-check-cell input { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05); }
+    :global(html[data-theme="dark"]) .t-check-cell input:focus-visible { box-shadow: 0 0 0 4px rgba(107, 155, 242, 0.2); }
 
     .fac-bulk {
         position: sticky; bottom: 1rem; z-index: 5;
         display: flex; align-items: center; justify-content: space-between; gap: 1rem;
         margin-top: 1.2rem; padding: 0.85rem 1.1rem;
-        background: #fff; border: 1px solid var(--color-border); border-radius: 14px;
+        background: var(--surface); border: 1px solid var(--color-border); border-radius: 14px;
         box-shadow: 0 18px 40px -22px rgba(10, 25, 47, 0.45);
     }
+    .fac-bulk[hidden] { display: none; }
     .fac-bulk-count { font-size: 0.85rem; font-weight: 600; color: var(--color-text); }
     .fac-bulk-acts { display: flex; gap: 0.6rem; }
     .fac-bulk-ghost, .fac-bulk-send {
@@ -370,14 +456,21 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
     }
 
     /* Acceso a las recurrentes desde la bandeja. */
-    .fac-rec-link {
+    .fac-rec-link, .fac-new-link {
         font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600;
         color: var(--color-text-muted); text-decoration: none; white-space: nowrap;
         border: 1px solid var(--color-border); border-radius: 9px; padding: 8px 13px;
         transition: border-color 0.25s, color 0.25s;
     }
-    .fac-rec-link:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
-    @media (max-width: 880px) { .fac-rec-link { min-height: 44px; display: inline-flex; align-items: center; } }
+    .fac-rec-link:hover, .fac-new-link:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
+    .fac-new-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        color: #fff; background: var(--color-blue-deep); border-color: var(--color-blue-deep);
+        box-shadow: 0 6px 18px -10px rgba(10, 25, 47, 0.5);
+    }
+    .fac-new-link:hover { color: #fff; transform: translateY(-1px); }
+    .fac-new-link svg { width: 14px; height: 14px; }
+    @media (max-width: 880px) { .fac-rec-link, .fac-new-link { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; } }
 
     /* Mismo vocabulario que /app/cotizaciones. Va scopeado porque esta página SÍ
        renderiza su propio markup en servidor (Regla 11). */
@@ -408,7 +501,7 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
     /* Barra de la topbar — calcada de /app/clientes para que la búsqueda se vea
        y se comporte igual en las dos pantallas (incluida la expansión al
        enfocar). Crear NO vive aquí: vive en el menú Crear de la topbar. */
-    .topbar-btns { display: flex; gap: 0.6rem; align-items: center; }
+    .topbar-btns { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.6rem; align-items: center; }
     .ph-search {
         display: flex;
         align-items: center;
@@ -426,7 +519,7 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
         width: 320px;
         border-color: var(--color-blue-deep, #0a192f);
         box-shadow: 0 0 0 3px rgba(10, 25, 47, 0.08);
-        background: #fff;
+        background: var(--surface);
     }
     .ph-search svg { width: 15px; height: 15px; color: #999; flex-shrink: 0; transition: color 0.15s; }
     .ph-search:focus-within svg { color: var(--color-blue-deep, #0a192f); }
@@ -450,7 +543,7 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
     .table-card { display: block; }
     .t-head, .t-row {
         display: grid;
-        grid-template-columns: 130px 1.6fr 0.9fr 1fr 1fr 150px;
+        grid-template-columns: 140px minmax(180px, 1.6fr) 0.75fr 0.85fr 0.9fr 0.9fr 140px;
         gap: 1rem; align-items: center;
         padding: 0.95rem 0.75rem;
     }
@@ -468,7 +561,9 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
     .t-row:last-of-type { border-bottom: none; }
     .t-row:hover { background: var(--color-bg-soft); }
 
-    .t-folio { font-size: 0.84rem; font-weight: 700; color: var(--color-text); }
+    .t-folio { display: flex; flex-direction: column; gap: 2px; min-width: 0; color: var(--color-text); }
+    .t-folio strong { overflow: hidden; text-overflow: ellipsis; font-size: 0.84rem; font-weight: 700; white-space: nowrap; }
+    .t-folio small { color: var(--color-text-muted); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.02em; }
     .t-client { display: flex; align-items: center; gap: 9px; font-size: 0.84rem; font-weight: 500; color: var(--color-text); min-width: 0; }
     .t-avatar {
         width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
@@ -482,11 +577,15 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
     .t-amount { font-size: 1rem; color: var(--color-blue-deep); }
     .t-saldo { font-size: 0.9rem; color: var(--color-text); }
     .t-right { text-align: right; }
-    .t-status { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-    .t-badge {
-        font-size: 0.6rem; font-weight: 700; padding: 2px 7px; border-radius: 100px;
-        color: #b45309; background: rgba(245, 158, 11, 0.1); white-space: nowrap;
+    .t-status { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+    .t-status-meta {
+        display: flex; align-items: center; gap: 4px; min-width: 0;
+        font-size: 0.61rem; font-weight: 650; line-height: 1.15; white-space: nowrap;
     }
+    .t-delivery { color: var(--color-text-muted); }
+    .t-status-sep { color: var(--color-text-muted); opacity: 0.55; }
+    .t-test-mode { color: #b45309; }
+    :global(html[data-theme="dark"]) .t-test-mode { color: #fbbf24; }
 
     .t-empty { padding: 2.5rem; text-align: center; }
     .t-empty p { font-size: 0.85rem; color: var(--color-text-muted); margin: 0; }
@@ -497,7 +596,7 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
         background: var(--color-bg-soft); padding: 9px 18px; border-radius: 100px;
         transition: background 0.25s var(--ease-ios);
     }
-    .t-more a:hover { background: #e8e8ec; }
+    .t-more a:hover { background: var(--surface-2); }
 
     /* Regla 16: la fila se reordena, no se esconde. Total y saldo siguen a la
        vista — son justamente las columnas por las que se abre esta pantalla. */
@@ -522,7 +621,8 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
             grid-template-areas:
                 "folio total"
                 "client status"
-                "due saldo";
+                "created saldo"
+                "due due";
             gap: 0.5rem 1rem;
             padding: 1rem 0;
             border-radius: 0;
@@ -530,8 +630,9 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
         .t-folio { grid-area: folio; }
         .t-amount { grid-area: total; align-self: start; }
         .t-client { grid-area: client; overflow-wrap: anywhere; }
-        .t-status { grid-area: status; justify-self: end; align-self: center; }
-        .t-row > .t-muted { grid-area: due; display: block; font-size: 0.72rem; }
+        .t-created { grid-area: created; }
+        .t-status { grid-area: status; justify-self: end; align-self: center; align-items: flex-end; }
+        .t-row > .t-muted:not(.t-created) { grid-area: due; display: block; font-size: 0.72rem; }
         .t-saldo { grid-area: saldo; justify-self: end; }
         .t-more a { min-height: 44px; display: inline-flex; align-items: center; }
     }

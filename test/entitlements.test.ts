@@ -44,10 +44,9 @@ describe('normalizePlan', () => {
 });
 
 describe('matriz de capacidades', () => {
-    it('ninguna capacidad de pago se habilita en Gratis', () => {
-        for (const f of FEATURES) {
-            expect(planIncludes('free', f)).toBe(false);
-        }
+    it('Gratis habilita temporalmente solo los dos carriles de facturación', () => {
+        const freeFeatures = FEATURES.filter((feature) => planIncludes('free', feature));
+        expect(freeFeatures.sort()).toEqual(['cfdi', 'international_invoicing']);
     });
 
     it('developer (el rango más alto) incluye todo', () => {

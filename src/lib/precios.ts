@@ -165,7 +165,7 @@ export const COMPARATIVA: CompareGroup[] = [
         rows: [
             { label: 'Cotizaciones enviadas', free: '5 / mes', starter: 'Ilimitadas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas' },
             { label: 'Armado de cotizaciones con IA', free: '3 / mes', starter: '20 / mes', pro: '50 / mes', scale: '500 / mes', developer: 'Ilimitado' },
-            { label: 'Facturas electrónicas emitidas', free: false, starter: '3 / mes', pro: '20 / mes', scale: '100 / mes', developer: '1,000 / mes', hint: 'CFDI 4.0 en México, factura comercial en el resto del mundo.' },
+            { label: 'Facturas electrónicas emitidas', free: '3 / mes', starter: '3 / mes', pro: '20 / mes', scale: '100 / mes', developer: '1,000 / mes', hint: 'CFDI 4.0 en México, factura comercial en el resto del mundo.' },
             { label: 'Llamadas a la API pública', free: '100 / mes', starter: '1,000 / mes', pro: '5,000 / mes', scale: '10,000 / mes', developer: '50,000 / mes' },
         ],
     },
@@ -209,8 +209,8 @@ export const COMPARATIVA: CompareGroup[] = [
     {
         titulo: 'Fiscal y multi-divisa',
         rows: [
-            { label: 'Facturación electrónica automática', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 ante el SAT en México; factura comercial propia en el resto del mundo.' },
-            { label: 'Tu propio CSD (sello digital, México)', free: false, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Facturación electrónica automática', free: true, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 ante el SAT en México; factura comercial propia en el resto del mundo.' },
+            { label: 'Tu propio CSD (sello digital, México)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Multi-divisa con cobertura cambiaria (FX lock)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },

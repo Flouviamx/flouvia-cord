@@ -1,29 +1,69 @@
 ---
-title: "Facturas emitidas"
-description: "Consulta en un solo lugar cada CFDI que has timbrado, con su PDF y XML."
+title: "Crear, emitir y cobrar facturas"
+description: "Crea una factura, asígnale folio al emitir, envíala y sigue su saldo desde Cord."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Facturas emitidas</h1>
-  <p class="page-subtitle">Todos tus CFDI juntos — folio, cliente, monto, fecha, estado y sus archivos — sin tener que abrir cada cotización una por una.</p>
+  <h1 class="page-title">Crear, emitir y cobrar facturas</h1>
+  <p class="page-subtitle">Cord reúne la captura, emisión fiscal, entrega y cobranza de cada factura en un solo flujo.</p>
 </header>
 
-## Dónde encontrarla
+## Dónde encontrar tus facturas
 
-**Ajustes › Facturación › Facturas emitidas.** Es la segunda pestaña, junto a "Datos fiscales" (donde subes tu CSD).
+Abre **Mi dinero › Facturas**. La bandeja muestra el folio, cliente, fecha de creación, vencimiento, total, saldo y estado operativo.
 
-## Qué muestra cada fila
+Los borradores todavía no tienen folio oficial. Cord los identifica como **Sin folio** y les agrega una referencia temporal `BOR-...` para que puedas reconocerlos. El folio consecutivo se reserva únicamente al emitir.
 
-- **Folio** — enlaza directo al detalle de esa cotización.
-- **Cliente** y **Total**.
-- **Fecha** en que se timbró.
-- **Estado**: Timbrada, Pendiente, Error o Cancelada.
-- **PDF** y **XML** del CFDI, listos para descargar o reenviar.
+## Crear una factura
 
-<Callout type="info">
-Una factura solo aparece aquí después de que la timbras desde el detalle de la cotización (botón **"Timbrar CFDI 4.0"**). No es una lista de cotizaciones — es exclusivamente el registro de los comprobantes fiscales ya emitidos.
+<Steps>
+1. **Selecciona al cliente.** Cord toma el correo, términos de pago y datos fiscales desde la ficha del cliente.
+2. **Agrega conceptos.** Usa productos del catálogo, kits, una línea libre o **Armar con IA**. Puedes definir cantidad, precio e impuesto por concepto.
+3. **Revisa total y vencimiento.** Confirma impuestos, retenciones, divisa, tipo de cambio cuando aplique y fecha de vencimiento.
+4. **Emite.** Elige **Emitir y enviar** para asignar el folio y mandar el correo en el mismo flujo, o **Emitir sin enviar** si quieres entregar la factura después.
+</Steps>
+
+<Callout type="warning">
+Emitir es irreversible: asigna el folio oficial y bloquea el documento fiscal. Si necesitas corregir una factura emitida, usa anulación o nota de crédito según su estado de pago.
 </Callout>
 
-## Badges de contexto
+## Qué recibe tu cliente
 
-Si una factura se generó en un entorno de prueba, la fila lo marca explícitamente (no se confunde con un CFDI real ante el SAT). Ver [Entornos de Prueba](/docs/desarrolladores/empezar/pruebas) para más sobre cómo Cord separa datos de prueba de datos reales.
+El correo incluye el PDF y la liga pública de la factura. Desde esa página, el cliente puede consultar el saldo y su historial de pagos; si tu cuenta de cobros está habilitada, también puede pagar con tarjeta.
+
+La página pública presenta la marca de tu negocio, el folio, el saldo pendiente, las partes, los conceptos y las descargas en una sola vista. Si el documento se generó en modo de prueba o sin timbre fiscal, Cord lo advierte claramente y deshabilita el pago en línea.
+
+Si la emisión termina pero el correo falla, Cord conserva la factura emitida y marca únicamente la entrega como pendiente. Puedes abrir el detalle y usar **Enviar factura** de nuevo sin generar otro folio.
+
+## Estados de la bandeja
+
+- **Borrador**: editable y sin folio oficial.
+- **Abierta**: emitida y con saldo pendiente.
+- **Vencida**: abierta y después de su fecha de vencimiento.
+- **Pagada**: saldo liquidado.
+- **Error al emitir**: el proveedor fiscal no confirmó la emisión; abre el detalle y usa **Reintentar emisión**.
+- **Anulada** o **Incobrable**: la factura ya no sigue el flujo normal de cobranza.
+
+La insignia principal siempre representa el estado financiero. Debajo, Cord muestra
+por separado el contexto de entrega y de entorno, por ejemplo **Enviada · Prueba**.
+Así, **Prueba** nunca sustituye ni contradice estados como **Abierta** o **Pagada**.
+
+## Acciones desde el detalle
+
+Desde una factura puedes reenviar el correo, registrar pagos manuales o parciales, copiar la liga pública, descargar PDF y XML cuando corresponda, anular, emitir una nota de crédito, duplicar como borrador o crear una recurrencia mensual.
+
+El progreso superior separa cinco momentos: **Borrador**, **Emitida**, **Enviada**, **Vista** y **Pagada**. A la derecha encuentras accesos directos para abrir o copiar la liga del cliente, descargar el PDF y compartir por WhatsApp. Las acciones excepcionales, como anular o marcar incobrable, permanecen dentro de **Más acciones**.
+
+Después del primer envío, la bandeja muestra **Enviada** y deja de ofrecer esa factura en la selección masiva. El reenvío permanece dentro del detalle, junto al correo del destinatario, para evitar entregas duplicadas por accidente.
+
+<Callout type="warning">
+**Documento de prueba** significa que no hubo una emisión fiscal válida. En México, no funciona como CFDI ante el SAT. Configura tu emisión fiscal y crea una factura nueva; Cord conserva el documento anterior sin alterar su historial.
+</Callout>
+
+La sección **Actividad** registra emisión, envío, vista, recordatorios, pagos y cambios de estado. Así puedes saber qué ocurrió sin depender del correo del vendedor.
+
+## Envío masivo y exportación
+
+Selecciona facturas emitidas y todavía no enviadas desde la bandeja para entregarlas en una tanda. Los borradores, documentos ya enviados y documentos no enviables conservan una casilla visible pero deshabilitada; al pasar el cursor, Cord explica por qué no participan en ese envío. **Exportar CSV** descarga la vista actual y respeta el filtro de estado y la búsqueda activa.
+
+Para automatizar cobros recurrentes, abre **Ver recurrentes**. Para configurar el carril fiscal de México, consulta [Facturación CFDI 4.0](/docs/pagos/facturacion).

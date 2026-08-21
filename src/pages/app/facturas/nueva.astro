@@ -112,6 +112,7 @@ const defaultDue = draft?.venceISO
 // Payload para el script. Va como JSON en el DOM y no por `define:vars` para
 // que el script pueda ser un módulo bundleado y así importar de verdad.
 const BOOT = {
+    locale: L,
     draftId: draft?.id ?? null,
     orgCurrency: String(ORG.moneda || profile.currency),
     orgCountry: country,
@@ -159,6 +160,14 @@ const BOOT = {
         agregaConcepto: L === 'en' ? 'Add at least one concept' : 'Agrega al menos un concepto',
         faltaDescripcion: L === 'en' ? 'A line is missing its description' : 'Una línea no tiene descripción',
         guardado: L === 'en' ? 'Draft saved' : 'Borrador guardado',
+        emitida: L === 'en' ? 'Invoice issued' : 'Factura emitida',
+        sinCorreo: L === 'en'
+            ? 'This client has no email. Add one or choose “Issue without sending”.'
+            : 'Este cliente no tiene correo. Agrégalo o elige “Emitir sin enviar”.',
+        sinCorreoCorto: L === 'en' ? 'No email on file' : 'Sin correo registrado',
+        eligeClienteEntrega: L === 'en' ? 'Choose a client' : 'Elige un cliente',
+        sinFecha: L === 'en' ? 'No due date' : 'Sin fecha',
+        sinEntrega: L === 'en' ? 'No email delivery' : 'Sin envío por correo',
         errorGenerico: L === 'en' ? "Couldn't save. Try again." : 'No se pudo guardar. Intenta de nuevo.',
         kitAgregado: L === 'en' ? 'Kit added' : 'Kit agregado',
         fxNoDisponible: L === 'en' ? 'Exchange rate unavailable' : 'Tipo de cambio no disponible',
@@ -176,10 +185,6 @@ const BOOT = {
     page="facturas"
     heading={draft ? (L === 'en' ? 'Editar factura' : 'Editar factura') : (L === 'en' ? 'New invoice' : 'Nueva factura')}
     crumbs={[{ label: L === 'en' ? 'Invoices' : 'Facturas', href: '/app/facturas' }]}>
-
-    {hasAccess && (
-        <span slot="topbar-actions" class="draft-tag">{L === 'en' ? 'Draft' : 'Borrador'}</span>
-    )}
 
     {!hasPerm && (
         <AccessGate
@@ -252,7 +257,7 @@ const BOOT = {
                         <select id="clientSelect" class="ed-select" aria-label={L === 'en' ? 'Client' : 'Cliente'}>
                             <option value="">{L === 'en' ? 'Choose a client' : 'Elige un cliente'}</option>
                             {CLIENTES.map((c: any) => (
-                                <option value={c.id} data-desc={c.descuentoPct ?? 0} data-term={c.terminosCode ?? ''}>{c.empresa}</option>
+                                <option value={c.id} data-desc={c.descuentoPct ?? 0} data-term={c.terminosCode ?? ''} data-email={c.email ?? ''}>{c.empresa}</option>
                             ))}
                             <option value="__NEW__" class="opt-action">{L === 'en' ? '+ New client' : '+ Crear cliente'}</option>
                         </select>
@@ -418,22 +423,63 @@ const BOOT = {
                         </div>
                     </div>
 
+                    <div class="invoice-delivery" id="invoiceDelivery">
+                        <span>{L === 'en' ? 'Delivery' : 'Entrega'}</span>
+                        <strong id="issueRecipient">{L === 'en' ? 'Choose a client' : 'Elige un cliente'}</strong>
+                        <small>{L === 'en' ? 'Email includes the PDF and payment link.' : 'El correo incluye el PDF y la liga de pago.'}</small>
+                    </div>
+
                     <button type="button" class="btn-send" id="btnIssue">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7"/></svg>
-                        <span>{L === 'en' ? 'Save and review' : 'Guardar y revisar'}</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+                        <span>{L === 'en' ? 'Issue and send' : 'Emitir y enviar'}</span>
                     </button>
-                    <button type="button" class="btn-draft" id="btnDraft">{L === 'en' ? 'Save draft' : 'Guardar borrador'}</button>
+                    <div class="issue-secondary-actions">
+                        <button type="button" class="btn-draft" id="btnIssueOnly">{L === 'en' ? 'Issue without sending' : 'Emitir sin enviar'}</button>
+                        <button type="button" class="btn-text" id="btnDraft">{L === 'en' ? 'Save and exit' : 'Guardar y salir'}</button>
+                    </div>
                     <p class="sum-note">
                         {L === 'en'
-                            ? 'Saving does not stamp anything. You issue it from the invoice detail.'
-                            : 'Guardar no timbra nada. La emites desde el detalle de la factura.'}
+                            ? 'The number is assigned when you issue. Later corrections require a void or credit note.'
+                            : 'El folio se asigna al emitir. Después, las correcciones requieren anulación o nota de crédito.'}
                     </p>
-                    <p class="sum-kbd"><kbd>⌘</kbd><kbd>Enter</kbd> {L === 'en' ? 'to save' : 'para guardar'}</p>
+                    <p class="sum-kbd"><kbd>⌘</kbd><kbd>Enter</kbd> {L === 'en' ? 'to issue and send' : 'para emitir y enviar'}</p>
                 </section>
             </aside>
         </div>
 
         <ClientModal showDelete={false} />
+
+        <dialog class="modal issue-confirm" id="issueConfirm" aria-labelledby="issueConfirmTitle">
+            <form method="dialog" class="m-form">
+                <div class="m-head">
+                    <div>
+                        <span class="issue-eyebrow">{L === 'en' ? 'Final review' : 'Revisión final'}</span>
+                        <h2 id="issueConfirmTitle">{L === 'en' ? 'Issue this invoice?' : '¿Emitir esta factura?'}</h2>
+                    </div>
+                    <button type="submit" class="m-close" aria-label={L === 'en' ? 'Close' : 'Cerrar'}>✕</button>
+                </div>
+                <div class="m-body">
+                    <p class="issue-warning">
+                        {L === 'en'
+                            ? 'Issuing assigns the official number and locks the fiscal document.'
+                            : 'Al emitir se asigna el folio oficial y se bloquea el documento fiscal.'}
+                    </p>
+                    <dl class="issue-review">
+                        <div><dt>{L === 'en' ? 'Client' : 'Cliente'}</dt><dd id="confirmClient">…</dd></div>
+                        <div><dt>Total</dt><dd id="confirmTotal">…</dd></div>
+                        <div><dt>{L === 'en' ? 'Due date' : 'Vencimiento'}</dt><dd id="confirmDue">…</dd></div>
+                        <div><dt>{L === 'en' ? 'Delivery' : 'Entrega'}</dt><dd id="confirmDelivery">…</dd></div>
+                    </dl>
+                </div>
+                <div class="m-foot">
+                    <div class="m-actions">
+                        <span class="m-spacer"></span>
+                        <button type="submit" class="m-cancel">{L === 'en' ? 'Go back' : 'Regresar'}</button>
+                        <button type="button" class="m-save" id="issueOk">{L === 'en' ? 'Issue invoice' : 'Emitir factura'}</button>
+                    </div>
+                </div>
+            </form>
+        </dialog>
     </div>
     )}
 </AppLayout>
@@ -922,7 +968,7 @@ const BOOT = {
             }
         });
 
-        // ── Guardar ─────────────────────────────────────────────────────────
+        // ── Guardar y emitir ────────────────────────────────────────────────
         const payload = () => ({
             cliente_id: $client.value,
             currency,
@@ -940,7 +986,7 @@ const BOOT = {
             })),
         });
 
-        const guardar = async (irADetalle: boolean, btn: HTMLButtonElement) => {
+        const validar = () => {
             if (!$client.value) { toast(T.eligeCliente); $client.focus(); return; }
             if (!lines.length) { toast(T.agregaConcepto); $prod.focus(); return; }
             const vacia = lines.findIndex((l) => !l.nombre.trim());
@@ -949,40 +995,94 @@ const BOOT = {
                 ($lines.querySelectorAll('.lr-desc-input')[0] as HTMLInputElement | null)?.focus();
                 return;
             }
+            return true;
+        };
 
-            const etiqueta = btn.innerHTML;
+        let activeDraftId: string | null = BOOT.draftId;
+        const persistirBorrador = async () => {
+            const res = activeDraftId
+                ? await fetch(`/api/facturas/${activeDraftId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'update_draft', ...payload() }),
+                })
+                : await fetch('/api/facturas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload()),
+                });
+            const d = await res.json();
+            if (!res.ok) throw new Error(d.error || T.errorGenerico);
+            activeDraftId = d.id || activeDraftId;
+            if (!activeDraftId) throw new Error(T.errorGenerico);
+            return activeDraftId;
+        };
+
+        const clientOption = () => $client.selectedOptions[0] as HTMLOptionElement | undefined;
+        const clientEmail = () => String(clientOption()?.dataset.email || '').trim();
+        const refreshRecipient = () => {
+            const email = clientEmail();
+            $('issueRecipient')!.textContent = email || ($client.value ? T.sinCorreoCorto : T.eligeClienteEntrega);
+        };
+        $client.addEventListener('change', refreshRecipient);
+
+        const issueDialog = $('issueConfirm') as HTMLDialogElement;
+        let pendingSend = true;
+        const abrirEmision = (sendEmail: boolean) => {
+            if (!validar()) return;
+            const email = clientEmail();
+            if (sendEmail && !email) { toast(T.sinCorreo, 4200); return; }
+            pendingSend = sendEmail;
+            $('confirmClient')!.textContent = clientOption()?.textContent?.trim() || '…';
+            $('confirmTotal')!.textContent = fmt(ultimoTotal);
+            $('confirmDue')!.textContent = ($('dueDate') as HTMLInputElement).value || T.sinFecha;
+            $('confirmDelivery')!.textContent = sendEmail ? email : T.sinEntrega;
+            $('issueOk')!.textContent = sendEmail
+                ? (BOOT.locale === 'en' ? 'Issue and send' : 'Emitir y enviar')
+                : (BOOT.locale === 'en' ? 'Issue invoice' : 'Emitir factura');
+            issueDialog.showModal();
+        };
+
+        $('btnIssue')!.addEventListener('click', () => abrirEmision(true));
+        $('btnIssueOnly')!.addEventListener('click', () => abrirEmision(false));
+        $('btnDraft')!.addEventListener('click', async (e) => {
+            if (!validar()) return;
+            const btn = e.currentTarget as HTMLButtonElement;
             btn.disabled = true;
             toast(T.guardando, 6000);
             try {
-                const res = BOOT.draftId
-                    ? await fetch(`/api/facturas/${BOOT.draftId}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'update_draft', ...payload() }),
-                    })
-                    : await fetch('/api/facturas', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload()),
-                    });
-                const d = await res.json();
-                if (!res.ok) throw new Error(d.error || T.errorGenerico);
-                const id = d.id || BOOT.draftId;
-                toast(T.guardado, 1500);
-                setTimeout(() => {
-                    window.location.href = irADetalle ? `/app/facturas/${id}` : '/app/facturas';
-                }, 700);
+                await persistirBorrador();
+                toast(T.guardado, 900);
+                window.setTimeout(() => { window.location.href = '/app/facturas'; }, 450);
             } catch (err) {
                 btn.disabled = false;
-                btn.innerHTML = etiqueta;
                 toast(err instanceof Error ? err.message : T.errorGenerico, 3200);
             }
-        };
+        });
 
-        $('btnIssue')!.addEventListener('click', (e) => guardar(true, e.currentTarget as HTMLButtonElement));
-        $('btnDraft')!.addEventListener('click', (e) => guardar(false, e.currentTarget as HTMLButtonElement));
+        $('issueOk')!.addEventListener('click', async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.disabled = true;
+            toast(T.emitiendo, 12000);
+            try {
+                const id = await persistirBorrador();
+                const res = await fetch(`/api/facturas/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: pendingSend ? 'finalize_and_send' : 'finalize' }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || T.errorGenerico);
+                toast(T.emitida, 1200);
+                const delivery = d.sent === false ? '?delivery=failed' : '';
+                window.setTimeout(() => { window.location.href = `/app/facturas/${id}${delivery}`; }, 500);
+            } catch (err) {
+                btn.disabled = false;
+                toast(err instanceof Error ? err.message : T.errorGenerico, 4200);
+            }
+        });
 
-        // ⌘/Ctrl+Enter guarda. Regla 16: en móvil no hay atajos.
+        // ⌘/Ctrl+Enter abre la revisión final. Regla 16: en móvil no hay atajos.
         document.addEventListener('keydown', (e) => {
             if (window.matchMedia('(max-width: 880px)').matches) return;
             if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -996,6 +1096,7 @@ const BOOT = {
             $client.value = BOOT.preselectCliente;
             $client.dispatchEvent(new Event('change'));
         }
+        refreshRecipient();
         render();
         if (currency !== BOOT.orgCurrency) refreshFx();
     }

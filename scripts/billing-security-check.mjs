@@ -15,17 +15,17 @@ let assertions = 0;
 const check = (condition, message) => { assertions++; assert.ok(condition, message); };
 
 // Matriz ago 2026 (delimitación de planes): `collections`/`cashflow_90` bajan a
-// Pro (van con cfo_dashboard, que ya vivía ahí) y `international_invoicing` baja
-// a Starter para quedar en el mismo peldaño que `cfdi` — mismo carril de
-// facturación electrónica, distinto solo por país. Ver entitlements.ts y
-// docs/negocio-billing.md.
+// Pro (van con cfo_dashboard, que ya vivía ahí) y la facturación electrónica se
+// abre temporalmente a Gratis con un hard cap de 3/mes. Los dos carriles siguen
+// en el mismo peldaño: CFDI en México, factura comercial fuera. Ver
+// entitlements.ts y docs/negocio-billing.md.
 // `recurring_invoices` (ago 2026) entra en Pro: la recurrencia es lo que
 // convierte la facturación en operación repetible y va con el resto de la
 // cobranza automática, no con el documento suelto.
 const expectedFeatures = {
-  cfdi: 'starter', recurring_invoices: 'pro',
+  cfdi: 'free', recurring_invoices: 'pro',
   remove_branding: 'starter', custom_email: 'starter', advanced_forecast: 'starter',
-  international_invoicing: 'starter',
+  international_invoicing: 'free',
   team: 'pro', roles: 'pro', multi_org: 'pro', live_presence: 'pro', quote_attention: 'pro',
   cfo_dashboard: 'pro',
   audit_log: 'pro', webhook_replay: 'pro', collections: 'pro', cashflow_90: 'pro',
@@ -35,8 +35,8 @@ const expectedFeatures = {
 check(JSON.stringify(FEATURE_MIN_PLAN) === JSON.stringify(expectedFeatures), 'La matriz de features cambió sin actualizar la prueba contractual.');
 check(normalizePlan('business') === 'pro' && normalizePlan('negocio') === 'pro', 'Los aliases históricos deben normalizarse.');
 check(normalizePlan('admin') === 'free' && normalizePlan('') === 'free', 'Un plan desconocido debe caer a Gratis.');
-check(!planIncludes('free', 'cfdi') && planIncludes('starter', 'cfdi'), 'CFDI debe iniciar en Starter.');
-check(!planIncludes('free', 'international_invoicing') && planIncludes('starter', 'international_invoicing'), 'Facturación internacional debe iniciar en Starter, en paridad con CFDI.');
+check(planIncludes('free', 'cfdi'), 'CFDI debe estar disponible temporalmente en Gratis.');
+check(planIncludes('free', 'international_invoicing'), 'Facturación internacional debe estar disponible temporalmente en Gratis, en paridad con CFDI.');
 check(!planIncludes('starter', 'collections') && planIncludes('pro', 'collections'), 'Cobranza debe iniciar en Pro.');
 check(!planIncludes('pro', 'collections_ai') && planIncludes('scale', 'collections_ai'), 'Cobranza autónoma con IA debe iniciar en Scale.');
 check(!planIncludes('pro', 'approvals') && planIncludes('scale', 'approvals'), 'Aprobaciones deben iniciar en Scale.');
@@ -88,6 +88,7 @@ const webhooksApi = read('src/pages/api/webhooks.ts');
 const vercel = read('vercel.json');
 
 check(billing.includes('envios: 5') && /starter:\s*\{[^}]*envios:\s*null/.test(billing), 'El tope de envíos/mes debe ser exclusivo de Gratis (5), sin número en el resto de los planes.');
+check(/free:\s*\{[^}]*cfdi:\s*3/.test(billing), 'Gratis debe incluir temporalmente 3 facturas electrónicas al mes.');
 check(billing.includes("if (dim === 'envios') return false;"), 'Envíos nunca debe tener excedente facturable — es tope duro puro, sin meter.');
 check(billing.includes("'payload[value]': String(row.meter_value)"), 'Stripe debe recibir solo meter_value.');
 check(!billing.includes("'payload[value]': String(row.value)"), 'Nunca se debe cobrar el consumo total incluido.');

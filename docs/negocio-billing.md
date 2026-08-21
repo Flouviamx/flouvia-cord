@@ -17,7 +17,7 @@ de precio — los price ID de Stripe LIVE ya tienen suscripciones activas.
 
 | Plan | Precio | Posición | Incluye (resumen) |
 |------|--------|----------|-------------------|
-| Gratis | $0 | gancho | 5 cotizaciones activas, 5 **enviadas/mes**, 50 prod/cli, 3 IA/mes, "Powered by Cord" |
+| Gratis | $0 | gancho | 5 cotizaciones activas, 5 **enviadas/mes**, 50 prod/cli, 3 IA y **3 facturas/mes** (habilitación temporal), "Powered by Cord" |
 | Starter | $240 | freelance | 50 cotizaciones, 500 prod/cli, 20 IA + 3 facturas/mes (MX o resto del mundo), tu marca, CSV |
 | **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 20 facturas/mes, **cobranza + flujo a 90 días**, seguimiento en vivo, analítica |
 | Scale | $1,390 | automatización | + 15 usuarios, 500 IA + 100 facturas/mes, aprobaciones, **cobranza autónoma con IA**, SMTP propio, SSO |
@@ -25,8 +25,8 @@ de precio — los price ID de Stripe LIVE ya tienen suscripciones activas.
 
 Movimientos de gate respecto a la matriz de jun 2026 (`FEATURE_MIN_PLAN` en
 `src/lib/entitlements.ts`): `collections` y `cashflow_90` bajan de Scale a Pro
-(van con `cfo_dashboard`, que ya vivía ahí); `international_invoicing` baja de
-Scale a Starter para quedar en el mismo peldaño que `cfdi` — mismo carril de
+(van con `cfo_dashboard`, que ya vivía ahí); `international_invoicing` y `cfdi`
+quedan temporalmente en Gratis con 3 documentos al mes — mismo carril de
 facturación electrónica, distinto solo por país (Regla 10). `collections_ai`
 (la cobranza *autónoma*) sigue siendo exclusiva de Scale.
 
@@ -195,10 +195,10 @@ Flujo:
   snapshots inmutables y PDF interno. No equivale a clearance o presentación ante la
   autoridad tributaria local.
 - El feature de plan `international_invoicing` habilita la emisión fuera de México y
-  requiere **Starter** (bajó de Scale en la delimitación ago 2026, para quedar en el
-  mismo peldaño que `cfdi` — mismo carril de facturación electrónica, distinto solo
-  por país). `cfdi` conserva su propio gate (también Starter) y el medidor de
-  timbrado mexicano; ninguno de los dos consume la cuota del otro
+  queda temporalmente disponible en **Gratis**, en el mismo peldaño que `cfdi` —
+  mismo carril de facturación electrónica, distinto solo por país. Ambos comparten
+  el hard cap de 3 documentos mensuales en Gratis; `cfdi` conserva el medidor de
+  timbrado mexicano y ninguno de los dos consume la cuota del otro
   (`scripts/billing-security-check.mjs` lo verifica sobre el ternario
   `isMexico ? 'cfdi' : 'international_invoicing'` en `/api/cotizaciones/[id].ts`).
 - Persistencia: `documentos_fiscales`, `invoice_sequences` y `orgs.fiscal_metadata`, todas
@@ -314,6 +314,40 @@ historial de pagos y cobro con tarjeta del saldo vía Connect),
 `notifyInvoiceIssued`/`notifyInvoiceReminder` en `src/lib/email.ts`,
 `/api/v1/facturas` y las tools MCP `listar_facturas`, `detalle_factura` y
 `crear_factura_borrador` (escritura acotada a borrador a propósito).
+
+**Flujo profesional de emisión (20 ago 2026).** La bandeja ya no usa la palabra
+"Borrador" como si fuera el folio: muestra **Sin folio** y una referencia visual
+`BOR-xxxxxx`; el número oficial se asigna únicamente en `finalizeInvoice`. El
+editor concentra la intención principal en **Emitir y enviar**, con revisión final
+de cliente, total, vencimiento y correo. `PATCH /api/facturas/[id]` expone
+`finalize_and_send`, que orquesta emisión y entrega sin afirmar una transacción
+imposible: si timbrar termina y el correo falla, responde `issued: true, sent:
+false`, conserva el folio y deja el reenvío como siguiente paso idempotente.
+
+El detalle muestra saldo, vencimiento y entrega juntos; permite reintentar una
+emisión fiscal en error, duplicar a un borrador nuevo (sin copiar folio ni fecha
+vencida), reenviar, cobrar parcial o totalmente, anular o acreditar. La bandeja
+marca error fiscal y vencimiento como estados operativos, mantiene el envío masivo
+como acción secundaria y exporta la vista filtrada a CSV mediante
+`GET /api/facturas/export` (techo defensivo de 10,000 filas).
+
+**Entrega y documentos de prueba.** La selección masiva incluye únicamente
+facturas emitidas que todavía no tienen `sent_at`; una factura ya entregada se
+reenvía desde su detalle, junto al destinatario y la bitácora. `simulado` no es un
+estado comercial: indica que ningún proveedor fiscal emitió el documento. La UI
+lo presenta como **Documento de prueba** y explica que no es válido ante la
+autoridad; el link público también lo advierte y bloquea el pago en línea. El
+endpoint de PaymentIntent repite esa guarda en servidor. Una emisión histórica
+simulada no se convierte en timbrada por cambiar configuración.
+
+`MexicoSatProvider` lee `FACTURAPI_*` tanto de `import.meta.env` como de
+`process.env`. En Astro desarrollo carga `.env` en el primer carril; consultar
+solo el segundo hacía que una llave disponible se ignorara y degradara la emisión
+a simulación local. Una llave `sk_test_` produce `testMode`, no un CFDI real.
+
+La documentación pública canónica del flujo vive en
+`src/content/docs/{es,en}/pagos/facturas-emitidas.mdx`, publicada en
+`docs.cordhq.app`.
 
 **Regla 19 en la hosted page.** La vista NO se marca en el SSR: la registra el
 heartbeat de `/api/i/[token]` con la pestaña visible y solo cuando

@@ -231,12 +231,13 @@ export async function emitSubscriptionInvoice(
   const periodo = invoice.created
     ? new Date(invoice.created * 1000).toISOString().slice(0, 7)
     : new Date().toISOString().slice(0, 7);
+  const invoiceNumber = `CORD-SUB-${String(invoice.number || invoice.id).replace(/[^A-Za-z0-9-]/g, '').slice(-16).toUpperCase()}`;
 
   let resp: FiscalDocumentResponse;
   try {
     resp = await FiscalFactory.getProvider('MX').issueDocument({
       documentId: String(reserved.id),
-      invoiceNumber: `CORD-SUB-${String(invoice.number || invoice.id).replace(/[^A-Za-z0-9-]/g, '').slice(-16).toUpperCase()}`,
+      invoiceNumber,
       idempotencyKey: `subscription:${invoice.id}:invoice:v1`,
       orgId,
       quoteId: `cord-sub-${invoice.id}`,
@@ -276,7 +277,7 @@ export async function emitSubscriptionInvoice(
        set status = ${resp.success ? 'issued' : 'error'},
            facturapi_id = ${resp.success ? resp.documentId : null},
            fiscal_uuid = ${resp.fiscalId ?? null},
-           invoice_number = ${resp.success ? (resp.invoiceNumber ?? null) : null},
+           invoice_number = ${resp.success ? invoiceNumber : null},
            provider_data = ${JSON.stringify(resp.rawProviderData ?? {})},
            invoice_error = ${resp.success ? null : (resp.error || 'fallo al timbrar')},
            issued_at = ${resp.success ? new Date() : null},
@@ -287,7 +288,7 @@ export async function emitSubscriptionInvoice(
     emitted: resp.success,
     documentId: resp.documentId,
     fiscalId: resp.fiscalId,
-    invoiceNumber: resp.invoiceNumber,
+    invoiceNumber: resp.success ? invoiceNumber : undefined,
     status: resp.success ? 'issued' : 'error',
     error: resp.error,
   };

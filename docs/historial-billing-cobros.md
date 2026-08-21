@@ -7,6 +7,97 @@
 
 ---
 
+**Tema oscuro, selección y jerarquía de estados en documentos (20 ago 2026)** —
+las utilidades y los creadores de Facturas/Cotizaciones fijaban fondos blancos o
+reutilizaban el azul de acento como fondo. En dark mode aparecían losas grises,
+campos blancos y resúmenes con texto casi invisible. Además, la bandeja sustituía
+la casilla de borradores y facturas ya enviadas por un hueco, y mezclaba estado
+financiero, entrega y entorno como tres badges equivalentes.
+
+- Las utilidades y botones secundarios consumen ahora `--surface`/`--surface-2`,
+  con contraste e inset específicos para dark mode. WhatsApp conserva verde de
+  marca legible en ambos temas.
+- `AppLayout` define un contrato `--editor-*` compartido por ambos creadores:
+  panel, campo, hover, foco, tinta de acento y hero de IA. El resumen lateral,
+  selects, líneas, dropdowns, vacíos y acciones ya cambian de material como una
+  unidad; el hero mantiene navy oscuro en vez de volverse azul luminoso.
+- Todas las filas muestran su checkbox. Sólo las facturas emitidas no enviadas
+  permiten interacción; borradores, enviadas y no elegibles lo muestran
+  deshabilitado con explicación accesible. El filtro del servidor no cambió.
+- El estado financiero permanece como pill principal; `Enviada · Prueba` aparece
+  como contexto secundario y ya no se parte en una composición accidental.
+- La guía pública ES/EN, el sistema de diseño y `app-rutas.md` documentan el
+  patrón. El roadmap reemplaza la ficha obsoleta de "bandeja de CFDI en Ajustes"
+  por el Cord Invoicing real, de creación a cobro, y marca su API pública como
+  disponible.
+
+---
+
+**Hosted invoice y estados de entrega llevados al nivel de cotizaciones (20 ago
+2026)** — una factura ya enviada seguía siendo seleccionable en la bandeja para
+"Enviar por correo", `simulado` se mostraba como jerga técnica sin explicar que
+el documento no tenía validez fiscal, y el detalle calculaba `$0` porque su DTO
+solo aceptaba el alias de total usado por la lista.
+
+- La selección masiva ahora contiene únicamente facturas emitidas sin `sent_at`;
+  el servidor aplica el mismo filtro. Una factura entregada muestra **Enviada** y
+  el reenvío vive junto al destinatario dentro de su detalle.
+- La casilla nativa se sustituyó por un control de selección con esquinas suaves,
+  foco visible y estados checked/indeterminate propios. El detalle prioriza la
+  siguiente acción por estado, agrupa las operaciones secundarias y convierte el
+  link del cliente en una superficie clara para copiar o abrir.
+- `/i/[token]` adopta la jerarquía de `/q`: marca y folio, saldo protagonista,
+  partes, conceptos, descargas y CTA de pago. La vista pública y el detalle
+  llaman **Documento de prueba** a una emisión simulada, explican su alcance y
+  no permiten iniciar un PaymentIntent; el endpoint repite la guarda.
+- `rowToFactura` acepta `d.total` además de los aliases de lista, corrigiendo el
+  total `$0` del detalle. `MexicoSatProvider` ahora lee `FACTURAPI_*` desde
+  `import.meta.env` y `process.env`: Astro desarrollo cargaba `.env` en el primer
+  carril y la llave global disponible se ignoraba, degradando a simulación local.
+  Los documentos históricos no se reescriben.
+- Las guías pública ES/EN de `docs.cordhq.app` documentan entrega, reenvío, link
+  público y significado de los documentos de prueba.
+
+---
+
+**Emisión directa y bandeja profesional de facturas (20 ago 2026)** — el editor
+creaba un borrador con "Guardar y revisar" y lo enviaba al detalle, pero ese detalle
+redirigía los borradores sin folio de vuelta al editor. No existía ningún botón que
+llamara `finalize`; por eso todas las facturas parecían quedarse en borrador aunque
+el backend fiscal ya soportaba emisión, entrega y cobranza.
+
+- El editor ahora ofrece **Emitir y enviar**, **Emitir sin enviar** y **Guardar y
+  salir**, con una revisión final de cliente, total, vencimiento y destino de correo.
+- `finalize_and_send` preserva la frontera irreversible: emisión y correo son una
+  sola intención de UI, pero no se revierten juntos. Si el correo falla después de
+  emitir, la factura conserva folio y se presenta como entrega pendiente.
+- La bandeja muestra **Sin folio** más referencia `BOR-...` para borradores, fecha de
+  creación, vencidas y errores fiscales como estados visibles. Se arregló la barra
+  masiva que ignoraba `[hidden]` y aparecía con cero seleccionadas.
+- El detalle agrega resumen de saldo/vencimiento/entrega, reintento de emisión y
+  duplicado seguro a borrador. Los `confirm()` nativos de anulación e incobrable se
+  sustituyeron por `cordConfirm`.
+- Nueva exportación CSV filtrada en `/api/facturas/export`; la creación directa y
+  recurrentes permanecen como acciones explícitas, no escondidas en selección
+  masiva.
+- Se reescribió la guía ES/EN de `docs.cordhq.app` para documentar el flujo real y
+  quitar la ruta obsoleta de Ajustes que afirmaba que solo existían CFDI nacidos de
+  cotizaciones.
+- La revisión de tipos detectó que el CFDI de una suscripción leía
+  `resp.invoiceNumber`, campo que no pertenece al contrato del proveedor. Ahora
+  persiste y devuelve el número `CORD-SUB-...` que Cord calculó antes de emitir.
+
+---
+
+**Facturación electrónica habilitada temporalmente en Gratis (20 ago 2026)** —
+para facilitar validación operativa, los dos carriles de Cord Invoicing (`cfdi`
+en México e `international_invoicing` fuera) bajaron temporalmente a Gratis con
+un hard cap de 3 documentos por mes. El gate de servidor, la cuota atómica y la
+tabla pública de precios se actualizaron juntos; no hay excedente facturable en
+Gratis y el cuarto documento se bloquea antes de llamar al proveedor fiscal.
+
+---
+
 **Divisa de plataforma real y facturación fuera del portal ajeno (19 ago 2026)** —
 dos entregas que compartían raíz: el billing de la propia plataforma nunca se
 terminó y lo que faltaba se delegó a Stripe.
@@ -1103,5 +1194,20 @@ ofrecía los 32 estados en un `<select>` cerrado.
   `recurring_invoices` entra a `FEATURE_MIN_PLAN` en Pro.
 - **Abono parcial** en la hosted invoice page, acotado en servidor.
 - **Estado de cuenta** por cliente, leído de la misma vista que la cobranza.
+
+### Detalle de factura alineado con Cotizaciones (20 ago 2026)
+
+El detalle interno de factura dejó de ser una tarjeta aislada con una lista
+vertical de botones. Ahora comparte la jerarquía ya probada en Cotizaciones:
+progreso de cinco estados, identidad del cliente y total en la cabecera, detalle
+de conceptos abierto, totales contables a la derecha y columna sticky para
+acciones y actividad.
+
+La jerarquía de acciones también sigue el estado real. Antes del primer envío,
+**Enviar factura** es el CTA principal; después, **Registrar pago** toma ese lugar
+y **Reenviar** queda contextual junto al correo del destinatario. Abrir liga,
+copiar, PDF y WhatsApp son utilidades equivalentes. Cotizaciones y Facturas
+comparten desde este cambio un único `WhatsAppIcon.astro`, basado en el trazo de
+marca de Simple Icons, en vez de mantener SVG distintos o aproximados.
 
 Ver reglas 23, 24 y 25 de `estandares-ingenieria.md`.

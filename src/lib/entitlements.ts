@@ -53,23 +53,24 @@ export type FeatureKey =
     | 'sso'
     | 'agent_governance';
 
-/** Plan mínimo de cada capacidad que NO está incluida en Gratis.
+/** Plan mínimo de cada capacidad.
  *
  * Matriz ago 2026 (delimitación de planes): `collections` y `cashflow_90` bajan
  * de Scale a Pro (van con `cfo_dashboard`, que ya vivía en Pro — separarlos no
- * respondía a ninguna lógica de valor). `international_invoicing` baja de Scale
- * a Starter para quedar en el mismo peldaño que `cfdi`: son el mismo carril de
- * facturación electrónica, distinto solo por país (Regla 10, posicionamiento
- * horizontal). Ver docs/negocio-billing.md. */
-export const FEATURE_MIN_PLAN: Record<FeatureKey, PaidPlan> = {
-    cfdi: 'starter',
+ * respondía a ninguna lógica de valor). La facturación electrónica queda
+ * temporalmente disponible en Gratis, con el tope mensual definido en
+ * `billing.INCLUDED`; `international_invoicing` y `cfdi` permanecen en el mismo
+ * peldaño porque son el mismo carril, distinto solo por país (Regla 10,
+ * posicionamiento horizontal). Ver docs/negocio-billing.md. */
+export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanId> = {
+    cfdi: 'free',
     // La recurrencia es lo que convierte la facturación en operación repetible:
     // vive con el resto de la cobranza automática, no con el documento suelto.
     recurring_invoices: 'pro',
     remove_branding: 'starter',
     custom_email: 'starter',
     advanced_forecast: 'starter',
-    international_invoicing: 'starter',
+    international_invoicing: 'free',
     team: 'pro',
     roles: 'pro',
     multi_org: 'pro',
@@ -160,7 +161,7 @@ export function webhookLimit(plan: string): number {
     return WEBHOOK_LIMITS[plan] ?? WEBHOOK_LIMITS.free;
 }
 
-export function minimumPlan(feature: FeatureKey): PaidPlan {
+export function minimumPlan(feature: FeatureKey): PlanId {
     return FEATURE_MIN_PLAN[feature];
 }
 

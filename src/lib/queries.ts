@@ -1417,7 +1417,10 @@ export interface FacturaFilters {
 }
 
 function rowToFactura(r: any) {
-    const total = num(r.invoice_total ?? r.quote_total);
+    // La bandeja aliasa `d.total` como invoice_total; el detalle selecciona
+    // `d.*`. Aceptar ambas formas evita que una factura válida aparezca con
+    // total $0 en el detalle mientras su saldo sí conserva el importe real.
+    const total = num(r.invoice_total ?? r.total ?? r.quote_total);
     const pagado = num(r.amount_paid);
     return {
         id: r.id as string,
@@ -3734,27 +3737,32 @@ export async function getSetupProgress() {
     // grupo representa una etapa del ciclo (preparar → catálogo → vender → cobrar
     // → escalar); el widget muestra el sub-progreso de cada grupo y abre el
     // primero incompleto. `group` etiqueta a qué sección pertenece cada paso.
-    const groupsDef = [
-        { id: 'negocio',  label: 'Prepara tu negocio',      icon: 'store',   desc: 'Deja tu marca y tus datos fiscales listos para verte profesional en cada cotización.' },
-        { id: 'catalogo', label: 'Arma tu catálogo',        icon: 'box',     desc: 'Carga lo que vendes y a quién se lo vendes para cotizar en segundos.' },
-        { id: 'venta',    label: 'Cierra tu primera venta',  icon: 'send',    desc: 'Crea, envía y mira en vivo cómo tu cliente abre y aprueba con firma.' },
-        { id: 'dinero',   label: 'Recibe tu dinero',         icon: 'wallet',  desc: 'Cobra en línea, factura el CFDI y cierra el ciclo completo.' },
-        { id: 'equipo',   label: 'Crece tu operación',       icon: 'users',   desc: 'Suma a tu equipo con permisos por rol cuando estés listo para escalar.' },
-    ] as const;
+    // Los textos salen del diccionario, no del código: este widget lo pinta
+    // AppLayout en TODAS las páginas mientras el setup no esté completo, así que
+    // hardcodearlos dejaba en español la primera pantalla de una cuenta en
+    // inglés — y una sandbox nunca completa el setup. Mismo patrón que
+    // src/lib/settings.ts: se devuelven ya resueltos al idioma del request.
+    const L = currentLocale();
+    const groupsDef = ([
+        { id: 'negocio',  icon: 'store'  },
+        { id: 'catalogo', icon: 'box'    },
+        { id: 'venta',    icon: 'send'   },
+        { id: 'dinero',   icon: 'wallet' },
+        { id: 'equipo',   icon: 'users'  },
+    ] as const).map((g) => ({ ...g, label: i18nT(L, `onb.g.${g.id}`), desc: i18nT(L, `onb.g.${g.id}.desc`) }));
 
-    const tasks = [
-        { group: 'negocio',  id: 'marca',         label: 'Personaliza tu marca',        desc: 'Sube tu logo, elige tu color y agrega tus datos de contacto — aparecen en cada cotización, PDF y en el link de tu cliente.', href: '/app/ajustes/branding',    done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
-        { group: 'negocio',  id: 'fiscal',        label: 'Completa tus datos fiscales', desc: 'RFC, régimen fiscal y código postal: necesarios para timbrar CFDI 4.0 válidos ante el SAT.', href: '/app/ajustes/fiscal',     done: !!o?.rfc },
-        { group: 'negocio',  id: 'documento',     label: 'Personaliza tu PDF y portal', desc: 'Elige plantilla de PDF, escribe tu mensaje y condiciones, y ajusta el portal que ve tu cliente. Todo con vista previa.', href: '/app/ajustes/pdf',        done: !!(o?.pdf_mensaje || o?.pdf_condiciones || o?.portal_bienvenida) },
-        { group: 'catalogo', id: 'productos',     label: 'Crea tu catálogo',            desc: 'Agrega los productos o servicios que vendes, con su costo para ver el margen. Puedes importarlos en lote por CSV.', href: '/app/productos',          done: Number(np) > 0 },
-        { group: 'catalogo', id: 'clientes',      label: 'Agrega tus clientes',         desc: 'A quién le cotizas, con sus términos de pago (contado o crédito), nivel de precios y límite de crédito.', href: '/app/clientes',           done: Number(nc) > 0 },
-        { group: 'venta',    id: 'cotizacion',    label: 'Crea tu primera cotización',  desc: 'El corazón de Cord — elige un cliente, agrega líneas y guarda. Puedes armarla con IA pegando el pedido. Te toma 2 minutos.', href: '/app/cotizaciones/nueva', done: Number(nq) > 0 },
-        { group: 'venta',    id: 'enviar',        label: 'Envía tu primera cotización', desc: 'Compártela por link, correo o WhatsApp y mira EN VIVO cuándo tu cliente la abre y la aprueba con firma electrónica.', href: '/app/cotizaciones',       done: Number(nsent) > 0 },
-        { group: 'dinero',   id: 'online_cobros', label: 'Activa los cobros en línea',  desc: 'Conecta tu cuenta bancaria de forma segura para recibir pagos con tarjeta o SPEI directo a tu banco — incluye anticipos.', href: '/app/ajustes/cobros',     done: !!o?.stripe_charges_enabled },
-        { group: 'dinero',   id: 'cobro',         label: 'Cobra y factura',             desc: 'Cobra en línea con Cord Payments o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.', href: '/app/cobranza',           done: Number(ncobro) > 0 },
-        { group: 'equipo',   id: 'equipo',        label: 'Invita a tu equipo',          desc: 'Suma vendedores y define permisos por rol (cotizar, aprobar, cobranza…) para trabajar en conjunto.', href: '/app/ajustes/equipo',     done: Number(nmem) > 1 },
-
-    ];
+    const tasks = ([
+        { group: 'negocio',  id: 'marca',         href: '/app/ajustes/branding',    done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
+        { group: 'negocio',  id: 'fiscal',        href: '/app/ajustes/fiscal',      done: !!o?.rfc },
+        { group: 'negocio',  id: 'documento',     href: '/app/ajustes/pdf',         done: !!(o?.pdf_mensaje || o?.pdf_condiciones || o?.portal_bienvenida) },
+        { group: 'catalogo', id: 'productos',     href: '/app/productos',           done: Number(np) > 0 },
+        { group: 'catalogo', id: 'clientes',      href: '/app/clientes',            done: Number(nc) > 0 },
+        { group: 'venta',    id: 'cotizacion',    href: '/app/cotizaciones/nueva',  done: Number(nq) > 0 },
+        { group: 'venta',    id: 'enviar',        href: '/app/cotizaciones',        done: Number(nsent) > 0 },
+        { group: 'dinero',   id: 'online_cobros', href: '/app/ajustes/cobros',      done: !!o?.stripe_charges_enabled },
+        { group: 'dinero',   id: 'cobro',         href: '/app/cobranza',            done: Number(ncobro) > 0 },
+        { group: 'equipo',   id: 'equipo',        href: '/app/ajustes/equipo',      done: Number(nmem) > 1 },
+    ] as const).map((t) => ({ ...t, label: i18nT(L, `onb.t.${t.id}`), desc: i18nT(L, `onb.t.${t.id}.desc`) }));
 
     // Agrupa los pasos y calcula el sub-progreso de cada sección.
     const groups = groupsDef.map((g) => {

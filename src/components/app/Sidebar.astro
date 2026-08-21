@@ -79,7 +79,7 @@ const NAV_GROUPS = [
 
     <nav class="sb-nav">
         <div class="sb-indicator" id="sbIndicator" aria-hidden="true"></div>
-        <div class="sb-group sb-pins" id="sbPins" data-label={t(L, 'sidebar.grupo.fijados')} data-pin-on={t(L, 'sidebar.pin.quitar_menu')} data-pin-off={t(L, 'layout.aria.fijar_menu')} data-pin-remove={t(L, 'sidebar.pin.quitar')} hidden></div>
+        <div class="sb-group sb-pins" id="sbPins" data-label={t(L, 'sidebar.grupo.fijados')} data-pin-on={t(L, 'sidebar.pin.quitar_menu')} data-pin-off={t(L, 'layout.aria.fijar_menu')} data-pin-remove={t(L, 'sidebar.pin.quitar')} data-pin-toast-on={t(L, 'sidebar.pin.toast_on')} data-pin-toast-off={t(L, 'sidebar.pin.toast_off')} hidden></div>
         {NAV_GROUPS.map((group) => (
             <div class:list={['sb-group', { 'sb-group-flat': !group.label }]}>
                 {group.label && (
@@ -727,10 +727,15 @@ const NAV_GROUPS = [
                 });
             });
         };
+        // Los textos salen del mismo mount que ya trae los demás (data-* servidos
+        // por t()), no de literales: este toast se dispara con la tecla X en
+        // cualquier página de /app y era el último español del sidebar.
+        const toastOn = (mount as HTMLElement)?.dataset.pinToastOn || '';
+        const toastOff = (mount as HTMLElement)?.dataset.pinToastOff || '';
         const toggle = () => {
             const c = current(); const pins = getPins(); const has = pins.some((p) => p.href === c.href);
-            if (has) { setPins(pins.filter((p) => p.href !== c.href)); (window as any).cordToast?.('Quitado de fijados'); }
-            else { pins.push(c); setPins(pins); (window as any).cordToast?.('Fijado en el menú', 'ok'); }
+            if (has) { setPins(pins.filter((p) => p.href !== c.href)); if (toastOn) (window as any).cordToast?.(toastOn); }
+            else { pins.push(c); setPins(pins); if (toastOff) (window as any).cordToast?.(toastOff, 'ok'); }
             renderMount(); syncBtn();
         };
         pinBtn?.addEventListener('click', toggle);

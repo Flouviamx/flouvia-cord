@@ -449,6 +449,37 @@ Todo indicador de que la sesión está en el **entorno de prueba** (sandbox, ver
   ("Espacio de trabajo" → "Entorno de prueba"). Regla general: en cualquier trigger de
   espacio angosto, preferir anillo/color de texto sobre un badge que compite por ancho.
 
+### Documentos financieros: tema, selección y estados compuestos (ago 2026)
+
+Las bandejas y detalles de Cotizaciones/Facturas comparten tres contratos visuales:
+
+- **Una superficie, dos temas:** botones auxiliares, cuadrículas de utilidades y
+  barras flotantes usan `--surface`, `--surface-2`, `--color-border` y
+  `--color-text-muted`. No fijar `#fff` ni gradientes blancos en componentes que
+  viven dentro de `AppLayout`; en dark mode deben conservar profundidad con un
+  inset tenue, no convertirse en losas grises de alto contraste.
+- **Editores como una familia:** `/app/facturas/nueva` y
+  `/app/cotizaciones/nueva` consumen `--editor-panel`, `--editor-field`,
+  `--editor-field-hover`, `--editor-ai-*`, `--editor-accent-ink` y
+  `--editor-focus-ring`. El hero de IA tiene fondo propio (`--editor-ai-bg`): no
+  reutiliza `--color-blue-deep`, porque en dark ese token es un acento claro. El
+  resumen, campos, dropdowns, vacíos y focos cambian de material juntos; nunca se
+  deja un panel blanco con texto heredado del tema oscuro.
+- **La selección no desaparece:** toda fila de una tabla seleccionable conserva
+  su checkbox. Si el registro no participa en la acción masiva, el control queda
+  deshabilitado y explica el motivo con `title` y `aria-label`; un hueco vacío se
+  interpreta como pérdida de funcionalidad. La autorización real continúa en el
+  servidor.
+- **Una insignia por dimensión primaria:** el pill principal representa el estado
+  financiero (`Abierta`, `Vencida`, `Pagada`). Entrega y entorno son metadatos
+  secundarios en una línea aparte (`Enviada · Prueba`). No apilar tres pills que
+  compitan por jerarquía dentro de una columna estrecha.
+
+Referencia ejecutable: `src/layouts/AppLayout.astro`, `src/styles/editor.css`,
+`src/pages/app/facturas/index.astro`, `src/pages/app/facturas/[id].astro`,
+`src/pages/app/facturas/nueva.astro`, `src/pages/app/cotizaciones/[id].astro` y
+`src/pages/app/cotizaciones/nueva.astro`.
+
 ### Estética "Sober Pixel" (Marketing para Desarrolladores)
 
 Para secciones dirigidas a ingenieros (ej. `/dev-blog`), se utiliza una variante del sistema de diseño conocida como **"Sober Pixel"**. Esta estética busca un look técnico y retro (estilo terminal o dashboard de servidor) pero manteniendo la regla de "Quiet Luxury" del resto de la app.

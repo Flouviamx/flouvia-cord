@@ -34,7 +34,8 @@ const esVistaPrevia = viewer.rol === 'seller';
 
 const color = /^#[0-9a-fA-F]{6}$/.test(f.org.color ?? '') ? f.org.color! : '#0a192f';
 const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const puedePagar = pagoActivo && f.pagoDisponible && f.aceptaTarjeta && !f.esPrueba;
+const puedePagar = pagoActivo && f.pagoDisponible && f.aceptaTarjeta
+    && !f.esPrueba && !f.simulado && !f.testMode;
 const regresoDePago = Astro.url.searchParams.get('pagado') === '1' && f.estado !== 'paid';
 
 const ESTADO: Record<string, { label: string; tone: string }> = {
@@ -48,11 +49,12 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
 ---
 
 <Layout
-    title={`${titulo} ${f.numero ?? ''} — ${f.org.nombre}`}
+    title={`${titulo} ${f.numero ?? ''} - ${f.org.nombre}`}
     noindex={true}
 >
     <div class="iv-bg" aria-hidden="true">
-        <div class="iv-orb" style={`background: radial-gradient(circle, ${color}14 0%, transparent 70%)`}></div>
+        <div class="iv-orb iv-orb-top"></div>
+        <div class="iv-orb iv-orb-bottom" style={`background: radial-gradient(circle, ${color}14 0%, transparent 70%)`}></div>
     </div>
 
     <main class="iv-main" data-i18n={JSON.stringify({
@@ -78,35 +80,59 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
         )}
 
         <article class="iv-card">
+            {(f.simulado || f.testMode || f.esPrueba) && (
+                <div class="iv-test-ribbon" role="status">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4.5"/><path d="M12 17h.01"/></svg>
+                    <span>
+                        <strong>{L === 'en' ? 'Test document' : 'Documento de prueba'}</strong>
+                        {f.simulado
+                            ? (L === 'en' ? 'It has no fiscal stamp and is not valid before the tax authority.' : 'No tiene timbre fiscal y no es válido ante el SAT.')
+                            : (L === 'en' ? 'It was created in a test environment and cannot be used as a fiscal receipt.' : 'Fue creado en un entorno de prueba y no funciona como comprobante fiscal.')}
+                    </span>
+                </div>
+            )}
             <header class="iv-head">
                 <div class="iv-brand">
                     {f.org.logoUrl
                         ? <img src={f.org.logoUrl} alt={f.org.nombre} class="iv-logo" />
-                        : <span class="iv-brand-name">{f.org.nombre}</span>}
+                        : <span class="iv-brand-mark" style={`background:${color}`}>{f.org.nombre.slice(0, 1).toUpperCase()}</span>}
+                    <span class="iv-brand-copy">
+                        <strong>{f.org.nombre}</strong>
+                        {f.emisor?.taxId && <small>{taxIdLabel} {f.emisor.taxId}</small>}
+                    </span>
                 </div>
-                <div class="iv-headmeta">
-                    <span class={`iv-chip iv-chip-${estado.tone}`}>{estado.label}</span>
-                    {f.vencida && <span class="iv-chip iv-chip-late">{t(L, 'fact.p_vencida')}</span>}
-                    {f.esPrueba && <span class="iv-chip iv-chip-off">{t(L, 'fact.p_prueba')}</span>}
+                <div class="iv-folio-tag">
+                    <span>{titulo}</span>
+                    <strong>{f.numero}</strong>
                 </div>
             </header>
 
-            <div class="iv-title">
-                <h1>{titulo} {f.numero}</h1>
+            <div class="iv-rule"></div>
+
+            <section class="iv-total-hero">
+                <span class="iv-total-label">{f.estado === 'paid'
+                    ? (L === 'en' ? 'Invoice paid' : 'Factura pagada')
+                    : (L === 'en' ? 'Balance due' : 'Saldo pendiente')}</span>
+                <h1 class="editorial" style={`color:${color}`}>{moneyFull(f.saldo)}</h1>
+                <div class="iv-headmeta">
+                    <span class={`iv-chip iv-chip-${estado.tone}`}>{estado.label}</span>
+                    {f.vencida && <span class="iv-chip iv-chip-late">{t(L, 'fact.p_vencida')}</span>}
+                </div>
                 <p class="iv-sub">
-                    {t(L, 'fact.p_emitida')} {f.emitida}{f.venceLegible ? ` · ${t(L, 'fact.p_vence_el')} ${f.venceLegible}` : ''}
+                    <span>{t(L, 'fact.p_emitida')} {f.emitida}</span>
+                    {f.venceLegible && <span>{t(L, 'fact.p_vence_el')} {f.venceLegible}</span>}
                 </p>
-            </div>
+            </section>
 
             <section class="iv-parties">
                 <div>
                     <span class="iv-label">{t(L, 'fact.p_de')}</span>
                     <p class="iv-party">{f.emisor?.legalName ?? f.org.nombre}</p>
-                    {f.emisor?.taxId && <p class="iv-party-sub">{taxIdLabel} {f.emisor.taxId}</p>}
+                    {f.org.email && <p class="iv-party-sub">{f.org.email}</p>}
                 </div>
                 <div>
                     <span class="iv-label">{t(L, 'fact.p_para')}</span>
-                    <p class="iv-party">{f.receptor?.legalName ?? '—'}</p>
+                    <p class="iv-party">{f.receptor?.legalName ?? (L === 'en' ? 'Not provided' : 'No disponible')}</p>
                     {f.receptor?.taxId && <p class="iv-party-sub">{taxIdLabel} {f.receptor.taxId}</p>}
                 </div>
             </section>
@@ -372,10 +398,15 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
     .iv-partial-cancel { background: #fff; color: #4a5567; }
     .iv-partial-ok { color: #fff; }
 
-    .iv-bg { position: fixed; inset: 0; z-index: -1; background: #f5f5f7; overflow: hidden; }
-    .iv-orb { position: absolute; top: -18vh; right: -12vw; width: 60vw; height: 60vw; border-radius: 50%; }
+    .iv-bg { position: fixed; inset: 0; z-index: -1; background: #f3f2ef; overflow: hidden; }
+    .iv-orb { position: absolute; border-radius: 50%; filter: blur(90px); }
+    .iv-orb-top {
+        width: 70vw; height: 70vw; top: -30%; left: -15%;
+        background: radial-gradient(circle, rgba(10, 25, 47, 0.05) 0%, transparent 70%);
+    }
+    .iv-orb-bottom { width: 55vw; height: 55vw; bottom: -20%; right: -10%; opacity: 0.7; }
 
-    .iv-main { max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; }
+    .iv-main { max-width: 780px; margin: 0 auto; padding: 56px 24px 80px; }
 
     .iv-note {
         display: flex; align-items: center; gap: 10px;
@@ -385,14 +416,46 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
     .iv-note-ok { color: #14683f; }
 
     .iv-card {
-        background: #fff; border-radius: 32px; padding: 40px;
-        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04), 0 12px 40px rgba(10, 25, 47, 0.06);
+        position: relative; overflow: hidden; background: #fff; border-radius: 28px; padding: 44px 48px;
+        border: 1px solid rgba(10, 25, 47, 0.06);
+        box-shadow: 0 4px 6px rgba(10, 25, 47, 0.03), 0 20px 60px -20px rgba(10, 25, 47, 0.12);
+        animation: ivCardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
+    @keyframes ivCardIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .iv-card { animation: none; } }
 
-    .iv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-    .iv-logo { max-height: 34px; width: auto; display: block; }
-    .iv-brand-name { font-weight: 600; font-size: 16px; color: #050505; }
-    .iv-headmeta { display: flex; gap: 8px; flex-wrap: wrap; }
+    .iv-test-ribbon {
+        display: flex; align-items: flex-start; justify-content: center; gap: 0.55rem;
+        margin: -44px -48px 2rem; padding: 0.7rem 1.25rem;
+        background: #b45309; color: #fff; font-size: 0.75rem; line-height: 1.45; text-align: center;
+    }
+    .iv-test-ribbon svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+    .iv-test-ribbon span { display: inline; }
+    .iv-test-ribbon strong { margin-right: 0.35rem; }
+
+    .iv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+    .iv-brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .iv-logo { max-height: 42px; max-width: 140px; width: auto; display: block; object-fit: contain; object-position: left center; }
+    .iv-brand-mark {
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 44px; height: 44px; border-radius: 13px; color: #fff; font-size: 1rem; font-weight: 800;
+    }
+    .iv-brand-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .iv-brand-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; color: #111; }
+    .iv-brand-copy small { font-size: 0.68rem; color: #9ca3af; }
+    .iv-folio-tag { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+    .iv-folio-tag span { font-size: 0.52rem; font-weight: 800; letter-spacing: 1.7px; text-transform: uppercase; color: #c4c8cf; }
+    .iv-folio-tag strong { font-size: 0.96rem; color: #111; letter-spacing: -0.02em; }
+    .iv-rule { height: 1px; margin: 1.8rem 0 2rem; background: rgba(10, 25, 47, 0.07); }
+
+    .iv-total-hero {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        min-height: 190px; padding: 1.75rem 1.5rem; margin-bottom: 2.2rem;
+        border: 1px solid rgba(10, 25, 47, 0.055); border-radius: 20px; background: #fafafa; text-align: center;
+    }
+    .iv-total-label { font-size: 0.54rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #b7bcc5; }
+    .iv-total-hero h1 { margin: 0.35rem 0 0.7rem; font-size: clamp(2.65rem, 8vw, 3.55rem); line-height: 1; letter-spacing: -0.05em; }
+    .iv-headmeta { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; }
 
     .iv-chip { font-size: 12px; font-weight: 500; padding: 5px 11px; border-radius: 999px; white-space: nowrap; }
     .iv-chip-wait { background: rgba(10, 25, 47, 0.06); color: #0a192f; }
@@ -400,26 +463,25 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
     .iv-chip-off { background: rgba(10, 25, 47, 0.05); color: #6b7280; }
     .iv-chip-late { background: rgba(180, 35, 24, 0.09); color: #b42318; }
 
-    .iv-title { margin: 32px 0 36px; }
-    .iv-title h1 { font-size: 30px; letter-spacing: -0.04em; line-height: 1.1; color: #050505; margin: 0; }
-    .iv-sub { font-size: 14px; color: #6b7280; margin: 8px 0 0; }
+    .iv-sub { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.3rem 1rem; font-size: 0.76rem; color: #8a8f99; margin: 0.75rem 0 0; }
 
-    .iv-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9ca3af; }
-    .iv-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 36px; }
-    .iv-party { font-size: 15px; color: #111827; margin: 6px 0 0; font-weight: 500; }
-    .iv-party-sub { font-size: 13px; color: #6b7280; margin: 2px 0 0; }
+    .iv-label { font-size: 0.52rem; font-weight: 800; letter-spacing: 1.7px; text-transform: uppercase; color: #c4c8cf; }
+    .iv-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 2.2rem; }
+    .iv-party { font-size: 0.9rem; color: #111827; margin: 7px 0 0; font-weight: 650; }
+    .iv-party-sub { font-size: 0.74rem; color: #8a8f99; margin: 3px 0 0; }
 
     .iv-lines { overflow-x: auto; }
     .iv-lines table { width: 100%; border-collapse: collapse; min-width: 420px; }
     .iv-lines th {
-        text-align: left; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-        color: #9ca3af; font-weight: 500; padding: 0 0 10px; border-bottom: 1px solid #eceff3;
+        text-align: left; font-size: 0.52rem; letter-spacing: 1.35px; text-transform: uppercase;
+        color: #c4c8cf; font-weight: 800; padding: 0 0 0.7rem; border-bottom: 1px solid rgba(10, 25, 47, 0.07);
     }
-    .iv-lines td { padding: 14px 0; font-size: 14px; color: #374151; border-bottom: 1px solid #f5f6f8; }
+    .iv-lines td { padding: 0.95rem 0; font-size: 0.84rem; color: #4b5563; border-bottom: 1px solid rgba(10, 25, 47, 0.045); }
+    .iv-lines td:first-child { color: #111827; font-weight: 600; }
     .iv-num { text-align: right; }
 
-    .iv-totals { margin-top: 28px; margin-left: auto; max-width: 320px; }
-    .iv-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 14px; color: #4b5563; }
+    .iv-totals { margin-top: 1.8rem; margin-left: auto; max-width: 320px; }
+    .iv-row { display: flex; justify-content: space-between; padding: 0.42rem 0; font-size: 0.82rem; color: #6b7280; }
     .iv-row-total { border-top: 1px solid #eceff3; margin-top: 6px; padding-top: 13px; color: #111827; font-weight: 500; }
     .iv-row-due {
         border-top: 1px solid #0a192f; margin-top: 6px; padding-top: 13px;
@@ -433,17 +495,18 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
 
     .iv-notas { margin-top: 32px; padding-top: 24px; border-top: 1px solid #f5f6f8; font-size: 14px; color: #4b5563; line-height: 1.6; }
 
-    .iv-foot { margin-top: 40px; padding-top: 28px; border-top: 1px solid #eceff3; }
+    .iv-foot { margin-top: 2.5rem; padding-top: 1.8rem; border-top: 1px solid rgba(10, 25, 47, 0.07); }
     .iv-pay {
-        display: block; width: 100%; border: none; border-radius: 999px;
-        color: #fff; font-size: 15px; font-weight: 500; padding: 15px 24px; cursor: pointer;
-        transition: transform 0.15s ease;
+        display: block; width: 100%; min-height: 50px; border: none; border-radius: 14px;
+        color: #fff; font-size: 0.94rem; font-weight: 650; padding: 0.9rem 1.5rem; cursor: pointer;
+        box-shadow: 0 12px 28px -14px rgba(10, 25, 47, 0.5);
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
     }
-    .iv-pay:hover { transform: scale(1.01); }
-    .iv-pay:active { transform: scale(0.99); }
+    .iv-pay:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -16px rgba(10, 25, 47, 0.56); }
+    .iv-pay:active { transform: scale(0.985); }
     .iv-pay:disabled { opacity: 0.6; cursor: default; transform: none; }
-    .iv-dl { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
-    .iv-dl a { font-size: 14px; color: #0a192f; text-decoration: none; border-bottom: 1px solid rgba(10, 25, 47, 0.2); }
+    .iv-dl { display: flex; justify-content: center; gap: 1.2rem; margin-top: 1.25rem; flex-wrap: wrap; }
+    .iv-dl a { font-size: 0.78rem; font-weight: 650; color: #0a192f; text-decoration: none; }
     .iv-uuid { font-size: 12px; color: #9ca3af; margin: 18px 0 0; word-break: break-all; }
     .iv-powered { font-size: 12px; color: #9ca3af; margin: 8px 0 0; }
 
@@ -457,8 +520,18 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
     @media (max-width: 640px) {
         .iv-main { padding: 24px 14px 60px; }
         .iv-card { padding: 26px 20px; border-radius: 26px; }
+        .iv-test-ribbon { margin: -26px -20px 1.5rem; padding: 0.7rem 1rem; text-align: left; }
+        .iv-brand-copy small { display: none; }
+        .iv-brand-copy strong { max-width: 150px; }
+        .iv-rule { margin: 1.4rem 0; }
+        .iv-total-hero { min-height: 165px; padding: 1.4rem 1rem; margin-bottom: 1.7rem; }
         .iv-parties { grid-template-columns: 1fr; gap: 18px; }
-        .iv-title h1 { font-size: 25px; }
         .iv-totals { max-width: none; }
+    }
+
+    @media print {
+        .iv-bg, .iv-note, .iv-aviso, .iv-paywrap, .iv-pay, .iv-pay-partial { display: none !important; }
+        .iv-main { max-width: none; padding: 0; }
+        .iv-card { border: 0; box-shadow: none; animation: none; }
     }
 </style>

@@ -3029,21 +3029,79 @@ alter table documento_recurrencias force row level security;
 alter table documentos_fiscales add column if not exists recurrencia_id uuid references documento_recurrencias(id) on delete set null;
 create index if not exists idx_documentos_recurrencia on documentos_fiscales(recurrencia_id) where recurrencia_id is not null;
 
--- ── Entorno de prueba: la sandbox hereda la LOCALIZACIÓN del padre ──────────
--- La sandbox se creaba copiando marca y config fiscal pero no `idioma`,
--- `moneda` ni `zona_horaria`, así que nacía con los defaults del schema
--- (es-MX / MXN / America/Mexico_City). Como el modo de prueba resuelve ESTA
--- org, un negocio con la cuenta en inglés veía la app entera voltearse al
--- español al encender el toggle. El insert ya los copia (lib/db.ts) y el PATCH
--- de Ajustes los propaga; esto alinea las sandbox que ya existían.
--- Solo toca las que siguen en el default: una sandbox que alguien personalizó
--- a mano se respeta.
-update orgs s set
-  idioma       = case when s.idioma       = 'es-MX'               then p.idioma       else s.idioma       end,
-  moneda       = case when s.moneda       = 'MXN'                 then p.moneda       else s.moneda       end,
-  zona_horaria = case when s.zona_horaria = 'America/Mexico_City' then p.zona_horaria else s.zona_horaria end
-from orgs p
-where s.sandbox_of = p.id
-  and (s.idioma is distinct from p.idioma
-    or s.moneda is distinct from p.moneda
-    or s.zona_horaria is distinct from p.zona_horaria);
+-- ── Entorno de prueba: la sandbox hereda la PRESENTACIÓN del padre ──────────
+-- `idioma`, `moneda` y `zona_horaria` deciden en qué idioma, divisa y zona se
+-- renderiza la app. En modo de prueba `getActiveOrgId()` resuelve la org
+-- SANDBOX, así que se leen de ESA fila: si nace con los defaults del schema
+-- (es-MX / MXN / CDMX), un negocio con la cuenta en inglés ve la app entera
+-- voltearse al español al encender el toggle.
+--
+-- Mantener la copia al día desde la aplicación ya falló: había tres caminos que
+-- tenían que acordarse de propagar (el insert de resolveSandboxOrgId, el PATCH
+-- de Ajustes y un backfill), y `POST /api/onboarding/complete` —que también
+-- escribe estas tres columnas— no propagaba. La invariante se impone aquí, en
+-- la base, donde ningún camino nuevo la puede saltar.
+--
+-- Son DOS triggers con trabajos distintos:
+--   · al nacer, la sandbox toma la presentación del padre;
+--   · cuando el padre la cambia, baja a la sandbox.
+-- Deliberadamente NO hay `before update` sobre la sandbox: un cambio hecho a
+-- propósito DENTRO del modo de prueba se respeta hasta el siguiente cambio del
+-- padre. Con un update forzado, los tres controles de Ajustes guardarían y se
+-- revertirían solos — la regla 15 al revés.
+
+create or replace function cord_sandbox_inherit_presentation()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.sandbox_of is not null then
+    select p.idioma, p.moneda, p.zona_horaria
+      into new.idioma, new.moneda, new.zona_horaria
+      from orgs p
+     where p.id = new.sandbox_of;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_sandbox_inherit_presentation on orgs;
+create trigger trg_sandbox_inherit_presentation
+  before insert on orgs
+  for each row execute function cord_sandbox_inherit_presentation();
+
+-- El `update` de abajo corre bajo el contexto del PADRE (app.org_id = padre), y
+-- la política rls_orgs admite `sandbox_of = app.org_id` tanto en `using` como en
+-- `with check` — por eso no hace falta security definer.
+create or replace function cord_sandbox_cascade_presentation()
+returns trigger
+language plpgsql
+as $$
+begin
+  update orgs
+     set idioma = new.idioma, moneda = new.moneda, zona_horaria = new.zona_horaria
+   where sandbox_of = new.id;
+  return null;
+end;
+$$;
+
+drop trigger if exists trg_sandbox_cascade_presentation on orgs;
+create trigger trg_sandbox_cascade_presentation
+  after update of idioma, moneda, zona_horaria on orgs
+  for each row
+  when (new.sandbox_of is null
+        and (old.idioma       is distinct from new.idioma
+          or old.moneda       is distinct from new.moneda
+          or old.zona_horaria is distinct from new.zona_horaria))
+  execute function cord_sandbox_cascade_presentation();
+
+-- Backfill: alinea las sandbox que ya existían. Sin condición sobre el valor
+-- previo — la invariante que los triggers sostienen de aquí en adelante es
+-- "la sandbox nace y sigue al padre", y este es su punto de partida.
+update orgs s
+   set idioma = p.idioma, moneda = p.moneda, zona_horaria = p.zona_horaria
+  from orgs p
+ where s.sandbox_of = p.id
+   and (s.idioma       is distinct from p.idioma
+     or s.moneda       is distinct from p.moneda
+     or s.zona_horaria is distinct from p.zona_horaria);

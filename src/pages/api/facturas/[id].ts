@@ -1,5 +1,5 @@
 // /api/facturas/[id] — ciclo de vida de una factura.
-//   PATCH { action: 'finalize' | 'send' | 'payment' | 'void' | 'credit_note' | 'uncollectible' }
+//   PATCH { action: 'finalize' | 'finalize_and_send' | 'send' | 'duplicate' | 'payment' | 'void' | 'credit_note' | 'uncollectible' }
 //   DELETE                                     → { ok }  (solo borradores)
 //
 // Cada acción es explícita y unidireccional. En particular `void` NO cae a
@@ -10,7 +10,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { requirePerm, invalidateMoneyCaches, getFacturaDetalle } from '../../../lib/queries';
-import { finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
+import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
 import { applyPayment } from '../../../lib/fiscal/payments';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../lib/billing';
@@ -44,7 +44,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     switch (action) {
         case 'update_draft': return updateDraft(orgId, id, body, request);
         case 'finalize': return finalize(orgId, id, request);
+        case 'finalize_and_send': return finalizeAndSend(orgId, id, request);
         case 'send': return send(orgId, id, request);
+        case 'duplicate': return duplicate(orgId, id, request);
         case 'payment': return payment(orgId, id, body, request);
         case 'void': return voidIt(orgId, id, body, request);
         case 'credit_note': return creditNote(orgId, id, body, request);
@@ -137,6 +139,31 @@ async function finalize(orgId: string, id: string, request: Request) {
     return json({ ok: true, numero: result.invoiceNumber, token: result.publicToken, fiscal_id: result.fiscalId });
 }
 
+/**
+ * Emite y entrega como una sola intención de producto, sin fingir atomicidad.
+ * La emisión fiscal es irreversible: si el correo falla, la respuesta conserva
+ * el éxito de la emisión y deja claro que solo falta reintentar la entrega.
+ */
+async function finalizeAndSend(orgId: string, id: string, request: Request) {
+    const finalized = await finalize(orgId, id, request);
+    const finalizedBody = await responseBody(finalized);
+    if (!finalized.ok) return json(finalizedBody, finalized.status);
+
+    const delivered = await send(orgId, id, request);
+    const deliveredBody = await responseBody(delivered);
+    if (!delivered.ok) {
+        return json({
+            ...finalizedBody,
+            ok: true,
+            issued: true,
+            sent: false,
+            delivery_error: String((deliveredBody as any)?.error || 'No pudimos enviar el correo. Intenta de nuevo.'),
+        });
+    }
+
+    return json({ ...finalizedBody, ok: true, issued: true, sent: true });
+}
+
 /** Manda la factura al cliente por correo, con su PDF y su link de pago. */
 async function send(orgId: string, id: string, request: Request) {
     const factura = await getFacturaDetalle(id);
@@ -162,6 +189,38 @@ async function send(orgId: string, id: string, request: Request) {
     await logInvoiceEvent(orgId, id, 'sent', `Enviada a ${factura.clienteEmail}`);
     after(dispatchInvoiceEvent(orgId, id, 'invoice.sent'));
     return json({ ok: true });
+}
+
+/** Copia los datos comerciales a un borrador nuevo, sin reutilizar folio ni vencimiento. */
+async function duplicate(orgId: string, id: string, request: Request) {
+    const subscriptionDenied = await requireEntitlement(orgId, await invoicingFeatureFor(orgId));
+    if (subscriptionDenied) return subscriptionDenied;
+
+    const source = await getFacturaDetalle(id);
+    if (!source) return json({ error: 'Factura no encontrada' }, 404);
+    if (!source.clienteId) return json({ error: 'La factura original no tiene un cliente editable.' }, 409);
+
+    const result = await createInvoiceDraft(orgId, {
+        clienteId: source.clienteId,
+        currency: source.currency || undefined,
+        dueDate: null,
+        notes: source.notas,
+        createdBy: currentUserId(),
+        items: source.lineas.map((linea) => ({
+            descripcion: linea.descripcion,
+            cantidad: linea.cantidad,
+            precioUnitario: linea.precioUnitario,
+            taxRate: linea.subtotal > 0 ? linea.impuesto / linea.subtotal : 0,
+        })),
+    });
+    if (!result.ok) return json({ error: result.error || 'No se pudo duplicar la factura.' }, 400);
+
+    await logAudit(orgId, {
+        accion: 'factura.duplicada', entidad: 'factura', entidad_id: result.documentId as string,
+        detalle: `Copia de ${source.invoiceNumber || id}`, ip: reqIp(request),
+    });
+    invalidateMoneyCaches(orgId);
+    return json({ ok: true, id: result.documentId, token: result.publicToken });
 }
 
 /** Registra un pago manual (transferencia, efectivo, cheque) contra la factura. */
@@ -260,4 +319,9 @@ export const DELETE: APIRoute = async ({ params, request }) => {
 
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+}
+
+async function responseBody(response: Response): Promise<Record<string, unknown>> {
+    try { return await response.json(); }
+    catch { return {}; }
 }

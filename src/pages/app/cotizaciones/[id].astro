@@ -1,6 +1,7 @@
 ---
 // Detalle de cotización — items, totales, timeline de eventos y acciones. Datos reales (Neon).
 import AppLayout from '../../../layouts/AppLayout.astro';
+import WhatsAppIcon from '../../../components/app/WhatsAppIcon.astro';
 import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, getSuscripcionByCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../../lib/queries';
 import { getCountryProfile } from '../../../lib/countries';
 import { memberCan } from '../../../lib/permissions';
@@ -364,7 +365,7 @@ const dotColor = (tipo: string) =>
                             <span class="act-util-lbl">{t(L, 'id.pdf')}</span>
                         </a>
                         <button class="act-util act-util-wa" id="btnWhats" title={t(L, 'id.wa_title')}>
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                            <WhatsAppIcon />
                             <span class="act-util-lbl">WhatsApp</span>
                         </button>
                     </div>
@@ -644,19 +645,25 @@ const dotColor = (tipo: string) =>
     .act-util {
         display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
         font-family: var(--font-sans);
-        background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(252,252,253,0.6));
+        background: var(--surface);
         color: var(--color-text-muted);
         border: 1px solid var(--color-border); border-radius: 11px;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 1px 2px rgba(10,25,47,0.04);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.42), 0 1px 2px rgba(10,25,47,0.04);
         padding: 9px 4px 7px; cursor: pointer; text-decoration: none;
         transition: transform 0.25s var(--ease-spring), box-shadow 0.25s var(--ease-spring), color 0.2s, border-color 0.2s;
     }
-    .act-util:hover { color: var(--color-blue-deep); border-color: rgba(10,25,47,0.18); transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 10px 22px -10px rgba(10,25,47,0.3); }
+    .act-util:hover { color: var(--color-blue-deep); border-color: var(--color-blue-deep); transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 10px 22px -10px rgba(10,25,47,0.3); }
     .act-util svg { width: 18px; height: 18px; }
     .act-util-lbl { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1px; line-height: 1; white-space: nowrap; }
     .act-util-wa { color: #0b7a4b; }
     .act-util-wa:hover { color: #0b7a4b; border-color: rgba(11,122,75,0.3); }
     .act-util.act-copied { color: var(--color-ok); border-color: rgba(16,185,129,0.35); }
+    :global(html[data-theme="dark"]) .act-util {
+        background: var(--surface-2); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 1px 2px rgba(0, 0, 0, 0.22);
+    }
+    :global(html[data-theme="dark"]) .act-util:hover { background: #202a39; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 22px -12px rgba(0, 0, 0, 0.72); }
+    :global(html[data-theme="dark"]) .act-util-wa,
+    :global(html[data-theme="dark"]) .act-util-wa:hover { color: #34d399; border-color: rgba(52, 211, 153, 0.28); }
 
     /* Íconos SVG de banners/documentos (reemplazan emojis) */
     .ap-ic { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }

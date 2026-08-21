@@ -5,39 +5,52 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, withOrgTx } from '../../lib/db';
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+import { fmtDate, intlLocale } from '../../lib/fmt-server';
 
-// Tipos de evento → texto e ícono (clave que el front mapea a un SVG).
-const META: Record<string, { label: string; icon: string }> = {
-    sent:     { label: 'Cotización enviada',        icon: 'send' },
-    viewed:   { label: 'Tu cliente vio la cotización', icon: 'eye' },
-    approved: { label: 'Cotización aprobada',        icon: 'check' },
-    rejected: { label: 'Cotización rechazada',       icon: 'x' },
-    paid:     { label: 'Pago recibido',              icon: 'card' },
-    invoiced: { label: 'Cotización facturada (CFDI)', icon: 'doc' },
-    comment:  { label: 'Nuevo mensaje del cliente',  icon: 'chat' },
-    counter:  { label: 'Contraoferta del cliente',   icon: 'chat' },
-    reply:    { label: 'Respondiste al cliente',     icon: 'chat' },
-    email:    { label: 'Correo enviado',             icon: 'send' },
+// Tipos de evento → clave de texto e ícono (el front mapea el icon a un SVG).
+// El label sale del diccionario: esta campana vive en la topbar de todas las
+// páginas y se quedaba en español con la cuenta en inglés.
+const META: Record<string, { key: Parameters<typeof t>[1]; icon: string }> = {
+    sent:     { key: 'notif.tipo.sent',     icon: 'send'  },
+    viewed:   { key: 'notif.tipo.viewed',   icon: 'eye'   },
+    approved: { key: 'notif.tipo.approved', icon: 'check' },
+    rejected: { key: 'notif.tipo.rejected', icon: 'x'     },
+    paid:     { key: 'notif.tipo.paid',     icon: 'card'  },
+    invoiced: { key: 'notif.tipo.invoiced', icon: 'doc'   },
+    comment:  { key: 'notif.tipo.comment',  icon: 'chat'  },
+    counter:  { key: 'notif.tipo.counter',  icon: 'chat'  },
+    reply:    { key: 'notif.tipo.reply',    icon: 'chat'  },
+    email:    { key: 'notif.tipo.email',    icon: 'send'  },
 };
 
+/**
+ * "hace 5 min" / "5 min ago". Se arma con Intl.RelativeTimeFormat en vez de una
+ * tabla de strings por idioma: la pluralización y el orden de las palabras son
+ * problema del motor, no nuestro. Más allá de una semana se cae a la fecha, que
+ * ya viaja en la zona horaria del negocio vía fmtDate().
+ */
 function relative(d: string): string {
     const diff = Date.now() - new Date(d).getTime();
+    const rtf = new Intl.RelativeTimeFormat(intlLocale(), { numeric: 'auto', style: 'short' });
     const m = Math.floor(diff / 60000);
-    if (m < 1) return 'hace un momento';
-    if (m < 60) return `hace ${m} min`;
+    if (m < 1) return rtf.format(0, 'minute');
+    if (m < 60) return rtf.format(-m, 'minute');
     const h = Math.floor(m / 60);
-    if (h < 24) return `hace ${h} h`;
+    if (h < 24) return rtf.format(-h, 'hour');
     const days = Math.floor(h / 24);
-    if (days < 7) return `hace ${days} d`;
-    return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(d));
+    if (days < 7) return rtf.format(-days, 'day');
+    return fmtDate(d);
 }
 
 export const GET: APIRoute = async () => {
     try {
+        const L = currentLocale();
         const orgId = await getActiveOrgId();
         const [rows] = await withOrgTx(orgId, sql`
             select e.id, e.tipo, e.detalle, e.created_at, c.folio, c.id as cotizacion_id,
-                   coalesce(cl.empresa, 'Sin cliente') as cliente
+                   cl.empresa as cliente
             from eventos e
             join cotizaciones c on c.id = e.cotizacion_id
             left join clientes cl on cl.id = c.cliente_id
@@ -45,13 +58,14 @@ export const GET: APIRoute = async () => {
             order by e.created_at desc limit 15`);
 
         const items = rows.map((e) => {
-            const meta = META[e.tipo as string] ?? { label: (e.detalle as string) || 'Actividad', icon: 'doc' };
+            const meta = META[e.tipo as string];
+            const title = meta ? t(L, meta.key) : ((e.detalle as string) || t(L, 'notif.tipo.otro'));
             return {
                 id: e.id as string,
                 tipo: e.tipo as string,
-                icon: meta.icon,
-                title: meta.label,
-                sub: `${e.folio} · ${e.cliente}`,
+                icon: meta?.icon ?? 'doc',
+                title,
+                sub: `${e.folio} · ${(e.cliente as string) || t(L, 'notif.sin_cliente')}`,
                 cuando: relative(e.created_at as string),
                 ts: new Date(e.created_at as string).getTime(),
                 href: `/app/cotizaciones/${e.cotizacion_id}`,

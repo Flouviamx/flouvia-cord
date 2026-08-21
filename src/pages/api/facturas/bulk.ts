@@ -54,6 +54,7 @@ export const POST: APIRoute = async ({ request }) => {
          where d.org_id = ${orgId}
            and d.id = any(${ids}::uuid[])
            and d.status = 'issued'
+           and d.sent_at is null
            and d.lifecycle in ('open', 'uncollectible')`);
 
     let enviadas = 0;
