@@ -2,6 +2,8 @@
 // sin tocar la DB; lo consumen tanto el server (queries/APIs) como las páginas.
 // El owner siempre tiene todo (override en memberCan), aunque su matriz esté vacía.
 
+import { currentLocale } from './context';
+
 export const PERMISOS = [
     { key: 'cotizar',   label: 'Cotizaciones', desc: 'Crear, editar, enviar y duplicar cotizaciones' },
     { key: 'aprobar',   label: 'Aprobaciones', desc: 'Aprobar/rechazar descuentos, montos y cambios de estado' },
@@ -75,11 +77,32 @@ export const planTieneApi = (plan: string) => API_PLANS.includes(plan);
 // única fuente, para no repetir la tabla en dos módulos que pueden desincronizarse.
 export { apiKeyLimit, webhookLimit } from './entitlements';
 
-export const PLAN_LABELS: Record<string, string> = {
-    free: 'Gratis', starter: 'Starter', pro: 'Profesional', scale: 'Scale',
-    developer: 'Developer', business: 'Negocio', negocio: 'Negocio',
+// Nombre COMERCIAL de cada plan, por idioma. Fuente única: existían tres copias
+// de esta tabla (aquí, en queries.ts y en org-entitlements.ts), las tres solo en
+// español, así que una sesión en inglés leía "Tu plan: Gratis" y "requiere el
+// plan Profesional" dentro de plantillas que sí estaban traducidas.
+// 'basico', 'negocio' y 'business' son alias heredados de planes viejos que
+// todavía viven en `orgs.plan` de cuentas grandfathered.
+export const PLAN_LABELS: Record<'es' | 'en', Record<string, string>> = {
+    es: {
+        free: 'Gratis', starter: 'Starter', pro: 'Profesional', scale: 'Scale',
+        developer: 'Developer', basico: 'Básico', business: 'Negocio', negocio: 'Negocio',
+    },
+    en: {
+        free: 'Free', starter: 'Starter', pro: 'Professional', scale: 'Scale',
+        developer: 'Developer', basico: 'Basic', business: 'Business', negocio: 'Business',
+    },
 };
-export const planLabel = (plan: string): string => PLAN_LABELS[plan] ?? 'Gratis';
+
+/**
+ * El idioma cae por default al del request (`orgs.idioma`), de modo que los ~10
+ * call sites que ya inyectan este nombre dentro de un `t(L, …)` quedan correctos
+ * sin pasarlo. Fuera del middleware —crons, scripts— `currentLocale()` da 'es'.
+ */
+export const planLabel = (plan: string, locale: 'es' | 'en' = currentLocale()): string => {
+    const table = PLAN_LABELS[locale] ?? PLAN_LABELS.es;
+    return table[plan] ?? table.free;
+};
 
 // SSO empresarial (SAML 2.0): tier alto — Scale y Developer. NO incluye los
 // alias legacy 'business'/'negocio' (mapean a cuentas Pro grandfathered).

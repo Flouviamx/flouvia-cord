@@ -9,7 +9,8 @@ import type { APIRoute } from 'astro';
 import { z } from 'zod';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm, invalidateMoneyCaches } from '../../lib/queries';
-import { currentUserId } from '../../lib/context';
+import { currentUserId, currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
 import { reauthenticate, revokeAllSessions } from '../../lib/auth';
 import { parseJsonBody } from '../../lib/validation';
 import { rateLimit, tooMany } from '../../lib/ratelimit';
@@ -18,13 +19,16 @@ import { decryptSecret, encryptRequiredSecret } from '../../lib/crypto-secret';
 import { requireFreshAuth } from '../../lib/step-up';
 import { requireEntitlement } from '../../lib/org-entitlements';
 import type { FeatureKey } from '../../lib/entitlements';
-import { getCountryProfile, isCountryCode } from '../../lib/countries';
+import { getCountryProfile, isCountryCode, isSupportedCountry } from '../../lib/countries';
+import { listOfferedCurrencies } from '../../lib/currency';
+import { isValidTimeZone } from '../../lib/timezones';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
-// Node 24/ICU es la fuente local del catálogo ISO 4217. Así Ajustes admite la
-// moneda de cualquier país sin depender de una API o paquete de terceros.
-const SUPPORTED_CURRENCIES = new Set(Intl.supportedValuesOf('currency'));
+// La API acepta exactamente lo que el selector ofrece. Validar contra el ISO
+// completo dejaba entrar por POST una divisa que la UI ya no lista y que
+// después no se puede convertir ni cobrar — la superficie y su endpoint tienen
+// que decir lo mismo.
 // Logo: acepta data URL de imagen (subida, cap ~1.1MB) o URL http(s).
 const logoOk = (s: string) =>
     s.length <= 1_500_000 &&
@@ -186,7 +190,13 @@ export const PATCH: APIRoute = async ({ request }) => {
     const countryCode = body.country_code !== undefined
         ? String(body.country_code).trim().toUpperCase()
         : String(actual.country_code || 'MX').toUpperCase();
-    if (!isCountryCode(countryCode)) return json({ error: 'País no soportado.' }, 400);
+    // El país debe estar en el set que Cord ofrece, O ser el que la organización
+    // ya tenía guardado: recortar el catálogo no puede impedirle a una cuenta
+    // existente guardar cualquier otro ajuste de esta misma pantalla.
+    const paisActual = String(actual.country_code || 'MX').toUpperCase();
+    const paisValido = isSupportedCountry(countryCode)
+        || (countryCode === paisActual && isCountryCode(countryCode));
+    if (!paisValido) return json({ error: 'País no soportado.' }, 400);
 
     // ── Centro de mando Enterprise (jun 2026) ──
     // Cambiar de país arrastra la divisa y la zona horaria SOLO si la org nunca
@@ -200,12 +210,22 @@ export const PATCH: APIRoute = async ({ request }) => {
         && String(actual.moneda || '').toUpperCase() === perfilAnterior.currency.toUpperCase();
     const zonaHeredada = paisCambio && String(actual.zona_horaria || '') === perfilAnterior.timeZone;
 
+    const monedaOfrecida = new Set(listOfferedCurrencies(actual.moneda));
     const moneda = body.moneda !== undefined
-        ? (SUPPORTED_CURRENCIES.has(String(body.moneda).toUpperCase()) ? String(body.moneda).toUpperCase() : actual.moneda)
+        ? (monedaOfrecida.has(String(body.moneda).toUpperCase()) ? String(body.moneda).toUpperCase() : actual.moneda)
         : (monedaHeredada ? perfilNuevo.currency : actual.moneda);
-    const zona = body.zona_horaria !== undefined
-        ? (str(body.zona_horaria, 40) || perfilNuevo.timeZone)
-        : (zonaHeredada ? perfilNuevo.timeZone : actual.zona_horaria);
+    // La zona se valida contra los ids IANA reales, no por longitud: antes
+    // entraba cualquier string de 40 caracteres y el valor inválido se
+    // descartaba en silencio mucho después (setRequestTimeZone en context.ts),
+    // así que el negocio guardaba "algo" y seguía viendo las fechas en la zona
+    // del servidor sin ningún aviso.
+    let zona = zonaHeredada ? perfilNuevo.timeZone : actual.zona_horaria;
+    if (body.zona_horaria !== undefined) {
+        const propuesta = str(body.zona_horaria, 64);
+        if (!propuesta) zona = perfilNuevo.timeZone;
+        else if (isValidTimeZone(propuesta)) zona = propuesta;
+        else return json({ error: 'Esa zona horaria no existe. Elige una de la lista.' }, 400);
+    }
     // El idioma sigue al país con el mismo criterio que la divisa: se hereda solo
     // si nunca se personalizó. Un país hispanohablante deja la app en español;
     // cualquier otro, en inglés.
@@ -320,6 +340,21 @@ export const PATCH: APIRoute = async ({ request }) => {
             banco_nombre = ${bancoNombre}, banco_clabe = null, banco_clabe_enc = ${bancoClabeEnc},
             banco_clabe_last4 = ${bancoClabeLast4}, banco_beneficiario = ${bancoBen}
         where id = ${orgId}`);
+
+    // El entorno de prueba es un ESPEJO: hereda idioma, divisa y zona horaria al
+    // crearse (resolveSandboxOrgId en lib/db.ts), pero eso solo cubre a las que
+    // nacen después de este cambio. Sin propagar aquí, un negocio que hoy pasa su
+    // cuenta a inglés vería su sandbox —creada la semana pasada— seguir en
+    // español. Son los tres campos de PRESENTACIÓN y nada más: el resto de la
+    // config de la sandbox se edita por su cuenta a propósito.
+    // Solo del padre hacia la hija; editar DENTRO del modo de prueba sigue
+    // escribiendo únicamente en la sandbox.
+    if (!actual.sandbox_of) {
+        await withOrgTx(orgId, sql`
+            update orgs set idioma = ${idioma}, moneda = ${moneda}, zona_horaria = ${zona}
+            where sandbox_of = ${orgId}`);
+    }
+
     const submittedFields = Object.keys(body).filter((key) => key !== 'banco_clabe').sort();
     if (body.banco_clabe !== undefined) submittedFields.push(`banco_clabe(last4:${actual.banco_clabe_last4 || 'ninguna'}->${bancoClabeLast4 || 'ninguna'})`);
     await logAudit(orgId, { accion: 'org.actualizada', entidad: 'org', entidad_id: orgId, detalle: `Campos: ${submittedFields.join(', ') || 'ninguno'}`, ip: reqIp(request) });
@@ -380,7 +415,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     }
     if (org.sandbox_of) {
         // El entorno de prueba se vacía con /api/test-mode/reset, no aquí.
-        return json({ error: 'No se puede eliminar un entorno de prueba por esta vía' }, 409);
+        return json({ error: t(currentLocale(), 'err.test.org_delete') }, 409);
     }
 
     const confirmed = await reauthenticate(userId, { password: parsed.data.password, code: parsed.data.code });

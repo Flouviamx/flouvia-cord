@@ -164,3 +164,48 @@
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
+
+/* ══ Botones "Personalizar / Restablecer / Listo" (WidgetCustomizeButtons.astro)
+   Los renderiza un componente, no la página: su CSS NO puede vivir en el
+   <style> scopeado de ninguna de las cinco páginas anfitrionas, porque Astro
+   solo estampa el data-astro-cid-* en el markup que la propia página emite y
+   la regla no matchearía — sin error de build (regla 11).
+
+   Estética del dashboard, que era la buena, más las dos mejoras que solo
+   tenían las otras páginas: altura táctil y respuesta al pulsar. ══ */
+.widget-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 42px;
+    appearance: none;
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--color-text);
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: 100px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.2s var(--ease-ios), transform 0.18s ease;
+}
+
+/* OBLIGATORIA: WidgetGrid entra y sale del modo edición alternando la propiedad
+   `hidden`, y `display:inline-flex` la anula. Sin esta regla los tres botones
+   se quedan visibles a la vez — es justo lo que le faltaba a cobranza/agente. */
+.widget-edit-btn[hidden] { display: none; }
+
+.widget-edit-btn:hover { background: var(--row-hover); }
+.widget-edit-btn:active { transform: scale(0.97); }
+.widget-edit-btn.is-done {
+    background: var(--color-blue-deep);
+    color: #fff;
+    border-color: var(--color-blue-deep);
+}
+
+/* Regla 16: por debajo de 880 px el objetivo táctil sube a 44 px. */
+@media (max-width: 880px) {
+    .widget-edit-btn { min-height: 44px; justify-content: center; padding-inline: 1rem; }
+}

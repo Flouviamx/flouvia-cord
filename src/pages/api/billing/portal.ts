@@ -19,6 +19,8 @@ import { getActiveOrgId } from '../../../lib/db';
 import { sql } from '../../../lib/db';
 import { STRIPE_KEY, stripe } from '../../../lib/billing';
 import { requirePerm } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 import { siteOrigin } from '../../../lib/email';
 
 export const POST: APIRoute = async () => {
@@ -28,7 +30,7 @@ export const POST: APIRoute = async () => {
 
     const orgId = await getActiveOrgId();
     const [o] = await sql`select stripe_customer_id, sandbox_of from orgs where id = ${orgId}`;
-    if (o?.sandbox_of) return json({ error: 'Estás en el entorno de prueba. Sal del modo de prueba para gestionar tu plan.' }, 409);
+    if (o?.sandbox_of) return json({ error: t(currentLocale(), 'err.test.plan') }, 409);
     const customer = o?.stripe_customer_id as string | undefined;
     if (!customer) return json({ error: 'Aún no tienes una suscripción activa.' }, 409);
 

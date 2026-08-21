@@ -19,6 +19,7 @@ import '../../../styles/modal.css';
 import AccessGate from '../../../components/app/AccessGate.astro';
 import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
 import WidgetGrid from '../../../components/app/WidgetGrid.astro';
+import WidgetCustomizeButtons from '../../../components/app/WidgetCustomizeButtons.astro';
 import { getCobranzaIA, getMyMembership, getOrg, money } from '../../../lib/queries';
 import { memberCan, planLabel } from '../../../lib/permissions';
 import { currentLocale } from '../../../lib/context';
@@ -101,9 +102,7 @@ const MOTIVO_LABEL: Record<string, string> = {
                 </span>
                 <button type="button" class="cia-btn" id="ciaRunBtn">{t(L, 'cia.forzar')}</button>
                 {canConfig && <button type="button" class="cia-btn" id="ciaCfgBtn">{t(L, 'cia.configurar')}</button>}
-                <button type="button" class="cia-btn" id="ciaEditBtn">{t(L, 'cia.personalizar')}</button>
-                <button type="button" class="cia-btn" id="ciaDoneBtn" hidden>{t(L, 'cia.listo')}</button>
-                <button type="button" class="cia-btn" id="ciaResetBtn" hidden>{t(L, 'cia.restablecer')}</button>
+                <WidgetCustomizeButtons editId="ciaEditBtn" resetId="ciaResetBtn" doneId="ciaDoneBtn" />
             </div>
         )}
     </Fragment>

@@ -8,7 +8,7 @@ import { currentUserId, currentOrgIdOverride, currentLocale, currentTimeZone, se
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
 import { notifyQuoteEvent } from './notify';
-import { memberCan, type Membership, type PermKey, type PermMap } from './permissions';
+import { memberCan, planLabel, type Membership, type PermKey, type PermMap } from './permissions';
 import { INCLUDED } from './billing';
 import { checkEntitlement, getEntitlementContext } from './org-entitlements';
 import { planIncludes, resourceLimit } from './entitlements';
@@ -50,7 +50,6 @@ const termLabel = (t: string | null) => TERM_LABEL[t ?? 'contado'] ?? 'Contado';
 // de diferencia respecto al suyo.
 
 // ── ORG ─────────────────────────────────────────────────────────────────────
-const PLAN_LABEL: Record<string, string> = { free: 'Gratis', starter: 'Starter', basico: 'Básico', pro: 'Profesional', scale: 'Scale', developer: 'Developer', negocio: 'Negocio', business: 'Negocio' };
 
 export async function getOrg() {
     const orgId = await getActiveOrgId();
@@ -73,7 +72,9 @@ export async function getOrg() {
         email: (o.email_contacto as string) ?? '',
         telefono: (o.telefono as string) ?? '',
         direccion: (o.direccion as string) ?? '',
-        plan: PLAN_LABEL[effectivePlan] ?? 'Gratis',
+        // Nombre del plan ya localizado — setRequestLocale() corre unas líneas
+        // arriba, así que planLabel() lee el idioma correcto de la org.
+        plan: planLabel(effectivePlan),
         prefix: o.quote_prefix as string,
         moneda: o.moneda as string,
         ivaPct: num(o.iva_pct),

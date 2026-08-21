@@ -11,6 +11,7 @@ import { currentLocale } from '../../../lib/context';
 import { t, getEditorRuntimeI18n } from '../../../i18n/app';
 import FlagSelect from '../../../components/ui/FlagSelect';
 import { CURRENCY_FLAG } from '../../../lib/flags';
+import { listOfferedCurrencies } from '../../../lib/currency';
 import '../../../styles/modal.css';
 
 const L = currentLocale();
@@ -71,8 +72,7 @@ const DEFAULT_CURRENCY = ((draftQuote as any)?.baseCurrency ?? (draftQuote as an
 // island client:load, y Astro serializa las props a JSON (una función no
 // sobrevive ese cruce, ver el comentario de FlagOption en FlagSelect.tsx).
 const currencyNames = new Intl.DisplayNames([L], { type: 'currency' });
-const CURRENCY_OPTIONS = [...new Set([DEFAULT_CURRENCY, ...Intl.supportedValuesOf('currency')])]
-    .sort((a, b) => a === DEFAULT_CURRENCY ? -1 : b === DEFAULT_CURRENCY ? 1 : a.localeCompare(b))
+const CURRENCY_OPTIONS = listOfferedCurrencies(DEFAULT_CURRENCY)
     .map((code) => ({
         code,
         label: `${code} — ${currencyNames.of(code) || code}`,

@@ -35,6 +35,50 @@ const ISO_4217: Set<string> = (() => {
 
 export const DEFAULT_CURRENCY = 'MXN';
 
+// ── Divisas que Cord OFRECE ─────────────────────────────────────────────────
+//
+// El catálogo ISO tiene ~300 códigos y los selectores los listaban todos. Una
+// cotización capturada en VND o en GNF no se puede convertir (ninguna fuente de
+// FX publica el par), no se puede cobrar (Stripe no la liquida) y el negocio se
+// entera hasta el momento del cobro — cuando ya se la mandó al cliente.
+//
+// Este set son las divisas de los países soportados (`SUPPORTED_COUNTRIES` en
+// countries.ts) más las de comercio internacional, para el negocio que vende
+// fuera de su mercado. `isSupportedCurrency` sigue siendo el catálogo ISO
+// completo: es la frontera de integridad de un dato YA GUARDADO, no lo que se
+// ofrece capturar.
+export const OFFERED_CURRENCIES = [
+    // Divisas de los países soportados
+    'MXN', 'USD', 'CAD', 'BRL', 'EUR', 'GBP', 'COP', 'ARS', 'CLP', 'PEN',
+    // Comercio internacional
+    'JPY', 'CNY', 'CHF', 'AUD',
+] as const;
+
+export function isOfferedCurrency(value: unknown): boolean {
+    const code = String(value ?? '').trim().toUpperCase();
+    return (OFFERED_CURRENCIES as readonly string[]).includes(code);
+}
+
+/**
+ * Las divisas del selector, con la actual primero.
+ *
+ * `include` conserva la divisa que la organización o el documento ya tienen
+ * guardada aunque haya quedado fuera del set: recortar el catálogo no puede
+ * reescribir el importe de una venta viva.
+ */
+export function listOfferedCurrencies(include?: string | null): string[] {
+    const current = String(include || '').trim().toUpperCase();
+    const codes = [...OFFERED_CURRENCIES] as string[];
+    if (current && isSupportedCurrency(current) && !isOfferedCurrency(current)) codes.push(current);
+    return [...new Set(codes)].sort((a, b) => {
+        if (a === current) return -1;
+        if (b === current) return 1;
+        const ai = (OFFERED_CURRENCIES as readonly string[]).indexOf(a);
+        const bi = (OFFERED_CURRENCIES as readonly string[]).indexOf(b);
+        return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+    });
+}
+
 export function normalizeCurrency(value: unknown, fallback = DEFAULT_CURRENCY): string {
     const code = String(value ?? '').trim().toUpperCase();
     return /^[A-Z]{3}$/.test(code) && ISO_4217.has(code) ? code : fallback;

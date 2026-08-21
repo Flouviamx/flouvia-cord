@@ -557,3 +557,43 @@ Tres reglas que no son negociables porque el documento es legal, no un PDF:
 Es capacidad de **México**. Fuera, el comprobante del cobro ya ES el documento y
 la opción ni se ofrece (regla 24).
 
+
+### 28. Un catálogo que se ofrece es una promesa de cobertura
+
+Un país en el `<select>` de alta y una divisa en el selector de la cotización no
+son datos de referencia: son Cord diciendo "aquí operamos". Ofrecer el catálogo
+ISO completo porque está disponible es la regla 15 a escala de mercado — el
+producto prometía 249 países y 300 divisas, y sostenía 23 y unas 15.
+
+Dos listas por catálogo, con trabajos distintos, y no se mezclan:
+
+- **Vocabulario de validación** — `COUNTRY_CODES` (ISO 3166-1) e
+  `isSupportedCurrency()` (ISO 4217, vía ICU). Validan un dato **ya guardado**.
+  Nunca se ofrecen enteros en una superficie.
+- **Set ofrecido** — `SUPPORTED_COUNTRIES` en `src/lib/countries.ts` y
+  `OFFERED_CURRENCIES` en `src/lib/currency.ts`. Es lo único que ve el usuario, y
+  lo único que aceptan los endpoints que lo escriben. La superficie y su endpoint
+  dicen lo mismo: ocultar una opción del select no es validación.
+
+Un país entra al set ofrecido solo con las cuatro piezas completas: perfil real
+en `PROFILE_DEFAULTS` (divisa, locale, zona horaria, etiqueta fiscal), tasas de
+arranque en `TAX_PRESETS` o la decisión explícita de no tenerlas, riel de cobro
+decidido, y formato de cuenta de depósito en `payout-fields.ts` si ese riel
+existe. `scripts/fiscal-core-check.mjs` lo verifica: agregar dos letras a la
+lista sin las piezas rompe el check, no la cuenta de un cliente.
+
+**Un set recortado no reescribe un dato vivo.** `listCountries(locale, include)`
+y `listOfferedCurrencies(include)` reciben el valor que la organización o el
+documento ya tienen guardado y lo conservan en el selector aunque haya quedado
+fuera. Sin ese parámetro, una cuenta en un país retirado abre Ajustes, guarda
+cualquier otro campo y se le sustituye el país en silencio.
+
+**Un riel ausente se dice, no se descubre en el proveedor.** El set ofrecido no
+implica que todo funcione igual en todos: Stripe no abre cuentas conectadas en
+varios de esos países (`supportsOnlinePayments()`), y ahí la cuenta cotiza,
+factura y cobra con pago registrado a mano, pero el alta de Cord Payments no se
+ofrece y el endpoint responde 409 con un mensaje para el dueño del negocio, no
+con el error del proveedor (regla 14). El caso que originó esta parte: Brasil
+estaba en la lista de países IBAN, y Brasil no usa IBAN — ninguna cuenta
+brasileña habría pasado el mod-97, con un error que hablaba de dígitos de
+control sobre un formato que ahí no existe.

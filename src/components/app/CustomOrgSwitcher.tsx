@@ -15,6 +15,8 @@ const SW_STRINGS = {
     crearEspacio: 'Crear espacio de trabajo',
     configEquipo: 'Configuración del equipo',
     entornoPrueba: 'Entorno de prueba',
+    espacioTrabajo: 'Espacio de trabajo',
+    cuentaPersonal: 'Cuenta personal',
     cerrarSesion: 'Cerrar sesión',
     workspacePersonal: 'Workspace personal',
     errorCrear: 'No se pudo crear la cuenta.',
@@ -27,6 +29,8 @@ const SW_STRINGS = {
     crearEspacio: 'Create workspace',
     configEquipo: 'Team settings',
     entornoPrueba: 'Test environment',
+    espacioTrabajo: 'Workspace',
+    cuentaPersonal: 'Personal account',
     cerrarSesion: 'Sign out',
     workspacePersonal: 'Personal workspace',
     errorCrear: "We couldn't create the account.",
@@ -129,9 +133,6 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
     }
   };
 
-  const ROLE_LABEL: Record<string, string> = {
-    owner: 'Dueño', admin: 'Admin', vendedor: 'Vendedor', lectura: 'Lectura', miembro: 'Miembro',
-  };
   const roleLabel = (rol?: string) => S.roles[rol || ''] || S.roles.miembro;
 
   const membershipsByParent: Record<string, any[]> = {};
@@ -206,7 +207,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
           )}
         </div>
         <div className="org-text">
-          <span className={`org-eyebrow ${isTestMode ? 'is-test' : ''}`}>{isTestMode ? 'Entorno de prueba' : 'Espacio de trabajo'}</span>
+          <span className={`org-eyebrow ${isTestMode ? 'is-test' : ''}`}>{isTestMode ? S.entornoPrueba : S.espacioTrabajo}</span>
           <span className="org-name" title={activeName}>{activeName}</span>
         </div>
         <svg className="chevron-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -338,7 +339,7 @@ export default function CustomOrgSwitcher({ orgLogoUrl = '', user, activeOrg, lo
             <div className="user-profile-section">
               <div className="user-avatar">{safeUser.firstName?.charAt(0) || safeUser.emailAddresses?.[0]?.emailAddress?.charAt(0)?.toUpperCase()}</div>
               <div className="org-details">
-                <span className="org-item-name">{safeUser.fullName || 'Cuenta personal'}</span>
+                <span className="org-item-name">{safeUser.fullName || S.cuentaPersonal}</span>
                 <span className="org-item-role">{safeUser.emailAddresses?.[0]?.emailAddress}</span>
               </div>
             </div>

@@ -1,0 +1,32 @@
+---
+// Los tres botones que gobiernan el modo de edición de un WidgetGrid:
+// Personalizar → Restablecer → Listo.
+//
+// WidgetGrid NO los renderiza a propósito (solo recibe sus ids y les alterna
+// `hidden`), así que cada una de las cinco páginas con widgets autoraba su
+// propio markup y su propio CSS: `dash-`, `reports-`, `cbr-`, `cbz-`, `cia-`.
+// Solo el dashboard llevaba ícono, informes pintaba "Personalizar" en azul
+// sólido con los textos hardcodeados, y agente ni siquiera tenía la regla de
+// rescate `[hidden]`. Este componente es el markup ÚNICO; su CSS vive en
+// `src/styles/widgets.css` porque un `<style>` scopeado de la página anfitriona
+// no alcanza al markup que renderiza otro componente (regla 11).
+import { currentLocale } from '../../lib/context';
+import { t } from '../../i18n/app';
+
+interface Props {
+    /** ids que se le pasan al WidgetGrid correspondiente. */
+    editId: string;
+    resetId: string;
+    doneId: string;
+}
+
+const { editId, resetId, doneId } = Astro.props;
+const L = currentLocale();
+---
+
+<button type="button" class="widget-edit-btn" id={editId}>
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18M3 9v10a2 2 0 0 0 2 2h4m10-12v10a2 2 0 0 1-2 2H9"/></svg>
+    {t(L, 'widgets.personalizar')}
+</button>
+<button type="button" class="widget-edit-btn" id={resetId} hidden>{t(L, 'widgets.restablecer')}</button>
+<button type="button" class="widget-edit-btn is-done" id={doneId} hidden>{t(L, 'widgets.listo')}</button>

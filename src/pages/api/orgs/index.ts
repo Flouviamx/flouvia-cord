@@ -16,7 +16,7 @@ import type { APIRoute } from 'astro';
 import { sql, logAudit, reqIp, getActiveOrgId } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
-import { COUNTRY_CODES, getCountryProfile } from '../../../lib/countries';
+import { SUPPORTED_COUNTRIES, getCountryProfile } from '../../../lib/countries';
 import { defaultCountryTaxPct } from '../../../lib/impuestos';
 import { seedTaxCatalog } from '../../../lib/impuestos-db';
 import { requireEntitlement } from '../../../lib/org-entitlements';
@@ -25,12 +25,13 @@ import { log } from '../../../lib/log';
 const json = (data: unknown, status = 200) =>
     new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 
-// El alta en cualquier país está abierta (cotizar/cobrar/CRM funcionan igual
-// en todos) — lo que SÍ está limitado a México por ahora es la FACTURACIÓN
-// fiscal real (ver FiscalFactory: solo MexicoSatProvider timbra de verdad).
+// El alta se abre en los mercados que Cord sostiene de punta a punta: perfil,
+// impuestos de arranque y riel de cobro. Lo que SÍ está limitado a México es la
+// FACTURACIÓN fiscal real (ver FiscalFactory: solo MexicoSatProvider timbra de
+// verdad) y, en cuatro de esos países, el cobro en línea (supportsOnlinePayments).
 // Fuente única: countries.ts (antes este Set vivía duplicado a mano aquí y
 // podía desincronizarse si se agregaba un país nuevo en un solo lugar).
-const SUPPORTED_COUNTRIES = new Set<string>(COUNTRY_CODES);
+const ALTA_PERMITIDA = new Set<string>(SUPPORTED_COUNTRIES);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const POST: APIRoute = async ({ request }) => {
@@ -51,7 +52,7 @@ export const POST: APIRoute = async ({ request }) => {
     const countryCode = String(body?.countryCode || 'MX').toUpperCase();
     const parentOrgId = body?.parentOrgId ? String(body.parentOrgId).trim() : null;
 
-    if (!SUPPORTED_COUNTRIES.has(countryCode)) return json({ error: 'País no soportado' }, 400);
+    if (!ALTA_PERMITIDA.has(countryCode)) return json({ error: 'País no soportado' }, 400);
     if (parentOrgId && !UUID_RE.test(parentOrgId)) return json({ error: 'parentOrgId inválido' }, 400);
     const countryProfile = getCountryProfile(countryCode);
     const appLocale = countryProfile.locale.startsWith('es') ? 'es-MX' : 'en-US';

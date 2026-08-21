@@ -6,6 +6,7 @@ import PlanPaywallModal from '../../components/app/PlanPaywallModal.astro';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import ReportPicker from '../../components/app/ReportPicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
+import WidgetCustomizeButtons from '../../components/app/WidgetCustomizeButtons.astro';
 import ResumenReport from '../../components/app/informes/ResumenReport.astro';
 import ComercialReport from '../../components/app/informes/ComercialReport.astro';
 import FinanzasReport from '../../components/app/informes/FinanzasReport.astro';
@@ -72,9 +73,7 @@ const widgetLabels = {
                     {es ? `Al día de hoy · ${dateFull(todayISO, L)}` : `As of today · ${dateFull(todayISO, L)}`}
                 </span>
             )}
-            {hasReportAccess && <button type="button" class="reports-edit-btn" id="reportEditBtn">{es ? 'Personalizar' : 'Customize'}</button>}
-            {hasReportAccess && <button type="button" class="reports-edit-btn" id="reportDoneBtn" hidden>{es ? 'Listo' : 'Done'}</button>}
-            {hasReportAccess && <button type="button" class="reports-reset-btn" id="reportResetBtn" hidden>{es ? 'Restablecer' : 'Reset'}</button>}
+            {hasReportAccess && <WidgetCustomizeButtons editId="reportEditBtn" resetId="reportResetBtn" doneId="reportDoneBtn" />}
         </div>
     </Fragment>
 
@@ -207,17 +206,13 @@ const widgetLabels = {
     /* Selector de informe + fechas + acciones: SIEMPRE pegados a la derecha, exista o no
        texto a la izquierda (`margin-left: auto` no depende del ancho del hermano). */
     .reports-top-actions { display: flex; align-items: center; justify-content: flex-end; margin-left: auto; gap: .55rem; flex-wrap: wrap; }
-    .snapshot-chip, .reports-edit-btn, .reports-reset-btn { min-height: 42px; display: inline-flex; align-items: center; gap: .55rem; padding: .62rem .9rem; border: 0; border-radius: 999px; font: inherit; font-size: .78rem; font-weight: 650; white-space: nowrap; }
+    .snapshot-chip { min-height: 42px; display: inline-flex; align-items: center; gap: .55rem; padding: .62rem .9rem; border: 0; border-radius: 999px; font: inherit; font-size: .78rem; font-weight: 650; white-space: nowrap; }
     /* ⚠️ Rescue obligatorio: un `display` de autor SIEMPRE le gana al `[hidden]{display:none}`
-       del navegador. Sin esto, Personalizar + Listo + Restablecer se pintan los tres a la vez
-       (bug real, ago 2026). Mismo patrón que `.dash-edit-btn[hidden]` en index.astro. */
-    .snapshot-chip[hidden], .reports-edit-btn[hidden], .reports-reset-btn[hidden] { display: none; }
+       del navegador. El de los tres botones de personalización vive junto a ellos en
+       styles/widgets.css; este es el del chip, que esta página sí renderiza. */
+    .snapshot-chip[hidden] { display: none; }
     .snapshot-chip { background: var(--color-bg-soft); color: var(--color-text-muted); }
     .snapshot-chip svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
-    .reports-edit-btn { background: var(--color-blue-deep); color: white; cursor: pointer; transition: transform .18s ease; }
-    .reports-edit-btn:hover { transform: scale(.98); }
-    .reports-edit-btn:active { transform: scale(.96); }
-    .reports-reset-btn { background: var(--color-bg-soft); color: var(--color-text-muted); cursor: pointer; }
     /* El grid vive en styles/widgets.css (global) — ver la nota ahí. Esta página comparte
        exactamente el mismo grid, gap y breakpoints que /app. */
     [data-report-shell][aria-busy='true'] { opacity: .68; pointer-events: none; transition: opacity .18s ease; }
@@ -231,6 +226,6 @@ const widgetLabels = {
         .reports-top-actions { width: 100%; justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-inline: contain; padding-bottom: 2px; scrollbar-width: none; }
         .reports-top-actions::-webkit-scrollbar { display: none; }
         .reports-top-actions > * { flex: 0 0 auto; }
-        .snapshot-chip, .reports-edit-btn, .reports-reset-btn { min-height: 44px; }
+        .snapshot-chip { min-height: 44px; }
     }
 </style>

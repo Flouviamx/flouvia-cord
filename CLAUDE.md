@@ -33,6 +33,7 @@ manual, changelog ni depósito de decisiones. La documentación canónica vive e
 | Superficie de facturación (`billing.cordhq.app`) | Regla 26 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + [`docs/app-rutas.md`](docs/app-rutas.md) + guard en `src/lib/billing-surface.ts` |
 | Cualquier importe, divisa o tipo de cambio del CLIENTE | Reglas 21 y 22 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + contrato ejecutable en `src/lib/currency.ts` y `src/lib/fx/FXService.ts` |
 | Impuestos, retenciones, zona horaria o rieles de cobro por país | Reglas 23 y 24 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + contrato ejecutable en `src/lib/impuestos.ts`, `src/lib/impuestos-db.ts`, `src/lib/countries.ts`, `src/lib/fmt-server.ts` y `src/lib/payout-fields.ts` |
+| Qué países o divisas ofrece Cord | Regla 28 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + contrato ejecutable en `src/lib/countries.ts` (`SUPPORTED_COUNTRIES`) y `src/lib/currency.ts` (`OFFERED_CURRENCIES`) |
 | Cord Invoicing (facturas, recordatorios, recurrencia, cobranza) | Regla 25 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + [`docs/negocio-billing.md`](docs/negocio-billing.md) + `src/lib/fiscal/` |
 | API pública, MCP, webhooks o Elements | [`docs/app-rutas.md`](docs/app-rutas.md) + [`docs/historial-platform-api.md`](docs/historial-platform-api.md) |
 | Cord Ops, seguridad o escala | [`docs/cord-ops.md`](docs/cord-ops.md) + [`docs/historial-infra-hitos.md`](docs/historial-infra-hitos.md) |

@@ -13,6 +13,7 @@ import AppLayout from '../../layouts/AppLayout.astro';
 import AccessGate from '../../components/app/AccessGate.astro';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
+import WidgetCustomizeButtons from '../../components/app/WidgetCustomizeButtons.astro';
 import { getMyMembership, money } from '../../lib/queries';
 import { memberCan } from '../../lib/permissions';
 import { currentLocale } from '../../lib/context';
@@ -110,9 +111,7 @@ const CBR_T = {
                 initialDesde={rango.desde} initialHasta={rango.hasta}
                 storageKey="cord.cobros.range.v1"
             />
-            {hasAccess && <button type="button" class="cbr-edit-btn" id="cbrEditBtn">{t(L, 'cbr.personalizar')}</button>}
-            {hasAccess && <button type="button" class="cbr-edit-btn cbr-edit-done" id="cbrDoneBtn" hidden>{t(L, 'cbr.listo')}</button>}
-            {hasAccess && <button type="button" class="cbr-edit-btn" id="cbrResetBtn" hidden>{t(L, 'cbr.restablecer')}</button>}
+            {hasAccess && <WidgetCustomizeButtons editId="cbrEditBtn" resetId="cbrResetBtn" doneId="cbrDoneBtn" />}
         </div>
     </Fragment>
 
@@ -746,20 +745,6 @@ const CBR_T = {
        vocabulario compartido (.report-kpi, .report-list, .report-chart, .snapshot-tag)
        vive en styles/report-widgets.css — Regla 11. */
     .cbr-top-actions { display: flex; align-items: center; justify-content: flex-end; margin-left: auto; gap: .55rem; flex-wrap: wrap; }
-    .cbr-edit-btn {
-        display: inline-flex; align-items: center; gap: 6px; min-height: 42px;
-        appearance: none; font-family: var(--font-sans); font-size: .78rem; font-weight: 650;
-        color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border);
-        border-radius: 999px; padding: .62rem .9rem; cursor: pointer; white-space: nowrap;
-        transition: background .2s var(--ease-ios), transform .18s ease;
-    }
-    /* ⚠️ RESCUE OBLIGATORIO: un `display` de autor SIEMPRE le gana al
-       `[hidden]{display:none}` del navegador. Sin esto salen Personalizar + Listo +
-       Restablecer los tres a la vez (bug real, ya visto en informes e index). */
-    .cbr-edit-btn[hidden] { display: none; }
-    .cbr-edit-btn:hover { background: var(--row-hover); }
-    .cbr-edit-btn:active { transform: scale(.97); }
-    .cbr-edit-btn.cbr-edit-done { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
 
     [data-cobros-shell][aria-busy='true'] { opacity: .68; pointer-events: none; transition: opacity .18s ease; }
     /* El contenido que aún espera a Stripe se atenúa, pero NO bloquea el puntero: el

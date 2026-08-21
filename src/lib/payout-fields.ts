@@ -11,7 +11,7 @@
 // para todos y dejar que Stripe falle produce un error incomprensible para
 // alguien que solo quiere cobrar (regla 14).
 
-export type PayoutFormat = 'clabe' | 'iban' | 'us_aba' | 'gb_sort' | 'ca_transit' | 'au_bsb' | 'nz' | 'generic';
+export type PayoutFormat = 'clabe' | 'iban' | 'us_aba' | 'gb_sort' | 'ca_transit' | 'au_bsb' | 'nz' | 'br_bank' | 'generic';
 
 export interface PayoutField {
     key: string;
@@ -83,13 +83,24 @@ const SPECS: Record<string, PayoutSpec> = {
         format: 'nz', label: 'Cuenta bancaria', labelEn: 'Bank account',
         fields: [{ key: 'account_number', label: 'Número de cuenta', labelEn: 'Account number', kind: 'digits', minLength: 15, maxLength: 16 }],
     },
+    // Brasil NO usa IBAN — estaba en la lista de IBAN y ninguna cuenta brasileña
+    // habría pasado el mod-97. El riel local es código de banco (3 dígitos) +
+    // agência (4) + conta, que es exactamente lo que pide Stripe.
+    BR: {
+        format: 'br_bank', label: 'Conta bancária', labelEn: 'Bank account',
+        fields: [
+            { key: 'bank_code', label: 'Código do banco', labelEn: 'Bank code', kind: 'digits', minLength: 3, maxLength: 3, hint: '3 dígitos', hintEn: '3 digits' },
+            { key: 'branch_code', label: 'Agência', labelEn: 'Branch code', kind: 'digits', minLength: 4, maxLength: 4, hint: '4 dígitos', hintEn: '4 digits' },
+            { key: 'account_number', label: 'Conta com dígito', labelEn: 'Account number with check digit', kind: 'alnum', minLength: 4, maxLength: 15 },
+        ],
+    },
 };
 
 // Zona SEPA y demás territorios donde Stripe liquida por IBAN.
 const IBAN_COUNTRIES = [
     'AD', 'AT', 'BE', 'BG', 'CH', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GI', 'GR',
     'HR', 'HU', 'IE', 'IS', 'IT', 'LI', 'LT', 'LU', 'LV', 'MC', 'MT', 'NL', 'NO', 'PL', 'PT',
-    'RO', 'SE', 'SI', 'SK', 'SM', 'TR', 'AE', 'SA', 'IL', 'BR',
+    'RO', 'SE', 'SI', 'SK', 'SM', 'TR', 'AE', 'SA', 'IL',
 ];
 for (const code of IBAN_COUNTRIES) SPECS[code] = IBAN_SPEC;
 
@@ -228,6 +239,12 @@ export function stripeExternalAccountFields(
     if (spec.format === 'ca_transit') {
         // Canadá manda transit e institution juntos en `routing_number`.
         base['external_account[routing_number]'] = `${values.transit_number}-${values.institution_number}`;
+        base['external_account[account_number]'] = values.account_number;
+        return base;
+    }
+    if (spec.format === 'br_bank') {
+        // Brasil manda banco y agência juntos en `routing_number`, con guion.
+        base['external_account[routing_number]'] = `${values.bank_code}-${values.branch_code}`;
         base['external_account[account_number]'] = values.account_number;
         return base;
     }

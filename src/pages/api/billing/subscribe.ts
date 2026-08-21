@@ -12,6 +12,8 @@ import type { APIRoute } from 'astro';
 import { randomUUID } from 'node:crypto';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { getOrg, requirePerm } from '../../../lib/queries';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 import {
     STRIPE_KEY, PLAN_PRICES, METER_PRICES, isPaidPlan, getOrCreateCustomer, stripe,
     priceFor, meterPricesFor, platformCurrencyForOrg, type Cycle,
@@ -167,7 +169,7 @@ export const POST: APIRoute = async ({ request }) => {
     // El ENTORNO DE PRUEBA nunca toca Stripe Billing real.
     const [[sb]] = await withOrgTx(orgId, sql`select sandbox_of from orgs where id = ${orgId}`);
     if (sb?.sandbox_of) {
-        return json({ error: 'Estás en el entorno de prueba. Sal del modo de prueba para gestionar tu plan.' }, 409);
+        return json({ error: t(currentLocale(), 'err.test.plan') }, 409);
     }
 
     const org = await getOrg();

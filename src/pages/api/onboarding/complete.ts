@@ -15,7 +15,7 @@ import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db
 import { currentUserId } from '../../../lib/context';
 import { parseJsonBody } from '../../../lib/validation';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
-import { COUNTRY_CODES, getCountryProfile } from '../../../lib/countries';
+import { SUPPORTED_COUNTRIES, getCountryProfile } from '../../../lib/countries';
 import { defaultCountryTaxPct } from '../../../lib/impuestos';
 import { seedTaxCatalog } from '../../../lib/impuestos-db';
 
@@ -26,7 +26,7 @@ const CASOS_USO = ['cotizar', 'cobrar', 'facturar', 'seguimiento', 'margenes', '
 
 const schema = z.object({
     nombre: z.string().trim().min(1).max(120),
-    countryCode: z.enum(COUNTRY_CODES),
+    countryCode: z.enum(SUPPORTED_COUNTRIES),
     puesto: z.enum(PUESTOS),
     industria: z.enum(INDUSTRIAS),
     tamano: z.enum(TAMANOS),

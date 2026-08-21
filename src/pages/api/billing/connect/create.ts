@@ -3,11 +3,14 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
+import { currentLocale } from '../../../../lib/context';
+import { t } from '../../../../i18n/app';
 import { createConnectAccount, retrieveAccount, updateConnectAccount } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
 import { auditConnect } from '../../../../lib/connect-audit';
 import { limitConnectMutation } from '../../../../lib/connect-security';
 import { sanitizeStripeRequirements } from '../../../../lib/connect-fields';
+import { supportsOnlinePayments } from '../../../../lib/countries';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('cobros_config');
@@ -18,7 +21,16 @@ export const POST: APIRoute = async ({ request }) => {
     if (limited) return limited;
     const [org] = await sql`select sandbox_of, stripe_account_id, country_code, moneda from orgs where id = ${orgId}`;
     if (org?.sandbox_of) {
-        return new Response(JSON.stringify({ error: 'Connect no está disponible en el entorno de prueba' }), { status: 409 });
+        return new Response(JSON.stringify({ error: t(currentLocale(), 'err.test.connect') }), { status: 409 });
+    }
+
+    // Ocultar el alta en la UI no es autorización: Stripe no abre cuentas
+    // conectadas en todos los países del set, y un POST directo terminaba en un
+    // error del proveedor que no le dice nada al dueño del negocio (regla 14).
+    if (!supportsOnlinePayments(String(org?.country_code || 'MX'))) {
+        return new Response(JSON.stringify({
+            error: 'El cobro en línea todavía no está disponible en tu país. Puedes recibir transferencia y registrar el pago desde la cotización.',
+        }), { status: 409 });
     }
 
     const { business_type } = await request.json();

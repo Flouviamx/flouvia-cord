@@ -29,6 +29,7 @@ import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
 import { getCountryProfile } from '../../../lib/countries';
 import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../lib/impuestos';
 import { CURRENCY_FLAG } from '../../../lib/flags';
+import { listOfferedCurrencies } from '../../../lib/currency';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import '../../../styles/modal.css';
@@ -90,8 +91,7 @@ const DEFAULT_CURRENCY = String(draft?.currency || ORG.moneda || profile.currenc
 const currencyNames = new Intl.DisplayNames([L], { type: 'currency' });
 // `flag` viaja como dato plano: este array cruza el límite de hidratación de un
 // island y Astro serializa las props a JSON — una función no sobrevive el cruce.
-const CURRENCY_OPTIONS = [...new Set([DEFAULT_CURRENCY, ...Intl.supportedValuesOf('currency')])]
-    .sort((a, b) => (a === DEFAULT_CURRENCY ? -1 : b === DEFAULT_CURRENCY ? 1 : a.localeCompare(b)))
+const CURRENCY_OPTIONS = listOfferedCurrencies(DEFAULT_CURRENCY)
     .map((code) => ({
         code,
         label: `${code} — ${currencyNames.of(code) || code}`,

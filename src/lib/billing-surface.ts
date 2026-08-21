@@ -11,6 +11,8 @@
 import { sql, getActiveOrgId } from './db';
 import { requirePerm } from './queries';
 import { STRIPE_KEY, stripe } from './billing';
+import { currentLocale } from './context';
+import { t } from '../i18n/app';
 
 export function json(data: unknown, status = 200): Response {
     return new Response(JSON.stringify(data), {
@@ -43,7 +45,7 @@ export async function billingContext(): Promise<{ ctx: BillingContext } | { deni
           from orgs where id = ${orgId}`;
 
     if (o?.sandbox_of) {
-        return { denied: json({ error: 'Estás en el entorno de prueba. Sal del modo de prueba para gestionar tu facturación.' }, 409) };
+        return { denied: json({ error: t(currentLocale(), 'err.test.billing') }, 409) };
     }
     const customer = o?.stripe_customer_id as string | undefined;
     if (!customer) {

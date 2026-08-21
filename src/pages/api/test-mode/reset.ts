@@ -8,6 +8,8 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../lib/db';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 
 export const POST: APIRoute = async () => {
     const orgId = await getActiveOrgId(); // en modo prueba = la org sandbox
@@ -15,7 +17,7 @@ export const POST: APIRoute = async () => {
     // Guard duro: SOLO se borra si es una sandbox. Jamás tocar una org real.
     const [o] = await sql`select sandbox_of from orgs where id = ${orgId}`;
     if (!o?.sandbox_of) {
-        return json({ error: 'Solo puedes vaciar datos dentro del entorno de prueba.' }, 409);
+        return json({ error: t(currentLocale(), 'err.test.reset_scope') }, 409);
     }
 
     // Cascade elimina todas las filas hijas (cotizaciones, clientes, productos,

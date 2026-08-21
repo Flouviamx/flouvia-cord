@@ -3028,3 +3028,22 @@ alter table documento_recurrencias force row level security;
 -- Trazabilidad: de qué recurrencia salió cada factura.
 alter table documentos_fiscales add column if not exists recurrencia_id uuid references documento_recurrencias(id) on delete set null;
 create index if not exists idx_documentos_recurrencia on documentos_fiscales(recurrencia_id) where recurrencia_id is not null;
+
+-- ── Entorno de prueba: la sandbox hereda la LOCALIZACIÓN del padre ──────────
+-- La sandbox se creaba copiando marca y config fiscal pero no `idioma`,
+-- `moneda` ni `zona_horaria`, así que nacía con los defaults del schema
+-- (es-MX / MXN / America/Mexico_City). Como el modo de prueba resuelve ESTA
+-- org, un negocio con la cuenta en inglés veía la app entera voltearse al
+-- español al encender el toggle. El insert ya los copia (lib/db.ts) y el PATCH
+-- de Ajustes los propaga; esto alinea las sandbox que ya existían.
+-- Solo toca las que siguen en el default: una sandbox que alguien personalizó
+-- a mano se respeta.
+update orgs s set
+  idioma       = case when s.idioma       = 'es-MX'               then p.idioma       else s.idioma       end,
+  moneda       = case when s.moneda       = 'MXN'                 then p.moneda       else s.moneda       end,
+  zona_horaria = case when s.zona_horaria = 'America/Mexico_City' then p.zona_horaria else s.zona_horaria end
+from orgs p
+where s.sandbox_of = p.id
+  and (s.idioma is distinct from p.idioma
+    or s.moneda is distinct from p.moneda
+    or s.zona_horaria is distinct from p.zona_horaria);

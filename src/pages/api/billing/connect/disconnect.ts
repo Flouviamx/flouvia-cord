@@ -4,6 +4,8 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
+import { currentLocale } from '../../../../lib/context';
+import { t } from '../../../../i18n/app';
 import { stripe } from '../../../../lib/billing';
 import { limitConnectMutation } from '../../../../lib/connect-security';
 import { auditConnect } from '../../../../lib/connect-audit';
@@ -20,7 +22,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (staleAuth) return staleAuth;
     const [org] = await sql`select sandbox_of, stripe_account_id from orgs where id = ${orgId}`;
     if (org?.sandbox_of) {
-        return new Response(JSON.stringify({ error: 'Connect no está disponible en el entorno de prueba' }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ error: t(currentLocale(), 'err.test.connect') }), { status: 409, headers: { 'Content-Type': 'application/json' } });
     }
 
     if (org?.stripe_account_id) {

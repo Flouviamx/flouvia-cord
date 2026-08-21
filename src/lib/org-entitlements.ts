@@ -8,6 +8,7 @@
 
 import { sql, withOrgTx } from './db';
 import { log } from './log';
+import { planLabel } from './permissions';
 import {
     FEATURE_LABEL,
     PLAN_RANK,
@@ -20,10 +21,6 @@ import {
     type LimitedResource,
     type PlanId,
 } from './entitlements';
-
-const PLAN_LABEL: Record<PlanId, string> = {
-    free: 'Gratis', starter: 'Starter', pro: 'Profesional', scale: 'Scale', developer: 'Developer',
-};
 
 export interface EntitlementContext {
     requestedOrgId: string;
@@ -149,7 +146,7 @@ export async function requireEntitlement(orgId: string, feature: FeatureKey): Pr
         const result = await checkEntitlement(orgId, feature);
         if (result.ok) return null;
         return json({
-            error: `${FEATURE_LABEL[feature]} requiere el plan ${PLAN_LABEL[result.requiredPlan]} o superior.`,
+            error: `${FEATURE_LABEL[feature]} requiere el plan ${planLabel(result.requiredPlan)} o superior.`,
             code: 'subscription_required',
             feature,
             plan: result.plan,

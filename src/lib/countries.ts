@@ -1,7 +1,13 @@
-// Catálogo internacional de organizaciones. Cord puede crear una cuenta y emitir
-// una factura comercial en cualquier territorio ISO 3166-1 alpha-2. El único
-// carril regulatorio conectado hoy es CFDI 4.0 para México; en los demás países
-// el documento es comercial y no se presenta automáticamente a la autoridad.
+// Catálogo de países de Cord. Dos listas con trabajos distintos:
+//
+//   · COUNTRY_CODES  — el vocabulario ISO 3166-1 alpha-2 completo. Valida un
+//     país YA GUARDADO. Nunca se ofrece entero en un select.
+//   · SUPPORTED_COUNTRIES — los mercados que Cord ofrece hoy al crear una
+//     cuenta. Es el set que ve el usuario.
+//
+// El único carril regulatorio conectado es CFDI 4.0 para México; en los demás
+// países el documento es comercial y no se presenta automáticamente a la
+// autoridad.
 
 export const COUNTRY_CODES = [
     'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ',
@@ -24,6 +30,46 @@ export const COUNTRY_CODES = [
 
 export type CountryCode = (typeof COUNTRY_CODES)[number];
 
+// ── Países que Cord OFRECE hoy ──────────────────────────────────────────────
+//
+// `COUNTRY_CODES` es el vocabulario ISO completo y sigue siendo la frontera de
+// validación de un dato ya guardado: una organización creada antes de este
+// recorte no puede quedar con un país inválido. Pero OFRECER 249 países en un
+// select cuando solo unos cuantos tienen perfil, impuestos y riel de cobro es
+// la regla 15 a escala de país — el producto prometía 249 mercados y sostenía
+// 23. Los demás nacían con USD, UTC, "Tax ID" genérico, catálogo de impuestos
+// vacío y un campo de cuenta bancaria que el proveedor iba a rebotar.
+//
+// Este set son los mercados donde Cord se vende hoy. Agregar uno no es escribir
+// dos letras aquí: exige perfil en PROFILE_DEFAULTS, tasas en TAX_PRESETS (o la
+// decisión explícita de no tenerlas), y decidir su riel de cobro abajo.
+export const SUPPORTED_COUNTRIES = [
+    'MX', 'US', 'CA', 'BR',
+    'ES', 'GB', 'DE', 'FR',
+    'CO', 'AR', 'CL', 'PE',
+] as const;
+
+export type SupportedCountry = (typeof SUPPORTED_COUNTRIES)[number];
+
+export function isSupportedCountry(value: string): value is SupportedCountry {
+    return (SUPPORTED_COUNTRIES as readonly string[]).includes(String(value || '').toUpperCase());
+}
+
+// ── Riel de cobro por país ──────────────────────────────────────────────────
+//
+// Cord Payments corre sobre Stripe Connect, y Stripe no abre cuentas conectadas
+// en todos los países del set. Donde no las abre, la cuenta sirve igual para
+// cotizar, facturar y llevar la cobranza — lo que no existe es el cobro con
+// tarjeta dentro del link, y eso se DICE antes de empezar el alta en vez de
+// dejar que el proveedor devuelva un error que no le habla al dueño del negocio
+// (regla 14). Hoy Colombia, Argentina, Chile y Perú están en ese caso.
+const CONNECT_COUNTRIES = new Set<string>(['MX', 'US', 'CA', 'BR', 'ES', 'GB', 'DE', 'FR']);
+
+/** ¿Cord Payments (cobro en línea) está disponible en este país? */
+export function supportsOnlinePayments(code: string): boolean {
+    return CONNECT_COUNTRIES.has(String(code || '').toUpperCase());
+}
+
 export interface CountryProfile {
     code: CountryCode;
     name: string;
@@ -44,6 +90,8 @@ export interface CountryProfile {
     taxLabel: string;
     invoicePrefix: string;
     regulatoryRail: 'cfdi_40' | 'commercial_invoice';
+    /** `stripe_connect` = se puede cobrar en línea; `manual` = solo registro de pagos. */
+    paymentsRail: 'stripe_connect' | 'manual';
 }
 
 type ProfileDefaults = Pick<CountryProfile, 'currency' | 'locale' | 'timeZone' | 'taxIdLabel' | 'taxLabel' | 'invoicePrefix'>;
@@ -255,26 +303,31 @@ export function getCountryProfile(code: string, displayLocale: 'es' | 'en' = 'es
         name: countryName(safeCode, displayLocale),
         ...defaults,
         regulatoryRail: safeCode === 'MX' ? 'cfdi_40' : 'commercial_invoice',
+        paymentsRail: supportsOnlinePayments(safeCode) ? 'stripe_connect' : 'manual',
     };
 }
 
-export function listCountries(locale: 'es' | 'en' = 'es') {
-    const featured: CountryCode[] = ['MX', 'US', 'CO', 'AR', 'CL', 'PE', 'ES', 'BR', 'CA', 'GB'];
-    const rank = new Map(featured.map((code, index) => [code, index]));
-    return COUNTRY_CODES
+/**
+ * Los países que se OFRECEN, en orden de relevancia comercial.
+ *
+ * `include` agrega un país fuera del set cuando la organización ya lo tiene
+ * guardado: recortar el catálogo no puede hacer que una cuenta existente vea su
+ * propio país desaparecer del selector y se le reescriba al guardar Ajustes.
+ */
+export function listCountries(locale: 'es' | 'en' = 'es', include?: string | null) {
+    const extra = String(include || '').toUpperCase();
+    const codes: CountryCode[] = [...SUPPORTED_COUNTRIES];
+    if (extra && isCountryCode(extra) && !isSupportedCountry(extra)) codes.push(extra);
+    const rank = new Map(SUPPORTED_COUNTRIES.map((code, index) => [code as string, index]));
+    return codes
         .map((code) => ({
             code,
             name: countryName(code, locale),
             tag: code === 'MX'
-                ? (locale === 'en' ? 'CFDI 4.0' : 'CFDI 4.0')
+                ? 'CFDI 4.0'
                 : (locale === 'en' ? 'Commercial invoice' : 'Factura comercial'),
         }))
-        .sort((a, b) => {
-            const ar = rank.get(a.code);
-            const br = rank.get(b.code);
-            if (ar !== undefined || br !== undefined) return (ar ?? 999) - (br ?? 999);
-            return a.name.localeCompare(b.name, locale);
-        });
+        .sort((a, b) => (rank.get(a.code) ?? 999) - (rank.get(b.code) ?? 999));
 }
 
 // Compatibilidad con los consumidores existentes en español.

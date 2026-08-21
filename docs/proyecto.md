@@ -97,11 +97,20 @@ Los scripts especializados de seguridad y operación se descubren en
   toda la app interna, `/q` y los correos transaccionales — el selector de
   Ajustes ya no dice "próximamente". `orgs.zona_horaria` tiene consumidor real
   vía `src/lib/fmt-server.ts`. Los impuestos son por línea y por país
-  (`TAX_PRESETS` en `src/lib/countries.ts` siembra ~35 países al crear la
+  (`TAX_PRESETS` en `src/lib/countries.ts` siembra las tasas estándar al crear la
   cuenta) y las cuentas de depósito usan el formato del país
   (`src/lib/payout-fields.ts`: CLABE, IBAN, routing+account, sort code, transit,
-  BSB). Detalle en `negocio-billing.md` y reglas 23–25 de
+  BSB, banco+agência). Detalle en `negocio-billing.md` y reglas 23–25 de
   `estandares-ingenieria.md`.
+- Mercados ofrecidos (ago 2026): el alta se abrió a los 12 países que Cord
+  sostiene de punta a punta —MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE— en
+  lugar de los 249 códigos ISO, y las divisas se acotaron a las de ese set más
+  las de comercio internacional. En CO, AR, CL y PE la cuenta cotiza, factura y
+  lleva cobranza, pero el cobro en línea no está disponible y se dice antes de
+  empezar el alta. Contrato y criterio de admisión en la regla 28 de
+  `estandares-ingenieria.md`; fuentes en `src/lib/countries.ts`
+  (`SUPPORTED_COUNTRIES`, `supportsOnlinePayments`) y `src/lib/currency.ts`
+  (`OFFERED_CURRENCIES`).
 
 ## Configuración
 

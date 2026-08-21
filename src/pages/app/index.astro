@@ -7,6 +7,7 @@ import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
+import WidgetCustomizeButtons from '../../components/app/WidgetCustomizeButtons.astro';
 import WidgetEmpty from '../../components/app/WidgetEmpty.astro';
 import { getActiveOrgId } from '../../lib/db';
 import { checkEntitlement } from '../../lib/org-entitlements';
@@ -102,12 +103,7 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
 
 <AppLayout title="Dashboard — Cord" page="dashboard" heading={t(L, 'dash.heading')}>
     <Fragment slot="topbar-actions">
-        <button type="button" class="dash-edit-btn" id="dashEditBtn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18M3 9v10a2 2 0 0 0 2 2h4m10-12v10a2 2 0 0 1-2 2H9"/></svg>
-            {t(L, 'dash.personalizar')}
-        </button>
-        <button type="button" class="dash-edit-btn dash-edit-reset" id="dashResetBtn" hidden>{t(L, 'dash.restablecer')}</button>
-        <button type="button" class="dash-edit-btn dash-edit-done" id="dashDoneBtn" hidden>{t(L, 'dash.listo')}</button>
+        <WidgetCustomizeButtons editId="dashEditBtn" resetId="dashResetBtn" doneId="dashDoneBtn" />
     </Fragment>
     {mostrarNudgeCobros && (
         <div class="dash-card cobros-nudge" id="cobrosNudge" style="display:none">
@@ -551,16 +547,8 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     .hero-rev-nota { margin: 0.5rem 0 0; font-size: 0.72rem; color: var(--color-text-muted); opacity: 0.85; }
 
 
-    /* ── Botones "Personalizar / Listo / Restablecer" (topbar-actions) ── */
-    .dash-edit-btn {
-        display: inline-flex; align-items: center; gap: 6px;
-        appearance: none; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
-        color: var(--color-text); background: var(--color-bg-soft); border: 1px solid var(--color-border);
-        border-radius: 100px; padding: 7px 14px; cursor: pointer; transition: background 0.2s var(--ease-ios);
-    }
-    .dash-edit-btn[hidden] { display: none; }
-    .dash-edit-btn:hover { background: var(--row-hover); }
-    .dash-edit-btn.dash-edit-done { background: var(--color-blue-deep); color: #fff; border-color: var(--color-blue-deep); }
+    /* Los botones "Personalizar / Restablecer / Listo" viven ahora en
+       WidgetCustomizeButtons.astro, con su CSS en src/styles/widgets.css. */
 
     /* ══ Grid unitario de widgets ══ */
     /* El grid, los `data-span` y el modo edición viven en `src/styles/widgets.css` (global),
@@ -662,7 +650,6 @@ const showTour = isDemo && COTIZACIONES[0].status === 'sent';
     .task-empty { font-size: 0.82rem; color: var(--color-text-muted); margin: 0.6rem 0; }
 
     @media (max-width: 680px) {
-        .dash-edit-btn { min-height: 44px; justify-content: center; padding-inline: 1rem; }
         .hero-rev { padding: 1.25rem 1rem; }
         .hero-rev-metrics {
             width: 100%;

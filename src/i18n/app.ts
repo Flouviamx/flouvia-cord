@@ -21,6 +21,12 @@ export type AppLocale = "es" | "en";
 export const appStrings = {
     es: {
         // Sidebar — grupos
+        // Botonera compartida de personalización de widgets
+        // (WidgetCustomizeButtons.astro) — la usan las cinco páginas con
+        // WidgetGrid, que antes tenían cada una su propia copia de estas claves.
+        "widgets.personalizar": "Personalizar",
+        "widgets.restablecer": "Restablecer",
+        "widgets.listo": "Listo",
         "widgets.buscar_ph": "Buscar widgets…",
         "widgets.sin_resultados": "Sin resultados",
         "widgets.agregar": "Agregar",
@@ -71,6 +77,17 @@ export const appStrings = {
         "layout.test.desc": "Todo lo que hagas aquí es de prueba — tus datos reales no se tocan.",
         "layout.test.reset": "Vaciar datos de prueba",
         "layout.test.exit": "Salir del modo de prueba",
+
+        // Errores del entorno de prueba que devuelven las APIs y el cliente
+        // muestra como toast. Van por t() y no como literal: la app entera se
+        // sirve en el idioma de la org, y estos se quedaban en español.
+        "err.test.billing": "Estás en el entorno de prueba. Sal del modo de prueba para gestionar tu facturación.",
+        "err.test.plan": "Estás en el entorno de prueba. Sal del modo de prueba para gestionar tu plan.",
+        "err.test.connect": "Cord Payments no está disponible en el entorno de prueba.",
+        "err.test.reset_scope": "Solo puedes vaciar datos dentro del entorno de prueba.",
+        "err.test.org_delete": "No se puede eliminar un entorno de prueba por esta vía.",
+        "err.test.key_unresolved": "No se pudo resolver el entorno de prueba de esta llave.",
+        "err.test.key_is_test": "Esta llave pertenece al entorno de prueba. Genera una llave en vivo fuera del modo de prueba.",
         // AppLayout — aria-labels de topbar
         "layout.aria.abrir_menu": "Abrir menú",
         "layout.aria.buscar_cmdk": "Buscar — Command K",
@@ -713,6 +730,9 @@ export const appStrings = {
 
         // Ajustes › Cobros
         "set.cobros.intro": "Recibe pagos de tus cotizaciones en línea. El dinero cae directo a tu cuenta; Cord no toca ni retiene tus fondos.",
+        "set.cobros.pais_titulo": "El cobro en línea todavía no está disponible en tu país",
+        "set.cobros.pais_desc": "Cord funciona completo en tu cuenta —cotizas, facturas y le das seguimiento a la cobranza—, pero el pago con tarjeta dentro del link todavía no opera aquí. Mientras tanto puedes recibir transferencia y registrar el pago tú mismo: el saldo del cliente y la cobranza se actualizan igual.",
+        "set.cobros.pais_contacto": "Escríbenos si quieres que te avisemos en cuanto se habilite.",
         "set.cobros.eyebrow": "COBROS EN LÍNEA",
         "set.cobros.titulo": "Deja que tus clientes te paguen con un clic",
         "set.cobros.desc": "Conecta tu cuenta y cobra tus cotizaciones con tarjeta o transferencia. Cord Payments presenta una sola tarifa por método.",
@@ -1558,9 +1578,6 @@ export const appStrings = {
         "dash.rango_nota": "El rango aplica a ingreso, tendencia, embudo y rankings. Cartera, pipeline y salud siempre muestran hoy.",
         "dash.sin_datos_rango": "Sin movimientos en este periodo",
 
-        "dash.personalizar": "Personalizar",
-        "dash.listo": "Listo",
-        "dash.restablecer": "Restablecer",
         "dash.widgets_ocultos": "Widgets ocultos",
         "dash.confirmar_restablecer": "¿Restablecer el orden y los widgets ocultos del dashboard?",
         "dash.w_tendencia": "Tendencia mensual",
@@ -2555,9 +2572,6 @@ export const appStrings = {
         "cob.registrar_pago_btn": "Registrar pago",
         "cob.no_pudo_registrar_pago": "No se pudo registrar el pago",
         "cob.wa_saludo": "Hola{empresa}, le recordamos amablemente el saldo de la cotización {folio} por {total} (vence {vence}). Puede revisarla aquí: {link}. ¡Gracias!",
-        "cob.personalizar": "Personalizar",
-        "cob.listo": "Listo",
-        "cob.restablecer": "Restablecer",
         "cob.widgets_ocultos": "Widgets ocultos",
         "cob.reset_confirm": "¿Restablecer los widgets de Cobranza?",
         "cob.w_arrastrar": "Arrastrar widget",
@@ -2647,9 +2661,6 @@ export const appStrings = {
         "cbr.th_metodo": "Método",
         "cbr.th_fecha": "Fecha",
         "cbr.th_monto": "Monto",
-        "cbr.personalizar": "Personalizar",
-        "cbr.listo": "Listo",
-        "cbr.restablecer": "Restablecer",
         "cbr.widgets_ocultos": "Widgets ocultos",
         "cbr.reset_confirm": "¿Restablecer los widgets de Mi dinero?",
         "cbr.w_arrastrar": "Arrastrar widget",
@@ -2726,9 +2737,6 @@ export const appStrings = {
         "cia.modo_automatico": "Automático",
         "cia.forzar": "Correr ahora",
         "cia.configurar": "Configurar",
-        "cia.personalizar": "Personalizar",
-        "cia.listo": "Listo",
-        "cia.restablecer": "Restablecer",
         "cia.widgets_ocultos": "Widgets ocultos",
         "cia.reset_confirm": "¿Restablecer los widgets de esta página?",
         "cia.w_arrastrar": "Arrastrar",
@@ -3178,6 +3186,9 @@ export const appStrings = {
     },
     en: {
         // Sidebar — groups
+        "widgets.personalizar": "Customize",
+        "widgets.restablecer": "Reset",
+        "widgets.listo": "Done",
         "widgets.buscar_ph": "Search widgets…",
         "widgets.sin_resultados": "No results",
         "widgets.agregar": "Add",
@@ -3228,6 +3239,14 @@ export const appStrings = {
         "layout.test.desc": "Everything you do here is a test — your real data is untouched.",
         "layout.test.reset": "Clear test data",
         "layout.test.exit": "Exit test mode",
+
+        "err.test.billing": "You're in the test environment. Exit test mode to manage your billing.",
+        "err.test.plan": "You're in the test environment. Exit test mode to manage your plan.",
+        "err.test.connect": "Cord Payments isn't available in the test environment.",
+        "err.test.reset_scope": "You can only clear data from inside the test environment.",
+        "err.test.org_delete": "A test environment can't be deleted this way.",
+        "err.test.key_unresolved": "We couldn't resolve the test environment for this key.",
+        "err.test.key_is_test": "This key belongs to the test environment. Generate a live key outside test mode.",
         // AppLayout — topbar aria-labels
         "layout.aria.abrir_menu": "Open menu",
         "layout.aria.buscar_cmdk": "Search — Command K",
@@ -3866,6 +3885,9 @@ export const appStrings = {
 
         // Settings › Payments
         "set.cobros.intro": "Accept quote payments online. Funds go straight to your account; Cord never touches or holds them.",
+        "set.cobros.pais_titulo": "Online payments aren't available in your country yet",
+        "set.cobros.pais_desc": "Cord works fully in your account — you quote, invoice and chase collections — but card payments inside the link don't operate here yet. In the meantime you can take a bank transfer and record the payment yourself: the client's balance and your collections update just the same.",
+        "set.cobros.pais_contacto": "Write to us if you want a heads-up as soon as it's enabled.",
         "set.cobros.eyebrow": "ONLINE PAYMENTS",
         "set.cobros.titulo": "Let your clients pay with one click",
         "set.cobros.desc": "Connect your account and accept card or bank transfer payments. Cord Payments presents one published fee per method.",
@@ -4711,9 +4733,6 @@ export const appStrings = {
         "dash.rango_nota": "The range applies to revenue, trend, funnel and rankings. Receivables, pipeline and health always show today.",
         "dash.sin_datos_rango": "No activity in this period",
 
-        "dash.personalizar": "Customize",
-        "dash.listo": "Done",
-        "dash.restablecer": "Reset",
         "dash.widgets_ocultos": "Hidden widgets",
         "dash.confirmar_restablecer": "Reset the dashboard's widget order and hidden widgets?",
         "dash.w_tendencia": "Monthly trend",
@@ -5708,9 +5727,6 @@ export const appStrings = {
         "cob.registrar_pago_btn": "Record payment",
         "cob.no_pudo_registrar_pago": "Could not record the payment",
         "cob.wa_saludo": "Hi{empresa}, we kindly remind you of the balance for quote {folio} of {total} (due {vence}). You can review it here: {link}. Thank you!",
-        "cob.personalizar": "Customize",
-        "cob.listo": "Done",
-        "cob.restablecer": "Reset",
         "cob.widgets_ocultos": "Hidden widgets",
         "cob.reset_confirm": "Reset the Collections widgets?",
         "cob.w_arrastrar": "Drag widget",
@@ -5800,9 +5816,6 @@ export const appStrings = {
         "cbr.th_metodo": "Method",
         "cbr.th_fecha": "Date",
         "cbr.th_monto": "Amount",
-        "cbr.personalizar": "Customize",
-        "cbr.listo": "Done",
-        "cbr.restablecer": "Reset",
         "cbr.widgets_ocultos": "Hidden widgets",
         "cbr.reset_confirm": "Reset the My money widgets?",
         "cbr.w_arrastrar": "Drag widget",
@@ -5879,9 +5892,6 @@ export const appStrings = {
         "cia.modo_automatico": "Automatic",
         "cia.forzar": "Run now",
         "cia.configurar": "Configure",
-        "cia.personalizar": "Customize",
-        "cia.listo": "Done",
-        "cia.restablecer": "Reset",
         "cia.widgets_ocultos": "Hidden widgets",
         "cia.reset_confirm": "Reset the widgets on this page?",
         "cia.w_arrastrar": "Drag",

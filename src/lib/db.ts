@@ -153,15 +153,21 @@ export async function resolveSandboxOrgId(parentId: string): Promise<string> {
 
     // Primera vez: crear la sandbox copiando el snapshot de marca/config del padre.
     // El índice único parcial (sandbox_of) hace el insert idempotente ante carreras.
+    // `idioma`, `moneda` y `zona_horaria` viajan en el snapshot a propósito: el modo
+    // de prueba resuelve ESTA org, así que sin ellas setRequestLocale()/Currency()/
+    // TimeZone() leían los defaults del schema (es-MX, MXN, CDMX) y la app de un
+    // negocio en inglés se volteaba entera al español al encender el toggle.
     const [[created]] = await withOrgTx(parentId, sql`
         insert into orgs (sandbox_of, nombre, logo_url, color_marca, quote_prefix, plan,
                           country_code, iva_pct, vigencia_default_dias, terminos_default,
                           pdf_template, pdf_mensaje, pdf_condiciones, portal_bienvenida,
-                          email_from_name, iva_incluido_defecto)
+                          email_from_name, iva_incluido_defecto,
+                          idioma, moneda, zona_horaria)
         select id, nombre, logo_url, color_marca, quote_prefix, plan,
                country_code, iva_pct, vigencia_default_dias, terminos_default,
                pdf_template, pdf_mensaje, pdf_condiciones, portal_bienvenida,
-               email_from_name, iva_incluido_defecto
+               email_from_name, iva_incluido_defecto,
+               idioma, moneda, zona_horaria
         from orgs where id = ${parentId}
         on conflict (sandbox_of) where sandbox_of is not null
         do update set sandbox_of = excluded.sandbox_of

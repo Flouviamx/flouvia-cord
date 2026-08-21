@@ -6,6 +6,7 @@ import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { describeFee, describeSubscriptionFee, FEE_TERMS_VERSION } from '../../../lib/fees';
 import { payoutSpecFor } from '../../../lib/payout-fields';
+import { supportsOnlinePayments, countryName } from '../../../lib/countries';
 const ORG = await getOrg();
 const L = currentLocale();
 
@@ -18,6 +19,12 @@ const puedeCobrar = activo; // habilita tarjeta / SPEI (transferencia manual no 
 // negocio en Madrid es prometer algo que va a fallar en el proveedor (regla 14).
 const PAIS = String(ORG.countryCode || 'MX').toUpperCase();
 const speiDisponible = PAIS === 'MX';
+// Cord Payments corre sobre Stripe Connect, que no abre cuentas conectadas en
+// todos los países del set (hoy CO, AR, CL y PE). Se dice ANTES de empezar el
+// alta, no se deja que el proveedor devuelva un error que no le habla al dueño
+// del negocio (regla 14). La cuenta sirve igual: cotiza, factura y cobra con
+// pago registrado a mano.
+const cobrosEnLinea = supportsOnlinePayments(PAIS);
 // El formato de la cuenta de depósito depende del país: CLABE, IBAN, sort code.
 const PAYOUT = payoutSpecFor(PAIS);
 const marca = ORG.colorMarca || '#0a192f';
@@ -36,7 +43,14 @@ const pasos = [
 <SettingsShell title="Cobros — Ajustes" tab="cobros" perm="cobros_config"
     intro={t(L, 'set.cobros.intro')} save>
 
-    {estado === 'nuevo' ? (
+    {!cobrosEnLinea && estado === 'nuevo' ? (
+        <div style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border);">
+            <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-muted);">{countryName(PAIS, L)}</span>
+            <h2 class="editorial" style="font-size: 1.8rem; margin: 0.5rem 0 1rem; color: var(--color-text);">{t(L, 'set.cobros.pais_titulo')}</h2>
+            <p style="font-size: 0.95rem; color: var(--color-text-muted); line-height: 1.6; max-width: 60ch; margin: 0 0 1rem;">{t(L, 'set.cobros.pais_desc')}</p>
+            <p style="font-size: 0.85rem; color: var(--color-text-muted); margin: 0;">{t(L, 'set.cobros.pais_contacto')}</p>
+        </div>
+    ) : estado === 'nuevo' ? (
         <>
         <div style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border);">
             <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--color-text-muted);">{t(L, 'set.cobros.eyebrow')}</span>

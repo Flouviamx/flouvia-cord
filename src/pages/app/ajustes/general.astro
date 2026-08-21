@@ -5,28 +5,36 @@ import { getOrg } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { listCountries } from '../../../lib/countries';
+import { listTimeZones, canonicalZone } from '../../../lib/timezones';
+import { listOfferedCurrencies } from '../../../lib/currency';
 import FlagSelect from '../../../components/ui/FlagSelect';
 const ORG = await getOrg();
 const L = currentLocale();
-const COUNTRY_OPTIONS = listCountries(L).map((country) => ({
+const COUNTRY_OPTIONS = listCountries(L, ORG.countryCode).map((country) => ({
     code: country.code,
     label: country.name,
     hint: country.tag,
 }));
 
 const displayCurrency = new Intl.DisplayNames([L], { type: 'currency' });
-const priorityCurrencies = ['MXN', 'USD', 'EUR'];
-const currencyCodes = [...new Set([...Intl.supportedValuesOf('currency'), ORG.moneda])]
-    .sort((a, b) => {
-        const ar = priorityCurrencies.indexOf(a), br = priorityCurrencies.indexOf(b);
-        if (ar >= 0 || br >= 0) return (ar >= 0 ? ar : 999) - (br >= 0 ? br : 999);
-        return a.localeCompare(b);
-    });
-const MONEDAS = currencyCodes.map((code) => ({ v: code, l: `${code} — ${displayCurrency.of(code) || code}` }));
-const zoneValues = [...new Set(['UTC', ...Intl.supportedValuesOf('timeZone'), ORG.zonaHoraria])];
-const ZONAS = zoneValues.sort((a, b) => a.localeCompare(b)).map((zone) => ({
-    v: zone,
-    l: zone === 'UTC' ? 'UTC' : zone.replaceAll('_', ' ').replace('/', ' — '),
+// El set que Cord ofrece, con la divisa actual de la org primero. No es el ISO
+// completo: ver OFFERED_CURRENCIES en lib/currency.ts.
+const MONEDAS = listOfferedCurrencies(ORG.moneda)
+    .map((code) => ({ v: code, l: `${code} — ${displayCurrency.of(code) || code}` }));
+// Zonas con offset y país (src/lib/timezones.ts). Las del país donde opera el
+// negocio van primero; `ORG.zonaHoraria` se pasa como `ensure` para que una
+// cuenta guardada con un alias de ICU siga encontrando la suya seleccionada.
+// El valor guardado puede ser un alias ('Asia/Kolkata'); el catálogo usa el id
+// canónico de ICU, así que ambos lados se comparan ya canonizados o la zona del
+// negocio no saldría seleccionada.
+const ZONA_ACTUAL = canonicalZone(ORG.zonaHoraria);
+const ZONAS = listTimeZones(L, ORG.countryCode, ORG.zonaHoraria).map((z) => ({
+    code: z.id,
+    label: z.city,
+    hint: z.country ? `${z.offset} · ${z.country}` : z.offset,
+    // `flag` es OBLIGATORIO aquí: FlagSelect cae a usar `code` como ISO y
+    // 'America/Mexico_City' no es un código de país.
+    flag: z.countryCode || 'UN',
 }));
 ---
 
@@ -109,10 +117,16 @@ const ZONAS = zoneValues.sort((a, b) => a.localeCompare(b)).map((zone) => ({
                         : 'Define la experiencia de facturación y el carril regulatorio que muestra Cord.'}</span>
                 </div>
                 <div class="s-field">
-                    <label for="oZona">{t(L, 'set.general.zona_horaria')}</label>
-                    <select class="s-input" id="oZona" data-field="zona_horaria">
-                        {ZONAS.map((z) => <option value={z.v} selected={ORG.zonaHoraria === z.v}>{z.l}</option>)}
-                    </select>
+                    <label id="oZonaLabel">{t(L, 'set.general.zona_horaria')}</label>
+                    <FlagSelect
+                        client:load
+                        ariaLabel={t(L, 'set.general.zona_horaria')}
+                        options={ZONAS}
+                        defaultValue={ZONA_ACTUAL}
+                        nativeId="oZona"
+                        nativeName="zona_horaria"
+                        nativeDataField="zona_horaria"
+                    />
                     <span class="s-hint">{t(L, 'set.general.zona_horaria_hint')}</span>
                 </div>
             </div>

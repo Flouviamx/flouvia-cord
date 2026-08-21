@@ -21,10 +21,22 @@ Cord charges a fee for every payment you process (see the full detail in [Fees a
 account is opened in that country and with your business currency, and **neither can be
 changed later** — regulatory verification requires it. If the country is wrong, fix it
 before starting verification.
-
-Adding a bank account from the app uses CLABE, which is Mexican. If your bank is in
-another country, write to us and we'll set it up with you.
 </Callout>
+
+### Where it's available
+
+Cord Payments — card payments inside the link — is available today in **Mexico, the
+United States, Canada, Brazil, Spain, the United Kingdom, Germany and France**.
+
+In **Colombia, Argentina, Chile and Peru** you can open your Cord account and use
+everything else — quoting, invoicing, chasing collections and recording the payments you
+receive by bank transfer — but online payments don't operate there yet. Settings ›
+Payments tells you so instead of letting you start a verification that can't complete.
+
+What the wizard asks for comes from your business's country: the tax identifier (RFC in
+Mexico, NIF/CIF in Spain, EIN in the United States), the ID document accepted, and your
+deposit account's format. Cord validates that format **before** sending it, so a
+mistyped digit is caught by Cord rather than bounced by the bank days later.
 
 1. Go to **Settings › Payments** inside the app.
 2. If your account is in "New" status, click **Start verification**.
@@ -33,12 +45,12 @@ another country, write to us and we'll set it up with you.
 | Step | What it captures |
 |---|---|
 | **1. Entity type** | Whether your business operates as an individual or a legal entity, and the business category (MCC). |
-| **2. Business details** | Legal name, RFC/tax ID, and the details you invoice under. |
+| **2. Business details** | Legal name, your country's tax identifier, and the details you invoice under. |
 | **3. Fiscal address** | Your business's registered fiscal address. |
 | **4. Identity** | Personal details of the legal representative or the individual operating the account. |
 | **5. Owners** | Information about any beneficial owners with a relevant stake in the business (anti-money-laundering regulatory requirement). |
 | **6. Verification** | Official ID and live selfie capture — see [LiveCapture](#identity-verification-with-livecapture) below. |
-| **7. Bank account** | The CLABE where you want to receive your deposits. |
+| **7. Bank account** | The account where you want to receive your deposits, in your country's format: CLABE in Mexico, IBAN in Spain and Germany, routing + account in the United States, sort code in the UK, transit in Canada, bank + branch in Brazil. |
 | **8. Terms** | You accept the handling of your data and **Cord Payments' current fee schedule** — it's the same step where you confirm how much Cord will charge you to process each payment. |
 
 The wizard picks up exactly where you left off if you leave halfway through — you won't have to recapture what you already saved. If Cord detects a specific missing requirement (say, a photo that came out blurry), it sends you straight to that particular step instead of restarting the whole process.
@@ -53,7 +65,7 @@ For financial regulatory reasons, verifying your identity and the legitimacy of 
 - All of this happens without uploading files or opening third-party pages — the camera lives right inside the same Cord screen.
 
 <Callout type="info">
-**Your photos are not stored by Cord.** The identification images and selfie are transmitted encrypted directly to the financial verification system, and Cord does not persist them on its own servers. Your CLABE is retained, but encrypted at rest, so it can be displayed and used to operate your deposit account.
+**Your photos are not stored by Cord.** The identification images and selfie are transmitted encrypted directly to the financial verification system, and Cord does not persist them on its own servers. Your deposit account is retained, but encrypted at rest, so it can be displayed and used to operate it.
 </Callout>
 
 ## Your account's status
