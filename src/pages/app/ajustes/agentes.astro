@@ -13,8 +13,7 @@
 // Ahora: la cobranza es una tarjeta de ESTADO que enlaza a su página, y las
 // conexiones se explican por lo que hacen, no por el protocolo que usan.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
-import AccessGate from '../../../components/app/AccessGate.astro';
+import PlanGate from '../../../components/app/PlanGate.astro';
 import '../../../styles/modal.css';
 import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
 import { listMcpServers } from '../../../lib/agents/governance';
@@ -56,21 +55,16 @@ const conPermiso = servers.filter((s: any) => s.permitido && s.activo).length;
 <SettingsShell title="Inteligencia artificial — Ajustes" tab="agentes" perm="ajustes">
 
     {!entitlementCheck.ok ? (
-        <>
-            <AccessGate reason="plan" class="is-inset" title={t(L, 'set.ag.plan_titulo')} desc={t(L, 'set.ag.plan_desc')
+        <PlanGate
+            id="agentesPlanModal"
+            class="is-inset"
+            title={t(L, 'set.ag.plan_titulo')}
+            desc={t(L, 'set.ag.plan_desc')
                 .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                .replace('{current}', planLabel(entitlementCheck.plan))} />
-            <PlanPaywallModal
-                id="agentesPlanModal"
-                title={t(L, 'set.ag.plan_titulo')}
-                desc={t(L, 'set.ag.plan_desc')
-                    .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                    .replace('{current}', planLabel(entitlementCheck.plan))}
-                requiredPlan={entitlementCheck.requiredPlan}
-                locale={L === 'en' ? 'en' : 'es'}
-                returnHref="/app/ajustes"
-            />
-        </>
+                .replace('{current}', planLabel(entitlementCheck.plan))}
+            requiredPlan={entitlementCheck.requiredPlan}
+            locale={L === 'en' ? 'en' : 'es'}
+            returnHref="/app/ajustes" />
     ) : <Fragment>
 
     <!-- ── Cobranza con IA: tarjeta de estado, NO un segundo interruptor ── -->

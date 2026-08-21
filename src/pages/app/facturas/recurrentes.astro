@@ -11,7 +11,7 @@
 // bien ("Repetir cada mes"), que es como realmente nace una recurrencia.
 import AppLayout from '../../../layouts/AppLayout.astro';
 import AccessGate from '../../../components/app/AccessGate.astro';
-import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
+import PlanGate from '../../../components/app/PlanGate.astro';
 import { getMyMembership } from '../../../lib/queries';
 import { memberCan, planLabel } from '../../../lib/permissions';
 import { getActiveOrgId, sql, withOrgTx } from '../../../lib/db';
@@ -65,23 +65,16 @@ const CADENCIA_LABEL: Record<string, string> = {
     {!hasPerm && <AccessGate title={t(L, 'fact.sin_acceso_titulo')} desc={t(L, 'fact.sin_acceso_desc')} />}
 
     {hasPerm && !hasAccess && gate && (
-        <Fragment>
-            <AccessGate reason="plan"
-                title={t(L, 'rec.titulo')}
-                desc={tf('fact.plan_desc', {
-                    plan: planLabel(gate.requiredPlan),
-                    current: planLabel(gate.plan),
-                })} />
-            <PlanPaywallModal
-                id="recPlanModal"
-                title={t(L, 'rec.titulo')}
-                desc={tf('fact.plan_desc', {
-                    plan: planLabel(gate.requiredPlan),
-                    current: planLabel(gate.plan),
-                })}
-                requiredPlan={gate.requiredPlan}
-            />
-        </Fragment>
+        <PlanGate
+            id="recPlanModal"
+            title={t(L, 'rec.titulo')}
+            desc={tf('fact.plan_desc', {
+                plan: planLabel(gate.requiredPlan),
+                current: planLabel(gate.plan),
+            })}
+            requiredPlan={gate.requiredPlan}
+            locale={L === 'en' ? 'en' : 'es'}
+            returnHref="/app/facturas" />
     )}
 
     {hasPerm && hasAccess && (

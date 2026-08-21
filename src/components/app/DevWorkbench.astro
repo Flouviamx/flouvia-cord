@@ -30,10 +30,26 @@ import '../../styles/developers.css';
 import { t } from '../../i18n/app';
 import { WEBHOOK_EVENTS } from '../../lib/webhooks';
 import { DEV_INTEGRATION_PROMPT } from '../../lib/dev-prompt';
+import PlanPaywallModal from './PlanPaywallModal.astro';
+import {
+    PLAN_RANK, apiKeyLimit, normalizePlan, webhookLimit,
+    type PaidPlan,
+} from '../../lib/entitlements';
+import { planLabel } from '../../lib/permissions';
 
-interface Props { locale: 'es' | 'en' }
-const { locale } = Astro.props;
+interface Props { locale: 'es' | 'en'; currentPlan: string }
+const { locale, currentPlan } = Astro.props;
 const L = locale;
+const tf = (key: string, vars: Record<string, string>) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
+const normalizedPlan = normalizePlan(currentPlan);
+const PAID_STEPS: PaidPlan[] = ['starter', 'pro', 'scale', 'developer'];
+const nextCapacityPlan = PAID_STEPS.find((plan) => PLAN_RANK[plan] > PLAN_RANK[normalizedPlan]) ?? 'developer';
+const currentPlanName = planLabel(normalizedPlan, L);
+const nextPlanName = planLabel(nextCapacityPlan, L);
 
 const TABS = [
     { id: 'resumen', label: t(L, 'wb.tab.resumen') },
@@ -205,6 +221,33 @@ const WBI18N = {
         </svg>
     </button>
 </div>
+
+<!-- Los límites del Workbench llegan como fragmentos por innerHTML. El paywall
+     vive en el chasis estable y se abre por delegación desde esos fragmentos. -->
+<PlanPaywallModal
+    id="apiKeysPlanModal"
+    title={t(L, 'set.api.upsell_titulo')}
+    desc={tf('set.api.upsell_desc', {
+        n: String(apiKeyLimit(normalizedPlan)),
+        current: currentPlanName,
+        plan: nextPlanName,
+    })}
+    requiredPlan={nextCapacityPlan}
+    locale={L}
+    autoOpen={false}
+/>
+<PlanPaywallModal
+    id="webhooksPlanModal"
+    title={t(L, 'set.wh.upsell_titulo')}
+    desc={tf('set.wh.upsell_desc', {
+        n: String(webhookLimit(normalizedPlan)),
+        current: currentPlanName,
+        plan: nextPlanName,
+    })}
+    requiredPlan={nextCapacityPlan}
+    locale={L}
+    autoOpen={false}
+/>
 
 <!-- ── Wizard full-screen: agregar / editar endpoint de webhook ──
      Es un <div> con z-index, NO un <dialog showModal()>: un dialog se promueve al

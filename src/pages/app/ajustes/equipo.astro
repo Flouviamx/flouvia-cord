@@ -12,8 +12,10 @@
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import '../../../styles/modal.css';
 import PermPicker from '../../../components/app/PermPicker.astro';
+import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
 import { getOrg, getMembers, getMyMembership, getSeatUsage } from '../../../lib/queries';
 import { memberCan, PERMISOS, PRESETS, planTieneEquipo, minPlanOf, planLabel, TEAM_PLANS } from '../../../lib/permissions';
+import { minimumPlan } from '../../../lib/entitlements';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -43,6 +45,7 @@ const ilimitado = !Number.isFinite(seats.limite);
 const lleno = !ilimitado && seats.usados >= seats.limite;
 const pctAsientos = ilimitado ? 0 : Math.min(100, Math.round((seats.usados / seats.limite) * 100));
 const tienePlanEquipo = planTieneEquipo(seats.plan);
+const teamPlan = minimumPlan('team');
 const dominios = (ORG.inviteDomains || '').split(',').map((d: string) => d.trim()).filter(Boolean);
 
 // Todo lo que el <script> necesita traducido (no es is:inline, no puede llamar
@@ -101,7 +104,7 @@ const EQ_T = {
             <div class="eq-seats-actions">
                 <button type="button" class="eq-btn" id="eqExport">{t(L, 'set.eq.exportar')}</button>
                 {canEdit && (lleno || !tienePlanEquipo
-                    ? <a class="eq-btn eq-btn-primary" href={`/app/ajustes/plan?plan=${minPlanOf(TEAM_PLANS)}`}>{t(L, 'set.eq.asientos_ver_planes')}</a>
+                    ? <a class="eq-btn eq-btn-primary" href={`/app/ajustes/plan?plan=${minPlanOf(TEAM_PLANS)}`} data-plan-paywall-open="equipoPlanModal">{t(L, 'set.eq.asientos_ver_planes')}</a>
                     : <button type="button" class="eq-btn eq-btn-primary" id="eqInvite">{t(L, 'set.eq.agregar_miembro')}</button>)}
             </div>
         </div>
@@ -272,6 +275,21 @@ const EQ_T = {
         </div>
     </dialog>
     </>
+    )}
+
+    {canEdit && (lleno || !tienePlanEquipo) && (
+        <PlanPaywallModal
+            id="equipoPlanModal"
+            title={t(L, 'set.eq.upsell_titulo')}
+            desc={tf('set.eq.upsell_desc', {
+                current: planLabel(seats.plan),
+                n: String(seats.limite),
+                plan: planLabel(teamPlan),
+            })}
+            requiredPlan={teamPlan}
+            locale={L === 'en' ? 'en' : 'es'}
+            autoOpen={false}
+        />
     )}
 </SettingsShell>
 

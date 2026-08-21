@@ -2,7 +2,7 @@
 import AppLayout from '../../layouts/AppLayout.astro';
 import '../../styles/modal.css';
 import AccessGate from '../../components/app/AccessGate.astro';
-import PlanPaywallModal from '../../components/app/PlanPaywallModal.astro';
+import PlanGate from '../../components/app/PlanGate.astro';
 import DateRangePicker from '../../components/app/DateRangePicker.astro';
 import ReportPicker from '../../components/app/ReportPicker.astro';
 import WidgetGrid from '../../components/app/WidgetGrid.astro';
@@ -80,23 +80,16 @@ const widgetLabels = {
     {!hasAnalytics && <AccessGate title={t(L, 'an.sin_acceso_titulo')} desc={t(L, 'an.sin_acceso_desc')} />}
     {hasAnalytics && !hasPerm && <AccessGate reason="perm" title={t(L, 'an.informe_restringido_titulo')} desc={t(L, 'an.informe_restringido_desc')} />}
     {hasAnalytics && hasPerm && !subscriptionAccess && entitlementCheck && (
-        <>
-            <AccessGate reason="plan" title={t(L, 'an.informe_plan_titulo')} desc={t(L, 'an.informe_plan_desc')
+        <PlanGate
+            id="informesPlanModal"
+            title={t(L, 'an.informe_plan_titulo')}
+            desc={t(L, 'an.informe_plan_desc')
                 .replace('{report}', reportLabel(report, L))
                 .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                .replace('{current}', planLabel(entitlementCheck.plan))} />
-            <PlanPaywallModal
-                id="informesPlanModal"
-                title={t(L, 'an.informe_plan_titulo')}
-                desc={t(L, 'an.informe_plan_desc')
-                    .replace('{report}', reportLabel(report, L))
-                    .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                    .replace('{current}', planLabel(entitlementCheck.plan))}
-                requiredPlan={entitlementCheck.requiredPlan}
-                locale={L === 'en' ? 'en' : 'es'}
-                returnHref="/app/informes"
-            />
-        </>
+                .replace('{current}', planLabel(entitlementCheck.plan))}
+            requiredPlan={entitlementCheck.requiredPlan}
+            locale={L === 'en' ? 'en' : 'es'}
+            returnHref="/app/informes" />
     )}
 
     {hasReportAccess && data && (

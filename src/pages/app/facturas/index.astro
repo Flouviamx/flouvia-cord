@@ -14,7 +14,7 @@
 // Crear ya no es un modal: vive en `/app/facturas/nueva`, el editor completo.
 import AppLayout from '../../../layouts/AppLayout.astro';
 import AccessGate from '../../../components/app/AccessGate.astro';
-import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
+import PlanGate from '../../../components/app/PlanGate.astro';
 import { getFacturas, getFacturasResumen, getMyMembership, money } from '../../../lib/queries';
 import { memberCan, planLabel } from '../../../lib/permissions';
 import { getActiveOrgId } from '../../../lib/db';
@@ -117,24 +117,16 @@ const vacia = data.facturas.length === 0 && !filtros.estado && !filtros.q;
         <AccessGate title={t(L, 'fact.sin_acceso_titulo')} desc={t(L, 'fact.sin_acceso_desc')} />
     )}
     {hasPerm && !hasAccess && entitlementCheck && (
-        <Fragment>
-            <AccessGate reason="plan"
-                title={t(L, 'fact.plan_titulo')}
-                desc={tf('fact.plan_desc', {
-                    plan: planLabel(entitlementCheck.requiredPlan),
-                    current: planLabel(entitlementCheck.plan),
-                })} />
-            <PlanPaywallModal
-                id="facturasPlanModal"
-                title={t(L, 'fact.plan_titulo')}
-                desc={tf('fact.plan_desc', {
-                    plan: planLabel(entitlementCheck.requiredPlan),
-                    current: planLabel(entitlementCheck.plan),
-                })}
-                requiredPlan={entitlementCheck.requiredPlan}
-                locale={L === 'en' ? 'en' : 'es'}
-                returnHref="/app" />
-        </Fragment>
+        <PlanGate
+            id="facturasPlanModal"
+            title={t(L, 'fact.plan_titulo')}
+            desc={tf('fact.plan_desc', {
+                plan: planLabel(entitlementCheck.requiredPlan),
+                current: planLabel(entitlementCheck.plan),
+            })}
+            requiredPlan={entitlementCheck.requiredPlan}
+            locale={L === 'en' ? 'en' : 'es'}
+            returnHref="/app" />
     )}
 
     {hasAccess && vacia && (

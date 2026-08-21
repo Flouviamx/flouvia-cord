@@ -7,13 +7,15 @@
 // incluye la función junto a otro que la super-incluye es ruido, no ayuda a
 // decidir (paywall-upgrade-cro: "Show, don't just tell").
 //
-// Requiere que la página importe src/styles/modal.css (Regla 12: AppLayout no
-// lo carga por defecto).
 import { PLANES, precioAnualMensualizado } from '../../lib/precios';
+import { PLANES_EN } from '../../lib/precios.en';
 import { getActiveOrgId } from '../../lib/db';
 import { platformCurrencyForOrg } from '../../lib/billing';
 import { planMoney, planCycleLabel } from '../../lib/plan-money';
 import { PLAN_RANK, type PlanId } from '../../lib/entitlements';
+// El esqueleto viaja CON el componente. Antes cada caller debía acordarse de
+// importar esta hoja y algunos bloqueos terminaban como un <dialog> casi nativo.
+import '../../styles/modal.css';
 
 interface Props {
     id?: string;
@@ -24,8 +26,16 @@ interface Props {
     /** A dónde navegar cuando se cierra el modal (Esc o ✕) — nunca se deja al
      *  usuario varado en una página bloqueada sin salida. Default: /app. */
     returnHref?: string;
+    /** `false` lo convierte en upsell contextual: se abre desde cualquier
+     * elemento con `data-plan-paywall-open="<id>"` y al cerrar permanece en la
+     * pantalla actual. Los bloqueos de página conservan apertura automática. */
+    autoOpen?: boolean;
+    returnOnClose?: boolean;
 }
-const { id = 'planPaywallModal', title, desc, requiredPlan, locale = 'es', returnHref = '/app' } = Astro.props;
+const {
+    id = 'planPaywallModal', title, desc, requiredPlan, locale = 'es',
+    returnHref = '/app', autoOpen = true, returnOnClose = autoOpen,
+} = Astro.props;
 const es = locale !== 'en';
 // La divisa se resuelve AQUÍ y no como prop: este modal se monta en siete
 // páginas y un constructor por call-site es cómo una de ellas termina pintando
@@ -36,18 +46,34 @@ const money = (n: number) => planMoney(n, CUR, locale);
 // PLANES ya está en orden ascendente de rank (starter…developer): el primer
 // elemento que alcanza el rank requerido ES el más barato que desbloquea la
 // función. Como máximo dos tarjetas: esa, y la inmediata superior si existe.
-const options = PLANES
+const catalogue = es ? PLANES : PLANES_EN;
+const options = catalogue
     .filter((p) => p.id !== 'free' && PLAN_RANK[p.id] >= PLAN_RANK[requiredPlan])
     .slice(0, 2);
+const titleId = `${id}Title`;
+const descId = `${id}Desc`;
 ---
 
-<dialog class="modal modal-lg ppm" id={id} data-ppm-auto="1" data-ppm-return={returnHref}>
+<dialog
+    class="modal modal-lg ppm"
+    id={id}
+    data-ppm
+    data-ppm-auto={autoOpen ? '1' : '0'}
+    data-ppm-return={returnHref}
+    data-ppm-return-on-close={returnOnClose ? '1' : '0'}
+    aria-labelledby={titleId}
+    aria-describedby={descId}
+    tabindex="-1">
     <div class="m-head">
-        <h2>{title}</h2>
-        <button type="button" class="m-close" data-ppm-close aria-label={es ? 'Cerrar' : 'Close'}>✕</button>
+        <h2 id={titleId}>{title}</h2>
+        <button type="button" class="m-close" data-ppm-close aria-label={es ? 'Cerrar' : 'Close'}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+                <path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5" />
+            </svg>
+        </button>
     </div>
     <div class="m-body">
-        <p class="ppm-desc">{desc}</p>
+        <p class="ppm-desc" id={descId}>{desc}</p>
 
         {options.some((p) => !p.custom) && (
             <div class="ppm-toggle">
@@ -115,19 +141,22 @@ const options = PLANES
     // depender de si este módulo corrió antes o después de otros de la página.
     function initPaywallModals() {
         document.querySelectorAll<HTMLDialogElement>('dialog[data-ppm-auto]').forEach((dlg) => {
+            if (dlg.dataset.ppmReady === '1') return;
+            dlg.dataset.ppmReady = '1';
             (window as any).cordWireModal?.(dlg);
 
-            // Cerrar (✕ o Esc, que dispara 'close' de forma nativa en <dialog>)
-            // siempre navega a un lugar usable — nunca deja la página bloqueada
-            // sin salida detrás del backdrop.
+            // En un bloqueo de página, cerrar vuelve a un lugar usable. En un
+            // upsell contextual (límite de asientos/API/webhooks), cerrar solo
+            // descarta el modal y respeta el "no" del usuario.
             const goBack = () => {
+                if (dlg.dataset.ppmReturnOnClose !== '1') return;
                 const returnHref = dlg.getAttribute('data-ppm-return') || '/app';
                 // replace(), no href=: cerrar el paywall no debe dejar la URL
                 // bloqueada en el historial — "atrás" no debe regresar a ella.
                 window.location.replace(returnHref);
             };
             dlg.querySelector('[data-ppm-close]')?.addEventListener('click', () => dlg.close());
-            dlg.addEventListener('close', goBack, { once: true });
+            dlg.addEventListener('close', goBack);
 
             // Toggle mensual/anual: recalcula precio mostrado + cycle del CTA.
             const toggle = dlg.querySelector<HTMLInputElement>('.ppm-toggle-check');
@@ -144,14 +173,58 @@ const options = PLANES
                 });
             });
 
-            if (!dlg.open) dlg.showModal();
+            if (dlg.dataset.ppmAuto === '1' && !dlg.open) {
+                dlg.showModal();
+                // El UA enfocaba automáticamente el primer botón y dibujaba un
+                // aro azul permanente alrededor de la X. El dialog recibe el
+                // foco inicial; Tab conserva el foco visible del botón.
+                requestAnimationFrame(() => dlg.focus({ preventScroll: true }));
+            }
         });
+
+        // Delegación: también alcanza triggers que llegan después por
+        // `innerHTML`, como las pestañas del Workbench.
+        if (document.documentElement.dataset.ppmDelegated !== '1') {
+            document.documentElement.dataset.ppmDelegated = '1';
+            document.addEventListener('click', (event) => {
+                const trigger = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-plan-paywall-open]');
+                if (!trigger) return;
+                const modalId = trigger.dataset.planPaywallOpen;
+                const dlg = modalId ? document.getElementById(modalId) as HTMLDialogElement | null : null;
+                if (!dlg?.matches('dialog[data-ppm]')) return;
+                event.preventDefault();
+                if (!dlg.open) dlg.showModal();
+                requestAnimationFrame(() => dlg.focus({ preventScroll: true }));
+            });
+        }
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPaywallModals);
     else initPaywallModals();
 </script>
 
 <style>
+    .ppm {
+        --ppm-accent-ink: #fff;
+        color: var(--color-text);
+    }
+    :global(html[data-theme="dark"]) .ppm { --ppm-accent-ink: #0b1018; }
+    .ppm:focus { outline: none; }
+    .ppm .m-head h2 { color: var(--color-text); }
+    .ppm .m-close {
+        width: 34px; height: 34px;
+        color: var(--color-text-muted); background: var(--surface-2);
+        border: 1px solid var(--color-border); outline: none;
+        box-shadow: none;
+    }
+    .ppm .m-close svg { width: 17px; height: 17px; }
+    .ppm .m-close:hover {
+        color: var(--color-danger); background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.22);
+    }
+    .ppm .m-close:focus-visible {
+        box-shadow: 0 0 0 3px rgba(107, 155, 242, 0.25);
+        border-color: var(--color-blue-deep);
+    }
     .ppm-desc { font-size: 0.86rem; line-height: 1.55; color: var(--color-text-muted); margin: 0 0 0.5rem; }
 
     .ppm-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 0.2rem; }
@@ -166,6 +239,7 @@ const options = PLANES
     }
     .ppm-toggle-check:checked + .ppm-slider { background: var(--color-blue-deep); }
     .ppm-toggle-check:checked + .ppm-slider:before { transform: translateX(15px); }
+    .ppm-switch:has(input:focus-visible) .ppm-slider { box-shadow: 0 0 0 3px rgba(107, 155, 242, 0.25); }
     .ppm-toggle-label { font-size: 0.78rem; color: var(--color-text-muted); font-weight: 500; display: flex; align-items: center; gap: 6px; }
     .ppm-toggle-save {
         font-style: normal; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.3px;
@@ -177,12 +251,12 @@ const options = PLANES
     .ppm-card {
         position: relative; display: flex; flex-direction: column; gap: 0.55rem;
         border: 1px solid var(--color-border); border-radius: 16px; padding: 1.2rem 1rem 1.1rem;
-        background: var(--color-bg-soft);
+        background: var(--surface-2);
     }
     .ppm-card.featured { background: var(--surface); box-shadow: 0 0 0 1.5px var(--color-blue-deep), 0 16px 32px -18px rgba(10,25,47,0.3); }
     .ppm-ribbon {
         position: absolute; top: -10px; left: 1rem; font-size: 0.6rem; font-weight: 800;
-        letter-spacing: 0.04em; text-transform: uppercase; color: #fff;
+        letter-spacing: 0.04em; text-transform: uppercase; color: var(--ppm-accent-ink);
         background: var(--color-blue-deep); border-radius: 999px; padding: 3px 10px;
     }
     .ppm-name { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
@@ -195,7 +269,7 @@ const options = PLANES
     .ppm-feats li svg { flex-shrink: 0; margin-top: 2px; color: var(--color-blue-deep); }
     .ppm-cta {
         margin-top: 0.3rem; text-align: center; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600;
-        color: #fff; background: var(--color-blue-deep); text-decoration: none;
+        color: var(--ppm-accent-ink); background: var(--color-blue-deep); text-decoration: none;
         border-radius: 999px; padding: 9px 12px;
         transition: transform 0.25s var(--ease-spring), box-shadow 0.25s;
     }

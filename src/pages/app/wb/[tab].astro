@@ -316,7 +316,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
                 </div>
             </div>
             {AT_LIMIT_KEYS && (
-                <p class="dev-limit-note">{tf('set.api.limite_nota_pre', { n: String(LIMITE_KEYS) })} <a href="/app/ajustes/plan">{t(L, 'set.api.subir_plan')}</a> {t(L, 'set.api.limite_nota_post')}</p>
+                <p class="dev-limit-note">{tf('set.api.limite_nota_pre', { n: String(LIMITE_KEYS) })} <a href="/app/ajustes/plan" data-plan-paywall-open="apiKeysPlanModal">{t(L, 'set.api.subir_plan')}</a> {t(L, 'set.api.limite_nota_post')}</p>
             )}
 
             <div class="key-table">
@@ -610,7 +610,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
                 </div>
             </div>
             {AT_LIMIT_WH && (
-                <p class="dev-limit-note">{tf('set.wh.limite_nota_pre', { n: String(LIMITE_WH), s: LIMITE_WH === 1 ? '' : 's' })} <a href="/app/ajustes/plan">{t(L, 'set.wh.subir_plan')}</a> {t(L, 'set.wh.limite_nota_post')}</p>
+                <p class="dev-limit-note">{tf('set.wh.limite_nota_pre', { n: String(LIMITE_WH), s: LIMITE_WH === 1 ? '' : 's' })} <a href="/app/ajustes/plan" data-plan-paywall-open="webhooksPlanModal">{t(L, 'set.wh.subir_plan')}</a> {t(L, 'set.wh.limite_nota_post')}</p>
             )}
 
             <div class="wh-list">

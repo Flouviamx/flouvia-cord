@@ -4,8 +4,7 @@
 // /app/ajustes/plan antes de que la página cargara). SettingsShell ya resuelve
 // el gate por PERMISO (perm="ajustes"); este es el segundo gate, por PLAN.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
-import '../../../styles/modal.css';
-import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
+import PlanGate from '../../../components/app/PlanGate.astro';
 import { getAuditLog } from '../../../lib/queries';
 import { getActiveOrgId } from '../../../lib/db';
 import { checkEntitlement } from '../../../lib/org-entitlements';
@@ -20,7 +19,7 @@ const AUDIT = entitlementCheck.ok ? await getAuditLog() : [];
 
 <SettingsShell title={t(L, 'ajustes.titulo_auditoria')} tab="auditoria" perm="ajustes"
     intro={t(L, 'set.aud.intro')}>
-    <div class="s-block full">
+    {entitlementCheck.ok && <div class="s-block full">
         <div class="audit-list">
             {AUDIT.length === 0 && <p class="audit-empty">{t(L, 'set.aud.vacio')}</p>}
             {AUDIT.map((a) => (
@@ -31,10 +30,11 @@ const AUDIT = entitlementCheck.ok ? await getAuditLog() : [];
                 </div>
             ))}
         </div>
-    </div>
+    </div>}
     {!entitlementCheck.ok && (
-        <PlanPaywallModal
+        <PlanGate
             id="auditoriaPlanModal"
+            class="is-inset"
             title={t(L, 'set.aud.plan_titulo')}
             desc={t(L, 'set.aud.plan_desc')
                 .replace('{plan}', planLabel(entitlementCheck.requiredPlan))

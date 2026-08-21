@@ -17,7 +17,7 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import '../../../styles/modal.css';
 import AccessGate from '../../../components/app/AccessGate.astro';
-import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
+import PlanGate from '../../../components/app/PlanGate.astro';
 import WidgetGrid from '../../../components/app/WidgetGrid.astro';
 import WidgetCustomizeButtons from '../../../components/app/WidgetCustomizeButtons.astro';
 import { getCobranzaIA, getMyMembership, getOrg, money } from '../../../lib/queries';
@@ -109,21 +109,15 @@ const MOTIVO_LABEL: Record<string, string> = {
 
     {!hasPerm && <AccessGate title={t(L, 'cia.sin_acceso_titulo')} desc={t(L, 'cia.sin_acceso_desc')} />}
     {hasPerm && !hasAccess && entitlementCheck && (
-        <>
-            <AccessGate reason="plan" title={t(L, 'cia.plan_titulo')} desc={t(L, 'cia.plan_desc')
+        <PlanGate
+            id="ciaPlanModal"
+            title={t(L, 'cia.plan_titulo')}
+            desc={t(L, 'cia.plan_desc')
                 .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                .replace('{current}', planLabel(entitlementCheck.plan))} />
-            <PlanPaywallModal
-                id="ciaPlanModal"
-                title={t(L, 'cia.plan_titulo')}
-                desc={t(L, 'cia.plan_desc')
-                    .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                    .replace('{current}', planLabel(entitlementCheck.plan))}
-                requiredPlan={entitlementCheck.requiredPlan}
-                locale={L === 'en' ? 'en' : 'es'}
-                returnHref="/app/cobranza"
-            />
-        </>
+                .replace('{current}', planLabel(entitlementCheck.plan))}
+            requiredPlan={entitlementCheck.requiredPlan}
+            locale={L === 'en' ? 'en' : 'es'}
+            returnHref="/app/cobranza" />
     )}
 
     {hasAccess && D && (

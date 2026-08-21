@@ -514,7 +514,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
 
 
         {!setup.complete && <OnboardingWidget progress={setup} />}
-        {canDev && <DevWorkbench locale={L} />}
+        {canDev && <DevWorkbench locale={L} currentPlan={ORG.plan_raw} />}
 
         <Analytics />
         <CookieConsent lang={L} />

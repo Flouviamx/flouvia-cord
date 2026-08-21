@@ -17,6 +17,7 @@ import AppLayout from '../../../layouts/AppLayout.astro';
 import ClientModal from '../../../components/app/ClientModal.astro';
 import DatePicker from '../../../components/app/DatePicker.astro';
 import AccessGate from '../../../components/app/AccessGate.astro';
+import PlanGate from '../../../components/app/PlanGate.astro';
 import FlagSelect from '../../../components/ui/FlagSelect';
 import {
     getProductos, getClientes, getOrg, getKitsForEditor, getImpuestos,
@@ -194,11 +195,15 @@ const BOOT = {
                 : 'Pídele a un administrador el permiso de cotizar.'} />
     )}
     {hasPerm && !hasAccess && entitlementCheck && (
-        <AccessGate reason="plan"
+        <PlanGate
+            id="facturaNuevaPlanModal"
             title={L === 'en' ? 'Cord Invoicing is not in your plan' : 'Cord Invoicing no está en tu plan'}
             desc={L === 'en'
                 ? 'Issuing invoices requires the Starter plan or above.'
-                : 'Emitir facturas requiere el plan Starter o superior.'} />
+                : 'Emitir facturas requiere el plan Starter o superior.'}
+            requiredPlan={entitlementCheck.requiredPlan}
+            locale={L === 'en' ? 'en' : 'es'}
+            returnHref="/app/facturas" />
     )}
 
     {hasAccess && (

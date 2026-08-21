@@ -11,7 +11,7 @@
 import AppLayout from '../../../layouts/AppLayout.astro';
 import '../../../styles/modal.css';
 import AccessGate from '../../../components/app/AccessGate.astro';
-import PlanPaywallModal from '../../../components/app/PlanPaywallModal.astro';
+import PlanGate from '../../../components/app/PlanGate.astro';
 import WidgetGrid from '../../../components/app/WidgetGrid.astro';
 import WidgetCustomizeButtons from '../../../components/app/WidgetCustomizeButtons.astro';
 import WidgetEmpty from '../../../components/app/WidgetEmpty.astro';
@@ -99,21 +99,15 @@ const CBZ_T = {
         <AccessGate title={t(L, 'cob.sin_acceso_titulo')} desc={t(L, 'cob.sin_acceso_desc')} />
     )}
     {hasPerm && !hasAccess && entitlementCheck && (
-        <>
-            <AccessGate reason="plan" title={t(L, 'cob.plan_titulo')} desc={t(L, 'cob.plan_desc')
+        <PlanGate
+            id="cobranzaPlanModal"
+            title={t(L, 'cob.plan_titulo')}
+            desc={t(L, 'cob.plan_desc')
                 .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                .replace('{current}', planLabel(entitlementCheck.plan))} />
-            <PlanPaywallModal
-                id="cobranzaPlanModal"
-                title={t(L, 'cob.plan_titulo')}
-                desc={t(L, 'cob.plan_desc')
-                    .replace('{plan}', planLabel(entitlementCheck.requiredPlan))
-                    .replace('{current}', planLabel(entitlementCheck.plan))}
-                requiredPlan={entitlementCheck.requiredPlan}
-                locale={L === 'en' ? 'en' : 'es'}
-                returnHref="/app"
-            />
-        </>
+                .replace('{current}', planLabel(entitlementCheck.plan))}
+            requiredPlan={entitlementCheck.requiredPlan}
+            locale={L === 'en' ? 'en' : 'es'}
+            returnHref="/app" />
     )}
     {hasAccess && !hay && (
         <section class="empty">

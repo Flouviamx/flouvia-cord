@@ -1,0 +1,35 @@
+---
+// Contrato único de bloqueo por PLAN. El contenido inline explica por qué la
+// pantalla no carga y el modal presenta el peldaño mínimo real + el siguiente.
+// Mantenerlos juntos evita gates sin CTA, paywalls sin CSS o planes divergentes.
+import AccessGate from './AccessGate.astro';
+import PlanPaywallModal from './PlanPaywallModal.astro';
+import type { PlanId } from '../../lib/entitlements';
+
+interface Props {
+    id: string;
+    title: string;
+    desc: string;
+    requiredPlan: PlanId;
+    locale?: 'es' | 'en';
+    returnHref?: string;
+    class?: string;
+}
+
+const {
+    id, title, desc, requiredPlan, locale = 'es', returnHref = '/app',
+    class: className,
+} = Astro.props;
+---
+
+<Fragment>
+    <AccessGate reason="plan" class={className} title={title} desc={desc} />
+    <PlanPaywallModal
+        id={id}
+        title={title}
+        desc={desc}
+        requiredPlan={requiredPlan}
+        locale={locale}
+        returnHref={returnHref}
+    />
+</Fragment>
