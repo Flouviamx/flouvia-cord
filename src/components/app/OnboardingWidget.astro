@@ -261,7 +261,7 @@ const ICONS: Record<string, string> = {
     .onb.show { opacity: 1; transform: none; pointer-events: auto; }
 
     .onb-card {
-        background: #fff; border: 1px solid var(--color-border); border-radius: 20px;
+        background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 20px;
         box-shadow: 0 30px 70px -28px rgba(10,25,47,0.5), 0 4px 14px -8px rgba(10,25,47,0.25);
         overflow: hidden;
     }
@@ -304,7 +304,7 @@ const ICONS: Record<string, string> = {
     .onb-gicon {
         position: relative; width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
         display: flex; align-items: center; justify-content: center;
-        background: rgba(10,25,47,0.05); color: var(--color-blue-deep);
+        background: var(--color-bg-soft); color: var(--color-blue-deep);
         transition: background 0.35s var(--ease-spring), color 0.35s var(--ease-spring);
     }
     .onb-gicon > svg { width: 19px; height: 19px; transition: opacity 0.3s, transform 0.3s var(--ease-spring); }
@@ -325,7 +325,7 @@ const ICONS: Record<string, string> = {
 
     /* Micro-progreso: puntitos por sub-paso (verde = hecho) */
     .onb-gcount { display: flex; gap: 3px; flex-shrink: 0; }
-    .onb-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(10,25,47,0.16); transition: background 0.35s var(--ease-spring); }
+    .onb-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--color-border); transition: background 0.35s var(--ease-spring); }
     .onb-dot[data-done="true"] { background: var(--color-ok); }
     .onb-group[data-open="true"] .onb-gcount { display: none; }
 
@@ -344,14 +344,14 @@ const ICONS: Record<string, string> = {
         padding: 9px 9px 9px 6px; border-radius: 10px;
         transition: background 0.25s var(--ease-ios);
     }
-    .onb-step + .onb-step { border-top: 1px solid rgba(10,25,47,0.05); }
+    .onb-step + .onb-step { border-top: 1px solid var(--color-border); }
     .onb-step.just-done { animation: onb-flash 0.9s var(--ease-ios); }
     @keyframes onb-flash { 0%, 100% { background: transparent; } 30% { background: rgba(16,185,129,0.14); } }
 
     .onb-check {
         width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
         display: flex; align-items: center; justify-content: center;
-        background: #fff; border: 1.5px solid var(--color-border); color: #fff;
+        background: var(--color-bg); border: 1.5px solid var(--color-border); color: var(--color-bg);
         transition: background 0.3s var(--ease-spring), border-color 0.3s var(--ease-spring);
     }
     .onb-check-tick { width: 11px; height: 11px; opacity: 0; transform: scale(0.5); transition: opacity 0.3s, transform 0.3s var(--ease-spring); }

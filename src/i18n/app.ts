@@ -1528,9 +1528,9 @@ export const appStrings = {
         "set.cuenta.toast_no_copio": "No se pudo copiar",
 
         "dash.heading": "Inicio",
-        "dash.nudge_titulo": "Activa los cobros en línea",
+        "dash.nudge_titulo": "Cord Payments",
         "dash.nudge_desc": "Conecta tu cuenta para que tus clientes paguen las cotizaciones con tarjeta o transferencia. El dinero cae directo a tu cuenta — Cord no toca tus fondos.",
-        "dash.nudge_cta": "Configurar cobros",
+        "dash.nudge_cta": "Configurar Cord Payments",
         "dash.nudge_descartar": "Descartar",
         "dash.kpi_por_cerrar": "POR CERRAR",
         "dash.kpi_cotizaciones_activas": "{n} cotizaciones activas",
@@ -4741,9 +4741,9 @@ export const appStrings = {
         "set.cuenta.toast_no_copio": "Could not copy",
 
         "dash.heading": "Home",
-        "dash.nudge_titulo": "Enable online payments",
+        "dash.nudge_titulo": "Cord Payments",
         "dash.nudge_desc": "Connect your account so clients can pay quotes by card or bank transfer. The money goes straight to your account — Cord never touches your funds.",
-        "dash.nudge_cta": "Set up payments",
+        "dash.nudge_cta": "Set up Cord Payments",
         "dash.nudge_descartar": "Dismiss",
         "dash.kpi_por_cerrar": "IN PROGRESS",
         "dash.kpi_cotizaciones_activas": "{n} active quotes",

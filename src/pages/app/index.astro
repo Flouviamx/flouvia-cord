@@ -31,10 +31,10 @@ const [dash, TAREAS, CFO, ANALYTICS, ORG, SERIE, COBRANZA] = await Promise.all([
     getDashboard(), getTareas(), canCfo ? getCFO() : EMPTY_CFO, canAnalytics ? getAnalytics() : EMPTY_ANALYTICS,
     getOrg(), getSerieDiaria(), canCollections ? getCobranza() : EMPTY_COBRANZA,
 ]);
-// Aviso único para invitar a configurar cobros a quien aún no conecta su cuenta
-// (existentes o nuevos). Se oculta permanentemente al conectar (server-side) o al
-// descartarlo (localStorage, ver script abajo).
-const mostrarNudgeCobros = !ORG.stripeAccountId;
+// Aviso de Cord Payments — solo para cuentas reales sin Stripe conectado todavía.
+// No se muestra en orgs sandbox (modo de prueba), identificadas por sandboxOf != null.
+// Se oculta permanentemente al conectar (server-side) o al descartarlo (localStorage).
+const mostrarNudgeCobros = !ORG.stripeAccountId && !ORG.sandboxOf;
 const { quotes: COTIZACIONES, porCerrar, tasaCierre, abiertas, feed: eventosFeed } = dash;
 const recientes = COTIZACIONES.slice(0, 5);
 const seguimiento = dash.seguimiento;
