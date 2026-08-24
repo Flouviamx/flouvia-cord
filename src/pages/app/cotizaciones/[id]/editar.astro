@@ -6,6 +6,7 @@ import { getCountryProfile } from '../../../../lib/countries';
 import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../../lib/impuestos';
 import { currentLocale } from '../../../../lib/context';
 import { t } from '../../../../i18n/app';
+import '../../../../styles/editor.css';
 
 const L = currentLocale();
 const tf = (key: string, vars: Record<string, string> = {}) => {
@@ -61,7 +62,7 @@ const MULTI_TAX = TAX_OPTIONS.length > 1;
 <AppLayout title={`Editar ${q.folio}`} page="cotizaciones" heading={q.status === 'draft' ? tf('edv.editar_borrador_heading', { folio: q.folio }) : tf('edv.nueva_version_heading', { folio: q.folio })} crumbs={[{ label: t(L, 'edv.crumb_cotizaciones'), href: '/app/cotizaciones' }, { label: q.folio, href: `/app/cotizaciones/${id}` }]}>
     <span slot="topbar-actions" class="draft-tag">{q.status === 'draft' ? t(L, 'edv.borrador') : tf('edv.v_borrador', { n: String(q.version + 1) })}</span>
 
-    <div class="editor-grid">
+    <div class="editor-grid" data-editor="quote">
         <!-- ── Columna principal ── -->
         <div class="ed-main">
             <!-- Cliente (Solo lectura al editar versión) -->
