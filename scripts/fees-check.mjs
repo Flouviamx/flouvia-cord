@@ -27,8 +27,10 @@ assert.equal(speiAboveCap.applicationFeeCents, 58_000);
 assert.equal(speiAboveCap.blendedTotalCents, 58_812);
 assert.equal(computeFee({ amountCents: 100_000, metodo: 'card', moneda: 'USD' }).applicationFeeCents, 0);
 assert.equal(computeFee({ amountCents: 100_000, metodo: 'card', moneda: 'MXN', enabled: false }).applicationFeeCents, 0);
-assert.deepEqual(computeSubscriptionFee(100_000), { applicationFeeCents: 464, feeBaseCents: 400, feeIvaCents: 64 });
-assert.equal(computeSubscriptionFee(100_000, false).applicationFeeCents, 0);
+assert.deepEqual(computeSubscriptionFee(100_000, 'MXN'), { applicationFeeCents: 464, feeBaseCents: 400, feeIvaCents: 64 });
+assert.equal(computeSubscriptionFee(100_000, 'MXN', false).applicationFeeCents, 0);
+// Tarifa mexicana pactada con Stripe MX, no un IVA genérico: fuera de MXN no se cobra.
+assert.equal(computeSubscriptionFee(100_000, 'USD').applicationFeeCents, 0);
 assert.match(describeFee('card'), /IVA$/);
 assert.match(describeFee('spei'), /máximo \$588\.12/);
 assert.equal(describeSubscriptionFee(), describeFee('card'));

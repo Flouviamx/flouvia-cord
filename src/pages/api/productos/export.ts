@@ -3,7 +3,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 import { csvCell, csvFilename } from '../../../lib/csv';
 
@@ -12,7 +12,7 @@ export const GET: APIRoute = async () => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`select sku, nombre, unidad, precio_lista, activo from productos where org_id = ${orgId} order by nombre`;
+    const [rows] = await withOrgTx(orgId, sql`select sku, nombre, unidad, precio_lista, activo from productos where org_id = ${orgId} order by nombre`);
 
     const header = ['sku', 'nombre', 'unidad', 'precio', 'activo'];
     const lines = [header.join(',')];

@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { requirePermAny } from '../../../../lib/queries';
 import { getStripeSnapshot, listPayoutsLite } from '../../../../lib/stripe-cobros';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
@@ -18,7 +18,8 @@ export const GET: APIRoute = async () => {
     const rl = await rateLimit(`api:payouts:${orgId}`, 60, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
 
-    const [org] = await sql`select stripe_account_id from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select stripe_account_id from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (!org?.stripe_account_id) {
         return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
     }

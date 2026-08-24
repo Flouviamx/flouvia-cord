@@ -120,6 +120,32 @@ describe('retenciones', () => {
             retenciones: [{ nombre: 'mal', tasa: 10.667 }],
         })).toThrow(RangeError);
     });
+
+    describe('base: "impuesto" — el caso Colombia', () => {
+        // La ReteIVA colombiana es 15% DEL IVA, no del subtotal. Modelarla
+        // como 'subtotal' (el default, correcto para México) calculaba
+        // 5.26× de más: 15% de 1,000 = 150, cuando la DIAN espera 15% de
+        // 190 (el IVA al 19%) = 28.50.
+        const RETE_IVA_CO = { nombre: 'ReteIVA 15%', tipo: 'ret_iva', tasa: 0.15, base: 'impuesto' as const };
+
+        it('se calcula sobre el IMPUESTO, no sobre el subtotal', () => {
+            const r = calculateDocumentTotals([linea(1, 1000, 0.19)], { retenciones: [RETE_IVA_CO] });
+            expect(r.impuestos).toBe(190);
+            expect(r.retenciones[0].base).toBe(190);
+            expect(r.retenciones[0].monto).toBeCloseTo(28.5, 2);
+            expect(r.retenciones[0].baseTipo).toBe('impuesto');
+            // El bug que se está previniendo: 1000 * 0.15 = 150 (5.26× de más).
+            expect(r.retencionTotal).not.toBeCloseTo(150, 0);
+        });
+
+        it('default sigue siendo "subtotal" cuando no se especifica', () => {
+            const r = calculateDocumentTotals([linea(1, 1000, 0.16)], {
+                retenciones: [{ nombre: 'Retención IVA', tipo: 'ret_iva', tasa: 0.106667 }],
+            });
+            expect(r.retenciones[0].baseTipo).toBe('subtotal');
+            expect(r.retenciones[0].base).toBe(1000);
+        });
+    });
 });
 
 describe('presets e identidad fiscal por país', () => {
@@ -148,11 +174,14 @@ describe('presets e identidad fiscal por país', () => {
         }
     });
 
-    it('México conserva su carril: IVA 16 default y las dos retenciones', () => {
+    it('México conserva su carril: IVA 16 default y sus cuatro retenciones', () => {
         const mx = taxPresetsFor('MX');
         expect(mx.find((p) => p.esDefault)?.tasa).toBe(16);
         const ret = mx.filter((p) => p.kind === 'retencion');
-        expect(ret.map((r) => r.tipo).sort()).toEqual(['ret_isr', 'ret_iva']);
+        // 10.667% (general) + 1.25% ISR + 4% (autotransporte) + 6% (servicios
+        // de personal) — art. 1-A LIVA.
+        expect(ret.map((r) => r.tipo).sort()).toEqual(['ret_isr', 'ret_iva', 'ret_iva', 'ret_iva']);
+        expect(ret.map((r) => r.tasa).sort((a, b) => a - b)).toEqual([1.25, 4, 6, 10.667]);
         expect(defaultCountryTaxPct('MX')).toBe(16);
     });
 

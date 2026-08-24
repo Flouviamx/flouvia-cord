@@ -189,8 +189,12 @@ const STRIPE_ERROR_CODES: Record<string, string> = {
     // Entidad legal / cuenta
     tax_id_invalid: 'El RFC no tiene un formato válido para el procesador de pagos.',
     account_invalid: 'Esta cuenta de pagos ya no es válida. Puede haberse eliminado.',
-    account_number_invalid: 'La CLABE no es válida.',
-    routing_number_invalid: 'El número de ruta de la CLABE no es válido.',
+    // Genérico a propósito: este código lo dispara Stripe para CUALQUIER país
+    // (CLABE en México, routing+account en EE.UU., IBAN en la zona SEPA…), y
+    // translateStripeError() no recibe el país del emisor. Decir "la CLABE"
+    // aquí le hablaba de un formato mexicano a un negocio en Austin.
+    account_number_invalid: 'El número de cuenta bancaria no es válido.',
+    routing_number_invalid: 'El número de ruta o sucursal bancaria no es válido.',
 
     // Cuenta bancaria
     bank_account_unusable: 'Esa cuenta bancaria no se puede usar para recibir pagos.',

@@ -110,13 +110,13 @@ describe('computeFee', () => {
 
 describe('computeSubscriptionFee', () => {
     it('no cobra sobre montos inválidos ni con el flag apagado', () => {
-        expect(computeSubscriptionFee(0).applicationFeeCents).toBe(0);
-        expect(computeSubscriptionFee(-1).applicationFeeCents).toBe(0);
-        expect(computeSubscriptionFee(100_000, false).applicationFeeCents).toBe(0);
+        expect(computeSubscriptionFee(0, 'MXN').applicationFeeCents).toBe(0);
+        expect(computeSubscriptionFee(-1, 'MXN').applicationFeeCents).toBe(0);
+        expect(computeSubscriptionFee(100_000, 'MXN', false).applicationFeeCents).toBe(0);
     });
 
     it('cobra 0.4% + IVA', () => {
-        const r = computeSubscriptionFee(100_000);   // MXN 1,000
+        const r = computeSubscriptionFee(100_000, 'MXN');   // MXN 1,000
         expect(r.feeBaseCents).toBe(400);            // 0.4%
         expect(r.feeIvaCents).toBe(64);              // 16% de 400
         expect(r.applicationFeeCents).toBe(464);
@@ -124,7 +124,13 @@ describe('computeSubscriptionFee', () => {
 
     it('nunca excede el monto de la suscripción', () => {
         for (const amountCents of [1, 100, 10_000, 1_000_000]) {
-            expect(computeSubscriptionFee(amountCents).applicationFeeCents).toBeLessThanOrEqual(amountCents);
+            expect(computeSubscriptionFee(amountCents, 'MXN').applicationFeeCents).toBeLessThanOrEqual(amountCents);
+        }
+    });
+
+    it('no cobra fuera de MXN — es una tarifa pactada con Stripe MX, no un IVA genérico', () => {
+        for (const moneda of ['USD', 'EUR', 'usd']) {
+            expect(computeSubscriptionFee(100_000, moneda).applicationFeeCents).toBe(0);
         }
     });
 });

@@ -22,8 +22,10 @@ import { logInvoiceEvent } from './timeline';
 import { normalizeCurrency } from '../currency';
 import { dueDateFor, isoDay } from '../cobros';
 import { FXService, FXUnavailableError } from '../fx/FXService';
-import { calculateInvoiceTotals, type TaxBreakdown } from '../../../packages/elements/src/engine';
+import { calculateDocumentTotals, type TaxBreakdown } from '../../../packages/elements/src/engine';
 import { FiscalFactory } from './FiscalFactory';
+import { partiesFrom } from './parties';
+import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import {
   cleanPrefix,
   documentTypeFor,
@@ -38,6 +40,7 @@ import type {
   FiscalDocumentResponse,
   FiscalLineItem,
   FiscalParty,
+  FiscalRetencion,
 } from './index';
 
 export interface DraftLineInput {
@@ -121,8 +124,16 @@ function buildLines(
   items: DraftLineInput[],
   defaultTaxRate: number,
   ivaIncluido: boolean,
-): { lines: FiscalLineItem[]; subtotal: number; taxes: number; total: number; byRate: TaxBreakdown[] } {
-  const totals = calculateInvoiceTotals(
+  retenciones: { nombre: string; tasa: number; tipo?: string }[] = [],
+): {
+  lines: FiscalLineItem[]; subtotal: number; taxes: number; total: number; byRate: TaxBreakdown[];
+  retenciones: FiscalRetencion[]; retencionTotal: number;
+} {
+  // calculateDocumentTotals, no calculateInvoiceTotals: el editor
+  // (facturas/nueva.astro) resta las retenciones del catálogo al mostrar el
+  // total, y si aquí se guardara sin restarlas la pantalla diría un total y
+  // el documento persistido sería otro.
+  const totals = calculateDocumentTotals(
     items.map((item) => ({
       producto_id: item.productoId ?? null,
       descripcion: item.descripcion,
@@ -134,7 +145,7 @@ function buildLines(
       // y con `||` el 0 se caería al default gravando lo que no debe.
       tax_rate: item.taxRate ?? defaultTaxRate,
     })),
-    { ivaIncluido },
+    { ivaIncluido, retenciones },
   );
 
   const lines: FiscalLineItem[] = totals.lineas.map((l) => ({
@@ -154,40 +165,14 @@ function buildLines(
     subtotal: money(totals.subtotal),
     taxes: money(totals.impuestos),
     total: money(totals.total),
+    retenciones: totals.retenciones.map((r) => ({ ...r, base: money(r.base), monto: money(r.monto) })),
+    retencionTotal: money(totals.retencionTotal),
     byRate: totals.porTasa,
   };
 }
 
-function partiesFrom(head: any, country: string): { issuer: FiscalParty; recipient: FiscalParty } {
-  const fiscalMetadata = metadata(head.fiscal_metadata);
-  return {
-    issuer: {
-      legalName: fiscalMetadata.legal_name || String(head.org_razon_social || head.org_nombre || 'Emisor'),
-      taxId: fiscalMetadata.tax_id || (head.org_tax_id ? String(head.org_tax_id) : undefined),
-      taxSystem: head.org_tax_system ? String(head.org_tax_system) : undefined,
-      email: head.org_email ? String(head.org_email) : undefined,
-      address: {
-        countryCode: country,
-        line1: fiscalMetadata.address_line1 || (head.org_direccion ? String(head.org_direccion) : undefined),
-        line2: fiscalMetadata.address_line2 || undefined,
-        city: fiscalMetadata.city || undefined,
-        region: fiscalMetadata.region || undefined,
-        postalCode: fiscalMetadata.postal_code || (head.org_cp ? String(head.org_cp) : undefined),
-      },
-    },
-    recipient: {
-      legalName: String(head.cliente_empresa || head.cliente_contacto || 'Cliente'),
-      taxId: head.cliente_rfc ? String(head.cliente_rfc) : undefined,
-      taxSystem: head.cliente_regimen ? String(head.cliente_regimen) : undefined,
-      email: head.cliente_email ? String(head.cliente_email) : undefined,
-      contactName: head.cliente_contacto ? String(head.cliente_contacto) : undefined,
-      address: {
-        countryCode: country,
-        postalCode: head.cliente_cp ? String(head.cliente_cp) : undefined,
-      },
-    },
-  };
-}
+// partiesFrom() vive en ./parties — compartida con emit.ts para que el país y
+// la dirección del RECEPTOR (no del emisor) se resuelvan una sola vez.
 
 /**
  * Resuelve el tipo de cambio de la divisa de venta a la contable.
@@ -256,7 +241,9 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
            cl.id as cliente_id, cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
            cl.email as cliente_email, cl.contacto as cliente_contacto,
            cl.regimen_fiscal as cliente_regimen, cl.uso_cfdi as cliente_uso,
-           cl.cp_fiscal as cliente_cp, cl.terminos_default as cliente_terminos
+           cl.cp_fiscal as cliente_cp, cl.terminos_default as cliente_terminos,
+           cl.country_code as cliente_country_code, cl.direccion_line1 as cliente_direccion_line1,
+           cl.direccion_line2 as cliente_direccion_line2, cl.ciudad as cliente_ciudad, cl.region as cliente_region
       from orgs o
       join clientes cl on cl.id = ${input.clienteId} and cl.org_id = o.id
      where o.id = ${orgId}
@@ -266,17 +253,33 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
 
   const country = String(head.country_code || 'MX').toUpperCase();
   const profile = getCountryProfile(country);
-  const taxRate = head.iva_pct !== null && head.iva_pct !== undefined ? Number(head.iva_pct) / 100 : 0;
+  // Mismo catálogo y misma validación de servidor que las cotizaciones (regla
+  // 23): sin esto, un POST a /api/facturas podía declarar cualquier tax_rate y
+  // el único freno era el rango [0,1] del motor. Las retenciones tampoco se
+  // eligen por línea — son la política de retención del negocio, resuelta aquí.
+  // `catalogo.defaultRate` ya incorpora `orgs.iva_pct` como respaldo cuando el
+  // catálogo no tiene un consumo marcado `es_default` (impuestos-db.ts).
+  let catalogo;
+  try {
+    catalogo = await taxCatalogFor(orgId);
+  } catch (error) {
+    if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message };
+    throw error;
+  }
+  const itemsConTasaValidada = items.map((it) => ({
+    ...it,
+    taxRate: catalogo.resolve(it.taxRate, catalogo.defaultRate),
+  }));
   let built;
   try {
-    built = buildLines(items, taxRate, input.ivaIncluido === true);
+    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones);
   } catch (error: unknown) {
     // RangeError del motor = tasa fuera de [0,1]. Se traduce a un error de
     // captura en vez de dejar que reviente como 500 sin explicación.
     if (error instanceof RangeError) return { ok: false, error: 'Alguna línea tiene una tasa de impuesto inválida.' };
     throw error;
   }
-  const { lines, subtotal, taxes, total } = built;
+  const { lines, subtotal, taxes, total, retenciones, retencionTotal } = built;
 
   const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
   const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
@@ -294,6 +297,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
     insert into documentos_fiscales (
       org_id, cotizacion_id, cliente_id, country_code, document_type, status, provider,
       currency, ledger_currency, fx_rate, ledger_total, subtotal, tax_total, total,
+      retencion_total, retenciones_snapshot,
       lifecycle, due_date, amount_paid, amount_remaining, public_token, notes, created_by,
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
       schema_version, provider_data, updated_at
@@ -301,7 +305,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       ${orgId}, null, ${String(head.cliente_id)}, ${country}, ${documentTypeFor(country)}, 'pending',
       ${country === 'MX' ? 'facturapi' : 'cord'},
       ${currency}, ${ledgerCurrency}, ${fxRate}, ${money(total * fxRate)},
-      ${subtotal}, ${taxes}, ${total},
+      ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(retenciones)}::jsonb,
       'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
       ${input.notes || null}, ${input.createdBy || null},
       ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
@@ -354,7 +358,9 @@ export async function updateInvoiceDraft(
            cl.id as cliente_id, cl.empresa as cliente_empresa, cl.rfc as cliente_rfc,
            cl.email as cliente_email, cl.contacto as cliente_contacto,
            cl.regimen_fiscal as cliente_regimen, cl.uso_cfdi as cliente_uso,
-           cl.cp_fiscal as cliente_cp, cl.terminos_default as cliente_terminos
+           cl.cp_fiscal as cliente_cp, cl.terminos_default as cliente_terminos,
+           cl.country_code as cliente_country_code, cl.direccion_line1 as cliente_direccion_line1,
+           cl.direccion_line2 as cliente_direccion_line2, cl.ciudad as cliente_ciudad, cl.region as cliente_region
       from orgs o
       join clientes cl on cl.id = ${input.clienteId} and cl.org_id = o.id
      where o.id = ${orgId}
@@ -364,15 +370,25 @@ export async function updateInvoiceDraft(
 
   const country = String(head.country_code || 'MX').toUpperCase();
   const profile = getCountryProfile(country);
-  const taxRate = head.iva_pct !== null && head.iva_pct !== undefined ? Number(head.iva_pct) / 100 : 0;
+  let catalogo;
+  try {
+    catalogo = await taxCatalogFor(orgId);
+  } catch (error) {
+    if (error instanceof TaxCatalogUnavailableError) return { ok: false, error: error.message };
+    throw error;
+  }
+  const itemsConTasaValidada = items.map((it) => ({
+    ...it,
+    taxRate: catalogo.resolve(it.taxRate, catalogo.defaultRate),
+  }));
   let built;
   try {
-    built = buildLines(items, taxRate, input.ivaIncluido === true);
+    built = buildLines(itemsConTasaValidada, catalogo.defaultRate, input.ivaIncluido === true, catalogo.retenciones);
   } catch (error: unknown) {
     if (error instanceof RangeError) return { ok: false, error: 'Alguna línea tiene una tasa de impuesto inválida.' };
     throw error;
   }
-  const { lines, subtotal, taxes, total } = built;
+  const { lines, subtotal, taxes, total, retenciones, retencionTotal } = built;
 
   const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
   const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
@@ -395,6 +411,8 @@ export async function updateInvoiceDraft(
       subtotal = ${subtotal},
       tax_total = ${taxes},
       total = ${total},
+      retencion_total = ${retencionTotal},
+      retenciones_snapshot = ${JSON.stringify(retenciones)}::jsonb,
       amount_remaining = ${total} - coalesce(amount_paid, 0),
       due_date = ${dueDate}::date,
       notes = ${input.notes || null},
@@ -428,7 +446,8 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
            o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of,
            d.id, d.lifecycle, d.status, d.country_code as doc_country, d.document_type,
            d.currency, d.ledger_currency, d.fx_rate, d.ledger_total,
-           d.subtotal, d.tax_total, d.total, d.invoice_number, d.public_token,
+           d.subtotal, d.tax_total, d.total, d.retencion_total, d.retenciones_snapshot,
+           d.invoice_number, d.public_token,
            d.issuer_snapshot, d.recipient_snapshot, d.line_items_snapshot,
            d.fiscal_id, d.provider_data,
            cl.uso_cfdi as cliente_uso
@@ -467,27 +486,35 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
   );
   const idempotencyKey = `invoice:${documentId}:v1`;
   const issuedAt = new Date().toISOString();
+  // Serie + ejercicio: mismo criterio que emit.ts — la serie es el propio
+  // `prefix` (cambiarlo en Ajustes reinicia el contador, en vez de reutilizar
+  // la secuencia vieja); `ejercicio=0` preserva la numeración indefinida de
+  // las orgs ya existentes, y España reinicia cada año porque el ejercicio es
+  // parte del PK de la secuencia.
+  const serie = prefix;
+  const ejercicio = country === 'ES' ? new Date(issuedAt).getFullYear() : 0;
+  const folioPrefix = ejercicio > 0 ? `${prefix}${ejercicio}` : prefix;
 
   // Mismo advisory lock que el carril de cotización: serializa dos clicks de
   // "Emitir" sobre el mismo borrador. Sin él, dos pestañas queman dos folios.
   const [, claimedRows] = await withOrgTx(orgId,
     sql`select pg_advisory_xact_lock(hashtextextended(${`${orgId}:${idempotencyKey}`}, 0))`,
     sql`with next_number as (
-          insert into invoice_sequences (org_id, country_code, document_type, prefix, next_value)
-          select ${orgId}, ${country}, ${docType}, ${prefix}, 2
+          insert into invoice_sequences (org_id, country_code, document_type, serie, ejercicio, prefix, next_value)
+          select ${orgId}, ${country}, ${docType}, ${serie}, ${ejercicio}, ${folioPrefix}, 2
            where exists (
              select 1 from documentos_fiscales
               where id = ${documentId} and org_id = ${orgId}
                 and lifecycle = 'draft' and invoice_number is null
            )
-          on conflict (org_id, country_code, document_type) do update
+          on conflict (org_id, country_code, document_type, serie, ejercicio) do update
              set next_value = invoice_sequences.next_value + 1,
                  prefix = excluded.prefix,
                  updated_at = now()
           returning next_value - 1 as sequence_value
         )
         update documentos_fiscales d
-           set invoice_number = ${prefix} || '-' || lpad(next_number.sequence_value::text, 6, '0'),
+           set invoice_number = ${folioPrefix} || '-' || lpad(next_number.sequence_value::text, 6, '0'),
                idempotency_key = ${idempotencyKey},
                updated_at = now()
           from next_number
@@ -514,6 +541,7 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
     orgId,
     quoteId: documentId,
     countryCode: country,
+    documentType: docType,
     issuer: head.issuer_snapshot as FiscalParty,
     recipient: head.recipient_snapshot as FiscalParty,
     lines: (head.line_items_snapshot as FiscalLineItem[]) || [],
@@ -524,6 +552,9 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
       currency: String(head.currency || 'MXN'),
       ...(Number(head.fx_rate) !== 1
         ? { exchangeRate: Number(head.fx_rate), ledgerCurrency: String(head.ledger_currency || '') }
+        : {}),
+      ...(Number(head.retencion_total) > 0
+        ? { retenciones: (head.retenciones_snapshot as FiscalRetencion[]) || [], retencionTotal: Number(head.retencion_total) }
         : {}),
     },
     issuedAt,
@@ -660,7 +691,7 @@ export async function voidInvoice(
     ? { success: true, rawProviderData: { simulado: true } }
     : await FiscalFactory.getProvider(country).cancelDocument(
         String(doc.provider_document_id || documentId),
-        { reason, providerApiKey: providerKey },
+        { reason, providerApiKey: providerKey, orgId },
       );
 
   // Falla cerrada: si el SAT no confirmó la cancelación, la factura sigue viva

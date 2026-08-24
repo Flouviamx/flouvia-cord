@@ -3,7 +3,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import crypto from 'node:crypto';
 import QRCode from 'qrcode';
-import { sql, getActiveOrgId } from '../../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { auditConnect } from '../../../../lib/connect-audit';
 import { limitConnectMutation } from '../../../../lib/connect-security';
@@ -21,7 +21,8 @@ export const POST: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const limited = await limitConnectMutation(request, 'capture-session', orgId, 8);
     if (limited) return limited;
-    const [org] = await sql`select stripe_account_id from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select stripe_account_id from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (!org?.stripe_account_id) return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
 
     const data = await request.json().catch(() => ({}));
@@ -35,10 +36,10 @@ export const POST: APIRoute = async ({ request }) => {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const expiresAt = new Date(Date.now() + TTL_MS);
 
-    await sql`
+    await withOrgTx(orgId, sql`
         insert into identity_capture_sessions (token_hash, org_id, stripe_account_id, person_id, is_company_doc, expires_at)
         values (${tokenHash}, ${orgId}, ${org.stripe_account_id}, ${personId}, ${isCompanyDoc}, ${expiresAt.toISOString()})
-    `;
+    `);
 
     const origin = new URL(request.url).origin;
     const url = `${origin}/verificar-identidad/${token}`;

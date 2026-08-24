@@ -6,7 +6,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 
 // Eventos y canales válidos (whitelist — evita basura en el jsonb).
@@ -45,7 +45,8 @@ export const PATCH: APIRoute = async ({ request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
     const orgId = await getActiveOrgId();
-    const [actual] = await sql`select notif_prefs, integraciones, slack_webhook_url from orgs where id = ${orgId}`;
+    const [actualRows] = await withOrgTx(orgId, sql`select notif_prefs, integraciones, slack_webhook_url from orgs where id = ${orgId}`);
+    const actual = actualRows[0];
 
     const notif = body.notif_prefs !== undefined ? sanitizeNotif(body.notif_prefs) : actual.notif_prefs;
     const integr = body.integraciones !== undefined ? sanitizeIntegr(body.integraciones) : actual.integraciones;
@@ -60,10 +61,10 @@ export const PATCH: APIRoute = async ({ request }) => {
         else return json({ error: 'La URL de Slack debe empezar con https://hooks.slack.com/' }, 400);
     }
 
-    await sql`update orgs set notif_prefs = ${JSON.stringify(notif)}::jsonb,
+    await withOrgTx(orgId, sql`update orgs set notif_prefs = ${JSON.stringify(notif)}::jsonb,
                               integraciones = ${JSON.stringify(integr)}::jsonb,
                               slack_webhook_url = ${slack}
-              where id = ${orgId}`;
+              where id = ${orgId}`);
     await logAudit(orgId, { accion: 'org.preferencias', entidad: 'org', entidad_id: orgId, detalle: 'Actualizó notificaciones/integraciones', ip: reqIp(request) });
     return json({ ok: true });
 };

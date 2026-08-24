@@ -3,9 +3,16 @@
 export { mountCotizador } from './core.js';
 export { CordCotizadorElement, defineCordElements } from './element.js';
 export { CordAPI, CordError } from './api.js';
-export { num, sanitizeItem, calculateTotals, roundMoney } from './engine.js';
+export {
+    num, sanitizeItem, calculateTotals, roundMoney,
+    calculateInvoiceTotals, calculateDocumentTotals,
+} from './engine.js';
 export { configureCord, getCordConfig } from './config.js';
-export type { EngineItem, EngineItemInput, EngineTotals } from './engine.js';
+export type {
+    EngineItem, EngineItemInput, EngineTotals,
+    InvoiceItemInput, InvoiceItem, InvoiceTotals, TaxBreakdown,
+    RetencionInput, RetencionApplied, DocumentTotals,
+} from './engine.js';
 export type { CordGlobalConfig } from './config.js';
 export type { CordErrorCode } from './api.js';
 export type {

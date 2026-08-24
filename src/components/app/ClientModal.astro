@@ -14,7 +14,7 @@ import { REGIMENES_FISCALES, USOS_CFDI } from '../../lib/sat';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import { getOrg } from '../../lib/queries';
-import { getCountryProfile } from '../../lib/countries';
+import { COUNTRY_CODES, countryName, getCountryProfile } from '../../lib/countries';
 
 interface Props {
     showDelete?: boolean;
@@ -25,6 +25,21 @@ const L = currentLocale();
 const ORG = await getOrg();
 const COUNTRY = getCountryProfile(ORG.countryCode, L);
 const isMx = ORG.countryCode === 'MX';
+
+// El cliente puede ser de CUALQUIER país, no solo de los que Cord ofrece al
+// darse de alta (regla 28: esto valida un dato ya guardado, no un catálogo
+// ofrecido). Lista completa ISO, ordenada por nombre en el idioma del usuario.
+const COUNTRY_OPTIONS = COUNTRY_CODES
+    .map((code) => ({ code, name: countryName(code, L) }))
+    .sort((a, b) => a.name.localeCompare(b.name, L));
+
+// El label del tax id depende del país DEL CLIENTE, no del emisor — un
+// cliente francés de una empresa española no es "NIF / CIF". Se resuelve del
+// lado del cliente porque el país del cliente es un <select> que el usuario
+// cambia en vivo; este mapa se embebe una sola vez.
+const TAX_ID_LABELS: Record<string, string> = Object.fromEntries(
+    COUNTRY_CODES.map((code) => [code, getCountryProfile(code, L).taxIdLabel]),
+);
 const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
 ---
 
@@ -37,7 +52,10 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
     data-i18n-empresa-obligatoria={t(L, 'cmod.empresa_obligatoria')}
     data-i18n-creando={t(L, 'cmod.creando')} data-i18n-guardando={t(L, 'cmod.guardando')}
     data-show-delete={showDelete ? '1' : ''}
+    data-org-country={ORG.countryCode}
+    data-rfc-default-label={COUNTRY.taxIdLabel}
 >
+    <script type="application/json" id="cmTaxIdLabels" is:inline set:html={JSON.stringify(TAX_ID_LABELS)} />
     <form method="dialog" class="m-form" id="clientForm">
         <div class="m-head">
             <h2 id="cmTitle">{t(L, 'cmod.nuevo_titulo')}</h2>
@@ -65,8 +83,8 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                     <input class="m-input" id="cmTelefono" name="telefono" type="tel" placeholder={t(L, 'cmod.telefono_ph')} />
                 </div>
                 <div class="m-field">
-                    <label for="cmRfc">{isMx ? t(L, 'cmod.rfc') : COUNTRY.taxIdLabel}</label>
-                    <input class="m-input" id="cmRfc" name="rfc" placeholder={isMx ? 'DEZ981123QX1' : COUNTRY.taxIdLabel} maxlength={isMx ? 13 : 64} />
+                    <label for="cmRfc" id="cmRfcLabel">{isMx ? t(L, 'cmod.rfc') : COUNTRY.taxIdLabel}</label>
+                    <input class="m-input" id="cmRfc" name="rfc" placeholder={isMx ? 'DEZ981123QX1' : COUNTRY.taxIdLabel} maxlength={64} />
                 </div>
             </div>
             <div class="m-field">
@@ -103,21 +121,50 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 </div>
             </div>
 
-            <details class="m-fiscal" id="cmFiscal" style={isMx ? undefined : 'display:none;'}>
-                <summary>{t(L, 'cmod.fiscal_summary')}</summary>
-                <p class="m-hint" style="margin: 0 0 0.75rem 0;">{t(L, 'cmod.fiscal_hint')}</p>
+            <details class="m-fiscal" id="cmDireccion" open>
+                <summary>{t(L, 'cmod.direccion_summary')}</summary>
                 <div class="m-row">
                     <div class="m-field">
-                        <label for="cmRegimen">{t(L, 'cmod.regimen_fiscal')}</label>
-                        <select class="m-input" id="cmRegimen">
-                            <option value="">{t(L, 'cmod.sin_especificar')}</option>
-                            {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
+                        <label for="cmCountry">{t(L, 'cmod.pais')}</label>
+                        <select class="m-input" id="cmCountry">
+                            <option value="">{t(L, 'cmod.pais_hereda')}</option>
+                            {COUNTRY_OPTIONS.map((c) => <option value={c.code}>{c.name}</option>)}
                         </select>
                     </div>
                     <div class="m-field">
-                        <label for="cmCp">{t(L, 'cmod.cp_domicilio')}</label>
-                        <input class="m-input" id="cmCp" inputmode="numeric" maxlength="5" placeholder="06600" />
+                        <label for="cmCp">{t(L, 'cmod.cp')}</label>
+                        <input class="m-input" id="cmCp" maxlength="20" placeholder="06600" />
                     </div>
+                </div>
+                <div class="m-field">
+                    <label for="cmDireccion1">{t(L, 'cmod.direccion1')}</label>
+                    <input class="m-input" id="cmDireccion1" maxlength="200" placeholder={t(L, 'cmod.direccion1_ph')} />
+                </div>
+                <div class="m-field">
+                    <label for="cmDireccion2">{t(L, 'cmod.direccion2')}</label>
+                    <input class="m-input" id="cmDireccion2" maxlength="200" placeholder={t(L, 'cmod.direccion2_ph')} />
+                </div>
+                <div class="m-row">
+                    <div class="m-field">
+                        <label for="cmCiudad">{t(L, 'cmod.ciudad')}</label>
+                        <input class="m-input" id="cmCiudad" maxlength="100" />
+                    </div>
+                    <div class="m-field">
+                        <label for="cmRegion">{t(L, 'cmod.region')}</label>
+                        <input class="m-input" id="cmRegion" maxlength="100" />
+                    </div>
+                </div>
+            </details>
+
+            <details class="m-fiscal" id="cmFiscal">
+                <summary>{t(L, 'cmod.fiscal_summary')}</summary>
+                <p class="m-hint" style="margin: 0 0 0.75rem 0;">{t(L, 'cmod.fiscal_hint')}</p>
+                <div class="m-field">
+                    <label for="cmRegimen">{t(L, 'cmod.regimen_fiscal')}</label>
+                    <select class="m-input" id="cmRegimen">
+                        <option value="">{t(L, 'cmod.sin_especificar')}</option>
+                        {REGIMENES_FISCALES.map((r) => <option value={r.codigo}>{r.nombre}</option>)}
+                    </select>
                 </div>
                 <div class="m-field">
                     <label for="cmUso">{t(L, 'cmod.uso_cfdi')}</label>
@@ -151,6 +198,10 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const dlg: HTMLDialogElement = dlgEl;
         const I = dlg.dataset;
         const canDelete = I.showDelete === '1';
+        const orgCountry = I.orgCountry || 'MX';
+        const rfcDefaultLabel = I.rfcDefaultLabel || 'Tax ID';
+        let taxIdLabels: Record<string, string> = {};
+        try { taxIdLabels = JSON.parse(document.getElementById('cmTaxIdLabels')?.textContent || '{}'); } catch { /* deja {} */ }
         const form = document.getElementById('clientForm') as HTMLFormElement;
         const title = document.getElementById('cmTitle')!;
         const errorEl = document.getElementById('cmError')!;
@@ -158,11 +209,25 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
         const btnSave = document.getElementById('cmSave') as HTMLButtonElement;
         const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('#cmTerminos .chip'));
         const tierChips = Array.from(document.querySelectorAll<HTMLButtonElement>('#cmTiers .chip'));
+        const rfcLabel = document.getElementById('cmRfcLabel')!;
+        const fiscalDetails = document.getElementById('cmFiscal') as HTMLDetailsElement | null;
 
         let editId: string | null = null;
         let terminos = 'contado';
 
         const input = (id: string) => document.getElementById(id) as HTMLInputElement;
+
+        // El país RESUELTO del cliente: el suyo si lo eligió, si no el del negocio.
+        // De ahí sale el label del tax id y si se muestra el bloque de CFDI mexicano
+        // — un cliente francés de una empresa española no es "NIF / CIF" ni tiene RFC.
+        const syncCountryDependent = () => {
+            const chosen = input('cmCountry').value.toUpperCase();
+            const resolved = chosen || orgCountry;
+            rfcLabel.textContent = taxIdLabels[resolved] || rfcDefaultLabel;
+            input('cmRfc').placeholder = rfcLabel.textContent || '';
+            if (fiscalDetails) fiscalDetails.style.display = resolved === 'MX' ? '' : 'none';
+        };
+        input('cmCountry').addEventListener('change', syncCountryDependent);
         const setTerm = (v: string) => {
             terminos = v;
             chips.forEach((c) => c.classList.toggle('active', c.dataset.v === v));
@@ -203,10 +268,15 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
             input('cmRegimen').value = data?.regimen ?? '';
             input('cmUso').value = data?.uso ?? '';
             input('cmCp').value = data?.cp ?? '';
+            input('cmCountry').value = data?.country ?? '';
+            input('cmDireccion1').value = data?.direccion1 ?? '';
+            input('cmDireccion2').value = data?.direccion2 ?? '';
+            input('cmCiudad').value = data?.ciudad ?? '';
+            input('cmRegion').value = data?.region ?? '';
             setNivel(data?.nivel ?? 'estandar', false);
             setTerm(data?.terminos ?? 'contado');
-            const fiscal = document.getElementById('cmFiscal') as HTMLDetailsElement | null;
-            if (fiscal) fiscal.open = false;
+            if (fiscalDetails) fiscalDetails.open = false;
+            syncCountryDependent();
             dlg.showModal();
             (window as any).cordWireModal?.(dlg);
             if (!editId) setTimeout(() => input('cmEmpresa').focus(), 60);
@@ -244,6 +314,11 @@ const save = saveLabel ?? t(L, 'cmod.guardar_cliente');
                 regimen_fiscal: input('cmRegimen').value,
                 uso_cfdi: input('cmUso').value,
                 cp_fiscal: input('cmCp').value,
+                country_code: input('cmCountry').value,
+                direccion_line1: input('cmDireccion1').value,
+                direccion_line2: input('cmDireccion2').value,
+                ciudad: input('cmCiudad').value,
+                region: input('cmRegion').value,
             };
             try {
                 const res = await fetch('/api/clientes', {

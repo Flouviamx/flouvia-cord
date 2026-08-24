@@ -7,7 +7,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -15,7 +15,8 @@ export const POST: APIRoute = async () => {
     const orgId = await getActiveOrgId(); // en modo prueba = la org sandbox
 
     // Guard duro: SOLO se borra si es una sandbox. Jamás tocar una org real.
-    const [o] = await sql`select sandbox_of from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select sandbox_of from orgs where id = ${orgId}`);
+    const o = orgRows[0];
     if (!o?.sandbox_of) {
         return json({ error: t(currentLocale(), 'err.test.reset_scope') }, 409);
     }
@@ -23,7 +24,7 @@ export const POST: APIRoute = async () => {
     // Cascade elimina todas las filas hijas (cotizaciones, clientes, productos,
     // eventos, etc.). La condición sandbox_of is not null es una segunda red de
     // seguridad: aunque orgId apuntara mal, nunca borraría una org real.
-    await sql`delete from orgs where id = ${orgId} and sandbox_of is not null`;
+    await withOrgTx(orgId, sql`delete from orgs where id = ${orgId} and sandbox_of is not null`);
 
     return json({ ok: true });
 };

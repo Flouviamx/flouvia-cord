@@ -4,7 +4,7 @@
 export const prerender = false;
 
 import { withApiAuth } from '../../../lib/apikey';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { getProductos } from '../../../lib/queries';
 import { ok, fail, pageParams } from '../../../lib/apiv1';
 import { requireResourceCapacity, resourceLimitError } from '../../../lib/org-entitlements';
@@ -41,10 +41,11 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
     if (capacityDenied) return capacityDenied;
     let row: any;
     try {
-        [row] = await sql`
+        const [rows] = await withOrgTx(orgId, sql`
             insert into productos (org_id, sku, nombre, unidad, precio_lista, activo)
             values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.precio}, ${p.activo})
-            returning id`;
+            returning id`);
+        row = rows[0];
     } catch (error) {
         return resourceLimitError(error) ?? fail('No se pudo crear el producto.', 'server_error', 500);
     }

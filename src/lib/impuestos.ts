@@ -85,7 +85,7 @@ export function defaultTaxRate(impuestos: ImpuestoRow[], orgTaxRate?: number): n
 export function retencionesFrom(impuestos: ImpuestoRow[]) {
     return impuestos
         .filter((i) => i.kind === 'retencion' && i.activo && i.esDefault && i.rate > 0)
-        .map((i) => ({ nombre: i.nombre, tipo: i.tipo, tasa: i.rate }));
+        .map((i) => ({ nombre: i.nombre, tipo: i.tipo, tasa: i.rate, base: i.retencionBase }));
 }
 
 // Las tasas viajan como fracciones con decimales largos (0.106667). Comparar

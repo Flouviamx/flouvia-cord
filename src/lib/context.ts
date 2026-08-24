@@ -31,7 +31,18 @@ interface ReqCtx {
     // Idioma resuelto para este request (app interna /app/**, /q/[token] y
     // correos transaccionales). Se detecta del header Accept-Language del
     // navegador — sin toggle manual, ver docs/app-rutas.md → i18n de la app.
+    //
+    // Es el vocabulario CERRADO de la interfaz (qué diccionario de i18n/app.ts
+    // usar), no el formato regional. NO se pasa a Intl.NumberFormat/DateTimeFormat
+    // directamente — para eso existe `formatLocale`.
     locale?: "es" | "en";
+    // Locale de FORMATO (BCP-47 completo: 'pt-BR', 'de-DE', 'en-GB'…), del
+    // perfil del país de la org (`getCountryProfile().locale`). `locale` de
+    // arriba solo distingue es/en para la interfaz; sin este campo, Intl
+    // siempre recibía 'es-MX' o 'en-US' sin importar el país real, así que un
+    // negocio en São Paulo o Londres leía sus fechas y números en formato
+    // mexicano o estadounidense.
+    formatLocale?: string;
     // Divisa de PRESENTACIÓN de este request (ISO 4217). La resuelve el
     // middleware para /app y las APIs internas desde orgs.moneda, y el link
     // público desde la divisa de la propia cotización — el cliente debe leer
@@ -90,6 +101,15 @@ export function currentLocale(): "es" | "en" {
     return reqContext.getStore()?.locale ?? "es";
 }
 
+/**
+ * Locale de FORMATO del request (BCP-47 completo), o `undefined` si no se
+ * fijó explícitamente. El llamador (`intlLocale()` en fmt-server.ts) decide
+ * el fallback — normalmente derivarlo de `currentLocale()`.
+ */
+export function currentFormatLocale(): string | undefined {
+    return reqContext.getStore()?.formatLocale;
+}
+
 /** Divisa de presentación del request; MXN fuera del middleware (crons/scripts). */
 export function currentCurrency(): string {
     return reqContext.getStore()?.currency ?? "MXN";
@@ -108,6 +128,24 @@ export function setRequestLocale(idioma: string | null | undefined): void {
     const value = String(idioma ?? '').trim().toLowerCase();
     if (!value) return;
     store.locale = value.startsWith('en') ? 'en' : 'es';
+}
+
+/**
+ * Fija el locale de FORMATO del request (BCP-47 completo, del perfil del
+ * país: `getCountryProfile(countryCode).locale`). Se valida contra ICU antes
+ * de guardarlo — un locale corrupto o mal formado no debe tirar cada
+ * `Intl.NumberFormat`/`DateTimeFormat` de la página, mismo criterio que
+ * `setRequestTimeZone`.
+ */
+export function setRequestFormatLocale(locale: string | null | undefined): void {
+    const store = reqContext.getStore();
+    if (!store) return;
+    const value = String(locale ?? '').trim();
+    if (!value) return;
+    try {
+        new Intl.NumberFormat(value);
+        store.formatLocale = value;
+    } catch { /* locale inválido: se conserva el fallback de currentLocale() */ }
 }
 
 /**

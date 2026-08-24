@@ -54,10 +54,19 @@ export interface BuilderContextType {
 export function useQuoteBuilder(opts: UseQuoteBuilderOptions = {}): BuilderContextType {
     const { onQuoteCreated, catalog, clients: propClients } = opts;
     const context = useCordContext();
-    // Precedencia: ivaPct de ESTA instancia > <CordProvider> > 0.16. Configurarlo
-    // en el Provider (no por instancia) evita que el total del Builder
-    // diverja del que termina calculando el servidor para tu org.
-    const ivaPct = opts.ivaPct ?? context.ivaPct ?? 0.16;
+    // Precedencia: ivaPct de ESTA instancia > <CordProvider>. Sin ninguno de
+    // los dos, ANTES se caía a 0.16 (16%, la tasa mexicana) en silencio — un
+    // Builder embebido en Madrid o Austin calculaba con IVA mexicano sin que
+    // nadie lo pidiera. Configurarlo en el Provider (no por instancia) evita
+    // además que el total del Builder diverja del que calcula el servidor
+    // para tu org.
+    if (opts.ivaPct === undefined && context.ivaPct === undefined) {
+        throw new Error(
+            'useQuoteBuilder necesita ivaPct: pásalo como opción del hook o configúralo en <CordProvider ivaPct={...}>. ' +
+            'Sin una tasa explícita no se puede calcular un total — antes se asumía 0.16 (16%, México) en silencio.',
+        );
+    }
+    const ivaPct = opts.ivaPct ?? context.ivaPct!;
     const t = useCordTranslations();
     const { createQuote, isLoading } = useCreateQuote();
     // Estos dos hooks se llaman SIEMPRE (regla de hooks — nunca

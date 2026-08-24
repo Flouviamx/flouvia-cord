@@ -16,7 +16,7 @@ import { emitFiscalDocument } from '../../../lib/fiscal/emit';
 import { MAX_ITEMS } from '../../../lib/cotizaciones';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
 import { sanitizeItem, calculateDocumentTotals } from '../../../../packages/elements/src/engine';
-import { taxCatalogFor } from '../../../lib/impuestos-db';
+import { taxCatalogFor, TaxCatalogUnavailableError } from '../../../lib/impuestos-db';
 import { trackServer } from '../../../lib/posthog-server';
 import { normalizeCurrency } from '../../../lib/currency';
 import { FXService, FXUnavailableError } from '../../../lib/fx/FXService';
@@ -148,7 +148,13 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         // editar un borrador podía darle otro total que crearlo. Y el re-insert
         // de las líneas más abajo no llevaba `tax_rate`, de modo que una simple
         // edición borraba el impuesto por línea que el vendedor había elegido.
-        const catalogo = await taxCatalogFor(orgId);
+        let catalogo;
+        try {
+            catalogo = await taxCatalogFor(orgId);
+        } catch (error) {
+            if (error instanceof TaxCatalogUnavailableError) return json({ error: error.message, code: 'tax_catalog_unavailable' }, 503);
+            throw error;
+        }
         const items = rawItems.map((raw: any, i: number) => ({
             ...sanitizeItem(raw),
             tax_rate: catalogo.resolve(rawItems[i]?.tax_rate, catalogo.defaultRate),

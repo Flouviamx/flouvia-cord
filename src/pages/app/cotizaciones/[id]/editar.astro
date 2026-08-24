@@ -1,7 +1,9 @@
 ---
 // Editor de cotizaciones para editar y crear nuevas versiones (V2, V3...).
 import AppLayout from '../../../../layouts/AppLayout.astro';
-import { getProductos, getClientes, getOrg, getCotizacion } from '../../../../lib/queries';
+import { getProductos, getClientes, getOrg, getCotizacion, getImpuestos } from '../../../../lib/queries';
+import { getCountryProfile } from '../../../../lib/countries';
+import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../../lib/impuestos';
 import { currentLocale } from '../../../../lib/context';
 import { t } from '../../../../i18n/app';
 
@@ -28,8 +30,8 @@ const EVT = {
 };
 
 const { id } = Astro.params;
-const [productos, CLIENTES, ORG, q] = await Promise.all([
-    getProductos(), getClientes(), getOrg(), getCotizacion(id ?? '')
+const [productos, CLIENTES, ORG, q, IMPUESTOS] = await Promise.all([
+    getProductos(), getClientes(), getOrg(), getCotizacion(id ?? ''), getImpuestos(),
 ]);
 
 if (!q || (q.status !== 'sent' && q.status !== 'viewed' && q.status !== 'expired' && q.status !== 'draft')) {
@@ -39,6 +41,21 @@ if (!q || (q.status !== 'sent' && q.status !== 'viewed' && q.status !== 'expired
 const catalogo = productos.filter(p => p.activo);
 const VIGENCIAS = [...new Set([15, 30, 60, ORG.vigenciaDefaultDias])].sort((a, b) => a - b);
 const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - new Date().getTime()) / 86400000));
+
+// Mismo constructor que nueva.astro/facturas — no una cuarta aritmética. Antes
+// esta pantalla ignoraba por completo el catálogo de impuestos: aplanaba todo
+// a `orgs.iva_pct`, con etiqueta "IVA" fija, y no restaba retenciones. El
+// servidor (api/cotizaciones/[id].ts) ya calculaba bien al guardar — el
+// vendedor veía un total en pantalla y se guardaba otro.
+const isMx = ORG.countryCode === 'MX';
+const PAIS = String(ORG.countryCode || 'MX');
+const TAX_LABEL = getCountryProfile(PAIS, L).taxLabel;
+const TAX_INCLUDED_LABEL = isMx ? t(L, 'ed.iva_incluido') : (L === 'en' ? 'Prices include tax' : 'Precios con impuesto incluido');
+const orgTaxRate = Number(ORG.ivaPct) || 0;
+const TAX_OPTIONS = buildTaxOptions(IMPUESTOS, { locale: L, countryCode: PAIS, orgTaxRate });
+const DEFAULT_TAX_RATE = defaultTaxRate(IMPUESTOS, orgTaxRate);
+const RETENCIONES = retencionesFrom(IMPUESTOS);
+const MULTI_TAX = TAX_OPTIONS.length > 1;
 ---
 
 <AppLayout title={`Editar ${q.folio}`} page="cotizaciones" heading={q.status === 'draft' ? tf('edv.editar_borrador_heading', { folio: q.folio }) : tf('edv.nueva_version_heading', { folio: q.folio })} crumbs={[{ label: t(L, 'edv.crumb_cotizaciones'), href: '/app/cotizaciones' }, { label: q.folio, href: `/app/cotizaciones/${id}` }]}>
@@ -67,10 +84,10 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
                     <h2>{t(L, 'edv.productos')}</h2>
                 </div>
 
-                <div class="lines-head">
-                    <span>{t(L, 'edv.th_producto')}</span><span>{t(L, 'edv.th_cant')}</span><span>{t(L, 'edv.th_lista')}</span><span>{t(L, 'edv.th_negociado')}</span><span class="lh-right">{t(L, 'edv.th_importe')}</span><span class="lh-margen">{t(L, 'edv.th_margen')}</span><span></span>
+                <div class="lines-head" class:list={[{ 'has-tax': MULTI_TAX }]}>
+                    <span>{t(L, 'edv.th_producto')}</span><span>{t(L, 'edv.th_cant')}</span><span>{t(L, 'edv.th_lista')}</span><span>{t(L, 'edv.th_negociado')}</span>{MULTI_TAX && <span class="lh-tax">{TAX_LABEL}</span>}<span class="lh-right">{t(L, 'edv.th_importe')}</span><span class="lh-margen">{t(L, 'edv.th_margen')}</span><span></span>
                 </div>
-                <div id="lines"></div>
+                <div id="lines" class:list={[{ 'has-tax': MULTI_TAX }]}></div>
 
                 <div class="lines-empty" id="linesEmpty" hidden>
                     <p>{t(L, 'edv.sin_productos')}</p>
@@ -94,14 +111,13 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
                 <div class="section-head"><h2>{t(L, 'edv.resumen')}</h2></div>
                 <div class="sum-line"><span>{t(L, 'edv.subtotal')}</span><span class="editorial" id="sumSubtotal">$0.00</span></div>
                 <div class="sum-field" style="flex-direction: row; align-items: center; justify-content: space-between; margin-top: 0.5rem; margin-bottom: -0.5rem;">
-                    <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">{t(L, 'edv.iva_incluido')}</label>
-                    <label class="s-toggle" title={t(L, 'edv.iva_incluido_title')}>
+                    <label for="ivaIncluido" style="margin:0; cursor: pointer; color: var(--color-text);">{TAX_INCLUDED_LABEL}</label>
+                    <label class="s-toggle" title={TAX_INCLUDED_LABEL}>
                         <input type="checkbox" id="ivaIncluido" checked={q.iva_incluido} />
                         <span class="s-toggle-track"><span class="s-toggle-thumb"></span></span>
                     </label>
                 </div>
-                <div class="sum-line"><span>{t(L, 'edv.iva')} {ORG.ivaPct}%</span><span class="editorial" id="sumIva">$0.00</span></div>
-                <input type="hidden" id="cfgIva" value={ORG.ivaPct} />
+                <div id="sumTaxes"></div>
                 <div class="sum-divider"></div>
                 <div class="sum-line sum-total"><span>{t(L, 'edv.total')}</span><span class="editorial" id="sumTotal">$0.00</span></div>
 
@@ -136,7 +152,26 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
     </div>
 </AppLayout>
 
-<script is:inline define:vars={{ catalogo, aprobMargenMin: ORG.aprobMargenMin, qItems: q.items, qId: q.id, qStatus: q.status, T: EVT, quoteCurrency: q.baseCurrency || ORG.moneda || 'MXN', quoteFiscalCurrency: q.fiscalCurrency || ORG.moneda || 'MXN' }}>
+<script type="application/json" id="edvBoot" is:inline set:html={JSON.stringify({
+    catalogo, aprobMargenMin: ORG.aprobMargenMin, qItems: q.items, qId: q.id, qStatus: q.status, T: EVT,
+    quoteCurrency: q.baseCurrency || ORG.moneda || 'MXN', quoteFiscalCurrency: q.fiscalCurrency || ORG.moneda || 'MXN',
+    taxOptions: TAX_OPTIONS, defaultTaxRate: DEFAULT_TAX_RATE, retenciones: RETENCIONES,
+    taxLabel: TAX_LABEL, multiTax: MULTI_TAX,
+})} />
+<script>
+    // Módulo bundleado, no `is:inline` + `define:vars` — mismo motivo que
+    // cotizaciones/nueva.astro: `is:inline` no puede importar, así que este
+    // editor de versiones tenía su PROPIA copia de la aritmética (tasa plana,
+    // sin retenciones) mientras el servidor recalculaba con el motor
+    // compartido. El vendedor veía un total en pantalla y se guardaba otro.
+    import { calculateDocumentTotals } from '../../../../../packages/elements/src/engine';
+
+    const BOOT = JSON.parse(document.getElementById('edvBoot')?.textContent || '{}');
+    const { catalogo, aprobMargenMin, qItems, qId, qStatus, T, quoteCurrency } = BOOT;
+    const DEFAULT_TAX = Number(BOOT.defaultTaxRate) || 0;
+    const TAX_OPTIONS = BOOT.taxOptions || [];
+    const escapeHtml = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
     const lines = [...qItems].map(it => ({
         id: it.producto_id || null, // Nota: el rowToQuote no incluye producto_id nativamente, requeriría arreglo si es vital, pero se asume nombre
         nombre: it.descripcion,
@@ -148,7 +183,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
         // La tasa viaja con la línea. Sin esto, crear una V2 reseteaba cada
         // concepto a la tasa default y borraba un "Exento" que el vendedor
         // había elegido a propósito en la versión anterior.
-        taxRate: it.taxRate
+        taxRate: it.taxRate != null ? Number(it.taxRate) : DEFAULT_TAX,
     }));
 
     const $lines = document.getElementById('lines');
@@ -181,18 +216,53 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
 
     const catMap = Object.fromEntries(catalogo.map(p => [p.id, p]));
 
+    // Selector de impuesto de la línea. Solo aparece cuando la org tiene más
+    // de una tasa (mismo criterio que nueva.astro): con una sola, una columna
+    // de un único valor es ruido; con varias, es la diferencia entre poder
+    // dejar un concepto exento y no.
+    function taxSelect(l, idx) {
+        if (!BOOT.multiTax) return '';
+        const actual = l.taxRate ?? DEFAULT_TAX;
+        const opts = TAX_OPTIONS.map((o) => {
+            const sel = Math.abs(o.rate - actual) < 1e-9 ? ' selected' : '';
+            return `<option value="${o.rate}"${sel}>${escapeHtml(o.label)}</option>`;
+        }).join('');
+        return `<select class="lr-tax" data-idx="${idx}" data-field="taxRate" aria-label="${escapeHtml(BOOT.taxLabel)}">${opts}</select>`;
+    }
+
     function recalc() {
-        const ivaPct = (Number((document.getElementById('cfgIva') || {}).value) || 0) / 100;
         const ivaIncluido = document.getElementById('ivaIncluido') ? document.getElementById('ivaIncluido').checked : false;
-        const subtotal = lines.reduce((s, l) => s + (l.negociado ?? l.lista) * l.cantidad, 0);
-        
-        const iva = ivaIncluido ? subtotal - (subtotal / (1 + ivaPct)) : subtotal * ivaPct;
-        const realSubtotal = ivaIncluido ? subtotal / (1 + ivaPct) : subtotal;
-        const total = ivaIncluido ? subtotal : subtotal + iva;
+
+        // El MISMO motor que usa el servidor para escribir los totales
+        // (api/cotizaciones/[id].ts, acción resend/update_draft/send).
+        const totals = calculateDocumentTotals(
+            lines.map((l) => ({
+                descripcion: l.nombre,
+                cantidad: l.cantidad,
+                precio_unitario: l.lista,
+                precio_negociado: l.negociado,
+                tax_rate: l.taxRate ?? DEFAULT_TAX,
+            })),
+            { ivaIncluido, retenciones: BOOT.retenciones || [] },
+        );
+        const realSubtotal = totals.subtotal;
+        const total = totals.total;
 
         document.getElementById('sumSubtotal').textContent = fmt(realSubtotal);
-        document.getElementById('sumIva').textContent = fmt(iva);
         document.getElementById('sumTotal').textContent = fmt(total);
+
+        // Desglose por tasa + retenciones — una retención se RESTA, y se
+        // dibuja con el signo a la vista porque va junto a los impuestos y
+        // apunta en dirección contraria.
+        const $taxes = document.getElementById('sumTaxes');
+        if ($taxes) {
+            const filasImpuesto = totals.porTasa
+                .filter((tr) => tr.impuesto > 0)
+                .map((tr) => `<div class="sum-line sum-tax"><span>${escapeHtml(BOOT.taxLabel)} ${Math.round(tr.tasa * 10000) / 100}%</span><span class="editorial">${fmt(tr.impuesto)}</span></div>`);
+            const filasRetencion = (totals.retenciones || [])
+                .map((r) => `<div class="sum-line sum-ret"><span>${escapeHtml(r.nombre)}</span><span class="editorial">−${fmt(r.monto)}</span></div>`);
+            $taxes.innerHTML = [...filasImpuesto, ...filasRetencion].join('');
+        }
     }
 
     function margenBadge(costo, precio) {
@@ -219,6 +289,7 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
                 <input type="number" min="1" value="${l.cantidad}" class="lr-input" data-idx="${idx}" data-field="cantidad" />
                 <span class="lr-lista">${fmt(l.lista)}</span>
                 <input type="number" min="0" step="0.01" value="${precioFinal.toFixed(2)}" class="lr-input lr-nego ${l.negociado !== null && l.negociado < l.lista ? 'is-deal' : ''}" data-idx="${idx}" data-field="negociado" />
+                ${taxSelect(l, idx)}
                 <span class="editorial lr-importe">${fmt(importe)}</span>
                 ${margenBadge(l.costo, precioFinal)}
                 <button class="lr-del" data-del="${idx}" aria-label="${T.quitar}">
@@ -233,14 +304,25 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
     $select.addEventListener('change', () => {
         const p = catMap[$select.value];
         if (!p) return;
-        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, costo: p.costo || 0, negociado: null, cantidad: 1 });
+        lines.push({ id: p.id, nombre: p.nombre, unidad: p.unidad, lista: p.precio, costo: p.costo || 0, negociado: null, cantidad: 1, taxRate: DEFAULT_TAX });
         $select.selectedIndex = 0;
         render();
     });
 
     document.getElementById('btnFreeLine')?.addEventListener('click', () => {
-        lines.push({ id: null, nombre: '', unidad: 'pieza', lista: 0, costo: 0, negociado: 0, cantidad: 1 });
+        lines.push({ id: null, nombre: '', unidad: 'pieza', lista: 0, costo: 0, negociado: 0, cantidad: 1, taxRate: DEFAULT_TAX });
         render();
+    });
+
+    // El selector de impuesto es un <select>, no un <input>: el handler de
+    // arriba lo descarta por instanceof, así que escucha su propio 'change'.
+    $lines.addEventListener('change', (e) => {
+        const t = e.target;
+        if (!(t instanceof HTMLSelectElement) || t.dataset.field !== 'taxRate') return;
+        const l = lines[parseInt(t.dataset.idx, 10)];
+        if (!l) return;
+        l.taxRate = Number(t.value) || 0;
+        recalc();
     });
 
     $lines.addEventListener('input', (e) => {
@@ -337,6 +419,25 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
 </script>
 
 <style is:global>
+    /* Columna de impuesto: solo existe cuando la org tiene más de una tasa.
+       La rejilla se llavea por `.has-tax` en el contenedor y no por el número
+       de hijos, para que una org con una sola tasa conserve el layout de
+       siempre. Las filas las inyecta JS, así que la regla vive aquí y no en
+       un <style> scopeado que nunca haría match (regla 11). */
+    .lines-head.has-tax,
+    #lines.has-tax .line-row { grid-template-columns: 1.8fr 70px 90px 110px 104px 1fr 58px 30px; }
+    .lr-tax {
+        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 500;
+        color: var(--color-text); background: var(--color-bg-soft);
+        border: 1px solid transparent; border-radius: 8px; padding: 6px 8px;
+        width: 100%; min-width: 0; cursor: pointer; appearance: none;
+        transition: border-color 0.25s;
+    }
+    .lr-tax:focus { outline: none; border-color: var(--color-blue-deep); background: var(--surface); box-shadow: 0 0 0 2px rgba(10,25,47,0.05); }
+    .lh-tax { text-align: left; }
+    .sum-tax, .sum-ret { font-size: 0.82rem; }
+    .sum-ret span:last-child { color: #b45309; }
+
     .line-row {
         display: grid;
         grid-template-columns: 1.8fr 70px 90px 110px 1fr 58px 30px;
@@ -376,6 +477,17 @@ const vigenciaDias = Math.max(1, Math.round((new Date(q.vigencia).getTime() - ne
             gap: 0.65rem 0.75rem;
             padding: 1rem 0;
         }
+        /* La tasa es información comercial: en móvil se apila, no se esconde
+           (regla 16). Un renglón propio de 44px la deja tocable. */
+        #lines.has-tax .line-row {
+            grid-template-columns: minmax(0, 1fr) minmax(92px, 0.72fr) 44px;
+            grid-template-areas:
+                "name name delete"
+                "quantity price price"
+                "tax tax tax"
+                "list margin amount";
+        }
+        .line-row > .lr-tax { grid-area: tax; min-height: 44px; font-size: 16px; }
         .line-row > :is(.lr-name, .lr-desc-input) { grid-area: name; min-width: 0; }
         .line-row > .lr-input:nth-child(2) { grid-area: quantity; }
         .line-row > .lr-lista { grid-area: list; }

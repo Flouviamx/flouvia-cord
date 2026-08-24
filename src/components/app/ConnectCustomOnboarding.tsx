@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { STRIPE_MX_STATES, STRIPE_COMPANY_STRUCTURES, STRIPE_MCC_B2B, translateRequirement } from '../../lib/stripe-catalogs';
 import { FEE_TERMS_VERSION } from '../../lib/fees';
 import { payoutSpecFor, validatePayout } from '../../lib/payout-fields';
-import { getCountryProfile } from '../../lib/countries';
+import { getCountryProfile, US_STATES } from '../../lib/countries';
+import { validRfc, validSpainTaxId } from '../../lib/tax-id';
 
 interface ConnectCustomOnboardingProps {
     org?: any;
@@ -61,6 +62,7 @@ const CO_STRINGS = {
     apellidos: 'Apellidos',
     idPersonal: 'Identificación fiscal personal',
     idPersonalMx: 'CURP o RFC personal',
+    ssnLast4: 'Últimos 4 dígitos del SSN',
     fechaNacimiento: 'Fecha de nacimiento',
     emailPersonal: 'Email personal',
     telefono: 'Teléfono',
@@ -133,6 +135,7 @@ const CO_STRINGS = {
     apellidos: 'Last name(s)',
     idPersonal: 'Personal tax ID',
     idPersonalMx: 'CURP or personal RFC',
+    ssnLast4: 'Last 4 digits of SSN',
     fechaNacimiento: 'Date of birth',
     emailPersonal: 'Personal email',
     telefono: 'Phone',
@@ -219,6 +222,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
         dob_month: '',
         dob_year: '',
         id_number: '',
+        ssn_last_4: '',
         phone: '',
         email: '',
         address_line1: '',
@@ -414,12 +418,16 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 setStep(1);
             } else if (step === 1) {
                 if (!name || !taxId || !mcc) throw new Error('Faltan datos obligatorios');
-                const rfcRegex = /^[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}$/i;
-                // El formato del RFC es mexicano. Validar 12–13 caracteres en
-                // España o Estados Unidos rechaza identificadores perfectamente
-                // válidos, así que fuera de México solo se exige que exista.
-                if (esMx && !rfcRegex.test(taxId)) throw new Error('El RFC no tiene un formato válido (12 o 13 caracteres, formato oficial)');
-                if (!esMx && taxId.trim().length < 5) throw new Error(`Captura tu ${TAX_ID_LABEL}`);
+                // El checksum se verifica AQUÍ y no se deja para que Stripe lo
+                // rechace con un error que no le dice nada al vendedor (regla
+                // 14) — mismo criterio que la CLABE en payout-fields.ts.
+                if (esMx) {
+                    if (!validRfc(taxId)) throw new Error('El RFC no tiene un formato válido (12 o 13 caracteres, formato oficial)');
+                } else if (PAIS === 'ES') {
+                    if (!validSpainTaxId(taxId)) throw new Error('Ese NIF, NIE o CIF no es válido — revisa la letra de control.');
+                } else if (taxId.trim().length < 5) {
+                    throw new Error(`Captura tu ${TAX_ID_LABEL}`);
+                }
 
                 const payload: any = {
                     business_profile: { mcc, url, support_phone: phone, support_email: email },
@@ -457,6 +465,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 setStep(3); // Empresa Y persona física pasan por el paso 3 (datos personales + DOB)
             } else if (step === 3) { // Datos personales (representante o persona física)
                 if (!person.first_name || !person.last_name || !person.id_number) throw new Error('Completa los datos personales');
+                if (PAIS === 'US' && person.ssn_last_4.length !== 4) throw new Error('Captura los últimos 4 dígitos del SSN');
                 const d = Number(person.dob_day), m = Number(person.dob_month), y = Number(person.dob_year);
                 if (!d || !m || !y || d < 1 || d > 31 || m < 1 || m > 12 || y < 1900 || y > new Date().getFullYear() - 18) {
                     throw new Error('Revisa la fecha de nacimiento (debes ser mayor de 18 años)');
@@ -467,7 +476,10 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                     city: person.address_city,
                     state: person.address_state,
                     postal_code: person.address_postal_code,
-                    country: 'MX'
+                    // El país de la ORG, no 'MX' fijo: el domicilio del
+                    // representante de un negocio en Austin se mandaba a
+                    // Stripe como si viviera en México, bloqueando el alta.
+                    country: PAIS,
                 };
                 if (businessType === 'individual') {
                     // Persona física: los datos van al individual[...] de la CUENTA (no una person aparte).
@@ -478,6 +490,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                             first_name: person.first_name,
                             last_name: person.last_name,
                             id_number: person.id_number,
+                            ...(PAIS === 'US' && person.ssn_last_4 ? { ssn_last_4: person.ssn_last_4 } : {}),
                             email: person.email,
                             phone: person.phone,
                             dob,
@@ -493,6 +506,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                         first_name: person.first_name,
                         last_name: person.last_name,
                         id_number: person.id_number,
+                        ...(PAIS === 'US' && person.ssn_last_4 ? { ssn_last_4: person.ssn_last_4 } : {}),
                         email: person.email,
                         phone: person.phone,
                         dob,
@@ -559,7 +573,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
             } else if (step === 6) { // Cuenta Bancaria
                 if (!accountHolder.trim()) throw new Error('Escribe el nombre del titular de la cuenta');
                 // Misma validación que el servidor, con el formato del país.
-                const check = validatePayout(String(org?.countryCode || 'MX'), bankFields, 'es');
+                const check = validatePayout(String(org?.countryCode || 'MX'), bankFields, locale);
                 if (!check.ok) throw new Error(check.error || 'Revisa los datos de tu cuenta');
                 const send = () => fetch('/api/billing/connect/external-account', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -773,7 +787,14 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                         <div className="s-row">
                             <div className="s-field">
                                 <label>{S.codigoPostal}</label>
-                                <input className="s-input" value={address.postal_code} onChange={e => setAddress({...address, postal_code: e.target.value.replace(/\D/g, '')})} maxLength={5} inputMode="numeric" />
+                                {/* El formato del CP lo decide el país: MX/US son 5 dígitos,
+                                    pero un ZIP+4 (12345-6789), un código canadiense
+                                    (K1A 0B1) o uno británico traen letras y guiones. */}
+                                {(esMx || PAIS === 'US') ? (
+                                    <input className="s-input" value={address.postal_code} onChange={e => setAddress({...address, postal_code: e.target.value.replace(/\D/g, '')})} maxLength={5} inputMode="numeric" />
+                                ) : (
+                                    <input className="s-input" value={address.postal_code} onChange={e => setAddress({...address, postal_code: e.target.value.toUpperCase()})} maxLength={12} />
+                                )}
                             </div>
                             <div className="s-field">
                                 <label>{S.ciudadMunicipio}</label>
@@ -782,13 +803,20 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                         </div>
                         <div className="s-field">
                             <label>{S.estado}</label>
-                            {/* Los 32 estados mexicanos solo existen en México. Fuera,
-                                un <select> cerrado deja al negocio sin poder capturar
-                                su provincia, condado o comunidad autónoma. */}
+                            {/* Los 32 estados mexicanos solo existen en México y los 50
+                                de EE.UU. solo ahí — Stripe exige el código de 2 letras
+                                exacto en ambos. Fuera de los dos, un <select> cerrado
+                                deja al negocio sin poder capturar su provincia, condado
+                                o comunidad autónoma. */}
                             {esMx ? (
                                 <select className="s-input" value={address.state} onChange={e => setAddress({...address, state: e.target.value})}>
                                     <option value="">{S.seleccionaEstado}</option>
                                     {STRIPE_MX_STATES.map(s => <option key={s.codigo} value={s.codigo}>{s.nombre}</option>)}
+                                </select>
+                            ) : PAIS === 'US' ? (
+                                <select className="s-input" value={address.state} onChange={e => setAddress({...address, state: e.target.value})}>
+                                    <option value="">{S.seleccionaEstado}</option>
+                                    {US_STATES.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
                                 </select>
                             ) : (
                                 <input className="s-input" value={address.state} onChange={e => setAddress({...address, state: e.target.value})} maxLength={60} />
@@ -815,6 +843,14 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                 <label>{esMx ? S.idPersonalMx : S.idPersonal}</label>
                                 <input className="s-input" value={person.id_number} onChange={e => setPerson({...person, id_number: e.target.value.toUpperCase()})} autoCapitalize="characters" />
                             </div>
+                            {PAIS === 'US' && (
+                                <div className="s-field">
+                                    <label>{S.ssnLast4}</label>
+                                    <input className="s-input" value={person.ssn_last_4} onChange={e => setPerson({...person, ssn_last_4: e.target.value.replace(/\D/g, '').slice(0, 4)})} maxLength={4} inputMode="numeric" autoComplete="off" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="s-row">
                             <div className="s-field">
                                 <label>{S.fechaNacimiento}</label>
                                 <div className="co-dob">
@@ -854,13 +890,22 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                         <option value="">{S.selecciona}</option>
                                         {STRIPE_MX_STATES.map(s => <option key={s.codigo} value={s.codigo}>{s.nombre}</option>)}
                                     </select>
+                                ) : PAIS === 'US' ? (
+                                    <select className="s-input" value={person.address_state} onChange={e => setPerson({...person, address_state: e.target.value})}>
+                                        <option value="">{S.selecciona}</option>
+                                        {US_STATES.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
+                                    </select>
                                 ) : (
                                     <input className="s-input" value={person.address_state} onChange={e => setPerson({...person, address_state: e.target.value})} maxLength={60} />
                                 )}
                             </div>
                             <div className="s-field co-field-cp">
-                                <label>CP</label>
-                                <input className="s-input" value={person.address_postal_code} onChange={e => setPerson({...person, address_postal_code: e.target.value.replace(/\D/g, '')})} maxLength={5} inputMode="numeric" />
+                                <label>{esMx ? 'CP' : S.codigoPostal}</label>
+                                {(esMx || PAIS === 'US') ? (
+                                    <input className="s-input" value={person.address_postal_code} onChange={e => setPerson({...person, address_postal_code: e.target.value.replace(/\D/g, '')})} maxLength={5} inputMode="numeric" />
+                                ) : (
+                                    <input className="s-input" value={person.address_postal_code} onChange={e => setPerson({...person, address_postal_code: e.target.value.toUpperCase()})} maxLength={12} />
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1001,7 +1046,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                             // Solo se opina cuando el campo ya tiene su longitud
                             // completa: marcar en rojo mientras se teclea es ruido.
                             const completo = valor.length >= f.minLength;
-                            const check = completo ? validatePayout(String(org?.countryCode || 'MX'), { ...bankFields, [f.key]: valor }, 'es') : null;
+                            const check = completo ? validatePayout(String(org?.countryCode || 'MX'), { ...bankFields, [f.key]: valor }, locale) : null;
                             return (
                                 <div className="s-field" key={f.key}>
                                     <label>{f.label}{f.hint ? ` (${f.hint})` : ''}</label>

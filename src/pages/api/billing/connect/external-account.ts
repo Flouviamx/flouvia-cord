@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { createExternalAccount, retrieveAccount } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
@@ -22,7 +22,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (limited) return limited;
     const staleAuth = await requireFreshAuth();
     if (staleAuth) return staleAuth;
-    const [org] = await sql`select stripe_account_id, stripe_business_type, banco_clabe_last4, country_code, moneda from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select stripe_account_id, stripe_business_type, banco_clabe_last4, country_code, moneda from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (!org?.stripe_account_id) return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
 
     // Cada país identifica una cuenta bancaria a su manera: CLABE en México,
@@ -69,14 +70,14 @@ export const POST: APIRoute = async ({ request }) => {
         // Las columnas se llaman `banco_clabe*` por herencia mexicana; guardan la
         // cuenta de depósito sea cual sea su formato. Renombrarlas es una
         // migración aparte y no cambia lo que hacen.
-        await sql`update orgs
+        await withOrgTx(orgId, sql`update orgs
                      set banco_clabe = null, banco_clabe_enc = ${encryptedAccount},
                          banco_clabe_last4 = ${validation.last4}, banco_beneficiario = ${account_holder_name}
-                   where id = ${orgId}`;
+                   where id = ${orgId}`);
 
         const account = await retrieveAccount(org.stripe_account_id as string);
         const requirements = sanitizeStripeRequirements(account.requirements);
-        await sql`update orgs set stripe_requirements = ${JSON.stringify(requirements)} where id = ${orgId}`;
+        await withOrgTx(orgId, sql`update orgs set stripe_requirements = ${JSON.stringify(requirements)} where id = ${orgId}`);
         await auditConnect(orgId, request, 'cuenta_bancaria_actualizada', {
             entity: 'external_account',
             entityId: result.id,

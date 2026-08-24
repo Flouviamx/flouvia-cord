@@ -244,6 +244,50 @@ leía nadie; con la red caída se congelaba `1.0` durante 30 días, y el panel d
 dividía el total tratándolo como si ya estuviera en la divisa contable — tres
 capas con tres respuestas distintas para la misma venta.
 
+### 29. Un registro fiscal encadenado no se corrige: se anula con otro registro
+
+Verifactu (España, RD 1007/2023) no es una integración discrecional: cada factura
+genera un registro de "alta" cuya huella SHA-256 encadena con la huella del
+registro ANTERIOR de la misma organización. La cadena completa —no solo el
+documento individual— es lo que la ley exige poder verificar.
+
+- **Append-only de verdad, no por disciplina de código.** `verifactu_registros`
+  lleva `force row level security` MÁS un trigger que bloquea `UPDATE`/`DELETE`
+  sobre `huella`, `huella_anterior`, `payload`, `seq` y `tipo` — ni siquiera el
+  rol de aplicación puede editar un registro ya firmado. Corregir una factura
+  después de encadenada es un registro NUEVO (de subsanación o de anulación),
+  nunca una edición del anterior.
+- **El encadenamiento es síncrono; el envío a la AEAT es asíncrono.**
+  `SpainVerifactuProvider.issueDocument()` genera y persiste el registro sin
+  tocar la red — la disponibilidad de la AEAT no puede bloquear la emisión de
+  una factura. El envío real corre en un cron con reintentos (mismo patrón que
+  el outbox de consumo de Stripe), detrás de `VERIFACTU_AEAT_ENABLED` explícito.
+- **Fallo cerrado sobre la propia identidad del sistema.** `SistemaInformatico`
+  es un bloque OBLIGATORIO del registro (identifica a Cord como desarrollador
+  del software ante la AEAT, vía `VERIFACTU_SIF_NIF`/`VERIFACTU_SIF_NOMBRE`/
+  `VERIFACTU_SIF_ID`) — sin esas variables configuradas, `issueDocument()`
+  lanza y la factura NO se marca emitida. Encadenar un registro con ese bloque
+  inventado sería peor que no encadenarlo: la cadena es append-only para
+  siempre, así que un dato inventado ahí queda mintiendo permanentemente.
+- **Sin certificado, el rail sigue siendo honesto.** Mientras la org no suba un
+  certificado válido (`orgs.verifactu_modo`), `SpainVerifactuProvider` degrada
+  al mismo contrato que `CommercialInvoiceProvider`
+  (`regulatory_status: 'commercial_only'`) — la app nunca aparenta un registro
+  que no se generó (regla 15 aplicada a un rail fiscal completo).
+- **La serialización de la cadena no usa un advisory lock.** El driver de Neon
+  que usa este repo (`neon()`, HTTP, sin sesiones interactivas) no sostiene una
+  transacción entre dos llamadas separadas — un lock tomado en una ya se liberó
+  cuando la siguiente empieza. La cadena se serializa con `unique(org_id, seq)`
+  más reintento: dos emisiones concurrentes compiten por el mismo `seq`, gana
+  una, la otra relee el eslabón real y reintenta.
+- **La estructura del envío se verifica contra la fuente primaria, no de
+  memoria.** El algoritmo de la huella (`huella.ts`) se verificó contra los 3
+  ejemplos oficiales completos de la AEAT (coincidencia SHA-256 byte a byte);
+  el XML del envío SOAP (`aeat.ts`) se construyó a partir del WSDL y los XSD
+  reales descargados de la AEAT, no de una reconstrucción. Un campo reordenado
+  o un namespace distinto invalidaría la cadena entera — antes de tocar este
+  código, reconfirma contra la versión VIGENTE publicada por la AEAT.
+
 ## Diseño, interacción y accesibilidad
 
 ### 2. Sin saltos de línea embebidos
@@ -464,8 +508,13 @@ guardarlo ni con mostrarlo en Ajustes.
   de México; en Madrid es "NIF / CIF" y en Austin "EIN / Tax ID". Un `<select>`
   con los 32 estados mexicanos deja sin capturar su provincia a todo el resto.
 - **Catálogos de arranque**: una cuenta nueva nace con las tasas estándar de su
-  país (`TAX_PRESETS`). Estados Unidos y Brasil nacen **sin** preset a propósito:
-  no hay tasa nacional que sugerir, e inventarla sería peor que dejarla vacía.
+  país (`TAX_PRESETS`). Brasil nace **sin** preset nacional a propósito: no hay
+  tasa que sugerir, e inventarla sería peor que dejarla vacía. Estados Unidos
+  tampoco tiene tasa NACIONAL — pero deja de estar vacío en cuanto la cuenta
+  declara su estado (`fiscal_metadata.region`): `usStateTaxPresets()` siembra
+  `Sales tax <ST> <n>%` desde `US_STATE_TAX` (las 50 + DC) más la opción exenta;
+  un estado sin sales tax propio (Oregon) solo ofrece la exenta, nunca un 0%
+  de "consumo" inventado.
 
 Verificación mínima: crea una organización fuera de México y recorre el flujo
 completo. Si en algún punto lees "RFC", "SAT", "IVA" impuesto por el código, un

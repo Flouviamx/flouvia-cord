@@ -8,6 +8,7 @@
 // - La cotización pasa a 'paid' solo cuando no quedan cobros 'pendiente'
 //   (el flip atómico vive en el webhook de Stripe).
 import { sql, withOrgTx } from './db';
+import { currencyDecimals, normalizeCurrency } from './currency';
 
 export const TERM_DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
 
@@ -37,20 +38,32 @@ export function venceDia(v: unknown): string {
     return String(v).slice(0, 10);
 }
 
-// Reparte total en anticipo + saldo sin perder centavos.
-export function splitAnticipo(total: number, pct: number) {
-    const totalCents = Math.round(total * 100);
-    const antCents = Math.round((totalCents * pct) / 100);
-    return { anticipo: antCents / 100, saldo: (totalCents - antCents) / 100 };
+// Reparte total en anticipo + saldo sin perder unidades mínimas.
+//
+// `currency` decide la escala (100 para MXN/USD, 1 para JPY/CLP, 1000 para
+// KWD — ver currencyDecimals): con la escala fija en 100, un anticipo en JPY
+// se calculaba en centésimas de yen que no existen, y el reparto no cuadraba
+// con lo que después manda `toMinorUnits` a Stripe.
+export function splitAnticipo(total: number, pct: number, currency = 'MXN') {
+    const scale = 10 ** currencyDecimals(currency);
+    const totalUnits = Math.round(total * scale);
+    const antUnits = Math.round((totalUnits * pct) / 100);
+    return { anticipo: antUnits / scale, saldo: (totalUnits - antUnits) / scale };
 }
 
 // Reparte un saldo en N cuotas iguales; la última absorbe el residuo.
-export function splitCuotas(monto: number, n: number): number[] {
-    const totalCents = Math.round(monto * 100);
-    const base = Math.floor(totalCents / n);
+//
+// Mismo motivo que splitAnticipo: sin `currency`, `splitCuotas(1000, 3)` en
+// JPY repartía en centésimas de yen (333.33/333.33/333.34), y al pasarlas por
+// toMinorUnits('JPY') la suma no daba el total — payment-intent.ts detectaba
+// el descuadre y regeneraba los cobros (cancelando PaymentIntents) en bucle.
+export function splitCuotas(monto: number, n: number, currency = 'MXN'): number[] {
+    const scale = 10 ** currencyDecimals(currency);
+    const totalUnits = Math.round(monto * scale);
+    const base = Math.floor(totalUnits / n);
     const cuotas = Array.from({ length: n }, () => base);
-    cuotas[n - 1] += totalCents - base * n;
-    return cuotas.map((c) => c / 100);
+    cuotas[n - 1] += totalUnits - base * n;
+    return cuotas.map((c) => c / scale);
 }
 
 // Materializa las filas anticipo + saldo para una cotización con anticipo_pct.
@@ -59,7 +72,7 @@ export function splitCuotas(monto: number, n: number): number[] {
 // Llamar DESPUÉS de que el total quede final (p. ej. tras aprobación parcial).
 export async function materializeAnticipoCobros(cotizacionId: string, orgId: string) {
     const [rows] = await withOrgTx(orgId, sql`
-        select c.id, c.org_id, c.total, c.anticipo_pct,
+        select c.id, c.org_id, c.total, c.anticipo_pct, c.base_currency,
                coalesce(c.terminos, cl.terminos_default) as terminos,
                coalesce(c.approved_at, c.created_at) as base_date
         from cotizaciones c
@@ -71,7 +84,7 @@ export async function materializeAnticipoCobros(cotizacionId: string, orgId: str
     const total = Number(c.total);
     if (!pct || pct <= 0 || pct >= 100 || !(total > 0)) return false;
 
-    const { anticipo, saldo } = splitAnticipo(total, pct);
+    const { anticipo, saldo } = splitAnticipo(total, pct, normalizeCurrency(c.base_currency as string));
     const venceSaldo = isoDay(dueDateFor(c.base_date as string, c.terminos as string));
 
     // ATÓMICO (un solo batch de Neon): si solo se insertara el anticipo y fallara

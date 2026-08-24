@@ -8,7 +8,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
-import { sql, logAudit, reqIp } from '../../../lib/db';
+import { sql, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { stripe } from '../../../lib/billing';
 import { billingContext, json, stripeTaxIdType } from '../../../lib/billing-surface';
 import { getCountryProfile } from '../../../lib/countries';
@@ -29,7 +29,8 @@ export const GET: APIRoute = async () => {
     if ('denied' in gate) return gate.denied;
     const { orgId, customer } = gate.ctx;
 
-    const [o] = await sql`select country_code from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select country_code from orgs where id = ${orgId}`);
+    const o = orgRows[0];
     const profile = getCountryProfile(o?.country_code);
 
     try {
@@ -63,7 +64,8 @@ export const PATCH: APIRoute = async ({ request }) => {
     if (!parsed.success) return json({ error: 'Revisa los datos: hay un campo con formato inválido.' }, 400);
     const d = parsed.data;
 
-    const [o] = await sql`select country_code from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select country_code from orgs where id = ${orgId}`);
+    const o = orgRows[0];
     const country = String(o?.country_code || '').toUpperCase();
     const profile = getCountryProfile(country);
 

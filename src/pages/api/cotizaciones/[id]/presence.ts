@@ -18,8 +18,8 @@ export const GET: APIRoute = async ({ params }) => {
     const subscriptionDenied = await requireEntitlement(orgId, 'live_presence');
     if (subscriptionDenied) return subscriptionDenied;
     const id = params.id ?? '';
-    const [r] = await sql`select id from cotizaciones where id = ${id} and org_id = ${orgId}`;
-    if (!r) return json({ online: false, convCount: 0, seccion: null, escribiendo: false });
+    const [guard] = await withOrgTx(orgId, sql`select id from cotizaciones where id = ${id} and org_id = ${orgId}`);
+    if (!guard[0]) return json({ online: false, convCount: 0, seccion: null, escribiendo: false });
 
     // Conversación = eventos de tipo comment/counter/reply + comentarios por línea.
     const [presRows, ev, cm] = await withOrgTx(orgId,

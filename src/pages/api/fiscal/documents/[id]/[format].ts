@@ -21,10 +21,12 @@ export const GET: APIRoute = async ({ params }) => {
   const [[doc]] = await withOrgTx(orgId, sql`
     select d.id, d.document_type, d.country_code, d.invoice_number, d.currency,
            d.ledger_currency, d.fx_rate, d.ledger_total,
-           d.subtotal, d.tax_total, d.total, d.issuer_snapshot,
+           d.subtotal, d.tax_total, d.total, d.retencion_total, d.retenciones_snapshot,
+           d.issuer_snapshot,
            d.recipient_snapshot, d.line_items_snapshot, d.provider_data,
            d.status, d.issued_at, d.cotizacion_id,
            d.public_token as invoice_token, d.due_date as invoice_due,
+           orig.invoice_number as credit_note_of_number,
            o.facturapi_live_key, o.facturapi_live_key_enc,
            -- Marca y condiciones: son PRESENTACIÓN, no datos fiscales, así que se
            -- leen en vivo (el snapshot inmutable sigue mandando en importes y
@@ -35,6 +37,7 @@ export const GET: APIRoute = async ({ params }) => {
       from documentos_fiscales d
       join orgs o on o.id = d.org_id
       left join cotizaciones c on c.id = d.cotizacion_id
+      left join documentos_fiscales orig on orig.id = d.credit_note_of and orig.org_id = d.org_id
      where d.id = ${id} and d.org_id = ${orgId}
      limit 1`);
   if (!doc || doc.status !== 'issued') return new Response('Documento no encontrado', { status: 404 });
@@ -106,6 +109,7 @@ function invoicePdf(doc: any, simulated: boolean): Response {
     subtotal: Number(doc.subtotal || 0),
     taxTotal: Number(doc.tax_total || 0),
     total: Number(doc.total || 0),
+    retenciones: Array.isArray(doc.retenciones_snapshot) ? doc.retenciones_snapshot : null,
     issuedAt: doc.issued_at,
     issuer: doc.issuer_snapshot || { legalName: 'Emisor' },
     recipient: doc.recipient_snapshot || { legalName: 'Cliente' },
@@ -123,6 +127,8 @@ function invoicePdf(doc: any, simulated: boolean): Response {
       ? new Date(doc.invoice_due as string)
       : dueDateFrom(doc.terminos, doc.base_date),
     paymentTerms: TERM_LABEL[term] || null,
+    creditNoteOfNumber: (doc.credit_note_of_number as string) || null,
+    verifactu: doc.provider_data?.verifactu || null,
     // El "cómo pagar" es la página de LA FACTURA: ahí está el saldo real de
     // este documento. El link de la cotización queda como respaldo para los
     // documentos emitidos antes de que la factura tuviera token propio; una

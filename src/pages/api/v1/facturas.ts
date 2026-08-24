@@ -67,11 +67,16 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
     });
     if (!result.ok) {
         // Regla 22: sin tasa demostrable no se factura. 503, no 400 — el
-        // integrador debe reintentar, no corregir su payload.
+        // integrador debe reintentar, no corregir su payload. Mismo trato para
+        // un catálogo de impuestos que no se pudo leer (regla 22 aplicada al
+        // impuesto): no es un payload inválido, es un servicio no disponible.
         const fxDown = /tipo de cambio/i.test(result.error || '');
+        const catalogDown = /catálogo de impuestos/i.test(result.error || '');
         return fxDown
             ? fail(result.error!, 'fx_unavailable', 503)
-            : fail(result.error!, 'invalid_request', 400);
+            : catalogDown
+                ? fail(result.error!, 'tax_catalog_unavailable', 503)
+                : fail(result.error!, 'invalid_request', 400);
     }
 
     await logAudit(orgId, {

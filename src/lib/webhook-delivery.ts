@@ -298,10 +298,11 @@ async function updateWebhookSummary(orgId: string, webhookId: string, result: Sa
 // fallo de correo NUNCA debe romper el settle de una entrega.
 async function notifyOwner(orgId: string, opts: { subject: string; heading: string; bodyHtml: string }): Promise<void> {
     try {
-        const [org] = await sql`
+        const [orgRows] = await withOrgTx(orgId, sql`
             select o.nombre, coalesce(o.color_marca, '#0a192f') as color, o.email_contacto,
                    (select email from org_members where org_id = o.id and rol = 'owner' limit 1) as owner_email
-            from orgs o where o.id = ${orgId}`;
+            from orgs o where o.id = ${orgId}`);
+        const org = orgRows[0];
         const to = (org?.email_contacto as string) || (org?.owner_email as string) || null;
         if (!to) return;
         const color = /^#[0-9a-fA-F]{6}$/.test(org?.color as string) ? (org.color as string) : '#0a192f';

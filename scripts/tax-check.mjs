@@ -28,6 +28,7 @@ import {
     taxPresetsFor,
 } from '../src/lib/countries.ts';
 import { buildTaxOptions, defaultTaxRate } from '../src/lib/impuestos.ts';
+import { validNif, validNie, validCif, validSpainTaxId, validRfc } from '../src/lib/tax-id.ts';
 
 const linea = (cantidad, precio, tax_rate) => ({
     descripcion: 'x', cantidad, precio_unitario: precio, tax_rate,
@@ -142,7 +143,7 @@ for (const code of ['US', 'BR']) {
 // Aceptar 18 dígitos para todos y dejar que Stripe falle produce un error que
 // no le dice nada a quien solo quiere cobrar.
 {
-    const { payoutSpecFor, validatePayout, clabeValida, ibanValido, stripeExternalAccountFields } =
+    const { payoutSpecFor, validatePayout, clabeValida, ibanValido, abaValido, stripeExternalAccountFields } =
         await import('../src/lib/payout-fields.ts');
 
     assert.equal(payoutSpecFor('MX').format, 'clabe');
@@ -156,6 +157,17 @@ for (const code of ['US', 'BR']) {
     assert.ok(ibanValido('GB82WEST12345698765432'));
     assert.ok(!ibanValido('DE89370400440532013001'), 'un IBAN alterado debió rechazarse');
     assert.ok(!clabeValida('012345678901234567'), 'una CLABE con checksum malo debió rechazarse');
+
+    // ABA (routing number de EE.UU.): pesos 3,7,1 mod 10. El archivo llevaba
+    // desde su creación afirmando que estos checksums se verifican aquí y no
+    // en Stripe, pero abaValido() no existía — un 999999999 pasaba entero.
+    assert.ok(abaValido('110000000'), 'routing number del fixture de prueba de Stripe debió aceptarse');
+    assert.ok(abaValido('021000021'), 'routing number con checksum válido debió aceptarse');
+    assert.ok(!abaValido('999999999'), 'un routing number con checksum inválido debió rechazarse');
+    assert.ok(!abaValido('12345678'), 'un routing number de 8 dígitos debió rechazarse');
+    assert.ok(!validatePayout('US', { routing_number: '999999999', account_number: '000123456789' }).ok,
+        'validatePayout debe rechazar un routing number con checksum malo');
+    assert.ok(validatePayout('US', { routing_number: '110000000', account_number: '000123456789' }).ok);
 
     // Un IBAN español no se cuela como si fuera CLABE.
     assert.ok(!validatePayout('MX', { clabe: 'ES9121000418450200051332' }).ok);
@@ -184,6 +196,37 @@ for (const code of ['US', 'BR']) {
     const queries = readFileSync(new URL('../src/lib/queries.ts', import.meta.url), 'utf8');
     assert.ok(!/Intl\.DateTimeFormat\('es-MX'/.test(queries),
         'queries.ts volvió a formatear fechas con un locale mexicano fijo');
+}
+
+// ── 11. Identificador fiscal por país ───────────────────────────────────────
+// La única validación que existía en todo el repo era el RFC mexicano; para
+// España (NIF/NIE/CIF incluidos) el filtro era "al menos 5 caracteres". Un
+// dígito de control mal tecleado se guardaba igual.
+{
+    // "12345678Z" y "X1234567L" son los NIF/NIE de ejemplo que cita la propia
+    // documentación de la Agencia Tributaria — no son datos reales de nadie.
+    assert.ok(validNif('12345678Z'));
+    assert.ok(!validNif('12345678A'), 'letra de control incorrecta debe rechazarse');
+    assert.ok(!validNif('1234567Z'), '7 dígitos en vez de 8 debe rechazarse');
+    assert.ok(validNie('X1234567L'));
+    assert.ok(validNie('x 1234567 l'.toUpperCase().replace(/\s/g, '')), 'debe tolerar mayúsculas');
+    assert.ok(!validNie('Y1234567L'), 'el mismo número con otro prefijo no comparte letra de control');
+
+    // B12345674: derivado a mano con la fórmula de la norma (suma ponderada de
+    // posiciones + letra 'B' en el grupo que exige dígito de control).
+    assert.ok(validCif('B12345674'));
+    assert.ok(validCif('B-1234567-4'), 'debe tolerar guiones');
+    assert.ok(!validCif('B12345670'), 'dígito de control incorrecto debe rechazarse');
+    // N/P/Q/R/S/W exigen letra de control, nunca dígito.
+    assert.ok(!/^\d$/.test('J'), 'sanity check de la tabla de control');
+
+    assert.ok(validSpainTaxId('12345678Z'), 'un NIF se reconoce por empezar en dígito');
+    assert.ok(validSpainTaxId('X1234567L'), 'un NIE se reconoce por empezar en X/Y/Z');
+    assert.ok(validSpainTaxId('B12345674'), 'un CIF se reconoce por empezar en otra letra');
+    assert.ok(!validSpainTaxId('nope'));
+
+    assert.ok(validRfc('DEZ981123QX1'), 'RFC mexicano de persona física con formato válido');
+    assert.ok(!validRfc('123'), 'un RFC demasiado corto debe rechazarse');
 }
 
 console.log('security:tax (impuestos, rieles de cobro y zona horaria) OK');

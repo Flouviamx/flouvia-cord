@@ -31,8 +31,10 @@
     "security:billing-live": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-stripe-billing.mjs",
     "security:billing-db": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/verify-billing-db.mjs",
     "security:rls": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/rls-audit.mjs",
-    "test:payments": "npm run test && npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes && npm run security:billing && npm run security:currency && npm run security:tax",
-    "security:tax": "node scripts/tax-check.mjs"
+    "security:tenancy": "node scripts/tenancy-lint.mjs",
+    "test:payments": "npm run test && npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes && npm run security:billing && npm run security:currency && npm run security:tax && npm run security:fiscal && npm run security:verifactu && npm run security:tenancy",
+    "security:tax": "node scripts/tax-check.mjs",
+    "security:verifactu": "node --experimental-strip-types scripts/verifactu-check.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
@@ -62,6 +64,7 @@
     "is-inside-container": "^1.0.0",
     "marked": "^15.0.0",
     "nanostores": "^1.4.0",
+    "node-forge": "^1.4.0",
     "posthog-js": "^1.409.0",
     "posthog-node": "^5.47.0",
     "qrcode": "^1.5.4",
@@ -70,9 +73,11 @@
     "three": "^0.185.0",
     "typescript": "^6.0.3",
     "undici": "^8.9.0",
+    "xml2js": "^0.6.2",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@types/node-forge": "^1.3.14",
     "@types/qrcode": "^1.5.6",
     "circle-flags": "^2.8.3",
     "vitest": "^4.1.10"

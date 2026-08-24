@@ -2,7 +2,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { currentLocale } from '../../../../lib/context';
 import { t } from '../../../../i18n/app';
@@ -20,7 +20,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (limited) return limited;
     const staleAuth = await requireFreshAuth();
     if (staleAuth) return staleAuth;
-    const [org] = await sql`select sandbox_of, stripe_account_id from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select sandbox_of, stripe_account_id from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (org?.sandbox_of) {
         return new Response(JSON.stringify({ error: t(currentLocale(), 'err.test.connect') }), { status: 409, headers: { 'Content-Type': 'application/json' } });
     }
@@ -33,7 +34,7 @@ export const POST: APIRoute = async ({ request }) => {
         }
     }
 
-    await sql`update orgs set stripe_account_id = null, stripe_account_type = null, stripe_charges_enabled = false, acepta_tarjeta = false, cobro_spei_auto = false where id = ${orgId}`;
+    await withOrgTx(orgId, sql`update orgs set stripe_account_id = null, stripe_account_type = null, stripe_charges_enabled = false, acepta_tarjeta = false, cobro_spei_auto = false where id = ${orgId}`);
     await auditConnect(orgId, request, 'cuenta_desconectada');
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });

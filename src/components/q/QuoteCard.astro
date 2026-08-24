@@ -62,7 +62,7 @@ const anticipoPct = Number(q.anticipoPct) || 0;
 const totalNum = Number(q.total) || quoteTotal(q);
 let cobros = cobrosReales;
 if (!cobrosReales.length && anticipoPct >= 1 && anticipoPct <= 99 && q.status !== 'paid' && !yaRechazada) {
-    const { anticipo, saldo } = splitAnticipo(totalNum, anticipoPct);
+    const { anticipo, saldo } = splitAnticipo(totalNum, anticipoPct, q.baseCurrency);
     cobros = [
         { id: '', tipo: 'anticipo', numeroCuota: 0, monto: anticipo, status: 'pendiente', vence: '', venceEnFuturo: false, pagado: false },
         { id: '', tipo: 'saldo', numeroCuota: 0, monto: saldo, status: 'pendiente', vence: q.saldoVence || '', venceEnFuturo: q.pagoDisponible === false, pagado: false },
@@ -123,7 +123,8 @@ const waDigits = vWa.replace(/\D/g, '');
 const hayContacto = !!(vEmail || vWa || vTel);
 ---
 
-<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
+<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
+    <script type="application/json" id="qRetenciones" is:inline set:html={JSON.stringify((q.retenciones || []).map((r: any) => ({ nombre: r.nombre, tasa: r.tasa, tipo: r.tipo })))} />
     {ORG.esPrueba && (
         <div class="q-test-ribbon" role="status">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
@@ -207,7 +208,13 @@ const hayContacto = !!(vEmail || vWa || vTel);
             <span class="qi-right">{t(L, 'q.th_importe')}</span>
         </div>
         {q.items.map((it: any) => (
-            <div data-line-id={it.id} data-importe={lineTotal(it)} class:list={['qi-row-wrapper', { 'qi-excluida': yaAprobada && it.aprobado === false }]}>
+            <div
+                data-line-id={it.id}
+                data-importe={lineTotal(it)}
+                data-cantidad={it.cantidad}
+                data-precio={it.precioNegociado ?? it.precioLista}
+                data-tax-rate={it.taxRate ?? ''}
+                class:list={['qi-row-wrapper', { 'qi-excluida': yaAprobada && it.aprobado === false }]}>
                 <div class="qi-row">
                     <span class="qi-name">
                         {!yaAprobada && !yaRechazada && (
@@ -608,6 +615,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
 </script>
 
 <script>
+    import { calculateDocumentTotals } from '../../../packages/elements/src/engine';
+
     const card = document.querySelector('.q-card') as HTMLElement | null;
     const folio = card?.dataset.folio ?? '';
     const token = card?.dataset.token ?? '';
@@ -694,7 +703,17 @@ const hayContacto = !!(vEmail || vWa || vTel);
     };
 
     // ── Aprobación parcial: selección de líneas + total en vivo ──
-    const ivaPct = Number((document.querySelector('.q-card') as HTMLElement)?.dataset.iva ?? '16') / 100;
+    //
+    // Motor único (regla 23): antes esto aplanaba TODO a un `dataset.iva` con
+    // "16" de respaldo — exento, multi-tasa e impuesto incluido se ignoraban
+    // por completo, y era la única superficie del link público que no usaba
+    // calculateDocumentTotals. El servidor (api/q/[token].ts) valida esto de
+    // nuevo al firmar; esto es solo la vista previa mientras el cliente marca
+    // casillas, y debe decir lo mismo que el servidor va a guardar.
+    const fallbackRate = Number(card?.dataset.iva ?? '0') / 100;
+    const ivaIncluido = card?.dataset.ivaIncluido === '1';
+    let qRetenciones: { nombre: string; tasa: number; tipo?: string }[] = [];
+    try { qRetenciones = JSON.parse(document.getElementById('qRetenciones')?.textContent || '[]'); } catch { /* deja [] */ }
     const moneyFmt = qMoney;
     const picks = Array.from(document.querySelectorAll<HTMLInputElement>('.qi-pick-cb'));
     const approveBtn = document.getElementById('qApproveBtn') as HTMLButtonElement | null;
@@ -708,11 +727,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
         const total = picks.length;
         const sel = picks.filter(p => p.checked);
         const n = sel.length;
-        // Subtotal de lo seleccionado (data-importe ya es el importe por línea, sin IVA).
-        let sub = 0;
         sel.forEach(p => {
             const w = p.closest('.qi-row-wrapper') as HTMLElement | null;
-            sub += Number(w?.dataset.importe ?? 0);
             if (w) w.classList.toggle('qi-deseleccionada', false);
         });
         picks.filter(p => !p.checked).forEach(p => {
@@ -731,7 +747,26 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 const cnt = document.getElementById('qPartialCount');
                 const tot = document.getElementById('qPartialTotal');
                 if (cnt) cnt.textContent = (I18NQ.lineasDe || '{n} de {total} líneas').replace('{n}', String(n)).replace('{total}', String(total));
-                if (tot) tot.textContent = moneyFmt(sub * (1 + ivaPct));
+                if (tot) {
+                    const items = sel.map(p => {
+                        const w = p.closest('.qi-row-wrapper') as HTMLElement | null;
+                        const rate = w?.dataset.taxRate;
+                        return {
+                            cantidad: Number(w?.dataset.cantidad ?? 0),
+                            precio_unitario: Number(w?.dataset.precio ?? 0),
+                            tax_rate: rate ? Number(rate) : fallbackRate,
+                        };
+                    });
+                    try {
+                        const totals = calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones });
+                        tot.textContent = moneyFmt(totals.total);
+                    } catch {
+                        // Una tasa corrupta no debe tumbar la vista previa — el
+                        // servidor es quien de verdad valida al firmar.
+                        const sub = items.reduce((s, it) => s + it.cantidad * it.precio_unitario, 0);
+                        tot.textContent = moneyFmt(sub);
+                    }
+                }
             } else {
                 partialNote.hidden = true;
             }

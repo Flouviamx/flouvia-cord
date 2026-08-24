@@ -325,13 +325,20 @@ const CBR_T = {
     import { mountAll, remount } from '../../lib/chart-mount';
     import { money as fmtMoney, intlLocale } from '../../lib/fmt';
     import { wireFilterSource, registerFilterSink } from '../../lib/widget-filter';
+    import { fromMinorUnits, toMinorUnits } from '../../lib/currency';
 
     const shell = document.querySelector<HTMLElement>('[data-cobros-shell]');
     if (shell) {
         const locale = intlLocale();
         const T = (window as any).CORD_CBR_I18N ?? {};
         const tpl = (str: string, vars: Record<string, string>) => String(str ?? '').replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? '');
-        const money = (n: number) => fmtMoney(n, locale);
+        // `currency` es opcional a propósito: los KPIs que salen de Neon (cobrado,
+        // MRR) ya están en la divisa de la org y usan el default de fmtMoney. Los
+        // que vienen de Stripe (balance, rango, payouts, disputas) traen SU PROPIA
+        // divisa — mostrarlos con el símbolo de la org sería mentir sobre qué
+        // moneda es cada número, además de que ya se corrigió la escala en
+        // stripe-cobros.ts (JPY/CLP no tienen centavos que dividir).
+        const money = (n: number, currency?: string) => fmtMoney(n, locale, currency);
 
         mountAll(document);
 
@@ -414,9 +421,9 @@ const CBR_T = {
             // Neto real.
             busy('neto', false);
             if (stripe.range && !failed.has('range')) {
-                setText('neto', money(stripe.range.net));
+                setText('neto', money(stripe.range.net, stripe.range.currency));
                 setText('neto-sub', tpl(T.netoSub,
-                    { fee: money(stripe.range.fee), pct: String(stripe.range.feePct) }));
+                    { fee: money(stripe.range.fee, stripe.range.currency), pct: String(stripe.range.feePct) }));
             } else {
                 setText('neto', '—');
                 setText('neto-sub', T.netoError);
@@ -425,10 +432,10 @@ const CBR_T = {
             // Saldo.
             busy('saldo', false);
             if (stripe.snapshot && !failed.has('snapshot')) {
-                setText('disponible', money(stripe.snapshot.available));
-                const partes = [tpl(T.disponibleSub, { monto: money(stripe.snapshot.pending) })];
+                setText('disponible', money(stripe.snapshot.available, stripe.snapshot.currency));
+                const partes = [tpl(T.disponibleSub, { monto: money(stripe.snapshot.pending, stripe.snapshot.currency) })];
                 if (stripe.snapshot.reserved > 0) {
-                    partes.push(tpl(T.reservadoSub, { monto: money(stripe.snapshot.reserved) }));
+                    partes.push(tpl(T.reservadoSub, { monto: money(stripe.snapshot.reserved, stripe.snapshot.currency) }));
                 }
                 setText('disponible-sub', partes.join(' · '));
             } else {
@@ -443,6 +450,7 @@ const CBR_T = {
             if (destRows) destRows.innerHTML = '';
             if (rangeData && !failed.has('range') && rangeData.gross > 0) {
                 const pct = (v: number) => Math.max(0, Math.round((v / rangeData.gross) * 1000) / 10);
+                const rm = (n: number) => money(n, rangeData.currency);
                 setChart('cbr-destino', {
                     segments: [
                         { key: 'net', label: T.destinoNeto, value: pct(rangeData.net), color: '#059669' },
@@ -452,10 +460,10 @@ const CBR_T = {
                     ].filter((seg) => seg.value > 0),
                 });
                 if (destRows) {
-                    destRows.append(row(T.destinoNeto, `${pct(rangeData.net)}%`, money(rangeData.net), 'is-ok'));
-                    destRows.append(row(T.destinoFee, `${rangeData.feePct}%`, `−${money(rangeData.fee)}`, 'is-warn'));
-                    if (rangeData.refunds > 0) destRows.append(row(T.destinoRefunds, '', `−${money(rangeData.refunds)}`));
-                    if (rangeData.disputes > 0) destRows.append(row(T.destinoDisputes, '', `−${money(rangeData.disputes)}`, 'is-danger'));
+                    destRows.append(row(T.destinoNeto, `${pct(rangeData.net)}%`, rm(rangeData.net), 'is-ok'));
+                    destRows.append(row(T.destinoFee, `${rangeData.feePct}%`, `−${rm(rangeData.fee)}`, 'is-warn'));
+                    if (rangeData.refunds > 0) destRows.append(row(T.destinoRefunds, '', `−${rm(rangeData.refunds)}`));
+                    if (rangeData.disputes > 0) destRows.append(row(T.destinoDisputes, '', `−${rm(rangeData.disputes)}`, 'is-danger'));
                 }
                 const nota = bind('destino-nota');
                 if (nota) {
@@ -485,7 +493,7 @@ const CBR_T = {
                     for (const p of nextPayout ? [nextPayout] : []) {
                         const line = row(PAYOUT_LABEL[p.status] || p.status,
                             tpl(T.llegada, { fecha: fecha(p.arrivalISO) }),
-                            money(p.amount));
+                            money(p.amount, p.currency));
                         const dot = document.createElement('i');
                         dot.className = 'cbr-dot'; dot.style.background = PAYOUT_DOT[p.status] || '#94a3b8';
                         line.prepend(dot);
@@ -549,7 +557,7 @@ const CBR_T = {
             setText('disputas', String(abiertas.length));
             const total = abiertas.reduce((sum: number, d: any) => sum + d.amount, 0);
             setText('disputas-sub', abiertas.length
-                ? tpl(T.disputasSub, { monto: money(total) })
+                ? tpl(T.disputasSub, { monto: money(total, abiertas[0]?.currency) })
                 : T.disputasNinguna);
             const dispHost = bind('disputas-list');
             if (dispHost) {
@@ -557,7 +565,7 @@ const CBR_T = {
                 for (const d of abiertas.slice(0, 3)) {
                     const item = row(d.reason, d.evidenceDueISO
                         ? tpl(T.disputaVence, { fecha: fecha(d.evidenceDueISO) })
-                        : d.status, money(d.amount), 'is-danger');
+                        : d.status, money(d.amount, d.currency), 'is-danger');
                     const link = document.createElement('a');
                     link.className = 'cbr-dispute-link'; link.href = `/app/cobros/disputas/${encodeURIComponent(d.id)}`;
                     link.textContent = locale.startsWith('es') ? 'Preparar evidencia' : 'Prepare evidence';
@@ -657,7 +665,7 @@ const CBR_T = {
         const refundReason = document.querySelector<HTMLTextAreaElement>('#refundReason');
         const refundNote = document.querySelector<HTMLElement>('#refundNote');
         const refundError = document.querySelector<HTMLElement>('#refundError');
-        let refundState: { cobroId: string; nonce: string; method: string; maxAmountCents: number } | null = null;
+        let refundState: { cobroId: string; nonce: string; method: string; maxAmountCents: number; currency: string } | null = null;
 
         shell.addEventListener('click', async (event) => {
             const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-refund-cobro]');
@@ -667,12 +675,16 @@ const CBR_T = {
                 const res = await fetch(`/api/cobros/${encodeURIComponent(button.dataset.refundCobro || '')}/reembolso`);
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || T.errorActualizar);
-                refundState = { cobroId: button.dataset.refundCobro || '', nonce: data.nonce, method: data.method, maxAmountCents: data.maxAmountCents };
-                refundAmount.max = (data.maxAmountCents / 100).toFixed(2);
-                refundAmount.value = (data.maxAmountCents / 100).toFixed(2);
+                refundState = { cobroId: button.dataset.refundCobro || '', nonce: data.nonce, method: data.method, maxAmountCents: data.maxAmountCents, currency: data.currency };
+                // fromMinorUnits, no /100 fijo: en JPY/CLP la unidad mínima YA es la
+                // unidad completa, y dividir entre 100 mostraba (y dejaba capturar)
+                // un monto máximo cien veces menor al que el cobro real permite.
+                const maxAmount = fromMinorUnits(data.maxAmountCents, data.currency);
+                refundAmount.max = maxAmount.toFixed(2);
+                refundAmount.value = maxAmount.toFixed(2);
                 refundNote.textContent = data.method === 'spei'
                     ? (locale.startsWith('es') ? 'SPEI requiere devolver el dinero por transferencia manual. Cord creará la tarea y el registro contable.' : 'SPEI requires a manual bank transfer. Cord will create the task and accounting record.')
-                    : (locale.startsWith('es') ? `Máximo disponible: ${money(data.maxAmountCents / 100)}` : `Maximum available: ${money(data.maxAmountCents / 100)}`);
+                    : (locale.startsWith('es') ? `Máximo disponible: ${money(maxAmount, data.currency)}` : `Maximum available: ${money(maxAmount, data.currency)}`);
                 refundDialog.showModal(); refundAmount.focus();
             } catch (error) {
                 (window as any).cordToast?.((error as Error).message);
@@ -683,7 +695,7 @@ const CBR_T = {
         refundForm?.addEventListener('submit', async (event) => {
             event.preventDefault();
             if (!refundState || !refundAmount || !refundReason || !refundError) return;
-            const amountCents = Math.round(Number(refundAmount.value) * 100);
+            const amountCents = toMinorUnits(Number(refundAmount.value), refundState.currency);
             if (!(amountCents > 0) || amountCents > refundState.maxAmountCents) return;
             const submit = refundForm.querySelector<HTMLButtonElement>('.cbr-refund-submit');
             if (submit) submit.disabled = true;

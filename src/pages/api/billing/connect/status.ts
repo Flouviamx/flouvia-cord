@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { retrieveAccount } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
@@ -15,7 +15,8 @@ export const GET: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const limited = await limitConnectRead(request, 'status', orgId);
     if (limited) return limited;
-    const [org] = await sql`select stripe_account_id, stripe_person_id from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select stripe_account_id, stripe_person_id from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (!org?.stripe_account_id) {
         // No es un error: simplemente aún no hay cuenta (el wizard arranca en cero).
         return new Response(JSON.stringify({ ok: true, account: null }), { headers: { 'Content-Type': 'application/json' } });
@@ -25,13 +26,13 @@ export const GET: APIRoute = async ({ request }) => {
         const account = await retrieveAccount(org.stripe_account_id as string);
         
         // Sync local
-        await sql`update orgs set 
+        await withOrgTx(orgId, sql`update orgs set
             stripe_charges_enabled = ${account.charges_enabled},
             stripe_payouts_enabled = ${account.payouts_enabled},
             stripe_details_submitted = ${account.details_submitted},
             stripe_disabled_reason = ${account.requirements?.disabled_reason || null},
             stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))}
-            where id = ${orgId}`;
+            where id = ${orgId}`);
 
         return new Response(JSON.stringify({ 
             ok: true, 

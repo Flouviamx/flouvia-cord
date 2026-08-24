@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { currentLocale } from '../../../../lib/context';
 import { t } from '../../../../i18n/app';
@@ -19,7 +19,8 @@ export const POST: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const limited = await limitConnectMutation(request, 'create', orgId, 6);
     if (limited) return limited;
-    const [org] = await sql`select sandbox_of, stripe_account_id, country_code, moneda from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select sandbox_of, stripe_account_id, country_code, moneda from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (org?.sandbox_of) {
         return new Response(JSON.stringify({ error: t(currentLocale(), 'err.test.connect') }), { status: 409 });
     }
@@ -52,7 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
             const msg = String(e?.message || '');
             if (/no such account|does not have access|has been deleted|account is invalid/i.test(msg)) {
                 accountId = '';
-                await sql`update orgs set stripe_account_id = null, stripe_charges_enabled = false where id = ${orgId}`;
+                await withOrgTx(orgId, sql`update orgs set stripe_account_id = null, stripe_charges_enabled = false where id = ${orgId}`);
             } else {
                 return new Response(JSON.stringify({ error: translateStripeError(e) || 'No se pudo consultar la cuenta de Stripe' }), { status: 502 });
             }
@@ -67,7 +68,7 @@ export const POST: APIRoute = async ({ request }) => {
             String(org?.country_code || 'MX'),
             String(org?.moneda || '') || undefined,
         );
-        await sql`update orgs set stripe_account_id = ${accountId}, stripe_account_type = 'custom', stripe_business_type = ${business_type} where id = ${orgId}`;
+        await withOrgTx(orgId, sql`update orgs set stripe_account_id = ${accountId}, stripe_account_type = 'custom', stripe_business_type = ${business_type} where id = ${orgId}`);
         account = await retrieveAccount(accountId);
         await auditConnect(orgId, request, 'cuenta_creada', { entityId: accountId, detail: business_type });
     } else if (account && account.business_type !== business_type && !account.details_submitted) {
@@ -75,11 +76,11 @@ export const POST: APIRoute = async ({ request }) => {
         // Stripe permite corregir business_type mientras la cuenta no esté verificada.
         try {
             account = await updateConnectAccount(accountId, { business_type });
-            await sql`update orgs set stripe_business_type = ${business_type} where id = ${orgId}`;
+            await withOrgTx(orgId, sql`update orgs set stripe_business_type = ${business_type} where id = ${orgId}`);
         } catch { /* si Stripe lo rechaza, se continúa con el tipo original */ }
     }
 
-    await sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`;
+    await withOrgTx(orgId, sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`);
 
     return new Response(JSON.stringify({ ok: true, accountId, requirements: account.requirements, business_type: account.business_type }), { headers: { 'Content-Type': 'application/json' } });
 };

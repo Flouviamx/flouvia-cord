@@ -10,7 +10,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { requireEntitlement } from '../../../../lib/org-entitlements';
 import { getAtencion } from '../../../../lib/atencion';
 
@@ -20,8 +20,8 @@ export const GET: APIRoute = async ({ params }) => {
     if (subscriptionDenied) return subscriptionDenied;
 
     const id = params.id ?? '';
-    const [row] = await sql`select id from cotizaciones where id = ${id} and org_id = ${orgId}`;
-    if (!row) return new Response('not found', { status: 404 });
+    const [rows] = await withOrgTx(orgId, sql`select id from cotizaciones where id = ${id} and org_id = ${orgId}`);
+    if (!rows[0]) return new Response('not found', { status: 404 });
 
     const atencion = await getAtencion(orgId, id);
     return new Response(JSON.stringify(atencion), {

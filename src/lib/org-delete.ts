@@ -5,7 +5,7 @@
 // Stripe (best-effort), dejar constancia si había una cuenta Connect activa
 // (Stripe no siempre permite borrarla vía API), y borrar la fila — las ~33
 // tablas hijas ya tienen `on delete cascade` (ver db/schema.sql).
-import { sql } from './db';
+import { sql, withOrgTx } from './db';
 import { stripe } from './billing';
 
 import { log } from './log';
@@ -30,5 +30,5 @@ export async function deleteOrgCascade(org: OrgToDelete): Promise<void> {
         // real vive en los logs del servidor (Vercel), no en la BD.
         log.warn('org eliminada con cuenta Connect activa — revisar manualmente en el proveedor', { route: 'org-delete', orgId: org.id, orgNombre: org.nombre, connectAccountId: org.stripe_account_id });
     }
-    await sql`delete from orgs where id = ${org.id}`;
+    await withOrgTx(org.id, sql`delete from orgs where id = ${org.id}`);
 }

@@ -7,7 +7,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { reauthenticate } from '../../../lib/auth';
 import { parseJsonBody } from '../../../lib/validation';
@@ -26,7 +26,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (!rl.ok) return tooMany(rl.retryAfter);
 
     const orgId = await getActiveOrgId();
-    const [org] = await sql`select owner_id, require_sso from orgs where id = ${orgId} limit 1`;
+    const [orgRows] = await withOrgTx(orgId, sql`select owner_id, require_sso from orgs where id = ${orgId} limit 1`);
+    const org = orgRows[0];
     if (!org) return json({ error: 'No encontrada' }, 404);
     if (org.owner_id !== userId) return json({ error: 'Solo el dueño puede desactivar el requisito de SSO temporalmente' }, 403);
     if (!org.require_sso) return json({ error: 'Exigir SSO no está activo' }, 400);
@@ -37,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!confirmed) return json({ error: 'confirmation_required' }, 401);
 
     const until = new Date(Date.now() + 60 * 60 * 1000);
-    await sql`update orgs set sso_breakglass_until = ${until} where id = ${orgId}`;
+    await withOrgTx(orgId, sql`update orgs set sso_breakglass_until = ${until} where id = ${orgId}`);
     await logAudit(orgId, {
         accion: 'sso.breakglass',
         entidad: 'org',

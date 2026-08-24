@@ -3,12 +3,15 @@
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
 import { REGIMENES_FISCALES, USOS_CFDI } from '../../../lib/sat';
-import { getCountryProfile } from '../../../lib/countries';
+import { getCountryProfile, US_STATES } from '../../../lib/countries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 const ORG = await getOrg();
 const L = currentLocale();
 const isMx = ORG.countryCode === 'MX';
+const isUs = ORG.countryCode === 'US';
+const isEs = ORG.countryCode === 'ES';
+const verifactuOn = ORG.verifactuModo === 'verifactu';
 const PROFILE = getCountryProfile(ORG.countryCode, L);
 const FM = ORG.fiscalMetadata || {};
 ---
@@ -60,7 +63,19 @@ const FM = ORG.fiscalMetadata || {};
                     </div>
                     <div class="s-field">
                         <label for="fRegion">{L === 'en' ? 'State or region' : 'Estado, provincia o región'}</label>
-                        <input class="s-input" id="fRegion" data-field="fiscal_region" value={FM.region || ''} maxlength="100" />
+                        {isUs ? (
+                            // <select> cerrado para US: Stripe y el sembrado de sales
+                            // tax (Ajustes › Impuestos) necesitan el código de 2
+                            // letras exacto, no "Texas" escrito a mano.
+                            <select class="s-input" id="fRegion" data-field="fiscal_region">
+                                <option value="" selected={!FM.region}>{L === 'en' ? '— Select —' : '— Selecciona —'}</option>
+                                {US_STATES.map((s) => (
+                                    <option value={s.code} selected={FM.region === s.code}>{s.name}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input class="s-input" id="fRegion" data-field="fiscal_region" value={FM.region || ''} maxlength="100" />
+                        )}
                     </div>
                 </div>
                 <div class="s-row">
@@ -165,6 +180,52 @@ const FM = ORG.fiscalMetadata || {};
         </div>
         <a class="fact-link" href="/app/ajustes/facturas">{t(L, 'set.fiscal.ver_facturas')}</a>
     </div>
+
+    {isEs && (
+        <div class="s-block">
+            <h3>{L === 'en' ? 'Verifactu' : 'Verifactu'}</h3>
+            <p class="csd-intro">{L === 'en'
+                ? 'Verifactu is the certified invoicing system required by Spanish tax law (RD 1007/2023). Upload your electronic certificate (.p12/.pfx) to chain and register every invoice with the AEAT. Without it, invoices are still issued as commercial documents, but they are not registered with the tax authority.'
+                : 'Verifactu es el sistema de facturación certificado que exige la ley española (RD 1007/2023). Sube tu certificado electrónico (.p12/.pfx) para encadenar y registrar cada factura ante la AEAT. Sin él, las facturas se siguen emitiendo como documento comercial, pero no quedan registradas ante la autoridad fiscal.'}
+            </p>
+
+            <div class="csd-state" id="vfState" data-on={verifactuOn ? '1' : '0'}>
+                <span class="csd-state-dot"></span>
+                <span class="csd-state-info">
+                    <span class="csd-state-title" id="vfStateTitle">
+                        {verifactuOn
+                            ? (L === 'en' ? 'Verifactu active' : 'Verifactu activo')
+                            : (L === 'en' ? 'Verifactu not connected' : 'Verifactu sin conectar')}
+                    </span>
+                    <span class="csd-state-sub" id="vfName">
+                        {verifactuOn
+                            ? (ORG.verifactuCertCaduca
+                                ? (L === 'en' ? `Certificate valid until ${ORG.verifactuCertCaduca}` : `Certificado vigente hasta ${ORG.verifactuCertCaduca}`)
+                                : (ORG.verifactuCertNombre || (L === 'en' ? 'Certificate active' : 'Certificado activo')))
+                            : (L === 'en' ? 'Upload your .p12/.pfx certificate to start' : 'Sube tu certificado .p12/.pfx para empezar')}
+                    </span>
+                </span>
+                <button type="button" class="csd-btn-ghost" id="vfRemove" style={verifactuOn ? '' : 'display:none'}>
+                    {L === 'en' ? 'Disconnect' : 'Desconectar'}
+                </button>
+            </div>
+
+            <label class="csd-drop" id="vfDrop" style="max-width:260px">
+                <input type="file" id="vfFile" accept=".p12,.pfx" />
+                <span class="csd-drop-ico">.p12</span>
+                <span class="csd-drop-t">{L === 'en' ? 'Electronic certificate' : 'Certificado electrónico'}</span>
+                <span class="csd-drop-s" id="vfFileName">{L === 'en' ? 'Choose your .p12/.pfx file' : 'Elige tu archivo .p12/.pfx'}</span>
+            </label>
+            <div class="s-field" style="max-width:50%; margin-top:1rem">
+                <label for="vfPass">{L === 'en' ? 'Certificate password' : 'Contraseña del certificado'}</label>
+                <input class="s-input" id="vfPass" type="password" placeholder="••••••••" autocomplete="off" />
+            </div>
+            <div class="csd-actions">
+                <button type="button" class="csd-btn-solid" id="vfUpload">{L === 'en' ? 'Upload certificate' : 'Subir certificado'}</button>
+                <span class="csd-msg" id="vfMsg"></span>
+            </div>
+        </div>
+    )}
 </SettingsShell>
 
 <style>
@@ -301,4 +362,87 @@ const FM = ORG.fiscalMetadata || {};
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCsd);
     else initCsd();
+
+    // ── Verifactu: subir .p12/.pfx + contraseña a /api/fiscal/verifactu-cert ──
+    function initVerifactu() {
+        const file = document.getElementById('vfFile') as HTMLInputElement | null;
+        const passIn = document.getElementById('vfPass') as HTMLInputElement | null;
+        const upBtn = document.getElementById('vfUpload') as HTMLButtonElement | null;
+        const rmBtn = document.getElementById('vfRemove') as HTMLButtonElement | null;
+        const msg = document.getElementById('vfMsg');
+        const state = document.getElementById('vfState') as HTMLElement | null;
+        const drop = document.getElementById('vfDrop');
+        const fileName = document.getElementById('vfFileName');
+        const isEn = document.documentElement.lang === 'en';
+        if (!file || !passIn || !upBtn || !msg || !state) return;
+
+        const flash = (text: string, ok: boolean) => {
+            msg.textContent = text;
+            msg.className = 'csd-msg ' + (ok ? 'ok' : 'err');
+            if (ok) setTimeout(() => { msg.textContent = ''; msg.className = 'csd-msg'; }, 5000);
+        };
+
+        file.addEventListener('change', () => {
+            const f = file.files?.[0];
+            if (fileName) fileName.textContent = f ? f.name : (isEn ? 'Choose your .p12/.pfx file' : 'Elige tu archivo .p12/.pfx');
+            drop?.classList.toggle('has-file', !!f);
+        });
+
+        upBtn.addEventListener('click', async () => {
+            const f = file.files?.[0];
+            const password = passIn.value;
+            if (!f) { flash(isEn ? 'Choose your certificate file first.' : 'Elige primero tu archivo de certificado.', false); return; }
+            if (!password) { flash(isEn ? 'Enter the certificate password.' : 'Escribe la contraseña del certificado.', false); return; }
+
+            const fd = new FormData();
+            fd.append('p12', f);
+            fd.append('password', password);
+
+            upBtn.disabled = true; const orig = upBtn.textContent; upBtn.textContent = isEn ? 'Uploading…' : 'Subiendo…';
+            try {
+                const res = await fetch('/api/fiscal/verifactu-cert', { method: 'POST', body: fd });
+                const d = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(d.error || (isEn ? 'Could not upload the certificate' : 'No se pudo subir el certificado'));
+                passIn.value = '';
+                state.setAttribute('data-on', '1');
+                const title = document.getElementById('vfStateTitle');
+                const sub = document.getElementById('vfName');
+                if (title) title.textContent = isEn ? 'Verifactu active' : 'Verifactu activo';
+                if (sub) sub.textContent = d.caduca
+                    ? (isEn ? `Certificate valid until ${d.caduca}` : `Certificado vigente hasta ${d.caduca}`)
+                    : (isEn ? 'Certificate active' : 'Certificado activo');
+                if (rmBtn) rmBtn.style.display = '';
+                flash(isEn ? 'Certificate uploaded. Invoices now chain into the Verifactu registry.' : 'Certificado cargado. Las facturas ya se encadenan al registro de Verifactu.', true);
+                (window as any).cordToast?.(isEn ? 'Verifactu connected' : 'Verifactu conectado', 'ok');
+            } catch (err: any) {
+                flash(err.message || (isEn ? 'Could not upload the certificate' : 'No se pudo subir el certificado'), false);
+            } finally { upBtn.disabled = false; upBtn.textContent = orig; }
+        });
+
+        rmBtn?.addEventListener('click', async () => {
+            const ok = await (window as any).cordConfirm({
+                title: isEn ? 'Disconnect Verifactu' : 'Desconectar Verifactu',
+                body: isEn
+                    ? 'New invoices will stop being registered with the AEAT until you upload a certificate again. Disconnect?'
+                    : 'Las facturas nuevas dejarán de registrarse ante la AEAT hasta que subas un certificado de nuevo. ¿Desconectar?',
+                danger: true,
+                confirmText: isEn ? 'Disconnect' : 'Desconectar',
+            });
+            if (!ok) return;
+            rmBtn.disabled = true;
+            try {
+                const res = await fetch('/api/fiscal/verifactu-cert', { method: 'DELETE' });
+                if (!res.ok) throw new Error();
+                state.setAttribute('data-on', '0');
+                const title = document.getElementById('vfStateTitle');
+                const sub = document.getElementById('vfName');
+                if (title) title.textContent = isEn ? 'Verifactu not connected' : 'Verifactu sin conectar';
+                if (sub) sub.textContent = isEn ? 'Upload your .p12/.pfx certificate to start' : 'Sube tu certificado .p12/.pfx para empezar';
+                rmBtn.style.display = 'none';
+                flash(isEn ? 'Verifactu disconnected.' : 'Verifactu desconectado.', true);
+            } catch { flash(isEn ? 'Could not disconnect Verifactu' : 'No se pudo desconectar Verifactu', false); } finally { rmBtn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initVerifactu);
+    else initVerifactu();
 </script>

@@ -16,7 +16,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { getActiveOrgId } from '../../../lib/db';
-import { sql } from '../../../lib/db';
+import { sql, withOrgTx } from '../../../lib/db';
 import { STRIPE_KEY, stripe } from '../../../lib/billing';
 import { requirePerm } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
@@ -29,7 +29,8 @@ export const POST: APIRoute = async () => {
     if (!STRIPE_KEY) return json({ error: 'La facturación aún no está configurada.' }, 503);
 
     const orgId = await getActiveOrgId();
-    const [o] = await sql`select stripe_customer_id, sandbox_of from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select stripe_customer_id, sandbox_of from orgs where id = ${orgId}`);
+    const o = orgRows[0];
     if (o?.sandbox_of) return json({ error: t(currentLocale(), 'err.test.plan') }, 409);
     const customer = o?.stripe_customer_id as string | undefined;
     if (!customer) return json({ error: 'Aún no tienes una suscripción activa.' }, 409);

@@ -7,7 +7,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 import { facturapiConfigured, createOrganization, updateLegal, uploadCertificate, getLiveKey } from '../../../lib/fiscal/facturapi';
 import { encryptRequiredSecret, requireEncryption } from '../../../lib/crypto-secret';
@@ -35,7 +35,8 @@ export const POST: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const subscriptionDenied = await requireEntitlement(orgId, 'cfdi');
     if (subscriptionDenied) return subscriptionDenied;
-    const [o] = await sql`select rfc, razon_social, nombre, regimen_fiscal, cp_fiscal, telefono, sitio_web, facturapi_org_id from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select rfc, razon_social, nombre, regimen_fiscal, cp_fiscal, telefono, sitio_web, facturapi_org_id from orgs where id = ${orgId}`);
+    const o = orgRows[0];
     const rfc = String(o?.rfc ?? '').trim();
     const razon = String(o?.razon_social ?? o?.nombre ?? '').trim();
     const regimen = String(o?.regimen_fiscal ?? '').trim();
@@ -50,7 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
         const r = await createOrganization(razon);
         if (!r.ok || !r.data?.id) return json({ error: `No se pudo crear la organización en Facturapi: ${r.error}` }, 502);
         fapiOrgId = r.data.id as string;
-        await sql`update orgs set facturapi_org_id = ${fapiOrgId} where id = ${orgId}`;
+        await withOrgTx(orgId, sql`update orgs set facturapi_org_id = ${fapiOrgId} where id = ${orgId}`);
     }
 
     // 2. Datos legales del emisor (RFC va implícito en el CSD; régimen + CP aquí).
@@ -77,10 +78,10 @@ export const POST: APIRoute = async ({ request }) => {
     const lk = await getLiveKey(fapiOrgId);
     if (lk.ok && lk.data) {
         const encrypted = encryptRequiredSecret(lk.data);
-        await sql`update orgs set facturapi_live_key = null, facturapi_live_key_enc = ${encrypted} where id = ${orgId}`;
+        await withOrgTx(orgId, sql`update orgs set facturapi_live_key = null, facturapi_live_key_enc = ${encrypted} where id = ${orgId}`);
     }
 
-    await sql`update orgs set csd_estado = 'cargado', csd_nombre = ${cer.name}, csd_subido_at = now() where id = ${orgId}`;
+    await withOrgTx(orgId, sql`update orgs set csd_estado = 'cargado', csd_nombre = ${cer.name}, csd_subido_at = now() where id = ${orgId}`);
     await logAudit(orgId, { accion: 'csd.cargado', entidad: 'org', entidad_id: orgId, detalle: `CSD cargado (${cer.name})`, ip: reqIp(request) });
     return json({ ok: true, csd_nombre: cer.name, livekey: lk.ok });
 };
@@ -89,7 +90,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
     const staleAuth = await requireFreshAuth(); if (staleAuth) return staleAuth;
     const orgId = await getActiveOrgId();
-    await sql`update orgs set csd_estado = null, csd_nombre = null, csd_subido_at = null, facturapi_live_key = null, facturapi_live_key_enc = null where id = ${orgId}`;
+    await withOrgTx(orgId, sql`update orgs set csd_estado = null, csd_nombre = null, csd_subido_at = null, facturapi_live_key = null, facturapi_live_key_enc = null where id = ${orgId}`);
     await logAudit(orgId, { accion: 'csd.eliminado', entidad: 'org', entidad_id: orgId, detalle: 'CSD desconectado', ip: reqIp(request) });
     return json({ ok: true });
 };

@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import { withApiAuth } from '../../../lib/apikey';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { getClientes } from '../../../lib/queries';
 import { ok, fail, pageParams } from '../../../lib/apiv1';
 import { requireResourceCapacity, resourceLimitError } from '../../../lib/org-entitlements';
@@ -44,10 +44,11 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
     if (capacityDenied) return capacityDenied;
     let row: any;
     try {
-        [row] = await sql`
+        const [rows] = await withOrgTx(orgId, sql`
             insert into clientes (org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito, nivel, descuento_pct)
             values (${orgId}, ${c.empresa}, ${c.contacto}, ${c.email}, ${c.telefono}, ${c.rfc}, ${c.terminos}, ${c.limite}, ${c.nivel}, ${c.descuento})
-            returning id`;
+            returning id`);
+        row = rows[0];
     } catch (error) {
         return resourceLimitError(error) ?? fail('No se pudo crear el cliente.', 'server_error', 500);
     }

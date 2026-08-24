@@ -3105,3 +3105,161 @@ update orgs s
    and (s.idioma       is distinct from p.idioma
      or s.moneda       is distinct from p.moneda
      or s.zona_horaria is distinct from p.zona_horaria);
+
+-- ── Internacionalización financiera: identidad fiscal real del cliente ──────
+-- `clientes` solo tenía `rfc` (nombre mexicano) y campos SAT. Sin país ni
+-- dirección, el receptor de toda factura fuera de México heredaba el país del
+-- EMISOR (emit.ts / invoices.ts leían `country` de `orgs`, nunca del cliente),
+-- así que un cliente estadounidense de una empresa española quedaba registrado
+-- como español en el documento — y sin domicilio, incumpliendo el art. 6.1.c
+-- del reglamento de facturación español.
+--
+-- `country_code` nace NULL a propósito: `null` = "hereda el país del emisor",
+-- que es el comportamiento de hoy. Un default 'MX' habría reescrito en
+-- silencio la nacionalidad de todo cliente ya guardado.
+alter table clientes add column if not exists country_code text;
+alter table clientes add column if not exists direccion_line1 text;
+alter table clientes add column if not exists direccion_line2 text;
+alter table clientes add column if not exists ciudad text;
+alter table clientes add column if not exists region text; -- estado/provincia/state, según el país
+
+-- ── Retenciones: sobre qué base se calculan ─────────────────────────────────
+-- El motor (engine.ts) restaba toda retención sobre el SUBTOTAL, correcto para
+-- México (la Retención de IVA 10.667% es 2/3 del IVA del 16%, ambos sobre el
+-- mismo subtotal) pero falso para Colombia: la ReteIVA es 15% DEL IVA, no del
+-- subtotal — modelarla como 'subtotal' calculaba 5.26× de más. `retencion_base`
+-- nace 'subtotal' para no reescribir en silencio las retenciones ya guardadas.
+alter table impuestos add column if not exists retencion_base text not null default 'subtotal';
+alter table impuestos drop constraint if exists chk_impuestos_retencion_base;
+alter table impuestos add constraint chk_impuestos_retencion_base
+    check (retencion_base in ('subtotal', 'impuesto'));
+
+-- ── Numeración de facturas: serie + ejercicio ───────────────────────────────
+-- `invoice_sequences` numeraba indefinidamente sin año ni serie: legal con
+-- serie única, pero incompatible con cualquier gestoría española, y cambiar
+-- `invoice_prefix` en Ajustes reescribía el prefijo de la MISMA fila sin
+-- resetear `next_value` — pasar de "INV" a "FRA" producía "INV-000122" →
+-- "FRA-000123" en vez de reiniciar en 1.
+--
+-- `ejercicio = 0` es el valor de TODA fila existente (el `alter table` la
+-- rellena con el default antes de que el nuevo PK se aplique) y significa
+-- "sin reinicio anual" — exactamente el comportamiento de siempre, así que
+-- ninguna secuencia ya viva cambia de número. España sí reinicia: el
+-- ejercicio forma parte del PK de la secuencia, así que un año nuevo
+-- simplemente encuentra una fila que no existía y arranca en 1 sin lógica de
+-- "reset" aparte. `serie` nace vacía por el mismo motivo.
+alter table invoice_sequences add column if not exists serie text not null default '';
+alter table invoice_sequences add column if not exists ejercicio int not null default 0;
+
+alter table invoice_sequences drop constraint if exists invoice_sequences_pkey;
+alter table invoice_sequences add constraint invoice_sequences_pkey
+    primary key (org_id, country_code, document_type, serie, ejercicio);
+
+-- La serie ES el `prefix` (ver emit.ts/invoices.ts): backfill de una sola vez
+-- para las filas que nacieron con `serie=''` antes de este cambio. Sin esto,
+-- la primera factura después de desplegar buscaría la llave
+-- (org_id, país, tipo, prefix, 0) — que no existe todavía— y crearía una fila
+-- NUEVA arrancando en 1, duplicando el folio que la secuencia vieja ya había
+-- emitido. Idempotente: una fila que ya tiene `serie = prefix` no hace match
+-- del `where` y no se vuelve a tocar.
+update invoice_sequences set serie = prefix where serie = '' and prefix <> '';
+
+-- ── Verifactu: cadena de registros de facturación (España) ─────────────────
+-- Cada factura emitida en España genera un registro de "alta" (o de
+-- "anulación" al cancelarla) con su huella SHA-256 encadenada a la huella del
+-- registro ANTERIOR de la misma org — algoritmo verificado contra los
+-- vectores oficiales de la AEAT en src/lib/fiscal/verifactu/huella.ts. La
+-- tabla es APPEND-ONLY por diseño: alterar `huella`, `huella_anterior`,
+-- `payload` o `seq` después de escritos rompería la cadena que la propia ley
+-- exige poder verificar. Solo el estado de ENVÍO (columnas `envio_*`) puede
+-- cambiar, porque eso es responsabilidad de Cord, no del dato ya firmado.
+create table if not exists verifactu_registros (
+  id              uuid        default gen_random_uuid() primary key,
+  org_id          uuid        not null references orgs(id) on delete cascade,
+  documento_id    uuid        not null references documentos_fiscales(id) on delete restrict,
+  tipo            text        not null,               -- 'alta' | 'anulacion'
+  seq             bigint      not null,                -- posición en la cadena de ESTA org
+  huella_anterior text        not null default '',     -- '' = primer registro del SIF
+  huella          text        not null,                -- SHA-256 hex MAYÚSCULAS, 64 chars
+  payload         jsonb       not null,                -- el registro tal como se firmó
+  generado_at     timestamptz not null default now(),
+  envio_estado    text        not null default 'pendiente', -- pendiente|aceptado|aceptado_con_errores|rechazado
+  envio_at        timestamptz,
+  aeat_respuesta  jsonb,
+  created_at      timestamptz not null default now(),
+  unique (org_id, seq),
+  unique (documento_id, tipo),
+  check (tipo in ('alta', 'anulacion')),
+  check (huella ~ '^[0-9A-F]{64}$'),
+  check (envio_estado in ('pendiente', 'aceptado', 'aceptado_con_errores', 'rechazado'))
+);
+
+alter table verifactu_registros enable row level security;
+drop policy if exists "rls_verifactu_registros" on verifactu_registros;
+create policy "rls_verifactu_registros" on verifactu_registros
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table verifactu_registros force row level security;
+
+-- El candado real: ni siquiera el rol de aplicación puede tocar lo ya
+-- firmado. `force row level security` protege el AISLAMIENTO entre orgs,
+-- pero no impide que la propia org edite su fila — este trigger sí.
+create or replace function cord_verifactu_registro_inmutable()
+returns trigger
+language plpgsql
+as $$
+begin
+  if TG_OP = 'DELETE' then
+    raise exception 'verifactu_registros es append-only: no se puede borrar un registro ya firmado';
+  end if;
+  if new.huella is distinct from old.huella
+     or new.huella_anterior is distinct from old.huella_anterior
+     or new.payload is distinct from old.payload
+     or new.seq is distinct from old.seq
+     or new.tipo is distinct from old.tipo
+     or new.documento_id is distinct from old.documento_id then
+    raise exception 'verifactu_registros es append-only: huella/payload/seq/tipo no se pueden modificar';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_verifactu_registro_inmutable on verifactu_registros;
+create trigger trg_verifactu_registro_inmutable
+  before update or delete on verifactu_registros
+  for each row execute function cord_verifactu_registro_inmutable();
+
+-- Registro de eventos del sistema de facturación (RD 1007/2023): arranque,
+-- parada, exportación, incidencia, cambio de configuración. Es la evidencia
+-- de que el SIF no se manipuló entre registros — no lleva huella propia
+-- todavía porque Cord opera un único sistema centralizado, no instalaciones
+-- distribuidas que necesiten encadenar EVENTOS entre sí además de facturas.
+create table if not exists verifactu_eventos (
+  id          uuid        default gen_random_uuid() primary key,
+  org_id      uuid        not null references orgs(id) on delete cascade,
+  tipo        text        not null,       -- arranque | parada | exportacion | incidencia | cambio_config
+  detalle     jsonb       not null default '{}'::jsonb,
+  created_at  timestamptz not null default now()
+);
+
+alter table verifactu_eventos enable row level security;
+drop policy if exists "rls_verifactu_eventos" on verifactu_eventos;
+create policy "rls_verifactu_eventos" on verifactu_eventos
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+alter table verifactu_eventos force row level security;
+
+-- ── Certificado electrónico de Verifactu ────────────────────────────────────
+-- Mismo patrón que el CSD de Facturapi (facturapi_live_key_enc): el archivo
+-- .p12/.pfx viaja cifrado con encryptRequiredSecret() (AES-256-GCM), nunca en
+-- claro. `verifactu_modo` es el interruptor real: mientras sea distinto de
+-- 'verifactu', las facturas españolas siguen por CommercialInvoiceProvider
+-- (regla 15 — es preferible decir "todavía no conectado" que aparentar).
+alter table orgs add column if not exists verifactu_cert_enc text;
+alter table orgs add column if not exists verifactu_cert_pass_enc text;
+alter table orgs add column if not exists verifactu_cert_nombre text;
+alter table orgs add column if not exists verifactu_cert_caduca date;
+alter table orgs add column if not exists verifactu_cert_subido_at timestamptz;
+alter table orgs add column if not exists verifactu_modo text not null default 'no_verifactu';
+alter table orgs drop constraint if exists chk_orgs_verifactu_modo;
+alter table orgs add constraint chk_orgs_verifactu_modo check (verifactu_modo in ('no_verifactu', 'verifactu'));

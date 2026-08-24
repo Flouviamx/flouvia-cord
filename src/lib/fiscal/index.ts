@@ -26,6 +26,18 @@ export interface FiscalLineItem {
   total: number;
   productKey?: string;
   unitKey?: string;
+  /** Causa legal de exención/no sujeción. ES: 'E1'..'E6' o inversión del sujeto pasivo. */
+  exemptionReason?: string;
+}
+
+export interface FiscalRetencion {
+  nombre: string;
+  /** Subcódigo del país. Solo México lo usa hoy (mapea a los impuestos retenidos del CFDI). */
+  tipo: string;
+  /** Fracción, no porcentaje: 0.10667, nunca 10.667. */
+  tasa: number;
+  base: number;
+  monto: number;
 }
 
 export interface FiscalTotals {
@@ -42,6 +54,9 @@ export interface FiscalTotals {
   exchangeRate?: number;
   /** Divisa contable del emisor, si difiere de `currency`. */
   ledgerCurrency?: string;
+  /** Retenciones aplicadas al documento — se RESTAN de subtotal+taxes para llegar a `total`. */
+  retenciones?: FiscalRetencion[];
+  retencionTotal?: number;
 }
 
 // Contrato canónico propiedad de Cord. Los adapters regulatorios traducen este
@@ -54,6 +69,8 @@ export interface FiscalDocumentRequest {
   orgId: string;
   quoteId: string;
   countryCode: string;
+  /** 'commercial_invoice' | 'credit_note' | 'cfdi_40' | 'cfdi_egreso'… — determina p.ej. F1 vs R1 en Verifactu. */
+  documentType?: string;
   issuer: FiscalParty;
   recipient: FiscalParty;
   lines: FiscalLineItem[];
@@ -90,6 +107,13 @@ export interface FiscalCancelRequest {
    * como cancelada.
    */
   providerApiKey?: string;
+  /**
+   * Org dueña del documento. Providers que necesitan releer el propio
+   * `documentos_fiscales` bajo RLS (Verifactu: NIF/serie/fecha originales
+   * para el registro de anulación) lo requieren porque `documentId` solo no
+   * basta para pasar la política de aislamiento por organización.
+   */
+  orgId?: string;
 }
 
 export interface FiscalCancelResponse {

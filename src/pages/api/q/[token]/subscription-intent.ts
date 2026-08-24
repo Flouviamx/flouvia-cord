@@ -66,7 +66,12 @@ export const POST: APIRoute = async ({ params }) => {
     if (!(amount > 0)) return json({ error: 'Monto inválido' }, 500);
 
     const acct = c.stripe_account_id as string;
-    const applicationFeePercent = isFeeScheduleActive(c.fee_enabled, c.fee_terms_version)
+    // La tarifa de Cord Payments es una tarifa MEXICANA pactada con Stripe MX
+    // ("+ IVA" son las siglas del impuesto mexicano, no un IVA genérico) — mismo
+    // gate que computeFee/computeSubscriptionFee. Sin él, una iguala cobrada en
+    // USD/EUR le aplicaba el 0.4% + "IVA" del 16% sobre CADA factura recurrente
+    // aunque la cuenta no operara en México.
+    const applicationFeePercent = isFeeScheduleActive(c.fee_enabled, c.fee_terms_version) && currency === 'MXN'
         ? SUBSCRIPTION_APPLICATION_FEE_PERCENT
         : null;
     const pubKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;

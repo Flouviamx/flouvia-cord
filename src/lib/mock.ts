@@ -70,7 +70,7 @@ export interface MockQuote {
      */
     taxRateFallback?: number;
     /** Retenciones congeladas al crear el documento. Se restan del total. */
-    retenciones?: { nombre: string; tipo: string; tasa: number; base: number; monto: number }[];
+    retenciones?: { nombre: string; tipo: string; tasa: number; base: number; monto: number; baseTipo?: 'subtotal' | 'impuesto' }[];
 }
 
 export const ORG = {
@@ -140,6 +140,15 @@ export const lineTotal = (it: MockItem) => (it.precioNegociado ?? it.precioLista
  */
 const documentTotals = (q: MockQuote) => {
     const fallback = q.taxRateFallback ?? IVA;
+    // `q.retenciones` es el snapshot GUARDADO (con `base`/`monto` ya
+    // congelados al momento de cotizar o aprobar). Aquí se usa solo como la
+    // DEFINICIÓN de la retención (nombre/tipo/tasa) para recalcularla en vivo
+    // contra el subtotal ACTUAL de `q.items` — correcto para una vista en
+    // vivo del link público, donde el vendedor puede seguir editando o el
+    // cliente aprobar solo un subconjunto de líneas. El `base`/`monto` del
+    // snapshot se descarta a propósito: mezclarlos con la tasa aquí sería
+    // aplicar una retención vieja sobre un subtotal nuevo.
+    const retenciones = (q.retenciones ?? []).map((r) => ({ nombre: r.nombre, tipo: r.tipo, tasa: r.tasa, base: r.baseTipo ?? 'subtotal' as const }));
     return calculateDocumentTotals(
         q.items.filter((it) => it.aprobado !== false).map((it) => ({
             descripcion: it.descripcion,
@@ -148,7 +157,7 @@ const documentTotals = (q: MockQuote) => {
             precio_negociado: it.precioNegociado,
             tax_rate: it.taxRate ?? fallback,
         })),
-        { ivaIncluido: !!q.iva_incluido, retenciones: q.retenciones ?? [] },
+        { ivaIncluido: !!q.iva_incluido, retenciones },
     );
 };
 

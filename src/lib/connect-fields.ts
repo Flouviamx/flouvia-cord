@@ -54,6 +54,13 @@ export const ACCOUNT_CONNECT_FIELDS = [
     'company.address.state', 'company.address.postal_code', 'company.address.country',
     'individual.first_name', 'individual.last_name', 'individual.email', 'individual.phone',
     'individual.id_number', 'individual.gender', 'individual.maiden_name',
+    // `ssn_last_4`: Stripe US Custom lo exige casi siempre además de `id_number`
+    // (que ahí se usa para el SSN completo o el ITIN). `political_exposure`:
+    // otro requisito que Stripe puede pedir en el KYC de EE.UU. Sin ambos en
+    // el allowlist, `flattenConnectFields()` los rechazaba como campo
+    // desconocido — era IMPOSIBLE completar el KYC de una cuenta individual
+    // en Estados Unidos.
+    'individual.ssn_last_4', 'individual.political_exposure',
     'individual.address.line1', 'individual.address.line2', 'individual.address.city',
     'individual.address.state', 'individual.address.postal_code', 'individual.address.country',
     'individual.dob.day', 'individual.dob.month', 'individual.dob.year',
@@ -61,6 +68,7 @@ export const ACCOUNT_CONNECT_FIELDS = [
 
 export const PERSON_CONNECT_FIELDS = [
     'first_name', 'last_name', 'email', 'phone', 'id_number', 'gender', 'maiden_name',
+    'ssn_last_4', 'political_exposure',
     'address.line1', 'address.line2', 'address.city', 'address.state', 'address.postal_code', 'address.country',
     'dob.day', 'dob.month', 'dob.year',
     'relationship.title', 'relationship.owner', 'relationship.representative',

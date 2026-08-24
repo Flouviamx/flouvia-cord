@@ -4,28 +4,33 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 
-const safe = async (q: Promise<any[]>) => { try { return await q; } catch { return []; } };
+// `safe` recibe el resultado del CARRIL, no la query suelta: withOrgTx devuelve
+// una entrada por query, así que se toma la primera. Sin el carril, cada una de
+// estas lecturas devolvería [] bajo RLS y el export saldría vacío en silencio,
+// porque este helper se traga el error a propósito.
+const safe = async (q: Promise<any[][]>) => { try { return (await q)[0] ?? []; } catch { return []; } };
 
 export const GET: APIRoute = async () => {
     const denied = await requirePerm('ajustes');
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
-    const [org] = await sql`select * from orgs where id = ${orgId}`;
-    const productos = await safe(sql`select * from productos where org_id = ${orgId} order by nombre`);
-    const clientes = await safe(sql`select * from clientes where org_id = ${orgId} order by empresa`);
-    const cotizaciones = await safe(sql`select * from cotizaciones where org_id = ${orgId} order by created_at desc`);
+    const [orgRows] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
+    const org = orgRows[0];
+    const productos = await safe(withOrgTx(orgId, sql`select * from productos where org_id = ${orgId} order by nombre`));
+    const clientes = await safe(withOrgTx(orgId, sql`select * from clientes where org_id = ${orgId} order by empresa`));
+    const cotizaciones = await safe(withOrgTx(orgId, sql`select * from cotizaciones where org_id = ${orgId} order by created_at desc`));
     const ids = cotizaciones.map((c: any) => c.id);
-    const items = ids.length ? await safe(sql`select * from cotizacion_items where cotizacion_id = any(${ids})`) : [];
-    const eventos = await safe(sql`select * from eventos where org_id = ${orgId} order by created_at`);
-    const tareas = await safe(sql`select * from tareas where org_id = ${orgId}`);
-    const auditoria = await safe(sql`select * from audit_log where org_id = ${orgId} order by created_at desc limit 1000`);
+    const items = ids.length ? await safe(withOrgTx(orgId, sql`select * from cotizacion_items where cotizacion_id = any(${ids})`)) : [];
+    const eventos = await safe(withOrgTx(orgId, sql`select * from eventos where org_id = ${orgId} order by created_at`));
+    const tareas = await safe(withOrgTx(orgId, sql`select * from tareas where org_id = ${orgId}`));
+    const auditoria = await safe(withOrgTx(orgId, sql`select * from audit_log where org_id = ${orgId} order by created_at desc limit 1000`));
 
     // No exportamos el hash de las API keys; sólo el inventario enmascarado.
-    const apiKeys = (await safe(sql`select id, nombre, prefix, last4, scope, created_at, last_used_at, revoked_at from api_keys where org_id = ${orgId}`));
+    const apiKeys = (await safe(withOrgTx(orgId, sql`select id, nombre, prefix, last4, scope, created_at, last_used_at, revoked_at from api_keys where org_id = ${orgId}`)));
 
     const payload = {
         exportado_en: new Date().toISOString(),

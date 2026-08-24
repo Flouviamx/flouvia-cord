@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { stripeUpload, attachPersonDocument, retrieveAccount, updateConnectAccount, isAlreadyVerifiedError } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
@@ -17,7 +17,8 @@ export const POST: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const limited = await limitConnectMutation(request, 'document', orgId, 12);
     if (limited) return limited;
-    const [org] = await sql`select stripe_account_id, stripe_business_type from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select stripe_account_id, stripe_business_type from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (!org?.stripe_account_id) return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
 
     const formData = await request.formData();
@@ -58,7 +59,7 @@ export const POST: APIRoute = async ({ request }) => {
         }
 
         const account = await retrieveAccount(org.stripe_account_id as string);
-        await sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`;
+        await withOrgTx(orgId, sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`);
         await auditConnect(orgId, request, 'documento_subido', {
             entity: 'connect_document',
             entityId: uploadedFile.id,

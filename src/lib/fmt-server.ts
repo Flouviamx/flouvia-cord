@@ -12,11 +12,21 @@
 //     cotizaciones fechadas un día antes de haberlas creado, y "hoy"/"ayer" se
 //     calculaban contra un día que no era el suyo.
 
-import { currentLocale, currentTimeZone } from './context';
+import { currentLocale, currentFormatLocale, currentTimeZone } from './context';
 
-/** Locale BCP-47 del request para Intl. */
+/**
+ * Locale BCP-47 del request para Intl — el de FORMATO (`getCountryProfile`
+ * del país de la org: 'pt-BR', 'de-DE', 'en-GB'…), no el de la interfaz.
+ *
+ * `currentLocale()` solo distingue es/en (qué diccionario de i18n/app.ts
+ * usar); antes era también la ÚNICA señal que llegaba a `Intl`, así que un
+ * negocio en São Paulo o en Londres leía sus fechas en formato mexicano o
+ * estadounidense aunque toda su cuenta estuviera en portugués o en inglés
+ * británico. Sin `formatLocale` resuelto (crons, scripts, requests sin
+ * organización) se conserva el fallback de siempre.
+ */
 export function intlLocale(): string {
-    return currentLocale() === 'en' ? 'en-US' : 'es-MX';
+    return currentFormatLocale() ?? (currentLocale() === 'en' ? 'en-US' : 'es-MX');
 }
 
 const opts = (extra: Intl.DateTimeFormatOptions): Intl.DateTimeFormatOptions => {

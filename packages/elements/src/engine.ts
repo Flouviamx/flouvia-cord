@@ -180,12 +180,20 @@ export function calculateInvoiceTotals(
     // Agrupado por tasa, en orden ascendente: el exento primero, como se lee en
     // cualquier factura. Se agrupa sobre el número crudo, no sobre el
     // redondeado, para que el desglose sume exactamente el total.
+    //
+    // La CLAVE del mapa sí se redondea a 9 decimales (misma tolerancia que
+    // `close()` en impuestos.ts e impuestos-db.ts): dos líneas con 0.10667 y
+    // 0.106670000000001 —el mismo 10.667% mexicano, uno capturado a mano y
+    // otro venido de `tasa/100` sobre un `numeric` de Neon— son la MISMA tasa
+    // y deben sumar en la misma fila del desglose, no separarse en dos filas
+    // que impriman el mismo porcentaje.
     const mapa = new Map<number, TaxBreakdown>();
     for (const l of lineas) {
-        const acc = mapa.get(l.tax_rate) ?? { tasa: l.tax_rate, base: 0, impuesto: 0 };
+        const key = Math.round(l.tax_rate * 1e9) / 1e9;
+        const acc = mapa.get(key) ?? { tasa: l.tax_rate, base: 0, impuesto: 0 };
         acc.base += l.base;
         acc.impuesto += l.impuesto;
-        mapa.set(l.tax_rate, acc);
+        mapa.set(key, acc);
     }
 
     return {
@@ -218,14 +226,34 @@ export interface RetencionInput {
     tasa: number | string;
     /** Subcódigo del país. Solo México lo usa (lo mapea el CFDI). */
     tipo?: string;
+    /**
+     * Sobre qué se calcula esta retención. `'subtotal'` (default) es correcto
+     * para México, donde la Retención de IVA (10.667%) es 2/3 del IVA del 16%
+     * calculado sobre el mismo subtotal — pero no es una ley universal. La
+     * ReteIVA colombiana es 15% DEL IVA, no del subtotal: modelarla como
+     * 'subtotal' calcula 5.26× de más (15% de 1,000 = 150, cuando la DIAN
+     * espera 15% de 190 = 28.50). Cord no reimplementa el régimen especial de
+     * cada país — esto es la única bifurcación que necesita para no mentir.
+     */
+    base?: 'subtotal' | 'impuesto';
 }
 
 export interface RetencionApplied {
     nombre: string;
     tipo: string;
     tasa: number;
+    /** Monto BASE sobre el que se calculó esta retención (no el tipo — ver baseTipo). */
     base: number;
     monto: number;
+    /**
+     * Sobre qué se calculó: 'subtotal' o 'impuesto' (ver RetencionInput.base).
+     * Viaja en el resultado para que un snapshot guardado (retenciones_snapshot)
+     * pueda recalcularse en vivo contra un subtotal nuevo SIN perder de vista
+     * si esta retención era del tipo "sobre el IVA" — sin esto, recomputar la
+     * ReteIVA colombiana desde su propio snapshot volvía a calcularla sobre el
+     * subtotal por default.
+     */
+    baseTipo: 'subtotal' | 'impuesto';
 }
 
 export interface DocumentTotals extends InvoiceTotals {
@@ -257,12 +285,15 @@ export function calculateDocumentTotals(
         if (!Number.isFinite(tasa) || tasa < 0 || tasa > 1) {
             throw new RangeError(`calculateDocumentTotals: la tasa de retención debe estar entre 0 y 1 (recibido: ${r.tasa}).`);
         }
+        const baseTipo: 'subtotal' | 'impuesto' = r.base === 'impuesto' ? 'impuesto' : 'subtotal';
+        const baseAmount = baseTipo === 'impuesto' ? base.impuestos : base.subtotal;
         return {
             nombre: String(r.nombre ?? '').slice(0, 80),
             tipo: String(r.tipo ?? 'ret_iva'),
             tasa,
-            base: base.subtotal,
-            monto: base.subtotal * tasa,
+            base: baseAmount,
+            monto: baseAmount * tasa,
+            baseTipo,
         };
     }).filter((r) => r.tasa > 0);
 

@@ -25,10 +25,18 @@
 import { stripe, getBalance, retrieveAccount } from './billing';
 import { cached } from './cache';
 import { rateLimit } from './ratelimit';
+import { fromMinorUnits } from './currency';
 
 import { log } from './log';
-/** Centavos → pesos. Único punto de conversión de todo el módulo. */
-const toMajor = (cents: unknown): number => Math.round(Number(cents || 0)) / 100;
+/**
+ * Unidad mínima de Stripe → unidad mostrable. Único punto de conversión de
+ * todo el módulo — pero el módulo SÍ conoce la divisa de cada cifra (Stripe
+ * la manda en cada payout/disputa, y este archivo ya elige la "dominante"
+ * para el balance y el rango), así que ya no hay excusa para dividir entre
+ * 100 fijo: una cuenta Connect en JPY o CLP mostraba "Mi dinero" cien veces
+ * subestimado, porque esas divisas no tienen centavos que dividir.
+ */
+const toMajor = (cents: unknown, currency = 'MXN'): number => fromMinorUnits(Math.round(Number(cents || 0)), currency);
 
 /** `YYYY-MM-DD` desde un epoch de Stripe (segundos), en hora local. */
 function isoDay(epochSec: unknown): string {
@@ -61,6 +69,7 @@ export interface StripeSnapshot {
 export interface PayoutLite {
     id: string;
     amount: number;
+    currency: string;
     status: PayoutStatus;
     arrivalISO: string;
     createdISO: string;
@@ -97,11 +106,13 @@ export interface RangeMoney {
     byType: { type: string; gross: number; fee: number; net: number; n: number }[];
     /** Se alcanzó el tope de páginas: los totales son un piso, no el total real. */
     truncated: boolean;
+    currency: string;
 }
 
 export interface DisputeLite {
     id: string;
     amount: number;
+    currency: string;
     reason: string;
     status: string;
     createdISO: string;
@@ -150,12 +161,13 @@ export async function getStripeSnapshot(orgId: string, acct: string): Promise<St
         }
         const sumFor = (buckets: any[]): number =>
             (buckets || []).filter((b: any) => b.currency === currency).reduce((s: number, b: any) => s + Number(b.amount || 0), 0);
+        const cur = currency.toUpperCase();
         return {
-            available: toMajor(sumFor(bal?.available)),
-            pending: toMajor(sumFor(bal?.pending)),
-            instantAvailable: toMajor(sumFor(bal?.instant_available)),
-            reserved: toMajor(sumFor(bal?.connect_reserved)),
-            currency: currency.toUpperCase(),
+            available: toMajor(sumFor(bal?.available), cur),
+            pending: toMajor(sumFor(bal?.pending), cur),
+            instantAvailable: toMajor(sumFor(bal?.instant_available), cur),
+            reserved: toMajor(sumFor(bal?.connect_reserved), cur),
+            currency: cur,
             livemode: !!bal?.livemode,
         };
     });
@@ -170,13 +182,17 @@ export async function getStripeSnapshot(orgId: string, acct: string): Promise<St
 export async function listPayoutsLite(orgId: string, acct: string, limit = 10): Promise<PayoutLite[]> {
     return cached(`stripe:pay:${orgId}:${limit}`, 60, async () => {
         const res = await stripe('/v1/payouts', { limit: String(Math.min(100, Math.max(1, limit))) }, 'GET', { stripeAccount: acct });
-        return (res?.data || []).map((p: any): PayoutLite => ({
-            id: String(p.id),
-            amount: toMajor(p.amount),
-            status: (p.status || 'pending') as PayoutStatus,
-            arrivalISO: isoDay(p.arrival_date),
-            createdISO: isoDay(p.created),
-        }));
+        return (res?.data || []).map((p: any): PayoutLite => {
+            const cur = String(p.currency || 'mxn').toUpperCase();
+            return {
+                id: String(p.id),
+                amount: toMajor(p.amount, cur),
+                currency: cur,
+                status: (p.status || 'pending') as PayoutStatus,
+                arrivalISO: isoDay(p.arrival_date),
+                createdISO: isoDay(p.created),
+            };
+        });
     });
 }
 
@@ -272,9 +288,23 @@ export async function getRangeMoney(orgId: string, acct: string, desde: string, 
         const REFUND = new Set(['refund']);
         const DISPUTE = new Set(['dispute']);
 
+        // Divisa dominante del rango, mismo criterio que getStripeSnapshot: sin
+        // esto, una cuenta con transacciones en más de una divisa sumaba MXN y
+        // JPY como si fueran la misma unidad, y encima las escalaba todas ×100.
+        const totalsByCurrency = new Map<string, number>();
+        for (const r of rows) {
+            const c = String(r.currency || 'mxn').toLowerCase();
+            totalsByCurrency.set(c, (totalsByCurrency.get(c) ?? 0) + Math.abs(Number(r.amount || 0)));
+        }
+        let currency = 'mxn';
+        let best = -Infinity;
+        for (const [c, total] of totalsByCurrency) if (total > best) { best = total; currency = c; }
+        const cur = currency.toUpperCase();
+
         const byType = new Map<string, { gross: number; fee: number; net: number; n: number }>();
         let gross = 0, fee = 0, net = 0, refunds = 0, disputes = 0, txs = 0;
         for (const r of rows) {
+            if (String(r.currency || 'mxn').toLowerCase() !== currency) continue;
             // reporting_category es el contrato estable para reportes. `type`
             // también incluye cuotas del procesador y no debe confundirse con
             // contracargos.
@@ -291,17 +321,18 @@ export async function getRangeMoney(orgId: string, acct: string, desde: string, 
         }
 
         return {
-            gross: toMajor(gross),
-            fee: toMajor(fee),
-            net: toMajor(net),
-            refunds: toMajor(refunds),
-            disputes: toMajor(disputes),
+            gross: toMajor(gross, cur),
+            fee: toMajor(fee, cur),
+            net: toMajor(net, cur),
+            refunds: toMajor(refunds, cur),
+            disputes: toMajor(disputes, cur),
             txs,
             feePct: gross > 0 ? Math.round((fee / gross) * 1000) / 10 : 0,
             byType: [...byType.entries()]
-                .map(([type, v]) => ({ type, gross: toMajor(v.gross), fee: toMajor(v.fee), net: toMajor(v.net), n: v.n }))
+                .map(([type, v]) => ({ type, gross: toMajor(v.gross, cur), fee: toMajor(v.fee, cur), net: toMajor(v.net, cur), n: v.n }))
                 .sort((a, b) => Math.abs(b.gross) - Math.abs(a.gross)),
             truncated,
+            currency: cur,
         };
     });
 }
@@ -316,16 +347,20 @@ export async function listDisputesLite(orgId: string, acct: string, desde: strin
             'created[gte]': String(dayStartEpoch(desde)),
             'created[lte]': String(dayEndEpoch(hasta)),
         }, 'GET', { stripeAccount: acct });
-        return (res?.data || []).map((d: any): DisputeLite => ({
-            id: String(d.id),
-            amount: toMajor(d.amount),
-            reason: String(d.reason || 'unknown'),
-            status: String(d.status || 'unknown'),
-            createdISO: isoDay(d.created),
-            // Solo la fecha límite. `evidence` y el resto de `evidence_details` traen
-            // datos del comprador y de la defensa: se quedan en el servidor.
-            evidenceDueISO: d.evidence_details?.due_by ? isoDay(d.evidence_details.due_by) : null,
-        }));
+        return (res?.data || []).map((d: any): DisputeLite => {
+            const cur = String(d.currency || 'mxn').toUpperCase();
+            return {
+                id: String(d.id),
+                amount: toMajor(d.amount, cur),
+                currency: cur,
+                reason: String(d.reason || 'unknown'),
+                status: String(d.status || 'unknown'),
+                createdISO: isoDay(d.created),
+                // Solo la fecha límite. `evidence` y el resto de `evidence_details` traen
+                // datos del comprador y de la defensa: se quedan en el servidor.
+                evidenceDueISO: d.evidence_details?.due_by ? isoDay(d.evidence_details.due_by) : null,
+            };
+        });
     });
 }
 

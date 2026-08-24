@@ -10,13 +10,14 @@
 // Lo que NO cambia es el pie: este documento no afirma haber sido transmitido ni
 // autorizado por ninguna autoridad fiscal (reglas 10 y 14).
 
-import { countryName, getCountryProfile } from '../countries';
+import QRCode from 'qrcode';
+import { countryName, getCountryProfile, isEuCountry } from '../countries';
 import { currencyDecimals, normalizeCurrency } from '../currency';
 import {
   PdfDocument, measureText, prepareImage, truncateText, wrapText,
   type Align, type FontKey, type RGB,
 } from '../pdf/writer';
-import type { FiscalLineItem, FiscalParty } from './index';
+import type { FiscalLineItem, FiscalParty, FiscalRetencion } from './index';
 
 export interface InvoicePdfInput {
   invoiceNumber: string;
@@ -30,6 +31,8 @@ export interface InvoicePdfInput {
   recipient: FiscalParty;
   lines: FiscalLineItem[];
   simulated?: boolean;
+  /** Retenciones del documento — se RESTAN de subtotal+impuestos para llegar a `total`. */
+  retenciones?: FiscalRetencion[] | null;
   /** Divisa contable del emisor, si difiere de `currency`. */
   ledgerCurrency?: string | null;
   /** Tipo de cambio `currency` → `ledgerCurrency` aplicado al documento. */
@@ -48,6 +51,10 @@ export interface InvoicePdfInput {
   paymentTerms?: string | null;
   /** Referencia u orden de compra del cliente. */
   reference?: string | null;
+  /** Folio de la factura ORIGINAL, si este documento es su nota de crédito/rectificativa. */
+  creditNoteOfNumber?: string | null;
+  /** Registro Verifactu (España) ya encadenado — `provider_data.verifactu` de SpainVerifactuProvider. */
+  verifactu?: { qrUrl: string; huella: string; leyenda: string; leyendaCorta: string } | null;
   /** Instrucciones de pago (link, banco). Se imprime tal cual. */
   paymentInstructions?: string | null;
   /** Nota libre al pie. */
@@ -86,7 +93,28 @@ function readableOn(rgb: RGB): RGB {
   return luminance > 0.6 ? INK : WHITE;
 }
 
-function addressLines(party: FiscalParty): string[] {
+/**
+ * QR de Verifactu dibujado como una cuadrícula de rectángulos vectoriales, no
+ * como un PNG incrustado: `QRCode.create()` es síncrono y puro (sin canvas ni
+ * I/O), coherente con que todo este documento sea vectorial (ver cabecera del
+ * archivo). Zona de silencio de 2 módulos — sin ella algunos lectores de móvil
+ * fallan al enfocar el código pegado al resto del contenido.
+ */
+function drawQr(doc: PdfDocument, url: string, x: number, top: number, size: number): void {
+  const qr = QRCode.create(url, { errorCorrectionLevel: 'M' });
+  const modules = qr.modules;
+  const quiet = 2;
+  const cell = size / (modules.size + quiet * 2);
+  doc.rect(x, top, size, size, { fill: WHITE });
+  for (let row = 0; row < modules.size; row++) {
+    for (let col = 0; col < modules.size; col++) {
+      if (!modules.get(row, col)) continue;
+      doc.rect(x + (col + quiet) * cell, top + (row + quiet) * cell, cell, cell, { fill: INK });
+    }
+  }
+}
+
+function addressLines(party: FiscalParty, locale: 'es' | 'en'): string[] {
   const value = party.address;
   if (!value) return [];
   const street = [value.line1, value.line2].filter(Boolean).join(', ');
@@ -94,7 +122,9 @@ function addressLines(party: FiscalParty): string[] {
   // México/CDMX). Imprimirlos dos veces se lee como un error de captura.
   const same = String(value.city || '').trim().toLowerCase() === String(value.region || '').trim().toLowerCase();
   const city = [value.postalCode, value.city, same ? '' : value.region].filter(Boolean).join(' ');
-  const country = value.countryCode ? countryName(value.countryCode, 'es') : '';
+  // El idioma del DOCUMENTO, no un 'es' fijo: una factura en inglés (país no
+  // hispanohablante) imprimía "Estados Unidos" en vez de "United States".
+  const country = value.countryCode ? countryName(value.countryCode, locale) : '';
   return [street, city, country].map((line) => String(line || '').trim()).filter(Boolean);
 }
 
@@ -189,10 +219,14 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
       cursor += 14;
     }
     cursor += 2;
+    // El label del tax id sale del país DE ESTA PARTE, no del emisor: un
+    // emisor mexicano facturando a un cliente español etiquetaba el NIF/CIF
+    // del cliente como "RFC".
+    const partyTaxIdLabel = getCountryProfile(p.address?.countryCode || input.countryCode).taxIdLabel;
     const rows = [
-      p.taxId ? `${profile.taxIdLabel}: ${p.taxId}` : '',
+      p.taxId ? `${partyTaxIdLabel}: ${p.taxId}` : '',
       p.contactName || '',
-      ...addressLines(p),
+      ...addressLines(p, isSpanish ? 'es' : 'en'),
       p.email || '',
     ].filter(Boolean);
     for (const row of rows) {
@@ -207,6 +241,10 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
 
   // ── Franja de datos clave ──────────────────────────────────────────────────
   const facts: { k: string; v: string }[] = [];
+  // La referencia a la factura ORIGINAL es obligatoria en una rectificativa —
+  // sin ella, el documento se lee como una factura nueva y no como lo que
+  // corrige. Va primero: es el dato más importante de todo el documento.
+  if (input.creditNoteOfNumber) facts.push({ k: t('Rectifica a', 'Corrects invoice'), v: input.creditNoteOfNumber });
   if (input.dueDate) facts.push({ k: t('Vencimiento', 'Due date'), v: fmtDateShort(input.dueDate) });
   if (input.paymentTerms) facts.push({ k: t('Condiciones', 'Terms'), v: input.paymentTerms });
   facts.push({ k: t('Moneda', 'Currency'), v: currency });
@@ -228,7 +266,10 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     { title: t('Concepto', 'Description'), width: contentW - 262, align: 'left' },
     { title: t('Cant.', 'Qty'), width: 44, align: 'right' },
     { title: t('P. unitario', 'Unit price'), width: 78, align: 'right' },
-    { title: t('Imp.', 'Tax'), width: 58, align: 'right' },
+    // El nombre real del impuesto del país ('IVA', 'VAT', 'Sales tax'…), no un
+    // "Tax" genérico — una factura española decía "Impuesto 21%" en la tabla
+    // y "IVA" en el editor de origen; ahora dicen lo mismo.
+    { title: truncateText(profile.taxLabel, 58, 6.8, 'bold'), width: 58, align: 'right' },
     { title: t('Importe', 'Amount'), width: 82, align: 'right' },
   ];
   const colX = (index: number) => MARGIN + COLS.slice(0, index).reduce((sum, c) => sum + c.width, 0);
@@ -289,10 +330,11 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
 
   // ── Totales ────────────────────────────────────────────────────────────────
   const taxRows = [...taxBuckets.entries()].filter(([rate]) => rate > 0).sort((a, b) => a[0] - b[0]);
+  const retenciones = (input.retenciones ?? []).filter((r) => Number(r.monto) > 0);
   const fxRate = Number(input.fxRate);
   const ledger = normalizeCurrency(input.ledgerCurrency ?? '', '');
   const hasFx = !!ledger && ledger !== currency && Number.isFinite(fxRate) && fxRate > 0;
-  const totalsH = 16 + (taxRows.length || 1) * 16 + 42 + (hasFx ? 26 : 0);
+  const totalsH = 16 + (taxRows.length || 1) * 16 + retenciones.length * 16 + 42 + (hasFx ? 26 : 0);
 
   if (y + totalsH > BOTTOM_LIMIT) { doc.addPage(); y = MARGIN + 8; }
   const totalsTop = y + 16;
@@ -309,11 +351,17 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   totalRow(t('Subtotal', 'Subtotal'), `${money(input.subtotal)} ${currency}`);
   if (taxRows.length) {
     for (const [rate, bucket] of taxRows) {
-      totalRow(`${t('Impuesto', 'Tax')} ${taxLabel(rate)} · ${t('base', 'base')} ${money(bucket.base)}`,
+      totalRow(`${profile.taxLabel} ${taxLabel(rate)} · ${t('base', 'base')} ${money(bucket.base)}`,
         `${money(bucket.amount)} ${currency}`, true);
     }
   } else if (Number(input.taxTotal) > 0) {
-    totalRow(t('Impuestos', 'Tax'), `${money(input.taxTotal)} ${currency}`, true);
+    totalRow(profile.taxLabel, `${money(input.taxTotal)} ${currency}`, true);
+  }
+  // Una retención se RESTA: va junto a los impuestos pero con el signo a la
+  // vista, porque apunta en dirección contraria (regla 20 de estándares
+  // aplicada a dinero — la posición sola no distingue suma de resta).
+  for (const r of retenciones) {
+    totalRow(r.nombre, `−${money(r.monto)} ${currency}`, true);
   }
 
   // El total va en el color de la marca: es el número que todos buscan primero.
@@ -340,13 +388,52 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
     ty += 26;
   }
 
+  // ── Inversión del sujeto pasivo (reverse charge) ────────────────────────────
+  // Una venta B2B entre dos países de la UE con NIF-IVA en ambos lados va a
+  // tipo 0 y el documento DEBE llevar esta mención — no es opcional, es lo que
+  // le dice a la autoridad del receptor por qué no hay IVA repercutido en un
+  // documento que de otro modo se vería como una venta exenta sin motivo.
+  // Cord no valida el NIF-IVA contra VIES (el servicio de la Comisión Europea
+  // no siempre responde, y bloquear la factura por eso sería peor que no
+  // validar): solo verifica que ambas partes declaren tax id y country code
+  // en países distintos de la UE.
+  const issuerCountry = String(input.issuer.address?.countryCode || input.countryCode).toUpperCase();
+  const recipientCountry = String(input.recipient.address?.countryCode || '').toUpperCase();
+  const isIntraCommunity = isEuCountry(issuerCountry) && isEuCountry(recipientCountry)
+    && issuerCountry !== recipientCountry && !!input.issuer.taxId && !!input.recipient.taxId
+    && input.lines.some((l) => (Number(l.taxRate) || 0) === 0);
+  const reverseChargeNotice = t(
+    'Operación intracomunitaria. Inversión del sujeto pasivo — Art. 25 Ley 37/1992 del IVA. El adquirente debe autorrepercutirse el IVA en su declaración.',
+    'Intra-Community supply. Reverse charge — VAT self-assessed by the recipient in accordance with Art. 25 of Spanish VAT Law 37/1992.',
+  );
+
+  // ── Verifactu: QR + huella, la evidencia de que este registro se encadenó ──
+  // Va ANTES de "Cómo pagar" porque la ley exige que el QR y su leyenda sean
+  // tan legibles como el resto de la factura — no un pie de página diminuto.
+  let by = totalsTop;
+  if (input.verifactu?.qrUrl) {
+    const qrSize = 64;
+    if (by + qrSize > BOTTOM_LIMIT) { doc.addPage(); by = MARGIN + 8; }
+    drawQr(doc, input.verifactu.qrUrl, MARGIN, by, qrSize);
+    const textX = MARGIN + qrSize + 12;
+    const textW = contentW - totalsW - 28 - qrSize - 12;
+    doc.text(input.verifactu.leyendaCorta, textX, by + 2, { size: 8, font: 'bold', color: INK, tracking: 0.6 });
+    const leyendaLines = wrapText(input.verifactu.leyenda, textW, 7.4);
+    leyendaLines.forEach((line, i) => {
+      doc.text(line, textX, by + 15 + i * 9.5, { size: 7.4, color: MUTED });
+    });
+    const huellaY = by + 15 + leyendaLines.length * 9.5 + 6;
+    doc.text(`Huella: ${input.verifactu.huella}`, textX, huellaY, { size: 6.4, color: MUTED });
+    by += qrSize + 14;
+  }
+
   // ── Cómo pagar y notas, a la izquierda de los totales ──────────────────────
   const blocks = [
     input.paymentInstructions ? { title: t('Cómo pagar', 'How to pay'), body: input.paymentInstructions } : null,
+    isIntraCommunity ? { title: t('Mención legal', 'Legal notice'), body: reverseChargeNotice } : null,
     input.notes ? { title: t('Notas', 'Notes'), body: input.notes } : null,
   ].filter(Boolean) as { title: string; body: string }[];
 
-  let by = totalsTop;
   if (blocks.length) {
     const blockW = contentW - totalsW - 28;
     for (const block of blocks) {

@@ -25,14 +25,6 @@ const THREE_DECIMAL = new Set(['BHD', 'JOD', 'KWD', 'OMR', 'TND']);
 /** Divisas que Stripe no liquida y que por tanto no pueden cobrar en línea. */
 const STRIPE_UNSUPPORTED = new Set(['CUP', 'KPW', 'IRR', 'SYP', 'VES']);
 
-const ISO_4217: Set<string> = (() => {
-    try {
-        return new Set(Intl.supportedValuesOf('currency'));
-    } catch {
-        return new Set(['MXN', 'USD', 'EUR', 'GBP', 'CAD', 'BRL', 'COP', 'CLP', 'ARS', 'PEN']);
-    }
-})();
-
 export const DEFAULT_CURRENCY = 'MXN';
 
 // ── Divisas que Cord OFRECE ─────────────────────────────────────────────────
@@ -53,6 +45,23 @@ export const OFFERED_CURRENCIES = [
     // Comercio internacional
     'JPY', 'CNY', 'CHF', 'AUD',
 ] as const;
+
+// `Intl.supportedValuesOf('currency')` exige ICU completo. Un runtime con ICU
+// recortado (`--with-intl=small-icu`, algunos edge runtimes) hace que ESTE
+// catch se ejecute — y el fallback tiene que reconocer, como mínimo, todo lo
+// que Cord ya sabe por sus propias tablas. Antes el fallback tenía 10 códigos
+// comunes y JPY/CNY/CHF/AUD —las 4 divisas de "comercio internacional" que
+// Cord SÍ ofrece— no estaban: `normalizeCurrency('JPY')` caía a 'MXN',
+// `currencyDecimals` daba 2 en vez de 0, y `toMinorUnits` cobraba 100× de
+// más. Es literalmente el bug que el encabezado de este archivo declara
+// resuelto, en la única rama que no se prueba con ICU completo instalado.
+const ISO_4217: Set<string> = (() => {
+    try {
+        return new Set(Intl.supportedValuesOf('currency'));
+    } catch {
+        return new Set([...OFFERED_CURRENCIES, ...ZERO_DECIMAL, ...THREE_DECIMAL, ...STRIPE_UNSUPPORTED]);
+    }
+})();
 
 export function isOfferedCurrency(value: unknown): boolean {
     const code = String(value ?? '').trim().toUpperCase();
@@ -113,8 +122,18 @@ export function stripeSupportsCurrency(currency: string): boolean {
 export function toMinorUnits(amount: number, currency: string): number {
     const value = Number(amount);
     if (!Number.isFinite(value)) throw new Error(`Monto inválido para ${currency}`);
+    // Falla cerrado ante una divisa no reconocida: `currencyDecimals` por sí
+    // sola normaliza a MXN (2 decimales) y seguiría adelante en silencio — la
+    // única función que de verdad mueve dinero hacia Stripe no puede adivinar
+    // los decimales de un código que no reconoce (regla 22 aplicada a divisa).
+    if (!isSupportedCurrency(currency)) throw new Error(`Divisa no reconocida: ${currency}`);
     const decimals = currencyDecimals(currency);
-    const scaled = Math.round(value * 10 ** decimals);
+    // + Number.EPSILON: la representación binaria de un monto como 1.005 cae
+    // justo por debajo del decimal exacto (1.00499999999999989…), y sin este
+    // ajuste Math.round lo trunca a 100 en vez de 101. Mismo criterio que
+    // money() en fiscal/emit.ts — dos redondeos distintos para el mismo tipo
+    // de monto es la clase de bug que aparece un centavo a la vez.
+    const scaled = Math.round((value + Number.EPSILON) * 10 ** decimals);
     // Stripe rechaza los tres decimales que no terminan en 0; se redondea a la
     // centena EXPLÍCITAMENTE en vez de dejar que el PSP falle en producción.
     const minor = decimals === 3 ? Math.round(scaled / 10) * 10 : scaled;

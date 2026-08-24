@@ -75,7 +75,7 @@ Los scripts especializados de seguridad y operación se descubren en
 | Billing | Stripe Billing freemium, medidores de excedente y Customer Portal. |
 | Cobros | Stripe Connect para pagos directos a las cuentas conectadas. |
 | Correo | Resend para correo transaccional y cobranza. |
-| Fiscal | Facturapi mediante `MexicoSatProvider` para CFDI 4.0 en México. |
+| Fiscal | Facturapi mediante `MexicoSatProvider` para CFDI 4.0 en México; `SpainVerifactuProvider` para Verifactu en España (huella SHA-256 encadenada + envío SOAP a la AEAT). |
 | IA | Anthropic SDK; `AI_MODEL` permite override. El default del código es `claude-haiku-4-5-20251001`. |
 | Animación | GSAP 3 únicamente en landing y login; dentro de la aplicación se usa CSS. |
 | Analytics | PostHog para producto y Vercel Analytics para Web Vitals. El contrato detallado vive en [`analytics.md`](analytics.md). |
@@ -111,6 +111,20 @@ Los scripts especializados de seguridad y operación se descubren en
   `estandares-ingenieria.md`; fuentes en `src/lib/countries.ts`
   (`SUPPORTED_COUNTRIES`, `supportsOnlinePayments`) y `src/lib/currency.ts`
   (`OFFERED_CURRENCIES`).
+- Estados Unidos y España al 100% del núcleo financiero (ago 2026): antes de esto,
+  la factura ignoraba el impuesto por línea (`emit.ts` aplicaba una tasa plana),
+  EE.UU. no tenía dónde capturar sales tax (el selector no se dibujaba con una
+  sola opción) y el alta de Connect estaba hardcodeada a México
+  (`country: 'MX'` bloqueaba cualquier cuenta no mexicana). Ahora: motor único
+  `calculateDocumentTotals()` en toda factura y cotización; EE.UU. siembra sales
+  tax por estado (`usStateTaxPresets()`) y Connect Custom acepta KYC de EE.UU.
+  (`ssn_last_4`, estados de 2 letras, checksum ABA real); España emite con base
+  legal completa (IRPF, serie+ejercicio, NIF/NIE/CIF validados,
+  inversión del sujeto pasivo intracomunitaria) y **Verifactu** — el sistema de
+  facturación certificado que exige el RD 1007/2023, con huella SHA-256
+  encadenada verificada contra los vectores oficiales de la AEAT y envío real
+  por SOAP verificado contra el WSDL/XSD oficial. Ver regla 29 de
+  `estandares-ingenieria.md` y `negocio-billing.md`.
 
 ## Configuración
 
@@ -129,7 +143,7 @@ Mapa de configuración:
 | SSO | `SAML_SP_PRIVATE_KEY`, `SAML_SP_CERT` |
 | Stripe | `STRIPE_*`, incluida la firma separada de Connect |
 | Correo y cron | `RESEND_*`, `SALES_EMAIL`, `CRON_SECRET`, `INBOUND_EMAIL_SECRET` |
-| Fiscal | `FACTURAPI_*`, incluida la llave de la organización Cord |
+| Fiscal | `FACTURAPI_*`, incluida la llave de la organización Cord; `VERIFACTU_SIF_*`, `VERIFACTU_AEAT_*` para Verifactu (España) |
 | IA | `ANTHROPIC_API_KEY`, `AI_MODEL` |
 | Analytics | `PUBLIC_POSTHOG_*`, `POSTHOG_DISABLE_CAPTURE` |
 

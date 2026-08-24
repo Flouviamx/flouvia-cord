@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, reqIp } from '../../../../lib/db';
+import { sql, getActiveOrgId, reqIp, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { updateConnectAccount } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
@@ -17,7 +17,8 @@ export const PATCH: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const limited = await limitConnectMutation(request, 'account', orgId, 20);
     if (limited) return limited;
-    const [org] = await sql`select stripe_account_id, stripe_business_type from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select stripe_account_id, stripe_business_type from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (!org?.stripe_account_id) {
         return new Response(JSON.stringify({ error: 'Cuenta no creada' }), { status: 400 });
     }

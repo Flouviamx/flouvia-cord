@@ -15,7 +15,7 @@ import { trackServer } from './posthog-server';
 
 import { sanitizeItem, calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { normalizeCurrency } from './currency';
-import { taxCatalogFor } from './impuestos-db';
+import { taxCatalogFor, TaxCatalogUnavailableError } from './impuestos-db';
 import { intlLocale } from './fmt-server';
 
 // El motivo de aprobación lo lee el aprobador: el tope y el total van con la
@@ -175,7 +175,13 @@ export async function createCotizacion(
     // no puede inventarse una tasa que el negocio no configuró. Sin tasa
     // explícita se cae al perfil predeterminado, que es lo que hacía la columna
     // plana orgs.iva_pct antes de que existiera el impuesto por línea.
-    const catalogo = await taxCatalogFor(orgId);
+    let catalogo;
+    try {
+        catalogo = await taxCatalogFor(orgId);
+    } catch (error) {
+        if (error instanceof TaxCatalogUnavailableError) throw new QuoteError(error.message, 503);
+        throw error;
+    }
     const fallbackRate = catalogo.defaultRate;
     const itemsConImpuesto = items.map((it, i) => ({
         ...it,

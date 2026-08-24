@@ -85,11 +85,12 @@ async function updateDraft(orgId: string, id: string, body: any, request: Reques
         ivaIncluido: body.iva_incluido === true,
     });
     if (!result.ok) {
-        // Igual que al crear: un fallo de FX es 503 y se reintenta; una factura
-        // ya emitida es 409 porque el estado, no el payload, es lo que impide.
-        const fxDown = /tipo de cambio/i.test(result.error || '');
+        // Igual que al crear: un fallo de FX o del catálogo de impuestos es 503 y
+        // se reintenta; una factura ya emitida es 409 porque el estado, no el
+        // payload, es lo que impide.
+        const serviceDown = /tipo de cambio|catálogo de impuestos/i.test(result.error || '');
         const emitida = /ya fue emitida/i.test(result.error || '');
-        return json({ error: result.error }, fxDown ? 503 : (emitida ? 409 : 400));
+        return json({ error: result.error }, serviceDown ? 503 : (emitida ? 409 : 400));
     }
     await logAudit(orgId, {
         accion: 'factura.borrador_actualizado', entidad: 'factura', entidad_id: id,

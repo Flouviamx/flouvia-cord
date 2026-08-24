@@ -109,6 +109,7 @@ const DEFAULT_PROFILE: ProfileDefaults = {
 // otro país nazca con MXN y horario de Ciudad de México. Lo no listado cae a
 // USD/UTC y puede ajustarse en Configuración.
 const PROFILE_DEFAULTS: Partial<Record<CountryCode, Partial<ProfileDefaults>>> = {
+    AE: { currency: 'AED', locale: 'ar-AE', timeZone: 'Asia/Dubai', taxIdLabel: 'TRN', taxLabel: 'VAT' },
     AR: { currency: 'ARS', locale: 'es-AR', timeZone: 'America/Argentina/Buenos_Aires', taxIdLabel: 'CUIT', taxLabel: 'IVA' },
     AU: { currency: 'AUD', locale: 'en-AU', timeZone: 'Australia/Sydney', taxIdLabel: 'ABN', taxLabel: 'GST' },
     BR: { currency: 'BRL', locale: 'pt-BR', timeZone: 'America/Sao_Paulo', taxIdLabel: 'CNPJ / CPF', taxLabel: 'ICMS / ISS' },
@@ -184,6 +185,12 @@ export interface TaxPreset {
     tasa: number;
     /** Se aplica a las líneas nuevas del editor. Uno por país. */
     esDefault?: boolean;
+    /**
+     * Solo para `kind: 'retencion'`. Sobre qué se calcula: `'subtotal'`
+     * (default, correcto para México) o `'impuesto'` (Colombia: la ReteIVA es
+     * 15% DEL IVA, no del subtotal). Ver RetencionInput en engine.ts.
+     */
+    base?: 'subtotal' | 'impuesto';
 }
 
 export type TaxKind = 'consumo' | 'retencion' | 'exento';
@@ -203,8 +210,28 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
         EXENTO,
         { nombre: 'Retención IVA 10.667%', kind: 'retencion', tipo: 'ret_iva', tasa: 10.667 },
         { nombre: 'Retención ISR 1.25%', kind: 'retencion', tipo: 'ret_isr', tasa: 1.25 },
+        // Art. 1-A LIVA: fracción IV (autotransporte de carga federal) y
+        // fracción II inciso a) (servicios de personal / outsourcing).
+        { nombre: 'Retención IVA 4% (autotransporte)', kind: 'retencion', tipo: 'ret_iva', tasa: 4 },
+        { nombre: 'Retención IVA 6% (servicios de personal)', kind: 'retencion', tipo: 'ret_iva', tasa: 6 },
     ],
-    CA: [std('GST 5%', 5), red('HST 13%', 13), red('HST 15%', 15), ZERO_RATED],
+    // GST/HST son federales. QST/PST/RST son IMPUESTOS PROVINCIALES aparte —en
+    // QC/BC/SK/MB se cobran junto al 5% de GST, no en su lugar— y aquí se
+    // ofrecen como una tasa seleccionable más, con el nombre de su provincia,
+    // para el negocio que solo necesita una tasa por línea. HST de Nueva
+    // Escocia bajó de 15% a 14% en abril de 2025; "HST 15%" sigue vigente en
+    // New Brunswick, Newfoundland & Labrador y Prince Edward Island.
+    CA: [
+        std('GST 5%', 5),
+        red('HST 13% (ON)', 13),
+        red('HST 14% (NS)', 14),
+        red('HST 15% (NB/NL/PE)', 15),
+        red('QST 9.975% (QC)', 9.975),
+        red('PST 7% (BC)', 7),
+        red('PST 6% (SK)', 6),
+        red('RST 7% (MB)', 7),
+        ZERO_RATED,
+    ],
 
     // Latinoamérica
     AR: [std('IVA 21%', 21), red('IVA 10,5%', 10.5), red('IVA 27%', 27), EXENTO],
@@ -213,21 +240,34 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
         std('IVA 19%', 19),
         red('IVA 5%', 5),
         EXENTO,
-        { nombre: 'ReteIVA 15%', kind: 'retencion', tipo: 'ret_iva', tasa: 15 },
+        // 15% DEL IVA, no del subtotal — `base: 'impuesto'` es lo que hace que
+        // el motor calcule sobre la base correcta (regla del motor, engine.ts).
+        { nombre: 'ReteIVA 15%', kind: 'retencion', tipo: 'ret_iva', tasa: 15, base: 'impuesto' },
         { nombre: 'ReteFuente 2,5%', kind: 'retencion', tipo: 'ret_isr', tasa: 2.5 },
     ],
     CR: [std('IVA 13%', 13), red('IVA 4%', 4), red('IVA 2%', 2), red('IVA 1%', 1), EXENTO],
     DO: [std('ITBIS 18%', 18), red('ITBIS 16%', 16), EXENTO],
     GT: [std('IVA 12%', 12), EXENTO],
     PA: [std('ITBMS 7%', 7), EXENTO],
-    PE: [std('IGV 18%', 18), EXENTO],
+    // Régimen de Retenciones del IGV (RS 037-2002/SUNAT): 3% del importe de la
+    // operación, tasa única sin importar el rubro — a diferencia de las
+    // Detracciones (SPOT), que varían 4-12% por tipo de bien o servicio y por
+    // eso NO se agregan aquí como una sola tasa.
+    PE: [std('IGV 18%', 18), EXENTO, { nombre: 'Retención IGV 3%', kind: 'retencion', tipo: 'ret_iva', tasa: 3 }],
     PY: [std('IVA 10%', 10), red('IVA 5%', 5), EXENTO],
     UY: [std('IVA 22%', 22), red('IVA 10%', 10), EXENTO],
 
     // Europa
     CH: [std('MWST 8.1%', 8.1), red('MWST 3.8%', 3.8), red('MWST 2.6%', 2.6), ZERO_RATED],
     DE: [std('USt. 19%', 19), red('USt. 7%', 7), ZERO_RATED],
-    ES: [std('IVA 21%', 21), red('IVA 10%', 10), red('IVA 4%', 4), EXENTO],
+    // IRPF del autónomo: 15% general, 7% los primeros 3 años de alta (art. 101
+    // LIRPF). Es retención del PROPIO emisor —se resta de lo que cobra—, no un
+    // impuesto que el negocio le traslade a nadie.
+    ES: [
+        std('IVA 21%', 21), red('IVA 10%', 10), red('IVA 4%', 4), EXENTO,
+        { nombre: 'Retención IRPF 15%', kind: 'retencion', tipo: 'ret_isr', tasa: 15 },
+        { nombre: 'Retención IRPF 7% (nuevo autónomo)', kind: 'retencion', tipo: 'ret_isr', tasa: 7 },
+    ],
     FR: [std('TVA 20%', 20), red('TVA 10%', 10), red('TVA 5,5%', 5.5), red('TVA 2,1%', 2.1), ZERO_RATED],
     GB: [std('VAT 20%', 20), red('VAT 5%', 5), ZERO_RATED],
     IE: [std('VAT 23%', 23), red('VAT 13.5%', 13.5), red('VAT 9%', 9), ZERO_RATED],
@@ -259,8 +299,11 @@ export const TAX_PRESETS: Partial<Record<CountryCode, TaxPreset[]>> = {
 /** Presets del país, o solo "Exento" cuando no hay tasa nacional que sugerir. */
 export function taxPresetsFor(code: string): TaxPreset[] {
     const normalized = code.toUpperCase();
-    const safeCode = isCountryCode(normalized) ? normalized : 'MX';
-    return TAX_PRESETS[safeCode] ?? [EXENTO];
+    // Un código inválido NO cae a 'MX': eso heredaba el 16% mexicano completo
+    // (con retenciones incluidas) exactamente en el caso que el comentario de
+    // arriba dice evitar — "el 16% mexicano heredado". `hasTaxPreset` ya
+    // devolvía `false` para lo mismo; las dos funciones se contradecían.
+    return isCountryCode(normalized) ? (TAX_PRESETS[normalized] ?? [EXENTO]) : [EXENTO];
 }
 
 /** ¿Cord tiene tasas estándar que sugerir para este país? */
@@ -332,3 +375,80 @@ export function listCountries(locale: 'es' | 'en' = 'es', include?: string | nul
 
 // Compatibilidad con los consumidores existentes en español.
 export const COUNTRIES = listCountries('es');
+
+// ── Estados Unidos: sales tax ───────────────────────────────────────────────
+//
+// Estados Unidos no tiene tasa nacional (por eso no está en TAX_PRESETS: ver
+// el comentario de esa tabla), pero eso no puede significar que el catálogo
+// de una cuenta nueva se quede vacío y la columna de impuesto ni se dibuje
+// (`MULTI_TAX` en el editor exige más de una opción). `US_STATE_TAX` es la
+// tasa BASE estatal — no incluye condado ni ciudad, que en varios estados
+// suman puntos porcentuales adicionales y varían por jurisdicción exacta.
+// Es un punto de partida editable, igual que cualquier fila de TAX_PRESETS:
+// el negocio la ajusta con su contador a la tasa real de su domicilio.
+// ── Unión Europea: inversión del sujeto pasivo (reverse charge) ────────────
+// Una venta B2B entre dos estados miembro con NIF-IVA en ambos lados va a
+// tipo 0 y el documento debe llevar la mención legal — no se ofrece como
+// tasa, es una CONSECUENCIA de emisor y receptor estar en países distintos
+// de este set y ambos declarar tax id (ver invoice-pdf.ts).
+export const EU_COUNTRIES = new Set([
+    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR',
+    'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK',
+    'SI', 'ES', 'SE',
+]);
+
+export function isEuCountry(code: string): boolean {
+    return EU_COUNTRIES.has(String(code || '').toUpperCase());
+}
+
+export const US_STATES: { code: string; name: string }[] = [
+    { code: 'AL', name: 'Alabama' }, { code: 'AK', name: 'Alaska' }, { code: 'AZ', name: 'Arizona' },
+    { code: 'AR', name: 'Arkansas' }, { code: 'CA', name: 'California' }, { code: 'CO', name: 'Colorado' },
+    { code: 'CT', name: 'Connecticut' }, { code: 'DE', name: 'Delaware' },
+    { code: 'DC', name: 'District of Columbia' }, { code: 'FL', name: 'Florida' }, { code: 'GA', name: 'Georgia' },
+    { code: 'HI', name: 'Hawaii' }, { code: 'ID', name: 'Idaho' }, { code: 'IL', name: 'Illinois' },
+    { code: 'IN', name: 'Indiana' }, { code: 'IA', name: 'Iowa' }, { code: 'KS', name: 'Kansas' },
+    { code: 'KY', name: 'Kentucky' }, { code: 'LA', name: 'Louisiana' }, { code: 'ME', name: 'Maine' },
+    { code: 'MD', name: 'Maryland' }, { code: 'MA', name: 'Massachusetts' }, { code: 'MI', name: 'Michigan' },
+    { code: 'MN', name: 'Minnesota' }, { code: 'MS', name: 'Mississippi' }, { code: 'MO', name: 'Missouri' },
+    { code: 'MT', name: 'Montana' }, { code: 'NE', name: 'Nebraska' }, { code: 'NV', name: 'Nevada' },
+    { code: 'NH', name: 'New Hampshire' }, { code: 'NJ', name: 'New Jersey' }, { code: 'NM', name: 'New Mexico' },
+    { code: 'NY', name: 'New York' }, { code: 'NC', name: 'North Carolina' }, { code: 'ND', name: 'North Dakota' },
+    { code: 'OH', name: 'Ohio' }, { code: 'OK', name: 'Oklahoma' }, { code: 'OR', name: 'Oregon' },
+    { code: 'PA', name: 'Pennsylvania' }, { code: 'RI', name: 'Rhode Island' }, { code: 'SC', name: 'South Carolina' },
+    { code: 'SD', name: 'South Dakota' }, { code: 'TN', name: 'Tennessee' }, { code: 'TX', name: 'Texas' },
+    { code: 'UT', name: 'Utah' }, { code: 'VT', name: 'Vermont' }, { code: 'VA', name: 'Virginia' },
+    { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' }, { code: 'WI', name: 'Wisconsin' },
+    { code: 'WY', name: 'Wyoming' },
+];
+
+export function isUsState(code: string): boolean {
+    const normalized = String(code || '').toUpperCase();
+    return US_STATES.some((s) => s.code === normalized);
+}
+
+// Tasa BASE estatal de sales tax, en porcentaje. 0 = el estado no cobra sales
+// tax estatal (puede seguir habiendo impuesto local — Alaska tiene sales tax
+// municipal pese a no tener estatal). No es una tabla tributaria completa:
+// condado y ciudad se editan a mano en Ajustes.
+export const US_STATE_TAX: Record<string, number> = {
+    AL: 4, AK: 0, AZ: 5.6, AR: 6.5, CA: 7.25, CO: 2.9, CT: 6.35, DE: 0, DC: 6,
+    FL: 6, GA: 4, HI: 4, ID: 6, IL: 6.25, IN: 7, IA: 6, KS: 6.5, KY: 6, LA: 4.45,
+    ME: 5.5, MD: 6, MA: 6.25, MI: 6, MN: 6.875, MS: 7, MO: 4.225, MT: 0, NE: 5.5,
+    NV: 6.85, NH: 0, NJ: 6.625, NM: 4.875, NY: 4, NC: 4.75, ND: 5, OH: 5.75,
+    OK: 4.5, OR: 0, PA: 6, RI: 7, SC: 6, SD: 4.2, TN: 7, TX: 6.25, UT: 4.85,
+    VT: 6, VA: 4.3, WA: 6.5, WV: 6, WI: 5, WY: 4,
+};
+
+/**
+ * Presets de sales tax para el estado del negocio — se usan al sembrar, NO
+ * viven en TAX_PRESETS (esa tabla es por país; esto es por estado). `state`
+ * ya validado contra US_STATES por el llamador.
+ */
+export function usStateTaxPresets(state: string): TaxPreset[] {
+    const rate = US_STATE_TAX[state.toUpperCase()] ?? 0;
+    const presets: TaxPreset[] = [];
+    if (rate > 0) presets.push(std(`Sales tax ${state.toUpperCase()} ${rate}%`, rate));
+    presets.push({ nombre: 'Exempt / Resale', kind: 'exento', tipo: 'exento', tasa: 0 });
+    return presets;
+}

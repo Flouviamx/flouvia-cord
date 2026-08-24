@@ -39,6 +39,8 @@ const metaBits = [c.contacto, c.email, c.telefono].filter(Boolean);
                 data-limite={c.limite > 0 ? String(c.limite) : ''} data-nivel={c.nivel}
                 data-descuento={c.descuentoPct > 0 ? String(c.descuentoPct) : ''}
                 data-regimen={c.regimenFiscal} data-uso={c.usoCfdi} data-cp={c.cpFiscal}
+                data-country={c.countryCode} data-direccion1={c.direccionLine1} data-direccion2={c.direccionLine2}
+                data-ciudad={c.ciudad} data-region={c.region}
             >{t(L, 'cdet.editar')}</button>
         )}
         {canEdit && <a class="dc-btn-primary" href={`/app/cotizaciones/nueva?cliente=${c.id}`}>{t(L, 'cdet.nueva_cotizacion')}</a>}

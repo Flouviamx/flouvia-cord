@@ -8,7 +8,7 @@
 // de ajustes puede leer la factura de otro negocio. El check no puede quedar a
 // criterio de cada archivo: se escribe una vez y se usa siempre.
 
-import { sql, getActiveOrgId } from './db';
+import { sql, getActiveOrgId, withOrgTx } from './db';
 import { requirePerm } from './queries';
 import { STRIPE_KEY, stripe } from './billing';
 import { currentLocale } from './context';
@@ -40,9 +40,10 @@ export async function billingContext(): Promise<{ ctx: BillingContext } | { deni
     if (!STRIPE_KEY) return { denied: json({ error: 'La facturación aún no está disponible.' }, 503) };
 
     const orgId = await getActiveOrgId();
-    const [o] = await sql`
+    const [orgRows] = await withOrgTx(orgId, sql`
         select stripe_customer_id, stripe_subscription_id, subscription_status, sandbox_of
-          from orgs where id = ${orgId}`;
+          from orgs where id = ${orgId}`);
+    const o = orgRows[0];
 
     if (o?.sandbox_of) {
         return { denied: json({ error: t(currentLocale(), 'err.test.billing') }, 409) };

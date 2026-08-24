@@ -26,6 +26,8 @@ import { resolveViewer } from '../../../lib/public-viewer';
 import { recordHeartbeat, recordHito } from '../../../lib/atencion';
 import { markViewed } from '../../../lib/queries';
 import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
+import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
+import { money as roundMoney } from '../../../lib/fiscal/emit';
 
 // Los eventos que escribe el link público (firma parcial, contrapropuesta) los
 // lee el vendedor en su historial: el importe va con la divisa de la cotización.
@@ -55,7 +57,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
     const identity = await resolvePublicQuote(token);
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
     const [rows] = await withOrgTx(identity.orgId, sql`
-        select c.id, c.org_id, c.status, c.rev, c.base_currency, o.moneda,
+        select c.id, c.org_id, c.status, c.rev, c.base_currency, c.iva_incluido, c.retenciones_snapshot, o.moneda,
                (o.sandbox_of is not null) as is_sandbox, o.is_demo
         from cotizaciones c join orgs o on o.id = c.org_id
         where c.id = ${identity.id} and c.org_id = ${identity.orgId}`);
@@ -116,7 +118,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         const email = String(body.email ?? '').trim().slice(0, 200);
         
         const [allItems] = await withOrgTx(orgId, sql`
-            select id, descripcion, cantidad, precio_unitario, precio_negociado
+            select id, descripcion, cantidad, precio_unitario, precio_negociado, tax_rate
             from cotizacion_items where cotizacion_id = ${c.id} order by orden`);
 
         // Aprobación parcial: el cliente puede incluir solo un subconjunto de líneas.
@@ -150,11 +152,49 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         // El driver HTTP de Neon NO soporta sql.begin(callback); usa sql.transaction([...]).
         const txQueries: any[] = [];
         if (isPartial) {
+            // Recalcula con el MISMO motor que crear/editar (regla 23): tasa POR
+            // LÍNEA de lo que de verdad se aprobó, impuesto incluido si aplica, y
+            // las retenciones de la cotización recalculadas sobre el nuevo
+            // subtotal (más chico que el original). Antes esto aplanaba todo al
+            // `orgs.iva_pct` de la org —con 16 de respaldo si faltaba— e ignoraba
+            // por completo `tax_rate`, `iva_incluido` y las retenciones: una
+            // aprobación parcial de una cotización exenta o con IRPF se guardaba
+            // gravada al 16% mexicano.
             const [orgInfo] = await withOrgTx(orgId, sql`select iva_pct from orgs where id = ${orgId}`);
-            const ivaPct = Number(orgInfo[0]?.iva_pct ?? 16) / 100;
-            const newIva = subAceptado * ivaPct;
-            const newTotal = subAceptado + newIva;
-            txQueries.push(sql`update cotizaciones set status = 'approved', approved_at = now(), subtotal = ${subAceptado}, iva = ${newIva}, total = ${newTotal} where id = ${c.id} and org_id = ${orgId}`);
+            const fallbackRate = Number(orgInfo[0]?.iva_pct ?? 0) / 100;
+            const retencionesSnapshot = Array.isArray(c.retenciones_snapshot) ? c.retenciones_snapshot : [];
+            let totals;
+            try {
+                totals = calculateDocumentTotals(
+                    firmadas.map((it: any) => ({
+                        descripcion: it.descripcion,
+                        cantidad: it.cantidad,
+                        precio_unitario: it.precio_unitario,
+                        precio_negociado: it.precio_negociado,
+                        tax_rate: it.tax_rate ?? fallbackRate,
+                    })),
+                    {
+                        ivaIncluido: !!c.iva_incluido,
+                        retenciones: retencionesSnapshot.map((r: any) => ({
+                            nombre: String(r.nombre ?? ''), tasa: Number(r.tasa) || 0, tipo: String(r.tipo ?? 'ret_iva'),
+                            base: r.baseTipo === 'impuesto' ? 'impuesto' as const : 'subtotal' as const,
+                        })),
+                    },
+                );
+            } catch (error: unknown) {
+                if (error instanceof RangeError) return json({ error: 'Alguna línea de la cotización tiene una tasa de impuesto inválida' }, 400);
+                throw error;
+            }
+            const newSubtotal = roundMoney(totals.subtotal);
+            const newIva = roundMoney(totals.impuestos);
+            const newTotal = roundMoney(totals.total);
+            const newRetencionTotal = roundMoney(totals.retencionTotal);
+            txQueries.push(sql`
+                update cotizaciones set
+                    status = 'approved', approved_at = now(),
+                    subtotal = ${newSubtotal}, iva = ${newIva}, total = ${newTotal},
+                    retencion_total = ${newRetencionTotal}, retenciones_snapshot = ${JSON.stringify(totals.retenciones)}::jsonb
+                where id = ${c.id} and org_id = ${orgId}`);
         } else {
             txQueries.push(sql`update cotizaciones set status = 'approved', approved_at = now() where id = ${c.id} and org_id = ${orgId}`);
         }

@@ -1097,7 +1097,7 @@ async function recurringInvoicePaid(invoice: any, account: string) {
     if (piId && montoNum > 0) {
         try {
             const amountCents = toMinorUnits(montoNum, invoiceCurrency);
-            const fee = computeSubscriptionFee(amountCents, row.application_fee_percent != null);
+            const fee = computeSubscriptionFee(amountCents, invoiceCurrency, row.application_fee_percent != null);
             const [created] = await withOrgTx(orgId, sql`
                 insert into cotizacion_cobros
                     (org_id, cotizacion_id, tipo, numero_cuota, monto, status, payment_method,

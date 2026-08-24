@@ -451,8 +451,11 @@ const mainHandler = async (context: any, next: any) => {
     // creada en Estados Unidos ve la app en inglés aunque el navegador venga en
     // español, y viceversa.
     // Este valor sigue siendo el efectivo donde no hay organización todavía: el
-    // wizard de /onboarding (aún no hay país elegido) y el link público
-    // /q/[token], que además se sobrescribe con el idioma de la cotización.
+    // wizard de /onboarding (aún no hay país elegido). El link público
+    // /q/[token] y la hosted invoice /i/[token] lo pisan con el idioma DEL
+    // NEGOCIO (setRequestLocale en getCotizacionByToken/getFacturaByToken) —
+    // el cliente final lee la interfaz en el idioma que el negocio configuró,
+    // no en el de su propio navegador.
     // Nunca afecta la landing, que usa su propio sistema de rutas /en/*.
     const acceptLang = context.request.headers.get("accept-language") ?? "";
     const firstLang = acceptLang.split(",")[0]?.trim().toLowerCase() ?? "";

@@ -125,6 +125,23 @@ export function clabeValida(clabe: string): boolean {
     return (10 - (suma % 10)) % 10 === Number(clabe[17]);
 }
 
+/**
+ * Dígito de control ABA (routing number de EE.UU.): pesos 3,7,1 repetidos
+ * sobre los 9 dígitos, mod 10. El archivo llevaba desde su creación afirmando
+ * que "los checksums se verifican aquí y no en Stripe" — cierto para CLABE e
+ * IBAN, pero un routing number de EE.UU. cualquiera (999999999) pasaba sin
+ * checarse. Es la misma matemática que clabeValida(), sobre 9 dígitos en vez
+ * de 18 y sin dígito de control separado: la suma ponderada completa debe
+ * dar múltiplo de 10.
+ */
+export function abaValido(routingNumber: string): boolean {
+    if (!/^\d{9}$/.test(routingNumber)) return false;
+    const pesos = [3, 7, 1];
+    let suma = 0;
+    for (let i = 0; i < 9; i++) suma += Number(routingNumber[i]) * pesos[i % 3];
+    return suma % 10 === 0;
+}
+
 /** Dígito de control de un IBAN: mod-97 sobre el número reordenado (ISO 13616). */
 export function ibanValido(raw: string): boolean {
     const iban = String(raw || '').replace(/\s+/g, '').toUpperCase();
@@ -198,6 +215,14 @@ export function validatePayout(countryCode: string, input: Record<string, unknow
             error: locale === 'en'
                 ? "That IBAN isn't valid. Check the characters — the control digits don't match."
                 : 'El IBAN no es válido. Revisa los caracteres; los dígitos de control no coinciden.',
+        };
+    }
+    if (spec.format === 'us_aba' && !abaValido(values.routing_number)) {
+        return {
+            ok: false,
+            error: locale === 'en'
+                ? "That routing number isn't valid. Check the digits — the ABA checksum doesn't match."
+                : 'Ese routing number no es válido. Revisa los dígitos; el checksum ABA no coincide.',
         };
     }
 

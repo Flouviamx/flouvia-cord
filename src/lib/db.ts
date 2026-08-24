@@ -8,7 +8,8 @@
 
 import { neon, type NeonQueryPromise } from '@neondatabase/serverless';
 import { createHash } from 'node:crypto';
-import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope, setRequestCurrency, setRequestLocale, setRequestTimeZone } from './context';
+import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
+import { getCountryProfile } from './countries';
 import { log } from './log';
 
 const url = import.meta.env.DATABASE_URL || process.env.DATABASE_URL;
@@ -148,16 +149,17 @@ export async function resolvePresentationContext(): Promise<void> {
     try {
         const orgId = await getActiveOrgId();
         const [rows] = await withOrgTx(orgId, sql`
-            select idioma, moneda, zona_horaria from orgs where id = ${orgId} limit 1`);
+            select idioma, moneda, zona_horaria, country_code from orgs where id = ${orgId} limit 1`);
         if (!rows.length) {
             log.warn('Organización activa sin fila al resolver la presentación; se usa el idioma del navegador.', { route: 'presentation', orgId });
             return;
         }
         const r = rows[0] as any;
-        // Los tres setters ignoran valores vacíos o inválidos y son idempotentes:
+        // Los cuatro setters ignoran valores vacíos o inválidos y son idempotentes:
         // `getOrg()` vuelve a llamarlos más tarde con el mismo resultado.
         setRequestCurrency(r.moneda as string);
         setRequestLocale(r.idioma as string);
+        setRequestFormatLocale(getCountryProfile(r.country_code as string).locale);
         setRequestTimeZone(r.zona_horaria as string);
     } catch (error) {
         log.warn('No se pudo resolver el contexto de presentación; se usa el idioma del navegador.', { route: 'presentation', error });

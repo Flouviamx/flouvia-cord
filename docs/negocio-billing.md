@@ -193,7 +193,7 @@ Flujo:
   medidor de CFDI.
 - Resto de códigos ISO: factura comercial propia de Cord, con folio por organización,
   snapshots inmutables y PDF interno. No equivale a clearance o presentación ante la
-  autoridad tributaria local.
+  autoridad tributaria local — **excepto España con Verifactu activado**, ver abajo.
 - El feature de plan `international_invoicing` habilita la emisión fuera de México y
   queda temporalmente disponible en **Gratis**, en el mismo peldaño que `cfdi` —
   mismo carril de facturación electrónica, distinto solo por país. Ambos comparten
@@ -206,6 +206,54 @@ Flujo:
 - Los adapters regulatorios futuros deben implementar `FiscalProvider` y registrarse antes
   de `CommercialInvoiceProvider`; no deben sustituir el documento canónico de Cord.
 
+### Verifactu (España) — ago 2026
+
+Sistema de facturación certificado que exige el RD 1007/2023 (Orden HAC/1177/2024):
+cada factura genera un registro de "alta" encadenado por hash SHA-256 al registro
+ANTERIOR de la misma org, y ese registro se remite en tiempo real a la AEAT — no es
+una integración discrecional, es la obligación legal misma.
+
+- **Encadenamiento síncrono, envío asíncrono.** `SpainVerifactuProvider` (registrado
+  en `FiscalFactory` ANTES de `CommercialInvoiceProvider`, el orden decide qué
+  provider gana) genera y persiste el registro al emitir — sin red, sin depender de
+  la disponibilidad de la AEAT. El ENVÍO real corre en `/api/cron/verifactu-submit`
+  (diario — el plan de Vercel de Cord no permite crons más frecuentes; VERI*FACTU
+  exige remisión inmediata por ley, así que hay que subir la frecuencia en
+  `vercel.json` en cuanto el plan lo permita), como el outbox de consumo de
+  Stripe: una caída de la AEAT nunca bloquea la emisión de una factura.
+- **Cadena append-only de verdad.** `verifactu_registros` tiene `force row level
+  security` MÁS un trigger que bloquea `UPDATE`/`DELETE` sobre `huella`,
+  `huella_anterior`, `payload`, `seq` y `tipo` — ni siquiera el rol de aplicación
+  puede editar un registro ya firmado. La serialización de `seq` es por
+  `unique(org_id, seq)` + reintento, no por advisory lock: el driver HTTP de Neon
+  (`neon()`, sin sesiones interactivas) no sostendría un lock entre dos llamadas.
+- **Fallo cerrado real.** Sin `orgs.rfc` (NIF) o sin la identidad del propio SIF de
+  Cord (`VERIFACTU_SIF_NIF`/`VERIFACTU_SIF_NOMBRE`/`VERIFACTU_SIF_ID`, variables de
+  entorno — Cord es el DESARROLLADOR del software ante la AEAT, no el titular de
+  cada factura), `issueDocument()` lanza y la factura NO se marca emitida. Encadenar
+  un registro con ese bloque inventado sería peor que no encadenarlo: la cadena es
+  append-only para siempre.
+- **Certificado por org, en Ajustes › Fiscal (solo España).** Sube un `.p12`/`.pfx`,
+  parseado con `node-forge` (puro JS — el runtime de Vercel no garantiza un binario
+  `openssl`) para validar la contraseña y extraer la caducidad real antes de
+  aceptarlo. Se cifra con el mismo `encryptRequiredSecret()` que el CSD de
+  Facturapi. Subir un certificado válido es lo ÚNICO que enciende
+  `orgs.verifactu_modo='verifactu'`; mientras esté apagado, `SpainVerifactuProvider`
+  degrada al mismo contrato honesto que `CommercialInvoiceProvider`
+  (`regulatory_status: 'commercial_only'`).
+- **Huella, QR y estructura del SOAP verificados contra fuente primaria**, no una
+  reconstrucción de memoria: los 3 ejemplos oficiales de "Detalle de las
+  especificaciones técnicas para la generación de la huella" (AEAT v0.1.2) coinciden
+  SHA-256 byte a byte; el endpoint, namespaces y el XML de
+  `RegFactuSistemaFacturacion` salen del WSDL/XSD reales descargados de la AEAT
+  (`SistemaFacturacion.wsdl`, `SuministroInformacion.xsd`, `SuministroLR.xsd`,
+  `RespuestaSuministro.xsd`) y del ejemplo completo §9.1.1.1 de "Descripción de los
+  servicios web" (v1.0.3). Lo que NO se pudo verificar en esta sesión: el
+  comportamiento real del servicio de la AEAT ante un envío real — no había
+  certificado de una empresa española disponible. Confirmar contra preproducción
+  (`VERIFACTU_AEAT_SANDBOX=true`) antes de depender de esto en producción.
+- **Retenciones (IRPF)** viajan por el mismo motor que México (`calculateDocumentTotals`,
+  ver "Impuestos por línea" abajo) y se restan en el desglose del registro AEAT.
 
 ### Documento de factura — ago 2026
 
@@ -230,6 +278,12 @@ que se trata como pieza de marca del negocio emisor, no como un volcado de datos
 - El pie legal se conserva palabra por palabra y cambia según el país: en México
   aclara que la validez la determina el CFDI timbrado y su XML; fuera, que es un
   documento comercial no presentado ante ninguna autoridad (reglas 10 y 14).
+- Cuando el documento SÍ tiene registro Verifactu (`provider_data.verifactu`), el PDF
+  dibuja el QR de cotejo de la AEAT como una cuadrícula de rectángulos vectoriales
+  (`QRCode.create()`, síncrono y puro — coherente con que todo el documento sea
+  vectorial, sin incrustar un PNG), la leyenda "VERI*FACTU" y la huella completa,
+  antes del bloque de "Cómo pagar". Un documento sin registro (`commercial_only`)
+  no dibuja nada de esto — no hay nada que enseñar.
 
 Marca y condiciones se leen **en vivo** al descargar; los importes y las partes
 salen del snapshot inmutable de `documentos_fiscales`. Cambiar el logo actualiza
@@ -537,17 +591,27 @@ aritmética y `tipo` es el subcódigo local que solo México usa para el CFDI.
 propósito: `null` = línea anterior al impuesto por línea (cae a la tasa de la
 organización), `0` = exenta por decisión del vendedor.
 
-Las retenciones se **restan** del total, se calculan sobre el subtotal y salen de
-los perfiles predeterminados del catálogo. Se persisten en
+Las retenciones se **restan** del total y salen de los perfiles predeterminados
+del catálogo. La base sobre la que se calculan **no es siempre el subtotal**:
+`impuestos.retencion_base` (`'subtotal' | 'impuesto'`) lo declara por perfil —
+la mayoría de retenciones son sobre subtotal, pero la ReteIVA de Colombia es
+15% **del IVA**, no del subtotal (calcularla sobre subtotal sobrefacturaba la
+retención ~5.26×). `RetencionApplied.baseTipo` viaja en el snapshot para que
+reconstruir el cálculo después no pierda esa base. Se persisten en
 `cotizaciones.retencion_total` / `retenciones_snapshot` y sus equivalentes en
 `documentos_fiscales`.
 
 Motor único: `calculateDocumentTotals()`. `calculateTotals()` queda como camino
 heredado y **no se toca** — escribió los totales que hoy viven en producción.
 
-`TAX_PRESETS` (`src/lib/countries.ts`) siembra las tasas estándar de ~35 países al
-crear la cuenta. Estados Unidos y Brasil nacen sin preset: no hay tasa nacional
-que sugerir.
+`TAX_PRESETS` (`src/lib/countries.ts`) siembra las tasas estándar al crear la
+cuenta. Brasil nace sin preset nacional (no hay tasa que sugerir). Estados
+Unidos tampoco tiene preset NACIONAL, pero deja de estar vacío en cuanto la
+cuenta declara su estado (`fiscal_metadata.region`): `usStateTaxPresets()`
+siembra `Sales tax <ST> <n>%` + `Exempt/Resale` a partir de `US_STATE_TAX` (las
+50 + DC). Un estado nuevo sin sales tax estatal (Oregon, por ejemplo) no ofrece
+el preset de consumo, solo el exento — inventar una tasa 0% de "consumo" ahí
+sería peor que dejarla vacía.
 
 ### Cartera: un solo lugar para los dos rieles
 
@@ -582,10 +646,19 @@ plan es un cobro que no puede parar.
 
 `src/lib/payout-fields.ts` define el formato de la cuenta de depósito por país
 (CLABE, IBAN, routing+account, sort code, transit, BSB) y verifica sus dígitos de
-control en Cord. SPEI solo se ofrece en México y solo liquida MXN.
+control **en Cord, no en Stripe** — un error de Stripe no le dice nada al
+vendedor (regla 14). CLABE (mod-97 propio), IBAN (mod-97) y ABA/routing number
+de EE.UU. (mod-10, pesos 3-7-1) tienen checksum real; Brasil no usa IBAN pese a
+haber estado alguna vez en esa lista — ninguna cuenta brasileña habría pasado el
+mod-97. SPEI solo se ofrece en México y solo liquida MXN.
 
 ### Verificación
 
-Además de `npm run test:payments`, este dominio corre `npm run security:tax`, que
-cubre impuesto por línea, retenciones, presets por país, rieles de cobro y que la
-zona horaria tenga consumidor.
+Además de `npm run test:payments`, este dominio corre `npm run security:tax`
+(impuesto por línea, retenciones — incluida la base `subtotal` vs `impuesto` —,
+presets por país, rieles de cobro y que la zona horaria tenga consumidor),
+`npm run security:currency` (unidades mínimas por divisa, fail-closed de FX,
+reparto en divisas de 0/3 decimales), `npm run security:fiscal` (los 12
+mercados, orden de providers en `FiscalFactory`, NIF/NIE/CIF español, checksum
+ABA) y `npm run security:verifactu` (huella y QR contra los 3 vectores
+oficiales de la AEAT, estructura del SOAP contra el WSDL/XSD real).

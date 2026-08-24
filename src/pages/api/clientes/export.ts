@@ -3,7 +3,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 import { csvCell, csvFilename } from '../../../lib/csv';
 
@@ -12,7 +12,7 @@ export const GET: APIRoute = async () => {
     if (denied) return denied;
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`select empresa, contacto, email, telefono, rfc, terminos_default, limite_credito from clientes where org_id = ${orgId} order by empresa`;
+    const [rows] = await withOrgTx(orgId, sql`select empresa, contacto, email, telefono, rfc, terminos_default, limite_credito from clientes where org_id = ${orgId} order by empresa`);
 
     const header = ['empresa', 'contacto', 'email', 'telefono', 'rfc', 'terminos', 'limite'];
     const lines = [header.join(',')];

@@ -333,6 +333,7 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     // `is:inline`. Ojo regla de diseño: nada de sintaxis TypeScript aquí que no
     // sobreviva el bundle — este bloque ya rompió una vez por un `as any`.
     import { calculateDocumentTotals } from '../../../../packages/elements/src/engine';
+    import { currencyDecimals } from '../../../lib/currency';
 
     const BOOT = JSON.parse(document.getElementById('edBootQ')?.textContent || '{}');
     const { catalogo, kits, aprobMargenMin, draftQuote, preselectCliente, T, orgCurrency } = BOOT;
@@ -467,7 +468,15 @@ const DEFAULT_RECURRENTE = Boolean((draftQuote as any)?.esRecurrente);
     let lastClientVal = $client ? $client.value : '';
     const $descNote = document.getElementById('descNote');
     const currentDesc = () => { const o = $client && $client.options[$client.selectedIndex]; return o && !o.disabled ? (parseFloat(o.dataset.desc) || 0) : 0; };
-    const applyDesc = (lista) => { const d = currentDesc(); return d > 0 ? Math.round(lista * (1 - d / 100) * 100) / 100 : null; };
+    // Redondeo a los decimales REALES de la divisa del editor: un descuento en
+    // JPY/CLP redondeado "a centavos" (×100) dejaba el precio con decimales que
+    // esa divisa no tiene.
+    const applyDesc = (lista) => {
+        const d = currentDesc();
+        if (d <= 0) return null;
+        const scale = 10 ** currencyDecimals(editorCurrency());
+        return Math.round(lista * (1 - d / 100) * scale) / scale;
+    };
     const reflectDesc = () => {
         const d = currentDesc();
         if ($descNote) { $descNote.textContent = d > 0 ? `Nivel del cliente: −${d}% aplicado automáticamente a los precios de lista.` : ''; $descNote.hidden = d <= 0; }

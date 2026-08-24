@@ -33,10 +33,13 @@ consulta [`historial-auth-clerk.md`](historial-auth-clerk.md).
 - `ops_operators`/`ops_auth_challenges`/`ops_sessions`/`ops_audit_log` (ago 2026) — carril de identidad privilegiada exclusivo de `ops.cordhq.app`. Allowlist en código + BD, passkey o contraseña con TOTP, cookie separada, tokens y retos hasheados, expiración corta y bitácora de acceso. Una sesión normal de Cord nunca autoriza Ops.
 - `external_usage_events` (ago 2026) — telemetría RLS por organización para proveedores con costo variable. Registra proveedor, categoría, operación, unidades, tokens de entrada/salida y estado; nunca prompts, destinatarios, payloads, respuestas, llaves ni secretos. Complementa `uso_periodo`, `api_requests`, `webhook_deliveries` y `cotizacion_cobros` en `/ops/usage`.
 - `productos` — catálogo de cada org
-- `clientes` — a quién se cotiza (con `terminos_default` y `limite_credito`)
+- `clientes` — a quién se cotiza (con `terminos_default` y `limite_credito`). `country_code`
+  (ago 2026, nullable, sin default) = país del CLIENTE; `null` hereda el del emisor, así que
+  la migración no reescribe ningún documento ya emitido. `direccion_line1/2`, `ciudad`,
+  `region` completan la dirección del receptor que exige la factura (regla 25).
 - `cotizaciones` — status `draft|sent|viewed|approved|rejected|expired|paid|invoiced` + `public_token` + `base_currency` y `fiscal_currency` para coberturas FX. `creado_por` (jul 2026, nullable) = `users.id` de quien la creó/duplicó — alimenta `/app/desempeno`. `retencion_total`/`retenciones_snapshot` (ago 2026) — retenciones congeladas al crear el documento, ver regla 23.
 - `cotizacion_items` — líneas (permite línea libre sin producto; `precio_negociado` opcional). `tax_rate` (ago 2026, nullable, fracción 0–1) = tasa de ESA línea, snapshot al capturar; `null` = anterior al impuesto por línea (cae a la tasa de la org), `0` = exenta a propósito. Ver regla 23.
-- `impuestos` — catálogo de tasas por organización. `kind` (`consumo|retencion|exento`, ago 2026) es la clasificación NEUTRA que decide la aritmética; `tipo` es el subcódigo local que solo México usa para el CFDI. `TAX_PRESETS` en `src/lib/countries.ts` siembra las tasas estándar del país al crear la cuenta (US y BR sin preset a propósito). Constructor único de opciones en `src/lib/impuestos.ts` (`buildTaxOptions`); resolutor/validador de servidor en `src/lib/impuestos-db.ts` (`taxCatalogFor`). Ver regla 23.
+- `impuestos` — catálogo de tasas por organización. `kind` (`consumo|retencion|exento`, ago 2026) es la clasificación NEUTRA que decide la aritmética; `tipo` es el subcódigo local que solo México usa para el CFDI. `TAX_PRESETS` en `src/lib/countries.ts` siembra las tasas estándar del país al crear la cuenta (BR sin preset nacional a propósito; US tampoco tiene preset nacional pero `usStateTaxPresets()` siembra por estado en cuanto la cuenta declara `fiscal_metadata.region`). `retencion_base` (`'subtotal'|'impuesto'`, ago 2026) declara sobre qué se calcula cada retención — la ReteIVA de Colombia es 15% del IVA, no del subtotal. Constructor único de opciones en `src/lib/impuestos.ts` (`buildTaxOptions`); resolutor/validador de servidor en `src/lib/impuestos-db.ts` (`taxCatalogFor`, falla cerrado ante error de BD). Ver regla 23.
 - `eventos` — timeline + "tu cliente vio la cotización" (**feature estrella**). `documento_id` (ago 2026, nullable) — mismo timeline para facturas independientes; ver `src/lib/fiscal/timeline.ts`. Regla 19: la vista se registra solo con actor `client` y solo la primera vez.
 - `documentos_fiscales` — fuente canónica de las emisiones fiscales por país (reemplaza a la tabla legado `facturas_cfdi`). Conserva número, moneda, totales, snapshots inmutables de emisor/receptor/líneas, proveedor y llave de idempotencia. México usa el rail CFDI 4.0 de Facturapi; el resto puede emitir una factura comercial propia de Cord sin afirmar envío a la autoridad local. `retencion_total`/`retenciones_snapshot` y `recurrencia_id` (ago 2026, ver `documento_recurrencias` abajo).
 - `invoice_sequences` — consecutivo atómico por `org_id + country_code + document_type`; RLS + FORCE evita cruces entre organizaciones y la llave única de `documentos_fiscales` evita duplicar una emisión por cotización.
@@ -366,6 +369,17 @@ existe pero es ajeno ya es filtrar entre negocios.
 /api/orgs        → POST crea una org (el servidor genera el id — reemplaza a
                    /api/orgs/provision, que tenía un IDOR cross-tenant real).
 /api/fiscal/documents/[id]/{pdf,xml} → descarga autenticada y acotada al `org_id`.
+/api/fiscal/verifactu-cert → POST multipart {p12,password} sube y valida el
+                   certificado de Verifactu (España); DELETE lo desconecta. Solo
+                   subir un certificado que `parsePkcs12()` valida enciende
+                   `orgs.verifactu_modo`. `requirePerm('ajustes')` +
+                   `requireFreshAuth()` (step-up), igual que `/api/fiscal/csd`.
+/api/cron/verifactu-submit → outbox de Verifactu (diario — el plan de Vercel de
+                   Cord no permite crons más frecuentes; subir la frecuencia en
+                   cuanto lo permita): envía a la AEAT los `verifactu_registros`
+                   con `envio_estado='pendiente'`. El encadenamiento ya ocurrió
+                   síncrono al emitir; esto es SOLO el envío, detrás de
+                   `VERIFACTU_AEAT_ENABLED` explícito.
                    CFDI se proxifica desde Facturapi; las facturas comerciales se
                    renderizan desde los snapshots canónicos de Cord. XML solo existe
                    cuando el rail regulatorio realmente lo produce.

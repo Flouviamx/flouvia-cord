@@ -62,11 +62,12 @@ export const POST: APIRoute = async ({ request }) => {
         ivaIncluido: body.iva_incluido === true,
         createdBy: currentUserId(),
     });
-    // Un fallo de FX es 503 (Regla 22: no se inventa la tasa, se dice que no se
-    // pudo obtener); el resto son datos mal capturados.
+    // Un fallo de FX o del catálogo de impuestos es 503 (regla 22 aplicada al
+    // impuesto: no se inventa la tasa, se dice que no se pudo confirmar); el
+    // resto son datos mal capturados.
     if (!result.ok) {
-        const fxDown = /tipo de cambio/i.test(result.error || '');
-        return json({ error: result.error }, fxDown ? 503 : 400);
+        const serviceDown = /tipo de cambio|catálogo de impuestos/i.test(result.error || '');
+        return json({ error: result.error }, serviceDown ? 503 : 400);
     }
 
     await logAudit(orgId, {

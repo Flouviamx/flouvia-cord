@@ -92,9 +92,14 @@ export function describeSubscriptionFee(): string {
     return describeFee('card');
 }
 
-export function computeSubscriptionFee(amountCents: number, enabled = true): Pick<FeeResult, 'applicationFeeCents' | 'feeBaseCents' | 'feeIvaCents'> {
+// La comisión de Cord Payments es una tarifa mexicana pactada con Stripe MX
+// ("+ IVA" son las siglas del impuesto mexicano, no un IVA genérico) — mismo
+// gate que computeFee. Sin él, un cobro recurrente en USD/EUR le cobraba a la
+// org el 0.4% + "IVA" del 16% aunque su cuenta nunca hubiera aceptado esa
+// tarifa ni operara en México.
+export function computeSubscriptionFee(amountCents: number, moneda: string, enabled = true): Pick<FeeResult, 'applicationFeeCents' | 'feeBaseCents' | 'feeIvaCents'> {
     const amount = Math.round(amountCents);
-    if (!enabled || !Number.isSafeInteger(amount) || amount <= 0) {
+    if (!enabled || !Number.isSafeInteger(amount) || amount <= 0 || moneda.toUpperCase() !== 'MXN') {
         return { applicationFeeCents: 0, feeBaseCents: 0, feeIvaCents: 0 };
     }
     const feeBaseCents = Math.round(amount * SUBSCRIPTION_FEE_PERCENT / 100);

@@ -44,6 +44,10 @@
     {
       "path": "/api/cron/expirar-cotizaciones",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/verifactu-submit",
+      "schedule": "0 9 * * *"
     }
   ],
   "redirects": [

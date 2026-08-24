@@ -7,15 +7,15 @@
 // la habría vuelto a copiar — con el riesgo de que uno se quedara con el gate
 // equivocado y un negocio fuera de México pasara por el gate de CFDI.
 
-import { sql } from '../db';
+import { sql, withOrgTx } from '../db';
 import type { FeatureKey } from '../entitlements';
 
 /** País fiscal del emisor, normalizado. Default MX por compatibilidad. */
 export async function orgCountry(orgId: string): Promise<string> {
-    const [row] = await sql`
+    const [rows] = await withOrgTx(orgId, sql`
         select upper(coalesce(country_code, 'MX')) as country_code
-          from orgs where id = ${orgId} limit 1`;
-    return String(row?.country_code || 'MX');
+          from orgs where id = ${orgId} limit 1`);
+    return String(rows[0]?.country_code || 'MX');
 }
 
 export async function invoicingFeatureFor(orgId: string): Promise<FeatureKey> {

@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 import { createPerson, updatePerson, deletePerson, retrieveAccount } from '../../../../lib/billing';
 import { translateStripeError } from '../../../../lib/stripe-catalogs';
@@ -25,7 +25,8 @@ export const POST: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const limited = await limitConnectMutation(request, 'persons-create', orgId, 12);
     if (limited) return limited;
-    const [org] = await sql`select stripe_account_id from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select stripe_account_id from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (!org?.stripe_account_id) return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
 
     const data = await request.json().catch(() => null);
@@ -38,11 +39,11 @@ export const POST: APIRoute = async ({ request }) => {
         
         // Si es el representante, guardamos su id (asumimos por ahora que solo se envía relationship.representative)
         if (data.relationship?.representative) {
-            await sql`update orgs set stripe_person_id = ${person.id} where id = ${orgId}`;
+            await withOrgTx(orgId, sql`update orgs set stripe_person_id = ${person.id} where id = ${orgId}`);
         }
 
         const account = await retrieveAccount(org.stripe_account_id as string);
-        await sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`;
+        await withOrgTx(orgId, sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`);
         await auditConnect(orgId, request, 'persona_creada', { entity: 'connect_person', entityId: person.id });
 
         return new Response(JSON.stringify({ ok: true, personId: person.id, requirements: account.requirements }), { headers: { 'Content-Type': 'application/json' } });
@@ -58,7 +59,8 @@ export const PATCH: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const limited = await limitConnectMutation(request, 'persons-update', orgId, 20);
     if (limited) return limited;
-    const [org] = await sql`select stripe_account_id from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select stripe_account_id from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (!org?.stripe_account_id) return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
 
     const data = await request.json();
@@ -72,7 +74,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     try {
         await updatePerson(org.stripe_account_id as string, personId, fields);
         const account = await retrieveAccount(org.stripe_account_id as string);
-        await sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`;
+        await withOrgTx(orgId, sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`);
         await auditConnect(orgId, request, 'persona_actualizada', { entity: 'connect_person', entityId: personId, detail: Object.keys(fields).join(', ') });
         return new Response(JSON.stringify({ ok: true, requirements: account.requirements }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {
@@ -87,7 +89,8 @@ export const DELETE: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     const limited = await limitConnectMutation(request, 'persons-delete', orgId, 8);
     if (limited) return limited;
-    const [org] = await sql`select stripe_account_id, stripe_person_id from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select stripe_account_id, stripe_person_id from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     if (!org?.stripe_account_id) return new Response(JSON.stringify({ error: 'No account' }), { status: 400 });
 
     const data = await request.json();
@@ -97,10 +100,10 @@ export const DELETE: APIRoute = async ({ request }) => {
     try {
         await deletePerson(org.stripe_account_id as string, personId);
         if (org.stripe_person_id === personId) {
-            await sql`update orgs set stripe_person_id = null where id = ${orgId}`;
+            await withOrgTx(orgId, sql`update orgs set stripe_person_id = null where id = ${orgId}`);
         }
         const account = await retrieveAccount(org.stripe_account_id as string);
-        await sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`;
+        await withOrgTx(orgId, sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`);
         await auditConnect(orgId, request, 'persona_eliminada', { entity: 'connect_person', entityId: personId });
         return new Response(JSON.stringify({ ok: true, requirements: account.requirements }), { headers: { 'Content-Type': 'application/json' } });
     } catch (e: any) {

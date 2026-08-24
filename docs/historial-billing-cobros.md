@@ -7,6 +7,88 @@
 
 ---
 
+**Estados Unidos y España al 100% del núcleo financiero, más Verifactu completo
+(23 ago 2026)** — un audit encontró que la factura no usaba el motor de impuesto
+por línea: `emit.ts` aplicaba `orgs.iva_pct` plano, así que una cotización
+española con 21% + 10% + exento se facturaba entera a una sola tasa y una
+retención visible en pantalla desaparecía al emitir. Estados Unidos no tenía
+dónde capturar sales tax (el selector de impuesto no se dibujaba con una sola
+opción en el catálogo) y el alta de Stripe Connect tenía `country: 'MX'`
+hardcodeado en la dirección del representante, bloqueando el alta de cualquier
+negocio no mexicano.
+
+- **Motor único de verdad.** `calculateDocumentTotals()` (con retenciones y
+  `tax_rate` real por línea) reemplazó la aritmética propia de `emit.ts`, la
+  aprobación parcial (servidor y navegador), el editor de versiones V2 y
+  `invoices.ts` — cinco caminos que antes calculaban impuestos de cinco formas
+  distintas quedaron en uno. `documentos_fiscales.retencion_total` /
+  `retenciones_snapshot` (existían, nadie las escribía) ya se persisten.
+- **Retención con base correcta.** Nueva columna `impuestos.retencion_base`
+  (`'subtotal'|'impuesto'`): la ReteIVA de Colombia es 15% del IVA, no del
+  subtotal — calcularla sobre subtotal sobrefacturaba la retención ~5.26×.
+- **Divisa y redondeo.** El fallback de `ISO_4217` sin ICU tenía 10 códigos
+  contra 14 en `OFFERED_CURRENCIES` (JPY degradaba a MXN → cobro 100× de más);
+  `toMinorUnits()` unificó el redondeo con EPSILON; `splitAnticipo`/
+  `splitCuotas` dejaron de asumir 2 decimales fijos (regeneraban cobros en
+  bucle en divisas de 0 decimales); `stripe-cobros.ts` dejó de mostrar todo en
+  la divisa de la org en vez de la del cobro real.
+- **Locale de formato, separado del idioma de interfaz.** `orgs.idioma`
+  (es/en, cerrado) y el locale de formato (`pt-BR`, `es-ES`, `en-GB`… abierto,
+  del perfil del país) eran la misma variable — un negocio en São Paulo veía
+  sus fechas en `es-MX`. `/q` nunca heredaba el idioma del negocio pese a que
+  el middleware y `proyecto.md` afirmaban lo contrario.
+- **Estados Unidos.** `US_STATE_TAX`/`US_STATES` (50 + DC) siembran sales tax
+  por estado en cuanto la cuenta declara `fiscal_metadata.region`
+  (`usStateTaxPresets()`); el selector de impuesto se dibuja aunque el
+  catálogo tenga una sola opción. Connect Custom: `country: 'MX'` hardcodeado
+  → país real de la org; `ssn_last_4` y `political_exposure` agregados al
+  allowlist de `connect-fields.ts` (sin ellos, el KYC individual de EE.UU. era
+  imposible de completar); checksum ABA real (mod-10, pesos 3-7-1) — antes
+  `999999999` pasaba.
+- **España, base legal.** IRPF (15%/7%) en el catálogo y en el PDF; dirección
+  del receptor; serie + ejercicio en la numeración (`invoice_sequences` ganó
+  `serie`/`ejercicio` en su PK, con backfill de la fila existente); NIF/NIE/CIF
+  validados (`src/lib/tax-id.ts`); inversión del sujeto pasivo intracomunitaria
+  con mención legal automática en el PDF cuando ambas partes son de la UE con
+  NIF-IVA y hay una línea al 0%.
+- **Verifactu, investigado contra la fuente oficial antes de implementar.** La
+  huella (`huella.ts`) se verificó contra los 3 ejemplos completos del
+  documento oficial de la AEAT — coincidencia SHA-256 byte a byte, no una
+  aproximación. El envío SOAP (`aeat.ts`) se construyó a partir del WSDL y los
+  XSD reales descargados de la AEAT (`SistemaFacturacion.wsdl`,
+  `SuministroInformacion.xsd`, `SuministroLR.xsd`, `RespuestaSuministro.xsd`) y
+  del ejemplo oficial completo de "Descripción de los servicios web" — el
+  endpoint `https://www1.agenciatributaria.gob.es/wlpl/TIKE-CONT/ws/
+  SistemaFacturacion/VerifactuSOAP` salió del `<soap:address>` real, no de una
+  fuente secundaria. `verifactu_registros` es append-only con un trigger que
+  bloquea `UPDATE`/`DELETE` sobre los campos firmados, más `unique(org_id,
+  seq)` + reintento para la serialización (el driver HTTP de Neon no sostiene
+  un advisory lock entre dos llamadas separadas). `SpainVerifactuProvider` se
+  registró en `FiscalFactory` antes de `CommercialInvoiceProvider`, y degrada
+  a ese mismo contrato honesto mientras la org no suba un certificado válido
+  (`/api/fiscal/verifactu-cert`, parseado con `node-forge` — puro JS, sin
+  depender de un binario `openssl` en el runtime de Vercel). El envío real a
+  la AEAT corre en `/api/cron/verifactu-submit`, detrás de
+  `VERIFACTU_AEAT_ENABLED` explícito — diario, porque el plan de Vercel de Cord
+  no permite crons más frecuentes (VERI*FACTU exige remisión inmediata por ley;
+  subir la frecuencia en `vercel.json` en cuanto el plan lo permita). No
+  verificado end-to-end contra el
+  servicio real (no había certificado de una empresa española disponible en
+  la sesión); confirmar contra preproducción antes de depender de esto en
+  producción. Ver regla 29 de `estandares-ingenieria.md`.
+- **Bug real encontrado y corregido durante la propia verificación**: el primer
+  borrador de `aeat.ts` construía el bloque `Encadenamiento.RegistroAnterior`
+  con la serie/fecha de LA PROPIA factura en vez de la de la factura anterior
+  en la cadena — la huella nunca fue incorrecta (eso se verificó aparte,
+  contra la cadena real en Neon), pero el XML de envío sí lo habría sido. Lo
+  atrapó el propio test de regresión (`verifactu-check.mjs`) antes de tocar
+  producción.
+- `security:fiscal` faltaba en `test:payments` pese a ser el único check que
+  valida los 12 mercados — ya está. `security:currency`, `security:tax` y el
+  nuevo `security:verifactu` completan la cadena.
+
+---
+
 **Tema oscuro, selección y jerarquía de estados en documentos (20 ago 2026)** —
 las utilidades y los creadores de Facturas/Cotizaciones fijaban fondos blancos o
 reutilizaban el azul de acento como fondo. En dark mode aparecían losas grises,

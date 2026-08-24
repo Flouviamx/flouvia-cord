@@ -33,7 +33,7 @@ const allowed = [
 
 function isComment(line) {
     const s = line.trim();
-    return s.startsWith('//') || s.startsWith('/*') || s.startsWith('*') || s.startsWith('<!--') || s.startsWith('-->');
+    return s.startsWith('//') || s.startsWith('/*') || s.startsWith('{/*') || s.startsWith('*') || s.startsWith('<!--') || s.startsWith('-->');
 }
 
 async function filesUnder(path) {
@@ -63,7 +63,7 @@ for (const target of targets) {
                 if (trimmed.includes('*/') || trimmed.includes('-->')) blockComment = false;
                 return;
             }
-            if (trimmed.startsWith('/*') || trimmed.startsWith('<!--')) {
+            if (trimmed.startsWith('/*') || trimmed.startsWith('{/*') || trimmed.startsWith('<!--')) {
                 if (!trimmed.includes('*/') && !trimmed.includes('-->')) blockComment = true;
                 return;
             }

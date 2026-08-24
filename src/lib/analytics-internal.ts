@@ -1,7 +1,7 @@
 // Fuente única para decidir qué actividad pertenece al equipo interno de Cord.
 // La allowlist vive en ops-auth; analítica solo traduce esas dos identidades a
 // workspaces para que también queden fuera los links públicos y eventos backend.
-import { sql } from './db';
+import { sql, withOrgTx } from './db';
 import { OPS_ALLOWED_EMAILS } from './ops-auth';
 import { log } from './log';
 
@@ -20,7 +20,7 @@ export async function isInternalAnalyticsOrg(orgId: string): Promise<boolean> {
     if (cached && cached.expiresAt > Date.now()) return cached.internal;
 
     try {
-        const [row] = await sql`
+        const [rows] = await withOrgTx(orgId, sql`
             with target as (
                 select coalesce(sandbox_of, id) as id
                 from orgs
@@ -42,8 +42,8 @@ export async function isInternalAnalyticsOrg(orgId: string): Promise<boolean> {
                     join users u on u.id = m.user_id
                     where lower(u.email) = any(${[...OPS_ALLOWED_EMAILS]}::text[])
                 )
-            ) as internal`;
-        const internal = !!row?.internal;
+            ) as internal`);
+        const internal = !!rows[0]?.internal;
         orgCache.set(orgId, { internal, expiresAt: Date.now() + CACHE_TTL_MS });
         return internal;
     } catch (error) {

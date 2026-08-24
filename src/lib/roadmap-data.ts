@@ -387,23 +387,25 @@ El carril regulatorio cambia según dónde estés; tu flujo de trabajo no. Aprue
 
 ### Beneficios clave:
 - **México — CFDI 4.0 real:** timbrado ante el SAT, con tu propio CSD si lo subiste, y XML + PDF descargables. Este carril es exclusivo de México: es la regulación mexicana, no la de todos.
+- **España — Verifactu real:** conecta tu certificado electrónico en Ajustes y cada factura se encadena y remite a la Agencia Tributaria (AEAT) conforme al RD 1007/2023, con su código QR de verificación impreso en el PDF. Sin certificado conectado, tu factura se sigue emitiendo como documento comercial, con folio propio, mientras conectas el tuyo.
 - **Resto del mundo — factura de Cord:** folio propio por organización, datos congelados en el momento de emitir, y un PDF con el logo y el color de tu negocio. Es una factura comercial: no afirma haber sido presentada ante la autoridad fiscal local.
 - **En la moneda de la venta:** el documento se emite en la moneda en que le vendiste al cliente. Si tu contabilidad va en otra, la factura declara el tipo de cambio aplicado y el total convertido.
-- **Numeración por país:** cada país lleva su propia serie, así que un cambio de mercado no rompe tu secuencia de folios.
+- **Numeración por país:** cada país lleva su propia serie (España reinicia cada año, como exige su gestoría), así que un cambio de mercado no rompe tu secuencia de folios.
 
 ### Lo que todavía no hace:
-Fuera de México, la factura no se presenta automáticamente ante la autoridad local. Los rieles de facturación electrónica obligatoria de otros países —Verifactu en España, DIAN en Colombia, SII en Chile— están en la lista, y la arquitectura ya está preparada para conectarlos.`,
+Fuera de México y España, la factura no se presenta automáticamente ante la autoridad local. Los rieles de facturación electrónica obligatoria de otros países —DIAN en Colombia, SII en Chile— están en la lista, y la arquitectura ya está preparada para conectarlos.`,
             en: `## One way to invoice, in any country
 The regulatory rail changes depending on where you are; your workflow does not. Approve the quote, hit invoice, and Cord picks the right rail for you.
 
 ### Key benefits:
 - **Mexico — real CFDI 4.0:** stamped with the SAT, using your own CSD if you uploaded it, with downloadable XML + PDF. This rail is Mexico-only: it is Mexican regulation, not everyone's.
+- **Spain — real Verifactu:** connect your electronic certificate in Settings and every invoice is chained and remitted to the Tax Agency (AEAT) under RD 1007/2023, with its verification QR code printed on the PDF. Without a certificate connected, your invoice is still issued as a commercial document, with its own numbering, while you connect yours.
 - **Everywhere else — a Cord invoice:** its own numbering per organization, data frozen at issue time, and a PDF carrying your business's logo and color. It is a commercial invoice: it does not claim to have been filed with the local tax authority.
 - **In the currency of the sale:** the document is issued in the currency you sold in. If your books are in a different one, the invoice states the exchange rate applied and the converted total.
-- **Numbering per country:** each country keeps its own series, so entering a new market never breaks your folio sequence.
+- **Numbering per country:** each country keeps its own series (Spain resets yearly, as its accounting practice requires), so entering a new market never breaks your folio sequence.
 
 ### What it does not do yet:
-Outside Mexico, the invoice is not automatically filed with the local authority. Mandatory e-invoicing rails in other countries — Verifactu in Spain, DIAN in Colombia, SII in Chile — are on the list, and the architecture is already prepared to connect them.`
+Outside Mexico and Spain, the invoice is not automatically filed with the local authority. Mandatory e-invoicing rails in other countries — DIAN in Colombia, SII in Chile — are on the list, and the architecture is already prepared to connect them.`
         },
         area: 'fiscal',
         status: 'live',

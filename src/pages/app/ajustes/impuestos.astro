@@ -23,7 +23,11 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
 const IMPUESTOS = await getImpuestos();
 const PAIS = String(ORG.countryCode || 'MX');
 const PROFILE = getCountryProfile(PAIS, L);
-const PUEDE_SEMBRAR = IMPUESTOS.length === 0 && hasTaxPreset(PAIS);
+const isUs = PAIS === 'US';
+// Sales tax es ESTATAL, no nacional (por eso US no está en TAX_PRESETS): solo
+// hay algo que sembrar si el negocio ya declaró su estado en Ajustes › Fiscal.
+const usState = isUs ? String((ORG.fiscalMetadata as any)?.region || '') : '';
+const PUEDE_SEMBRAR = IMPUESTOS.length === 0 && (hasTaxPreset(PAIS) || (isUs && !!usState));
 // Las tres clases neutras, nombradas como se dicen en este país.
 const KINDS: { id: TaxKind; label: string }[] = (['consumo', 'retencion', 'exento'] as TaxKind[])
     .map((id) => ({ id, label: taxKindLabel(id, L, PAIS) }));
@@ -43,17 +47,27 @@ const NOMBRE_PLACEHOLDER = `${PROFILE.taxLabel} ${PROFILE.code === 'MX' ? '16' :
                 {IMPUESTOS.length === 0 && (
                     <div class="imp-seed" id="impEmpty">
                         <p class="imp-empty">
-                            {PUEDE_SEMBRAR
+                            {isUs && !usState
                                 ? (L === 'en'
-                                    ? `Your catalog is empty. Cord knows the standard rates for ${PROFILE.name} and can add them for you — you can edit or delete any of them afterwards.`
-                                    : `Tu catálogo está vacío. Cord conoce las tasas estándar de ${PROFILE.name} y puede capturarlas por ti — después puedes editarlas o borrarlas.`)
-                                : (L === 'en'
-                                    ? `Your catalog is empty. ${PROFILE.name} has no single national rate, so add the ones your business charges.`
-                                    : `Tu catálogo está vacío. En ${PROFILE.name} no hay una tasa nacional única, así que captura las que cobra tu negocio.`)}
+                                    ? 'Your catalog is empty. Sales tax is set by state, not nationally — add your state in Settings › Tax profile and Cord can suggest its base rate.'
+                                    : 'Tu catálogo está vacío. El sales tax lo define cada estado, no hay tasa nacional — agrega tu estado en Ajustes › Datos fiscales y Cord puede sugerirte su tasa base.')
+                                : PUEDE_SEMBRAR
+                                    ? (isUs
+                                        ? (L === 'en'
+                                            ? `Your catalog is empty. Cord can add the base state rate for ${usState} — county and city taxes vary by exact address, so confirm those with your accountant. You can edit or delete this afterwards.`
+                                            : `Tu catálogo está vacío. Cord puede capturar la tasa base estatal de ${usState} — el impuesto de condado y ciudad varía por domicilio exacto, así que confírmalo con tu contador. Después puedes editarla o borrarla.`)
+                                        : (L === 'en'
+                                            ? `Your catalog is empty. Cord knows the standard rates for ${PROFILE.name} and can add them for you — you can edit or delete any of them afterwards.`
+                                            : `Tu catálogo está vacío. Cord conoce las tasas estándar de ${PROFILE.name} y puede capturarlas por ti — después puedes editarlas o borrarlas.`))
+                                    : (L === 'en'
+                                        ? `Your catalog is empty. ${PROFILE.name} has no single national rate, so add the ones your business charges.`
+                                        : `Tu catálogo está vacío. En ${PROFILE.name} no hay una tasa nacional única, así que captura las que cobra tu negocio.`)}
                         </p>
                         {PUEDE_SEMBRAR && (
                             <button class="dev-new" id="impSeed">
-                                {L === 'en' ? `Add the standard rates for ${PROFILE.name}` : `Capturar las tasas de ${PROFILE.name}`}
+                                {isUs
+                                    ? (L === 'en' ? `Add the base rate for ${usState}` : `Capturar la tasa base de ${usState}`)
+                                    : (L === 'en' ? `Add the standard rates for ${PROFILE.name}` : `Capturar las tasas de ${PROFILE.name}`)}
                             </button>
                         )}
                     </div>

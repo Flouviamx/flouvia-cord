@@ -4,7 +4,7 @@
 // Re-exporta los helpers puros y STATUS_META del mock (no se duplican).
 
 import { sql, getActiveOrgId, resolvePublicQuote, resolvePublicInvoice, withOrgTx } from './db';
-import { currentUserId, currentOrgIdOverride, currentLocale, currentTimeZone, setRequestCurrency, setRequestLocale, setRequestTimeZone } from './context';
+import { currentUserId, currentOrgIdOverride, currentLocale, currentTimeZone, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
 import { notifyQuoteEvent } from './notify';
@@ -62,6 +62,7 @@ export async function getOrg() {
     // contexto del request; money() la lee sin recibirla por parámetro.
     setRequestCurrency(o.moneda as string);
     setRequestLocale(o.idioma as string);
+    setRequestFormatLocale(getCountryProfile(String(o.country_code || 'MX')).locale);
     setRequestTimeZone(o.zona_horaria as string);
     return {
         id: orgId,
@@ -119,6 +120,9 @@ export async function getOrg() {
         aiCobranzaActiva: (o.ai_cobranza_activa as boolean) ?? false,
         csdEstado: (o.csd_estado as string) ?? '',
         csdNombre: (o.csd_nombre as string) ?? '',
+        verifactuModo: (o.verifactu_modo as string) || 'no_verifactu',
+        verifactuCertNombre: (o.verifactu_cert_nombre as string) ?? '',
+        verifactuCertCaduca: o.verifactu_cert_caduca ? new Date(o.verifactu_cert_caduca as string).toISOString().slice(0, 10) : '',
         require2fa: (o.require_2fa as boolean) ?? false,
         requireSso: (o.require_sso as boolean) ?? false,
         ssoBreakglassUntil: o.sso_breakglass_until ? new Date(o.sso_breakglass_until as string).toISOString() : null,
@@ -657,6 +661,8 @@ export interface ImpuestoRow {
     rate: number;        // fracción 0–1, lista para el motor
     esDefault: boolean;
     activo: boolean;
+    /** Solo para kind:'retencion'. Ver RetencionInput en engine.ts. */
+    retencionBase: 'subtotal' | 'impuesto';
 }
 
 const normalizeKind = (value: unknown, tipo: string): TaxKind => {
@@ -697,6 +703,7 @@ export async function getImpuestos(): Promise<ImpuestoRow[]> {
             rate: tasa / 100,
             esDefault: !!i.es_default,
             activo: !!i.activo,
+            retencionBase: i.retencion_base === 'impuesto' ? 'impuesto' : 'subtotal',
         };
     });
 }
@@ -1111,6 +1118,11 @@ export async function getClientes() {
         regimenFiscal: (c.regimen_fiscal as string) ?? '',
         usoCfdi: (c.uso_cfdi as string) ?? '',
         cpFiscal: (c.cp_fiscal as string) ?? '',
+        countryCode: (c.country_code as string) ?? '',
+        direccionLine1: (c.direccion_line1 as string) ?? '',
+        direccionLine2: (c.direccion_line2 as string) ?? '',
+        ciudad: (c.ciudad as string) ?? '',
+        region: (c.region as string) ?? '',
         origen: (c.origen as string) || 'app',
         createdAt: c.created_at ? new Date(c.created_at as string).toISOString() : null,
         fiscalCompleto: !!((c.regimen_fiscal as string) && (c.cp_fiscal as string)),
@@ -1219,6 +1231,11 @@ export async function getCliente(id: string) {
         regimenFiscal: (c.regimen_fiscal as string) ?? '',
         usoCfdi: (c.uso_cfdi as string) ?? '',
         cpFiscal: (c.cp_fiscal as string) ?? '',
+        countryCode: (c.country_code as string) ?? '',
+        direccionLine1: (c.direccion_line1 as string) ?? '',
+        direccionLine2: (c.direccion_line2 as string) ?? '',
+        ciudad: (c.ciudad as string) ?? '',
+        region: (c.region as string) ?? '',
         origen: (c.origen as string) || 'app',
         createdAt: c.created_at ? new Date(c.created_at as string).toISOString() : null,
         fiscalCompleto: !!((c.regimen_fiscal as string) && (c.cp_fiscal as string)),
@@ -1558,6 +1575,7 @@ export async function getFacturaByToken(token: string) {
                    o.nombre as org_nombre, o.logo_url as org_logo_url,
                    o.color_marca as org_color, o.email_contacto as org_email,
                    o.telefono as org_tel, o.moneda as org_moneda,
+                   o.idioma as org_idioma, o.country_code as org_country_code,
                    o.portal_powered as org_portal_powered,
                    (o.sandbox_of is not null) as org_es_prueba,
                    o.stripe_account_id as org_stripe_account_id,
@@ -1580,6 +1598,12 @@ export async function getFacturaByToken(token: string) {
     // no en la del negocio. Sin esta línea money() pinta el símbolo de la org.
     const currency = normalizeCurrency((r.currency as string) || (r.org_moneda as string));
     setRequestCurrency(currency);
+    // El link público se servía en el idioma del NAVEGADOR del cliente, nunca
+    // en el del negocio: `setRequestLocale` nunca se llamaba aquí. Un negocio
+    // en inglés cuya factura abre un cliente con el navegador en español veía
+    // "IVA" y textos en español que el propio negocio nunca configuró.
+    setRequestLocale(r.org_idioma as string);
+    setRequestFormatLocale(getCountryProfile(String(r.org_country_code || 'MX')).locale);
 
     const total = num(r.total);
     const pagado = num(r.amount_paid);
@@ -1744,7 +1768,7 @@ export async function getCotizacionByToken(token: string) {
                o.email_contacto as org_email, o.telefono as org_tel, o.whatsapp as org_wa,
                o.portal_banner as org_portal_banner, o.portal_bienvenida as org_portal_bienvenida,
                o.portal_mostrar_chat as org_portal_chat, o.portal_powered as org_portal_powered,
-               o.country_code as org_country_code,
+               o.country_code as org_country_code, o.idioma as org_idioma,
                (o.sandbox_of is not null) as org_es_prueba,
                o.is_demo as org_es_demo,
                o.stripe_account_id as org_stripe_account_id,
@@ -1811,6 +1835,13 @@ export async function getCotizacionByToken(token: string) {
         (rows[0].base_currency as string) || (rows[0].moneda as string),
     );
     setRequestCurrency(quoteCurrency);
+    // El link público se servía en el idioma del NAVEGADOR del cliente, nunca
+    // en el del negocio — `setRequestLocale` nunca se llamaba en este carril.
+    // Un negocio en inglés cuyo cliente abre el link con el navegador en
+    // español veía "IVA", "Aprobar" y el resto de la interfaz en español,
+    // aunque toda la cuenta estuviera configurada en inglés.
+    setRequestLocale(rows[0].org_idioma as string);
+    setRequestFormatLocale(getCountryProfile(String(rows[0].org_country_code || 'MX')).locale);
 
     // Días restantes de vigencia (para la cuenta regresiva del link público).
     if (rows[0].vigencia) {
@@ -1994,7 +2025,16 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
                 precio_negociado: it.precio_negociado === null ? null : num(it.precio_negociado),
                 tax_rate: it.tax_rate != null ? num(it.tax_rate) : fallbackRate,
             })),
-            { ivaIncluido: Boolean(c.iva_incluido), retenciones: retencionesGuardadas },
+            {
+                ivaIncluido: Boolean(c.iva_incluido),
+                // El snapshot trae `base` como MONTO (número); el motor espera
+                // `base` como TIPO ('subtotal'|'impuesto') en el input — de ahí
+                // `baseTipo`, no `base`, para no perder la ReteIVA colombiana
+                // (15% DEL IVA) al recalcularla en vivo desde su propio snapshot.
+                retenciones: retencionesGuardadas.map((r: any) => ({
+                    nombre: r.nombre, tipo: r.tipo, tasa: r.tasa, base: r.baseTipo ?? 'subtotal',
+                })),
+            },
         );
     } catch { /* una tasa corrupta no debe tumbar el stream; se manda sin desglose */ }
 
