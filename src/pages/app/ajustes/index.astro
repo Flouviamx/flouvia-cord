@@ -27,10 +27,16 @@ const R = 26, C = 2 * Math.PI * R;
 const dash = C * (SETUP.pct / 100);
 
 const catMap = Object.fromEntries(SETTINGS_CATEGORIES.map(c => [c.id, c]));
-const sPersonal = [catMap.cuenta];
-const sCuenta = [catMap.general, catMap.branding, catMap.equipo, catMap.notificaciones, catMap.planes, catMap.avanzado];
-const sProducto = [catMap.cotizaciones, catMap.facturacion, catMap.cobros, catMap.integraciones];
-const sDev = [catMap.mcp, catMap.agentes, catMap.elements];
+// Los cuatro grupos del índice. Viven aquí y no en settings.ts a propósito:
+// settings.ts define el modelo categoría→tabs, y esto es sólo cómo se AGRUPAN
+// para presentarlas. `id` sólo lo usa Desarrolladores, que se oculta/muestra
+// con el toggle de modo dev.
+const GRUPOS = [
+    { label: t(L, 'idx.sec_personal'), cats: [catMap.cuenta], first: true },
+    { label: t(L, 'idx.sec_cuenta'), cats: [catMap.general, catMap.branding, catMap.equipo, catMap.notificaciones, catMap.planes, catMap.avanzado] },
+    { label: t(L, 'idx.sec_producto'), cats: [catMap.cotizaciones, catMap.facturacion, catMap.cobros, catMap.integraciones] },
+    { label: t(L, 'idx.sec_dev'), cats: [catMap.mcp, catMap.agentes, catMap.elements], id: 'idxDevSection' },
+];
 ---
 
 <AppLayout title={t(L, 'ajustes.titulo_index')} page="ajustes" heading="Ajustes">
@@ -65,63 +71,35 @@ const sDev = [catMap.mcp, catMap.agentes, catMap.elements];
             </a>
         )}
 
-        <h3 class="idx-section-label">{t(L, 'idx.sec_personal')}</h3>
-        <div class="idx-rows">
-            {sPersonal.map((c) => (
-                <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
-                    <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
-                    <span class="idx-row-body">
-                        <span class="idx-row-title">{c.label}</span>
-                        <span class="idx-row-desc">{c.desc}</span>
-                    </span>
-                    <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </a>
-            ))}
-        </div>
-
-        <h3 class="idx-section-label idx-section-adv">{t(L, 'idx.sec_cuenta')}</h3>
-        <div class="idx-rows">
-            {sCuenta.map((c) => (
-                <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
-                    <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
-                    <span class="idx-row-body">
-                        <span class="idx-row-title">{c.label}</span>
-                        <span class="idx-row-desc">{c.desc}</span>
-                    </span>
-                    <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </a>
-            ))}
-        </div>
-
-        <h3 class="idx-section-label idx-section-adv">{t(L, 'idx.sec_producto')}</h3>
-        <div class="idx-rows">
-            {sProducto.map((c) => (
-                <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
-                    <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
-                    <span class="idx-row-body">
-                        <span class="idx-row-title">{c.label}</span>
-                        <span class="idx-row-desc">{c.desc}</span>
-                    </span>
-                    <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </a>
-            ))}
-        </div>
-
-        <div id="idxDevSection" style="display:none;">
-            <h3 class="idx-section-label idx-section-adv">{t(L, 'idx.sec_dev')}</h3>
-            <div class="idx-rows">
-                {sDev.map((c) => (
-                    <a href={c.tabs[0].href} class="idx-row" data-cat={c.id}>
-                        <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
-                        <span class="idx-row-body">
-                            <span class="idx-row-title">{c.label}</span>
-                            <span class="idx-row-desc">{c.desc}</span>
-                        </span>
-                        <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                    </a>
-                ))}
+        {GRUPOS.map((g) => (
+            <div id={g.id} style={g.id ? 'display:none;' : undefined}>
+                <h3 class={g.first ? 'idx-section-label' : 'idx-section-label idx-section-adv'}>{g.label}</h3>
+                <div class="idx-rows">
+                    {g.cats.map((c) => (
+                        <div class="idx-row" data-cat={c.id}>
+                            {/* Sólo para el ratón: duplica el destino del título, así que
+                                se saca del árbol de accesibilidad y del tabulador para no
+                                anunciar dos veces la misma categoría. El link real es el
+                                título; con teclado se llega a él y a cada pestaña. */}
+                            <a class="idx-row-hit" href={c.tabs[0].href} tabindex="-1" aria-hidden="true"></a>
+                            <svg class="idx-row-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={c.icon} />
+                            <span class="idx-row-body">
+                                <a class="idx-row-title" href={c.tabs[0].href}>{c.label}</a>
+                                <span class="idx-row-desc">{c.desc}</span>
+                                {(c.tabs.length > 1 || c.tabs[0].label !== c.label) && (
+                                    <span class="idx-row-tabs">
+                                        {c.tabs.map((tb) => (
+                                            <a class="idx-tab-link" href={tb.href}>{tb.label}</a>
+                                        ))}
+                                    </span>
+                                )}
+                            </span>
+                            <svg class="idx-row-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                    ))}
+                </div>
             </div>
-        </div>
+        ))}
 
         <div class="idx-devmode">
             <span class="idx-dm-body">
@@ -192,18 +170,45 @@ const sDev = [catMap.mcp, catMap.agentes, catMap.elements];
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
         gap: 2rem 2.5rem; 
     }
+    /* La fila es un <div>, no un <a>: ahora contiene links propios (título y
+       tabs) y no se pueden anidar <a>. `.idx-row-hit` restituye el "clic en
+       cualquier parte de la fila" con una capa absoluta por DEBAJO de esos
+       links (z-index), así no se pierde el área de clic que había antes. */
     .idx-row {
+        position: relative;
         display: flex; align-items: flex-start; gap: 1rem;
         text-decoration: none; color: inherit;
         transition: transform 0.25s var(--ease-spring);
     }
+    .idx-row-hit { position: absolute; inset: 0; z-index: 0; border-radius: 10px; }
     .idx-row:hover { transform: translateY(-2px); }
     .idx-row-ico { width: 20px; height: 20px; color: var(--color-blue-deep); flex-shrink: 0; margin-top: 2px; }
     .idx-row-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
-    .idx-row-title { font-size: 0.98rem; font-weight: 600; color: var(--color-text); transition: color 0.2s ease; }
+    .idx-row-title {
+        position: relative; z-index: 1; align-self: flex-start;
+        font-size: 0.98rem; font-weight: 600; color: var(--color-text);
+        text-decoration: none; transition: color 0.2s ease;
+    }
     .idx-row:hover .idx-row-title { color: var(--color-blue-deep); }
     .idx-row-desc { display: none; font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.5; }
     @media (min-width: 561px) { .idx-row-desc { display: block; } }
+
+    /* Sub-links de las pestañas de cada categoría: lo que antes sólo se veía
+       DESPUÉS de entrar a la categoría. Misma escala tipográfica que la
+       descripción para no introducir un nivel visual nuevo. */
+    .idx-row-tabs { display: none; flex-wrap: wrap; gap: 2px 0; margin-top: 5px; }
+    .idx-tab-link {
+        position: relative; z-index: 1;
+        font-size: 0.78rem; color: var(--color-text-muted);
+        text-decoration: none; padding: 1px 0; transition: color 0.2s ease;
+    }
+    /* Separador "·" entre pestañas, sin meterlo en el markup. */
+    .idx-tab-link:not(:last-child)::after { content: '·'; margin: 0 7px; color: var(--color-border); }
+    .idx-tab-link:hover { color: var(--color-blue-deep); text-decoration: underline; text-underline-offset: 2px; }
+    /* Sólo en el layout de escritorio (>600px). Por debajo la fila se vuelve
+       una lista compacta con borde y los sub-links la llenarían de ruido. */
+    @media (min-width: 601px) { .idx-row-tabs { display: flex; } }
+
     .idx-row-arrow { display: none; width: 18px; height: 18px; }
 
     /* Eliminado: CSS oculto para Desarrolladores, ahora se hace vía inline style display:none/block */

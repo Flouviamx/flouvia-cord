@@ -112,19 +112,38 @@ async function postgresAllow(key: string, limit: number, windowSec: number): Pro
 
 /**
  * Cuenta un hit contra `key` en una ventana deslizante de `windowSec`. Devuelve
- * ok=false cuando se rebasa `limit`. NUNCA lanza: ante un fallo del backend
- * durable cae al contador local (fail-open hacia el local, no hacia "sin límite").
+ * ok=false cuando se rebasa `limit`. NUNCA lanza.
+ *
+ * Orden: Upstash si está configurado → Postgres (Neon) → contador local.
+ *
+ * El contador local es el ÚLTIMO recurso, no el segundo. Vive en la memoria de
+ * UNA instancia, así que en Vercel con varias réplicas el límite efectivo se
+ * multiplica por el número de instancias: 600 req/min por llave se vuelven 600
+ * por réplica. Como Upstash no está provisionado en este proyecto, ese era el
+ * camino REAL de `checkApiKeyRateLimit` — es decir, el tope que protege la API
+ * pública y el MCP no se estaba aplicando de verdad.
+ *
+ * Neon ya es el estado durable de todo lo demás (`rate_limit_counters` existe y
+ * `strictRateLimit` lo usa desde hace tiempo), así que no agrega dependencia
+ * nueva: solo deja de fingir que un contador por proceso es un límite global.
  */
 export async function rateLimit(key: string, limit: number, windowSec = 60): Promise<RateResult> {
     if (RATE_LIMIT_BACKEND === 'upstash') {
         try {
             return await upstashAllow(`rl:${key}`, limit, windowSec);
         } catch {
-            // Upstash caído → degradar al contador local en vez de dejar pasar todo.
-            return memAllow(key, limit, windowSec * 1000);
+            // Upstash caído: se intenta el respaldo durable antes que el local.
         }
     }
-    return memAllow(key, limit, windowSec * 1000);
+    try {
+        return await postgresAllow(key, limit, windowSec);
+    } catch (error) {
+        // Ni Upstash ni Neon: el contador local es mejor que no contar nada.
+        // A diferencia de strictRateLimit, aquí NO se falla cerrado — este
+        // carril protege superficies normales, no privilegiadas.
+        log.error('error no controlado', { route: 'ratelimit/postgres-soft', err: error });
+        return memAllow(key, limit, windowSec * 1000);
+    }
 }
 
 /**

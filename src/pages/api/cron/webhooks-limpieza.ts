@@ -11,25 +11,28 @@
 //   webhook_events: succeeded/canceled > 30 días; failed > 90 días (la UI de
 //     "Reintentar" y redeliver() los necesitan más tiempo — ver webhook-delivery.ts).
 //
-// Como el resto de los crons de este proyecto (recordatorios/intereses/cobranza),
-// usa `sql` directo sin withOrgTx/withSystemTx: es trabajo de mantenimiento
-// cross-org, no tenant-facing, y corre con el rol de Neon que ya bypasea RLS
-// (BYPASSRLS) — RLS es defensa en profundidad aquí, no el mecanismo de acceso.
+// Retención cross-org: no hay un org_id único que setear, así que corre en el
+// carril de SISTEMA (withSystemTx, app.scope='system') igual que el sweeper de
+// webhook_events. Ese carril exige cronScope en el reqContext, y solo se marca
+// aquí DESPUÉS de validar CRON_SECRET. Antes esto usaba `sql` directo y dependía
+// de que el rol de Neon bypaseara RLS — al migrar a cord_app habría borrado cero
+// filas en silencio, dejando el outbox creciendo sin límite.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
-import { sql } from '../../../lib/db';
+import { sql, withSystemTx } from '../../../lib/db';
+import { reqContext } from '../../../lib/context';
 
 const BATCH = 5000;
 const MAX_BATCHES = 20; // techo por categoría por corrida (≤100k filas/día/categoría)
 
 // Repite un DELETE por lotes hasta vaciar la categoría o agotar MAX_BATCHES —
 // nunca todo de un solo tirón.
-async function deleteBatched(query: (batch: number) => Promise<any[]>): Promise<number> {
+async function deleteBatched(query: (batch: number) => Promise<any[][]>): Promise<number> {
     let total = 0;
     for (let i = 0; i < MAX_BATCHES; i++) {
-        const deleted = await query(BATCH);
+        const [deleted] = await query(BATCH);
         total += deleted.length;
         if (deleted.length < BATCH) break; // ya no queda más de esta categoría
     }
@@ -40,27 +43,29 @@ export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
 
+    return reqContext.run({ userId: null, cronScope: true }, async () => {
+
     // ── webhook_deliveries: > 30 días ──
-    const deliveriesPorEdad = await deleteBatched((batch) => sql`
+    const deliveriesPorEdad = await deleteBatched((batch) => withSystemTx(sql`
         delete from webhook_deliveries
         where ctid = any(array(
             select ctid from webhook_deliveries
             where created_at < now() - interval '30 days'
             limit ${batch}
         ))
-        returning id`);
+        returning id`));
 
     // ── webhook_deliveries: tope de 500 más recientes por endpoint ──
     let deliveriesPorTope = 0;
     let hotHooks: any[] = [];
     try {
-        hotHooks = await sql`
+        [hotHooks] = await withSystemTx(sql`
             select webhook_id from webhook_deliveries
             group by webhook_id having count(*) > 500
-            limit 50`;
+            limit 50`);
     } catch { hotHooks = []; }
     for (const h of hotHooks) {
-        const deleted = await sql`
+        const [deleted] = await withSystemTx(sql`
             delete from webhook_deliveries
             where ctid = any(array(
                 select ctid from webhook_deliveries
@@ -69,29 +74,29 @@ export const GET: APIRoute = async ({ request }) => {
                 offset 500
                 limit 2000
             ))
-            returning id`;
+            returning id`);
         deliveriesPorTope += deleted.length;
     }
 
     // ── webhook_events: succeeded/canceled > 30 días ──
-    const eventosResueltos = await deleteBatched((batch) => sql`
+    const eventosResueltos = await deleteBatched((batch) => withSystemTx(sql`
         delete from webhook_events
         where ctid = any(array(
             select ctid from webhook_events
             where estado in ('succeeded', 'canceled') and updated_at < now() - interval '30 days'
             limit ${batch}
         ))
-        returning id`);
+        returning id`));
 
     // ── webhook_events: failed > 90 días ──
-    const eventosFallidos = await deleteBatched((batch) => sql`
+    const eventosFallidos = await deleteBatched((batch) => withSystemTx(sql`
         delete from webhook_events
         where ctid = any(array(
             select ctid from webhook_events
             where estado = 'failed' and updated_at < now() - interval '90 days'
             limit ${batch}
         ))
-        returning id`);
+        returning id`));
 
     return json({
         deliveries_por_edad: deliveriesPorEdad,
@@ -99,6 +104,7 @@ export const GET: APIRoute = async ({ request }) => {
         endpoints_con_tope_aplicado: hotHooks.length,
         events_resueltos: eventosResueltos,
         events_fallidos: eventosFallidos,
+    });
     });
 };
 

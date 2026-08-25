@@ -14,11 +14,16 @@ import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { orgsConVerifactuActivo, submitPendingForOrg } from '../../../lib/fiscal/verifactu/submit';
 import { log } from '../../../lib/log';
+import { reqContext } from '../../../lib/context';
 
 export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
 
+    // Carril de SISTEMA: orgsConVerifactuActivo() barre TODAS las organizaciones
+    // para encontrar las españolas con Verifactu encendido. El envío de cada una
+    // (submitPendingForOrg) vuelve a withOrgTx con su propio org_id.
+    return reqContext.run({ userId: null, cronScope: true }, async () => {
     try {
         const orgs = await orgsConVerifactuActivo();
         const results = [];
@@ -48,4 +53,5 @@ export const GET: APIRoute = async ({ request }) => {
             headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
         });
     }
+    });
 };

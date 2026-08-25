@@ -18,14 +18,12 @@ export const GET: APIRoute = async ({ url, request }) => {
     const domain = (url.searchParams.get('domain') || '').trim().toLowerCase().replace(/^@/, '');
     if (!domain || domain.length > 253) return json({ sso: false });
 
+    // Pantalla de entrada: quien pregunta todavía no tiene sesión ni
+    // organización. La función acotada devuelve SOLO lo que la pantalla
+    // necesita para decidir a dónde mandar el login.
     const rows = await sql`
-        select d.connection_id, o.require_sso, o.nombre as org_nombre
-        from sso_domains d
-        join sso_connections c on c.id = d.connection_id
-        join orgs o on o.id = c.org_id
-        where d.domain = ${domain} and d.verified_at is not null and c.enabled = true
-          and cord_effective_plan(o.id) in ('scale', 'developer')
-        limit 1`;
+        select connection_id, org_nombre, require_sso
+          from cord_resolve_sso_domain(${domain})`;
     if (!rows.length) return json({ sso: false });
 
     const r = rows[0] as any;

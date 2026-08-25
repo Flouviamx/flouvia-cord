@@ -21,7 +21,8 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
-import { sql, logAudit } from '../../../lib/db';
+import { sql, logAudit, withOrgTx, withSystemTx } from '../../../lib/db';
+import { reqContext } from '../../../lib/context';
 import { sendEmail, siteOrigin, notifyInvoiceReminder } from '../../../lib/email';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
@@ -45,10 +46,15 @@ export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
 
+    // Carril de SISTEMA para las dos consultas de cartera que cruzan
+    // organizaciones; el registro de etapa y el envío de cada documento vuelven
+    // a withOrgTx con el org_id de esa factura.
+    return reqContext.run({ userId: null, cronScope: true }, async () => {
+
     // Cartera viva de TODAS las orgs reales (una sola query; el volumen es bajo:
     // solo approved/invoiced con email y vencimiento próximo). Las orgs sandbox
     // (entorno de prueba) y la demo quedan fuera.
-    const rows = await sql`
+    const [rows] = await withSystemTx(sql`
         select c.id, c.folio, c.total, c.terminos, c.public_token, c.base_currency, o.moneda,
                coalesce(c.approved_at, c.created_at) as base,
                cl.empresa, cl.email,
@@ -61,7 +67,7 @@ export const GET: APIRoute = async ({ request }) => {
           and c.es_recurrente is not true
           and cl.email is not null and cl.email <> ''
           and o.sandbox_of is null
-          and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'`;
+          and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'`);
 
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const MS = 86400000;
@@ -151,7 +157,7 @@ export const GET: APIRoute = async ({ request }) => {
     // `documento_recordatorios`. La dedup es un hecho de la base: cada etapa se
     // manda una vez por documento, corra el cron las veces que corra. Y una
     // corrida perdida se recupera sola — la etapa sigue pendiente mañana.
-    const facturas = await sql`
+    const [facturas] = await withSystemTx(sql`
         select d.id, d.org_id, d.due_date, d.cotizacion_id,
                (current_date - d.due_date) as dias_vencida,
                coalesce(o.recordatorio_etapas, '{-7,-1,3,7,14,30}'::int[]) as etapas,
@@ -162,7 +168,7 @@ export const GET: APIRoute = async ({ request }) => {
            and d.due_date is not null
            and d.amount_remaining > 0
            and o.sandbox_of is null
-           and (current_date - d.due_date) between -30 and 120`;
+           and (current_date - d.due_date) between -30 and 120`);
 
     // Dedup contra la cartera de cotizaciones: si la factura viene de una que ya
     // recibió recordatorio arriba, no se manda dos veces por el mismo dinero.
@@ -197,12 +203,12 @@ export const GET: APIRoute = async ({ request }) => {
         // Se REGISTRA antes de mandar. Al revés, un fallo entre el envío y la
         // escritura repetiría el correo en la siguiente corrida — y repetir un
         // cobro es la queja más cara que puede generar esta función.
-        const [marca] = await sql`
+        const [marcaRows] = await withOrgTx(orgId, sql`
             insert into documento_recordatorios (org_id, documento_id, etapa)
             values (${orgId}, ${docId}, ${etapa})
             on conflict (documento_id, etapa) do nothing
-            returning id`;
-        if (!marca) continue;   // otra corrida ganó la carrera
+            returning id`);
+        if (!marcaRows[0]) continue;   // otra corrida ganó la carrera
 
         const sent = await notifyInvoiceReminder(orgId, docId, diasVencida > 0);
         if (sent) {
@@ -211,20 +217,21 @@ export const GET: APIRoute = async ({ request }) => {
                 accion: 'factura.recordatorio_enviado', entidad: 'factura',
                 entidad_id: docId, detalle: `etapa ${etapa > 0 ? `+${etapa}` : etapa} · vence ${f.due_date}`,
             });
-            await sql`insert into eventos (org_id, documento_id, tipo, detalle)
+            await withOrgTx(orgId, sql`insert into eventos (org_id, documento_id, tipo, detalle)
                       values (${orgId}, ${docId}, 'reminder', ${etapa > 0
                           ? `Recordatorio de cobro (${etapa} días vencida)`
-                          : `Aviso de vencimiento (${Math.abs(etapa)} días antes)`})`;
+                          : `Aviso de vencimiento (${Math.abs(etapa)} días antes)`})`);
         } else {
             // No salió: se libera la etapa para reintentar mañana en vez de
             // darla por consumida.
-            await sql`delete from documento_recordatorios where documento_id = ${docId} and etapa = ${etapa}`;
+            await withOrgTx(orgId, sql`delete from documento_recordatorios where documento_id = ${docId} and etapa = ${etapa}`);
         }
     }
 
     return json({
         enviados, candidatos: candidatos.length, vencidasHoy: vencidasHoy.length,
         facturas: { enviados: facturasEnviadas, candidatas: facturas.length, vencidasHoy: vencidasFactura },
+    });
     });
 };
 

@@ -4,7 +4,7 @@
 // API key). Aquí vive el cálculo server-side de subtotal/IVA, el folio, el flujo
 // de aprobación por umbrales y los eventos/auditoría — para no divergir.
 
-import { sql, logAudit } from './db';
+import { sql, logAudit, withOrgTx } from './db';
 import { notifyQuoteSent } from './email';
 import { dispatchQuoteEvent } from './webhooks';
 import { FXService, FXUnavailableError } from './fx/FXService';
@@ -117,9 +117,10 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
     if (!empresa) return null;
     const email = input.cliente?.email?.trim() || null;
 
-    const [existing] = email
-        ? await sql`select id from clientes where org_id = ${orgId} and (lower(empresa) = lower(${empresa}) or email = ${email}) limit 1`
-        : await sql`select id from clientes where org_id = ${orgId} and lower(empresa) = lower(${empresa}) limit 1`;
+    const [existingRows] = email
+        ? await withOrgTx(orgId, sql`select id from clientes where org_id = ${orgId} and (lower(empresa) = lower(${empresa}) or email = ${email}) limit 1`)
+        : await withOrgTx(orgId, sql`select id from clientes where org_id = ${orgId} and lower(empresa) = lower(${empresa}) limit 1`);
+    const existing = existingRows[0];
     if (existing) return existing.id as string;
 
     try {
@@ -130,11 +131,11 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
     }
 
     try {
-        const [created] = await sql`
+        const [createdRows] = await withOrgTx(orgId, sql`
             insert into clientes (org_id, empresa, email, contacto, telefono, rfc, origen)
             values (${orgId}, ${empresa}, ${email}, ${input.cliente?.contacto || null}, ${input.cliente?.telefono || null}, ${input.cliente?.rfc || null}, 'embed')
-            returning id`;
-        return created.id as string;
+            returning id`);
+        return createdRows[0].id as string;
     } catch (error) {
         const limit = parsedResourceLimit(error);
         if (limit) throw new QuoteError(`Tu plan permite ${limit.limit} clientes. Libera espacio o sube de plan para continuar.`, 402);
@@ -166,7 +167,8 @@ export async function createCotizacion(
     const items = rawItems.map(sanitizeItem);
 
     // Totales server-side (no confiar en el cliente) con el motor compartido.
-    const [org] = await sql`select * from orgs where id = ${orgId}`;
+    const [orgRows] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
+    const org = orgRows[0];
     const approvalsEnabled = (await checkEntitlement(orgId, 'approvals')).ok;
     const iva_incluido = Boolean(input.iva_incluido);
 
@@ -204,9 +206,10 @@ export async function createCotizacion(
     const baseCurrency = normalizeCurrency(input.base_currency, normalizeCurrency(org.moneda));
     const fiscalCurrency = normalizeCurrency(input.fiscal_currency, baseCurrency);
 
-    const [{ maxn }] = await sql`
+    const [maxRows] = await withOrgTx(orgId, sql`
         select coalesce(max(nullif(regexp_replace(folio, '\\D', '', 'g'), '')::int), 0) as maxn
-        from cotizaciones where org_id = ${orgId}`;
+        from cotizaciones where org_id = ${orgId}`);
+    const { maxn } = maxRows[0];
     const folio = `${org.quote_prefix}-${String(Number(maxn) + 1).padStart(4, '0')}`;
 
     // Flujo de aprobación: ¿el descuento, monto o margen rebasan los topes?
@@ -295,7 +298,7 @@ export async function createCotizacion(
 
     let cot: any;
     try {
-        [cot] = await sql`
+        [[cot]] = await withOrgTx(orgId, sql`
             insert into cotizaciones
                 (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, sent_at, aprob_estado, aprob_motivo,
                  moneda, base_currency, fiscal_currency, fx_rate, fx_rate_source, fx_locked_until, iva_incluido, anticipo_pct, es_recurrente, creado_por,
@@ -305,7 +308,7 @@ export async function createCotizacion(
                  ${terminos}, ${vigencia.toISOString()}, ${input.notas || null}, ${sentAt}, ${aprobEstado}, ${aprobMotivo},
                  ${baseCurrency}, ${baseCurrency}, ${fiscalCurrency}, ${fxRate}, ${fxSource}, ${fxLockedUntil}, ${iva_incluido}, ${anticipoPct}, ${esRecurrente}, ${creadoPor},
                  ${retencionTotal}, ${retencionesSnapshot}::jsonb)
-            returning id, public_token`;
+            returning id, public_token`);
     } catch (error) {
         const limit = parsedResourceLimit(error);
         if (limit) throw new QuoteError(`Tu plan permite ${limit.limit} cotizaciones activas. Cierra una o sube de plan para continuar.`, 402);
@@ -314,7 +317,7 @@ export async function createCotizacion(
 
     let orden = 0;
     for (const it of itemsConImpuesto) {
-        await sql`
+        await withOrgTx(orgId, sql`
             insert into cotizacion_items
                 (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
             values
@@ -322,24 +325,24 @@ export async function createCotizacion(
                  ${Number(it.precio_unitario) || 0},
                  ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)},
                  ${Number(it.costo_unitario) || 0},
-                 ${orden++}, ${it.tax_rate})`;
+                 ${orden++}, ${it.tax_rate})`);
     }
 
-    await sql`
+    await withOrgTx(orgId, sql`
         insert into cotizacion_versiones
             (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
         values
-            (${cot.id}, ${orgId}, 1, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(itemsConImpuesto)}, ${input.notas || null}, ${iva_incluido})`;
+            (${cot.id}, ${orgId}, 1, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(itemsConImpuesto)}, ${input.notas || null}, ${iva_incluido})`);
 
-    await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-              values (${orgId}, ${cot.id}, 'created', 'Borrador creado')`;
+    await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+              values (${orgId}, ${cot.id}, 'created', 'Borrador creado')`);
     if (input.send && !needsApproval) {
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${orgId}, ${cot.id}, 'sent', 'Cotización enviada — link generado')`;
+        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                  values (${orgId}, ${cot.id}, 'sent', 'Cotización enviada — link generado')`);
     }
     if (needsApproval) {
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${orgId}, ${cot.id}, 'comment', ${'Solicitud de aprobación: ' + aprobMotivo})`;
+        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                  values (${orgId}, ${cot.id}, 'comment', ${'Solicitud de aprobación: ' + aprobMotivo})`);
     }
     await logAudit(orgId, {
         accion: needsApproval ? 'cotizacion.aprobacion_solicitada' : (input.send ? 'cotizacion.enviada' : 'cotizacion.creada'),
@@ -351,8 +354,8 @@ export async function createCotizacion(
     if (input.send && !needsApproval) {
         email = await notifyQuoteSent(orgId, cot.id as string, opts.origin);
         if (email.sent) {
-            await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                      values (${orgId}, ${cot.id}, 'email', 'Correo enviado al cliente')`;
+            await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                      values (${orgId}, ${cot.id}, 'email', 'Correo enviado al cliente')`);
         }
         await dispatchQuoteEvent(orgId, cot.id as string, 'quote.sent');
     }

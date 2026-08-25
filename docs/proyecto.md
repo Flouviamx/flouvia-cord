@@ -125,6 +125,38 @@ Los scripts especializados de seguridad y operación se descubren en
   encadenada verificada contra los vectores oficiales de la AEAT y envío real
   por SOAP verificado contra el WSDL/XSD oficial. Ver regla 29 de
   `estandares-ingenieria.md` y `negocio-billing.md`.
+- **Pendiente operativo, no de código (ago 2026):** dos huecos de trámite bloquean
+  el 100% real de EE.UU. y España — ninguno se resuelve con más ingeniería.
+  - *España:* Verifactu está construido y verificado, pero `VERIFACTU_SIF_NIF`
+    sigue sin configurarse porque Flouvia todavía no tiene NIF español. Falta
+    conseguirlo (gestor), presentar la declaración responsable del software
+    (RD 1007/2023) y probar un envío real contra el sandbox de la AEAT antes de
+    `VERIFACTU_AEAT_ENABLED=true`. Sin esto, España sigue en el fallback
+    `commercial_only` — funcional, pero sin registro ante la AEAT.
+  - *Estados Unidos:* el wizard de 1099-K de Stripe Connect (Tax forms) quedó a
+    medias en "Información de la empresa" — Flouvia no tiene un EIN propio.
+    No hace falta constituir una entidad en EE.UU.: un extranjero puede
+    solicitar EIN directo con el Formulario SS-4 (responsible party
+    identificado por pasaporte, sin SSN/ITIN). Con el EIN, se retoma el wizard:
+    "Entidad de liquidación de pagos" + "Red de terceros" + montos brutos
+    (incluir comisiones) ya quedaron decididos correctamente en las pantallas
+    previas.
+
+- Aislamiento multi-tenant declarado (ago 2026): el schema habilitaba y forzaba
+  RLS en ~50 tablas con políticas correctas, y **ninguna se aplicaba** — el rol
+  de conexión conservaba `rolbypassrls`, así que Postgres las ignoraba y el único
+  muro real era que el código no olvidara un `where org_id`. No hubo fuga, pero
+  tampoco segunda línea de defensa. Hoy las 69 rutas que consultan tablas
+  multi-tenant viajan en un carril declarado (`withOrgTx` / `withUserTx` /
+  `withSystemTx` / `withOpsTx` / `withCaptureToken`, en `src/lib/db.ts`), Cord Ops
+  tiene carril propio en vez de heredar el bypass, los crons separan el barrido
+  cross-org del trabajo por organización, y los flujos previos a la membresía
+  (SSO, invitación, baja de cuenta, correo entrante) se resuelven con funciones
+  `security definer` estrechas. `npm run security:tenancy` impide que la deuda
+  vuelva a crecer y `npm run security:rls` audita la base real. Contrato en la
+  regla 30 de `estandares-ingenieria.md`; la activación del rol `cord_app` es una
+  tarea de consola pendiente, con criterios de salida y revert en
+  `db/RUNBOOK-cord-app.md`.
 
 ## Configuración
 

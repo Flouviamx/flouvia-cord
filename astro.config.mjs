@@ -43,6 +43,30 @@ export default defineConfig({
     resolve: {
       preserveSymlinks: true,
     },
+    build: {
+      // Minificador de CSS pineado a esbuild A PROPÓSITO, no por preferencia.
+      //
+      // Astro 7.2 trae su propio Vite 8, y Vite 8 invirtió el default: ahora
+      // `cssMinify: true` cae en lightningcss y sólo el string literal
+      // 'esbuild' toma el camino de esbuild (en Vite 7 era al revés).
+      //
+      // lightningcss BORRA la propiedad estándar cuando el fuente declara
+      // también el prefijo a mano — se queda sólo con la última de las dos:
+      //   backdrop-filter + -webkit-backdrop-filter  →  SÓLO -webkit-
+      // Este repo escribe el -webkit- al final en 54 declaraciones, así que
+      // producción perdía `backdrop-filter` en 14 de 16 casos: sin blur en
+      // Firefox, y como .topbar/.sidebar tienen fondo al 72% que DEPENDE del
+      // blur, el chrome se veía translúcido. En dev no se minifica, por eso
+      // sólo pasaba en producción.
+      //
+      // No basta con configurar targets: con ambas propiedades en el fuente
+      // lightningcss colapsa igual. Y quitar los -webkit- a mano rompería
+      // Safari, porque sin `cssTarget` lightningcss recibe `targets: {}` y no
+      // regenera prefijos. esbuild conserva ambas y no reordena.
+      //
+      // scripts/css-build-check.mjs vigila que esto no vuelva en silencio.
+      cssMinify: 'esbuild',
+    },
     // El SDK de MCP (@modelcontextprotocol/sdk) y sus deps (hono, zod compat)
     // mezclan CJS/ESM y rompen el SSR de Vite con "reading 'call'" si se dejan
     // como external. Forzar el bundle (noExternal) hace que Vite resuelva el

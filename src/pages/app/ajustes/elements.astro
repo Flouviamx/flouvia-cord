@@ -5,7 +5,7 @@
 // header CSP `frame-ancestors`. Estilo LISTA (regla de André, no tarjetas).
 import SettingsShell from '../../../components/app/SettingsShell.astro';
 import { getOrg } from '../../../lib/queries';
-import { sql, getActiveOrgId } from '../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -15,10 +15,11 @@ const L = currentLocale();
 // Token real de una cotización enviada → snippet copy-paste que YA funciona.
 // Si no hay ninguna aún, mostramos un placeholder.
 const orgId = await getActiveOrgId();
-const [reciente] = await sql`
+const [recienteRows] = await withOrgTx(orgId, sql`
     select public_token from cotizaciones
     where org_id = ${orgId} and status <> 'draft'
-    order by created_at desc limit 1`;
+    order by created_at desc limit 1`);
+const reciente = recienteRows[0];
 const hasSample = !!reciente?.public_token;
 const sampleToken = (reciente?.public_token as string) || 'TOKEN_DE_TU_COTIZACION';
 

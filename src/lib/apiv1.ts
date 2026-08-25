@@ -18,6 +18,42 @@ export function fail(error: string, code: string, status = 400): Response {
     });
 }
 
+// Tope de cuerpo para los POST/PATCH de la API pública. Generoso para una
+// cotización con cientos de líneas, mucho menor que el límite de plataforma.
+const MAX_BODY_BYTES = 1_000_000;
+
+/**
+ * Lee y valida el cuerpo JSON de una petición de la API pública. Devuelve el
+ * objeto ya parseado, o la `Response` de error lista para devolver.
+ *
+ * Antes cada endpoint hacía `await request.json()` en un try/catch y nada más:
+ * sin exigir `Content-Type: application/json` y sin más tope que el de la
+ * plataforma. No era explotable de por sí, pero es la capa que evita gastar
+ * parseo en peticiones que ya se sabe que no van a servir, y hace que el error
+ * diga QUÉ está mal en vez de un "JSON inválido" genérico.
+ */
+export async function readJsonBody(request: Request): Promise<any | Response> {
+    const tipo = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (tipo && tipo !== 'application/json') {
+        return fail('El cuerpo debe enviarse como application/json', 'unsupported_media_type', 415);
+    }
+
+    // Se confía en content-length solo para RECHAZAR temprano; el tamaño real se
+    // vuelve a medir sobre el texto leído, que es el que no se puede falsear.
+    const declarado = Number(request.headers.get('content-length') || 0);
+    if (Number.isFinite(declarado) && declarado > MAX_BODY_BYTES) {
+        return fail('El cuerpo de la petición es demasiado grande', 'payload_too_large', 413);
+    }
+
+    let raw: string;
+    try { raw = await request.text(); } catch { return fail('No se pudo leer el cuerpo', 'invalid_json', 400); }
+    if (Buffer.byteLength(raw, 'utf8') > MAX_BODY_BYTES) {
+        return fail('El cuerpo de la petición es demasiado grande', 'payload_too_large', 413);
+    }
+
+    try { return JSON.parse(raw); } catch { return fail('JSON inválido', 'invalid_json', 400); }
+}
+
 // Paginación por offset (simple y predecible). Tope duro para no devolver todo.
 export function pageParams(url: URL): { limit: number; offset: number } {
     const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit')) || 50));

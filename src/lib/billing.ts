@@ -96,7 +96,8 @@ export function meterPricesFor(plan: PaidPlan, _currency: PlatformCurrency): str
  * `plan-currency.ts` para el contrato completo.
  */
 export async function platformCurrencyForOrg(orgId: string): Promise<PlatformCurrency> {
-    const [o] = await sql`select country_code, billing_currency from orgs where id = ${orgId}`;
+    const [oRows] = await withOrgTx(orgId, sql`select country_code, billing_currency from orgs where id = ${orgId}`);
+    const o = oRows[0];
     return platformCurrencyFor(o?.country_code, o?.billing_currency);
 }
 
@@ -227,7 +228,8 @@ function stripeError(err: any, status: number): Error {
 // Auto-sana: si el id guardado no existe bajo la API key actual (cambio de
 // cuenta o de modo test↔live), se recrea en vez de fallar ("No such customer").
 export async function getOrCreateCustomer(orgId: string, email?: string, nombre?: string): Promise<string> {
-    const [o] = await sql`select stripe_customer_id, country_code, idioma from orgs where id = ${orgId}`;
+    const [oRows] = await withOrgTx(orgId, sql`select stripe_customer_id, country_code, idioma from orgs where id = ${orgId}`);
+    const o = oRows[0];
     const existing = o?.stripe_customer_id as string | undefined;
     if (existing) {
         try {
@@ -247,7 +249,7 @@ export async function getOrCreateCustomer(orgId: string, email?: string, nombre?
         'preferred_locales[0]': locale,
         'metadata[org_id]': orgId,
     }, 'POST', { idempotencyKey: `billing-customer:${orgId}` });
-    await sql`update orgs set stripe_customer_id = ${cus.id} where id = ${orgId}`;
+    await withOrgTx(orgId, sql`update orgs set stripe_customer_id = ${cus.id} where id = ${orgId}`);
     return cus.id as string;
 }
 

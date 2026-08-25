@@ -1,6 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { sql } from "../db";
+import { sql, withOrgTx } from "../db";
 import { assertSafeWebhookTarget } from "../ssrf";
 import { decryptSecret } from "../crypto-secret";
 import { checkEntitlement } from "../org-entitlements";
@@ -37,11 +37,11 @@ export class McpClientManager {
 
   // Obtiene la lista de servidores MCP registrados por la organización
   private async getServers(): Promise<McpServerConfig[]> {
-    const rows = await sql`
+    const [rows] = await withOrgTx(this.orgId, sql`
       SELECT id, nombre, url_sse, auth_token
       FROM mcp_servers
       WHERE org_id = ${this.orgId} AND activo = true
-    `;
+    `);
     // auth_token se guarda cifrado (ver crypto-secret.ts) — se descifra aquí,
     // en el único lugar que de verdad lo USA para conectarse. decryptSecret
     // devuelve el texto plano tal cual si el token es heredado (pre-cifrado)
@@ -62,11 +62,11 @@ export class McpClientManager {
       return permissions;
     }
 
-    const rows = await sql`
+    const [rows] = await withOrgTx(this.orgId, sql`
       SELECT recurso_id, herramientas 
       FROM agentes_permisos 
       WHERE org_id = ${this.orgId} AND agente_id = ${this.agenteId} AND tipo_recurso = 'outbound'
-    `;
+    `);
 
     for (const row of rows) {
       if (row.recurso_id && Array.isArray(row.herramientas)) {

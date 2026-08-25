@@ -12,7 +12,7 @@ import { getFacturaDetalle } from '../../../../lib/queries';
 import { finalizeInvoice, voidInvoice, createCreditNote } from '../../../../lib/fiscal/invoices';
 import { applyPayment } from '../../../../lib/fiscal/payments';
 import { notifyInvoiceIssued } from '../../../../lib/email';
-import { ok, fail, invoiceDetail } from '../../../../lib/apiv1';
+import { ok, fail, invoiceDetail, readJsonBody } from '../../../../lib/apiv1';
 import { requireEntitlement } from '../../../../lib/org-entitlements';
 import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../../lib/billing';
 import { dispatchInvoiceEvent } from '../../../../lib/webhooks';
@@ -27,8 +27,8 @@ export const GET = withApiAuth('read', async ({ params }) => {
 
 export const POST = withApiAuth('write', async ({ params, request }, auth) => {
     const id = String(params.id ?? '');
-    let body: any;
-    try { body = await request.json(); } catch { return fail('JSON inválido', 'invalid_json', 400); }
+    const body = await readJsonBody(request);
+    if (body instanceof Response) return body;
     const action = String(body.action ?? '').trim();
 
     const orgId = await getActiveOrgId();

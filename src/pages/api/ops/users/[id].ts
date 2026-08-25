@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql } from '../../../../lib/db';
+import { sql, withOpsTx } from '../../../../lib/db';
 import { trustedIp } from '../../../../lib/ip';
 import { isAllowedOpsEmail, opsAuditQuery } from '../../../../lib/ops-auth';
 
@@ -22,12 +22,12 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
-    const rows = await sql`
+    const [rows] = await withOpsTx(sql`
       select u.id, u.email, u.suspended_at,
              exists(select 1 from ops_operators o where o.user_id = u.id and o.active) as is_operator,
              (select count(*)::int from orgs o where o.owner_id = u.id) as owned_orgs
       from users u where u.id = ${targetId} limit 1
-    `;
+    `);
     if (!rows.length) return json({ error: 'Usuario no encontrado' }, 404);
     const target = rows[0] as any;
     const ip = trustedIp(request);

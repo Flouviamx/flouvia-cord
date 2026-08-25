@@ -19,7 +19,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { z } from 'zod';
-import { sql } from '../../../lib/db';
+import { sql, withUserTx } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { reauthenticate, clearSessionCookies } from '../../../lib/auth';
 import { emailSchema, parseJsonBody } from '../../../lib/validation';
@@ -54,33 +54,28 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
         return json({ error: 'email_mismatch' }, 400);
     }
 
-    // 1) Orgs donde es dueño (owner_id legacy, o org_members.rol='owner') Y
-    // existen OTROS miembros activos → bloquea la baja completa.
-    const blocking = await sql`
-        select o.id, o.nombre
-        from orgs o
-        left join org_members m on m.org_id = o.id and m.user_id = ${userId} and m.estado = 'activo'
-        where (o.owner_id = ${userId} or m.rol = 'owner')
-          and o.sandbox_of is null
-          and exists (
-              select 1 from org_members m2
-              where m2.org_id = o.id and m2.estado = 'activo' and m2.user_id <> ${userId}
-          )`;
+    // Las organizaciones que este usuario posee se resuelven con
+    // `cord_account_owned_orgs`, una función SQL acotada (security definer).
+    //
+    // No es un rodeo: este flujo necesita ver a los OTROS miembros para decidir
+    // si una organización queda huérfana, y ninguna política RLS se lo permite
+    // —bajo el carril de usuario solo se ven las filas propias—. Con una consulta
+    // normal, el `exists(... user_id <> yo)` daría siempre falso: TODA
+    // organización se clasificaría como de dueño único y se borraría junto con
+    // la cuenta. La función define propiedad y orfandad en un solo lugar para
+    // que las dos ramas de abajo no puedan divergir.
+    const [owned] = await withUserTx(userId, sql`
+        select id, nombre, stripe_subscription_id, stripe_account_id, tiene_otros_miembros
+          from cord_account_owned_orgs(${userId}::uuid)`);
+
+    // 1) Dueño Y quedan otros miembros activos → bloquea la baja completa.
+    const blocking = owned.filter((o) => o.tiene_otros_miembros === true);
     if (blocking.length) {
         return json({ error: 'blocking_orgs', orgs: blocking.map((o) => ({ id: o.id, nombre: o.nombre })) }, 409);
     }
 
-    // 2) Orgs donde es dueño ÚNICO (nadie más activo) — se borran con la cuenta.
-    const soleOwned = await sql`
-        select o.id, o.nombre, o.stripe_subscription_id, o.stripe_account_id
-        from orgs o
-        left join org_members m on m.org_id = o.id and m.user_id = ${userId} and m.estado = 'activo'
-        where (o.owner_id = ${userId} or m.rol = 'owner')
-          and o.sandbox_of is null
-          and not exists (
-              select 1 from org_members m2
-              where m2.org_id = o.id and m2.estado = 'activo' and m2.user_id <> ${userId}
-          )`;
+    // 2) Dueño ÚNICO (nadie más activo) — se borran con la cuenta.
+    const soleOwned = owned.filter((o) => o.tiene_otros_miembros !== true);
     for (const org of soleOwned) {
         await deleteOrgCascade({
             id: org.id as string,
@@ -90,11 +85,11 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
         });
     }
 
-    // 3) Scrub de referencias de texto SIN FK en las orgs que sobreviven.
-    await sql`update cotizaciones set creado_por = ${TOMBSTONE} where creado_por = ${userId}`;
-    await sql`update audit_log set actor = ${TOMBSTONE} where actor = ${userId}`;
-    await sql`update api_keys set created_by = ${TOMBSTONE} where created_by = ${userId}`;
-    await sql`update org_members set invited_by = ${TOMBSTONE} where invited_by = ${userId}`;
+    // 3) Scrub de referencias de texto SIN FK en las orgs que sobreviven. También
+    // cross-org (un vendedor pudo cotizar en varias), así que va por la misma
+    // función acotada: con una consulta normal afectaría cero filas y el id de
+    // la cuenta borrada seguiría dentro de los registros.
+    await withUserTx(userId, sql`select cord_account_scrub(${userId}::uuid, ${TOMBSTONE})`);
 
     // 4) Borra la cuenta (cascadea sessions/oauth_accounts/passkeys/tokens/
     // org_members restantes).

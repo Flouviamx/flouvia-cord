@@ -31,16 +31,17 @@ export const GET: APIRoute = async ({ params, request }) => {
     const subscriptionDenied = await requireEntitlement(orgId, 'live_presence');
     if (subscriptionDenied) return subscriptionDenied;
     const id = params.id ?? '';
-    const [row] = await sql`select id from cotizaciones where id = ${id} and org_id = ${orgId}`;
-    if (!row) return new Response('not found', { status: 404 });
+    const [guard] = await withOrgTx(orgId, sql`select id from cotizaciones where id = ${id} and org_id = ${orgId}`);
+    if (!guard[0]) return new Response('not found', { status: 404 });
 
     // Identidad del vendedor para su fila de presencia. Se resuelve una sola vez.
     const userId = currentUserId();
     const actorKey = userId ? `u:${userId}` : null;
     let nombre: string | null = null;
     if (userId) {
-        const [m] = await sql`select nombre, email from org_members
-            where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`;
+        const [mRows] = await withOrgTx(orgId, sql`select nombre, email from org_members
+            where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`);
+        const m = mRows[0];
         nombre = (m?.nombre as string) || (m?.email as string) || null;
     }
 

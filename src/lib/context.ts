@@ -62,6 +62,12 @@ interface ReqCtx {
     // (db.ts) exige esto antes de setear app.scope='system' — así una ruta con
     // sesión de usuario normal nunca puede tocar ese carril por accidente.
     cronScope?: boolean;
+    // Carril de OPS (Cord Ops lee TODAS las organizaciones a propósito). Lo marca
+    // el middleware DESPUÉS de validar la sesión de operador con
+    // validateOpsSession(); withOpsTx() (db.ts) lo exige antes de setear
+    // app.scope='ops'. Es un carril distinto del de cron a propósito: Ops es de
+    // solo lectura sobre datos de cliente, el de sistema también escribe.
+    opsScope?: boolean;
 }
 
 export const reqContext = new AsyncLocalStorage<ReqCtx>();
@@ -186,6 +192,11 @@ export function setRequestTimeZone(zone: string | null | undefined): void {
 /** ¿Este request corre en el carril de SISTEMA de un cron (ver withSystemTx)? */
 export function isCronScope(): boolean {
     return reqContext.getStore()?.cronScope === true;
+}
+
+/** ¿Este request corre en el carril de OPS con operador validado (ver withOpsTx)? */
+export function isOpsScope(): boolean {
+    return reqContext.getStore()?.opsScope === true;
 }
 
 /** Guarda el org_id resuelto en el store del request para reutilizarlo. */

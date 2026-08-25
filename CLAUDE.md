@@ -24,10 +24,14 @@ manual, changelog ni depósito de decisiones. La documentación canónica vive e
 |---|---|
 | Cualquier tarea | [`docs/proyecto.md`](docs/proyecto.md) + [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) |
 | UI dentro de `/app` | [`docs/app-rutas.md`](docs/app-rutas.md) + [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md) |
+| CSS con `backdrop-filter` u otra propiedad con prefijo `-webkit-` | Regla 31 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) — el minificador de producción puede borrar la forma estándar; verifica con `npm run security:css` |
+| `/app/ajustes` — agregar o mover una pestaña | [`docs/app-rutas.md`](docs/app-rutas.md) + `src/lib/settings.ts` (`SETTINGS_CATEGORIES`, campo `keywords` para ⌘K) |
 | Landing, soporte o páginas públicas | [`docs/landing.md`](docs/landing.md) + [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md) |
 | Mockups de marketing | Los dos anteriores + [`MOCKUP_STANDARDS.md`](MOCKUP_STANDARDS.md) |
 | Auth, sesiones, equipo o SSO | [`docs/app-rutas.md`](docs/app-rutas.md) + [`docs/historial-auth-clerk.md`](docs/historial-auth-clerk.md) |
-| Schema, queries, RLS o multi-tenant | [`docs/app-rutas.md`](docs/app-rutas.md) + `db/schema.sql` |
+| Schema, queries, RLS o multi-tenant | Regla 30 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + [`docs/app-rutas.md`](docs/app-rutas.md) + `db/schema.sql` + carriles en `src/lib/db.ts` |
+| Cualquier query nueva a una tabla con `org_id` | Regla 30 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md); el contrato lo verifica `npm run security:tenancy` |
+| Activar `cord_app` / que la RLS realmente aplique | [`db/RUNBOOK-cord-app.md`](db/RUNBOOK-cord-app.md) + `db/cord-app-role.sql` + `db/cord-force-bootstrap-rls.sql` |
 | Billing, planes, cobros, CFDI o Connect | [`docs/negocio-billing.md`](docs/negocio-billing.md) + [`docs/historial-billing-cobros.md`](docs/historial-billing-cobros.md) + contrato ejecutable en `src/lib/entitlements.ts` |
 | Precio de un plan de Cord o su divisa | Reglas 21 y 27 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + contrato ejecutable en `src/lib/plan-currency.ts`, `src/lib/plan-money.ts` y `src/lib/precios.ts` |
 | Superficie de facturación (`billing.cordhq.app`) | Regla 26 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + [`docs/app-rutas.md`](docs/app-rutas.md) + guard en `src/lib/billing-surface.ts` |

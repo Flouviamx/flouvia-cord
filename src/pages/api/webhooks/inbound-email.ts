@@ -4,10 +4,48 @@ import { runARAgent } from '../../../lib/agents/ar-agent';
 import { getCobranzaConfig, renderCollectionEmail } from '../../../lib/agents/cobranza-run';
 import { sendEmail, siteOrigin } from '../../../lib/email';
 import { log } from '../../../lib/log';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export const prerender = false;
 
 const INBOUND_SECRET = import.meta.env.INBOUND_EMAIL_SECRET || process.env.INBOUND_EMAIL_SECRET;
+
+// Ventana anti-replay: un webhook capturado no puede reproducirse indefinidamente.
+const FIRMA_TOLERANCIA_SEG = 300;
+
+/**
+ * Verifica la firma del proveedor sobre el CUERPO CRUDO, en tiempo constante.
+ *
+ * Antes esto era `token !== INBOUND_SECRET` con `!==`: un bearer estático,
+ * comparado carácter a carácter (filtra el secreto por tiempo de respuesta) y
+ * sin nada que atara la petición a su contenido — quien tuviera el token podía
+ * inyectar cualquier cuerpo, y reproducir uno capturado para siempre.
+ *
+ * La firma cubre `timestamp.cuerpo`, así que cambiar un byte del payload la
+ * invalida y el timestamp acota la reproducción. Se acepta el bearer a secas
+ * SOLO si el proveedor no manda firma, para no romper una configuración
+ * existente el día que se encienda; en cuanto llega `x-cord-signature`, mandar.
+ */
+function firmaValida(raw: string, timestamp: string | null, firma: string | null): boolean {
+    if (!INBOUND_SECRET) return false;
+    if (!firma) return true;                       // proveedor sin firma → decide el bearer
+    if (!timestamp) return false;
+
+    const edad = Math.abs(Date.now() / 1000 - Number(timestamp));
+    if (!Number.isFinite(edad) || edad > FIRMA_TOLERANCIA_SEG) return false;
+
+    const esperado = createHmac('sha256', INBOUND_SECRET).update(`${timestamp}.${raw}`).digest();
+    const recibido = Buffer.from(firma.replace(/^sha256=/, ''), 'hex');
+    return recibido.length === esperado.length && timingSafeEqual(recibido, esperado);
+}
+
+/** Compara dos secretos sin filtrar su longitud ni su contenido por tiempo. */
+function bearerValido(token: string | undefined): boolean {
+    if (!INBOUND_SECRET || !token) return false;
+    const a = Buffer.from(token);
+    const b = Buffer.from(INBOUND_SECRET);
+    return a.length === b.length && timingSafeEqual(a, b);
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // Respuestas del cliente por correo → conversación bidireccional del agente.
@@ -37,11 +75,17 @@ const INBOUND_SECRET = import.meta.env.INBOUND_EMAIL_SECRET || process.env.INBOU
 export const POST: APIRoute = async ({ request }) => {
   const authz = request.headers.get('authorization') || '';
   const token = /^Bearer\s+(.+)$/i.exec(authz.trim())?.[1];
-  if (!INBOUND_SECRET || token !== INBOUND_SECRET) {
+  if (!bearerValido(token)) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+  }
+  // El cuerpo se lee CRUDO porque la firma se calcula sobre esos bytes exactos:
+  // parsear y reserializar cambiaría el JSON y la firma dejaría de cuadrar.
+  const raw = await request.text();
+  if (!firmaValida(raw, request.headers.get('x-cord-timestamp'), request.headers.get('x-cord-signature'))) {
     return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
   }
   try {
-    const payload = await request.json();
+    const payload = JSON.parse(raw);
     const emailFrom = String(payload.from ?? '').trim().toLowerCase();
     const emailBody = String(payload.text || payload.html || '').slice(0, 8000);
     // Resend/SendGrid mandan las cabeceras de threading; `in_reply_to` es el
@@ -55,28 +99,13 @@ export const POST: APIRoute = async ({ request }) => {
     // forma de emparejar se cae al último recurso: la cotización con saldo más
     // vencida de ese remitente. Antes esto era el único camino y encima ignoraba
     // las cotizaciones 'approved'.
-    let quote: any = null;
-    if (inReplyTo) {
-      const [porHilo] = await sql`
-        select c.id as cotizacion_id, c.org_id
-        from cobranza_conversaciones cc
-        join cotizaciones c on c.id = cc.cotizacion_id
-        where cc.message_id is not null and ${inReplyTo} like '%' || cc.message_id || '%'
-        order by cc.created_at desc limit 1`;
-      quote = porHilo ?? null;
-    }
-    if (!quote) {
-      const [porRemitente] = await sql`
-        select c.id as cotizacion_id, c.org_id
-        from cotizaciones c
-        join clientes cl on c.cliente_id = cl.id
-        where cl.email = ${emailFrom}
-          and c.status in ('approved', 'invoiced')
-          and c.paid_at is null
-          and c.es_recurrente is not true
-        order by coalesce(c.approved_at, c.created_at) asc limit 1`;
-      quote = porRemitente ?? null;
-    }
+    // El emparejamiento es cross-org por necesidad —el proveedor de correo no
+    // sabe de qué organización es el mensaje—, así que va en una función
+    // acotada. La prioridad (hilo real primero, remitente como último recurso)
+    // vive DENTRO de ella, no repartida entre dos consultas aquí.
+    const [quote] = await sql`
+      select cotizacion_id, org_id, via
+        from cord_resolve_inbound_email(${inReplyTo || null}, ${emailFrom})`;
     if (!quote) {
       return new Response(JSON.stringify({ error: 'Cotización no encontrada para este remitente' }), { status: 404 });
     }

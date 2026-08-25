@@ -20,7 +20,8 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
-import { sql, logAudit } from '../../../lib/db';
+import { sql, logAudit, withOrgTx, withSystemTx } from '../../../lib/db';
+import { reqContext } from '../../../lib/context';
 import { dispatchQuoteEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
 import { siteOrigin } from '../../../lib/email';
@@ -30,9 +31,14 @@ export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
 
+    // El carril de SISTEMA se enciende DESPUÉS de validar CRON_SECRET: el barrido
+    // cruza organizaciones, así que no hay un org_id único que setear. El trabajo
+    // por cotización de más abajo sí vuelve al carril normal withOrgTx.
+    return reqContext.run({ userId: null, cronScope: true }, async () => {
+
     // Excluye orgs sandbox (entorno de prueba) y la org demo — mismo criterio
     // que recordatorios.ts/cobranza.ts.
-    const rows = await sql`
+    const [rows] = await withSystemTx(sql`
         update cotizaciones c
            set status = 'expired'
           from orgs o
@@ -42,13 +48,13 @@ export const GET: APIRoute = async ({ request }) => {
            and c.vigencia < current_date
            and o.sandbox_of is null
            and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'
-        returning c.id, c.org_id, c.folio`;
+        returning c.id, c.org_id, c.folio`);
 
     for (const r of rows) {
         const orgId = r.org_id as string;
         const id = r.id as string;
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${orgId}, ${id}, 'expired', 'Cotización vencida — pasó su fecha de vigencia sin decisión del cliente')`;
+        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                  values (${orgId}, ${id}, 'expired', 'Cotización vencida — pasó su fecha de vigencia sin decisión del cliente')`);
         await logAudit(orgId, { accion: 'cotizacion.vencida', entidad: 'cotizacion', entidad_id: id, detalle: r.folio as string });
         // Secuencial (no after()): el volumen típico es bajo y el cron no
         // tiene presión de latencia de respuesta al usuario — mismo patrón
@@ -61,7 +67,7 @@ export const GET: APIRoute = async ({ request }) => {
     // así que la coincidencia exacta de fecha basta para disparar una sola vez
     // por cotización (sin tabla de dedup: al día siguiente `vigencia` ya no
     // matchea `current_date + 3`).
-    const porVencer = await sql`
+    const [porVencer] = await withSystemTx(sql`
         select c.id, c.org_id, c.folio, c.total, cl.empresa
         from cotizaciones c
         join orgs o on o.id = c.org_id
@@ -69,7 +75,7 @@ export const GET: APIRoute = async ({ request }) => {
         where c.status in ('sent', 'viewed')
           and c.vigencia = current_date + 3
           and o.sandbox_of is null
-          and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'`;
+          and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'`);
 
     for (const r of porVencer) {
         await notify(r.org_id as string, 'quote_expiring', {
@@ -81,6 +87,7 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     return json({ vencidas: rows.length, porVencer: porVencer.length });
+    });
 };
 
 function json(data: unknown, status = 200) {

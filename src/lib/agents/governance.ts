@@ -4,24 +4,25 @@
 // Las tablas tienen RLS (enable, sin force) → el rol dueño bypasea, así que
 // filtramos por org_id explícito en cada query (mismo patrón que client-manager).
 
-import { sql } from '../db';
+import { sql, withOrgTx } from '../db';
 import { encryptSecret } from '../crypto-secret';
 
 const DEFAULT_AGENT_NAME = 'Asistente Cord';
 
 /** Devuelve el id del agente por defecto de la org, creándolo si no existe. */
 export async function getDefaultAgentId(orgId: string): Promise<string> {
-  const [existing] = await sql`
+  const [existingRows] = await withOrgTx(orgId, sql`
     select id from agentes_ia
     where org_id = ${orgId} and nombre = ${DEFAULT_AGENT_NAME}
-    order by created_at asc limit 1`;
+    order by created_at asc limit 1`);
+  const existing = existingRows[0];
   if (existing?.id) return existing.id as string;
 
-  const [created] = await sql`
+  const [createdRows] = await withOrgTx(orgId, sql`
     insert into agentes_ia (org_id, nombre, descripcion, activo)
     values (${orgId}, ${DEFAULT_AGENT_NAME}, 'Agente que arma cotizaciones y consulta tus sistemas conectados.', true)
-    returning id`;
-  return created.id as string;
+    returning id`);
+  return createdRows[0].id as string;
 }
 
 export interface McpServerRow {
@@ -37,12 +38,11 @@ export interface McpServerRow {
 /** Lista los servidores MCP de la org + si el agente default tiene permiso. */
 export async function listMcpServers(orgId: string): Promise<McpServerRow[]> {
   const agentId = await getDefaultAgentId(orgId);
-  const servers = await sql`
-    select id, nombre, url_sse, auth_token, activo
-    from mcp_servers where org_id = ${orgId} order by created_at asc`;
-  const perms = await sql`
-    select recurso_id from agentes_permisos
-    where org_id = ${orgId} and agente_id = ${agentId} and tipo_recurso = 'outbound'`;
+  const [servers, perms] = await withOrgTx(orgId,
+    sql`select id, nombre, url_sse, auth_token, activo
+    from mcp_servers where org_id = ${orgId} order by created_at asc`,
+    sql`select recurso_id from agentes_permisos
+    where org_id = ${orgId} and agente_id = ${agentId} and tipo_recurso = 'outbound'`);
   const allowed = new Set(perms.map((p: any) => p.recurso_id as string));
   return servers.map((s: any) => ({
     id: s.id, nombre: s.nombre, url_sse: s.url_sse,
@@ -59,19 +59,19 @@ export async function addMcpServer(
   // encryptSecret lo deja en claro — ver crypto-secret.ts). client-manager.ts
   // lo descifra al conectar.
   const stored = authToken ? encryptSecret(authToken) : null;
-  const [row] = await sql`
+  const [rows] = await withOrgTx(orgId, sql`
     insert into mcp_servers (org_id, nombre, url_sse, auth_token, activo)
     values (${orgId}, ${nombre}, ${urlSse}, ${stored}, true)
-    returning id`;
-  return row.id as string;
+    returning id`);
+  return rows[0].id as string;
 }
 
 export async function deleteMcpServer(orgId: string, id: string): Promise<void> {
-  await sql`delete from mcp_servers where id = ${id} and org_id = ${orgId}`;
+  await withOrgTx(orgId, sql`delete from mcp_servers where id = ${id} and org_id = ${orgId}`);
 }
 
 export async function setServerActivo(orgId: string, id: string, activo: boolean): Promise<void> {
-  await sql`update mcp_servers set activo = ${activo} where id = ${id} and org_id = ${orgId}`;
+  await withOrgTx(orgId, sql`update mcp_servers set activo = ${activo} where id = ${id} and org_id = ${orgId}`);
 }
 
 /** Otorga o revoca el permiso del agente default sobre un servidor MCP. */
@@ -79,14 +79,14 @@ export async function setServerPermitido(orgId: string, serverId: string, permit
   const agentId = await getDefaultAgentId(orgId);
   if (permitido) {
     // Por defecto le damos acceso a TODAS las tools del servidor (["*"]).
-    await sql`
+    await withOrgTx(orgId, sql`
       insert into agentes_permisos (org_id, agente_id, tipo_recurso, recurso_id, herramientas)
       values (${orgId}, ${agentId}, 'outbound', ${serverId}, '["*"]'::jsonb)
       on conflict (agente_id, tipo_recurso, recurso_id)
-      do update set herramientas = '["*"]'::jsonb`;
+      do update set herramientas = '["*"]'::jsonb`);
   } else {
-    await sql`
+    await withOrgTx(orgId, sql`
       delete from agentes_permisos
-      where org_id = ${orgId} and agente_id = ${agentId} and tipo_recurso = 'outbound' and recurso_id = ${serverId}`;
+      where org_id = ${orgId} and agente_id = ${agentId} and tipo_recurso = 'outbound' and recurso_id = ${serverId}`);
   }
 }

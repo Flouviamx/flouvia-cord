@@ -4,7 +4,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, logAudit, reqIp } from '../../../lib/db';
+import { sql, logAudit, reqIp, withOrgTx, withUserTx } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../lib/billing';
@@ -33,8 +33,15 @@ export const POST: APIRoute = async ({ request }) => {
 
     // El token se guarda hasheado (sha256) — ver equipo.ts. Buscar por el hash
     // del token recibido, nunca por el valor crudo.
+    // Se resuelve con una función acotada porque quien acepta TODAVÍA no es
+    // miembro: no hay organización activa que setear, y la política de usuario
+    // solo deja ver filas ya vinculadas a su user_id. El token traduce a
+    // identidad; a partir de ahí el trabajo vuelve al carril normal de esa
+    // organización, igual que en /q/[token].
     const tokenHash = sha256Hex(token);
-    const rows = await sql`select id, org_id, user_id, estado, email, token_expires_at, rol from org_members where token = ${tokenHash}`;
+    const [rows] = await withUserTx(userId, sql`
+        select id, org_id, user_id, estado, email, token_expires_at, rol
+          from cord_resolve_invitation(${tokenHash})`);
     if (!rows.length) return json({ error: 'Invitación no válida' }, 404);
     const inv = rows[0];
     if (inv.estado === 'revocado') return json({ error: 'Esta invitación fue cancelada' }, 410);
@@ -60,9 +67,9 @@ export const POST: APIRoute = async ({ request }) => {
     if (subscriptionDenied) return subscriptionDenied;
 
     // ¿Ya soy miembro de esta org? (evita violar el índice único) → consumo el invite.
-    const existing = await sql`select id from org_members where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`;
+    const [existing] = await withOrgTx(orgId, sql`select id from org_members where org_id = ${orgId} and user_id = ${userId} and estado = 'activo' limit 1`);
     if (existing.length) {
-        if (existing[0].id !== inv.id) await sql`delete from org_members where id = ${inv.id}`;
+        if (existing[0].id !== inv.id) await withOrgTx(orgId, sql`delete from org_members where id = ${inv.id}`);
         return json({ ok: true, orgId, already: true });
     }
 
@@ -72,14 +79,15 @@ export const POST: APIRoute = async ({ request }) => {
         return json({ error: usage.reason }, unavailable ? 503 : 429);
     }
     try {
-        await sql`update org_members set user_id = ${userId}, estado = 'activo', joined_at = now(), token = null, token_expires_at = null where id = ${inv.id}`;
+        await withOrgTx(orgId, sql`update org_members set user_id = ${userId}, estado = 'activo', joined_at = now(), token = null, token_expires_at = null where id = ${inv.id}`);
     } catch (error) {
         await cancelUsage(orgId, usage.id);
         throw error;
     }
     void flushUsageReservation(orgId, usage.id);
     await logAudit(orgId, { accion: 'equipo.union', entidad: 'miembro', entidad_id: inv.id, detalle: 'Aceptó la invitación', ip: reqIp(request), userAgent: request.headers.get('user-agent') });
-    const [orgFlags] = await sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`;
+    const [orgFlagsRows] = await withOrgTx(orgId, sql`select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
+    const orgFlags = orgFlagsRows[0];
     await trackServer('team_member_accepted', orgId, { role: inv.rol }, !!orgFlags?.is_sandbox, !!orgFlags?.is_demo);
 
     const [me2] = await sql`select first_name, last_name, email from users where id = ${userId} limit 1`;

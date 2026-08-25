@@ -8,7 +8,8 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
-import { sql, logAudit } from '../../../lib/db';
+import { sql, logAudit, withOrgTx, withSystemTx } from '../../../lib/db';
+import { reqContext } from '../../../lib/context';
 import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
 
 const RESEND_KEY  = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
@@ -28,19 +29,24 @@ export const GET: APIRoute = async ({ request }) => {
     const authError = assertCronAuth(request);
     if (authError) return authError;
 
+    // Carril de SISTEMA solo para descubrir las organizaciones con tasa
+    // configurada; el cargo de cada una se calcula y escribe en su propio
+    // withOrgTx más abajo.
+    return reqContext.run({ userId: null, cronScope: true }, async () => {
+
     const now = new Date();
     // Periodo = mes actual ('YYYY-MM'). El cron corre el día 1, así que el
     // interés corresponde al mes que recién arrancó (deuda sigue sin pagarse).
     const periodo = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
 
     // Orgs con tasa de interés configurada (cualquier plan que lo habilite).
-    const orgs = await sql`
+    const [orgs] = await withSystemTx(sql`
         select id, nombre, interes_moratorio_pct, moneda,
                (select email from org_members where org_id = orgs.id and rol = 'owner' limit 1) as owner_email
         from orgs
         where interes_moratorio_pct > 0
           and cord_effective_plan(id) in ('scale', 'developer')
-          and sandbox_of is null`;
+          and sandbox_of is null`);
 
     let totalCargos = 0;
     let totalOrgs   = 0;
@@ -55,14 +61,14 @@ export const GET: APIRoute = async ({ request }) => {
         // interés por más que se venciera. Además cobraba el interés sobre el
         // TOTAL y no sobre el saldo: un cliente que ya había abonado el 80%
         // seguía pagando interés sobre el 100%.
-        const rows = await sql`
+        const [rows] = await withOrgTx(orgId, sql`
             select cxc.origen, cxc.ref_id, cxc.folio, cxc.saldo, cxc.dias_vencido,
                    cl.empresa
             from cuentas_por_cobrar cxc
             left join clientes cl on cl.id = cxc.cliente_id
             where cxc.org_id = ${orgId}
               and cxc.dias_vencido > 0
-              and cxc.saldo > 0`;
+              and cxc.saldo > 0`);
 
         const cargos: { folio: string; empresa: string; monto: number; diasVencido: number }[] = [];
 
@@ -81,19 +87,19 @@ export const GET: APIRoute = async ({ request }) => {
             try {
                 // ON CONFLICT DO NOTHING = idempotente, por riel.
                 if (esFactura) {
-                    await sql`
+                    await withOrgTx(orgId, sql`
                         insert into intereses_moratorios
                             (org_id, documento_id, periodo, tasa_pct, saldo_base, monto, dias_vencido)
                         values
                             (${orgId}, ${refId}, ${periodo}, ${tasa}, ${saldo}, ${monto}, ${diasVencido})
-                        on conflict (documento_id, periodo) where documento_id is not null do nothing`;
+                        on conflict (documento_id, periodo) where documento_id is not null do nothing`);
                 } else {
-                    await sql`
+                    await withOrgTx(orgId, sql`
                         insert into intereses_moratorios
                             (org_id, cotizacion_id, periodo, tasa_pct, saldo_base, monto, dias_vencido)
                         values
                             (${orgId}, ${refId}, ${periodo}, ${tasa}, ${saldo}, ${monto}, ${diasVencido})
-                        on conflict (cotizacion_id, periodo) do nothing`;
+                        on conflict (cotizacion_id, periodo) do nothing`);
                 }
 
                 cargos.push({ folio: (r.folio as string) ?? '—', empresa: (r.empresa as string) ?? '—', monto, diasVencido });
@@ -165,6 +171,7 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     return json({ periodo, orgs: totalOrgs, cargos: totalCargos });
+    });
 };
 
 const esc = (s: string) => String(s ?? '').replace(/</g, '&lt;');

@@ -4,7 +4,7 @@
 // al emitir (SpainVerifactuProvider), y el ENVÍO va por un cron con reintentos
 // para no bloquear la emisión de la factura con la latencia/disponibilidad de
 // un servicio de terceros.
-import { sql, withOrgTx } from '../../db';
+import { sql, withOrgTx, withSystemTx } from '../../db';
 import { decryptSecret } from '../../crypto-secret';
 import { submitToAeat, type BatchRegistro, type RegistroIdentity } from './aeat';
 import { logVerifactuEvento } from './chain';
@@ -28,9 +28,9 @@ export interface SubmitOrgResult {
 
 /** Orgs españolas con Verifactu activado — candidatas a tener envíos pendientes. */
 export async function orgsConVerifactuActivo(): Promise<string[]> {
-    const rows = await sql`
+    const [rows] = await withSystemTx(sql`
         select id from orgs
-        where verifactu_modo = 'verifactu' and sandbox_of is null and is_demo is not true`;
+        where verifactu_modo = 'verifactu' and sandbox_of is null and is_demo is not true`);
     return rows.map((r: any) => r.id as string);
 }
 

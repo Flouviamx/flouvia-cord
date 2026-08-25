@@ -9,7 +9,7 @@
 // REGLA DE ORO: dispatchQuoteEvent NUNCA lanza. Un fallo de webhook jamás debe
 // romper la operación de negocio que lo originó (enviar, aprobar, cobrar…).
 
-import { sql } from './db';
+import { sql, withOrgTx } from './db';
 import { after } from './after';
 import { enqueueForSubscribers, flushNow, newEventId } from './webhook-delivery';
 
@@ -66,10 +66,11 @@ interface QuoteSummary {
 export async function dispatchQuoteEvent(orgId: string, cotizacionId: string, evento: WebhookEvent): Promise<void> {
     try {
         // El resumen de la cotización lo comparten webhooks y Slack: lo cargamos una vez.
-        const [q] = await sql`
+        const [qRows] = await withOrgTx(orgId, sql`
             select c.id, c.folio, c.status, c.total, c.public_token, cl.empresa
             from cotizaciones c left join clientes cl on cl.id = c.cliente_id
-            where c.id = ${cotizacionId} and c.org_id = ${orgId}`;
+            where c.id = ${cotizacionId} and c.org_id = ${orgId}`);
+        const q = qRows[0];
         if (!q) return;
         await dispatchToSubscribers(orgId, evento, q as QuoteSummary);
     } catch {
@@ -101,10 +102,11 @@ export async function dispatchPaymentPartial(orgId: string, cotizacionId: string
     tipo: string; monto: number; numero_cuota: number; saldo_pendiente: number; payment_method: string | null;
 }): Promise<void> {
     try {
-        const [q] = await sql`
+        const [qRows] = await withOrgTx(orgId, sql`
             select c.id, c.folio, c.status, c.total, c.public_token, cl.empresa
             from cotizaciones c left join clientes cl on cl.id = c.cliente_id
-            where c.id = ${cotizacionId} and c.org_id = ${orgId}`;
+            where c.id = ${cotizacionId} and c.org_id = ${orgId}`);
+        const q = qRows[0];
         if (!q) return;
         await dispatchToSubscribers(orgId, 'payment.partial', q as QuoteSummary, extra);
     } catch {
@@ -139,14 +141,15 @@ async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSumm
  */
 export async function dispatchInvoiceEvent(orgId: string, documentoId: string, evento: WebhookEvent): Promise<void> {
     try {
-        const [d] = await sql`
+        const [dRows] = await withOrgTx(orgId, sql`
             select d.id, d.invoice_number, d.fiscal_id, d.lifecycle, d.status,
                    d.currency, d.total, d.amount_paid, d.amount_remaining, d.due_date,
                    d.public_token, d.country_code, d.document_type, d.cotizacion_id,
                    cl.empresa
               from documentos_fiscales d
               left join clientes cl on cl.id = d.cliente_id
-             where d.id = ${documentoId} and d.org_id = ${orgId}`;
+             where d.id = ${documentoId} and d.org_id = ${orgId}`);
+        const d = dRows[0];
         if (!d) return;
         const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
         await emitToSubscribers(orgId, evento, {
@@ -180,7 +183,7 @@ async function emitToSubscribers(orgId: string, evento: string, data: Record<str
         // más antiguos cubiertos por el plan efectivo reciben eventos. El
         // ranking en el momento de uso impide que endpoints excedentes sigan
         // operando por haber sido creados antes del cambio de plan.
-        hooks = await sql`
+        [hooks] = await withOrgTx(orgId, sql`
             with ranked as (
                 select id, eventos,
                        row_number() over (order by created_at asc, id asc)::int as position,
@@ -194,7 +197,7 @@ async function emitToSubscribers(orgId: string, evento: string, data: Record<str
                   from webhooks
                  where org_id = ${orgId} and activo = true
             )
-            select id, eventos from ranked where position <= allowance`;
+            select id, eventos from ranked where position <= allowance`);
     } catch { return; } // tabla aún no migrada → no-op
     const subs = hooks.filter((h) => {
         const evs = Array.isArray(h.eventos) ? h.eventos : [];

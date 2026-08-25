@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { createHash } from 'node:crypto';
-import { sql, withCaptureToken } from '../../../../../lib/db';
+import { sql, withCaptureToken, withOrgTx } from '../../../../../lib/db';
 import { stripeUpload, attachPersonDocument, attachPersonAdditionalDocument, retrieveAccount, updateConnectAccount, isAlreadyVerifiedError } from '../../../../../lib/billing';
 import { translateStripeError } from '../../../../../lib/stripe-catalogs';
 import { guardUpload } from '../../../../../lib/upload-guard';
@@ -41,7 +41,12 @@ export const GET: APIRoute = async ({ params, request }) => {
     const { row, expired } = await loadSession(token);
     if (!row) return new Response(JSON.stringify({ ok: false, error: 'not_found' }), { status: 404 });
 
-    const [org] = await sql`select nombre, logo_url, color_marca from orgs where id = ${row.org_id}`;
+    // El org_id ya viene resuelto del token de captura (withCaptureToken, arriba),
+    // así que la lectura de marca va en el carril normal de esa organización —
+    // mismo patrón que /q/[token]: el token resuelve la identidad, withOrgTx hace
+    // el trabajo.
+    const [orgRows] = await withOrgTx(row.org_id as string, sql`select nombre, logo_url, color_marca from orgs where id = ${row.org_id}`);
+    const org = orgRows[0];
     return new Response(JSON.stringify(publicState(row, org, expired)), { headers: { 'Content-Type': 'application/json' } });
 };
 
@@ -112,7 +117,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         );
 
         const finalAccount = account || await retrieveAccount(stripeAccountId);
-        await sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(finalAccount.requirements))} where id = ${row.org_id}`;
+        await withOrgTx(row.org_id as string, sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(finalAccount.requirements))} where id = ${row.org_id}`);
         await auditConnect(row.org_id as string, request, 'captura_movil_recibida', {
             entity: 'connect_document',
             entityId: uploaded.id,

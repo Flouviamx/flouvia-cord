@@ -646,3 +646,93 @@ con el error del proveedor (regla 14). El caso que originó esta parte: Brasil
 estaba en la lista de países IBAN, y Brasil no usa IBAN — ninguna cuenta
 brasileña habría pasado el mod-97, con un error que hablaba de dígitos de
 control sobre un formato que ahí no existe.
+
+### 30. Una query multi-tenant viaja en un carril de contexto declarado
+
+El aislamiento entre organizaciones no puede depender de que el código nunca
+olvide un `where org_id = ...`. Toda query a una tabla multi-tenant se ejecuta
+dentro de un **carril** que declara, ante Postgres, en nombre de quién corre.
+
+Los carriles viven en `src/lib/db.ts` y son cinco. No se inventa uno nuevo sin
+una razón que ninguno cubra:
+
+- `withOrgTx(orgId, ...)` — la organización activa de la sesión. El caso normal.
+- `withUserTx(userId, ...)` — bootstrap: resolver a qué organizaciones pertenece
+  alguien, antes de tener una activa.
+- `withSystemTx(...)` — barrido cross-org de un cron. Exige `cronScope` en el
+  `reqContext`, que solo marca una ruta `/api/cron` **después** de validar
+  `CRON_SECRET`.
+- `withOpsTx(...)` — lectura cross-org de Cord Ops. Exige `opsScope`, que solo
+  marca el middleware **después** de `validateOpsSession()`.
+- `withCaptureToken(token, ...)` — captura móvil de identidad.
+
+Reglas que sostienen el contrato:
+
+- **El carril de sistema se limita al barrido.** Un cron descubre cross-org qué
+  organizaciones tocar, y el trabajo de cada una vuelve a `withOrgTx` con su
+  `org_id`. Procesar todo en `app.scope='system'` convierte un cron en un
+  bypass permanente.
+- **Un token resuelve identidad, no abre acceso.** `/q/[token]`,
+  `/i/[token]` y la captura móvil resuelven el `org_id` con una función
+  `security definer` estrecha y **vuelven** a `withOrgTx` con ese id. El token
+  nunca es la credencial de la query.
+- **Ampliar una política es una decisión, no un atajo.** Si un camino no encaja
+  en un carril, la respuesta por defecto es una función `security definer` para
+  ese flujo — no un `or` más en la política de `cotizaciones`.
+- **`scripts/tenancy-lint.mjs` lo verifica** y corre en `test:payments`. Detecta
+  la query por el carril que la ENCIERRA, no por el `await`: `safe(sql\`...\`)`
+  también ejecuta, y ese helper además se traga el error.
+
+Casos que originaron la regla (ago 2026): las ~50 tablas del schema tenían RLS
+habilitada y forzada con políticas correctas, y **ninguna se estaba aplicando** —
+el rol de conexión conservaba `rolbypassrls`, así que Postgres las ignoraba por
+completo. Al preparar la migración a `cord_app` aparecieron las roturas que eso
+tapaba: el export de datos de la organización devolvía arrays vacíos en silencio
+(su helper `safe()` se traga el error), la política de `orgs` solo reconocía al
+**dueño**, así que un miembro invitado perdía su organización del selector, y
+Cord Ops funcionaba únicamente porque el rol bypaseaba RLS — el privilegio más
+alto del sistema existía como efecto secundario de la configuración de la base,
+no como una decisión declarada.
+
+### 31. Un `-webkit-` escrito a mano puede borrar la propiedad estándar en producción
+
+Un componente puede declarar correctamente `backdrop-filter` **y**
+`-webkit-backdrop-filter`, pasar `npm run typecheck` y `npm run build` sin una
+sola advertencia, y aun así llegar a producción sin la propiedad estándar. El
+minificador de CSS del build, no el código fuente, es quien decide qué
+sobrevive — y `npm run build` nunca inspecciona lo que produjo.
+
+Astro 7.2 trae su propio Vite 8 (`node_modules/astro/node_modules/vite`), y
+Vite 8 invirtió el default del minificador de CSS: `cssMinify: true` cae ahora
+en `lightningcss` — antes cargaba a `esbuild`. `lightningcss` **colapsa** un
+par `backdrop-filter` + `-webkit-backdrop-filter` en el mismo selector y sólo
+deja la ÚLTIMA declaración del par, sin importar cuál sea. Este repo escribía
+el `-webkit-` al final en las 54 declaraciones existentes, así que producción
+perdía la propiedad estándar en 14 de 16 casos: sin ella, Firefox se queda sin
+blur en cualquier superficie que la use. Como el `background` de `.topbar` y
+`.sidebar` está a 72%/75% de opacidad — pensado para verse sólido SÓLO con el
+blur encima —, el resultado era un chrome translúcido, visible únicamente en
+Firefox y únicamente en producción (dev nunca minifica).
+
+- **El arreglo no es quitar el `-webkit-` a mano.** Sin `cssTarget` ni
+  `browserslist` configurados, `lightningcss` recibe `targets: {}` y **no
+  regenera prefijos** — dejar sólo la propiedad estándar en el fuente habría
+  roto Safari en su lugar. El arreglo correcto es pinear el minificador de
+  vuelta a `esbuild` en `astro.config.mjs`
+  (`vite.build.cssMinify: 'esbuild'`), que conserva ambas declaraciones y no
+  las reordena.
+- **El contrato se verifica sobre el bundle, nunca sobre el fuente.**
+  `scripts/css-build-check.mjs` (`npm run security:css`) recorre
+  `.vercel/output/static/_astro/*.css` después de `npm run build` y afirma que
+  cada `-webkit-backdrop-filter` tiene su forma estándar en el mismo archivo.
+  Confirmado deliberadamente reintroduciendo el bug (`cssMinify: true`) antes
+  de escribir el check, para probar que sí lo detecta y no sólo que corre.
+- **Toda superficie con fondo semitransparente que dependa de un filtro
+  necesita su propio `@supports` de respaldo**, no sólo el arreglo del
+  minificador — es la segunda capa ante cualquier otra razón por la que el
+  filtro no aplique (GPU sin composición, "Reducir transparencia" del SO). El
+  test cubre las DOS formas con `or`:
+  `@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))`.
+  Un `@supports not (backdrop-filter: …)` a secas no dispara en el escenario
+  que originó esta regla: los navegadores dañados son exactamente aquellos
+  para los que ese test da falso.

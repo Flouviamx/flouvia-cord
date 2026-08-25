@@ -2,13 +2,13 @@
 import OpsLayout from '../../../layouts/OpsLayout.astro';
 import OpsShell from '../../../components/ops/OpsShell.astro';
 import OpsActionDialog from '../../../components/ops/OpsActionDialog.astro';
-import { sql } from '../../../lib/db';
+import { sql, withOpsTx } from '../../../lib/db';
 import { opsDate, opsNumber, OPS_AUDIT_LABELS } from '../../../lib/ops-format';
 
 if(!Astro.locals.opsOperator)return Astro.redirect('/ops/login');
 const id=String(Astro.params.id||'');
 if(!/^[0-9a-f-]{36}$/i.test(id))return Astro.redirect('/ops/organizations');
-const [orgRows,members,quotes,clients,products,keys,webhooks,sso,audit]=await Promise.all([
+const [orgRows,members,quotes,clients,products,keys,webhooks,sso,audit]=await withOpsTx(
   sql`select o.id,o.nombre,o.plan,o.country_code,o.moneda,o.quote_prefix,o.created_at,o.onboarded_at,o.subscription_status,o.billing_cycle,o.current_period_end,o.stripe_charges_enabled,o.stripe_payouts_enabled,o.stripe_details_submitted,o.stripe_disabled_reason,o.require_2fa,o.require_sso,o.session_timeout_min,o.ai_cobranza_activa,o.is_demo,o.sandbox_of,owner.email owner_email,
       (select count(*)::int from org_members m where m.org_id=o.id) member_count,
       (select count(*)::int from clientes c where c.org_id=o.id) client_count,
@@ -30,7 +30,7 @@ const [orgRows,members,quotes,clients,products,keys,webhooks,sso,audit]=await Pr
   sql`select id,url,activo,eventos,last_status,last_error,last_delivery_at,fallos_consecutivos,created_at from webhooks where org_id=${id} order by created_at desc limit 50`,
   sql`select id,nombre,proveedor,enabled,last_login_at,last_error,last_error_at,created_at from sso_connections where org_id=${id} order by created_at desc limit 50`,
   sql`select action,result,actor_email,metadata,ip,created_at from ops_audit_log where target_type='organization' and target_id=${id} order by created_at desc limit 50`,
-]);
+);
 if(!orgRows.length)return Astro.redirect('/ops/organizations');
 const org:any=orgRows[0]; const endpoint=`/api/ops/organizations/${id}`;
 ---

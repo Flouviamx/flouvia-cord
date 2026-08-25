@@ -159,6 +159,16 @@ const NAV_GROUPS = [
             inset 0 0 0 1px rgba(255,255,255,0.1),
             inset 0 1px 1px rgba(255,255,255,0.15);
     }
+    /* Los dos fondos de arriba (72% claro, 75% oscuro) DEPENDEN del blur para
+       verse sólidos. Sin él —GPU sin composición, "Reducir transparencia" del
+       SO, navegador viejo— el sidebar se transparenta y el contenido se ve por
+       debajo. El test cubre las DOS formas con `or`: un `not (backdrop-filter:
+       …)` a secas no dispara en un navegador que soporta la estándar pero
+       recibió sólo la prefijada. */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        .sidebar { background: #fff; }
+        :global(html[data-theme="dark"]) .sidebar { background: #181e28; }
+    }
     /* Sheen superior (specular highlight tipo liquid glass) — detrás del contenido */
     .sidebar::before {
         content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;

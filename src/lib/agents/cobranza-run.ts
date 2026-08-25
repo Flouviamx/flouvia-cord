@@ -11,7 +11,7 @@
 // Ahora el cron itera orgs llamando aquí, y el botón manual llama aquí. Una sola
 // implementación: no pueden volver a divergir.
 
-import { sql, withOrgTx } from '../db';
+import { sql, withOrgTx, withSystemTx } from '../db';
 import { runARAgent } from './ar-agent';
 import { sendEmail, siteOrigin } from '../email';
 import { moneyFull } from '../fmt';
@@ -381,12 +381,12 @@ export async function runCobranzaOrg(
 
 /** Orgs con la cobranza autónoma encendida (nunca sandboxes ni la org demo). */
 export async function orgsConCobranzaActiva(): Promise<string[]> {
-    const rows = await sql`
+    const [rows] = await withSystemTx(sql`
         select id from orgs
         where ai_cobranza_activa = true
           and cord_effective_plan(id) in ('scale', 'developer')
           and sandbox_of is null
           and is_demo is not true
-          and owner_id::text <> '00000000-0000-0000-0000-000000000000'`;
+          and owner_id::text <> '00000000-0000-0000-0000-000000000000'`);
     return rows.map((r: any) => r.id as string);
 }

@@ -6,7 +6,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
 
 const MAX_ROWS = 2000;
 
@@ -34,7 +34,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Resolver SKUs existentes en una sola query para decidir update vs insert.
     const skus = [...new Set(rows.map((r: any) => r.sku).filter(Boolean))] as string[];
     const existing = upsert && skus.length
-        ? await sql`select id, sku from productos where org_id = ${orgId} and sku = any(${skus})`
+        ? (await withOrgTx(orgId, sql`select id, sku from productos where org_id = ${orgId} and sku = any(${skus})`))[0]
         : [];
     const bySku = new Map(existing.map((e: any) => [e.sku as string, e.id as string]));
 
@@ -42,14 +42,15 @@ export const POST: APIRoute = async ({ request }) => {
     for (const r of rows) {
         const hit = upsert && r.sku ? bySku.get(r.sku) : undefined;
         if (hit) {
-            await sql`update productos set nombre = ${r.nombre}, unidad = ${r.unidad},
+            await withOrgTx(orgId, sql`update productos set nombre = ${r.nombre}, unidad = ${r.unidad},
                       precio_lista = ${r.precio}, activo = ${r.activo}
-                      where id = ${hit} and org_id = ${orgId}`;
+                      where id = ${hit} and org_id = ${orgId}`);
             updated++;
         } else {
-            const [ins] = await sql`insert into productos (org_id, sku, nombre, unidad, precio_lista, activo)
+            const [insRows] = await withOrgTx(orgId, sql`insert into productos (org_id, sku, nombre, unidad, precio_lista, activo)
                       values (${orgId}, ${r.sku}, ${r.nombre}, ${r.unidad}, ${r.precio}, ${r.activo})
-                      returning id, sku`;
+                      returning id, sku`);
+            const ins = insRows[0];
             // si en el mismo lote viene otro renglón con el mismo SKU, que también haga update
             if (upsert && ins.sku) bySku.set(ins.sku as string, ins.id as string);
             created++;

@@ -1,18 +1,18 @@
 ---
 import OpsLayout from '../../layouts/OpsLayout.astro';
 import OpsShell from '../../components/ops/OpsShell.astro';
-import { sql } from '../../lib/db';
+import { sql, withOpsTx } from '../../lib/db';
 import { opsDate,opsNumber,OPS_AUDIT_LABELS } from '../../lib/ops-format';
 
 if(!Astro.locals.opsOperator)return Astro.redirect('/ops/login');
 let stats:any={}; let recentUsers:any[]=[]; let recentOrgs:any[]=[]; let audit:any[]=[]; let error=false;
 try{
-  const result=await Promise.all([
+  const result=await withOpsTx(
     sql`select (select count(*)::int from users) users,(select count(*)::int from users where suspended_at is not null) suspended,(select count(*)::int from orgs) organizations,(select count(*)::int from sessions where revoked_at is null and expires_at>now()) sessions,(select count(*)::int from cotizaciones) quotes,(select coalesce(sum(total),0) from cotizaciones where status in ('approved','paid','invoiced')) closed_value,(select count(*)::int from api_keys where revoked_at is null) api_keys,(select count(*)::int from webhooks where activo) webhooks`,
     sql`select u.id,u.email,u.first_name,u.last_name,u.created_at,u.suspended_at,(select max(last_used_at) from sessions s where s.user_id=u.id) last_seen from users u order by u.created_at desc limit 5`,
     sql`select o.id,o.nombre,o.plan,o.created_at,u.email owner_email,(select count(*)::int from cotizaciones q where q.org_id=o.id) quotes from orgs o left join users u on u.id=o.owner_id order by o.created_at desc limit 5`,
     sql`select action,result,actor_email,target_type,created_at from ops_audit_log order by created_at desc limit 8`,
-  ]);stats=result[0][0]||{};recentUsers=result[1] as any[];recentOrgs=result[2] as any[];audit=result[3] as any[];
+  );stats=result[0][0]||{};recentUsers=result[1] as any[];recentOrgs=result[2] as any[];audit=result[3] as any[];
 }catch(cause){error=true;console.error('[ops/overview]',cause)}
 ---
 <OpsLayout title="Operaciones | Cord Ops"><OpsShell active="overview" title="Operaciones" subtitle="Control interno de toda la plataforma Cord.">

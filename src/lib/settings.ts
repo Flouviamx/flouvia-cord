@@ -11,7 +11,15 @@
 // devuelve la lista con label/desc ya resueltos al idioma del request (ver
 // src/i18n/app.ts + currentLocale()) — cae a español si falta la traducción.
 
-export interface SettingsTab { id: string; label: string; labelEn?: string; href: string; }
+/**
+ * `keywords`: sinónimos para el buscador ⌘K, que sólo empata contra el TÍTULO.
+ * Sirven para lo que la gente teclea pero no es el nombre de la pestaña: "IVA"
+ * o "VAT" para Impuestos, "RFC"/"NIF"/"CSD" para Datos fiscales. Se escriben
+ * en los dos idiomas en la misma cadena — el buscador normaliza y sólo mira si
+ * el término está contenido, así que mezclar es correcto y evita duplicar la
+ * lista por locale.
+ */
+export interface SettingsTab { id: string; label: string; labelEn?: string; href: string; keywords?: string; }
 export interface SettingsCategory { id: string; label: string; labelEn?: string; desc: string; descEn?: string; icon: string; tabs: SettingsTab[]; }
 
 export const SETTINGS_CATEGORIES: SettingsCategory[] = [
@@ -21,7 +29,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         descEn: 'Business name, base currency, contact info, and localization.',
         icon: '<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
         tabs: [
-            { id: 'general', label: 'General', labelEn: 'General', href: '/app/ajustes/general' },
+            { id: 'general', label: 'General', labelEn: 'General', href: '/app/ajustes/general', keywords: 'moneda currency divisa idioma language zona horaria timezone localizacion nombre negocio contacto' },
         ],
     },
     {
@@ -40,10 +48,10 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         descEn: 'Numbering, taxes, PDF document, and approval rules.',
         icon: '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13" stroke-opacity="0.5"/><line x1="16" x2="8" y1="17" y2="17" stroke-opacity="0.5"/><line x1="10" x2="8" y1="9" y2="9" stroke-opacity="0.5"/>',
         tabs: [
-            { id: 'cotizaciones', label: 'Folio e IVA',         labelEn: 'Numbering & tax',  href: '/app/ajustes/cotizaciones' },
-            { id: 'impuestos',    label: 'Impuestos',           labelEn: 'Taxes',            href: '/app/ajustes/impuestos' },
+            { id: 'cotizaciones', label: 'Folio e IVA',         labelEn: 'Numbering & tax',  href: '/app/ajustes/cotizaciones', keywords: 'folio numeracion numbering prefijo prefix serie consecutivo' },
+            { id: 'impuestos',    label: 'Impuestos',           labelEn: 'Taxes',            href: '/app/ajustes/impuestos',    keywords: 'iva vat sales tax taxes gst impuesto impuestos tasa tasas rate rates retencion retenciones withholding isr irpf exento exempt catalogo' },
             { id: 'pdf',          label: 'Documento PDF',       labelEn: 'PDF document',     href: '/app/ajustes/pdf' },
-            { id: 'aprobaciones', label: 'Aprobaciones',        labelEn: 'Approvals',        href: '/app/ajustes/aprobaciones' },
+            { id: 'aprobaciones', label: 'Aprobaciones',        labelEn: 'Approvals',        href: '/app/ajustes/aprobaciones', keywords: 'descuento discount margen margin umbral limite autorizacion' },
             { id: 'plantillas',   label: 'Plantillas',          labelEn: 'Templates',        href: '/app/ajustes/plantillas' },
         ],
     },
@@ -56,9 +64,13 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         desc: 'Datos fiscales, certificado de sello y emisión de facturas.',
         descEn: 'Tax details, digital seal certificate, and invoice issuing.',
         icon: '<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
+        // Sin pestaña "Facturas emitidas": /app/ajustes/facturas es un 301 a
+        // /app/facturas, así que como pestaña sacaba al usuario de Ajustes.
+        // Pasaba desapercibida mientras las pestañas sólo se veían dentro de la
+        // categoría; ahora que el índice las lista, una que te expulsa se nota.
+        // El archivo se conserva para links viejos en correos.
         tabs: [
-            { id: 'fiscal', label: 'Datos fiscales', labelEn: 'Tax details', href: '/app/ajustes/fiscal' },
-            { id: 'facturas', label: 'Facturas emitidas', labelEn: 'Issued invoices', href: '/app/ajustes/facturas' },
+            { id: 'fiscal', label: 'Datos fiscales', labelEn: 'Tax details', href: '/app/ajustes/fiscal', keywords: 'fiscal rfc nif cif nie ein tax id csd certificado certificate sello verifactu aeat sat cfdi regimen razon social domicilio facturacion invoicing' },
         ],
     },
     {
@@ -67,7 +79,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         descEn: 'Accept payments from your clients: card via Stripe and bank transfer.',
         icon: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
         tabs: [
-            { id: 'cobros', label: 'Cobros', labelEn: 'Payments', href: '/app/ajustes/cobros' },
+            { id: 'cobros', label: 'Cobros', labelEn: 'Payments', href: '/app/ajustes/cobros', keywords: 'stripe connect pagos payments tarjeta card transferencia spei clabe deposito payout comision fee banco' },
         ],
     },
     {
@@ -78,7 +90,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         // suscripción. Una tarjeta con banda — el objeto real de la categoría.
         icon: '<rect x="2" y="5" width="20" height="14" rx="2.5" fill="currentColor" fill-opacity="0.12"/><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/><path d="M6 15h4"/>',
         tabs: [
-            { id: 'plan', label: 'Suscripción', labelEn: 'Subscription', href: '/app/ajustes/plan' },
+            { id: 'plan', label: 'Suscripción', labelEn: 'Subscription', href: '/app/ajustes/plan', keywords: 'plan planes pricing precio suscripcion subscription billing facturacion uso usage limite upgrade downgrade tarjeta' },
         ],
     },
     {
@@ -88,7 +100,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         icon: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/><path d="M22 8c0-2.3-.8-4.3-2-6"/>',
         tabs: [
             { id: 'notificaciones', label: 'Notificaciones', labelEn: 'Notifications', href: '/app/ajustes/notificaciones' },
-            { id: 'correo',         label: 'Correo',         labelEn: 'Email',         href: '/app/ajustes/correo' },
+            { id: 'correo',         label: 'Correo',         labelEn: 'Email',         href: '/app/ajustes/correo', keywords: 'email correo remitente sender from reply-to firma plantilla' },
         ],
     },
     {
@@ -97,9 +109,9 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         descEn: 'Invite your team, set permissions, and access security.',
         icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5"/>',
         tabs: [
-            { id: 'equipo',    label: 'Equipo y Roles',  labelEn: 'Team & roles',  href: '/app/ajustes/equipo' },
-            { id: 'sso',       label: 'SSO',             labelEn: 'SSO',           href: '/app/ajustes/sso' },
-            { id: 'seguridad', label: 'Seguridad',       labelEn: 'Security',      href: '/app/ajustes/seguridad' },
+            { id: 'equipo',    label: 'Equipo y Roles',  labelEn: 'Team & roles',  href: '/app/ajustes/equipo', keywords: 'team equipo usuarios users miembros members roles permisos permissions invitar invite' },
+            { id: 'sso',       label: 'SSO',             labelEn: 'SSO',           href: '/app/ajustes/sso', keywords: 'sso saml okta entra azure google workspace login inicio sesion' },
+            { id: 'seguridad', label: 'Seguridad',       labelEn: 'Security',      href: '/app/ajustes/seguridad', keywords: 'seguridad security 2fa mfa totp passkey contrasena password sesiones sessions dominios' },
         ],
     },
     {
@@ -146,8 +158,8 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         descEn: 'Export your data, danger zone, and audit log.',
         icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
         tabs: [
-            { id: 'datos',     label: 'Datos y privacidad', labelEn: 'Data & privacy', href: '/app/ajustes/datos' },
-            { id: 'auditoria', label: 'Auditoría',          labelEn: 'Audit log',      href: '/app/ajustes/auditoria' },
+            { id: 'datos',     label: 'Datos y privacidad', labelEn: 'Data & privacy', href: '/app/ajustes/datos', keywords: 'exportar export datos data privacidad privacy gdpr retencion eliminar borrar cuenta delete' },
+            { id: 'auditoria', label: 'Auditoría',          labelEn: 'Audit log',      href: '/app/ajustes/auditoria', keywords: 'auditoria audit log bitacora historial actividad registro' },
         ],
     },
     {

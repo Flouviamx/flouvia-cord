@@ -10,6 +10,7 @@ import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { orgsConCobranzaActiva, runCobranzaOrg, type RunResult } from '../../../lib/agents/cobranza-run';
 import { log } from '../../../lib/log';
+import { reqContext } from '../../../lib/context';
 
 export const prerender = false;
 
@@ -17,6 +18,10 @@ export const GET: APIRoute = async ({ request }) => {
   const authError = assertCronAuth(request);
   if (authError) return authError;
 
+  // Carril de SISTEMA: orgsConCobranzaActiva() barre TODAS las organizaciones
+  // para saber cuáles tienen la cobranza encendida. El trabajo de cada una
+  // (runCobranzaOrg) vuelve a withOrgTx con su propio org_id.
+  return reqContext.run({ userId: null, cronScope: true }, async () => {
   try {
     const orgs = await orgsConCobranzaActiva();
     const results: (RunResult & { error?: string })[] = [];
@@ -47,4 +52,5 @@ export const GET: APIRoute = async ({ request }) => {
     log.error('Error en cron de cobranza', { err: error });
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
   }
+  });
 };

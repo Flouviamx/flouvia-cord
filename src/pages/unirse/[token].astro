@@ -27,14 +27,17 @@ const signedIn = !!currentUserId();
 
 let invite: { nombre: string; rol: string; estado: string; expirado: boolean } | null = null;
 try {
+    // Pantalla PÚBLICA: quien la abre puede no tener sesión todavía, y desde
+    // luego no es miembro. Misma función acotada que usa /api/equipo/join —
+    // traduce el hash del token a lo mínimo que hay que mostrar (nombre de la
+    // organización y rol), nunca a acceso sobre sus datos.
     const tokenHash = sha256Hex(token || '');
     const rows = await sql`
-        select o.nombre, m.rol, m.estado, m.token_expires_at
-        from org_members m join orgs o on o.id = m.org_id
-        where m.token = ${tokenHash}`;
+        select org_nombre, rol, estado, token_expires_at
+          from cord_resolve_invitation(${tokenHash})`;
     if (rows.length) {
         const expirado = !!rows[0].token_expires_at && new Date(rows[0].token_expires_at as string) < new Date();
-        invite = { nombre: rows[0].nombre as string, rol: rows[0].rol as string, estado: rows[0].estado as string, expirado };
+        invite = { nombre: rows[0].org_nombre as string, rol: rows[0].rol as string, estado: rows[0].estado as string, expirado };
     }
 } catch { /* tabla no migrada → invite null */ }
 

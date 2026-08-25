@@ -115,8 +115,20 @@ check(schema.includes("dimension in ('api','usuario','ia','timbrado','envios')")
 check(queries.includes('canRemoveBranding') && queries.includes('portalPowered: canRemoveBranding'), 'El link público debe restituir la marca tras downgrade.');
 check(queries.includes('can_manage_billing') && read('src/pages/app/ajustes/plan.astro').includes('BILL.canManage'), 'Un impago debe revocar funciones sin ocultar la recuperación del Portal.');
 check(email.includes('canCustomizeEmail') && email.includes('canRemoveBranding'), 'El correo debe aplicar entitlements efectivos.');
-check(saml.includes("cord_effective_plan(c.org_id) in ('scale', 'developer')"), 'Las URLs SAML públicas deben dejar de operar tras downgrade.');
-check(ssoDiscover.includes('cord_effective_plan(o.id)'), 'SSO discovery debe usar el plan efectivo.');
+// El gate por plan se movió de saml.ts a la función SQL cord_resolve_sso_connection
+// (auditoría de tenancy, ago 2026): el id de conexión llega SIN sesión, así que
+// se resuelve con una función estrecha. La garantía es la misma y se sigue
+// verificando en los dos extremos — que el filtro exista en la función, y que
+// saml.ts no tenga otra puerta que se la salte.
+check(schema.includes("cord_effective_plan(c.org_id) in ('scale', 'developer')")
+      && saml.includes('cord_resolve_sso_connection'),
+      'Las URLs SAML públicas deben dejar de operar tras downgrade.');
+// Mismo movimiento que arriba: el descubrimiento por dominio de correo también
+// llega sin sesión y se resuelve con cord_resolve_sso_domain, que conserva el
+// filtro por plan efectivo dentro de la función.
+check(schema.includes("cord_effective_plan(o.id) in ('scale', 'developer')")
+      && ssoDiscover.includes('cord_resolve_sso_domain'),
+      'SSO discovery debe usar el plan efectivo.');
 check(quoteApi.includes("isMexico ? 'cfdi' : 'international_invoicing'"), 'La emisión debe rutear por país a su propio feature — CFDI en México, factura comercial en el resto — sin consumir la cuota de la otra.');
 check(apiKeyAuth.includes('active_rank') && apiKeyAuth.includes('subscription_key_limit'), 'Las API keys excedentes deben apagarse tras downgrade.');
 check(apiKeys.includes("pg_advisory_xact_lock(hashtextextended(${'api_keys:' + orgId}"), 'La creación concurrente de API keys debe serializarse.');

@@ -2,13 +2,13 @@
 import OpsLayout from '../../../layouts/OpsLayout.astro';
 import OpsShell from '../../../components/ops/OpsShell.astro';
 import OpsActionDialog from '../../../components/ops/OpsActionDialog.astro';
-import { sql } from '../../../lib/db';
+import { sql, withOpsTx } from '../../../lib/db';
 import { opsDate, opsNumber, OPS_AUDIT_LABELS } from '../../../lib/ops-format';
 
 if (!Astro.locals.opsOperator) return Astro.redirect('/ops/login');
 const id = String(Astro.params.id || '');
 if (!/^[0-9a-f-]{36}$/i.test(id)) return Astro.redirect('/ops/users');
-const [userRows, memberships, sessions, passkeys, connections, audit] = await Promise.all([
+const [userRows, memberships, sessions, passkeys, connections, audit] = await withOpsTx(
   sql`select u.id,u.email,u.first_name,u.last_name,u.avatar_url,u.puesto,u.created_at,u.updated_at,u.email_verified_at,u.password_changed_at,u.failed_login_count,u.locked_until,u.totp_enabled,u.totp_confirmed_at,u.suspended_at,u.suspended_reason,
       exists(select 1 from ops_operators o where o.user_id=u.id and o.active) is_operator,
       (select count(*)::int from org_members m where m.user_id=u.id) membership_count,
@@ -21,7 +21,7 @@ const [userRows, memberships, sessions, passkeys, connections, audit] = await Pr
   sql`select name,device_type,backed_up,transports,created_at,last_used_at from passkeys where user_id=${id} order by created_at desc limit 25`,
   sql`select provider,email,created_at from oauth_accounts where user_id=${id} order by created_at desc limit 25`,
   sql`select action,result,actor_email,metadata,ip,created_at from ops_audit_log where target_type='user' and target_id=${id} order by created_at desc limit 50`,
-]);
+);
 if (!userRows.length) return Astro.redirect('/ops/users');
 const user:any=userRows[0];
 const name=[user.first_name,user.last_name].filter(Boolean).join(' ')||'Sin nombre';

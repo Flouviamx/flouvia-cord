@@ -89,7 +89,7 @@ const FM = ORG.fiscalMetadata || {};
                         <span class="s-hint">{L === 'en' ? 'Example: INV-000001' : 'Ejemplo: INV-000001'}</span>
                     </div>
                 </div>
-                <a class="fact-link" href="/app/ajustes/facturas">{L === 'en' ? 'View issued invoices' : 'Ver facturas emitidas'}</a>
+                <a class="fact-link" href="/app/facturas">{L === 'en' ? 'View issued invoices' : 'Ver facturas emitidas'}</a>
             </div>
         </div>
     )}
@@ -178,7 +178,7 @@ const FM = ORG.fiscalMetadata || {};
             <button type="button" class="csd-btn-solid" id="csdUpload">{t(L, 'set.fiscal.subir_csd')}</button>
             <span class="csd-msg" id="csdMsg"></span>
         </div>
-        <a class="fact-link" href="/app/ajustes/facturas">{t(L, 'set.fiscal.ver_facturas')}</a>
+        <a class="fact-link" href="/app/facturas">{t(L, 'set.fiscal.ver_facturas')}</a>
     </div>
 
     {isEs && (

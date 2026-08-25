@@ -4,7 +4,7 @@ export const prerender = false;
 import Layout from '../../layouts/Layout.astro';
 import IdentityCaptureMobile from '../../components/app/IdentityCaptureMobile';
 import { createHash } from 'node:crypto';
-import { sql, withCaptureToken } from '../../lib/db';
+import { sql, withCaptureToken, withOrgTx } from '../../lib/db';
 import { currentLocale } from '../../lib/context';
 
 const { token } = Astro.params;
@@ -17,7 +17,8 @@ const row = captureRows[0];
 
 let org: { nombre?: string; logo_url?: string; color_marca?: string } = {};
 if (row) {
-    [org] = await sql`select nombre, logo_url, color_marca from orgs where id = ${row.org_id}`;
+    const [orgRows] = await withOrgTx(row.org_id as string, sql`select nombre, logo_url, color_marca from orgs where id = ${row.org_id}`);
+    org = orgRows[0] ?? {};
 }
 
 // Esta pantalla la abre el dueño desde su teléfono: hereda el idioma de su

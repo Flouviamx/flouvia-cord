@@ -18,6 +18,7 @@ import { currentLocale, currentUserId } from '../lib/context';
 import { t, getAppRuntimeI18n } from '../i18n/app';
 import CookieConsent from '../components/CookieConsent.astro';
 import { isInternalAnalyticsOrg } from '../lib/analytics-internal';
+import { localizeCategories } from '../lib/settings';
 import '../styles/charts.css';
 import '../styles/daterange.css';
 import '../styles/widgets.css';
@@ -26,9 +27,23 @@ import '../styles/mobile-app.css';
 
 
 const L = currentLocale();
-const RT = getAppRuntimeI18n(L);
+const RT_BASE = getAppRuntimeI18n(L);
 
 const [ORG, ME] = await Promise.all([getOrg(), getMyMembership()]);
+
+// ⌘K alcanza cada sub-página de Ajustes, no sólo "Ajustes" a secas. Antes
+// teclear "impuestos", "IVA", "NIF" o "fiscal" no devolvía NADA: `cmdkNav`
+// tenía una sola entrada genérica y la pantalla de Ajustes tampoco nombraba
+// sus pestañas, así que esas páginas eran inalcanzables por búsqueda.
+//
+// Se genera desde SETTINGS_CATEGORIES (fuente única) y no a mano en i18n:
+// duplicar 23 entradas por idioma se desincroniza sola. Va aquí y no dentro de
+// getAppRuntimeI18n() porque las etiquetas dependen del PAÍS de la org
+// (`Folio e IVA` vs `Folio e impuestos`), y esa función sólo recibe el locale.
+const SETTINGS_NAV = localizeCategories(L, ORG.countryCode).flatMap((c) =>
+    c.tabs.map((tb) => [`${RT_BASE.cmdkAjustes} · ${tb.label}`, tb.href, 'gear', c.label, tb.keywords || ''])
+);
+const RT = { ...RT_BASE, cmdkNav: [...RT_BASE.cmdkNav, ...SETTINGS_NAV] };
 const analyticsInternal = await isInternalAnalyticsOrg(ORG.id);
 
 
@@ -721,6 +736,11 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             0 4px 12px -2px rgba(0,0,0,0.25),
             inset 0 0 0 1px rgba(255,255,255,0.1),
             inset 0 1px 1px rgba(255,255,255,0.15);
+    }
+    /* Mismo respaldo que en claro: este fondo está al 75% y hereda el
+       backdrop-filter de la regla scopeada, así que sin blur se transparenta. */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        html[data-theme="dark"] .topbar { background: #181e28; }
     }
     /* Buscador y kbd de la topbar */
     html[data-theme="dark"] .tb-kbd, html[data-theme="dark"] .cmdk-esc { background: rgba(255,255,255,0.06); color: var(--color-text-muted); }
@@ -1486,6 +1506,15 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             inset 0 1px 1px rgba(255,255,255,0.9);
         position: sticky; top: 1rem; z-index: 50;
     }
+    /* El fondo de arriba está al 72%: DEPENDE del blur para verse sólido.
+       Si el blur no aplica (GPU sin composición, "Reducir transparencia" del
+       SO, navegador viejo), la topbar se vuelve translúcida y el contenido
+       scrollea visible por debajo. El test cubre las DOS formas con `or`: un
+       `not (backdrop-filter: …)` a secas no dispara en un navegador que
+       soporta la estándar pero recibió sólo la prefijada. */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        .topbar { background: #fff; }
+    }
     .tb-demo {
         font-size: 0.58rem; font-weight: 800; letter-spacing: 1.2px;
         color: #b45309; background: rgba(245,158,11,0.1);
@@ -1827,7 +1856,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         };
         const I18N = (window as any).CORD_I18N || {};
         const G = I18N.cmdkGroups || { ir_a: 'Ir a', acciones: 'Acciones', recientes: 'Recientes', cotizaciones: 'Cotizaciones', clientes: 'Clientes', productos: 'Productos' };
-        const NAV: any[] = (I18N.cmdkNav || []).map(([title, href, iconKey, hint]: any) => ({ group: G.ir_a, title, href, icon: (I as any)[iconKey], hint }));
+        const NAV: any[] = (I18N.cmdkNav || []).map(([title, href, iconKey, hint, keywords]: any) => ({ group: G.ir_a, title, href, icon: (I as any)[iconKey], hint, keywords }));
         const ACTIONS: any[] = (I18N.cmdkActions || []).map((a: any) => ({
             group: G.acciones, title: a.title, href: a.href, icon: (I as any)[a.icon], kbd: a.kbd, hint: a.hint,
             run: a.runKey === 'quickTask' ? () => (window as any).cordQuickTask?.() : undefined,
@@ -1853,7 +1882,22 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
             const all = [...NAV, ...ACTIONS];
             if (!q.trim()) return all;
             const nq = norm(q);
-            return all.filter((c) => norm(c.title).includes(nq));
+            // Empata contra el título Y los sinónimos (`keywords` de
+            // settings.ts): "IVA", "VAT", "NIF" o "CSD" no son el nombre de
+            // ninguna pestaña, pero son lo que la gente teclea. El hint sigue
+            // fuera a propósito — es texto de apoyo, no vocabulario de búsqueda.
+            //
+            // Los sinónimos empatan por PRINCIPIO DE PALABRA, no por substring:
+            // "iva" dentro de "privacidad" haría que buscar el impuesto más
+            // común de México devolviera "Datos y privacidad". Una consulta con
+            // espacios ("sales tax") sí va por substring, porque ahí partir en
+            // palabras rompería la frase.
+            const kwHit = (kw: string) => {
+                if (!kw) return false;
+                const n = norm(kw);
+                return nq.includes(' ') ? n.includes(nq) : n.split(/\s+/).some((w: string) => w.startsWith(nq));
+            };
+            return all.filter((c) => norm(c.title).includes(nq) || kwHit(c.keywords));
         };
         const buildItems = (q: string, ent: any) => {
             const list: any[] = [];

@@ -6,7 +6,7 @@ export const prerender = false;
 import { withApiAuth } from '../../../lib/apikey';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { getProductos } from '../../../lib/queries';
-import { ok, fail, pageParams } from '../../../lib/apiv1';
+import { ok, fail, pageParams, readJsonBody } from '../../../lib/apiv1';
 import { requireResourceCapacity, resourceLimitError } from '../../../lib/org-entitlements';
 
 export const GET = withApiAuth('read', async ({ url }, auth) => {
@@ -22,8 +22,8 @@ export const GET = withApiAuth('read', async ({ url }, auth) => {
 });
 
 export const POST = withApiAuth('write', async ({ request }, auth) => {
-    let body: any;
-    try { body = await request.json(); } catch { return fail('JSON inválido', 'invalid_json', 400); }
+    const body = await readJsonBody(request);
+    if (body instanceof Response) return body;
 
     const nombre = String(body.nombre ?? '').trim();
     if (!nombre) return fail('El nombre del producto es obligatorio', 'invalid_request', 400);

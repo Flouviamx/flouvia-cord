@@ -4,7 +4,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../../lib/db';
 import { currentUserId } from '../../../../lib/context';
 import { after } from '../../../../lib/after';
 import { trackServer } from '../../../../lib/posthog-server';
@@ -13,41 +13,45 @@ export const POST: APIRoute = async ({ params }) => {
     const id = params.id ?? '';
     const orgId = await getActiveOrgId();
 
-    const [src] = await sql`select * from cotizaciones where id = ${id} and org_id = ${orgId}`;
+    const [srcRows] = await withOrgTx(orgId, sql`select * from cotizaciones where id = ${id} and org_id = ${orgId}`);
+    const src = srcRows[0];
     if (!src) return json({ error: 'Cotización no encontrada' }, 404);
 
-    const items = await sql`select * from cotizacion_items where cotizacion_id = ${id} order by orden`;
+    const [items] = await withOrgTx(orgId, sql`select * from cotizacion_items where cotizacion_id = ${id} order by orden`);
 
-    const [{ prefix, is_sandbox, is_demo }] = await sql`
+    const [prefixRows] = await withOrgTx(orgId, sql`
         select quote_prefix as prefix, (sandbox_of is not null) as is_sandbox, is_demo
-        from orgs where id = ${orgId}`;
-    const [{ maxn }] = await sql`
+        from orgs where id = ${orgId}`);
+    const { prefix, is_sandbox, is_demo } = prefixRows[0];
+    const [maxRows] = await withOrgTx(orgId, sql`
         select coalesce(max(nullif(regexp_replace(folio, '\\D', '', 'g'), '')::int), 0) as maxn
-        from cotizaciones where org_id = ${orgId}`;
+        from cotizaciones where org_id = ${orgId}`);
+    const { maxn } = maxRows[0];
     const folio = `${prefix}-${String(Number(maxn) + 1).padStart(4, '0')}`;
 
     const vigencia = new Date(); vigencia.setDate(vigencia.getDate() + 30);
 
-    const [cot] = await sql`
+    const [cotRows] = await withOrgTx(orgId, sql`
         insert into cotizaciones
             (org_id, cliente_id, folio, status, subtotal, iva, total, terminos, vigencia, notas, creado_por)
         values
             (${orgId}, ${src.cliente_id}, ${folio}, 'draft', ${src.subtotal}, ${src.iva}, ${src.total},
              ${src.terminos}, ${vigencia.toISOString()}, ${src.notas}, ${currentUserId()})
-        returning id`;
+        returning id`);
+    const cot = cotRows[0];
 
     let orden = 0;
     for (const it of items as any[]) {
-        await sql`
+        await withOrgTx(orgId, sql`
             insert into cotizacion_items
                 (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, orden)
             values
                 (${cot.id}, ${it.producto_id}, ${it.descripcion}, ${it.cantidad},
-                 ${it.precio_unitario}, ${it.precio_negociado}, ${orden++})`;
+                 ${it.precio_unitario}, ${it.precio_negociado}, ${orden++})`);
     }
 
-    await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-              values (${orgId}, ${cot.id}, 'created', ${'Duplicada de ' + src.folio})`;
+    await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+              values (${orgId}, ${cot.id}, 'created', ${'Duplicada de ' + src.folio})`);
 
     after(trackServer('quote_created', orgId, {
         event_id: cot.id,

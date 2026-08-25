@@ -213,11 +213,11 @@ export async function reconcileBilling(): Promise<BillingReconcileResult> {
         attemptsRecovered: 0, usageSent: 0, usageFailed: 0,
     };
     result.attemptsRecovered = await recoverCheckoutAttempts();
-    const orgs = await sql`
+    const [orgs] = await withSystemTx(sql`
         select id, stripe_subscription_id
           from orgs
          where sandbox_of is null and stripe_subscription_id is not null
-         order by id`;
+         order by id`);
     for (const org of orgs) await reconcileOne(org, result);
     const usage = await flushPendingUsage(250);
     result.usageSent = usage.sent;

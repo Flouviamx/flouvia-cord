@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { sql } from '../db';
+import { sql, withOrgTx } from '../db';
 import { splitCuotas, isoDay } from '../cobros';
 import { cancelUsage, flushUsageReservation, reserveUsage } from '../billing';
 import { trackExternalUsage } from '../external-usage';
@@ -75,10 +75,10 @@ async function executeProposePlan(
   if (!Number.isFinite(montoCuota) || Math.abs(montoCuota * cuotas - saldo) > Math.max(saldo * 0.01, 1)) {
     return `ERROR: ${cuotas} cuotas de $${montoCuota} no suman el saldo pendiente de $${saldo.toFixed(2)}. Las cuotas deben cubrir exactamente el adeudo (sin descuentos).`;
   }
-  const dup = await sql`
+  const [dup] = await withOrgTx(context.orgId, sql`
     select id from planes_pago_negociados
     where cotizacion_id = ${context.cotizacionId} and estado in ('propuesto', 'activo')
-    limit 1`;
+    limit 1`);
   if (dup.length) {
     return 'ERROR: esta cotización ya tiene un plan de pago vigente — recuérdale al cliente las cuotas ya acordadas.';
   }
@@ -89,21 +89,20 @@ async function executeProposePlan(
   if (context.dryRunPlan) {
     // Solo se registra la intención. `materializePlan()` hace el trabajo real
     // cuando un humano aprueba el correo.
-    await sql`
+    await withOrgTx(context.orgId, sql`
       insert into planes_pago_negociados (org_id, cotizacion_id, cuotas, monto_cuota, estado)
-      values (${context.orgId}, ${context.cotizacionId}, ${cuotas}, ${montos[0]}, 'propuesto')`;
+      values (${context.orgId}, ${context.cotizacionId}, ${cuotas}, ${montos[0]}, 'propuesto')`);
     const linea = context.payUrl ? ` El link de pago es: ${context.payUrl}` : '';
     return `OK: plan de ${cuotas} cuotas mensuales (${montos.map((m) => '$' + m.toFixed(2)).join(', ')}) registrado y pendiente de confirmación interna. Confírmale el plan al cliente en tu correo.${linea}`;
   }
 
   await materializePlan(context.orgId, context.cotizacionId, montos);
-  await sql`
-    insert into planes_pago_negociados (org_id, cotizacion_id, cuotas, monto_cuota, estado)
-    values (${context.orgId}, ${context.cotizacionId}, ${cuotas}, ${montos[0]}, 'activo')`;
-  await sql`
-    insert into eventos (org_id, cotizacion_id, tipo, detalle)
+  await withOrgTx(context.orgId,
+    sql`insert into planes_pago_negociados (org_id, cotizacion_id, cuotas, monto_cuota, estado)
+    values (${context.orgId}, ${context.cotizacionId}, ${cuotas}, ${montos[0]}, 'activo')`,
+    sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
     values (${context.orgId}, ${context.cotizacionId}, 'comment',
-            ${`Agente de cobranza acordó plan de ${cuotas} cuotas mensuales de ~$${montos[0].toFixed(2)}`})`;
+            ${`Agente de cobranza acordó plan de ${cuotas} cuotas mensuales de ~$${montos[0].toFixed(2)}`})`);
 
   const linea = context.payUrl ? ` La primera cuota ya se puede pagar en: ${context.payUrl}` : '';
   return `OK: plan registrado — ${cuotas} cuotas mensuales (${montos.map((m) => '$' + m.toFixed(2)).join(', ')}), la primera vence hoy.${linea} Confirma el plan al cliente en tu correo e incluye el link de pago.`;
@@ -120,13 +119,13 @@ async function executeProposePlan(
  */
 export async function materializePlan(orgId: string, cotizacionId: string, montos: number[]): Promise<void> {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
-  const pendientesPI = await sql`
+  const [pendientesPI] = await withOrgTx(orgId, sql`
     select co.stripe_payment_intent_id, o.stripe_account_id
     from cotizacion_cobros co
     join cotizaciones c on c.id = co.cotizacion_id
     join orgs o on o.id = c.org_id
     where co.cotizacion_id = ${cotizacionId} and co.status = 'pendiente'
-      and co.stripe_payment_intent_id is not null`;
+      and co.stripe_payment_intent_id is not null`);
   if (stripeKey) {
     for (const p of pendientesPI) {
       try {
@@ -141,15 +140,15 @@ export async function materializePlan(orgId: string, cotizacionId: string, monto
       } catch { /* best-effort: el webhook concilia si aun así se paga */ }
     }
   }
-  await sql`update cotizacion_cobros set status = 'cancelado'
-            where cotizacion_id = ${cotizacionId} and status = 'pendiente'`;
+  await withOrgTx(orgId, sql`update cotizacion_cobros set status = 'cancelado'
+            where cotizacion_id = ${cotizacionId} and status = 'pendiente'`);
   for (let i = 0; i < montos.length; i++) {
     const vence = new Date();
     vence.setMonth(vence.getMonth() + i);
-    await sql`
+    await withOrgTx(orgId, sql`
       insert into cotizacion_cobros (org_id, cotizacion_id, tipo, numero_cuota, monto, vence)
       values (${orgId}, ${cotizacionId}, 'cuota', ${i + 1}, ${montos[i]}, ${isoDay(vence)})
-      on conflict (cotizacion_id, tipo, numero_cuota) do nothing`;
+      on conflict (cotizacion_id, tipo, numero_cuota) do nothing`);
   }
 }
 
@@ -168,8 +167,23 @@ const TONO_INSTRUCCION: Record<Tono, { es: string; en: string }> = {
   },
 };
 
+// El nombre del cliente lo captura el negocio, pero también puede llegar desde
+// el alta por el link público/embed (`clientes.origen = 'embed'`), así que es
+// texto de un tercero entrando a un SYSTEM PROMPT. Se acota y se le quitan los
+// controles y saltos de línea con los que se podría simular el fin del bloque de
+// datos y abrir uno de instrucciones. El radio de impacto ya era chico —la única
+// herramienta del agente valida todo en servidor (propose_payment_plan)— pero un
+// nombre no tiene por qué poder redactar reglas.
+function nombreSeguro(valor: string): string {
+  return String(valor ?? '')
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .trim()
+    .slice(0, 120) || 'el cliente';
+}
+
 function buildSystemPrompt(c: ARContext): string {
   const en = c.idioma === 'en';
+  const clienteNombre = nombreSeguro(c.clienteNombre);
   const tono = TONO_INSTRUCCION[c.tono ?? 'profesional'][en ? 'en' : 'es'];
   const maxCuotas = Math.min(6, Math.max(2, c.maxCuotas ?? 3));
   const firma = c.firma ? (en ? `\nSign off exactly like this:\n${c.firma}` : `\nDespídete exactamente así:\n${c.firma}`) : '';
@@ -177,7 +191,7 @@ function buildSystemPrompt(c: ARContext): string {
   if (en) {
     return `You are an Accounts Receivable specialist working for a commercial company.
 Your goal is to get the customer to pay the overdue balance while keeping the relationship healthy.
-Customer: ${c.clienteNombre}
+Customer: ${clienteNombre}
 Outstanding balance: $${c.montoAdeudado.toFixed(2)}
 Days overdue: ${c.diasVencido}
 ${c.payUrl ? `Online payment link (ALWAYS include it verbatim in your email): ${c.payUrl}` : ''}
@@ -194,7 +208,7 @@ ${c.allowPlan
 
   return `Eres un especialista en Cuentas por Cobrar trabajando para una empresa comercial.
 Tu objetivo es lograr que el cliente pague el saldo vencido, manteniendo una relación sana.
-El cliente es ${c.clienteNombre}.
+El cliente es ${clienteNombre}.
 Saldo pendiente: $${c.montoAdeudado.toFixed(2)}
 Días de atraso: ${c.diasVencido}
 ${c.payUrl ? `Link de pago en línea (inclúyelo SIEMPRE en tu correo, tal cual): ${c.payUrl}` : ''}

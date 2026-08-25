@@ -10,7 +10,7 @@
 // REGLA DE ORO (igual que webhooks/slack): nunca lanza. Un fallo de
 // notificación jamás rompe la operación de negocio que la originó.
 
-import { sql } from './db';
+import { sql, withOrgTx } from './db';
 import { sendEmail, siteOrigin } from './email';
 import { postToSlack } from './slack';
 import { currencyDecimals, normalizeCurrency } from './currency';
@@ -126,14 +126,15 @@ function renderEmail(evento: NotifyEvent, en: boolean, orgNombre: string, color:
  */
 export async function notify(orgId: string, evento: NotifyEvent, data: NotifyData = {}): Promise<void> {
     try {
-        const [org] = await sql`
+        const [orgRows] = await withOrgTx(orgId, sql`
             select o.notif_prefs, o.slack_webhook_url, o.sandbox_of, o.is_demo,
                    o.nombre, o.moneda, coalesce(o.idioma, 'es-MX') as idioma,
                    coalesce(o.color_marca, '#0a192f') as color,
                    u.email as owner_email
             from orgs o
             left join users u on u.id = o.owner_id
-            where o.id = ${orgId}`;
+            where o.id = ${orgId}`);
+        const org = orgRows[0];
         // Entorno de PRUEBA / org demo: nunca mandar notificaciones reales por
         // datos que no son reales — mismo criterio que crons/otros emisores.
         if (!org || org.sandbox_of || org.is_demo) return;
@@ -168,10 +169,11 @@ export async function notify(orgId: string, evento: NotifyEvent, data: NotifyDat
  */
 export async function notifyQuoteEvent(orgId: string, cotizacionId: string, evento: 'quote_viewed' | 'quote_approved' | 'quote_rejected' | 'quote_paid'): Promise<void> {
     try {
-        const [q] = await sql`
+        const [qRows] = await withOrgTx(orgId, sql`
             select c.id, c.folio, c.total, c.base_currency, cl.empresa
             from cotizaciones c left join clientes cl on cl.id = c.cliente_id
-            where c.id = ${cotizacionId} and c.org_id = ${orgId}`;
+            where c.id = ${cotizacionId} and c.org_id = ${orgId}`);
+        const q = qRows[0];
         if (!q) return;
         await notify(orgId, evento, {
             folio: q.folio as string,

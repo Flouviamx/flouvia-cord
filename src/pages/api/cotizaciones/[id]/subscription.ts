@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
@@ -21,10 +21,11 @@ export const POST: APIRoute = async ({ params, request }) => {
     try { body = await request.json(); } catch { /* sin body */ }
     if (body.action !== 'cancel') return json({ error: 'Acción no válida' }, 400);
 
-    const [sub] = await sql`
+    const [subRows] = await withOrgTx(orgId, sql`
         select s.id, s.stripe_subscription_id, s.stripe_account_id, s.estado
         from cotizacion_suscripciones s
-        where s.cotizacion_id = ${id} and s.org_id = ${orgId} limit 1`;
+        where s.cotizacion_id = ${id} and s.org_id = ${orgId} limit 1`);
+    const sub = subRows[0];
     if (!sub) return json({ error: 'Esta cotización no tiene una iguala recurrente' }, 404);
     if (!sub.stripe_subscription_id) return json({ error: 'La iguala aún no ha sido autorizada por el cliente' }, 409);
     if (sub.estado === 'canceled') return json({ ok: true, estado: 'canceled' });
@@ -48,9 +49,10 @@ export const POST: APIRoute = async ({ params, request }) => {
         }
     }
 
-    await sql`update cotizacion_suscripciones set cancel_at_period_end = true where id = ${sub.id}`;
-    await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-              values (${orgId}, ${id}, 'comment', 'La iguala recurrente se cancelará al final del periodo actual — no habrá más cobros')`;
+    await withOrgTx(orgId,
+        sql`update cotizacion_suscripciones set cancel_at_period_end = true where id = ${sub.id}`,
+        sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+              values (${orgId}, ${id}, 'comment', 'La iguala recurrente se cancelará al final del periodo actual — no habrá más cobros')`);
     await logAudit(orgId, { accion: 'cotizacion.iguala_cancelada', entidad: 'cotizacion', entidad_id: id, detalle: 'Cancelación programada al fin de periodo', ip: reqIp(request) });
 
     return json({ ok: true, estado: 'cancel_at_period_end' });

@@ -98,12 +98,11 @@ export async function getConnection(id: string): Promise<SsoConnection | null> {
   // El id de conexión aparece en URLs públicas y por sí solo no demuestra que
   // la organización siga pagando SSO. Filtrar aquí cubre login SP/IdP,
   // metadata y ACS, incluso si alguien conserva una URL después del downgrade.
-  const rows = await sql`
-    select c.*
-      from sso_connections c
-     where c.id = ${id}
-       and cord_effective_plan(c.org_id) in ('scale', 'developer')
-     limit 1`;
+  // Función acotada (security definer): el id de conexión viaja en URLs
+  // públicas y llega SIN sesión — no hay organización activa que setear. El
+  // filtro por plan sigue viviendo dentro de la función, así que una URL
+  // guardada después de un downgrade sigue sin resolver.
+  const rows = await sql`select * from cord_resolve_sso_connection(${id}::uuid)`;
   if (!rows.length) return null;
   return rowToConnection(rows[0]);
 }
@@ -795,10 +794,12 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
   const emailDomain = email.slice(atIdx + 1);
 
   // ── El gate real ── (ver docs/historial-auth-clerk.md, análogo de Google)
-  const domRows = await sql`
+  // A partir de aquí la conexión YA está resuelta, así que todo el flujo corre
+  // en el carril normal de SU organización — el token/id dejó de ser relevante.
+  const [domRows] = await withOrgTx(conn.orgId, sql`
     select 1 from sso_domains
     where connection_id = ${conn.id} and domain = ${emailDomain} and verified_at is not null
-    limit 1`;
+    limit 1`);
   if (!domRows.length) throw new SamlValidationError('dominio_no_verificado');
 
   const nameId = profile.nameID;
@@ -838,16 +839,17 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
   const { rol, permisos } = evaluateRoleMappings(conn.roleMappings, attributes, conn.defaultPreset);
   const resolvedPermisos = cleanPermisos(permisos) ?? cleanPermisos(PRESETS[rol]?.permisos ?? PRESETS.lectura.permisos);
 
-  const [orgRow] = await sql`select owner_id, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${conn.orgId} limit 1`;
+  const [orgRows] = await withOrgTx(conn.orgId, sql`select owner_id, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${conn.orgId} limit 1`);
+  const orgRow = orgRows[0];
   if (!orgRow) throw new SamlValidationError('org_no_encontrada');
 
   // El owner NUNCA se toca — es un override incondicional en memberCan(), y
   // una mala config de IdP no puede degradarlo ni desactivarlo.
   if (orgRow.owner_id !== userId) {
-    const memberRows = await sql`
+    const [memberRows] = await withOrgTx(conn.orgId, sql`
       select id, estado, sso_managed from org_members
       where org_id = ${conn.orgId} and (user_id = ${userId} or (user_id is null and email = ${email}))
-      limit 1`;
+      limit 1`);
 
     if (memberRows.length) {
       const m = memberRows[0];
@@ -856,11 +858,11 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
         const usage = await reserveUsage(conn.orgId, 'usuario', 1);
         if (!usage.ok || !usage.id) throw new SamlValidationError('limite_de_asientos');
         try {
-          await sql`
+          await withOrgTx(conn.orgId, sql`
             update org_members set user_id = ${userId}, estado = 'activo', joined_at = now(),
               token = null, token_expires_at = null, rol = ${rol},
               permisos = ${JSON.stringify(resolvedPermisos)}::jsonb, sso_managed = true, sso_connection_id = ${conn.id}
-            where id = ${m.id}`;
+            where id = ${m.id}`);
         } catch (error) {
           await cancelUsage(conn.orgId, usage.id);
           throw error;
@@ -869,9 +871,9 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
       } else if (m.estado === 'activo' && m.sso_managed) {
         // Re-sincroniza SOLO si esta membresía está bajo control del IdP —
         // un admin que fijó el rol a mano (sso_managed=false) no se pisa.
-        await sql`
+        await withOrgTx(conn.orgId, sql`
           update org_members set rol = ${rol}, permisos = ${JSON.stringify(resolvedPermisos)}::jsonb, sso_connection_id = ${conn.id}
-          where id = ${m.id}`;
+          where id = ${m.id}`);
       }
     } else {
       if (!conn.jitProvisioning) throw new SamlValidationError('no_es_miembro');
@@ -883,9 +885,9 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
       const usage = await reserveUsage(conn.orgId, 'usuario', 1);
       if (!usage.ok || !usage.id) throw new SamlValidationError('limite_de_asientos');
       try {
-        await sql`
+        await withOrgTx(conn.orgId, sql`
           insert into org_members (org_id, user_id, email, rol, permisos, estado, joined_at, sso_managed, sso_connection_id)
-          values (${conn.orgId}, ${userId}, ${email}, ${rol}, ${JSON.stringify(resolvedPermisos)}::jsonb, 'activo', now(), true, ${conn.id})`;
+          values (${conn.orgId}, ${userId}, ${email}, ${rol}, ${JSON.stringify(resolvedPermisos)}::jsonb, 'activo', now(), true, ${conn.id})`);
       } catch (error) {
         await cancelUsage(conn.orgId, usage.id);
         throw error;
@@ -894,7 +896,7 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
     }
   }
 
-  await sql`update sso_connections set last_login_at = now() where id = ${conn.id}`;
+  await withOrgTx(conn.orgId, sql`update sso_connections set last_login_at = now() where id = ${conn.id}`);
 
   const [totpRow] = await sql`select totp_enabled from users where id = ${userId} limit 1`;
   const needs2fa = !!totpRow?.totp_enabled;
@@ -929,15 +931,12 @@ export interface SsoRequirement {
  * es el escape principal), y no hay una ventana de break-glass vigente.
  */
 export async function ssoRequirementFor(userId: string): Promise<SsoRequirement> {
+  // Se pregunta MIENTRAS el usuario intenta entrar por otro método: no hay
+  // sesión ni organización activa. Función acotada, no ampliación de política —
+  // sso_connections guarda la configuración del IdP y aquí solo hace falta su id.
   const rows = await sql`
-    select o.id as org_id, o.nombre, o.owner_id, o.sso_breakglass_until, c.id as connection_id
-    from org_members m
-    join orgs o on o.id = m.org_id and o.sandbox_of is null and o.require_sso = true
-      and cord_effective_plan(o.id) in ('scale', 'developer')
-    left join sso_connections c on c.org_id = o.id and c.enabled = true
-    where m.user_id = ${userId} and m.estado = 'activo'
-    order by c.created_at asc
-    limit 1`;
+    select org_id, nombre, owner_id, sso_breakglass_until, connection_id
+      from cord_sso_requirement_for(${userId}::uuid)`;
   if (!rows.length) return { blocked: false };
   const r = rows[0] as any;
   if (r.owner_id === userId) return { blocked: false };

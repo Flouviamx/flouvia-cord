@@ -5,7 +5,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
+import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { notifyQuoteSent } from '../../../lib/email';
 import { requirePerm, invalidateMoneyCaches } from '../../../lib/queries';
 import { dispatchQuoteEvent, dispatchQuoteEventFrom, type WebhookEvent } from '../../../lib/webhooks';
@@ -66,10 +66,10 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         const orgId = await getActiveOrgId();
         const mensaje = String(body.mensaje ?? '').trim().slice(0, 800);
         if (!mensaje) return json({ error: 'Escribe una respuesta' }, 400);
-        const rows = await sql`select id from cotizaciones where id = ${id} and org_id = ${orgId}`;
+        const [rows] = await withOrgTx(orgId, sql`select id from cotizaciones where id = ${id} and org_id = ${orgId}`);
         if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                  values (${orgId}, ${id}, 'reply', ${mensaje})`;
+        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                  values (${orgId}, ${id}, 'reply', ${mensaje})`);
         return json({ ok: true });
     }
 
@@ -80,12 +80,13 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         const mensaje = String(body.mensaje ?? '').trim().slice(0, 800);
         const itemId = String(body.item_id ?? '').trim();
         if (!mensaje || !itemId) return json({ error: 'Datos incompletos' }, 400);
-        const [item] = await sql`select ci.id from cotizacion_items ci
+        const [itemRows] = await withOrgTx(orgId, sql`select ci.id from cotizacion_items ci
                   join cotizaciones c on c.id = ci.cotizacion_id
-                  where ci.id = ${itemId} and c.id = ${id} and c.org_id = ${orgId}`;
+                  where ci.id = ${itemId} and c.id = ${id} and c.org_id = ${orgId}`);
+        const item = itemRows[0];
         if (!item) return json({ error: 'Línea no encontrada' }, 404);
-        await sql`insert into cotizacion_comentarios (org_id, cotizacion_id, item_id, autor_tipo, autor_nombre, contenido)
-                  values (${orgId}, ${id}, ${itemId}, 'usuario', 'Vendedor', ${mensaje})`;
+        await withOrgTx(orgId, sql`insert into cotizacion_comentarios (org_id, cotizacion_id, item_id, autor_tipo, autor_nombre, contenido)
+                  values (${orgId}, ${id}, ${itemId}, 'usuario', 'Vendedor', ${mensaje})`);
         return json({ ok: true });
     }
 
@@ -94,17 +95,17 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         const orgId = await getActiveOrgId();
         const subscriptionDenied = await requireEntitlement(orgId, 'approvals');
         if (subscriptionDenied) return subscriptionDenied;
-        const rows = await sql`
+        const [rows] = await withOrgTx(orgId, sql`
             select c.id, c.folio, c.aprob_estado, c.total, c.base_currency,
                    (o.sandbox_of is not null) as is_sandbox, o.is_demo
             from cotizaciones c join orgs o on o.id = c.org_id
-            where c.id = ${id} and c.org_id = ${orgId}`;
+            where c.id = ${id} and c.org_id = ${orgId}`);
         if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
         if (rows[0].aprob_estado !== 'pendiente') return json({ error: 'No hay una solicitud de aprobación pendiente' }, 409);
         const now = new Date().toISOString();
         if (body.action === 'approve_request') {
-            await sql`update cotizaciones set aprob_estado = 'aprobada', status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`;
-            await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'sent', 'Aprobada por gerencia y enviada al cliente')`;
+            await withOrgTx(orgId, sql`update cotizaciones set aprob_estado = 'aprobada', status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`);
+            await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'sent', 'Aprobada por gerencia y enviada al cliente')`);
             await logAudit(orgId, { accion: 'cotizacion.aprobacion_aprobada', entidad: 'cotizacion', entidad_id: id, detalle: rows[0].folio as string, ip: reqIp(request) });
             after(dispatchQuoteEvent(orgId, id, 'quote.sent'));
             after(trackServer('quote_sent', orgId, {
@@ -117,8 +118,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             }, !!rows[0].is_sandbox, !!rows[0].is_demo));
             return json({ ok: true, status: 'sent' });
         }
-        await sql`update cotizaciones set aprob_estado = 'rechazada' where id = ${id}`;
-        await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'rejected', 'Solicitud de aprobación rechazada por gerencia')`;
+        await withOrgTx(orgId, sql`update cotizaciones set aprob_estado = 'rechazada' where id = ${id}`);
+        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'rejected', 'Solicitud de aprobación rechazada por gerencia')`);
         await logAudit(orgId, { accion: 'cotizacion.aprobacion_rechazada', entidad: 'cotizacion', entidad_id: id, detalle: rows[0].folio as string, ip: reqIp(request) });
         return json({ ok: true, status: 'draft' });
     }
@@ -127,8 +128,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     if (!action) return json({ error: 'Acción no válida' }, 400);
 
     const orgId = await getActiveOrgId();
-    const rows = await sql`select id, status, version, base_currency, fiscal_currency, fx_rate
-                             from cotizaciones where id = ${id} and org_id = ${orgId}`;
+    const [rows] = await withOrgTx(orgId, sql`select id, status, version, base_currency, fiscal_currency, fx_rate
+                             from cotizaciones where id = ${id} and org_id = ${orgId}`);
     if (!rows.length) return json({ error: 'Cotización no encontrada' }, 404);
 
     const actual = rows[0].status as string;
@@ -220,7 +221,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
                 }
             }
 
-            await sql`update cotizaciones set
+            await withOrgTx(orgId, sql`update cotizaciones set
                         cliente_id = ${body.cliente_id || null},
                         terminos = ${terminos},
                         vigencia = (current_date + (${vigDias} * interval '1 day'))::date,
@@ -237,27 +238,27 @@ export const PATCH: APIRoute = async ({ params, request }) => {
                         retenciones_snapshot = ${retencionesSnapshot}::jsonb,
                         version = ${nextVersion}, iva_incluido = ${iva_incluido},
                         anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente}
-                      where id = ${id}`;
+                      where id = ${id}`);
         } else {
-            await sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
+            await withOrgTx(orgId, sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         retencion_total = ${retencionTotal}, retenciones_snapshot = ${retencionesSnapshot}::jsonb,
-                        version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`;
+                        version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`);
         }
 
-        await sql`delete from cotizacion_items where cotizacion_id = ${id}`;
+        await withOrgTx(orgId, sql`delete from cotizacion_items where cotizacion_id = ${id}`);
         let orden = 0;
         for (const it of items) {
-            await sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
-                      values (${id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++}, ${it.tax_rate})`;
+            await withOrgTx(orgId, sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
+                      values (${id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++}, ${it.tax_rate})`);
         }
         
         if (body.action === 'resend') {
-            await sql`insert into cotizacion_versiones (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
-                      values (${id}, ${orgId}, ${nextVersion}, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(items)}, null, ${iva_incluido})`;
-            await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'comment', ${'Versión ' + nextVersion + ' creada'})`;
+            await withOrgTx(orgId, sql`insert into cotizacion_versiones (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
+                      values (${id}, ${orgId}, ${nextVersion}, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(items)}, null, ${iva_incluido})`);
+            await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'comment', ${'Versión ' + nextVersion + ' creada'})`);
         } else {
             // Actualizamos la versión existente (borrador)
-            await sql`update cotizacion_versiones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, items = ${JSON.stringify(items)}, iva_incluido = ${iva_incluido} where cotizacion_id = ${id} and version = ${nextVersion}`;
+            await withOrgTx(orgId, sql`update cotizacion_versiones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, items = ${JSON.stringify(items)}, iva_incluido = ${iva_incluido} where cotizacion_id = ${id} and version = ${nextVersion}`);
         }
     }
 
@@ -272,9 +273,10 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     let fiscal: Awaited<ReturnType<typeof emitFiscalDocument>> | undefined;
     let fiscalCountry = 'MX';
     if (action.to === 'invoiced') {
-        const [orgFiscal] = await sql`
+        const [orgFiscalRows] = await withOrgTx(orgId, sql`
             select upper(coalesce(country_code, 'MX')) as country_code
-              from orgs where id = ${orgId} limit 1`;
+              from orgs where id = ${orgId} limit 1`);
+        const orgFiscal = orgFiscalRows[0];
         if (!orgFiscal) return json({ error: 'Organización no encontrada' }, 404);
         const isMexico = String(orgFiscal.country_code) === 'MX';
         fiscalCountry = String(orgFiscal.country_code);
@@ -294,13 +296,14 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         }
         // Cuenta ANTES de timbrar — para detectar si este va a ser el PRIMER
         // CFDI real de la org ("aha moment" fiscal, distinto del genérico de cotizar).
-        const [priorCount] = await sql`
+        const [priorCountRows] = await withOrgTx(orgId, sql`
             select count(*)::int as n
               from documentos_fiscales
              where org_id = ${orgId} and country_code = 'MX' and status = 'issued'
                and coalesce((provider_data->>'simulado')::boolean, false) = false
                and coalesce((provider_data->>'livemode')::boolean, true) = true
-               and provider_data->>'facturapi_id' is not null`;
+               and provider_data->>'facturapi_id' is not null`);
+        const priorCount = priorCountRows[0];
         fiscal = await emitFiscalDocument(orgId, id);
         if (!fiscal.emitted) {
             if (fiscalUsageId) await cancelUsage(orgId, fiscalUsageId);
@@ -314,7 +317,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             else void flushUsageReservation(orgId, fiscalUsageId);
         }
         if (isMexico && fiscal.billable === true && (priorCount?.n ?? 0) === 0) {
-            const [orgFlags] = await sql`select created_at, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`;
+            const [orgFlagsRows] = await withOrgTx(orgId, sql`select created_at, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
+            const orgFlags = orgFlagsRows[0];
             const timeSince = orgFlags?.created_at ? Math.max(0, Math.round((Date.now() - new Date(orgFlags.created_at as string).getTime()) / 86400000)) : null;
             await trackServer('cfdi_first_timbrado', orgId, { time_since_org_created_days: timeSince }, !!orgFlags?.is_sandbox, !!orgFlags?.is_demo);
         }
@@ -332,26 +336,26 @@ export const PATCH: APIRoute = async ({ params, request }) => {
                 return json({ error: envioUsage.reason, code: unavailable ? 'usage_verification_unavailable' : 'plan_limit_reached' }, unavailable ? 503 : 402);
             }
         }
-        await sql`update cotizaciones set status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`;
+        await withOrgTx(orgId, sql`update cotizaciones set status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`);
     } else if (action.to === 'approved') {
-        await sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id}`;
+        await withOrgTx(orgId, sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id}`);
         // Anticipo: materializa anticipo + saldo (idempotente; no-op sin anticipo_pct).
         try { await materializeAnticipoCobros(id, orgId); } catch { /* fallback en payment-intent */ }
     } else if (action.to === 'paid') {
         const method = body.payment_method || 'transferencia';
-        await sql`update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}), payment_method = coalesce(payment_method, ${method}) where id = ${id}`;
+        await withOrgTx(orgId, sql`update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}), payment_method = coalesce(payment_method, ${method}) where id = ${id}`);
         // Pago registrado a mano = la cotización quedó saldada: los cobros parciales
         // que sigan pendientes se cancelan (que el desglose no muestre "por pagar")
         // y sus PaymentIntents en Stripe también (best-effort) — un checkout abierto
         // en el navegador del cliente podría cobrar de más después del pago manual.
         const stripeKey = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
-        const pendientesPI = await sql`
+        const [pendientesPI] = await withOrgTx(orgId, sql`
             select co.stripe_payment_intent_id, o.stripe_account_id
             from cotizacion_cobros co
             join cotizaciones c on c.id = co.cotizacion_id
             join orgs o on o.id = c.org_id
             where co.cotizacion_id = ${id} and co.status = 'pendiente'
-              and co.stripe_payment_intent_id is not null`;
+              and co.stripe_payment_intent_id is not null`);
         if (stripeKey) {
             for (const p of pendientesPI) {
                 try {
@@ -366,9 +370,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
                 } catch { /* best-effort: el webhook concilia si aun así se paga */ }
             }
         }
-        await sql`update cotizacion_cobros set status = 'cancelado' where cotizacion_id = ${id} and status = 'pendiente'`;
+        await withOrgTx(orgId, sql`update cotizacion_cobros set status = 'cancelado' where cotizacion_id = ${id} and status = 'pendiente'`);
     } else {
-        await sql`update cotizaciones set status = ${action.to} where id = ${id}`;
+        await withOrgTx(orgId, sql`update cotizaciones set status = ${action.to} where id = ${id}`);
     }
 
     // Cualquier transición de estado mueve la cartera y el dinero cobrado: sin esto,
@@ -379,8 +383,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     const eventDetail = action.evento === 'invoiced'
         ? (fiscalCountry === 'MX' ? 'CFDI emitido' : `Factura ${fiscal?.invoiceNumber || ''} emitida`.trim())
         : action.detalle;
-    await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-              values (${orgId}, ${id}, ${action.evento}, ${eventDetail})`;
+    await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+              values (${orgId}, ${id}, ${action.evento}, ${eventDetail})`);
     await logAudit(orgId, { accion: `cotizacion.${body.action}`, entidad: 'cotizacion', entidad_id: id, detalle: `${actual} → ${action.to}`, ip: reqIp(request) });
 
     // Notifica el evento a las webhooks suscritas de la org (best-effort).
@@ -395,8 +399,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         const origin = new URL(request.url).origin;
         email = await notifyQuoteSent(orgId, id, origin);
         if (email.sent) {
-            await sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
-                      values (${orgId}, ${id}, 'email', 'Correo enviado al cliente')`;
+            await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                      values (${orgId}, ${id}, 'email', 'Correo enviado al cliente')`);
         }
     }
 
@@ -408,11 +412,12 @@ export const PATCH: APIRoute = async ({ params, request }) => {
                 ? 'quote_marked_paid'
                 : null;
     if (analyticsEvent) {
-        const [metric] = await sql`
+        const [metricRows] = await withOrgTx(orgId, sql`
             select c.total, c.base_currency, c.version,
                    (o.sandbox_of is not null) as is_sandbox, o.is_demo
             from cotizaciones c join orgs o on o.id = c.org_id
-            where c.id = ${id} and c.org_id = ${orgId}`;
+            where c.id = ${id} and c.org_id = ${orgId}`);
+        const metric = metricRows[0];
         if (metric) {
             after(trackServer(analyticsEvent, orgId, {
                 event_id: analyticsEvent === 'quote_sent'
@@ -443,14 +448,15 @@ export const DELETE: APIRoute = async ({ params }) => {
     // normal) re-consulta la fila por id, y para cuando dispararíamos el
     // webhook la fila ya no existe. dispatchQuoteEventFrom toma los datos ya
     // en mano en vez de volver a preguntarle a la BD.
-    const [before] = await sql`
+    const [beforeRows] = await withOrgTx(orgId, sql`
         select c.id, c.folio, c.status, c.total, c.public_token, cl.empresa
         from cotizaciones c left join clientes cl on cl.id = c.cliente_id
-        where c.id = ${id} and c.org_id = ${orgId} and c.status = 'draft'`;
-    const rows = await sql`
+        where c.id = ${id} and c.org_id = ${orgId} and c.status = 'draft'`);
+    const before = beforeRows[0];
+    const [rows] = await withOrgTx(orgId, sql`
         delete from cotizaciones
         where id = ${id} and org_id = ${orgId} and status = 'draft'
-        returning id`;
+        returning id`);
     if (!rows.length) return json({ error: 'Solo se pueden eliminar borradores' }, 409);
     if (before) after(dispatchQuoteEventFrom(orgId, 'quote.deleted', before as any));
     return json({ ok: true });

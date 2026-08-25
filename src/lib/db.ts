@@ -8,7 +8,7 @@
 
 import { neon, type NeonQueryPromise } from '@neondatabase/serverless';
 import { createHash } from 'node:crypto';
-import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
+import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope, isOpsScope, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
 import { getCountryProfile } from './countries';
 import { log } from './log';
 
@@ -404,6 +404,46 @@ export async function withSystemTx<T extends DbRow[][] = DbRow[][]>(
     assertCronContext();
     const results = await sql.transaction([
         sql`select set_config('app.scope', 'system', true)`,
+        ...queries,
+    ]);
+    return results.slice(1) as T;
+}
+
+// ── Carril de OPS (Cord Ops, cross-org y de SOLO LECTURA) ────────────────────
+// Cord Ops mira todas las organizaciones a propósito: es el panel interno de
+// soporte y operación. Hasta ahora eso funcionaba porque el rol de Neon bypasea
+// RLS — es decir, el privilegio más alto del sistema existía como EFECTO
+// SECUNDARIO de la configuración de la base, no como una decisión declarada.
+//
+// Este carril lo vuelve explícito: setea `app.scope='ops'`, que solo las
+// cláusulas USING de las políticas aceptan (nunca WITH CHECK). Ops sí escribe
+// —revoca llaves, desactiva webhooks, elimina organizaciones—, pero siempre
+// sobre filas que YA existen: USING gobierna qué ve y sobre qué puede actuar.
+// Donde la política tiene WITH CHECK propio ese no se amplía, así que Ops no
+// puede insertar ni reescribir contenido comercial dentro de una organización.
+
+/** Lanza si el request actual no viene de una sesión de operador validada. */
+export function assertOpsContext(): void {
+    if (!isOpsScope()) {
+        throw new Error(
+            '[db] withOpsTx requiere contexto de Ops (reqContext opsScope=true) — ' +
+            'lo marca el middleware solo tras validar la sesión de operador.'
+        );
+    }
+}
+
+/**
+ * Igual que withOrgTx pero para la lectura cross-org de Cord Ops. Exige que el
+ * middleware ya haya validado al operador (assertOpsContext) — así una ruta con
+ * sesión de cliente normal jamás alcanza este carril, aunque alguien importe
+ * withOpsTx por error.
+ */
+export async function withOpsTx<T extends DbRow[][] = DbRow[][]>(
+    ...queries: DbQuery[]
+): Promise<T> {
+    assertOpsContext();
+    const results = await sql.transaction([
+        sql`select set_config('app.scope', 'ops', true)`,
         ...queries,
     ]);
     return results.slice(1) as T;

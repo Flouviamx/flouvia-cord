@@ -8,7 +8,7 @@ import { withApiAuth } from '../../../lib/apikey';
 import { getActiveOrgId, reqIp } from '../../../lib/db';
 import { getCotizaciones } from '../../../lib/queries';
 import { createCotizacion, QuoteError } from '../../../lib/cotizaciones';
-import { ok, fail, pageParams, quoteListItem } from '../../../lib/apiv1';
+import { ok, fail, pageParams, quoteListItem, readJsonBody } from '../../../lib/apiv1';
 
 export const GET = withApiAuth('read', async ({ url }) => {
     const all = await getCotizaciones();
@@ -20,8 +20,8 @@ export const GET = withApiAuth('read', async ({ url }) => {
 });
 
 export const POST = withApiAuth('write', async ({ request }, auth) => {
-    let body: any;
-    try { body = await request.json(); } catch { return fail('JSON inválido', 'invalid_json', 400); }
+    const body = await readJsonBody(request);
+    if (body instanceof Response) return body;
 
     const orgId = await getActiveOrgId();
     try {

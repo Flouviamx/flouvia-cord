@@ -13,7 +13,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, logAudit, reqIp, getActiveOrgId } from '../../../lib/db';
+import { sql, logAudit, reqIp, getActiveOrgId, withUserTx } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { SUPPORTED_COUNTRIES, getCountryProfile } from '../../../lib/countries';
@@ -62,27 +62,36 @@ export const POST: APIRoute = async ({ request }) => {
         // esa org — nunca se confía en el id de la org padre sin verificarlo. El
         // driver de Neon devuelve un ARRAY de filas (nunca `const [rows]`).
         if (parentOrgId) {
-            const membership = await sql`
+            // Carril de USUARIO: la organización padre todavía no es la activa,
+            // pero la política de org_members sí reconoce las filas del propio
+            // user_id — que es exactamente lo que hay que comprobar aquí.
+            const [membership] = await withUserTx(userId, sql`
                 select 1 from org_members
                 where org_id = ${parentOrgId} and user_id = ${userId} and estado = 'activo'
-                limit 1`;
+                limit 1`);
             if (!membership.length) {
                 return json({ error: 'No tienes acceso a esa organización.' }, 403);
             }
         }
 
-        const [org] = await sql`
+        // El alta también va en el carril de usuario, y encaja sin ampliar nada:
+        // la organización nace con `owner_id = este usuario` y su primera
+        // membresía con `user_id = este usuario`, que es justo lo que las
+        // cláusulas WITH CHECK de ambas políticas ya aceptan. No hace falta una
+        // función elevada para crear algo que se crea a nombre de quien llama.
+        const [orgRows] = await withUserTx(userId, sql`
             insert into orgs (owner_id, nombre, country_code, parent_org_id, moneda, zona_horaria, idioma, iva_pct)
             values (${userId}, ${name}, ${countryCode}, ${parentOrgId}, ${countryProfile.currency},
                     ${countryProfile.timeZone}, ${appLocale}, ${defaultCountryTaxPct(countryCode)})
             returning id, nombre
-        `;
+        `);
+        const org = orgRows[0];
         const orgId = org.id as string;
 
-        await sql`
+        await withUserTx(userId, sql`
             insert into org_members (org_id, user_id, rol, estado, joined_at)
             values (${orgId}, ${userId}, 'owner', 'activo', now())
-            on conflict (org_id, user_id) where user_id is not null do nothing`;
+            on conflict (org_id, user_id) where user_id is not null do nothing`);
 
         // El catálogo de impuestos nace con las tasas estándar del país. Sin
         // esto, una cuenta en España empieza vacía y su primera cotización sale

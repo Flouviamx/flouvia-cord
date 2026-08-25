@@ -25,6 +25,10 @@ const L = currentLocale();
 const ORG = await getOrg();
 const category = localizedCategoryOfTab(tab, L, ORG.countryCode)!;
 const single = category.tabs.length <= 1;
+// Puede ser undefined en una sub-ruta que reusa el `tab` de su padre
+// (p. ej. /app/ajustes/sso/[id] pasa tab="sso"); la miga simplemente no
+// muestra el último nivel en ese caso.
+const activeTab = category.tabs.find((tb) => tb.id === tab);
 
 const ME = perm ? await getMyMembership() : null;
 const hasAccess = !perm || memberCan(ME!, perm);
@@ -32,10 +36,24 @@ const hasAccess = !perm || memberCan(ME!, perm);
 
 <AppLayout title={title} page="ajustes" heading="Ajustes">
     <div class="set2">
-        <a href="/app/ajustes" class="set2-crumb">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            {t(L, 'settings.configuracion')}
-        </a>
+        {/* La miga incluye la PESTAÑA actual, no sólo "Configuración". El <h2>
+            de abajo muestra la CATEGORÍA, así que estando en Impuestos la
+            página entera decía "Cotizaciones" y el nombre real sólo aparecía
+            en la pestaña activa. Con la ruta completa la página se identifica
+            sola. Se omite cuando la categoría tiene una sola pestaña: ahí el
+            <h2> ya la nombra y repetirla sería ruido. */}
+        <nav class="set2-crumb-row" aria-label={t(L, 'settings.configuracion')}>
+            <a href="/app/ajustes" class="set2-crumb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                {t(L, 'settings.configuracion')}
+            </a>
+            {!single && activeTab && (
+                <>
+                    <span class="set2-crumb-sep" aria-hidden="true">/</span>
+                    <span class="set2-crumb-here">{activeTab.label}</span>
+                </>
+            )}
+        </nav>
         <h2 class="set2-title">{category.label}</h2>
         <p class="set2-desc">{category.desc}</p>
 
@@ -74,9 +92,12 @@ const hasAccess = !perm || memberCan(ME!, perm);
 <style is:global>
     /* ════════ ESTILOS COMPARTIDOS DE AJUSTES (globales: cruzan el slot) ════════ */
     .set2 { max-width: 1040px; }
-    .set2-crumb { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; margin-bottom: 0.7rem; transition: color 0.2s; }
+    .set2-crumb-row { display: flex; align-items: center; gap: 6px; margin-bottom: 0.7rem; }
+    .set2-crumb { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; transition: color 0.2s; }
     .set2-crumb svg { width: 14px; height: 14px; }
     .set2-crumb:hover { color: var(--color-blue-deep); }
+    .set2-crumb-sep { font-size: 0.78rem; font-weight: 600; color: var(--color-border); }
+    .set2-crumb-here { font-size: 0.78rem; font-weight: 600; color: var(--color-text); }
     .set2-title { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.6px; margin: 0; }
     .set2-desc { font-size: 0.88rem; color: var(--color-text-muted); margin: 0.4rem 0 0; }
 
@@ -277,7 +298,10 @@ const hasAccess = !perm || memberCan(ME!, perm);
 
     @media (max-width: 420px) {
         .set2-title { font-size: 1.35rem; }
-        .set2-crumb { min-height: 36px; margin-bottom: 0.45rem; }
+        /* El margen vive en la fila; el min-height sigue en el link porque es
+           el área táctil. */
+        .set2-crumb { min-height: 36px; }
+        .set2-crumb-row { margin-bottom: 0.45rem; }
         .s-block { padding: 1.3rem 0; }
     }
 

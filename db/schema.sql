@@ -3263,3 +3263,425 @@ alter table orgs add column if not exists verifactu_cert_subido_at timestamptz;
 alter table orgs add column if not exists verifactu_modo text not null default 'no_verifactu';
 alter table orgs drop constraint if exists chk_orgs_verifactu_modo;
 alter table orgs add constraint chk_orgs_verifactu_modo check (verifactu_modo in ('no_verifactu', 'verifactu'));
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Carril de OPS (ago 2026) — lectura cross-org declarada, no heredada
+-- ════════════════════════════════════════════════════════════════════════════
+-- Cord Ops mira TODAS las organizaciones a propósito: es el panel interno de
+-- soporte y operación. Hasta ahora eso funcionaba solo porque el rol de Neon
+-- bypasea RLS, así que el privilegio más alto del sistema existía como efecto
+-- secundario de la configuración de la base, no como una decisión declarada.
+-- Al migrar a `cord_app` (db/cord-app-role.sql) esas pantallas se quedarían en
+-- blanco, y "arreglarlo" devolviéndole el bypass al rol tiraría toda la RLS.
+--
+-- `app.scope='ops'` lo vuelve explícito y ACOTADO. Dos límites deliberados:
+--
+--   1. La cláusula se agrega SOLO a USING, nunca a WITH CHECK. Eso no significa
+--      que Ops sea de solo lectura —revoca llaves, desactiva webhooks y elimina
+--      organizaciones, que es su trabajo— sino que Ops actúa sobre filas que YA
+--      existen: USING gobierna qué ve y qué puede borrar/desactivar. Donde la
+--      política tiene WITH CHECK propio (orgs, org_members, cotizaciones), ese
+--      no se amplía, así que Ops no puede INSERTAR ni reescribir contenido
+--      comercial dentro de la organización de un cliente.
+--   2. Solo lo enciende withOpsTx() (src/lib/db.ts), que exige opsScope en el
+--      reqContext — y ese lo marca el middleware ÚNICAMENTE después de validar
+--      la sesión de operador con validateOpsSession(). Una sesión de cliente
+--      normal no alcanza este carril aunque alguien importe withOpsTx por error.
+--
+-- Se re-crean las políticas completas (no se "parchan") para que la definición
+-- vigente viva en un solo lugar legible.
+
+-- La cláusula de MEMBRESÍA no es cosmética: sin ella, `rls_orgs` solo reconocía
+-- al DUEÑO (owner_id), así que un miembro invitado —admin, vendedor, lectura—
+-- dejaría de ver su propia organización en cuanto RLS empiece a aplicar. El
+-- selector de organizaciones de getUserProfile() (src/lib/queries.ts) se le
+-- vaciaría y quedaría sin entrar a ningún espacio de trabajo.
+drop policy if exists "rls_orgs" on orgs;
+create policy "rls_orgs" on orgs
+  using (
+    id = nullif(current_setting('app.org_id', true), '')::uuid
+    or sandbox_of = nullif(current_setting('app.org_id', true), '')::uuid
+    or owner_id = nullif(current_setting('app.user_id', true), '')::uuid
+    or exists (
+      select 1 from org_members m
+       where m.org_id = orgs.id
+         and m.user_id = nullif(current_setting('app.user_id', true), '')::uuid
+         and m.estado = 'activo'
+    )
+    or current_setting('app.scope', true) = 'ops'
+    or current_setting('app.scope', true) = 'system'
+  )
+  with check (
+    id = nullif(current_setting('app.org_id', true), '')::uuid
+    or sandbox_of = nullif(current_setting('app.org_id', true), '')::uuid
+    or owner_id = nullif(current_setting('app.user_id', true), '')::uuid
+  );
+
+drop policy if exists "rls_org_members" on org_members;
+create policy "rls_org_members" on org_members
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or user_id = nullif(current_setting('app.user_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'ops'
+  )
+  with check (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or user_id = nullif(current_setting('app.user_id', true), '')::uuid
+  );
+
+-- `app.scope='system'` es el carril de los CRONS cross-org (withSystemTx), el
+-- mismo que webhook_events ya usaba para su sweeper. Aquí hace falta en USING y
+-- en WITH CHECK porque el cron de vencimiento hace un UPDATE masivo
+-- (expirar-cotizaciones.ts): un UPDATE evalúa USING sobre la fila vieja Y
+-- WITH CHECK sobre la nueva, así que solo con USING el barrido fallaría.
+--
+-- Lo enciende únicamente withSystemTx(), que exige cronScope en el reqContext, y
+-- ese solo lo marca una ruta /api/cron DESPUÉS de validar CRON_SECRET. El trabajo
+-- por cotización de esos crons vuelve a withOrgTx normal — el carril de sistema
+-- se limita al barrido que de verdad cruza organizaciones.
+drop policy if exists "rls_cotizaciones" on cotizaciones;
+create policy "rls_cotizaciones" on cotizaciones
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'ops'
+    or current_setting('app.scope', true) = 'system'
+  )
+  with check (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'system'
+  );
+
+drop policy if exists "rls_clientes" on clientes;
+create policy "rls_clientes" on clientes
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'ops'
+    or current_setting('app.scope', true) = 'system'
+  );
+
+drop policy if exists "rls_productos" on productos;
+create policy "rls_productos" on productos
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'ops'
+  );
+
+drop policy if exists "rls_api_keys" on api_keys;
+create policy "rls_api_keys" on api_keys
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'ops'
+  );
+
+drop policy if exists "rls_webhooks" on webhooks;
+create policy "rls_webhooks" on webhooks
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'ops'
+  );
+
+drop policy if exists "rls_sso_connections" on sso_connections;
+create policy "rls_sso_connections" on sso_connections
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'ops'
+  );
+
+-- Tablas que el carril de SISTEMA (crons cross-org, withSystemTx) necesita leer
+-- para armar su barrido. Solo USING: el trabajo por documento vuelve a withOrgTx
+-- con el org_id de esa fila, así que la escritura sigue acotada a su organización.
+--
+--   documentos_fiscales / documento_recordatorios → recordatorios.ts arma la
+--     cartera vencida de todas las orgs y calcula qué etapa toca hoy.
+--   webhook_deliveries → webhooks-limpieza.ts aplica la retención del outbox.
+drop policy if exists "rls_documentos_fiscales" on documentos_fiscales;
+create policy "rls_documentos_fiscales" on documentos_fiscales
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'system'
+  );
+
+drop policy if exists "rls_documento_recordatorios" on documento_recordatorios;
+create policy "rls_documento_recordatorios" on documento_recordatorios
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'system'
+  )
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+drop policy if exists "rls_webhook_deliveries" on webhook_deliveries;
+create policy "rls_webhook_deliveries" on webhook_deliveries
+  using (
+    org_id = nullif(current_setting('app.org_id', true), '')::uuid
+    or current_setting('app.scope', true) = 'system'
+  );
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Sesiones del transporte MCP legacy (HTTP+SSE) — respaldo durable en Neon
+-- ════════════════════════════════════════════════════════════════════════════
+-- El transporte legacy abre la sesión con GET /api/mcp/sse y recibe los mensajes
+-- por POST /api/mcp/message. En Vercel esas dos peticiones pueden caer en
+-- INSTANCIAS DISTINTAS, así que un Map en memoria de proceso hace que la segunda
+-- no encuentre la sesión que abrió la primera: `404 session-not-found`
+-- intermitente, más frecuente cuanto más tráfico hay.
+--
+-- Upstash resolvía esto, pero no está provisionado en este proyecto. Neon ya es
+-- el estado durable de todo lo demás, así que sirve igual sin sumar proveedor.
+--
+-- Sin RLS, mismo criterio que `rate_limit_counters`: la fila se llavea por un id
+-- de sesión opaco e impredecible, y `/api/mcp/message` además exige Bearer y
+-- compara `session.orgId` contra el de la llave autenticada antes de usarla —
+-- la sesión no es la credencial, es un puntero.
+create table if not exists mcp_sessions (
+  id         text        primary key,   -- id de sesión del transporte (opaco)
+  data       jsonb       not null,      -- { orgId, scope, keyId }
+  expires_at timestamptz not null
+);
+create index if not exists idx_mcp_sessions_expires on mcp_sessions(expires_at);
+
+-- Cola FIFO de mensajes pendientes de relayar por el stream. `seq` da el orden
+-- (bigserial, no timestamp: dos mensajes del mismo milisegundo deben salir en
+-- el orden en que entraron).
+create table if not exists mcp_session_outbox (
+  seq        bigserial   primary key,
+  session_id text        not null,
+  payload    jsonb       not null,
+  expires_at timestamptz not null
+);
+create index if not exists idx_mcp_outbox_session on mcp_session_outbox(session_id, seq);
+create index if not exists idx_mcp_outbox_expires on mcp_session_outbox(expires_at);
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Baja de cuenta (ago 2026) — carril propio, porque no cabe en ningún otro
+-- ════════════════════════════════════════════════════════════════════════════
+-- Borrar una cuenta cruza TODAS las organizaciones del usuario y además tiene
+-- que ver a los OTROS miembros para decidir si una organización queda huérfana.
+-- Bajo `withUserTx` la política de org_members solo deja ver las filas del
+-- propio usuario, así que el `exists(... m2.user_id <> p_user)` daría SIEMPRE
+-- falso: toda organización se clasificaría como "de dueño único" y se borraría
+-- junto con la cuenta. Es la peor forma posible de romperse — silenciosa y
+-- destructiva— y por eso este flujo no se envolvió a ciegas.
+--
+-- La propiedad y la orfandad se definen UNA sola vez, en la misma función: si
+-- vivieran en dos consultas separadas podrían divergir, y una divergencia aquí
+-- borra datos de un cliente.
+create or replace function cord_account_owned_orgs(p_user uuid)
+returns table(
+  id                     uuid,
+  nombre                 text,
+  stripe_subscription_id text,
+  stripe_account_id      text,
+  tiene_otros_miembros   boolean
+)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select o.id, o.nombre, o.stripe_subscription_id, o.stripe_account_id,
+         exists (
+           select 1 from org_members m2
+            where m2.org_id = o.id
+              and m2.estado = 'activo'
+              and m2.user_id <> p_user
+         ) as tiene_otros_miembros
+    from orgs o
+    left join org_members m
+           on m.org_id = o.id and m.user_id = p_user and m.estado = 'activo'
+   where p_user is not null
+     and (o.owner_id = p_user or m.rol = 'owner')
+     and o.sandbox_of is null
+$$;
+
+-- Sustituye el id del usuario por una lápida en las columnas de TEXTO que lo
+-- referencian sin llave foránea. Son cross-org por naturaleza: un vendedor pudo
+-- crear cotizaciones en varias organizaciones. Sin esto, al activar cord_app el
+-- scrub afectaría cero filas y el id de una cuenta borrada seguiría dentro de
+-- los registros.
+create or replace function cord_account_scrub(p_user uuid, p_tombstone text)
+returns void
+language plpgsql volatile security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if p_user is null or p_tombstone is null or p_tombstone = '' then
+    return;
+  end if;
+  update cotizaciones set creado_por = p_tombstone where creado_por = p_user::text;
+  update audit_log     set actor      = p_tombstone where actor      = p_user::text;
+  update api_keys      set created_by = p_tombstone where created_by = p_user::text;
+  update org_members   set invited_by = p_tombstone where invited_by = p_user::text;
+end;
+$$;
+
+revoke all on function cord_account_owned_orgs(uuid) from public;
+revoke all on function cord_account_scrub(uuid, text) from public;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Invitaciones de equipo (ago 2026) — el token resuelve identidad, no da acceso
+-- ════════════════════════════════════════════════════════════════════════════
+-- Aceptar una invitación es, por definición, algo que ocurre ANTES de tener
+-- membresía: no hay `app.org_id` que setear ni fila propia en org_members que la
+-- política de usuario deje ver. Mismo patrón que el link público de cotización
+-- (`cord_resolve_public_quote`): una función estrecha traduce el hash del token
+-- a la fila mínima, y el llamador vuelve a withOrgTx con el org_id resuelto.
+--
+-- El token del link viaja crudo; en la base solo vive su sha256 (ver equipo.ts),
+-- así que la función recibe YA el hash — nunca el valor que viajó por correo.
+create or replace function cord_resolve_invitation(p_token_hash text)
+returns table(
+  id               uuid,
+  org_id           uuid,
+  org_nombre       text,
+  user_id          uuid,
+  estado           text,
+  email            text,
+  rol              text,
+  token_expires_at timestamptz
+)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select m.id, m.org_id, o.nombre, m.user_id, m.estado, m.email, m.rol, m.token_expires_at
+    from org_members m
+    join orgs o on o.id = m.org_id
+   where p_token_hash is not null and p_token_hash <> ''
+     and m.token = p_token_hash
+   limit 1
+$$;
+
+revoke all on function cord_resolve_invitation(text) from public;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- SSO / SAML (ago 2026) — tres puertas de entrada, todo lo demás por su org
+-- ════════════════════════════════════════════════════════════════════════════
+-- El login por SSO ocurre entero ANTES de que exista sesión: quien llega no
+-- tiene `app.user_id` ni `app.org_id`, y el único dato que trae es un id de
+-- conexión que viaja en una URL pública, o el dominio de su correo. Por eso las
+-- tres puertas se resuelven con funciones estrechas y el resto del flujo
+-- —membresía, roles, aprovisionamiento— vuelve a withOrgTx con el org_id que
+-- esas funciones devolvieron. El id de conexión identifica; no autoriza.
+--
+-- El filtro por plan se conserva DENTRO de la función, donde ya estaba: una URL
+-- de SSO guardada sigue sin servir después de un downgrade.
+create or replace function cord_resolve_sso_connection(p_id uuid)
+returns setof sso_connections
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select c.*
+    from sso_connections c
+   where p_id is not null
+     and c.id = p_id
+     and cord_effective_plan(c.org_id) in ('scale', 'developer')
+   limit 1
+$$;
+
+-- Descubrimiento por dominio de correo, en la pantalla de entrada: dice si ese
+-- dominio tiene SSO y a qué conexión mandar. Devuelve lo mínimo que la pantalla
+-- necesita — nunca la configuración de la conexión ni datos de la organización.
+create or replace function cord_resolve_sso_domain(p_domain text)
+returns table(connection_id uuid, org_nombre text, require_sso boolean)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select d.connection_id, o.nombre, o.require_sso
+    from sso_domains d
+    join sso_connections c on c.id = d.connection_id
+    join orgs o on o.id = c.org_id
+   where p_domain is not null and p_domain <> ''
+     and d.domain = p_domain
+     and d.verified_at is not null
+     and c.enabled = true
+     and cord_effective_plan(o.id) in ('scale', 'developer')
+   limit 1
+$$;
+
+-- Deja constancia de un fallo de validación en la conexión. Corre en el `catch`
+-- del ACS, donde puede no haberse llegado a resolver la organización — y el
+-- admin necesita ver ese error en Ajustes › SSO justamente cuando el login
+-- falla. No devuelve nada: no es un canal de lectura.
+create or replace function cord_sso_record_error(p_id uuid, p_slug text)
+returns void
+language sql volatile security definer
+set search_path = public, pg_temp
+as $$
+  update sso_connections
+     set last_error = left(coalesce(p_slug, 'validacion'), 200), last_error_at = now()
+   where p_id is not null and id = p_id
+$$;
+
+revoke all on function cord_resolve_sso_connection(uuid) from public;
+revoke all on function cord_resolve_sso_domain(text) from public;
+revoke all on function cord_sso_record_error(uuid, text) from public;
+
+-- ¿Este usuario está obligado a entrar por SSO? Se pregunta MIENTRAS intenta
+-- entrar por otro método, así que tampoco hay sesión todavía.
+--
+-- Va como función y no ampliando `rls_sso_connections` a propósito: esa tabla
+-- guarda la configuración del proveedor de identidad (certificados incluidos), y
+-- para responder esta pregunta basta con el id de la conexión. Ampliar la
+-- política habría dejado la fila entera visible a cualquier miembro.
+create or replace function cord_sso_requirement_for(p_user uuid)
+returns table(org_id uuid, nombre text, owner_id uuid, sso_breakglass_until timestamptz, connection_id uuid)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select o.id, o.nombre, o.owner_id, o.sso_breakglass_until, c.id
+    from org_members m
+    join orgs o on o.id = m.org_id
+                and o.sandbox_of is null
+                and o.require_sso = true
+                and cord_effective_plan(o.id) in ('scale', 'developer')
+    left join sso_connections c on c.org_id = o.id and c.enabled = true
+   where p_user is not null and m.user_id = p_user and m.estado = 'activo'
+   order by c.created_at asc
+   limit 1
+$$;
+
+revoke all on function cord_sso_requirement_for(uuid) from public;
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Correo entrante (ago 2026) — emparejar la respuesta con su cotización
+-- ════════════════════════════════════════════════════════════════════════════
+-- El proveedor de correo entrega un mensaje sin saber a qué organización
+-- pertenece: eso es justo lo que hay que averiguar. La búsqueda es cross-org por
+-- necesidad, así que va en una función estrecha y el resto del manejo vuelve a
+-- withOrgTx con el org_id resuelto.
+--
+-- Las dos estrategias viven aquí juntas y con prioridad explícita: primero el
+-- threading real (el message_id del correo que Cord envió), y solo si no hay con
+-- qué emparejar, la cotización vencida más antigua de ese remitente. Separarlas
+-- en dos consultas dejaba el orden implícito en el código que las llamaba.
+create or replace function cord_resolve_inbound_email(p_in_reply_to text, p_from text)
+returns table(cotizacion_id uuid, org_id uuid, via text)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  with por_hilo as (
+    select c.id as cotizacion_id, c.org_id as org_id, 'hilo'::text as via, 1 as prioridad
+      from cobranza_conversaciones cc
+      join cotizaciones c on c.id = cc.cotizacion_id
+     where p_in_reply_to is not null and p_in_reply_to <> ''
+       and cc.message_id is not null
+       and p_in_reply_to like '%' || cc.message_id || '%'
+     order by cc.created_at desc
+     limit 1
+  ),
+  por_remitente as (
+    select c.id as cotizacion_id, c.org_id as org_id, 'remitente'::text as via, 2 as prioridad
+      from cotizaciones c
+      join clientes cl on c.cliente_id = cl.id
+     where p_from is not null and p_from <> ''
+       and cl.email = p_from
+       and c.status in ('approved', 'invoiced')
+       and c.paid_at is null
+       and c.es_recurrente is not true
+     order by coalesce(c.approved_at, c.created_at) asc
+     limit 1
+  )
+  select t.cotizacion_id, t.org_id, t.via
+    from (select * from por_hilo union all select * from por_remitente) t
+   order by t.prioridad
+   limit 1
+$$;
+
+revoke all on function cord_resolve_inbound_email(text, text) from public;

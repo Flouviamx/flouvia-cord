@@ -12,7 +12,7 @@ import { withApiAuth } from '../../../lib/apikey';
 import { getActiveOrgId, logAudit, reqIp } from '../../../lib/db';
 import { getFacturas } from '../../../lib/queries';
 import { createInvoiceDraft, parseInvoiceItems, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
-import { ok, fail, invoiceListItem } from '../../../lib/apiv1';
+import { ok, fail, invoiceListItem, readJsonBody } from '../../../lib/apiv1';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
 
@@ -32,8 +32,8 @@ export const GET = withApiAuth('read', async ({ url }) => {
 });
 
 export const POST = withApiAuth('write', async ({ request }, auth) => {
-    let body: any;
-    try { body = await request.json(); } catch { return fail('JSON inválido', 'invalid_json', 400); }
+    const body = await readJsonBody(request);
+    if (body instanceof Response) return body;
 
     const orgId = await getActiveOrgId();
     // Regla 17: la API pública es un camino de ejecución más, y se gatea igual

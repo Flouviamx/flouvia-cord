@@ -3,7 +3,7 @@
 // src/lib/mock.ts para que las páginas sólo cambien el import + un `await`.
 // Re-exporta los helpers puros y STATUS_META del mock (no se duplican).
 
-import { sql, getActiveOrgId, resolvePublicQuote, resolvePublicInvoice, withOrgTx } from './db';
+import { sql, getActiveOrgId, resolvePublicQuote, resolvePublicInvoice, withOrgTx, withUserTx } from './db';
 import { currentUserId, currentOrgIdOverride, currentLocale, currentTimeZone, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
@@ -170,7 +170,7 @@ export async function getUserProfile() {
     // real de org_members (owner|admin|vendedor|lectura|miembro) — antes esto
     // devolvía formas de Clerk ('org:admin', `publicMetadata.parentOrgId`)
     // que ningún código de este repo emite más.
-    const memberships = await sql`
+    const [memberships] = await withUserTx(userId, sql`
         select
             o.id, o.nombre, o.logo_url, o.parent_org_id,
             coalesce(m.rol, case when o.owner_id = ${userId} then 'owner' else 'miembro' end) as rol
@@ -179,7 +179,7 @@ export async function getUserProfile() {
         where (o.owner_id = ${userId} or (m.user_id = ${userId} and m.estado = 'activo'))
           and o.sandbox_of is null
         order by o.nombre asc
-    `;
+    `);
 
     const passkeyCount = await sql`select count(*)::int as n from passkeys where user_id = ${userId}`;
     const connections = await sql`select provider, email, created_at from oauth_accounts where user_id = ${userId} order by created_at asc`;

@@ -231,6 +231,26 @@ existe pero es ajeno ya es filtrar entre negocios.
                    • Tu cuenta: **cuenta** → monta `CustomUserProfile` propio (perfil,
                      sesiones, 2FA, passkeys y cuentas conectadas — identidad del
                      usuario, distinta de los datos del negocio).
+                   Descubribilidad (ago 2026): antes el índice sólo pintaba el nombre de
+                   las 14 CATEGORÍAS — las 23 pestañas reales (p. ej. "Impuestos" dentro
+                   de Cotizaciones) nunca se mostraban en ningún lado, así que llegar al
+                   catálogo de tasas eran 5 clics / 3 cargas de página. Cada fila del
+                   índice muestra ahora sus pestañas como sub-links (`c.tabs`, ya
+                   localizados y renombrados por país vía `localizeCategories()`) — la
+                   fila pasó de `<a>` a `<div>` con el título como link propio, porque no
+                   se pueden anidar `<a>`; el clic en toda la fila se conserva con una
+                   capa `aria-hidden`/`tabindex="-1"` por debajo. ⌘K también indexa las
+                   23 pestañas con sinónimos (`SettingsTab.keywords`, ago 2026): "IVA",
+                   "VAT", "NIF", "CSD" o "Verifactu" ya encuentran su destino aunque no
+                   sean el nombre de ninguna pestaña — antes `cmdkNav` sólo tenía una
+                   entrada genérica "Ajustes". Los sinónimos empatan por PRINCIPIO DE
+                   PALABRA (`"iva".startsWith`), no por substring, porque por substring
+                   "iva" adentro de "privacidad" devolvía Datos y privacidad. La pestaña
+                   "Facturas emitidas" de Facturación se quitó de `settings.ts`: era un
+                   301 a `/app/facturas` que sacaba al usuario de Ajustes — invisible
+                   mientras las pestañas no se mostraban, notorio en cuanto el índice
+                   empezó a listarlas. El breadcrumb de `SettingsShell` ahora incluye la
+                   pestaña activa (`‹ Configuración / Impuestos`), no sólo la categoría.
 
 /app/facturas            → bandeja de facturas (`documentos_fiscales`, ago 2026).
                    Paginada por CURSOR en servidor. Distingue "Sin folio" de

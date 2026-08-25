@@ -320,6 +320,10 @@ const mainHandler = async (context: any, next: any) => {
     // Carril de identidad independiente: una sesión normal de cliente jamás
     // autoriza Ops. Todo /ops y /api/ops se valida aquí, centralmente, además
     // de los guards locales de las páginas/endpoints sensibles.
+    // Se declara fuera del bloque porque el carril de Ops (app.scope='ops', ver
+    // withOpsTx en db.ts) se cuelga del reqContext de más abajo, y solo puede
+    // encenderse con un operador YA validado aquí.
+    let opsOperatorValidado = false;
     if (isOpsPage || isOpsApi) {
         const opsToken = context.cookies.get(OPS_SESSION_COOKIE)?.value;
         const opsOperator = await validateOpsSession(
@@ -327,6 +331,7 @@ const mainHandler = async (context: any, next: any) => {
             context.request.headers.get('user-agent') || 'desconocido',
         );
         context.locals.opsOperator = opsOperator ?? undefined;
+        opsOperatorValidado = !!opsOperator;
 
         if (isOpsPage && !isOpsLoginPage && !opsOperator) {
             return context.redirect('/ops/login');
@@ -464,7 +469,7 @@ const mainHandler = async (context: any, next: any) => {
     // Exponer el userId Y la org activa a las queries (db.ts →
     // getActiveOrgId) durante todo el render/handler de este request, vía
     // AsyncLocalStorage.
-    const response = await reqContext.run({ userId: userId ?? null, sessionId: validatedSessionId, activeOrgId: orgId ?? null, testMode, locale }, async () => {
+    const response = await reqContext.run({ userId: userId ?? null, sessionId: validatedSessionId, activeOrgId: orgId ?? null, testMode, locale, opsScope: opsOperatorValidado }, async () => {
         // PRIMERO de todo: idioma, divisa y zona horaria de la ORGANIZACIÓN, que
         // pisan la adivinanza por Accept-Language de arriba. Va antes que
         // cualquier otra cosa dentro del scope porque hasta las respuestas de

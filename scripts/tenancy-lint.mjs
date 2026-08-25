@@ -38,55 +38,13 @@ const PERMANENT = new Map([
     ['src/lib/apikey.ts', 'resuelve la llave ANTES de que exista contexto de organización'],
 ]);
 
-// PENDIENTES: deuda de la auditoría de agosto 2026. Esta lista solo puede
-// ENCOGER — el script falla si un archivo listado ya no tiene violaciones, para
-// que nadie la deje crecer con entradas muertas. Cuando quede vacía, la
-// activación de cord_app deja de tener caminos rotos.
+// PENDIENTES: vacío. La deuda de la auditoría de agosto 2026 quedó cerrada —
+// los 69 archivos ejecutan sus queries dentro de un carril declarado.
 //
-// Las páginas de `src/pages/ops/` esperan su propio carril (withOpsTx): Ops lee
-// TODAS las organizaciones a propósito, así que no puede usar withOrgTx.
-const PENDING = new Set([
-    'src/lib/agents/ar-agent.ts',
-    'src/lib/agents/cobranza-run.ts',
-    'src/lib/agents/governance.ts',
-    'src/lib/billing-reconcile.ts',
-    'src/lib/billing.ts',
-    'src/lib/cotizaciones.ts',
-    'src/lib/fiscal/verifactu/submit.ts',
-    'src/lib/mcp.ts',
-    'src/lib/mcp/client-manager.ts',
-    'src/lib/notify.ts',
-    'src/lib/queries.ts',
-    'src/lib/saml.ts',
-    'src/lib/webhooks.ts',
-    'src/pages/api/account/index.ts',
-    'src/pages/api/auth/saml/[cid]/acs.ts',
-    'src/pages/api/auth/sso/discover.ts',
-    'src/pages/api/billing/connect/capture/[token].ts',
-    'src/pages/api/billing/handoff.ts',
-    'src/pages/api/clientes/import.ts',
-    'src/pages/api/cotizaciones/[id].ts',
-    'src/pages/api/cotizaciones/[id]/duplicate.ts',
-    'src/pages/api/cotizaciones/[id]/stream.ts',
-    'src/pages/api/cotizaciones/[id]/subscription.ts',
-    'src/pages/api/cron/expirar-cotizaciones.ts',
-    'src/pages/api/cron/intereses.ts',
-    'src/pages/api/cron/recordatorios.ts',
-    'src/pages/api/cron/webhooks-limpieza.ts',
-    'src/pages/api/equipo/join.ts',
-    'src/pages/api/ops/organizations/[id].ts',
-    'src/pages/api/ops/users/[id].ts',
-    'src/pages/api/orgs/index.ts',
-    'src/pages/api/productos/import.ts',
-    'src/pages/api/webhooks/inbound-email.ts',
-    'src/pages/app/ajustes/elements.astro',
-    'src/pages/billing/entrar.ts',
-    'src/pages/ops/index.astro',
-    'src/pages/ops/organizations/[id].astro',
-    'src/pages/ops/users/[id].astro',
-    'src/pages/unirse/[token].astro',
-    'src/pages/verificar-identidad/[token].astro',
-]);
+// Si algo tiene que entrar aquí, va con el motivo escrito y la lista solo puede
+// ENCOGER: el script falla si un archivo listado ya no tiene violaciones, para
+// que nadie la deje crecer con entradas muertas.
+const PENDING = new Map([]);
 
 // ── Tablas multi-tenant ─────────────────────────────────────────────────────
 // Se descubren por DOS caminos, porque la columna sola no basta:
@@ -129,6 +87,15 @@ function tenantTables() {
         const body = schema.slice(polRe.lastIndex, polRe.lastIndex + 800);
         const end = body.indexOf(';');
         if (/app\.org_id/.test(end === -1 ? body : body.slice(0, end))) tables.add(name);
+    }
+
+    // Una tabla con columna org_id pero SIN RLS habilitada no puede romperse al
+    // activar cord_app: Postgres no le aplica ninguna política. Marcarla sería
+    // ruido, y un linter con ruido termina desactivado. `billing_handoff_tokens`
+    // es el caso real: lleva org_id y se llavea por sha256 del token, sin RLS.
+    for (const name of [...tables]) {
+        const re = new RegExp(`alter\\s+table\\s+${name}\\s+enable\\s+row\\s+level\\s+security`, 'i');
+        if (!re.test(schema)) tables.delete(name);
     }
 
     return tables;
@@ -296,7 +263,7 @@ const tableRe = new RegExp(
 );
 
 const violations = [];
-const staleExemptions = new Set([...PENDING]);
+const staleExemptions = new Set(PENDING.keys());
 
 for (const file of walk(join(ROOT, 'src'))) {
     const rel = relative(ROOT, file);

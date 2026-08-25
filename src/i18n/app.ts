@@ -6497,6 +6497,10 @@ export function t(locale: AppLocale, key: AppStringKey): string {
 export function getAppRuntimeI18n(locale: AppLocale) {
     const es = {
         cmdkGroups: { ir_a: "Ir a", acciones: "Acciones", recientes: "Recientes", cotizaciones: "Cotizaciones", clientes: "Clientes", productos: "Productos" },
+        // Prefijo de las sub-páginas de Ajustes en ⌘K ("Ajustes · Impuestos").
+        // Las entradas las genera AppLayout desde SETTINGS_CATEGORIES, porque
+        // sus etiquetas dependen del país de la org y aquí sólo hay locale.
+        cmdkAjustes: "Ajustes",
         cmdkNav: [
             ["Inicio", "/app", "dashboard", "Resumen y actividad"],
             ["Cotizaciones", "/app/cotizaciones", "doc", "Lista y pipeline"],
@@ -6558,6 +6562,7 @@ export function getAppRuntimeI18n(locale: AppLocale) {
     if (locale !== "en") return es;
     return {
         cmdkGroups: { ir_a: "Go to", acciones: "Actions", recientes: "Recent", cotizaciones: "Quotes", clientes: "Clients", productos: "Products" },
+        cmdkAjustes: "Settings",
         cmdkNav: [
             ["Home", "/app", "dashboard", "Overview and activity"],
             ["Quotes", "/app/cotizaciones", "doc", "List and pipeline"],

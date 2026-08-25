@@ -7,7 +7,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId } from '../../../lib/db';
+import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
 
 const MAX_ROWS = 2000;
 const TERMINOS = new Set(['contado', 'net30', 'net60']);
@@ -34,7 +34,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!rows.length) return json({ error: 'Ninguna fila tiene nombre de empresa' }, 400);
 
     const orgId = await getActiveOrgId();
-    const existing = await sql`select id, empresa, rfc from clientes where org_id = ${orgId}`;
+    const [existing] = await withOrgTx(orgId, sql`select id, empresa, rfc from clientes where org_id = ${orgId}`);
     const byRfc = new Map<string, string>();
     const byName = new Map<string, string>();
     for (const e of existing as any[]) {
@@ -48,14 +48,15 @@ export const POST: APIRoute = async ({ request }) => {
             ? (r.rfc && byRfc.get(r.rfc)) || byName.get(r.empresa.toLowerCase())
             : undefined;
         if (hit) {
-            await sql`update clientes set empresa = ${r.empresa}, contacto = ${r.contacto}, email = ${r.email},
+            await withOrgTx(orgId, sql`update clientes set empresa = ${r.empresa}, contacto = ${r.contacto}, email = ${r.email},
                       telefono = ${r.telefono}, rfc = ${r.rfc}, terminos_default = ${r.terminos}, limite_credito = ${r.limite}
-                      where id = ${hit} and org_id = ${orgId}`;
+                      where id = ${hit} and org_id = ${orgId}`);
             updated++;
         } else {
-            const [ins] = await sql`insert into clientes (org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito)
+            const [insRows] = await withOrgTx(orgId, sql`insert into clientes (org_id, empresa, contacto, email, telefono, rfc, terminos_default, limite_credito)
                       values (${orgId}, ${r.empresa}, ${r.contacto}, ${r.email}, ${r.telefono}, ${r.rfc}, ${r.terminos}, ${r.limite})
-                      returning id`;
+                      returning id`);
+            const ins = insRows[0];
             if (upsert) {
                 byName.set(r.empresa.toLowerCase(), ins.id as string);
                 if (r.rfc) byRfc.set(r.rfc, ins.id as string);

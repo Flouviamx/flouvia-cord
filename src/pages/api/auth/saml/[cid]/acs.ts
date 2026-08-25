@@ -98,7 +98,7 @@ export const POST: APIRoute = async ({ params, request, redirect }) => {
     // direcciones/historial del navegador.
     const slug = err instanceof SamlValidationError ? err.message : 'validacion';
     log.error('Error', { route: 'saml/acs', err });
-    await sql`update sso_connections set last_error = ${slug}, last_error_at = now() where id = ${cid}`;
+    await sql`select cord_sso_record_error(${cid}::uuid, ${slug})`;
     return redirect(`/sign-in?sso_error=${encodeURIComponent(slug)}`);
   }
 };
