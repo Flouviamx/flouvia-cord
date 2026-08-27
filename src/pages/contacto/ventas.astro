@@ -1057,7 +1057,8 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error('bad status');
+        const result = await res.json().catch(() => null);
+        if (!res.ok || !result?.ok || result.emailed !== true) throw new Error('delivery failed');
       } catch {
         if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
         alert(isEn

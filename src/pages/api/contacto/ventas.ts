@@ -1,7 +1,8 @@
 // /api/contacto/ventas — recibe el formulario rediseñado de "Contacto de ventas"
 // Campos nuevos: teamSize, monthlyQuotes, currentTool, challenges, timeline, industry
 // Manda DOS correos vía Resend: (1) lead interno al equipo, (2) auto-ack al prospecto.
-// Gated por RESEND_API_KEY: sin llave responde ok igualmente (no rompe la UI).
+// Falla cerrado si el lead interno no se pudo entregar: la UI no debe confirmar
+// una solicitud que el equipo de ventas nunca recibió.
 // POST { email, firstName, lastName?, company, role?, industry?,
 //        teamSize?, monthlyQuotes?, currentTool?,
 //        challenges?, timeline?, message?, website? }
@@ -10,6 +11,7 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sendEmail } from '../../../lib/email';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
+import { log } from '../../../lib/log';
 
 const SALES_TO = import.meta.env.SALES_EMAIL || process.env.SALES_EMAIL || 'hola@flouvia.com';
 
@@ -112,7 +114,7 @@ export const POST: APIRoute = async ({ request }) => {
     const timelineLabel  = TIMELINE_LABELS[timeline] || timeline || '—';
 
     // ── Badge de urgencia para el asunto del correo ─────────────────────────
-    const urgencyFlag = timeline === 'urgente' ? '🔴 URGENTE · ' : '';
+    const urgencyFlag = timeline === 'urgente' ? '[URGENTE] ' : '';
 
     // ── Correo interno ───────────────────────────────────────────────────────
     const internalHtml = `
@@ -169,7 +171,16 @@ export const POST: APIRoute = async ({ request }) => {
         html: internalHtml,
         fromName: 'Cord · Leads',
         replyTo: email,
+        operation: 'sales_lead_internal',
     });
+
+    if (!internal.sent) {
+        log.error('No se pudo entregar el lead de ventas', {
+            route: '/api/contacto/ventas',
+            reason: internal.skipped || internal.error || 'desconocido',
+        });
+        return json({ ok: false, emailed: false, error: 'No pudimos enviar tu solicitud. Intenta de nuevo.' }, 503);
+    }
 
     // ── Auto-ack al prospecto ────────────────────────────────────────────────
     const ackHtml = `
@@ -201,15 +212,23 @@ export const POST: APIRoute = async ({ request }) => {
 </div>
 </div>`;
 
-    await sendEmail({
+    const acknowledgement = await sendEmail({
         to: email,
         subject: 'Recibimos tu solicitud — Cord',
         html: ackHtml,
         fromName: 'Cord',
         replyTo: SALES_TO,
+        operation: 'sales_lead_acknowledgement',
     });
 
-    return json({ ok: true, emailed: internal.sent });
+    if (!acknowledgement.sent) {
+        log.warn('El lead llegó a ventas pero falló la confirmación al prospecto', {
+            route: '/api/contacto/ventas',
+            reason: acknowledgement.skipped || acknowledgement.error || 'desconocido',
+        });
+    }
+
+    return json({ ok: true, emailed: true, acknowledged: acknowledgement.sent });
 };
 
 function json(data: unknown, status = 200) {
