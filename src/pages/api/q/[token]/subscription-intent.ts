@@ -12,19 +12,19 @@ export const prerender = false;
 // balance cada periodo), así que una iguala "automática" no puede correr sobre él.
 import type { APIRoute } from 'astro';
 import { sql, resolvePublicQuote, withOrgTx } from '../../../../lib/db';
-import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { isFeeScheduleActive, SUBSCRIPTION_APPLICATION_FEE_PERCENT } from '../../../../lib/fees';
 import { payerError } from '../../../../lib/pay-errors';
 import { normalizeCurrency, stripeCurrency, stripeSupportsCurrency, toMinorUnits } from '../../../../lib/currency';
 import { log } from '../../../../lib/log';
+import { limitPublicPayment } from '../../../../lib/connect-security';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
-export const POST: APIRoute = async ({ params }) => {
+export const POST: APIRoute = async ({ params, request }) => {
     if (!STRIPE_KEY) return json({ error: 'El pago en línea aún no está configurado.' }, 503);
     const token = params.token ?? '';
-    const rl = await rateLimit(`si:${token}`, 10, 60);
-    if (!rl.ok) return tooMany(rl.retryAfter);
+    const limited = await limitPublicPayment(request, 'si', token, 10);
+    if (limited) return limited;
 
     const identity = await resolvePublicQuote(token);
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);

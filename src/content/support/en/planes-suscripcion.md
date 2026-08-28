@@ -27,7 +27,7 @@ gives you 2 months free (you pay for 10).
 
 ### Changing plans
 
-1. Go to **Settings > Plans & billing > Subscription** (`/app/ajustes/plan`).
+1. Go to **Settings > Plans & subscription > Subscription** (`/app/ajustes/plan`).
 2. Pick the plan and cycle (monthly or annual). The secure billing checkout opens.
 3. The change applies immediately; your included quota adjusts to the new plan.
 

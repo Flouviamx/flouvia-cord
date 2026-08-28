@@ -1,21 +1,32 @@
 ---
 title: "Cord Elements (Embeddable UI components)"
-description: "Embed payment buttons and interactive forms directly into your own web application."
+description: "Embed Cord's quoter directly into your own web application, with your brand."
 category: "Developers"
 order: 3
 ---
 
-Cord Elements is a library of *drop-in* (ready to use) UI components that allows you to embed the power of Cord directly within your application's website, without the client knowing we exist.
+Cord Elements (`@flouviahq/elements`) is the component library that lets you embed Cord's quoter directly inside your own site or app, without sending the client to another domain.
 
 ### Benefits
 
-- **Reduced abandonment:** The client never leaves your domain (e.g., `app.yourcompany.com/checkout`) to pay or accept a quote.
-- **PCI Compliance:** The components inject secure iframes that collect card data. Sensitive information never touches your servers, exempting you from heavy PCI audits.
+- **Reduced abandonment:** the client never leaves your domain (e.g., `app.yourcompany.com/portal`) to view, approve, or pay a quote.
+- **PCI compliance:** card payment happens inside the quote's secure public-link iframe — sensitive card data never touches your servers.
 
-### Available Elements
+### The two real components
 
-1. **Payment Element:** A checkout box that dynamically supports cards, transfers, and interest-free months.
-2. **Quote Element:** Displays an interactive B2B quote within your customer portal.
-3. **Customer Portal Element:** Allows your users to download their own XML/PDF invoices and update their tax details directly on your site.
+1. **`CordCotizador`** — an auto-height iframe that shows an **already-created** quote so the client can view it, approve (sign) it, or pay it. It's the same quoter that runs at `/q/{token}`, brandable via the `appearance` API (colors, typography, light/dark theme).
+2. **`CordBuilder`** (or the headless `useQuoteBuilder` hook) — builds and creates a **new** quote from your own interface: client, line items, taxes, and totals computed with the same engine the server uses.
 
-To install Elements, simply add the script tag in your `<head>` and mount the components using our [Frontend SDK](/en/support/react-sdk).
+There is no separate "payment-only" component, nor an embeddable self-service invoice portal: downloading an invoice's PDF/XML or updating tax details today happens from the invoice's public link or inside the Cord app itself, not as a standalone Elements component.
+
+### Security: publishable key or your own proxy
+
+Creating quotes or reading the catalog from the browser requires deciding how your app talks to the API: with a **publishable key** (`pk_live_.../pk_test_...`, exposed client-side but with a narrow scope — it can never read your customer directory or touch invoicing) or with **your own proxy** (your backend calls Cord with an `sk_` key). The `CordCotizador` viewer needs neither: it only needs the quote's public `token`.
+
+### Installation
+
+```bash
+npm install @flouviahq/elements
+```
+
+See [Cord Elements for React](/en/support/react-sdk) for the React wrapper, or the [Cord Elements](/elements) page for the `<cord-cotizador>` Web Component (works on any site) and the Vue and Framer wrappers.

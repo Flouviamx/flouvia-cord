@@ -16,12 +16,12 @@ All quotes generated via API are recorded in the audit log (`audit_log`), automa
 
 ## Creating a Quote
 
-To create a draft quote, you must perform a `POST /v1/cotizaciones` sending the commercial details.
+To create a draft quote, you must perform a `POST /api/v1/cotizaciones` sending the commercial details.
 
 **Request:**
 
 ```bash
-curl -X POST "https://api.cordhq.com/v1/cotizaciones" \
+curl -X POST "https://cordhq.app/api/v1/cotizaciones" \
      -H "Authorization: Bearer sk_live_tU..." \
      -H "Content-Type: application/json" \
      -d '{
@@ -29,15 +29,24 @@ curl -X POST "https://api.cordhq.com/v1/cotizaciones" \
        "terminos": "net30",
        "vigencia_dias": 15,
        "notas": "Annual project",
+       "base_currency": "EUR",
        "items": [
-         { "sku": "SERV-01", "cantidad": 12, "precio": 500 }
+         {
+           "descripcion": "Annual license — Pro plan",
+           "cantidad": 12,
+           "precio_unitario": 500
+         }
        ]
      }'
 ```
 
+Every line in `items` requires `descripcion`, `cantidad`, and `precio_unitario` — field names stay in Spanish regardless of the request's language, since they are the API's canonical schema. `producto_id` is optional (it references a product from your [catalog](/en/docs/desarrolladores/funciones/productos) to inherit its name and list price), and `precio_negociado` lets you capture a discounted price different from the list price. There is no `sku` field: to link a line to a product, use its `producto_id`.
+
+`base_currency` is the currency the client sees and pays the quote in (ISO 4217, e.g. `MXN`, `USD`, `EUR`, `GBP`). It's optional — omit it and Cord falls back to your organization's accounting currency — but the API is country-agnostic: an account in Madrid, Austin, or Bogotá quotes in its own currency with no extra parameter.
+
 **Successful Response:**
 
-Cord returns not only the internal database ID, but also the pre-built **Public Token** (`link_publico`) so you can immediately send it to your client via WhatsApp, SMS, or an external email engine.
+Cord returns not only the internal database ID, but also the pre-built, already-absolute **Public Token** (`link_publico`) so you can immediately send it to your client via WhatsApp, SMS, or an external email engine.
 
 ```json
 {
@@ -51,6 +60,8 @@ Cord returns not only the internal database ID, but also the pre-built **Public 
 }
 ```
 
+If the quote requires internal approval before it can be sent (for example, a discount outside the allowed threshold), `needs_approval` comes back `true` and `motivo` describes the reason.
+
 ## Listing Quotes
 
 You can retrieve your paginated quote history or filter by status (for example, finding all `sent` or `paid` quotes).
@@ -58,6 +69,29 @@ You can retrieve your paginated quote history or filter by status (for example, 
 **Request:**
 
 ```bash
-curl -X GET "https://api.cordhq.com/v1/cotizaciones?status=pagada&limit=10" \
+curl -X GET "https://cordhq.app/api/v1/cotizaciones?status=paid&limit=10" \
      -H "Authorization: Bearer sk_live_tU..."
 ```
+
+The `status` value is the internal state as-is (English, never translated): `draft`, `sent`, `viewed`, `approved`, `rejected`, `expired`, `paid`, or `invoiced`.
+
+```json
+{
+  "data": [
+    {
+      "id": "qte_2a9d8",
+      "folio": "COT-00104",
+      "cliente": "Stark Industries",
+      "status": "paid",
+      "total": 6000,
+      "terminos": "net30",
+      "vigencia": "2026-09-10",
+      "creada": "2026-08-20T14:32:00.000Z",
+      "link_publico": "/q/tok_x8Yj9Z..."
+    }
+  ],
+  "meta": { "limit": 10, "offset": 0, "total": 1 }
+}
+```
+
+Note: in the list, `link_publico` is a relative path (`/q/<token>`); the creation response returns it absolute. For the detail of a single quote (line items, event timeline, approval), use `GET /api/v1/cotizaciones/{id}`.

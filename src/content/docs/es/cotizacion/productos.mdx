@@ -12,15 +12,19 @@ description: "Añade SKUs, agrupa artículos en kits y negocia precios."
 
 Antes de agregar productos a una cotización, Cord te permite nutrir tu catálogo base de diferentes formas:
 
-1. **Creación Manual:** Añade SKUs uno por uno, definiendo su Precio Base, nombre, descripción y la Clave de Producto/Servicio del SAT.
-2. **Importación Masiva por CSV / Excel:** Descarga nuestra plantilla, pega tu inventario desde tu ERP actual (SAP, Microsip, Excel) y súbelo. Puedes actualizar miles de precios en una sola carga.
-3. **Kits de Productos (Bundles):** Si sueles vender las mismas cosas juntas (Ej: *Kit de Punto de Venta: Computadora + Lector de Código de Barras + Impresora Térmica*), puedes crear un **Kit** en Cord. Al cotizar, simplemente seleccionas el Kit y el sistema añadirá automáticamente todas sus partes, ahorrándote el tener que buscar y agregar los mismos artículos varias veces.
+1. **Creación Manual:** Añade SKUs uno por uno, definiendo su SKU, nombre, descripción, unidad y Precio de Lista. Si además capturas el costo, Cord calcula el margen de lista automáticamente y lo compara contra el margen realmente cobrado en cada venta.
+2. **Importación Masiva por CSV / Excel:** Descarga nuestra plantilla, pega tu inventario desde tu ERP actual (SAP, Microsip, Excel) y súbelo. Cord detecta las columnas de nombre, SKU, unidad y precio automáticamente; puedes actualizar miles de productos en una sola carga.
+3. **Kits de Productos (Bundles):** Si sueles vender las mismas cosas juntas (Ej: *Kit de Punto de Venta: Computadora + Lector de Código de Barras + Impresora Térmica*), puedes crear un **Kit** en Cord. Al cotizar, simplemente seleccionas el Kit y el sistema añadirá automáticamente todas sus partes, ahorrándote el tener que buscar y agregar los mismos artículos varias veces. Un kit puede tener un precio de combo fijo, distinto a la suma de sus partes — Cord prorratea ese total entre las líneas al insertarlo.
+
+### Precios por volumen
+
+Desde la ficha de cada producto puedes definir escalones de precio por cantidad mínima (Ej: *10% de descuento a partir de 50 unidades*). Al cotizar, Cord aplica automáticamente el escalón que corresponde a la cantidad que capturaste, sin que tengas que recordar la tabla ni calcularla a mano.
 
 ## Agregando partidas a la cotización
 
 En la sección de **Partidas** del cotizador, tienes dos opciones:
 
-1. **Buscar en el Catálogo:** Utiliza la barra de búsqueda para encontrar los productos, servicios o Kits que ya configuraste con sus claves del SAT.
+1. **Buscar en el Catálogo:** Utiliza la barra de búsqueda para encontrar los productos, servicios o Kits que ya configuraste en tu catálogo.
 2. **Partida Libre:** Si necesitas cotizar algo único sobre la marcha (Ej: *Un servicio especial de instalación de fin de semana*), puedes agregar una **Línea Libre**. Simplemente escribes el nombre que quieras, le pones la cantidad y le asignas el precio que desees en ese momento, sin tener que ir a crear un producto en el catálogo primero.
 
 Por cada partida que agregues, puedes personalizar:
@@ -34,10 +38,10 @@ El B2B vive de la negociación. Cord maneja los descuentos de manera jerárquica
 
 1. **Descuento de Nivel de Cliente (Automático):** Si seleccionaste un cliente VIP, Cord ya aplicó su descuento base automáticamente.
 2. **Descuento por partida:** Se aplica únicamente a un producto específico (Ej: *20% de descuento en el Software, pero el Hardware se cobra completo*).
-3. **Descuento global:** Se aplica al subtotal de toda la cotización. Puedes ingresarlo como porcentaje (*10%*) o monto fijo (*-$5,000 MXN*).
+3. **Descuento global:** Se aplica al subtotal de toda la cotización. Puedes ingresarlo como porcentaje (*10%*) o monto fijo en la divisa de la cotización (Ej: *-$5,000*).
 
 <Callout type="warning">
-**Importante para el SAT:** Todos los descuentos en Cord se aplican matemáticamente **antes** de calcular los impuestos (IVA/IEPS), cumpliendo estrictamente con las reglas de redondeo del CFDI 4.0. No tienes que preocuparte por descuadres de centavos.
+Los descuentos siempre se calculan **antes** de aplicar impuestos — es una regla del motor de cálculo de Cord, no una configuración opcional, así que nunca hay descuadres de centavos entre lo que ve el vendedor y lo que factura el sistema. Para cuentas en México, esto además cumple con las reglas de redondeo del CFDI 4.0.
 </Callout>
 
 ## Cálculo en Tiempo Real
@@ -45,5 +49,5 @@ El B2B vive de la negociación. Cord maneja los descuentos de manera jerárquica
 A medida que agregas productos o modificas descuentos, Cord actualiza instantáneamente el desglose en la parte inferior de la pantalla:
 - **Subtotal:** Suma de todas las partidas sin impuestos.
 - **Descuentos:** Total restado.
-- **Impuestos (IVA / IEPS):** Calculados con base en las reglas fiscales de cada producto.
+- **Impuestos:** Cada partida lleva su propia tasa, tomada del catálogo fiscal de tu país al capturarla — el nombre que se imprime es el de tu país (IVA en México y España, VAT en Reino Unido, GST en Canadá, Sales tax por estado en Estados Unidos), nunca un rótulo genérico.
 - **Total:** Lo que el cliente pagará.

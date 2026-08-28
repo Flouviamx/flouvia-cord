@@ -7,6 +7,83 @@
 
 ---
 
+**Roadmap público reestructurado, contenido ampliado y Cord Payments visible (28 ago 2026)** —
+Se reemplazaron las páginas ES/EN duplicadas por componentes compartidos para índice y
+detalle. El filtro lateral sobredimensionado dejó de ser una tarjeta alta: en escritorio
+es una columna compacta y en móvil/tablet se abre bajo demanda. La fuente única pasó a
+19 iniciativas con familia, mercado, flujo, alcance, límites y relaciones. Cord
+Invoicing se dividió en producto, CFDI México, Verifactu España, validación fiscal y
+factura comercial internacional; se agregó Cord Payments con disponibilidad por país y
+límites de SPEI/MXN. Todos los detalles heredaron la nueva profundidad editorial y se
+validaron en 390, 768 y 1440 px, además de `typecheck` y build estático.
+
+---
+
+**Auditoría integral de docs.cordhq.app, /soporte y /roadmap: exhaustividad, clasificación y veracidad (ago 2026)** —
+André pidió una auditoría artículo por artículo (no muestreo) de las tres superficies
+públicas de contenido — 114 MDX de docs (8 categorías), 140 artículos de soporte (70
+ES + 70 EN, 6 categorías) y las 17 entradas del roadmap — para que estuvieran completas,
+bien organizadas y sin nada inventado. Se ejecutó con ~17 agentes en batches por
+categoría (con permiso de editar, no solo reportar) más correcciones directas de
+seguimiento. Hallazgos principales, de mayor a menor severidad:
+
+- **El aviso de privacidad completo (`src/pages/privacidad.astro`) se declaraba
+  emitido únicamente bajo la LFPDPPP mexicana** (derechos ARCO como único marco),
+  pese a que Cord opera en 12 países (MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE).
+  André señaló el sesgo en vivo durante la auditoría. Corregido para nombrar también
+  GDPR (UE/EEE/Reino Unido) y LGPD (Brasil) junto a ARCO, sin inventar certificaciones
+  de compliance no verificables desde el código — es una corrección de honestidad de
+  contenido, no una certificación legal; queda pendiente de review legal real si André
+  quiere reclamar compliance formal con esos regímenes. El mismo sesgo se repitió y
+  corrigió en `retencion-datos.md`, `acuerdos-nda.md` y varias páginas de docs que
+  presentaban SPEI/CLABE/ARCO/CFDI como universales en vez de exclusivos de México.
+- **Contradicción legal real sobre retención de CFDI al borrar cuenta:** un artículo
+  de soporte decía que Cord conserva los CFDI 5 años por ley aunque se borre la
+  organización; otro decía que Cord no conserva copia; el código (`src/lib/org-delete.ts`)
+  hace `DELETE ... cascade` real e inmediato sin excepción fiscal. Se investigó el
+  Art. 30 del CFF: la obligación de 5 años es del contribuyente (el negocio), no de
+  Cord ni del PAC (que solo retiene 3 meses por regla del SAT) — se alinearon ambos
+  artículos a lo que el código realmente hace.
+- **Features documentadas que no existen en el código, encontradas por cross-check
+  exhaustivo:** un flujo completo "Forzar NDA" con gating de precios
+  (`acuerdos-nda.md`), tres componentes inventados de Cord Elements
+  (`cord-elements.md`), un panel de tareas con recordatorio por correo
+  (`docs/gestion/tareas.mdx`), un estado "Cancelada" y un menú de tres puntos en
+  cotizaciones, vista Kanban como default (es Lista), roles "Desarrollador"/"Contador"
+  inexistentes, SSO con OIDC directo y SCIM con desaprovisionamiento automático
+  (solo hay SAML 2.0 + JIT), un plan "Enterprise" inexistente (es Scale/Developer),
+  un catálogo de claves SAT por producto, timbrado automático del REP, y una
+  "Factura Global" automatizada — ninguno de estos tiene respaldo en código; todos
+  reescritos con la capacidad real o marcados como no construidos.
+- **Regla 14 (vocabulario operativo):** quitadas todas las menciones de "Stripe" y
+  "Facturapi" en copy dirigido al usuario (quedan solo en la tabla de subencargados
+  del aviso de privacidad, donde sí corresponde nombrarlos) — se reemplazó por
+  vocabulario de negocio ("Cord Payments", "tu CSD conectado").
+- **Roadmap (`src/lib/roadmap-data.ts`):** las 13 entradas `live` se releyeron contra
+  código real; se corrigió la entrada de impuestos (ahora describe impuesto por línea
+  multi-país en vez de "IVA" genérico), seguimiento en vivo (correo/Slack + indicador
+  en vivo, no "notificación al dashboard"), y Verifactu España (el motor está
+  construido y verificado, pero su activación en producción depende del trámite de
+  NIF español, todavía en curso — antes decía que ya remitía a la AEAT). Se decidió
+  NO darle entrada propia al motor de sales tax por estado de EE.UU.: ya vive descrito
+  dentro de la entrada de impuestos, con la misma naturaleza que los `TAX_PRESETS` de
+  cualquier otro país.
+- **Sidebar de docs (`src/layouts/DocsLayout.astro`):** cruce completo contra los 114
+  archivos reales — cero huérfanos, cero enlaces rotos.
+- **Bug técnico real encontrado y corregido:** los artículos de soporte usan
+  `<Callout>` en Markdown plano (`content.config.ts` carga `.md` vía `glob`, no MDX),
+  así que el tag pasaba como HTML crudo sin ningún estilo — 9 artículos lo usan.
+  Corregido con CSS global en `src/pages/soporte/[slug].astro` siguiendo el patrón ya
+  establecido ahí para markup inyectado (regla 11).
+
+**Pendiente de confirmación de André, no verificable en código (dejado intacto a
+propósito):** `auditorias-seguridad.md` (afirma pentesting anual por terceros con
+proceso de NDA) y `reportar-vulnerabilidades.md` (afirma equipo DevSecOps interno,
+recompensas económicas y SLA de 24h) — ambos son afirmaciones de postura de
+seguridad, no funciones testeables por código; ningún agente los editó ni confirmó.
+
+---
+
 **404 inmersivo con shader tipográfico y rutas útiles (ago 2026)** — Se reemplazó la
 página de error pública por una composición light integrada con la navbar y el footer
 globales. El único shader usado es `CordDynamicBg`, el aurora GLSL estándar compartido
@@ -1312,3 +1389,29 @@ Se realizó un rediseño radical de la página `/dev-blog` para elevar su nivel 
 - **Feed Editorial y Figuras Esquema:** El feed de posts se convirtió en un layout editorial de 2 columnas separadas por una línea fina. Las imágenes de los posts ahora usan una ventana tipo interfaz técnica `[ FIG. 1 ]` con bordes sólidos y animaciones CSS abstractas de "wireframes" o grafos.
 - **Marquee de Estadísticas:** Se añadió un footer a la página principal del blog con un scroll infinito (Marquee CSS) mostrando métricas entre corchetes morados `[ 5 MILLION+ ]`, aportando densidad de información con un look de dashboard.
 - **Dev Console y AI Easter Egg:** El botón de `[C] CONSOLE` despliega un componente interactivo (`DevConsole.jsx`). En lugar de una ventana flotante, se rediseñó para anclarse en la parte inferior ocupando el 100% del ancho, con una barra de título gris claro (`#cbd5e1`). Se incluyó un Easter Egg (`ai <comando>`): simula una conexión ("INITIALIZING CORD NEURAL LINK") con retrasos reales y responde de forma técnica y útil a comandos como `ai api`, `ai webhooks` y `ai status`, en lugar de solo lanzar chistes de programadores.
+
+### 27 ago 2026
+
+- **Newsletter del Blog con doble opt-in y Resend Marketing aislado:** se
+  reemplazó el alta directa que guardaba un correo y enviaba una bienvenida por
+  un flujo verificable `pending → confirmed → unsubscribed`. El formulario manda
+  una confirmación de 24 horas desde `updates.cordhq.app`; solo el clic crea o
+  reactiva el Contact y lo agrega al Segment ES/EN. Los Broadcasts y supresiones
+  quedan fuera del carril transaccional. Un webhook `contact.*` firmado con Svix
+  refleja las bajas en Neon sin aceptar escrituras anónimas. El CTA abandonó las
+  tres tarjetas flotantes por una superficie editorial integrada, responsive y
+  con estados honestos de carga, error y confirmación. En el mismo bloque se
+  corrigieron LinkedIn a `linkedin.com/company/cordapp/` y Contacto a la página
+  de ventas.
+
+### 28 ago 2026
+
+- **Detección inicial de idioma y cierre de 404 desde `/en`:** la raíz pública
+  ahora usa `Accept-Language` para enviar a `/en` cuando la preferencia efectiva
+  es inglés; el selector ES/EN persiste una cookie explícita que gana sobre el
+  navegador. Se reemplazaron los helpers locales que prefijaban cualquier link
+  con `/en` por `publicPath()`, basado en las rutas inglesas que realmente
+  existen. Así Entrar, Dashboard, registro, `/q/demo` y los casos de uso dejan de
+  apuntar a URLs inexistentes. El middleware además normaliza enlaces viejos
+  como `/en/app/*`, `/en/sign-in`, `/en/registro` y `/en/q/*`. El contrato quedó
+  cubierto por `test/i18n-routing.test.ts`.

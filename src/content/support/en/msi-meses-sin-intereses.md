@@ -4,7 +4,7 @@ description: "Current availability of installment card payments in Cord."
 category: "Payments & Deposits"
 ---
 
-Cord Payments currently supports **a single card payment** and **SPEI transfer**. Months Without Interest are not yet available on the payment link.
+Months Without Interest is a payment method exclusive to Mexico. Cord Payments currently supports **a single card payment** in any country where it's available, and **SPEI transfer** for payments in Mexican pesos. Months Without Interest are not yet available on the payment link.
 
 ### What the customer sees
 

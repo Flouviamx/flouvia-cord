@@ -173,6 +173,96 @@ existe pero es ajeno ya es filtrar entre negocios.
                    antigüedad, exposición por cliente (saldo vs límite) y tabla con
                    "marcar cobrada" + recordatorio por WhatsApp. getCobranza() en
                    queries.ts (por cobrar = status approved|invoiced; vence según términos).
+/app/cobros      → "Mi dinero" (jul 2026). Gateado por el permiso `cobranza`; los
+                   reembolsos exigen además `reembolsar`. SSR pinta SOLO lo que sale
+                   de Neon (loadCobros en cobros-data.ts); todo lo del proveedor llega
+                   después en UNA llamada a /api/cobros?parts=stripe, y `conectado` se
+                   deriva de orgs, nunca de esa respuesta. WidgetGrid con prefs por
+                   miembro (storageKey cord.cobros.v1). Los depósitos se leen de la
+                   tabla `payouts` (listPayoutsFromDb en stripe-cobros.ts), poblada por
+                   los webhooks payout.*; la lectura viva queda como respaldo.
+/app/cobros/disputas/[disputeId]
+                 → editor de evidencia de contracargo. El envío es irreversible y
+                   exige step-up; ningún cron ni webhook puede enviarla solo
+                   (scripts/dispute-safety-check.mjs).
+/app/ajustes/cobros
+                 → alta de Cord Payments (Connect Custom) + métodos de cobro + cuenta
+                   de depósito manual + aceptación de la tarifa. Gateado por
+                   `cobros_config`. El island recibe un DTO ANGOSTO, no el objeto
+                   completo de getOrg(): Astro serializa las props al HTML y ahí
+                   viajaba la cuenta de depósito descifrada.
+/verificar-identidad/[token]
+                 → captura móvil de documentos, PÚBLICA y noindex. El token es la
+                   credencial (identity_capture_sessions) y la persona se deriva de la
+                   FILA de la sesión, nunca del body (regla 30).
+                   Es la ÚNICA ruta con camera=(self) en Permissions-Policy — el
+                   default camera=() deshabilitaba getUserMedia también aquí, así que
+                   el flujo del QR no arrancaba en Chromium.
+                   Como el token viaja en el path: no-referrer, no-store, X-Robots-Tag
+                   y `analyticsDisabled` (PostHog registraba la credencial viva en
+                   $current_url). Ver regla 34.
+
+APIs de cobros (ago 2026)
+─────────────────────────
+/api/billing/connect/create           POST   crea la cuenta conectada; 409 si el país
+                                             no tiene riel (supportsOnlinePayments).
+/api/billing/connect/account          PATCH  allowlist ACCOUNT_CONNECT_FIELDS. Las
+                                             declaraciones legales y tos_acceptance se
+                                             firman en SERVIDOR (date/ip/user_agent).
+/api/billing/connect/persons          GET/POST/PATCH/DELETE — personas de KYC (UBO).
+                                             Pertenencia verificada contra
+                                             connect_personas ANTES de llamar al
+                                             proveedor; step-up en las tres mutaciones;
+                                             tope duro MAX_PERSONAS. El GET reconstruye
+                                             la proyección si está vacía (backfill
+                                             perezoso, sin migración masiva).
+/api/billing/connect/status           GET    devuelve requirements SANEADOS + future_
+                                             requirements + estado de verificación.
+/api/billing/connect/document         POST   multipart. El `purpose` lo decide el
+                                             DESTINO: identity_document (persona),
+                                             additional_verification (empresa),
+                                             account_requirement (documents.*).
+/api/billing/connect/external-account POST   cuenta de depósito. Checksum en Cord,
+                                             divisa derivada del PAÍS (no de
+                                             orgs.moneda), cifrada al guardar, step-up.
+/api/billing/connect/payout-schedule  GET/PATCH — frecuencia de depósito (diaria,
+                                             semanal, mensual, manual) + días de
+                                             retraso. Step-up y auditoría.
+/api/billing/connect/capture-session  POST   acuña el token del QR. Step-up: es una
+                                             credencial portadora que sube documentos.
+/api/billing/connect/capture/[token]  GET/POST — PÚBLICA (PUBLIC_API_PREFIXES), no
+                                             exenta de CSRF. Partes: front | back |
+                                             address, más `action=cerrar`.
+                                             Estados: pending → en_progreso →
+                                             min_cubierto → cerrada | bloqueada. Sólo
+                                             los dos últimos rechazan: colapsar
+                                             min_cubierto con cerrada dejaba el REVERSO
+                                             inalcanzable.
+                                             Binding al primer dispositivo por cookie,
+                                             tope acumulado de intentos incrementado
+                                             ANTES de llamar al proveedor, ventana
+                                             deslizante (30 min / 15 desde el primer
+                                             uso) y dedupe por SHA-256. La auditoría usa
+                                             created_by como actor real.
+/api/billing/connect/{payouts,disconnect}
+/api/billing/fees/accept              POST   activa la tarifa; zod z.literal de la
+                                             versión exacta + step-up.
+/api/cobros                           GET    payload de "Mi dinero" (?parts=stripe).
+/api/cobros/[cobroId]/reembolso       GET/POST — nonce de un solo uso + step-up +
+                                             idempotencia; la comisión NO se devuelve.
+/api/cobros/disputas/[disputeId]/{evidencia,archivo,auto-evidence}
+/api/q/[token]/{payment-intent,checkout,subscription-intent,spei-email}
+                                             carril público del cobro de una cotización.
+/api/i/[token] y /api/i/[token]/payment-intent
+                                             carril público de la factura hospedada.
+                                             ⚠️ /api/i/ DEBE estar en
+                                             PUBLIC_API_PREFIXES: sin él el middleware
+                                             responde 401 y la factura no se puede
+                                             pagar (ver regla 33).
+/api/stripe/webhook                   POST   plataforma Y cuentas conectadas, con
+                                             secreto separado. Falla cerrado sin
+                                             secreto; un evento firmado con el de
+                                             Connect EXIGE event.account.
 
 /app/cotizaciones        → tabla con filtros por estado (client-side)
 /app/cotizaciones/nueva  → EL EDITOR — POST /api/cotizaciones (real). Comparte

@@ -94,3 +94,25 @@ export default FramerCordCotizador;
 ```
 
 This will register the property controls in Framer's visual interface (Property Controls), exposing the `Token` field in the right panel so your designers can modify it visually without touching code.
+
+## Webflow
+
+Unlike Framer (a real React Code Component), Webflow doesn't run React components — that's
+why the SDK exposes a separate entrypoint (`@flouviahq/elements/webflow`) built for Webflow's
+visual editor: a self-initializing script that **requires no code**, just custom attributes.
+
+1. In Webflow, add a **Div Block** wherever you want the quoter to appear.
+2. In that element's **Settings** panel, add a **Custom Attribute**: `data-cord-token` with
+   your quote's token as the value. (Optionally, `data-cord-base-url` if you use your own
+   domain, and `data-cord-min-height` for the iframe's minimum height.)
+3. Under **Page Settings › Custom Code** (or your site's settings if you want it on every
+   page), add this script before `</body>`:
+
+```html
+<script src="https://unpkg.com/@flouviahq/elements/dist/webflow.js"></script>
+```
+
+The script automatically finds every element with `data-cord-token` on the page (on load, and
+again if Webflow adds more later) and mounts the quoter there — it doesn't expose its own JS
+events like the native Web Component does; for that, use `<cord-cotizador>` directly or
+Framer's Code Component.

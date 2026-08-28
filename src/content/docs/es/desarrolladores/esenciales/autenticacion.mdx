@@ -17,7 +17,7 @@ Todas las peticiones deben realizarse a través de HTTPS. Las peticiones sin aut
 **Ejemplo de Petición:**
 
 ```bash
-curl -X GET "https://api.cordhq.com/v1/cotizaciones" \
+curl -X GET "https://cordhq.app/api/v1/cotizaciones" \
      -H "Authorization: Bearer sk_live_tU..."
 ```
 
@@ -32,9 +32,11 @@ Cord soporta dos alcances principales de claves de API para garantizar la seguri
 
 Las claves publicables tienen restricciones de seguridad automáticas impuestas por la API. Por ejemplo, si consultas la [API de Productos](/docs/desarrolladores/funciones/productos) usando una clave publicable, el servidor de Cord omitirá automáticamente el campo `costo` (margen) para garantizar que los visitantes de tu sitio web no puedan descubrir tus márgenes de ganancia.
 
+Además, una Publishable Key solo puede usarse en dos rutas: `GET /api/v1/productos` y `POST /api/v1/cotizaciones` — cualquier otro intento responde `403 insufficient_scope`. La petición también debe enviar un header `Origin` o `Referer`; si registraste dominios permitidos para esa llave, Cord verifica que coincidan antes de aceptarla.
+
 <Callout type="info">
 **Atención:**
-**Nunca expongas tus Claves Secretas.** Si tu clave secreta es comprometida, debes revocarla inmediatamente desde la pestaña **API** del dock de Desarrolladores.
+**Nunca expongas tus Claves Secretas.** Si tu clave secreta es comprometida, debes revocarla inmediatamente desde la pestaña **API** del [Cord Workbench](/docs/desarrolladores/herramientas/workbench).
 </Callout>
 
 ## Comprobación Rápida de Identidad
@@ -42,6 +44,6 @@ Las claves publicables tienen restricciones de seguridad automáticas impuestas 
 Si necesitas probar si tu clave de API está funcionando correctamente y a qué cuenta pertenece, puedes utilizar el endpoint `me`:
 
 ```bash
-curl -X GET "https://api.cordhq.com/v1/me" \
+curl -X GET "https://cordhq.app/api/v1/me" \
      -H "Authorization: Bearer sk_live_tU..."
 ```

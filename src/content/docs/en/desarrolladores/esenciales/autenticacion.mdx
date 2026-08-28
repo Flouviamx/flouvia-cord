@@ -17,7 +17,7 @@ All requests must be made over HTTPS. Requests without authentication or sent vi
 **Request Example:**
 
 ```bash
-curl -X GET "https://api.cordhq.com/v1/cotizaciones" \
+curl -X GET "https://cordhq.app/api/v1/cotizaciones" \
      -H "Authorization: Bearer sk_live_tU..."
 ```
 
@@ -32,6 +32,8 @@ Cord supports two main scopes of API keys to guarantee your data security:
 
 Publishable keys have automatic security restrictions imposed by the API. For example, if you query the [Products API](/en/docs/desarrolladores/funciones/productos) using a publishable key, the Cord server will automatically omit the `costo` (margin) field to ensure your website visitors cannot discover your profit margins.
 
+A Publishable Key can also only be used on two routes: `GET /api/v1/productos` and `POST /api/v1/cotizaciones` — any other attempt responds `403 insufficient_scope`. The request must also send an `Origin` or `Referer` header; if you registered allowed domains for that key, Cord checks that they match before accepting it.
+
 <Callout type="warning">
 **Caution:**
 **Never expose your Secret Keys.** If your secret key is compromised, you must immediately revoke it from the **API** tab of the [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench).
@@ -42,6 +44,6 @@ Publishable keys have automatic security restrictions imposed by the API. For ex
 If you need to test if your API key is working correctly and which account it belongs to, you can use the `me` endpoint:
 
 ```bash
-curl -X GET "https://api.cordhq.com/v1/me" \
+curl -X GET "https://cordhq.app/api/v1/me" \
      -H "Authorization: Bearer sk_live_tU..."
 ```

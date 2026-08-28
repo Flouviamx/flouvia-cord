@@ -1,18 +1,16 @@
 ---
-title: "SAT Catalogs and Product Keys"
-description: "Learn how to map your internal products with the official SAT keys for error-free billing."
+title: "SAT product and unit keys on your invoices"
+description: "Which key Cord uses when stamping, and what to do if your line of business needs a different one."
 category: "Invoicing"
 order: 2
 ---
 
-Every item (concept) you invoice must have a Product/Service Key and a Unit Key, according to the SAT catalogs.
+This applies only to organizations in **Mexico**: every line item on a CFDI 4.0 needs a Product/Service Key and a Unit Key from the SAT catalogs.
 
-### How to configure it in Cord?
+### Which key Cord uses today
 
-You do not need to memorize the codes. In the **Products/Inventory** section:
-1. Create or edit a product.
-2. Go to the *Tax Information* section.
-3. In **SAT Key**, simply type what you sell (e.g., "Software" or "Consulting"). Cord's predictive search will show you the valid keys (e.g., `43231500` for Business Software).
-4. In **SAT Unit**, search by description (e.g., "Service", "Piece"). The system will assign the correct code (e.g., `E48` for Service Unit, or `H87` for Piece).
+Cord doesn't yet have a product catalog with its own SAT key per item: when stamping, every invoice line is sent with the generic key `01010101` ("Not in the catalog") and unit `H87` ("Piece"). Those are valid keys with the SAT and won't block stamping, but they don't describe your specific line of business — if your accountant needs a more precise key (for example, `43231500` for business software, or `E48` for a service unit), you'll need to correct it manually on the resulting CFDI or ask your accountant to adjust it from their own system.
 
-Once configured in Cord's product catalog, any salesperson will be able to quote these items and the tax system will invisibly and automatically inherit these keys when stamping the invoice.
+<Callout type="info">
+Configuring a different SAT key per product is a capability that doesn't exist in Cord yet. If your business needs it to comply with a specific regime or line of business, reach out to us and we'll evaluate it.
+</Callout>

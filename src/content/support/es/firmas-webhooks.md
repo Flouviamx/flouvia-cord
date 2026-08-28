@@ -8,9 +8,38 @@ Asegurar la procedencia de los webhooks es crítico. Un atacante podría enviart
 
 ### Cómo firma Cord
 
-Cord calcula el **HMAC-SHA256 del cuerpo en bruto** del webhook usando tu *secreto de firma*, y lo envía en el header `X-Cord-Signature` con el formato `sha256=<hash>`. El nombre del evento viaja en `X-Cord-Event`. No hay timestamp en la firma.
+Cada entrega manda **dos** firmas del cuerpo en bruto, para que puedas migrar sin ventana de cortes:
 
-### Verificación en Node.js (Express)
+- **`X-Cord-Signature-V1`** (recomendada): `t=<timestamp unix>,v1=<hmac-sha256 hex de "{t}.{cuerpo}">`. Incluye el timestamp dentro de lo firmado, así que puedes rechazar una entrega vieja reenviada (protección anti-replay). Durante una rotación de secreto puede traer dos pares `v1=`; basta con que uno cuadre.
+- **`X-Cord-Signature`** (legacy, se mantiene por compatibilidad): `sha256=<hmac-sha256 hex del cuerpo>`, sin timestamp.
+
+Además de la firma, cada entrega trae `X-Cord-Event` (nombre del evento), `X-Cord-Event-Id` (id estable del evento, igual en reintentos y en un reenvío manual — úsalo para deduplicar), `X-Cord-Delivery-Id` (cambia en cada intento) e `Idempotency-Key` (repite el mismo valor de `X-Cord-Event-Id`, para frameworks que la leen automáticamente).
+
+### Con el SDK oficial (recomendado)
+
+`@flouviahq/elements/server` trae el verificador ya escrito: intenta primero `X-Cord-Signature-V1` (con tolerancia configurable, default 300 s) y cae a la legacy `X-Cord-Signature` si el endpoint todavía no la recibe.
+
+```typescript
+import { CordAPI } from '@flouviahq/elements/server';
+
+const cord = new CordAPI(process.env.CORD_SECRET_KEY!);
+
+// Ejemplo con un Route Handler de Next.js — req.text() ya es el cuerpo crudo
+export async function POST(req: Request) {
+  const body = await req.text();
+  try {
+    const event = cord.webhooks.constructEvent(body, req.headers, process.env.CORD_WEBHOOK_SECRET!);
+    // event.event, event.data — ver /soporte/api-facturas y /soporte/migracion-stripe para el catálogo de eventos
+    return new Response('ok');
+  } catch {
+    return new Response('Firma inválida', { status: 400 });
+  }
+}
+```
+
+### Verificación manual en Node.js (Express)
+
+Si no usas el SDK, puedes verificar la firma legacy a mano:
 
 ```javascript
 const crypto = require('crypto');
@@ -37,4 +66,4 @@ app.post('/webhook/cord', express.raw({ type: 'application/json' }), (req, res) 
 });
 ```
 
-**Clave:** firma sobre el cuerpo **crudo** (usa `express.raw`, no `express.json`), o el hash no coincidirá.
+**Clave:** firma sobre el cuerpo **crudo** (usa `express.raw`, no `express.json`), o el hash no coincidirá. Para verificar `X-Cord-Signature-V1` a mano, calcula el HMAC sobre `"{timestamp}.{cuerpo}"` en vez de solo el cuerpo, y valida que el timestamp esté dentro de tu tolerancia — o usa el SDK, que ya hace esto por ti.

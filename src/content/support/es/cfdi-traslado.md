@@ -11,4 +11,4 @@ Nuestro motor de facturación está optimizado para:
 - CFDI de Egreso (Notas de Crédito).
 - CFDI de Recepción de Pagos (Complementos / REP).
 
-Si tu empresa se dedica a la logística o al transporte de mercancías por vías federales y requieres timbrar Complementos Carta Porte versión 3.0, te sugerimos utilizar la API de nuestro proveedor directo de timbrado (Facturapi) conectando tu propio ERP, ya que su llenado requiere decenas de nodos específicos sobre vehículos, operadores y aseguradoras que no gestionamos en Cord.
+Si tu empresa se dedica a la logística o al transporte de mercancías por vías federales y requieres timbrar Complementos Carta Porte versión 3.0, te recomendamos usar un sistema de facturación especializado en ese complemento, conectado a tu propio ERP, ya que su llenado requiere decenas de nodos específicos sobre vehículos, operadores y aseguradoras que Cord no gestiona.

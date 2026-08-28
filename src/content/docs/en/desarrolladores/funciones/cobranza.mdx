@@ -16,49 +16,71 @@ This endpoint is perfect for being consumed by a Cron job (`node-cron` or Github
 
 ## Retrieving Portfolio Status
 
-The `GET /v1/cobranza` endpoint returns a master summary of the organization's financial health.
+The `GET /api/v1/cobranza` endpoint returns a master summary of the organization's financial health.
+
+<Callout type="info">
+**Requires the Scale plan or higher.** Collections is a paid capability (Rule 17). Without the required plan, the endpoint responds `402 Payment Required` with `code: "subscription_required"` instead of data — see [Error Handling](/en/docs/desarrolladores/esenciales/errores).
+</Callout>
 
 **Request:**
 
 ```bash
-curl -X GET "https://api.cordhq.com/v1/cobranza" \
+curl -X GET "https://cordhq.app/api/v1/cobranza" \
      -H "Authorization: Bearer sk_live_tU..."
 ```
 
 **Response (Analytical Snapshot):**
 
-The response is structured for immediate use, stripping all secret public `tokens` for security.
+The response is structured for immediate use, stripping each account's secret public `token` for security — publishing it in a list would turn any read-only key into a payment-link dispenser. Amounts are expressed in the organization's accounting currency.
 
 ```json
 {
   "data": {
     "resumen": {
-      "total_vencido": 150000,
-      "total_por_cobrar": 450000,
-      "facturas_vencidas_count": 12
+      "totalPorCobrar": 450000,
+      "totalVencido": 150000,
+      "totalVigente": 300000,
+      "nPorCobrar": 24,
+      "nVencidas": 12,
+      "nClientes": 9,
+      "nExcedidos": 1,
+      "interesTotal": 3200,
+      "interesPct": 3,
+      "avgDelay": 6,
+      "esperado7": 80000,
+      "esperado30": 220000
     },
-    "aging": {
-      "dias_0_30": 300000,
-      "dias_31_60": 50000,
-      "dias_61_90": 20000,
-      "dias_90_mas": 80000
-    },
+    "aging": [
+      { "key": "vigente", "label": "Not yet due", "monto": 300000, "n": 12, "color": "#3b82f6" },
+      { "key": "d30", "label": "1–30 days", "monto": 50000, "n": 6, "color": "#f59e0b" },
+      { "key": "d60", "label": "31–60 days", "monto": 20000, "n": 3, "color": "#f97316" },
+      { "key": "d60p", "label": "60+ days", "monto": 80000, "n": 3, "color": "#ef4444" }
+    ],
     "items": [
       {
         "id": "qte_...",
         "folio": "COT-00104",
-        "status": "vencida",
-        "dias_retraso": 14,
-        "saldo_pendiente": 5000
+        "empresa": "Stark Industries",
+        "clienteId": "cus_...",
+        "status": "invoiced",
+        "total": 5000,
+        "overdue": true,
+        "diasVencido": 14,
+        "interes": 42
       }
     ],
     "clientes": [
       {
-        "id": "cus_...",
         "empresa": "Stark Industries",
-        "deuda_total": 55000
+        "saldo": 55000,
+        "limite": 500000,
+        "n": 3,
+        "excede": false,
+        "uso": 11
       }
     ]
   }
 }
 ```
+
+`aging` is an array of 4 fixed buckets (`vigente`, `d30`, `d60`, `d60p`), not an object keyed by day range. `status` in `items` is the real quote/invoice state (`approved`, `invoiced`…); when it's overdue, `overdue` comes back `true` and `diasVencido` counts the days.

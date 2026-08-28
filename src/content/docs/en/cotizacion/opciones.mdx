@@ -24,12 +24,12 @@ Unlike static quoters, Cord understands the reality of B2B where 100% upfront is
 If you are an agency, consultancy, or sell continuous services, you can turn any quote into an **Automatic Monthly Retainer**.
 - By activating the "Monthly recurring charge" option, the quote turns into a real Cord Payments subscription (see [Monthly retainers](/en/docs/pagos/igualas)).
 - The client will authorize their credit/debit card **only once** from the public link when approving the proposal.
-- From that moment on, the system will automatically charge the total amount every month and the money will drop directly into your bank account friction-free, automatically generating the CFDI 4.0 invoice each cycle.
+- From that moment on, the system will automatically charge the total amount every month and the money will drop directly into your bank account friction-free, automatically generating that cycle's invoice (CFDI 4.0 in Mexico; whichever document applies in your country elsewhere).
 
 ### 3. Currencies and Exchange Rate Coverage (FX Lock)
 
-- **Quoting vs Billing Currency:** In B2B, it's common to quote in Dollars (USD) or Euros (EUR) to protect against devaluation, but bill in Mexican Pesos (MXN). Cord solves this natively.
-- **FX Lock (Frozen rate for 30 days):** When creating a quote in USD/EUR, Cord fetches the spot interbank rate (or Banxico FIX, depending on your setup). The system allows you to apply a coverage *buffer* percentage to protect your margins. Once the quote is sent, Cord **freezes this rate (FX Lock) for up to 30 days**. If the peso moves tomorrow, your client will pay in MXN using the rate that was locked, thus protecting the commercial relationship and your profits.
+- **Sales currency vs. accounting currency:** In B2B, it's common to quote in one currency (e.g. USD or EUR) to protect against devaluation, but keep your books in your country's currency (e.g. MXN, COP, BRL). Cord solves this natively whenever the two differ.
+- **FX Lock (Frozen rate for 30 days):** When you create a quote in a currency other than your business's accounting currency, Cord fetches a real, dated exchange rate from an external provider (never a made-up rate — if no source responds, the quote isn't created in that currency). You can apply a coverage *buffer* percentage on top of that spot rate to protect your margins. Once the quote is sent, Cord **freezes the applied rate (FX Lock) for up to 30 days**: if the exchange rate moves tomorrow, the accounting total keeps using the rate that was locked, protecting the commercial relationship and your profits.
 - **Validity:** Set the commercial validity days. If the quote expires, the Magic Link will block approval.
 
 ### 4. Notes and Legal Terms

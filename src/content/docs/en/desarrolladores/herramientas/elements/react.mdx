@@ -124,7 +124,12 @@ function MyOwnBuilder() {
 }
 ```
 
-<Callout type="info">
-**Configuration Note:** If you need to adjust the tax/VAT percentage, set it globally in your `<CordProvider ivaPct={0.16}>` instead of passing it to each instance. This ensures that what the client calculates and what the server evaluates are always identical.
-
+<Callout type="warning">
+**`ivaPct` is required, not an optional tweak.** The SDK no longer silently assumes 16% (Mexico)
+if you don't set it — `useQuoteBuilder` (and therefore `<CordBuilder>`) **throws** as soon as it
+mounts if it can't find an explicit rate, whether by prop or via `<CordProvider>`. Set it once,
+globally — `<CordProvider ivaPct={0.16}>` — instead of repeating it on every Builder instance:
+that way the total your client sees never drifts from what the server validates for your
+organization. A business outside Mexico must pass ITS OWN rate (or `0` if its sale carries no
+tax) — never assume 0.16 by default.
 </Callout>

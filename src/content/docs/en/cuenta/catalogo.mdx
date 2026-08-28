@@ -14,23 +14,33 @@ The heart of a B2B quote is product accuracy. Cord allows you to manage a centra
 
 ### 1. Manual Creation
 
-If you have a small catalog or sell services, you can add products one by one from **Catalog > New Product**.
+If you have a small catalog or sell services, you can add products one by one from **Products > New Product**.
 You will be asked for the following data:
 - **Product / Service Name**
-- **SKU (Internal Code):** Unique identifier.
-- **Base Price (Before taxes):** The public list price.
+- **SKU (Internal Code):** Unique identifier, optional.
+- **Unit:** piece, service, hour, m², kg... whichever you sell by.
+- **Description:** free text that accompanies the product on the quote.
+- **Sale Price (Before taxes):** the list price.
 - **Internal Cost (Optional):** If you enter how much the product costs you, Cord will calculate and show you the **Profit Margin** in real-time when building the quote. Your client will never see this cost.
-- **Volume Pricing:** Vital in B2B. You can set up automatic rules, for example: *"From 1 to 10 pieces the price is $100, from 11 to 50 pieces the price drops to $85"*. Cord will automatically adjust the price based on the quantity the sales rep adds to the quote.
+- **Volume Pricing (Optional):** Vital in B2B. You can set up automatic rules, for example: *"From 1 to 10 pieces the price is $100, from 11 to 50 pieces the price drops to $85"*. Cord will automatically adjust the price based on the quantity the sales rep adds to the quote.
 - **Status (Active / Inactive):** If you discontinue a product or run out of stock long-term, you can mark it as *Inactive* so sales reps can no longer add it to new quotes, without deleting its history.
-- **Product/Service and Unit Key (SAT):** Mandatory for CFDI 4.0. We have a built-in smart search engine.
-- **Applicable Taxes:** Define if it carries VAT (16%, 8%, 0% or Exempt) or IEPS.
+
+<Callout type="info">
+**Tax doesn't live on the product.** Cord calculates tax **per quote line**, not per
+catalog item — the same product can be sold taxed in one deal and exempt in another
+(an export, a tax-exempt client). You pick the rate from your account's tax catalog
+(**Settings > Quotes**) when you add the line item; the tax name follows your country
+(VAT, IVA, GST, Moms...), never a generic label. See
+[Products and discounts](/en/docs/cotizacion/productos) for how this applies when
+quoting.
+</Callout>
 
 ### 2. Bulk Import (CSV)
 
 For companies with hundreds or thousands of references, Cord supports bulk import.
-Download our **CSV Template**, paste the information extracted from your ERP (such as
-SAP, Oracle, or Microsip), and upload it to Cord to create prices, SKUs, and
-descriptions in a single move.
+Download our **CSV Template** (columns `sku, name, unit, price, active`), paste the
+information extracted from your ERP (such as SAP, Oracle, or Microsip), and upload it
+to Cord to create prices, SKUs, and descriptions in a single move.
 
 <Callout type="info">
 **Tip:** Do your prices change constantly?

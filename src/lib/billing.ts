@@ -607,7 +607,12 @@ export async function stripeUpload(
     bytes: Buffer | ArrayBuffer | Uint8Array,
     filename: string,
     mime: 'image/jpeg' | 'image/png' | 'application/pdf',
-    purpose: 'identity_document' | 'additional_verification' | 'dispute_evidence',
+    // `account_requirement` es el propósito de los documentos a nivel cuenta
+    // (`documents.*`): comprobante de registro mercantil, de titularidad real,
+    // licencia. Faltaba en el tipo, así que esa familia entera de requisitos era
+    // inexpresable — y es justo la ruta ALTERNATIVA que el proveedor ofrece en
+    // España y Alemania cuando la escritura constitutiva no basta.
+    purpose: 'identity_document' | 'additional_verification' | 'account_requirement' | 'dispute_evidence',
     stripeAccount: string
 ): Promise<any> {
     if (!STRIPE_KEY) throw new Error('STRIPE_SECRET_KEY no configurada');

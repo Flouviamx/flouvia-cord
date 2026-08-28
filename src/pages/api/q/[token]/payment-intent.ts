@@ -2,7 +2,6 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, resolvePublicQuote, withOrgTx } from '../../../../lib/db';
-import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { dueDateFor, isoDay, venceDia, materializeAnticipoCobros } from '../../../../lib/cobros';
 import { trackServer } from '../../../../lib/posthog-server';
 import { fromMinorUnits, normalizeCurrency, stripeCurrency, stripeSupportsCurrency, toMinorUnits } from '../../../../lib/currency';
@@ -10,14 +9,17 @@ import { computeFee, isFeeScheduleActive, type PaymentFeeMethod } from '../../..
 import { payerError } from '../../../../lib/pay-errors';
 import { after } from '../../../../lib/after';
 import { log } from '../../../../lib/log';
+import { limitPublicPayment } from '../../../../lib/connect-security';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
 export const POST: APIRoute = async ({ params, request }) => {
     if (!STRIPE_KEY) return json({ error: 'El pago en línea aún no está configurado.' }, 503);
     const token = params.token ?? '';
-    const rl = await rateLimit(`pi:${token}`, 10, 60);
-    if (!rl.ok) return tooMany(rl.retryAfter);
+    // Estricto y con componente de IP: es el carril donde vive el fraude de
+    // prueba de tarjetas, y `rateLimit()` a secas fallaba abierto.
+    const limited = await limitPublicPayment(request, 'pi', token, 10);
+    if (limited) return limited;
 
     // Cobro específico (anticipo/saldo/cuota) — opcional; sin él se elige el
     // siguiente cobro pendiente cuya fecha ya llegó.
@@ -276,8 +278,15 @@ export const POST: APIRoute = async ({ params, request }) => {
             cusForm.set('metadata[cotizacion_id]', c.id as string);
             cusForm.set('metadata[cobro_id]', cobro.id as string);
             cusForm.set('description', `Cliente de cotización ${c.folio} (${cobro.tipo})`);
+            // Idempotencia determinística por COBRO: sin ella, un reintento del
+            // navegador (o un doble clic) acuñaba un Customer nuevo en la cuenta
+            // conectada, y como la CLABE de SPEI se asigna POR CUSTOMER, el
+            // cliente terminaba con dos CLABEs vivas para la misma factura y el
+            // pago llegaba a una que nadie estaba conciliando.
             const cusRes = await fetch('https://api.stripe.com/v1/customers', {
-                method: 'POST', headers: connectHeaders, body: cusForm.toString(),
+                method: 'POST',
+                headers: { ...connectHeaders, 'Idempotency-Key': `cord-cus-${cobro.id}` },
+                body: cusForm.toString(),
             });
             const cus: any = await cusRes.json();
             if (!cusRes.ok || !cus?.id) {

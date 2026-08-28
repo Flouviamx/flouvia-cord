@@ -4,7 +4,7 @@ description: "Disponibilidad actual de pagos a meses en Cord."
 category: "Pagos y Depósitos"
 ---
 
-Cord Payments actualmente admite **tarjeta en un solo pago** y **transferencia SPEI**. Los Meses Sin Intereses todavía no están disponibles en el link de pago.
+Meses Sin Intereses es un método de pago exclusivo de México. Cord Payments actualmente admite **tarjeta en un solo pago** en cualquier país donde está disponible, y **transferencia SPEI** para cobros en pesos mexicanos. Los Meses Sin Intereses todavía no están disponibles en el link de pago.
 
 ### Qué verá el cliente
 

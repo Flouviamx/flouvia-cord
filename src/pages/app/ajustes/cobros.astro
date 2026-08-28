@@ -6,7 +6,7 @@ import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { describeFee, describeSubscriptionFee, FEE_TERMS_VERSION } from '../../../lib/fees';
 import { payoutSpecFor } from '../../../lib/payout-fields';
-import { supportsOnlinePayments, countryName } from '../../../lib/countries';
+import { supportsOnlinePayments, countryName, getCountryProfile } from '../../../lib/countries';
 const ORG = await getOrg();
 const L = currentLocale();
 
@@ -27,6 +27,46 @@ const speiDisponible = PAIS === 'MX';
 const cobrosEnLinea = supportsOnlinePayments(PAIS);
 // El formato de la cuenta de depósito depende del país: CLABE, IBAN, sort code.
 const PAYOUT = payoutSpecFor(PAIS);
+// La divisa que gobierna la comisión es la de la CUENTA CONECTADA, que Stripe
+// fija por país al crearla — no `orgs.moneda`, que es la divisa contable y el
+// usuario edita libre en Ajustes. Fuera de México, `describeFee` devuelve null:
+// Cord todavía no cobra comisión de plataforma ahí, y eso se dice con palabras
+// en vez de enseñar una tabla mexicana a un negocio en Madrid (regla 15).
+const DIVISA_COBRO = getCountryProfile(PAIS).currency;
+const TARIFA_TARJETA = describeFee('card', DIVISA_COBRO, L);
+const TARIFA_SPEI = describeFee('spei', DIVISA_COBRO, L);
+const TARIFA_IGUALAS = describeSubscriptionFee(DIVISA_COBRO, L);
+
+// ── El island recibe SOLO lo que usa ────────────────────────────────────────
+//
+// `org={ORG}` le pasaba el objeto completo de `getOrg()` a un island
+// `client:only`, y Astro serializa las props de un island al HTML de la página
+// para hidratarlo. Es decir: la cuenta de depósito DESCIFRADA (queries.ts la
+// descifra al leerla), el webhook de Slack, las preferencias de notificación y
+// todo lo demás viajaban en el código fuente, para once campos que el asistente
+// realmente usa.
+//
+// La pantalla está gateada por `cobros_config`, pero un permiso decide QUIÉN
+// abre la página, no qué se imprime dentro de ella: cualquier extensión del
+// navegador, un "ver código fuente" por encima del hombro o un futuro fallo de
+// XSS leen ese HTML igual.
+const WIZARD_ORG = {
+    countryCode: ORG.countryCode,
+    nombre: ORG.nombre,
+    razonSocial: ORG.razonSocial,
+    rfc: ORG.rfc,
+    direccion: ORG.direccion,
+    cpFiscal: ORG.cpFiscal,
+    telefono: ORG.telefono,
+    emailContacto: ORG.emailContacto,
+    sitioWeb: ORG.sitioWeb,
+    bancoBeneficiario: ORG.bancoBeneficiario,
+    // Sólo los últimos cuatro dígitos, para poder decir "termina en ••••1234".
+    // El número completo ya no se precarga en el formulario: cambiar la cuenta
+    // de depósito exige step-up (`requireFreshAuth`) y volver a teclearla, que
+    // es lo normal para un dato de este valor.
+    bancoLast4: String(ORG.bancoClabe || '').slice(-4) || null,
+};
 const marca = ORG.colorMarca || '#0a192f';
 const tarifaVigenteAceptada = ORG.feeEnabled && ORG.feeTermsVersion === FEE_TERMS_VERSION;
 
@@ -87,7 +127,7 @@ const pasos = [
             ))}
         </div>
         <div class="connect-frame">
-            <ConnectCustomOnboarding client:only="react" org={ORG} locale={L} />
+            <ConnectCustomOnboarding client:only="react" org={WIZARD_ORG} locale={L} />
         </div>
         </>
     ) : (
@@ -122,7 +162,7 @@ const pasos = [
                     </>
                 )}
                 <div class={`connect-frame ${estado === 'activo' ? 'is-active' : ''}`}>
-                    <ConnectCustomOnboarding client:only="react" org={ORG} locale={L} />
+                    <ConnectCustomOnboarding client:only="react" org={WIZARD_ORG} locale={L} />
                 </div>
             </div>
         </div>
@@ -212,14 +252,57 @@ const pasos = [
             </div>
         </div>
 
+    {activo && cobrosEnLinea && (
+        <section class="payout-sched" id="payoutSched">
+            <h3>{L === 'en' ? 'Payout frequency' : 'Frecuencia de depósito'}</h3>
+            <p>{L === 'en'
+                ? 'How often your money leaves for your bank account. Daily payouts pay the fixed transfer fee more often; monthly ones pool the money but keep it further away.'
+                : 'Cada cuánto sale tu dinero hacia tu cuenta bancaria. Los depósitos diarios pagan más veces la comisión fija de transferencia; los mensuales juntan el dinero pero lo dejan más lejos.'}</p>
+            <div class="s-row">
+                <div class="s-field">
+                    <label for="poInterval">{L === 'en' ? 'Frequency' : 'Frecuencia'}</label>
+                    <select class="s-input" id="poInterval">
+                        <option value="daily">{L === 'en' ? 'Daily' : 'Diaria'}</option>
+                        <option value="weekly">{L === 'en' ? 'Weekly' : 'Semanal'}</option>
+                        <option value="monthly">{L === 'en' ? 'Monthly' : 'Mensual'}</option>
+                        <option value="manual">{L === 'en' ? 'Manual' : 'Manual'}</option>
+                    </select>
+                </div>
+                <div class="s-field" id="poAnchorWeekWrap" hidden>
+                    <label for="poAnchorWeek">{L === 'en' ? 'Day of the week' : 'Día de la semana'}</label>
+                    <select class="s-input" id="poAnchorWeek">
+                        {['monday','tuesday','wednesday','thursday','friday'].map((d, i) => (
+                            <option value={d}>{(L === 'en'
+                                ? ['Monday','Tuesday','Wednesday','Thursday','Friday']
+                                : ['Lunes','Martes','Miércoles','Jueves','Viernes'])[i]}</option>
+                        ))}
+                    </select>
+                </div>
+                <div class="s-field" id="poAnchorMonthWrap" hidden>
+                    <label for="poAnchorMonth">{L === 'en' ? 'Day of the month' : 'Día del mes'}</label>
+                    <input class="s-input" id="poAnchorMonth" type="number" min="1" max="28" value="1" />
+                    <span class="s-hint">{L === 'en'
+                        ? 'Capped at 28: a 31 would silently skip February.'
+                        : 'Se topa en 28: un 31 se saltaría febrero en silencio.'}</span>
+                </div>
+            </div>
+            <button type="button" class="payout-sched-btn" id="poSave">{L === 'en' ? 'Save frequency' : 'Guardar frecuencia'}</button>
+            <span class="payout-sched-msg" id="poMsg" role="status"></span>
+        </section>
+    )}
+
     {conectado && !tarifaVigenteAceptada && !ORG.sandboxOf && (
         <section class="fee-accept" id="feeAccept" data-version={FEE_TERMS_VERSION}>
             <h3>{t(L, 'set.cobros.tarifa_titulo')}</h3>
             <p>{t(L, 'set.cobros.tarifa_desc')}</p>
             <div class="fee-lines">
-                <span><strong>{t(L, 'set.cobros.tarifa_tarjeta')}</strong>{describeFee('card')}</span>
-                {speiDisponible && <span><strong>SPEI</strong>{describeFee('spei')}</span>}
-                <span><strong>{t(L, 'set.cobros.tarifa_igualas')}</strong>{describeSubscriptionFee()}</span>
+                {TARIFA_TARJETA
+                    ? <span><strong>{t(L, 'set.cobros.tarifa_tarjeta')}</strong>{TARIFA_TARJETA}</span>
+                    : <span>{L === 'en'
+                        ? `Cord does not charge a platform fee on payments in ${DIVISA_COBRO} today. You only pay your payment processor's cost.`
+                        : `Hoy Cord no cobra comisión de plataforma sobre los pagos en ${DIVISA_COBRO}. Solo pagas el costo de tu procesador.`}</span>}
+                {speiDisponible && TARIFA_SPEI && <span><strong>SPEI</strong>{TARIFA_SPEI}</span>}
+                {TARIFA_IGUALAS && <span><strong>{t(L, 'set.cobros.tarifa_igualas')}</strong>{TARIFA_IGUALAS}</span>}
             </div>
             <label class="fee-check">
                 <input type="checkbox" id="feeTermsCheck" />
@@ -374,6 +457,81 @@ const pasos = [
     .connect-custom-onboarding .co-dob-sep { color: var(--color-text-muted); opacity: 0.5; }
 
     /* Attestation de dueños */
+    /* Frecuencia de depósito. Mismo lenguaje visual que el panel de tarifa:
+       superficie propia, hairline, sin card-dentro-de-card (regla 3). */
+    .payout-sched { margin-top: 26px; padding: 22px 24px; border: 1px solid var(--color-border); border-radius: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .payout-sched h3 { margin: 0; font-size: 0.95rem; font-weight: 600; letter-spacing: -0.02em; color: var(--color-text); }
+    .payout-sched p { margin: 0; font-size: 0.78rem; line-height: 1.5; color: var(--color-text-muted); max-width: 62ch; }
+    .payout-sched-btn { min-height: 44px; align-self: flex-start; padding: 0 20px; border-radius: 999px; border: none; background: #0a192f; color: #fff; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: transform 0.12s ease; }
+    .payout-sched-btn:active { transform: scale(0.98); }
+    .payout-sched-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+    .payout-sched-msg { font-size: 0.76rem; color: var(--color-text-muted); min-height: 1em; }
+    @media (max-width: 880px) {
+        .payout-sched-btn { align-self: stretch; width: 100%; }
+    }
+
+    /* ── Paso de personas y control (UBO) ──────────────────────────────────
+       Tarjetas apiladas en UNA columna, nunca tabla: por debajo de 880 px una
+       tabla obliga a scroll horizontal y esconde datos (regla 16). Las acciones
+       están SIEMPRE visibles y miden 44 px — nada de menú kebab ni hover. */
+    .connect-custom-onboarding .co-personas { display: flex; flex-direction: column; gap: 14px; }
+    .connect-custom-onboarding .co-personas-vacio { font-size: 0.8rem; color: var(--color-text-muted); margin: 0; }
+    .connect-custom-onboarding .co-persona-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .connect-custom-onboarding .co-persona { border: 1px solid var(--color-border); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; background: var(--color-surface, #fff); }
+    .connect-custom-onboarding .co-persona-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .connect-custom-onboarding .co-persona-nombre { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
+    .connect-custom-onboarding .co-persona-badge { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.01em; padding: 4px 9px; border-radius: 999px; background: rgba(10, 25, 47, 0.06); color: var(--color-text-muted); white-space: nowrap; }
+    .connect-custom-onboarding .co-persona-badge.is-ok { background: rgba(16, 185, 129, 0.12); color: #047857; }
+    .connect-custom-onboarding .co-persona-badge.is-wait { background: rgba(245, 158, 11, 0.14); color: #b45309; }
+    .connect-custom-onboarding .co-persona-badge.is-bad { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+    .connect-custom-onboarding .co-persona-roles { display: flex; flex-wrap: wrap; gap: 6px; }
+    .connect-custom-onboarding .co-chip { font-size: 0.7rem; font-weight: 500; padding: 3px 9px; border-radius: 999px; background: rgba(10, 25, 47, 0.05); color: var(--color-text); }
+    .connect-custom-onboarding .co-chip.is-soft { background: transparent; border: 1px solid var(--color-border); color: var(--color-text-muted); }
+    /* El motivo del rechazo. Sin esto el usuario re-sube la misma foto borrosa
+       indefinidamente: el proveedor SÍ dice por qué, Cord no lo mostraba. */
+    .connect-custom-onboarding .co-persona-motivo { margin: 0; font-size: 0.76rem; line-height: 1.45; color: #b91c1c; }
+    .connect-custom-onboarding .co-persona-pendientes { margin: 0; font-size: 0.74rem; line-height: 1.45; color: var(--color-text-muted); }
+    .connect-custom-onboarding .co-persona-confirm { font-size: 0.78rem; color: var(--color-text); align-self: center; }
+    .connect-custom-onboarding .co-persona-acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .connect-custom-onboarding .co-persona-form { border: 1px solid var(--color-border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .connect-custom-onboarding .co-role-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; }
+    .connect-custom-onboarding .co-personas-suma { margin: 0; font-size: 0.76rem; color: var(--color-text-muted); }
+    .connect-custom-onboarding .co-error { margin: 0; font-size: 0.78rem; color: #b91c1c; }
+    /* 44 px de área táctil en todos los botones de esta pantalla. */
+    .connect-custom-onboarding .co-btn-ghost,
+    .connect-custom-onboarding .co-btn-danger,
+    .connect-custom-onboarding .co-btn-primary,
+    .connect-custom-onboarding .co-btn-add {
+        min-height: 44px; padding: 0 16px; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+        cursor: pointer; transition: transform 0.12s ease, background 0.12s ease; border: 1px solid var(--color-border);
+        background: transparent; color: var(--color-text);
+    }
+    .connect-custom-onboarding .co-btn-primary { background: #0a192f; border-color: #0a192f; color: #fff; }
+    .connect-custom-onboarding .co-btn-danger { border-color: rgba(239, 68, 68, 0.4); color: #b91c1c; }
+    .connect-custom-onboarding .co-btn-add { border-style: dashed; align-self: flex-start; color: var(--color-text-muted); }
+    .connect-custom-onboarding .co-btn-ghost:active,
+    .connect-custom-onboarding .co-btn-danger:active,
+    .connect-custom-onboarding .co-btn-primary:active,
+    .connect-custom-onboarding .co-btn-add:active { transform: scale(0.98); }
+    .connect-custom-onboarding .co-btn-ghost:disabled,
+    .connect-custom-onboarding .co-btn-danger:disabled,
+    .connect-custom-onboarding .co-btn-primary:disabled,
+    .connect-custom-onboarding .co-btn-add:disabled { opacity: 0.5; cursor: default; transform: none; }
+    @media (max-width: 880px) {
+        /* Una columna y botones a todo el ancho: el pulgar no acierta a un
+           botón de 80 px metido en una fila de tres. */
+        .connect-custom-onboarding .co-role-grid { grid-template-columns: 1fr; }
+        .connect-custom-onboarding .co-persona-acciones { flex-direction: column; align-items: stretch; }
+        .connect-custom-onboarding .co-persona-acciones button { width: 100%; }
+        .connect-custom-onboarding .co-btn-add { align-self: stretch; width: 100%; }
+    }
+
+    /* Roles declarados del representante. Antes se mandaban `owner`/`director`
+       fijos en true, así que un director contratado quedaba declarado como dueño
+       del 100%. Target táctil completo: la fila entera es el <label> (regla 16). */
+    .connect-custom-onboarding .co-role { display: flex; align-items: center; gap: 14px; cursor: pointer; padding: 12px 0; min-height: 44px; }
+    .connect-custom-onboarding .co-role + .co-role { border-top: 1px solid var(--color-border); }
+    .connect-custom-onboarding .co-role-text { font-size: 0.85rem; color: var(--color-text); line-height: 1.45; }
     .connect-custom-onboarding .co-attest { display: flex; align-items: flex-start; gap: 14px; cursor: pointer; padding: 16px 0; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
     .connect-custom-onboarding .co-attest-text { display: flex; flex-direction: column; gap: 3px; }
     .connect-custom-onboarding .co-attest-text strong { font-size: 0.85rem; font-weight: 600; color: var(--color-text); }
@@ -529,6 +687,79 @@ const pasos = [
         .co-bank-row .co-btn { width: 100%; margin-left: 0; }
     }
 </style>
+
+<script>
+    // Frecuencia de depósito. El estado inicial se pide al endpoint en vez de
+    // renderizarse desde `orgs`: el espejo local puede ir un paso atrás si el
+    // proveedor cambió el calendario por su cuenta (verificación pendiente,
+    // riesgo), y aquí el dato que importa es el suyo.
+    (() => {
+        const panel = document.getElementById('payoutSched');
+        if (!panel) return;
+        const sel = document.getElementById('poInterval') as HTMLSelectElement;
+        const week = document.getElementById('poAnchorWeek') as HTMLSelectElement;
+        const month = document.getElementById('poAnchorMonth') as HTMLInputElement;
+        const weekWrap = document.getElementById('poAnchorWeekWrap') as HTMLElement;
+        const monthWrap = document.getElementById('poAnchorMonthWrap') as HTMLElement;
+        const btn = document.getElementById('poSave') as HTMLButtonElement;
+        const msg = document.getElementById('poMsg') as HTMLElement;
+        const en = document.documentElement.lang === 'en';
+
+        const sync = () => {
+            weekWrap.hidden = sel.value !== 'weekly';
+            monthWrap.hidden = sel.value !== 'monthly';
+        };
+        sel.addEventListener('change', sync);
+
+        fetch('/api/billing/connect/payout-schedule')
+            .then((r) => r.json())
+            .then((d) => {
+                if (!d?.ok || !d.schedule) return;
+                if (d.schedule.interval) sel.value = d.schedule.interval;
+                if (d.schedule.weekly_anchor) week.value = d.schedule.weekly_anchor;
+                if (d.schedule.monthly_anchor) month.value = String(d.schedule.monthly_anchor);
+                sync();
+                if (d.payoutsEnabled === false) {
+                    msg.textContent = en
+                        ? 'Payouts are paused until verification completes.'
+                        : 'Los depósitos están pausados hasta que se complete la verificación.';
+                }
+            })
+            .catch(() => { /* el panel sigue usable con los valores por defecto */ });
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            msg.textContent = '';
+            const body: any = { interval: sel.value };
+            if (sel.value === 'weekly') body.weekly_anchor = week.value;
+            if (sel.value === 'monthly') body.monthly_anchor = Number(month.value) || 1;
+            try {
+                // Mismo ciclo de step-up que el resto de la pantalla: cambiar la
+                // frecuencia decide a qué velocidad sale el dinero.
+                const enviar = () => fetch('/api/billing/connect/payout-schedule', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                let res = await enviar();
+                if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
+                    if (!await (window as any).cordStepUp()) throw new Error(en ? 'Identity confirmation required.' : 'Necesitas confirmar tu identidad.');
+                    res = await enviar();
+                }
+                const data = await res.json();
+                if (!data?.ok) throw new Error(data?.error || (en ? 'Could not save.' : 'No se pudo guardar.'));
+                msg.textContent = en ? 'Saved.' : 'Guardado.';
+                (window as any).cordToast?.(en ? 'Payout frequency updated' : 'Frecuencia de depósito actualizada', 'ok');
+            } catch (e: any) {
+                msg.textContent = e?.message || (en ? 'Could not save.' : 'No se pudo guardar.');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        sync();
+    })();
+</script>
 
 <script>
     

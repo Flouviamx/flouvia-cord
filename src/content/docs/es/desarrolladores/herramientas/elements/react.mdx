@@ -124,7 +124,13 @@ function MiPropioBuilder() {
 }
 ```
 
-<Callout type="info">
-**Nota de Configuración:** Si necesitas ajustar el porcentaje de IVA, configúralo globalmente en tu `<CordProvider ivaPct={0.16}>` en lugar de pasarlo a cada instancia. Esto garantiza que lo que calcula el cliente y lo que evalúa el servidor siempre sea idéntico.
-
+<Callout type="warning">
+**`ivaPct` es obligatorio, no un ajuste opcional.** El SDK ya no asume 16% (México) en
+silencio si no lo configuras — `useQuoteBuilder` (y por lo tanto `<CordBuilder>`) **lanza un
+error** en cuanto se monta si no encuentra una tasa explícita, ni por prop ni por
+`<CordProvider>`. Configúrala una sola vez a nivel global —
+`<CordProvider ivaPct={0.16}>`— en lugar de repetirla en cada instancia del Builder: así el
+total que ve tu cliente nunca diverge del que valida el servidor para tu organización. Un
+negocio fuera de México debe pasar SU propia tasa (o `0` si su venta no lleva impuesto) — nunca
+asumas 0.16 por default.
 </Callout>

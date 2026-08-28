@@ -6,15 +6,16 @@ category: "Quotes"
 
 Market conditions and supply prices change constantly. Never send a commercial proposal with an undetermined validity.
 
-### Configure Expiration Dates
+### Configure validity
 
 When drafting a quote in Cord:
-1. In the settings panel (right), locate **Validity and Expiration**.
-2. Define how many days the offer is valid from the date it is sent (e.g., 15 days) or choose a hard expiration date on the calendar (e.g., December 31st).
+1. In the right-hand panel, locate the **Validity** field.
+2. Choose how many days the offer is valid starting today — the options are 15, 30, 60 days, or whatever default you set for your organization. This isn't a calendar date picker: validity is always defined in days, and the exact expiration date is calculated for you.
 
-**Automatic Closure:**
-When the clock crosses the configured deadline, the platform reacts as follows:
-- The quote link switches to *Read-Only* mode and displays a banner indicating that the offer has expired.
-- The "Accept Deal," "Sign Electronically," and "Card Payment" form buttons are disabled on the server, protecting you from accepting payments for services that may have already increased in price.
+**Automatic closure:**
+Once the validity date has passed without the client deciding:
+- The public link shows "Expired" in the quote's header.
+- A daily job marks the quote as **expired** when it was still in "sent" or "viewed" status with no response. From that point on, accepting, rejecting, or sending a counteroffer from the public link is rejected server-side with a notice that the quote no longer accepts changes — you don't need to check each folio manually. Because this job runs once a day, there can be a window of up to 24 hours after the deadline where the quote is technically still open.
+- This validity window only applies to the client's **decision** (accept/reject). If the quote was already approved under credit terms (Net 30/60), payment is governed by that term's due date, not by validity — see [Add credit terms](/en/support/terminos-de-credito).
 
-If the client contacts you to revive the agreement, you can manually extend the validity from the document's settings.
+If the client reaches out to revive an expired deal, edit the quote: saving the changes generates a new version with fresh validity starting from that moment.

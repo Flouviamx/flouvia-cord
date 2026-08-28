@@ -8,7 +8,7 @@ If you already use Cord on a monthly plan, you can switch to **annual billing** 
 
 ### How to switch to annual
 
-1. Go to **Settings > Plans & billing > Subscription** (`/app/ajustes/plan`).
+1. Go to **Settings > Plans & subscription > Subscription** (`/app/ajustes/plan`).
 2. Toggle **Annual** in the plan selector.
 3. Confirm in the secure form. The annual charge is made upfront and your subscription renews every 12 months.
 

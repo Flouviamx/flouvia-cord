@@ -19,19 +19,19 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, resolvePublicInvoice, withOrgTx } from '../../../../lib/db';
-import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { currencyDecimals, normalizeCurrency, stripeCurrency, stripeSupportsCurrency, toMinorUnits } from '../../../../lib/currency';
 import { computeFee, isFeeScheduleActive } from '../../../../lib/fees';
 import { payerError } from '../../../../lib/pay-errors';
 import { log } from '../../../../lib/log';
+import { limitPublicPayment } from '../../../../lib/connect-security';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
 export const POST: APIRoute = async ({ params, request }) => {
     if (!STRIPE_KEY) return json({ error: 'El pago en línea aún no está disponible.' }, 503);
     const token = params.token ?? '';
-    const rl = await rateLimit(`ipi:${token}`, 10, 60);
-    if (!rl.ok) return tooMany(rl.retryAfter);
+    const limited = await limitPublicPayment(request, 'ipi', token, 10);
+    if (limited) return limited;
 
     const identity = await resolvePublicInvoice(token);
     if (!identity) return json({ error: 'Factura no encontrada' }, 404);
@@ -172,8 +172,15 @@ export const POST: APIRoute = async ({ params, request }) => {
         form.set('metadata[invoice_number]', String(d.invoice_number ?? ''));
         if (fee.applicationFeeCents > 0) form.set('application_fee_amount', String(fee.applicationFeeCents));
 
+        // Misma idempotencia determinística que el carril de cotización: la clave
+        // incluye el MONTO porque este endpoint acepta abonos parciales, así que
+        // dos abonos distintos sobre la misma factura son operaciones distintas y
+        // deben poder crear cada uno su PaymentIntent. Sin clave, un reintento
+        // dejaba dos cobros en vuelo por el mismo saldo.
         const res = await fetch('https://api.stripe.com/v1/payment_intents', {
-            method: 'POST', headers, body: form.toString(),
+            method: 'POST',
+            headers: { ...headers, 'Idempotency-Key': `cord-inv-${d.id}-${amount}` },
+            body: form.toString(),
         });
         const data: any = await res.json();
         if (!res.ok || !data?.client_secret) {

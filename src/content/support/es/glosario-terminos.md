@@ -43,7 +43,7 @@ Es un mecanismo mediante el cual Cord avisa proactivamente a tu servidor (vía u
 Es nuestra suite de componentes de interfaz de usuario (UI) pre-construidos que puedes incrustar directamente en tu aplicación (React, Vue o HTML plano) para procesar pagos sin tener que diseñar el flujo de *checkout* desde cero. [Más información](/soporte/cord-elements).
 
 ### Modo de prueba (Test)
-Las llaves `sk_test_` no consumen tu medidor de uso ni cuentan para tu facturación, así que sirven para integrar la API sin afectar tu plan. Nota: operan sobre los mismos datos de tu organización (no hay un sandbox 100% aislado todavía), y que el timbrado sea real o simulado depende de tu configuración de Facturapi.
+Las llaves `sk_test_` no consumen tu medidor de uso ni cuentan para tu facturación, así que sirven para integrar la API sin afectar tu plan. Nota: operan sobre los mismos datos de tu organización (no hay un sandbox 100% aislado todavía), y que el timbrado sea real o simulado depende de si tienes tu CSD conectado.
 
 ### Endpoint
 Una URL específica de la API de Cord diseñada para ejecutar una acción (Ej. `POST /api/v1/cotizaciones` para crear una cotización).
@@ -59,4 +59,4 @@ Significa que el cliente tiene 30 días naturales a partir de la emisión de la 
 Ocurre cuando un cliente final contacta a su banco para rechazar un cargo procesado vía Cord. El banco retiene los fondos temporalmente mientras Cord te ayuda a enviar evidencia para ganar la disputa.
 
 ### Conciliación (Reconciliation)
-El proceso de emparejar un movimiento de dinero en la cuenta bancaria corporativa con su respectiva factura o registro contable. Cord automatiza el 95% de la conciliación B2B.
+El proceso de emparejar un movimiento de dinero en la cuenta bancaria corporativa con su respectiva factura o registro contable. Cord automatiza este proceso para los cobros que pasan por Cord Payments (tarjeta y, en México, SPEI); un depósito por transferencia bancaria manual lo confirmas tú mismo.

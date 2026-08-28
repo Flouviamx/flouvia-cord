@@ -8,32 +8,50 @@ description: "Asegura el acceso al ecosistema de Cord usando tu proveedor de ide
   <p class="page-subtitle">Delega la autenticación de Cord a tu proveedor de identidad empresarial (Okta, Google Workspace, Azure AD).</p>
 </header>
 
-## Enterprise Security (Seguridad Empresarial)
+## Seguridad Empresarial
 
-A medida que las organizaciones crecen, gestionar usuarios y contraseñas de manera individual se convierte en un riesgo inmanejable. Cord soporta integraciones de clase mundial usando **SSO (SAML)**.
+A medida que las organizaciones crecen, gestionar usuarios y contraseñas de manera individual se convierte en un riesgo inmanejable. Cord soporta integraciones **SSO vía SAML 2.0** con motor propio (no un checkbox cosmético): validación de firma XML-DSig, control de replay, aprovisionamiento automático de cuentas, mapeo de roles por atributo y un mecanismo de emergencia si tu proveedor de identidad falla.
 
 Al habilitar SSO en tu organización de Cord:
 - Tus empleados inician sesión automáticamente si ya están autenticados en su portal corporativo de trabajo.
-- Cualquier política estricta de **MFA (Multi-Factor Authentication)** que configures en tu proveedor de identidad (Okta) es impuesta obligatoriamente antes de que Cord conceda el acceso.
-- Cuando un empleado abandona la empresa, el departamento de IT solo debe deshabilitar su cuenta corporativa central y automáticamente pierde el acceso a los datos financieros sensibles de Cord.
+- Cualquier política de **MFA** que ya exijas en tu proveedor de identidad (Okta, Azure AD, Google Workspace) se hereda: Cord delega la autenticación por completo, así que nunca ve ni gestiona ese segundo factor.
+- Activar **"Exigir SSO"** bloquea contraseña, Google, Apple y llaves de acceso para todos los miembros **excepto el dueño de la cuenta**, que siempre conserva su contraseña como respaldo — el único camino de entrada que no depende de que tu IdP esté disponible.
 
 ## Requisitos Previos
 
-1. Tu organización debe estar suscrita a un **Plan Enterprise** de Cord (esta función no está disponible en niveles de introducción).
-2. Debes tener el rol de Administrador en Cord (o permisos explícitos de `ajustes` y `equipo`).
-3. Debes tener privilegios de Administrador en tu Proveedor de Identidad.
+1. Tu organización debe estar en el plan **Scale** de Cord o superior (Developer) — SSO no está disponible en Free, Starter ni Pro.
+2. Necesitas el permiso `equipo` en tu rol de Cord (lo tienen Dueño y Administrador por default; un rol personalizado también puede tenerlo).
+3. Debes tener privilegios de Administrador en tu Proveedor de Identidad (Okta, Azure AD / Microsoft Entra, Google Workspace, o cualquier IdP SAML 2.0).
+
+## Dónde configurarlo
+
+**Ajustes › Equipo y permisos › SSO** (no vive bajo Seguridad — SSO es parte del mismo grupo que Equipo y Roles, porque gestiona quién entra a la organización, y comparte el permiso `equipo`).
 
 ## Pasos de Configuración SAML
 
-La configuración requiere un intercambio bidireccional entre Cord y tu Proveedor de Identidad.
+El intercambio es bidireccional, pero el orden real invierte lo que muchos esperan: primero le das a Cord los datos de tu IdP, y Cord genera los tuyos a partir de ahí — no al revés.
 
-1. Navega a **Ajustes > Seguridad > SSO**.
-2. Copia la **ACS URL** (Assertion Consumer Service) y el **Entity ID** que Cord ha generado para tu organización.
-3. Ingresa estos datos al crear la nueva aplicación SAML en Okta, Azure AD o el proveedor que elijas.
-4. Una vez creada la aplicación en tu proveedor, obtendrás una URL de inicio de sesión de IdP y un **Certificado X.509**.
-5. Pega la URL de inicio de sesión y sube el certificado X.509 a la configuración de Cord.
+1. En tu Proveedor de Identidad, crea una nueva aplicación SAML para Cord y descarga o copia su **XML de metadata** (la mayoría de los IdP lo exponen en una URL pública o un botón "Download metadata").
+2. En Cord, **Ajustes › Equipo y permisos › SSO › Conectar proveedor**, dale un nombre a la conexión y pega ese XML. Cord lo parsea automáticamente: extrae el Entity ID del IdP, la URL de inicio de sesión, el o los certificados X.509 de firma y, si existe, la URL de Single Logout — no hace falta capturar esos campos a mano (aunque el detalle de la conexión los deja editables después, por si tu IdP rota el certificado).
+3. Con la conexión creada, Cord te muestra tres valores propios de tu organización: la **ACS URL** (Assertion Consumer Service — a dónde tu IdP debe enviar la respuesta SAML), el **Entity ID** de Cord y la **Metadata URL**. Regresa a tu Proveedor de Identidad y complétalos en la aplicación que creaste en el paso 1.
+4. Prueba con un solo usuario antes de exigir SSO para todo el equipo — un mapeo de atributos incorrecto puede dejar fuera (locked out) a todo tu personal.
+
+## Aprovisionamiento y roles, no solo login
+
+SSO en Cord no es solo "iniciar sesión distinto" — decide automáticamente qué cuenta se crea y con qué rol:
+
+- **Aprovisionamiento JIT (Just-in-Time)**: activado por default. La primera vez que alguien entra por esta conexión, Cord crea su cuenta y lo agrega a la organización en el mismo login — no hace falta invitarlo manualmente desde Equipo primero.
+- **Mapeo de roles por atributo**: define reglas del tipo *"si el atributo `groups` que manda mi IdP contiene `finance-admin`, asigna el rol Administrador"*. Cada regla compara un atributo SAML (`equals`, `contains` o `regex`) contra un valor y un rol de Cord; se evalúan en orden y **gana la primera que haga match**. Si ninguna aplica, la cuenta recibe el **rol por default** que configures para la conexión (ej. Lectura).
+- **Login iniciado por el IdP**: puedes habilitar que un empleado entre directamente desde el portal de aplicaciones de su IdP (Okta, MyApps de Microsoft), sin pasar primero por `cordhq.app`.
+
+## Dominios verificados (opcional, recomendado)
+
+Puedes atar una conexión SSO a uno o más dominios de correo (`tuempresa.com`) mediante un registro **TXT en tu DNS** — el mismo patrón de verificación que un dominio de correo saliente. Con al menos un dominio verificado, solo los correos de ese dominio pueden entrar por esa conexión; sin ninguno verificado, la conexión no restringe por dominio.
+
+## Si tu proveedor de identidad falla (break-glass)
+
+Con "Exigir SSO" activo, un proveedor de identidad caído deja fuera a toda la organización — **excepto al dueño de la cuenta**. Si necesitas que el resto del equipo entre con contraseña temporalmente, el dueño puede usar el botón de emergencia en la misma pantalla: reautentica con su contraseña y desactiva el requisito de SSO por **1 hora**. Pasada la hora (o si la reactivas antes a mano), el requisito vuelve solo.
 
 <Callout type="warning">
-**Importante:** Prueba la integración con un solo usuario antes de forzarla a todo el equipo, de lo contrario podrías dejar fuera (locked out) a todo tu personal si la configuración tiene errores de mapeo.
-
+**Importante:** Prueba la integración con un solo usuario antes de activar "Exigir SSO" para todo el equipo — un error de mapeo de atributos puede dejar fuera (locked out) a todo tu personal, salvo al dueño de la cuenta.
 </Callout>

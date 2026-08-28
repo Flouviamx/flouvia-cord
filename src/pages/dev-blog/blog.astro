@@ -167,7 +167,7 @@ const checkboxFilled = [
           <a href={article.url} class="table-row article-row" data-type={article.type} data-topic={article.topic}>
             <div class="col-date"><span class="table-date">{article.date}</span></div>
             <div class="col-name"><span class="table-name">{article.title}</span></div>
-            <div class="col-type"><span class="card-tag">[ {article.type} ]</span><span class="row-arrow">↗</span></div>
+            <div class="col-type"><span class="card-tag">{article.type}</span><span class="row-arrow">↗</span></div>
           </a>
         ))}
 
@@ -613,7 +613,7 @@ const checkboxFilled = [
   /* Articles Layout (Sidebar + Content) */
   .articles-layout {
     display: grid;
-    grid-template-columns: 240px 1fr;
+    grid-template-columns: 240px minmax(0, 1fr);
     gap: 64px;
     margin-top: 64px;
     margin-bottom: 100px;
@@ -723,7 +723,7 @@ const checkboxFilled = [
 
   .table-head {
     display: grid;
-    grid-template-columns: 120px 1fr 100px;
+    grid-template-columns: 120px minmax(0, 1fr) 100px;
     gap: 24px;
     padding-bottom: 12px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -735,7 +735,7 @@ const checkboxFilled = [
 
   .table-row {
     display: grid;
-    grid-template-columns: 120px 1fr 100px;
+    grid-template-columns: 120px minmax(0, 1fr) 100px;
     gap: 24px;
     padding: 24px 0;
     border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -799,15 +799,165 @@ const checkboxFilled = [
       min-height: 240px;
     }
     .articles-layout {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
       gap: 48px;
     }
     .table-head, .table-row {
-      grid-template-columns: 90px 1fr 80px;
+      grid-template-columns: 90px minmax(0, 1fr) 80px;
       gap: 16px;
     }
     .table-name {
       font-size: 15px;
+    }
+  }
+
+  /* ---------------------------------------------------------------------
+     Movil. El filtro deja de ser una columna lateral y pasa a chips con
+     objetivo tactil real; la tabla se apila porque tres columnas fijas en
+     375px dejaban el titulo -- lo unico que importa -- en 130px.
+     --------------------------------------------------------------------- */
+
+  @media (max-width: 768px) {
+    .dev-hero {
+      margin-bottom: 56px;
+      padding-top: 8px;
+    }
+    .dev-lead {
+      font-size: 1rem;
+      line-height: 1.65;
+      max-width: none;
+    }
+    .articles-layout {
+      margin-top: 48px;
+      margin-bottom: 56px;
+      gap: 32px;
+    }
+    .articles-header {
+      margin-bottom: 24px;
+    }
+    .articles-sidebar {
+      gap: 28px;
+    }
+    .sidebar-title {
+      min-height: 44px;
+      font-size: 15px;
+    }
+    .clear-filters {
+      min-height: 44px;
+      padding: 0 4px;
+      font-size: 11px;
+    }
+    .sidebar-search-container {
+      padding: 12px 14px;
+      margin-bottom: 20px;
+    }
+    .search-input {
+      /* Safari en iOS hace zoom al enfocar un input de menos de 16px y deja
+         la pagina desencuadrada al salir. */
+      font-size: 16px;
+    }
+    .sidebar-list {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-left: 0;
+      border-left: none;
+    }
+    .sidebar-list li {
+      min-height: 44px;
+      padding: 0 12px;
+      gap: 8px;
+      font-size: 13px;
+      border: 1px dashed rgba(255,255,255,0.15);
+      border-radius: 2px;
+    }
+    .sidebar-list li.active-filter {
+      border-color: var(--dev-accent);
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .stat-item {
+      margin-right: 28px;
+    }
+    .stats-marquee {
+      font-size: 10px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .dev-feed {
+      gap: 40px;
+    }
+    .featured-grid {
+      gap: 48px;
+    }
+    .featured-col {
+      gap: 16px;
+    }
+    .card-fig {
+      min-height: 190px;
+    }
+    .fig-content {
+      min-height: 150px;
+    }
+    .card-title {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    .card-desc {
+      margin-bottom: 20px;
+    }
+    .card-tag {
+      font-size: 10px;
+      padding: 4px 8px;
+    }
+    .card-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 16px;
+    }
+
+    /* La fila sigue siendo grid: el filtro la vuelve a mostrar con
+       display:'grid' en linea, asi que cambiar a flex la romperia. */
+    .table-head {
+      display: none;
+    }
+    .table-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "date type"
+        "name name";
+      gap: 10px 12px;
+      padding: 18px 0;
+    }
+    .col-date { grid-area: date; }
+    .col-name { grid-area: name; }
+    .col-type {
+      grid-area: type;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .table-row:hover {
+      padding-left: 0;
+    }
+    .table-name {
+      font-size: 16px;
+      color: white;
+    }
+    /* Sin hover que lo revele, la flecha nunca aparecia en tactil. */
+    .row-arrow {
+      opacity: 0.45;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .dev-title {
+      font-size: 2.4rem;
+      gap: 8px;
+    }
+    .articles-title {
+      font-size: 2rem;
     }
   }
 </style>

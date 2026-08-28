@@ -10,6 +10,9 @@
 // países aceptan directamente el número de cuenta local. Aceptar 18 dígitos
 // para todos y dejar que Stripe falle produce un error incomprensible para
 // alguien que solo quiere cobrar (regla 14).
+//
+// Qué formato tiene dígito de control verificable y cuál sólo se valida por
+// estructura está detallado en el docblock de `validatePayout()`.
 
 export type PayoutFormat = 'clabe' | 'iban' | 'us_aba' | 'gb_sort' | 'ca_transit' | 'au_bsb' | 'nz' | 'br_bank' | 'generic';
 
@@ -72,6 +75,9 @@ const SPECS: Record<string, PayoutSpec> = {
             { key: 'account_number', label: 'Número de cuenta', labelEn: 'Account number', kind: 'digits', minLength: 5, maxLength: 12 },
         ],
     },
+    // Australia y Nueva Zelanda se conservan porque el formato ya está resuelto,
+    // aunque hoy NO están en el set de países ofrecidos (`SUPPORTED_COUNTRIES`).
+    // Ninguna cuenta llega aquí mientras no se abran esos mercados.
     AU: {
         format: 'au_bsb', label: 'Cuenta bancaria', labelEn: 'Bank account',
         fields: [
@@ -157,6 +163,21 @@ export function ibanValido(raw: string): boolean {
     return resto === 1;
 }
 
+// Canadá y Nueva Zelanda: SIN checksum, a propósito.
+//
+// Ambos países tienen algoritmos de dígito verificador documentados, y la
+// tentación era implementarlos aquí. No se hizo porque no se pudieron verificar
+// contra la fuente primaria en el momento de escribir esto, y un checksum mal
+// implementado es PEOR que ninguno: rechaza cuentas buenas con un mensaje que
+// culpa al usuario de un error que no cometió. El proveedor valida del otro
+// lado; lo que se pierde es el mensaje temprano, no la corrección.
+//
+// Nueva Zelanda además usa varios algoritmos (A, B, D, E…) seleccionados por el
+// rango de la sucursal: elegir el equivocado rechaza una cuenta válida.
+//
+// Para activarlos: confirmar el algoritmo contra Payments Canada / Payments NZ,
+// añadir vectores reales al check, y recién entonces enchufarlos abajo.
+
 export interface PayoutValidation {
     ok: boolean;
     /** Mensaje para el dueño del negocio: qué está mal, no qué proveedor falló. */
@@ -170,9 +191,25 @@ export interface PayoutValidation {
 /**
  * Valida los campos de depósito contra el formato del país.
  *
- * Los checksums se verifican AQUÍ y no en Stripe: una CLABE mal tecleada
- * rebotaba con un error del proveedor que no le dice nada al vendedor, y el
- * dinero terminaba en el limbo hasta que alguien lo notara.
+ * Los checksums se verifican AQUÍ y no en el proveedor: una CLABE mal tecleada
+ * rebotaba con un error suyo que no le dice nada al vendedor, y el dinero
+ * terminaba en el limbo hasta que alguien lo notara.
+ *
+ * Qué se verifica de verdad, y qué no — porque este comentario afirmaba durante
+ * meses que "los checksums se verifican aquí" a secas, y eso sólo era cierto
+ * para tres de los ocho formatos:
+ *
+ *   · CLABE (MX) ....... dígito de control, pesos 3,7,1
+ *   · IBAN (SEPA) ...... mod-97 sobre el número reordenado (ISO 13616)
+ *   · ABA (US) ......... dígito de control, pesos 3,7,1
+ *   · CA, GB, AU, BR ... SIN checksum: el sort code británico y el
+ *                        BSB australiano son identificadores de sucursal sin
+ *                        dígito verificador; en Brasil el dígito de la conta
+ *                        depende del banco; y el de Canadá no se pudo verificar
+ *                        contra la fuente primaria (ver la nota de arriba).
+ *                        Se valida longitud y formato, que es todo lo que se
+ *                        puede afirmar con honestidad.
+ *   · NZ ............... estructura; el algoritmo depende del rango de sucursal.
  */
 export function validatePayout(countryCode: string, input: Record<string, unknown>, locale: 'es' | 'en' = 'es'): PayoutValidation {
     const spec = payoutSpecFor(countryCode);

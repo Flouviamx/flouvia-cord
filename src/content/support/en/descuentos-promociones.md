@@ -4,17 +4,17 @@ description: "Add line-item or total discounts to your proposal."
 category: "Quotes"
 ---
 
-Flexibility in B2B negotiation is vital. Cord allows you to apply discounts both at the individual line-item level and globally on the quote.
+Flexibility in negotiation is vital. Cord doesn't have a separate "% discount" field: the discount lives directly in each line item's price, plus two mechanisms that automate it. There is no global discount on the subtotal — every line is negotiated on its own.
 
-### Types of Discount
+### How it works
 
-**1. Linear Discount (Per item):**
-Ideal if you only want to discount a particular service (e.g., 20% off consulting, but the software license remains at full price).
-- In the quote editor, click the `%` discount icon next to the item price. You can apply it as a percentage or as a fixed amount (e.g., -$500 MXN).
+**1. Negotiated price per line item:**
+Every row in the quote has two columns: **List** (the catalog price) and **Negotiated** (the final price you're charging this client). To give a discount, edit the Negotiated field directly — for example, lower it from $1,000 to $800. Cord calculates the resulting discount % and shows it next to that line's gross margin (if you entered the product's cost), so you see in real time how much margin you're giving up. You can leave one item at full price and discount only another within the same quote.
 
-**2. Global Discount:**
-Applies to the total sum of the subtotal.
-- In the right configuration panel, under *Finance*, add a global discount.
+**2. Automatic discount by client tier or volume:**
+If the client has a **discount %** configured on their profile (**Clients > [client] > tier/discount**), the editor applies that percentage automatically when you add each line item — you can override it by hand on any line. If the product also has volume pricing set up in the catalog, the negotiated price adjusts based on the quantity entered.
 
-**How does the SAT view this?**
-When the quote is converted into an Invoice (CFDI 4.0), Cord perfectly maps the discounts to the tax XML in the `Descuento` (Discount) node, ensuring the transferred VAT calculation is based on the correct taxable base, preventing accounting discrepancies and mathematical errors with the SAT.
+**Guardrail against excessive discounts:**
+If your organization has the approval flow enabled (**Settings > Quotes > Approvals**), a per-line discount that exceeds the configured maximum % — or that leaves the gross margin below the minimum — blocks direct sending and requires approval before the quote reaches the client.
+
+**Tax note (Mexico):** when invoicing a quote with negotiated prices, the CFDI 4.0 declares the discount in the `Descuento` node against the correct taxable base. Outside Mexico this doesn't apply: each country's fiscal document simply reflects the already-negotiated price, without a SAT-specific discount node.

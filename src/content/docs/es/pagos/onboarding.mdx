@@ -48,25 +48,70 @@ después.
 | **1. Tipo de entidad** | Si tu negocio opera como persona física o persona moral, y el giro comercial (MCC). |
 | **2. Datos del negocio** | Razón social, identificación fiscal (la de tu país) y los datos con los que facturas. |
 | **3. Dirección fiscal** | El domicilio fiscal registrado de tu negocio. |
-| **4. Identidad** | Datos personales del representante legal o de la persona física que opera la cuenta. |
-| **5. Dueños** | Información de cualquier dueño beneficiario con participación relevante en el negocio (requisito regulatorio antilavado). |
-| **6. Verificación** | Captura de identificación oficial y selfie en vivo — ver [LiveCapture](#verificación-de-identidad-con-livecapture) abajo. |
+| **4. Identidad** | Datos personales del representante legal o de la persona física que opera la cuenta. Los campos cambian según tu país: en México se pide CURP o RFC personal, en Estados Unidos los últimos 4 del SSN, y en España, Alemania, Francia y Reino Unido **no se pide identificación personal** porque la verificación de esos países no la usa. |
+| **5. Personas y control** | La lista completa de quienes controlan el negocio: el representante legal y **cada persona con 25% o más de participación**, cada una con su propio rol y porcentaje. Es un requisito de las normas antilavado, no una preferencia de Cord — ver [Personas y titulares reales](#personas-y-titulares-reales) abajo. |
+| **6. Verificación** | Captura de identificación oficial de cada persona — ver [LiveCapture](#verificación-de-identidad-con-livecapture) abajo. |
 | **7. Cuenta bancaria** | La cuenta donde quieres recibir tus depósitos, en el formato de tu país: CLABE en México, IBAN en España y Alemania, routing + cuenta en Estados Unidos, sort code en Reino Unido, transit en Canadá, banco + agência en Brasil. |
 | **8. Términos** | Aceptas el tratamiento de tus datos y **la tabla de tarifas vigente de Cord Payments** — es el mismo paso donde confirmas cuánto te va a cobrar Cord por procesar cada pago. |
 
 El asistente retoma exactamente donde lo dejaste si sales a la mitad — no tienes que volver a capturar lo que ya guardaste. Si Cord detecta que falta un requisito específico (por ejemplo, una foto que salió borrosa), te manda directo a ese paso en particular en vez de reiniciar todo el proceso.
 
+### Personas y titulares reales
+
+En la Unión Europea, Reino Unido y Canadá, declarar a los **titulares reales** (personas con 25% o más de participación) es una obligación legal, no un trámite opcional. El paso 5 es una lista, no una casilla:
+
+- **Agregas a cada persona** con sus datos, su rol y su porcentaje.
+- **Una persona puede tener varios roles a la vez** — representante legal, dueña, directora, directiva — y cada uno se marca por separado. Si tu representante legal es un director contratado sin acciones, se declara así: no se le atribuye una participación que no tiene.
+- **Cada persona lleva su propia verificación de identidad**, con su estado visible en la lista.
+- La declaración final de que la lista está completa aparece **después** de haberla construido, y sólo cuando la verificación de tu país la exige.
+
+Una sociedad con tres socios al 30% cada uno declara a los tres. Si sólo pudieras declarar a uno, la cuenta no llegaría a activarse: el sistema de verificación seguiría pidiendo los que faltan.
+
+<Callout type="info">
+**Qué NO guarda Cord.** Los números de identificación, las fechas de nacimiento, los domicilios personales y las imágenes de los documentos viajan directo al sistema de verificación financiera. Cord conserva únicamente el nombre y el rol de cada persona, para poder mostrarte la lista. Tu cuenta de depósito sí se guarda, cifrada en reposo.
+</Callout>
+
 ### Verificación de identidad con LiveCapture
 
 Por regulaciones financieras, es obligatorio verificar tu identidad y la legitimidad de tu negocio (KYC — Know Your Customer). Cord usa un sistema nativo llamado **LiveCapture** que hace esto en segundos, directamente desde tu navegador o tu celular:
 
-- El sistema solicita permiso para acceder a tu cámara.
-- Capturas el frente y reverso de tu identificación oficial (la de tu país, o tu pasaporte).
-- Tomas una selfie en vivo como prueba de vida.
-- Todo ocurre sin subir archivos ni abrir páginas de terceros — la cámara vive dentro de la misma pantalla de Cord.
+- **Eliges primero qué documento vas a usar.** La lista es la de tu país: INE en México, DNI en España, Personalausweis en Alemania, CNH en Brasil, licencia estatal en Estados Unidos. Esa elección ajusta la forma del marco de la cámara y decide si se te pedirá el reverso — un pasaporte no lo tiene, así que ese paso se salta solo.
+- El sistema solicita permiso para acceder a tu cámara y capturas el documento.
+- Si la verificación lo pide, capturas también un **comprobante de domicilio**: un recibo de servicios o estado de cuenta reciente a nombre de la persona. Tiene que ser un documento **distinto** del de identidad.
+- Todo ocurre sin subir archivos ni abrir páginas de terceros — la cámara vive dentro de la misma pantalla de Cord. Si prefieres usar la app de cámara de tu teléfono o ya tienes la foto, el botón para elegir un archivo está siempre disponible.
 
 <Callout type="info">
-**Tus fotos no se guardan en Cord.** Las imágenes de identificación y la selfie se transmiten cifradas directamente al sistema de verificación financiera, y Cord no las almacena de forma persistente en sus propios servidores. Tu cuenta de depósito sí se conserva, pero cifrada en reposo, para poder mostrarla y operarla.
+**Si vives en un país distinto al del negocio, sólo se acepta pasaporte.** Es una regla del sistema de verificación, no de Cord, y Cord te la dice antes de que tomes la foto en vez de dejar que el documento se rechace días después.
+</Callout>
+
+### Cord revisa la foto antes de enviarla
+
+La causa más común de un rechazo no es un documento inválido: es una foto que no se puede leer. Antes de mandar nada, Cord mide la imagen y te avisa qué corregir — que está movida, que hay poca luz, que un reflejo tapa un dato, que el documento se confunde con el fondo.
+
+Esos avisos son **consejos, no bloqueos**: si crees que la foto está bien, la mandas igual. Sólo dos cosas se detienen en firme, porque el sistema de verificación las rechaza siempre y esperar el rechazo te costaría días:
+
+- **Una foto en blanco y negro** de una identificación con foto. Tiene que ser a color.
+- **Una foto con muy poca resolución**, donde el documento no se puede leer.
+
+Los documentos de identidad se envían en JPG o PNG. Un PDF sólo sirve para comprobantes de domicilio y documentos de la empresa.
+
+### El enlace de "continúa en tu teléfono" es de un solo uso
+
+Cuando generas el código QR desde tu computadora, el enlace que se crea:
+
+- **Queda ligado al primer teléfono que lo abre.** Si alguien más lo intercepta y lo abre en otro dispositivo, deja de funcionar.
+- **Vive 30 minutos**, y sólo 15 desde que lo abres por primera vez.
+- **Tiene un tope de intentos.** Agotarlo lo cierra; generas uno nuevo desde tu computadora en un clic.
+- **No se puede reutilizar la misma foto.** Si un documento fue rechazado, tienes que tomar una foto nueva: reenviar el mismo archivo vuelve a fallar automáticamente.
+
+### Si rechazan un documento, te decimos por qué
+
+Cuando el sistema de verificación rechaza una foto, Cord te muestra **el motivo exacto** en la tarjeta de esa persona: que la imagen no se lee, que el documento está vencido, que el nombre no coincide con el que capturaste, que falta el reverso. Sin ese motivo, la única salida era volver a subir la misma foto y esperar un resultado distinto.
+
+<Callout type="info">
+**Tus fotos no se guardan en Cord.** Las imágenes se transmiten cifradas directamente al sistema de verificación financiera, y Cord no las almacena de forma persistente en sus propios servidores. Antes de transmitirlas, Cord les **quita los metadatos** — incluida la ubicación GPS que muchos teléfonos escriben dentro de la foto.
+
+Lo que Cord sí conserva es un **registro de cumplimiento** de cada envío: qué parte del documento se mandó, cuándo, desde qué dirección IP y qué respondió el sistema de verificación. Nunca la imagen, ni el número del documento, ni una miniatura. Ese registro se conserva cinco años, que es el plazo que exige la normativa de prevención de lavado de dinero.
 </Callout>
 
 ## Estados de tu cuenta

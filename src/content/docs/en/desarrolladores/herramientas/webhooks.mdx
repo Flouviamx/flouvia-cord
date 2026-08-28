@@ -156,15 +156,60 @@ That means you can update your `CORD_WEBHOOK_SECRET` at any point within the win
 | `quote.paid` | Full payment is received (a simple charge, or the last pending charge of a deposit/installment plan). |
 | `payment.partial` | A SINGLE partial charge is received (deposit, balance, or one installment) without the quote being fully paid yet. |
 | `payment.failed` | A recurring retainer/subscription charge fails. |
-| `invoice.stamped` | The CFDI is stamped. |
-| `invoice.issued` | A commercial invoice is issued outside Mexico. |
+| `invoice.stamped` | The CFDI is stamped (comes from a quote, see note below). |
+| `invoice.issued` | A commercial invoice is issued outside Mexico (comes from a quote). |
+| `invoice.finalized` | A **Cord Invoicing** invoice is finalized — the standalone invoice object, not tied to a quote. |
+| `invoice.sent` | The seller sends that invoice to the client. |
+| `invoice.paid` | The invoice is paid in full. |
+| `invoice.payment_failed` | A charge against that invoice fails (declined card, failed direct debit). |
+| `invoice.voided` | The invoice is voided. |
+| `invoice.marked_uncollectible` | The invoice is marked uncollectible. |
+| `invoice.overdue` | Its due date passed without being settled (fired by the reminders cron). |
 | `ping` | Only shows up when using "Test" from the Workbench — never fired by a real event. |
 
-> **Note:** `payment.partial` carries extra fields on `data` that other events don't have:
-> `tipo` (`anticipo`\|`saldo`\|`cuota`), `monto`, `numero_cuota`, `saldo_pendiente`, and
-> `payment_method`, in addition to the normal quote summary (folio, client, total, link). If
-> you use the Server SDK in TypeScript, `CordWebhookEvent` is a discriminated union on
-> `event` — comparing `event === 'payment.partial'` narrows the type of `data` for you.
+> **Note:** `payment.partial` carries extra fields on `data` that other **quote** events don't
+> have: `tipo` (`anticipo`\|`saldo`\|`cuota`), `monto`, `numero_cuota`, `saldo_pendiente`, and
+> `payment_method`, in addition to the normal quote summary (folio, client, total, link).
+
+<Callout type="warning">
+**Two event families, two shapes of `data`.** The `quote.*` and `payment.*` events (including
+`invoice.stamped`/`invoice.issued`, which fire from the quote) share the `data` shape from the
+example above (`folio`, `status`, `total`, `cliente`, `link_publico`…). The seven events
+`invoice.finalized`/`sent`/`paid`/`payment_failed`/`voided`/`marked_uncollectible`/`overdue`
+belong to **Cord Invoicing** — the invoice as its own object, with its own lifecycle and its
+own public link, not something derived from a quote — and carry a DIFFERENT `data` shape:
+
+```json
+{
+  "id": "evt_...",
+  "event": "invoice.paid",
+  "created_at": "2026-08-20T14:00:00.000Z",
+  "data": {
+    "id": "d4a1...",
+    "object": "invoice",
+    "numero": "FAC-0032",
+    "folio_fiscal": "3f2a...-uuid-cfdi",
+    "estado": "paid",
+    "estado_fiscal": "stamped",
+    "pais": "MX",
+    "tipo": "factura",
+    "moneda": "MXN",
+    "total": 12500.00,
+    "pagado": 12500.00,
+    "saldo": 0,
+    "vence": "2026-08-30",
+    "cliente": "Distribuidora El Zarco",
+    "cotizacion_id": null,
+    "link_publico": "https://cordhq.app/i/9c1f..."
+  }
+}
+```
+
+Note the public link: `/i/{token}` for a Cord Invoicing invoice, versus `/q/{token}` for a
+quote. If you use the Server SDK in TypeScript, `CordWebhookEvent` today only types the
+discriminated union of `quote.*`/`payment.*` events — for the seven Cord Invoicing `invoice.*`
+events, type `data` by hand against the shape above until the SDK covers it.
+</Callout>
 
 ## Delivery log and retention
 

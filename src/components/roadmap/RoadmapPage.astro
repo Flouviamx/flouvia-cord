@@ -1,0 +1,387 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../landing/Nav.astro';
+import Footer from '../landing/Footer.astro';
+import PageAnims from '../landing/PageAnims.astro';
+import CordDynamicBg from '../CordDynamicBg.jsx';
+import { roadmapData } from '../../lib/roadmap-data';
+
+interface Props { lang: 'es' | 'en' }
+const { lang } = Astro.props;
+const isEn = lang === 'en';
+const basePath = isEn ? '/en/roadmap' : '/roadmap';
+const ROADMAP_PAL = { base: '#071633', color1: '#0B3C87', color2: '#1F6FE0', color3: '#34D399' };
+
+const copy = isEn ? {
+    title: 'Roadmap & Platform - Cord',
+    description: 'Explore what Cord has shipped and what comes next across quoting, payments, invoicing, and platform capabilities.',
+    heroTitle: 'Everything we are building.',
+    heroLead: 'What you can use today and what comes next, with clear scope, availability, and limits.',
+    allTab: 'Development plan',
+    liveTab: 'Shipped',
+    filters: 'Filters',
+    filterBy: 'Filter by',
+    product: 'Product',
+    allProducts: 'All products',
+    quotes: 'Quotes',
+    payments: 'Cord Payments',
+    invoicing: 'Cord Invoicing',
+    platform: 'Platform',
+    availability: 'Availability',
+    allStatuses: 'All statuses',
+    live: 'Live',
+    beta: 'In beta',
+    next: 'Coming soon',
+    apiOnly: 'API integrations only',
+    initiatives: 'Product initiatives',
+    singular: 'initiative',
+    plural: 'initiatives',
+    noResults: 'No initiatives match these filters.',
+    clear: 'Clear filters',
+    api: 'API',
+    details: 'View details',
+} : {
+    title: 'Roadmap y Plataforma - Cord',
+    description: 'Conoce lo que Cord ya lanzó y lo que viene después en cotizaciones, pagos, facturación y plataforma.',
+    heroTitle: 'Todo lo que estamos construyendo.',
+    heroLead: 'Lo que ya puedes usar y lo que viene después, con alcance, disponibilidad y límites claros.',
+    allTab: 'Plan de desarrollo',
+    liveTab: 'Lanzados',
+    filters: 'Filtros',
+    filterBy: 'Filtrar por',
+    product: 'Producto',
+    allProducts: 'Todos los productos',
+    quotes: 'Cotizaciones',
+    payments: 'Cord Payments',
+    invoicing: 'Cord Invoicing',
+    platform: 'Plataforma',
+    availability: 'Disponibilidad',
+    allStatuses: 'Todos los estados',
+    live: 'Disponible',
+    beta: 'En beta',
+    next: 'Próximamente',
+    apiOnly: 'Solo integrables por API',
+    initiatives: 'Iniciativas de producto',
+    singular: 'iniciativa',
+    plural: 'iniciativas',
+    noResults: 'No hay iniciativas que coincidan con estos filtros.',
+    clear: 'Limpiar filtros',
+    api: 'API',
+    details: 'Ver detalle',
+};
+
+const statusMap = { live: copy.live, beta: copy.beta, next: copy.next };
+const familyMap = { quotes: copy.quotes, payments: copy.payments, invoicing: copy.invoicing, platform: copy.platform };
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: isEn ? 'https://cordhq.app/en/' : 'https://cordhq.app/' },
+        { '@type': 'ListItem', position: 2, name: 'Roadmap', item: `https://cordhq.app${basePath}` },
+    ],
+};
+---
+
+<Layout title={copy.title} description={copy.description}>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <Nav darkHero={true} />
+    <main class="rd-main" data-singular={copy.singular} data-plural={copy.plural}>
+        <header class="rd-hero">
+            <div class="rd-hero-bg" aria-hidden="true">
+                <CordDynamicBg client:only="react" colors={ROADMAP_PAL} grain={false} />
+            </div>
+            <div class="rd-hero-inner">
+                <h1 class="rd-h1 masked-title">{copy.heroTitle}</h1>
+                <p class="rd-lead reveal">{copy.heroLead}</p>
+            </div>
+        </header>
+
+        <div class="rd-layout">
+            <aside class="rd-controls reveal" aria-label={copy.filters}>
+                <div class="rd-tabs" role="tablist" aria-label={isEn ? 'Roadmap view' : 'Vista del roadmap'}>
+                    <button class="rd-tab is-active" data-tab-target="all" role="tab" aria-selected="true">{copy.allTab}</button>
+                    <button class="rd-tab" data-tab-target="live" role="tab" aria-selected="false">{copy.liveTab}</button>
+                </div>
+
+                <button class="rd-filter-toggle" id="rd-filter-toggle" type="button" aria-expanded="false" aria-controls="rd-filter-panel">
+                    <span>{copy.filters}</span>
+                    <span class="rd-filter-count" id="rd-filter-count" aria-hidden="true">0</span>
+                </button>
+
+                <div class="rd-filter-panel" id="rd-filter-panel" data-open="false">
+                    <p class="rd-filters-title">{copy.filterBy}</p>
+
+                    <label class="rd-filter-group">
+                        <span>{copy.product}</span>
+                        <select class="rd-select" id="filter-family">
+                            <option value="all">{copy.allProducts}</option>
+                            <option value="quotes">{copy.quotes}</option>
+                            <option value="payments">{copy.payments}</option>
+                            <option value="invoicing">{copy.invoicing}</option>
+                            <option value="platform">{copy.platform}</option>
+                        </select>
+                    </label>
+
+                    <label class="rd-filter-group">
+                        <span>{copy.availability}</span>
+                        <select class="rd-select" id="filter-status">
+                            <option value="all">{copy.allStatuses}</option>
+                            <option value="live">{copy.live}</option>
+                            <option value="beta">{copy.beta}</option>
+                            <option value="next">{copy.next}</option>
+                        </select>
+                    </label>
+
+                    <label class="rd-toggle-wrap">
+                        <span class="rd-toggle-label">{copy.apiOnly}</span>
+                        <input type="checkbox" class="rd-toggle-input" id="filter-api" />
+                        <span class="rd-toggle-slider" aria-hidden="true"></span>
+                    </label>
+                </div>
+            </aside>
+
+            <section class="rd-content" aria-labelledby="rd-list-title">
+                <header class="rd-list-head reveal">
+                    <h2 id="rd-list-title">{copy.initiatives}</h2>
+                    <p id="rd-result-count" aria-live="polite">{roadmapData.length} {copy.plural}</p>
+                </header>
+
+                <div class="rd-active-filters" id="rd-active-filters" aria-label={isEn ? 'Active filters' : 'Filtros activos'}></div>
+
+                <div class="rd-list" id="roadmap-list">
+                    {roadmapData.map((item) => (
+                        <a
+                            href={`${basePath}/${item.slug}`}
+                            class="rd-row"
+                            data-family={item.family}
+                            data-status={item.status}
+                            data-api={String(item.api)}
+                        >
+                            <div class="rd-row-meta">
+                                <span class={`rd-row-status status-${item.status}`}>{statusMap[item.status]}</span>
+                                <span>{familyMap[item.family]}</span>
+                                <span>{item.market[lang]}</span>
+                                {item.api && <span>{copy.api}</span>}
+                            </div>
+                            <div class="rd-row-main">
+                                <div class="rd-row-copy">
+                                    <h3>{item.title[lang]}</h3>
+                                    <p>{item.shortDesc[lang]}</p>
+                                </div>
+                                <span class="rd-row-link" aria-hidden="true">{copy.details}<span>→</span></span>
+                            </div>
+                        </a>
+                    ))}
+
+                    <div id="rd-empty" class="rd-empty" hidden>
+                        <p>{copy.noResults}</p>
+                        <button id="rd-clear-filters" type="button">{copy.clear}</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <Footer />
+    <PageAnims />
+</Layout>
+
+<style>
+    .rd-main { background: var(--color-bg); min-height: 100dvh; }
+    .rd-hero { position: relative; overflow: hidden; padding: 7.25rem 5% 3.75rem; }
+    .rd-hero-bg { position: absolute; inset: 0; z-index: 0; background: #071633; }
+    .rd-hero-inner { position: relative; z-index: 2; width: min(1180px, 100%); margin: 0 auto; text-align: center; }
+    .rd-h1 { max-width: 920px; margin: 0 auto 1.15rem; color: #fff !important; font-size: clamp(2.55rem, 5.6vw, 4.45rem); font-weight: 800; letter-spacing: -.045em; line-height: 1.02; }
+    .rd-h1 :global(.m-line-in) { color: #fff !important; }
+    .rd-lead { max-width: 620px; margin: 0 auto; color: rgba(228, 237, 252, .78); font-size: clamp(1rem, 1.7vw, 1.12rem); line-height: 1.62; }
+
+    .rd-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; width: min(1240px, 100%); margin: 0 auto; padding: 2.4rem 5% 5rem; }
+    .rd-controls { min-width: 0; }
+    .rd-tabs { display: grid; grid-template-columns: 1.45fr .85fr; gap: 4px; overflow: hidden; padding: 4px; border-radius: 14px; background: var(--color-bg-soft); }
+    .rd-tab { min-width: 0; overflow: hidden; border: 0; border-radius: 11px; padding: .72rem .65rem; background: transparent; color: var(--color-text-muted); font: 650 .85rem/1.2 inherit; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; transition: background-color .25s ease, color .25s ease, box-shadow .25s ease; }
+    .rd-tab:hover { color: var(--color-text); }
+    .rd-tab.is-active { background: var(--color-bg); color: var(--color-text); box-shadow: 0 1px 3px rgba(10, 25, 47, .09); }
+    .rd-tab:focus-visible, .rd-filter-toggle:focus-visible, .rd-select:focus-visible, .rd-empty button:focus-visible, .rd-filter-chip:focus-visible { outline: 3px solid rgba(31, 111, 224, .28); outline-offset: 2px; }
+
+    .rd-filter-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: .75rem; border: 1px solid var(--color-border); border-radius: 12px; padding: .78rem .9rem; background: var(--color-bg); color: var(--color-text); font: 650 .88rem/1 inherit; cursor: pointer; }
+    .rd-filter-count { display: grid; place-items: center; min-width: 1.5rem; height: 1.5rem; padding: 0 .4rem; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: .72rem; }
+    .rd-filter-panel { display: none; grid-template-columns: 1fr; gap: 1rem; margin-top: .8rem; padding: 1rem; border-radius: 14px; background: var(--color-bg-soft); }
+    .rd-filter-panel[data-open="true"] { display: grid; }
+    .rd-filters-title { margin: 0; color: var(--color-text-muted); font-size: .66rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .rd-filter-group { display: grid; gap: .42rem; color: var(--color-text-muted); font-size: .74rem; font-weight: 650; }
+    .rd-select { width: 100%; border: 1px solid transparent; border-radius: 10px; padding: .74rem .78rem; background: var(--color-bg); color: var(--color-text); font: 500 .87rem/1.2 inherit; cursor: pointer; }
+    .rd-select:disabled { opacity: .52; cursor: not-allowed; }
+    .rd-toggle-wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; }
+    .rd-toggle-label { color: var(--color-text); font-size: .86rem; line-height: 1.4; }
+    .rd-toggle-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+    .rd-toggle-slider { position: relative; flex: 0 0 auto; width: 42px; height: 24px; border-radius: 999px; background: #c8cad1; transition: background-color .25s ease; }
+    .rd-toggle-slider::before { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(10, 25, 47, .16); transition: transform .25s var(--ease-spring); }
+    .rd-toggle-input:checked + .rd-toggle-slider { background: #0f766e; }
+    .rd-toggle-input:checked + .rd-toggle-slider::before { transform: translateX(18px); }
+    .rd-toggle-input:focus-visible + .rd-toggle-slider { outline: 3px solid rgba(31, 111, 224, .28); outline-offset: 2px; }
+
+    .rd-content { min-width: 0; }
+    .rd-list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: .25rem 0 1.25rem; border-bottom: 1px solid var(--color-border); }
+    .rd-list-head h2 { margin: 0; color: var(--color-text); font-size: clamp(1.35rem, 2vw, 1.75rem); letter-spacing: -.025em; }
+    .rd-list-head p { margin: 0; color: var(--color-text-muted); font-size: .82rem; white-space: nowrap; }
+    .rd-active-filters { display: flex; flex-wrap: wrap; gap: .45rem; min-height: 0; padding-top: .75rem; }
+    .rd-active-filters:empty { display: none; }
+    :global(.rd-filter-chip) { border: 1px solid var(--color-border); border-radius: 999px; padding: .38rem .65rem; background: transparent; color: var(--color-text-muted); font: 600 .72rem/1 inherit; cursor: pointer; }
+    :global(.rd-filter-chip:hover) { color: var(--color-text); border-color: var(--color-text-muted); }
+    .rd-list { display: flex; flex-direction: column; }
+    .rd-row { display: block; padding: 1.65rem 0; border-bottom: 1px solid var(--color-border); color: inherit; text-decoration: none; transition: transform .28s var(--ease-spring); }
+    .rd-row[hidden] { display: none; }
+    .rd-row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .7rem; margin-bottom: .7rem; color: var(--color-text-muted); font-size: .68rem; font-weight: 650; letter-spacing: .02em; }
+    .rd-row-meta span + span::before { content: '/'; margin-right: .7rem; color: var(--color-border); }
+    .rd-row-status { font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .status-live { color: #087f5b; }
+    .status-beta { color: #a15c00; }
+    .status-next { color: #3355b7; }
+    .rd-row-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+    .rd-row-copy h3 { margin: 0 0 .48rem; color: var(--color-text); font-size: clamp(1.18rem, 2vw, 1.5rem); font-weight: 720; letter-spacing: -.025em; line-height: 1.18; }
+    .rd-row-copy p { display: -webkit-box; max-width: 720px; margin: 0; overflow: hidden; color: var(--color-text-muted); font-size: .94rem; line-height: 1.58; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+    .rd-row-link { display: inline-flex; align-items: center; gap: .45rem; color: var(--color-text-muted); font-size: .78rem; font-weight: 650; }
+    .rd-row-link span { font-size: 1rem; transition: transform .25s var(--ease-spring); }
+    .rd-empty { padding: 4rem 1rem; text-align: center; color: var(--color-text-muted); }
+    .rd-empty[hidden] { display: none; }
+    .rd-empty p { margin: 0 0 1rem; }
+    .rd-empty button { border: 1px solid var(--color-border); border-radius: 10px; padding: .7rem 1rem; background: transparent; color: var(--color-text); font: 650 .86rem/1 inherit; cursor: pointer; }
+
+    @media (min-width: 720px) {
+        .rd-layout { padding-top: 3rem; }
+        .rd-filter-panel[data-open="true"] { grid-template-columns: 1fr 1fr; align-items: end; }
+        .rd-filters-title { grid-column: 1 / -1; }
+        .rd-toggle-wrap { min-height: 44px; }
+        .rd-row-main { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2rem; }
+        .rd-row-copy p { -webkit-line-clamp: 2; }
+    }
+
+    @media (min-width: 1024px) {
+        .rd-layout { grid-template-columns: 238px minmax(0, 1fr); gap: clamp(3.5rem, 6vw, 5.5rem); padding-top: 4.25rem; }
+        .rd-controls { position: sticky; top: 6rem; }
+        .rd-filter-toggle { display: none; }
+        .rd-filter-panel, .rd-filter-panel[data-open="false"], .rd-filter-panel[data-open="true"] { display: grid; margin-top: 1.6rem; padding: 0; background: transparent; }
+        .rd-row { padding: 1.9rem .8rem; margin-inline: -.8rem; border-radius: 12px; }
+        .rd-row:hover { transform: translateX(5px); }
+        .rd-row:hover .rd-row-link { color: var(--color-text); }
+        .rd-row:hover .rd-row-link span { transform: translateX(4px); }
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .rd-tab.is-active, .rd-select { background: rgba(255, 255, 255, .075); box-shadow: none; }
+        .rd-toggle-slider { background: #42454e; }
+        .status-live { color: #42c89a; }
+        .status-beta { color: #f0ad4e; }
+        .status-next { color: #8da7ff; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .rd-row, .rd-row-link span, .rd-toggle-slider, .rd-toggle-slider::before { transition: none; }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const main = document.querySelector<HTMLElement>('.rd-main');
+        const singular = main?.dataset.singular || 'initiative';
+        const plural = main?.dataset.plural || 'initiatives';
+        const familySelect = document.getElementById('filter-family') as HTMLSelectElement | null;
+        const statusSelect = document.getElementById('filter-status') as HTMLSelectElement | null;
+        const apiToggle = document.getElementById('filter-api') as HTMLInputElement | null;
+        const rows = Array.from(document.querySelectorAll<HTMLElement>('.rd-row'));
+        const emptyState = document.getElementById('rd-empty');
+        const clearButton = document.getElementById('rd-clear-filters');
+        const resultCount = document.getElementById('rd-result-count');
+        const filterCount = document.getElementById('rd-filter-count');
+        const activeFilters = document.getElementById('rd-active-filters');
+        const filterToggle = document.getElementById('rd-filter-toggle');
+        const filterPanel = document.getElementById('rd-filter-panel');
+        const tabs = Array.from(document.querySelectorAll<HTMLElement>('.rd-tab'));
+        let currentTab = 'all';
+        let previousStatus = 'all';
+
+        const labelFor = (select: HTMLSelectElement | null) => select?.selectedOptions[0]?.textContent?.trim() || '';
+
+        const addChip = (label: string, clear: () => void) => {
+            if (!activeFilters) return;
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'rd-filter-chip';
+            button.textContent = `${label} ×`;
+            button.addEventListener('click', clear);
+            activeFilters.appendChild(button);
+        };
+
+        const renderChips = () => {
+            if (!activeFilters) return;
+            activeFilters.replaceChildren();
+            if (familySelect?.value && familySelect.value !== 'all') addChip(labelFor(familySelect), () => { familySelect.value = 'all'; filterRows(); });
+            if (currentTab !== 'live' && statusSelect?.value && statusSelect.value !== 'all') addChip(labelFor(statusSelect), () => { statusSelect.value = 'all'; filterRows(); });
+            if (apiToggle?.checked) addChip('API', () => { apiToggle.checked = false; filterRows(); });
+        };
+
+        const filterRows = () => {
+            const family = familySelect?.value || 'all';
+            const status = statusSelect?.value || 'all';
+            const apiOnly = Boolean(apiToggle?.checked);
+            let visible = 0;
+
+            rows.forEach((row) => {
+                const show = (currentTab !== 'live' || row.dataset.status === 'live')
+                    && (family === 'all' || row.dataset.family === family)
+                    && (status === 'all' || row.dataset.status === status)
+                    && (!apiOnly || row.dataset.api === 'true');
+                row.hidden = !show;
+                if (show) visible += 1;
+            });
+
+            if (emptyState) emptyState.hidden = visible !== 0;
+            if (resultCount) resultCount.textContent = `${visible} ${visible === 1 ? singular : plural}`;
+            const count = Number(family !== 'all') + Number(currentTab !== 'live' && status !== 'all') + Number(apiOnly);
+            if (filterCount) filterCount.textContent = String(count);
+            renderChips();
+        };
+
+        const resetFilters = () => {
+            currentTab = 'all';
+            previousStatus = 'all';
+            tabs.forEach((tab, index) => {
+                const active = index === 0;
+                tab.classList.toggle('is-active', active);
+                tab.setAttribute('aria-selected', String(active));
+            });
+            if (familySelect) familySelect.value = 'all';
+            if (statusSelect) { statusSelect.value = 'all'; statusSelect.disabled = false; }
+            if (apiToggle) apiToggle.checked = false;
+            filterRows();
+        };
+
+        tabs.forEach((tab) => tab.addEventListener('click', () => {
+            tabs.forEach((candidate) => {
+                const active = candidate === tab;
+                candidate.classList.toggle('is-active', active);
+                candidate.setAttribute('aria-selected', String(active));
+            });
+            currentTab = tab.dataset.tabTarget || 'all';
+            if (statusSelect && currentTab === 'live') {
+                previousStatus = statusSelect.value;
+                statusSelect.value = 'live';
+                statusSelect.disabled = true;
+            } else if (statusSelect) {
+                statusSelect.disabled = false;
+                statusSelect.value = previousStatus;
+            }
+            filterRows();
+        }));
+
+        filterToggle?.addEventListener('click', () => {
+            const open = filterToggle.getAttribute('aria-expanded') !== 'true';
+            filterToggle.setAttribute('aria-expanded', String(open));
+            if (filterPanel) filterPanel.dataset.open = String(open);
+        });
+        familySelect?.addEventListener('change', filterRows);
+        statusSelect?.addEventListener('change', filterRows);
+        apiToggle?.addEventListener('change', filterRows);
+        clearButton?.addEventListener('click', resetFilters);
+        filterRows();
+    });
+</script>

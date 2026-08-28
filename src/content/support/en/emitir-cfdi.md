@@ -1,11 +1,11 @@
 ---
-title: "Configure automatic billing (CFDI 4.0)"
-description: "Learn how to enable automatic billing so your clients receive their CFDI 4.0 as soon as they make a payment."
+title: "Issue a CFDI 4.0 from a quote or from scratch"
+description: "Learn to stamp a sale's CFDI 4.0 in one click from a won quote, or invoice directly without a prior quote."
 category: "Invoicing"
 order: 1
 ---
 
-The issuance of an Internet Digital Tax Receipt (CFDI) version 4.0 is fully integrated into your sales flow.
+The issuance of an Internet Digital Tax Receipt (CFDI) version 4.0 is fully integrated into your sales flow. Stamping is always confirmed by a person with one click — Cord never stamps on its own the moment a payment comes in.
 
 ### From Quote to Invoice in One Click
 

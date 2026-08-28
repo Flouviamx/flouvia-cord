@@ -5,6 +5,8 @@ const CSRF_EXEMPT_WRITE_EXACT = new Set([
     '/api/mcp/',
     '/api/mcp/message',
     '/api/mcp/message/',
+    '/api/resend/marketing-webhook',
+    '/api/resend/marketing-webhook/',
 ]);
 
 /**

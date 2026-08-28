@@ -88,7 +88,7 @@ if (!entry) {
 const { Content } = await render(entry);
 const { title, description, date, type, topic, authors, readTime, featured } = entry.data;
 
-const authorTags = authors ? authors.map(a => `<span class="dashed-tag">[ ${a} ]</span>`).join('\n          ') : '';
+const authorTags = authors ? authors.map(a => `<span class="dashed-tag">${a}</span>`).join('\n          ') : '';
 
 // Convert date format from "2026.07.23" to ISO
 const isoDate = date ? date.replace(/\./g, '-') : undefined;
@@ -158,7 +158,7 @@ const articleJsonLd = {
       <div class="meta-row">
         <span class="meta-key">{lang === 'en' ? 'CATEGORIES:' : 'CATEGORÍAS:'}</span>
         <div class="meta-tags">
-          <span class="dashed-tag" style="text-transform: uppercase;">[ {topic} ]</span>
+          <span class="dashed-tag" style="text-transform: uppercase;">{topic}</span>
         </div>
       </div>
       
@@ -227,7 +227,11 @@ const articleJsonLd = {
   /* Article Body */
   .article-body {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    /* minmax(0,...) + min-width:0: un track `1fr` mide por defecto el
+       min-content de su contenido, y el min-content de un bloque de codigo es
+       su linea mas larga sin cortar. Sin esto el track crecia mas alla del
+       contenedor y el articulo entero se salia de la pantalla en movil. */
+    grid-template-columns: 280px minmax(0, 1fr);
     gap: 120px;
   }
   
@@ -236,6 +240,7 @@ const articleJsonLd = {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    min-width: 0;
     position: sticky;
     top: 120px;
     align-self: flex-start;
@@ -342,6 +347,7 @@ const articleJsonLd = {
   /* Content Area */
   .content-area {
     padding-top: 0;
+    min-width: 0;
   }
   
   :global(.prose) {
@@ -390,12 +396,162 @@ const articleJsonLd = {
     margin-bottom: 0.5em;
   }
   
+  :global(.prose ol) {
+    margin-bottom: 1.5em;
+    padding-left: 1.5em;
+    color: #94a3b8;
+  }
+
+  :global(.prose h3) {
+    font-family: var(--dev-sans);
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: white;
+    margin: 1.8em 0 0.8em 0;
+    letter-spacing: -0.01em;
+  }
+
+  :global(.prose strong) {
+    color: #e2e8f0;
+    font-weight: 600;
+  }
+
+  :global(.prose a) {
+    color: var(--dev-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    overflow-wrap: anywhere;
+  }
+
+  :global(.prose blockquote) {
+    margin: 2em 0;
+    padding-left: 20px;
+    border-left: 2px solid var(--dev-accent);
+    color: #cbd5e1;
+  }
+
+  /* Un bloque de codigo es contenido ancho: se desplaza dentro de su propia
+     caja. Sin esto empujaba el ancho del documento y, como el body recorta el
+     desbordamiento, el codigo se cortaba sin forma de leerlo. */
+  :global(.prose pre) {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px;
+    margin: 2em 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    font-family: var(--dev-mono);
+    font-size: 13px;
+    line-height: 1.6;
+    tab-size: 2;
+  }
+
+  :global(.prose pre code) {
+    font-family: var(--dev-mono);
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  :global(.prose :not(pre) > code) {
+    font-family: var(--dev-mono);
+    font-size: 0.85em;
+    color: #c084fc;
+    background: rgba(192, 132, 252, 0.08);
+    border: 1px dashed rgba(192, 132, 252, 0.25);
+    border-radius: 2px;
+    padding: 1px 5px;
+    overflow-wrap: anywhere;
+  }
+
+  :global(.prose img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+
+  :global(.prose table) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
   @media (max-width: 900px) {
     .article-body {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
+      /* El gap de 120px era la calle entre dos columnas; apiladas se vuelve
+         una pantalla de vacio entre la metadata y el articulo. */
+      gap: 40px;
     }
     .hero-content {
       flex-direction: column-reverse;
+    }
+    .metadata-sidebar {
+      position: static;
+      gap: 16px;
+      padding-bottom: 8px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .article-hero {
+      padding: 16px 0 28px 0;
+      margin-bottom: 32px;
+    }
+    .btn-grid {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .outline-btn {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 44px;
+      padding: 0 14px;
+      font-size: 11px;
+      white-space: normal;
+    }
+    .meta-row {
+      gap: 16px;
+    }
+    .meta-val {
+      text-align: right;
+    }
+    :global(.prose) {
+      font-size: 1.05rem;
+      line-height: 1.75;
+    }
+    :global(.prose h2) {
+      font-size: 1.65rem;
+      margin: 1.6em 0 0.7em 0;
+    }
+    :global(.prose h3) {
+      font-size: 1.25rem;
+    }
+    :global(.prose pre) {
+      font-size: 12px;
+      padding: 14px;
+      margin: 1.6em 0;
+    }
+    :global(.prose-raw) {
+      font-size: 12px;
+      padding: 16px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .article-title {
+      font-size: 2.1rem;
+    }
+    .btn-grid {
+      flex-direction: column;
+    }
+    .outline-btn {
+      width: 100%;
     }
   }
 </style>

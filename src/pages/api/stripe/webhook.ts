@@ -12,9 +12,10 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { randomUUID } from 'node:crypto';
 import { sql, logAudit, withOrgTx } from '../../../lib/db';
+import { cerrarVeredictoKyc } from '../../../lib/kyc-evidencia';
 import { dispatchQuoteEvent, dispatchPaymentPartial, dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notifyQuoteEvent } from '../../../lib/notify';
-import { METER_PRICES, PRICE_TO_PLAN, stripe } from '../../../lib/billing';
+import { METER_PRICES, PRICE_TO_PLAN, retrieveAccount, stripe } from '../../../lib/billing';
 import { trackPaymentReceived, trackServer } from '../../../lib/posthog-server';
 import { after } from '../../../lib/after';
 import { verifyStripeSignature } from '../../../lib/stripe-signature';
@@ -33,10 +34,20 @@ export const POST: APIRoute = async ({ request }) => {
     const raw = await request.text();
     let signatureSource: 'billing' | 'connect' | null = null;
 
-    if ((!WH_SECRET && !CONNECT_WH_SECRET) && process.env.VERCEL) {
+    // Sin secreto NO se procesa nada, corra donde corra.
+    //
+    // Antes el 500 por configuración faltante estaba condicionado a
+    // `process.env.VERCEL`, y el bloque de verificación completo a que existiera
+    // al menos un secreto. La combinación dejaba una puerta: sin ningún secreto
+    // y fuera de Vercel (un contenedor, un preview self-hosted, un runner de
+    // pruebas con la base de producción), el handler aceptaba eventos SIN FIRMA
+    // y los procesaba como reales — marcar cotizaciones pagadas, conciliar
+    // comisiones, mover el ledger. Un webhook de dinero falla cerrado siempre;
+    // dónde está desplegado no es parte del contrato de seguridad.
+    if (!WH_SECRET && !CONNECT_WH_SECRET) {
         return new Response('webhook mal configurado (falta secret)', { status: 500 });
     }
-    if (WH_SECRET || CONNECT_WH_SECRET) {
+    {
         const sig = request.headers.get('stripe-signature') || '';
         let valid = false;
         if (WH_SECRET && verifyStripeSignature(raw, sig, WH_SECRET as string)) {
@@ -57,6 +68,26 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (typeof event?.id !== 'string' || !event.id.startsWith('evt_') || typeof event?.type !== 'string') {
         return new Response('evento inválido', { status: 400 });
+    }
+
+    // ── Cada secreto abre su propio carril, y sólo el suyo ──────────────────
+    //
+    // Todo el dispatch de abajo decide con `event.account`: presente = cuenta
+    // conectada (el dinero del vendedor), ausente = plataforma (la suscripción
+    // que la org le paga a Cord). `signatureSource` se calculaba y no se usaba
+    // para nada, así que un evento firmado con el secreto de CONNECT y sin
+    // `account` entraba directo a los handlers de facturación de la plataforma
+    // —`retrieveAndSyncSubscription`, `downgradeToFree`— que conceden y quitan
+    // planes.
+    //
+    // Un endpoint de Connect sólo recibe eventos de cuentas conectadas, y ésos
+    // SIEMPRE traen `account`. Exigirlo no rechaza nada legítimo y convierte la
+    // separación de secretos en una separación real de privilegios.
+    if (signatureSource === 'connect' && !event.account) {
+        log.warn('evento firmado con el secreto de Connect sin cuenta asociada', {
+            route: 'stripe-webhook', eventId: event.id, tipo: event.type,
+        });
+        return new Response('evento fuera de carril', { status: 400 });
     }
 
     if (signatureSource) {
@@ -199,8 +230,34 @@ async function handleStripeEvent(event: any): Promise<void> {
             await updateAccountStatus(obj);
             break;
         }
+        // ── KYC: personas y capacidades ───────────────────────────────────────
+        // Sin estos eventos, el estado de la verificación sólo se refrescaba si
+        // alguien abría Ajustes › Cobros. Una identificación rechazada por el
+        // proveedor podía quedarse días sin que el negocio se enterara — y el
+        // motivo del rechazo no se registraba en ningún lado, así que el usuario
+        // volvía a subir la misma foto sin saber por qué fallaba.
+        //
+        // ⚠️ `person.*` sólo llega en el scope "Connected accounts" del endpoint
+        // de webhooks. Si no está seleccionado ahí, estos casos nunca corren.
+        case 'person.created':
+        case 'person.updated':
+        case 'person.deleted': {
+            await recordPersonEvent(obj, event.account, event.type);
+            break;
+        }
+        case 'capability.updated': {
+            await recordCapabilityEvent(obj, event.account);
+            break;
+        }
+        // El ciclo COMPLETO del depósito, no sólo los dos estados finales: sin
+        // `created`/`updated` la tabla no sabía de un depósito en camino, que es
+        // justo el que el negocio quiere ver ("¿cuándo me cae?").
+        case 'payout.created':
+        case 'payout.updated':
         case 'payout.paid':
-        case 'payout.failed': {
+        case 'payout.failed':
+        case 'payout.canceled':
+        case 'payout.reconciliation_completed': {
             await recordPayoutStatus(obj, event.account, event.type);
             break;
         }
@@ -340,18 +397,69 @@ async function markPaymentFailed(intent: any, account?: string): Promise<void> {
     after(dispatchQuoteEvent(orgId, cid, 'payment.failed'));
 }
 
+/**
+ * Persiste un depósito. Antes esto sólo escribía una línea de auditoría, así
+ * que el negocio no tenía historial de depósitos ni forma de conciliarlos: el
+ * widget "próximo depósito" dependía de una llamada en vivo al proveedor en
+ * cada carga de la página.
+ *
+ * Idempotente por `stripe_payout_id`. Los eventos llegan fuera de orden con
+ * frecuencia (`payout.paid` antes que un `payout.updated` viejo), así que un
+ * estado terminal no se pisa con uno anterior.
+ */
 async function recordPayoutStatus(payout: any, account: string | undefined, eventType: string): Promise<void> {
     const orgId = await orgForConnectedAccount(account);
-    if (!orgId) return;
+    if (!orgId || !payout?.id || !account) return;
+
     const currency = String(payout?.currency || 'mxn').toUpperCase();
-    const amount = fromMinorUnits(Number(payout?.amount ?? 0), currency);
-    const failed = eventType === 'payout.failed';
-    await logAudit(orgId, {
-        accion: failed ? 'cord_pagos.deposito_fallido' : 'cord_pagos.deposito_pagado',
-        entidad: 'payout',
-        entidad_id: String(payout?.id || ''),
-        detalle: `${amount.toFixed(2)} ${currency}${failed ? `; ${String(payout?.failure_code || 'sin código')}` : ''}`,
-    });
+    const amountCents = Math.round(Number(payout?.amount ?? 0));
+    const status = String(payout?.status || 'pending');
+    const arrival = Number(payout?.arrival_date);
+    const arrivalDate = Number.isFinite(arrival) && arrival > 0
+        ? new Date(arrival * 1000).toISOString().slice(0, 10)
+        : null;
+    const destino = payout?.destination && typeof payout.destination === 'object' ? payout.destination : null;
+
+    await withOrgTx(orgId, sql`
+        insert into payouts (
+            org_id, stripe_account_id, stripe_payout_id, amount_cents, currency, status,
+            arrival_date, metodo, tipo_destino, destino_last4, failure_code, failure_message
+        ) values (
+            ${orgId}, ${account}, ${payout.id}, ${amountCents}, ${currency}, ${status},
+            ${arrivalDate}, ${payout?.method ?? null}, ${payout?.type ?? null},
+            ${destino?.last4 ?? null}, ${payout?.failure_code ?? null}, ${payout?.failure_message ?? null}
+        )
+        on conflict (stripe_payout_id) do update set
+            amount_cents    = excluded.amount_cents,
+            currency        = excluded.currency,
+            arrival_date    = coalesce(excluded.arrival_date, payouts.arrival_date),
+            metodo          = coalesce(excluded.metodo, payouts.metodo),
+            tipo_destino    = coalesce(excluded.tipo_destino, payouts.tipo_destino),
+            destino_last4   = coalesce(excluded.destino_last4, payouts.destino_last4),
+            failure_code    = excluded.failure_code,
+            failure_message = excluded.failure_message,
+            -- Un estado terminal no se degrada con un evento que llegó tarde.
+            status = case
+                when payouts.status in ('paid', 'failed', 'canceled')
+                     and excluded.status not in ('paid', 'failed', 'canceled')
+                then payouts.status
+                else excluded.status
+            end,
+            updated_at = now()
+    `);
+
+    // La auditoría se conserva sólo para los dos estados que le importan al
+    // negocio; el resto vive en la tabla y no tiene por qué llenar el log.
+    if (eventType === 'payout.paid' || eventType === 'payout.failed') {
+        const failed = eventType === 'payout.failed';
+        const amount = fromMinorUnits(amountCents, currency);
+        await logAudit(orgId, {
+            accion: failed ? 'cord_pagos.deposito_fallido' : 'cord_pagos.deposito_pagado',
+            entidad: 'payout',
+            entidad_id: String(payout.id),
+            detalle: `${amount.toFixed(2)} ${currency}${failed ? `; ${String(payout?.failure_code || 'sin código')}` : ''}`,
+        });
+    }
 }
 
 async function recordRefundEvent(refundOrCharge: any, account: string | undefined, eventType: string): Promise<void> {
@@ -984,6 +1092,81 @@ async function syncFailedBillingInvoice(invoice: any) {
     if (rows.length) {
         await trackServer('payment_failed', rows[0].id as string, { context: 'subscription' }, !!rows[0].is_sandbox, !!rows[0].is_demo);
     }
+}
+
+/**
+ * Refresca los requisitos de la cuenta tras un cambio en una de sus personas y
+ * deja rastro cuando el proveedor RECHAZA una verificación.
+ *
+ * No se confía en el payload del evento para el estado de la cuenta: los
+ * eventos llegan fuera de orden, así que se relee la cuenta y se guarda lo que
+ * diga en ese momento. El payload sí se usa para el motivo del rechazo, que es
+ * información del evento y no del agregado.
+ */
+async function recordPersonEvent(person: any, account: string | undefined, tipo: string) {
+    if (!account) return;
+    const orgId = await orgForConnectedAccount(account);
+    if (!orgId) return;
+
+    const verificacion = person?.verification || {};
+    const rechazo = verificacion.details_code || verificacion.document?.details_code || null;
+    const nombre = [person?.first_name, person?.last_name].filter(Boolean).join(' ').trim();
+
+    // Cierra la evidencia de KYC con lo que el proveedor decidió. Es la mitad que
+    // faltaba del par "lo que Cord midió / lo que el proveedor dictaminó": sin
+    // esto, la tabla guarda métricas sin desenlace y no sirve para calibrar nada.
+    if (typeof person?.id === 'string') {
+        await cerrarVeredictoKyc(person.id, {
+            estado: rechazo ? 'rechazado' : (verificacion.status === 'verified' ? 'verificado' : 'pendiente'),
+            codigo: rechazo,
+            detalle: verificacion.details ?? null,
+        });
+    }
+
+    await logAudit(orgId, {
+        accion: rechazo ? 'cord_pagos.persona_verificacion_rechazada' : `cord_pagos.${tipo.replace('.', '_')}`,
+        entidad: 'connect_person',
+        // El id de la persona, nunca su documento ni su identificación.
+        entidad_id: typeof person?.id === 'string' ? person.id : null,
+        detalle: [
+            nombre && `persona: ${nombre}`,
+            verificacion.status && `estado: ${verificacion.status}`,
+            rechazo && `motivo: ${rechazo}`,
+        ].filter(Boolean).join(' · ') || tipo,
+    });
+
+    // Los requisitos de la cuenta cambian con cada persona: se releen de la
+    // fuente en vez de derivarlos del evento.
+    try {
+        const fresh = await retrieveAccount(account);
+        await updateAccountStatus(fresh);
+    } catch {
+        // Que el refresco falle no puede tumbar el evento: el rastro de
+        // auditoría ya quedó y `account.updated` volverá a sincronizar.
+    }
+}
+
+/**
+ * Una capability (card_payments, transfers, mx_bank_transfer_payments) cambió de
+ * estado. Es la señal más temprana de que el proveedor va a suspender los
+ * cobros: llega antes que el `account.updated` que apaga `charges_enabled`.
+ */
+async function recordCapabilityEvent(capability: any, account: string | undefined) {
+    if (!account) return;
+    const orgId = await orgForConnectedAccount(account);
+    if (!orgId) return;
+
+    await logAudit(orgId, {
+        accion: 'cord_pagos.capacidad_actualizada',
+        entidad: 'connect_capability',
+        entidad_id: typeof capability?.id === 'string' ? capability.id : null,
+        detalle: `estado: ${capability?.status ?? 'desconocido'}`,
+    });
+
+    try {
+        const fresh = await retrieveAccount(account);
+        await updateAccountStatus(fresh);
+    } catch { /* mismo criterio que arriba */ }
 }
 
 async function updateAccountStatus(account: any) {

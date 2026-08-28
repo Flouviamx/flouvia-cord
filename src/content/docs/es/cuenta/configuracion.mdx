@@ -12,31 +12,58 @@ description: "Ingresa los datos generales de tu empresa y administra tu equipo."
 
 El primer paso es registrar tu empresa en Cord. Entra a **Ajustes > General** para llenar la siguiente información:
 
-- **Nombre Comercial:** Así es como tus clientes verán a tu empresa en las cotizaciones y enlaces públicos.
-- **Razón Social:** Requerido para fines de facturación.
-- **RFC:** Tu Registro Federal de Contribuyentes válido.
-- **Régimen Fiscal:** El régimen bajo el que tributas ante el SAT.
-- **Código Postal:** Código Postal de tu domicilio fiscal principal.
+- **Nombre:** Así es como tus clientes verán a tu empresa en las cotizaciones y enlaces públicos.
+- **Moneda:** la divisa en la que le cotizas y le cobras a tus clientes (no la de tu suscripción a Cord, que fija tu país — ver [Tu suscripción](/docs/cuenta/suscripcion?lang=es)).
+- **Correo de contacto, teléfono y dirección.**
+- **Sitio web y WhatsApp** (para mostrarlos en tu enlace público).
+- **País donde operas:** define el carril regulatorio que usa Cord — qué campos fiscales pide, qué tasas de impuesto siembra por defecto y el vocabulario de facturación (ver más abajo).
+- **Zona horaria:** con la que se calculan y muestran las fechas de tus cotizaciones y facturas.
+- **Idioma:** aplica a la aplicación, a tus enlaces públicos y a los correos que Cord envía en tu nombre.
 
-<Callout type="warning">
-  **Importante:** Asegúrate de que el RFC y el Régimen Fiscal coincidan exactamente con tu Constancia de Situación Fiscal. Cord usará estos datos como emisor para timbrar el CFDI 4.0.
-</Callout>
+Los datos fiscales para facturar (Razón Social, tu Tax ID, domicilio fiscal) se
+capturan aparte, en **Ajustes > Facturación / Datos fiscales**. Ese formulario cambia
+según tu país: en México pide **RFC**, **Régimen Fiscal** y habilita el CSD para
+CFDI 4.0 (ver [Agrega la información fiscal](/docs/cuenta/csd?lang=es)); fuera de
+México pide razón social, tu identificador fiscal local (NIF/CIF en España, EIN/Tax ID
+en Estados Unidos...), domicilio y prefijo de factura — Cord emite un folio con copia
+inmutable y PDF; el envío o autorización ante tu autoridad fiscal local depende del
+país (España cuenta con Verifactu).
 
 ## 2. Invita a tu equipo de ventas
 
-El proceso de venta B2B es colaborativo. Cord te permite invitar a tantos miembros de equipo como necesites. Dirígete a **Ajustes > Equipo** y selecciona **Invitar miembro**.
+El proceso de venta B2B es colaborativo. Cord te permite invitar a tantos miembros de equipo como tu plan lo permita (verás tu uso de asientos y el límite en la propia pantalla). Dirígete a **Ajustes > Equipo** y selecciona **Agregar miembro**.
 
-### Roles disponibles (Próximamente)
+### Roles y permisos
 
-Actualmente todos los miembros invitados tienen acceso a la creación de cotizaciones. En una actualización futura habilitaremos **Roles y Permisos Granulares** para distinguir entre:
-- **Administrador:** Acceso total a ajustes, facturación, CSD y exportaciones.
-- **Vendedor:** Puede crear cotizaciones, ajustar precios (con límites) y enviar enlaces, pero no puede modificar el catálogo general ni ver las métricas globales.
-- **Lector:** Acceso de solo lectura para auditorías.
+Cada invitación parte de un **preset** de permisos que puedes usar tal cual o
+personalizar campo por campo:
+- **Administrador:** acceso total a ajustes, facturación, catálogo y exportaciones.
+- **Vendedor:** crea y envía cotizaciones, pero no administra ajustes de la cuenta.
+- **Lectura:** acceso de solo consulta, para auditorías.
+- **Personalizado:** activa o desactiva permisos individuales (cotizar, catálogo,
+  clientes, cobranza, ajustes...) cuando ninguno de los tres presets encaja.
 
-## 3. Configuración de Términos de Crédito por Defecto
+Desde la ficha de cada miembro puedes ver su rol efectivo, su última sesión, su
+actividad reciente, editar sus permisos, reenviar la invitación, revocar su acceso o
+volver a invitarlo si ya fue revocado. Si restringiste las invitaciones a los dominios
+de correo de tu empresa (`Ajustes > Equipo`), una invitación a un correo fuera de esos
+dominios se rechaza antes de enviarse. Un miembro que entra por SSO trae sus permisos
+gestionados por tu proveedor de identidad y no se editan aquí.
+
+## 3. Valores por defecto de tus cotizaciones
 
 Si tu modelo de negocio opera bajo términos corporativos B2B (donde no cobras de contado, sino a 30 o 60 días), no tienes que configurarlo a mano en cada cotización.
 
-Dirígete a **Ajustes > Ventas > Términos de crédito** para establecer los valores globales de tu cuenta:
-- **Términos predeterminados:** Selecciona *Net 30* o *Net 60*. A partir de ahora, cada nueva cotización heredará este término de pago automáticamente.
-- Cuando una cotización con términos es aprobada, el sistema agenda la fecha de vencimiento y programa el flujo de cobranza inteligente, bloqueando la creación de nuevas cotizaciones si el cliente excede su límite de crédito o tiene facturas vencidas.
+Dirígete a **Ajustes > Cotizaciones** para establecer los valores con los que arranca cada cotización nueva:
+- **Vigencia por defecto (días).**
+- **Términos predeterminados:** *Contado*, *Net 30* o *Net 60*. A partir de ahora, cada nueva cotización heredará este término de pago automáticamente (lo puedes cambiar caso por caso al cotizar).
+- **Anticipo por defecto (%).**
+- **Folio y prefijo** de tus cotizaciones, y el **texto legal** que acompaña al PDF.
+
+<Callout type="info">
+**El límite de crédito es una señal, no un bloqueo automático.** Cada cliente puede
+tener su propio límite de crédito (**Clientes > [cliente]**). Cord lo usa para avisarte
+—en la ficha del cliente y en Cobranza— cuánto saldo abierto lleva contra ese límite,
+pero no impide por sí solo crear una cotización nueva; la decisión de detener una venta
+a un cliente sobre-expuesto sigue siendo tuya.
+</Callout>

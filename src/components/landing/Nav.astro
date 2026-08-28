@@ -2,11 +2,13 @@
 // Navbar de Cord — replica el sistema de flouvia.com:
 // top-bar editorial + glass pill con indicador deslizante + wordmark central
 // que se transforma en píldora al hacer scroll. Wordmark "cord" en texto (no SVG).
-import { altLangUrls, useTranslations } from '../../i18n/utils';
+import { altLangUrls, languagePreferenceUrl, publicPath, useTranslations } from '../../i18n/utils';
 const { esUrl, enUrl, lang } = altLangUrls(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
-const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+const l = (p: string) => publicPath(p, lang);
+const esSwitchUrl = languagePreferenceUrl(esUrl, 'es');
+const enSwitchUrl = languagePreferenceUrl(enUrl, 'en');
 
 export interface Props {
     darkHero?: boolean;
@@ -28,10 +30,10 @@ const { darkHero = false } = Astro.props;
                         <a href={l("/")} class="pill-logo" id="pill-logo">
                             <img src="/imgs/logo-cord-white.png" alt="Cord" class="pill-logo-img" />
                         </a>
-                        <a href="/#producto" class="nav-link" data-mega="producto" aria-haspopup="true" aria-expanded="false">{t("nav.producto")}<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
+                        <a href={l("/#producto")} class="nav-link" data-mega="producto" aria-haspopup="true" aria-expanded="false">{t("nav.producto")}<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
                         <a href={l("/soluciones/empresas")} class="nav-link" data-mega="soluciones" aria-haspopup="true" aria-expanded="false">{t("nav.soluciones")}<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
                         <a href={l("/desarrolladores/api")} class="nav-link" data-mega="desarrolladores" aria-haspopup="true" aria-expanded="false">{t("nav.desarrolladores")}<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
-                        <a href="/#faq" class="nav-link" data-mega="recursos" aria-haspopup="true" aria-expanded="false">{t("nav.recursos")}<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
+                        <a href={l("/#faq")} class="nav-link" data-mega="recursos" aria-haspopup="true" aria-expanded="false">{t("nav.recursos")}<svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></a>
                         <a href={l("/precios")} class="nav-link" data-path={l("/precios")}>{t("nav.precios")}</a>
                     </div>
 
@@ -217,8 +219,8 @@ const { darkHero = false } = Astro.props;
 
             <div class="nav-right desktop-nav" id="nav-right">
                 <div class="lang-switch">
-                    <a href={esUrl} class="lang-option" class:list={[{ active: lang === 'es' }]}>ES</a>
-                    <a href={enUrl} class="lang-option" class:list={[{ active: lang === 'en' }]}>EN</a>
+                    <a href={esSwitchUrl} class="lang-option" class:list={[{ active: lang === 'es' }]}>ES</a>
+                    <a href={enSwitchUrl} class="lang-option" class:list={[{ active: lang === 'en' }]}>EN</a>
                 </div>
                 <a href={l("/sign-in")} class="nav-login-pill" aria-label={t("nav.entrar")}
                    data-auth-swap data-out-href={l("/sign-in")} data-out-label={t("nav.entrar")}
@@ -461,8 +463,8 @@ const { darkHero = false } = Astro.props;
                 <div class="mm-meta">
                     <p class="m-eyebrow">{t("nav.mobile.eyebrow")}</p>
                     <div class="lang-switch-mobile" style="margin-bottom: 1.2rem;">
-                        <a href={esUrl} class="lang-option-m" class:list={[{ active: lang === 'es' }]}>ES</a>
-                        <a href={enUrl} class="lang-option-m" class:list={[{ active: lang === 'en' }]}>EN</a>
+                        <a href={esSwitchUrl} class="lang-option-m" class:list={[{ active: lang === 'es' }]}>ES</a>
+                        <a href={enSwitchUrl} class="lang-option-m" class:list={[{ active: lang === 'en' }]}>EN</a>
                     </div>
                     <div class="m-legal">
                         <span>{t("nav.mobile.footer.op")}</span>
@@ -1014,9 +1016,21 @@ const { darkHero = false } = Astro.props;
         sessionStorage.removeItem('langSwapScroll');
     }
 
-    document.querySelectorAll('.lang-option, .lang-option-m').forEach(link => {
+    document.querySelectorAll<HTMLAnchorElement>('.lang-option, .lang-option-m').forEach(link => {
         link.addEventListener('click', () => {
             sessionStorage.setItem('langSwapScroll', window.scrollY.toString());
+
+            // Muchas subpáginas públicas son prerender y, en producción, un HTML
+            // estático no pasa por middleware. Persistimos también en cliente para
+            // que la elección manual gane desde cualquier página; el query queda
+            // como fallback sin JS para las rutas SSR y se limpia antes de navegar.
+            const destination = new URL(link.href, window.location.href);
+            const selectedLang = destination.searchParams.get('lang');
+            if (selectedLang === 'es' || selectedLang === 'en') {
+                document.cookie = `cord_public_lang=${selectedLang}; Max-Age=31536000; Path=/; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+                destination.searchParams.delete('lang');
+                link.href = `${destination.pathname}${destination.search}${destination.hash}`;
+            }
         });
     });
 

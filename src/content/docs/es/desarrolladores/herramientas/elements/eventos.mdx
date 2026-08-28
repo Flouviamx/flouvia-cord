@@ -29,17 +29,17 @@ contenedor.addEventListener('cord:approved', (evento) => {
 
 ## Diccionario de Eventos
 
-Todos los eventos tienen el prefijo `cord:` para evitar colisiones de nombres con otras librerías.
+Todos los eventos tienen el prefijo `cord:` para evitar colisiones de nombres con otras librerías. El `detail` de cada evento incluye siempre `token` (el token público de la cotización) y `folio` (ej. `"COT-0148"`), además de los campos propios que se listan abajo.
 
 ### Ciclo de vida del componente
 - **`cord:ready`**: Disparado en el momento exacto en que el SDK termina de renderizar el contenido, calcular la altura final y las fuentes tipográficas terminan de cargarse.
 - **`cord:resize`**: Se emite continuamente cada que la altura del iframe cambia (útil solo si escribes tu propio contenedor y no usas `embed.js`).
-- **`cord:viewed`**: Disparado cuando el iframe se hace visible y Cord registra en la base de datos que el cliente ha visualizado la cotización de forma oficial.
+- **`cord:viewed`**: Se dispara junto con `cord:ready`, en cuanto el cotizador termina de renderizarse dentro del iframe — es la señal de que el contenido ya es visible para tu página anfitriona. El registro oficial en la base de datos de que el cliente vio la cotización corre por un mecanismo interno independiente, que exige que la pestaña esté realmente visible (para no contar como "vista" al propio vendedor previsualizando su link); no asumas que ambos ocurren en el mismo instante.
 
 ### Interacción comercial
 - **`cord:approved`**: Emitido en el instante en que el usuario aprueba los términos de la propuesta comercial. Devuelve en el `detail` datos útiles como el hash de validación y quién firmó (`signed_by`).
-- **`cord:signed`**: Disparado secuencialmente al momento de capturar una firma legal vinculante.
-- **`cord:pay`**: Emitido cuando el usuario hace clic en el botón para iniciar su flujo de pago (tarjeta, SPEI, transferencia manual, etc.).
-- **`cord:rejected`**: Disparado si el cliente marca explícitamente la propuesta como declinada.
-- **`cord:message`**: Se activa cada que el cliente deja un comentario general en el chat de la cotización.
-- **`cord:item_comment`**: Se dispara cuando el usuario deja un comentario específico sobre una partida (línea de producto) de la cotización.
+- **`cord:signed`**: Se dispara en el MISMO instante que `cord:approved`, con el mismo `detail` (`signed_by`, `hash`) — en Cord, aprobar y firmar son una sola acción del cliente, no dos pasos separados en el tiempo. Escucha el que te resulte más claro semánticamente; no esperes a que "llegue después" del otro.
+- **`cord:pay`**: Emitido cuando el usuario hace clic en el botón para iniciar su flujo de pago en línea (tarjeta o SPEI, según lo que el negocio tenga habilitado). El `detail` trae la `url` a la que el cliente será redirigido.
+- **`cord:rejected`**: Disparado si el cliente marca explícitamente la propuesta como declinada. El `detail` incluye el `comentario` que haya dejado.
+- **`cord:message`**: Se activa cada que el cliente deja un comentario general o una contraoferta en el chat de la cotización.
+- **`cord:item_comment`**: Se dispara cuando el usuario deja un comentario específico sobre una partida (línea de producto) de la cotización, con el `item_id` correspondiente en el `detail`.

@@ -1,18 +1,24 @@
 ---
-title: "Cancelación con CFDI Relacionado (01)"
-description: "Sustituye facturas con errores correctamente."
+title: "Cancelar una factura con documentos relacionados"
+description: "Qué hacer cuando el SAT rechaza la cancelación por una Nota de Crédito u otro documento asociado."
 category: "Facturación"
 ---
 
-El SAT es muy estricto cuando intentas cancelar una factura (Ingreso) que ya tiene documentos relacionados, como Notas de Crédito (Egreso) o Complementos de Pago (REP). El SAT arrojará un error 400 indicando que el CFDI no es cancelable.
+Esto aplica solo a organizaciones en **México**, donde Cord timbra CFDI 4.0 ante el SAT. Fuera de México no existe este bloqueo porque no hay comprobante fiscal encadenado que romper.
 
-### Pasos para desenredar un CFDI relacionado
+El SAT es estricto cuando intentas cancelar una factura (Ingreso) que ya tiene un documento relacionado, como una Nota de Crédito (Egreso). Si el documento hijo sigue vigente, el SAT rechaza la cancelación de la factura padre.
 
-Para lograr la cancelación, debes "romper" la cadena de atrás hacia adelante:
+### Rompe la cadena de atrás hacia adelante
 
-1. Localiza el Complemento de Pago (REP) o Nota de Crédito que está relacionado a la factura principal.
-2. **Cancela primero ese documento secundario.** Utiliza el motivo `02 - Comprobante emitido con errores sin relación`.
-3. Espera 5 minutos a que el SAT procese la cancelación del documento hijo y su estatus pase a *Cancelado*.
-4. Ahora, ve a la factura principal y solicita su cancelación. Si vas a sustituirla, usa el motivo `01 - Comprobante emitido con errores con relación`. De lo contrario, usa el motivo `02`.
+1. Localiza la Nota de Crédito relacionada. Su propio detalle indica de qué factura viene (verás la etiqueta "Nota de crédito de [folio]"); si no la tienes a la mano, búscala en tu bandeja de **Facturas** por fecha o por cliente.
+2. Entra a esa Nota de Crédito y cancélala primero, desde el menú de opciones de su propio detalle.
+3. Espera unos minutos a que el SAT registre la cancelación del documento hijo.
+4. Ahora sí, regresa a la factura principal y cancélala.
 
-Cord simplifica esto mostrando un árbol de relaciones en la vista de la factura, indicándote exactamente qué documento bloquea a cuál.
+### Qué hace Cord al cancelar
+
+El botón **Cancelar factura** pide una confirmación y cancela el comprobante ante el SAT con el motivo estándar `02 — Comprobantes emitidos con errores sin relación`. Es el motivo correcto cuando vas a rehacer la factura desde cero (por ejemplo, te equivocaste en el RFC del cliente).
+
+<Callout type="info">
+El motivo `01 — Comprobantes emitidos con errores con relación` exige declarar ante el SAT cuál es el CFDI que sustituye al que cancelas, y hoy esa vinculación no se arma automáticamente desde la interfaz de Cord. Si necesitas cancelar sustituyendo un CFDI por otro, escríbenos y te ayudamos a resolverlo.
+</Callout>

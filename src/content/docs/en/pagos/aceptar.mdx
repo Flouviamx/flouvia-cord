@@ -23,12 +23,14 @@ If you activated more than one method (see [Payment methods](/en/docs/pagos/meto
 
 ### Paying by SPEI
 
+**SPEI is a Mexico-only rail:** it only shows up as an option when the cotización is denominated in Mexican pesos (MXN). If the business quotes in another currency, the customer pays by card even if the seller has SPEI enabled.
+
 - When the customer picks "SPEI Transfer", Cord Payments generates a **unique interbank CLABE**, tied exclusively to that payment, and shows it on an instructions screen — the customer never leaves the cotización link or sees a third-party form.
 - The customer transfers from their online banking to that CLABE.
 - **Automatic reconciliation:** as soon as the money arrives, Cord detects the deposit, flips the cotización to "Paid", and notifies both parties — no need to cross-reference receipts by hand.
 
 <Callout type="info">
-Each method has its own fee (4% + $3 + VAT on card; 1% + $7 + VAT with a cap on SPEI). See the full detail in [Fees and advantages](/en/docs/pagos/condiciones).
+Card and SPEI have different fees (see the full detail in [Fees and advantages](/en/docs/pagos/condiciones)); that table is the current schedule for payments in Mexican pesos.
 </Callout>
 
 ## Partial payments and deposits

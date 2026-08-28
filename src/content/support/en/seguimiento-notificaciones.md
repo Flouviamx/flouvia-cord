@@ -14,10 +14,15 @@ From the moment you send the quote link via email or WhatsApp:
 - **Viewing now:** While the client has the quote open, you see it live on the detail view with the "Viewing now" indicator (depending on your plan).
 - **Decision:** Every approval, rejection, counteroffer, or comment from the client is recorded in that quote's timeline.
 
-### Configure Push/Email Notifications
+### Configure email and Slack notifications
 
-To get real-time updates, go to **Settings > Notifications**.
-You can enable direct alerts to your email for the following events:
-- "Quote COT-045 was viewed for the first time."
-- "Quote COT-045 has been signed and accepted."
-- "Payment for COT-045 was received."
+Go to **Settings > Notifications**. There you'll find an event × channel matrix (email and Slack, the latter once you've set up a webhook) where you turn each alert on or off independently:
+- Quote viewed for the first time.
+- Quote approved.
+- Quote rejected.
+- Payment received.
+- Quote about to expire.
+- Payment overdue.
+- A new member joins the team (email only; this one doesn't post to Slack).
+
+There are no native browser-push or mobile-app notifications — the two channels available today are email and Slack.

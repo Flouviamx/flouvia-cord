@@ -662,3 +662,139 @@ reparto en divisas de 0/3 decimales), `npm run security:fiscal` (los 12
 mercados, orden de providers en `FiscalFactory`, NIF/NIE/CIF español, checksum
 ABA) y `npm run security:verifactu` (huella y QR contra los 3 vectores
 oficiales de la AEAT, estructura del SOAP contra el WSDL/XSD real).
+
+### KYC multi-persona y depósitos — auditoría de Cord Payments (ago 2026)
+
+Auditoría completa del carril de cobros, de la forma de alta hasta el depósito.
+Lo que se encontró no era deuda menor: había un carril de dinero muerto en
+producción y un modelo de KYC que no cabía en la ley de la mitad de los mercados
+ofrecidos.
+
+**El carril muerto.** `/api/i/` nunca se agregó a `PUBLIC_API_PREFIXES`, así que
+el middleware respondía 401 a todo cliente sin sesión. Los dos endpoints de la
+factura hospedada existían y eran correctos: no se podía pagar una factura ni se
+registraba su vista. Es el caso que originó el corolario de la regla 33.
+
+**El KYC.** Se creaba UNA sola `Person`, marcada a la fuerza como
+`representative + owner + director` con 100 % de participación, y el paso
+"Dueños" era un checkbox. Consecuencias: una S.L. española con tres socios al
+30 % no podía completar el alta, y la atestación `owners_provided` que Cord
+enviaba era factualmente falsa. Además el asistente exigía `person.id_number` en
+los ocho países —verificado contra la API de requisitos del proveedor, España,
+Alemania y Reino Unido **no lo piden**—, no existía camino para el documento
+constitutivo (se subía con el `purpose` equivocado), y la selfie iba al campo de
+comprobante de domicilio.
+
+Hoy: `connect_personas` (proyección reconstruible; el proveedor sigue siendo la
+fuente de verdad y el gate de cobros sigue leyendo `charges_enabled`), lista real
+con alta/edición/baja, roles preguntados, verificación y **motivo de rechazo
+traducido** por persona, documentos de empresa por las dos rutas que el proveedor
+ofrece, y qué campos se piden derivado de `requirements`. Contrato en la regla 32.
+
+**Depósitos.** Sólo existían como una línea en `audit_log`: sin tabla, sin
+historial, sin conciliación y sin control de frecuencia — el artículo de soporte
+decía literalmente "escríbenos". Hoy la tabla `payouts` se puebla desde el ciclo
+completo de webhooks `payout.*` (created/updated/paid/failed/canceled, con un
+estado terminal que no se degrada por un evento que llegó tarde),
+`/app/cobros` la lee en SSR, y `payout-schedule.ts` expone frecuencia y días de
+retraso con step-up.
+
+**Tarifas por divisa.** `computeFee()` tenía escondido un `if (moneda !== 'MXN')
+return 0`, así que España, Europa, Canadá, Estados Unidos y Brasil procesaban sin
+comisión de plataforma como efecto colateral de un `if`. Ahora es una tabla
+`FEE_SCHEDULES` por divisa con las de fuera de MXN declaradas y **apagadas**: el
+hueco es visible, la UI y los docs lo dicen, y `assertFeeMargin()` impide activar
+una divisa sin su costo real y su impuesto local (el 16 % es el IVA mexicano, no
+una constante universal). Activar un mercado es llenar una entrada, no volver a
+razonar la aritmética.
+
+**País inmutable.** `PATCH /api/org` dejaba cambiar `country_code` con cobros
+activos, aunque el país de una cuenta conectada no se puede cambiar nunca: la
+organización quedaba pidiendo un IBAN para una cuenta registrada en México. Ahora
+se bloquea con explicación, en el endpoint y en el selector.
+
+Verificación: `npm run test:payments` (incluye el nuevo `security:payments`) y
+`test/connect-requirements.test.ts` con fixtures reales de MX, US, ES, GB, DE y
+el programa europeo `eu-2025`.
+
+### Endurecimiento de la captura de identidad (ago 2026)
+
+Segunda pasada sobre el mismo carril, esta vez sobre la foto. La decisión de
+partida acota todo lo demás: **Stripe Identity no está disponible para
+plataformas con cuenta en México** — verificado en `docs.stripe.com/identity/
+use-cases`, disponibilidad general en GB/JP/US y beta en 31 países, MX en
+ninguna de las dos listas. Se decidió no contratar un proveedor IDV externo ni
+usar el onboarding embebido, y endurecer el carril propio.
+
+Consecuencia que el diseño asume de frente: **Cord no hace autenticidad
+documental ni prueba de vida certificada** — eso no se escribe con canvas. Lo que
+sí hace el proveedor sobre lo que Cord le sube (por eso devuelve
+`document_manipulated`, `document_fraudulent`, `document_photo_mismatch`). El
+trabajo del carril propio es todo lo demás.
+
+**Cuatro fallas que impedían que el flujo funcionara.**
+
+- `Permissions-Policy: camera=()` se fijaba para toda ruta sin excepción. Es una
+  allowlist vacía: deshabilita `getUserMedia` también para el documento de nivel
+  superior, así que en Chromium la captura fallaba **antes** del prompt de
+  permiso. El flujo del QR no podía funcionar.
+- El frente cerraba la sesión y el 409 posterior hacía **inalcanzable el
+  reverso** — regresión introducida al quitar la selfie. Lo necesitan INE, DNI,
+  CNH, Personalausweis, CNI y las licencias de EE.UU. y Canadá: siete de los ocho
+  mercados. Hoy `min_cubierto` y `cerrada` son estados distintos.
+- El cron de limpieza consultaba `completed_at`, columna inexistente. Postgres
+  evalúa el `WHERE` completo, así que reventaba a diario y la rama de
+  `expires_at` tampoco corría: **ninguna sesión se borró jamás**.
+- La cámara seguía encendida tras "Cancelar" (el cleanup capturaba el `stream`
+  del primer render, todavía `null`).
+
+**El token dejó de filtrarse.** Viaja en el path y la página no pasaba
+`analyticsDisabled`, así que PostHog registraba la credencial viva en
+`$current_url` y Vercel Analytics en el pathname. Hoy la ruta va con
+`no-referrer`, `no-store`, `X-Robots-Tag` y sin analítica.
+
+**Compuertas de calidad** (`capture-quality.ts`, módulo puro sin DOM para poder
+probarlo): una sola pasada sobre la ROI del marco re-muestreada a 800 px —la
+varianza del laplaciano depende de la escala, sin normalizar ningún umbral
+significa nada entre dispositivos— que acumula luminancia, laplaciano,
+histograma y croma. Aconseja casi siempre; sólo bloquea blanco y negro y
+resolución bajo el piso, que son rechazo garantizado del proveedor. Ver regla 34.
+
+**Servidor** (`upload-guard.ts`): lectura de cabeceras JPEG/PNG sin dependencias
+—`sharp` traería un binario nativo y re-codificar degradaría la imagen justo
+antes de que el proveedor la lea—, rangos de dimensiones (un JPEG de 1×1 pasaba),
+strip de EXIF por segmentos con reinyección de un APP1 mínimo para conservar la
+orientación sin el GPS, truncado anti-polyglot tras `FFD9`, y SHA-256 para el
+dedupe. La prueba del EXIF cazó un off-by-two real: el valor de una entrada IFD
+va en `entrada+8`, y escribirlo dos bytes antes pisa el campo `count`.
+
+**Anti-abuso del enlace**: binding al primer dispositivo por cookie propia —atada
+en el primer POST y no en el GET, porque el QR se escanea desde el navegador
+embebido de WhatsApp y el usuario luego abre en Safari, otro contenedor—, tope
+acumulado de intentos incrementado antes de llamar al proveedor, ventana
+deslizante (30 min absolutos, 15 desde el primer uso) y `created_by` como actor
+real de la auditoría, que cierra la cadena "quién pidió el enlace / quién subió".
+
+**Evidencia** (`connect_kyc_evidencia`): un registro por documento enviado que
+sobrevive al borrado de la sesión efímera y del espejo de personas. Guarda la
+forma técnica y las **métricas medidas en el cliente**; el webhook escribe
+después el veredicto del proveedor en la misma fila. Ese par es el único dataset
+con el que los umbrales de captura se pueden calibrar con evidencia. Retención de
+5 años (`RETENCION_ANIOS`), purgada por el cron ya corregido. Nunca guarda la
+imagen, el `file_…`, el número del documento ni un hash perceptual.
+
+**Guía por país** (`identity-documents.ts`): catálogo de los ocho mercados con el
+nombre local del documento, si lleva reverso, y la regla transfronteriza
+verificada literal (si la residencia difiere del país de la cuenta, sólo
+pasaporte). El marco de la cámara pasó de 1.23:1 —que no corresponde a ningún
+documento— a 1.586:1 para ID-1 y 1.42:1 para pasaporte.
+
+**No verificable desde aquí, y anotado como tal:** el listado exacto de
+documentos que el proveedor acepta por país (esa página construye el desplegable
+en el cliente), el soporte real de `ImageCapture.takePhoto()` en Safari iOS y los
+WebView de WhatsApp, y **todos los umbrales numéricos** — no hay dataset, por eso
+sólo avisan y por eso existe la tabla de evidencia.
+
+Verificación: `test/upload-guard.test.ts`, `test/capture-quality.test.ts`,
+`test/identity-documents.test.ts` y el recorrido a mano del QR en un teléfono
+real, que es lo único que decide si la cámara arranca.

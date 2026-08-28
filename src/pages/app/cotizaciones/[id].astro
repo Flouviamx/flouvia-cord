@@ -1052,10 +1052,18 @@ const dotColor = (tipo: string) =>
             if (!ok) return;
             b.disabled = true; b.textContent = I.i18nCancelando!;
             try {
-                const res = await fetch(`/api/cotizaciones/${qid}/subscription`, {
+                // Cancelar una iguala ahora exige reautenticación reciente (corta
+                // un ingreso recurrente y no se deshace desde aquí). Sin este
+                // ciclo el usuario vería "reauthentication_required" crudo.
+                const enviar = () => fetch(`/api/cotizaciones/${qid}/subscription`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'cancel' }),
                 });
+                let res = await enviar();
+                if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
+                    if (!await (window as any).cordStepUp()) throw new Error(I.i18nNoPudoCancelar);
+                    res = await enviar();
+                }
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || I.i18nNoPudoCancelar);
                 (window as any).cordToast?.(I.i18nIgualaCancelada, 'ok');

@@ -8,7 +8,7 @@ Si ya usas Cord en plan mensual, puedes cambiar a **pago anual** y ahorrar: el c
 
 ### Cómo cambiar a anual
 
-1. Ve a **Ajustes > Planes y cobranza > Suscripción** (`/app/ajustes/plan`).
+1. Ve a **Ajustes > Planes y suscripción > Suscripción** (`/app/ajustes/plan`).
 2. Activa el interruptor **Anual** en la selección de plan.
 3. Confirma en el formulario seguro. El cobro anual se hace por adelantado y tu suscripción queda renovando cada 12 meses.
 

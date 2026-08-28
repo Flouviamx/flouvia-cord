@@ -26,7 +26,7 @@ meses gratis (pagas 10).
 
 ### Cambiar de plan
 
-1. Ve a **Ajustes > Planes y cobranza > Suscripción** (`/app/ajustes/plan`).
+1. Ve a **Ajustes > Planes y suscripción > Suscripción** (`/app/ajustes/plan`).
 2. Elige el plan y el ciclo (mensual o anual). Se abre el checkout seguro de facturación.
 3. El cambio aplica de inmediato; tu cuota incluida se ajusta al nuevo plan.
 

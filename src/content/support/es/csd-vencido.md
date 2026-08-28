@@ -13,9 +13,8 @@ Además, el SAT puede **revocar** tu CSD antes de tiempo como medida precautoria
 
 ### Cómo actualizar tu CSD en Cord
 
-1. Entra a **Ajustes > Fiscal y SAT**.
+1. Entra a **Ajustes › Datos fiscales**.
 2. En la sección *Certificado de Sello Digital*, verás el estado de tu sello actual.
-3. Haz clic en **Reemplazar CSD**.
-4. Sube tu nuevo archivo `.cer`, tu nuevo archivo `.key` y la contraseña correspondiente.
+3. Arrastra o selecciona tu nuevo archivo `.cer` y tu nuevo archivo `.key`, escribe la contraseña de la llave privada y haz clic en **Subir CSD y conectar**. No necesitas quitar el certificado anterior primero: subir uno nuevo lo reemplaza.
 
 **Tip de Tiempo:** Después de tramitar un nuevo CSD en el portal del SAT (Certifica), tarda **entre 24 y 72 horas** en propagarse por todos los servidores del SAT a nivel nacional (el famoso LCO). Si lo subes a Cord el mismo día que lo sacaste, el timbrado fallará indicando que "El CSD no se encuentra en la lista de sellos válidos". Debes tener paciencia.

@@ -14,23 +14,33 @@ El corazón de una cotización B2B es la precisión de los productos. Cord te pe
 
 ### 1. Creación Manual
 
-Si tienes un catálogo pequeño o vendes servicios, puedes agregar productos uno a uno desde **Catálogo > Nuevo Producto**.
+Si tienes un catálogo pequeño o vendes servicios, puedes agregar productos uno a uno desde **Productos > Nuevo Producto**.
 Se te pedirán los siguientes datos:
 - **Nombre del Producto / Servicio**
-- **SKU (Código Interno):** Identificador único.
-- **Precio Base (Antes de impuestos):** El precio de lista público.
+- **SKU (Código Interno):** Identificador único, opcional.
+- **Unidad:** pieza, servicio, hora, m², kg... la que uses para vender.
+- **Descripción:** texto libre que acompaña al producto en la cotización.
+- **Precio de venta (Antes de impuestos):** el precio de lista.
 - **Costo Interno (Opcional):** Si capturas cuánto te cuesta a ti el producto, Cord te calculará e indicará el **Margen de Ganancia** en tiempo real al momento de armar la cotización. Tu cliente nunca verá este costo.
-- **Precios por Volumen:** En B2B es vital. Puedes configurar reglas automáticas, por ejemplo: *"De 1 a 10 piezas el precio es $100, de 11 a 50 piezas el precio baja a $85"*. Cord ajustará el precio automáticamente según la cantidad que el vendedor agregue a la cotización.
+- **Precios por Volumen (Opcional):** En B2B es vital. Puedes configurar reglas automáticas, por ejemplo: *"De 1 a 10 piezas el precio es $100, de 11 a 50 piezas el precio baja a $85"*. Cord ajustará el precio automáticamente según la cantidad que el vendedor agregue a la cotización.
 - **Estado (Activo / Inactivo):** Si descontinúas un producto o te quedas sin stock de largo plazo, puedes marcarlo como *Inactivo* para que los vendedores ya no puedan agregarlo a nuevas cotizaciones, sin borrar su historial.
-- **Clave de Producto/Servicio y Unidad (SAT):** Obligatorio para el CFDI 4.0. Contamos con un buscador inteligente integrado.
-- **Impuestos aplicables:** Define si lleva IVA (16%, 8%, 0% o Exento) o IEPS.
+
+<Callout type="info">
+**El impuesto no vive en el producto.** Cord calcula impuestos por **línea de la
+cotización**, no por artículo del catálogo — el mismo producto puede venderse gravado
+en una venta y exento en otra (una exportación, un cliente exento). Al agregar la
+partida eliges la tasa desde el catálogo fiscal de tu cuenta (**Ajustes >
+Cotizaciones**); el nombre del impuesto es el de tu país (IVA, VAT, GST, Moms...), no
+un genérico. Ver [Productos y descuentos](/docs/cotizacion/productos?lang=es) para el
+detalle de cómo se aplica al cotizar.
+</Callout>
 
 ### 2. Importación Masiva (CSV)
 
 Para empresas con cientos o miles de referencias, Cord soporta la importación masiva.
-Descarga nuestra **Plantilla CSV**, pega la información extraída de tu ERP (como SAP,
-Oracle, o Microsip), y súbela a Cord para dar de alta precios, SKUs y descripciones en
-un solo movimiento.
+Descarga nuestra **Plantilla CSV** (columnas `sku, nombre, unidad, precio, activo`),
+pega la información extraída de tu ERP (como SAP, Oracle, o Microsip), y súbela a Cord
+para dar de alta precios, SKUs y descripciones en un solo movimiento.
 
 <Callout type="info">
 **Consejo:** ¿Tus precios cambian constantemente?

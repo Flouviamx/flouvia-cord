@@ -21,27 +21,51 @@ The Cord API always returns standard HTTP status codes. As a general rule:
 |---|---|
 | **200 OK** | Everything worked as expected. |
 | **400 Bad Request** | The request was unacceptable. Usually means `invalid_request` (missing fields) or `invalid_json`. |
-| **401 Unauthorized** | Your API Key is missing or incorrect. |
-| **403 Forbidden** | You have insufficient permissions (e.g., trying to write with a read-only key). |
-| **404 Not Found** | The resource (quote, client) does not exist. |
-| **409 Conflict** | For example, trying to delete test data (`/api/test-mode/reset`) without being in a Sandbox organization. |
+| **401 Unauthorized** | Your API Key is missing, incorrect, or was revoked. |
+| **402 Payment Required** | The operation requires a higher plan (`subscription_required`) or exceeds a limit on your current plan (`plan_limit_reached`, e.g. number of clients or products). |
+| **403 Forbidden** | You have insufficient permissions (e.g., trying to write with a read-only key, or a Publishable Key attempting an action outside its scope). |
+| **404 Not Found** | The resource (quote, client, invoice) does not exist. |
+| **409 Conflict** | An invalid state transition for the resource — for example, voiding an invoice that requires a credit note instead, or trying to delete test data (`/api/test-mode/reset`) without being in a Sandbox organization. |
+| **429 Too Many Requests** | You exceeded your key's requests-per-minute limit (`rate_limited`) or your plan's monthly quota (`api_quota_exceeded`). Respect the `Retry-After` header. |
+| **503 Service Unavailable** | A dependency the operation needs didn't respond — for example, an exchange rate could not be obtained (`fx_unavailable`) or the tax catalog (`tax_catalog_unavailable`). Cord never invents a rate: if it can't prove one, the operation fails closed. Retry later. |
 
 ## Error Object Structure
 
-When a `4xx` or `5xx` error occurs, Cord always responds with a unified JSON object containing the error type and a human-readable message to help you diagnose the problem immediately.
+When a `4xx` or `5xx` error occurs, Cord always responds with a **flat** (not nested) JSON object with two fields: `error` (a human-readable message you can show or log) and `code` (a stable string for your handling logic). Some errors add extra fields depending on the case (see examples below).
 
 **Error Response Example:**
 
 ```json
 {
-  "error": {
-    "code": "invalid_request",
-    "message": "The company name is required"
-  }
+  "error": "The company name is required",
+  "code": "invalid_request"
 }
 ```
 
-### Common Error Codes (`error.code`)
+**Example with extra fields (plan limit, 402):**
 
-- `invalid_json`: Occurs when your `POST` or `PATCH` request body is not valid JSON.
-- `invalid_request`: Occurs when business validations fail. For example, sending a quote without specifying a valid client, or attempting to apply a discount greater than 100%. The `message` field will explain the exact reason.
+```json
+{
+  "error": "Your plan allows 50 clients. Free up space or upgrade your plan to continue.",
+  "code": "plan_limit_reached",
+  "resource": "clients",
+  "limit": 50,
+  "plan": "starter"
+}
+```
+
+<Callout type="warning">
+Don't rely on the nested `error.code` / `error.message` shape to parse the response: `error` is always the message string, and `code` is a sibling field at the same level, not a property of `error`.
+</Callout>
+
+### Common Error Codes (`code`)
+
+- `invalid_json`: Your `POST` request body is not valid JSON, or `Content-Type: application/json` wasn't sent.
+- `invalid_request`: A business validation failed (missing field, discount out of range, a quote without a valid client). The `error` field explains the exact reason.
+- `missing_key` / `invalid_key`: The `Authorization: Bearer` header is missing, or the key doesn't exist / was revoked.
+- `insufficient_scope`: Your key doesn't have the required scope (a read-only key tried to write, or a Publishable Key tried a route outside its allowed list).
+- `not_found`: The requested resource doesn't exist in your organization.
+- `subscription_required`: The capability requires a higher plan. The response includes `plan` (your current one) and `plan_required`.
+- `plan_limit_reached`: You hit a hard limit on your plan (clients, products, API keys). The response includes `resource`, `limit`, and `plan`.
+- `rate_limited` / `api_quota_exceeded`: Requests-per-minute or monthly API quota limit. Retry while respecting `Retry-After`.
+- `fx_unavailable` / `tax_catalog_unavailable`: A third-party data point (exchange rate or tax catalog) could not be obtained with certainty. The operation did not complete — don't assume it did.

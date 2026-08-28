@@ -12,15 +12,19 @@ description: "Add SKUs, group items into kits, and negotiate prices."
 
 Before adding products to a quote, Cord allows you to nourish your base catalog in different ways:
 
-1. **Manual Creation:** Add SKUs one by one, defining their Base Price, name, description, and SAT Product/Service Key.
-2. **Bulk Import via CSV / Excel:** Download our template, paste your inventory from your current ERP (SAP, Microsip, Excel), and upload it. You can update thousands of prices in a single batch.
-3. **Product Kits (Bundles):** If you usually sell the same things together (e.g., *Point of Sale Kit: Computer + Barcode Scanner + Thermal Printer*), you can create a **Kit** in Cord. When quoting, simply select the Kit and the system will automatically add all its parts, saving you from searching for and adding the same items multiple times.
+1. **Manual Creation:** Add SKUs one by one, defining their SKU, name, description, unit, and List Price. If you also capture the cost, Cord calculates the list margin automatically and compares it against the margin you actually charge on each sale.
+2. **Bulk Import via CSV / Excel:** Download our template, paste your inventory from your current ERP (SAP, Microsip, Excel), and upload it. Cord detects the name, SKU, unit, and price columns automatically; you can update thousands of products in a single batch.
+3. **Product Kits (Bundles):** If you usually sell the same things together (e.g., *Point of Sale Kit: Computer + Barcode Scanner + Thermal Printer*), you can create a **Kit** in Cord. When quoting, simply select the Kit and the system will automatically add all its parts, saving you from searching for and adding the same items multiple times. A kit can carry a fixed combo price, different from the sum of its parts — Cord prorates that total across the lines when it's inserted.
+
+### Volume pricing
+
+From each product's detail page you can define price tiers by minimum quantity (e.g., *10% off starting at 50 units*). When quoting, Cord automatically applies the tier that matches the quantity you entered, so you never have to remember the table or calculate it by hand.
 
 ## Adding line items to the quote
 
 In the **Line Items** section of the quoter, you have two options:
 
-1. **Search the Catalog:** Use the search bar to find the products, services, or Kits you already configured with their SAT keys.
+1. **Search the Catalog:** Use the search bar to find the products, services, or Kits you already configured in your catalog.
 2. **Free-text Line Item:** If you need to quote something unique on the fly (e.g., *A special weekend installation service*), you can add a **Free Line**. You simply type any name you want, set the quantity, and assign whatever price you want right there, without having to go create a product in the catalog first.
 
 For each item you add, you can customize:
@@ -34,10 +38,10 @@ B2B thrives on negotiation. Cord handles discounts hierarchically:
 
 1. **Client Tier Discount (Automatic):** If you selected a VIP client, Cord has already applied their base discount automatically.
 2. **Line item discount:** Applied only to a specific product (e.g., *20% off Software, but Hardware is charged full price*).
-3. **Global discount:** Applied to the subtotal of the entire quote. You can enter it as a percentage (*10%*) or a fixed amount (*-$5,000 MXN*).
+3. **Global discount:** Applied to the subtotal of the entire quote. You can enter it as a percentage (*10%*) or a fixed amount in the quote's currency (e.g., *-$5,000*).
 
 <Callout type="warning">
-**Important for the SAT:** All discounts in Cord are applied mathematically **before** calculating taxes (VAT/IEPS), strictly complying with CFDI 4.0 rounding rules. You don't have to worry about cent mismatches.
+Discounts are always calculated **before** taxes are applied — that's a rule of Cord's calculation engine, not an optional setting, so there's never a cent mismatch between what the seller sees and what the system invoices. For accounts in Mexico, this also complies with CFDI 4.0 rounding rules.
 </Callout>
 
 ## Real-Time Calculation
@@ -45,5 +49,5 @@ B2B thrives on negotiation. Cord handles discounts hierarchically:
 As you add products or modify discounts, Cord instantly updates the breakdown at the bottom of the screen:
 - **Subtotal:** Sum of all line items without taxes.
 - **Discounts:** Total subtracted.
-- **Taxes (VAT / IEPS):** Calculated based on the tax rules of each product.
+- **Taxes:** Each line item carries its own rate, taken from your country's tax catalog when you enter it — the name printed is your country's own (VAT in the UK, GST in Canada, Sales tax by state in the United States, IVA in Mexico and Spain), never a generic label.
 - **Total:** What the client will ultimately pay.

@@ -1,8 +1,8 @@
 ---
-import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import { getLangFromUrl, publicPath, useTranslations } from '../../i18n/utils';
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
-const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+const l = (p: string) => publicPath(p, lang);
 // El diferenciador — cómo ve tu cliente la cotización (mockup del link público /q/).
 // Calca fiel del /q actual: fondo suave, card blanca con marca del vendedor,
 // total hero, líneas, strip de confianza, botón pill y compose de chat abierto.

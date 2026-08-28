@@ -158,6 +158,21 @@ Los scripts especializados de seguridad y operación se descubren en
   tarea de consola pendiente, con criterios de salida y revert en
   `db/RUNBOOK-cord-app.md`.
 
+- Cord Payments auditado de punta a punta (ago 2026): el alta, el KYC, la captura
+  de documentos, el cobro y el depósito. Lo que se encontró no era deuda menor —
+  había un carril de dinero MUERTO en producción (`/api/i/` nunca se agregó a
+  `PUBLIC_API_PREFIXES`, así que ninguna factura hospedada se podía pagar), un
+  KYC de una sola persona que no cabía en la ley de la mitad de los mercados
+  ofrecidos, y la captura móvil bloqueada por un header de seguridad
+  (`Permissions-Policy: camera=()` aplicaba también a la pantalla de
+  verificación). Hoy: personas múltiples con titulares reales
+  (`connect_personas`), requisitos derivados del proveedor en vez de ramas por
+  país, captura con compuertas de calidad y guía documental por país, evidencia
+  de KYC con retención declarada, depósitos con historial y frecuencia propia, y
+  tarifas por divisa donde el hueco fuera de MXN es explícito en vez de un `if`
+  escondido. Reglas 32, 33 y 34 de `estandares-ingenieria.md`; detalle en
+  `negocio-billing.md`.
+
 ## Configuración
 
 La fuente única y completa de variables es [`.env.example`](../.env.example).

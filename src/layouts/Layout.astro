@@ -153,7 +153,11 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
     </head>
     <body>
         <slot />
-        <Analytics />
+        {/* Vercel Analytics registra el pathname. En la pantalla de verificación
+            de identidad ese pathname CONTIENE el token de captura, que es una
+            credencial portadora viva — por eso comparte el mismo interruptor que
+            PostHog en vez de ir siempre. */}
+        {!analyticsDisabled && <Analytics />}
         <CookieConsent lang={lang} />
     </body>
 </html>

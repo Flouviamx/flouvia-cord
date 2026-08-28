@@ -11,6 +11,7 @@ import { limitConnectMutation } from '../../../../lib/connect-security';
 import { sanitizeStripeRequirements } from '../../../../lib/connect-fields';
 import { requireFreshAuth } from '../../../../lib/step-up';
 import { validatePayout, stripeExternalAccountFields } from '../../../../lib/payout-fields';
+import { getCountryProfile } from '../../../../lib/countries';
 import { currentLocale } from '../../../../lib/context';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -59,7 +60,13 @@ export const POST: APIRoute = async ({ request }) => {
         const encryptedAccount = encryptRequiredSecret(principal);
         const reqFields = stripeExternalAccountFields(
             pais,
-            String(org.moneda || 'MXN'),
+            // La divisa del depósito la fija el PAÍS de la cuenta conectada, no
+            // `orgs.moneda`. Esa columna es la divisa CONTABLE del negocio, se
+            // edita libre en Ajustes y no tiene por qué coincidir: una S.L. en
+            // Madrid que lleva sus libros en USD mandaba `currency=usd` para un
+            // IBAN español y el alta de depósitos se caía. El fallback 'MXN'
+            // hacía lo mismo con cualquier país sin `moneda` guardada.
+            getCountryProfile(pais).currency,
             account_holder_name,
             (data.account_holder_type as 'individual' | 'company') || (org.stripe_business_type === 'individual' ? 'individual' : 'company'),
             values,

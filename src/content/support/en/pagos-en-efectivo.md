@@ -4,7 +4,7 @@ description: "Current availability of cash payments."
 category: "Payments & Deposits"
 ---
 
-Cord Payments does not currently support OXXO vouchers or convenience-store payments. The public link offers card or SPEI transfer when those methods are enabled for the organization.
+Cord Payments does not currently support OXXO vouchers or convenience-store payments (a Mexican cash payment network). The public link offers card (in any country where Cord Payments is available) or SPEI transfer (for payments in Mexican pesos only) when those methods are enabled for the organization.
 
 ### Record a payment received outside Cord
 

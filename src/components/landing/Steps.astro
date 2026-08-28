@@ -1,5 +1,5 @@
 ---
-import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import { getLangFromUrl, publicPath, useTranslations } from '../../i18n/utils';
 import CordDynamicBg from '../CordDynamicBg.jsx';
 
 // Shader estándar de Cord — una paleta por tarjeta para que los 3 pasos y las
@@ -15,7 +15,7 @@ const CTA_PALS = [
 ];
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
-const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+const l = (p: string) => publicPath(p, lang);
 // Cómo funciona — 3 pasos como tarjetas premium (fondo claro, igual al resto
 // de la landing) con el shader estándar de Cord (CordDynamicBg) como
 // visual de cada tarjeta.

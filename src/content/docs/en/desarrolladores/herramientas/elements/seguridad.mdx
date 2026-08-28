@@ -39,4 +39,8 @@ The domain system allows strict origins or the use of wildcards:
 
 Security doesn't stop at preventing who can see the iframe. When Cord Elements fires events outward (like `cord:approved`), the communication could be intercepted by another malicious tab.
 
-Cord uses the `parentOrigin` parameter sent by your frontend and cross-references it with your registered Allowlist in Cord's database. If the requesting origin is on the authorized domains list, the `window.postMessage` channel will route the communication **only to that specific origin**. If not, the events will fail silently. This prevents sensitive data exfiltration.
+The SDK automatically attaches the `parentOrigin` parameter (your page's `window.location.origin`) to the iframe's URL. Cord cross-references it against your domain Allowlist: if you have at least one domain registered **and** that `parentOrigin` matches one of them, the `window.postMessage` channel routes the communication **only to that specific origin**.
+
+<Callout type="warning">
+**Important:** if there's NO match (or you haven't configured an Allowlist yet), Cord does **not** drop the event — it dispatches it with `postMessage`'s `*` target, the SDK's historical behavior, so older integrations or a third-party `<iframe>` embedded without `embed.js` don't break. This means that, without an Allowlist configured, any window in the frame chain can read the events. Hardening to a specific origin is an improvement that only kicks in once you register your domains — it isn't an automatic rejection of the unauthorized. Configure your Allowlist in production; don't rely on an unlisted origin "failing silently," because that isn't how it behaves today.
+</Callout>

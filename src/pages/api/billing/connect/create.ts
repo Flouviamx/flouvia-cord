@@ -82,5 +82,5 @@ export const POST: APIRoute = async ({ request }) => {
 
     await withOrgTx(orgId, sql`update orgs set stripe_requirements = ${JSON.stringify(sanitizeStripeRequirements(account.requirements))} where id = ${orgId}`);
 
-    return new Response(JSON.stringify({ ok: true, accountId, requirements: account.requirements, business_type: account.business_type }), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ ok: true, accountId, requirements: sanitizeStripeRequirements(account.requirements), business_type: account.business_type }), { headers: { 'Content-Type': 'application/json' } });
 };

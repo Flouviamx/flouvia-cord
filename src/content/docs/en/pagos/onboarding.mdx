@@ -47,25 +47,70 @@ mistyped digit is caught by Cord rather than bounced by the bank days later.
 | **1. Entity type** | Whether your business operates as an individual or a legal entity, and the business category (MCC). |
 | **2. Business details** | Legal name, your country's tax identifier, and the details you invoice under. |
 | **3. Fiscal address** | Your business's registered fiscal address. |
-| **4. Identity** | Personal details of the legal representative or the individual operating the account. |
-| **5. Owners** | Information about any beneficial owners with a relevant stake in the business (anti-money-laundering regulatory requirement). |
-| **6. Verification** | Official ID and live selfie capture — see [LiveCapture](#identity-verification-with-livecapture) below. |
+| **4. Identity** | Personal details of the legal representative or the individual operating the account. The fields change by country: Mexico asks for CURP or personal RFC, the United States for the last 4 of the SSN, and Spain, Germany, France and the UK **ask for no personal ID at all**, because verification in those countries doesn't use one. |
+| **5. People and control** | The full list of who controls the business: the legal representative and **every person owning 25% or more**, each with their own role and percentage. This is an anti-money-laundering requirement, not a Cord preference — see [People and beneficial owners](#people-and-beneficial-owners) below. |
+| **6. Verification** | Official ID capture for each person — see [LiveCapture](#identity-verification-with-livecapture) below. |
 | **7. Bank account** | The account where you want to receive your deposits, in your country's format: CLABE in Mexico, IBAN in Spain and Germany, routing + account in the United States, sort code in the UK, transit in Canada, bank + branch in Brazil. |
 | **8. Terms** | You accept the handling of your data and **Cord Payments' current fee schedule** — it's the same step where you confirm how much Cord will charge you to process each payment. |
 
 The wizard picks up exactly where you left off if you leave halfway through — you won't have to recapture what you already saved. If Cord detects a specific missing requirement (say, a photo that came out blurry), it sends you straight to that particular step instead of restarting the whole process.
 
+### People and beneficial owners
+
+In the European Union, the United Kingdom and Canada, declaring **beneficial owners** (people holding 25% or more) is a legal obligation, not an optional formality. Step 5 is a list, not a checkbox:
+
+- **You add each person** with their details, role and percentage.
+- **One person can hold several roles at once** — legal representative, owner, director, executive — and each is ticked separately. If your legal representative is a hired director with no shares, that's what gets declared: they aren't credited with ownership they don't have.
+- **Each person carries their own identity verification**, with its status visible in the list.
+- The final declaration that the list is complete appears **after** you've built it, and only when your country's verification requires it.
+
+A company with three shareholders at 30% each declares all three. If you could only declare one, the account would never activate: the verification system would keep asking for the ones missing.
+
+<Callout type="info">
+**What Cord does NOT store.** Identification numbers, dates of birth, personal addresses and document images go straight to the financial verification system. Cord keeps only each person's name and role, so it can show you the list. Your deposit account is stored, encrypted at rest.
+</Callout>
+
 ### Identity verification with LiveCapture
 
 For financial regulatory reasons, verifying your identity and the legitimacy of your business (KYC — Know Your Customer) is mandatory. Cord uses a native system called **LiveCapture** that does this in seconds, directly from your browser or your phone:
 
-- The system asks for permission to access your camera.
-- You capture the front and back of your official ID (national ID or passport).
-- You take a live selfie as proof of liveness.
-- All of this happens without uploading files or opening third-party pages — the camera lives right inside the same Cord screen.
+- **You pick which document you'll use first.** The list is your country's: INE in Mexico, DNI in Spain, Personalausweis in Germany, CNH in Brazil, state licence in the United States. That choice sets the shape of the camera frame and decides whether you'll be asked for the back — a passport doesn't have one, so that step is skipped automatically.
+- The system asks for permission to access your camera and you capture the document.
+- If verification asks for it, you also capture **proof of address**: a recent utility bill or bank statement in that person's name. It has to be a **different** document from the ID.
+- All of this happens without uploading files or opening third-party pages — the camera lives right inside the same Cord screen. If you'd rather use your phone's camera app, or you already have the photo, the button to choose a file is always available.
 
 <Callout type="info">
-**Your photos are not stored by Cord.** The identification images and selfie are transmitted encrypted directly to the financial verification system, and Cord does not persist them on its own servers. Your deposit account is retained, but encrypted at rest, so it can be displayed and used to operate it.
+**If you live in a different country from the business, only a passport is accepted.** That's a rule of the verification system, not Cord's, and Cord tells you before you take the photo rather than letting the document be rejected days later.
+</Callout>
+
+### Cord checks the photo before sending it
+
+The most common cause of a rejection isn't an invalid document: it's a photo that can't be read. Before sending anything, Cord measures the image and tells you what to fix — it's blurry, there isn't enough light, a glare is covering a field, the document blends into the background.
+
+Those are **advice, not blocks**: if you think the photo is fine, you send it anyway. Only two things are stopped outright, because the verification system always rejects them and waiting for that rejection would cost you days:
+
+- **A black-and-white photo** of a photo ID. It has to be in colour.
+- **A very low-resolution photo**, where the document can't be read.
+
+Identity documents are sent as JPG or PNG. A PDF only works for proof of address and company documents.
+
+### The "continue on your phone" link is single-use
+
+When you generate the QR code from your computer, the link it creates:
+
+- **Is bound to the first phone that opens it.** If someone else intercepts it and opens it on another device, it stops working.
+- **Lives for 30 minutes**, and only 15 from the moment you first open it.
+- **Has an attempt limit.** Using it up closes the link; you generate a new one from your computer in one click.
+- **Won't accept the same photo twice.** If a document was rejected, you need to take a new photo: re-sending the same file fails automatically.
+
+### If a document is rejected, we tell you why
+
+When the verification system rejects a photo, Cord shows you **the exact reason** on that person's card: the image isn't readable, the document has expired, the name doesn't match what you entered, the back is missing. Without that reason, the only option was to upload the same photo again and hope for a different outcome.
+
+<Callout type="info">
+**Your photos are not stored by Cord.** Images are transmitted encrypted directly to the financial verification system, and Cord does not persist them on its own servers. Before transmitting them, Cord **strips their metadata** — including the GPS location many phones write inside the photo.
+
+What Cord does keep is a **compliance record** of each submission: which part of the document was sent, when, from which IP address, and what the verification system replied. Never the image, nor the document number, nor a thumbnail. That record is kept for five years, the period anti-money-laundering regulation requires.
 </Callout>
 
 ## Your account's status

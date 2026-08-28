@@ -23,6 +23,10 @@ For payments in Mexican pesos, the published fee is:
 - **Automatic SPEI:** 1% + MXN 7 + tax, capped at MXN 588.12 total per payment.
 - **Recurring card retainers:** 4% + MXN 3 + tax. This figure includes card processing and Cord's 0.4% margin.
 
-The buyer pays the full amount and funds settle directly into your account. Cord Payments deducts one blended fee and shows you the reconciled net amount. Manual transfers to your usual bank account do not pass through Cord Payments and do not generate this fee.
+The buyer pays the full amount and funds settle directly into your account. Cord Payments deducts one blended fee and shows you the reconciled net amount. Manual transfers to your usual payout account do not pass through Cord Payments and do not generate this fee.
 
 Existing organizations keep their previous terms until they expressly accept the current transaction-fee terms in **Settings › Payments**.
+
+### Payments outside Mexico
+
+The blended fee above (4%/1% + fixed + tax) is specific to payments in Mexican pesos. For card payments in other supported currencies (USD, CAD, BRL, EUR, GBP, for accounts in the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France), Cord Payments does not currently apply its own processing fee on the charge — only the platform subscription is charged. In Colombia, Argentina, Chile, and Peru, online payment isn't available yet; the account quotes, invoices, and tracks collections with payments recorded by hand.

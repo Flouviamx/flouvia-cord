@@ -13,9 +13,8 @@ Additionally, the SAT can **revoke** your CSD prematurely as a precautionary mea
 
 ### How to update your CSD in Cord
 
-1. Go to **Settings > Fiscal and SAT**.
+1. Go to **Settings › Tax details**.
 2. In the *Digital Seal Certificate* section, you will see the status of your current seal.
-3. Click on **Replace CSD**.
-4. Upload your new `.cer` file, your new `.key` file, and the corresponding password.
+3. Drag or select your new `.cer` file and your new `.key` file, enter the private key's password, and click **Upload CSD and connect**. You don't need to remove the previous certificate first — uploading a new one replaces it.
 
 **Time Tip:** After processing a new CSD on the SAT portal (Certifica), it takes **between 24 and 72 hours** to propagate through all SAT servers nationwide (the famous LCO). If you upload it to Cord on the same day you obtained it, the stamping will fail indicating that "The CSD is not found in the valid seals list". You must be patient.

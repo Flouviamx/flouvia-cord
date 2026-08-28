@@ -9,11 +9,14 @@ Cord permite configurar un flujo de aprobación interno para evitar que los vend
 
 ### Configurar Reglas de Aprobación
 
-1. Ve a **Ajustes > Ventas y Cotizaciones**.
-2. Busca la sección de **Flujos de Aprobación Internos**.
-3. Añade una regla, por ejemplo: *"Si el Descuento Total supera el 15%, requiere aprobación de un Gerente"*.
+1. Ve a **Ajustes > Cotizaciones > Aprobaciones**.
+2. En **Umbrales** define hasta tres topes independientes (deja cualquiera en 0 para desactivarlo):
+   - **Descuento máximo (%):** el % de descuento sobre precio de lista de cualquier partida.
+   - **Monto máximo:** el total de la cotización, en la divisa de venta.
+   - **Margen bruto mínimo (%):** solo aplica a partidas que tengan capturado un costo unitario.
+3. Guarda los cambios. No hay un constructor de reglas de texto libre: son estos tres umbrales numéricos, evaluados juntos — basta con que uno se rebase para requerir aprobación.
 
 ### Experiencia del Vendedor
-Cuando un vendedor intente enviar una cotización que rompa esta regla, el botón de "Enviar al cliente" cambiará a **"Solicitar Aprobación"**. El administrador o gerente recibirá una notificación (correo y dentro de la app).
+Cuando un vendedor intenta enviar una cotización que rebasa alguno de los tres umbrales, la cotización se guarda como borrador pendiente en lugar de enviarse, y queda marcada con el motivo exacto (por ejemplo, "descuento 22% supera el 15% permitido"). Solo los miembros del equipo con el permiso **Aprobar** —normalmente owner/admin, configurable por persona en **Ajustes > Equipo y Roles**— ven los botones **Aprobar y enviar** / **Rechazar** en la cotización.
 
-Una vez que el gerente revisa y hace clic en **Aprobar Trato**, el vendedor recibe luz verde y la URL pública de la cotización se activa. Si es rechazada, la URL arrojará un error 404 al cliente final hasta que se corrijan las condiciones.
+Al aprobar, la cotización se envía al cliente en ese momento y el link público queda disponible. Mientras está pendiente o si se rechaza, el link no se comparte con el cliente — no es que la URL exista y regrese un error: la cotización simplemente no ha sido enviada.

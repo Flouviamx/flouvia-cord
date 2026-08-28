@@ -1,19 +1,20 @@
 ---
-title: "Issue Credit Note (Expense)"
-description: "Apply legal refunds and bonuses."
+title: "Issue a Credit Note"
+description: "Apply refunds and bonuses on top of an already-issued invoice."
 category: "Invoicing"
 ---
 
-Credit Notes (Expense type CFDI) are the SAT's fiscal mechanism to apply refunds, bonuses, or correct errors in invoice balances.
+A Credit Note is the mechanism to credit the balance of an already-issued invoice without cancelling it outright — for example, when you give a client a post-sale discount, or need to refund part of what was collected. In Mexico it's issued as an Expense-type CFDI, linked by its UUID to the original invoice.
 
 ### Issue a Credit Note in Cord
 
-If you need to cancel an invoice balance without canceling it completely (e.g., you gave a 10% post-sale discount to the customer):
+1. Locate the original invoice in your **Invoices** inbox. Only an **issued** invoice can have a Credit Note.
+2. Open its options menu and choose **Generate Credit Note**.
+3. Cord creates a new Credit Note as a draft, for the **full amount** of the original invoice, and takes you straight to its detail page.
+4. From there, edit it like any draft: adjust the amount if you only need to credit part of it, and add a line explaining the reason. When it's ready, issue it from the same draft editor you use for any new invoice.
 
-1. Locate the original Income Invoice in **Accounting > Invoices**.
-2. In the options menu (three dots), select **Generate Credit Note**.
-3. A panel will open with the original invoice concepts. Cord will automatically inject the relationship type **01 (Credit note of related documents)** and link the parent invoice's UUID.
-4. Adjust the amount to refund/bonus. If it is a full refund of a specific product, leave the price intact. If it is a bonus, adjust the value to the amount to discount.
-5. Click on **Stamp Expense**.
+<Callout type="info">
+When you use the button from the app, the Credit Note is created for the full amount of the original invoice — there isn't an in-between step in the interface today to specify a partial amount before creating it. If you invoice through the API, you can send the partial amount you want to credit directly.
+</Callout>
 
-The system will automatically send an email to the customer attaching the XML and PDF of the Credit Note for their fiscal deduction purposes.
+Cord **does not automatically email** the client when you create the Credit Note: it's generated as a draft for you to review, and you send it yourself with the send button on its detail page once you've issued it — just like with any other invoice.

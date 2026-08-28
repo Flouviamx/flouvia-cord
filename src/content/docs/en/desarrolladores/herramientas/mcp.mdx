@@ -1,6 +1,6 @@
 ---
 title: "Cord MCP Server"
-description: "Connect AI clients like Claude and Cursor to your company's financial system — 7 tools, real pagination, safe-to-retry calls, and activity metered like the rest of the API."
+description: "Connect AI clients like Claude and Cursor to your company's financial system — 10 tools, real pagination, safe-to-retry calls, and activity metered like the rest of the API."
 ---
 
 <header class="content-header">
@@ -65,16 +65,23 @@ key must belong to the same organization that opened the session.
 | `buscar_cliente` | Searches the directory by company/contact/RFC/email. Paginated. | read |
 | `listar_productos` | Product catalog (id, SKU, name, unit, list price). Paginated. | read |
 | `crear_cotizacion_borrador` | Creates a DRAFT quote (doesn't send it). Idempotent if you pass `idempotency_key`. | **write** |
+| `listar_facturas` | Lists **Cord Invoicing** invoices with their balance and state (`draft`\|`open`\|`paid`\|`void`\|`uncollectible`\|`overdue`). Filter by state, client, or free text. Paginated. | read |
+| `detalle_factura` | Full detail of ONE invoice: line items, issuer, recipient, taxes, declared FX rate, balance, and payments received. | read |
+| `crear_factura_borrador` | Creates a DRAFT invoice for a client, without needing a prior quote. Requires the Starter plan or higher (Cord Invoicing). | **write** |
 
 Every tool declares standard MCP annotations (`readOnlyHint`, `idempotentHint`,
 `destructiveHint`) in `tools/list` — an MCP client can use these to decide which calls to
-auto-approve without asking the user every time. The 6 read tools are `readOnlyHint: true`;
-`crear_cotizacion_borrador` is `readOnlyHint: false` and, honestly, `idempotentHint: false` by
-default (it's only safe to retry if you pass `idempotency_key`, see below).
+auto-approve without asking the user every time. The 8 read tools are `readOnlyHint: true`;
+the two write tools (`crear_cotizacion_borrador` and `crear_factura_borrador`) are
+`readOnlyHint: false` and, honestly, `idempotentHint: false` by default — neither one stamps
+or sends anything, they only leave a draft ready for a human to review before triggering an
+irreversible action (rule 17: nothing that costs real money fires without a human confirming
+it). `crear_cotizacion_borrador` is safe to retry if you pass `idempotency_key` (see below);
+`crear_factura_borrador` doesn't accept that parameter yet — every call creates a new draft.
 
 ## Pagination
 
-`buscar_cliente` and `listar_productos` return pages, not the whole table:
+`buscar_cliente`, `listar_productos`, and `listar_facturas` return pages, not the whole table:
 
 ```json
 {

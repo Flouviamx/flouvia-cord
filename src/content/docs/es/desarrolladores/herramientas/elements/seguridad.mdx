@@ -39,4 +39,8 @@ El sistema de dominios permite orígenes estrictos o el uso de comodines (wildca
 
 La seguridad no se detiene en prevenir quién puede ver el iframe. Cuando Cord Elements dispara eventos hacia afuera (como `cord:approved`), la comunicación podría ser interceptada por otra pestaña maliciosa.
 
-Cord utiliza el parámetro `parentOrigin` que envía tu frontend y lo cruza con tu Allowlist registrada en la base de datos de Cord. Si el origen solicitante está en la lista de dominios autorizados, el canal `window.postMessage` dirigirá la comunicación **únicamente a ese origen específico**. Si no, los eventos fallarán silenciosamente. Esto evita la exfiltración de datos sensibles.
+El SDK adjunta automáticamente el parámetro `parentOrigin` (el `window.location.origin` de tu página) a la URL del iframe. Cord lo cruza contra tu Allowlist de dominios: si tienes al menos un dominio registrado **y** ese `parentOrigin` matchea alguno de ellos, el canal `window.postMessage` dirige la comunicación **únicamente a ese origen específico**.
+
+<Callout type="warning">
+**Importante:** si NO hay match (o si no configuraste ninguna Allowlist todavía), Cord **no** descarta el evento — lo emite con el target `*` de `postMessage`, el mismo comportamiento histórico del SDK, para no romper integraciones antiguas o un `<iframe>` de terceros embebido sin pasar por `embed.js`. Esto significa que, sin una Allowlist configurada, cualquier ventana en la cadena de frames puede leer los eventos. El endurecimiento a un origen específico es una mejora que solo se activa cuando registras tus dominios — no un rechazo automático de lo no autorizado. Configura tu Allowlist en producción; no dependas de que un origen no listado "falle silenciosamente", porque no es así como se comporta hoy.
+</Callout>

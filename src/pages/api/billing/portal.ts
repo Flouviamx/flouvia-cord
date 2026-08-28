@@ -22,6 +22,7 @@ import { requirePerm } from '../../../lib/queries';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { siteOrigin } from '../../../lib/email';
+import { merchantError } from '../../../lib/pay-errors';
 
 export const POST: APIRoute = async () => {
     const denied = await requirePerm('ajustes');
@@ -43,7 +44,8 @@ export const POST: APIRoute = async () => {
         }, 'POST', { idempotencyKey: `billing-portal:${orgId}:${Math.floor(Date.now() / 60_000)}` });
         return json({ url: session.url });
     } catch (e: any) {
-        return json({ error: e?.message || 'No se pudo abrir el portal' }, 502);
+        const safe = merchantError(e);
+        return json({ error: safe.message, reference: safe.reference }, 502);
     }
 };
 

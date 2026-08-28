@@ -60,7 +60,11 @@ export const POST: APIRoute = async ({ request }) => {
             usage: 'off_session',
             'payment_method_types[0]': 'card',
             'metadata[org_id]': orgId,
-        }, 'POST');
+            // Clave por MINUTO y organización: un doble clic o un reintento del
+            // navegador acuñaba un SetupIntent nuevo cada vez, llenando la cuenta
+            // del proveedor de intentos huérfanos. No es por org a secas porque
+            // dar de alta dos tarjetas seguidas sí son dos operaciones distintas.
+        }, 'POST', { idempotencyKey: `billing-setup:${orgId}:${Math.floor(Date.now() / 60_000)}` });
         await logAudit(orgId, { accion: 'billing.metodo_alta_inicio', entidad: 'org', entidad_id: orgId, detalle: 'SetupIntent', ip: reqIp(request) });
         return json({ client_secret: intent.client_secret });
     } catch {

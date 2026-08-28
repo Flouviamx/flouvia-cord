@@ -21,6 +21,8 @@ import { trackServer } from '../../../lib/posthog-server';
 import { normalizeCurrency } from '../../../lib/currency';
 import { FXService, FXUnavailableError } from '../../../lib/fx/FXService';
 import { log } from '../../../lib/log';
+import { merchantError } from '../../../lib/pay-errors';
+import { strictRateLimit, strictLimitResponse } from '../../../lib/ratelimit';
 
 // Evento interno (eventos.tipo) → evento público de webhook.
 const WH_MAP: Record<string, WebhookEvent> = {
@@ -58,6 +60,10 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     // Permisos: aprobar/rechazar requieren 'aprobar'; lo demás, 'cotizar'.
     const denied = await requirePerm(APROBAR_ACTIONS.has(String(body.action)) ? 'aprobar' : 'cotizar');
     if (denied) return denied;
+    // Cambiar el estado de una cotización dispara correo al cliente, timbrado
+    // fiscal y cancelación de cobros en el proveedor. Iba sin límite propio.
+    const limitadoCot = strictLimitResponse(await strictRateLimit(`cotizacion-patch:${await getActiveOrgId()}`, 120, 60));
+    if (limitadoCot) return limitadoCot;
 
     // Respuesta del vendedor al cliente (no cambia estado; alimenta la conversación
     // de /q). `detalle` es el texto TAL CUAL de la burbuja — sin narrarlo en tercera
@@ -437,7 +443,12 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     return json({ ok: true, status: action.to, email, fiscal });
     } catch (err: any) {
         log.error('error no controlado', { route: 'PATCH cotizacion', err });
-        return json({ error: err?.message || 'Error interno' }, 500);
+        // El catch-all envuelve, entre otras cosas, la cancelación de un
+        // PaymentIntent en el proveedor: `err.message` puede ser su texto crudo
+        // en inglés con ids internos (regla 14). El mensaje real ya quedó en el
+        // log de arriba, que es donde sirve.
+        const safe = merchantError(err);
+        return json({ error: safe.message, reference: safe.reference }, 500);
     }
 };
 

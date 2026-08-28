@@ -1,9 +1,9 @@
 ---
-import { getLangFromUrl, useTranslations } from "../../i18n/utils";
+import { getLangFromUrl, publicPath, useTranslations } from "../../i18n/utils";
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === "en";
 const t = useTranslations(lang);
-const l = (p: string) => (lang === "es" ? p : `/en${p === "/" ? "" : p}`);
+const l = (p: string) => publicPath(p, lang);
 
 // CTA final + footer — dark navy, coherente con el footer de flouvia.com.
 // Las subpáginas (/producto/*, /soluciones) pueden personalizar el CTA via props.

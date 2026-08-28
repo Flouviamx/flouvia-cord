@@ -14,7 +14,7 @@ export default function DevConsole() {
     { type: 'system', text: ASCII_LOGO },
     { type: 'system', text: "Type 'help' to see available commands." },
     { type: 'system', text: "Hint: Try typing 'ai <your question>' for a surprise." },
-    { type: 'system', text: "--------------------------------------------------------------------------------" }
+    { type: 'system', text: "--------------------------------------------" }
   ]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -65,7 +65,7 @@ export default function DevConsole() {
     if (q.includes('api') || q.includes('endpoint')) {
       answer = "The Cord API uses REST. Base URL: https://api.cordhq.com/v1. Don't forget your Bearer token in the headers!";
     } else if (q.includes('doc') || q.includes('help')) {
-      answer = "You can find all our technical documentation, SDKs, and guides in the [ A ] API DOCS section above.";
+      answer = "You can find all our technical documentation, SDKs, and guides in the DOCS section above.";
     } else if (q.includes('webhook')) {
       answer = "Webhooks are fired in real-time. Verify the signature using your webhook secret to ensure the payload is from Cord.";
     } else if (q.includes('status') || q.includes('ping')) {
@@ -84,7 +84,7 @@ export default function DevConsole() {
       answer = responses[Math.floor(Math.random() * responses.length)];
     }
 
-    setHistory(prev => [...prev, { type: 'output', text: `[AI] ${answer}` }]);
+    setHistory(prev => [...prev, { type: 'output', text: `AI: ${answer}` }]);
     setIsProcessing(false);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
@@ -157,6 +157,7 @@ export default function DevConsole() {
 
   return (
     <div 
+      className="dev-console"
       style={{
         position: 'fixed',
         bottom: 0,
@@ -164,6 +165,7 @@ export default function DevConsole() {
         right: 0,
         height: '35vh',
         minHeight: '250px',
+        paddingBottom: 'env(safe-area-inset-bottom)',
         backgroundColor: '#020617', // match the dark background
         borderTop: '2px solid #cbd5e1',
         display: 'flex',
@@ -195,12 +197,29 @@ export default function DevConsole() {
           <span>⇋</span>
         </div>
         <span>CONSOLE</span>
-        <div 
+        <button
+          type="button"
           onClick={() => setIsOpen(false)}
-          style={{ cursor: 'pointer', opacity: 0.8, fontSize: '12px' }}
+          aria-label="Close console"
+          className="dev-console-close"
+          style={{
+            cursor: 'pointer',
+            opacity: 0.8,
+            fontSize: '12px',
+            background: 'none',
+            border: 'none',
+            color: 'inherit',
+            font: 'inherit',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: '32px',
+            minHeight: '28px',
+            padding: 0
+          }}
         >
           ✕
-        </div>
+        </button>
       </div>
 
       {/* Terminal Body */}
@@ -236,6 +255,7 @@ export default function DevConsole() {
           <span style={{ color: '#10b981', marginRight: '8px' }}>$</span>
           <input
             ref={inputRef}
+            className="dev-console-input"
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}

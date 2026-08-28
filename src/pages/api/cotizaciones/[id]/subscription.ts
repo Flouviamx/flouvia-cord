@@ -7,6 +7,9 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../../lib/db';
 import { requirePerm } from '../../../../lib/queries';
+import { merchantError } from '../../../../lib/pay-errors';
+import { strictRateLimit, strictLimitResponse } from '../../../../lib/ratelimit';
+import { requireFreshAuth } from '../../../../lib/step-up';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -17,6 +20,16 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     const id = params.id ?? '';
     const orgId = await getActiveOrgId();
+
+    // Cancelar una iguala corta un flujo de ingresos RECURRENTE del negocio, y
+    // no se puede deshacer desde aquí (hay que volver a pedirle autorización al
+    // cliente). Iba sin rate limit y sin step-up, mientras que un reembolso —de
+    // consecuencia comparable— exige los dos. Se alinean.
+    const limited = strictLimitResponse(await strictRateLimit(`iguala-cancel:${orgId}`, 10, 3600));
+    if (limited) return limited;
+    const stale = await requireFreshAuth();
+    if (stale) return stale;
+
     let body: any = {};
     try { body = await request.json(); } catch { /* sin body */ }
     if (body.action !== 'cancel') return json({ error: 'Acción no válida' }, 400);
@@ -43,9 +56,17 @@ export const POST: APIRoute = async ({ params, request }) => {
                 body: form.toString(),
             });
             const data: any = await res.json();
-            if (!res.ok) return json({ error: data?.error?.message || 'No se pudo cancelar la suscripción' }, 502);
-        } catch {
-            return json({ error: 'No se pudo conectar con Stripe' }, 502);
+            // Ni el mensaje crudo del proveedor ni su nombre: el dueño del negocio
+            // no puede accionar sobre "No such subscription", y "no se pudo
+            // conectar con Stripe" le nombra un proveedor que Cord no expone en
+            // ninguna otra pantalla (regla 14).
+            if (!res.ok) {
+                const safe = merchantError(data?.error);
+                return json({ error: safe.message, reference: safe.reference }, 502);
+            }
+        } catch (e) {
+            const safe = merchantError(e);
+            return json({ error: safe.message, reference: safe.reference }, 502);
         }
     }
 

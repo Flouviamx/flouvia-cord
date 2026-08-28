@@ -11,9 +11,9 @@ Una cotización en Cord está diseñada para ser una propuesta comercial legalme
 
 Una propuesta ganadora se compone de cuatro grandes bloques:
 
-1. **Encabezado (Header):** Contiene el logotipo de tu empresa, tu RFC fiscal, la fecha de emisión y el Número de Folio (ej. `COT-2023-085`). También muestra a quién va dirigida la propuesta.
-2. **Partidas (Line Items):** Es la tabla principal donde desglosas tus productos o servicios. Cada partida puede llevar una descripción larga con viñetas, una imagen, precio unitario, cantidad y descuentos.
+1. **Encabezado (Header):** Contiene el logotipo de tu empresa, tu identificador fiscal (RFC en México, NIF/CIF en España, EIN/Tax ID en Estados Unidos, y así según el país de tu cuenta), la fecha de emisión y el Número de Folio (ej. `COT-2023-085`). También muestra a quién va dirigida la propuesta.
+2. **Partidas (Line Items):** Es la tabla principal donde desglosas tus productos o servicios. Cada partida puede llevar una descripción larga con viñetas, una imagen, precio unitario, cantidad, descuentos y su propia tasa de impuesto — puedes mezclar una línea gravada con una exenta en la misma cotización.
 3. **Términos Legales y Crédito:** Aquí defines las reglas del juego. Por ejemplo: "Esta propuesta es válida por 15 días. El pago debe realizarse a 30 días naturales (Net 30) tras la aceptación".
 4. **Bloque de Cierre (Firma/Pago):** Es el Call To Action (CTA). Dependiendo de tu configuración, el cliente verá un botón para firmar electrónicamente o un módulo para introducir su tarjeta y pagar el anticipo de inmediato.
 
-**Personalización:** Puedes cambiar los colores de los botones y la tipografía desde **Ajustes > Apariencia** para que coincida exactamente con tu manual de marca.
+**Personalización:** Puedes cambiar los colores de acento y el logotipo desde **Ajustes > Branding**, y el mensaje de bienvenida del link público desde **Ajustes > Portal del cliente**, para que coincidan con tu manual de marca.

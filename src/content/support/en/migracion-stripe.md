@@ -34,4 +34,4 @@ If you prefer to do it in code, use the REST API: see [API: Manage Customers](/e
 
 ### Step 3: Point your webhooks
 
-If you react to events from your backend, add your URL in **Settings > Developers > Webhooks**. Cord emits its own events: `quote.sent`, `quote.viewed`, `quote.approved`, `quote.rejected`, `quote.paid`, and `quote.invoiced`. Test them with the "Test" button before relying on them.
+If you react to events from your backend, add your URL in the **Webhooks** tab of the Developers dock (enable it in Settings > Company). Cord emits its own quote events (`quote.sent`, `quote.viewed`, `quote.approved`, `quote.rejected`, `quote.paid`) and invoice events (`invoice.issued`, plus the full lifecycle `invoice.finalized`/`invoice.sent`/`invoice.paid`/`invoice.voided` — see [Invoicing (CFDI) and the API](/en/support/api-facturas)). Test them with the "Test" button before relying on them.

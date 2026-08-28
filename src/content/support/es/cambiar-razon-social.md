@@ -1,18 +1,29 @@
 ---
-title: "Cambiar Razón Social"
-description: "Pasos legales para transferir tu cuenta Cord a otra empresa."
+title: "Cambiar razón social o identificador fiscal"
+description: "Cuándo editar tus datos fiscales directamente y cuándo crear un nuevo espacio de trabajo."
 category: "Cuenta y Equipo"
 ---
 
-Cambiar la Razón Social y RFC de tu cuenta operativa es un procedimiento crítico, ya que impacta la facturación en vivo y la emisión de comprobantes.
+El nombre legal de tu negocio y su identificador fiscal —RFC en México, NIF/CIF en España, EIN/Tax ID en Estados Unidos, y así según el país— se editan en **Ajustes > Datos fiscales**. No hace falta contactar a soporte para corregir un typo o actualizar un dato: el campo es editable en cualquier momento.
 
-### Proceso de Migración Fiscal
+### Cuándo basta con editar el campo
 
-No existe un botón para "cambiar el RFC" directamente, ya que las facturas pasadas no pueden migrar de emisor. Si tu empresa cambió legalmente de Razón Social:
+Si tu identificador fiscal no cambió y solo necesitas corregir la razón social (un error de captura, un cambio de "S.A. de C.V." a otra forma sin RFC nuevo, etc.), edítalo directamente:
 
-1. **Crea una nueva organización:** Dentro de Cord, puedes pertenecer a múltiples organizaciones. Haz clic en el nombre de tu empresa arriba a la izquierda y selecciona *Crear nueva organización*.
-2. Registra los nuevos datos (RFC, Razón Social, CSD del SAT).
-3. Contacta a soporte para que transfiramos tu plan de suscripción actual a la nueva cuenta.
-4. Exporta tu catálogo de clientes de la cuenta vieja e impórtalo en la nueva.
+1. Ve a **Ajustes > Datos fiscales**.
+2. Actualiza el nombre legal y guarda.
 
-Este método garantiza que tu historial contable previo se mantenga intacto e inmutable bajo el RFC anterior para efectos de auditoría del SAT.
+Esto no reescribe las facturas ya emitidas: cada una queda con los datos del emisor tal como estaban el día que se generó.
+
+### Cuándo crear un espacio de trabajo nuevo en vez de editar
+
+Si tu empresa cambió legalmente de identificador fiscal (un RFC nuevo, o el equivalente en tu país), **no** edites el campo sobre la cuenta viva. En México en particular, el CSD que subiste está emitido por el SAT a nombre de tu RFC anterior: si solo cambias el texto de la razón social, la próxima factura seguiría timbrando con un CSD que ya no corresponde al identificador fiscal declarado. Lo correcto es:
+
+1. Haz clic en el nombre de tu organización arriba a la izquierda y selecciona **Crear espacio de trabajo**. Puedes elegir crear una cuenta **independiente** o **anidada** bajo la organización actual, y el país donde opera la nueva entidad (Cord no asume que es el mismo país que la cuenta de origen).
+2. Registra ahí los datos de la nueva entidad: identificador fiscal, razón social y, si tu país usa un certificado de sellado (CSD del SAT, exclusivo de México), súbelo en el espacio de trabajo nuevo.
+3. Contacta a soporte para transferir tu plan de suscripción vigente a la cuenta nueva, si no quieres pagar dos suscripciones en paralelo.
+4. Exporta tu catálogo de clientes de la cuenta anterior e impórtalo en la nueva.
+
+Crear un espacio de trabajo adicional requiere plan Profesional o superior; en Gratis y Starter, contacta a soporte para evaluar el cambio.
+
+Este método mantiene tu historial contable anterior intacto e inmutable bajo el identificador fiscal original, para efectos de auditoría de la autoridad fiscal correspondiente.

@@ -16,7 +16,7 @@ Cord divide el cobro por ti con la función de anticipo (ver [Cobrar un anticipo
 
 1. Crea tu cotización por el monto total ($100,000).
 2. Define el **% de anticipo** (ej. 50%) en la barra lateral del editor.
-3. Cuando el cliente aprueba, el anticipo ($50,000) queda pagable de inmediato con tarjeta o SPEI, y el saldo se cobra según los términos.
+3. Cuando el cliente aprueba, el anticipo ($50,000) queda pagable de inmediato con tarjeta (o SPEI, si tu negocio cobra en pesos mexicanos), y el saldo se cobra según los términos.
 
 ### La parte fiscal la controlas tú
 

@@ -20,7 +20,7 @@ Una factura tiene dos ejes que no se mezclan: su **estado comercial** (`draft`, 
 
 | Método | Ruta | Scope |
 |---|---|---|
-| `GET` | `/api/v1/facturas?estado=&cliente=&q=&cursor=` | `read` |
+| `GET` | `/api/v1/facturas?estado=&cliente=&q=&desde=&hasta=&cursor=` | `read` |
 | `POST` | `/api/v1/facturas` | `write` |
 | `GET` | `/api/v1/facturas/{id}` | `read` |
 | `POST` | `/api/v1/facturas/{id}` (`finalize`, `send`, `payment`, `void`, `credit_note`) | `write` |

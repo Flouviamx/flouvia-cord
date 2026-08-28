@@ -19,7 +19,7 @@ Use your **Secret API Key** (`sk_`) to mass-feed the catalog. Ideal for nightly 
 **Request:**
 
 ```bash
-curl -X POST "https://api.cordhq.com/v1/productos" \
+curl -X POST "https://cordhq.app/api/v1/productos" \
      -H "Authorization: Bearer sk_live_tU..." \
      -H "Content-Type: application/json" \
      -d '{
@@ -43,7 +43,7 @@ curl -X POST "https://api.cordhq.com/v1/productos" \
 
 ## Listing Products & Data Security
 
-The listing API (`GET /v1/productos`) features a Dynamic Masking mechanism based on the trust level of the API key you authenticate with.
+The listing API (`GET /api/v1/productos`) features a Dynamic Masking mechanism based on the trust level of the API key you authenticate with.
 
 If you use a **Secret Key (`sk_`)**:
 Cord assumes you are a trusted internal system and returns the complete object, **including hidden costs and profit margins (`costo`)**.
@@ -52,6 +52,20 @@ If you use a **Publishable Key (`pk_`)**:
 Publishable keys are exposed in the browser (for example, to render a pricing list on a public React website). Cord assumes risk and **automatically removes the `costo` field from all results in memory** before serializing the JSON. This way, your margins are never leaked to the public frontend.
 
 ```bash
-curl -X GET "https://api.cordhq.com/v1/productos?limit=50" \
+curl -X GET "https://cordhq.app/api/v1/productos?limit=50" \
      -H "Authorization: Bearer pk_live_yX..."
 ```
+
+With `sk_live_...` the same product includes `costo`:
+
+```json
+{ "data": [ { "id": "prod_1a2b3c...", "sku": "LIC-PRO-24", "nombre": "Professional Annual License", "unidad": "license", "precio": 12000, "costo": 4000, "activo": true } ] }
+```
+
+With `pk_live_...`, `costo` simply isn't present on the object (not `null` or `0` — the key doesn't exist):
+
+```json
+{ "data": [ { "id": "prod_1a2b3c...", "sku": "LIC-PRO-24", "nombre": "Professional Annual License", "unidad": "license", "precio": 12000, "activo": true } ] }
+```
+
+Note: a Publishable Key can only be used on `GET /api/v1/productos` and `POST /api/v1/cotizaciones` — any other route (creating products, reading clients, collections) responds `403 insufficient_scope`, and it also requires an `Origin`/`Referer` header matching the domains you registered for that key.

@@ -1,6 +1,6 @@
 ---
 title: "Cord MCP Server"
-description: "Conecta clientes de IA como Claude y Cursor al sistema financiero de tu empresa — 7 herramientas, paginación real, llamadas seguras de repetir y actividad medida como el resto de la API."
+description: "Conecta clientes de IA como Claude y Cursor al sistema financiero de tu empresa — 10 herramientas, paginación real, llamadas seguras de repetir y actividad medida como el resto de la API."
 ---
 
 <header class="content-header">
@@ -65,16 +65,24 @@ pertenecer a la misma organización que abrió la sesión.
 | `buscar_cliente` | Busca en el directorio por empresa/contacto/RFC/correo. Paginado. | lectura |
 | `listar_productos` | Catálogo de productos (id, SKU, nombre, unidad, precio de lista). Paginado. | lectura |
 | `crear_cotizacion_borrador` | Crea una cotización en BORRADOR (no la envía). Idempotente si mandas `idempotency_key`. | **escritura** |
+| `listar_facturas` | Lista las facturas de **Cord Invoicing** con su saldo y estado (`draft`\|`open`\|`paid`\|`void`\|`uncollectible`\|`overdue`). Filtra por estado, cliente o texto libre. Paginado. | lectura |
+| `detalle_factura` | Detalle completo de UNA factura: conceptos, emisor, receptor, impuestos, tipo de cambio declarado, saldo y pagos recibidos. | lectura |
+| `crear_factura_borrador` | Crea una factura en BORRADOR para un cliente, sin necesidad de una cotización previa. Requiere el plan Starter o superior (Cord Invoicing). | **escritura** |
 
 Cada tool declara sus anotaciones estándar de MCP (`readOnlyHint`, `idempotentHint`,
 `destructiveHint`) en `tools/list` — un cliente MCP puede usarlas para decidir qué llamadas
-auto-aprobar sin preguntarle al usuario cada vez. Las 6 de lectura son `readOnlyHint: true`;
-`crear_cotizacion_borrador` es `readOnlyHint: false` y, honestamente, `idempotentHint: false`
-por default (solo es segura de repetir si le mandas `idempotency_key`, ver abajo).
+auto-aprobar sin preguntarle al usuario cada vez. Las 8 de lectura son `readOnlyHint: true`;
+las dos de escritura (`crear_cotizacion_borrador` y `crear_factura_borrador`) son
+`readOnlyHint: false` y, honestamente, `idempotentHint: false` por default — ninguna de las
+dos timbra ni envía nada, solo dejan un borrador listo para que una persona lo revise antes de
+disparar una acción irreversible (regla 17: nada que cueste dinero real se dispara sin que un
+humano lo confirme). `crear_cotizacion_borrador` es segura de repetir si le mandas
+`idempotency_key` (ver abajo); `crear_factura_borrador` todavía no acepta ese parámetro — cada
+llamada crea un borrador nuevo.
 
 ## Paginación
 
-`buscar_cliente` y `listar_productos` devuelven páginas, no la tabla completa:
+`buscar_cliente`, `listar_productos` y `listar_facturas` devuelven páginas, no la tabla completa:
 
 ```json
 {

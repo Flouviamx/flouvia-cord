@@ -1080,6 +1080,272 @@ create policy "system_identity_capture_sessions" on identity_capture_sessions
   with check (current_setting('app.scope', true) = 'system');
 alter table identity_capture_sessions force row level security;
 
+-- ── Depósitos a la cuenta del negocio (payouts) (ago 2026) ──────────────────
+--
+-- Los depósitos sólo existían como una línea en `audit_log`: no había tabla, no
+-- había historial, y el widget "próximo depósito" dependía de una llamada en
+-- vivo al proveedor en cada carga de /app/cobros. Un negocio no podía responder
+-- "¿qué cobros trae este depósito?", que es LA pregunta de la conciliación
+-- bancaria, ni ver qué le habían depositado el mes pasado.
+--
+-- La fuente sigue siendo el proveedor: esta tabla se llena desde los webhooks
+-- `payout.*` (con el mismo claim idempotente que el resto) y es reconstruible.
+-- `stripe_payout_id` es único para que un reintento del webhook no duplique.
+create table if not exists payouts (
+  id                 uuid        default gen_random_uuid() primary key,
+  org_id             uuid        not null references orgs(id) on delete cascade,
+  stripe_account_id  text        not null,
+  stripe_payout_id   text        not null unique,
+  amount_cents       bigint      not null,
+  currency           text        not null,
+  -- paid | pending | in_transit | canceled | failed
+  status             text        not null,
+  arrival_date       date,
+  metodo             text,                     -- standard | instant
+  tipo_destino       text,                     -- bank_account | card
+  destino_last4      text,
+  failure_code       text,
+  failure_message    text,
+  -- NOTA: la conciliación depósito → cobros (qué cobros trae cada depósito, vía
+  -- balance transactions) NO está construida todavía. Las columnas para
+  -- guardarla se agregarán EN EL MISMO CAMBIO que las escriba: una columna que
+  -- nadie llena aparenta una capacidad que no existe, y la siguiente persona
+  -- que lea este schema creería que el desglose ya está ahí (regla 15).
+  created_at         timestamptz not null default now(),
+  updated_at         timestamptz not null default now()
+);
+create index if not exists idx_payouts_org on payouts(org_id, arrival_date desc nulls last, created_at desc);
+create index if not exists idx_payouts_status on payouts(org_id, status);
+
+alter table payouts enable row level security;
+drop policy if exists "rls_payouts" on payouts;
+create policy "rls_payouts" on payouts
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+-- El webhook resuelve la organización con una función security definer y vuelve
+-- a withOrgTx, pero los crons de conciliación barren cross-org.
+drop policy if exists "system_payouts" on payouts;
+create policy "system_payouts" on payouts
+  using (current_setting('app.scope', true) = 'system')
+  with check (current_setting('app.scope', true) = 'system');
+drop policy if exists "ops_payouts" on payouts;
+create policy "ops_payouts" on payouts
+  using (current_setting('app.scope', true) = 'ops');
+alter table payouts force row level security;
+
+-- Frecuencia de depósito elegida por el negocio. Espejo de
+-- `settings.payouts.schedule` del proveedor: se guarda para poder pintar la
+-- pantalla sin una llamada en vivo, pero la fuente sigue siendo él.
+alter table orgs add column if not exists payout_interval text;      -- daily | weekly | monthly | manual
+alter table orgs add column if not exists payout_delay_days int;
+alter table orgs add column if not exists payout_weekly_anchor text; -- monday…sunday
+alter table orgs add column if not exists payout_monthly_anchor int; -- 1..31
+
+-- ── Personas de KYC de Connect (UBO, directores, representante) (ago 2026) ──
+--
+-- ESPEJO de las Person del proveedor de pagos, no la fuente de verdad. El
+-- proveedor manda: cada escritura va primero a su API y esta tabla se rellena
+-- con SU respuesta, nunca con lo que mandó el cliente. Es RECONSTRUIBLE en
+-- cualquier momento con `reconcilePersons(orgId)` (src/lib/connect-personas.ts).
+--
+-- Existe por tres cosas que el proveedor no puede dar:
+--   · un ancla con FK para la captura móvil (identity_capture_sessions.persona_id
+--     guardaba un person_id de TEXTO LIBRE, sin nada en Postgres contra qué
+--     validar que fuera de esta organización);
+--   · lecturas baratas en el sondeo del wizard, que corre cada 2.5 s;
+--   · un nombre que mostrar en Cord Ops sin autenticarse como la cuenta ajena.
+--
+-- NINGUNA decisión de producto se toma desde aquí: el gate de cobros sigue
+-- leyendo `charges_enabled` del proveedor. Una divergencia es una etiqueta vieja
+-- durante segundos, nunca un permiso mal concedido.
+--
+-- NUNCA se guardan aquí: id_number, id_number_secondary, ssn_last_4, dob,
+-- domicilio personal, nationality, ni imágenes o file ids de documentos. Esos
+-- datos viajan directo al proveedor y Cord los olvida — es lo que promete el
+-- propio aviso del alta.
+create table if not exists connect_personas (
+  id                 uuid        default gen_random_uuid() primary key,
+  org_id             uuid        not null references orgs(id) on delete cascade,
+  stripe_account_id  text        not null,
+  stripe_person_id   text,                        -- null = borrador local, aún no enviado
+
+  -- Espejo de relationship.*
+  es_representante   boolean     not null default false,
+  es_dueno           boolean     not null default false,
+  es_director        boolean     not null default false,
+  es_ejecutivo       boolean     not null default false,
+  porcentaje         numeric(5,2),                -- relationship.percent_ownership
+  puesto             text,                        -- relationship.title
+
+  -- Etiqueta para la lista. No es un dato de KYC.
+  nombre_visible     text        not null default '',
+
+  -- Espejo recortado de verification.* y requirements
+  verificacion       text        not null default 'unverified', -- unverified | pending | verified
+  verif_detalle      text,                        -- verification.details
+  verif_codigo       text,                        -- verification.details_code
+  doc_codigo         text,                        -- verification.document.details_code
+  requisitos         jsonb       not null default '{}'::jsonb,
+
+  orden              int         not null default 0,
+  synced_at          timestamptz,
+  created_at         timestamptz not null default now(),
+  updated_at         timestamptz not null default now()
+);
+create unique index if not exists uq_connect_personas_stripe
+  on connect_personas(org_id, stripe_person_id) where stripe_person_id is not null;
+-- El proveedor admite UN representante por cuenta; el índice lo vuelve
+-- imposible de violar también del lado de Cord.
+create unique index if not exists uq_connect_personas_representante
+  on connect_personas(org_id) where es_representante;
+create index if not exists idx_connect_personas_org
+  on connect_personas(org_id, orden, created_at);
+
+alter table connect_personas enable row level security;
+drop policy if exists "rls_connect_personas" on connect_personas;
+create policy "rls_connect_personas" on connect_personas
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+-- Cord Ops mira todas las organizaciones a propósito, y sólo lee (carril withOpsTx).
+drop policy if exists "ops_connect_personas" on connect_personas;
+create policy "ops_connect_personas" on connect_personas
+  using (current_setting('app.scope', true) = 'ops');
+alter table connect_personas force row level security;
+
+-- La captura móvil deja de apuntar a un person_id de texto libre. La columna
+-- vieja se conserva mientras haya sesiones vivas creadas con el modelo anterior.
+alter table identity_capture_sessions
+  add column if not exists persona_id uuid references connect_personas(id) on delete cascade;
+-- Huellas de lo YA subido en ESTA sesión. El proveedor auto-rechaza un archivo
+-- reenviado ("Duplicate uploads fail automatically"), así que mandar dos veces el
+-- mismo byte a byte —o el frente otra vez como reverso— quema un intento y
+-- devuelve un rechazo que el usuario no entiende. Es un digest, no la imagen, y
+-- muere con la fila a los minutos.
+alter table identity_capture_sessions
+  add column if not exists hashes jsonb not null default '{}'::jsonb;
+
+-- ── Cadena de custodia y anti-abuso del enlace de captura ───────────────────
+--
+-- El token es una credencial PORTADORA que viaja en la URL: quien la intercepte
+-- —por encima del hombro, por una captura de pantalla reenviada por chat, por el
+-- historial del navegador— puede subir SUS documentos a la cuenta conectada de
+-- otro negocio. Lo único que lo acotaba era un TTL de 10 minutos.
+--
+-- `device_hash` liga el PRIMER uso a los siguientes mediante una cookie propia.
+-- No se puede atar nada en la emisión: el flujo legítimo es a propósito de dos
+-- dispositivos (el escritorio genera el QR, el teléfono lo escanea) y el segundo
+-- es desconocido al acuñar.
+--
+-- `ip_*` y `user_agent` son FORENSES, jamás autorización: las operadoras rotan
+-- la IP a media sesión (CGNAT, salto Wi-Fi↔LTE), así que atar a IP garantiza
+-- bloquear al usuario legítimo, y el user-agent se copia en un segundo.
+alter table identity_capture_sessions add column if not exists created_by        text;
+alter table identity_capture_sessions add column if not exists first_used_at     timestamptz;
+alter table identity_capture_sessions add column if not exists usable_until      timestamptz;
+alter table identity_capture_sessions add column if not exists closed_at         timestamptz;
+alter table identity_capture_sessions add column if not exists intentos          int not null default 0;
+alter table identity_capture_sessions add column if not exists intentos_fallidos int not null default 0;
+alter table identity_capture_sessions add column if not exists device_hash       text;
+alter table identity_capture_sessions add column if not exists device_reclamos   int not null default 0;
+alter table identity_capture_sessions add column if not exists ip_primera        text;
+alter table identity_capture_sessions add column if not exists ip_ultima         text;
+alter table identity_capture_sessions add column if not exists user_agent        text;
+-- Pista documental resuelta AL ACUÑAR el enlace (p. ej. 'pasaporte'): evita que
+-- Cord PERSISTA el país de residencia de la persona sólo para pintar un texto.
+-- Es transitoria, igual que la fila.
+alter table identity_capture_sessions add column if not exists doc_hint          text;
+-- El `delete` del cron barría la tabla entera por seq scan.
+create index if not exists idx_ics_expira on identity_capture_sessions(expires_at);
+create index if not exists idx_ics_persona on identity_capture_sessions(persona_id);
+
+-- ── Evidencia de KYC (ago 2026) ────────────────────────────────────────────
+--
+-- Cord recolecta el KYC en su propia interfaz (Connect Custom), así que es Cord
+-- quien responde de QUÉ envió, CUÁNDO y DESDE DÓNDE. Esa evidencia no puede
+-- vivir en `identity_capture_sessions` (se borra a los minutos) ni en
+-- `connect_personas` (es un espejo reconstruible del proveedor). Vive aquí, y
+-- sobrevive a las dos.
+--
+-- NUNCA se guarda aquí: los bytes, ninguna miniatura, el `file_…` del proveedor
+-- (es un handle recuperable con la llave de la plataforma, o sea un puntero a la
+-- foto de la identificación), el número del documento, la fecha de nacimiento,
+-- el domicilio, ni un hash PERCEPTUAL — ese describe el contenido de la imagen
+-- mucho más que uno criptográfico.
+--
+-- La columna `metricas` es lo que convierte esta tabla en algo más que un
+-- registro de cumplimiento: guarda lo que Cord MIDIÓ de la foto junto al
+-- veredicto que después dio el proveedor. Ese par es el único dataset con el que
+-- se pueden calibrar los umbrales de captura con evidencia en vez de con
+-- intuición.
+create table if not exists connect_kyc_evidencia (
+  id                  uuid        default gen_random_uuid() primary key,
+  org_id              uuid        not null references orgs(id) on delete cascade,
+  stripe_account_id   text        not null,
+
+  -- `persona_id` es la FK viva; `stripe_person_id` se denormaliza a propósito
+  -- para que la evidencia sobreviva al borrado del espejo.
+  persona_id          uuid        references connect_personas(id) on delete set null,
+  stripe_person_id    text,
+  alcance             text        not null,   -- persona | individual | company | cuenta
+
+  -- Qué se envió y con qué propósito. Los propósitos NO son intercambiables.
+  parte               text        not null,   -- front | back | address | documents.<tipo>
+  proposito           text        not null,   -- identity_document | additional_verification | account_requirement
+  tipo_documento      text,                   -- pasaporte | id_nacional | licencia | residencia (DECLARADO)
+
+  -- Forma técnica del archivo, no su contenido.
+  sha256              text        not null,
+  bytes               int         not null,
+  mime                text        not null,
+  ancho               int,
+  alto                int,
+
+  -- Métricas de calidad medidas en el cliente: números, nunca píxeles.
+  metricas            jsonb       not null default '{}'::jsonb,
+
+  -- Cadena de custodia. `capture_session_id` va SIN FK a propósito: la sesión
+  -- efímera se borra a los minutos y esta fila se queda.
+  origen              text        not null,   -- captura_movil | escritorio
+  capture_session_id  uuid,
+  emitido_por         text,                   -- user_id que acuñó el enlace
+  subido_por          text,                   -- user_id si vino de escritorio; null desde el teléfono
+  ip                  text,
+  user_agent          text,
+
+  -- Veredicto del proveedor. Llega DESPUÉS, por webhook.
+  estado              text        not null default 'enviado', -- enviado | pendiente | verificado | rechazado
+  codigo_proveedor    text,
+  detalle_proveedor   text,
+  resuelto_at         timestamptz,
+
+  created_at          timestamptz not null default now()
+);
+create index if not exists idx_kyc_evid_org     on connect_kyc_evidencia(org_id, created_at desc);
+create index if not exists idx_kyc_evid_persona on connect_kyc_evidencia(org_id, persona_id, created_at desc);
+-- El dedupe SIEMPRE va acotado a la organización: un índice global de `sha256`
+-- sería un oráculo cross-tenant ("¿alguien más subió este archivo?").
+create index if not exists idx_kyc_evid_sha     on connect_kyc_evidencia(org_id, sha256);
+create index if not exists idx_kyc_evid_abierta on connect_kyc_evidencia(org_id, stripe_person_id, created_at desc)
+  where estado in ('enviado', 'pendiente');
+create index if not exists idx_kyc_evid_retencion on connect_kyc_evidencia(created_at);
+
+alter table connect_kyc_evidencia enable row level security;
+drop policy if exists "rls_connect_kyc_evidencia" on connect_kyc_evidencia;
+create policy "rls_connect_kyc_evidencia" on connect_kyc_evidencia
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+-- El webhook cierra la fila con el veredicto y el cron de retención la purga:
+-- ambos barren cross-org por el carril de sistema.
+drop policy if exists "system_connect_kyc_evidencia" on connect_kyc_evidencia;
+create policy "system_connect_kyc_evidencia" on connect_kyc_evidencia
+  using (current_setting('app.scope', true) = 'system')
+  with check (current_setting('app.scope', true) = 'system');
+-- Cord Ops mira todas las organizaciones a propósito, y sólo lee.
+drop policy if exists "ops_connect_kyc_evidencia" on connect_kyc_evidencia;
+create policy "ops_connect_kyc_evidencia" on connect_kyc_evidencia
+  using (current_setting('app.scope', true) = 'ops');
+alter table connect_kyc_evidencia force row level security;
+
 -- ── Cobros parciales: anticipo / saldo / cuotas (jul 2026) ──────────────────
 -- Una cotización puede cobrarse en varias "rebanadas": anticipo + saldo (si el
 -- vendedor pidió un % de anticipo), cuotas negociadas por el agente de cobranza,
@@ -1388,6 +1654,35 @@ create table if not exists blog_subscribers (
   email       text        not null unique,
   created_at  timestamptz default now()
 );
+
+-- Doble opt-in y espejo mínimo de Resend Marketing. Neon conserva la evidencia
+-- del consentimiento; Resend gobierna los Broadcasts, segmentos y supresiones.
+alter table blog_subscribers add column if not exists locale text not null default 'es';
+alter table blog_subscribers add column if not exists status text not null default 'pending';
+alter table blog_subscribers add column if not exists confirmation_token_hash text;
+alter table blog_subscribers add column if not exists confirmation_expires_at timestamptz;
+alter table blog_subscribers add column if not exists confirmation_sent_at timestamptz;
+alter table blog_subscribers add column if not exists confirmed_at timestamptz;
+alter table blog_subscribers add column if not exists unsubscribed_at timestamptz;
+alter table blog_subscribers add column if not exists resend_contact_id text;
+alter table blog_subscribers add column if not exists resend_synced_at timestamptz;
+alter table blog_subscribers add column if not exists resend_updated_at timestamptz;
+alter table blog_subscribers add column if not exists updated_at timestamptz not null default now();
+
+do $$ begin
+  alter table blog_subscribers add constraint blog_subscribers_locale_check
+    check (locale in ('es', 'en'));
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter table blog_subscribers add constraint blog_subscribers_status_check
+    check (status in ('pending', 'confirmed', 'unsubscribed'));
+exception when duplicate_object then null; end $$;
+
+create unique index if not exists uq_blog_subscribers_confirmation_token
+  on blog_subscribers(confirmation_token_hash)
+  where confirmation_token_hash is not null;
+create index if not exists idx_blog_subscribers_status
+  on blog_subscribers(status, locale, created_at desc);
 
 -- ════════════════════════════════════════════════════════════════════════════
 -- OUTBOX de webhooks salientes — durabilidad real (jul 2026)

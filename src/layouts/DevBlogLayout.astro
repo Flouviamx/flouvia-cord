@@ -80,6 +80,8 @@ const isHome = !isBlog;
 const tail = currentPath.startsWith('/dev-blog/en')
   ? currentPath.slice('/dev-blog/en'.length)
   : currentPath.slice('/dev-blog'.length);
+const homeHref = lang === 'en' ? `${devBase}/en` : devBase;
+const blogHref = lang === 'en' ? `${devBase}/en/blog` : `${devBase}/blog`;
 const esPath = `/dev-blog${tail}` || '/dev-blog';
 const enPath = `/dev-blog/en${tail}`;
 
@@ -150,12 +152,12 @@ const orgJsonLd = {
     <!-- Minimalist Dev Navbar -->
     <nav class="dev-nav">
       <div class="dev-nav-left">
-        <a href={lang === 'en' ? `${devBase}/en` : devBase} class="dev-logo-mark">CORD<span class="cmd-blink">_</span></a>
-        <div class="dev-nav-links">
-          <a href={lang === 'en' ? `${devBase}/en` : devBase} class={`dev-nav-btn ${isHome ? 'active' : ''}`}>
+        <a href={homeHref} class="dev-logo-mark">CORD<span class="cmd-blink">_</span></a>
+        <div class="dev-nav-links dev-nav-desktop">
+          <a href={homeHref} class={`dev-nav-btn ${isHome ? 'active' : ''}`}>
             <kbd class="dev-kbd">H</kbd> <span class="btn-text">{lang === 'en' ? 'HOME' : 'INICIO'}</span>
           </a>
-          <a href={lang === 'en' ? `${devBase}/en/blog` : `${devBase}/blog`} class={`dev-nav-btn ${isBlog ? 'active' : ''}`}>
+          <a href={blogHref} class={`dev-nav-btn ${isBlog ? 'active' : ''}`}>
             <kbd class="dev-kbd">B</kbd> <span class="btn-text">BLOG</span>
           </a>
           <a href="https://docs.cordhq.app" class="dev-nav-btn" target="_blank" rel="noopener noreferrer">
@@ -168,13 +170,42 @@ const orgJsonLd = {
           <a href={esPath} class={`dev-nav-btn ${lang === 'es' ? 'active' : ''}`}>ES</a>
           <a href={enPath} class={`dev-nav-btn ${lang === 'en' ? 'active' : ''}`}>EN</a>
         </div>
-        <div class="dev-nav-links" id="console-trigger-container">
-          <a href="#" class="dev-nav-btn">
+        <div class="dev-nav-links dev-nav-desktop">
+          <a href="#" class="dev-nav-btn" data-open-console>
             <kbd class="dev-kbd">C</kbd> <span class="btn-text">{lang === 'en' ? 'CONSOLE' : 'CONSOLA'}</span>
           </a>
         </div>
+        <!-- Menu tactil: por debajo de 760px la barra no cabe sin encoger los
+             controles por debajo del objetivo tactil minimo (regla 16), asi que
+             los enlaces se mueven a un panel propio en lugar de comprimirse. -->
+        <button
+          type="button"
+          class="dev-nav-toggle"
+          id="dev-nav-toggle"
+          aria-controls="dev-nav-menu"
+          aria-expanded="false"
+          aria-label={lang === 'en' ? 'Open menu' : 'Abrir menu'}
+        >
+          <span class="toggle-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span class="toggle-label">{lang === 'en' ? 'MENU' : 'MENU'}</span>
+        </button>
       </div>
     </nav>
+
+    <div class="dev-nav-menu" id="dev-nav-menu" hidden>
+      <a href={homeHref} class={`dev-menu-item ${isHome ? 'active' : ''}`}>
+        <span>{lang === 'en' ? 'HOME' : 'INICIO'}</span><span class="menu-arrow">&#8599;</span>
+      </a>
+      <a href={blogHref} class={`dev-menu-item ${isBlog ? 'active' : ''}`}>
+        <span>BLOG</span><span class="menu-arrow">&#8599;</span>
+      </a>
+      <a href="https://docs.cordhq.app" class="dev-menu-item" target="_blank" rel="noopener noreferrer">
+        <span>DOCS</span><span class="menu-arrow">&#8599;</span>
+      </a>
+      <button type="button" class="dev-menu-item" data-open-console>
+        <span>{lang === 'en' ? 'CONSOLE' : 'CONSOLA'}</span><span class="menu-arrow">&#8599;</span>
+      </button>
+    </div>
 
     <main class="dev-container">
       <slot />
@@ -231,13 +262,61 @@ const orgJsonLd = {
     <DevConsole client:load />
 
     <script>
-      // Bind the Console button to open the DevConsole modal
-      const consoleContainer = document.getElementById('console-trigger-container');
-      if (consoleContainer) {
-        consoleContainer.addEventListener('click', (e) => {
-          e.preventDefault();
-          window.dispatchEvent(new CustomEvent('open-dev-console'));
+      // Delegacion en document: el disparador de la consola existe dos veces
+      // (barra de escritorio y panel tactil). Con un listener por id, la copia
+      // del panel quedaria muerta y el boton no abriria nada en movil.
+      document.addEventListener('click', (e) => {
+        const trigger = e.target && e.target.closest ? e.target.closest('[data-open-console]') : null;
+        if (!trigger) return;
+        e.preventDefault();
+        closeNavMenu();
+        window.dispatchEvent(new CustomEvent('open-dev-console'));
+      });
+
+      const navToggle = document.getElementById('dev-nav-toggle');
+      const navMenu = document.getElementById('dev-nav-menu');
+
+      function closeNavMenu() {
+        if (!navMenu || !navToggle) return;
+        navMenu.hidden = true;
+        navToggle.setAttribute('aria-expanded', 'false');
+        document.documentElement.classList.remove('dev-menu-open');
+      }
+
+      function openNavMenu() {
+        if (!navMenu || !navToggle) return;
+        navMenu.hidden = false;
+        navToggle.setAttribute('aria-expanded', 'true');
+        document.documentElement.classList.add('dev-menu-open');
+      }
+
+      if (navToggle && navMenu) {
+        navToggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (navMenu.hidden) openNavMenu();
+          else closeNavMenu();
         });
+
+        // Un enlace del panel navega: el panel no puede sobrevivir al click.
+        navMenu.querySelectorAll('a').forEach((link) => {
+          link.addEventListener('click', () => closeNavMenu());
+        });
+
+        document.addEventListener('click', (e) => {
+          if (navMenu.hidden) return;
+          if (navMenu.contains(e.target) || navToggle.contains(e.target)) return;
+          closeNavMenu();
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') closeNavMenu();
+        });
+
+        // Al volver a escritorio el panel deja de estar dibujado: si se queda
+        // "abierto" en el estado, el toggle regresa invertido en el siguiente giro.
+        const desktop = window.matchMedia('(min-width: 761px)');
+        const onChange = () => { if (desktop.matches) closeNavMenu(); };
+        desktop.addEventListener('change', onChange);
       }
     </script>
 
@@ -262,6 +341,20 @@ const orgJsonLd = {
         font-family: var(--dev-mono); /* Apply tech font globally */
         min-height: 100vh;
         overflow-x: clip;
+        /* Safari en iOS infla el texto al girar a horizontal; el layout esta
+           calculado en px y ahi se rompe. */
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+      }
+
+      /* Ningun bloque puede empujar el ancho del documento: en movil el
+         desbordamiento no se ve (overflow-x: clip), solo recorta contenido. */
+      html.dev-mode img,
+      html.dev-mode video,
+      html.dev-mode svg,
+      html.dev-mode canvas {
+        max-width: 100%;
+        height: auto;
       }
 
 
@@ -420,6 +513,107 @@ const orgJsonLd = {
         padding: 124px 24px 100px; /* 64px navbar + 60px original padding */
       }
 
+      /* Menu tactil (< 760px). En escritorio ni el boton ni el panel existen
+         visualmente; la barra completa se conserva igual que siempre. */
+      .dev-nav-toggle {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        min-height: 44px;
+        padding: 0 14px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: var(--dev-text);
+        font-family: var(--dev-mono);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        cursor: pointer;
+        border-radius: 0;
+      }
+
+      .dev-nav-toggle .toggle-bars {
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3px;
+        width: 14px;
+      }
+
+      .dev-nav-toggle .toggle-bars span {
+        display: block;
+        height: 2px;
+        width: 100%;
+        background: var(--dev-accent);
+        transition: transform 0.2s ease, opacity 0.2s ease;
+      }
+
+      .dev-nav-toggle[aria-expanded="true"] .toggle-bars span:nth-child(1) {
+        transform: translateY(5px) rotate(45deg);
+      }
+      .dev-nav-toggle[aria-expanded="true"] .toggle-bars span:nth-child(2) {
+        opacity: 0;
+      }
+      .dev-nav-toggle[aria-expanded="true"] .toggle-bars span:nth-child(3) {
+        transform: translateY(-5px) rotate(-45deg);
+      }
+
+      .dev-nav-menu {
+        position: fixed;
+        top: 56px;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        background: #020617;
+        border-bottom: 1px solid var(--dev-accent);
+        box-shadow: 0 24px 48px rgba(2, 6, 23, 0.6);
+        display: flex;
+        flex-direction: column;
+        padding: 8px 0 12px;
+        max-height: calc(100dvh - 56px);
+        overflow-y: auto;
+      }
+
+      .dev-nav-menu[hidden] {
+        display: none;
+      }
+
+      .dev-menu-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        width: 100%;
+        min-height: 52px;
+        padding: 0 20px;
+        box-sizing: border-box;
+        background: transparent;
+        border: none;
+        border-bottom: 1px dashed rgba(255,255,255,0.08);
+        color: var(--dev-text-muted);
+        font-family: var(--dev-mono);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .dev-menu-item:last-child {
+        border-bottom: none;
+      }
+
+      .dev-menu-item.active {
+        color: var(--dev-accent);
+      }
+
+      .dev-menu-item .menu-arrow {
+        color: var(--dev-accent);
+        opacity: 0.6;
+        font-weight: 400;
+      }
+
       /* Dev Footer */
       .dev-footer {
         position: relative;
@@ -539,12 +733,202 @@ const orgJsonLd = {
         margin-top: 80px;
       }
 
-      @media (max-width: 768px) {
+      /* Consola. Los estilos viven aqui y no en la isla porque un <style>
+         scopeado de Astro no alcanza al DOM que monta React (regla 11). */
+      @media (max-width: 760px) {
+        .dev-console {
+          height: 52dvh;
+          min-height: 220px;
+        }
+        .dev-console-input {
+          /* iOS hace zoom al enfocar por debajo de 16px. */
+          font-size: 16px !important;
+        }
+        .dev-console-close {
+          min-width: 44px !important;
+          min-height: 40px !important;
+          margin: -6px -8px -6px 0;
+        }
+      }
+
+      /* Arte de pixeles: la celda se llavea por variable porque las islas React
+         no reciben CSS scopeado (regla 11). Sin esto, DEVELOPERS mide 39 celdas
+         de 18px (~741px) y en un telefono se recortaba por los dos lados.
+         El ancho util es celdas x (--pix + 1px de gap), y el arte del footer se
+         escala x1.25 con el scroll: los saltos de abajo ya lo contemplan. */
+      .pixel-art {
+        max-width: 100%;
+      }
+
+      @media (max-width: 900px) {
+        .pixel-art--developers { --pix: 12px; }
+      }
+
+      @media (max-width: 760px) {
+        .pixel-art--developers { --pix: 10px; }
+        .pixel-art--devs,
+        .pixel-art--blog {
+          --pix: 12px;
+          --pix-pad: 20px 20px 20px 0;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .pixel-art--developers { --pix: 8px; }
+      }
+
+      @media (max-width: 480px) {
+        .pixel-art--developers { --pix: 6px; }
+        .pixel-art--devs,
+        .pixel-art--blog {
+          --pix: 10px;
+          --pix-pad: 16px 16px 16px 0;
+        }
+      }
+
+      @media (max-width: 380px) {
+        .pixel-art--developers { --pix: 5px; }
+        .pixel-art--devs,
+        .pixel-art--blog { --pix: 8px; }
+      }
+
+      /* ------------------------------------------------------------------
+         Responsive. Movil es tactil, no escritorio encogido (regla 16):
+         los indicadores <kbd> se ocultan, los controles suben a objetivo
+         tactil y los enlaces de la barra se mueven al panel en vez de
+         comprimirse hasta dejar de ser pulsables.
+         ------------------------------------------------------------------ */
+
+      @media (max-width: 1024px) {
+        .dev-container {
+          padding: 112px 24px 80px;
+        }
+        .footer-content {
+          gap: 48px;
+        }
+      }
+
+      /* Regla 16: por debajo de 880px no se muestran atajos de teclado. */
+      @media (max-width: 880px) {
+        .dev-kbd {
+          display: none;
+        }
+        .dev-footer {
+          padding-top: 56px;
+          /* El overscroll de 100vh es un lujo de escritorio; en un telefono son
+             dos pantallas de vacio que el pulgar tiene que recorrer. */
+          padding-bottom: 60vh;
+        }
+        .footer-wireframe {
+          margin-top: 48px;
+        }
+        .footer-desc {
+          font-size: 17px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .dev-nav {
+          height: 56px;
+          padding-left: max(16px, env(safe-area-inset-left));
+          padding-right: max(16px, env(safe-area-inset-right));
+          gap: 12px;
+          /* Transparente funciona sobre el aire de escritorio; en movil el
+             contenido pasa justo por debajo y la barra se vuelve ilegible. */
+          background: var(--dev-bg);
+          border-bottom: 1px solid var(--dev-border-light);
+        }
+        .dev-nav-left,
+        .dev-nav-right {
+          gap: 12px;
+        }
+        .dev-nav-desktop {
+          display: none;
+        }
+        .dev-nav-toggle {
+          display: inline-flex;
+        }
+        .dev-logo-mark {
+          font-size: 16px;
+          letter-spacing: 1.5px;
+        }
+        .dev-nav-right .dev-nav-btn {
+          min-height: 44px;
+          padding: 0 14px;
+          align-items: center;
+        }
+        .dev-container {
+          padding: 88px 20px 64px;
+        }
         .footer-content {
           flex-direction: column;
+          gap: 40px;
+          padding: 0 20px;
+        }
+        .footer-left {
+          max-width: none;
         }
         .footer-right {
-          padding-top: 20px;
+          padding-top: 0;
+          gap: 32px;
+        }
+        .btn-learn-more {
+          min-height: 44px;
+          align-items: center;
+        }
+        /* Solo los del footer son enlaces que se pulsan. Los del articulo son
+           etiquetas de metadata y con min-height se estiraban con el texto
+           pegado arriba. */
+        .footer-tags .dashed-tag {
+          min-height: 40px;
+          padding: 0 12px;
+        }
+     
+        /* Scrim: el panel flota sobre contenido de alto contraste y sin el se
+           lee como si los enlaces fueran parte de la pagina. */
+        html.dev-menu-open body::after {
+          content: '';
+          position: fixed;
+          inset: 56px 0 0 0;
+          background: rgba(2, 6, 23, 0.72);
+          z-index: 998;
+          pointer-events: none;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .dev-container {
+          padding: 84px 16px 56px;
+        }
+        .dev-nav-menu {
+          padding-bottom: max(12px, env(safe-area-inset-bottom));
+        }
+        .dev-footer {
+          padding-bottom: 40vh;
+        }
+        .footer-content {
+          padding: 0 16px;
+        }
+        .footer-desc {
+          font-size: 16px;
+        }
+      }
+
+      /* Un telefono en horizontal tiene poca altura: el panel a pantalla casi
+         completa deja de tener sentido y el overscroll del footer sobra. */
+      @media (max-width: 900px) and (orientation: landscape) {
+        .dev-footer {
+          padding-bottom: 30vh;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html.dev-mode *,
+        html.dev-mode *::before,
+        html.dev-mode *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
         }
       }
     </style>

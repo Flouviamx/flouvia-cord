@@ -1,43 +1,57 @@
 ---
-title: "Global Invoicing (CFDI 4.0)"
-description: "Discover how Cord issues international invoices and CFDI 4.0 in Mexico using its Global Fiscal Abstraction."
+title: "Fiscal invoicing by country"
+description: "How Cord decides which receipt to issue depending on country: CFDI 4.0 in Mexico, Verifactu in Spain, and a commercial invoice everywhere else."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Invoicing and Fiscal Abstraction</h1>
-  <p class="page-subtitle">Automated tax receipts, from global commercial invoices to nominative CFDI 4.0 in Mexico.</p>
+  <h1 class="page-title">Fiscal invoicing by country</h1>
+  <p class="page-subtitle">One invoicing engine, a different receipt depending on where your business operates.</p>
 </header>
 
-## Global Fiscal Abstraction
+## One document, three regulatory rails
 
-Cord's payments system is designed to scale internationally thanks to the **FiscalFactory** design pattern.
+Cord doesn't treat an invoice as a generic PDF with a number: the type of receipt it issues depends on your business's country. Today there are three rails:
 
-Depending on the country of your client and your own business, the fiscal engine decides which stamping provider to use and what type of receipt to generate (for example, *US Commercial Invoices* for transactions in the United States).
+- **Mexico:** CFDI 4.0, stamped with the SAT.
+- **Spain:** a legally complete invoice plus the certified filing record required by **Verifactu** (RD 1007/2023).
+- **Every other country Cord supports:** a complete commercial invoice — with a sequential number, per-line taxes, and full standing between the parties — with no stamping before any authority, because those countries neither require nor offer that mechanism.
 
-## Issuing in Mexico: Nominative CFDI 4.0
+In all three cases, tax is calculated **per line**, not per document: you can mix a taxed item with an exempt one on the same invoice, and each one prints the rate and the name of the tax that applies in your country (VAT in the UK, GST in Canada, state-by-state sales tax in the US, IVA in Mexico and Spain, and so on, based on your account's fiscal profile).
 
-For users in Mexico, Cord uses the **Facturapi** API (`MexicoSatProvider`) under the hood to achieve 100% compliance with SAT requirements, completely invisibly and automatically.
+## Mexico: Nominative CFDI 4.0
 
-### Extracting data from your Catalog
+For accounts in Mexico, Cord automatically stamps with the SAT through a certified electronic-invoicing provider — your team never has to log into a separate portal or manage certificates on its own.
 
-Unlike other systems that issue generic invoices to the "General Public" and then force the client to log into a self-invoicing portal, Cord is proactive.
+### Pulling data from the catalog
 
-Cord automatically extracts the information from the individual client's profile (CRM):
+Unlike systems that issue to the "General Public" and then force the client to self-invoice through an external portal, Cord is proactive and pulls fiscal data directly from the client's record:
 
-- **Tax Regime:** Extracted directly from the SAT Catalog assigned to that client.
-- **CFDI Use:** Determined based on the type of service or product, or explicitly defined in the client's profile.
-- **Zip Code (C.P.):** Validated against the tax status certificate registered on their record.
+- **Tax Regime:** the one assigned to that client's profile.
+- **CFDI Use:** based on the type of product or service, or explicitly set on the client's profile.
+- **Zip code:** the one registered on their tax status certificate.
 
-### Automatic and Transparent Stamping
+### Automatic, transparent stamping
 
-1. As soon as the payment is confirmed (by Card or dynamic SPEI through Cord Payments), the system notifies Cord's server.
-2. The system assembles the payload with the quote's line items and the client's exact fiscal data (Regime, Zip Code, CFDI Use).
-3. The `FiscalFactory` is invoked and stamps the document with the SAT (nominative CFDI 4.0).
-4. The final XML and PDF files are sent directly to the client's email along with their payment receipt, closing the commercial cycle without any manual intervention from your team.
+1. As soon as the payment is confirmed (by card or SPEI through Cord Payments, or recorded manually), Cord assembles the receipt.
+2. The line items from the quote or invoice are combined with the client's exact fiscal data (Regime, zip code, CFDI Use).
+3. The document is stamped with the SAT as a nominative CFDI 4.0.
+4. The XML and PDF are emailed to the client along with their payment receipt, with no manual work from your team.
 
-## The CFDI for Cord Payments' fee
+## Spain: Verifactu
 
-In addition to the CFDI you stamp for your own customers, Cord issues its **own income CFDI** for the fee it charges on every Cord Payments transaction (see [Fees and advantages](/en/docs/pagos/condiciones)) — this is the tax receipt for the payment-processing service Cord provides you, not for your own sale.
+For accounts in Spain, every invoice generates a filing record with a **chained SHA-256 fingerprint**, linked to your organization's previous record — the traceability mechanism required by Royal Decree 1007/2023 (Verifactu). The chain is built at the moment of issuance, together with the rest of the legal data Spanish rules require: a validated NIF/NIE/CIF, IRPF withholding where it applies, series-and-year numbering, and the legal note for reverse-charge intra-EU transactions.
+
+<Callout type="info">
+**Online submission to the Spanish tax authority** rolls out in phases as Cord completes the regulatory process with the authority itself. While that submission isn't yet active for your account, the invoice remains a complete, legally valid document between you and your client — the only thing that changes is whether the record has already reached the tax authority or not. Cord always states this clearly on the document, never as an assumption.
+</Callout>
+
+## Everywhere else: commercial invoice
+
+In the United States, Canada, Brazil, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru, Cord issues a **complete commercial invoice**: a sequential number, per-line taxes with the name and rate that apply in that country, withholdings where the country has them, and full standing as a receipt between the parties. What doesn't exist in these countries is an automated stamping or filing step with a tax authority — because that mechanism (CFDI, Verifactu) is specific to Mexico and Spain respectively; the rest of the countries neither require nor offer that rail, so the commercial invoice already IS the final document.
+
+## The receipt for Cord Payments' own fee (Mexico)
+
+In addition to the CFDI you stamp for your own customers, in Mexico Cord issues its **own income CFDI** for the fee it charges on every Cord Payments transaction (see [Fees and advantages](/en/docs/pagos/condiciones)) — this is the tax receipt for the payment-processing service Cord provides you, not for your own sale.
 
 This receipt is issued **consolidated, in periodic batches** (not one per individual transaction) against the RFC and fiscal data registered on your account.
 

@@ -20,7 +20,7 @@ Many B2B businesses collect a percentage up front to kick off an order and the r
 
 On the public link, your client sees the full breakdown from the start: the total, how much they pay today as a deposit, and how much is left as balance with its due date. On approval:
 
-- The **deposit** is payable immediately (card or SPEI, straight to your bank).
+- The **deposit** is payable immediately (card, or SPEI for businesses billing in Mexican pesos), straight to your bank.
 - The **balance** stays pending. If the quote is cash, it's also payable right away; if it's on credit (Net 30/60), the balance can be paid once the due date arrives.
 
 Each part is an independent charge with its own payment link. The quote is marked as **paid** only once no charge remains pending.

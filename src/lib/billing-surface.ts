@@ -13,6 +13,7 @@ import { requirePerm } from './queries';
 import { STRIPE_KEY, stripe } from './billing';
 import { currentLocale } from './context';
 import { t } from '../i18n/app';
+import { strictRateLimit, strictLimitResponse } from './ratelimit';
 
 export function json(data: unknown, status = 200): Response {
     return new Response(JSON.stringify(data), {
@@ -34,12 +35,31 @@ export interface BillingContext {
  * Los mensajes describen el ESTADO, nunca el mecanismo: nada de "Stripe",
  * nombres de variables de entorno ni proveedores (regla 14).
  */
-export async function billingContext(): Promise<{ ctx: BillingContext } | { denied: Response }> {
+export async function billingContext(
+    opts: { limite?: number; scope?: string } = {},
+): Promise<{ ctx: BillingContext } | { denied: Response }> {
     const denied = await requirePerm('ajustes');
     if (denied) return { denied };
     if (!STRIPE_KEY) return { denied: json({ error: 'La facturación aún no está disponible.' }, 503) };
 
     const orgId = await getActiveOrgId();
+
+    // ── Rate limit en el punto por el que pasan TODAS ───────────────────────
+    //
+    // Ninguna ruta de esta superficie tenía límite propio: sólo el contador
+    // in-process del middleware, que en Vercel Fluid se multiplica por réplica y
+    // no acota nada de verdad. Cada una de estas llamadas crea o consulta
+    // objetos en el proveedor, así que un bucle en el navegador podía agotar el
+    // rate limit de la PLATAFORMA y tumbar la facturación de todos.
+    //
+    // Va aquí y no en cada archivo por la misma razón que el carril de tenencia
+    // vive en db.ts: una regla que hay que acordarse de repetir en siete
+    // archivos es una regla que un octavo va a olvidar.
+    const limitado = strictLimitResponse(
+        await strictRateLimit(`billing:${opts.scope ?? 'surface'}:${orgId}`, opts.limite ?? 30, 60),
+    );
+    if (limitado) return { denied: limitado };
+
     const [orgRows] = await withOrgTx(orgId, sql`
         select stripe_customer_id, stripe_subscription_id, subscription_status, sandbox_of
           from orgs where id = ${orgId}`);

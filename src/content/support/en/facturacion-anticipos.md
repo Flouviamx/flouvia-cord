@@ -16,7 +16,7 @@ Cord splits the charge for you with the deposit feature (see [Collect a deposit]
 
 1. Create your quote for the total amount ($100,000).
 2. Set the **deposit %** (e.g. 50%) in the editor's sidebar.
-3. When the client approves, the deposit ($50,000) is immediately payable by card or SPEI, and the balance is collected per the terms.
+3. When the client approves, the deposit ($50,000) is immediately payable by card (or SPEI, for businesses billing in Mexican pesos), and the balance is collected per the terms.
 
 ### The tax side is up to you
 

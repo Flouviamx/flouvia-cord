@@ -8,9 +8,38 @@ Ensuring the origin of webhooks is critical. An attacker could send you a fake p
 
 ### How Cord signs
 
-Cord computes the **HMAC-SHA256 of the raw webhook body** using your *signing secret*, and sends it in the `X-Cord-Signature` header in the format `sha256=<hash>`. The event name travels in `X-Cord-Event`. There is no timestamp in the signature.
+Every delivery carries **two** signatures of the raw body, so you can migrate without a cutover window:
 
-### Verification in Node.js (Express)
+- **`X-Cord-Signature-V1`** (recommended): `t=<unix timestamp>,v1=<hex hmac-sha256 of "{t}.{body}">`. It includes the timestamp inside what's signed, so you can reject an old delivery being replayed (anti-replay protection). During a secret rotation it may carry two `v1=` pairs; either one matching is enough.
+- **`X-Cord-Signature`** (legacy, kept for backward compatibility): `sha256=<hex hmac-sha256 of the body>`, with no timestamp.
+
+Alongside the signature, every delivery also carries `X-Cord-Event` (event name), `X-Cord-Event-Id` (a stable event id, the same across retries and a manual redelivery — use it to deduplicate), `X-Cord-Delivery-Id` (changes on every attempt), and `Idempotency-Key` (repeats the same value as `X-Cord-Event-Id`, for frameworks that read it automatically).
+
+### With the official SDK (recommended)
+
+`@flouviahq/elements/server` ships the verifier already written: it tries `X-Cord-Signature-V1` first (with a configurable tolerance, default 300s) and falls back to the legacy `X-Cord-Signature` if the endpoint hasn't received it yet.
+
+```typescript
+import { CordAPI } from '@flouviahq/elements/server';
+
+const cord = new CordAPI(process.env.CORD_SECRET_KEY!);
+
+// Example with a Next.js Route Handler — req.text() is already the raw body
+export async function POST(req: Request) {
+  const body = await req.text();
+  try {
+    const event = cord.webhooks.constructEvent(body, req.headers, process.env.CORD_WEBHOOK_SECRET!);
+    // event.event, event.data — see /en/support/api-facturas and /en/support/migracion-stripe for the event catalog
+    return new Response('ok');
+  } catch {
+    return new Response('Invalid signature', { status: 400 });
+  }
+}
+```
+
+### Manual verification in Node.js (Express)
+
+If you don't use the SDK, you can verify the legacy signature by hand:
 
 ```javascript
 const crypto = require('crypto');
@@ -37,4 +66,4 @@ app.post('/webhook/cord', express.raw({ type: 'application/json' }), (req, res) 
 });
 ```
 
-**Key point:** sign over the **raw** body (use `express.raw`, not `express.json`), or the hash won't match.
+**Key point:** sign over the **raw** body (use `express.raw`, not `express.json`), or the hash won't match. To verify `X-Cord-Signature-V1` by hand, compute the HMAC over `"{timestamp}.{body}"` instead of just the body, and check the timestamp is within your tolerance — or use the SDK, which already does this for you.

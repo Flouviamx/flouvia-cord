@@ -12,23 +12,22 @@ description: "Organiza tu pipeline de ventas con las vistas de Lista y Kanban en
 
 Cord no es solo un generador de documentos, es un mini-CRM enfocado en cerrar tratos. Cuando entras a tu cuenta, la página principal te muestra todas tus cotizaciones organizadas por estado.
 
-### 1. Vista de Kanban (Tablero)
-Por defecto, verás la vista Kanban. Esta vista organiza tus cotizaciones en columnas según su estado, permitiéndote entender rápidamente la salud de tu flujo de ventas.
+### 1. Vista de Lista
+Por defecto, verás la Vista de Lista: una tabla densa, estilo hoja de cálculo con las cotizaciones más recientes primero, ideal si manejas un volumen alto y necesitas escanear rápido folio, cliente, términos, vigencia, monto y estado de un vistazo.
+- Usa las píldoras de filtro sobre la tabla para acotar por etapa del pipeline: Todas, Abiertas, Por aprobar, Aprobadas, Pagadas o Cerradas (rechazadas/vencidas).
+- Haz clic en cualquier fila para abrir el detalle completo de esa cotización.
+
+### 2. Vista de Kanban (Tablero)
+Haz clic en el ícono de **Tablero** junto al de Lista para cambiar de vista. Esta vista organiza tus cotizaciones en columnas según su estado, permitiéndote entender rápidamente la salud de tu flujo de ventas.
 - **Borradores:** Cotizaciones a medio terminar.
 - **Enviadas:** Esperando que el cliente las abra.
 - **Vistas:** El cliente ya abrió el enlace (¡momento ideal para llamarlo!).
 - **Aprobadas:** El cliente aceptó los términos.
-- **Pagadas / Facturadas:** Tratos cerrados y cobrados.
+- **Pagadas / Facturadas:** Tratos cerrados y cobrados (comparten columna).
 
-**Cómo usarla:** Simplemente arrastra y suelta (drag-and-drop) tarjetas si necesitas forzar cambios de estado manuales (aunque Cord automatiza la mayoría de los cambios cuando el cliente interactúa con el enlace).
-
-### 2. Vista de Lista
-Si manejas un volumen alto de cotizaciones y necesitas buscar o filtrar rápidamente, la Vista de Lista es tu mejor aliada.
-- Haz clic en el ícono de **Lista (≡)** en la esquina superior derecha del dashboard.
-- Aquí verás una tabla densa, estilo hoja de cálculo, ideal para ordenar por fecha de creación, monto total, cliente o fecha de vencimiento.
-- Puedes usar la barra de búsqueda superior para encontrar cotizaciones por nombre de cliente o número de folio (Ej: `COT-00142`).
+**Cómo usarla:** Arrastra y suelta (drag-and-drop) una tarjeta a la siguiente columna del pipeline para forzar ese avance de estado (por ejemplo, de Enviada a Aprobada). El tablero solo acepta movimientos hacia adelante en el flujo normal de venta — no puedes regresar una tarjeta a un estado anterior arrastrándola. Cord automatiza la mayoría de estos cambios cuando el cliente interactúa con el enlace, así que el drag-and-drop es para los casos en que necesitas forzarlo tú mismo.
 
 <Callout type="info">
-**Filtros avanzados:** En ambas vistas puedes filtrar por vendedor (para ver solo las cotizaciones de tu equipo) o por rango de fechas (Ej: "Cierres de este mes").
+**Resumen arriba de la tabla:** antes de la lista de filtros verás el valor total de tus cotizaciones abiertas, el valor ya aprobado y, si aplica, cuántas están esperando tu aprobación interna — la foto rápida de tu pipeline sin tener que sumar nada a mano.
 
 </Callout>

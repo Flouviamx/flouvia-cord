@@ -10,21 +10,25 @@ description: "Delega el seguimiento de cuentas por cobrar a un Agente IA que mon
 
 ## Tu nuevo gestor de cobranza
 
-Cord incorpora un Agente de Inteligencia Artificial (`AI AR`) diseñado específicamente para gestionar cuentas por cobrar. Este agente actúa de forma autónoma (si lo habilitas) para recuperar ingresos de cotizaciones y facturas que han superado sus términos de crédito.
+Cord incorpora un Agente de Inteligencia Artificial diseñado específicamente para gestionar cuentas por cobrar. Este agente actúa de forma autónoma (si lo habilitas) para recuperar ingresos de cotizaciones y facturas que han superado sus términos de crédito.
+
+<Callout type="info">
+La Cobranza Autónoma (IA) está disponible a partir del plan **Scale** (incluye también **Developer**). En planes anteriores, la cobranza sigue funcionando de forma manual desde la cartera de [cuentas por cobrar](/docs/pagos/tesoreria-fx).
+</Callout>
 
 ### ¿Cómo funciona?
 
-1. **Monitoreo 24/7:** El agente escanea diariamente tu base de datos en busca de cobros que han superado su fecha de vencimiento (`Net 30`, `Net 60`, etc.).
-2. **Contacto Inteligente:** Cuando detecta un retraso, envía un correo al cliente deudor con un tono profesional, amable, pero firme, solicitando la regularización de la cuenta.
-3. **Negociación Activa:** Si el cliente responde indicando dificultades de flujo de efectivo, el agente es capaz de negociar. Puede estructurar y ofrecer **planes de pago de hasta 3 cuotas mensuales**.
-4. **Links Dinámicos:** Una vez que se llega a un acuerdo o el cliente accede a pagar, el agente envía enlaces de pago dinámicos (SPEI o Tarjeta) que actualizan el saldo en tiempo real al ser procesados.
+1. **Monitoreo periódico:** un proceso automático revisa tu cartera de cuentas por cobrar buscando cotizaciones y facturas vencidas, con la cadencia que configures en días (por defecto, cada 7 días por cuenta).
+2. **Contacto inteligente:** cuando detecta un retraso, redacta un correo al cliente deudor en el tono que elijas (cercano, profesional o firme), solicitando la regularización de la cuenta e incluyendo siempre el link de pago real.
+3. **Negociación activa:** una vez que la cuenta lleva suficientes días vencida (el umbral lo defines tú), el agente puede estructurar y ofrecer un **plan de pago en cuotas mensuales** — de 2 a un máximo configurable entre 2 y 6 cuotas (3 por defecto) — que sumen exactamente el saldo, sin descuentos sobre el capital.
+4. **Links dinámicos:** una vez que se llega a un acuerdo o el cliente accede a pagar, el agente envía enlaces de pago dinámicos (SPEI o Tarjeta) que actualizan el saldo en tiempo real al ser procesados.
 
-### Flujo de 2 Turnos
+### Modo Aprobación vs. modo Automático
 
-Para garantizar que la Inteligencia Artificial no envíe correos infinitos o se desvíe del objetivo, el agente está limitado a una arquitectura estricta de **2 turnos (turns)**:
+Tú decides cuánto control conserva un humano antes de que el cliente reciba algo:
 
-- **Turno 1:** Detección de mora y primer aviso de cobro (o propuesta de plan de pagos si detecta historial de retraso).
-- **Turno 2:** Respuesta a la negociación del cliente. Si en este turno no se logra un acuerdo, el agente "escala" el ticket a un humano (tú o tu equipo de finanzas) y detiene la interacción automática.
+- **Modo Aprobación (default):** el agente redacta el correo y, si negoció un plan de pagos, lo deja **propuesto** sin activarlo — nada se envía ni se reescriben los cobros pendientes hasta que tú lo apruebes. Recibes un solo correo-resumen con los borradores que están esperando tu revisión.
+- **Modo Automático:** el agente envía el correo y activa el plan de pagos negociado sin esperar tu aprobación.
 
 ### Beneficios
 

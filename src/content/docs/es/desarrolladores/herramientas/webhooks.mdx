@@ -156,15 +156,63 @@ Esto significa que puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momen
 | `quote.paid` | Se recibe el pago total (cobro simple o el último cobro pendiente de un plan por anticipo/cuotas). |
 | `payment.partial` | Se recibe UN cobro parcial (anticipo, saldo o una cuota) sin que la cotización quede totalmente pagada todavía. |
 | `payment.failed` | Falla un cobro recurrente de una iguala/retainer. |
-| `invoice.stamped` | Se timbra el CFDI. |
-| `invoice.issued` | Se emite una factura comercial fuera de México. |
+| `invoice.stamped` | Se timbra el CFDI (viene de una cotización, ver nota abajo). |
+| `invoice.issued` | Se emite una factura comercial fuera de México (viene de una cotización). |
+| `invoice.finalized` | Se emite una factura de **Cord Invoicing** — el objeto de factura standalone, no atado a una cotización. |
+| `invoice.sent` | El vendedor envía esa factura al cliente. |
+| `invoice.paid` | La factura queda totalmente pagada. |
+| `invoice.payment_failed` | Falla un cobro contra esa factura (tarjeta rechazada, domiciliación fallida). |
+| `invoice.voided` | Se anula la factura. |
+| `invoice.marked_uncollectible` | Se marca la factura como incobrable. |
+| `invoice.overdue` | Pasó su fecha de vencimiento sin liquidarse (lo dispara el cron de recordatorios). |
 | `ping` | Solo aparece al usar "Probar" desde el Workbench — nunca lo dispara un evento real. |
 
-> **Nota:** `payment.partial` trae campos extra en `data` que los demás eventos no tienen:
-> `tipo` (`anticipo`\|`saldo`\|`cuota`), `monto`, `numero_cuota`, `saldo_pendiente` y
-> `payment_method`, además del resumen normal de la cotización (folio, cliente, total, link).
-> Si usas el Server SDK en TypeScript, `CordWebhookEvent` es una unión discriminada por
-> `event` — al comparar `event === 'payment.partial'` el tipo de `data` se estrecha solo.
+> **Nota:** `payment.partial` trae campos extra en `data` que los demás eventos de
+> **cotización** no tienen: `tipo` (`anticipo`\|`saldo`\|`cuota`), `monto`, `numero_cuota`,
+> `saldo_pendiente` y `payment_method`, además del resumen normal de la cotización (folio,
+> cliente, total, link).
+
+<Callout type="warning">
+**Dos familias de eventos, dos formas de `data`.** Los eventos `quote.*` y `payment.*`
+(incluidos `invoice.stamped`/`invoice.issued`, que se disparan desde la cotización) comparten
+la forma de `data` del ejemplo de arriba (`folio`, `status`, `total`, `cliente`,
+`link_publico`…). Los siete eventos `invoice.finalized`/`sent`/`paid`/`payment_failed`/
+`voided`/`marked_uncollectible`/`overdue` pertenecen a **Cord Invoicing** — la factura como
+objeto propio, con su propio ciclo de vida y su propio link público, no un derivado de la
+cotización — y traen una forma de `data` DISTINTA:
+
+```json
+{
+  "id": "evt_...",
+  "event": "invoice.paid",
+  "created_at": "2026-08-20T14:00:00.000Z",
+  "data": {
+    "id": "d4a1...",
+    "object": "invoice",
+    "numero": "FAC-0032",
+    "folio_fiscal": "3f2a...-uuid-cfdi",
+    "estado": "paid",
+    "estado_fiscal": "stamped",
+    "pais": "MX",
+    "tipo": "factura",
+    "moneda": "MXN",
+    "total": 12500.00,
+    "pagado": 12500.00,
+    "saldo": 0,
+    "vence": "2026-08-30",
+    "cliente": "Distribuidora El Zarco",
+    "cotizacion_id": null,
+    "link_publico": "https://cordhq.app/i/9c1f..."
+  }
+}
+```
+
+Nota el link público: `/i/{token}` para una factura de Cord Invoicing, contra `/q/{token}`
+para una cotización. Si usas el Server SDK en TypeScript, hoy `CordWebhookEvent` solo tipa la
+unión discriminada de los eventos `quote.*`/`payment.*` — para los siete eventos `invoice.*`
+de Cord Invoicing, tipa el `data` manualmente contra la forma de arriba hasta que el SDK lo
+cubra.
+</Callout>
 
 ## Log de entregas y retención
 

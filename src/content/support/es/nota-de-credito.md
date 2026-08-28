@@ -1,19 +1,20 @@
 ---
-title: "Emitir Nota de Crédito (Egreso)"
-description: "Aplica devoluciones y bonificaciones legales."
+title: "Emitir una Nota de Crédito"
+description: "Aplica devoluciones y bonificaciones sobre una factura ya emitida."
 category: "Facturación"
 ---
 
-Las Notas de Crédito (CFDI tipo Egreso) son el mecanismo fiscal del SAT para aplicar devoluciones, bonificaciones o corregir errores en saldos de facturas.
+Una Nota de Crédito es el mecanismo para acreditar el saldo de una factura ya emitida sin cancelarla por completo — por ejemplo, cuando le haces un descuento post-venta a un cliente, o necesitas devolverle parte de lo cobrado. En México se emite como CFDI de tipo Egreso, vinculado por su UUID a la factura original.
 
 ### Emitir una Nota de Crédito en Cord
 
-Si necesitas anular el saldo de una factura sin cancelarla por completo (ej. le hiciste un descuento post-venta del 10% al cliente):
+1. Localiza la factura original en tu bandeja de **Facturas**. Solo una factura **emitida** admite Nota de Crédito.
+2. Abre su menú de opciones y elige **Generar Nota de Crédito**.
+3. Cord crea una Nota de Crédito nueva como borrador, por el **monto total** de la factura original, y te lleva directo a su detalle.
+4. Desde ahí, edítala como cualquier borrador: ajusta el monto si necesitas acreditar solo una parte y añade un concepto que explique el motivo. Cuando esté lista, emítela desde el mismo editor de borradores que usas para cualquier factura nueva.
 
-1. Localiza la Factura de Ingreso original en **Contabilidad > Facturas**.
-2. En el menú de opciones (tres puntos), selecciona **Generar Nota de Crédito**.
-3. Se abrirá un panel con los conceptos originales de la factura. Cord inyectará automáticamente el tipo de relación **01 (Nota de crédito de los documentos relacionados)** y vinculará el UUID de la factura padre.
-4. Ajusta el monto a devolver/bonificar. Si es una devolución total de un producto específico, deja el precio intacto. Si es una bonificación, ajusta el valor al monto a descontar.
-5. Haz clic en **Timbrar Egreso**.
+<Callout type="info">
+Al usar el botón desde la app, la Nota de Crédito nace por el monto total de la factura original — hoy no hay un paso intermedio en la interfaz para indicar un monto parcial antes de crearla. Si facturas por la API, puedes enviar directamente el monto parcial que quieres acreditar.
+</Callout>
 
-El sistema enviará automáticamente un correo electrónico al cliente adjuntando el XML y el PDF de la Nota de Crédito para sus efectos de deducción fiscal.
+Cord **no envía automáticamente** un correo al cliente al crear la Nota de Crédito: se genera como borrador para que la revises, y la mandas tú mismo con el botón de enviar de su detalle una vez que la hayas emitido — igual que con cualquier otra factura.

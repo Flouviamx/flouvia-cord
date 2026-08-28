@@ -17,7 +17,7 @@ For security, Cord's systems store your API Key as an irreversible Hash (`sha-25
 ## Security Best Practices
 
 ### Do not commit secret keys to repositories
-Never commit (e.g., in Git) a key starting with `sk_live_`. If Cord detects a compromised key in public Github sources, automated fraud mechanisms may preemptively suspend it. Use environment variables (like unversioned `.env` files) on your servers.
+Never commit (e.g., in Git) a key starting with `sk_live_`. If a public repository exposes your key, anyone can use it with the same permissions as your backend until you manually revoke it from the Workbench — Cord does not detect or suspend it for you. Use environment variables (like unversioned `.env` files) on your servers, and check the key's activity log if you suspect it leaked.
 
 ### Use the correct scope (Publishable vs Secret)
 - **Secret Keys (`sk_`):** Have full read and write access to your finances and clients. They should only live on backend servers under your control.
@@ -25,4 +25,4 @@ Never commit (e.g., in Git) a key starting with `sk_live_`. If Cord detects a co
 
 ## Real-Time Activity
 
-Within the API tab in the dashboard, you will have access to a live audit log of each key's usage, allowing you to quickly track which IP or which flow (traditional API or MCP) originated a change in your system.
+The **Logs** tab of the Workbench is a live audit log of every key's usage: filter by method or status class, search by route, and select any request to see which IP, which key, and which flow (REST API or MCP) originated it. MCP calls show up with the tool that was invoked, for example `/mcp/tools/call:listar_productos`.

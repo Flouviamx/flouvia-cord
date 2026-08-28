@@ -14,7 +14,7 @@ Endpoints that return collections of objects, like listing all your clients or q
 
 ## Query Parameters
 
-All list reading routes (`GET /v1/cotizaciones`, `GET /v1/clientes`, `GET /v1/productos`) accept the following parameters in the URL:
+All list reading routes (`GET /api/v1/cotizaciones`, `GET /api/v1/clientes`, `GET /api/v1/productos`) accept the following parameters in the URL:
 
 - `limit`: (Integer) Determines the maximum number of results to return.
 - `offset`: (Integer) Specifies how many results to skip before starting to return data.
@@ -22,7 +22,7 @@ All list reading routes (`GET /v1/cotizaciones`, `GET /v1/clientes`, `GET /v1/pr
 **Request Example (Page 2):**
 
 ```bash
-curl -X GET "https://api.cordhq.com/v1/clientes?limit=50&offset=50" \
+curl -X GET "https://cordhq.app/api/v1/clientes?limit=50&offset=50" \
      -H "Authorization: Bearer sk_live_tU..."
 ```
 
@@ -45,3 +45,21 @@ All Cord paginated responses return a JSON object with two main properties: `dat
 ```
 
 - Use `meta.total` to build pagination controls in your UI or to know exactly when to stop a data export script.
+
+## Exception: `GET /api/v1/facturas` uses a cursor, not offset
+
+Invoices are listed with **keyset pagination** (`cursor` / `next_cursor`), not `limit`/`offset`. With offset, a new invoice shifts the entire next page and can hide a record without you noticing — unacceptable in a listing that feeds collections or accounting reconciliation.
+
+```bash
+curl -X GET "https://cordhq.app/api/v1/facturas?limit=50" \
+     -H "Authorization: Bearer sk_live_tU..."
+```
+
+```json
+{
+  "data": [ { "id": "fac_...", "numero": "F-2026-104", "estado": "open" } ],
+  "meta": { "next_cursor": "2026-08-20T14:32:00.000Z" }
+}
+```
+
+`next_cursor` is the creation date (ISO 8601) of the last row on the page, not an opaque token: repeat the request adding `?cursor=<next_cursor>` to fetch the next one. When there are no more pages, `next_cursor` comes back `null`.

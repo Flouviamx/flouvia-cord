@@ -736,3 +736,145 @@ Firefox y únicamente en producción (dev nunca minifica).
   Un `@supports not (backdrop-filter: …)` a secas no dispara en el escenario
   que originó esta regla: los navegadores dañados son exactamente aquellos
   para los que ese test da falso.
+
+### 32. El KYC lo dicta el proveedor, no una rama por país
+
+Cord recolecta el KYC completo en su propia UI (Connect **Custom**), así que es
+Cord —no el proveedor— quien responde de que el alta sea correcta, completa y
+legalmente sostenible en cada mercado. Eso impone cuatro contratos.
+
+- **Qué se pide se DERIVA, no se hardcodea.** `requirements` +
+  `future_requirements` + los `requirements` de cada persona son la única fuente
+  de qué campos faltan. `parseConnectRequirements()` / `requiresField()` en
+  `src/lib/connect-requirements.ts` los leen; el país sólo decide **cómo se
+  llama** lo que ya se pidió (`personIdLabel`, `taxIdLabel`, `payoutSpecFor`).
+  Un `if (PAIS === 'US')` para decidir si un campo existe es la regla rota:
+  el wizard exigía `person.id_number` en los ocho países y España, Alemania y
+  Reino Unido **no lo piden** — el alta era imposible de terminar ahí.
+- **Una atestación se firma después de poder construir lo que declara.**
+  `owners_provided` se enviaba junto a un único `Person` marcado a la fuerza
+  como `owner + director` al 100 %, sin UI para agregar a nadie más: una
+  sociedad con tres socios al 30 % no podía completar el alta, y lo que Cord
+  declaraba era falso. Los roles se PREGUNTAN, la lista se construye, y las
+  declaraciones (`ownership_declaration` y sus hermanas) siguen el contrato de
+  `tos_acceptance`: **el cliente manda un booleano, el servidor pone `date`,
+  `ip` y `user_agent`**. Una IP que llega del navegador no es evidencia de nada,
+  y caer a `127.0.0.1` cuando no se resuelve es firmar con un dato inventado.
+- **El propósito de un archivo es parte del dato.** `identity_document`,
+  `additional_verification` y `account_requirement` NO son intercambiables: el
+  documento constitutivo de una empresa subido como identidad es un mismatch que
+  el proveedor rechaza, y la selfie que Cord mandaba a
+  `verification.additional_document` —documentado como comprobante de domicilio—
+  era el dato equivocado ocupando el hueco de otro requisito. La prueba de vida
+  real es un producto aparte del proveedor; mientras no se contrate, no se finge.
+- **Un token resuelve identidad; la pertenencia se verifica en Postgres.** El
+  `personId` del body viajaba directo al proveedor y lo único que impedía tocar
+  a la persona de otra organización era que él devolviera 404 — seguridad
+  delegada a un tercero. `connect_personas` es el ancla local (proyección
+  reconstruible, nunca la fuente de verdad: el gate de cobros sigue leyendo
+  `charges_enabled`), y escribir identidad exige step-up igual que cambiar la
+  cuenta de depósito.
+
+Verificación: `npm run test:payments`, que incluye `security:payments`
+(`scripts/payments-contract-check.mjs` — carril, rate limit, idempotencia y
+ausencia de fuga del mensaje del proveedor en las 15 rutas que mueven dinero) y
+el vitest de `test/connect-requirements.test.ts`, con fixtures reales de los seis
+mercados. Esas fixtures son la única defensa contra que el proveedor cambie sus
+reglas y nadie se entere.
+
+### 33. Una ruta que mueve dinero declara sus cuatro garantías
+
+Toda ruta que crea un objeto de dinero —PaymentIntent, Checkout Session,
+Subscription, Customer, Refund— o que toca `application_fee` necesita las
+cuatro, y `npm run security:payments` lo verifica derivando el universo del
+árbol de rutas, no de una lista escrita a mano:
+
+1. **Carril de tenencia** (regla 30) si ejecuta alguna query.
+2. **Rate limit** propio. El contador in-process del middleware se multiplica
+   por réplica en Vercel Fluid y no acota nada real. Puede vivir en un
+   envoltorio compartido (`billingContext()` para la facturación,
+   `limitPublicPayment()` para el carril público), pero entonces el check
+   verifica **también el envoltorio**: confiar en uno sin comprobarlo deja de
+   proteger el día que alguien lo vacía.
+
+   En el carril público el límite es **estricto y con componente de IP**.
+   `rateLimit()` a secas falla ABIERTO —si el backend de conteo no responde, el
+   límite desaparece— y ese es justo el endpoint donde vive el fraude de prueba
+   de tarjetas. Fallar cerrado ahí no cuesta disponibilidad real: el respaldo del
+   limitador es la misma base de datos que el endpoint necesita dos líneas
+   después para resolver la cotización. Y sin componente de IP, un atacante con
+   muchos enlaces públicos y un comprador legítimo detrás de un NAT compartido se
+   medían igual.
+3. **`Idempotency-Key` determinística** cuando CREA. Sin ella un reintento del
+   navegador acuñaba un segundo Customer en la cuenta conectada y, como la CLABE
+   de SPEI se asigna por Customer, el cliente terminaba con dos CLABEs vivas y
+   el pago llegaba a la que nadie conciliaba.
+4. **Ningún mensaje crudo del proveedor** en la respuesta (regla 14): sólo
+   `payerError()` / `merchantError()` / `translateStripeError()`.
+
+Corolario del carril público: `/api/q/*` e `/api/i/*` son públicas por diseño
+—el token es la credencial— pero **no** están exentas de CSRF, y ambas deben
+estar en `PUBLIC_API_PREFIXES`. `/api/i/` no lo estaba: los dos endpoints de la
+factura hospedada existían, eran correctos, y el middleware respondía 401 a todo
+cliente sin sesión. Nadie podía pagar una factura ni se registraba su vista.
+
+### 34. Una foto de identidad se valida donde se toma, no donde se rechaza
+
+Cord recolecta el KYC en su propia interfaz, así que responde de que llegue una
+foto que el proveedor **pueda** verificar. El proveedor sí hace autenticidad
+documental y detección de manipulación sobre lo que Cord le sube; lo que Cord no
+puede delegar es que la foto sea legible, que el enlace de captura no sea
+abusable y que no se filtren datos por el camino.
+
+- **La compuerta aconseja, casi nunca bloquea.** Un falso rechazo deja a un
+  negocio sin poder cobrar; una foto regular que el proveedor acepta vale más que
+  una buena rechazada por un umbral mal calibrado. Sólo se bloquea lo que es
+  fracaso **garantizado** del otro lado: blanco y negro en una identificación con
+  foto (el proveedor auto-rechaza `_greyscale`) y resolución bajo el piso de
+  lectura. Nitidez, exposición y reflejos avisan con un consejo accionable y
+  dejan continuar.
+- **Un umbral sin dataset es una corazonada, y se trata como tal.** Las métricas
+  medidas en el cliente viajan a `connect_kyc_evidencia`, donde el webhook
+  escribe después el veredicto real del proveedor. Ese par —"nitidez X → el
+  proveedor dijo ilegible"— es el único dataset con el que los números de
+  `UMBRALES` se pueden ajustar con evidencia. Hasta que exista, sólo avisan.
+- **El país decide el vocabulario del documento, no si se pide.** Qué falta lo
+  sigue diciendo `requirements` (regla 32). El catálogo de
+  `src/lib/identity-documents.ts` sólo traduce las tres categorías que el
+  proveedor confirma —pasaporte, licencia, identificación oficial— al nombre
+  local, y dice si esa familia lleva reverso. La regla transfronteriza sí es
+  del proveedor y está verificada literal: **si el país de residencia difiere del
+  de la cuenta, sólo se acepta pasaporte**, y se dice antes de tomar la foto.
+- **El enlace de captura es una credencial portadora y se trata como tal.** Viaja
+  en la URL, así que la ruta va con `no-referrer`, `no-store`, `X-Robots-Tag` y
+  **sin analítica** — el `$current_url` de PostHog registraba el token vivo en un
+  tercero. Se liga al primer dispositivo que lo usa (cookie propia, atada en el
+  primer POST y no en el GET: el QR se escanea desde el navegador embebido de
+  WhatsApp y el usuario luego abre en Safari, otro contenedor de cookies), lleva
+  tope acumulado de intentos incrementado **antes** de llamar al proveedor, y
+  ventana deslizante. La IP y el user-agent son **forenses, jamás autorización**:
+  las operadoras rotan la IP a media sesión, así que atar a IP garantiza bloquear
+  al usuario legítimo.
+- **Los metadatos se quitan, pero la orientación se conserva.** El EXIF viajaba
+  intacto al proveedor, con el GPS del domicilio dentro. Se elimina reescribiendo
+  la cadena de segmentos —sin re-codificar, que degradaría la imagen justo antes
+  de que el proveedor la lea— y se **reinyecta un APP1 mínimo con sólo la
+  etiqueta `Orientation`** cuando no es 1: strippearla sin rotar los píxeles
+  acostaría una foto vertical de iPhone, o sea, arreglar la privacidad rompiendo
+  el KYC.
+- **El mismo archivo no se manda dos veces.** El proveedor auto-rechaza un
+  reenvío idéntico, así que repetirlo quema un intento y devuelve un rechazo
+  incomprensible. El dedupe es por SHA-256 y va **siempre acotado a la
+  organización**: un índice global sería un oráculo cross-tenant.
+
+Verificación: `test/upload-guard.test.ts` (JPEG y PNG fabricados a mano —
+incluida la trampa de que `C4` es DHT, `C8` es JPG y `CC` es DAC, y **no** son
+SOF), `test/capture-quality.test.ts` (funciones puras, sin DOM) y
+`test/identity-documents.test.ts`.
+
+Casos que originaron la regla (ago 2026): `Permissions-Policy: camera=()` se
+fijaba para toda ruta sin excepción, así que en Chromium el flujo del QR fallaba
+**antes** de pedir permiso; el cron de limpieza consultaba una columna
+inexistente y por eso **ninguna sesión de captura se borró jamás**; el marco guía
+medía 1.23:1, que no corresponde a ningún documento real; y la cámara seguía
+encendida después de que la persona pulsara "Cancelar".

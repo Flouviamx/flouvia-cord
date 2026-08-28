@@ -1,11 +1,11 @@
 ---
-title: "Configurar facturación automática (CFDI 4.0)"
-description: "Aprende cómo habilitar la facturación automática para que tus clientes reciban su CFDI 4.0 en cuanto realicen el pago."
+title: "Emitir CFDI 4.0 desde una cotización o desde cero"
+description: "Aprende a timbrar el CFDI 4.0 de una venta en un clic desde la cotización ganada, o a facturar directamente sin cotización previa."
 category: "Facturación"
 order: 1
 ---
 
-La emisión de un Comprobante Fiscal Digital por Internet (CFDI) versión 4.0 está totalmente integrada en tu flujo de ventas.
+La emisión de un Comprobante Fiscal Digital por Internet (CFDI) versión 4.0 está totalmente integrada en tu flujo de ventas. El timbrado siempre lo confirma una persona con un clic — Cord no timbra por sí solo en cuanto entra un pago.
 
 ### De Cotización a Factura en un Clic
 

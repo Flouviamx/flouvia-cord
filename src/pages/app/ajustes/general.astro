@@ -10,6 +10,12 @@ import { listOfferedCurrencies } from '../../../lib/currency';
 import FlagSelect from '../../../components/ui/FlagSelect';
 const ORG = await getOrg();
 const L = currentLocale();
+// El país de una cuenta conectada es inmutable en el proveedor: dejar el select
+// abierto invitaba a un cambio que el endpoint ahora rechaza (y que antes
+// aceptaba, dejando la cuenta divergente en silencio). Ocultar la opción no es
+// validar — la validación real vive en PATCH /api/org; esto es para que se vea
+// el porqué antes de intentarlo.
+const PAIS_BLOQUEADO = !!ORG.stripeAccountId;
 const COUNTRY_OPTIONS = listCountries(L, ORG.countryCode).map((country) => ({
     code: country.code,
     label: country.name,
@@ -111,10 +117,15 @@ const ZONAS = listTimeZones(L, ORG.countryCode, ORG.zonaHoraria).map((z) => ({
                         nativeId="oCountry"
                         nativeName="country_code"
                         nativeDataField="country_code"
+                        disabled={PAIS_BLOQUEADO}
                     />
-                    <span class="s-hint">{L === 'en'
-                        ? 'Controls the invoicing experience and regulatory rail shown by Cord.'
-                        : 'Define la experiencia de facturación y el carril regulatorio que muestra Cord.'}</span>
+                    <span class="s-hint">{PAIS_BLOQUEADO
+                        ? (L === 'en'
+                            ? 'Locked while online payments are connected: your payments account is registered in this country and that cannot be changed. To operate from another country, disconnect payments in Settings › Payments first — you will need to complete verification again.'
+                            : 'Bloqueado mientras los cobros en línea estén conectados: tu cuenta de cobros quedó registrada en este país y eso no se puede cambiar. Para operar desde otro país, primero desconecta los cobros en Ajustes › Cobros — tendrás que volver a completar la verificación.')
+                        : (L === 'en'
+                            ? 'Controls the invoicing experience and regulatory rail shown by Cord.'
+                            : 'Define la experiencia de facturación y el carril regulatorio que muestra Cord.')}</span>
                 </div>
                 <div class="s-field">
                     <label id="oZonaLabel">{t(L, 'set.general.zona_horaria')}</label>

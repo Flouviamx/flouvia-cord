@@ -1,0 +1,170 @@
+---
+import { marked } from 'marked';
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../landing/Nav.astro';
+import Footer from '../landing/Footer.astro';
+import PageAnims from '../landing/PageAnims.astro';
+import { roadmapData, type RoadmapItem } from '../../lib/roadmap-data';
+
+interface Props { item: RoadmapItem; lang: 'es' | 'en' }
+const { item, lang } = Astro.props;
+const isEn = lang === 'en';
+const basePath = isEn ? '/en/roadmap' : '/roadmap';
+const htmlContent = await marked.parse(item.content[lang]);
+const copy = isEn ? {
+    back: 'Back to roadmap', availability: 'Availability', product: 'Product', market: 'Scope', developers: 'Developers', api: 'Public API',
+    live: 'Live', beta: 'In beta', next: 'Coming soon', quotes: 'Quotes', payments: 'Cord Payments', invoicing: 'Cord Invoicing', platform: 'Platform',
+    workflow: 'How it works', scope: 'Availability and scope', boundaries: 'Clear limits', related: 'Related initiatives', all: 'View the full roadmap',
+} : {
+    back: 'Volver al roadmap', availability: 'Disponibilidad', product: 'Producto', market: 'Alcance', developers: 'Desarrolladores', api: 'API pública',
+    live: 'Disponible', beta: 'En beta', next: 'Próximamente', quotes: 'Cotizaciones', payments: 'Cord Payments', invoicing: 'Cord Invoicing', platform: 'Plataforma',
+    workflow: 'Cómo funciona', scope: 'Disponibilidad y alcance', boundaries: 'Límites claros', related: 'Iniciativas relacionadas', all: 'Ver el roadmap completo',
+};
+const statusMap = { live: copy.live, beta: copy.beta, next: copy.next };
+const familyMap = { quotes: copy.quotes, payments: copy.payments, invoicing: copy.invoicing, platform: copy.platform };
+const relatedItems = item.related.map((slug) => roadmapData.find((entry) => entry.slug === slug)).filter(Boolean) as RoadmapItem[];
+const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Cord', item: isEn ? 'https://cordhq.app/en/' : 'https://cordhq.app/' },
+        { '@type': 'ListItem', position: 2, name: 'Roadmap', item: `https://cordhq.app${basePath}` },
+        { '@type': 'ListItem', position: 3, name: item.title[lang], item: `https://cordhq.app${basePath}/${item.slug}` },
+    ],
+};
+---
+
+<Layout title={`${item.title[lang]} - Cord Roadmap`} description={item.shortDesc[lang]}>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    <Nav />
+    <main class="rd-detail-main">
+        <article class="rd-detail">
+            <header class="rd-detail-header reveal">
+                <a href={basePath} class="rd-back">← {copy.back}</a>
+                <div class="rd-kicker">
+                    <span>{familyMap[item.family]}</span>
+                    <span class={`status-${item.status}`}>{statusMap[item.status]}</span>
+                </div>
+                <h1>{item.title[lang]}</h1>
+                <p class="rd-detail-lead">{item.shortDesc[lang]}</p>
+
+                <dl class="rd-meta">
+                    <div><dt>{copy.availability}</dt><dd class={`status-${item.status}`}>{statusMap[item.status]}</dd></div>
+                    <div><dt>{copy.product}</dt><dd>{familyMap[item.family]}</dd></div>
+                    <div><dt>{copy.market}</dt><dd>{item.market[lang]}</dd></div>
+                    {item.api && <div><dt>{copy.developers}</dt><dd>{copy.api}</dd></div>}
+                </dl>
+            </header>
+
+            <div class="rd-detail-grid">
+                <div class="rd-article-body">
+                    <div class="rd-prose reveal" set:html={htmlContent} />
+
+                    <section class="rd-section reveal">
+                        <h2>{copy.workflow}</h2>
+                        <ol class="rd-workflow">
+                            {item.workflow[lang].map((step) => (
+                                <li><p>{step}</p></li>
+                            ))}
+                        </ol>
+                    </section>
+
+                    <section class="rd-section rd-scope reveal">
+                        <div>
+                            <h2>{copy.scope}</h2>
+                            <p>{item.scope[lang]}</p>
+                        </div>
+                        <div>
+                            <h2>{copy.boundaries}</h2>
+                            <p>{item.boundaries[lang]}</p>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="rd-related reveal" aria-labelledby="rd-related-title">
+                    <h2 id="rd-related-title">{copy.related}</h2>
+                    <nav>
+                        {relatedItems.map((related) => (
+                            <a href={`${basePath}/${related.slug}`}>
+                                <span>{familyMap[related.family]}</span>
+                                <strong>{related.title[lang]}</strong>
+                            </a>
+                        ))}
+                    </nav>
+                    <a href={basePath} class="rd-all-link">{copy.all} <span>→</span></a>
+                </aside>
+            </div>
+        </article>
+    </main>
+    <Footer />
+    <PageAnims />
+</Layout>
+
+<style>
+    .rd-detail-main { min-height: 100dvh; padding: 8.5rem 5% 6rem; background: var(--color-bg); }
+    .rd-detail { width: min(1120px, 100%); margin: 0 auto; }
+    .rd-detail-header { max-width: 900px; }
+    .rd-back { display: inline-block; margin-bottom: 2.8rem; color: var(--color-text-muted); font-size: .88rem; font-weight: 600; text-decoration: none; transition: color .25s ease, transform .25s var(--ease-spring); }
+    .rd-back:hover { color: var(--color-text); transform: translateX(-3px); }
+    .rd-kicker { display: flex; flex-wrap: wrap; gap: .55rem 1rem; margin-bottom: 1rem; color: var(--color-text-muted); font-size: .7rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+    .rd-kicker span + span::before { content: '/'; margin-right: 1rem; color: var(--color-border); }
+    .rd-detail-header h1 { max-width: 850px; margin: 0 0 1.1rem; color: var(--color-text); font-size: clamp(2.35rem, 5vw, 4.6rem); font-weight: 780; letter-spacing: -.05em; line-height: 1.02; }
+    .rd-detail-lead { max-width: 760px; margin: 0; color: var(--color-text-muted); font-size: clamp(1.05rem, 1.8vw, 1.24rem); line-height: 1.62; }
+    .rd-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem 2rem; margin: 3rem 0 0; padding: 1.6rem 0; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+    .rd-meta div { display: grid; gap: .42rem; }
+    .rd-meta dt { color: var(--color-text-muted); font-size: .67rem; font-weight: 750; letter-spacing: .09em; text-transform: uppercase; }
+    .rd-meta dd { margin: 0; color: var(--color-text); font-size: .88rem; font-weight: 650; line-height: 1.4; }
+    .status-live { color: #087f5b !important; }
+    .status-beta { color: #a15c00 !important; }
+    .status-next { color: #3355b7 !important; }
+
+    .rd-detail-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4rem; margin-top: 4.5rem; }
+    .rd-article-body { min-width: 0; }
+    .rd-prose { max-width: 730px; color: var(--color-text); font-size: 1.02rem; line-height: 1.78; }
+    .rd-prose :global(h2), .rd-prose :global(h3) { color: var(--color-text); letter-spacing: -.025em; }
+    .rd-prose :global(h2) { margin: 0 0 1.1rem; font-size: clamp(1.65rem, 3vw, 2.15rem); line-height: 1.18; }
+    .rd-prose :global(h2:not(:first-child)) { margin-top: 3.6rem; }
+    .rd-prose :global(h3) { margin: 2.5rem 0 .9rem; font-size: 1.18rem; }
+    .rd-prose :global(p) { margin: 0 0 1.35rem; color: var(--color-text-muted); }
+    .rd-prose :global(ul), .rd-prose :global(ol) { margin: 0 0 1.5rem; padding: 0; list-style: none; }
+    .rd-prose :global(li) { position: relative; margin: 0; padding: .9rem 0 .9rem 1.4rem; border-bottom: 1px solid var(--color-border); color: var(--color-text-muted); }
+    .rd-prose :global(li)::before { content: ''; position: absolute; top: 1.55rem; left: 0; width: 5px; height: 5px; border-radius: 50%; background: #1f6fe0; }
+    .rd-prose :global(strong) { color: var(--color-text); font-weight: 680; }
+    .rd-prose :global(code) { border-radius: 5px; padding: .15em .35em; background: var(--color-bg-soft); font-size: .88em; }
+
+    .rd-section { max-width: 730px; margin-top: 4.5rem; padding-top: 2.2rem; border-top: 1px solid var(--color-border); }
+    .rd-section h2 { margin: 0 0 1.3rem; color: var(--color-text); font-size: clamp(1.5rem, 3vw, 2rem); letter-spacing: -.03em; }
+    .rd-workflow { margin: 0; padding: 0; list-style: none; }
+    .rd-workflow li { padding: 1.05rem 0 1.05rem 1.1rem; border-bottom: 1px solid var(--color-border); border-left: 2px solid #3355b7; }
+    .rd-workflow p, .rd-scope p { margin: 0; color: var(--color-text-muted); line-height: 1.7; }
+    .rd-scope { display: grid; gap: 2.5rem; }
+    .rd-scope h2 { margin-bottom: .8rem; font-size: 1.18rem; }
+
+    .rd-related { align-self: start; padding-top: 1.4rem; border-top: 1px solid var(--color-border); }
+    .rd-related h2 { margin: 0 0 .8rem; color: var(--color-text-muted); font-size: .68rem; font-weight: 780; letter-spacing: .1em; text-transform: uppercase; }
+    .rd-related nav { display: grid; }
+    .rd-related nav a { display: grid; gap: .32rem; padding: 1rem 0; border-bottom: 1px solid var(--color-border); color: inherit; text-decoration: none; }
+    .rd-related nav span { color: var(--color-text-muted); font-size: .67rem; font-weight: 650; }
+    .rd-related nav strong { color: var(--color-text); font-size: .9rem; line-height: 1.35; transition: color .2s ease; }
+    .rd-related nav a:hover strong { color: #3355b7; }
+    .rd-all-link { display: inline-flex; gap: .45rem; margin-top: 1.2rem; color: var(--color-text); font-size: .8rem; font-weight: 680; text-decoration: none; }
+    .rd-all-link span { transition: transform .25s var(--ease-spring); }
+    .rd-all-link:hover span { transform: translateX(4px); }
+
+    @media (min-width: 720px) {
+        .rd-meta { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .rd-scope { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 980px) {
+        .rd-detail-grid { grid-template-columns: minmax(0, 1fr) 238px; gap: clamp(4rem, 8vw, 7rem); }
+        .rd-related { position: sticky; top: 7rem; }
+    }
+    @media (prefers-color-scheme: dark) {
+        .status-live { color: #42c89a !important; }
+        .status-beta { color: #f0ad4e !important; }
+        .status-next { color: #8da7ff !important; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .rd-back, .rd-all-link span { transition: none; }
+    }
+</style>

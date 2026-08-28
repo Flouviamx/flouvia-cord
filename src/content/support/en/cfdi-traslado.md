@@ -11,4 +11,4 @@ Our billing engine is optimized for:
 - Expense CFDI (Credit Notes).
 - Payment Receipt CFDI (Supplements / REP).
 
-If your company is dedicated to logistics or transporting merchandise on federal highways and you need to stamp Carta Porte Supplements version 3.0, we suggest using the API of our direct stamping provider (Facturapi) by connecting your own ERP, since filling it out requires dozens of specific nodes about vehicles, operators, and insurance companies that we do not manage in Cord.
+If your company is dedicated to logistics or transporting merchandise on federal highways and you need to stamp Carta Porte Supplements version 3.0, we recommend using an invoicing system specialized in that supplement, connected to your own ERP, since filling it out requires dozens of specific nodes about vehicles, operators, and insurance companies that Cord does not manage.

@@ -43,7 +43,7 @@ It is a mechanism by which Cord proactively notifies your server (via an HTTP PO
 It is our suite of pre-built user interface (UI) components that you can embed directly into your application (React, Vue, or plain HTML) to process payments without having to design the checkout flow from scratch. [More information](/en/support/cord-elements).
 
 ### Test mode
-`sk_test_` keys don't consume your usage meter or count toward billing, so they're useful for integrating the API without affecting your plan. Note: they operate on the same organization data (there's no 100% isolated sandbox yet), and whether stamping is real or simulated depends on your Facturapi configuration.
+`sk_test_` keys don't consume your usage meter or count toward billing, so they're useful for integrating the API without affecting your plan. Note: they operate on the same organization data (there's no 100% isolated sandbox yet), and whether stamping is real or simulated depends on whether you have your CSD connected.
 
 ### Endpoint
 A specific URL of the Cord API designed to execute an action (e.g., `POST /api/v1/cotizaciones` to create a quote).
@@ -59,4 +59,4 @@ It means that the customer has 30 calendar days from the issuance of the invoice
 Occurs when an end customer contacts their bank to reject a charge processed via Cord. The bank temporarily holds the funds while Cord helps you submit evidence to win the dispute.
 
 ### Reconciliation
-The process of matching a money movement in the corporate bank account with its respective invoice or accounting record. Cord automates 95% of B2B reconciliation.
+The process of matching a money movement in the corporate bank account with its respective invoice or accounting record. Cord automates this for payments that go through Cord Payments (card, and in Mexico, SPEI); a manual bank transfer deposit is confirmed by you.

@@ -99,6 +99,10 @@ export default function PixelIcon({
   }, []);
 
   const handlePointerDown = (e, index) => {
+    // Regla 16: arrastrar se queda en escritorio. En tactil ese mismo gesto ES
+    // el scroll de la pagina, y sobre el arte grande del footer la dejaba
+    // atascada: el dedo movia un pixel en vez de desplazar.
+    if (e.pointerType === 'touch') return;
     e.preventDefault();
     e.stopPropagation();
     const block = blocksRef.current[index];

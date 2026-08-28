@@ -1,84 +1,117 @@
-// POST /api/blog/subscribe — registra un suscriptor del blog.
-// Guarda el email en Neon (tabla blog_subscribers) y manda un correo de
-// bienvenida vía Resend. Público (sin sesión) → rate limit por IP.
-// Patrón idéntico a /api/contacto/ventas.ts.
+// POST /api/blog/subscribe
+// Inicia un doble opt-in para Resend Marketing. Un correo no entra al segmento
+// hasta abrir el enlace de confirmación; Neon conserva el registro de consentimiento.
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql } from '../../../lib/db';
-import { sendEmail } from '../../../lib/email';
+import {
+    createConfirmationToken,
+    marketingConfig,
+    normalizeBlogLocale,
+    publicSiteOrigin,
+    sendBlogConfirmation,
+} from '../../../lib/blog-newsletter';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
+import { trustedIp } from '../../../lib/ip';
 import { log } from '../../../lib/log';
 
-const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const CONFIRMATION_TTL_HOURS = 24;
+const RESEND_COOLDOWN_MINUTES = 2;
 
 export const POST: APIRoute = async ({ request }) => {
-    // Rate limit por IP (público, sin sesión).
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anon';
-    const rl = await rateLimit(`blog-sub:${ip}`, 5, 60);
+    const rl = await rateLimit(`blog-sub:${trustedIp(request)}`, 5, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
 
-    let body: Record<string, unknown> = {};
-    try { body = await request.json(); } catch {
-        return json({ error: 'Cuerpo inválido' }, 400);
+    let body: Record<string, unknown>;
+    try {
+        body = await request.json();
+    } catch {
+        return json({ error: 'invalid_request' }, 400);
     }
 
     const email = String(body.email ?? '').trim().toLowerCase().slice(0, 160);
-    if (!isEmail(email)) return json({ error: 'Correo inválido' }, 400);
+    const locale = normalizeBlogLocale(body.locale);
+    if (!isEmail(email)) return json({ error: 'invalid_email' }, 400);
+    if (body.website) return json({ ok: true, state: 'pending' });
 
-    // Honeypot anti-spam (campo invisible "website").
-    if (body.website) return json({ ok: true });
-
-    // Insertar en blog_subscribers (ON CONFLICT = ya existe → no error).
-    try {
-        await sql`
-            insert into blog_subscribers (email)
-            values (${email})
-            on conflict (email) do nothing`;
-    } catch (err: any) {
-        // Si la tabla no existe aún (pre-migración), respondemos ok igual —
-        // no rompemos la UI. El admin puede correr db:migrate después.
-        if (err?.code === '42P01') {
-            log.warn('Tabla blog_subscribers no existe — corre npm run db:migrate', { route: 'blog/subscribe' });
-            return json({ ok: true, warning: 'tabla pendiente de migración' });
-        }
-        throw err;
+    if (!marketingConfig()) {
+        log.error('Resend Marketing no está configurado', { route: 'blog/subscribe' });
+        return json({ error: 'service_unavailable' }, 503);
     }
 
-    // Correo de bienvenida (best-effort, gated por RESEND_API_KEY).
-    await sendEmail({
-        to: email,
-        subject: '¡Bienvenido al Blog de Cord!',
-        html: `<div style="background:#fff;padding:48px 24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-<div style="max-width:520px;margin:0 auto;">
+    try {
+        const existing = await sql`
+            select status, confirmation_sent_at
+            from blog_subscribers
+            where email = ${email}
+            limit 1`;
+        const subscriber = existing[0] as any;
 
-  <div style="margin-bottom:36px;">
-    <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="86" height="auto" alt="Cord" style="display:block;" />
-  </div>
+        // La respuesta no revela si una dirección forma parte de la lista.
+        if (subscriber?.status === 'confirmed') return json({ ok: true, state: 'pending' });
+        if (subscriber?.confirmation_sent_at) {
+            const sentAt = new Date(subscriber.confirmation_sent_at).getTime();
+            if (Date.now() - sentAt < RESEND_COOLDOWN_MINUTES * 60_000) {
+                return json({ ok: true, state: 'pending' });
+            }
+        }
 
-  <p style="font-size:16px;color:#111827;font-weight:500;margin:0 0 16px;">¡Hola!</p>
-  <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 16px;">Gracias por suscribirte al Blog de Cord. A partir de ahora recibirás artículos, guías y estrategias sobre <strong>ventas, facturación y cómo acelerar tu flujo de ingresos</strong>.</p>
-  <p style="font-size:15px;line-height:1.7;color:#374151;margin:0 0 40px;">No enviamos spam — solo contenido que vale la pena leer.</p>
+        const { token, hash } = createConfirmationToken();
+        const expiresAt = new Date(Date.now() + CONFIRMATION_TTL_HOURS * 60 * 60 * 1000);
+        await sql`
+            insert into blog_subscribers (
+                email, locale, status, confirmation_token_hash,
+                confirmation_expires_at, updated_at
+            ) values (
+                ${email}, ${locale}, 'pending', ${hash}, ${expiresAt}, now()
+            )
+            on conflict (email) do update set
+                locale = excluded.locale,
+                status = 'pending',
+                confirmation_token_hash = excluded.confirmation_token_hash,
+                confirmation_expires_at = excluded.confirmation_expires_at,
+                confirmation_sent_at = null,
+                updated_at = now()`;
 
-  <div style="margin:40px 0;">
-    <a href="https://cordhq.app/blog" style="display:inline-block;background-color:#0a192f;color:#fff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">Visitar el Blog</a>
-  </div>
+        const origin = import.meta.env.PROD ? publicSiteOrigin() : new URL(request.url).origin;
+        const confirmUrl = new URL('/api/blog/confirm', origin);
+        confirmUrl.searchParams.set('token', token);
+        const sent = await sendBlogConfirmation(email, locale, confirmUrl.toString());
+        if (!sent.ok) {
+            log.error('no se pudo enviar el doble opt-in del blog', {
+                route: 'blog/subscribe', status: sent.status, providerError: sent.error,
+            });
+            return json({ error: 'delivery_failed' }, 502);
+        }
 
-  <div style="padding-top:24px;border-top:1px solid #F3F4F6;">
-    <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">Equipo Cord · cordhq.app</p>
-  </div>
+        try {
+            await sql`
+                update blog_subscribers
+                set confirmation_sent_at = now(), updated_at = now()
+                where email = ${email} and confirmation_token_hash = ${hash}`;
+        } catch (error: any) {
+            // El correo ya salió y el token ya quedó persistido. No le pedimos
+            // al visitante reintentar, porque eso podría mandar un duplicado.
+            log.warn('confirmación enviada pero no se pudo guardar sent_at', {
+                route: 'blog/subscribe', err: error,
+            });
+        }
 
-</div>
-</div>`,
-        fromName: 'Cord Blog',
-    });
-
-    return json({ ok: true });
+        return json({ ok: true, state: 'pending' });
+    } catch (error: any) {
+        log.error('no se pudo iniciar la suscripción al blog', { route: 'blog/subscribe', err: error });
+        return json({ error: 'service_unavailable' }, 503);
+    }
 };
 
 function json(data: unknown, status = 200) {
     return new Response(JSON.stringify(data), {
         status,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store',
+        },
     });
 }

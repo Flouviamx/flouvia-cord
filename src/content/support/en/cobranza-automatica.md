@@ -13,7 +13,7 @@ The agent only writes when a quote's credit terms have **actually lapsed**. The 
 
 ### What it does
 
-1. **Reminder with a real payment link.** Every email includes a button that goes straight to paying the exact outstanding amount (card or SPEI, directly to your bank). If you don't have online payments active, the button points to the public link with your bank transfer details.
+1. **Reminder with a real payment link.** Every email includes a button that goes straight to paying the exact outstanding amount (card, or SPEI for businesses billing in Mexican pesos), directly to your bank. If you don't have online payments active, the button points to the public link with your bank transfer details.
 2. **Adaptive tone.** The agent adjusts its tone based on days overdue: friendly at first, firmer as time passes.
 3. **Negotiates installments when needed.** If the client is several days overdue and can't pay in full, the agent can agree to a plan of 2 or 3 monthly installments that add up to the exact amount owed (no discounts), automatically creating the payable charges for each one.
 

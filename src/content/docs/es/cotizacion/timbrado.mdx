@@ -1,11 +1,11 @@
 ---
-title: "Aprobación, Timbrado y Cobranza"
-description: "Convierte una cotización en factura y automatiza la cobranza de tu cartera vencida."
+title: "Aprobación y facturación"
+description: "Convierte una cotización aprobada en el documento fiscal que corresponde a tu país, y da seguimiento a la cobranza de tu cartera vencida."
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Aprobación, Timbrado y Cobranza</h1>
-  <p class="page-subtitle">El cierre del ciclo. Timbra CFDI 4.0 automáticamente y deja que la IA de Cord persiga los saldos pendientes por ti.</p>
+  <h1 class="page-title">Aprobación y facturación</h1>
+  <p class="page-subtitle">El cierre del ciclo. Cord emite el documento fiscal de tu país en cuanto el cliente aprueba, y te apoya a dar seguimiento a los saldos pendientes.</p>
 </header>
 
 ## Aprobación Digital
@@ -15,27 +15,35 @@ Cuando el cliente revisa el Enlace Mágico y hace clic en **Aprobar Cotización*
 2. El enlace web se congela comercialmente (ya no se pueden cambiar precios).
 3. Si configuraste un anticipo o pago de contado, el **Checkout de pago en línea se habilita** automáticamente.
 
-## El Timbrado CFDI 4.0 a un clic
+## Facturación: un documento distinto según tu país
 
-Cord se conecta a los PAC (Proveedores Autorizados de Certificación) para emitir facturas legales. 
+Cord no emite el mismo tipo de comprobante en todos lados — el país de tu negocio decide el carril:
+
+- **México:** timbrado CFDI 4.0 ante el SAT, a través de un proveedor certificado de facturación electrónica.
+- **España:** factura con base legal completa y el registro de facturación certificado que exige **Verifactu** (RD 1007/2023).
+- **Resto de países soportados por Cord** (Estados Unidos, Canadá, Brasil, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú): factura comercial completa, con folio, impuestos por línea y validez plena entre las partes — sin timbrado ante ninguna autoridad, porque ese mecanismo no existe ahí.
+
+Ver el detalle completo por país en [Facturación fiscal por país](/docs/pagos/facturacion).
+
+### El timbrado CFDI 4.0 a un clic (México)
 
 1. Ve a la cotización aprobada en tu panel y haz clic en **Emitir Factura (Timbrar)**.
-2. El sistema validará inteligentemente que el cliente tenga su RFC, Razón Social, Uso de CFDI y Código Postal bien capturados. Si le falta el código postal fiscal, te lo pedirá en un modal rápido sin sacarte de la pantalla.
+2. El sistema validará que el cliente tenga su RFC, Razón Social, Uso de CFDI y Código Postal bien capturados. Si le falta el código postal fiscal, te lo pedirá en un modal rápido sin sacarte de la pantalla.
 3. Al confirmar, el sistema genera el UUID del SAT en tiempo real.
-4. El cliente recibe automáticamente un correo impecable adjuntando el **XML** y la representación impresa en **PDF** (con tu branding).
+4. El cliente recibe automáticamente un correo adjuntando el **XML** y la representación impresa en **PDF** (con tu branding).
 
-## Cobranza Inteligente y Flujo de Caja
+## Cobranza y Tesorería
 
-Para las cotizaciones con términos de crédito (Net 30/60) o aquellas donde el cliente solo pagó el anticipo, Cord tiene un módulo completo de **Cobranza** y **Tesorería**.
+Para las cotizaciones con términos de crédito (Net 30/60) o aquellas donde el cliente solo pagó el anticipo, Cord tiene un módulo de **Cobranza** y **Tesorería** — la vista completa vive en [Tesorería y FX Lock](/docs/pagos/tesoreria-fx) y en [Cobranza Autónoma (IA)](/docs/pagos/cobranza-ia); aquí un resumen de cómo se conecta con el cierre de la cotización.
 
-### 1. Intereses Moratorios Automáticos
-Si el saldo de una cotización sobrepasa su fecha de vencimiento, Cord puede aplicar un cargo de interés compuesto automático de manera mensual (Ej: 2% o 5%). Este monto se suma a la cuenta por cobrar y Cord te envía un correo resumen cada día 1 del mes con todo lo generado por recargos.
+### Intereses moratorios automáticos
 
-### 2. Agente Autónomo de Cobranza (IA)
-En lugar de que un humano persiga a los clientes que deben facturas viejas, el **Agente de IA de Cord** toma el control:
-- Si un cliente tiene 15+ días de retraso, la IA entra en un ciclo de correos.
-- Redacta mensajes hiper-personalizados exigiendo el saldo. En cada correo, incluye un botón directo de pago en línea por el monto exacto de la deuda.
-- **Negociación de Planes de Pago:** Si el deudor responde el correo argumentando problemas de flujo, la IA de Cord tiene la capacidad de *negociar*. Puede estructurar el saldo vencido en 2 o 3 cuotas mensuales, y si el deudor acepta, la IA materializa las cuotas en la plataforma y le envía los enlaces de pago correspondientes, todo en piloto automático.
+Disponible a partir del plan **Scale** (incluye **Developer**) y configurable en **Ajustes › Aprobaciones**: si el saldo de una cotización sobrepasa su fecha de vencimiento, Cord aplica un interés compuesto mensual sobre el capital adeudado, y te envía un correo resumen cada día 1 del mes con todo lo generado por recargos.
 
-### 3. Tesorería Predictiva
-En tu sección de "Flujo de caja", Cord analiza qué clientes se retrasan constantemente y cruza esa información con tu cartera vencida real para darte un estimado realista del dinero que efectivamente entrará en los próximos 90 días.
+### Agente Autónomo de Cobranza (IA)
+
+También disponible a partir del plan **Scale**, el Agente de IA de Cord monitorea tu cartera vencida y, según el modo que elijas (Aprobación o Automático), redacta correos de cobranza personalizados y puede negociar un plan de pagos en cuotas mensuales con el deudor. El detalle completo del funcionamiento vive en [Cobranza Autónoma (IA)](/docs/pagos/cobranza-ia).
+
+### Tesorería Predictiva
+
+En `/app/informes`, Cord cruza los términos de crédito de tus cotizaciones abiertas con el comportamiento de pago real de cada cliente para darte un estimado más realista del dinero que efectivamente entrará en los próximos 90 días.

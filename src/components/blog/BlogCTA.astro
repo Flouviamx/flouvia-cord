@@ -1,33 +1,33 @@
 ---
 // BlogCTA.astro
 const { isEn } = Astro.props;
----
-<section class="article-footer-cta">
-    <div class="bento-grid">
 
-        <!-- Columna Grande: Suscripción -->
+const subscribeId = isEn ? 'subscribe' : 'suscripcion';
+const salesHref = isEn ? '/en/contacto/ventas' : '/contacto/ventas';
+---
+
+<section class="article-footer-cta" id={subscribeId}>
+    <div class="bento-grid">
         <div class="bento-card span-2">
             <h3>{isEn ? 'Subscribe to the Cord Blog' : 'Suscríbete al Blog de Cord'}</h3>
             <p>{isEn ? 'Financial strategies, market analysis, and product updates right in your inbox.' : 'Estrategias financieras, análisis de mercado y novedades de producto directamente en tu bandeja de entrada.'}</p>
 
             <form class="subscribe-form" id="blog-subscribe-form" data-lang={isEn ? 'en' : 'es'}>
-                <input type="email" name="email" placeholder={isEn ? 'you@company.com' : 'tu@empresa.com'} required autocomplete="email" />
-                <!-- Honeypot anti-spam (oculto) -->
-                <input type="text" name="website" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" tabindex="-1" autocomplete="off" />
+                <input type="email" name="email" placeholder={isEn ? 'you@company.com' : 'tu@empresa.com'} required autocomplete="email" aria-label={isEn ? 'Work email' : 'Correo de trabajo'} />
+                <input class="form-honeypot" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
                 <button type="submit" class="btn-primary" id="blog-subscribe-btn">
                     <span class="btn-label">{isEn ? 'Subscribe' : 'Suscribirme'}</span>
-                    <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    <svg class="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:none;"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="15" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.7s" repeatCount="indefinite"/></circle></svg>
+                    <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                    <svg class="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="15" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.7s" repeatCount="indefinite" /></circle></svg>
                 </button>
             </form>
-            <div id="subscribe-feedback" style="display:none;"></div>
-            <span class="privacy-note">{isEn ? 'Cord will process your data according to our' : 'Cord tratará tus datos según su'} <a href={isEn ? "/en/privacidad" : "/privacidad"}>{isEn ? 'Privacy Policy' : 'Política de Privacidad'}</a>.</span>
+            <div id="subscribe-feedback" class="subscribe-feedback" role="status" aria-live="polite"></div>
+            <span class="privacy-note">{isEn ? 'Cord will process your data according to our' : 'Cord tratará tus datos según su'} <a href={isEn ? '/en/privacidad' : '/privacidad'}>{isEn ? 'Privacy Policy' : 'Política de Privacidad'}</a>.</span>
         </div>
 
-        <!-- Columna Pequeña 1: LinkedIn -->
         <div class="bento-card">
             <div class="bento-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" fill="currentColor" fill-opacity="0.14"></path>
                     <rect x="2" y="9" width="4" height="12" fill="currentColor" fill-opacity="0.14"></rect>
                     <circle cx="4" cy="4" r="2" fill="currentColor" fill-opacity="0.22"></circle>
@@ -35,223 +35,309 @@ const { isEn } = Astro.props;
             </div>
             <h4>{isEn ? 'Like what you read?' : '¿Te gusta lo que lees?'}</h4>
             <p>{isEn ? 'Cord builds financial infrastructure to accelerate commercial closing. Follow us for more analysis and case studies.' : 'Cord construye infraestructura financiera para acelerar el cierre comercial. Síguenos para más análisis y casos de estudio.'}</p>
-            <a href="https://linkedin.com/company/flouviamx" target="_blank" rel="noopener" class="bento-link">{isEn ? 'Follow on LinkedIn' : 'Seguir en LinkedIn'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <a href="https://www.linkedin.com/company/cordapp/" target="_blank" rel="noopener noreferrer" class="bento-link">{isEn ? 'Follow on LinkedIn' : 'Seguir en LinkedIn'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg></a>
         </div>
 
-        <!-- Columna Pequeña 2: Contact -->
         <div class="bento-card">
             <div class="bento-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.14"></path>
                     <path d="M7 8.5h10M7 12h6" stroke-opacity="0.55"></path>
                 </svg>
             </div>
             <h4>{isEn ? 'Questions or comments?' : '¿Dudas o comentarios?'}</h4>
             <p>{isEn ? "We'd love to hear your thoughts on this article or your sales flow." : 'Nos encantaría escuchar tu opinión sobre este artículo o tu flujo de ventas.'}</p>
-            <a href="mailto:hello@cord.mx" class="bento-link">{isEn ? 'Contact us' : 'Contáctanos'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            <a href={salesHref} class="bento-link">{isEn ? 'Contact us' : 'Contáctanos'} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7" /></svg></a>
         </div>
-
     </div>
 </section>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('blog-subscribe-form');
-    if (!form) return;
-    const isEn = form.dataset.lang === 'en';
-    const btn = document.getElementById('blog-subscribe-btn');
-    const feedback = document.getElementById('subscribe-feedback');
-    const arrow = btn?.querySelector('.btn-arrow');
-    const spinner = btn?.querySelector('.btn-spinner');
-    const label = btn?.querySelector('.btn-label');
-    const emailInput = form.querySelector('input[name="email"]');
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('blog-subscribe-form');
+        if (!(form instanceof HTMLFormElement)) return;
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!emailInput || !btn || !feedback) return;
+        const isEn = form.dataset.lang === 'en';
+        const btn = document.getElementById('blog-subscribe-btn');
+        const feedback = document.getElementById('subscribe-feedback');
+        const arrow = btn?.querySelector('.btn-arrow');
+        const spinner = btn?.querySelector('.btn-spinner');
+        const label = btn?.querySelector('.btn-label');
+        const emailInput = form.querySelector('input[name="email"]');
+        const honeypot = form.querySelector('input[name="website"]');
 
-        const email = emailInput.value.trim();
-        if (!email) return;
+        if (!(btn instanceof HTMLButtonElement) || !(emailInput instanceof HTMLInputElement) || !feedback) return;
 
-        // Honeypot
-        const hp = form.querySelector('input[name="website"]');
-        const hpVal = hp ? hp.value : '';
+        const showFeedback = (message, type) => {
+            feedback.textContent = message;
+            feedback.className = `subscribe-feedback ${type}`;
+        };
 
-        // Loading state
-        btn.disabled = true;
-        if (arrow) arrow.style.display = 'none';
-        if (spinner) spinner.style.display = 'inline';
-        if (label) label.textContent = isEn ? 'Subscribing...' : 'Suscribiendo...';
-        feedback.style.display = 'none';
+        const resetButton = () => {
+            btn.disabled = false;
+            btn.style.background = '';
+            if (label) label.textContent = isEn ? 'Subscribe' : 'Suscribirme';
+            if (spinner instanceof SVGElement) spinner.style.display = 'none';
+            if (arrow instanceof SVGElement) arrow.style.display = 'inline';
+        };
 
-        try {
-            const res = await fetch('/api/blog/subscribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, website: hpVal }),
-            });
+        const errorMessage = (code) => {
+            if (code === 'invalid_email') return isEn ? 'Enter a valid email address.' : 'Escribe un correo válido.';
+            if (code === 'delivery_failed') return isEn ? 'We could not send the confirmation email. Try again.' : 'No pudimos enviar el correo de confirmación. Intenta de nuevo.';
+            if (code === 'service_unavailable') return isEn ? 'Subscriptions are temporarily unavailable.' : 'Las suscripciones no están disponibles por el momento.';
+            return isEn ? 'Something went wrong. Please try again.' : 'Algo salió mal. Intenta de nuevo.';
+        };
 
-            if (res.status === 429) {
-                showFeedback(isEn ? 'Too many attempts. Try again in a minute.' : 'Demasiados intentos. Espera un minuto.', 'error');
-                resetBtn();
-                return;
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const email = emailInput.value.trim();
+            if (!email) return;
+
+            btn.disabled = true;
+            if (arrow instanceof SVGElement) arrow.style.display = 'none';
+            if (spinner instanceof SVGElement) spinner.style.display = 'inline';
+            if (label) label.textContent = isEn ? 'Sending...' : 'Enviando...';
+            feedback.textContent = '';
+            feedback.className = 'subscribe-feedback';
+
+            try {
+                const response = await fetch('/api/blog/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email,
+                        locale: isEn ? 'en' : 'es',
+                        website: honeypot instanceof HTMLInputElement ? honeypot.value : '',
+                    }),
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (response.status === 429) {
+                    showFeedback(isEn ? 'Too many attempts. Try again in a minute.' : 'Demasiados intentos. Espera un minuto.', 'error');
+                    resetButton();
+                    return;
+                }
+
+                if (!response.ok) {
+                    showFeedback(errorMessage(data.error), 'error');
+                    resetButton();
+                    return;
+                }
+
+                showFeedback(
+                    isEn
+                        ? 'Check your inbox to confirm. If you were already subscribed, there is nothing else to do.'
+                        : 'Revisa tu correo para confirmar. Si ya estabas suscrito, no necesitas hacer nada más.',
+                    'success',
+                );
+                if (label) label.textContent = isEn ? 'Email sent' : 'Correo enviado';
+                if (spinner instanceof SVGElement) spinner.style.display = 'none';
+                if (arrow instanceof SVGElement) arrow.style.display = 'inline';
+                btn.style.background = '#059669';
+                emailInput.value = '';
+                window.setTimeout(resetButton, 5000);
+            } catch {
+                showFeedback(isEn ? 'Connection error. Please try again.' : 'Error de conexión. Intenta de nuevo.', 'error');
+                resetButton();
             }
-
-            const data = await res.json();
-            if (!res.ok) {
-                showFeedback(data.error || (isEn ? 'Something went wrong' : 'Algo salió mal'), 'error');
-                resetBtn();
-                return;
-            }
-
-            // Success
-            showFeedback(isEn ? "You're in! Check your inbox for a welcome email." : '¡Listo! Revisa tu bandeja de entrada.', 'success');
-            if (label) label.textContent = isEn ? 'Subscribed' : 'Suscrito';
-            if (spinner) spinner.style.display = 'none';
-            if (arrow) { arrow.style.display = 'inline'; }
-            btn.style.background = '#059669';
-            emailInput.value = '';
-            // Unlock after 5s for re-subscribe attempts
-            setTimeout(resetBtn, 5000);
-        } catch {
-            showFeedback(isEn ? 'Connection error. Please try again.' : 'Error de conexión. Intenta de nuevo.', 'error');
-            resetBtn();
-        }
+        });
     });
-
-    function showFeedback(msg, type) {
-        if (!feedback) return;
-        feedback.textContent = msg;
-        feedback.className = `subscribe-feedback ${type}`;
-        feedback.style.display = 'block';
-    }
-
-    function resetBtn() {
-        if (!btn || !label || !spinner || !arrow) return;
-        btn.disabled = false;
-        btn.style.background = '';
-        label.textContent = isEn ? 'Subscribe' : 'Suscribirme';
-        spinner.style.display = 'none';
-        arrow.style.display = 'inline';
-    }
-});
 </script>
-
 
 <style>
     .article-footer-cta {
-        max-width: 1200px; margin: 0 auto 7rem; padding: 0 5%;
+        max-width: 1200px;
+        margin: 0 auto 7rem;
+        padding: 0 5%;
+        scroll-margin-top: 7rem;
     }
+
     .bento-grid {
-        display: grid; grid-template-columns: repeat(4, 1fr);
-        gap: 1.75rem; align-items: stretch;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.75rem;
+        align-items: stretch;
     }
 
     .bento-card {
-        background: #ffffff; border-radius: 32px; padding: 3rem;
-        display: flex; flex-direction: column; justify-content: space-between;
+        background: #fff;
+        border-radius: 32px;
+        padding: 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
         box-shadow:
-            0 1px 2px rgba(10,25,47,0.03),
-            0 10px 24px -14px rgba(10,25,47,0.08),
-            0 34px 68px -26px rgba(10,25,47,0.14),
-            inset 0 1px 0 rgba(255,255,255,0.9),
-            inset 0 0 0 1px rgba(10,25,47,0.045);
-        transition: transform 0.5s cubic-bezier(0.16,1,0.3,1), box-shadow 0.5s cubic-bezier(0.16,1,0.3,1);
+            0 1px 2px rgba(10, 25, 47, 0.03),
+            0 10px 24px -14px rgba(10, 25, 47, 0.08),
+            0 34px 68px -26px rgba(10, 25, 47, 0.14),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9),
+            inset 0 0 0 1px rgba(10, 25, 47, 0.045);
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
+
     .bento-card:hover {
         transform: translateY(-4px);
         box-shadow:
-            0 1px 2px rgba(10,25,47,0.03),
-            0 16px 32px -16px rgba(10,25,47,0.10),
-            0 44px 84px -28px rgba(10,25,47,0.18),
-            inset 0 1px 0 rgba(255,255,255,0.9),
-            inset 0 0 0 1px rgba(10,25,47,0.05);
+            0 1px 2px rgba(10, 25, 47, 0.03),
+            0 16px 32px -16px rgba(10, 25, 47, 0.1),
+            0 44px 84px -28px rgba(10, 25, 47, 0.18),
+            inset 0 1px 0 rgba(255, 255, 255, 0.9),
+            inset 0 0 0 1px rgba(10, 25, 47, 0.05);
     }
 
     .span-2 { grid-column: span 2; }
 
     .bento-card h3 {
-        font-size: 1.7rem; font-weight: 700; color: #050505; letter-spacing: -0.03em;
-        line-height: 1.15; margin-bottom: 0.9rem;
+        font-size: 1.7rem;
+        font-weight: 700;
+        color: #050505;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+        margin-bottom: 0.9rem;
     }
 
     .bento-card h4 {
-        font-size: 1.15rem; font-weight: 700; color: #050505; letter-spacing: -0.02em;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #050505;
+        letter-spacing: -0.02em;
         margin-bottom: 0.6rem;
     }
 
     .bento-card p {
-        font-size: 1rem; color: #555556; line-height: 1.55; margin-bottom: 2.25rem;
+        font-size: 1rem;
+        color: #555556;
+        line-height: 1.55;
+        margin-bottom: 2.25rem;
     }
 
     .bento-icon {
-        width: 52px; height: 52px; border-radius: 16px;
-        background: linear-gradient(160deg, rgba(10,25,47,0.07), rgba(10,25,47,0.03));
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), inset 0 0 0 1px rgba(10,25,47,0.05);
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: linear-gradient(160deg, rgba(10, 25, 47, 0.07), rgba(10, 25, 47, 0.03));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 0 0 1px rgba(10, 25, 47, 0.05);
         color: var(--color-blue-deep);
-        display: flex; align-items: center; justify-content: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         margin-bottom: 1.75rem;
     }
+
     .bento-icon svg { width: 25px; height: 25px; }
 
-    /* Formulario de Suscripción */
     .subscribe-form {
-        display: flex; gap: 0.8rem; margin-bottom: 1.1rem;
+        display: flex;
+        gap: 0.8rem;
+        margin-bottom: 1.1rem;
     }
+
     .subscribe-form input {
-        flex: 1; padding: 0 1.3rem; height: 52px; border-radius: 100px;
-        background: #f5f5f7; border: none;
-        font-family: inherit; font-size: 1rem; color: #050505; font-weight: 500;
+        flex: 1;
+        padding: 0 1.3rem;
+        height: 52px;
+        border-radius: 100px;
+        background: #f5f5f7;
+        border: none;
+        font-family: inherit;
+        font-size: 1rem;
+        color: #050505;
+        font-weight: 500;
         box-shadow: inset 0 0 0 1.5px transparent;
         transition: box-shadow 0.3s ease, background 0.3s ease;
-        -webkit-appearance: none; appearance: none; margin: 0;
+        appearance: none;
+        margin: 0;
     }
+
     .subscribe-form input::placeholder { color: #86868b; }
+
     .subscribe-form input:focus {
-        outline: none; background: #fff;
-        box-shadow: inset 0 0 0 1.5px rgba(10,25,47,0.16), 0 6px 16px -8px rgba(10,25,47,0.16);
+        outline: none;
+        background: #fff;
+        box-shadow: inset 0 0 0 1.5px rgba(10, 25, 47, 0.16), 0 6px 16px -8px rgba(10, 25, 47, 0.16);
+    }
+
+    .subscribe-form .form-honeypot {
+        position: absolute;
+        left: -9999px;
+        opacity: 0;
+        height: 0;
+        width: 0;
+        padding: 0;
     }
 
     .btn-primary {
-        background: #0a192f; color: #fff;
-        padding: 0 1.6rem; height: 52px; border-radius: 100px;
-        font-weight: 600; font-size: 0.95rem; border: none;
-        display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap;
-        transition: background 0.3s ease, transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease;
+        background: #0a192f;
+        color: #fff;
+        padding: 0 1.6rem;
+        height: 52px;
+        border-radius: 100px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.3s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
     }
+
     .btn-primary:hover {
-        background: #132a4d; transform: translateY(-1px);
-        box-shadow: 0 12px 28px -12px rgba(10,25,47,0.4);
+        background: #132a4d;
+        transform: translateY(-1px);
+        box-shadow: 0 12px 28px -12px rgba(10, 25, 47, 0.4);
     }
+
     .btn-primary:active { transform: scale(0.97); }
     .btn-primary svg { width: 16px; height: 16px; transition: transform 0.3s; }
     .btn-primary:hover svg { transform: translateX(3px); }
+    .btn-spinner { display: none; }
+
+    .btn-primary:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .btn-primary:disabled:hover {
+        transform: none;
+        box-shadow: none;
+    }
 
     .privacy-note {
-        font-size: 0.8rem; color: #86868b;
+        font-size: 0.8rem;
+        color: #86868b;
     }
+
     .privacy-note a { color: inherit; text-decoration: underline; }
 
     .subscribe-feedback {
-        font-size: 0.85rem; font-weight: 600; margin-bottom: 0.6rem;
-        padding: 0.5rem 0; border-radius: 8px;
+        display: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.6rem;
+        padding: 0.5rem 0;
+        border-radius: 8px;
     }
+
+    .subscribe-feedback.success,
+    .subscribe-feedback.error { display: block; }
     .subscribe-feedback.success { color: #059669; }
-    .subscribe-feedback.error   { color: #dc2626; }
-
-    .btn-primary:disabled {
-        opacity: 0.7; cursor: not-allowed;
-    }
-    .btn-primary:disabled:hover {
-        transform: none; box-shadow: none;
-    }
-
+    .subscribe-feedback.error { color: #dc2626; }
 
     .bento-link {
-        display: inline-flex; align-items: center; gap: 6px;
-        font-size: 0.95rem; font-weight: 600; color: var(--color-blue-deep);
-        text-decoration: none; transition: gap 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--color-blue-deep);
+        text-decoration: none;
+        transition: gap 0.3s;
     }
+
     .bento-link svg { width: 16px; height: 16px; transition: transform 0.3s; }
     .bento-link:hover { gap: 10px; }
 
@@ -259,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .bento-grid { grid-template-columns: 1fr 1fr; }
         .span-2 { grid-column: span 2; }
     }
+
     @media (max-width: 768px) {
         .bento-grid { grid-template-columns: 1fr; gap: 1.25rem; }
         .span-2 { grid-column: span 1; }
@@ -266,5 +353,12 @@ document.addEventListener('DOMContentLoaded', () => {
         .subscribe-form { flex-direction: column; }
         .subscribe-form input { height: 52px; min-height: 52px; width: 100%; flex: none; }
         .subscribe-form .btn-primary { width: 100%; justify-content: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .bento-card,
+        .btn-primary,
+        .btn-primary svg,
+        .bento-link { transition: none; }
     }
 </style>

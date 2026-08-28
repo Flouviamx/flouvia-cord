@@ -1,16 +1,20 @@
 ---
 title: "Single Sign-On (SSO)"
-description: "Habilita acceso con Google Workspace o Microsoft Entra."
+description: "Habilita acceso con SAML 2.0 desde Google Workspace, Microsoft Entra u Okta."
 category: "Cuenta y Equipo"
 ---
 
-Gestionar decenas de contraseñas de empleados es un riesgo de seguridad. Para organizaciones con planes Enterprise, Cord ofrece la integración de Single Sign-On (SSO) mediante SAML o integraciones OIDC directas (Google Workspace, Microsoft Entra ID / Azure AD, Okta).
+Gestionar decenas de contraseñas de empleados es un riesgo de seguridad. Cord ofrece Single Sign-On mediante **SAML 2.0** para organizaciones en plan **Scale o Developer**. Cualquier proveedor de identidad que hable SAML sirve —Google Workspace, Microsoft Entra ID / Azure AD, Okta, y otros— configurado como aplicación SAML de tu IdP, no como conexión OIDC directa.
 
-### Configurar SSO (Single Sign-On)
+### Configurar SSO
 
-1. Ingresa a **Ajustes > Seguridad de la Organización**.
-2. Busca el módulo de **Conexiones SSO** y añade un nuevo proveedor de identidad (IdP).
-3. Deberás mapear la URL de metadatos ACS (Assertion Consumer Service) proporcionada por tu panel de Okta o Azure AD.
-4. Reclama tu dominio corporativo (ej. `@tuempresa.com`). Te pediremos colocar un registro TXT en tus DNS para probar tu propiedad.
+1. Ve a **Ajustes > Seguridad**.
+2. Busca el módulo de conexiones SSO y añade tu proveedor de identidad como aplicación SAML.
+3. Registra la URL de metadata o los datos del IdP (Entity ID, SSO URL y certificado) que te da tu panel de Okta, Azure AD o Google Workspace.
+4. Reclama tu dominio corporativo (por ejemplo `@tuempresa.com`). Cord te da un token para colocar en un registro TXT de tu DNS, y verifica la propiedad consultando ese registro por DNS real —no basta con pegar el token en la pantalla.
 
-Una vez activo, cualquier empleado que intente iniciar sesión en Cord utilizando un correo `@tuempresa.com` será redirigido a tu portal corporativo de inicio de sesión. Además, soportamos el aprovisionamiento automático (JIT/SCIM), lo que significa que cuando das de baja a un empleado de tu Active Directory, pierde acceso a Cord instantáneamente.
+Una vez que el dominio queda verificado y activas **Exigir SSO**, cualquier empleado que intente iniciar sesión con un correo de ese dominio usando contraseña es bloqueado y redirigido a tu proveedor de identidad. El dueño de la cuenta conserva siempre la opción de entrar con contraseña, como salida de emergencia si el proveedor de identidad falla.
+
+### Qué automatiza y qué no
+
+Cord soporta **aprovisionamiento JIT** (Just-In-Time): la primera vez que alguien de tu dominio entra vía SSO, Cord le crea su cuenta y membresía automáticamente, sin que tengas que invitarlo a mano. Cord **no** soporta SCIM: dar de baja a alguien en tu directorio (Google Workspace, Azure AD) no revoca su acceso a Cord de forma automática — para eso, revócalo también desde **Ajustes > Equipo** en Cord.

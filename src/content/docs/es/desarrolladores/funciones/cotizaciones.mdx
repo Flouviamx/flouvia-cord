@@ -16,12 +16,12 @@ Todas las cotizaciones generadas vía API quedan registradas en el registro de a
 
 ## Crear una Cotización
 
-Para crear un borrador de cotización, debes realizar un `POST /v1/cotizaciones` enviando el detalle comercial.
+Para crear un borrador de cotización, debes realizar un `POST /api/v1/cotizaciones` enviando el detalle comercial.
 
 **Petición:**
 
 ```bash
-curl -X POST "https://api.cordhq.com/v1/cotizaciones" \
+curl -X POST "https://cordhq.app/api/v1/cotizaciones" \
      -H "Authorization: Bearer sk_live_tU..." \
      -H "Content-Type: application/json" \
      -d '{
@@ -29,15 +29,24 @@ curl -X POST "https://api.cordhq.com/v1/cotizaciones" \
        "terminos": "net30",
        "vigencia_dias": 15,
        "notas": "Proyecto anual",
+       "base_currency": "EUR",
        "items": [
-         { "sku": "SERV-01", "cantidad": 12, "precio": 500 }
+         {
+           "descripcion": "Licencia anual — plan Pro",
+           "cantidad": 12,
+           "precio_unitario": 500
+         }
        ]
      }'
 ```
 
+Cada línea de `items` requiere `descripcion`, `cantidad` y `precio_unitario`. `producto_id` es opcional (referencia un producto de tu [catálogo](/docs/desarrolladores/funciones/productos) para heredar su nombre y precio de lista) y `precio_negociado` permite capturar un precio con descuento distinto al de lista. No existe un campo `sku`: si quieres enlazar la línea a un producto, usa su `producto_id`.
+
+`base_currency` es la divisa en la que el cliente ve y paga la cotización (ISO 4217, ej. `MXN`, `USD`, `EUR`, `GBP`). Es opcional — si la omites, Cord usa la divisa contable de tu organización — pero la API es agnóstica de país: una cuenta en Madrid, Austin o Bogotá cotiza en su propia divisa sin ningún parámetro adicional.
+
 **Respuesta Exitosa:**
 
-Cord te devuelve no solo el ID interno de la base de datos, sino también el **Token Público** (`link_publico`) preconstruido para que se lo envíes a tu cliente inmediatamente vía WhatsApp, SMS o un motor de correos externo.
+Cord te devuelve no solo el ID interno de la base de datos, sino también el **Token Público** (`link_publico`) preconstruido, ya absoluto, para que se lo envíes a tu cliente inmediatamente vía WhatsApp, SMS o un motor de correos externo.
 
 ```json
 {
@@ -51,6 +60,8 @@ Cord te devuelve no solo el ID interno de la base de datos, sino también el **T
 }
 ```
 
+Si la cotización requiere aprobación interna antes de enviarse (por ejemplo, un descuento fuera de umbral), `needs_approval` viene en `true` y `motivo` describe la razón.
+
 ## Listar Cotizaciones
 
 Puedes recuperar tu historial paginado de cotizaciones o filtrar por estado (por ejemplo, buscar todas las cotizaciones `enviadas` o `pagadas`).
@@ -58,6 +69,29 @@ Puedes recuperar tu historial paginado de cotizaciones o filtrar por estado (por
 **Petición:**
 
 ```bash
-curl -X GET "https://api.cordhq.com/v1/cotizaciones?status=pagada&limit=10" \
+curl -X GET "https://cordhq.app/api/v1/cotizaciones?status=paid&limit=10" \
      -H "Authorization: Bearer sk_live_tU..."
 ```
+
+El valor de `status` es el estado interno tal cual (en inglés, no traducido): `draft`, `sent`, `viewed`, `approved`, `rejected`, `expired`, `paid` o `invoiced`.
+
+```json
+{
+  "data": [
+    {
+      "id": "qte_2a9d8",
+      "folio": "COT-00104",
+      "cliente": "Stark Industries",
+      "status": "paid",
+      "total": 6000,
+      "terminos": "net30",
+      "vigencia": "2026-09-10",
+      "creada": "2026-08-20T14:32:00.000Z",
+      "link_publico": "/q/tok_x8Yj9Z..."
+    }
+  ],
+  "meta": { "limit": 10, "offset": 0, "total": 1 }
+}
+```
+
+Nota: en el listado, `link_publico` es una ruta relativa (`/q/<token>`); en la respuesta de creación viene absoluta. Para el detalle de una sola cotización (líneas, eventos, aprobación), usa `GET /api/v1/cotizaciones/{id}`.

@@ -1,0 +1,214 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../landing/Nav.astro';
+import Footer from '../landing/Footer.astro';
+
+const { isEn = false, status = 'invalid' } = Astro.props;
+
+const content = isEn ? {
+    confirmed: {
+        eyebrow: 'Subscription confirmed',
+        title: 'You are on the list.',
+        body: 'The next useful Cord article will arrive in your inbox. No noise, and you can unsubscribe at any time.',
+        action: 'Return to the blog',
+    },
+    'already-confirmed': {
+        eyebrow: 'Already confirmed',
+        title: 'Everything is ready.',
+        body: 'This email is already subscribed to the Cord Blog. There is nothing else you need to do.',
+        action: 'Read the latest articles',
+    },
+    expired: {
+        eyebrow: 'Link expired',
+        title: 'Let us send you a new one.',
+        body: 'Confirmation links last 24 hours. Enter your email again to receive a fresh link.',
+        action: 'Request another link',
+    },
+    unavailable: {
+        eyebrow: 'Temporary interruption',
+        title: 'We could not confirm it yet.',
+        body: 'The subscription is not active yet. Try the same link again in a few minutes.',
+        action: 'Return to the blog',
+    },
+    'rate-limited': {
+        eyebrow: 'Too many attempts',
+        title: 'Give it a minute.',
+        body: 'Wait briefly and open the confirmation link again.',
+        action: 'Return to the blog',
+    },
+    invalid: {
+        eyebrow: 'Invalid link',
+        title: 'This confirmation link does not work.',
+        body: 'Request a new link from the subscription form and make sure you open the most recent email.',
+        action: 'Request a new link',
+    },
+} : {
+    confirmed: {
+        eyebrow: 'Suscripción confirmada',
+        title: 'Ya estás en la lista.',
+        body: 'El próximo artículo útil de Cord llegará a tu correo. Sin ruido y con la opción de darte de baja cuando quieras.',
+        action: 'Volver al blog',
+    },
+    'already-confirmed': {
+        eyebrow: 'Ya estaba confirmada',
+        title: 'Todo está listo.',
+        body: 'Este correo ya recibe el Blog de Cord. No necesitas hacer nada más.',
+        action: 'Leer los últimos artículos',
+    },
+    expired: {
+        eyebrow: 'Enlace vencido',
+        title: 'Pide un enlace nuevo.',
+        body: 'Los enlaces de confirmación duran 24 horas. Escribe tu correo otra vez para recibir uno nuevo.',
+        action: 'Pedir otro enlace',
+    },
+    unavailable: {
+        eyebrow: 'Interrupción temporal',
+        title: 'Todavía no pudimos confirmarlo.',
+        body: 'La suscripción todavía no está activa. Intenta abrir el mismo enlace otra vez en unos minutos.',
+        action: 'Volver al blog',
+    },
+    'rate-limited': {
+        eyebrow: 'Demasiados intentos',
+        title: 'Dale un minuto.',
+        body: 'Espera un momento y abre de nuevo el enlace de confirmación.',
+        action: 'Volver al blog',
+    },
+    invalid: {
+        eyebrow: 'Enlace inválido',
+        title: 'Este enlace de confirmación no funciona.',
+        body: 'Solicita uno nuevo desde el formulario y asegúrate de abrir el correo más reciente.',
+        action: 'Pedir otro enlace',
+    },
+};
+
+const safeStatus = status in content ? status : 'invalid';
+const message = content[safeStatus as keyof typeof content];
+const blogHref = isEn ? '/en/blog' : '/blog';
+const actionHref = ['expired', 'invalid'].includes(safeStatus)
+    ? `${blogHref}#${isEn ? 'subscribe' : 'suscripcion'}`
+    : blogHref;
+---
+
+<Layout
+    title={isEn ? 'Subscription | Cord Blog' : 'Suscripción | Blog de Cord'}
+    description={isEn ? 'Manage your Cord Blog subscription.' : 'Administra tu suscripción al Blog de Cord.'}
+>
+    <meta slot="head" name="robots" content="noindex, nofollow" />
+    <Nav />
+
+    <main class="subscription-result">
+        <div class="result-orb" aria-hidden="true"></div>
+        <section class="result-content" aria-labelledby="subscription-title">
+            <img src="/imgs/logo-cord-navy.png" width="92" height="35" alt="Cord" />
+            <p class="result-eyebrow">{message.eyebrow}</p>
+            <h1 id="subscription-title">{message.title}</h1>
+            <p class="result-body">{message.body}</p>
+            <a class="result-action" href={actionHref}>{message.action} <span aria-hidden="true">→</span></a>
+        </section>
+    </main>
+
+    <Footer
+        ctaTitle={isEn ? 'From proposal to payment.' : 'De la propuesta al pago.'}
+        ctaSub={isEn ? 'Everything in one link.' : 'Todo en un solo link.'}
+        isEn={isEn}
+    />
+</Layout>
+
+<style>
+    .subscription-result {
+        position: relative;
+        isolation: isolate;
+        min-height: min(780px, 92dvh);
+        padding: 10rem 1.5rem 7rem;
+        display: grid;
+        place-items: center;
+        overflow: clip;
+        background: #f5f5f7;
+        color: #1d1d1f;
+        font-family: 'Inter', sans-serif;
+    }
+    .result-orb {
+        position: absolute;
+        z-index: -1;
+        width: min(74vw, 880px);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.55) 42%, rgba(245, 245, 247, 0) 72%);
+        transform: translate(18%, -10%);
+        pointer-events: none;
+    }
+    .result-content {
+        width: min(100%, 720px);
+        text-align: center;
+    }
+    .result-content img {
+        width: 92px;
+        height: auto;
+        margin: 0 auto 4rem;
+    }
+    .result-eyebrow {
+        margin: 0 0 1.35rem;
+        color: #6e6e73;
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    .result-content h1 {
+        margin: 0;
+        color: #1d1d1f;
+        font-size: clamp(3rem, 8vw, 6.4rem);
+        font-weight: 700;
+        line-height: 0.96;
+        letter-spacing: -0.065em;
+    }
+    .result-body {
+        max-width: 570px;
+        margin: 2rem auto 0;
+        color: #6e6e73;
+        font-size: clamp(1rem, 2vw, 1.2rem);
+        line-height: 1.65;
+        letter-spacing: -0.012em;
+    }
+    .result-action {
+        margin-top: 2.5rem;
+        padding: 0.9rem 1.35rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        border-radius: 999px;
+        background: #0a192f;
+        color: #ffffff;
+        font-size: 0.92rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: transform 0.22s ease, background 0.22s ease;
+    }
+    .result-action:hover { background: #132a49; transform: translateY(-2px); }
+    .result-action:active { transform: translateY(0) scale(0.985); }
+    .result-action:focus-visible { outline: 3px solid rgba(10, 25, 47, 0.25); outline-offset: 4px; }
+    .result-action span { transition: transform 0.22s ease; }
+    .result-action:hover span { transform: translateX(3px); }
+
+    :global(html[data-theme='dark']) .subscription-result { background: #09090b; color: #f5f5f7; }
+    :global(html[data-theme='dark']) .result-orb {
+        background: radial-gradient(circle, rgba(31, 34, 39, 0.9) 0%, rgba(15, 16, 18, 0.52) 46%, rgba(9, 9, 11, 0) 72%);
+    }
+    :global(html[data-theme='dark']) .result-content img { filter: invert(1) grayscale(1) brightness(2.4); }
+    :global(html[data-theme='dark']) .result-content h1 { color: #f5f5f7; }
+    :global(html[data-theme='dark']) .result-eyebrow,
+    :global(html[data-theme='dark']) .result-body { color: #a1a1a6; }
+    :global(html[data-theme='dark']) .result-action { background: #f5f5f7; color: #111214; }
+    :global(html[data-theme='dark']) .result-action:hover { background: #ffffff; }
+
+    @media (max-width: 620px) {
+        .subscription-result { min-height: 720px; padding: 8rem 1.25rem 5rem; }
+        .result-content img { margin-bottom: 3rem; }
+        .result-content h1 { font-size: clamp(3rem, 16vw, 4.6rem); }
+        .result-body { margin-top: 1.5rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .result-action,
+        .result-action span { transition: none; }
+    }
+</style>

@@ -1,0 +1,6 @@
+---
+export const prerender = false;
+import SubscriptionResultPage from '../../../components/blog/SubscriptionResultPage.astro';
+const status = Astro.url.searchParams.get('status') || 'invalid';
+---
+<SubscriptionResultPage status={status} isEn={true} />

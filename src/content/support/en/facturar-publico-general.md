@@ -1,21 +1,16 @@
 ---
 title: "General Public Invoicing"
-description: "Issuance of daily or monthly global CFDI."
+description: "How to issue a CFDI to the General Public in Cord today."
 category: "Invoicing"
 ---
 
-All sales and income you receive that are not individually invoiced to a specific RFC must be declared to the SAT through a **General Public Global Invoice**.
+This applies only to organizations in **Mexico**. Any sale you don't invoice to a specific RFC — counter sales, charges where the client didn't request an invoice — must be declared to the SAT under the generic General Public RFC.
 
-### When to use the global invoice?
+### How to do it in Cord today
 
-- You have an e-commerce business and processed 50 card orders from customers who did not request an invoice.
-- You made over-the-counter cash sales.
+1. When creating the quote or invoice, use a client with no tax ID captured (or create one named "General Public" and leave its RFC field blank).
+2. When stamping, Cord detects there's no specific RFC and automatically uses the generic RFC **XAXX010101000** with the name **PÚBLICO EN GENERAL**, as required by the SAT.
 
-**SAT Rules (CFDI 4.0):**
-The global invoice must be issued using the generic RFC **XAXX010101000** and the literal name **PUBLICO EN GENERAL** (in uppercase and without accents). Additionally, you must indicate the periodicity (daily, weekly, or monthly) and the corresponding year.
-
-### Cord Workflow
-1. Go to **Accounting > General Invoices**.
-2. Click on **Generate Global Invoice**.
-3. Select the time period.
-4. Cord will automatically scan all transactions collected in that period that do not have an associated CFDI, and group them into a single invoice with dozens of items, exactly as stipulated by law.
+<Callout type="warning">
+Cord doesn't yet have a tool that automatically groups several sales from a period into a single periodic Global Invoice (daily, weekly, or monthly). Today, each sale to the general public is stamped as an individual CFDI with the generic RFC. If your business needs to consolidate several sales into a single Global Invoice by periodicity, coordinate that calculation with your accountant while we build that automation.
+</Callout>

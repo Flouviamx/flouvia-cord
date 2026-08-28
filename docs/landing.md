@@ -60,8 +60,27 @@ Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
 - **Anti-flash:** gate `.js-anim #navbar { opacity:0 }` (is:global) + entrada GSAP que
   oculta las piezas, revela el contenedor y las entra con stagger. `clearProps` al
   terminar para que `.scrolled`/`:hover` gobiernen.
-- Diferencias vs flouvia: SIN lang switch (v1 solo español); wordmark de texto en
-  vez de logos SVG. El login-icon pill SÍ existe desde jun 2026 (André lo pidió).
+- Diferencias vs flouvia: selector ES/EN con rutas reales (`/` y `/en`); wordmark
+  de texto en vez de logos SVG. El login-icon pill SÍ existe desde jun 2026
+  (André lo pidió).
+
+### Idioma público y frontera con la app
+
+- La primera visita a `/` negocia ES/EN con `Accept-Language`, incluyendo sus
+  pesos `q=`. Español permanece en `/`; inglés redirige temporalmente a `/en`.
+  Si el navegador no declara ninguno de los dos idiomas, inglés es el fallback
+  internacional; un header ausente o solo `*` conserva español para crawlers.
+- El selector manual gana sobre la detección y persiste un año en la cookie
+  host-only `cord_public_lang`. Sus links usan `?lang=es|en` solo como señal al
+  middleware en SSR; `Nav.astro` persiste la misma preferencia desde páginas
+  prerenderizadas y limpia el query antes de navegar a la URL canónica.
+- `publicPath()` en `src/i18n/utils.ts` es el único constructor de enlaces
+  localizados de la landing. Solo agrega `/en` a familias que tienen una ruta
+  inglesa real. `/app`, auth (`/sign-in`, `/sign-up`), links públicos (`/q`,
+  `/i`) y los casos de uso ES-only conservan su ruta global.
+- El middleware recupera bookmarks generados por el helper anterior —por
+  ejemplo `/en/app`, `/en/sign-in`, `/en/q/demo` y `/en/casos-de-uso/*`— y los
+  normaliza antes de que Astro responda 404.
 
 ### Animaciones de la landing (`index.astro`) — refinadas jun 2026 (Stripe/Linear)
 
@@ -102,6 +121,30 @@ Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
 
 ---
 
+## Blog y newsletter
+
+`/blog` y `/en/blog` comparten `BlogCTA.astro`. La suscripción usa doble opt-in
+y mantiene separados los dos carriles de correo:
+
+- los correos transaccionales siguen usando `RESEND_API_KEY` y `RESEND_FROM`;
+- el blog usa Resend Marketing con `updates.cordhq.app`, llaves propias y
+  segmentos separados para español e inglés;
+- `POST /api/blog/subscribe` crea o renueva una solicitud `pending` en
+  `blog_subscribers` y manda un enlace de 24 horas;
+- `GET /api/blog/confirm` crea/reactiva el Contact en Resend solo después del
+  clic y lo agrega al segmento de su idioma;
+- `/api/resend/marketing-webhook` verifica la firma Svix y refleja bajas o
+  eliminaciones en Neon. Resend es la fuente de entrega y supresión; Neon guarda
+  la evidencia de consentimiento;
+- `/blog/suscripcion` y `/en/blog/subscription` muestran el resultado sin
+  indexarse.
+
+Los Broadcasts deben enviarse al segmento correspondiente e incluir el enlace
+de baja administrado por Resend. Las variables operativas viven únicamente en
+`.env.example`.
+
+---
+
 ## Página 404 pública
 
 `src/pages/404.astro` usa navbar y footer globales sobre una composición clara
@@ -120,6 +163,31 @@ y accesos aireados a producto, precios y soporte.
   de hidratar cuando entra en viewport.
 - Fondo `#f5f5f7`, CTA navy en píldora con hover/active/focus; los tres accesos
   inferiores colapsan a una columna en móvil.
+
+---
+
+## Roadmap público
+
+`/roadmap` y `/en/roadmap` comparten `src/components/roadmap/RoadmapPage.astro`;
+los detalles comparten `RoadmapDetail.astro`. Los cuatro archivos de ruta solo
+resuelven idioma, slug y `getStaticPaths`, por lo que el comportamiento ES/EN no se
+duplica.
+
+- `src/lib/roadmap-data.ts` es la fuente única de 19 iniciativas. Cada entrada declara
+  familia (`quotes`, `payments`, `invoicing`, `platform`), mercado, flujo, alcance,
+  límites y relaciones además de estado y disponibilidad de API.
+- La lista separa Cord Invoicing como producto, CFDI 4.0 (México), Verifactu
+  (España), validación de Constancia/RFC y facturación comercial internacional.
+  Cord Payments tiene iniciativa propia y explicita los ocho mercados con cobro en
+  línea, SPEI solo para MXN de cuentas mexicanas y pagos manuales donde Connect no
+  está disponible.
+- En escritorio los filtros forman una columna lateral compacta; debajo de `1024px`
+  quedan cerrados dentro de un disclosure. Tabs, filtros activos, conteo, vacío y
+  navegación por teclado comparten el mismo script. Las filas filtrables no usan
+  reveals individuales: `[hidden]` las saca explícitamente del layout para que el
+  conteo, lo renderizado y lo visible siempre coincidan al cambiar filtros.
+- Cada detalle incluye resumen, metadatos de disponibilidad/producto/alcance, cuerpo
+  editorial, flujo, límites claros e iniciativas relacionadas.
 
 ---
 

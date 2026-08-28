@@ -19,7 +19,7 @@ Usa tu **Clave de API Secreta** (`sk_`) para alimentar el catálogo masivamente.
 **Petición:**
 
 ```bash
-curl -X POST "https://api.cordhq.com/v1/productos" \
+curl -X POST "https://cordhq.app/api/v1/productos" \
      -H "Authorization: Bearer sk_live_tU..." \
      -H "Content-Type: application/json" \
      -d '{
@@ -43,7 +43,7 @@ curl -X POST "https://api.cordhq.com/v1/productos" \
 
 ## Listar Productos y Seguridad de Datos
 
-La API de listado (`GET /v1/productos`) cuenta con un mecanismo de enmascaramiento dinámico (Dynamic Masking) basado en el nivel de confianza de la clave de API con la que te autenticas.
+La API de listado (`GET /api/v1/productos`) cuenta con un mecanismo de enmascaramiento dinámico (Dynamic Masking) basado en el nivel de confianza de la clave de API con la que te autenticas.
 
 Si usas una **Clave Secreta (`sk_`)**:
 Cord asume que eres un sistema interno confiable y te devuelve el objeto completo, **incluyendo los costos ocultos y márgenes de ganancia (`costo`)**.
@@ -52,6 +52,20 @@ Si usas una **Clave Publicable (`pk_`)**:
 Las claves publicables se exponen en el navegador (por ejemplo, para pintar una lista de precios en una web pública de React). Cord asume riesgo y **retira automáticamente el campo `costo` de todos los resultados en memoria** antes de serializar el JSON. Así, tus márgenes jamás se fugan al frontend público.
 
 ```bash
-curl -X GET "https://api.cordhq.com/v1/productos?limit=50" \
+curl -X GET "https://cordhq.app/api/v1/productos?limit=50" \
      -H "Authorization: Bearer pk_live_yX..."
 ```
+
+Con `sk_live_...` el mismo producto incluye `costo`:
+
+```json
+{ "data": [ { "id": "prod_1a2b3c...", "sku": "LIC-PRO-24", "nombre": "Licencia Anual Profesional", "unidad": "licencia", "precio": 12000, "costo": 4000, "activo": true } ] }
+```
+
+Con `pk_live_...`, `costo` simplemente no aparece en el objeto (no viene como `null` ni `0` — la clave no existe):
+
+```json
+{ "data": [ { "id": "prod_1a2b3c...", "sku": "LIC-PRO-24", "nombre": "Licencia Anual Profesional", "unidad": "licencia", "precio": 12000, "activo": true } ] }
+```
+
+Nota: una Publishable Key solo puede usarse en `GET /api/v1/productos` y `POST /api/v1/cotizaciones` — cualquier otra ruta (crear productos, leer clientes, cobranza) responde `403 insufficient_scope`, y además exige un header `Origin`/`Referer` que coincida con los dominios que registraste para esa llave.

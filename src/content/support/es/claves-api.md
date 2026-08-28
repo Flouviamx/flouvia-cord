@@ -9,7 +9,7 @@ Tus Claves de API son la puerta de entrada a tu cuenta. Trátalas con el mismo c
 
 ### Dónde se generan
 
-Activa el **Modo desarrollador** (Ajustes > Empresa) y abre la pestaña **API** en el dock de Desarrolladores, la barra que aparece al fondo de la pantalla (`/app?wb=api`). Ahí creas llaves nuevas, eliges su alcance (lectura o escritura) y las revocas. La llave secreta se muestra **una sola vez** al crearla; guárdala en un gestor de secretos, nunca en el código fuente.
+Activa el **Modo desarrollador** (el interruptor al fondo del índice de Ajustes) y abre la pestaña **API** en el dock de Desarrolladores, la barra que aparece al fondo de la pantalla (`/app?wb=api`). Ahí creas llaves nuevas, eliges su alcance (lectura o escritura) y las revocas. La llave secreta se muestra **una sola vez** al crearla; guárdala en un gestor de secretos, nunca en el código fuente.
 
 ### Autenticación
 
@@ -29,7 +29,7 @@ Respuesta:
 ### Entornos (Live vs Test)
 
 Al crear una llave eliges su modo:
-- **Test (`sk_test_...`):** no consume tu medidor de uso de API ni cuenta para tu facturación. Útil para probar integraciones. **Importante:** opera sobre los mismos datos de tu organización — no hay un sandbox aislado todavía. Que el timbrado CFDI sea real o simulado depende de tu configuración de Facturapi (CSD / llave), no del modo de la llave.
+- **Test (`sk_test_...`):** no consume tu medidor de uso de API ni cuenta para tu facturación. Opera sobre el **entorno de prueba** de tu cuenta (una organización espejo, aislada de tus datos reales — mismo mecanismo que el interruptor "Entorno de prueba" del selector de organización). La primera llamada con una llave test crea esa organización espejo si todavía no existe. Que el timbrado CFDI sea real o simulado depende de si tienes tu CSD conectado, no del modo de la llave. Ver [Probar Cord sin afectar tu producción](/soporte/sandbox-pruebas).
 - **Live (`sk_live_...`):** úsala en producción. Cada llamada cuenta para el consumo de tu plan.
 
 ### Alcances (Scopes)

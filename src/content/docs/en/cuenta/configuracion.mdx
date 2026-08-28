@@ -12,31 +12,58 @@ description: "Enter your company's general information and manage your team."
 
 The first step is to register your company in Cord. Go to **Settings > General** to fill in the following information:
 
-- **Commercial Name:** This is how your clients will see your company on quotes and public links.
-- **Legal Name (Razón Social):** Required for invoicing purposes.
-- **RFC:** Your valid Mexican Tax ID (Registro Federal de Contribuyentes).
-- **Tax Regime (Régimen Fiscal):** The tax regime under which you file with the SAT.
-- **Zip Code:** The zip code of your main fiscal address.
+- **Name:** This is how your clients will see your company on quotes and public links.
+- **Currency:** the currency you quote and charge your clients in (not your Cord subscription's currency, which follows your country — see [Your subscription](/en/docs/cuenta/suscripcion)).
+- **Contact email, phone, and address.**
+- **Website and WhatsApp** (shown on your public link).
+- **Country of operation:** sets the regulatory rail Cord uses — which tax fields it asks for, which tax rates it seeds by default, and the invoicing vocabulary (see below).
+- **Time zone:** used to calculate and display the dates on your quotes and invoices.
+- **Language:** applies to the app, your public links, and the emails Cord sends on your behalf.
 
-<Callout type="warning">
-**Important:** Make sure the RFC and Tax Regime exactly match your Constancia de Situación Fiscal. Cord will use this data as the issuer to stamp the CFDI 4.0.
-</Callout>
+The tax details used for invoicing (Legal name, your tax ID, fiscal address) are
+captured separately, under **Settings > Invoicing / Tax details**. That form changes
+based on your country: in Mexico it asks for **RFC** and **Tax Regime** and enables the
+CSD for CFDI 4.0 (see [Add tax information](/en/docs/cuenta/csd)); outside Mexico it
+asks for your legal name, your local tax ID (NIF/CIF in Spain, EIN/Tax ID in the US...),
+address, and invoice prefix — Cord issues a numbered invoice with an immutable copy and
+a PDF; submission or clearance with your local tax authority depends on the country
+(Spain has Verifactu).
 
 ## 2. Invite your sales team
 
-The B2B sales process is collaborative. Cord allows you to invite as many team members as you need. Go to **Settings > Team** and select **Invite member**.
+The B2B sales process is collaborative. Cord lets you invite as many team members as your plan allows (you'll see your seat usage and limit right on the screen). Go to **Settings > Team** and select **Add member**.
 
-### Available Roles (Coming Soon)
+### Roles and permissions
 
-Currently, all invited members have access to quote creation. In a future update, we will enable **Granular Roles and Permissions** to distinguish between:
-- **Admin:** Full access to settings, billing, CSD, and exports.
-- **Sales Rep:** Can create quotes, adjust prices (with limits), and send links, but cannot modify the general catalog or view global metrics.
-- **Viewer:** Read-only access for audits.
+Every invite starts from a permission **preset** you can use as-is or customize
+field by field:
+- **Admin:** full access to settings, billing, catalog, and exports.
+- **Sales rep:** creates and sends quotes, but doesn't manage account settings.
+- **Read-only:** view-only access, for audits.
+- **Custom:** toggle individual permissions (quoting, catalog, clients, collections,
+  settings...) when none of the three presets fits.
 
-## 3. Default Credit Terms Settings
+From each member's profile you can see their effective role, last session, recent
+activity, edit their permissions, resend the invitation, revoke access, or re-invite
+them if already revoked. If you restricted invitations to your company's email domains
+(`Settings > Team`), an invite to an address outside those domains is rejected before
+it sends. A member who signs in through SSO has permissions managed by your identity
+provider and isn't edited here.
+
+## 3. Quote defaults
 
 If your business model operates under corporate B2B terms (where you don't charge cash upfront, but on 30 or 60-day terms), you don't have to configure it manually on every quote.
 
-Go to **Settings > Sales > Credit Terms** to set your account's global values:
-- **Default terms:** Select *Net 30* or *Net 60*. From now on, every new quote will automatically inherit this payment term.
-- When a quote with terms is approved, the system schedules the due date and programs the smart collections flow, blocking the creation of new quotes if the client exceeds their credit limit or has overdue invoices.
+Go to **Settings > Quotes** to set the values every new quote starts with:
+- **Default validity (days).**
+- **Default terms:** *Cash*, *Net 30*, or *Net 60*. From now on, every new quote will automatically inherit this payment term (you can still change it per quote when quoting).
+- **Default advance (%).**
+- **Numbering prefix**, and the **legal text** that accompanies the PDF.
+
+<Callout type="info">
+**The credit limit is a signal, not an automatic block.** Each client can have their own
+credit limit (**Clients > [client]**). Cord uses it to warn you — on the client's
+profile and in Collections — how much open balance they carry against that limit, but
+it doesn't by itself stop a new quote from being created; the call to pause selling to
+an over-exposed client is still yours.
+</Callout>

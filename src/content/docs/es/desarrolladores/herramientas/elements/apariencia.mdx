@@ -10,9 +10,18 @@ description: "Personaliza el aspecto de Cord Elements con variables CSS, Dark Mo
 
 ## La API de Apariencia
 
-Por defecto, Cord Elements se renderiza con nuestra paleta de colores limpia y neutral, pero puedes controlar profundamente su estética mediante un objeto JSON de configuración. 
+Por defecto, Cord Elements se renderiza con nuestra paleta de colores limpia y neutral, pero puedes controlar profundamente su estética mediante un objeto JSON de configuración: `appearance`.
 
-Debido a que el cotizador vive dentro de un iframe, no puedes inyectar hojas de estilo tradicionales directamente. En su lugar, el script `embed.js` envía tus preferencias estéticas a los servidores de Cord, quienes renderizan el CSS validado de forma segura.
+<Callout type="info">
+**Dos mecanismos distintos según dónde vive el componente.** Para el **iframe**
+(`embed.js`/`<cord-cotizador>`/`<CordCotizador>`) — que vive bajo el dominio de Cord y no puedes
+tocar con tu propio CSS — `appearance` viaja como parámetro al servidor, que renderiza el CSS
+validado del lado de Cord. Para los **componentes nativos de React** (`<CordBuilder>` y sus
+slots, vía `<CordProvider appearance={{...}}>`) no hay ningún iframe ni ida y vuelta al
+servidor: el SDK genera un `<style>` con variables CSS e inyecta las tuyas directamente en el
+`<head>` de TU página. El objeto `appearance` es el mismo en ambos casos; el mecanismo que lo
+aplica es distinto.
+</Callout>
 
 ### El parámetro Appearance
 
@@ -21,7 +30,7 @@ El script embebible lee de tu etiqueta HTML o configuración de inicialización 
 ```html
 <script src="https://cordhq.app/embed.js" async></script>
 <div 
-  data-cord-token="tok_A1B2C3D4E5" 
+  data-cord-token="a1b2c3d4e5f60718" 
   data-appearance='{
     "theme": "dark",
     "variables": {
@@ -61,3 +70,44 @@ Cord te permite cargar tu propia familia tipográfica comercial o libre directam
 
 Pasa un arreglo `fonts` con objetos que contengan el `cssSrc`. 
 > **Nota:** Por motivos estrictos de seguridad y para prevenir inyecciones de interfaz (UI-redressing), Cord solo ejecutará directivas `@import` provenientes de hosts de tipografía comprobados, como `fonts.googleapis.com` o `fonts.bunny.net`. Cualquier otra URL externa será descartada silenciosamente.
+
+### 4. Modo headless (`baseTheme: 'none'`) — solo componentes nativos
+
+Si usas `<CordBuilder>` (o `useQuoteBuilder` con tu propia UI) y NO quieres ni una sola regla
+CSS de Cord de por medio, pasa `appearance={{ baseTheme: 'none' }}` a tu `<CordProvider>`. Las
+clases `.cord-*` se siguen emitiendo en el markup — no desaparecen — pero el SDK no inyecta su
+hoja de estilos base: el look completo queda en tus manos (Tailwind, CSS Modules, lo que uses).
+No aplica al iframe (`<CordCotizador>`), que siempre mantiene su hoja de estilos propia.
+
+### 5. Overrides por elemento (`elements`) — solo componentes nativos
+
+Cada nodo interno de `<CordBuilder>` lleva una clase estable `.cord-<key>` (`builderRoot`,
+`formField`, `itemRow`, `summaryRoot`, `submitButton`…) que nunca cambia entre versiones. Puedes
+sumarle tu propio `className` y/o `style` inline por elemento con `appearance.elements`:
+
+```tsx
+<CordProvider
+  publishableKey={pk}
+  appearance={{
+    elements: {
+      submitButton: 'mi-boton-tailwind',
+      itemRow: { style: { gap: '18px' } },
+      formFieldInput: { className: 'mi-input', style: { borderRadius: '6px' } },
+    },
+  }}
+>
+  <CordBuilder />
+</CordProvider>
+```
+
+La clase base `.cord-<key>` **nunca se reemplaza**, solo se le agrega la tuya encima — mismo
+patrón que `appearance.elements` de Clerk. Al igual que `baseTheme`, esto solo afecta a los
+componentes nativos, no al iframe.
+
+<Callout type="warning">
+**Lo que NO existe (a propósito):** un campo `rules` para inyectar selectores CSS arbitrarios
+DENTRO del iframe nunca llegó a funcionar en producción — el servidor lo descarta por
+seguridad desde que se agregó el campo, para cerrar la puerta a una inyección de interfaz vía
+un selector malicioso. Si ves ese campo mencionado en un ejemplo viejo o en un fork, ignóralo:
+usa `variables` y `elements` para lo nativo, y las opciones documentadas arriba para el iframe.
+</Callout>

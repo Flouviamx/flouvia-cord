@@ -1,16 +1,19 @@
 ---
-title: "Client Catalog and RFC"
-description: "Management and validation of RFCs in the client list."
+title: "Client Catalog and Tax ID"
+description: "How Cord stores your clients' tax IDs and what validation actually happens."
 category: "Invoicing"
 ---
 
-Client management in Cord is designed to avoid SAT rejections when issuing CFDI 4.0.
+This article covers the RFC as Mexico's tax ID field; in other countries the same field stores your client's local tax identifier (NIF/CIF in Spain, EIN/Tax ID in the United States, and so on, based on the country you've configured).
 
-### Real-time Validation (CFDI 4.0)
+### What Cord stores today
 
-In version 4.0 of the CFDI, the Name/Corporate Name and the Postal Code must match letter by letter with the client's Tax Situation Certificate (CSF).
-When you add a client in Cord:
-1. The system validates the Postal Code against the official SAT list.
-2. If the Corporate Name includes the corporate regime (e.g. "ACME S.A. DE C.V."), Cord will **automatically clean it** to "ACME", since the SAT rejects invoices that include the "SA de CV".
+When you add a client, the tax ID field is saved exactly as you type it, in uppercase. Cord **does not validate the postal code against the SAT catalog, nor does it automatically clean up the corporate name** (for example, stripping "S.A. DE C.V.") — if the SAT rejects a CFDI 4.0 because the captured name or postal code doesn't match your client's Tax Situation Certificate (CSF), the fix today is manual: copy the name and postal code exactly as they appear on the CSF before saving the client.
 
-**Bulk import tip:** If you are coming from another system, use our CSV import tool. Make sure that the Name and Postal Code columns come directly from the CSF of your clients to avoid future operational blockages.
+### Bulk import via CSV
+
+If you're coming from another system, use the bulk import from your **Clients** directory. Each row accepts: company name, contact, email, phone, tax ID, payment terms (cash, Net 30, or Net 60), and credit limit. If a client already exists (same tax ID or same company name), the import updates that row instead of duplicating it.
+
+<Callout type="info">
+Since the import doesn't validate the tax ID or the postal code against any official catalog, data quality depends entirely on your source file: copy it directly from the CSF (or the equivalent tax document in your country) for each client to avoid rejections when invoicing.
+</Callout>

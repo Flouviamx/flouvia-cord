@@ -1,8 +1,8 @@
 ---
-import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import { getLangFromUrl, publicPath, useTranslations } from '../../i18n/utils';
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
-const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+const l = (p: string) => publicPath(p, lang);
 // Sección de features — bento grid con la estética producto-vibrante.
 ---
 

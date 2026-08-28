@@ -1,8 +1,8 @@
 ---
-import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import { getLangFromUrl, publicPath, useTranslations } from '../../i18n/utils';
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
-const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+const l = (p: string) => publicPath(p, lang);
 // Hero — estilo Stripe/Linear: gradient mesh sutil, mucho aire, tipografía grande,
 // mockup grande con glow. Manteniendo navy/Inter/serif-italic de Flouvia.
 // El mockup es una CALCA de la app real de hoy (light mode): sidebar clara con

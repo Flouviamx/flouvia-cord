@@ -1,8 +1,8 @@
 ---
-import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import { getLangFromUrl, publicPath, useTranslations } from '../../i18n/utils';
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
-const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+const l = (p: string) => publicPath(p, lang);
 
 import { PLANES as PLANES_ES, precioAnualMensualizado } from '../../lib/precios';
 import { PLANES_EN } from '../../lib/precios.en';

@@ -5,9 +5,9 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, resolvePublicQuote, withOrgTx } from '../../../../lib/db';
-import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { payerError } from '../../../../lib/pay-errors';
 import { normalizeCurrency, stripeCurrency, stripeSupportsCurrency, toMinorUnits } from '../../../../lib/currency';
+import { limitPublicPayment } from '../../../../lib/connect-security';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -15,8 +15,8 @@ export const POST: APIRoute = async ({ params, request }) => {
     if (!STRIPE_KEY) return json({ error: 'El pago en línea aún no está configurado.' }, 503);
     const token = params.token ?? '';
     // Crear sesiones de Stripe es costoso/abusable: límite estricto por token.
-    const rl = await rateLimit(`checkout:${token}`, 6, 60);
-    if (!rl.ok) return tooMany(rl.retryAfter);
+    const limited = await limitPublicPayment(request, 'checkout', token, 6);
+    if (limited) return limited;
     const identity = await resolvePublicQuote(token);
     if (!identity) return json({ error: 'Cotización no encontrada' }, 404);
     const [rows] = await withOrgTx(identity.orgId, sql`
@@ -91,8 +91,13 @@ export const POST: APIRoute = async ({ params, request }) => {
         if (c.cobro_spei_auto) {
             const cusForm = new URLSearchParams();
             cusForm.set('metadata[cotizacion_id]', c.id as string);
+            // Idempotencia por cotización: la CLABE de SPEI se asigna POR CUSTOMER,
+            // así que un reintento sin clave dejaba dos CLABEs vivas para la misma
+            // venta y el pago podía llegar a la que nadie concilia.
             const cusRes = await fetch('https://api.stripe.com/v1/customers', {
-                method: 'POST', headers: connectHeaders, body: cusForm.toString(),
+                method: 'POST',
+                headers: { ...connectHeaders, 'Idempotency-Key': `cord-legacy-cus-${c.id}` },
+                body: cusForm.toString(),
             });
             const cus: any = await cusRes.json();
             if (!cusRes.ok || !cus?.id) {
@@ -104,7 +109,7 @@ export const POST: APIRoute = async ({ params, request }) => {
 
         const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
             method: 'POST',
-            headers: connectHeaders,
+            headers: { ...connectHeaders, 'Idempotency-Key': `cord-legacy-cs-${c.id}-${amount}` },
             body: form.toString(),
         });
         const data: any = await res.json();

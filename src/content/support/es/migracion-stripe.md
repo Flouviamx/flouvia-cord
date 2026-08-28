@@ -34,4 +34,4 @@ Si prefieres hacerlo por código, usa la API REST: ver [API: Gestionar clientes]
 
 ### Paso 3: Apunta tus webhooks
 
-Si reaccionas a eventos desde tu backend, agrega tu URL en la pestaña **Webhooks** del dock de Desarrolladores (actívalo en Ajustes > Empresa). Cord emite eventos propios: `quote.sent`, `quote.viewed`, `quote.approved`, `quote.rejected`, `quote.paid` y `quote.invoiced`. Pruébalos con el botón "Probar" antes de depender de ellos.
+Si reaccionas a eventos desde tu backend, agrega tu URL en la pestaña **Webhooks** del dock de Desarrolladores (actívalo en Ajustes > Empresa). Cord emite eventos propios de cotización (`quote.sent`, `quote.viewed`, `quote.approved`, `quote.rejected`, `quote.paid`) y de factura (`invoice.issued`, y el ciclo completo `invoice.finalized`/`invoice.sent`/`invoice.paid`/`invoice.voided` — ver [Facturación (CFDI) y la API](/soporte/api-facturas)). Pruébalos con el botón "Probar" antes de depender de ellos.

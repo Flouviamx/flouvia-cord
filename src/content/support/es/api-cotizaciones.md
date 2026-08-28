@@ -36,15 +36,19 @@ Respuesta:
 ```
 
 **Campos del cuerpo:**
-- `items` (obligatorio): arreglo de partidas. Cada una con `descripcion`, `cantidad`, `precio_unitario` y, opcionalmente, `producto_id` y `precio_negociado`.
+- `items` (obligatorio): arreglo de partidas. Cada una con `descripcion`, `cantidad`, `precio_unitario` y, opcionalmente, `producto_id`, `precio_negociado`, `costo_unitario` y `tax_rate` (fracción 0–1, ej. `0.16`; si se omite, se usa la tasa por defecto de tu organización — el impuesto es un dato de la línea, no del documento).
 - `cliente_id` (opcional): id de un cliente existente (créalo con [API: Gestionar clientes](/soporte/api-clientes)).
+- `cliente` (opcional, alternativa a `cliente_id`): objeto `{ empresa, email?, contacto?, telefono?, rfc? }` para un cliente que todavía no existe — Cord lo busca por empresa/email dentro de tu organización y, si no lo encuentra, lo crea.
 - `terminos`: `contado`, `net30` o `net60`.
 - `vigencia_dias`: días que la cotización permanece válida.
+- `notas`: texto libre que aparece al final de la cotización.
 - `send`: si es `true`, Cord envía el link público al correo del cliente al crearla.
+- `base_currency`/`fiscal_currency` (opcionales): divisa en la que el cliente ve la cotización y divisa contable en la que se factura, si difieren. `fx_buffer_pct` agrega un colchón al tipo de cambio congelado.
+- `iva_incluido` (opcional): si es `true`, los `precio_unitario` de los items ya incluyen impuesto.
 
 **Importante:**
 - Todos los montos van en **pesos** (`15000` = $15,000.00 MXN), no en centavos.
-- El IVA y los totales se calculan en el servidor según la configuración de tu organización.
+- Los totales (impuestos, retenciones y divisa) se calculan en el servidor con el mismo motor que usa la app — nunca confíes en un total calculado en el cliente.
 - `link_publico` es la ruta del link que ve tu cliente (`/q/{token}`); antepón `https://cordhq.app`.
 
 ### Listar cotizaciones

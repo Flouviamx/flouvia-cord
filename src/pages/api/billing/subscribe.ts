@@ -22,6 +22,9 @@ import { normalizePlatformCurrency, type PlatformCurrency } from '../../../lib/p
 import { stripeCurrency } from '../../../lib/currency';
 import { siteOrigin } from '../../../lib/email';
 import { PLAN_RANK, type PaidPlan } from '../../../lib/entitlements';
+import { merchantError } from '../../../lib/pay-errors';
+import { log } from '../../../lib/log';
+import { strictRateLimit, strictLimitResponse } from '../../../lib/ratelimit';
 
 // API version mínima para billing_mode flexible + invoice.confirmation_secret.
 const STRIPE_VERSION = '2025-06-30.basil';
@@ -165,6 +168,13 @@ export const POST: APIRoute = async ({ request }) => {
     if (plan === 'developer') return json({ error: 'El plan Developer se contrata hablando con ventas.', code: 'developer_contact_sales' }, 400);
 
     const orgId = await getActiveOrgId();
+
+    // Esta ruta acuña suscripciones y sesiones de checkout en el proveedor y no
+    // pasa por `billingContext()` (resuelve su propio contexto por el flujo de
+    // alta). Sin límite propio quedaba apoyada sólo en el contador in-process
+    // del middleware, que en Vercel Fluid se multiplica por réplica.
+    const limitado = strictLimitResponse(await strictRateLimit(`billing:subscribe:${orgId}`, 20, 60));
+    if (limitado) return limitado;
 
     // El ENTORNO DE PRUEBA nunca toca Stripe Billing real.
     const [[sb]] = await withOrgTx(orgId, sql`select sandbox_of from orgs where id = ${orgId}`);
@@ -453,7 +463,15 @@ export const POST: APIRoute = async ({ request }) => {
             update billing_checkout_attempts
                set status = 'failed', last_error = ${String(e?.message || 'error').slice(0, 500)}, updated_at = now()
              where org_id = ${orgId} and status = 'creating'`).catch(() => null);
-        return json({ error: e?.message || 'No se pudo iniciar el checkout' }, 502);
+        // `stripeError()` pone el mensaje CRUDO de Stripe en `.message` (inglés,
+        // con ids internos: "No such price: 'price_…'"). Devolverlo tal cual le
+        // enseña al dueño del negocio el mecanismo en vez del estado (regla 14).
+        // `merchantError()` traduce por código y degrada a una referencia cuando
+        // no conoce el código; el mensaje crudo sigue yendo al log, que es donde
+        // sirve.
+        const safe = merchantError(e);
+        log.error('el proveedor rechazó el alta de suscripción', { route: 'billing-subscribe', orgId, reference: safe.reference, err: e });
+        return json({ error: safe.message, reference: safe.reference }, 502);
     }
 };
 

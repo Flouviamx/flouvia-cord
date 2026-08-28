@@ -1,21 +1,16 @@
 ---
 title: "Facturación al Público en General"
-description: "Emisión de CFDI global diario o mensual."
+description: "Cómo emitir un CFDI a Público en General en Cord hoy."
 category: "Facturación"
 ---
 
-Todas las ventas e ingresos que recibas que no sean facturados individualmente a un RFC específico, deben declararse ante el SAT mediante una **Factura Global de Público en General**.
+Esto aplica solo a organizaciones en **México**. Toda venta que no facturas a un RFC específico —ventas de mostrador, cobros donde el cliente no pidió factura— debe declararse ante el SAT bajo el RFC genérico de Público en General.
 
-### ¿Cuándo usar la factura global?
+### Cómo hacerlo en Cord hoy
 
-- Tienes un e-commerce y cobraste 50 pedidos con tarjeta a clientes que no pidieron factura.
-- Hiciste ventas de mostrador en efectivo.
+1. Al crear la cotización o factura, usa un cliente sin identificador fiscal capturado (o crea uno llamado "Público en general" y déjale el campo de RFC vacío).
+2. Al timbrar, Cord detecta que no hay RFC específico y usa automáticamente el RFC genérico **XAXX010101000** con el nombre **PÚBLICO EN GENERAL**, tal como lo exige el SAT.
 
-**Reglas del SAT (CFDI 4.0):**
-La factura global debe emitirse usando el RFC genérico **XAXX010101000** y el nombre literal **PUBLICO EN GENERAL** (en mayúsculas y sin acentos). Además, debes indicar la periodicidad (diaria, semanal o mensual) y el año correspondiente.
-
-### Flujo en Cord
-1. Ve a **Contabilidad > Facturas Generales**.
-2. Haz clic en **Generar Factura Global**.
-3. Selecciona el periodo de tiempo.
-4. Cord escaneará automáticamente todas las transacciones cobradas en ese periodo que no tengan un CFDI asociado, y las agrupará en una sola factura con decenas de partidas, tal como lo estipula la ley.
+<Callout type="warning">
+Cord no tiene todavía una herramienta que agrupe automáticamente varias ventas del periodo en una sola Factura Global periódica (diaria, semanal o mensual). Hoy, cada venta a público en general se timbra como un CFDI individual con el RFC genérico. Si tu negocio necesita consolidar varias ventas en una sola Factura Global por periodicidad, coordina ese cálculo con tu contador mientras construimos esa automatización.
+</Callout>

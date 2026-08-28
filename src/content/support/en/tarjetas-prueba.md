@@ -4,7 +4,7 @@ description: "List of PANs to simulate 3D Secure flows and failures."
 category: "Developers"
 ---
 
-Test card numbers only work in a separate development environment. They are not valid on the public link of a production organization.
+Test card numbers only work in a separate development environment. They are not valid on the public link of a production organization, nor inside your account's [Test environment](/en/support/sandbox-pruebas) — Cord Payments cannot be connected there by design, so card payments remain the one piece of the flow you can't simulate yourself from within the app.
 
 ### Request development access
 

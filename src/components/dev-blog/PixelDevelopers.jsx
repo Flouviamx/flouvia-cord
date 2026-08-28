@@ -110,6 +110,10 @@ export default function PixelDevelopers() {
   }, []);
 
   const handlePointerDown = (e, index) => {
+    // Regla 16: arrastrar se queda en escritorio. En tactil ese mismo gesto ES
+    // el scroll de la pagina, y sobre el arte grande del footer la dejaba
+    // atascada: el dedo movia un pixel en vez de desplazar.
+    if (e.pointerType === 'touch') return;
     e.preventDefault();
     const block = blocksRef.current[index];
     if(!block) return;
@@ -220,6 +224,7 @@ export default function PixelDevelopers() {
         ref={containerRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        className="pixel-art pixel-art--developers"
         style={{
           display: 'inline-grid',
           gridTemplateColumns: `repeat(39, 1fr)`,
@@ -234,7 +239,7 @@ export default function PixelDevelopers() {
               const color = getInitialColor(rIdx, cIdx);
               const hoverColor = getHoverColor(rIdx, cIdx);
               return (
-                <div key={`${rIdx}-${cIdx}`} style={{ width: '18px', height: '18px' }}>
+                <div key={`${rIdx}-${cIdx}`} style={{ width: 'var(--pix, 18px)', height: 'var(--pix, 18px)' }}>
                   <div 
                     ref={el => blocksRef.current[currentIndex] = el}
                     data-orig-color={color}
@@ -247,13 +252,13 @@ export default function PixelDevelopers() {
                       borderRadius: '0',
                       transformOrigin: 'center center',
                       cursor: 'grab',
-                      touchAction: 'none'
+                      touchAction: 'manipulation'
                     }}
                   />
                 </div>
               );
             }
-            return <div key={`${rIdx}-${cIdx}`} style={{ width: '18px', height: '18px' }} />;
+            return <div key={`${rIdx}-${cIdx}`} style={{ width: 'var(--pix, 18px)', height: 'var(--pix, 18px)' }} />;
           })
         )}
       </div>

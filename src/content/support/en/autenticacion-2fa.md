@@ -15,8 +15,8 @@ Two-Factor Authentication (2FA) adds an extra layer of security. We recommend th
 
 **Saving Backup Codes:** The system will provide you with 10 single-use codes. Keep them in a safe place. If you lose your phone, these codes are the only way to regain access to your Cord account.
 
-### Enforce 2FA for the Team (Enterprise Organizations)
-Enterprise account owners can force all members to enable 2FA:
+### Enforce 2FA for the Team
+Any account owner, regardless of plan, can force all members to enable 2FA:
 1. Go to **Settings > Security**.
 2. Enable *Require two-step verification for all members*.
 Any employee who does not have 2FA enabled will be logged out and forced to configure it upon their next login.

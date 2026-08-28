@@ -3,6 +3,7 @@ import { sequence } from "astro:middleware";
 import { reqContext } from "./lib/context";
 import { LEGACY_ROUTES } from "./lib/informes";
 import { isAllowedMutationOrigin, isCsrfExemptWrite } from './lib/csrf-policy';
+import { canonicalPathForInvalidEnglishRoute, preferredPublicLang } from './i18n/utils';
 
 // APIs que DEBEN seguir públicas (las llaman terceros sin sesión):
 //   /api/q/*         → vista pública del cliente (token secreto)
@@ -28,7 +29,17 @@ import { isAllowedMutationOrigin, isCsrfExemptWrite } from './lib/csrf-policy';
 // la credencial — ver identity_capture_sessions). OJO: el prefijo exige la barra
 // final para NO alcanzar /api/billing/connect/capture-session (esa SÍ requiere
 // sesión — la crea el escritorio autenticado).
-const PUBLIC_API_PREFIXES = ["/api/q/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/auth/", "/api/contacto/", "/api/billing/connect/capture/"];
+//
+// /api/i/* → factura hospedada. MISMO carril que /api/q/*: el destinatario de una
+// factura no tiene cuenta en Cord, y el token de la URL es la credencial (lo
+// resuelve `resolvePublicInvoice`, una función security definer que devuelve solo
+// {id, orgId} y obliga a volver a withOrgTx — regla 30). Faltaba, y como el
+// middleware responde 401 a toda API que no esté aquí, los DOS endpoints de la
+// factura hospedada eran inalcanzables para un cliente sin sesión: no se podía
+// pagar (`/api/i/[token]/payment-intent`) ni se registraba la vista
+// (`/api/i/[token]`, la señal de la regla 19). Ambos handlers existían y estaban
+// bien; lo único que faltaba era esta línea.
+const PUBLIC_API_PREFIXES = ["/api/q/", "/api/i/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/auth/", "/api/contacto/", "/api/blog/", "/api/billing/connect/capture/"];
 // Solo los tres endpoints que CREAN una sesión de Ops son públicos. Cualquier
 // futura API bajo /api/ops queda privada por default y exige sesión Ops válida.
 const OPS_PUBLIC_API_EXACT = [
@@ -36,15 +47,16 @@ const OPS_PUBLIC_API_EXACT = [
     "/api/ops/passkey-options",
     "/api/ops/passkey-verify",
 ];
-const PUBLIC_API_EXACT = ["/api/mcp", "/api/docs-search.json", "/api/geo", ...OPS_PUBLIC_API_EXACT];
+const PUBLIC_API_EXACT = ["/api/mcp", "/api/docs-search.json", "/api/geo", "/api/resend/marketing-webhook", ...OPS_PUBLIC_API_EXACT];
 
 // Exención CSRF independiente de "API pública". Solo entra aquí una mutación
 // que se autentica con una credencial que el navegador no adjunta por sí solo
 // (firma HMAC, Bearer o CRON_SECRET) y cuyo handler no debe leer cookies.
 //
 // No reutilizar PUBLIC_API_PREFIXES: ahí también viven /api/auth/*, /api/q/*,
-// /api/contacto/* y capture/*, que sí reciben llamadas de navegador y dependen
-// de cookies o tokens en URL; exentarlas convertiría una ruta pública en CSRF.
+// /api/i/*, /api/contacto/* y capture/*, que sí reciben llamadas de navegador y
+// dependen de cookies o tokens en URL; exentarlas convertiría una ruta pública en
+// CSRF.
 // ── Rate limiting (in-memory, por IP) ────────────────────────────────────────
 // Ventana: 60 s. Límites:
 //   · APIs internas de lectura (GET):   200 req/min
@@ -180,6 +192,75 @@ const subdomainRewrite = async (context: any, next: any) => {
                 }
             }
         }
+    }
+
+    return next();
+};
+
+const PUBLIC_LANG_COOKIE = 'cord_public_lang';
+
+function languageVary(headers: Headers): void {
+    const current = headers.get('Vary')?.split(',').map((value) => value.trim()).filter(Boolean) ?? [];
+    for (const value of ['Accept-Language', 'Cookie']) {
+        if (!current.some((item) => item.toLowerCase() === value.toLowerCase())) current.push(value);
+    }
+    headers.set('Vary', current.join(', '));
+}
+
+// La landing negocia idioma una sola vez en la raíz. Accept-Language describe
+// la preferencia real del dispositivo mejor que geolocalizar la IP (una persona
+// puede estar viajando o usar VPN). El selector ES/EN fija una cookie para que
+// la elección explícita gane en visitas posteriores.
+const publicLanguageRouting = async (context: any, next: any) => {
+    const path = context.url.pathname;
+    const method = context.request.method;
+    const host = normalizedHostname(context.url.hostname || '');
+    const isSpecialSubdomain = SUBDOMAINS.some((subdomain) => host === subdomain.host);
+
+    if (isSpecialSubdomain || (method !== 'GET' && method !== 'HEAD') || path.startsWith('/api/')) {
+        return next();
+    }
+
+    const requestedLang = context.url.searchParams.get('lang');
+    const explicitLang = requestedLang === 'es' || requestedLang === 'en' ? requestedLang : null;
+    if (explicitLang) {
+        context.cookies.set(PUBLIC_LANG_COOKIE, explicitLang, {
+            path: '/',
+            sameSite: 'lax',
+            secure: import.meta.env.PROD,
+            maxAge: 60 * 60 * 24 * 365,
+        });
+    }
+
+    const canonicalPath = canonicalPathForInvalidEnglishRoute(path);
+    if (explicitLang || canonicalPath) {
+        const destination = new URL(context.url);
+        if (explicitLang) destination.searchParams.delete('lang');
+        if (canonicalPath) destination.pathname = canonicalPath;
+        const response = context.redirect(`${destination.pathname}${destination.search}`, 302);
+        response.headers.set('Cache-Control', 'private, no-store');
+        languageVary(response.headers);
+        return response;
+    }
+
+    if (path === '/') {
+        const saved = context.cookies.get(PUBLIC_LANG_COOKIE)?.value;
+        const lang = saved === 'es' || saved === 'en'
+            ? saved
+            : preferredPublicLang(context.request.headers.get('accept-language'));
+
+        if (lang === 'en') {
+            const destination = `/en${context.url.search}`;
+            const response = context.redirect(destination, 302);
+            response.headers.set('Cache-Control', 'private, no-store');
+            languageVary(response.headers);
+            return response;
+        }
+
+        const response = await next();
+        const varied = new Response(response.body, response);
+        languageVary(varied.headers);
+        return varied;
     }
 
     return next();
@@ -607,8 +688,36 @@ const securityHeaders = async (context: any, next: any) => {
 
     secureRes.headers.set("X-Content-Type-Options", "nosniff");
     secureRes.headers.set("X-Permitted-Cross-Domain-Policies", "none");
-    secureRes.headers.set("Referrer-Policy", path.startsWith("/reset-password") ? "no-referrer" : "strict-origin-when-cross-origin");
-    secureRes.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(self)");
+    // La captura de identidad es la ÚNICA superficie que necesita la cámara, y el
+    // token de la sesión viaja en el path — así que también es la única que no
+    // puede filtrar su URL por `Referer`, igual que el enlace de recuperación de
+    // contraseña.
+    const isCapturaIdentidad = path === "/verificar-identidad" || path.startsWith("/verificar-identidad/");
+
+    secureRes.headers.set(
+        "Referrer-Policy",
+        path.startsWith("/reset-password") || isCapturaIdentidad ? "no-referrer" : "strict-origin-when-cross-origin",
+    );
+    // `camera=()` es una allowlist VACÍA: deshabilita getUserMedia incluso para el
+    // documento de nivel superior, no sólo para iframes. Se aplicaba a TODA ruta
+    // sin excepción, así que en Chromium la pantalla de verificación de identidad
+    // fallaba con NotAllowedError ANTES de mostrar el prompt de permiso — el flujo
+    // del QR no podía funcionar, y el usuario veía un mensaje genérico de
+    // "revisa los permisos de tu navegador" sobre un permiso que nunca se le pidió.
+    //
+    // `camera=(self)` habilita la cámara sólo en este mismo origen y sólo en esta
+    // ruta; todo lo demás sigue con la allowlist vacía.
+    secureRes.headers.set(
+        "Permissions-Policy",
+        `camera=${isCapturaIdentidad ? "(self)" : "()"}, microphone=(), geolocation=(), payment=(self)`,
+    );
+    if (isCapturaIdentidad) {
+        // Una página que lleva una credencial portadora en la URL no se cachea ni
+        // se indexa. El `noindex` del layout es un meta tag; esto es el header,
+        // que también cubre respuestas no-HTML y crawlers que no ejecutan JS.
+        secureRes.headers.set("Cache-Control", "private, no-store, max-age=0");
+        secureRes.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    }
     secureRes.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
     if (isOpsPage || isOpsApi) {
         // Ops usa un layout aislado sin analytics, iframes, fuentes ni scripts
@@ -651,4 +760,4 @@ const securityHeaders = async (context: any, next: any) => {
     return secureRes;
 };
 
-export const onRequest = sequence(subdomainRewrite, securityHeaders, mainHandler);
+export const onRequest = sequence(subdomainRewrite, securityHeaders, publicLanguageRouting, mainHandler);

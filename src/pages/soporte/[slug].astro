@@ -53,8 +53,8 @@ const relatedArticles = categoryEntries.filter(a => a.id !== entry.id).slice(0, 
 const slugifyCategory = (cat: string) => cat.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'y').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const catSlug = slugifyCategory(entry.data.category);
 
-// Datos estructurados (jul 2026, auditoría SEO/AI-SEO): los 132 artículos de
-// soporte (66 ES + 66 EN) no tenían ningún JSON-LD. Article (no BlogPosting:
+// Datos estructurados (jul 2026, auditoría SEO/AI-SEO): los 140 artículos de
+// soporte (70 ES + 70 EN, ago 2026) no tenían ningún JSON-LD. Article (no BlogPosting:
 // son documentación de producto, no editorial) + BreadcrumbList con la
 // jerarquía real Home > Centro de ayuda > Categoría > Artículo.
 const SITE = 'https://cordhq.app';
@@ -511,6 +511,35 @@ const breadcrumbSchema = {
     .markdown-body :global(pre code) {
         background: transparent;
         padding: 0;
+    }
+
+    /* <callout type="info|warning|success"> pasa como HTML crudo desde el
+       markdown plano de esta colección (glob de .md, no MDX) — no hay
+       componente Astro que lo intercepte, así que se estiliza aquí como
+       markup ajeno (regla 11). */
+    .markdown-body :global(callout) {
+        display: flex;
+        gap: 16px;
+        padding: 20px 24px;
+        border-radius: 12px;
+        margin: 2rem 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        color: #334155;
+    }
+    .markdown-body :global(callout p:first-child) { margin-top: 0; }
+    .markdown-body :global(callout p:last-child) { margin-bottom: 0; }
+    .markdown-body :global(callout[type="warning"]) {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #78350f;
+    }
+    .markdown-body :global(callout[type="success"]) {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+        color: #14532d;
     }
 </style>
 

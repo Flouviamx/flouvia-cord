@@ -35,128 +35,386 @@ export const STRIPE_MX_STATES = [
     { codigo: 'ZAC', nombre: 'Zacatecas' },
 ];
 
-export const STRIPE_COMPANY_STRUCTURES = [
-    { codigo: 'private_corporation', nombre: 'Empresa privada (S.A., S. de R.L.)' },
-    { codigo: 'sole_proprietorship', nombre: 'Propietario único' },
-    { codigo: 'public_corporation', nombre: 'Empresa pública' },
-    { codigo: 'unincorporated_association', nombre: 'Asociación civil / sin fines de lucro' },
-    { codigo: 'multi_member_llc', nombre: 'LLC con múltiples miembros' },
-    { codigo: 'single_member_llc', nombre: 'LLC de miembro único' },
-];
-
-export const STRIPE_MCC_B2B = [
-    { codigo: '1520', nombre: 'Contratistas generales (residencial y comercial)' },
-    { codigo: '1731', nombre: 'Contratistas eléctricos' },
-    { codigo: '1799', nombre: 'Contratistas generales especializados' },
-    { codigo: '2741', nombre: 'Editoriales y publicadoras' },
-    { codigo: '2791', nombre: 'Tipografía y grabado' },
-    { codigo: '4214', nombre: 'Transporte de carga local y mensajería' },
-    { codigo: '4215', nombre: 'Servicios de mensajería (aire o tierra)' },
-    { codigo: '4789', nombre: 'Servicios de transporte (no clasificados)' },
-    { codigo: '4814', nombre: 'Servicios de telecomunicaciones' },
-    { codigo: '5045', nombre: 'Computadoras y periféricos (mayoreo)' },
-    { codigo: '5065', nombre: 'Equipos y suministros eléctricos (mayoreo)' },
-    { codigo: '5085', nombre: 'Suministros industriales (mayoreo)' },
-    { codigo: '5111', nombre: 'Materiales de oficina y papelería (mayoreo)' },
-    { codigo: '5131', nombre: 'Materiales y textiles (mayoreo)' },
-    { codigo: '5734', nombre: 'Venta de software de computadoras' },
-    { codigo: '7311', nombre: 'Servicios de publicidad' },
-    { codigo: '7333', nombre: 'Fotografía comercial, arte y gráficos' },
-    { codigo: '7349', nombre: 'Mantenimiento y limpieza de edificios' },
-    { codigo: '7372', nombre: 'Programación, diseño de sistemas y procesamiento de datos' },
-    { codigo: '7375', nombre: 'Servicios de recuperación de información' },
-    { codigo: '7379', nombre: 'Reparación y mantenimiento de computadoras' },
-    { codigo: '7392', nombre: 'Servicios de consultoría y relaciones públicas' },
-    { codigo: '7393', nombre: 'Agencias de detectives, seguridad y protección' },
-    { codigo: '7399', nombre: 'Servicios comerciales varios' },
-    { codigo: '7829', nombre: 'Producción y distribución de video' },
-    { codigo: '8111', nombre: 'Servicios legales' },
-    { codigo: '8734', nombre: 'Laboratorios de prueba e investigación' },
-    { codigo: '8931', nombre: 'Servicios de contabilidad, auditoría y teneduría de libros' },
-    { codigo: '8999', nombre: 'Servicios profesionales' },
-];
-
-// Mapeo de requirement code -> { mensaje (ES), paso del wizard (0-7) }
-export const STRIPE_REQUIREMENTS_DICT: Record<string, { mensaje: string, paso: number }> = {
-    // Negocio
-    'business_profile.mcc': { mensaje: 'Giro del negocio (MCC)', paso: 1 },
-    'business_profile.url': { mensaje: 'Sitio web o descripción del producto', paso: 1 },
-    'business_profile.product_description': { mensaje: 'Descripción del producto', paso: 1 },
-    'business_profile.support_phone': { mensaje: 'Teléfono de soporte', paso: 1 },
-    'business_profile.support_email': { mensaje: 'Correo de soporte', paso: 1 },
-    
-    // Empresa (Company)
-    'company.name': { mensaje: 'Razón social del negocio', paso: 1 },
-    'company.tax_id': { mensaje: 'RFC de la empresa', paso: 1 },
-    'company.phone': { mensaje: 'Teléfono de la empresa', paso: 1 },
-    'company.structure': { mensaje: 'Estructura legal (Tipo de sociedad)', paso: 1 },
-    'company.address.line1': { mensaje: 'Dirección (Calle y número)', paso: 2 },
-    'company.address.city': { mensaje: 'Dirección (Ciudad)', paso: 2 },
-    'company.address.state': { mensaje: 'Dirección (Estado)', paso: 2 },
-    'company.address.postal_code': { mensaje: 'Dirección (Código Postal)', paso: 2 },
-    'company.verification.document': { mensaje: 'Documento constitutivo de la empresa', paso: 5 }, 
-    
-    // Representante Legal y Personas (person_xxx)
-    'person.first_name': { mensaje: 'Nombre del representante o dueño', paso: 3 },
-    'person.last_name': { mensaje: 'Apellidos del representante o dueño', paso: 3 },
-    'person.id_number': { mensaje: 'RFC o CURP del representante/dueño', paso: 3 },
-    'person.dob': { mensaje: 'Fecha de nacimiento del representante/dueño', paso: 3 },
-    'person.address': { mensaje: 'Dirección del representante/dueño', paso: 3 },
-    'person.verification.document': { mensaje: 'Identificación oficial del representante/dueño', paso: 5 },
-    
-    // Attestations
-    'company.owners_provided': { mensaje: 'Declaración de dueños beneficiarios', paso: 4 },
-    'company.directors_provided': { mensaje: 'Declaración de directores', paso: 4 },
-    'company.executives_provided': { mensaje: 'Declaración de ejecutivos', paso: 4 },
-    
-    // Individual (si es persona física)
-    'individual.first_name': { mensaje: 'Nombre', paso: 1 },
-    'individual.last_name': { mensaje: 'Apellidos', paso: 1 },
-    'individual.id_number': { mensaje: 'RFC o CURP', paso: 1 },
-    'individual.dob': { mensaje: 'Fecha de nacimiento', paso: 1 },
-    'individual.address.line1': { mensaje: 'Dirección (Calle y número)', paso: 2 },
-    'individual.address.city': { mensaje: 'Dirección (Ciudad)', paso: 2 },
-    'individual.address.state': { mensaje: 'Dirección (Estado)', paso: 2 },
-    'individual.address.postal_code': { mensaje: 'Dirección (Código Postal)', paso: 2 },
-    'individual.phone': { mensaje: 'Teléfono', paso: 1 },
-    'individual.verification.document': { mensaje: 'Identificación oficial', paso: 5 },
-    
-    // Cuenta y Términos
-    'external_account': { mensaje: 'Cuenta bancaria (CLABE)', paso: 6 },
-    'tos_acceptance.date': { mensaje: 'Aceptación del acuerdo de cuenta conectada', paso: 7 },
-    'tos_acceptance.ip': { mensaje: 'Aceptación del acuerdo de cuenta conectada', paso: 7 }
+// ── Estructura legal de la empresa, POR PAÍS ────────────────────────────────
+//
+// `company.structure` es un enum del proveedor y su set de valores es
+// DISTINTO en cada país. Esta lista era global e incluía `multi_member_llc` y
+// `single_member_llc`, que son figuras de Estados Unidos: a una S.L. en Madrid
+// se le ofrecían tipos de sociedad que ahí no existen, y elegir uno produce un
+// rechazo del proveedor por estructura incompatible.
+//
+// Verificado el 26-ago-2026 contra el endpoint de requisitos por país: MX, ES,
+// FR, GB y BR devuelven `entity_type_structures` VACÍO — ahí el proveedor no
+// ofrece estructura y el selector NO debe dibujarse. Un país ausente de este
+// mapa significa exactamente eso, no un hueco por llenar.
+const COMPANY_STRUCTURES: Record<string, { codigo: string; nombre: string; nombreEn: string }[]> = {
+    US: [
+        { codigo: 'sole_proprietorship', nombre: 'Propietario único', nombreEn: 'Sole proprietorship' },
+        { codigo: 'single_member_llc', nombre: 'LLC de miembro único', nombreEn: 'Single-member LLC' },
+        { codigo: 'multi_member_llc', nombre: 'LLC con múltiples miembros', nombreEn: 'Multi-member LLC' },
+        { codigo: 'private_corporation', nombre: 'Sociedad privada', nombreEn: 'Private corporation' },
+        { codigo: 'public_corporation', nombre: 'Sociedad pública', nombreEn: 'Public corporation' },
+        { codigo: 'private_partnership', nombre: 'Sociedad de personas privada', nombreEn: 'Private partnership' },
+        { codigo: 'public_partnership', nombre: 'Sociedad de personas pública', nombreEn: 'Public partnership' },
+        { codigo: 'incorporated_non_profit', nombre: 'Sin fines de lucro constituida', nombreEn: 'Incorporated non-profit' },
+        { codigo: 'unincorporated_non_profit', nombre: 'Sin fines de lucro no constituida', nombreEn: 'Unincorporated non-profit' },
+    ],
+    CA: [
+        { codigo: 'sole_proprietorship', nombre: 'Propietario único', nombreEn: 'Sole proprietorship' },
+        { codigo: 'private_corporation', nombre: 'Sociedad privada', nombreEn: 'Private corporation' },
+        { codigo: 'public_corporation', nombre: 'Sociedad pública', nombreEn: 'Public corporation' },
+        { codigo: 'private_partnership', nombre: 'Sociedad de personas privada', nombreEn: 'Private partnership' },
+        { codigo: 'public_partnership', nombre: 'Sociedad de personas pública', nombreEn: 'Public partnership' },
+        { codigo: 'incorporated_non_profit', nombre: 'Sin fines de lucro constituida', nombreEn: 'Incorporated non-profit' },
+        { codigo: 'unincorporated_non_profit', nombre: 'Sin fines de lucro no constituida', nombreEn: 'Unincorporated non-profit' },
+    ],
+    DE: [
+        { codigo: 'sole_proprietorship', nombre: 'Empresario individual', nombreEn: 'Sole proprietorship' },
+        { codigo: 'private_corporation', nombre: 'Sociedad privada (GmbH, UG)', nombreEn: 'Private corporation (GmbH, UG)' },
+        { codigo: 'public_corporation', nombre: 'Sociedad pública (AG)', nombreEn: 'Public corporation (AG)' },
+        { codigo: 'private_partnership', nombre: 'Sociedad de personas (GbR, OHG, KG)', nombreEn: 'Private partnership (GbR, OHG, KG)' },
+        { codigo: 'unincorporated_association', nombre: 'Asociación no constituida', nombreEn: 'Unincorporated association' },
+        { codigo: 'incorporated_non_profit', nombre: 'Sin fines de lucro constituida (e.V.)', nombreEn: 'Incorporated non-profit (e.V.)' },
+    ],
 };
 
-export function translateRequirement(req: string): { mensaje: string, paso: number } {
-    if (STRIPE_REQUIREMENTS_DICT[req]) {
-        return STRIPE_REQUIREMENTS_DICT[req];
-    }
-    
-    // Matcher para personas (person_123.dob.day -> person.dob)
-    if (req.startsWith('person_')) {
-        const parts = req.split('.');
-        if (parts.length > 1) {
-            const field = parts.slice(1).join('.'); // e.g. dob.day o verification.document
-            
-            // Buscar si tenemos mapeo para person.field
-            for (const key of Object.keys(STRIPE_REQUIREMENTS_DICT)) {
-                if (key.startsWith('person.') && (key === `person.${field}` || `person.${field}`.startsWith(key))) {
-                    return STRIPE_REQUIREMENTS_DICT[key];
-                }
-            }
-        }
-        return { mensaje: 'Datos de identidad (representante o dueño)', paso: 3 };
-    }
-    
-    // Matcher genérico para subcampos
-    for (const key of Object.keys(STRIPE_REQUIREMENTS_DICT)) {
-        if (req.startsWith(key)) {
-            return STRIPE_REQUIREMENTS_DICT[key];
-        }
+/**
+ * Las estructuras legales que ese país ofrece, o `null` si no ofrece ninguna.
+ *
+ * `null` significa "no dibujes el selector": el proveedor no pide estructura en
+ * ese país, y ofrecer un desplegable obligatorio con figuras de otro
+ * ordenamiento jurídico es pedir un dato falso.
+ */
+export function companyStructuresFor(
+    countryCode: string,
+    locale: 'es' | 'en' = 'es',
+): { codigo: string; nombre: string }[] | null {
+    const lista = COMPANY_STRUCTURES[String(countryCode || '').toUpperCase()];
+    if (!lista) return null;
+    return lista.map((e) => ({ codigo: e.codigo, nombre: locale === 'en' ? e.nombreEn : e.nombre }));
+}
+
+// ── Giro del negocio (MCC) ──────────────────────────────────────────────────
+//
+// La lista se llamaba `STRIPE_MCC_B2B` y sólo tenía giros B2B, en español.
+// Contradice la regla 10 del proyecto: Cord es una plataforma de cierre
+// comercial para CUALQUIER negocio y país, no software B2B. Un restaurante en
+// Madrid, una clínica en Bogotá o una tienda en Austin abrían el alta de cobros
+// y no encontraban su actividad — y el MCC no es cosmético: decide la categoría
+// con la que el proveedor evalúa el riesgo de la cuenta.
+//
+// Sigue siendo una SELECCIÓN, no los ~300 códigos del estándar: ofrecer la lista
+// completa es la regla 28 aplicada a un desplegable. Están los giros que un
+// negocio que cotiza y cobra por link puede tener, con "Servicios profesionales"
+// (8999) y "Servicios comerciales varios" (7399) como salida honesta.
+export const STRIPE_MCC = [
+    // Construcción y oficios
+    { codigo: '1520', es: 'Contratistas generales (residencial y comercial)', en: 'General contractors (residential and commercial)' },
+    { codigo: '1711', es: 'Climatización, plomería e instalaciones', en: 'HVAC, plumbing and installation' },
+    { codigo: '1731', es: 'Contratistas eléctricos', en: 'Electrical contractors' },
+    { codigo: '1799', es: 'Contratistas especializados', en: 'Special trade contractors' },
+    // Manufactura, impresión y edición
+    { codigo: '2741', es: 'Editoriales y publicadoras', en: 'Publishing and printing' },
+    { codigo: '2791', es: 'Tipografía y grabado', en: 'Typesetting and engraving' },
+    // Logística y transporte
+    { codigo: '4214', es: 'Transporte de carga y mudanzas', en: 'Freight and moving' },
+    { codigo: '4215', es: 'Servicios de mensajería', en: 'Courier services' },
+    { codigo: '4722', es: 'Agencias de viajes', en: 'Travel agencies' },
+    { codigo: '4789', es: 'Servicios de transporte', en: 'Transportation services' },
+    // Comercio
+    { codigo: '5045', es: 'Equipo de cómputo (mayoreo)', en: 'Computers and equipment (wholesale)' },
+    { codigo: '5065', es: 'Equipo y partes electrónicas', en: 'Electronic parts and equipment' },
+    { codigo: '5072', es: 'Ferretería y herramientas', en: 'Hardware and tools' },
+    { codigo: '5111', es: 'Papelería y material de oficina', en: 'Stationery and office supplies' },
+    { codigo: '5131', es: 'Textiles y materiales', en: 'Textiles and materials' },
+    { codigo: '5192', es: 'Libros, revistas y periódicos', en: 'Books, periodicals and newspapers' },
+    { codigo: '5199', es: 'Productos no duraderos (mayoreo)', en: 'Nondurable goods (wholesale)' },
+    { codigo: '5251', es: 'Ferretería y tlapalería (menudeo)', en: 'Hardware stores (retail)' },
+    { codigo: '5311', es: 'Tiendas departamentales', en: 'Department stores' },
+    { codigo: '5399', es: 'Comercio general al menudeo', en: 'General merchandise (retail)' },
+    { codigo: '5499', es: 'Alimentos y abarrotes', en: 'Food and grocery' },
+    { codigo: '5651', es: 'Ropa y accesorios', en: 'Clothing and accessories' },
+    { codigo: '5712', es: 'Muebles y decoración', en: 'Furniture and home furnishings' },
+    { codigo: '5734', es: 'Venta de software', en: 'Computer software stores' },
+    { codigo: '5999', es: 'Comercio especializado', en: 'Specialty retail' },
+    // Alimentos y hospitalidad
+    { codigo: '5812', es: 'Restaurantes', en: 'Restaurants' },
+    { codigo: '5814', es: 'Comida rápida y para llevar', en: 'Fast food and takeaway' },
+    { codigo: '7011', es: 'Hoteles y hospedaje', en: 'Hotels and lodging' },
+    { codigo: '7299', es: 'Servicios personales', en: 'Personal services' },
+    // Servicios profesionales
+    { codigo: '7311', es: 'Publicidad y marketing', en: 'Advertising and marketing' },
+    { codigo: '7333', es: 'Fotografía, diseño y artes gráficas', en: 'Photography, design and graphic arts' },
+    { codigo: '7338', es: 'Reprografía y planos', en: 'Reprographics and blueprinting' },
+    { codigo: '7349', es: 'Limpieza y mantenimiento de inmuebles', en: 'Cleaning and building maintenance' },
+    { codigo: '7372', es: 'Desarrollo de software y sistemas', en: 'Software and systems development' },
+    { codigo: '7375', es: 'Servicios de datos e información', en: 'Data and information services' },
+    { codigo: '7379', es: 'Soporte y reparación de cómputo', en: 'Computer support and repair' },
+    { codigo: '7392', es: 'Consultoría y relaciones públicas', en: 'Consulting and public relations' },
+    { codigo: '7393', es: 'Seguridad y protección', en: 'Security and protective services' },
+    { codigo: '7399', es: 'Servicios comerciales varios', en: 'Business services (other)' },
+    { codigo: '7538', es: 'Talleres y servicio automotriz', en: 'Automotive service and repair' },
+    { codigo: '7623', es: 'Reparación de equipo y electrodomésticos', en: 'Equipment and appliance repair' },
+    { codigo: '7829', es: 'Producción de video y cine', en: 'Video and film production' },
+    { codigo: '7997', es: 'Gimnasios y clubes deportivos', en: 'Gyms and sports clubs' },
+    // Salud, educación y profesiones reguladas
+    { codigo: '8011', es: 'Consultorios médicos', en: 'Medical practices' },
+    { codigo: '8021', es: 'Odontología', en: 'Dental practices' },
+    { codigo: '8049', es: 'Terapias y salud especializada', en: 'Therapy and specialised health' },
+    { codigo: '8111', es: 'Servicios legales', en: 'Legal services' },
+    { codigo: '8220', es: 'Educación superior y formación', en: 'Higher education and training' },
+    { codigo: '8299', es: 'Enseñanza y capacitación', en: 'Education and training services' },
+    { codigo: '8351', es: 'Guarderías y cuidado infantil', en: 'Childcare services' },
+    { codigo: '8398', es: 'Organizaciones sin fines de lucro', en: 'Non-profit organisations' },
+    { codigo: '8641', es: 'Asociaciones civiles y clubes', en: 'Associations and clubs' },
+    { codigo: '8734', es: 'Laboratorios de prueba e investigación', en: 'Testing and research laboratories' },
+    { codigo: '8911', es: 'Arquitectura e ingeniería', en: 'Architecture and engineering' },
+    { codigo: '8931', es: 'Contabilidad y auditoría', en: 'Accounting and auditing' },
+    { codigo: '8999', es: 'Servicios profesionales', en: 'Professional services' },
+    // Inmobiliario y financiero
+    { codigo: '6513', es: 'Arrendamiento de inmuebles', en: 'Real estate rental' },
+    { codigo: '7011', es: 'Administración de propiedades', en: 'Property management' },
+] as const;
+
+/** El catálogo de giros en el idioma del usuario, ordenado alfabéticamente. */
+export function mccOptions(locale: 'es' | 'en' = 'es'): { codigo: string; nombre: string }[] {
+    const vistos = new Set<string>();
+    return STRIPE_MCC
+        .filter((m) => (vistos.has(m.codigo) ? false : (vistos.add(m.codigo), true)))
+        .map((m) => ({ codigo: m.codigo, nombre: locale === 'en' ? m.en : m.es }))
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, locale === 'en' ? 'en' : 'es'));
+}
+
+
+// ── Qué le falta a la cuenta, dicho en el idioma y el vocabulario del país ──
+//
+// Este diccionario tenía tres defectos que se notaban justo donde Cord dice que
+// opera:
+//
+//   1. **Estaba en español fijo.** Una cuenta en Londres o Berlín, con la app en
+//      inglés, veía sus requisitos en español.
+//   2. **Usaba vocabulario mexicano.** "RFC de la empresa" y "Cuenta bancaria
+//      (CLABE)" no significan nada fuera de México; ahí es NIF/CIF e IBAN.
+//   3. **No conocía los prefijos de rol.** `representative.*`, `owners.*`,
+//      `directors.*` y `executives.*` son EXACTAMENTE los requisitos que ve una
+//      cuenta recién creada, y todos caían al fallback genérico "Requisito
+//      adicional de verificación, paso 1".
+//
+// La clave del diccionario es ahora el campo YA DESPOJADO de su prefijo de
+// scope (`parseRequirement`), así que una sola entrada cubre `representative.
+// dob`, `owners.dob`, `person_1K….dob` e `individual.dob`.
+
+import { getCountryProfile, personIdLabel } from './countries';
+import { payoutSpecFor } from './payout-fields';
+import { parseRequirement } from './connect-requirements';
+
+interface RequisitoTexto {
+    es: string;
+    en: string;
+    paso: number;
+}
+
+/**
+ * Campo normalizado -> texto y paso del asistente.
+ *
+ * `{taxId}`, `{personId}` y `{payout}` se sustituyen con el vocabulario real del
+ * país: RFC en México, NIF/CIF en España, EIN en Estados Unidos; CLABE, IBAN,
+ * sort code según el riel de depósito.
+ */
+const REQUISITOS: Record<string, RequisitoTexto> = {
+    // Negocio
+    'business_profile.mcc': { es: 'Giro del negocio (MCC)', en: 'Business category (MCC)', paso: 1 },
+    'business_profile.url': { es: 'Sitio web o descripción del producto', en: 'Website or product description', paso: 1 },
+    'business_profile.product_description': { es: 'Descripción del producto', en: 'Product description', paso: 1 },
+    'business_profile.support_phone': { es: 'Teléfono de soporte', en: 'Support phone', paso: 1 },
+    'business_profile.support_email': { es: 'Correo de soporte', en: 'Support email', paso: 1 },
+    'business_profile.name': { es: 'Nombre comercial', en: 'Trading name', paso: 1 },
+
+    // Empresa
+    'name': { es: 'Razón social del negocio', en: 'Registered business name', paso: 1 },
+    'tax_id': { es: '{taxId} de la empresa', en: 'Business {taxId}', paso: 1 },
+    'registration_number': { es: 'Número de registro mercantil', en: 'Company registration number', paso: 1 },
+    'vat_id': { es: 'Número de IVA intracomunitario', en: 'VAT number', paso: 1 },
+    'phone': { es: 'Teléfono', en: 'Phone', paso: 1 },
+    'structure': { es: 'Estructura legal', en: 'Legal structure', paso: 1 },
+    'address.line1': { es: 'Dirección (calle y número)', en: 'Address (street and number)', paso: 2 },
+    'address.line2': { es: 'Dirección (interior)', en: 'Address (line 2)', paso: 2 },
+    'address.city': { es: 'Dirección (ciudad)', en: 'Address (city)', paso: 2 },
+    'address.state': { es: 'Dirección (estado o provincia)', en: 'Address (state or province)', paso: 2 },
+    'address.postal_code': { es: 'Dirección (código postal)', en: 'Address (postal code)', paso: 2 },
+    'address.country': { es: 'Dirección (país)', en: 'Address (country)', paso: 2 },
+
+    // Persona
+    'first_name': { es: 'Nombre de la persona', en: "Person's first name", paso: 3 },
+    'last_name': { es: 'Apellidos de la persona', en: "Person's last name", paso: 3 },
+    'id_number': { es: '{personId}', en: '{personId}', paso: 3 },
+    'id_number_secondary': { es: 'Segunda identificación personal', en: 'Secondary personal ID', paso: 3 },
+    'ssn_last_4': { es: 'Últimos 4 dígitos del SSN', en: 'Last 4 digits of SSN', paso: 3 },
+    'nationality': { es: 'Nacionalidad', en: 'Nationality', paso: 3 },
+    'dob': { es: 'Fecha de nacimiento', en: 'Date of birth', paso: 3 },
+    'dob.day': { es: 'Fecha de nacimiento', en: 'Date of birth', paso: 3 },
+    'dob.month': { es: 'Fecha de nacimiento', en: 'Date of birth', paso: 3 },
+    'dob.year': { es: 'Fecha de nacimiento', en: 'Date of birth', paso: 3 },
+    'email': { es: 'Correo de la persona', en: "Person's email", paso: 3 },
+    'political_exposure': { es: 'Declaración de exposición política', en: 'Political exposure declaration', paso: 3 },
+    'relationship.title': { es: 'Puesto en el negocio', en: 'Job title', paso: 3 },
+    'relationship.percent_ownership': { es: 'Porcentaje de participación', en: 'Ownership percentage', paso: 3 },
+
+    // Atestaciones y declaraciones
+    'owners_provided': { es: 'Declaración de dueños con 25% o más', en: 'Declaration of owners with 25% or more', paso: 4 },
+    'directors_provided': { es: 'Declaración de directores', en: 'Declaration of directors', paso: 4 },
+    'executives_provided': { es: 'Declaración de directivos', en: 'Declaration of executives', paso: 4 },
+    'ownership_declaration': { es: 'Firma de la declaración de titularidad', en: 'Ownership declaration signature', paso: 4 },
+    'directorship_declaration': { es: 'Firma de la declaración de directores', en: 'Directorship declaration signature', paso: 4 },
+    'representative_declaration': { es: 'Firma de la declaración del representante', en: 'Representative declaration signature', paso: 4 },
+    'ownership_exemption_reason': { es: 'Motivo de exención de titularidad', en: 'Ownership exemption reason', paso: 4 },
+
+    // Documentos
+    'verification.document': { es: 'Identificación oficial', en: 'Government-issued ID', paso: 5 },
+    'verification.additional_document': { es: 'Comprobante de domicilio', en: 'Proof of address', paso: 5 },
+    'documents.company_memorandum_of_association.files': { es: 'Escritura constitutiva de la empresa', en: 'Company memorandum of association', paso: 5 },
+    'documents.company_registration_verification.files': { es: 'Comprobante de registro de la empresa', en: 'Company registration document', paso: 5 },
+    'documents.proof_of_registration.files': { es: 'Comprobante de registro mercantil', en: 'Proof of company registration', paso: 5 },
+    'documents.proof_of_ultimate_beneficial_ownership.files': { es: 'Comprobante de titularidad real', en: 'Proof of ultimate beneficial ownership', paso: 5 },
+    'documents.company_tax_id_verification.files': { es: 'Comprobante de identificación fiscal', en: 'Tax ID verification document', paso: 5 },
+    'documents.proof_of_address.files': { es: 'Comprobante de domicilio del negocio', en: 'Business proof of address', paso: 5 },
+    'documents.bank_account_ownership_verification.files': { es: 'Comprobante de titularidad de la cuenta', en: 'Bank account ownership document', paso: 5 },
+    'documents.company_license.files': { es: 'Licencia de operación', en: 'Business licence', paso: 5 },
+    'documents.company_authorization.files': { es: 'Autorización de la empresa', en: 'Company authorization', paso: 5 },
+    'documents.passport.files': { es: 'Pasaporte', en: 'Passport', paso: 5 },
+    'documents.visa.files': { es: 'Visa', en: 'Visa', paso: 5 },
+
+    // Cuenta y términos
+    'external_account': { es: 'Cuenta bancaria ({payout})', en: 'Bank account ({payout})', paso: 6 },
+    'settings.payments.statement_descriptor': { es: 'Nombre que verá el cliente en su estado de cuenta', en: 'Statement descriptor shown on your customer\u2019s card statement', paso: 1 },
+    'tos_acceptance.date': { es: 'Aceptación del acuerdo de cuenta conectada', en: 'Connected account agreement acceptance', paso: 7 },
+    'tos_acceptance.ip': { es: 'Aceptación del acuerdo de cuenta conectada', en: 'Connected account agreement acceptance', paso: 7 },
+    'tos_acceptance.service_agreement': { es: 'Aceptación del acuerdo de servicio', en: 'Service agreement acceptance', paso: 7 },
+};
+
+/** Quién es el sujeto del requisito, para que la lista no diga todo igual. */
+const SUJETO: Record<string, { es: string; en: string }> = {
+    representative: { es: 'representante legal', en: 'legal representative' },
+    owner: { es: 'dueño', en: 'owner' },
+    director: { es: 'director', en: 'director' },
+    executive: { es: 'directivo', en: 'executive' },
+};
+
+export interface RequisitoTraducido { mensaje: string; paso: number }
+
+/**
+ * Traduce un requisito del proveedor a algo accionable.
+ *
+ * `country` y `locale` son opcionales para no romper a los llamadores que
+ * todavía no los pasan; sin ellos se usa el vocabulario mexicano en español,
+ * que es el comportamiento histórico.
+ */
+export function translateRequirement(
+    req: string,
+    locale: 'es' | 'en' = 'es',
+    country = 'MX',
+): RequisitoTraducido {
+    const parsed = parseRequirement(String(req || ''), 'currently_due');
+
+    // Una entrevista del proveedor no la resuelve este asistente: se dice, en
+    // vez de mandar al usuario a dar vueltas por los pasos.
+    if (parsed.scope.kind === 'interview') {
+        return {
+            mensaje: locale === 'en'
+                ? 'Additional review requested by the payments provider'
+                : 'Revisión adicional solicitada por el procesador de pagos',
+            paso: 8,
+        };
     }
 
-    log.warn('requisito de Connect sin traducción', { route: 'connect', requisito: req });
-    return { mensaje: 'Requisito adicional de verificación', paso: 1 };
+    const entrada = REQUISITOS[parsed.field] ?? REQUISITOS[parsed.field.split('.').slice(0, 2).join('.')];
+    if (!entrada) {
+        log.warn('requisito de Connect sin traducción', { route: 'connect', requisito: req });
+        return {
+            mensaje: locale === 'en' ? 'Additional verification requirement' : 'Requisito adicional de verificación',
+            paso: 1,
+        };
+    }
+
+    const perfil = getCountryProfile(country, locale);
+    const mensaje = entrada[locale]
+        .replace('{taxId}', perfil.taxIdLabel)
+        .replace('{personId}', personIdLabel(country, locale))
+        .replace('{payout}', locale === 'en' ? payoutSpecFor(country).labelEn : payoutSpecFor(country).label);
+
+    // A quién le falta, cuando no es obvio. `person_…` no lleva sufijo: en la
+    // lista de personas ya se sabe de quién se habla.
+    if (parsed.scope.kind === 'role') {
+        const sujeto = SUJETO[parsed.scope.role];
+        if (sujeto) return { mensaje: `${mensaje} — ${sujeto[locale]}`, paso: entrada.paso };
+    }
+    return { mensaje, paso: entrada.paso };
+}
+
+// ── Por qué se rechazó una verificación ─────────────────────────────────────
+//
+// El proveedor devuelve un código exacto cuando rechaza un documento o una
+// identidad. Cord nunca lo mostraba, así que el usuario volvía a subir la MISMA
+// foto borrosa una y otra vez sin enterarse de qué estaba mal — y el negocio se
+// quedaba sin poder cobrar por una razón que estaba a la vista en la API.
+//
+// Los códigos y su significado son de la documentación del proveedor. El texto
+// es de Cord: describe qué hacer, no repite la jerga.
+
+const RECHAZO_DOCUMENTO: Record<string, { es: string; en: string }> = {
+    document_corrupt: { es: 'El archivo llegó dañado. Vuelve a tomar la foto y súbela de nuevo.', en: "The file arrived corrupted. Take the photo again and re-upload it." },
+    document_country_not_supported: { es: 'Esa identificación es de un país que no se acepta para verificar esta cuenta.', en: 'That ID is from a country not accepted for verifying this account.' },
+    document_expired: { es: 'La identificación está vencida. Usa una vigente.', en: 'The ID has expired. Use a valid one.' },
+    document_failed_copy: { es: 'Se detectó una fotocopia. Necesitamos una foto del documento original.', en: 'A photocopy was detected. We need a photo of the original document.' },
+    document_failed_greyscale: { es: 'La foto está en blanco y negro. Tómala a color.', en: 'The photo is greyscale. Take it in colour.' },
+    document_failed_other: { es: 'No se pudo verificar la identificación. Prueba con otro documento oficial.', en: "The ID couldn't be verified. Try another government-issued document." },
+    document_failed_test_mode: { es: 'Se usó un documento de prueba en una cuenta real.', en: 'A test document was used on a live account.' },
+    document_fraudulent: { es: 'La identificación no pasó la revisión de autenticidad. Escríbenos para resolverlo.', en: "The ID didn't pass the authenticity review. Contact us to resolve it." },
+    document_id_type_not_supported: { es: 'Ese tipo de documento no se acepta. Usa pasaporte o identificación oficial con foto.', en: 'That document type is not accepted. Use a passport or photo ID.' },
+    document_id_country_not_supported: { es: 'Ese documento es de un país que no se acepta aquí.', en: 'That document is from a country not accepted here.' },
+    document_incomplete: { es: 'Falta parte del documento en la foto. Que se vean las cuatro esquinas.', en: 'Part of the document is missing. Make sure all four corners are visible.' },
+    document_invalid: { es: 'El documento no es válido para verificar identidad.', en: 'The document is not valid for identity verification.' },
+    document_manipulated: { es: 'La imagen parece editada. Sube una foto sin retocar.', en: 'The image appears edited. Upload an unretouched photo.' },
+    document_missing_back: { es: 'Falta el reverso de la identificación.', en: 'The back of the ID is missing.' },
+    document_missing_front: { es: 'Falta el frente de la identificación.', en: 'The front of the ID is missing.' },
+    document_not_readable: { es: 'La foto no se lee. Busca buena luz, sin reflejos ni sombras.', en: "The photo isn't readable. Use good lighting, without glare or shadows." },
+    document_not_uploaded: { es: 'No se recibió el documento. Vuelve a subirlo.', en: "The document wasn't received. Upload it again." },
+    document_photo_mismatch: { es: 'La foto del documento no coincide con la selfie.', en: "The document photo doesn't match the selfie." },
+    document_too_large: { es: 'El archivo pesa demasiado. Sube una imagen de menos de 10 MB.', en: 'The file is too large. Upload an image under 10 MB.' },
+    document_type_not_supported: { es: 'Ese tipo de documento no se acepta para esta cuenta.', en: 'That document type is not accepted for this account.' },
+};
+
+const RECHAZO_IDENTIDAD: Record<string, { es: string; en: string }> = {
+    document_address_mismatch: { es: 'La dirección del documento no coincide con la que capturaste.', en: "The address on the document doesn't match the one you entered." },
+    document_dob_mismatch: { es: 'La fecha de nacimiento no coincide con la del documento.', en: "The date of birth doesn't match the document." },
+    document_duplicate_type: { es: 'Se subió dos veces el mismo tipo de documento.', en: 'The same document type was uploaded twice.' },
+    document_id_number_mismatch: { es: 'El número de identificación no coincide con el del documento.', en: "The ID number doesn't match the document." },
+    document_name_mismatch: { es: 'El nombre no coincide con el del documento.', en: "The name doesn't match the document." },
+    document_nationality_mismatch: { es: 'La nacionalidad no coincide con la del documento.', en: "The nationality doesn't match the document." },
+    failed_keyed_identity: { es: 'Los datos capturados no coinciden con los registros oficiales. Revísalos con cuidado.', en: "The details you entered don't match official records. Review them carefully." },
+    failed_other: { es: 'No se pudo verificar la identidad con los datos actuales.', en: "Identity couldn't be verified with the current details." },
+};
+
+/**
+ * Por qué se rechazó una verificación, dicho para el dueño del negocio.
+ *
+ * `fallback` es el texto literal que devuelve el proveedor (`verification.details`),
+ * que su documentación marca como apto para mostrar. Se usa sólo cuando el
+ * código no está en el diccionario: es mejor un texto en inglés que decir
+ * "algo falló" y dejar a la persona sin nada que corregir.
+ */
+export function describeVerificationRejection(
+    codigo: string | null | undefined,
+    docCodigo: string | null | undefined,
+    fallback: string | null | undefined,
+    locale: 'es' | 'en' = 'es',
+): string | null {
+    const doc = docCodigo ? RECHAZO_DOCUMENTO[docCodigo] : undefined;
+    if (doc) return doc[locale];
+    const id = codigo ? RECHAZO_IDENTIDAD[codigo] : undefined;
+    if (id) return id[locale];
+    if (codigo && RECHAZO_DOCUMENTO[codigo]) return RECHAZO_DOCUMENTO[codigo][locale];
+    return fallback?.trim() || null;
 }
 
 // ════════════════════════════════════════════════════════════════════════════

@@ -15,8 +15,8 @@ La Autenticación de Dos Pasos (2FA) añade una capa extra de seguridad. Recomen
 
 **Guardado de Códigos de Respaldo:** El sistema te entregará 10 códigos de un solo uso. ¡Guárdalos en un lugar seguro! Si pierdes tu celular, estos códigos son la única manera de recuperar el acceso a tu cuenta de Cord.
 
-### Forzar 2FA para el Equipo (Organizaciones Enterprise)
-Los dueños de cuentas Enterprise pueden forzar a que todos los miembros activen 2FA:
+### Forzar 2FA para el Equipo
+Cualquier dueño de cuenta, sin importar el plan, puede forzar a que todos los miembros activen 2FA:
 1. Ve a **Ajustes > Seguridad**.
 2. Activa *Exigir verificación en dos pasos para todos los miembros*.
 Cualquier empleado que no tenga 2FA habilitado será deslogueado y obligado a configurarlo en su próximo inicio de sesión.

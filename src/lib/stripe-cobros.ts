@@ -26,6 +26,7 @@ import { stripe, getBalance, retrieveAccount } from './billing';
 import { cached } from './cache';
 import { rateLimit } from './ratelimit';
 import { fromMinorUnits } from './currency';
+import { sql, withOrgTx } from './db';
 
 import { log } from './log';
 /**
@@ -174,6 +175,38 @@ export async function getStripeSnapshot(orgId: string, acct: string): Promise<St
 }
 
 // ── Depósitos ─────────────────────────────────────────────────────────────────
+
+/**
+ * El historial de depósitos, leído de Neon.
+ *
+ * Los depósitos se persisten desde los webhooks `payout.*`, así que la lista se
+ * puede pintar en el SSR sin esperar al proveedor — antes el widget de "próximo
+ * depósito" llegaba tarde, después de la llamada de red, en cada carga de la
+ * página. La lectura viva (`listPayoutsLite`) sigue existiendo como respaldo
+ * para las cuentas cuyo historial todavía no se llenó.
+ */
+export async function listPayoutsFromDb(orgId: string, limit = 12): Promise<PayoutLite[]> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select stripe_payout_id, amount_cents, currency, status, arrival_date, created_at
+          from payouts
+         where org_id = ${orgId}
+         order by coalesce(arrival_date, created_at::date) desc, created_at desc
+         limit ${Math.min(60, Math.max(1, limit))}`);
+    return rows.map((r): PayoutLite => {
+        const cur = String(r.currency || 'MXN').toUpperCase();
+        return {
+            id: String(r.stripe_payout_id),
+            amount: fromMinorUnits(Number(r.amount_cents ?? 0), cur),
+            currency: cur,
+            status: (r.status || 'pending') as PayoutStatus,
+            // Mismo criterio que `isoDay`: NO `toISOString()`, que normaliza a
+            // UTC y puede correr la fecha un día completo. `arrival_date` es una
+            // columna `date` y ya viene sin hora.
+            arrivalISO: r.arrival_date ? String(r.arrival_date).slice(0, 10) : '',
+            createdISO: r.created_at ? isoDay(new Date(r.created_at as string).getTime() / 1000) : '',
+        };
+    });
+}
 
 /**
  * `listPayouts()` de billing.ts no acepta parámetros, así que Stripe devuelve su

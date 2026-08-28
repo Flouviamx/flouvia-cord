@@ -4,7 +4,7 @@ description: "Lista de PANs para simular flujos 3D Secure y fallos."
 category: "Desarrolladores"
 ---
 
-Los números de tarjeta de prueba solo funcionan en un entorno de desarrollo separado. No son válidos en el link público de una organización productiva.
+Los números de tarjeta de prueba solo funcionan en un entorno de desarrollo separado. No son válidos en el link público de una organización productiva ni dentro del [Entorno de prueba](/soporte/sandbox-pruebas) de tu cuenta — Cord Payments no se puede conectar ahí a propósito, así que el cobro con tarjeta sigue siendo la única pieza del flujo que no puedes simular tú mismo desde la app.
 
 ### Solicitar acceso de desarrollo
 

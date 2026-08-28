@@ -3,13 +3,13 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
-import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import { getLangFromUrl, publicPath, useTranslations } from '../i18n/utils';
 
 export const prerender = true;
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
-const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+const l = (p: string) => publicPath(p, lang);
 ---
 
 <Layout title={isEn ? "Terms and Conditions | CORD by Flouvia" : "Términos y Condiciones | CORD by Flouvia"}>

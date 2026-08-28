@@ -10,30 +10,48 @@ description: "Secure access to the Cord ecosystem using your corporate identity 
 
 ## Enterprise Security
 
-As organizations grow, managing users and passwords individually becomes an unmanageable risk. Cord supports world-class integrations using **SSO (SAML)**.
+As organizations grow, managing users and passwords individually becomes an unmanageable risk. Cord supports **SSO via SAML 2.0** with its own engine (not a cosmetic checkbox): XML-DSig signature validation, replay protection, automatic account provisioning, attribute-based role mapping, and an emergency mechanism if your identity provider fails.
 
 By enabling SSO in your Cord organization:
 - Your employees log in automatically if they are already authenticated in their corporate work portal.
-- Any strict **MFA (Multi-Factor Authentication)** policies you configure in your identity provider (Okta) are mandatorily enforced before Cord grants access.
-- When an employee leaves the company, the IT department only needs to disable their central corporate account, and they automatically lose access to Cord's sensitive financial data.
+- Any **MFA** policy you already enforce at your identity provider (Okta, Azure AD, Google Workspace) carries over: Cord delegates authentication entirely, so it never sees or manages that second factor itself.
+- Turning on **"Require SSO"** blocks password, Google, Apple, and passkeys for every member **except the account owner**, who always keeps their password as a fallback — the one way in that doesn't depend on your IdP being up.
 
 ## Prerequisites
 
-1. Your organization must be subscribed to a **Cord Enterprise Plan** (this feature is not available on introductory tiers).
-2. You must have the Administrator role in Cord (or explicit `ajustes` and `equipo` permissions).
-3. You must have Administrator privileges in your Identity Provider.
+1. Your organization must be on Cord's **Scale** plan or higher (Developer) — SSO isn't available on Free, Starter, or Pro.
+2. You need the `equipo` (team) permission on your Cord role (Owner and Administrator have it by default; a custom role can also carry it).
+3. You must have Administrator privileges in your Identity Provider (Okta, Azure AD / Microsoft Entra, Google Workspace, or any SAML 2.0 IdP).
+
+## Where to configure it
+
+**Settings › Team & permissions › SSO** (it doesn't live under Security — SSO sits in the same group as Team & roles, because it governs who gets into the organization, and shares the `equipo` permission).
 
 ## SAML Configuration Steps
 
-Configuration requires a two-way exchange between Cord and your Identity Provider.
+The exchange is two-way, but the real order flips what most people expect: you hand Cord your IdP's data first, and Cord generates its own from that — not the other way around.
 
-1. Navigate to **Settings > Security > SSO**.
-2. Copy the **ACS URL** (Assertion Consumer Service) and the **Entity ID** that Cord has generated for your organization.
-3. Enter this data when creating the new SAML application in Okta, Azure AD, or your provider of choice.
-4. Once the application is created in your provider, you will receive an IdP login URL and an **X.509 Certificate**.
-5. Paste the login URL and upload the X.509 certificate to the Cord configuration.
+1. In your Identity Provider, create a new SAML application for Cord and download or copy its **metadata XML** (most IdPs expose this at a public URL or a "Download metadata" button).
+2. In Cord, go to **Settings › Team & permissions › SSO › Connect a provider**, name the connection, and paste that XML. Cord parses it automatically: it extracts the IdP's Entity ID, its sign-in URL, its signing X.509 certificate(s), and, if present, its Single Logout URL — you don't need to type those fields by hand (though the connection's detail view leaves them editable afterward, in case your IdP rotates its certificate).
+3. Once the connection is created, Cord shows you three values that belong to your organization: the **ACS URL** (Assertion Consumer Service — where your IdP should send the SAML response), Cord's **Entity ID**, and the **Metadata URL**. Go back to your Identity Provider and fill those into the application you created in step 1.
+4. Test with a single user before requiring SSO for the whole team — an incorrect attribute mapping can lock out your entire staff.
+
+## Provisioning and roles, not just login
+
+SSO in Cord isn't just "sign in a different way" — it automatically decides what account gets created and with what role:
+
+- **JIT (Just-in-Time) provisioning**: on by default. The first time someone logs in through this connection, Cord creates their account and adds them to the organization in that same login — no need to invite them manually from Team first.
+- **Attribute-based role mapping**: define rules like *"if the `groups` attribute my IdP sends contains `finance-admin`, assign the Administrator role."* Each rule compares one SAML attribute (`equals`, `contains`, or `regex`) against a value and a Cord role; rules are evaluated in order and **the first match wins**. If none apply, the account gets the connection's **default role** (e.g. Read-only).
+- **IdP-initiated login**: you can enable an employee to sign in directly from their IdP's app portal (Okta, Microsoft's MyApps), without going through `cordhq.app` first.
+
+## Verified domains (optional, recommended)
+
+You can tie an SSO connection to one or more email domains (`yourcompany.com`) via a **DNS TXT record** — the same verification pattern used for an outbound email domain. With at least one verified domain, only emails from that domain can sign in through that connection; with none verified, the connection doesn't restrict by domain.
+
+## If your identity provider goes down (break-glass)
+
+With "Require SSO" on, a down identity provider locks out the whole organization — **except the account owner**. If the rest of the team needs to sign in with a password temporarily, the owner can use the emergency button on the same screen: re-authenticate with their password to disable the SSO requirement for **1 hour**. After the hour passes (or if you re-enable it sooner by hand), the requirement comes back on its own.
 
 <Callout type="warning">
-**Important:** Test the integration with a single user before forcing it on the entire team, otherwise you could lock out your entire staff if the configuration has mapping errors.
-
+**Important:** Test the integration with a single user before turning on "Require SSO" for the whole team — an attribute mapping error can lock out your entire staff, except the account owner.
 </Callout>

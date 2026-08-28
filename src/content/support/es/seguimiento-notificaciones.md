@@ -14,10 +14,15 @@ Desde el momento en que envías la liga de la cotización por correo o WhatsApp:
 - **Viendo ahora:** Mientras el cliente tiene la cotización abierta, lo ves en vivo en el detalle con el indicador "Viendo ahora" (según tu plan).
 - **Decisión:** Cada aprobación, rechazo, contraoferta o comentario del cliente queda registrado en el timeline de esa cotización.
 
-### Configurar Notificaciones Push/Email
+### Configurar notificaciones por correo y Slack
 
-Para enterarte en tiempo real, ve a **Ajustes > Notificaciones**.
-Puedes habilitar alertas directas a tu correo electrónico para los siguientes eventos:
-- "La cotización COT-045 fue vista por primera vez".
-- "La cotización COT-045 ha sido firmada y aceptada".
-- "El pago de la COT-045 fue recibido".
+Ve a **Ajustes > Notificaciones**. Ahí encuentras una matriz evento × canal (correo electrónico y Slack, este último si configuraste un webhook) donde activas o desactivas cada aviso de forma independiente:
+- Cotización vista por primera vez.
+- Cotización aprobada.
+- Cotización rechazada.
+- Pago recibido.
+- Cotización por vencer.
+- Pago vencido.
+- Un nuevo miembro se une al equipo (solo por correo; no genera mensaje de Slack).
+
+No hay notificaciones push nativas de navegador o app móvil — los dos canales disponibles hoy son correo y Slack.

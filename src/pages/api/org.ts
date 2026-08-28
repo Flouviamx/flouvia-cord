@@ -198,6 +198,36 @@ export const PATCH: APIRoute = async ({ request }) => {
         || (countryCode === paisActual && isCountryCode(countryCode));
     if (!paisValido) return json({ error: 'País no soportado.' }, 400);
 
+    // ── El país de una cuenta de cobros es INMUTABLE ────────────────────────
+    //
+    // Stripe fija país y divisa al crear la cuenta conectada y no los deja
+    // cambiar nunca. Cord sí dejaba editar `country_code` libremente, así que
+    // una organización mexicana con cobros activos podía ponerse "España" en
+    // Ajustes y a partir de ahí todo divergía en silencio: el formulario de
+    // depósito le pedía un IBAN para una cuenta que Stripe tiene registrada en
+    // México, el riel fiscal cambiaba de CFDI a factura comercial, y el alta de
+    // depósitos se caía con un error del proveedor que no le dice nada al dueño
+    // del negocio.
+    //
+    // Se bloquea con explicación, no en silencio: quien lo intenta necesita
+    // saber POR QUÉ no se puede y qué tendría que hacer. El `<select>` de
+    // Ajustes también queda fijo, pero eso es cortesía — la validación real es
+    // ésta, porque ocultar una opción del select no es validar (regla 28).
+    if (paisActual !== countryCode && actual.stripe_account_id) {
+        await logAudit(orgId, {
+            accion: 'org.pais_bloqueado',
+            entidad: 'org',
+            entidad_id: orgId,
+            detalle: `Intento de cambiar el país de ${paisActual} a ${countryCode} con cobros conectados`,
+            ip: reqIp(request),
+        });
+        return json({
+            error: currentLocale() === 'en'
+                ? 'Your country cannot be changed while online payments are connected: your payments account is registered in the country you set it up with. To operate from another country, disconnect payments first — you will need to complete verification again.'
+                : 'No puedes cambiar tu país mientras los cobros en línea estén conectados: tu cuenta de cobros quedó registrada en el país con el que la diste de alta. Para operar desde otro país, primero desconecta los cobros — tendrás que volver a completar la verificación.',
+        }, 409);
+    }
+
     // ── Centro de mando Enterprise (jun 2026) ──
     // Cambiar de país arrastra la divisa y la zona horaria SOLO si la org nunca
     // las personalizó (siguen siendo las del país anterior). Sin esto una cuenta

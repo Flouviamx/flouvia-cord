@@ -13,7 +13,7 @@ El agente solo escribe cuando el crédito de una cotización **realmente venció
 
 ### Qué hace
 
-1. **Recordatorio con link de pago real.** Cada correo incluye un botón que lleva directo al pago del monto exacto pendiente (tarjeta o SPEI, directo a tu banco). Si no tienes cobros en línea activos, el botón lleva al link público con tus datos de transferencia.
+1. **Recordatorio con link de pago real.** Cada correo incluye un botón que lleva directo al pago del monto exacto pendiente (tarjeta, o SPEI si tu negocio cobra en pesos mexicanos), directo a tu banco. Si no tienes cobros en línea activos, el botón lleva al link público con tus datos de transferencia.
 2. **Tono adaptativo.** El agente ajusta el tono según los días de atraso: amable al principio, más firme conforme pasa el tiempo.
 3. **Negocia cuotas si hace falta.** Si el cliente lleva varios días vencido y no puede pagar de golpe, el agente puede acordar un plan de 2 o 3 cuotas mensuales que suman exactamente el adeudo (sin descuentos), y crea automáticamente los cobros pagables de cada cuota.
 

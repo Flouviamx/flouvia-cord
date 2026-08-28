@@ -19,7 +19,7 @@ import CordDynamicBg from '../components/CordDynamicBg.jsx';
 
 // Shader estándar de Cord — azul eléctrico + esmeralda para la tarjeta oscura.
 const DARK_PAL = { base: '#061F20', color1: '#10B981', color2: '#047857', color3: '#38BDF8' };
-import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import { getLangFromUrl, publicPath, useTranslations } from '../i18n/utils';
 import { DEV_PAGES } from '../lib/desarrolladores';
 import { DEV_PAGES_EN } from '../lib/desarrolladores.en';
 
@@ -115,7 +115,7 @@ const favicon = (domain: string) => `https://t3.gstatic.com/faviconV2?client=SOC
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
-const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+const l = (p: string) => publicPath(p, lang);
 const devPage = elementsData(isEn);
 const crossPage = (isEn ? DEV_PAGES_EN : DEV_PAGES).find((p) => p.slug === 'api')!;
 

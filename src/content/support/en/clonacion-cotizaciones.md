@@ -8,16 +8,15 @@ If you frequently send similar proposals to different prospects (e.g. software r
 
 ### How to clone a quote?
 
-1. Go to **Sales > Quotes**.
-2. Find the quote you want to duplicate (it can be in draft status, sent, or even rejected).
-3. Click on the three dots context menu on the right and select **Duplicate Quote**.
-4. An exact new Draft will be generated.
+1. Go to **Quotes** and open the quote you want to duplicate (draft, sent, approved, or even rejected — any status can be cloned).
+2. On the detail screen, click the **Duplicate** button in the side panel.
+3. A new draft is generated with a new folio number, a fresh 30-day validity period, and its own public link.
 
 **What IS copied:**
-- All line items, descriptions, and prices.
-- Applied discounts and taxes.
-- Legal terms, warranties, and relative validity.
+- The assigned client (the clone is addressed to the same client; you can change it before sending).
+- All line items, with their description, quantity, list price, and negotiated price.
+- The original quote's credit terms and notes.
 
 **What is NOT copied:**
-- The client (you will be asked to select who this new proposal is directed to).
-- The history of signatures or payments. Each clone is a completely clean slate.
+- The per-line tax rate and unit cost of each item: the clone starts with tax left blank (falls back to the organization's catalog) and cost at zero, so review each line's tax and cost before sending if the original quote had specific rates or costs.
+- The event history, signatures, comments, or payments. Each clone is a completely clean slate; the only new entry is an event noting which quote it was duplicated from.

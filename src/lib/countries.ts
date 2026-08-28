@@ -350,6 +350,40 @@ export function getCountryProfile(code: string, displayLocale: 'es' | 'en' = 'es
     };
 }
 
+// ── Identificación de una PERSONA, no del negocio ───────────────────────────
+//
+// `taxIdLabel` nombra el identificador FISCAL de la empresa (RFC, NIF, EIN).
+// El KYC de Connect pide además, en algunos países, el identificador de la
+// persona física que representa al negocio — y no es el mismo dato ni tiene el
+// mismo nombre: en México es la CURP o el RFC personal, en Estados Unidos el
+// SSN, en Canadá el SIN, en Brasil el CPF.
+//
+// España, Alemania, Francia y Reino Unido NO aparecen aquí a propósito:
+// verificado contra la API de requisitos de Stripe, ahí no se pide
+// identificación personal, así que no hay etiqueta que dar. Que un país falte
+// en este mapa es la señal de que el campo no debe dibujarse — no un hueco.
+const PERSON_ID_LABELS: Partial<Record<CountryCode, { es: string; en: string }>> = {
+    MX: { es: 'CURP o RFC personal', en: 'CURP or personal RFC' },
+    US: { es: 'Número de Seguro Social (SSN)', en: 'Social Security Number (SSN)' },
+    CA: { es: 'Número de seguro social (SIN)', en: 'Social Insurance Number (SIN)' },
+    BR: { es: 'CPF', en: 'CPF' },
+};
+
+/**
+ * Cómo se llama la identificación PERSONAL en este país.
+ *
+ * Devuelve una etiqueta neutra donde no hay un nombre local, para que el campo
+ * siga siendo legible si Stripe llega a pedirlo en un país que este mapa no
+ * cubre todavía. Quién decide si el campo se PIDE es
+ * `requiresField()` de `connect-requirements.ts`, nunca este mapa.
+ */
+export function personIdLabel(code: string, locale: 'es' | 'en' = 'es'): string {
+    const normalized = String(code || '').toUpperCase();
+    const entry = isCountryCode(normalized) ? PERSON_ID_LABELS[normalized] : undefined;
+    if (entry) return entry[locale];
+    return locale === 'en' ? 'Personal tax ID' : 'Identificación fiscal personal';
+}
+
 /**
  * Los países que se OFRECEN, en orden de relevancia comercial.
  *
@@ -421,6 +455,80 @@ export const US_STATES: { code: string; name: string }[] = [
     { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' }, { code: 'WI', name: 'Wisconsin' },
     { code: 'WY', name: 'Wyoming' },
 ];
+
+// ── Subdivisiones de los demás países con cobro en línea ────────────────────
+//
+// El alta de Connect sólo tenía catálogo para México y Estados Unidos; el resto
+// era un input libre. No es un detalle cosmético: el proveedor EXIGE el código
+// de 2 letras de la provincia en Canadá y de la UF en Brasil, así que escribir
+// "Ontario" o "São Paulo" hacía que la cuenta rebotara con un error del
+// proveedor que no le dice nada al dueño del negocio (regla 14 y regla 24).
+//
+// España va con el código de 2 dígitos del INE, que es como se identifica la
+// provincia en cualquier trámite. Reino Unido, Alemania y Francia NO llevan
+// catálogo a propósito: ahí el proveedor no pide subdivisión, y ofrecer un
+// selector obligatorio donde no hace falta es pedir un dato inventado.
+
+export const CA_PROVINCES: { code: string; name: string }[] = [
+    { code: 'AB', name: 'Alberta' }, { code: 'BC', name: 'British Columbia' },
+    { code: 'MB', name: 'Manitoba' }, { code: 'NB', name: 'New Brunswick' },
+    { code: 'NL', name: 'Newfoundland and Labrador' }, { code: 'NS', name: 'Nova Scotia' },
+    { code: 'NT', name: 'Northwest Territories' }, { code: 'NU', name: 'Nunavut' },
+    { code: 'ON', name: 'Ontario' }, { code: 'PE', name: 'Prince Edward Island' },
+    { code: 'QC', name: 'Quebec' }, { code: 'SK', name: 'Saskatchewan' },
+    { code: 'YT', name: 'Yukon' },
+];
+
+export const BR_STATES: { code: string; name: string }[] = [
+    { code: 'AC', name: 'Acre' }, { code: 'AL', name: 'Alagoas' }, { code: 'AP', name: 'Amapá' },
+    { code: 'AM', name: 'Amazonas' }, { code: 'BA', name: 'Bahia' }, { code: 'CE', name: 'Ceará' },
+    { code: 'DF', name: 'Distrito Federal' }, { code: 'ES', name: 'Espírito Santo' },
+    { code: 'GO', name: 'Goiás' }, { code: 'MA', name: 'Maranhão' }, { code: 'MT', name: 'Mato Grosso' },
+    { code: 'MS', name: 'Mato Grosso do Sul' }, { code: 'MG', name: 'Minas Gerais' },
+    { code: 'PA', name: 'Pará' }, { code: 'PB', name: 'Paraíba' }, { code: 'PR', name: 'Paraná' },
+    { code: 'PE', name: 'Pernambuco' }, { code: 'PI', name: 'Piauí' }, { code: 'RJ', name: 'Rio de Janeiro' },
+    { code: 'RN', name: 'Rio Grande do Norte' }, { code: 'RS', name: 'Rio Grande do Sul' },
+    { code: 'RO', name: 'Rondônia' }, { code: 'RR', name: 'Roraima' }, { code: 'SC', name: 'Santa Catarina' },
+    { code: 'SP', name: 'São Paulo' }, { code: 'SE', name: 'Sergipe' }, { code: 'TO', name: 'Tocantins' },
+];
+
+export const ES_PROVINCES: { code: string; name: string }[] = [
+    { code: '01', name: 'Álava' }, { code: '02', name: 'Albacete' }, { code: '03', name: 'Alicante' },
+    { code: '04', name: 'Almería' }, { code: '05', name: 'Ávila' }, { code: '06', name: 'Badajoz' },
+    { code: '07', name: 'Illes Balears' }, { code: '08', name: 'Barcelona' }, { code: '09', name: 'Burgos' },
+    { code: '10', name: 'Cáceres' }, { code: '11', name: 'Cádiz' }, { code: '12', name: 'Castellón' },
+    { code: '13', name: 'Ciudad Real' }, { code: '14', name: 'Córdoba' }, { code: '15', name: 'A Coruña' },
+    { code: '16', name: 'Cuenca' }, { code: '17', name: 'Girona' }, { code: '18', name: 'Granada' },
+    { code: '19', name: 'Guadalajara' }, { code: '20', name: 'Gipuzkoa' }, { code: '21', name: 'Huelva' },
+    { code: '22', name: 'Huesca' }, { code: '23', name: 'Jaén' }, { code: '24', name: 'León' },
+    { code: '25', name: 'Lleida' }, { code: '26', name: 'La Rioja' }, { code: '27', name: 'Lugo' },
+    { code: '28', name: 'Madrid' }, { code: '29', name: 'Málaga' }, { code: '30', name: 'Murcia' },
+    { code: '31', name: 'Navarra' }, { code: '32', name: 'Ourense' }, { code: '33', name: 'Asturias' },
+    { code: '34', name: 'Palencia' }, { code: '35', name: 'Las Palmas' }, { code: '36', name: 'Pontevedra' },
+    { code: '37', name: 'Salamanca' }, { code: '38', name: 'Santa Cruz de Tenerife' },
+    { code: '39', name: 'Cantabria' }, { code: '40', name: 'Segovia' }, { code: '41', name: 'Sevilla' },
+    { code: '42', name: 'Soria' }, { code: '43', name: 'Tarragona' }, { code: '44', name: 'Teruel' },
+    { code: '45', name: 'Toledo' }, { code: '46', name: 'Valencia' }, { code: '47', name: 'Valladolid' },
+    { code: '48', name: 'Bizkaia' }, { code: '49', name: 'Zamora' }, { code: '50', name: 'Zaragoza' },
+    { code: '51', name: 'Ceuta' }, { code: '52', name: 'Melilla' },
+];
+
+/**
+ * El catálogo de subdivisiones del país, o `null` si ahí no se pide una.
+ *
+ * `null` NO es un hueco: significa "este país no usa subdivisión en el alta" y
+ * la UI debe pintar un input libre (o ninguno), no un selector vacío. México
+ * vive en `STRIPE_MX_STATES` porque su catálogo lo consume además el CFDI.
+ */
+export function subdivisionsFor(countryCode: string): { code: string; name: string }[] | null {
+    switch (String(countryCode || '').toUpperCase()) {
+        case 'US': return US_STATES;
+        case 'CA': return CA_PROVINCES;
+        case 'BR': return BR_STATES;
+        case 'ES': return ES_PROVINCES;
+        default: return null;
+    }
+}
 
 export function isUsState(code: string): boolean {
     const normalized = String(code || '').toUpperCase();

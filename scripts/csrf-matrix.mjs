@@ -8,6 +8,7 @@ const exempt = [
     ['/api/mcp', 'POST'],
     ['/api/mcp/message', 'POST'],
     ['/api/cron/webhook-heartbeat', 'POST'],
+    ['/api/resend/marketing-webhook', 'POST'],
     [`/api/auth/saml/${uuid}/acs`, 'POST'],
 ];
 for (const [path, method] of exempt) {
@@ -20,6 +21,7 @@ const guarded = [
     ['/api/q/token/payment-intent', 'POST'],
     ['/api/billing/connect/capture/token', 'POST'],
     ['/api/contacto/ventas', 'POST'],
+    ['/api/blog/subscribe', 'POST'],
     ['/api/ops/operators', 'POST'],
 ];
 for (const [path, method] of guarded) {

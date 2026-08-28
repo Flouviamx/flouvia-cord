@@ -94,3 +94,26 @@ export default FramerCordCotizador;
 ```
 
 Esto registrará los controles de propiedades en la interfaz visual de Framer (Property Controls), exponiendo el campo `Token` en el panel derecho para que tus diseñadores puedan modificarlo visualmente sin tocar código.
+
+## Webflow
+
+A diferencia de Framer (un Code Component real), Webflow no ejecuta componentes de React —
+por eso el SDK expone un entrypoint separado (`@flouviahq/elements/webflow`) pensado para el
+editor visual de Webflow: un script de auto-inicialización que **no requiere escribir código**,
+solo atributos personalizados.
+
+1. En Webflow, agrega un **Div Block** donde quieras que aparezca el cotizador.
+2. En el panel de **Settings** del elemento, agrega un **Custom Attribute**: `data-cord-token`
+   con el token de tu cotización como valor. (Opcionalmente, `data-cord-base-url` si usas un
+   dominio propio, y `data-cord-min-height` para el alto mínimo del iframe.)
+3. En **Page Settings › Custom Code** (o en los ajustes del sitio si quieres que aplique a
+   todas las páginas), agrega este script antes de `</body>`:
+
+```html
+<script src="https://unpkg.com/@flouviahq/elements/dist/webflow.js"></script>
+```
+
+El script busca automáticamente todos los elementos con `data-cord-token` en la página (al
+cargar, y de nuevo si Webflow los agrega después) y monta el cotizador ahí — no expone eventos
+JS propios como el Web Component nativo; para eso, usa `<cord-cotizador>` directamente o el
+Code Component de Framer.

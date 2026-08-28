@@ -8,12 +8,12 @@ import Nav from '../components/landing/Nav.astro';
 import Footer from '../components/landing/Footer.astro';
 import PageAnims from '../components/landing/PageAnims.astro';
 import Steps from '../components/landing/Steps.astro';
-import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import { getLangFromUrl, publicPath, useTranslations } from '../i18n/utils';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
-const l = (p: string) => lang === 'es' ? p : `/en${p === '/' ? '' : p}`;
+const l = (p: string) => publicPath(p, lang);
 
 const title = isEn ? "How Cord Works | From Proposal to Payment" : "Cómo funciona Cord | De la Propuesta al Cobro";
 const description = isEn 

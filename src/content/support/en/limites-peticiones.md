@@ -9,11 +9,13 @@ To keep the service stable for everyone, Cord applies a request limit **per IP**
 
 ### The limit
 
-There is a global floor of roughly **500 requests per minute per IP** across all routes. It is a per-**minute** limit (a rolling 60-second window), not per second. For normal B2B integrations (syncing catalogs, creating quotes, reading receivables) this is plenty of headroom.
+There is a global floor of roughly **500 requests per minute per IP** across all routes. On top of that, each **API key** has its own limit: **600 requests per minute** for a secret key (`sk_`) and **120 per minute** for a publishable key (`pk_`, more restricted since it lives exposed in the browser). All of these are per-**minute** limits (a rolling 60-second window), not per second. For normal B2B integrations (syncing catalogs, creating quotes, reading receivables) this is plenty of headroom.
+
+Separately from the request-rate limit, your subscription **plan** includes a monthly quota of API calls; exceeding it also responds `429`, but with `code: "api_quota_exceeded"` instead of a speed problem — the fix there is upgrading your plan, not retrying slower.
 
 ### Handling 429
 
-If you exceed the limit, Cord responds with `429 Too Many Requests` and a `Retry-After: 60` (seconds) header. Your app should handle it with **exponential backoff**:
+If you exceed the request-rate limit, Cord responds with `429 Too Many Requests` and a `Retry-After: 60` (seconds) header. Your app should handle it with **exponential backoff**:
 
 1. On a 429, wait and retry (respect `Retry-After` if present).
 2. If it fails again, double the wait: 1s, 2s, 4s, 8s…

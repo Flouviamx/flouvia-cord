@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { STRIPE_MX_STATES, STRIPE_COMPANY_STRUCTURES, STRIPE_MCC_B2B, translateRequirement } from '../../lib/stripe-catalogs';
+import { STRIPE_MX_STATES, companyStructuresFor, mccOptions, translateRequirement } from '../../lib/stripe-catalogs';
 import { FEE_TERMS_VERSION } from '../../lib/fees';
 import { payoutSpecFor, validatePayout } from '../../lib/payout-fields';
-import { getCountryProfile, US_STATES } from '../../lib/countries';
+import { getCountryProfile, personIdLabel, subdivisionsFor } from '../../lib/countries';
 import { validRfc, validSpainTaxId } from '../../lib/tax-id';
+import { requiresField } from '../../lib/connect-requirements';
+import ConnectPersonasStep from './ConnectPersonasStep';
+import type { ConnectPersona } from '../../lib/connect-personas';
 
 interface ConnectCustomOnboardingProps {
     org?: any;
@@ -68,24 +71,30 @@ const CO_STRINGS = {
     telefono: 'Teléfono',
     calle: 'Calle y número',
     ciudad: 'Ciudad',
+    rolTitulo: '¿Qué papel tiene esta persona en el negocio?',
+    rolNota: 'Marca solo lo que sea cierto. Los datos que declaras aquí se envían tal cual para la verificación.',
+    rolDueno: 'Posee 25% o más del negocio',
+    rolDirector: 'Es director, administrador o miembro del consejo',
+    rolPuesto: 'Puesto',
+    rolParticipacion: 'Porcentaje de participación',
     duenosNota: 'Por regulaciones financieras, se debe declarar si hay dueños con más del 25% de participación.',
     duenosConfirmo: 'Confirmo que he agregado a todos los dueños con ≥25%',
-    duenosDetalle: 'El representante que agregaste ya fue marcado como dueño y directivo. Activa esto para declarar que la lista está completa.',
-    identidadNota: 'Necesitamos una foto clara de una identificación oficial vigente y una selfie de verificación.',
+    duenosDetalle: 'Estás declarando bajo tu responsabilidad que la lista de personas con 25% o más de participación está completa. Es una declaración legal y se envía tal cual para la verificación.',
+    identidadNota: 'Necesitamos una foto clara de una identificación oficial vigente. Si hace falta, después te pediremos un comprobante de domicilio.',
     recomendado: 'Recomendado',
-    qrNota: 'Escanea el código con tu celular y toma las fotos con su cámara. Tendrás mejor luz y enfoque; también te pedimos una selfie para reforzar la verificación.',
+    qrNota: 'Escanea el código con tu celular y toma las fotos con su cámara: tendrás mejor luz y enfoque que con un archivo escaneado.',
     generando: 'Generando…',
     copiar: 'Copiar',
     frente: 'Frente',
     reverso: 'Reverso',
-    selfie: 'Selfie',
+    comprobante: 'Comprobante',
     esperandoTelefono: 'Esperando a que termines desde tu teléfono…',
     codigoExpiro: 'El código expiró por seguridad (duran 10 minutos).',
     generarNuevo: 'Generar uno nuevo',
     frenteId: 'Frente de la identificación',
     quitar: 'Quitar',
     reversoId: 'Reverso (omite si tu identificación es un pasaporte)',
-    selfieNota: '¿Quieres agregar también tu selfie de verificación? Usa la opción "Con tu teléfono" de arriba.',
+    comprobanteNota: 'Si te pedimos un comprobante de domicilio, la forma más rápida de subirlo es con la opción "Con tu teléfono" de arriba.',
     cuentaNota: 'Ingresa la cuenta donde recibirás los cobros. Debe estar a nombre del negocio o representante.',
     titular: 'Nombre del titular de la cuenta',
     valido: 'válido',
@@ -93,7 +102,7 @@ const CO_STRINGS = {
     tosAcuerdo: 'Acuerdo de Cuenta Conectada de Stripe',
     tosCierre: ', que incluye los Términos de Servicio de Stripe.',
     tosCondicion: 'Como condición para que Cord habilite los servicios de procesamiento de pagos a través de Stripe, aceptas proporcionar a Cord información precisa y completa sobre ti y tu negocio, y autorizas a Cord a compartirla junto con los datos de transacciones relacionados con tu uso de los servicios de procesamiento de pagos provistos por Stripe.',
-    tosDatos: 'Las imágenes de identificación y selfie se envían directamente a Stripe y CORD no las almacena de forma persistente. Tu cuenta de depósito se conserva cifrada para operar y mostrarte a dónde llegan los cobros.',
+    tosDatos: 'Las imágenes de tus documentos se envían directamente a Stripe y CORD no las almacena de forma persistente; antes de enviarlas se les quitan los metadatos, incluida la ubicación GPS. Tu cuenta de depósito se conserva cifrada para operar y mostrarte a dónde llegan los cobros.',
     consentTitulo: 'Acepto expresamente el tratamiento de datos y las condiciones de Cord Payments',
     consentLei: 'Confirmo que leí el',
     consentPrivacidad: 'Aviso de Privacidad',
@@ -102,7 +111,43 @@ const CO_STRINGS = {
     consentCierre: 'y el acuerdo de Stripe. Autorizo el tratamiento y las transferencias descritas de mis datos financieros, patrimoniales y de verificación de identidad.',
     consentRegistro: 'Tu aceptación se registra con fecha, dirección IP y versión de términos.',
     atras: 'Atrás',
-    pasos: ['Tipo de entidad', 'Datos del negocio', 'Dirección fiscal', 'Identidad', 'Dueños', 'Verificación', 'Cuenta bancaria', 'Términos'],
+    personas: {
+      titulo: 'Personas y control',
+      intro: 'Declara a quienes controlan el negocio: el representante legal y toda persona con 25% o más de participación. Es un requisito de las normas contra el lavado de dinero, no una preferencia de Cord.',
+      agregar: 'Agregar persona',
+      editar: 'Editar',
+      quitar: 'Quitar',
+      verificar: 'Verificar identidad',
+      guardar: 'Guardar persona',
+      cancelar: 'Cancelar',
+      sinPersonas: 'Todavía no has agregado a nadie. Empieza por el representante legal.',
+      rolRepresentante: 'Representante legal',
+      rolDueno: 'Dueño',
+      rolDirector: 'Director',
+      rolEjecutivo: 'Directivo',
+      rolesTitulo: '¿Qué papel tiene en el negocio?',
+      participacion: 'Porcentaje de participación',
+      puesto: 'Puesto',
+      nombres: 'Nombre(s)',
+      apellidos: 'Apellidos',
+      idPersonal: 'Últimos 4 dígitos del SSN',
+      fechaNacimiento: 'Fecha de nacimiento',
+      email: 'Email',
+      telefono: 'Teléfono',
+      calle: 'Calle y número',
+      ciudad: 'Ciudad',
+      estado: 'Estado o provincia',
+      codigoPostal: 'Código postal',
+      selecciona: 'Selecciona…',
+      estadoNoVerificada: 'Datos capturados',
+      estadoEnRevision: 'En revisión',
+      estadoVerificada: 'Verificada',
+      estadoAccion: 'Acción requerida',
+      sumaParticipacion: 'Declarado: {pct}% de participación entre las personas de esta lista.',
+      confirmarQuitar: '¿Quitar a esta persona?',
+      pendientes: 'Falta:',
+    },
+    pasos: ['Tipo de entidad', 'Datos del negocio', 'Dirección fiscal', 'Identidad', 'Personas', 'Verificación', 'Cuenta bancaria', 'Términos'],
   },
   en: {
     requisitosPendientes: 'Pending requirements',
@@ -141,24 +186,30 @@ const CO_STRINGS = {
     telefono: 'Phone',
     calle: 'Street and number',
     ciudad: 'City',
+    rolTitulo: 'What role does this person have in the business?',
+    rolNota: 'Only tick what is true. What you declare here is submitted as-is for verification.',
+    rolDueno: 'Owns 25% or more of the business',
+    rolDirector: 'Is a director, board member or administrator',
+    rolPuesto: 'Job title',
+    rolParticipacion: 'Ownership percentage',
     duenosNota: 'Financial regulations require declaring any owner with more than 25% ownership.',
     duenosConfirmo: "I confirm I've added every owner with ≥25%",
-    duenosDetalle: 'The representative you added is already marked as owner and director. Turn this on to declare the list is complete.',
-    identidadNota: 'We need a clear photo of a valid government ID and a verification selfie.',
+    duenosDetalle: 'You are declaring, under your own responsibility, that the list of people owning 25% or more is complete. This is a legal declaration and is submitted as-is for verification.',
+    identidadNota: 'We need a clear photo of a valid government ID. If needed, we may ask for proof of address afterwards.',
     recomendado: 'Recommended',
-    qrNota: "Scan the code with your phone and take the photos with its camera — better light and focus. We'll also ask for a selfie to strengthen verification.",
+    qrNota: "Scan the code with your phone and take the photos with its camera — better light and focus than a scanned file.",
     generando: 'Generating…',
     copiar: 'Copy',
     frente: 'Front',
     reverso: 'Back',
-    selfie: 'Selfie',
+    comprobante: 'Proof of address',
     esperandoTelefono: 'Waiting for you to finish on your phone…',
     codigoExpiro: 'The code expired for security (they last 10 minutes).',
     generarNuevo: 'Generate a new one',
     frenteId: 'Front of the ID',
     quitar: 'Remove',
     reversoId: 'Back (skip if your ID is a passport)',
-    selfieNota: 'Want to add your verification selfie too? Use the "With your phone" option above.',
+    comprobanteNota: 'If we ask for proof of address, the fastest way to upload it is the "With your phone" option above.',
     cuentaNota: 'Enter the account where you\'ll receive payouts. It must be under the business or representative name.',
     titular: 'Account holder name',
     valido: 'valid',
@@ -166,7 +217,7 @@ const CO_STRINGS = {
     tosAcuerdo: 'Stripe Connected Account Agreement',
     tosCierre: ", which includes Stripe's Terms of Service.",
     tosCondicion: 'As a condition of Cord enabling payment processing services through Stripe, you agree to provide Cord with accurate and complete information about you and your business, and you authorize Cord to share it along with transaction data related to your use of the payment processing services provided by Stripe.',
-    tosDatos: "ID and selfie images are sent directly to Stripe and CORD does not store them persistently. Your payout account is kept encrypted so we can operate and show you where payments land.",
+    tosDatos: "Document images are sent directly to Stripe and CORD does not store them persistently; their metadata, including GPS location, is stripped before sending. Your payout account is kept encrypted so we can operate and show you where payments land.",
     consentTitulo: 'I expressly accept the data processing and the Cord Payments terms',
     consentLei: 'I confirm I read the',
     consentPrivacidad: 'Privacy Notice',
@@ -175,9 +226,83 @@ const CO_STRINGS = {
     consentCierre: "and the Stripe agreement. I authorize the described processing and transfers of my financial, asset and identity-verification data.",
     consentRegistro: 'Your acceptance is recorded with date, IP address and terms version.',
     atras: 'Back',
-    pasos: ['Entity type', 'Business details', 'Registered address', 'Identity', 'Owners', 'Verification', 'Bank account', 'Terms'],
+    personas: {
+      titulo: 'People and control',
+      intro: 'Declare who controls the business: the legal representative and anyone owning 25% or more. This is an anti-money-laundering requirement, not a Cord preference.',
+      agregar: 'Add person',
+      editar: 'Edit',
+      quitar: 'Remove',
+      verificar: 'Verify identity',
+      guardar: 'Save person',
+      cancelar: 'Cancel',
+      sinPersonas: "You haven't added anyone yet. Start with the legal representative.",
+      rolRepresentante: 'Legal representative',
+      rolDueno: 'Owner',
+      rolDirector: 'Director',
+      rolEjecutivo: 'Executive',
+      rolesTitulo: 'What role do they have in the business?',
+      participacion: 'Ownership percentage',
+      puesto: 'Job title',
+      nombres: 'First name(s)',
+      apellidos: 'Last name',
+      idPersonal: 'Last 4 digits of SSN',
+      fechaNacimiento: 'Date of birth',
+      email: 'Email',
+      telefono: 'Phone',
+      calle: 'Street and number',
+      ciudad: 'City',
+      estado: 'State or province',
+      codigoPostal: 'Postal code',
+      selecciona: 'Select…',
+      estadoNoVerificada: 'Details captured',
+      estadoEnRevision: 'Under review',
+      estadoVerificada: 'Verified',
+      estadoAccion: 'Action required',
+      sumaParticipacion: 'Declared: {pct}% ownership across the people in this list.',
+      confirmarQuitar: 'Remove this person?',
+      pendientes: 'Missing:',
+    },
+    pasos: ['Entity type', 'Business details', 'Registered address', 'Identity', 'People', 'Verification', 'Bank account', 'Terms'],
   },
 } as const;
+
+/**
+ * Un solo camino para hablar con la API de cobros, con el ciclo de step-up.
+ *
+ * Los endpoints que escriben identidad (personas, sesión de captura,
+ * declaraciones) exigen reautenticación reciente y responden 428. Ese ciclo
+ * estaba implementado UNA sola vez y a mano, dentro del paso de la cuenta
+ * bancaria; cualquier otro paso que empezara a pedirlo se habría quedado colgado
+ * mostrando "reauthentication_required" como si fuera un error del formulario.
+ *
+ * `window.cordStepUp` lo publica AppLayout: abre el diálogo de confirmación de
+ * identidad y resuelve `true` si el usuario se reautenticó.
+ */
+async function postConnect(url: string, init: RequestInit): Promise<any> {
+    const enviar = () => fetch(url, init);
+    let res = await enviar();
+    if (res.status === 428) {
+        const stepUp = (window as any).cordStepUp;
+        if (typeof stepUp !== 'function') {
+            throw new Error('Necesitas confirmar tu identidad para continuar. Recarga la página e intenta de nuevo.');
+        }
+        if (!await stepUp()) {
+            throw new Error('Necesitas confirmar tu identidad para continuar.');
+        }
+        res = await enviar();
+    }
+    const data = await res.json().catch(() => null);
+    if (!data?.ok) throw new Error(data?.error || 'No se pudo completar la operación.');
+    return data;
+}
+
+/** Azúcar para el caso más común: un JSON de ida. */
+const postConnectJson = (url: string, body: unknown, method: 'POST' | 'PATCH' | 'DELETE' = 'POST') =>
+    postConnect(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
 
 export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectCustomOnboardingProps) {
     const S = CO_STRINGS[locale] ?? CO_STRINGS.es;
@@ -186,6 +311,23 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
     // El nombre de la identificación fiscal sale del país: RFC en México, NIF en
     // España, EIN en Estados Unidos. Preguntar "RFC" en Madrid no tiene respuesta.
     const TAX_ID_LABEL = getCountryProfile(PAIS, locale).taxIdLabel;
+    // La identificación de la PERSONA no es la del negocio: en México es la CURP,
+    // en Estados Unidos el SSN. Donde Stripe no la pide, el campo ni se dibuja.
+    const PERSON_ID_LABEL = personIdLabel(PAIS, locale);
+    // Subdivisión del país: los 32 estados de México, las 13 provincias de
+    // Canadá, las 27 UF de Brasil, las 52 provincias de España, los 51 de EE.UU.
+    // `null` = ese país no usa subdivisión en el alta y va input libre. El
+    // proveedor EXIGE el código de dos letras en Canadá y Brasil, así que
+    // escribir "Ontario" a mano hacía rebotar la cuenta.
+    const SUBDIVISIONES = PAIS === 'MX'
+        ? STRIPE_MX_STATES.map((e) => ({ code: e.codigo, name: e.nombre }))
+        : subdivisionsFor(PAIS);
+    // `company.structure` es un enum distinto en cada país. Donde el proveedor
+    // no ofrece ninguno (México, España, Francia, Reino Unido, Brasil) el
+    // selector no se dibuja, en vez de ofrecer figuras de otro ordenamiento.
+    const ESTRUCTURAS = companyStructuresFor(PAIS, locale);
+    // El giro ya no es una lista B2B en español: Cord es horizontal (regla 10).
+    const GIROS = mccOptions(locale);
     const [step, setStep] = useState(0);
     const [booting, setBooting] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -195,8 +337,27 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
     const [chargesEnabled, setChargesEnabled] = useState(false);
     const [detailsSubmitted, setDetailsSubmitted] = useState(false);
     const [disabledReason, setDisabledReason] = useState<string | null>(null);
-    const [bankInfo, setBankInfo] = useState<{ bank_name?: string; last4?: string } | null>(null);
+    const [bankInfo, setBankInfo] = useState<{ bank_name?: string; last4?: string } | null>(
+        org?.bancoLast4 ? { last4: String(org.bancoLast4) } : null,
+    );
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // ── Qué pedir lo decide Stripe, no una rama por país ────────────────────
+    //
+    // `person.id_number` se exigía en los ocho países y `ssn_last_4` se pintaba
+    // con `if (PAIS === 'US')`. Verificado contra la API de requisitos de
+    // Stripe: ES, DE y GB NO piden `id_number` — el representante europeo no
+    // tiene ese número, así que el alta era imposible de terminar ahí.
+    //
+    // Se distingue MOSTRAR de EXIGIR: se pinta el campo si Stripe lo va a pedir
+    // en algún momento (incluye `eventually_due`, así se captura de una vez), y
+    // sólo se bloquea el avance si lo pide AHORA. Un campo que nadie pidió no se
+    // dibuja: es identificación nacional, no un dato de relleno.
+    const mostrarIdNumber = requiresField(requirements, 'id_number', { includeEventual: true });
+    const exigirIdNumber = requiresField(requirements, 'id_number');
+    const mostrarSsn = requiresField(requirements, 'ssn_last_4', { includeEventual: true });
+    const exigirSsn = requiresField(requirements, 'ssn_last_4');
+    const mostrarNacionalidad = requiresField(requirements, 'nationality', { includeEventual: true });
 
     // State
     const [businessType, setBusinessType] = useState<'company' | 'individual' | ''>('');
@@ -229,11 +390,22 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
         address_city: '',
         address_state: '',
         address_postal_code: '',
-        title: 'Director',
-        percent_ownership: 100
+        title: '',
+        // Los roles se PREGUNTAN. Antes se mandaban `owner: true, director: true`
+        // fijos junto con `percent_ownership: 100`, así que un director
+        // contratado sin una sola acción quedaba declarado ante la autoridad
+        // como dueño del 100% del negocio. Es un dato de KYC, no un default.
+        is_owner: false,
+        is_director: false,
+        percent_ownership: '' as string | number,
     });
     const [personId, setPersonId] = useState<string | null>(null);
     const [ownersProvided, setOwnersProvided] = useState(false);
+    // La lista real de personas. Antes el paso 4 era un checkbox y no había
+    // ninguna: se creaba una sola Person y se declaraba que la lista estaba
+    // completa, lo cual era falso en cuanto el negocio tenía más de un socio.
+    const [personas, setPersonas] = useState<ConnectPersona[]>([]);
+    const [personasCargadas, setPersonasCargadas] = useState(false);
 
     // Document (modo "Subir archivo" — fallback cuando no hay teléfono a la mano)
     const [docFront, setDocFront] = useState<File | null>(null);
@@ -242,24 +414,29 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
     const [previewBack, setPreviewBack] = useState<string | null>(null);
 
     // Verificación de identidad "continúa en tu teléfono" — QR + polling (estilo
-    // Stripe Identity). El celular sube frente/reverso/selfie directo a Stripe vía
+    // Stripe Identity). El celular sube frente/reverso/comprobante directo a Stripe vía
     // /api/billing/connect/capture/[token]; el escritorio solo espera y refresca.
     const [uploadMode, setUploadMode] = useState<'phone' | 'file'>('phone');
     const [captureToken, setCaptureToken] = useState<string | null>(null);
     const [captureUrl, setCaptureUrl] = useState<string | null>(null);
     const [captureQr, setCaptureQr] = useState<string | null>(null);
     const [captureStatus, setCaptureStatus] = useState<'idle' | 'creating' | 'waiting' | 'completed' | 'expired'>('idle');
-    const [capturedParts, setCapturedParts] = useState<{ front?: boolean; back?: boolean; selfie?: boolean }>({});
+    const [capturedParts, setCapturedParts] = useState<{ front?: boolean; back?: boolean; address?: boolean }>({});
     const capturePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Bank
     // Los campos de depósito dependen del país: CLABE, IBAN, routing+account…
     const payoutSpec = payoutSpecFor(String(org?.countryCode || 'MX'));
+    // Los campos arrancan VACÍOS, también cuando ya hay una cuenta guardada.
+    // Antes se precargaba la CLABE completa, lo que obligaba a mandarle al
+    // navegador el número de cuenta descifrado sólo para rellenar un input. La
+    // cuenta vigente se muestra como `••••1234` (ver `bankInfo`), y cambiarla
+    // exige volver a teclearla — el mismo criterio que cualquier producto serio
+    // aplica a un dato de este valor, y coherente con el step-up que ya pide el
+    // endpoint.
     const [bankFields, setBankFields] = useState<Record<string, string>>(() => {
         const inicial: Record<string, string> = {};
         for (const f of payoutSpec.fields) inicial[f.key] = '';
-        // Compatibilidad: una cuenta mexicana ya capturada se precarga.
-        if (payoutSpec.format === 'clabe' && org?.bancoClabe) inicial.clabe = String(org.bancoClabe);
         return inicial;
     });
     const setBankField = (key: string, value: string) =>
@@ -295,8 +472,14 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
     }, [step, detailsSubmitted, chargesEnabled, requirements]);
 
     // Sondea la sesión de captura por teléfono cada 2.5s mientras espera — cuando
-    // el celular termina (frente + selfie subidos), se refleja solo en el escritorio
+    // el celular cierra la sesión, se refleja solo en el escritorio
     // sin que nadie tenga que refrescar la página.
+    // La lista se pide al entrar al paso, no al montar: la mayoría de las altas
+    // nunca llegan aquí en la primera sesión.
+    useEffect(() => {
+        if (step === 4 && !personasCargadas) void cargarPersonas();
+    }, [step, personasCargadas]);
+
     useEffect(() => {
         if (captureStatus !== 'waiting' || !captureToken) return;
         const poll = async () => {
@@ -331,13 +514,8 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
         }
         setCaptureStatus('creating');
         try {
-            const res = await fetch('/api/billing/connect/capture-session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ personId, isCompanyDoc: businessType === 'individual' }),
-            });
-            const data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'No se pudo generar el enlace');
+            const data = await postConnectJson('/api/billing/connect/capture-session',
+                { personId, isCompanyDoc: businessType === 'individual' });
             setCaptureToken(data.token);
             setCaptureUrl(data.url);
             setCaptureQr(data.qrSvg || null);
@@ -347,6 +525,43 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
             setError(e.message);
             setCaptureStatus('idle');
         }
+    };
+
+    const cargarPersonas = async () => {
+        try {
+            const res = await fetch('/api/billing/connect/persons');
+            const data = await res.json();
+            if (data.ok) setPersonas(data.personas || []);
+        } catch { /* la lista se vuelve a pedir al entrar al paso */ }
+        finally { setPersonasCargadas(true); }
+    };
+
+    const crearPersona = async (payload: any) => {
+        const data = await postConnectJson('/api/billing/connect/persons', payload);
+        setPersonas(data.personas || []);
+        setRequirements(data.requirements);
+        if (data.personId && payload?.relationship?.representative) setPersonId(data.personId);
+    };
+
+    const editarPersona = async (payload: any) => {
+        const data = await postConnectJson('/api/billing/connect/persons', payload, 'PATCH');
+        setPersonas(data.personas || []);
+        setRequirements(data.requirements);
+    };
+
+    const quitarPersona = async (stripePersonId: string) => {
+        const data = await postConnectJson('/api/billing/connect/persons', { id: stripePersonId }, 'DELETE');
+        setPersonas(data.personas || []);
+        setRequirements(data.requirements);
+    };
+
+    // Verificar a UNA persona reutiliza el mismo QR de captura móvil que ya
+    // existía, apuntado a ella en vez de al representante fijo.
+    const verificarPersona = (stripePersonId: string) => {
+        setPersonId(stripePersonId);
+        setStep(5);
+        setUploadMode('phone');
+        setCaptureStatus('idle');
     };
 
     const fetchStatus = async (): Promise<any | null> => {
@@ -382,7 +597,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
             // de forzar al usuario a re-caminar todo el wizard desde cero.
             const due: string[] = acc.requirements?.currently_due || [];
             if (due.length) {
-                const primerPaso = Math.min(...due.map((r) => translateRequirement(r).paso));
+                const primerPaso = Math.min(...due.map((r) => translateRequirement(r, locale, PAIS).paso));
                 setStep(Math.max(1, Math.min(7, primerPaso)));
             }
         }
@@ -403,13 +618,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
         try {
             if (step === 0) {
                 if (!businessType) throw new Error('Selecciona un tipo de registro');
-                const res = await fetch('/api/billing/connect/create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ business_type: businessType })
-                });
-                const data = await res.json();
-                if (!data.ok) throw new Error(data.error);
+                const data = await postConnectJson('/api/billing/connect/create', { business_type: businessType });
                 setAccountId(data.accountId);
                 setRequirements(data.requirements);
                 if (data.business_type === 'company' || data.business_type === 'individual') {
@@ -437,13 +646,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 } else {
                     payload.individual = { first_name: name.split(' ')[0], last_name: name.split(' ').slice(1).join(' ') || '.', id_number: taxId, phone };
                 }
-                const res = await fetch('/api/billing/connect/account', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (!data.ok) throw new Error(data.error);
+                const data = await postConnectJson('/api/billing/connect/account', payload, 'PATCH');
                 setRequirements(data.requirements);
                 setStep(2);
             } else if (step === 2) {
@@ -454,18 +657,26 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 } else {
                     payload.individual = { address };
                 }
-                const res = await fetch('/api/billing/connect/account', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (!data.ok) throw new Error(data.error);
+                const data = await postConnectJson('/api/billing/connect/account', payload, 'PATCH');
                 setRequirements(data.requirements);
                 setStep(3); // Empresa Y persona física pasan por el paso 3 (datos personales + DOB)
             } else if (step === 3) { // Datos personales (representante o persona física)
-                if (!person.first_name || !person.last_name || !person.id_number) throw new Error('Completa los datos personales');
-                if (PAIS === 'US' && person.ssn_last_4.length !== 4) throw new Error('Captura los últimos 4 dígitos del SSN');
+                if (!person.first_name || !person.last_name) throw new Error('Completa los datos personales');
+                // Sólo se exige lo que Stripe pidió para ESTA cuenta. Antes se
+                // exigía `id_number` en los ocho países (bloqueo duro en ES/DE/GB)
+                // y `ssn_last_4` con una rama por país.
+                if (exigirIdNumber && !person.id_number.trim()) {
+                    throw new Error(locale === 'en' ? `Enter the ${PERSON_ID_LABEL}` : `Captura el ${PERSON_ID_LABEL}`);
+                }
+                if (exigirSsn && person.ssn_last_4.length !== 4) throw new Error('Captura los últimos 4 dígitos del SSN');
+                if (person.is_owner) {
+                    const pct = Number(person.percent_ownership);
+                    if (!Number.isFinite(pct) || pct <= 0 || pct > 100) {
+                        throw new Error(locale === 'en'
+                            ? 'Enter the ownership percentage (between 1 and 100).'
+                            : 'Captura el porcentaje de participación (entre 1 y 100).');
+                    }
+                }
                 const d = Number(person.dob_day), m = Number(person.dob_month), y = Number(person.dob_year);
                 if (!d || !m || !y || d < 1 || d > 31 || m < 1 || m > 12 || y < 1900 || y > new Date().getFullYear() - 18) {
                     throw new Error('Revisa la fecha de nacimiento (debes ser mayor de 18 años)');
@@ -483,58 +694,61 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 };
                 if (businessType === 'individual') {
                     // Persona física: los datos van al individual[...] de la CUENTA (no una person aparte).
-                    const res = await fetch('/api/billing/connect/account', {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ individual: {
+                    const data = await postConnectJson('/api/billing/connect/account', {
+                        individual: {
                             first_name: person.first_name,
                             last_name: person.last_name,
-                            id_number: person.id_number,
-                            ...(PAIS === 'US' && person.ssn_last_4 ? { ssn_last_4: person.ssn_last_4 } : {}),
+                            // Se manda sólo si existe: `flattenConnectFields()` omite
+                            // vacíos, pero mandar una llave que el país no usa ensucia
+                            // el payload y confunde al leer un log.
+                            ...(person.id_number ? { id_number: person.id_number } : {}),
+                            ...(person.ssn_last_4 ? { ssn_last_4: person.ssn_last_4 } : {}),
                             email: person.email,
                             phone: person.phone,
                             dob,
                             address: personAddress,
-                        } })
-                    });
-                    const data = await res.json();
-                    if (!data.ok) throw new Error(data.error);
+                        },
+                    }, 'PATCH');
                     setRequirements(data.requirements);
                     setStep(5); // las personas físicas omiten el paso de dueños beneficiarios
                 } else {
                     const payload = {
                         first_name: person.first_name,
                         last_name: person.last_name,
-                        id_number: person.id_number,
-                        ...(PAIS === 'US' && person.ssn_last_4 ? { ssn_last_4: person.ssn_last_4 } : {}),
+                        ...(person.id_number ? { id_number: person.id_number } : {}),
+                        ...(person.ssn_last_4 ? { ssn_last_4: person.ssn_last_4 } : {}),
                         email: person.email,
                         phone: person.phone,
                         dob,
                         address: personAddress,
-                        relationship: { representative: true, owner: true, director: true, title: person.title, percent_ownership: person.percent_ownership }
+                        // `owner` y `director` salen de lo que el usuario declaró, no
+                        // de un literal. Marcarlos siempre en true declaraba ante la
+                        // autoridad que el representante posee el 100% del negocio,
+                        // aunque fuera un director contratado sin acciones — y de paso
+                        // hacía imposible que la lista de dueños fuera correcta.
+                        relationship: {
+                            representative: true,
+                            owner: person.is_owner,
+                            director: person.is_director,
+                            title: person.title || undefined,
+                            ...(person.is_owner ? { percent_ownership: Number(person.percent_ownership) } : {}),
+                        },
                     };
                     // Si ya existe el representante (reanudación), se ACTUALIZA en vez
                     // de crear una segunda persona duplicada en la cuenta.
-                    const res = await fetch('/api/billing/connect/persons', {
-                        method: personId ? 'PATCH' : 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(personId ? { ...payload, id: personId } : payload)
-                    });
-                    const data = await res.json();
-                    if (!data.ok) throw new Error(data.error);
+                    const data = await postConnectJson(
+                        '/api/billing/connect/persons',
+                        personId ? { ...payload, id: personId } : payload,
+                        personId ? 'PATCH' : 'POST',
+                    );
                     if (data.personId) setPersonId(data.personId);
                     setRequirements(data.requirements);
                     setStep(4);
                 }
             } else if (step === 4) { // Dueños Beneficiarios
                 if (!ownersProvided) throw new Error('Confirma que la lista de dueños está completa para continuar');
-                const res = await fetch('/api/billing/connect/account', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ company: { owners_provided: true, directors_provided: true, executives_provided: true } })
-                });
-                const data = await res.json();
-                if (!data.ok) throw new Error(data.error);
+                const data = await postConnectJson('/api/billing/connect/account',
+                    { company: { owners_provided: true, directors_provided: true, executives_provided: true } }, 'PATCH');
                 setRequirements(data.requirements);
                 setStep(5);
             } else if (step === 5) { // Identificación
@@ -558,10 +772,11 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                         } else {
                             fd.append('isCompanyDoc', 'true');
                         }
-                        const res = await fetch('/api/billing/connect/document', { method: 'POST', body: fd });
-                        const data = await res.json();
-                        if (!data.ok) throw new Error(data.error || 'Error al subir el documento');
-                        return data;
+                        // Por `postConnect` como todo lo demás: no se le pone
+                        // Content-Type a un FormData (el navegador tiene que
+                        // escribir el boundary), y el ciclo de step-up queda
+                        // cubierto si este endpoint llega a exigirlo.
+                        return postConnect('/api/billing/connect/document', { method: 'POST', body: fd });
                     };
 
                     await uploadDoc(docFront, 'front');
@@ -575,35 +790,22 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 // Misma validación que el servidor, con el formato del país.
                 const check = validatePayout(String(org?.countryCode || 'MX'), bankFields, locale);
                 if (!check.ok) throw new Error(check.error || 'Revisa los datos de tu cuenta');
-                const send = () => fetch('/api/billing/connect/external-account', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...check.values, account_holder_name: accountHolder, account_holder_type: businessType })
-                });
-                let res = await send();
-                if (res.status === 428 && typeof (window as any).cordStepUp === 'function') {
-                    if (!await (window as any).cordStepUp()) throw new Error('Necesitas confirmar tu identidad para cambiar la cuenta bancaria');
-                    res = await send();
-                }
-                const data = await res.json();
-                if (!data.ok) throw new Error(data.error);
+                // El ciclo de step-up vive en `postConnect`, no aquí: era el único
+                // camino del wizard que lo manejaba, y estaba escrito a mano.
+                const data = await postConnectJson('/api/billing/connect/external-account',
+                    { ...check.values, account_holder_name: accountHolder, account_holder_type: businessType });
                 setRequirements(data.requirements);
                 if (data.external_account?.last4) setBankInfo({ bank_name: data.external_account.bank_name, last4: data.external_account.last4 });
                 setStep(7);
             } else if (step === 7) { // TOS Acceptance
                 if (!legalConsent) throw new Error('Confirma los términos y el tratamiento de datos para continuar');
-                const res = await fetch('/api/billing/connect/account', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tos_acceptance: true,
-                        legal_consents: {
-                            payments_terms: FEE_TERMS_VERSION,
-                            privacy: true,
-                        },
-                    })
-                });
-                const data = await res.json();
-                if (!data.ok) throw new Error(data.error);
+                await postConnectJson('/api/billing/connect/account', {
+                    tos_acceptance: true,
+                    legal_consents: {
+                        payments_terms: FEE_TERMS_VERSION,
+                        privacy: true,
+                    },
+                }, 'PATCH');
                 await fetchStatus();
                 setStep(8);
             }
@@ -623,7 +825,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 <div className="co-req-header">{S.requisitosPendientes}</div>
                 <ul className="co-req-list">
                     {dueList.map((req: string) => {
-                        const tr = translateRequirement(req);
+                        const tr = translateRequirement(req, locale, PAIS);
                         return <li key={req} onClick={() => setStep(tr.paso)} className="co-req-item">
                             <span className="co-req-msg">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fillOpacity="0.1"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -685,7 +887,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                 Esta página se actualizará sola en cuanto tus cobros estén activos.
                             </p>
                             {disabledReason && disabledReason !== 'requirements.pending_verification' && (
-                                <p className="co-review-reason">Detalle: {translateRequirement(disabledReason).mensaje}</p>
+                                <p className="co-review-reason">{locale === 'en' ? 'Detail' : 'Detalle'}: {translateRequirement(disabledReason, locale, PAIS).mensaje}</p>
                             )}
                         </div>
                     ) : null}
@@ -751,17 +953,17 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                 <label>{S.giro}</label>
                                 <select className="s-input" value={mcc} onChange={e => setMcc(e.target.value)}>
                                     <option value="">{S.selecciona}</option>
-                                    {STRIPE_MCC_B2B.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
+                                    {GIROS.map(m => <option key={m.codigo} value={m.codigo}>{m.nombre}</option>)}
                                 </select>
                                 <span className="s-hint">{S.giroHint}</span>
                             </div>
                         </div>
-                        {businessType === 'company' && (
+                        {businessType === 'company' && ESTRUCTURAS && (
                             <div className="s-field">
                                 <label>{S.estructuraLegal}</label>
                                 <select className="s-input" value={structure} onChange={e => setStructure(e.target.value)}>
                                     <option value="">{S.selecciona}</option>
-                                    {STRIPE_COMPANY_STRUCTURES.map(s => <option key={s.codigo} value={s.codigo}>{s.nombre}</option>)}
+                                    {ESTRUCTURAS.map(e => <option key={e.codigo} value={e.codigo}>{e.nombre}</option>)}
                                 </select>
                             </div>
                         )}
@@ -803,20 +1005,15 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                         </div>
                         <div className="s-field">
                             <label>{S.estado}</label>
-                            {/* Los 32 estados mexicanos solo existen en México y los 50
-                                de EE.UU. solo ahí — Stripe exige el código de 2 letras
-                                exacto en ambos. Fuera de los dos, un <select> cerrado
-                                deja al negocio sin poder capturar su provincia, condado
-                                o comunidad autónoma. */}
-                            {esMx ? (
+                            {/* Un solo camino: el catálogo del país si existe, input
+                                libre si ese país no usa subdivisión. Antes eran dos
+                                ramas fijas (MX y US) y todo lo demás caía a texto
+                                libre — incluidos Canadá y Brasil, donde el proveedor
+                                EXIGE el código de dos letras y "Ontario" rebotaba. */}
+                            {SUBDIVISIONES ? (
                                 <select className="s-input" value={address.state} onChange={e => setAddress({...address, state: e.target.value})}>
                                     <option value="">{S.seleccionaEstado}</option>
-                                    {STRIPE_MX_STATES.map(s => <option key={s.codigo} value={s.codigo}>{s.nombre}</option>)}
-                                </select>
-                            ) : PAIS === 'US' ? (
-                                <select className="s-input" value={address.state} onChange={e => setAddress({...address, state: e.target.value})}>
-                                    <option value="">{S.seleccionaEstado}</option>
-                                    {US_STATES.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
+                                    {SUBDIVISIONES.map(sub => <option key={sub.code} value={sub.code}>{sub.name}</option>)}
                                 </select>
                             ) : (
                                 <input className="s-input" value={address.state} onChange={e => setAddress({...address, state: e.target.value})} maxLength={60} />
@@ -838,18 +1035,22 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                 <input className="s-input" value={person.last_name} onChange={e => setPerson({...person, last_name: e.target.value})} autoComplete="family-name" />
                             </div>
                         </div>
-                        <div className="s-row">
-                            <div className="s-field">
-                                <label>{esMx ? S.idPersonalMx : S.idPersonal}</label>
-                                <input className="s-input" value={person.id_number} onChange={e => setPerson({...person, id_number: e.target.value.toUpperCase()})} autoCapitalize="characters" />
+                        {(mostrarIdNumber || mostrarSsn) && (
+                            <div className="s-row">
+                                {mostrarIdNumber && (
+                                    <div className="s-field">
+                                        <label>{PERSON_ID_LABEL}</label>
+                                        <input className="s-input" value={person.id_number} onChange={e => setPerson({...person, id_number: e.target.value.toUpperCase()})} autoCapitalize="characters" autoComplete="off" />
+                                    </div>
+                                )}
+                                {mostrarSsn && (
+                                    <div className="s-field">
+                                        <label>{S.ssnLast4}</label>
+                                        <input className="s-input" value={person.ssn_last_4} onChange={e => setPerson({...person, ssn_last_4: e.target.value.replace(/\D/g, '').slice(0, 4)})} maxLength={4} inputMode="numeric" autoComplete="off" />
+                                    </div>
+                                )}
                             </div>
-                            {PAIS === 'US' && (
-                                <div className="s-field">
-                                    <label>{S.ssnLast4}</label>
-                                    <input className="s-input" value={person.ssn_last_4} onChange={e => setPerson({...person, ssn_last_4: e.target.value.replace(/\D/g, '').slice(0, 4)})} maxLength={4} inputMode="numeric" autoComplete="off" />
-                                </div>
-                            )}
-                        </div>
+                        )}
                         <div className="s-row">
                             <div className="s-field">
                                 <label>{S.fechaNacimiento}</label>
@@ -872,6 +1073,39 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                 <input className="s-input" value={person.phone} onChange={e => setPerson({...person, phone: e.target.value})} type="tel" autoComplete="tel" />
                             </div>
                         </div>
+                        {businessType === 'company' && (
+                            <>
+                                <div className="co-divider"></div>
+                                <p className="co-sub co-sub-strong">{S.rolTitulo}</p>
+                                <p className="co-hint">{S.rolNota}</p>
+                                <label className="co-role">
+                                    <span className="s-toggle">
+                                        <input type="checkbox" checked={person.is_owner} onChange={e => setPerson({...person, is_owner: e.target.checked, percent_ownership: e.target.checked ? person.percent_ownership : ''})} />
+                                        <span className="s-toggle-track"><span className="s-toggle-thumb"></span></span>
+                                    </span>
+                                    <span className="co-role-text">{S.rolDueno}</span>
+                                </label>
+                                <label className="co-role">
+                                    <span className="s-toggle">
+                                        <input type="checkbox" checked={person.is_director} onChange={e => setPerson({...person, is_director: e.target.checked})} />
+                                        <span className="s-toggle-track"><span className="s-toggle-thumb"></span></span>
+                                    </span>
+                                    <span className="co-role-text">{S.rolDirector}</span>
+                                </label>
+                                <div className="s-row">
+                                    <div className="s-field">
+                                        <label>{S.rolPuesto}</label>
+                                        <input className="s-input" value={person.title} onChange={e => setPerson({...person, title: e.target.value})} maxLength={60} autoComplete="organization-title" />
+                                    </div>
+                                    {person.is_owner && (
+                                        <div className="s-field">
+                                            <label>{S.rolParticipacion}</label>
+                                            <input className="s-input" value={String(person.percent_ownership)} onChange={e => setPerson({...person, percent_ownership: e.target.value.replace(/[^0-9.]/g, '').slice(0, 6)})} inputMode="decimal" placeholder="25" />
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
                         <div className="co-divider"></div>
                         <p className="co-sub co-sub-strong">{businessType === 'individual' ? 'Tu dirección personal' : 'Dirección personal del representante'}</p>
                         <div className="s-field">
@@ -885,15 +1119,10 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                             </div>
                             <div className="s-field">
                                 <label>{S.estado}</label>
-                                {esMx ? (
+                                {SUBDIVISIONES ? (
                                     <select className="s-input" value={person.address_state} onChange={e => setPerson({...person, address_state: e.target.value})}>
                                         <option value="">{S.selecciona}</option>
-                                        {STRIPE_MX_STATES.map(s => <option key={s.codigo} value={s.codigo}>{s.nombre}</option>)}
-                                    </select>
-                                ) : PAIS === 'US' ? (
-                                    <select className="s-input" value={person.address_state} onChange={e => setPerson({...person, address_state: e.target.value})}>
-                                        <option value="">{S.selecciona}</option>
-                                        {US_STATES.map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
+                                        {SUBDIVISIONES.map(sub => <option key={sub.code} value={sub.code}>{sub.name}</option>)}
                                     </select>
                                 ) : (
                                     <input className="s-input" value={person.address_state} onChange={e => setPerson({...person, address_state: e.target.value})} maxLength={60} />
@@ -913,6 +1142,25 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
 
                 {step === 4 && (
                     <div className="co-step">
+                        <ConnectPersonasStep
+                            personas={personas}
+                            pais={PAIS}
+                            subdivisiones={SUBDIVISIONES}
+                            locale={locale}
+                            strings={S.personas}
+                            exigeIdNumber={mostrarIdNumber}
+                            exigeSsn={mostrarSsn}
+                            exigeNacionalidad={mostrarNacionalidad}
+                            busy={loading}
+                            onCrear={crearPersona}
+                            onEditar={editarPersona}
+                            onQuitar={quitarPersona}
+                            onVerificar={verificarPersona}
+                        />
+                        {/* La atestación aparece DESPUÉS de la lista y sólo cuando el
+                            proveedor la pide. Antes era el paso entero, y se firmaba
+                            sin haber podido construir la lista que declara. */}
+                        <div className="co-divider"></div>
                         <p className="co-sub">{S.duenosNota}</p>
                         <label className="co-attest">
                             <span className="s-toggle">
@@ -967,7 +1215,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                         <ul className="co-phone-steps">
                                             <li className={capturedParts.front ? 'done' : ''}><span className="co-phone-step-dot"></span>{S.frente}</li>
                                             <li className={capturedParts.back ? 'done' : ''}><span className="co-phone-step-dot"></span>{S.reverso}</li>
-                                            <li className={capturedParts.selfie ? 'done' : ''}><span className="co-phone-step-dot"></span>{S.selfie}</li>
+                                            <li className={capturedParts.address ? 'done' : ''}><span className="co-phone-step-dot"></span>{S.comprobante}</li>
                                         </ul>
                                         {captureStatus === 'waiting' ? (
                                             <span className="co-phone-waiting"><span className="co-spinner co-spinner-btn" aria-hidden="true"></span> {S.esperandoTelefono}</span>
@@ -1003,7 +1251,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                     ) : (
                                         <label className="co-btn co-btn-ghost co-upload co-upload-block">
                                             Subir archivo
-                                            <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={e => {
+                                            <input type="file" accept="image/jpeg,image/png" onChange={e => {
                                                 const file = e.target.files?.[0];
                                                 if (file) { setDocFront(file); setPreviewFront(file.type.startsWith('image/') ? URL.createObjectURL(file) : '/imgs/logo-cord-navy.png'); }
                                             }} />
@@ -1025,14 +1273,14 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                     ) : (
                                         <label className="co-btn co-btn-ghost co-upload co-upload-block">
                                             Subir archivo
-                                            <input type="file" accept="image/jpeg,image/png,application/pdf" onChange={e => {
+                                            <input type="file" accept="image/jpeg,image/png" onChange={e => {
                                                 const file = e.target.files?.[0];
                                                 if (file) { setDocBack(file); setPreviewBack(file.type.startsWith('image/') ? URL.createObjectURL(file) : '/imgs/logo-cord-navy.png'); }
                                             }} />
                                         </label>
                                     )}
                                 </div>
-                                <p className="co-hint">{S.selfieNota}</p>
+                                <p className="co-hint">{S.comprobanteNota}</p>
                             </>
                         )}
                     </div>
