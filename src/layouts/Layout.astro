@@ -25,6 +25,7 @@ interface Props {
 import Analytics from '@vercel/analytics/astro';
 import { getLangFromUrl, altLangUrls } from '../i18n/utils';
 import CookieConsent from '../components/CookieConsent.astro';
+import SpeedInsights from '../components/SpeedInsights.astro';
 
 const {
     title,
@@ -158,6 +159,10 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
             credencial portadora viva — por eso comparte el mismo interruptor que
             PostHog en vez de ir siempre. */}
         {!analyticsDisabled && <Analytics />}
+        {/* Web Vitals de las páginas públicas. Comparte el interruptor de
+            analytics: en la pantalla de verificación de identidad el pathname
+            lleva un token portador vivo. */}
+        <SpeedInsights disabled={analyticsDisabled} />
         <CookieConsent lang={lang} />
     </body>
 </html>

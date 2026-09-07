@@ -1,0 +1,31 @@
+---
+import SpeedInsights from '@vercel/speed-insights/astro';
+
+interface Props {
+  disabled?: boolean;
+}
+
+const { disabled = false } = Astro.props;
+---
+
+{!disabled && (
+  <Fragment>
+    <!-- Speed Insights ya reporta el PATRÓN de ruta ("/q/[token]"), no el
+         pathname crudo, así que el token portador nunca sale. Este hook global
+         es defensa en profundidad: borra query y hash antes de enviar. El
+         componente Astro de Vercel lo lee al montar su custom element. -->
+    <script is:inline>
+      window.speedInsightsBeforeSend = function (event) {
+        try {
+          const url = new URL(event.url, window.location.origin);
+          url.search = '';
+          url.hash = '';
+          return { ...event, url: url.toString() };
+        } catch (_) {
+          return event;
+        }
+      };
+    </script>
+    <SpeedInsights />
+  </Fragment>
+)}
