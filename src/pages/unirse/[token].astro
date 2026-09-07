@@ -91,6 +91,14 @@ const valido = invite && invite.estado === 'invitado' && !invite.expirado;
     </main>
 </Layout>
 
+<script is:inline define:vars={{ inviteRole: invite?.rol ?? '', inviteValid: valido }}>
+    // Alguien abrió una invitación. window.cordTrack ya respeta consentimiento y
+    // exclusiones (no captura sin opt-in ni en localhost).
+    if (typeof window.cordTrack === 'function') {
+        window.cordTrack('invite_viewed', { role: inviteRole || undefined, valid: !!inviteValid });
+    }
+</script>
+
 <script is:inline>
     document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById('joinBtn');
@@ -102,6 +110,10 @@ const valido = invite && invite.estado === 'invitado' && !invite.expirado;
             try {
                 const res = await fetch('/api/equipo/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: btn.dataset.token }) });
                 const d = await res.json();
+                if (res.status === 428 && d.redirect) {
+                    window.location.href = `${d.redirect}?redirect_url=${encodeURIComponent(window.location.pathname)}`;
+                    return;
+                }
                 if (!res.ok) throw new Error(d.error || btn.dataset.i18nError || 'No se pudo unir');
                 window.location.href = '/app';
             } catch (e) { msg.textContent = e.message; msg.style.color = '#ef4444'; btn.disabled = false; }

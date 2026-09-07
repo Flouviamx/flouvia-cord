@@ -1,0 +1,169 @@
+---
+// Bloque ÚNICO de PostHog para toda la superficie web de Cord. Antes vivía
+// duplicado y DIVERGENTE en Layout.astro (landing/link público) y
+// AppLayout.astro (app): uno usaba `window.__cordFlags`, el otro un `const
+// phEventContext`, y era cuestión de tiempo que un arreglo se hiciera sólo en
+// uno. Aquí hay un solo contrato:
+//
+//   · localhost / 127.0.0.1 / ::1 → captura APAGADA del todo (el token local
+//     apunta al mismo proyecto y ningún filtro distingue `npm run dev`);
+//   · el equipo interno de Cord NO se apaga: se ETIQUETA con is_internal +
+//     $internal_or_test_user (persona y grupo `company`), y PostHog lo esconde
+//     con "filter test accounts";
+//   · `window.__cordFlags` es el contexto de captura — páginas con org propia
+//     (p. ej. /q/[token]) pueden pisarlo ANTES de capturar;
+//   · el before_send raspa $current_url/$referrer/$pathname/$set con
+//     cordScrubUrl (gemelo de redactAnalyticsUrl, paridad en
+//     test/privacy-safe-analytics.test.ts);
+//   · identify()+register() sólo con userId (app); group('company') con orgId.
+//
+// <CookieConsent> es el único que llama opt_in/opt_out_capturing().
+
+import { ANALYTICS_PRIVATE_ROUTE_RULES } from '../lib/privacy-safe-analytics';
+
+interface Props {
+  /** Interruptor de la superficie (Layout lo pasa desde `analyticsDisabled`). */
+  disabled?: boolean;
+  /** Org para el grupo `company`. Landing pública: vacío. */
+  orgId?: string;
+  isSandbox?: boolean;
+  isDemo?: boolean;
+  /** Interno resuelto en servidor (app). La landing lo deja en false y cae al
+   *  marcador del navegador. */
+  isInternal?: boolean;
+  /** Persistir la cookie `cord_analytics_internal` cuando isInternal (app). */
+  writeInternalMarker?: boolean;
+  /** Sólo la app: dispara identify() + register(). */
+  userId?: string;
+  orgName?: string;
+  plan?: string;
+  role?: string;
+  orgCreatedAt?: string | null;
+}
+
+const {
+  disabled = false,
+  orgId = '',
+  isSandbox = false,
+  isDemo = false,
+  isInternal = false,
+  writeInternalMarker = false,
+  userId = '',
+  orgName = '',
+  plan = '',
+  role = '',
+  orgCreatedAt = null,
+} = Astro.props;
+
+// Un `<script is:inline>` no puede importar módulos: las reglas de raspado
+// viajan por define:vars, igual que en PrivacySafeAnalytics.astro.
+const analyticsRouteRules = ANALYTICS_PRIVATE_ROUTE_RULES;
+---
+
+<script is:inline define:vars={{
+  phToken: import.meta.env.PUBLIC_POSTHOG_KEY || process.env.PUBLIC_POSTHOG_KEY || '',
+  phHost: import.meta.env.PUBLIC_POSTHOG_HOST || process.env.PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+  phDisabled: disabled,
+  phOrgId: orgId,
+  phIsSandbox: isSandbox,
+  phIsDemo: isDemo,
+  phIsInternalServer: isInternal,
+  phWriteMarker: writeInternalMarker,
+  phUserId: userId,
+  phOrgName: orgName,
+  phPlan: plan,
+  phRole: role,
+  phOrgCreatedAt: orgCreatedAt,
+  analyticsRouteRules,
+}}>
+  // Una visita autenticada de Ops marca este navegador para que tampoco genere
+  // sesiones anónimas etiquetables al volver a la landing sin sesión. No se usa
+  // IP: cambia con VPN/red móvil y puede agrupar a personas distintas.
+  if (phWriteMarker && phIsInternalServer) {
+    try {
+      localStorage.setItem('cord_analytics_internal', '1');
+      const sharedDomain = location.hostname.endsWith('cordhq.app') ? '; Domain=.cordhq.app' : '';
+      const secure = location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `cord_analytics_internal=1; Path=/; Max-Age=31536000; SameSite=Lax${sharedDomain}${secure}`;
+    } catch (e) {}
+  }
+  let phBrowserInternal = false;
+  try {
+    phBrowserInternal = localStorage.getItem('cord_analytics_internal') === '1'
+      || document.cookie.split('; ').some((part) => part === 'cord_analytics_internal=1');
+  } catch (e) {}
+  const phInternal = phIsInternalServer || phBrowserInternal;
+  const phCaptureDisabled = phDisabled || ['localhost', '127.0.0.1', '::1'].includes(location.hostname);
+  window.__cordFlags = window.__cordFlags || { is_sandbox: phIsSandbox, is_demo: phIsDemo, is_internal: phInternal, analytics_version: 2 };
+
+  // Gemelo inline de redactAnalyticsUrl() (src/lib/privacy-safe-analytics.ts):
+  // quita tokens portadores y UUIDs de la URL ANTES de enviarla a PostHog.
+  function cordScrubUrl(raw) {
+    try {
+      const u = new URL(raw, location.origin);
+      const rule = (analyticsRouteRules || []).find((r) => u.pathname.startsWith(r.prefix));
+      u.pathname = rule ? rule.replacement : u.pathname
+        .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?=\/|$)/gi, '/[id]')
+        .replace(/\/[A-Za-z0-9_-]{32,}(?=\/|$)/g, '/[token]');
+      u.search = '';
+      u.hash = '';
+      return u.toString();
+    } catch (e) { return raw; }
+  }
+  function cordScrubProps(p) {
+    if (!p || typeof p !== 'object') return p;
+    for (const k of ['$current_url', '$referrer', '$initial_current_url', '$initial_referrer']) {
+      if (typeof p[k] === 'string' && p[k].indexOf('http') === 0) p[k] = cordScrubUrl(p[k]);
+    }
+    if (typeof p.$pathname === 'string') { try { p.$pathname = new URL(cordScrubUrl('https://x' + (p.$pathname[0] === '/' ? '' : '/') + p.$pathname)).pathname; } catch (e) {} }
+    for (const bag of ['$set', '$set_once']) if (p[bag]) cordScrubProps(p[bag]);
+    return p;
+  }
+
+  window.cordTrack = function (event, props) {
+    if (phCaptureDisabled || typeof posthog === 'undefined') return;
+    posthog.capture(event, Object.assign({}, window.__cordFlags, props || {}));
+  };
+
+  if (phToken && !phCaptureDisabled) {
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init(phToken, {
+      api_host: phHost,
+      person_profiles: 'identified_only',
+      opt_out_capturing_by_default: true,
+      before_send: (event) => {
+        if (!event) return null;
+        event.properties = cordScrubProps(Object.assign({}, window.__cordFlags, event.properties || {}));
+        return event;
+      },
+      loaded: (posthog) => {
+        if (phInternal && posthog.setPersonProperties) posthog.setPersonProperties({ $internal_or_test_user: true });
+        if (phUserId) {
+          posthog.identify(phUserId, {
+            company_name: phOrgName,
+            plan: phPlan,
+            role: phRole,
+            is_sandbox: phIsSandbox,
+            is_demo: phIsDemo,
+            is_internal: phInternal,
+            analytics_version: 2,
+            ...(phInternal ? { $internal_or_test_user: true } : {}),
+          });
+          posthog.register({ platform: 'web' });
+        }
+        if (phOrgId) {
+          posthog.group('company', phOrgId, {
+            ...(phOrgName ? { name: phOrgName } : {}),
+            ...(phPlan ? { plan: phPlan } : {}),
+            ...(phOrgCreatedAt ? { created_at: phOrgCreatedAt } : {}),
+            is_sandbox: phIsSandbox,
+            is_demo: phIsDemo,
+            is_internal: phInternal,
+            analytics_version: 2,
+            ...(phInternal ? { $internal_or_test_user: true } : {}),
+          });
+        }
+      },
+    });
+  }
+</script>

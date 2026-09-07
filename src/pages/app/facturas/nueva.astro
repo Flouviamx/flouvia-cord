@@ -954,6 +954,9 @@ const BOOT = {
                 });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || T.errorGenerico);
+                (window as any).cordTrack?.('ai_draft_used', {
+                    has_file: !!aiFile, has_text: !!texto, item_count: d.items?.length || 0, surface: 'invoice',
+                });
                 lines.length = 0;
                 for (const it of d.items || []) {
                     lines.push({

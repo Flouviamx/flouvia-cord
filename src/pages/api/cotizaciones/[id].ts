@@ -416,7 +416,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             ? 'quote_approved'
             : body.action === 'paid'
                 ? 'quote_marked_paid'
-                : null;
+                : body.action === 'reject'
+                    ? 'quote_rejected'
+                    : null;
     if (analyticsEvent) {
         const [metricRows] = await withOrgTx(orgId, sql`
             select c.total, c.base_currency, c.version,

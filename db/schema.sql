@@ -2112,6 +2112,13 @@ alter table orgs  add column if not exists casos_uso     jsonb not null default 
 alter table orgs  add column if not exists onboarded_at  timestamptz;
 alter table users add column if not exists puesto        text;        -- dueno|ventas|finanzas|operaciones|otro
 
+-- Marcador de "ya emitido" para el evento de analítica `setup_step_completed`.
+-- getSetupProgress() (src/lib/queries.ts) es una LECTURA que AppLayout invoca en
+-- CADA página mientras el setup no está completo; sin este marcador, emitir el
+-- evento dispararía el evento en cada navegación. Guarda los task_id de la guía
+-- de configuración cuyo paso ya se reportó a PostHog.
+alter table orgs  add column if not exists setup_steps_emitted text[] not null default '{}'::text[];
+
 -- ── Cord Ops preparado para 10k+ usuarios (ago 2026) ───────────────────────
 -- Las vistas internas paginan a 50 filas y agregan únicamente los ids de esa
 -- página. Estos índices sostienen búsqueda, orden cronológico y ventanas de

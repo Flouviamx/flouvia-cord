@@ -18,6 +18,8 @@ import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { SUPPORTED_COUNTRIES, getCountryProfile } from '../../../lib/countries';
 import { defaultCountryTaxPct } from '../../../lib/impuestos';
 import { seedTaxCatalog } from '../../../lib/impuestos-db';
+import { trackServer } from '../../../lib/posthog-server';
+import { after } from '../../../lib/after';
 
 const PUESTOS = ['dueno', 'ventas', 'finanzas', 'operaciones', 'otro'] as const;
 const INDUSTRIAS = ['distribucion', 'manufactura', 'construccion', 'servicios', 'tecnologia', 'comercio', 'otro'] as const;
@@ -50,7 +52,9 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Solo el dueño completa el wizard — mismo criterio que el gate de
     // middleware.ts (needsOnboarding solo se evalúa para owner_id === userId).
-    const [[org]] = await withOrgTx(orgId, sql`select owner_id from orgs where id = ${orgId}`);
+    const [[org]] = await withOrgTx(orgId, sql`
+        select owner_id, (sandbox_of is not null) as is_sandbox, is_demo
+          from orgs where id = ${orgId}`);
     if (!org || org.owner_id !== userId) {
         return json({ error: 'No autorizado' }, 403);
     }
@@ -84,6 +88,21 @@ export const POST: APIRoute = async ({ request }) => {
         detalle: `Onboarding completado: ${industria} · ${tamano} · ${countryCode}`,
         ip: reqIp(request),
     });
+
+    // Server-side y con la firmografía que sólo existe aquí. Sustituye al
+    // cordTrack('onboarding_completed') del cliente: el servidor es estrictamente
+    // más fiable y el catálogo no debe tener dos nombres para el mismo hecho.
+    // event_id = orgId ⇒ una sola vez por organización.
+    after(trackServer('onboarding_completed', orgId, {
+        event_id: orgId,
+        industria,
+        tamano_equipo: tamano,
+        casos_uso: casosUso,
+        puesto,
+        country_code: countryCode,
+        moneda: countryProfile.currency,
+        idioma: appLocale,
+    }, !!org.is_sandbox, !!org.is_demo));
 
     return json({ ok: true });
 };

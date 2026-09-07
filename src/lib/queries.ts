@@ -3763,7 +3763,17 @@ function buildPricingSuggestion(rows: any[], precioLista: number): PricingSugges
 export async function getSetupProgress() {
     const orgId = await getActiveOrgId();
     const [[o]] = await withOrgTx(orgId, sql`select logo_url, email_contacto, telefono, rfc, color_marca,
-        pdf_mensaje, pdf_condiciones, portal_bienvenida, stripe_charges_enabled from orgs where id = ${orgId}`);
+        pdf_mensaje, pdf_condiciones, portal_bienvenida, stripe_charges_enabled, created_at,
+        (sandbox_of is not null) as is_sandbox, is_demo
+        from orgs where id = ${orgId}`);
+    // Columna nueva: si el deploy corre antes de la migración, no debe tumbar el
+    // render de todas las páginas. Sin ella, la analítica de setup no se emite
+    // hasta migrar (mismo criterio que otros consumidores pre-migración).
+    let emittedSteps: string[] | null = null;
+    try {
+        const [[row]] = await withOrgTx(orgId, sql`select setup_steps_emitted from orgs where id = ${orgId}`);
+        emittedSteps = Array.isArray(row?.setup_steps_emitted) ? row.setup_steps_emitted as string[] : [];
+    } catch { /* columna aún no migrada → analítica de setup en pausa hasta migrar */ }
     // Señales de avance en un solo batch (mismas tablas multi-tenant → seguras bajo RLS).
     const [[{ np }], [{ nc }], [{ nq }], [{ nsent }], [{ ncobro }], [{ nmem }]] = await withOrgTx(orgId,
         sql`select count(*)::int as np from productos where org_id = ${orgId}`,
@@ -3812,6 +3822,37 @@ export async function getSetupProgress() {
     });
 
     const doneN = tasks.filter((t) => t.done).length;
+
+    // Analítica `setup_step_completed`: sólo los pasos que pasaron a completo y
+    // que NO estaban ya en el marcador. La escritura del marcador y la emisión
+    // van en `after()` para no añadir latencia al render de cada página; el
+    // `event_id = <orgId>:<task_id>` deduplica en PostHog si dos cargas
+    // concurrentes detectan el mismo paso antes de que ninguna escriba.
+    const emitted = new Set<string>(emittedSteps ?? []);
+    const newlyDone = emittedSteps === null ? [] : tasks.filter((t) => t.done && !emitted.has(t.id));
+    if (newlyDone.length) {
+        const daysSinceSignup = o?.created_at
+            ? Math.max(0, Math.round((Date.now() - new Date(o.created_at as string).getTime()) / 86400000))
+            : undefined;
+        after((async () => {
+            await withOrgTx(orgId, sql`update orgs set setup_steps_emitted = (
+                select coalesce(array_agg(distinct v), '{}') from unnest(
+                    setup_steps_emitted || ${newlyDone.map((t) => t.id)}::text[]
+                ) v
+            ) where id = ${orgId}`);
+            for (const t of newlyDone) {
+                await trackServer('setup_step_completed', orgId, {
+                    event_id: `${orgId}:${t.id}`,
+                    group: t.group,
+                    task_id: t.id,
+                    done_count: doneN,
+                    total: tasks.length,
+                    days_since_signup: daysSinceSignup,
+                }, !!o?.is_sandbox, !!o?.is_demo);
+            }
+        })());
+    }
+
     return { groups, tasks, doneN, total: tasks.length, pct: Math.round((doneN / tasks.length) * 100), complete: doneN === tasks.length };
 }
 

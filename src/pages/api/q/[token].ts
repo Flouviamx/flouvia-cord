@@ -244,6 +244,16 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
             values (${orgId}, ${c.id}, 'rejected', ${comentario ? `El cliente rechazó: "${comentario}"` : 'El cliente rechazó la cotización desde el link'})`);
         after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.rejected'));
         after(notifyQuoteEvent(c.org_id as string, c.id as string, 'quote_rejected'));
+        const [rejMetric] = await withOrgTx(orgId, sql`
+            select total, base_currency from cotizaciones where id = ${c.id} and org_id = ${orgId}`);
+        after(trackServer('quote_rejected', orgId, {
+            event_id: c.id,
+            quote_id: c.id,
+            total: Number(rejMetric[0]?.total ?? 0),
+            currency: (rejMetric[0]?.base_currency as string) || 'MXN',
+            source: 'external',
+            has_comment: !!comentario,
+        }, !!c.is_sandbox, !!c.is_demo));
         return json({ ok: true, status: 'rejected' });
     }
 

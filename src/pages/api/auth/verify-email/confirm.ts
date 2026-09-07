@@ -9,7 +9,7 @@ import { confirmEmailVerification, createSession, setSessionCookies } from '../.
 import { emailVerifyConfirmSchema, parseJsonBody } from '../../../../lib/validation';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
-import { posthogServer } from '../../../../lib/posthog-server';
+import { trackUser } from '../../../../lib/posthog-server';
 import { log } from '../../../../lib/log';
 
 export const POST: APIRoute = async ({ request, cookies }) => {
@@ -34,16 +34,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
         // El token de verificación es de un solo uso (se borra en confirmEmailVerification),
         // así que este endpoint dispara exactamente una vez por signup real de email.
-        // Vercel puede congelar la invocación apenas se manda la respuesta — flush()
-        // antes de responder para no perder el evento (mismo patrón de posthog-server.ts).
-        if (posthogServer) {
-            posthogServer.capture({
-                distinctId: result.userId,
-                event: 'sign_up_completed',
-                properties: { sign_up_method: 'email' },
-            });
-            await posthogServer.flush();
-        }
+        // trackUser hace flush() antes de retornar (Vercel puede congelar la
+        // invocación apenas se manda la respuesta).
+        await trackUser('sign_up_completed', result.userId, { sign_up_method: 'email' }, { email: result.email });
 
         return new Response(JSON.stringify({ success: true, email: result.email }), { status: 200 });
     } catch (error) {

@@ -24,6 +24,8 @@ import { computeFee, isFeeScheduleActive } from '../../../../lib/fees';
 import { payerError } from '../../../../lib/pay-errors';
 import { log } from '../../../../lib/log';
 import { limitPublicPayment } from '../../../../lib/connect-security';
+import { after } from '../../../../lib/after';
+import { trackServer } from '../../../../lib/posthog-server';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -40,7 +42,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         select d.id, d.org_id, d.invoice_number, d.lifecycle, d.currency,
                d.total, d.amount_remaining, d.stripe_payment_intent_id,
                d.provider_data,
-               o.sandbox_of, o.stripe_account_id, o.stripe_charges_enabled,
+               o.sandbox_of, o.is_demo, o.stripe_account_id, o.stripe_charges_enabled,
                o.acepta_tarjeta, o.nombre as org_nombre, o.moneda,
                o.fee_enabled, o.fee_terms_version
           from documentos_fiscales d
@@ -193,6 +195,20 @@ export const POST: APIRoute = async ({ params, request }) => {
             update documentos_fiscales
                set stripe_payment_intent_id = ${data.id}, updated_at = now()
              where id = ${d.id} and org_id = ${orgId}`);
+
+        // Checkout NUEVO de una factura desde su hosted page — el gemelo del
+        // `checkout_started` que ya emite /api/q/[token]/payment-intent. Las
+        // banderas salen de la fila ya cargada: sin query extra.
+        after(trackServer('checkout_started', orgId, {
+            event_id: String(data.id),
+            checkout_id: String(data.id),
+            invoice_id: d.id as string,
+            amount,
+            currency,
+            payment_method: 'tarjeta',
+            checkout_version: 2,
+            source: 'public_link',
+        }, d.sandbox_of != null, !!d.is_demo));
 
         return json({
             clientSecret: data.client_secret, publishableKey: pubKey,

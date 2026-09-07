@@ -8,6 +8,18 @@ import { log } from './log';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const orgCache = new Map<string, { internal: boolean; expiresAt: number }>();
 
+const ALLOWED_EMAILS = new Set<string>(OPS_ALLOWED_EMAILS.map((e) => e.toLowerCase()));
+
+/**
+ * Variante SÍNCRONA por correo, sin consulta. La usan los eventos de registro
+ * (`sign_up_completed`) que se emiten en el callback de OAuth/SAML, cuando la
+ * organización todavía no existe y `isInternalAnalyticsOrg` no tiene a qué
+ * consultar. Un correo del equipo interno debe quedar igual de etiquetado.
+ */
+export function isInternalAnalyticsEmail(email: string | null | undefined): boolean {
+    return !!email && ALLOWED_EMAILS.has(email.trim().toLowerCase());
+}
+
 /**
  * Una org es interna cuando su dueño o un miembro activo pertenece a la
  * allowlist de Ops. Para sandboxes se evalúa la org padre, que es la identidad

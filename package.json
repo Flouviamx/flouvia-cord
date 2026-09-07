@@ -33,10 +33,11 @@
     "security:rls": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/rls-audit.mjs",
     "security:tenancy": "node scripts/tenancy-lint.mjs",
     "security:css": "node scripts/css-build-check.mjs",
-    "test:payments": "npm run test && npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes && npm run security:billing && npm run security:currency && npm run security:tax && npm run security:fiscal && npm run security:verifactu && npm run security:payments && npm run security:tenancy",
+    "test:payments": "npm run test && npm run security:csrf && npm run security:stripe-signature && npm run security:crypto && npm run security:fees && npm run security:whitelabel && npm run security:disputes && npm run security:billing && npm run security:currency && npm run security:tax && npm run security:fiscal && npm run security:verifactu && npm run security:payments && npm run security:tenancy && npm run security:analytics",
     "security:tax": "node scripts/tax-check.mjs",
     "security:verifactu": "node --experimental-strip-types scripts/verifactu-check.mjs",
-    "security:payments": "node scripts/payments-contract-check.mjs"
+    "security:payments": "node scripts/payments-contract-check.mjs",
+    "security:analytics": "node --experimental-strip-types scripts/analytics-contract-check.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

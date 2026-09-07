@@ -25,6 +25,7 @@ import { reqContext } from '../../../lib/context';
 import { dispatchQuoteEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
 import { siteOrigin } from '../../../lib/email';
+import { trackServer } from '../../../lib/posthog-server';
 
 
 export const GET: APIRoute = async ({ request }) => {
@@ -48,7 +49,7 @@ export const GET: APIRoute = async ({ request }) => {
            and c.vigencia < current_date
            and o.sandbox_of is null
            and o.owner_id::text <> '00000000-0000-0000-0000-000000000000'
-        returning c.id, c.org_id, c.folio`);
+        returning c.id, c.org_id, c.folio, c.total, c.base_currency, c.sent_at`);
 
     for (const r of rows) {
         const orgId = r.org_id as string;
@@ -60,6 +61,17 @@ export const GET: APIRoute = async ({ request }) => {
         // tiene presión de latencia de respuesta al usuario — mismo patrón
         // que recordatorios.ts/cobranza.ts (await por fila en un for).
         await dispatchQuoteEvent(orgId, id, 'quote.expired');
+        // La query ya excluyó orgs sandbox y la demo, así que ambas banderas
+        // son false por construcción.
+        await trackServer('quote_expired', orgId, {
+            event_id: id,
+            quote_id: id,
+            total: Number(r.total ?? 0),
+            currency: (r.base_currency as string) || 'MXN',
+            days_since_sent: r.sent_at
+                ? Math.max(0, Math.round((Date.now() - new Date(r.sent_at as string).getTime()) / 86400000))
+                : undefined,
+        }, false, false);
     }
 
     // ── Aviso "por vencer" (evento quote_expiring de Ajustes › Notificaciones) ──

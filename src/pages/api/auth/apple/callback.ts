@@ -16,7 +16,7 @@ import { createSession, setSessionCookies, createTwoFactorChallenge } from '../.
 import { exchangeAppleCode, verifyAppleIdToken, AppleTokenVerificationError } from '../../../../lib/auth-apple';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
-import { posthogServer } from '../../../../lib/posthog-server';
+import { trackUser } from '../../../../lib/posthog-server';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 import { ssoRequirementFor } from '../../../../lib/saml';
 import { log } from '../../../../lib/log';
@@ -116,13 +116,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
         }
 
         // Solo cuenta nueva de verdad — nunca en un login/link de una cuenta ya existente.
-        if (isNewUser && posthogServer) {
-            posthogServer.capture({
-                distinctId: userId!,
-                event: 'sign_up_completed',
-                properties: { sign_up_method: 'apple' },
-            });
-            await posthogServer.flush();
+        if (isNewUser) {
+            await trackUser('sign_up_completed', userId!, { sign_up_method: 'apple' }, { email });
         }
 
         // Exigir SSO (org-level): mismo criterio que google/callback.ts — un

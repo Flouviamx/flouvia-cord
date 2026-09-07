@@ -7,7 +7,7 @@ import { sql } from '../../../../lib/db';
 import { createSession, setSessionCookies, createTwoFactorChallenge } from '../../../../lib/auth';
 import { rateLimit, tooMany } from '../../../../lib/ratelimit';
 import { trustedIp } from '../../../../lib/ip';
-import { posthogServer } from '../../../../lib/posthog-server';
+import { trackUser } from '../../../../lib/posthog-server';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 import { ssoRequirementFor } from '../../../../lib/saml';
 import { completeOAuthLink, consumeOAuthLink, linkRedirect } from '../../../../lib/oauth-link';
@@ -148,13 +148,8 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
     }
 
     // Solo cuenta nueva de verdad — nunca en un login/link de una cuenta ya existente.
-    if (isNewUser && posthogServer) {
-      posthogServer.capture({
-        distinctId: userId!,
-        event: 'sign_up_completed',
-        properties: { sign_up_method: 'google' },
-      });
-      await posthogServer.flush();
+    if (isNewUser) {
+      await trackUser('sign_up_completed', userId!, { sign_up_method: 'google' }, { email });
     }
 
     // Exigir SSO (org-level, ver src/lib/saml.ts): sin este chequeo, cualquier

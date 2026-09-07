@@ -703,7 +703,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            (window as any).cordTrack?.('onboarding_completed', {});
+            // `onboarding_completed` lo emite el servidor (POST /api/onboarding/
+            // complete) con la firmografía completa; aquí no se duplica.
 
             const successSlide = slides[slides.length - 1];
             const fromEl = slides[current];

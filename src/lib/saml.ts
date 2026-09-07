@@ -25,7 +25,7 @@ import { validateWebhookUrl } from './ssrf';
 import { sha256Hex } from './auth';
 import { checkEntitlement } from './org-entitlements';
 import { cancelUsage, flushUsageReservation, reserveUsage } from './billing';
-import { trackServer, posthogServer } from './posthog-server';
+import { trackServer, trackUser } from './posthog-server';
 import { PRESETS, ALL_PERM_KEYS, type PermMap } from './permissions';
 
 export class SamlValidationError extends Error {}
@@ -902,9 +902,10 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
   const needs2fa = !!totpRow?.totp_enabled;
 
   // Solo cuenta nueva de verdad — nunca en un login/link de una cuenta ya existente.
-  if (isNewUser && posthogServer) {
-    posthogServer.capture({ distinctId: userId, event: 'sign_up_completed', properties: { sign_up_method: 'saml' } });
-    await posthogServer.flush();
+  if (isNewUser) {
+    await trackUser('sign_up_completed', userId, { sign_up_method: 'saml' }, {
+      orgId: conn.orgId, isSandbox: !!orgRow.is_sandbox, isDemo: !!orgRow.is_demo,
+    });
   }
   await trackServer('sso_login', conn.orgId, { provider: conn.proveedor }, !!orgRow.is_sandbox, !!orgRow.is_demo);
 

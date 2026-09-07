@@ -287,6 +287,13 @@ async function handleStripeEvent(event: any): Promise<void> {
     }
 }
 
+/** Banderas sandbox/demo de una org — para no meter datos ficticios en dashboards. */
+async function orgAnalyticsFlags(orgId: string): Promise<{ isSandbox: boolean; isDemo: boolean }> {
+    const [[row]] = await withOrgTx(orgId, sql`
+        select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
+    return { isSandbox: !!row?.is_sandbox, isDemo: !!row?.is_demo };
+}
+
 async function orgForConnectedAccount(account: string | undefined): Promise<string | null> {
     if (!account) return null;
     const [row] = await sql`select cord_resolve_org_for_connected_account(${account}) as id`;
@@ -354,6 +361,20 @@ async function settleInvoiceFromIntent(intent: any, account?: string): Promise<v
         await sendOpsAlert('Pago sin aplicar a factura',
             `Organización ${orgId}; documento ${targetId}; PI ${intent?.id}; ${result.error}`);
         return;
+    }
+    // Ingreso real de una factura PURA (pagada desde su hosted page). Solo el
+    // camino `metadata.documento_id`: el camino `cotizacion_id` es un pago del
+    // link de la cotización que markQuotePaid ya contó como payment_received —
+    // emitir aquí otra vez lo duplicaría.
+    if (docId) {
+        const pm = Array.isArray(intent?.payment_method_types) && intent.payment_method_types.includes('customer_balance')
+            ? 'spei' : 'tarjeta';
+        const flags = await orgAnalyticsFlags(orgId);
+        await trackPaymentReceived(
+            orgId, monto, currency, pm, false, undefined,
+            flags.isSandbox, flags.isDemo,
+            { payment_id: String(intent?.id || ''), invoice_id: targetId, payment_kind: 'invoice' },
+        );
     }
     if (result.justPaid) after(dispatchInvoiceEvent(orgId, targetId, 'invoice.paid'));
 }
@@ -459,6 +480,16 @@ async function recordPayoutStatus(payout: any, account: string | undefined, even
             entidad_id: String(payout.id),
             detalle: `${amount.toFixed(2)} ${currency}${failed ? `; ${String(payout?.failure_code || 'sin código')}` : ''}`,
         });
+        if (!failed) {
+            const flags = await orgAnalyticsFlags(orgId);
+            await trackServer('payout_paid', orgId, {
+                payout_id: String(payout.id),
+                amount,
+                currency,
+                arrival_date: arrivalDate ?? undefined,
+                method: payout?.method ?? undefined,
+            }, flags.isSandbox, flags.isDemo);
+        }
     }
 }
 
@@ -510,6 +541,18 @@ async function recordRefundEvent(refundOrCharge: any, account: string | undefine
         entidad: 'refund', entidad_id: refundId,
         detalle: `${fromMinorUnits(amount, currency)} ${currency}; ${status}`,
     });
+    // Reembolso EFECTIVO: monto negativo contra el revenue. Dedup por refund_id
+    // ($insert_id): `refund.updated` puede llegar varias veces.
+    if (status === 'succeeded') {
+        const flags = await orgAnalyticsFlags(orgId);
+        await trackServer('refund_issued', orgId, {
+            refund_id: refundId,
+            amount: fromMinorUnits(amount, currency),
+            currency,
+            cobro_id: cobro.id as string,
+            reason: (refundOrCharge?.reason as string) ?? undefined,
+        }, flags.isSandbox, flags.isDemo);
+    }
 }
 
 async function recordDisputeEvent(dispute: any, account: string | undefined, eventType: string): Promise<void> {
@@ -552,6 +595,13 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
     });
     if (eventType === 'charge.dispute.created') {
         const amountText = `${fromMinorUnits(amount, currency)} ${currency}`;
+        const dispFlags = await orgAnalyticsFlags(orgId);
+        await trackServer('dispute_created', orgId, {
+            dispute_id: disputeId,
+            amount: fromMinorUnits(amount, currency),
+            currency,
+            reason: (dispute?.reason as string) ?? undefined,
+        }, dispFlags.isSandbox, dispFlags.isDemo);
         after(sendOpsAlert('Contracargo nuevo', `${amountText}; organización ${orgId}; referencia ${disputeId}`));
         const [[owner]] = await withOrgTx(orgId, sql`
             select u.email, o.nombre from orgs o join users u on u.id = o.owner_id
