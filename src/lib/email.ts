@@ -10,17 +10,13 @@ import { getEntitlementContext } from './org-entitlements';
 import { planIncludes } from './entitlements';
 import { currencyDecimals, normalizeCurrency } from './currency';
 import { buildInvoicePdfAttachment } from './fiscal/invoice-attachment';
+import { publicDocumentUrl } from './public-links';
 
 const RESEND_KEY = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
-const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@flouvia.com>';
+const RESEND_FROM = import.meta.env.RESEND_FROM || process.env.RESEND_FROM || 'Cord <cotizaciones@cordhq.app>';
 
-// Origen público fijo para links dentro de correos disparados por CRON (sin un
-// request de navegador real detrás). `new URL(request.url).origin` en ese
-// contexto resuelve a la URL interna del deployment de Vercel (algo tipo
-// https://flouvia-cord-xxxx.vercel.app), NO a cordhq.app — el link salía roto/
-// feo en los correos de recordatorios y cobranza. Los endpoints disparados por
-// el navegador del vendedor (enviar cotización, etc.) SÍ siguen usando su
-// propio origin real, que ya resuelve bien.
+// Origen de la plataforma para auth y enlaces internos a /app.
+// Los documentos públicos usan publicDocumentUrl con la organización dueña.
 export function siteOrigin(): string {
     return (import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app').replace(/\/$/, '');
 }
@@ -113,9 +109,10 @@ export async function sendEmail(opts: { to: string; subject: string; html: strin
 /**
  * Notifica al cliente que tiene una cotización lista para revisar. Busca el
  * folio/total/token + correo del cliente + nombre/color de la org y arma el
- * correo. `origin` = base URL (https://cordhq.app) para el link público.
+ * correo. El tercer argumento se conserva por compatibilidad; el origen del
+ * documento se resuelve exclusivamente desde orgId.
  */
-export async function notifyQuoteSent(orgId: string, cotizacionId: string, origin: string): Promise<SendResult> {
+export async function notifyQuoteSent(orgId: string, cotizacionId: string, _origin?: string): Promise<SendResult> {
     const [rows] = await withOrgTx(orgId, sql`
         select c.folio, c.total, c.public_token, c.base_currency, cl.empresa, cl.email,
                o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
@@ -141,7 +138,7 @@ export async function notifyQuoteSent(orgId: string, cotizacionId: string, origi
         return s;
     };
 
-    const link = `${origin}/q/${r.public_token}`;
+    const link = await publicDocumentUrl(orgId, 'q', r.public_token);
     const color = /^#[0-9a-fA-F]{6}$/.test(r.color) ? r.color : '#0a192f';
     // Variables disponibles en intro/firma: {cliente} {folio} {total} {negocio}.
     // (Texto propio del vendedor, capturado en Ajustes › Correo — no se traduce.)
@@ -319,7 +316,7 @@ export async function notifyInvoiceIssued(orgId: string, documentoId: string): P
     const L = currentLocale();
     const currency = normalizeCurrency((r.currency as string) || (r.moneda as string));
     const saldo = Number(r.amount_remaining ?? r.total ?? 0);
-    const link = `${siteOrigin()}/i/${r.public_token}`;
+    const link = await publicDocumentUrl(orgId, 'i', r.public_token);
     const poweredLine = canRemoveBranding && r.portal_powered === false
         ? esc(r.org_nombre)
         : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
@@ -381,7 +378,7 @@ export async function notifyInvoiceReminder(orgId: string, documentoId: string, 
     const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
     const L = currentLocale();
     const saldo = Number(r.amount_remaining ?? r.total ?? 0);
-    const link = `${siteOrigin()}/i/${r.public_token}`;
+    const link = await publicDocumentUrl(orgId, 'i', r.public_token);
     const poweredLine = canRemoveBranding && r.portal_powered === false
         ? esc(r.org_nombre)
         : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;

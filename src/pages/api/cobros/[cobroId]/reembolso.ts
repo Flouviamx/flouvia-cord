@@ -19,6 +19,7 @@ const requestSchema = z.object({
     amountCents: z.number().int().positive(),
     reason: z.string().trim().max(240).optional(),
     manual: z.boolean().optional().default(false),
+    feeDisclosureAccepted: z.literal(true),
 }).strict();
 
 const hashNonce = (nonce: string) => createHash('sha256').update(nonce).digest('hex');
@@ -54,7 +55,14 @@ export const GET: APIRoute = async ({ params }) => {
           (org_id, cobro_id, nonce_hash, max_amount_cents, expires_at, created_by)
         values (${orgId}, ${cobroId}, ${hashNonce(nonce)}, ${maxAmountCents},
                 now() + interval '10 minutes', ${currentUserId()})`);
-    return json({ nonce, maxAmountCents, currency: refundCurrency, method: cobro.metodo_pago || cobro.payment_method || 'tarjeta', expiresIn: 600 });
+    return json({
+        nonce,
+        maxAmountCents,
+        currency: refundCurrency,
+        method: cobro.metodo_pago || cobro.payment_method || 'tarjeta',
+        applicationFeeRefunded: false,
+        expiresIn: 600,
+    });
 };
 
 export const POST: APIRoute = async ({ request, params }) => {
@@ -92,7 +100,7 @@ export const POST: APIRoute = async ({ request, params }) => {
     if (parsed.data.amountCents > available) return json({ error: 'El monto supera el saldo reembolsable' }, 409);
 
     const method = String(cobro.metodo_pago || cobro.payment_method || 'tarjeta');
-    const auditDetail = `${fromMinorUnits(parsed.data.amountCents, refundCurrency)} ${refundCurrency}${parsed.data.reason ? `; ${parsed.data.reason}` : ''}`;
+    const auditDetail = `${fromMinorUnits(parsed.data.amountCents, refundCurrency)} ${refundCurrency}${parsed.data.reason ? `; ${parsed.data.reason}` : ''}; ${method === 'spei' ? 'devolucion_manual=pendiente' : 'tarifa_plataforma_reembolsada=no'}`;
     if (method === 'spei') {
         if (!parsed.data.manual) {
             return json({ error: 'Los reembolsos SPEI requieren una transferencia manual y su registro posterior' }, 422);

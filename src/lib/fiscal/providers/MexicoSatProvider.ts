@@ -1,4 +1,5 @@
 import type { FiscalProvider, FiscalCancelRequest, FiscalCancelResponse, FiscalDocumentRequest, FiscalDocumentResponse } from '../index';
+import { mexicoItems } from './mexico-items';
 
 // Proveedor fiscal de México: timbra CFDI 4.0 vía Facturapi (facturapi.io).
 //
@@ -62,17 +63,17 @@ export class MexicoSatProvider implements FiscalProvider {
       ...(c.email ? { email: String(c.email) } : {}),
     };
 
-    const items = request.lines.map((it) => ({
-      quantity: it.quantity,
-      product: {
-        description: String(it.description || 'Concepto').slice(0, 1000),
-        // Claves SAT por defecto: 01010101 = "No existe en el catálogo"; H87 = Pieza.
-        product_key: String(it.productKey || '01010101'),
-        unit_key: String(it.unitKey || 'H87'),
-        price: it.unitPrice,
-        tax_included: false, // Cord maneja precios SIN IVA; Facturapi agrega el 16%.
-      },
-    }));
+    const isCreditNote = ['cfdi_egreso', 'credit_note'].includes(request.documentType || '');
+    if (isCreditNote && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(request.relatedFiscalId || '')) {
+      return { success: false, provider: 'facturapi', documentId: request.documentId,
+        error: 'La nota de crédito necesita el folio fiscal de la factura original.' };
+    }
+    let items;
+    try { items = mexicoItems(request); }
+    catch (error) {
+      return { success: false, provider: 'facturapi', documentId: request.documentId,
+        error: error instanceof Error ? error.message : 'El desglose fiscal no es válido.' };
+    }
 
     // Uso del CFDI: "público en general" (RFC genérico) EXIGE S01 (sin efectos
     // fiscales); con RFC real se usa el uso configurado o G03 por defecto.
@@ -94,13 +95,15 @@ export class MexicoSatProvider implements FiscalProvider {
     const rate = Number(request.totals.exchangeRate);
     const exchange = ledger === 'MXN' ? rate : Number.NaN;
     const body = {
+      type: isCreditNote ? 'E' : 'I',
+      ...(isCreditNote ? { related_documents: [{ relationship: '01', documents: [request.relatedFiscalId] }] } : {}),
       customer,
       items,
       currency,
       ...(currency !== 'MXN' && Number.isFinite(exchange) && exchange > 0
         ? { exchange }
         : {}),
-      use: cfdiUse,
+      use: isCreditNote && !generico ? 'G02' : cfdiUse,
       payment_form: request.cfdi?.paymentForm || '03', // 03 = Transferencia electrónica
       payment_method: request.cfdi?.paymentMethod || 'PUE',
       // Facturapi documenta esta llave como la protección oficial contra
@@ -185,36 +188,39 @@ export class MexicoSatProvider implements FiscalProvider {
    */
   async cancelDocument(documentId: string, request?: FiscalCancelRequest): Promise<FiscalCancelResponse> {
     const key = request?.providerApiKey || FACTURAPI_KEY;
-    // Sin llave no hubo timbrado real: el documento era simulado y anularlo es
-    // un hecho local. Se dice explícitamente en provider_data.
-    if (!key) return { success: true, rawProviderData: { simulado: true, motive: request?.reason || '02' } };
-    // Facturapi: DELETE /invoices/{id}?motive=02 (02 = comprobante con errores sin relación).
+    if (!key) return { success: false, status: 'unknown', error: 'Falta la credencial del emisor para consultar la cancelación.' };
     const motive = MexicoSatProvider.cancelMotive(request?.reason);
-    try {
-      const res = await fetch(`${FACTURAPI_BASE}/invoices/${documentId}?motive=${encodeURIComponent(motive)}`, {
-        method: 'DELETE',
-        headers: { Authorization: authHeader(key) },
-        signal: AbortSignal.timeout(25000),
+    const url = `${FACTURAPI_BASE}/invoices/${encodeURIComponent(documentId)}`;
+    const read = async (method: 'GET' | 'DELETE'): Promise<FiscalCancelResponse> => {
+      const res = await fetch(method === 'DELETE' ? `${url}?motive=${motive}` : url, {
+        method, headers: { Authorization: authHeader(key) }, signal: AbortSignal.timeout(25000),
       });
-      if (!res.ok) {
-        const detail = await res.text().catch(() => '');
-        return {
-          success: false,
-          error: `El SAT rechazó la cancelación (${res.status}).`,
-          rawProviderData: { cancel_status: res.status, cancel_detail: detail.slice(0, 500), motive },
-        };
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data || data.id !== documentId) {
+        return { success: false, status: 'unknown', error: 'No se pudo confirmar el estado de cancelación.',
+          rawProviderData: { http_status: res.status, motive, status: 'unknown' } };
       }
-      return { success: true, rawProviderData: { cancel_status: res.status, motive, livemode: !key.startsWith('sk_test_') } };
-    } catch (error: unknown) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'no se pudo contactar al proveedor fiscal',
-        rawProviderData: { motive, retry_safe: true },
-      };
+      const status: FiscalCancelResponse['status'] = data.status === 'canceled' && data.cancellation_status === 'accepted'
+        ? 'accepted'
+        : data.status === 'valid' && ['pending', 'verifying', 'rejected', 'expired', 'none'].includes(data.cancellation_status)
+          ? data.cancellation_status : 'unknown';
+      return { success: status !== 'unknown', status,
+        ...(status === 'unknown' ? { error: 'El estado fiscal aún no está confirmado.' } : {}),
+        rawProviderData: { status, invoice_status: data.status, cancellation_status: data.cancellation_status, motive, checked_at: new Date().toISOString() } };
+    };
+    try {
+      // Consultar primero también recupera un DELETE aceptado cuya respuesta se perdió.
+      const current = await read('GET');
+      if (!current.success || request?.checkOnly || ['accepted', 'pending', 'verifying'].includes(current.status || '')) return current;
+      if (motive === '01') return { success: false, status: current.status,
+        error: 'El motivo 01 requiere una factura de sustitución; usa el flujo de sustitución fiscal.' };
+      return await read('DELETE');
+    } catch {
+      return { success: false, status: 'unknown', error: 'No se pudo confirmar la cancelación. Consulta su estado antes de reintentar.',
+        rawProviderData: { status: 'unknown', motive, retry_safe: true } };
     }
   }
 
-  /** Motivos válidos de cancelación del SAT. Cualquier otro valor es 02. */
   private static cancelMotive(reason?: string): string {
     return ['01', '02', '03', '04'].includes(String(reason || '')) ? String(reason) : '02';
   }

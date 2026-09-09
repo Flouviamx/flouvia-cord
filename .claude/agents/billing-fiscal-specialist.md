@@ -20,8 +20,8 @@ price_id es silencioso hasta que factura mal a un cliente real.
 
 ## Contexto obligatorio antes de tocar nada
 
-1. Lee `docs/negocio-billing.md` completo — modelo de planes + Stripe Billing.
-2. Lee en `docs/historial.md` las entradas sobre CFDI/Facturapi/FiscalFactory,
+1. Lee `docs/estado/negocio-billing.md` (suscripción de Cord) y `docs/estado/cobros-facturacion.md` (cobros del negocio a sus clientes).
+2. Lee en `docs/historial/billing-cobros.md` las entradas sobre CFDI/Facturapi/FiscalFactory,
    y la entrada de "gating API/Webhooks → límites por plan" (búscalas por
    "FACTURAPI", "FiscalFactory", "MexicoSatProvider").
 3. Abre `src/lib/billing.ts` y `src/lib/fiscal/` directamente — son la fuente

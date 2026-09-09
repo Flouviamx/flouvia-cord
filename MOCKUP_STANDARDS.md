@@ -186,13 +186,13 @@ debajo (estilo `elevenlabs.io/creative`). Reglas específicas:
    con gancho de marketing (ver `showcase` en `producto.ts`) — el mockup debe PROBAR esa
    frase específica, no ser un dashboard genérico reciclado entre tabs.
 4. **El fondo gris de `.shw-stage` (`#f5f5f7`) puede llevar una aurora WebGL** detrás de los
-   mockups (`ShowcaseAuroraBg.jsx` — ver "Regla a futuro" en `docs/historial.md`, entrada
+   mockups (`ShowcaseAuroraBg.jsx` — ver "Regla a futuro" en `docs/historial/landing-marketing.md`, entrada
    `FeatureShowcase`). Si se toca, el shader debe seguir siendo TRANSPARENTE (alpha por
    blob, nunca un fondo opaco) para no tapar el gris — solo se agregan las auroras encima.
 5. **Auditar clases antes de entregar.** Si el archivo se construye con un agente en un solo
    pase (36 escenas es mucho volumen), es fácil que una clase usada en el markup nunca se
    defina en el `<style>` — pasó una vez (`.shwm-search`/`.shwm-drop-r`/`.shwm-landing` sin
-   estilos, ver `docs/historial.md`). Antes de dar por bueno el archivo, comparar clases
+   estilos, ver `docs/historial/landing-marketing.md`). Antes de dar por bueno el archivo, comparar clases
    usadas en el markup contra selectores definidos en `<style>`.
 
 ---

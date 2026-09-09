@@ -1,68 +1,73 @@
 ---
 title: "Payment methods"
-description: "Discover how Cord Payments works: dynamic SPEI, card, and manual transfer, and how the customer picks a method."
+description: "Card, SPEI, manual transfers and confirmation states."
+lastUpdated: "2026-09-08"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
 
 <header class="content-header">
   <h1 class="page-title">Payment methods</h1>
-  <p class="page-subtitle">Discover how Cord Payments works: dynamic SPEI, card, and manual transfer.</p>
+  <p class="page-subtitle">Card, SPEI, manual transfers and confirmation states.</p>
 </header>
 
-## Payment architecture
-
-Cord Payments is designed so that charging isn't a point of friction at the end of the project. Once you activate Cord Payments (see [Connect your account](/en/docs/pagos/onboarding)), your business can accept three methods — card, dynamic SPEI, and manual transfer — each with its own fee (see [Fees and advantages](/en/docs/pagos/condiciones)) and its own level of automation.
-
-On the public cotización link, the customer **picks the method explicitly before continuing** — one is never assigned to them by default without their knowledge. If your business only activated one method, that's the only one shown.
-
-### 1. Dynamic SPEI
-
-This is the method built for B2B in Mexico: it eliminates manual invoice reconciliation.
-
-**How it works:**
-Instead of giving every customer the same CLABE for your company, Cord Payments generates **a unique, temporary CLABE for each individual payment**.
-
-When the customer picks "SPEI Transfer":
-1. Cord Payments generates a virtual CLABE assigned exclusively to that specific payment, and shows it on a Cord-native instructions screen — without leaving the cotización link or redirecting to an external site.
-2. The customer transfers from their banking app to that CLABE.
-3. As soon as the funds enter the interbank network, Cord Payments identifies them automatically (because the CLABE was unique to that payment).
-4. The system marks the cotización as **Paid** in real time and sends you the confirmation.
-
 <Callout type="info">
-**Zero collisions:** unlike the traditional model where you get a "$15,000" deposit and have to investigate which client sent it, dynamic SPEI makes it impossible for two payments to be confused — every payment has its own CLABE.
+This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
 </Callout>
 
-Fee: 1% + $7.00 MXN + VAT, capped at $588.12 MXN per payment (see the full detail in [Fees and advantages](/en/docs/pagos/condiciones)).
+## Choose how to pay
 
-<Callout type="info">
-**SPEI is a Mexican rail and only charges in pesos.** If you quote in another currency,
-your client pays by card even with SPEI enabled — a CLABE can't receive dollars or
-euros. See [Treasury and FX Lock](/en/docs/pagos/tesoreria-fx).
-</Callout>
+The quote link offers methods enabled by the business. Card and automatic bank
+transfer require an enabled payment account. The public invoice page has its own
+card flow; do not assume it offers every quote payment method.
 
-### 2. Credit and debit card
+### Card
 
-The fastest, lowest-friction method. It shows up directly in the checkout embedded in the cotización (without ever taking the customer out of the document).
+The customer reviews the amount and completes the payment fields. Their bank may
+request additional verification. The payment is reflected when confirmation arrives;
+closing the payment screen or returning to the link is not proof of payment.
 
-**Key features:**
-- Supports Visa, Mastercard, and American Express.
-- Native interface with your brand's color and name — no third-party logos or references to any external processor.
-- **Near-instant authorization:** as soon as the customer confirms the payment, the cotización flips to Paid within seconds.
-- The only method that supports [recurring retainers](/en/docs/pagos/igualas) — a charge that gets set up once and repeats every month without the customer having to intervene again.
+### SPEI
 
-Fee: 4% + $3.00 MXN + VAT per transaction. The charge is made in the quote's currency;
-Cord's fee applies to charges in Mexican pesos.
+Automatic SPEI is available for MXN payments for eligible businesses in Mexico.
+Instructions show the CLABE, bank, reference and remaining amount. Use the current
+instructions for that payment, not a saved screenshot from another document.
 
-### 3. Manual bank transfer
+Each payment keeps a bank-customer reference to identify its funds. Reconciliation
+depends on confirmation; it is not guaranteed to be instant. If you already sent
+a transfer, check its status before trying a card. Do not assume a previous CLABE
+is unusable merely because you changed screens or methods. Contact the seller if
+you sent money to previous instructions.
 
-If you'd rather not use Cord Payments' automated collection — or the cotización is a large amount where you'd prefer to avoid any fee — you can leave manual transfer as the only active method.
+### Manual bank transfer
 
-**The manual flow:**
-1. The customer sees your traditional banking details (Bank, CLABE, Beneficiary) configured in Settings.
-2. The customer transfers outside of Cord.
-3. You, the seller, go into the cotización and press "Mark as paid" manually once you've verified the money landed in your account.
+When a business offers its own bank details, the seller verifies receipt and
+records the payment in Cord. An uploaded receipt does not replace that verification.
+Refunding a manual transfer is handled with the business.
 
-Fee: $0.00 — it doesn't go through Cord Payments, so it doesn't generate any fee, but it also doesn't have automatic reconciliation or chargeback protection.
+## Switching between SPEI and card
 
-<Callout type="info">
-You can activate all three methods at once, or just the ones that make sense for you, from **Settings › Payments**. The customer only sees the options you have turned on.
-</Callout>
+The protection improvement for switching methods is **under validation before
+publication**. It verifies the previous attempt, blocks replacement when money
+has been received or is in progress, and preserves the attempt across concurrent
+retries. It aims to reduce duplicate charges caused by switching or lost responses.
+
+While a payment is unresolved, do not repeat the transfer or open another method
+just to try it. Refresh the link or contact the business. The improvement does
+not include automatic refunds of late transfers or automatic recovery of every
+uncertain attempt.
+
+See [the scope of the changes](/en/docs/pagos/mejoras-confiabilidad) and
+[method-specific fees](/en/docs/pagos/condiciones). Sale currency is separate from
+[your Cord subscription currency](/en/docs/cuenta/suscripcion).
+
+## One payment flow: implementation prepared
+
+Integrations that still request the previous checkout will receive a link to
+Cord's current payment screen. They will use the same payment-attempt registry
+and payable balance instead of creating an independent hosted payment session.
+The API response retains its `url` field and accepted rates remain unchanged.
+
+Before activation, existing open or pending sessions are reviewed. They are not
+automatically canceled or refunded. The current audit found no sessions in the
+connected accounts checked; it must be repeated at release time. Deployment and
+integrated acceptance remain pending.

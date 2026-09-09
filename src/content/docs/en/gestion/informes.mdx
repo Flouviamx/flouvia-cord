@@ -1,0 +1,107 @@
+---
+title: "Reports and sales performance"
+description: "What each Cord report measures, which data follows the date range, what is a current snapshot, and how seller performance is attributed."
+lastUpdated: "2026-08-28"
+reviewedBy: "Cord Product and Analytics"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Analytics permission", "Collections permission for the receivables report"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Reports and sales performance</h1>
+  <p class="page-subtitle">Read metrics without confusing a historical cohort with today's operating position.</p>
+</header>
+
+**Reports** is Cord's single analytics surface. It contains seven views, while
+**Performance** compares results by the person who created or duplicated each quote.
+
+## The seven reports
+
+| Report | Main question | Time scope |
+|---|---|---|
+| Overview | Close rate, closed and lost value, velocity, and maturity. | Selected range |
+| Commercial diagnosis | Funnel, pipeline, stalled quotes, discount cost, and stage time. | Cohort plus current snapshot |
+| Finance | MRR, ARR, DSO, MRR at risk, weighted pipeline, and concentration. | Current snapshot |
+| Cash flow · 90 days | Receivables, probable pipeline, retainers, and near-term concentration. | Current projection |
+| Collections and receivables | Open, overdue, aging, promises, and payment behavior. | Current snapshot |
+| Clients | Value and conversion by client, cohorts, and inactive clients. | Range plus current snapshot |
+| Products | Quoted amount, volume, discount elasticity, and close rate. | Selected range |
+
+Finance, Cash flow, and Collections require Pro or above. Collections also requires
+the Collections permission; the others begin with Analytics permission.
+
+## Range-based reports
+
+Overview, Commercial diagnosis, Clients, and Products provide a date picker covering
+up to the last year. Cohort metrics assign a quote to the range by its creation date.
+A quote created yesterday may still be open and shouldn't be compared directly with a
+six-month-old cohort that had time to close.
+
+<Callout type="info">
+A low rate in a recent range may mean an **immature cohort**, not worse performance.
+Check the “still open” share first.
+</Callout>
+
+## Current-snapshot reports
+
+Finance, Cash flow, and Collections display **As of today** instead of an ineffective
+date selector. Mixed reports also mark current widgets as **today**; for example,
+Pipeline and stalled quotes describe the current state while the funnel uses the range.
+
+## Funnel calculation
+
+The commercial funnel is `sent → viewed → approved → paid`. Its base includes every
+quote that left draft, even if later rejected or expired. Viewed records the client's
+first real opening; internal activity and reloads don't create new conversions.
+
+## Finance metrics
+
+- **Contracted MRR:** monthly value of active retainers.
+- **ARR:** annualized MRR, not cash already received.
+- **MRR at risk:** `past_due` or cancellation-scheduled subscriptions.
+- **DSO:** estimated time to collection from available history.
+- **Weighted pipeline:** expected value from historical probability and timing; not
+  guaranteed cash.
+- **Concentration:** the largest client's share of pipeline.
+
+## Cash flow separates three sources
+
+The 90-day projection keeps certain receivables, probability-weighted pipeline, and
+contracted recurring revenue separate. The total is an expected scenario, not a bank
+balance. Movements from day 91 remain visible outside the horizon.
+
+## Collections and payment behavior
+
+The report uses the same unified receivables as the operating module: open and overdue
+totals, expected 30-day collections, average delay, aging, client-limit exposure,
+promise compliance, and actual-versus-agreed payment timing. A payment promise records
+a commitment; it doesn't move money or change the balance by itself.
+
+## Customize widgets
+
+Each report keeps its own member-level layout. Edit mode can reorder, resize, or hide
+widgets; Reset restores that report's default. Hiding a widget doesn't remove data or
+change calculations.
+
+## Seller performance
+
+`/app/desempeno` attributes each quote to `created_by`: the person who created or
+duplicated it. It shows quotes created, close rate, closed value, collected value,
+average ticket, and days to close.
+
+Older documents without a creator appear as **Unassigned**. Cord doesn't redistribute
+them or credit the latest editor automatically. The team rate is the average of the
+displayed seller rates, not payroll or commission accounting.
+
+## Common problems
+
+**Report is missing.** Check Analytics permission; Collections has its own permission,
+and Finance, Cash flow, and Collections require Pro or above.
+
+**Changing dates doesn't change a widget.** It is a current snapshot marked “today.”
+
+**A cohort's closed value looks low.** Some quotes may remain open; review maturity.
+
+**A closing is Unassigned.** The quote has no stored creator, often because it predates
+the current attribution model.

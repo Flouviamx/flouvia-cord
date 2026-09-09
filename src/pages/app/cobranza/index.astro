@@ -173,7 +173,7 @@ const CBZ_T = {
                     <div class="report-list cbz-mini" data-cbz-list="prioridad">
                         {prioridad.length === 0 && <p class="report-empty">{t(L, 'cob.prioridad_vacio')}</p>}
                         {prioridad.map((it) => (
-                            <div data-cbz-id={it.id} data-token={it.token} data-folio={it.folio} data-empresa={it.empresa}
+                            <div data-cbz-id={it.id} data-link={it.publicUrl} data-folio={it.folio} data-empresa={it.empresa}
                                 data-total={money(it.total)} data-tel={it.telefono} data-vence={it.vence}>
                                 <span>
                                     <strong>{it.empresa}</strong>
@@ -283,7 +283,7 @@ const CBZ_T = {
                             <span>{t(L, 'cob.th_cliente')}</span><span>{t(L, 'cob.th_folio')}</span><span>{t(L, 'cob.th_terminos')}</span><span>{t(L, 'cob.th_vence')}</span><span>{t(L, 'cob.th_estado')}</span><span class="t-right">{t(L, 'cob.th_saldo')}</span><span class="t-right">{t(L, 'cob.th_accion')}</span>
                         </div>
                         {C.items.map((it) => (
-                            <div class="t-row" data-cbz-id={it.id} data-id={it.id} data-token={it.token} data-folio={it.folio} data-empresa={it.empresa}
+                            <div class="t-row" data-cbz-id={it.id} data-id={it.id} data-link={it.publicUrl} data-folio={it.folio} data-empresa={it.empresa}
                                 data-total={money(it.total)} data-tel={it.telefono} data-vence={it.vence}
                                 data-total-num={String(it.total)} data-interes-num={String(it.interes)}
                                 data-overdue={it.overdue ? '1' : ''} data-dias={String(it.diasParaVencer)}
@@ -480,7 +480,7 @@ const CBZ_T = {
 
         function sendWhats(row: HTMLElement) {
             const d = row.dataset;
-            const link = `${location.origin}/q/${d.token}`;
+            const link = d.link || '';
             const msg = tpl(E.i18nWaSaludoTpl || 'Hola{empresa}, le recordamos amablemente el saldo de la cotización {folio} por {total} (vence {vence}). Puede revisarla aquí: {link}. ¡Gracias!', {
                 empresa: d.empresa ? ' ' + d.empresa : '',
                 folio: d.folio || '',

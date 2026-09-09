@@ -5,7 +5,7 @@
 //
 // Matriz ago 2026 (delimitación de planes): 5 niveles. Pro es el plan ANCLA (el
 // que se empuja). Free = gancho, con tope de envíos además de activas · Starter
-// = freelance, ya con facturación electrónica (MX y resto del mundo) · Pro =
+// = freelance, con CFDI en México y factura comercial en los demás mercados · Pro =
 // equipos (DESTACADO), ahora también cobranza y flujo de caja a 90 días ·
 // Scale = automatización (aprobaciones, cobranza autónoma con IA, SSO) ·
 // Developer = sin precio de autoservicio — capacidad y condiciones a medida,
@@ -17,6 +17,7 @@
 import type { PlanId } from './entitlements';
 export type { PlanId } from './entitlements';
 import type { PlatformCurrency } from './plan-currency';
+import { EUR_MONTHLY } from './plan-eur-rates';
 
 export interface Plan {
     id: PlanId;
@@ -32,7 +33,7 @@ export interface Plan {
      * suscripciones vigentes— pero no se muestra: `custom` lo saca del
      * autoservicio.
      */
-    precio: Record<PlatformCurrency, number>;
+    precio: Record<'MXN' | 'USD', number> & Partial<Record<PlatformCurrency, number>>;
     destacado?: boolean;
     ribbon?: string;
     /** Sin precio de autoservicio: "A tu medida" + CTA a ventas, sin checkout. */
@@ -53,13 +54,13 @@ export const PLANES: Plan[] = [
     {
         id: 'free',
         nombre: 'Gratis',
-        tagline: 'Para probar el sistema.',
-        precio: { MXN: 0, USD: 0 },
-        ctaLabel: 'Empezar gratis',
+        tagline: 'Para tus primeros clientes. Cada mes.',
+        precio: { MXN: 0, USD: 0, EUR: EUR_MONTHLY.free },
+        ctaLabel: 'Cotizar gratis',
         ctaHref: '/registro',
         feats: [
-            '5 cotizaciones activas',
-            '5 cotizaciones enviadas al mes',
+            '5 envíos al mes, renovables',
+            'Hasta 5 cotizaciones activas a la vez',
             '50 productos y 50 clientes',
             '3 armados con IA al mes',
             'Marca “Powered by Cord”',
@@ -68,48 +69,48 @@ export const PLANES: Plan[] = [
     {
         id: 'starter',
         nombre: 'Starter',
-        tagline: 'Para el que vende solo.',
-        precio: { MXN: 240, USD: 12 },
+        tagline: 'Más propuestas. Tu marca al frente.',
+        precio: { MXN: 240, USD: 12, EUR: EUR_MONTHLY.starter },
         ctaLabel: 'Empezar ahora',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui3vQBd5goOHQ1',
         feats: [
-            '50 cotizaciones activas',
+            'Envíos ilimitados; hasta 50 activas',
             '500 productos y clientes',
             '20 armados con IA + 3 facturas al mes',
-            'Facturación electrónica (México y resto del mundo)',
+            'CFDI 4.0 en México; factura comercial en otros mercados',
             'Tu marca (sin “Powered by”)',
         ],
     },
     {
         id: 'pro',
         nombre: 'Profesional',
-        tagline: 'Para equipos que venden en serio.',
-        precio: { MXN: 590, USD: 30 },
+        tagline: 'Tu equipo, tus ventas y tu cobranza.',
+        precio: { MXN: 590, USD: 30, EUR: EUR_MONTHLY.pro },
         destacado: true,
-        ribbon: 'MÁS POPULAR',
+        ribbon: 'PARA TU EQUIPO',
         ctaLabel: 'Empezar ahora',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui45gzUJYA3O2w',
         feats: [
             'Cotizaciones ilimitadas',
-            'Hasta 5 usuarios',
+            '5 usuarios incluidos',
             '50 armados con IA + 20 facturas al mes',
             'Cobranza y flujo de caja a 90 días',
-            'Seguimiento en vivo y analítica',
+            'Seguimiento en vivo y sin marca de Cord',
         ],
     },
     {
         id: 'scale',
         nombre: 'Scale',
-        tagline: 'Para operaciones con control.',
-        precio: { MXN: 1390, USD: 70 },
+        tagline: 'Automatiza el seguimiento y protege tu margen.',
+        precio: { MXN: 1390, USD: 70, EUR: EUR_MONTHLY.scale },
         ctaLabel: 'Empezar ahora',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui4AQicrCoCMUt',
         feats: [
             'Todo lo de Profesional',
-            'Hasta 15 usuarios',
+            '15 usuarios incluidos',
             '500 armados con IA + 100 facturas al mes',
             'Cobranza autónoma con IA y aprobaciones',
             'Correos desde tu dominio (SMTP) y SSO',
@@ -144,6 +145,7 @@ export interface CompareRow {
     scale: boolean | string;
     developer: boolean | string;
     hint?: string;
+    overageDim?: 'usuario' | 'ia' | 'timbrado' | 'api';
 }
 export interface CompareGroup {
     titulo: string;
@@ -165,7 +167,7 @@ export const COMPARATIVA: CompareGroup[] = [
         rows: [
             { label: 'Cotizaciones enviadas', free: '5 / mes', starter: 'Ilimitadas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas' },
             { label: 'Armado de cotizaciones con IA', free: '3 / mes', starter: '20 / mes', pro: '50 / mes', scale: '500 / mes', developer: 'Ilimitado' },
-            { label: 'Facturas electrónicas emitidas', free: '3 / mes', starter: '3 / mes', pro: '20 / mes', scale: '100 / mes', developer: '1,000 / mes', hint: 'CFDI 4.0 en México, factura comercial en el resto del mundo.' },
+            { label: 'Facturas emitidas', free: '3 / mes', starter: '3 / mes', pro: '20 / mes', scale: '100 / mes', developer: '1,000 / mes', hint: 'CFDI 4.0 en México; factura comercial en los demás mercados soportados.' },
             { label: 'Llamadas a la API pública', free: '100 / mes', starter: '1,000 / mes', pro: '5,000 / mes', scale: '10,000 / mes', developer: '50,000 / mes' },
         ],
     },
@@ -191,7 +193,7 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Link público + PDF descargable', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Aviso “tu cliente vio la cotización”', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Presencia “lo está viendo ahora”', free: false, starter: false, pro: true, scale: true, developer: true },
-            { label: 'Firma digital con validez legal (SHA-256)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Aprobación con evidencia técnica (SHA-256)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Contraoferta y chat con el cliente', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Negociación por línea (hilos)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Pago en línea con tarjeta (Stripe)', free: true, starter: true, pro: true, scale: true, developer: true },
@@ -209,7 +211,7 @@ export const COMPARATIVA: CompareGroup[] = [
     {
         titulo: 'Fiscal y multi-divisa',
         rows: [
-            { label: 'Facturación electrónica automática', free: true, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 ante el SAT en México; factura comercial propia en el resto del mundo.' },
+            { label: 'Emisión de facturas', free: true, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 ante el SAT en México; factura comercial en los demás mercados soportados.' },
             { label: 'Tu propio CSD (sello digital, México)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Multi-divisa con cobertura cambiaria (FX lock)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
@@ -243,7 +245,7 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Quitar marca “Powered by Cord”', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Personalizar color y logo', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Correos desde tu dominio (SMTP)', free: false, starter: false, pro: false, scale: true, developer: true },
-            { label: 'Multi-moneda (MXN, USD, EUR)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Multi-moneda (14 divisas ofrecidas)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
     {
@@ -284,10 +286,10 @@ export const COMPARATIVA: CompareGroup[] = [
     {
         titulo: 'Excedentes (cobro por uso)',
         rows: [
-            { label: 'Usuario adicional', free: 'Tope duro', starter: 'Tope duro', pro: '$300 / u', scale: '$300 / u', developer: '$200 / u' },
-            { label: 'Armado con IA extra', free: 'Tope duro', starter: '$4.00 / uso', pro: '$3.50 / uso', scale: '$3.00 / uso', developer: '$2.50 / uso' },
-            { label: 'Factura adicional', free: false, starter: '$3.00 / folio', pro: '$3.00 / folio', scale: '$2.00 / folio', developer: '$1.50 / folio' },
-            { label: 'API extra (por 100 req)', free: 'Tope duro', starter: '$0.03 USD', pro: '$0.03 USD', scale: '$0.02 USD', developer: '$0.02 USD' },
+            { overageDim: 'usuario', label: 'Usuario adicional', free: 'Tope duro', starter: 'Tope duro', pro: '$300 / u', scale: '$300 / u', developer: '$200 / u' },
+            { overageDim: 'ia', label: 'Armado con IA extra', free: 'Tope duro', starter: '$4.00 / uso', pro: '$3.50 / uso', scale: '$3.00 / uso', developer: '$2.50 / uso' },
+            { overageDim: 'timbrado', label: 'Factura adicional', free: false, starter: '$3.00 / folio', pro: '$3.00 / folio', scale: '$2.00 / folio', developer: '$1.50 / folio' },
+            { overageDim: 'api', label: 'API extra (por 100 req)', free: 'Tope duro', starter: '$0.03 USD', pro: '$0.03 USD', scale: '$0.02 USD', developer: '$0.02 USD' },
         ],
     },
 ];
@@ -295,7 +297,7 @@ export const COMPARATIVA: CompareGroup[] = [
 export const FAQ_PRECIOS: { q: string; a: string }[] = [
     {
         q: '¿De verdad puedo empezar gratis?',
-        a: 'Sí. El plan Gratis es para siempre: hasta 5 cotizaciones activas, 50 productos, 50 clientes, link público y PDF. No pedimos tarjeta para registrarte.',
+        a: 'Sí. Gratis no tiene fecha de vencimiento: incluye 5 envíos de cotizaciones cada mes, hasta 5 cotizaciones activas a la vez, 50 productos y 50 clientes. Puedes compartir el link y descargar el PDF con tu logo; el sello “Powered by Cord” permanece visible. No necesitas tarjeta.',
     },
     {
         q: '¿Qué cuenta como “cotización activa”?',
@@ -311,15 +313,27 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Los precios llevan impuestos?',
-        a: 'Sí. Lo que ves es lo que pagas: no se suma nada al cobrar. Los negocios en México facturan en pesos mexicanos (MXN); en el resto del mundo, en dólares (USD).',
+        a: 'Sí. Lo que ves es lo que pagas: no se suma nada al cobrar. Los negocios en México pagan los planes de Cord en pesos mexicanos (MXN); España, Alemania y Francia, en euros (EUR); los demás mercados soportados, en dólares (USD). Las suscripciones existentes conservan su moneda de facturación.',
     },
     {
         q: '¿Cómo funciona la facturación electrónica?',
         a: 'Depende del país de tu negocio, desde el plan Starter. En México conectas tu Certificado de Sello Digital (CSD) una vez y, al cerrar una cotización, Cord timbra el CFDI 4.0 ante el SAT con los mismos datos. Fuera de México, Cord emite una factura comercial propia con folio y PDF — no es un timbre ante una autoridad fiscal local, pero documenta la venta con los mismos datos de la cotización, sin recapturar en otro sistema.',
     },
     {
-        q: '¿Puedo probar Cord sin pagar?',
-        a: 'Sí. El plan Gratis es para siempre: 5 cotizaciones activas, sin tarjeta. Cuando estés listo subes a un plan de pago y se cobra desde el alta. Puedes cambiar o cancelar cuando quieras.',
+        q: '¿Qué pasa después de mis 5 envíos gratis?',
+        a: 'Se pausan los nuevos envíos hasta el primer día del siguiente mes (UTC), cuando se renueva el cupo de 5. Puedes esperar o elegir Starter para enviar sin límite mensual. El límite de cotizaciones activas es independiente: cerrar una libera espacio, pero no repone envíos. Llegar al cupo no convierte tu cuenta en una suscripción de pago.',
+    },
+    {
+        q: '¿Cuándo me conviene pagar por Cord?',
+        a: 'Elige Starter si necesitas más envíos o quitar “Powered by Cord”. Profesional añade cotizaciones ilimitadas, 5 usuarios incluidos, seguimiento en vivo, cobranza y flujo de caja a 90 días. Scale suma aprobaciones, cobranza con IA y correo desde tu dominio. Puedes quedarte en Gratis mientras sus límites cubran tu operación.',
+    },
+    {
+        q: '¿Puedo quitar la marca de Cord y usar mi dominio?',
+        a: 'Puedes quitar “Powered by Cord” desde Starter; Profesional y Scale también lo incluyen. Tu logo y tus colores están disponibles incluso en Gratis. Scale permite enviar correos desde tu dominio mediante SMTP. Usar un dominio propio para los enlaces de cotización es una capacidad distinta y actualmente no está disponible.',
+    },
+    {
+        q: '¿Gratis tiene un límite por el dinero que cobro?',
+        a: 'Actualmente no hay un umbral de facturación mensual que obligue a cambiar de plan. Gratis se limita por envíos, cotizaciones activas y otros recursos. Los pagos en línea tienen comisiones de procesamiento y requieren una cuenta elegible en un mercado con Cord Payments; la suscripción gratuita no elimina esas comisiones.',
     },
     {
         q: '¿El plan Developer es para integrar Cord a mi sistema?',
@@ -327,6 +341,6 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Necesito ser cliente de Flouvia para contratar un plan?',
-        a: 'No. Cord es un software independiente: cualquier negocio, en cualquier país, puede registrarse directamente en cordhq.app y elegir un plan, sin relación previa con Flouvia ni con ningún otro producto.',
+        a: 'No. Cord es un software independiente: los negocios de los 12 mercados disponibles pueden registrarse directamente en cordhq.app y elegir un plan, sin relación previa con Flouvia ni con otro producto.',
     },
 ];

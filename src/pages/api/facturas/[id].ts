@@ -48,7 +48,8 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         case 'send': return send(orgId, id, request);
         case 'duplicate': return duplicate(orgId, id, request);
         case 'payment': return payment(orgId, id, body, request);
-        case 'void': return voidIt(orgId, id, body, request);
+        case 'void':
+        case 'cancellation_status': return voidIt(orgId, id, body, request);
         case 'credit_note': return creditNote(orgId, id, body, request);
         case 'uncollectible': return uncollectible(orgId, id, doc, request);
         default: return json({ error: 'Acción no reconocida' }, 400);
@@ -246,20 +247,20 @@ async function payment(orgId: string, id: string, body: any, request: Request) {
 }
 
 async function voidIt(orgId: string, id: string, body: any, request: Request) {
-    const result = await voidInvoice(orgId, id, String(body.motivo ?? '').trim() || undefined);
+    const result = await voidInvoice(orgId, id, String(body.motivo ?? '').trim() || undefined, body.action === 'cancellation_status');
+    invalidateMoneyCaches(orgId);
     if (!result.ok) {
         // 409, no 400: la petición es válida, el estado de la factura es el que
         // no la admite. El cliente de la API necesita distinguirlos para poder
         // ofrecer la nota de crédito como siguiente paso.
-        return json({ error: result.error, requires_credit_note: !!result.requiresCreditNote }, 409);
+        return json({ error: result.error, requires_credit_note: !!result.requiresCreditNote, cancellation_status: result.cancellationStatus }, 409);
     }
     await logAudit(orgId, {
-        accion: 'factura.anulada', entidad: 'factura', entidad_id: id,
+        accion: result.pending ? 'factura.cancelacion_pendiente' : 'factura.anulada', entidad: 'factura', entidad_id: id,
         detalle: String(body.motivo ?? '') || 'sin motivo', ip: reqIp(request),
     });
-    invalidateMoneyCaches(orgId);
-    after(dispatchInvoiceEvent(orgId, id, 'invoice.voided'));
-    return json({ ok: true });
+    if (!result.pending && !result.reused) after(dispatchInvoiceEvent(orgId, id, 'invoice.voided'));
+    return json({ ok: true, pending: !!result.pending, cancellation_status: result.cancellationStatus }, result.pending ? 202 : 200);
 }
 
 async function creditNote(orgId: string, id: string, body: any, request: Request) {

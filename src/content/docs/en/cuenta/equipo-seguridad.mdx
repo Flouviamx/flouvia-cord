@@ -1,0 +1,134 @@
+---
+title: "Team, permissions, and security"
+description: "How to invite members, assign permissions, require 2FA, restrict domains, manage sessions, passkeys, OAuth, and SSO access in Cord."
+lastUpdated: "2026-09-08"
+reviewedBy: "Cord Product and Security"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Team permission to administer members", "Settings permission for organization policies"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Team, permissions, and security</h1>
+  <p class="page-subtitle">Separate each user's personal security from policies shared by the organization.</p>
+</header>
+
+<Callout type="info">
+This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
+</Callout>
+
+Cord has three access layers: **Your account** protects personal identity;
+**Team and permissions** controls what a member can do in one organization; and
+**Organization security** applies 2FA, inactivity, and invitation-domain policies.
+
+## Plans and seats
+
+Team invitations and custom roles begin on **Pro**. Included seats are Free 1,
+Starter 1, Pro 5, Scale 15, and unlimited on Developer. A valid pending invitation
+already reserves a seat.
+
+## Invite a person
+
+Open **Settings > Team and permissions > Add member**, enter an email, choose a
+preset or custom permissions, review access, and send.
+
+Invitations expire after **7 days**. Cord attempts email delivery and returns a
+copyable backup link. Resending rotates the previous token and creates a new seven-day
+link. When invitation domains are restricted, the address must match one exactly.
+
+## Roles and permissions
+
+- **Administrator:** almost all access, including Team; Refunds isn't enabled by default.
+- **Sales rep:** quotes, clients, products, and analytics; no settings or approvals.
+- **Read only:** can enter the app without modification permissions.
+- **Custom:** member-specific combination.
+- **Owner:** full override; can't be downgraded or revoked from Team.
+
+Independent permissions cover Quotes, Approvals, Collections, Clients, Products,
+Analytics, Settings, Payment configuration, Refunds, and Team.
+
+<Callout type="info">
+Hidden UI is not the security boundary. APIs validate both permission and active
+organization before reading or modifying data.
+</Callout>
+
+## Membership states
+
+An **active** member accepted access. An **invited** member has a pending, current, or
+expired link. A **revoked** member no longer has access, but remains visible for history
+and may be invited again. Revocation doesn't automatically reassign or delete documents.
+
+## Require two-step verification
+
+Enable **Require 2FA** under **Settings > Security**. Members without TOTP are sent to
+**Settings > Your account** to complete setup before continuing into protected areas.
+
+Setup displays an authenticator QR code and one-time backup codes. Store those outside
+Cord. Regenerating them invalidates the previous set. Disabling 2FA requires a current
+password or authenticator code depending on the account.
+
+## Passkeys, password, and OAuth
+
+Under **Your account**, a user can create or change a password, add or remove passkeys,
+and connect or disconnect Google and Apple. OAuth-created accounts may establish a
+password later. Keep another working sign-in method before disconnecting one.
+
+## Active sessions
+
+The session list shows device, known IP, last activity, and the current session. A user
+can close one session or all other sessions. The organization can separately enforce
+an inactivity timeout of unlimited, 1, 4, 8, or 24 hours.
+
+## Enterprise SSO
+
+SAML 2.0 connections are administered under **Settings > SSO** and require Scale or
+Developer. SSO authentication and administration require the corresponding effective plan;
+a saved connection does not guarantee access after losing that plan. Configure and verify domains
+before routing everyone to the identity provider and preserve the organization's
+emergency-access path.
+
+## Delete a personal account
+
+The danger zone permanently removes the personal identity, sessions, passkeys, and
+connected accounts. It requires a credential and typing the account email. If that
+person is the sole owner, owned organizations are affected too. Transfer ownership and
+export data first.
+
+## Common problems
+
+**Can't invite.** Check Team permission, Pro-or-higher plan, available seat, and domain.
+
+**Invitation expired.** Resend it; the old token can't be recovered.
+
+**Member can sign in but can't edit.** Inspect effective permissions, not only role name.
+
+**Organization requires 2FA.** The member must enroll TOTP in their own account.
+
+## Two-factor verification and access
+
+Enable 2FA under **Settings > Your account**: scan the QR with your authenticator,
+confirm the code and store the ten one-use backup codes shown during activation.
+
+When an organization requires 2FA and you have not configured it, complete setup
+before continuing. Protection also applies to dashboard requests, not only the
+visible screen. Actions needed to set up 2FA, confirm identity or sign out remain
+available.
+
+If a sensitive action asks you to verify your identity again, complete it before
+retrying. Team permissions still apply; enabling 2FA does not grant refund or
+business administration permissions.
+
+## Idle sign-out: implementation under validation
+
+The timeout configured by the business in **Settings › Security** is checked
+when entering the app, billing and protected internal APIs. Once it expires,
+the operation stops and you must sign in again. Passkey enrollment also checks it.
+
+Visiting a public page or using 2FA recovery routes does not restart this window.
+Activity means authenticated requests to protected surfaces, not mouse movement;
+automatic app requests may also count. A value of zero disables the idle timeout
+while retaining the maximum session lifetime, revocation and account suspension.
+
+Checking and refreshing activity happen together so concurrent requests cannot
+renew an already expired session. This protection has local tests; publication
+and integrated sign-in acceptance remain to be verified.

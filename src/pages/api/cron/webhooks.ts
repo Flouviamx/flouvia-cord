@@ -8,7 +8,7 @@
 // vercel.json) — el plan actual de Vercel rechaza CUALQUIER cron con
 // frecuencia sub-diaria (se probó "cada minuto" y "cada 5 min", ambos
 // tumbaban el deploy completo antes de crear el deployment; solo pasó al
-// quedar en 1x/día, ver docs/historial-platform-api.md). Esto solo retrasa
+// quedar en 1x/día, ver docs/historial/platform-api.md). Esto solo retrasa
 // el REINTENTO de fallas de entrega (la entrega normal sigue siendo
 // inline/instantánea) — subir de plan permitiría volver a una frecuencia
 // más agresiva. Protegido con CRON_SECRET, igual que el resto de crons.

@@ -1,0 +1,106 @@
+---
+title: "Clients, terms, and statements"
+description: "How to create and import clients, configure discounts, credit, terms, and tax data, and read commercial history and balances."
+lastUpdated: "2026-08-28"
+reviewedBy: "Cord Product and Operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Clients permission to create, edit, import, or delete", "Company name is required"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Clients, terms, and statements</h1>
+  <p class="page-subtitle">The Clients directory feeds pricing, credit, invoicing, collections, and reports.</p>
+</header>
+
+A Cord client is more than a contact. Its record stores reusable commercial and tax
+identity plus terms that control suggested discounts, due dates, and credit exposure.
+
+## Create a client
+
+Open **Clients > New client**. Company name is the only field required to save, but
+complete the remaining data before sending a quote that must be collected or invoiced.
+
+| Group | Fields | Effect |
+|---|---|---|
+| Contact | person, email, and phone | Recipient for quotes, invoices, and follow-up. |
+| Tax identity | RFC or local tax ID, regime, CFDI use, and postal code | Receiver data used for the fiscal document. |
+| Address | country, address lines, city, and region | Receiver address and country context. |
+| Terms | due now, Net 30, or Net 60 | Default due date for new client operations. |
+| Credit | limit at or above zero | Reference for exposure and over-limit alerts. |
+| Price level | Standard, Silver, Gold, or Distributor | Commercial classification and suggested discount. |
+
+Levels initially suggest 0%, 5%, 10%, and 15%. The percentage can be edited from 0%
+to 100%; the level is a label while the stored percentage is the effective default.
+
+<Callout type="warning">
+The credit limit is an operating signal, not credit issued by Cord or a payment
+guarantee. The seller decides whether to keep selling above that exposure.
+</Callout>
+
+## Client country
+
+Country may remain empty and inherit the issuer's country. Select it explicitly for a
+foreign receiver. Cord accepts receiver countries beyond the 12 markets where the
+platform is sold.
+
+Changing country adjusts the expected tax-ID label, but doesn't turn a commercial
+invoice into an automatic filing with the receiver's authority.
+
+## Import clients from CSV
+
+The **Clients > Import CSV** flow lets you upload a `.csv`, map columns, preview rows,
+and choose whether to update existing matches.
+
+One import accepts up to **2,000 rows**. Rows without a company are skipped. Valid
+term codes are `contado`, `net30`, and `net60`; anything else becomes due now.
+
+With **Update existing** enabled, Cord matches by exact tax ID first and case-insensitive
+company name second. Matches update contact, email, phone, ID, terms, and limit; other
+rows create clients. With it disabled, rows are inserted without merging duplicates.
+
+## Search, filter, and sort
+
+Filter clients with or without quotes, with a non-standard level, with a credit limit,
+or with incomplete tax data. Sort by company, closed amount, quote count, recent
+activity, or credit limit. These controls only change the view.
+
+## What a client record shows
+
+Cord calculates quote count, pipeline, closed and collected amounts, average ticket,
+win rate, average days to close, discounts conceded, 12-month activity, products sold,
+origin, creation date, and inactive days.
+
+When receivables exist, it also shows one statement across quotes and invoices: open
+balance, overdue amount, oldest item, and current, 1–30, 31–60, 61–90, and 90+ day
+aging bands. An invoiced operation appears as an invoice only, avoiding a duplicate
+balance.
+
+## Start a quote from the client
+
+Select **New quote** in the client record. The editor opens with that client selected
+and uses its terms as defaults. Always review recipient, currency, tax, discounts, and
+due date for the current document.
+
+Later client edits don't silently rewrite issued fiscal documents; those retain
+immutable issuer, receiver, line, and amount snapshots.
+
+## Permissions, limits, and deletion
+
+- Creating, editing, importing, and deleting requires the **Clients** permission.
+- Free supports up to 50 clients and Starter up to 500. Pro, Scale, and Developer
+  have no hard client limit under the current contract.
+- Deletion is permanent and recorded in the audit trail. Review associated quotes and
+  statement items first.
+
+## Common problems
+
+**New client or Import CSV is missing.** The member lacks Clients permission.
+
+**Import updated a row that should have been separate.** Upsert matched its tax ID or
+company name.
+
+**Tax data is incomplete.** Review country, ID, address, and document-specific fields.
+
+**Balance exceeds the limit.** This is an alert; decide whether to change terms,
+request an upfront payment, or stop new sales.

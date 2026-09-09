@@ -1,55 +1,93 @@
 ---
-title: "Ultimate Guide: CFDI 4.0 for wholesalers and distributors"
-excerpt: "Everything you need to know about payment supplements (REP), carta porte, and fiscal validation in Mexico for 2026."
-category: "Fiscal"
+title: "CFDI 4.0 in 2026: data, issuance, and Cord boundaries"
+excerpt: "An operating guide to prepare CFDI 4.0 in Cord, understand minimum recipient data, and identify fiscal complements that remain outside the product."
+category: "Tax"
 date: "12 Jun 2026"
+publishedAt: "2026-06-12"
+lastUpdated: "2026-08-28"
 readTime: "09 MIN"
-img: "/images/blog/guia-cfdi-4-0-2026.png"
-authorName: "Diego Fernández"
-authorRole: "Tax Tech Lead"
+img: "/og-cord.jpg"
+authorName: "Cord Team"
+authorRole: "Product and invoicing"
+reviewedBy: "Cord Product"
+reviewedByRole: "Functional-scope review; not tax advice"
+keywords: ["CFDI 4.0", "Mexico electronic invoicing", "CFDI recipient data", "CSD", "issue CFDI"]
+faq:
+  - question: "What minimum recipient data does CFDI 4.0 require?"
+    answer: "SAT identifies RFC, name or legal name, tax regime, and fiscal postal code as minimum recipient data. The transaction also needs all other applicable fields, including CFDI use."
+  - question: "Can Cord issue CFDI 4.0?"
+    answer: "Yes, for Mexican organizations with a valid tax profile and CSD. Cord sends the document to Facturapi as stamping infrastructure; XML and a PDF representation are available after confirmed issuance."
+  - question: "Does Cord issue payment-receipt or Carta Porte complements?"
+    answer: "Not currently. Cord issues income CFDI within the documented scope. Payment-receipt, Carta Porte, payroll, and other specialized complements must be handled outside Cord."
+sources:
+  - name: "SAT — CFDI 4.0 invoicing service"
+    url: "https://wwwmat.sat.gob.mx/aplicacion/75169/servicio-de-facturacion-cfdi-version-4.0-%28vigente-a-partir-del-1-de-enero-de-2022%29"
+  - name: "SAT — invoicing guidance"
+    url: "https://www.sat.gob.mx/minisitio/Factura/emite_materialdeayudaparafactura.htm"
+  - name: "SAT — payment receipt complement"
+    url: "https://wwwmat.sat.gob.mx/consultas/92764/comprobante-de-recepcion-de-pagos"
+  - name: "Cord Docs — fiscal invoicing"
+    url: "https://docs.cordhq.app/en/docs/pagos/facturacion"
 ---
 
-Invoicing in Mexico has become a software engineering job. With the consolidation of CFDI 4.0, the Tax Administration Service (SAT) has closed evasion loopholes by demanding strict validations and exhaustive catalogs.
+Issuing CFDI 4.0 requires more than an RFC. SAT identifies the recipient's **RFC, name
+or legal name, tax regime, and fiscal postal code** as minimum data. The transaction also
+needs the applicable concepts, taxes, currency, payment form and method, and CFDI use.
 
-For B2B companies (wholesalers, distributors, agencies, and software companies), the slightest error in a zip code or tax regime can delay a million-dollar payment for weeks.
+This guide explains Cord's workflow. It does not replace your accountant or SAT guidance
+for a particular transaction.
 
-In this guide, we will break down the three operational pillars of CFDI 4.0 that you must master to ensure smooth collection in your B2B business.
+## Configure the issuer once
 
-## 1. Data Validation (The Entry Barrier)
+Under **Settings > Invoicing > Tax details**, enter the issuer RFC, legal name, tax
+regime, fiscal postal code, numbering, and a valid Digital Seal Certificate with its
+private key and password.
 
-With version 3.3, having the client's RFC was enough. In CFDI 4.0, the SAT mathematically compares your XML against its database. If a single character doesn't match, the stamp is rejected.
+Cord validates the format and sends the material to the fiscal provider. Never expose
+the `.key` file, password, or certificate in email, chat, or support tickets. Replace an
+expired or revoked CSD before issuing again.
 
-The critical fields that must match exactly with the Proof of Tax Situation (CSF) are:
-- **Name or Corporate Name:** It must be in capital letters and *without* the corporate regime. That is, "EMPRESA DE MÉXICO" and not "EMPRESA DE MÉXICO, S.A. DE C.V.".
-- **Fiscal Domicile Zip Code:** The client's, not the branch you deliver to, but the one the SAT has registered as the headquarters or main domicile.
-- **Receiver's Tax Regime.**
+## Review every invoice
 
-> "40% of rejected B2B invoices in 2025 were due to typographical errors in the Name field or the inclusion of S.A. de C.V."
+Check recipient RFC, legal name, regime, fiscal postal code, CFDI use, line items and
+units, tax object and amounts, currency and exchange rate, and payment form and method.
 
-**The Solution:** Automate validation. Platforms like **Cord** automatically scan the client's Proof of Tax Situation in PDF upon registration, extracting the information and auto-completing the CRM to avoid human errors.
+Cord does **not** automatically scan a Certificate of Tax Status or decide the correct
+regime, use, or tax treatment for you.
 
-## 2. PPD vs PUE and Payment Supplements
+## What happens during stamping
 
-In B2B sales, it's rare for a corporate client to pay you in full upfront or the same day you issue the invoice. This is where the SAT's sacred rule comes in:
+Cord freezes an issuer, recipient, line-item, tax, and total snapshot and requests
+stamping through Facturapi. After confirmation, Cord stores the fiscal identifier, XML,
+and PDF representation associated with the document.
 
-### PUE (Payment in a Single Installment)
-It should only be used if the client **has already paid you** or if they guarantee they will pay *before* the calendar month in which you issued the invoice ends. If you mark PUE and the client doesn't pay you that month, you are committing a fiscal fault and must cancel the invoice.
+Fiscal issuance is not merely a visual status change. Corrections follow applicable
+fiscal mechanisms, including cancellation or related documents. Review before confirming.
 
-### PPD (Payment in Installments or Deferred)
-If you give credit (Net 30, Net 60), you must **always** issue the invoice as PPD with Payment Method "99" (To be defined).
+## PUE, PPD, and payment receipts
 
-When the client finally deposits the following month, you have the legal obligation to issue a **Payment Receipt Supplement (REP or CRP)**. In CFDI 4.0, this payment receipt is as complex as an invoice itself, requiring tax breakdowns (VAT, withholdings) for each payment received.
+SAT distinguishes when the transaction is paid. In general, PUE applies to a transaction
+paid in a single installment under applicable rules; PPD applies when payment is deferred
+or split and may require a payment-type CFDI.
 
-If you don't issue the payment supplement before the 5th of the month following the deposit, your client won't be able to deduct the expense, and you could be subject to fines.
+Cord **does not currently issue the payment receipt complement**. Recording payment in
+receivables updates operational control inside Cord but does not create that fiscal
+complement. Arrange issuance through your fiscal system or provider and adviser.
 
-## 3. Carta Porte Supplement (Distributors)
+## Carta Porte and other complements
 
-If you move merchandise on federal highways, the Carta Porte Supplement is no longer optional.
+Cord also does not issue Carta Porte, payroll, foreign-trade, or other specialized
+complements. An income CFDI issued in Cord does not automatically satisfy those duties.
+Determine the required document with a specialist.
 
-For wholesalers, this implies that the billing team now needs to know logistics details they previously ignored: truck model, license plates, driver's name and RFC, exact weight of the merchandise, and origin/destination node according to SCT catalogs.
+## Common errors
 
-**Strategy:** Communication between warehouse/logistics and finance must be real-time. Use modern ERPs that generate the Carta Porte XML at the loading dock by scanning the outbound order, not from the accounting office.
+- Recipient name does not match tax records.
+- Postal code belongs to a branch rather than the required fiscal address.
+- Tax regime and CFDI use are incompatible.
+- CSD is expired or revoked, or its password is wrong.
+- A payment recorded in Cord is mistaken for a fiscal payment complement.
+- Issuance occurs before resolving a currency, tax, or total discrepancy.
 
-## In Summary
-
-CFDI 4.0 is relentless. You can no longer rely on "the accountant fixing it at the end of the month". Invoicing must be deeply integrated into your sales and operations flow. By using modern infrastructure like **Cord**, you validate from the quote to the automatic stamping of the payment supplement when the money hits your bank account.
+Read the [Cord invoicing guide](https://docs.cordhq.app/en/docs/pagos/facturacion) for
+the exact configuration, issuance, download, and correction workflow.

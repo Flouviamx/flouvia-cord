@@ -12,6 +12,8 @@ import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 import { ssoRequirementFor } from '../../../../lib/saml';
 import { completeOAuthLink, consumeOAuthLink, linkRedirect } from '../../../../lib/oauth-link';
 import { log } from '../../../../lib/log';
+import { randomUUID } from 'node:crypto';
+import { legalIntentHash, SIGNUP_LEGAL_INTENT_COOKIE } from '../../../../lib/legal-signup';
 
 export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
   const ip = trustedIp(request);
@@ -37,6 +39,8 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
   // Limpiar cookies temporales
   cookies.delete('cord_oauth_state', { path: '/' });
   cookies.delete('cord_oauth_verifier', { path: '/' });
+  const signupLegalIntent = cookies.get(SIGNUP_LEGAL_INTENT_COOKIE)?.value || null;
+  cookies.delete(SIGNUP_LEGAL_INTENT_COOKIE, { path: '/' });
   const dest = safeRelativeRedirect(cookies.get('cord_oauth_redirect')?.value) || '/app';
   cookies.delete('cord_oauth_redirect', { path: '/' });
 
@@ -127,12 +131,15 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
           await sql`update users set avatar_url = coalesce(avatar_url, ${picture}) where id = ${userId}`;
         }
       } else {
-        // Crear usuario nuevo (sin contraseña — solo Google)
-        const [newUser] = await sql`
-          insert into users (email, first_name, last_name, avatar_url, email_verified_at)
-          values (${email}, ${firstName || null}, ${lastName || null}, ${picture || null}, now())
-          returning id
-        `;
+        // Crear usuario + vínculo OAuth + las dos evidencias legales en una
+        // sola transacción de base. Sin intención de clickwrap válida no se
+        // crea una cuenta nueva (un login de cuenta existente sigue normal).
+        if (!signupLegalIntent) return redirect('/sign-up?legal_required=1');
+        const proposedUserId = randomUUID();
+        const [newUser] = await sql`select cord_register_oauth_user_with_legal_intent(
+          ${proposedUserId}, ${email}, ${firstName || null}, ${lastName || null}, ${picture || null},
+          ${'google'}, ${providerUserId}, ${legalIntentHash(signupLegalIntent)}
+        ) as id`;
         userId = newUser.id as string;
         isNewUser = true;
       }
@@ -177,6 +184,9 @@ export const GET: APIRoute = async ({ request, url, cookies, redirect }) => {
     return redirect(dest);
   } catch (err) {
     log.error('Error', { route: 'google/callback', err });
+    if (err instanceof Error && err.message.includes('legal_intent_invalid')) {
+      return redirect('/sign-up?legal_required=1');
+    }
     return redirect('/sign-in?sso_error=1');
   }
 };

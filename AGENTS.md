@@ -8,7 +8,7 @@ la documentación canónica, en [`docs/README.md`](docs/README.md).
 
 1. Lee los dos documentos base importados al final.
 2. Usa `docs/README.md` para abrir solo el estado actual del dominio en alcance.
-3. Consulta `docs/historial.md` y su historial temático solo cuando necesites
+3. Consulta `docs/historial/README.md` y su historial temático solo cuando necesites
    contexto cronológico.
 4. Código, `db/schema.sql`, `package.json` y `.env.example` tienen prioridad para
    hechos operativos que puedan haber cambiado.

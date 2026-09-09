@@ -57,7 +57,7 @@ sobre gustos personales fuera de lo documentado en CLAUDE.md.
 ## Patrones ya rechazados por André — señala si reaparecen
 
 Busca específicamente si el diff reintroduce alguno de estos (todos fueron
-probados y descartados explícitamente, documentados en `docs/historial.md`):
+probados y descartados explícitamente, documentados en `docs/historial/landing-marketing.md`):
 - Botones magnéticos, ripple de click, tilt 3D con el cursor.
 - Exploded-view / rotación 3D de mockups al hacer scroll.
 - Emisor de partículas en `mousemove`.

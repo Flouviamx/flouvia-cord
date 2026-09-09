@@ -4,7 +4,7 @@
 // C14N — equivocarse en el detalle produce un verificador que acepta firmas
 // válidas Y documentos mutados por XML Signature Wrapping (XSW), en silencio.
 // Motor real: @node-saml/node-saml (xml-crypto por debajo). Ver
-// docs/historial-auth-clerk.md para el detalle de la decisión.
+// docs/historial/auth-clerk.md para el detalle de la decisión.
 //
 // Cobertura verificada de node-saml (leyendo su fuente, no solo los tipos):
 // ya valida — single-assertion enforcement, firma vía nodo verificado
@@ -793,7 +793,7 @@ export async function resolveUserAndProvision(conn: SsoConnection, profile: Prof
   if (atIdx < 1 || atIdx === email.length - 1) throw new SamlValidationError('correo_invalido');
   const emailDomain = email.slice(atIdx + 1);
 
-  // ── El gate real ── (ver docs/historial-auth-clerk.md, análogo de Google)
+  // ── El gate real ── (ver docs/historial/auth-clerk.md, análogo de Google)
   // A partir de aquí la conexión YA está resuelta, así que todo el flujo corre
   // en el carril normal de SU organización — el token/id dejó de ser relevante.
   const [domRows] = await withOrgTx(conn.orgId, sql`

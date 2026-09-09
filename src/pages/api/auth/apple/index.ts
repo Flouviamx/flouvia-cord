@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { createAppleClientSecret } from '../../../../lib/auth-apple';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 import { clearOAuthLink, linkRedirect } from '../../../../lib/oauth-link';
+import { SIGNUP_LEGAL_INTENT_COOKIE } from '../../../../lib/legal-signup';
 
 function base64url(buf: Buffer): string {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -56,6 +57,13 @@ export const GET: APIRoute = async ({ cookies, redirect, url }) => {
   // que un query param tampoco sobreviviría el roundtrip sin esta cookie.
   const dest = safeRelativeRedirect(url.searchParams.get('redirect_url'));
   if (dest) cookies.set('cord_apple_redirect', dest, cookieOpts);
+
+  const signup = url.searchParams.get('signup_intent') === '1';
+  if (signup) {
+    if (!cookies.get(SIGNUP_LEGAL_INTENT_COOKIE)?.value) return redirect('/sign-up?legal_required=1');
+  } else {
+    cookies.delete(SIGNUP_LEGAL_INTENT_COOKIE, { path: '/' });
+  }
 
   // Un login de Apple nunca debe heredar una intención de vinculación de Google.
   clearOAuthLink(cookies);

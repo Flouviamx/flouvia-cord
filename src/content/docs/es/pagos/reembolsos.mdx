@@ -8,6 +8,10 @@ description: "Cómo devolverle dinero a un cliente desde Mis cobros: reembolsos 
   <p class="page-subtitle">Devuélvele dinero a un cliente desde el mismo panel donde ves tus cobros — con confirmación de identidad de por medio.</p>
 </header>
 
+<Callout type="info">
+Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
+</Callout>
+
 ## Dónde reembolsar
 
 Los reembolsos viven en **Mis cobros** (`/app/cobros`), no en el detalle de la cotización. En el widget "Cobros recientes", cada fila que corresponde a un pago **conciliado a través de Cord Payments** tiene un botón **Reembolsar**. Un cobro registrado manualmente (transferencia fuera de Cord Payments) no tiene este botón — para ese caso, la devolución la manejas directamente con tu cliente por fuera de Cord.
@@ -34,7 +38,7 @@ El reembolso se procesa **automáticamente** en cuanto lo confirmas — no requi
 
 ### SPEI
 
-Una transferencia SPEI **no se puede revertir automáticamente** — a diferencia de una tarjeta, no hay forma de "devolver" el dinero por el mismo canal sin que tú hagas una transferencia nueva. Por eso, un reembolso de un cobro por SPEI:
+En Cord, el flujo de reembolso SPEI requiere una transferencia manual del negocio. Solicitarlo en el panel no devuelve el dinero por sí solo:
 
 1. Se registra en Cord como "reembolso pendiente, manual".
 2. Cord crea automáticamente una tarea en tu lista de pendientes recordándote transferir el monto de vuelta al cliente.
@@ -49,3 +53,11 @@ Una transferencia SPEI **no se puede revertir automáticamente** — a diferenci
 <Callout type="info">
 Un reembolso **no revierte el estado de la cotización** — sigue marcada como pagada. Si necesitas también anular la cotización en sí (por ejemplo, porque el pedido completo se canceló), hazlo desde el detalle de la cotización por separado.
 </Callout>
+
+## Efecto en una factura vinculada
+
+Cord distingue un reembolso solicitado de uno confirmado. Solo el confirmado se
+incorpora al dinero devuelto de la factura; un evento repetido no debe restarlo
+otra vez. Puede llegar antes que el registro del pago y quedar pendiente de esa
+vinculación. La nota de crédito reduce el importe del documento y el reembolso
+devuelve dinero: son acciones separadas. Revisa [el cálculo de saldo](/docs/pagos/facturas-emitidas).

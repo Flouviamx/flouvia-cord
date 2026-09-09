@@ -21,7 +21,7 @@ confirmación) que no haya parpadeo (FOUC) antes de dar por terminado.
 
 ## Contexto obligatorio antes de tocar nada
 
-1. Lee `docs/landing.md`, sección "Animaciones de la landing" — tiene el
+1. Lee `docs/estado/landing.md`, sección "Animaciones de la landing" — tiene el
    estándar completo con los bugs ya resueltos.
 2. Si el repo tiene skills de GSAP instalados en `.claude/skills/gsap-*`,
    consúltalos para sintaxis exacta de la API (ScrollTrigger, timelines, utils).
@@ -80,7 +80,7 @@ confirmación) que no haya parpadeo (FOUC) antes de dar por terminado.
   y en `/q` con opacidad muy baja `rgba(...,0.025)` — no los repliques en
   landing pública sin ese contexto específico).
 
-Si dudas si un patrón ya se probó y se rechazó, búscalo en `docs/historial.md`
+Si dudas si un patrón ya se probó y se rechazó, búscalo en `docs/historial/landing-marketing.md`
 antes de proponerlo — está documentado el motivo exacto de cada rechazo.
 
 ## Bugs conocidos — no los repitas

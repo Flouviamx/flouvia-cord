@@ -1,24 +1,46 @@
 ---
-title: "Cancelling an invoice with related documents"
-description: "What to do when the SAT rejects a cancellation because of a linked Credit Note or another related document."
+title: "Cancel CFDI with related documents"
+description: "Review payments, credit notes and status before voiding."
 category: "Invoicing"
 ---
 
-This applies only to organizations in **Mexico**, where Cord stamps CFDI 4.0 with the SAT. Outside Mexico this block doesn't exist, because there's no chained tax document to break.
+# Cancel CFDI with related documents
 
-The SAT is strict when you try to cancel an invoice (Income) that already has a related document, such as a Credit Note (Expense). If the child document is still active, the SAT rejects the cancellation of the parent invoice.
 
-### Break the chain from back to front
+## Voiding and crediting are different actions
 
-1. Locate the related Credit Note. Its own detail page shows which invoice it came from (you'll see the label "Credit note of [invoice number]"); if you don't have it handy, search for it in your **Invoices** inbox by date or client.
-2. Open that Credit Note and cancel it first, from its own detail page options menu.
-3. Wait a few minutes for the SAT to register the child document's cancellation.
-4. Now go back to the main invoice and cancel it.
+**Voiding** changes an invoice's validity. A **credit note** is a separate document
+that reduces the creditable amount of the original. Neither action automatically
+returns money.
 
-### What Cord does when you cancel
+In Cord, open **Invoices**, select the document and use **More actions > Void
+invoice**. The app blocks voiding when payments have been applied and suggests a
+credit note. It also requires resolving linked credit notes before voiding the
+original invoice. These are Cord workflow rules, not a replacement for reviewing
+the tax treatment of a specific case.
 
-The **Cancel invoice** button asks for confirmation and cancels the document with the SAT using the standard reason `02 — Document issued with errors without relationship`. That's the correct reason when you're going to redo the invoice from scratch (for example, you made a mistake in the client's RFC).
+## Mexico: request and confirmation
 
-<Callout type="info">
-Reason `01 — Document issued with errors with relationship` requires declaring to the SAT which CFDI replaces the one you're cancelling, and that link isn't built automatically from Cord's interface today. If you need to cancel by substituting one CFDI for another, reach out to us and we'll help you sort it out.
-</Callout>
+Submitting a request does not mean the CFDI has been canceled. Cord retains the
+request status and only presents the invoice as void once confirmed:
+
+- **Pending or verifying:** the invoice remains valid.
+- **Rejected, expired or unconfirmed:** the invoice is not marked void.
+- **Accepted:** its state changes to void.
+
+Use **Check cancellation status** in the detail to review a request. This is a
+manual check, not continuous automatic monitoring. Do not issue a replacement on
+the assumption that the request has completed.
+
+The button does not offer a complete replacement workflow with every fiscal
+reason and relationship. If your case requires that relationship, consult your
+advisor and support before proceeding. Do not use a credit note just to simulate
+cancellation.
+
+## Other markets
+
+Cord uses the available country rail and retains document history. Locally voiding
+a commercial invoice does not prove a tax authority has received or accepted a
+cancellation.
+
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.

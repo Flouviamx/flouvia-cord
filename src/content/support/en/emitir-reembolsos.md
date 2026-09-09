@@ -5,6 +5,9 @@ category: "Payments & Deposits"
 order: 4
 ---
 
+# Issue refunds to customers
+
+
 Cord lets you initiate a full or partial refund from the payment history without leaving the platform. The tax correction remains a separate step when the payment already has a CFDI.
 
 ### Step 1: Refund the payment in Cord
@@ -29,3 +32,13 @@ Issuing a refund does not by itself cancel the original tax document.
 4. Click on **Stamp Expense**. This will deduct the income for accounting purposes and provide your client with their XML proof.
 
 **In every other country**, the correction is issued as a commercial credit note linked to the original invoice. **In Spain**, if your account issues under Verifactu, the correction never edits the already-signed chained record: it generates a NEW cancellation record, which is added to the chain instead of rewriting the previous one. See [Issuing credit notes](/en/support/nota-de-credito).
+
+## Effect on a linked invoice
+
+Cord distinguishes a requested refund from a confirmed one. Only confirmed refunds
+count toward money returned on the invoice; repeated events must not subtract it
+again. A refund can arrive before the payment record and await that link. A credit
+note reduces the document amount while a refund returns money: these are separate
+actions. Review [balance calculation](/en/docs/pagos/facturas-emitidas).
+
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.

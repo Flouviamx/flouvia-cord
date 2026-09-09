@@ -81,9 +81,12 @@ const HELPERS = {
 // en el call site del helper, así que se registran aquí — declarados Y
 // verificados (si el reenvío deja de cumplirse, el script falla).
 //
-// (vacío: el carril `docs` de DocsLayout.astro se registrará aquí cuando
-// aterrice, junto a sus 5 eventos en el catálogo — ver analytics-events.ts.)
-const ENVOLTORIOS = [];
+const ENVOLTORIOS = [{
+  nombre: 'trackDocsEvent', archivo: 'src/layouts/DocsLayout.astro',
+  nameArg: 0, bagArg: 1, minArgs: 2, injects: ['page_path', 'language'],
+  reenvia: /function trackDocsEvent\(event, properties = \{\}\)\s*\{\s*\(window as any\)\.cordTrack\?\.\(event,\s*\{\s*page_path: window\.location\.pathname,\s*language: document\.documentElement\.lang \|\| 'es',\s*\.\.\.properties\s*\}\);\s*\}/,
+  porque: 'El buscador debe conservar el helper común y sus propiedades de página/idioma.',
+}];
 
 // Contratos que ningún tipo verifica. `exige` debe estar; `prohibe` no debe estar.
 const CONTRATOS = [

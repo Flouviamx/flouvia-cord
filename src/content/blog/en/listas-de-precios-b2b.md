@@ -5,8 +5,8 @@ category: "Operations"
 date: "15 May 2026"
 readTime: "08 MIN"
 img: "/images/blog/listas-de-precios-b2b.png"
-authorName: "Carlos Slim Jr."
-authorRole: "Operations Consultant"
+authorName: "Cord Team"
+authorRole: "Product and commercial operations"
 ---
 
 Unlike retail commerce (B2C) where the price of a pair of shoes is public and static, the B2B (Business-to-Business) world operates on a complex network of relationships and negotiations.

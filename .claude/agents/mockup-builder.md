@@ -22,7 +22,7 @@ terminado — nunca entregues algo "que debería verse bien" sin haberlo visto.
 
 Lee estos archivos completos ANTES de escribir una sola línea:
 1. `/MOCKUP_STANDARDS.md` — el estándar formal, línea por línea.
-2. `/docs/historial.md` — busca las entradas sobre "hero + bento", "satélites
+2. `docs/historial/landing-marketing.md` — busca las entradas sobre "hero + bento", "satélites
    flotantes", "`.bm-app`" y "screenshot-bleed" para ver el patrón más reciente
    y qué se descartó antes (exploded-view, tilt 3D, partículas — PROHIBIDOS).
 3. El archivo real que vas a editar (`BlockMockup.astro`, `SolucionBlockMockup.astro`,
@@ -98,5 +98,5 @@ ScrollTrigger dispare (`scrollIntoView` + esperar) antes de capturar.
 - Kanban que se arrastra con scroll (scrub) — debe ser loop auto-reproducido.
 
 Si tienes duda de si un patrón ya se probó y se descartó, búscalo en
-`docs/historial.md` antes de proponerlo — el historial documenta exactamente por
+`docs/historial/landing-marketing.md` antes de proponerlo — el historial documenta exactamente por
 qué se rechazó cada uno.

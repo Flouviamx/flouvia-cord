@@ -100,26 +100,37 @@ export async function getActiveOrgId(): Promise<string> {
  *   `onboarded_at` no debe terminar configurando el negocio de otra
  *   persona; el dueño es quien completa el wizard.
  */
-export async function getAppGates(userId: string): Promise<{ needs2fa: boolean; needsOnboarding: boolean; sessionTimeoutMin: number }> {
-    const NONE = { needs2fa: false, needsOnboarding: false, sessionTimeoutMin: 0 };
+export async function getAppGates(userId: string, options: { strictSecurity?: boolean } = {}): Promise<{ needs2fa: boolean; needsOnboarding: boolean; needsLegalAcceptance: boolean; sessionTimeoutMin: number }> {
+    const NONE = { needs2fa: false, needsOnboarding: false, needsLegalAcceptance: false, sessionTimeoutMin: 0 };
     try {
         const orgId = await getActiveOrgId();
         const [rows] = await withOrgTx(orgId, sql`
             select o.require_2fa, o.onboarded_at, o.owner_id, o.session_timeout_min,
-                   u.totp_enabled
+                   u.totp_enabled,
+                   cord_user_needs_legal_acceptance(
+                     ${userId}, case when o.idioma = 'en' then 'en-US' else 'es-MX' end
+                   ) as needs_legal_acceptance
             from orgs o cross join users u
             where o.id = ${orgId} and u.id = ${userId}
             limit 1`);
-        if (!rows.length) return NONE;
+        if (!rows.length) {
+            if (options.strictSecurity) throw new Error('No se pudo verificar la política de seguridad');
+            return { ...NONE, needsLegalAcceptance: true };
+        }
         const r = rows[0] as any;
         return {
             needs2fa: !!r.require_2fa && !r.totp_enabled,
             needsOnboarding: r.owner_id === userId && !r.onboarded_at,
+            needsLegalAcceptance: !!r.needs_legal_acceptance,
             sessionTimeoutMin: Number(r.session_timeout_min) || 0,
         };
-    } catch {
-        // Nunca bloquear /app por un fallo de esta verificación best-effort.
-        return NONE;
+    } catch (error) {
+        if (options.strictSecurity) throw error;
+        // 2FA/onboarding conservan su comportamiento best-effort histórico. El
+        // contrato general no: si no se puede demostrar el bundle vigente, la
+        // app queda confinada a aceptación y a las salidas seguras que permite
+        // el middleware (billing, exportación, baja y logout).
+        return { ...NONE, needsLegalAcceptance: true };
     }
 }
 
@@ -354,6 +365,12 @@ export async function withUserTx<T extends DbRow[][] = DbRow[][]>(
 export async function resolvePublicQuote(token: string): Promise<{ id: string; orgId: string } | null> {
     const [row] = await sql`select id, org_id from cord_resolve_public_quote(${token})`;
     return row ? { id: row.id as string, orgId: row.org_id as string } : null;
+}
+
+/** Exact-host bootstrap; all subsequent domain reads use withOrgTx. */
+export async function resolveCustomerDomain(hostname: string): Promise<string | null> {
+    const [row] = await sql`select org_id from cord_resolve_customer_domain(${hostname})`;
+    return row ? row.org_id as string : null;
 }
 
 /** Equivalente para la hosted invoice page (`/i/[token]`). Un borrador no resuelve. */

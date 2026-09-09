@@ -16,6 +16,7 @@ import { cached, invalidate } from './cache';
 import { after } from './after';
 import { trackServer } from './posthog-server';
 import { decryptSecret } from './crypto-secret';
+import { publicDocumentUrl } from './public-links';
 import { normalizeCurrency } from './currency';
 import { getCountryProfile, taxKindLabel } from './countries';
 import { fmtDate, fmtRelative, intlLocale } from './fmt-server';
@@ -1568,6 +1569,7 @@ export async function getFacturaByToken(token: string) {
                    d.lifecycle, d.status, d.country_code, d.document_type,
                    d.currency, d.ledger_currency, d.fx_rate, d.ledger_total,
                    d.subtotal, d.tax_total, d.total, d.amount_paid, d.amount_remaining,
+                   d.amount_credited, d.amount_refunded, d.refund_due,
                    d.due_date, d.notes, d.issued_at, d.created_at, d.public_token,
                    d.issuer_snapshot, d.recipient_snapshot, d.line_items_snapshot,
                    d.provider_data, d.pdf_url, d.xml_url, d.credit_note_of,
@@ -1609,7 +1611,7 @@ export async function getFacturaByToken(token: string) {
     const pagado = num(r.amount_paid);
     const saldo = r.amount_remaining !== null && r.amount_remaining !== undefined
         ? num(r.amount_remaining) : Math.max(total - pagado, 0);
-    const vence = r.due_date ? String(r.due_date).slice(0, 10) : null;
+    const vence = r.due_date ? venceDia(r.due_date) : null;
     const hoy = new Date().toISOString().slice(0, 10);
 
     return {
@@ -1623,6 +1625,7 @@ export async function getFacturaByToken(token: string) {
         pais: r.country_code as string,
         tipo: r.document_type as string,
         esNotaCredito: !!r.credit_note_of,
+        acreditado: num(r.amount_credited), reembolsado: num(r.amount_refunded), porDevolver: num(r.refund_due),
         currency,
         ledgerCurrency: (r.ledger_currency as string) || null,
         fxRate: r.fx_rate !== null && r.fx_rate !== undefined ? num(r.fx_rate) : null,
@@ -1721,6 +1724,8 @@ export async function getFacturaDetalle(id: string) {
         })),
         anuladaEn: r.voided_at ? fmtDate(r.voided_at as string) : null,
         motivoAnulacion: (r.void_reason as string) || null,
+        acreditado: num(r.amount_credited), reembolsado: num(r.amount_refunded), porDevolver: num(r.refund_due),
+        cancelacionEstado: String(r.provider_data?.cancelacion?.status || ''),
         pagos: pagos.map((pg: any) => ({
             id: pg.id as string,
             monto: num(pg.monto),
@@ -2686,7 +2691,11 @@ async function getPayBehaviorUncached() {
 export async function getCobranza() {
     const orgId = await getActiveOrgId();
     if (!(await checkEntitlement(orgId, 'collections')).ok) throw new Error('subscription_required:collections');
-    return cached(`cobranza:${orgId}`, 30, getCobranzaUncached);
+    const result = await cached(`cobranza:${orgId}`, 30, getCobranzaUncached);
+    // Resolve origin after the financial cache: disconnect/downgrade must take effect immediately.
+    return { ...result, items: await Promise.all(result.items.map(async item => ({
+        ...item, publicUrl: await publicDocumentUrl(orgId, 'q', item.token),
+    }))) };
 }
 async function getCobranzaUncached() {
     const orgId = await getActiveOrgId();
@@ -2728,7 +2737,7 @@ async function getCobranzaUncached() {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const MS = 86400000;
 
-    const items = rows.map((r) => {
+    const items = await Promise.all(rows.map(async (r) => {
         const tot = num(r.total);
         const due = dueDateFor(r.base_date as string, r.terminos as string);
         const diff = Math.floor((today.getTime() - due.getTime()) / MS);
@@ -2748,6 +2757,7 @@ async function getCobranzaUncached() {
             total: tot, terminos: termLabel(r.terminos as string),
             clienteId: (r.cliente_id as string) ?? null,
             status: r.status as string, token: r.public_token as string,
+            publicUrl: await publicDocumentUrl(orgId, 'q', r.public_token as string),
             telefono: (r.telefono as string) ?? '',
             vence: fmtDate(due), overdue,
             diasVencido: overdue ? diff : 0, diasParaVencer: overdue ? 0 : -diff,
@@ -2763,7 +2773,7 @@ async function getCobranzaUncached() {
                 nota: (prom.nota as string) || '',
             } : null,
         };
-    });
+    }));
 
     const sumBy = (pred: (i: typeof items[number]) => boolean) =>
         items.filter(pred).reduce((s, i) => s + i.total, 0);

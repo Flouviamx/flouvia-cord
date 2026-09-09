@@ -1,0 +1,48 @@
+---
+import { getLangFromUrl, publicPath } from '../../i18n/utils';
+const lang = getLangFromUrl(Astro.url);
+const en = lang === 'en';
+const steps = en ? [
+    { plan: 'Free', title: 'A fresh allowance every month.', text: 'Send 5 quotes each month and keep up to 5 active at a time. Your logo and colors are included, alongside “Powered by Cord”.' },
+    { plan: 'Starter', title: 'Make your brand the focus.', text: 'Remove “Powered by Cord”, personalize your emails and send without a monthly cap. Keep up to 50 active quotes.' },
+    { plan: 'Professional', title: 'Bring your team and your follow-up together.', text: 'Unlimited quotes, 5 included users, live client attention and a collections workspace. See what needs a follow-up and what is ready to collect.' },
+] : [
+    { plan: 'Gratis', title: 'Un nuevo cupo cada mes.', text: 'Envía 5 cotizaciones al mes y mantén hasta 5 activas a la vez. Incluye tu logo y colores, junto al sello “Powered by Cord”.' },
+    { plan: 'Starter', title: 'Dale el protagonismo a tu marca.', text: 'Quita “Powered by Cord”, personaliza tus correos y envía sin límite mensual. Mantén hasta 50 cotizaciones activas.' },
+    { plan: 'Profesional', title: 'Reúne a tu equipo y el seguimiento.', text: 'Cotizaciones ilimitadas, 5 usuarios incluidos, atención del cliente en vivo y un módulo de cobranza. Ve qué necesita seguimiento y qué está listo para cobrar.' },
+];
+---
+
+<section class="plan-value" aria-label={en ? 'When to choose each plan' : 'Cuándo elegir cada plan'}>
+    <div class="pv-intro">
+        <p class="pv-eyebrow">{en ? 'AT YOUR OWN PACE' : 'AL RITMO DE TU NEGOCIO'}</p>
+        <h2>{en ? 'Start free. Pay when you need more.' : 'Empieza gratis. Paga cuando necesites más.'}</h2>
+        <p>{en ? 'For your first clients, a few projects a month or a growing team. Choose the plan that fits the way you sell today.' : 'Para tus primeros clientes, unos cuantos proyectos al mes o un equipo que crece. Elige el plan que encaja con tu forma de vender hoy.'}</p>
+        <a href={publicPath('/registro', lang)}>{en ? 'Create my free account' : 'Crear mi cuenta gratis'} <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="pv-details">
+        <ol>
+            {steps.map(step => <li>
+                <span class="pv-plan">{step.plan}</span>
+                <div><h3>{step.title}</h3><p>{step.text}</p></div>
+            </li>)}
+        </ol>
+        <p class="pv-note">{en ? 'Used your 5 sends? The allowance renews on the first day of each month (UTC). Active quotes have a separate limit. Online payments are subject to availability and processing fees.' : '¿Usaste tus 5 envíos? El cupo se renueva el primer día de cada mes (UTC). Las cotizaciones activas tienen un límite independiente. Los pagos en línea están sujetos a disponibilidad y comisiones de procesamiento.'}</p>
+    </div>
+</section>
+
+<style>
+    .plan-value { display:grid; grid-template-columns: 0.85fr 1.15fr; gap:clamp(2rem,6vw,6rem); max-width:1200px; margin:0 auto; padding:5rem 0; color:var(--color-text); text-align:left; }
+    .pv-eyebrow { font-size:.65rem; font-weight:800; letter-spacing:2px; margin:0 0 1.2rem; color:var(--color-text-muted); }
+    h2 { font-size:clamp(1.9rem,3vw,2.8rem); line-height:1.1; letter-spacing:-.04em; text-wrap:balance; margin:0 0 1.25rem; }
+    p { font-size:.95rem; line-height:1.7; color:var(--color-text-muted); margin:0; }
+    a { display:inline-flex; align-items:center; gap:1rem; min-height:44px; margin-top:1rem; color:var(--color-blue-deep); font-size:.9rem; font-weight:650; text-underline-offset:5px; }
+    a:focus-visible { outline:2px solid currentColor; outline-offset:5px; border-radius:4px; }
+    ol { list-style:none; padding:0; margin:0; }
+    li { display:grid; grid-template-columns:92px 1fr; gap:1rem; padding:1.5rem 0; border-top:1px solid var(--color-border); }
+    .pv-plan { font-size:.75rem; font-weight:650; color:var(--color-blue-deep); padding-top:.15rem; }
+    h3 { font-size:1rem; line-height:1.4; letter-spacing:-.02em; margin:0 0 .5rem; }
+    .pv-note { font-size:.78rem; padding-top:1.5rem; border-top:1px solid var(--color-border); }
+    @media(max-width:900px) { .plan-value { grid-template-columns:1fr; gap:2rem; padding:3rem 5%; } }
+    @media(max-width:380px) { li { grid-template-columns:1fr; gap:.5rem; } }
+</style>

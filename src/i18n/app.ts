@@ -12,7 +12,7 @@
 //   const L = currentLocale();
 //   ... {t(L, 'sidebar.grupo.principal')} ...
 //
-// ⚠️ Este diccionario se llena de forma INCREMENTAL — ver docs/historial-app-features.md
+// ⚠️ Este diccionario se llena de forma INCREMENTAL — ver docs/historial/app-features.md
 // para el registro de qué páginas ya están cubiertas. Una key ausente cae al
 // español (fail-safe) vía el fallback de t().
 
@@ -691,7 +691,7 @@ export const appStrings = {
         "set.pdf.item3": "Block hueco 15×20×40",
 
         // Ajustes › Aprobaciones y tesorería
-        "set.aprob.intro": "Protege tus márgenes: topes que disparan aprobación de gerencia y la tasa de interés por mora.",
+        "set.aprob.intro": "Protege tus márgenes con topes que disparan aprobación de gerencia.",
         "set.aprob.umbrales": "Umbrales de aprobación",
         "set.aprob.desc_max": "Descuento máx. sin aprobación (%)",
         "set.aprob.desc_max_hint": "0 = sin tope. Por encima, \"Enviar\" pide aprobación de gerencia.",
@@ -701,7 +701,7 @@ export const appStrings = {
         "set.aprob.margen_min_hint": "0 = sin tope. Si alguna línea baja de este margen, la cotización se bloquea hasta que gerencia apruebe. Requiere que los productos tengan costo configurado.",
         "set.aprob.tesoreria": "Tesorería",
         "set.aprob.interes": "Interés moratorio mensual (%)",
-        "set.aprob.interes_hint": "Compuesto sobre el saldo vencido. Se calcula en Cobranza.",
+        "set.aprob.interes_hint": "La aplicación automática está suspendida mientras concluye la revisión jurídica por país. Las tasas guardadas no generan cargos.",
 
         // Ajustes › Plantillas de mensaje
         "set.pl.intro": "Escribe una vez, reutiliza siempre. Estos textos aparecen al enviar una cotización por WhatsApp o correo. Usa variables como {cliente} o {link} y se rellenan solas.",
@@ -1398,7 +1398,7 @@ export const appStrings = {
         "set.el.ev_message": "comentario o contraoferta",
         "set.el.ev_pay": "inició el pago en línea",
 
-        "set.datos.intro": "Tus datos son tuyos. Expórtalos cuando quieras o cierra tu cuenta. Cord no vende ni comparte tu información.",
+        "set.datos.intro": "Exporta tus datos cuando quieras o cierra tu cuenta. Cord no vende tu información; solo la comunica para prestar el servicio, cumplir obligaciones o seguir tus instrucciones.",
         "set.datos.exportar_titulo": "Exportar tus datos",
         "set.datos.json_titulo": "Descargar todo (JSON)",
         "set.datos.json_desc": "Productos, clientes, cotizaciones (con líneas y eventos), tareas y registro de auditoría en un solo archivo portable.",
@@ -1409,14 +1409,14 @@ export const appStrings = {
         "set.datos.csv_clientes": "Clientes",
         "set.datos.proximamente": "Próximamente",
         "set.datos.retencion_titulo": "Retención de datos",
-        "set.datos.retencion_desc": "Conservamos tus cotizaciones y CFDI mientras tu cuenta esté activa. Los CFDI timbrados se guardan <b>5 años</b> conforme al SAT. Las cotizaciones rechazadas o vencidas siguen disponibles para tu histórico hasta que las borres.",
+        "set.datos.retencion_desc": "Conservamos tus cotizaciones y CFDI en la organización mientras esté activa. Cord no sustituye tu archivo fiscal: exporta tus CFDI. La evidencia contractual seudónima y los registros de proveedores pueden tener un tratamiento separado.",
         "set.datos.zona_peligro": "Zona de peligro",
         "set.datos.eliminar_cuenta_titulo": "Eliminar la cuenta de {org}",
-        "set.datos.eliminar_cuenta_desc": "Borra de forma permanente la organización y <b>todos</b> sus datos. No se puede deshacer. Exporta antes.",
+        "set.datos.eliminar_cuenta_desc": "Borra de forma permanente la organización y sus datos operativos en la base principal de Cord. No borra automáticamente registros de proveedores, respaldos en rotación ni evidencia contractual seudónima. Exporta antes.",
         "set.datos.eliminar_cuenta": "Eliminar cuenta",
         "set.datos.eliminar_solo_owner": "Solo el dueño de la organización puede eliminarla.",
         "set.datos.dlg_titulo": "Eliminar {org} para siempre",
-        "set.datos.dlg_intro": "Se borrarán todas las cotizaciones, clientes, productos, CFDI, llaves API, webhooks y el equipo. Esto no se puede deshacer.",
+        "set.datos.dlg_intro": "Se borrarán de Cord las cotizaciones, clientes, productos, CFDI, llaves API, webhooks y el equipo de esta organización. Proveedores y evidencia contractual pueden conservar registros por separado. Esto no se puede deshacer.",
         "set.datos.dlg_pass_label": "Tu contraseña",
         "set.datos.dlg_code_label": "Código de tu app de autenticación",
         "set.datos.dlg_confirm_label": "Escribe \"{org}\" para confirmar",
@@ -3913,7 +3913,7 @@ export const appStrings = {
         "set.pdf.item3": "Hollow block 15×20×40",
 
         // Settings › Approvals & treasury
-        "set.aprob.intro": "Protect your margins: thresholds that trigger management approval, plus the late-payment interest rate.",
+        "set.aprob.intro": "Protect your margins with thresholds that trigger management approval.",
         "set.aprob.umbrales": "Approval thresholds",
         "set.aprob.desc_max": "Max discount without approval (%)",
         "set.aprob.desc_max_hint": "0 = no limit. Above it, \"Send\" requires management approval.",
@@ -3923,7 +3923,7 @@ export const appStrings = {
         "set.aprob.margen_min_hint": "0 = no limit. If any line falls below this margin, the quote is blocked until management approves. Requires products to have a cost configured.",
         "set.aprob.tesoreria": "Treasury",
         "set.aprob.interes": "Monthly late-payment interest (%)",
-        "set.aprob.interes_hint": "Compounded on the overdue balance. Calculated in Collections.",
+        "set.aprob.interes_hint": "Automatic application is suspended while the country-by-country legal review is completed. Saved rates do not generate charges.",
 
         // Settings › Message templates
         "set.pl.intro": "Write once, reuse forever. This text appears when sending a quote via WhatsApp or email. Use variables like {cliente} or {link} and they fill in automatically.",
@@ -4620,7 +4620,7 @@ export const appStrings = {
         "set.el.ev_message": "comment or counteroffer",
         "set.el.ev_pay": "started online payment",
 
-        "set.datos.intro": "Your data is yours. Export it whenever you want, or close your account. Cord doesn't sell or share your information.",
+        "set.datos.intro": "Export your data whenever you want, or close your account. Cord does not sell your information; it discloses it only to provide the service, meet duties, or follow your instructions.",
         "set.datos.exportar_titulo": "Export your data",
         "set.datos.json_titulo": "Download everything (JSON)",
         "set.datos.json_desc": "Products, clients, quotes (with line items and events), tasks, and audit log in a single portable file.",
@@ -4631,14 +4631,14 @@ export const appStrings = {
         "set.datos.csv_clientes": "Clients",
         "set.datos.proximamente": "Coming soon",
         "set.datos.retencion_titulo": "Data retention",
-        "set.datos.retencion_desc": "We keep your quotes and invoices while your account is active. Stamped CFDI invoices are kept for <b>5 years</b> per SAT requirements. Rejected or expired quotes remain available in your history until you delete them.",
+        "set.datos.retencion_desc": "We keep quotes and CFDI inside the organization while it is active. Cord does not replace your tax archive: export your CFDI. Pseudonymous contract evidence and provider records may be handled separately.",
         "set.datos.zona_peligro": "Danger zone",
         "set.datos.eliminar_cuenta_titulo": "Delete {org}'s account",
-        "set.datos.eliminar_cuenta_desc": "Permanently deletes the organization and <b>all</b> its data. Cannot be undone. Export first.",
+        "set.datos.eliminar_cuenta_desc": "Permanently deletes the organization and its operational data from Cord's primary database. It does not automatically erase provider records, backups still in rotation, or pseudonymous contract evidence. Export first.",
         "set.datos.eliminar_cuenta": "Delete account",
         "set.datos.eliminar_solo_owner": "Only the organization's owner can delete it.",
         "set.datos.dlg_titulo": "Delete {org} forever",
-        "set.datos.dlg_intro": "All quotes, clients, products, invoices, API keys, webhooks, and the team will be deleted. This cannot be undone.",
+        "set.datos.dlg_intro": "Cord will delete this organization's quotes, clients, products, invoices, API keys, webhooks, and team. Providers and contract evidence may retain separate records. This cannot be undone.",
         "set.datos.dlg_pass_label": "Your password",
         "set.datos.dlg_code_label": "Code from your authenticator app",
         "set.datos.dlg_confirm_label": "Type \"{org}\" to confirm",

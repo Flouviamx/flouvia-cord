@@ -1,0 +1,92 @@
+---
+title: "Payment and invoicing improvements"
+description: "Verified changes, benefits and pending validation."
+lastUpdated: "2026-09-08"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Payment and invoicing improvements</h1>
+  <p class="page-subtitle">Verified changes, benefits and pending validation.</p>
+</header>
+
+## What changes and why it helps
+
+This guide brings together the review of Cord Payments, Cord Invoicing and the
+subscription. It separates implemented work from pending activation: a passing
+test is not proof of production availability.
+
+| Improvement | Business benefit | Guide |
+| --- | --- | --- |
+| 2FA on dashboard requests | Requires verification before operating when the business mandates it | [Team and security](/en/docs/cuenta/equipo-seguridad) |
+| Subsequent payments use the invoice balance | Supports completing partial payments without charging the original total again | [Invoices](/en/docs/pagos/facturas-emitidas) |
+| Separate payments, credits and refunds | Explains money collected, amounts due and money to return | [Balances](/en/docs/pagos/facturas-emitidas) |
+| Taxes, withholdings and fiscal credit notes | Preserves line detail and the relationship between a credit note and its invoice | [Invoicing](/en/docs/pagos/facturacion) |
+| Confirmed cancellation | Prevents presenting an invoice as void while its request is pending | [Cancellation help](https://cordhq.app/en/support/cancelar-facturas) |
+| Downloads from invoice links | Recipients obtain available documents without entering the seller dashboard | [Invoice links](https://cordhq.app/en/support/enlace-publico-factura) |
+| Refreshable balance and next action | Helps customers distinguish paying, waiting for confirmation and contacting the business | [Invoices](/en/docs/pagos/facturas-emitidas) |
+| Recurring-period protection | Reduces duplicate issuance from concurrent runs and respects calendar edits | [Recurring invoices](/en/docs/pagos/facturas-recurrentes) |
+| EUR subscriptions and explicit overage | Offers fixed euro prices while preserving existing contract currency | [Subscription](/en/docs/cuenta/suscripcion) |
+| Branding follows effective plan | Preserves customization terms during upgrades and downgrades | [Subscription](/en/docs/cuenta/suscripcion) |
+
+The fixes are implemented and have regression tests. USD/EUR pricing configuration
+and authorized migrations were checked in connected services. Combined publication
+of these changes still needs verification; check the state shown by your account
+rather than assuming activation from this guide.
+
+## Safe switching from SPEI to card: under validation
+
+The first reliability block verifies the previous attempt before replacing it,
+preserves retries and blocks another method when funds have been received or are
+in progress. Its required registry is prepared in the connected database. Integrated
+testing and publication verification remain pending. It does not automatically
+recover every uncertain attempt or refund late transfers.
+
+## Direct-invoice fees: implemented, acceptance pending
+
+Payments through an invoice link also record their platform fee, linked to the
+correct document and business. The fee split prepared for that payment is retained,
+and the charge is retrieved to record verifiable processing costs and net proceeds.
+This helps prevent payments made without a quote from being omitted from the fee ledger.
+
+Missing processing costs leave the record pending. Unverifiable fee splits or
+currency mismatches require review and are excluded from the automatic monthly
+fee-invoice draft. Rates are unchanged and historical charges are not recalculated
+using current prices. Integrated acceptance, pending-record recovery and publication
+still need verification.
+
+## Idle sessions: implemented, acceptance pending
+
+The inactivity policy is also checked on protected APIs and billing. Public-page
+visits do not refresh sessions, and concurrent requests cannot revive an expired
+session. [See the scope and how activity is measured](/en/docs/cuenta/equipo-seguridad).
+
+## What tests establish
+
+Normal flows and simulated failures were tested: repeated notifications, partial
+payments, refunds arriving before payments, pending cancellations, issuance retries,
+concurrent periods and access to the correct document. SQL tests with a restricted
+role, compilation and security contract checks also ran. They do not guarantee
+zero failures, backup restoration, actual connection-role isolation or all production
+journeys.
+
+## Next: reliability before new capabilities
+
+Phase 1 continues with direct-invoice fees, actual database isolation, session
+inactivity, event recovery, alerts, backup restoration and integrated tests. Phase 2
+covers commercial continuity, follow-up and useful workflows for product and service
+businesses; it has not been delivered.
+
+See the [roadmap](https://cordhq.app/en/roadmap) for each initiative's scope.
+
+## One payment flow: implementation prepared
+
+Integrations that still request the previous checkout will receive a link to
+Cord's current payment screen. They will use the same payment-attempt registry
+and payable balance instead of creating an independent hosted payment session.
+The API response retains its `url` field and accepted rates remain unchanged.
+
+Before activation, existing open or pending sessions are reviewed. They are not
+automatically canceled or refunded. The current audit found no sessions in the
+connected accounts checked; it must be repeated at release time. Deployment and
+integrated acceptance remain pending.

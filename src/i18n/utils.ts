@@ -6,6 +6,7 @@ export type PublicLang = keyof typeof ui;
 const TRANSLATED_PUBLIC_ROUTES = [
   '/',
   '/blog',
+  '/build',
   '/como-funciona',
   '/comparar/facturacion',
   '/contacto/ventas',

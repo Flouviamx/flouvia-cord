@@ -5,7 +5,7 @@ description: "Turn an approved quote into the fiscal document that matches your 
 
 <header class="content-header">
   <h1 class="page-title">Approval and invoicing</h1>
-  <p class="page-subtitle">Closing the loop. Cord issues your country's fiscal document as soon as the client approves, and helps you follow up on pending balances.</p>
+  <p class="page-subtitle">Closing the loop. After approval, you can collect payment, issue the document available for your market, and follow up on pending balances.</p>
 </header>
 
 ## Digital Approval
@@ -20,8 +20,8 @@ When the client reviews the Magic Link and clicks **Approve Quote**, several thi
 Cord doesn't issue the same kind of receipt everywhere — your business's country decides the rail:
 
 - **Mexico:** CFDI 4.0 stamped with the SAT, through a certified electronic-invoicing provider.
-- **Spain:** an invoice with full legal grounds and the certified invoicing record required by **Verifactu** (RD 1007/2023).
-- **Rest of Cord's supported countries** (United States, Canada, Brazil, United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru): a complete commercial invoice, with a sequential number, line-item taxes, and full validity between the parties — no stamping with any authority, because that mechanism doesn't exist there.
+- **Spain:** a commercial invoice. A chained Verifactu record is created only when the organization's certificate and Cord's regulatory rail are active; otherwise the status is `commercial_only`.
+- **Other supported markets** (United States, Canada, Brazil, United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru): a commercial invoice with sequential numbering and taxes configured by the business, without automatic filing with the local tax authority.
 
 See the full country-by-country detail in [Fiscal invoicing by country](/en/docs/pagos/facturacion).
 
@@ -36,9 +36,10 @@ See the full country-by-country detail in [Fiscal invoicing by country](/en/docs
 
 For quotes with credit terms (Net 30/60) or those where the client only paid the advance, Cord has a **Collections** and **Treasury** module — the full picture lives in [Treasury and FX Lock](/en/docs/pagos/tesoreria-fx) and [Autonomous Collections (AI)](/en/docs/pagos/cobranza-ia); here's a summary of how it connects to a closed quote.
 
-### Automatic late interest
+### Late interest
 
-Available from the **Scale** plan (includes **Developer**) and configured in **Settings › Approvals**: if a quote's balance passes its due date, Cord applies compound interest monthly on the outstanding principal, and sends you a summary email every 1st of the month with everything generated in surcharges.
+Automatic application is suspended while the country-by-country legal review is
+completed. Saved rates do not generate new charges during this period.
 
 ### Autonomous Collections Agent (AI)
 

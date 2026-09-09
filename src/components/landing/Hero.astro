@@ -48,6 +48,7 @@ const l = (p: string) => publicPath(p, lang);
                 <div class="ph-widget-cta">Check it out →</div>
             </a>
         </div>
+        <p class="hero-free-note">{t('hero.free.note')}</p>
     </div>
 
     <!-- ── MOCKUP (demo interactivo · calca de la app real) ── -->
@@ -191,6 +192,10 @@ const l = (p: string) => publicPath(p, lang);
         </div>
     </div>
 </section>
+
+<style>
+    .hero-free-note { margin:1.25rem 0 0; color:var(--color-text-muted); font-size:.85rem; line-height:1.6; }
+</style>
 
 <style>
     .hero {

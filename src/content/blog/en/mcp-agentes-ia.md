@@ -5,8 +5,8 @@ category: "Technology"
 date: "02 May 2026"
 readTime: "12 MIN"
 img: "/images/blog/mcp-agentes-ia.png"
-authorName: "Engineering Team"
-authorRole: "Cord Core Team"
+authorName: "Cord Team"
+authorRole: "Product engineering"
 ---
 
 During the first wave of Generative Artificial Intelligence (2023-2024), almost all B2B platforms made the same mistake: they added a floating "Chatbot" in the bottom right corner of their software.
@@ -29,11 +29,11 @@ At **Cord**, we decided to adopt MCP as the definitive bridge between Claude's i
 
 ### How our MCP Tools work
 
-When you connect your Cord environment to Claude (Desktop or Enterprise), the AI acquires direct write capabilities into your database:
+When you connect a compatible MCP client to Cord, the model sees only tools allowed by the API key and active organization. It does not receive direct database access.
 
-1. **`create_quote`:** Claude can assemble a complex proposal. If you tell it: *"Prepare a proposal for Tesla Inc. for 500 annual licenses of our Enterprise software"*, Claude calls the tool, interacts with Cord's backend, and generates the interactive quote link ready to be sent.
-2. **`check_client_credit`:** Before authorizing a sale, the AI can check in milliseconds if the client has overdue invoices or has exceeded their authorized credit line.
-3. **`update_price_list` (Mass Update):** Tasks that would take an operator hours in Excel ("Increase the price of the 'Hardware' category by 5% for all Tier 2 clients"), Claude executes through MCP in seconds.
+1. **`crear_cotizacion_borrador`:** creates a draft with a valid client and line items. It does not send it.
+2. **`cartera_vencida` and `resumen_negocio`:** read operating facts within the key's read scope.
+3. **`buscar_cliente`, `listar_productos`, `listar_cotizaciones`, and `listar_facturas`:** find entities before proposing an action.
 
 > "The future of B2B software is not having better graphical user interfaces (GUIs); it is having perfect semantic APIs so that AI Agents can operate the infrastructure for us."
 
@@ -43,9 +43,9 @@ The major concern of CFOs and CTOs when giving "hands" to AI is security. What h
 
 The MCP standard and its implementation in Cord solve this through the **Human-in-the-Loop (HITL)** principle for destructive or high-impact actions.
 
-When Claude attempts to execute the `send_quote_to_client` tool, the MCP Server intercepts the action and returns an authorization request. In the graphical interface (whether in Cord or in Claude's chat window), the human user sees exactly what action is going to be executed (the JSON *payload*) and must explicitly press "Approve".
+Cord does not currently expose an MCP tool to send a quote or mass-update price lists. The available write tool creates a draft and supports an idempotency key to prevent accidental duplicates. Any additional confirmation shown by an MCP client depends on that client and should not be described as a barrier the Cord server always enforces.
 
-In this way, the AI acts as a hyper-efficient copilot that drafts, prepares, and assembles all the heavy lifting, but the final decision always requires a human signature.
+The actual security model combines a secret key, scopes, organization isolation, argument validation, limits, and audit records. After the draft is created, a person reviews and sends it through the authorized workflow.
 
 ## The Future of Operations
 

@@ -145,9 +145,9 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
 
 /**
  * Crea una cotización (borrador o enviada) para `orgId`. NO valida permisos ni
- * parsea el request — eso lo hace cada ruta (Sesión vs API key). `opts.origin` se
- * usa para construir el link público en el correo; `opts.actor` etiqueta la
- * auditoría (ej. 'api:<keyId>').
+ * parsea el request — eso lo hace cada ruta (Sesión vs API key). `opts.origin`
+ * se conserva por compatibilidad; el correo resuelve el dominio desde orgId.
+ * `opts.actor` etiqueta la auditoría (ej. 'api:<keyId>').
  */
 export async function createCotizacion(
     orgId: string,
@@ -352,7 +352,7 @@ export async function createCotizacion(
 
     let email: { sent: boolean; skipped?: string } | undefined;
     if (input.send && !needsApproval) {
-        email = await notifyQuoteSent(orgId, cot.id as string, opts.origin);
+        email = await notifyQuoteSent(orgId, cot.id as string);
         if (email.sent) {
             await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                       values (${orgId}, ${cot.id}, 'email', 'Correo enviado al cliente')`);

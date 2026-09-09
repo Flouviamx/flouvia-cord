@@ -188,16 +188,20 @@ export const POST: APIRoute = async ({ request }) => {
     try {
         const customer = await getOrCreateCustomer(orgId, org.email, org.nombre);
 
-        // Divisa de plataforma: MXN a México, USD al resto. Se resuelve UNA vez.
+        // Divisa de plataforma: MXN en México, EUR en ES/DE/FR, USD en el resto.
         //
-        // Stripe congela `customer.currency` en la primera factura, así que la del
+        // Cord conserva `customer.currency` cuando ya existe, así que la del
         // customer manda sobre la que derivamos del país: mandar un `currency` que
         // lo contradice es un 400 con el cobro a medias. Un cliente que ya pagó en
         // pesos sigue en pesos aunque hoy su país diga otra cosa.
         let currency = await platformCurrencyForOrg(orgId);
         const cus = await stripe(`/v1/customers/${customer}`, undefined, 'GET');
         const locked = normalizePlatformCurrency(cus?.currency);
+        if (cus?.currency && !locked) return json({ error: 'La moneda de esta suscripción requiere revisión.' }, 409);
         if (locked && locked !== currency) currency = locked;
+        if (body.expectedCurrency !== undefined && normalizePlatformCurrency(body.expectedCurrency) !== currency) {
+            return json({ error: 'La moneda de tu suscripción cambió. Vuelve a Plan para revisar el importe antes de pagar.', code: 'currency_changed' }, 409);
+        }
 
         // Expira locks abandonados. Una Subscription `incomplete` queda terminal
         // en Stripe después de su ventana; el webhook/reconciliador sincroniza el

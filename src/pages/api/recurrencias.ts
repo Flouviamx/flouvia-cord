@@ -15,6 +15,7 @@ import { requirePerm } from '../../lib/queries';
 import { requireEntitlement } from '../../lib/org-entitlements';
 import { currentUserId } from '../../lib/context';
 import { createRecurrencia, type Cadencia } from '../../lib/fiscal/recurrencias';
+import { recurrenceDay } from '../../lib/fiscal/recurrence-calendar';
 import { normalizeCurrency } from '../../lib/currency';
 
 const CADENCIAS = new Set(['mensual', 'trimestral', 'anual']);
@@ -27,9 +28,9 @@ export const GET: APIRoute = async () => {
         select r.id, r.nombre, r.currency, r.cadencia, r.dia_mes, r.dias_credito,
                r.next_run_at, r.end_date, r.activa, r.autopay, r.ultimo_error,
                r.ultima_emision_at, cl.empresa as cliente,
-               (select count(*)::int from documentos_fiscales d where d.recurrencia_id = r.id) as emitidas
+               (select count(*)::int from documentos_fiscales d where d.recurrencia_id = r.id and d.org_id = r.org_id and d.status = 'issued') as emitidas
           from documento_recurrencias r
-          join clientes cl on cl.id = r.cliente_id
+          join clientes cl on cl.id = r.cliente_id and cl.org_id = r.org_id
          where r.org_id = ${orgId}
          order by r.activa desc, r.next_run_at asc`);
     return json({ recurrencias: rows });
@@ -57,8 +58,9 @@ export const POST: APIRoute = async ({ request }) => {
         const [[doc]] = await withOrgTx(orgId, sql`
             select d.cliente_id, d.currency, d.line_items_snapshot, d.invoice_number, cl.empresa
               from documentos_fiscales d
-              left join clientes cl on cl.id = d.cliente_id
-             where d.id = ${String(body.fromDocumentoId)} and d.org_id = ${orgId}
+              left join clientes cl on cl.id = d.cliente_id and cl.org_id = d.org_id
+             where d.id = ${String(body.fromDocumentoId)} and d.org_id = ${orgId} and d.credit_note_of is null
+               and d.document_type not in ('credit_note', 'cfdi_egreso') and d.status = 'issued'
              limit 1`);
         if (!doc) return json({ error: 'Factura no encontrada.' }, 404);
         if (!doc.cliente_id) return json({ error: 'Esta factura no tiene un cliente al que repetirle el cobro.' }, 400);
@@ -92,8 +94,8 @@ export const POST: APIRoute = async ({ request }) => {
         diaMes: Number(body.diaMes) || 1,
         diasCredito: Number(body.diasCredito) || 0,
         notas: body.notas ? String(body.notas).slice(0, 1000) : null,
-        primeraEmision: body.primeraEmision ? String(body.primeraEmision).slice(0, 10) : null,
-        endDate: body.endDate ? String(body.endDate).slice(0, 10) : null,
+        primeraEmision: body.primeraEmision ? String(body.primeraEmision) : null,
+        endDate: body.endDate ? String(body.endDate) : null,
         autopay: false,   // el cobro automático llega con el método guardado del cliente
     }, currentUserId());
 
@@ -113,6 +115,10 @@ export const PATCH: APIRoute = async ({ request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     const id = String(body.id ?? '');
     if (!UUID_RE.test(id)) return json({ error: 'Falta id' }, 400);
+
+    if (body.endDate) {
+        try { recurrenceDay(body.endDate); } catch { return json({ error: 'La fecha final no es válida.' }, 400); }
+    }
 
     // Pausar SIEMPRE se permite, incluso sin plan: dejar a alguien sin poder
     // detener una emisión automática porque bajó de plan es un cobro que no
@@ -136,15 +142,15 @@ export const PATCH: APIRoute = async ({ request }) => {
             await withOrgTx(orgId, sql`update documento_recurrencias set nombre = ${String(body.nombre).slice(0, 120)}, updated_at = now() where id = ${id} and org_id = ${orgId}`);
         }
         if (body.diaMes !== undefined) {
-            const dia = Math.min(28, Math.max(1, Number(body.diaMes) || 1));
+            const dia = Math.min(28, Math.max(1, Math.round(Number(body.diaMes)) || 1));
             await withOrgTx(orgId, sql`update documento_recurrencias set dia_mes = ${dia}, updated_at = now() where id = ${id} and org_id = ${orgId}`);
         }
         if (body.diasCredito !== undefined) {
-            const dias = Math.max(0, Math.min(365, Number(body.diasCredito) || 0));
+            const dias = Math.max(0, Math.min(365, Math.round(Number(body.diasCredito)) || 0));
             await withOrgTx(orgId, sql`update documento_recurrencias set dias_credito = ${dias}, updated_at = now() where id = ${id} and org_id = ${orgId}`);
         }
         if (body.endDate !== undefined) {
-            await withOrgTx(orgId, sql`update documento_recurrencias set end_date = ${body.endDate ? String(body.endDate).slice(0, 10) : null}, updated_at = now() where id = ${id} and org_id = ${orgId}`);
+            await withOrgTx(orgId, sql`update documento_recurrencias set end_date = ${body.endDate ? String(body.endDate) : null}, updated_at = now() where id = ${id} and org_id = ${orgId}`);
         }
     }
     return json({ ok: true });

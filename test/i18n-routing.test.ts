@@ -22,6 +22,8 @@ describe('publicPath', () => {
   it('localizes only routes that have a real English page', () => {
     expect(publicPath('/', 'en')).toBe('/en');
     expect(publicPath('/precios', 'en')).toBe('/en/precios');
+    expect(publicPath('/build#posiciones', 'en')).toBe('/en/build#posiciones');
+    expect(publicPath('/build', 'es')).toBe('/build');
     expect(publicPath('/producto/editor?plan=pro', 'en')).toBe('/en/producto/editor?plan=pro');
     expect(publicPath('/soporte/categoria/pagos', 'en')).toBe('/en/support/category/pagos');
   });
@@ -50,6 +52,7 @@ describe('canonicalPathForInvalidEnglishRoute', () => {
 
   it('does not rewrite real English pages', () => {
     expect(canonicalPathForInvalidEnglishRoute('/en/precios')).toBeNull();
+    expect(canonicalPathForInvalidEnglishRoute('/en/build')).toBeNull();
     expect(canonicalPathForInvalidEnglishRoute('/en/producto/editor')).toBeNull();
     expect(canonicalPathForInvalidEnglishRoute('/en/support')).toBeNull();
   });

@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
+      "path": "/api/health",
+      "schedule": "0 10 * * *"
+    },
+    {
       "path": "/api/cron/recurrencias",
       "schedule": "0 13 * * *"
     },
@@ -50,7 +54,20 @@
       "schedule": "0 9 * * *"
     }
   ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "(?!(?:(?:www|dev|docs|ops|billing|build|pay)\\.)?cordhq\\.app$|cord\\.flouvia\\.com$|[a-z0-9.-]+\\.vercel\\.app$).+" }],
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }]
+    }
+  ],
   "redirects": [
+    {
+      "source": "/((?!(?:q|i)(?:/|$)|api/|_astro/|imgs/|fonts/|favicon\\.ico$|robots\\.txt$|\\.well-known/cord-domain-check$).+)",
+      "has": [{ "type": "host", "value": "(?!(?:(?:www|dev|docs|ops|billing|build|pay)\\.)?cordhq\\.app$|cord\\.flouvia\\.com$|[a-z0-9.-]+\\.vercel\\.app$).+" }],
+      "destination": "/",
+      "permanent": false
+    },
     {
       "source": "/(.*)",
       "has": [

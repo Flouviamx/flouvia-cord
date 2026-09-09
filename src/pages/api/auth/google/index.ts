@@ -7,6 +7,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 import { currentUserId } from '../../../../lib/context';
 import { beginOAuthLink, clearOAuthLink, linkRedirect } from '../../../../lib/oauth-link';
+import { SIGNUP_LEGAL_INTENT_COOKIE } from '../../../../lib/legal-signup';
 
 function base64url(buf: Buffer): string {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
@@ -46,6 +47,17 @@ export const GET: APIRoute = async ({ cookies, redirect, url }) => {
   // roundtrip completo a Google y de vuelta (un query param se perdería).
   const dest = safeRelativeRedirect(url.searchParams.get('redirect_url'));
   if (dest) cookies.set('cord_oauth_redirect', dest, cookieOpts);
+
+  // El mismo endpoint sirve para login y alta. Solo el botón de /sign-up manda
+  // esta intención; si el callback descubre que la identidad es nueva, exige y
+  // consume el token. Una cuenta ya existente puede iniciar sesión sin volver a
+  // aceptar aquí: la reaceptación de versiones futuras tiene su propio gate.
+  const signup = url.searchParams.get('signup_intent') === '1';
+  if (signup) {
+    if (!cookies.get(SIGNUP_LEGAL_INTENT_COOKIE)?.value) return redirect('/sign-up?legal_required=1');
+  } else {
+    cookies.delete(SIGNUP_LEGAL_INTENT_COOKIE, { path: '/' });
+  }
 
   // Una intención de vinculación vieja jamás debe contaminar un login normal.
   if (linkUserId) beginOAuthLink(cookies, linkUserId);

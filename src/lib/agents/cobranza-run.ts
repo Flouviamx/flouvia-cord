@@ -13,7 +13,8 @@
 
 import { sql, withOrgTx, withSystemTx } from '../db';
 import { runARAgent } from './ar-agent';
-import { sendEmail, siteOrigin } from '../email';
+import { sendEmail } from '../email';
+import { publicDocumentUrl } from '../public-links';
 import { moneyFull } from '../fmt';
 import { checkEntitlement } from '../org-entitlements';
 
@@ -29,6 +30,9 @@ export interface CobranzaConfig {
     firma: string | null;
     montoMin: number;
     maxCorrida: number;
+    creditorName: string;
+    creditorTaxId: string | null;
+    contactEmail: string | null;
 }
 
 export type OmitMotivo = 'cadencia' | 'exclusion' | 'monto_min' | 'plan_al_corriente' | 'saldado' | 'tope_corrida';
@@ -45,6 +49,7 @@ export interface RunResult {
 const DEFAULTS: CobranzaConfig = {
     activa: false, modo: 'aprobacion', graciaDias: 3, cadenciaDias: 7, planDias: 15,
     maxCuotas: 3, tono: 'profesional', idioma: 'es', firma: null, montoMin: 0, maxCorrida: 25,
+    creditorName: 'Acreedor', creditorTaxId: null, contactEmail: null,
 };
 
 function rowToConfig(row: any): CobranzaConfig {
@@ -65,6 +70,9 @@ function rowToConfig(row: any): CobranzaConfig {
         firma: row.ai_cobranza_firma ? String(row.ai_cobranza_firma).slice(0, 400) : null,
         montoMin: Math.max(0, Number(row.ai_cobranza_monto_min) || 0),
         maxCorrida: clamp(row.ai_cobranza_max_corrida, 1, 200, DEFAULTS.maxCorrida),
+        creditorName: String(row.creditor_name || row.nombre || DEFAULTS.creditorName).slice(0, 200),
+        creditorTaxId: row.creditor_tax_id ? String(row.creditor_tax_id).slice(0, 64) : null,
+        contactEmail: row.contact_email ? String(row.contact_email).slice(0, 320) : null,
     };
 }
 
@@ -76,14 +84,20 @@ function clamp(v: any, min: number, max: number, fallback: number): number {
 
 export const CONFIG_COLUMNS = `ai_cobranza_activa, ai_cobranza_modo, ai_cobranza_gracia_dias,
     ai_cobranza_cadencia_dias, ai_cobranza_plan_dias, ai_cobranza_max_cuotas, ai_cobranza_tono,
-    ai_cobranza_idioma, ai_cobranza_firma, ai_cobranza_monto_min, ai_cobranza_max_corrida`;
+    ai_cobranza_idioma, ai_cobranza_firma, ai_cobranza_monto_min, ai_cobranza_max_corrida,
+    coalesce(fiscal_metadata->>'legal_name', razon_social, nombre) as creditor_name,
+    coalesce(fiscal_metadata->>'tax_id', rfc) as creditor_tax_id,
+    coalesce(email_reply_to, email_contacto) as contact_email`;
 
 export async function getCobranzaConfig(orgId: string): Promise<CobranzaConfig> {
     const [[row]] = await withOrgTx(orgId, sql`
         select ai_cobranza_activa, ai_cobranza_modo, ai_cobranza_gracia_dias,
                ai_cobranza_cadencia_dias, ai_cobranza_plan_dias, ai_cobranza_max_cuotas,
                ai_cobranza_tono, ai_cobranza_idioma, ai_cobranza_firma,
-               ai_cobranza_monto_min, ai_cobranza_max_corrida
+               ai_cobranza_monto_min, ai_cobranza_max_corrida,
+               coalesce(fiscal_metadata->>'legal_name', razon_social, nombre) as creditor_name,
+               coalesce(fiscal_metadata->>'tax_id', rfc) as creditor_tax_id,
+               coalesce(email_reply_to, email_contacto) as contact_email
         from orgs where id = ${orgId}`);
     return rowToConfig(row);
 }
@@ -100,14 +114,23 @@ const linkify = (escaped: string, url: string) => {
 /** Plantilla del correo de cobranza (la buena del cron; el clon la tenía sin botón). */
 export function renderCollectionEmail(opts: {
     cuerpo: string; payUrl: string; cobraOnline: boolean; montoBoton: number; idioma: 'es' | 'en';
+    creditorName: string; creditorTaxId?: string | null; contactEmail?: string | null;
 }): string {
-    const { cuerpo, payUrl, cobraOnline, montoBoton, idioma } = opts;
+    const { cuerpo, payUrl, cobraOnline, montoBoton, idioma, creditorName, creditorTaxId, contactEmail } = opts;
     const en = idioma === 'en';
     const cta = cobraOnline
         ? (en ? `Pay ${moneyFull(montoBoton, 'en')} online` : `Pagar ${moneyFull(montoBoton, 'es')} en línea`)
         : (en ? 'View quote and payment options' : 'Ver cotización y opciones de pago');
     const seguro = en ? 'Secure payment processed by Stripe.' : 'Pago seguro procesado por Stripe.';
-    const pie = en ? 'Automated collections · Cord' : 'Cobranza automatizada · Cord';
+    const disclosure = en
+        ? `This is an automated collections message sent by Cord on behalf of ${creditorName}.`
+        : `Este es un mensaje automatizado de cobranza enviado por Cord en nombre de ${creditorName}.`;
+    const stop = en
+        ? 'To request that automated messages stop, reply to this email or contact the creditor.'
+        : 'Para solicitar que se detengan los mensajes automáticos, responde a este correo o contacta al acreedor.';
+    const contact = contactEmail
+        ? `<a href="mailto:${encodeURIComponent(contactEmail)}?subject=${encodeURIComponent(en ? 'Stop automated collections messages' : 'Detener mensajes automáticos de cobranza')}" style="color:#6B7280;">${escapeHtml(contactEmail)}</a>`
+        : (en ? 'Use the contact information previously provided by the creditor.' : 'Usa los datos de contacto proporcionados previamente por el acreedor.');
     return `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <div style="max-width:540px;margin:0 auto;">
     <div style="margin-bottom:32px;">
@@ -119,7 +142,10 @@ export function renderCollectionEmail(opts: {
       ${cobraOnline ? `<p style="font-size:12px;color:#9CA3AF;margin:10px 0 0;">${seguro}</p>` : ''}
     </div>
     <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
-      <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${pie}</p>
+      <p style="font-size:13px;color:#4B5563;margin:0 0 6px;line-height:1.5;font-weight:600;">${escapeHtml(creditorName)}</p>
+      ${creditorTaxId ? `<p style="font-size:12px;color:#6B7280;margin:0 0 10px;line-height:1.5;">${en ? 'Tax ID' : 'Identificación fiscal'}: ${escapeHtml(creditorTaxId)}</p>` : ''}
+      <p style="font-size:12px;color:#6B7280;margin:0;line-height:1.55;">${escapeHtml(disclosure)}</p>
+      <p style="font-size:12px;color:#6B7280;margin:8px 0 0;line-height:1.55;">${escapeHtml(stop)} ${contact}</p>
     </div>
   </div>
 </div>`;
@@ -162,8 +188,6 @@ export async function runCobranzaOrg(
     const cfg = await getCobranzaConfig(orgId);
     const out: RunResult = { orgId, procesadas: 0, borradores: 0, enviados: 0, fallidos: 0, omitidas: [] };
     if (!cfg.activa && !opts.dryRun) return out;
-
-    const origin = siteOrigin();
 
     // Candidatas: mismo cálculo canónico de vencimiento que getCobranza(), el cron
     // de intereses y el de recordatorios — coalesce(approved_at, created_at) + los
@@ -269,8 +293,8 @@ export async function runCobranzaOrg(
         // de la factura lleva SU saldo, que no es el de la cotización cuando ya
         // hubo abonos o una nota de crédito.
         const payUrl = esFactura
-            ? `${origin}/i/${q.public_token}`
-            : (cobraOnline ? `${origin}/q/${q.public_token}/pay` : `${origin}/q/${q.public_token}`);
+            ? await publicDocumentUrl(orgId, 'i', q.public_token)
+            : await publicDocumentUrl(orgId, 'q', q.public_token, cobraOnline ? '/pay' : undefined);
         const montoBoton = proxCobro ? Number(proxCobro.monto) : q.saldo;
 
         const [historial] = await withOrgTx(orgId, sql`
@@ -340,8 +364,12 @@ export async function runCobranzaOrg(
                 subject: cfg.idioma === 'en'
                     ? `Payment reminder — overdue balance (${diasVencido} days)`
                     : `Recordatorio de pago — saldo vencido (${diasVencido} días)`,
-                fromName: null,
-                html: renderCollectionEmail({ cuerpo: res.mensaje, payUrl, cobraOnline, montoBoton, idioma: cfg.idioma }),
+                fromName: `${cfg.creditorName} vía Cord`,
+                replyTo: cfg.contactEmail,
+                html: renderCollectionEmail({
+                    cuerpo: res.mensaje, payUrl, cobraOnline, montoBoton, idioma: cfg.idioma,
+                    creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
+                }),
             })
             : { sent: false, skipped: 'sin email' as string, messageId: undefined };
 

@@ -1,37 +1,93 @@
 ---
-title: "Cambiar tu plan de Cord"
-description: "Administra tu suscripción de Cord: planes, uso del mes y método de pago."
+title: "Tu suscripción a Cord"
+description: "Planes en MXN, USD y EUR, cuotas, excedentes y conservación de tu contrato."
 category: "Cuenta y Equipo"
-order: 4
 ---
 
-Cord es un SaaS con modelo freemium: pagas una cuota mensual por usar la plataforma. Los cobros procesados por Cord Payments tienen una tarifa separada por método, visible y aceptada antes de activarlos.
+# Tu suscripción a Cord
 
-### Los planes
 
-La divisa depende del país de tu negocio: **México factura en pesos (MXN)** y el
-resto del mundo **en dólares (USD)**. Es la divisa de tu suscripción a Cord, no la
-de tus ventas — tú puedes cotizarle a tus clientes en la que quieras.
+## Divisa y precio base
 
-| Plan | MXN/mes | USD/mes | Para quién |
-| :--- | :--- | :--- | :--- |
-| **Gratis** | $0 | $0 | Probar: 5 cotizaciones, 50 productos/clientes, 3 armados con IA al mes, "Powered by Cord". |
-| **Starter** | $240 | $12 | El que vende solo: 50 cotizaciones, 500 productos/clientes, 20 IA + 3 CFDI al mes, tu marca, CSV. |
-| **Profesional** | $590 | $30 | Equipos: cotizaciones ilimitadas, 5 usuarios, 50 IA + 20 CFDI, seguimiento en vivo, analítica, audit log. |
-| **Scale** | $1,390 | $70 | Operaciones: 15 usuarios, 500 IA + 100 CFDI, aprobaciones, cobranza, SMTP propio. |
-| **Developer** | $2,990 | $150 | Integrar: usuarios/IA ilimitados, 1,000 CFDI + 50,000 API al mes, excedentes más baratos. |
+La suscripción paga el uso de Cord. Las comisiones de Cord Payments y la moneda
+que usas para vender a tus clientes se administran por separado.
 
-Lo que ves es lo que pagas: no se suma nada al cobrar. El pago **anual** te da 2
-meses gratis (pagas 10).
+| País para nuevas contrataciones | Divisa |
+| --- | --- |
+| México | MXN |
+| España, Alemania y Francia | EUR |
+| Otros mercados soportados | USD |
 
-### Cambiar de plan
+Un contrato existente conserva su moneda. Cambiar el país, el idioma o el selector
+de precios no convierte una suscripción activa. Revisa la divisa y el total del
+resumen antes de confirmar; si no coinciden, actualiza la página antes de pagar.
 
-1. Ve a **Ajustes > Planes y suscripción > Suscripción** (`/app/ajustes/plan`).
-2. Elige el plan y el ciclo (mensual o anual). Se abre el checkout seguro de facturación.
-3. El cambio aplica de inmediato; tu cuota incluida se ajusta al nuevo plan.
+| Plan | MXN al mes | USD al mes | EUR al mes | EUR al año |
+| --- | --- | --- | --- | --- |
+| Gratis | 0 | 0 | 0 | 0 |
+| Starter | 240 | 12 | 12 | 120 |
+| Profesional | 590 | 30 | 30 | 300 |
+| Scale | 1.390 | 70 | 70 | 700 |
+| Developer | 2.990 | 150 | A medida | A medida |
 
-Para cambiar tu tarjeta, ver tus comprobantes, actualizar tus datos fiscales o cancelar, entra a [billing.cordhq.app](https://billing.cordhq.app), tu portal de facturación. Entras desde **Ajustes > Planes y suscripción** con la sesión que ya tienes. Ahí también puedes **emitir el CFDI** de cada pago de tu suscripción si tu negocio está en México.
+El precio anual base equivale a diez mensualidades y se cobra por año. Los
+excedentes se calculan por separado: no son parte de esos dos meses de ahorro.
+La selección anual se conserva durante el registro y el checkout.
 
-### Excedentes (consumo por uso)
+## Cuotas y excedentes
 
-Cada plan de pago incluye una cuota mensual de IA, CFDI, API y usuarios. Si la rebasas, del plan Profesional en adelante el **excedente se cobra por uso** (ej. CFDI extra por folio, IA extra por uso) al cierre del periodo. Los planes Gratis y Starter tienen topes duros en lugar de excedente. Ves tu consumo del mes en la misma pantalla de Suscripción.
+| Plan | IA al mes | Facturas al mes | Solicitudes API al mes | Usuarios incluidos |
+| --- | --- | --- | --- | --- |
+| Gratis | 3 | 3 | 100 | 1 |
+| Starter | 20 | 3 | 1.000 | 1 |
+| Profesional | 50 | 20 | 5.000 | 5 |
+| Scale | 500 | 100 | 10.000 | 15 |
+| Developer | Sin cuota numérica | 1.000 | 50.000 | Sin cuota numérica |
+
+Gratis tiene topes duros. Starter permite excedentes de IA, facturas y API, pero
+mantiene un solo usuario. Profesional y Scale también permiten usuarios extra.
+Los envíos de cotizaciones de Gratis tienen un tope de cinco por mes; no se cobra
+un excedente para saltarlo. Revisa uso y límites en **Ajustes > Planes y suscripción**.
+
+Para contratos EUR, estas son las tarifas sobre la cuota incluida:
+
+| Concepto extra | Starter | Profesional | Scale |
+| --- | --- | --- | --- |
+| Acción de IA | 0,20 EUR | 0,175 EUR | 0,15 EUR |
+| Factura | 0,15 EUR | 0,15 EUR | 0,10 EUR |
+| 100 solicitudes API | 0,03 EUR | 0,03 EUR | 0,02 EUR |
+| Usuario al mes | No disponible | 15 EUR | 15 EUR |
+
+Las tarifas son fijas por contrato, no una conversión diaria de divisas. Solo se
+factura el excedente de uso, no otra vez la cuota incluida. Developer en EUR se
+cotiza por ventas.
+
+## Administrar el plan y los pagos
+
+En **Ajustes > Planes y suscripción** ves tu plan, consumo y opciones de cambio.
+Desde ahí abre [el portal de facturación](https://billing.cordhq.app) para consultar
+tarjeta, cobros y comprobantes.
+
+- **Subir de plan:** requiere confirmar el pago correspondiente antes de activar
+  las capacidades nuevas.
+- **Bajar de plan o cancelar:** se programa según el periodo pagado; revisa la
+  fecha efectiva que muestra el portal.
+- **Pago pendiente:** no garantiza acceso de pago. Cord comprueba que exista una
+  suscripción activa con el periodo cubierto. Si falta esa evidencia, aplica los
+  permisos de Gratis y mantiene el acceso a la recuperación del pago.
+
+Los datos se conservan después de bajar de plan; las funciones y recursos que
+excedan el nuevo contrato dejan de operar. La eliminación de la marca de Cord
+requiere Starter o superior: si deja de corresponder, vuelve a mostrarse en las
+superficies públicas. Un dominio propio para enlaces no está incluido en esta
+actualización; su activación se comunica por separado.
+
+## Comprobantes de la suscripción
+
+El recibo del cargo y la factura fiscal son distintos. Para facturar un pago en
+México, completa los datos fiscales y usa la opción disponible en el portal.
+Revisa los datos antes de emitir. La disponibilidad de un documento y su estado
+se muestran por cargo; un comprobante no sustituye la revisión de tus obligaciones
+contables en cada país.
+
+> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

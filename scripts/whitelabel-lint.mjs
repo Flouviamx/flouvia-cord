@@ -17,6 +17,7 @@ const extensions = new Set(['.ts', '.tsx', '.astro', '.md', '.mdx']);
 // Allowlist deliberada. Cada excepción debe explicar por qué el nombre del
 // proveedor es técnico o contractual y no copy visible de Cord Pagos.
 const allowed = [
+    { path: /^src\/content\/support\/es\/retencion-datos\.md$/, line: /^- \*\*Datos de tarjeta:\*\* Cord no almacena CVV, track de banda ni PAN tokenizado/, reason: 'transparencia de privacidad: identifica al responsable externo de los datos de tarjeta; no es branding de pago' },
     // El texto contractual de la cuenta conectada ahora vive en el diccionario
     // CO_STRINGS del propio componente (una entrada por idioma), así que la
     // excepción cubre las dos versiones. Sigue siendo texto que Stripe EXIGE

@@ -58,9 +58,9 @@ export const SOLUCIONES_EN: Solution[] = [
             }
         ],
         stats: [
-            { valor: '99.9', countup: 99.9, decimals: 1, suffix: '%', label: 'historical uptime on our infrastructure' },
-            { valor: '10x', label: 'faster internal approvals' },
-            { valor: '0', label: 'margin leaks due to calculation errors' },
+            { valor: 'RBAC', label: 'permissions scoped by role and organization' },
+            { valor: 'API', label: 'manageable keys and webhooks' },
+            { valor: 'SHA-256', label: 'integrity fingerprint on approved proposals' },
         ],
         blocks: [
             {
@@ -118,7 +118,7 @@ export const SOLUCIONES_EN: Solution[] = [
             },
             {
                 q: 'What are the platform\'s security standards?',
-                a: 'All data is encrypted at rest and in transit. Closed quotes generate an SHA-256 hash signature ensuring immutability. We offer Enterprise SLAs for availability and direct technical support.',
+                a: 'Cord scopes access by organization and role, records relevant events, and encrypts sensitive credentials. Approved proposals retain a SHA-256 fingerprint to detect changes. We do not yet publish historical availability metrics or a standard SLA.',
             },
         ],
         interlink: { href: '/desarrolladores/api', label: 'API & Webhooks for integrations' },

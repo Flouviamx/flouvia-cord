@@ -40,6 +40,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         tabs: [
             { id: 'branding', label: 'Branding',          labelEn: 'Branding',      href: '/app/ajustes/branding' },
             { id: 'portal',   label: 'Portal del cliente', labelEn: 'Client portal', href: '/app/ajustes/portal' },
+            { id: 'dominio',  label: 'Dominio propio', labelEn: 'Custom domain', href: '/app/ajustes/dominio', keywords: 'dominio dominios domain domains subdominio subdomain dns cname txt tls ssl hostname marca branding' },
         ],
     },
     {

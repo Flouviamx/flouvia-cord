@@ -1,6 +1,6 @@
 ---
 interface Props {
-  active: 'overview' | 'users' | 'organizations' | 'usage' | 'database' | 'security';
+  active: 'overview' | 'users' | 'organizations' | 'usage' | 'status' | 'database' | 'security';
   eyebrow?: string;
   title: string;
   subtitle?: string;
@@ -13,6 +13,7 @@ const nav = [
   { id: 'users', href: '/ops/users', label: 'Usuarios' },
   { id: 'organizations', href: '/ops/organizations', label: 'Organizaciones' },
   { id: 'usage', href: '/ops/usage', label: 'Uso y costos' },
+  { id: 'status', href: '/ops/status', label: 'Disponibilidad' },
   { id: 'database', href: '/ops/database', label: 'Base de datos' },
   { id: 'security', href: '/ops/security', label: 'Seguridad' },
 ];

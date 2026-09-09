@@ -14,7 +14,7 @@ import AccessGate from '../../../components/app/AccessGate.astro';
 import WhatsAppIcon from '../../../components/app/WhatsAppIcon.astro';
 import { getFacturaDetalle, getMyMembership, money } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
-import { siteOrigin } from '../../../lib/email';
+import { publicDocumentUrl } from '../../../lib/public-links';
 import { getCountryProfile } from '../../../lib/countries';
 import { currentLocale } from '../../../lib/context';
 import { getInvoiceTimeline } from '../../../lib/fiscal/timeline';
@@ -29,14 +29,23 @@ const hasPerm = memberCan(ME, 'cobranza');
 const f = hasPerm ? await getFacturaDetalle(Astro.params.id ?? '') : null;
 if (hasPerm && !f) return Astro.redirect('/app/facturas');
 // Un borrador se edita, no se contempla: su sitio es el editor.
-if (f && f.estado === 'draft' && !f.invoiceNumber) {
+if (f && f.estado === 'draft' && !f.invoiceNumber && !f.notaCreditoDe) {
     return Astro.redirect(`/app/facturas/nueva?draft=${f.id}`);
 }
+
+const cancellationLabels: Record<string, string> = {
+    pending: L === 'en' ? 'Awaiting recipient acceptance.' : 'Pendiente de aceptación del receptor.',
+    verifying: L === 'en' ? 'The tax authority is verifying the request.' : 'El SAT está verificando la solicitud.',
+    rejected: L === 'en' ? 'Cancellation rejected.' : 'Cancelación rechazada.',
+    expired: L === 'en' ? 'Cancellation request expired.' : 'La solicitud de cancelación expiró.',
+};
+const cancellationLabel = cancellationLabels[f?.cancelacionEstado || '']
+    || (L === 'en' ? 'Cord has not confirmed the cancellation.' : 'Cord aún no tiene confirmación de cancelación.');
 
 const ESTADO_META: Record<string, { label: string; color: string; bg: string }> = {
     draft: { label: t(L, 'fact.st_draft'), color: '#5b6472', bg: 'rgba(91,100,114,0.1)' },
     open: { label: t(L, 'fact.st_open'), color: '#b45309', bg: 'rgba(245,158,11,0.12)' },
-    paid: { label: t(L, 'fact.st_paid'), color: '#059669', bg: 'rgba(16,185,129,0.12)' },
+    paid: { label: f?.acreditado ? (L === 'en' ? 'Settled' : 'Saldada') : t(L, 'fact.st_paid'), color: '#059669', bg: 'rgba(16,185,129,0.12)' },
     void: { label: t(L, 'fact.st_void'), color: '#5b6472', bg: 'rgba(91,100,114,0.1)' },
     uncollectible: { label: t(L, 'fact.st_uncollectible'), color: '#dc2626', bg: 'rgba(239,68,68,0.1)' },
 };
@@ -48,7 +57,7 @@ const meta = f?.estadoFiscal === 'error'
 // Vocabulario fiscal del país del documento, no un default mexicano.
 const perfilPais = f ? getCountryProfile(f.pais) : null;
 const taxIdLabel = perfilPais?.taxIdLabel ?? 'Tax ID';
-const linkPublico = f?.publicToken ? `${siteOrigin()}/i/${f.publicToken}` : null;
+const linkPublico = f?.publicToken ? await publicDocumentUrl(f.orgId, 'i', f.publicToken) : null;
 const deliveryFailed = Astro.url.searchParams.get('delivery') === 'failed';
 
 // Historia de la factura. Antes esta pantalla no la tenía: `eventos` solo
@@ -222,6 +231,10 @@ const METODOS = [
                                     <div class="fd-tline fd-tax"><span>{Math.round(tasa * 10000) / 100}%</span><span class="editorial">{money(value.impuesto)}</span></div>
                                 ))}
                                 <div class="fd-tline fd-total"><span>{t(L, 'fact.d_total')}</span><span class="editorial">{money(f.total)}</span></div>
+                                {f.acreditado > 0 && <div class="fd-tline"><span>{L === 'en' ? 'Credit notes applied' : 'Notas de crédito aplicadas'}</span><span class="editorial">−{money(f.acreditado)}</span></div>}
+                                {f.reembolsado > 0 && <div class="fd-tline"><span>{L === 'en' ? 'Refunded' : 'Reembolsado'}</span><span class="editorial">+{money(f.reembolsado)}</span></div>}
+                                {f.porDevolver > 0 && <div class="fd-tline"><span>{L === 'en' ? 'Amount to return to client' : 'Importe por devolver al cliente'}</span><span class="editorial">{money(f.porDevolver)}</span></div>}
+
                                 {f.pagado > 0 && (
                                     <div class="fd-tline"><span>{t(L, 'fact.d_pagado')}</span><span class="editorial">−{money(f.pagado)}</span></div>
                                 )}
@@ -259,9 +272,9 @@ const METODOS = [
                     <aside class="fd-side">
                         <section class="fd-actions">
                             <div class="fd-section-head"><h2>{L === 'en' ? 'Actions' : 'Acciones'}</h2></div>
-                            {f.estadoFiscal === 'error' && f.estado === 'draft' && (
+                            {f.estado === 'draft' && (f.estadoFiscal === 'error' || f.notaCreditoDe) && (
                                 <button type="button" class="fd-btn fd-btn-primary" data-act="finalize">
-                                    {L === 'en' ? 'Retry issuing' : 'Reintentar emisión'}
+                                    {f.estadoFiscal === 'error' ? (L === 'en' ? 'Retry issuing' : 'Reintentar emisión') : (L === 'en' ? 'Issue credit note' : 'Emitir nota de crédito')}
                                 </button>
                             )}
                             {f.estado !== 'draft' && !f.enviada && (
@@ -269,7 +282,7 @@ const METODOS = [
                                     {t(L, 'fact.d_enviar')}
                                 </button>
                             )}
-                            {f.estado === 'open' && f.enviada && (
+                            {f.estado === 'open' && !f.notaCreditoDe && f.enviada && (
                                 <button type="button" class="fd-btn fd-btn-ok" data-act="payment">{t(L, 'fact.d_pago')}</button>
                             )}
                             {f.enviada && f.estado !== 'draft' && (
@@ -282,13 +295,13 @@ const METODOS = [
                                     <button type="button" data-act="send">{L === 'en' ? 'Resend' : 'Reenviar'}</button>
                                 </div>
                             )}
-                            {f.estado === 'open' && !f.enviada && (
+                            {f.estado === 'open' && !f.notaCreditoDe && !f.enviada && (
                                 <button type="button" class="fd-btn fd-btn-secondary" data-act="payment">{t(L, 'fact.d_pago')}</button>
                             )}
 
                             {linkPublico && (
                                 <div class="fd-util-grid">
-                                    <a href={linkPublico} class="fd-util" target="_blank" rel="noopener noreferrer" title={L === 'en' ? 'Open client link' : 'Abrir link del cliente'}>
+                                    <a href={'/i/' + encodeURIComponent(f.publicToken!)} class="fd-util" target="_blank" rel="noopener noreferrer" title={L === 'en' ? 'Preview client link' : 'Vista previa del cliente'}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                         <span>{L === 'en' ? 'Open link' : 'Abrir link'}</span>
                                     </a>
@@ -321,13 +334,13 @@ const METODOS = [
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
                                 </summary>
                                 <div class="fd-more-menu">
-                                    {f.estado === 'open' && (
+                                    {f.estado === 'open' && !f.notaCreditoDe && (
                                         <button type="button" class="fd-menu-btn" data-act="uncollectible">{t(L, 'fact.d_incobrable')}</button>
                                     )}
                                     {f.estadoFiscal === 'issued' && !f.notaCreditoDe && (
                                         <button type="button" class="fd-menu-btn" data-act="credit_note">{t(L, 'fact.d_nota_credito')}</button>
                                     )}
-                                    {f.estadoFiscal === 'issued' && (
+                                    {f.estadoFiscal === 'issued' && !f.notaCreditoDe && (
                                         <button type="button" class="fd-menu-btn" id="fdRepetir">{t(L, 'rec.repetir')}</button>
                                     )}
                                     {f.pais === 'MX' && f.fiscalId && (
@@ -340,6 +353,12 @@ const METODOS = [
                             </details>
                         </section>
 
+                        {f.cancelacionEstado && f.estado !== 'void' && (
+                            <section class="surface-card" aria-live="polite" style="padding: 16px; margin-bottom: 16px;">
+                                <p>{cancellationLabel}</p>
+                                <button type="button" class="fd-btn" data-act="cancellation_status">{L === 'en' ? 'Check cancellation status' : 'Consultar cancelación'}</button>
+                            </section>
+                        )}
                         <section class="fd-timeline">
                             <div class="fd-section-head"><h2>{t(L, 'fact.d_actividad')}</h2></div>
                             {TIMELINE.length === 0
@@ -460,6 +479,10 @@ const METODOS = [
                     // Anular una factura con pagos no es un error de captura: el
                     // siguiente paso correcto es la nota de crédito, y hay que
                     // decirlo en vez de dejar al usuario reintentando.
+                    if (data.cancellation_status) {
+                        location.reload();
+                        return;
+                    }
                     if (data.requires_credit_note) throw new Error(`${data.error} ${T.usaNota}`);
                     throw new Error(data.error || T.error);
                 }

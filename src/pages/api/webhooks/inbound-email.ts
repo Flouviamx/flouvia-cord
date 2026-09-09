@@ -2,7 +2,8 @@ import type { APIRoute } from 'astro';
 import { sql, withOrgTx } from '../../../lib/db';
 import { runARAgent } from '../../../lib/agents/ar-agent';
 import { getCobranzaConfig, renderCollectionEmail } from '../../../lib/agents/cobranza-run';
-import { sendEmail, siteOrigin } from '../../../lib/email';
+import { sendEmail } from '../../../lib/email';
+import { publicDocumentUrl } from '../../../lib/public-links';
 import { log } from '../../../lib/log';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
@@ -136,8 +137,7 @@ export const POST: APIRoute = async ({ request }) => {
     const saldo = Math.max(0, Number(ctx.total) - Number(ctx.pagado ?? 0));
     const diasVencido = Math.max(0, Number(ctx.dias_vencido) || 0);
     const cobraOnline = !!ctx.cobra_online;
-    const origin = siteOrigin();
-    const payUrl = cobraOnline ? `${origin}/q/${ctx.public_token}/pay` : `${origin}/q/${ctx.public_token}`;
+    const payUrl = await publicDocumentUrl(orgId, 'q', ctx.public_token as string, cobraOnline ? '/pay' : undefined);
 
     await withOrgTx(orgId, sql`
       insert into cobranza_conversaciones (org_id, cotizacion_id, autor_tipo, mensaje, estado, enviado_at)
@@ -197,8 +197,10 @@ export const POST: APIRoute = async ({ request }) => {
     const envio = await sendEmail({
       orgId, operation: 'collection_reply', to: emailFrom,
       subject: cfg.idioma === 'en' ? 'Re: your outstanding balance' : 'Re: tu saldo pendiente',
+      fromName: `${cfg.creditorName} vía Cord`, replyTo: cfg.contactEmail,
       html: renderCollectionEmail({
         cuerpo: res.mensaje, payUrl, cobraOnline, montoBoton: saldo, idioma: cfg.idioma,
+        creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
       }),
     });
     await withOrgTx(orgId, sql`

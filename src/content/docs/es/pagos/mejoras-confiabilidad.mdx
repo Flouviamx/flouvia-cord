@@ -1,0 +1,94 @@
+---
+title: "Mejoras de pagos y facturación"
+description: "Cambios comprobados, beneficios y validaciones pendientes."
+lastUpdated: "2026-09-08"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Mejoras de pagos y facturación</h1>
+  <p class="page-subtitle">Cambios comprobados, beneficios y validaciones pendientes.</p>
+</header>
+
+## Qué cambia y para qué sirve
+
+Esta guía reúne la revisión de Cord Payments, Cord Invoicing y la suscripción.
+Distingue lo construido de lo pendiente de activar: una prueba aprobada no equivale
+a disponibilidad comprobada en producción.
+
+| Mejora | Qué aporta al negocio | Guía |
+| --- | --- | --- |
+| 2FA también en solicitudes del panel | Exige completar la verificación antes de operar cuando el negocio la requiere | [Equipo y seguridad](/docs/cuenta/equipo-seguridad) |
+| Cobros sucesivos por el saldo de la factura | Permite completar pagos parciales sin volver a cobrar el total original | [Facturas](/docs/pagos/facturas-emitidas) |
+| Pagos, créditos y reembolsos separados | Explica lo cobrado, lo pendiente y lo que corresponde devolver | [Saldo y conciliación](/docs/pagos/facturas-emitidas) |
+| Impuestos, retenciones y créditos fiscales | Conserva el detalle por concepto y la relación de una nota de crédito con su factura | [Facturación](/docs/pagos/facturacion) |
+| Cancelación confirmada | Evita presentar como anulada una factura cuya solicitud sigue pendiente | [Ayuda sobre cancelaciones](https://cordhq.app/soporte/cancelar-facturas) |
+| Descargas desde el enlace de factura | El destinatario obtiene los documentos disponibles sin entrar al panel del vendedor | [Enlace de factura](https://cordhq.app/soporte/enlace-publico-factura) |
+| Saldo actualizable y siguiente acción | El cliente distingue pagar, esperar confirmación o contactar al negocio | [Facturas](/docs/pagos/facturas-emitidas) |
+| Protección de periodos recurrentes | Reduce emisiones duplicadas por ejecuciones simultáneas y respeta cambios de calendario | [Recurrencias](/docs/pagos/facturas-recurrentes) |
+| Suscripción en EUR y excedentes explícitos | Permite contratar con precios fijos en euros y conservar la moneda del contrato existente | [Suscripción](/docs/cuenta/suscripcion) |
+| Marca según el plan efectivo | Mantiene las condiciones de personalización al subir o bajar de plan | [Suscripción](/docs/cuenta/suscripcion) |
+
+Las correcciones están implementadas y tienen pruebas de regresión. La configuración
+de precios USD/EUR y las migraciones autorizadas se verificaron en los servicios
+conectados. La publicación conjunta de estos cambios sigue pendiente de verificación;
+consulta el estado que muestra tu cuenta y no asumas una activación por leer esta guía.
+
+## Cambio seguro de SPEI a tarjeta: en validación
+
+El primer bloque de confiabilidad verifica el intento previo antes de sustituirlo,
+conserva los reintentos y bloquea otro método cuando hay dinero recibido o en proceso.
+El registro necesario ya está preparado en la base conectada. Falta la prueba
+integrada y verificar la publicación. No incluye recuperación automática de todos
+los intentos inciertos ni devolución automática de transferencias tardías.
+
+## Comisiones de facturas directas: implementado, pendiente de aceptación
+
+Los pagos desde el enlace de una factura también registran su comisión, vinculada
+al documento y al negocio. Se conserva el desglose preparado para ese cobro y se
+consulta el cargo para registrar el costo de procesamiento y el neto verificables.
+Esto ayuda a que el pago no quede fuera del registro de comisiones por haberse
+cobrado sin una cotización.
+
+Si faltan datos del costo, el registro queda pendiente. Si no puede comprobarse
+el desglose o las divisas no coinciden, requiere revisión y no entra al borrador
+mensual automático de comisiones. No se cambian las tarifas ni se recalculan
+cobros históricos con los precios actuales. Falta comprobar el recorrido integrado,
+la recuperación de pendientes y su publicación.
+
+## Sesiones por inactividad: implementado, pendiente de aceptación
+
+La política de inactividad se comprueba también en las API protegidas y en
+facturación. Consultar páginas públicas no renueva la sesión, y una petición
+concurrente no puede revivir una sesión vencida. [Consulta el alcance y cómo se
+mide la actividad](/docs/cuenta/equipo-seguridad).
+
+## Qué comprueban las pruebas
+
+Se probaron casos normales y fallos simulados: notificaciones repetidas, pagos
+parciales, reembolsos que llegan antes que el pago, cancelaciones pendientes,
+reintentos de emisión, periodos concurrentes y acceso al documento correcto.
+También se ejecutaron pruebas SQL con un rol restringido y comprobaciones de
+compilación y contratos de seguridad. Esto no garantiza cero fallos, restauración
+de respaldos, aislamiento del rol real ni todos los recorridos de producción.
+
+## Lo siguiente: confiabilidad antes que nuevas funciones
+
+La fase 1 continúa con comisiones de facturas directas, aislamiento real de la base,
+inactividad de sesiones, recuperación de eventos, alertas, restauración de respaldos
+y pruebas integradas. La fase 2 contempla mayor continuidad comercial, seguimiento
+y flujos útiles para negocios de productos y servicios; no está entregada.
+
+Consulta el [roadmap](https://cordhq.app/roadmap) para el alcance de cada iniciativa.
+
+## Un solo flujo de pago: implementación preparada
+
+Las integraciones que todavía solicitan el checkout anterior recibirán un enlace
+a la pantalla actual de pago de Cord. Así usan el mismo registro de intentos y
+el saldo que corresponde pagar, en vez de crear otra sesión de cobro independiente.
+La respuesta de la API conserva el campo `url` y no cambia las tarifas aceptadas.
+
+Antes de activar el cambio se revisan las sesiones antiguas que pudieran seguir
+abiertas o pendientes. No se cancelan ni reembolsan automáticamente. La revisión
+actual no detectó sesiones en las cuentas conectadas consultadas; debe repetirse
+al publicar. El cambio todavía está pendiente de despliegue y aceptación integrada.

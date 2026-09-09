@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PasswordField from './PasswordField';
 import PasswordStrength from './PasswordStrength';
+import { signupLegalBundle } from '../../lib/legal-corpus';
 // Mensajes en español para los errores de registro
 const ERROR_ES: Record<string, string> = {
   missing_fields: 'Ingresa tu correo y contraseña.',
@@ -8,6 +9,7 @@ const ERROR_ES: Record<string, string> = {
   validation_error: 'Revisa tus datos — el correo debe ser válido y la contraseña de al menos 8 caracteres.',
   internal_error: 'Ocurrió un error en el servidor. Intenta de nuevo más tarde.',
   rate_limited: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
+  legal_required: 'Acepta los Términos y confirma que leíste el Aviso de privacidad para continuar.',
   default: 'Ocurrió un error al crear la cuenta.',
 };
 
@@ -18,6 +20,7 @@ const ERROR_EN: Record<string, string> = {
   validation_error: 'Check your details — email must be valid and password at least 8 characters.',
   internal_error: 'A server error occurred. Please try again later.',
   rate_limited: 'Too many attempts. Please wait a moment and try again.',
+  legal_required: 'Accept the Terms and confirm that you read the Privacy Notice to continue.',
   default: 'An error occurred while creating your account.',
 };
 
@@ -31,6 +34,8 @@ export default function CustomSignUp() {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [isEn, setIsEn] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   // Igual que en CustomSignIn — se muestra tras cualquier 409 email_exists,
   // que el propio servidor ya revela hoy (register.ts:33), así que no añade
   // ninguna señal nueva.
@@ -51,6 +56,9 @@ export default function CustomSignUp() {
       if (params.get('desde') === 'login') {
         setNotice(isEn ? "We couldn't find an account with that email. Create one here in under a minute." : 'No encontramos una cuenta con ese correo. Créala aquí en menos de un minuto.');
       }
+      if (params.get('legal_required') === '1') {
+        setError(getErrorMsg('legal_required'));
+      }
     }
   }, [isEn]);
 
@@ -66,13 +74,27 @@ export default function CustomSignUp() {
     e.preventDefault();
     setError('');
     setSuggestSignin(false);
+
+    if (!termsAccepted || !privacyAcknowledged) {
+      setError(getErrorMsg('legal_required'));
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, firstName, lastName }),
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName,
+          termsAccepted,
+          privacyAcknowledged,
+          legalLocale: isEn ? 'en-US' : 'es-MX',
+        }),
       });
       const data = await res.json().catch(() => ({}));
 
@@ -98,19 +120,39 @@ export default function CustomSignUp() {
     }
   };
 
-  const handleGoogleSSO = () => {
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get('redirect_url');
-    const dest = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
-    window.location.href = dest ? `/api/auth/google?redirect_url=${encodeURIComponent(dest)}` : '/api/auth/google';
+  const beginOAuthSignup = async (provider: 'google' | 'apple') => {
+    if (!termsAccepted || !privacyAcknowledged) {
+      setError(getErrorMsg('legal_required'));
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      const intent = await fetch('/api/legal/oauth-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider,
+          termsAccepted,
+          privacyAcknowledged,
+          legalLocale: isEn ? 'en-US' : 'es-MX',
+        }),
+      });
+      if (!intent.ok) throw new Error('legal_intent_failed');
+
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get('redirect_url');
+      const dest = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
+      const oauth = new URLSearchParams({ signup_intent: '1' });
+      if (dest) oauth.set('redirect_url', dest);
+      window.location.href = `/api/auth/${provider}?${oauth.toString()}`;
+    } catch {
+      setError(getErrorMsg('internal_error'));
+      setLoading(false);
+    }
   };
 
-  const handleAppleSSO = () => {
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get('redirect_url');
-    const dest = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
-    window.location.href = dest ? `/api/auth/apple?redirect_url=${encodeURIComponent(dest)}` : '/api/auth/apple';
-  };
+  const legalBundle = signupLegalBundle(isEn ? 'en-US' : 'es-MX');
 
   return (
     <div className="auth-card">
@@ -171,6 +213,41 @@ export default function CustomSignUp() {
           <PasswordStrength password={password} isEn={isEn} />
         </div>
 
+        <div className="auth-legal-consents" aria-label={isEn ? 'Legal acknowledgements' : 'Confirmaciones legales'}>
+          <div className="checkbox-row auth-legal-row">
+            <input
+              id="termsAccepted"
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              required
+            />
+            <label htmlFor="termsAccepted">
+              {isEn ? 'I accept the ' : 'Acepto los '}
+              <a href={legalBundle.terms.href} target="_blank" rel="noopener noreferrer">
+                {isEn ? 'Terms and Conditions' : 'Términos y Condiciones'}
+              </a>
+              {isEn ? ` (version ${legalBundle.terms.version}).` : ` (versión ${legalBundle.terms.version}).`}
+            </label>
+          </div>
+          <div className="checkbox-row auth-legal-row">
+            <input
+              id="privacyAcknowledged"
+              type="checkbox"
+              checked={privacyAcknowledged}
+              onChange={(e) => setPrivacyAcknowledged(e.target.checked)}
+              required
+            />
+            <label htmlFor="privacyAcknowledged">
+              {isEn ? 'I confirm that I read the ' : 'Confirmo que leí el '}
+              <a href={legalBundle.privacy.href} target="_blank" rel="noopener noreferrer">
+                {isEn ? 'Privacy Notice' : 'Aviso de privacidad'}
+              </a>
+              {isEn ? '. This is not consent to optional analytics.' : '. Esto no autoriza analítica opcional.'}
+            </label>
+          </div>
+        </div>
+
         {notice && !error && <div className="auth-notice">{notice}</div>}
         {error && <div className="auth-error">{error}</div>}
         {suggestSignin && (
@@ -191,7 +268,7 @@ export default function CustomSignUp() {
           </a>
         )}
 
-        <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '1rem' }}>
+        <button type="submit" disabled={loading || !termsAccepted || !privacyAcknowledged} className="btn-primary" style={{ marginTop: '1rem' }}>
           {loading ? 'Creando cuenta...' : 'Crear cuenta'}
         </button>
       </form>
@@ -201,7 +278,7 @@ export default function CustomSignUp() {
 
       <div className="auth-social">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <button type="button" onClick={handleGoogleSSO} className="btn-social">
+          <button type="button" onClick={() => void beginOAuthSignup('google')} disabled={loading || !termsAccepted || !privacyAcknowledged} className="btn-social">
             <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '8px' }}>
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -211,7 +288,7 @@ export default function CustomSignUp() {
             Google
           </button>
 
-          <button type="button" onClick={handleAppleSSO} className="btn-social">
+          <button type="button" onClick={() => void beginOAuthSignup('apple')} disabled={loading || !termsAccepted || !privacyAcknowledged} className="btn-social">
             <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style={{ marginRight: '8px' }}>
               <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
             </svg>

@@ -1,34 +1,38 @@
 ---
-title: "Firma y Auditoría Legal"
-description: "Cómo Cord protege tus ventas con firmas electrónicas, captura de IP y rastro de auditoría."
+title: "Aprobación y evidencia técnica"
+description: "Cómo Cord registra una aprobación con identidad declarada, IP, fecha, hora y huella del documento aceptado."
+lastUpdated: "2026-08-28"
+reviewedBy: "Producto y seguridad de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
 
 <header class="content-header">
-  <h1 class="page-title">Firma y Auditoría Legal</h1>
-  <p class="page-subtitle">Mucho más seguro que un "OK" por correo. Descubre cómo los enlaces de Cord blindan legalmente tus acuerdos antes del pago.</p>
+  <h1 class="page-title">Aprobación y evidencia técnica</h1>
+  <p class="page-subtitle">Cord conserva un registro verificable de quién aprobó, cuándo lo hizo y qué versión del documento aceptó.</p>
 </header>
 
 ## El problema del "OK" por correo
 
-Tradicionalmente, un vendedor envía un PDF y el cliente responde "Autorizado, procedan". Si el día de mañana hay una disputa sobre los precios, los términos o el cobro de la factura, un simple correo electrónico ofrece muy poca protección legal para tu empresa.
+Tradicionalmente, un vendedor envía un PDF y el cliente responde "Autorizado, procedan". Después puede ser difícil demostrar qué versión, partidas o monto estaba revisando cada persona.
 
-Cord resuelve esto implementando una capa de **Auditoría y Firma Electrónica Simple** justo en el momento de la aprobación.
+Cord agrega una capa de **aprobación electrónica y evidencia técnica** justo en ese momento.
 
-## El proceso de Aprobación Segura
+## El proceso de aprobación
 
-Cuando tu cliente hace clic en el botón de **Aprobar Cotización** dentro del Enlace Mágico, el sistema no aprueba el documento instantáneamente. Antes de eso, despliega un modal de firma legal.
+Cuando tu cliente hace clic en **Aprobar Cotización** dentro del enlace, Cord muestra un modal de confirmación antes de cambiar el estado.
 
 Para proceder, el cliente debe:
 1. **Ingresar su Nombre Completo.**
 2. **Ingresar su Correo Electrónico Corporativo.**
-3. **Marcar una casilla legal** confirmando que tiene la autoridad para aceptar los Términos y Condiciones plasmados en la cotización, así como la obligación comercial de pago.
+3. **Marcar una casilla de confirmación** declarando que tiene autoridad para aceptar los términos y la obligación comercial descrita en la cotización.
 
-### Captura de Datos Forenses (El Rastro de Auditoría)
+### Datos del rastro de auditoría
 
-Al momento exacto en que el cliente presiona "Confirmar Firma", Cord captura de manera invisible un **Rastro de Auditoría Técnico**:
+Al confirmar, Cord conserva un **rastro de auditoría técnico**:
 - **Dirección IP pública** desde la cual se hizo la aprobación.
 - **Marca de tiempo (Timestamp) exacta** sincronizada con servidores seguros.
-- **Firma criptográfica** del estado del documento (lo que garantiza que los precios y términos no fueron alterados por el vendedor *después* de que el cliente firmó).
+- **Huella criptográfica** de la versión y del alcance aprobado, para detectar cambios posteriores en los datos cubiertos por la aprobación.
 
 ## El Sello de Auditoría
 
@@ -37,8 +41,12 @@ Una vez aprobada, el estado de la cotización cambia visualmente. En la parte in
 Este sello muestra de manera clara:
 > *"Aprobado digitalmente por [Nombre del Cliente] ([Correo del cliente]) el [Fecha y Hora] desde la dirección IP [192.168.x.x]."*
 
-### Ventajas legales
-- **Protección contra contracargos:** Si el cliente paga en línea con tarjeta de crédito y luego intenta meter un contracargo con su banco alegando que "no autorizó la compra", este registro de IP y correo sirve como evidencia contundente a tu favor.
+### Para qué sirve
+- **Preparar una disputa:** si el cliente desconoce un cargo, el registro puede formar parte de la evidencia que envías. El banco emisor decide el resultado y Cord no garantiza que la disputa se gane.
 - **Aprobación parcial, también firmada:** si tu cliente solo quiere aceptar algunas partidas de una cotización extensa, puede aprobarlas de forma parcial — el mismo sello de auditoría cubre exactamente las líneas y el monto que aceptó, no el total original.
-- **Terreno sólido para la cobranza:** tener evidencia legal de la aceptación de la deuda facilita perseguir un pago atrasado o negociar un plan de pagos, sin depender de un "sí" verbal o un correo suelto.
-- **Base para el timbrado en México:** en cuentas mexicanas, esta misma evidencia de aceptación es la que sostiene legalmente la emisión posterior de la Factura CFDI 4.0. Fuera de México, Cord emite el documento fiscal que corresponde a cada país sobre esta misma base de aprobación firmada.
+- **Contexto para cobranza:** el equipo puede consultar quién aceptó, cuándo y qué monto, sin depender únicamente de un "sí" verbal o un correo aislado.
+- **Conectar el flujo comercial:** la versión aprobada puede usarse para iniciar el cobro y preparar la factura disponible para el mercado de la cuenta.
+
+<Callout type="warning">
+Cord conserva evidencia técnica de la aprobación; no presta servicios notariales ni asesoría legal. La validez y fuerza probatoria dependen del documento, el flujo y la jurisdicción. Consulta a un profesional para casos de alto riesgo.
+</Callout>

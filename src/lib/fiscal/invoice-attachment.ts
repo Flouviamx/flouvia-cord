@@ -12,6 +12,7 @@
 
 import { sql, withOrgTx } from '../db';
 import { createInvoicePdf } from './invoice-pdf';
+import { publicDocumentUrl } from '../public-links';
 
 const TERM_LABEL: Record<string, string> = {
     contado: 'Contado', net30: 'Net 30', net60: 'Net 60',
@@ -70,7 +71,6 @@ export async function buildInvoicePdfAttachment(orgId: string, documentoId: stri
         // documentos que dicen lo mismo con distinta autoridad.
         if (doc.document_type === 'cfdi_40' && doc.provider_data?.facturapi_id) return null;
 
-        const origin = (process.env.PUBLIC_SITE_URL || 'https://cordhq.app').replace(/\/$/, '');
         const term = String(doc.terminos || '');
         const pdf = createInvoicePdf({
             invoiceNumber: String(doc.invoice_number || 'INV'),
@@ -95,8 +95,8 @@ export async function buildInvoicePdfAttachment(orgId: string, documentoId: stri
             creditNoteOfNumber: (doc.credit_note_of_number as string) || null,
             verifactu: doc.provider_data?.verifactu || null,
             paymentInstructions: doc.invoice_token
-                ? `${origin}/i/${doc.invoice_token}`
-                : (doc.public_token ? `${origin}/q/${doc.public_token}` : null),
+                ? await publicDocumentUrl(orgId, 'i', doc.invoice_token as string)
+                : (doc.public_token ? await publicDocumentUrl(orgId, 'q', doc.public_token as string) : null),
             notes: (doc.pdf_condiciones as string) || null,
         });
 

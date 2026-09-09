@@ -15,7 +15,7 @@ En este artículo repasamos los elementos que un **formato de cotización profes
 
 ## ¿Por qué importa tanto el formato?
 
-Un estudio de HubSpot reveló que las cotizaciones enviadas en menos de 24 horas tienen un 60% más de probabilidad de cerrar. Pero la velocidad sin calidad no sirve: si el cliente recibe un PDF con precios confusos, sin vigencia, o con los datos de otro comprador (un clásico del "copiar y pegar"), la confianza se pierde en segundos.
+Responder pronto reduce espera, pero la velocidad sin calidad no sirve: si el cliente recibe un PDF con precios confusos, sin vigencia o con los datos de otro comprador, tendrá que pedir una corrección antes de decidir.
 
 Un buen formato:
 - **Refleja profesionalismo:** Tu cotización es tu tarjeta de presentación comercial.
@@ -44,7 +44,7 @@ El corazón de la propuesta. Debe incluir:
 - Subtotal por línea.
 
 ### 5. Impuestos y total
-Nunca dejes los impuestos ocultos ni ambiguos. En México, el desglose de IVA (16%) es obligatorio para cualquier transacción formal. Muestra el Subtotal, el IVA y el Total final de forma separada.
+Nunca dejes los impuestos ocultos ni ambiguos. En México, aplica y desglosa la tasa o retención que corresponda a la operación; no todos los conceptos llevan automáticamente IVA de 16%. Muestra subtotal, impuestos, retenciones y total de forma separada.
 
 ### 6. Términos comerciales
 Esta sección es tu red de seguridad:
@@ -70,7 +70,7 @@ Si tu empresa envía más de 10 cotizaciones a la semana, las plantillas de Exce
 
 **Cord** fue diseñado para resolver exactamente esto. Cada cotización que creas en Cord genera automáticamente un link profesional que tu cliente puede revisar, aprobar y pagar desde su navegador, sin descargar ningún archivo. El sistema jala los precios de tu catálogo de productos, aplica listas de precios por cliente, desglosa impuestos automáticamente (incluyendo IVA y retenciones) y genera el folio consecutivo. Si necesitas timbrar un CFDI 4.0, Cord lo hace directamente desde la cotización aprobada.
 
-Además, como todas las cotizaciones viven en un solo lugar, tu equipo puede filtrar por estado (borrador, enviada, aprobada, pagada, vencida), dar seguimiento a la cobranza, y tener visibilidad completa del pipeline de ventas sin depender de reportes manuales.
+Además, como las cotizaciones viven en un solo lugar, tu equipo puede filtrar por estado (borrador, enviada, vista, aprobada, rechazada o vencida) y conectar el documento aprobado con la facturación y la cobranza sin depender de archivos dispersos.
 
 ## Conclusión
 

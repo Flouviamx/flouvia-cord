@@ -10,7 +10,7 @@ import { randomUUID } from 'node:crypto';
 import type { PlanId, PaidPlan } from './entitlements';
 import { sql, withOrgTx, withSystemTx } from './db';
 import { getEntitlementContext } from './org-entitlements';
-import { platformCurrencyFor, type PlatformCurrency } from './plan-currency';
+import { platformCurrencyFor, normalizePlatformCurrency, type PlatformCurrency } from './plan-currency';
 
 import { log } from './log';
 export const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
@@ -69,7 +69,7 @@ export const METERS: Record<MeterDim, string> = isTest ? {
 };
 
 // ── Divisa de plataforma y resolución de precios ──────────────────────────────
-// Cord cobra sus planes en MXN a los negocios mexicanos y en USD al resto
+// Cord cobra MXN en México, EUR en ES/DE/FR y USD en los demás mercados
 // (`plan-currency.ts`). En Stripe eso son `currency_options` sobre los MISMOS
 // Price: no hay precios USD paralelos, porque los Price de arriba ya tienen
 // suscripciones live y duplicarlos partiría en dos el catálogo.
@@ -80,11 +80,13 @@ export const METERS: Record<MeterDim, string> = isTest ? {
 
 /** Price base para (plan, ciclo) en la divisa dada. */
 export function priceFor(plan: PaidPlan, cycle: Cycle, _currency: PlatformCurrency): string {
+    if (plan === 'developer' && _currency === 'EUR') throw new Error('El contrato Developer en EUR requiere una tarifa negociada.');
     return PLAN_PRICES[plan][cycle];
 }
 
 /** Prices medidos del plan en la divisa dada, en orden estable. */
 export function meterPricesFor(plan: PaidPlan, _currency: PlatformCurrency): string[] {
+    if (plan === 'developer' && _currency === 'EUR') throw new Error('El contrato Developer en EUR requiere tarifas negociadas.');
     return Object.values(METER_PRICES[plan]).filter((id): id is string => Boolean(id));
 }
 
@@ -92,12 +94,26 @@ export function meterPricesFor(plan: PaidPlan, _currency: PlatformCurrency): str
  * Divisa en la que se le cobra a ESTA organización.
  *
  * `billing_currency` es la evidencia de una factura real y por eso gana sobre el
- * país: Stripe congela `customer.currency` en el primer cobro. Ver
+ * país: Cord conserva la moneda establecida de la suscripción. Ver
  * `plan-currency.ts` para el contrato completo.
  */
 export async function platformCurrencyForOrg(orgId: string): Promise<PlatformCurrency> {
-    const [oRows] = await withOrgTx(orgId, sql`select country_code, billing_currency from orgs where id = ${orgId}`);
+    const [oRows] = await withOrgTx(orgId, sql`select country_code, billing_currency, stripe_customer_id from orgs where id = ${orgId}`);
     const o = oRows[0];
+    if (o?.billing_currency && !normalizePlatformCurrency(o.billing_currency)) {
+        throw new Error('La moneda de esta suscripción requiere revisión.');
+    }
+    // A customer can already have a currency after an incomplete first invoice,
+    // before the paid-invoice webhook writes billing_currency. Show that same
+    // currency in the checkout summary, not the new country's default.
+    if (!o?.billing_currency && o?.stripe_customer_id && STRIPE_KEY) {
+        const customer = await stripe(`/v1/customers/${encodeURIComponent(o.stripe_customer_id)}`, undefined, 'GET');
+        if (customer.currency) {
+            const currency = normalizePlatformCurrency(customer.currency);
+            if (!currency) throw new Error('La moneda de esta suscripción requiere revisión.');
+            return currency;
+        }
+    }
     return platformCurrencyFor(o?.country_code, o?.billing_currency);
 }
 

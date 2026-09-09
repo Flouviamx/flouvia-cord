@@ -14,7 +14,7 @@
 // .origin` — en un request disparado por el cron de Vercel (no por un navegador)
 // eso resuelve a la URL interna del deployment (tipo https://flouvia-cord-xxxx
 // .vercel.app), no a cordhq.app. El correo salía con un link roto/feo. Ahora usa
-// `siteOrigin()` (mismo helper que ya usa dispatchQuoteEvent para webhooks), y el
+// `publicDocumentUrl()` con la organización de cada documento, y el
 // HTML se armó igual al resto de correos transaccionales (logo, color de marca,
 // botón pill) en vez de texto plano sin estilo.
 export const prerender = false;
@@ -23,7 +23,8 @@ import type { APIRoute } from 'astro';
 import { assertCronAuth } from '../../../lib/cron-auth';
 import { sql, logAudit, withOrgTx, withSystemTx } from '../../../lib/db';
 import { reqContext } from '../../../lib/context';
-import { sendEmail, siteOrigin, notifyInvoiceReminder } from '../../../lib/email';
+import { sendEmail, notifyInvoiceReminder } from '../../../lib/email';
+import { publicDocumentUrl } from '../../../lib/public-links';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notify } from '../../../lib/notify';
 import { currencyDecimals, normalizeCurrency } from '../../../lib/currency';
@@ -95,10 +96,9 @@ export const GET: APIRoute = async ({ request }) => {
     // necesitar una tabla de dedup.
     const vencidasHoy = todas.filter((c) => c.dias === -1);
 
-    const origin = siteOrigin();
     let enviados = 0;
     for (const c of candidatos) {
-        const link = `${origin}/q/${c.token}`;
+        const link = await publicDocumentUrl(c.orgId, 'q', c.token);
         const venceTxt = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long' }).format(c.vence);
         const poweredLine = c.poweredOff ? esc(c.orgNombre) : `${esc(c.orgNombre)} · enviado con Cord`;
         const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">

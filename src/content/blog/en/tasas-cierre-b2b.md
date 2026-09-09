@@ -5,8 +5,8 @@ category: "B2B Sales"
 date: "20 Apr 2026"
 readTime: "06 MIN"
 img: "/images/blog/tasas-cierre-b2b.png"
-authorName: "Lorena Silva"
-authorRole: "Sales Engineering"
+authorName: "Cord Team"
+authorRole: "Product and commercial operations"
 authorAvatar: "/images/blog/lorena.png"
 featured: true
 ---
@@ -15,7 +15,7 @@ A B2B quote is not just an early receipt; it is the most important commercial do
 
 Despite this critical responsibility, most companies send Excel sheets exported to PDF that look like accounting reports from the 90s.
 
-By analyzing thousands of transactions processed and approved in record time through **Cord**, we have decoded the 4 visual and psychological patterns that separate an average quote from a closing machine.
+The following four patterns are practical design principles for making a quote easier to understand and act on. They are not a guarantee of conversion.
 
 ## 1. The Immediate Executive Summary
 

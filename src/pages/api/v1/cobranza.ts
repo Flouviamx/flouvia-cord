@@ -12,7 +12,7 @@ export const GET = withApiAuth('read', async (_ctx, auth) => {
     const subscriptionDenied = await requireEntitlement(auth.orgId, 'collections');
     if (subscriptionDenied) return subscriptionDenied;
     const cob = await getCobranza();
-    // Quitamos el public_token de cada cuenta (es secreto del link público).
-    const items = cob.items.map(({ token, ...rest }) => rest);
+    // El token y su URL son la misma credencial; la cartera no los expone.
+    const items = cob.items.map(({ token, publicUrl, ...rest }) => rest);
     return ok({ resumen: cob.resumen, aging: cob.aging, items, clientes: cob.clientes });
 });

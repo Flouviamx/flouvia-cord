@@ -34,6 +34,7 @@ export type FeatureKey =
     | 'recurring_invoices'
     | 'remove_branding'
     | 'custom_email'
+    | 'custom_domain'
     | 'advanced_forecast'
     | 'team'
     | 'roles'
@@ -61,7 +62,7 @@ export type FeatureKey =
  * temporalmente disponible en Gratis, con el tope mensual definido en
  * `billing.INCLUDED`; `international_invoicing` y `cfdi` permanecen en el mismo
  * peldaño porque son el mismo carril, distinto solo por país (Regla 10,
- * posicionamiento horizontal). Ver docs/negocio-billing.md. */
+ * posicionamiento horizontal). Ver docs/estado/negocio-billing.md. */
 export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanId> = {
     cfdi: 'free',
     // La recurrencia es lo que convierte la facturación en operación repetible:
@@ -69,6 +70,7 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanId> = {
     recurring_invoices: 'pro',
     remove_branding: 'starter',
     custom_email: 'starter',
+    custom_domain: 'pro',
     advanced_forecast: 'starter',
     international_invoicing: 'free',
     team: 'pro',
@@ -100,6 +102,7 @@ export const FEATURE_LABEL: Record<FeatureKey, string> = {
     recurring_invoices: 'Facturas recurrentes',
     remove_branding: 'Quitar la marca de Cord',
     custom_email: 'Personalización de correos',
+    custom_domain: 'Dominio propio',
     advanced_forecast: 'Pronóstico y margen cedido',
     team: 'Invitar a tu equipo',
     roles: 'Roles y permisos personalizados',

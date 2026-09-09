@@ -1,0 +1,44 @@
+name: Cord reliability
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cord-reliability-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Payments, types and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            packages/elements/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install Elements dependencies used by app types
+        run: npm ci --prefix packages/elements
+      # Deliberately no production secrets or LIVE audit/migration scripts.
+      - name: Payment regressions and security contracts
+        run: npm run test:payments
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Production build
+        run: npm run build
+      - name: Verify built CSS
+        run: npm run security:css

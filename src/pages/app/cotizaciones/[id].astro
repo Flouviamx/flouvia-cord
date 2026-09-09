@@ -5,6 +5,7 @@ import WhatsAppIcon from '../../../components/app/WhatsAppIcon.astro';
 import { getCotizacion, getDocumentosFiscales, getMyMembership, getOrg, getSuscripcionByCotizacion, STATUS_META, money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../../lib/queries';
 import { getCountryProfile } from '../../../lib/countries';
 import { memberCan } from '../../../lib/permissions';
+import { publicDocumentUrl } from '../../../lib/public-links';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -18,6 +19,7 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
 const { id } = Astro.params;
 const [q, ME, ORG] = await Promise.all([getCotizacion(id ?? ''), getMyMembership(), getOrg()]);
 if (!q) return Astro.redirect('/app/cotizaciones');
+const publicUrl = await publicDocumentUrl(ORG.id, 'q', q.token);
 const docsFiscales = await getDocumentosFiscales(id ?? '');
 // Iguala recurrente: estado de la suscripción de Stripe (para mostrar y cancelar).
 const sus = q.esRecurrente ? await getSuscripcionByCotizacion(id ?? '') : null;
@@ -278,7 +280,7 @@ const dotColor = (tipo: string) =>
 
         <!-- Sidebar: acciones + timeline -->
         <aside class="d-side">
-            <section class="d-actions" data-qid={q.id} data-token={q.token} data-folio={q.folio} data-cliente={q.cliente} data-total={money(quoteTotal(q))} data-live-view={hasLiveView ? '1' : ''} data-fiscal-country={ORG.countryCode} data-fiscal-test={(isMx && !ORG.tieneCsdPropio && !isFacturapiGlobalLive) ? '1' : ''}
+            <section class="d-actions" data-qid={q.id} data-link={publicUrl} data-folio={q.folio} data-cliente={q.cliente} data-total={money(quoteTotal(q))} data-live-view={hasLiveView ? '1' : ''} data-fiscal-country={ORG.countryCode} data-fiscal-test={(isMx && !ORG.tieneCsdPropio && !isFacturapiGlobalLive) ? '1' : ''}
                 data-i18n-no-pudo-procesar={t(L, 'id.no_pudo_procesar')} data-i18n-rechazar-titulo={t(L, 'id.rechazar_solicitud_titulo')} data-i18n-rechazar-body={t(L, 'id.rechazar_solicitud_body')}
                 data-i18n-rechazar={t(L, 'id.rechazar')} data-i18n-cancelar-iguala-titulo={t(L, 'id.cancelar_iguala_titulo')} data-i18n-cancelar-iguala-body={t(L, 'id.cancelar_iguala_body')}
                 data-i18n-cancelar-iguala={t(L, 'id.cancelar_iguala')} data-i18n-no-mantenerla={t(L, 'id.no_mantenerla')} data-i18n-cancelando={t(L, 'id.cancelando')}
@@ -352,7 +354,7 @@ const dotColor = (tipo: string) =>
                 <!-- SECONDARY ACTIONS GRID -->
                 {q.status !== 'draft' && (
                     <div class="act-grid">
-                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title={t(L, 'id.abrir_link_title')}>
+                        <a href={'/q/' + encodeURIComponent(q.token)} class="act-util" target="_blank" title={t(L, 'id.abrir_link_title')}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                             <span class="act-util-lbl">{t(L, 'id.abrir_link')}</span>
                         </a>
@@ -372,7 +374,7 @@ const dotColor = (tipo: string) =>
                 )}
                 {q.status === 'draft' && (
                     <div class="act-grid">
-                        <a href={`/q/${q.token}`} class="act-util" target="_blank" title={t(L, 'id.vista_previa_title')}>
+                        <a href={'/q/' + encodeURIComponent(q.token)} class="act-util" target="_blank" title={t(L, 'id.vista_previa_title')}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             <span class="act-util-lbl">{t(L, 'id.vista_previa')}</span>
                         </a>
@@ -859,7 +861,7 @@ const dotColor = (tipo: string) =>
         const panel = document.querySelector<HTMLElement>('.d-actions');
         if (!panel) return;
         const qid = panel.dataset.qid!;
-        const token = panel.dataset.token!;
+        const publicUrl = panel.dataset.link!;
         const errorEl = document.getElementById('actError')!;
         const I = panel.dataset; // atajo al bridge data-i18n-*
 
@@ -1111,7 +1113,7 @@ const dotColor = (tipo: string) =>
             const folio = panel.dataset.folio || '';
             const cliente = panel.dataset.cliente || '';
             const total = panel.dataset.total || '';
-            const link = `${location.origin}/q/${token}`;
+            const link = publicUrl;
             const msg = (I.i18nWaSaludo || '')
                 .replace('{cliente}', cliente ? ' ' + cliente : '')
                 .replace('{folio}', folio)
@@ -1123,7 +1125,7 @@ const dotColor = (tipo: string) =>
         document.getElementById('btnCopy')?.addEventListener('click', async (e) => {
             const btn = e.currentTarget as HTMLButtonElement;
             try {
-                await navigator.clipboard.writeText(`${location.origin}/q/${token}`);
+                await navigator.clipboard.writeText(publicUrl);
             } catch {
                 errorEl.textContent = I.i18nNoPudoCopiarLink!;
                 return;

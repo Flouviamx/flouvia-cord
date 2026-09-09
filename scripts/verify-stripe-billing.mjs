@@ -2,6 +2,7 @@
 // cancela objetos. Usa la misma STRIPE_SECRET_KEY que la app.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { euroPriceCatalog } from './lib/euro-price-catalog.mjs';
 
 const key = process.env.STRIPE_SECRET_KEY || '';
 assert.ok(key, 'Falta STRIPE_SECRET_KEY.');
@@ -43,7 +44,7 @@ for (const meter of meters) {
 }
 
 const meterSet = new Set(meterIds);
-const prices = await Promise.all([...basePriceIds, ...meterPriceIds].map((id) => stripe(`/v1/prices/${id}`)));
+const prices = await Promise.all([...basePriceIds, ...meterPriceIds].map((id) => stripe(`/v1/prices/${id}`, { 'expand[]': 'currency_options' })));
 if (process.env.BILLING_AUDIT_DETAILS === '1') {
   console.log(prices.map((price) => ({
     id: price.id,
@@ -62,7 +63,7 @@ const expectedProducts = ['prod_Ui3vQBd5goOHQ1', 'prod_Ui45gzUJYA3O2w', 'prod_Ui
 // bug que este archivo existe para que no vuelva.
 const expectedBaseAmountsUsd = [1200, 12000, 3000, 30000, 7000, 70000, 15000, 150000];
 const expectedMeterAmountsUsd = [0.03, 20, 15, 0.03, 1500, 17.5, 15, 0.02, 1500, 15, 10, 0.02, 1000, 12.5, 7.5];
-// Cord cobra en dos divisas: MXN a México, USD al resto (src/lib/plan-currency.ts).
+// MXN/USD siguen en los 23 Price; EUR añade 17 opciones de autoservicio.
 // La base sigue siendo MXN —es la divisa original de los Price, con suscripciones
 // vivas— y USD viaja como `currency_options` sobre el MISMO Price. Sin esa opción,
 // una suscripción creada con `currency: 'usd'` falla en el momento del cobro, así
@@ -102,6 +103,14 @@ for (let index = 0; index < meterPriceIds.length; index++) {
   assert.equal(Number(price.currency_options.usd.unit_amount_decimal ?? price.currency_options.usd.unit_amount), expectedMeterAmountsUsd[index], `Tarifa medida USD incorrecta en ${price.id}.`);
 }
 
+// EUR is offered on the three self-service plans; Developer remains negotiated.
+for (const expected of euroPriceCatalog(source, testMode)) {
+  const price = prices.find(p => p.id === expected.id);
+  assert.ok(price?.currency_options?.eur, `Falta EUR en ${expected.plan}/${expected.dimension}`);
+  const value = price.currency_options.eur;
+  assert.equal(Number(value.unit_amount_decimal ?? value.unit_amount), Number(expected.amount), `Importe EUR incorrecto: ${price.id}`);
+}
+
 const endpointPage = await stripe('/v1/webhook_endpoints', { limit: 100 });
 const endpoint = endpointPage.data.find((item) => item.status === 'enabled' && item.url === 'https://cordhq.app/api/stripe/webhook' && item.application == null);
 assert.ok(endpoint, 'No existe un webhook de plataforma activo para cordhq.app.');
@@ -125,4 +134,4 @@ assert.equal(portal.features?.subscription_cancel?.enabled, true, 'Portal no per
 // billing. Cord lo hace con pending updates/schedules en /api/billing/subscribe.
 assert.equal(portal.features?.subscription_update?.enabled, false, 'Los cambios de plan medidos deben pasar por el flujo autoritativo de Cord.');
 
-console.log(`Stripe Billing real: ${prices.length} prices, ${meters.length} meters, webhook y portal verificados en modo ${testMode ? 'test' : 'live'}.`);
+console.log(`Stripe Billing real: ${prices.length} prices MXN/USD, 17 opciones EUR, ${meters.length} meters, webhook y portal verificados en modo ${testMode ? 'test' : 'live'}.`);

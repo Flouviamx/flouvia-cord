@@ -58,7 +58,7 @@ const tkMatrix = [
   [0,0,0,0,1,1,1,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0,0]
 ];
-const { title, description = "Blog técnico de Cord: artículos de ingeniería sobre arquitectura multi-tenant, pagos, webhooks financieros y la API de cotizaciones, para cualquier negocio en cualquier país.", articleDate, articleAuthors, lang = 'es' } = Astro.props;
+const { title, description = "Blog técnico de Cord: artículos de ingeniería sobre arquitectura multi-tenant, pagos, webhooks financieros y la API de cotizaciones.", articleDate, articleAuthors, lang = 'es' } = Astro.props;
 // Los links del dev-blog usan SIEMPRE el prefijo /dev-blog (dev y prod). En el
 // subdominio dev.cordhq.app, el middleware sirve el árbol /dev-blog; que los links
 // apunten a /dev-blog/* hace que el navegador pida un path que SÍ matchea una ruta
@@ -119,7 +119,9 @@ const orgJsonLd = {
     <link rel="alternate" hreflang="es" href={esUrl} />
     <link rel="alternate" hreflang="en" href={enUrl} />
     <link rel="alternate" hreflang="x-default" href={esUrl} />
-    <link rel="icon" type="image/png" href="/imgs/favicon-32x32.png" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- Open Graph -->
     <meta property="og:type" content={articleDate ? 'article' : 'website'} />

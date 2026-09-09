@@ -19,13 +19,13 @@ export const PLANES_EN: Plan[] = [
     {
         id: 'free',
         nombre: 'Free',
-        tagline: 'To test the system.',
+        tagline: 'For your first clients. Every month.',
         precio: precioDe('free'),
-        ctaLabel: 'Start for free',
+        ctaLabel: 'Quote for free',
         ctaHref: '/registro',
         feats: [
-            '5 active quotes',
-            '5 sent quotes per month',
+            '5 sends per month, renewed monthly',
+            'Up to 5 active quotes at a time',
             '50 products and 50 clients',
             '3 AI generations per month',
             '"Powered by Cord" branding',
@@ -34,48 +34,48 @@ export const PLANES_EN: Plan[] = [
     {
         id: 'starter',
         nombre: 'Starter',
-        tagline: 'For solo sellers.',
+        tagline: 'More proposals. Your brand up front.',
         precio: precioDe('starter'),
         ctaLabel: 'Start now',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui3vQBd5goOHQ1',
         feats: [
-            '50 active quotes',
+            'Unlimited sends; up to 50 active quotes',
             '500 products and clients',
             '20 AI generations + 3 invoices/mo',
-            'E-invoicing (Mexico and the rest of the world)',
+            'CFDI in Mexico; commercial invoices elsewhere',
             'Your brand (no "Powered by")',
         ],
     },
     {
         id: 'pro',
         nombre: 'Professional',
-        tagline: 'For teams that sell seriously.',
+        tagline: 'Your team, sales and collections together.',
         precio: precioDe('pro'),
         destacado: true,
-        ribbon: 'MOST POPULAR',
+        ribbon: 'FOR YOUR TEAM',
         ctaLabel: 'Start now',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui45gzUJYA3O2w',
         feats: [
             'Unlimited quotes',
-            'Up to 5 users',
+            '5 users included',
             '50 AI generations + 20 invoices/mo',
             'Collections and 90-day cash flow forecast',
-            'Live tracking and analytics',
+            'Live tracking and no Cord branding',
         ],
     },
     {
         id: 'scale',
         nombre: 'Scale',
-        tagline: 'For operations with control.',
+        tagline: 'Automate follow-up and protect your margin.',
         precio: precioDe('scale'),
         ctaLabel: 'Start now',
         ctaHref: '/registro',
         stripeProductId: 'prod_Ui4AQicrCoCMUt',
         feats: [
             'Everything in Professional',
-            'Up to 15 users',
+            '15 users included',
             '500 AI generations + 100 invoices/mo',
             'Autonomous AI collections and approval flows',
             'Emails from your domain (SMTP) and SSO',
@@ -236,10 +236,10 @@ export const COMPARATIVA_EN: CompareGroup[] = [
     {
         titulo: 'Overages (pay per use)',
         rows: [
-            { label: 'Additional user', free: 'Hard limit', starter: 'Hard limit', pro: '$15 / u', scale: '$15 / u', developer: '$10 / u' },
-            { label: 'Extra AI generation', free: 'Hard limit', starter: '$0.20 / use', pro: '$0.18 / use', scale: '$0.15 / use', developer: '$0.13 / use' },
-            { label: 'Extra invoice', free: false, starter: '$0.15 / file', pro: '$0.15 / file', scale: '$0.10 / file', developer: '$0.08 / file' },
-            { label: 'Extra API (per 100 req)', free: 'Hard limit', starter: '$0.03 USD', pro: '$0.03 USD', scale: '$0.02 USD', developer: '$0.02 USD' },
+            { overageDim: 'usuario', label: 'Additional user', free: 'Hard limit', starter: 'Hard limit', pro: '$15 / u', scale: '$15 / u', developer: '$10 / u' },
+            { overageDim: 'ia', label: 'Extra AI generation', free: 'Hard limit', starter: '$0.20 / use', pro: '$0.18 / use', scale: '$0.15 / use', developer: '$0.13 / use' },
+            { overageDim: 'timbrado', label: 'Extra invoice', free: false, starter: '$0.15 / file', pro: '$0.15 / file', scale: '$0.10 / file', developer: '$0.08 / file' },
+            { overageDim: 'api', label: 'Extra API (per 100 req)', free: 'Hard limit', starter: '$0.03 USD', pro: '$0.03 USD', scale: '$0.02 USD', developer: '$0.02 USD' },
         ],
     },
 ];
@@ -247,7 +247,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
 export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     {
         q: 'Can I really start for free?',
-        a: "Yes. The Free plan is forever: up to 5 active quotes, 50 products, 50 clients, public link, and PDF. We don't ask for a credit card to sign up.",
+        a: 'Yes. Free has no expiry date: it includes 5 quote sends each month, up to 5 active quotes at a time, 50 products and 50 clients. Share a link and download a PDF with your logo; “Powered by Cord” stays visible. No credit card required.',
     },
     {
         q: 'What counts as an "active quote"?',
@@ -263,15 +263,27 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'Do prices include tax?',
-        a: 'Yes. What you see is what you pay, with nothing added at checkout. Businesses in Mexico are billed in Mexican pesos (MXN); everywhere else, in US dollars (USD).',
+        a: 'Yes. What you see is what you pay, with nothing added at checkout. Businesses in Mexico are billed in Mexican pesos (MXN); Spain, Germany and France, in euros (EUR); other supported markets, in US dollars (USD). Existing subscriptions keep their billing currency.',
     },
     {
         q: 'How does e-invoicing work?',
         a: "It depends on your business's country, from the Starter plan onwards. In Mexico, you connect your Digital Seal Certificate (CSD) once, and when you close a quote, Cord stamps the CFDI 4.0 with the SAT using the exact same data. Outside Mexico, Cord issues its own commercial invoice with a sequential number and PDF — not a stamp with a local tax authority, but it documents the sale with the same quote data, with no retyping in another system.",
     },
     {
-        q: 'Can I test Cord without paying?',
-        a: "Yes. The Free plan is forever: 5 active quotes, no credit card required. When you're ready, you can upgrade to a paid plan. You can change or cancel anytime.",
+        q: 'What happens after my 5 free sends?',
+        a: 'New sends pause until the first day of the next month (UTC), when your allowance resets to 5. Wait for renewal or choose Starter for unlimited monthly sends. The active quote limit is separate: closing a quote frees a slot but does not replenish sends. Reaching the allowance does not start a paid subscription.',
+    },
+    {
+        q: 'When should I pay for Cord?',
+        a: 'Choose Starter for more sends or to remove “Powered by Cord”. Professional adds unlimited quotes, 5 included users, live tracking, collections and a 90-day cash-flow view. Scale adds approvals, AI collections and email from your domain. Stay on Free as long as its limits fit your business.',
+    },
+    {
+        q: 'Can I remove Cord branding and use my own domain?',
+        a: 'You can remove “Powered by Cord” from Starter onwards, including Professional and Scale. Your logo and colors are available even on Free. Scale supports email from your domain through SMTP. Hosting quote links on your own domain is a separate capability and is not currently available.',
+    },
+    {
+        q: 'Does Free limit how much money I can collect?',
+        a: 'There is currently no monthly revenue threshold that requires a plan upgrade. Free limits sends, active quotes and other resources. Online payments have processing fees and require an eligible account in a Cord Payments market; a free subscription does not remove those fees.',
     },
     {
         q: 'Is the Developer plan for integrating Cord into my system?',

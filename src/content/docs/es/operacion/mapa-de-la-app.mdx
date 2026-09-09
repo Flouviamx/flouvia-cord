@@ -1,0 +1,130 @@
+---
+title: "Mapa completo de la aplicación"
+description: "Qué hace cada sección de Cord, cómo se conectan cotizaciones, clientes, facturas, cobros, cobranza, informes y ajustes, y dónde realizar cada tarea."
+lastUpdated: "2026-08-28"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Tener una cuenta de Cord", "Seleccionar la organización correcta antes de modificar datos"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Mapa completo de la aplicación</h1>
+  <p class="page-subtitle">Una vista de extremo a extremo para saber dónde empieza, cambia y termina cada operación en Cord.</p>
+</header>
+
+Cord organiza el trabajo alrededor de un mismo ciclo comercial: **registrar al
+cliente, preparar la oferta, negociar, aprobar, cobrar, facturar y dar seguimiento**.
+Las secciones no son bases de datos aisladas; muestran distintas etapas de los
+mismos clientes, documentos y movimientos.
+
+## El flujo principal
+
+1. Crea o importa al cliente en **Clientes**.
+2. Crea productos, servicios o kits reutilizables en **Productos**.
+3. Prepara una cotización manualmente, desde un kit o con un borrador de IA.
+4. Envía el enlace público. Cord registra la primera vista y conserva la actividad
+   del documento.
+5. El cliente puede conversar, aprobar o rechazar y, cuando corresponde, elegir un
+   método de pago.
+6. Cord registra el cobro en línea o el pago marcado manualmente.
+7. La operación pasa a **Facturas** y **Cobranza** según el documento emitido, el
+   saldo y la fecha de vencimiento.
+8. **Informes** y **Desempeño** agregan los resultados sin crear una segunda copia
+   de la operación.
+
+## Dónde se hace cada cosa
+
+| Sección | Ruta | Para qué sirve |
+|---|---|---|
+| Inicio | `/app` | KPIs, pipeline, actividad reciente y pendientes de seguimiento. |
+| Cotizaciones | `/app/cotizaciones` | Crear, buscar, filtrar, abrir, editar, duplicar, enviar e imprimir cotizaciones. |
+| Clientes | `/app/clientes` | Directorio, importación CSV, condiciones comerciales, datos fiscales, crédito y estado de cuenta. |
+| Productos | `/app/productos` | Catálogo, precios, impuestos, precios por volumen e importación/exportación. |
+| Kits | `/app/productos/kits` | Paquetes de conceptos que se insertan juntos en una cotización. |
+| Cobranza | `/app/cobranza` | Cartera por cobrar, saldos vencidos, aging, exposición por cliente y seguimiento. |
+| Agente de cobranza | `/app/cobranza/agente` | Configurar y supervisar la cobranza con IA cuando el plan la incluye. |
+| Mi dinero | `/app/cobros` | Cobros, depósitos, saldos, reembolsos y acceso a disputas. |
+| Facturas | `/app/facturas` | Emitir, consultar, exportar y dar seguimiento a documentos fiscales o comerciales. |
+| Facturas recurrentes | `/app/facturas/recurrentes` | Programar emisiones repetidas; requiere Pro o superior. |
+| Informes | `/app/informes` | Resumen, diagnóstico comercial, finanzas, flujo, cobranza, clientes y productos. |
+| Desempeño | `/app/desempeno` | Resultados atribuidos a la persona que creó o duplicó cada cotización. |
+| Ajustes | `/app/ajustes` | Cuenta, negocio, marca, fiscal, pagos, equipo, seguridad, integraciones y plan. |
+
+<Callout type="info">
+Las opciones visibles dependen de tus **permisos**, tu **plan efectivo**, el **país
+de operación** y el estado de configuración de la cuenta. Que una página exista no
+significa que cualquier miembro pueda modificarla.
+</Callout>
+
+## Estados de una cotización
+
+Una cotización puede pasar por estos estados canónicos:
+
+| Estado | Significado operativo |
+|---|---|
+| `draft` | Borrador editable que todavía no se envía al cliente. |
+| `sent` | Enviada; el enlace público está listo para consulta. |
+| `viewed` | El cliente abrió por primera vez la cotización. |
+| `approved` | El cliente registró su aprobación. Puede quedar saldo pendiente. |
+| `rejected` | El cliente rechazó la propuesta. |
+| `expired` | Terminó su vigencia sin cierre. |
+| `paid` | El flujo no recurrente quedó pagado según sus cobros registrados. |
+| `invoiced` | La operación ya tiene un documento de factura asociado. |
+
+Una cotización recurrente no se convierte en `paid` para siempre: cada cuota genera
+su propio cobro y la suscripción conserva un estado separado.
+
+## Organización activa y entorno de prueba
+
+Cord es multiempresa. Cada cliente, producto, cotización, factura, miembro y ajuste
+pertenece a la **organización activa**. Si tienes acceso a más de una, confirma el
+selector de organización antes de importar, emitir o cambiar configuración.
+
+El **modo de prueba** usa una organización sandbox separada. Sus datos no se mezclan
+con producción y sus llaves, webhooks y operaciones deben tratarse como pruebas. Al
+volver al modo real, no esperes ver los registros creados dentro del sandbox.
+
+## Permisos que cambian la experiencia
+
+El dueño siempre tiene acceso total. Los demás miembros reciben presets o permisos
+por sección:
+
+- **Cotizaciones:** crear, editar, enviar y duplicar.
+- **Aprobaciones:** aprobar descuentos, montos o cambios controlados.
+- **Cobranza:** consultar y gestionar cuentas por cobrar.
+- **Clientes** y **Productos:** modificar sus directorios.
+- **Analítica:** abrir Informes y Desempeño.
+- **Ajustes:** cambiar la configuración del negocio.
+- **Configurar cobros:** modificar Cord Payments y la cuenta receptora.
+- **Reembolsos:** iniciar devoluciones de cobros conciliados.
+- **Equipo:** invitar personas y cambiar permisos.
+
+Si una acción no aparece, primero revisa el permiso del miembro; después, el plan y
+la configuración requerida por esa función.
+
+## Qué cambia por país
+
+- El registro está disponible en 12 mercados: México, Estados Unidos, Canadá,
+  Brasil, España, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú.
+- El cobro en línea está disponible en los primeros ocho. Colombia, Argentina,
+  Chile y Perú pueden cotizar, emitir factura comercial y gestionar cobranza, pero
+  todavía no activar Cord Payments.
+- SPEI dinámico es exclusivo de México.
+- México puede emitir CFDI 4.0 con un CSD válido.
+- Fuera de México, Cord emite factura comercial. España solo usa el carril
+  Verifactu cuando la cuenta y la integración regulatoria están activadas.
+
+## Antes de buscar un error
+
+Cuando algo no esté disponible, revisa en este orden:
+
+1. organización y modo de prueba activos;
+2. permiso del miembro;
+3. límite o capacidad del plan;
+4. país de operación y método compatible;
+5. campos obligatorios del cliente, emisor o documento;
+6. estado anterior de la cotización, factura o cobro.
+
+Después consulta la guía específica de la sección. El [Centro de soporte](https://cordhq.app/soporte)
+sirve para incidencias puntuales; estas guías explican el modelo completo.

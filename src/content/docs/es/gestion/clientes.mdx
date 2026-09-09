@@ -1,0 +1,131 @@
+---
+title: "Clientes, condiciones y estado de cuenta"
+description: "Cómo crear e importar clientes, configurar descuentos, crédito, términos y datos fiscales, y leer su historial comercial y saldo."
+lastUpdated: "2026-08-28"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Clientes para crear, editar, importar o eliminar", "Nombre de empresa obligatorio"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Clientes, condiciones y estado de cuenta</h1>
+  <p class="page-subtitle">El directorio de Clientes alimenta precios, crédito, facturación, cobranza e informes.</p>
+</header>
+
+Un cliente en Cord no es solo un contacto. Su ficha guarda la identidad comercial
+y fiscal que se reutiliza al cotizar, además de las condiciones que controlan el
+descuento sugerido, el vencimiento y la exposición de crédito.
+
+## Crear un cliente
+
+Abre **Clientes > Nuevo cliente**. El único campo obligatorio para guardar es el
+nombre de la empresa; completa los demás antes de enviar una cotización que deba
+cobrarse o facturarse.
+
+| Grupo | Campos | Efecto |
+|---|---|---|
+| Contacto | persona, correo y teléfono | Destinatario de cotizaciones, facturas y seguimiento. |
+| Identidad fiscal | RFC o identificador local, régimen, uso de CFDI y código postal | Datos del receptor usados al preparar el documento fiscal. |
+| Dirección | país, líneas de dirección, ciudad y región | Dirección del receptor y contexto fiscal por país. |
+| Condiciones | contado, Net 30 o Net 60 | Vencimiento predeterminado al crear operaciones para el cliente. |
+| Crédito | límite mayor o igual a cero | Referencia para mostrar exposición y alertar cuando el saldo lo supera. |
+| Nivel de precio | Estándar, Plata, Oro o Distribuidor | Clasificación comercial y descuento sugerido. |
+
+Los niveles proponen inicialmente 0%, 5%, 10% y 15%, respectivamente. El porcentaje
+puede editarse entre 0% y 100%; el nivel es una etiqueta y el porcentaje guardado es
+el valor que Cord aplica como condición predeterminada.
+
+<Callout type="warning">
+El límite de crédito es una señal operativa, no una línea de crédito otorgada por
+Cord ni una garantía de pago. La empresa usuaria decide si continúa vendiendo cuando
+la exposición excede ese límite.
+</Callout>
+
+## País del cliente
+
+El país del cliente puede quedar vacío. En ese caso hereda el país del emisor. Si el
+receptor opera en otro país, selecciónalo explícitamente: Cord admite países de
+receptor fuera de los 12 mercados donde se vende la plataforma.
+
+Cambiar el país modifica la etiqueta esperada para el identificador fiscal, pero no
+convierte por sí solo una factura comercial en una presentación fiscal ante la
+autoridad del receptor.
+
+## Importar clientes por CSV
+
+En **Clientes > Importar CSV** el flujo tiene tres pasos:
+
+1. carga un archivo `.csv` o descarga la plantilla;
+2. indica si la primera fila contiene encabezados y relaciona columnas;
+3. revisa la vista previa y decide si se actualizan coincidencias existentes.
+
+Una importación acepta hasta **2,000 filas**. Las filas sin empresa se omiten. Los
+términos válidos son `contado`, `net30` y `net60`; cualquier otro valor cae a contado.
+
+Con **Actualizar existentes** activo, Cord busca primero una coincidencia exacta por
+RFC o identificador fiscal y después por nombre de empresa sin distinguir mayúsculas.
+Si coincide, actualiza contacto, correo, teléfono, identificador, términos y límite;
+si no coincide, crea un cliente. Con la opción desactivada, crea registros nuevos y
+no intenta combinar duplicados.
+
+## Buscar, filtrar y ordenar
+
+El directorio permite buscar por datos visibles y filtrar:
+
+- con cotizaciones o sin cotizar;
+- con nivel distinto de Estándar;
+- con límite de crédito;
+- con información fiscal incompleta.
+
+Puedes ordenar por empresa, monto cerrado, número de cotizaciones, actividad reciente
+o límite de crédito. Estos controles no modifican el cliente: solo cambian la vista.
+
+## Qué muestra la ficha de un cliente
+
+Al abrir un cliente, Cord calcula sobre sus operaciones:
+
+- cotizaciones totales, pipeline, monto cerrado y monto cobrado;
+- ticket promedio, tasa de cierre y días promedio al cierre;
+- descuento total cedido en negociación;
+- actividad de los últimos 12 meses;
+- productos comprados, frecuencia e importe;
+- origen del registro, fecha de alta y días sin actividad.
+
+Si existe cartera abierta, la ficha también muestra un **estado de cuenta** unificado
+para cotizaciones y facturas: saldo, vencido, documento más antiguo y bandas corriente,
+1–30, 31–60, 61–90 y más de 90 días.
+
+Una operación facturada aparece como factura, no también como cotización, para evitar
+duplicar el saldo.
+
+## Crear una cotización desde el cliente
+
+Usa **Nueva cotización** dentro de la ficha. Cord abre el editor con ese cliente
+seleccionado; sus datos y condiciones funcionan como valores iniciales. Revisa siempre
+el destinatario, moneda, impuestos, descuentos y vencimiento del documento actual.
+
+Editar después la ficha no reescribe silenciosamente documentos fiscales ya emitidos:
+estos conservan sus snapshots de emisor, receptor, líneas e importes.
+
+## Permisos, límites y eliminación
+
+- Ver el directorio no concede edición.
+- Crear, editar, importar y eliminar requiere el permiso **Clientes**.
+- Free admite hasta 50 clientes y Starter hasta 500; Pro, Scale y Developer no tienen
+  un límite duro de clientes en el contrato actual.
+- Eliminar es una acción permanente y queda en la bitácora de auditoría. Antes de
+  hacerlo, revisa las cotizaciones y el estado de cuenta asociados.
+
+## Problemas frecuentes
+
+**No aparece “Nuevo cliente” o “Importar CSV”.** Falta el permiso Clientes.
+
+**La importación actualizó una fila que esperaba duplicar.** Con upsert activo,
+coincidió por identificador fiscal o nombre de empresa.
+
+**El cliente aparece con fiscal incompleto.** Revisa identificador, país, dirección y
+los campos fiscales específicos del documento que vas a emitir.
+
+**El saldo supera el límite.** Es una alerta; decide si cambias términos, solicitas
+anticipo o detienes nuevas ventas.

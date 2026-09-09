@@ -1,7 +1,7 @@
 # Proyecto Cord
 
 > Documento de estado actual. Para decisiones fechadas o migraciones, consulta
-> [`historial.md`](historial.md).
+> [`historial/README.md`](historial/README.md).
 
 ## Identidad y posicionamiento
 
@@ -78,7 +78,7 @@ Los scripts especializados de seguridad y operación se descubren en
 | Fiscal | Facturapi mediante `MexicoSatProvider` para CFDI 4.0 en México; `SpainVerifactuProvider` para Verifactu en España (huella SHA-256 encadenada + envío SOAP a la AEAT). |
 | IA | Anthropic SDK; `AI_MODEL` permite override. El default del código es `claude-haiku-4-5-20251001`. |
 | Animación | GSAP 3 únicamente en landing y login; dentro de la aplicación se usa CSS. |
-| Analytics | PostHog para producto y Vercel Analytics para Web Vitals. El contrato detallado vive en [`analytics.md`](analytics.md). |
+| Analytics | PostHog para producto y Vercel Analytics para Web Vitals. El contrato detallado vive en [`estado/analytics.md`](estado/analytics.md). |
 | Tipografía | Inter como única familia. Los montos usan `.editorial`: Inter 600, tracking `-0.03em` y números tabulares. |
 
 ### Estado operativo relevante
@@ -92,7 +92,7 @@ Los scripts especializados de seguridad y operación se descubren en
   `src/lib/billing.ts`; llaves, webhook y Customer Portal se configuran fuera del
   repositorio.
 - Las referencias históricas a Clerk se conservan en
-  `historial-auth-clerk.md`, pero no describen una dependencia vigente.
+  `historial/auth-clerk.md`, pero no describen una dependencia vigente.
 - Internacionalización real (ago 2026): `orgs.idioma` sirve español e inglés en
   toda la app interna, `/q` y los correos transaccionales — el selector de
   Ajustes ya no dice "próximamente". `orgs.zona_horaria` tiene consumidor real
@@ -100,8 +100,8 @@ Los scripts especializados de seguridad y operación se descubren en
   (`TAX_PRESETS` en `src/lib/countries.ts` siembra las tasas estándar al crear la
   cuenta) y las cuentas de depósito usan el formato del país
   (`src/lib/payout-fields.ts`: CLABE, IBAN, routing+account, sort code, transit,
-  BSB, banco+agência). Detalle en `negocio-billing.md` y reglas 23–25 de
-  `estandares-ingenieria.md`.
+  BSB, banco+agência). Detalle en `estado/cobros-facturacion.md` y reglas 23–25
+  de `estandares-ingenieria.md`.
 - Mercados ofrecidos (ago 2026): el alta se abrió a los 12 países que Cord
   sostiene de punta a punta —MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE— en
   lugar de los 249 códigos ISO, y las divisas se acotaron a las de ese set más
@@ -124,7 +124,7 @@ Los scripts especializados de seguridad y operación se descubren en
   facturación certificado que exige el RD 1007/2023, con huella SHA-256
   encadenada verificada contra los vectores oficiales de la AEAT y envío real
   por SOAP verificado contra el WSDL/XSD oficial. Ver regla 29 de
-  `estandares-ingenieria.md` y `negocio-billing.md`.
+  `estandares-ingenieria.md` y `estado/cobros-facturacion.md`.
 - **Pendiente operativo, no de código (ago 2026):** dos huecos de trámite bloquean
   el 100% real de EE.UU. y España — ninguno se resuelve con más ingeniería.
   - *España:* Verifactu está construido y verificado, pero `VERIFACTU_SIF_NIF`
@@ -171,7 +171,7 @@ Los scripts especializados de seguridad y operación se descubren en
   de KYC con retención declarada, depósitos con historial y frecuencia propia, y
   tarifas por divisa donde el hueco fuera de MXN es explícito en vez de un `if`
   escondido. Reglas 32, 33 y 34 de `estandares-ingenieria.md`; detalle en
-  `negocio-billing.md`.
+  `estado/cobros-facturacion.md`.
 
 ## Configuración
 

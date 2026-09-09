@@ -22,6 +22,7 @@ import type { FeatureKey } from '../../lib/entitlements';
 import { getCountryProfile, isCountryCode, isSupportedCountry } from '../../lib/countries';
 import { listOfferedCurrencies } from '../../lib/currency';
 import { isValidTimeZone } from '../../lib/timezones';
+import { validateLateInterestRate } from '../../lib/late-interest-policy';
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const TEMPLATES = new Set(['clasico', 'minimal', 'detallado']);
@@ -75,6 +76,13 @@ export const PATCH: APIRoute = async ({ request }) => {
         if (entitlementDenied) return entitlementDenied;
     }
     const [[actual]] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
+    if (body.interes_moratorio_pct !== undefined) {
+        const checkedInterest = validateLateInterestRate(
+            body.country_code ?? actual.country_code,
+            body.interes_moratorio_pct,
+        );
+        if (!checkedInterest.ok) return json({ error: checkedInterest.error }, 422);
+    }
 
     // Cada campo: si viene en el body lo tomamos (saneado), si no, conservamos.
     const nombre = body.nombre !== undefined ? String(body.nombre).trim() : actual.nombre;
@@ -106,7 +114,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     // FIX jul 2026: este campo tenía data-field en Ajustes → Aprobaciones pero el
     // PATCH lo ignoraba — el margen mínimo del Auditor Silencioso nunca se guardaba.
     const aprobMargen = body.aprob_margen_min !== undefined ? Math.min(100, Math.max(0, Number(body.aprob_margen_min) || 0)) : actual.aprob_margen_min;
-    const interes = body.interes_moratorio_pct !== undefined ? Math.min(100, Math.max(0, Number(body.interes_moratorio_pct) || 0)) : actual.interes_moratorio_pct;
+    const interes = body.interes_moratorio_pct !== undefined ? 0 : actual.interes_moratorio_pct;
     const logoUrl = body.logo_url !== undefined
         ? (String(body.logo_url) === '' ? null : (logoOk(String(body.logo_url)) ? String(body.logo_url) : actual.logo_url))
         : actual.logo_url;
@@ -405,7 +413,9 @@ const deleteSchema = z.object({
 });
 
 // DELETE /api/org { confirmName, password?, code? } — borra la organización
-// ACTIVA y TODOS sus datos. Solo el dueño, con re-autenticación (contraseña
+// ACTIVA y sus filas operativas dependientes en la base primaria. No borra
+// evidencia legal seudónima sin FK, respaldos ni registros que un proveedor
+// conserve bajo su propio contrato. Solo el dueño, con re-autenticación (contraseña
 // o código TOTP/respaldo) y type-to-confirm del nombre exacto de la org
 // (patrón GitHub/Stripe — evita un borrado accidental por un clic de más).
 // Las ~33 tablas hijas ya tienen `on delete cascade` (ver db/schema.sql), así

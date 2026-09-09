@@ -75,12 +75,12 @@ const howToSchema = {
 // confianza secundario dentro de la descripción, sin liderar el mensaje.
 // ACTUALIZACIÓN: Se implementa enfoque "Transaccional Absoluto".
 const title = isEn
-    ? "Cord — From Proposal to Payment in a Single Link"
-    : "Cord — De la propuesta al pago. Todo en un solo link.";
+    ? "Free Online Quote Software | Proposals to Payments | Cord"
+    : "Software de cotizaciones online gratis y cobranza | Cord";
 
 const description = isEn
-    ? "The platform that transforms proposals and agreements into instantly paid transactions. Centralize negotiation, legally binding signatures, margin intelligence, and automated collections in a single interactive link."
-    : "La plataforma que transforma propuestas y acuerdos en transacciones pagadas al instante. Centraliza en un solo link interactivo la negociación, firmas legales de contratos, inteligencia de margen y cobros automatizados.";
+    ? "Create professional quotes, share a link and follow up through payment. Start with 5 free sends each month and up to 5 active quotes. No credit card required."
+    : "Crea cotizaciones profesionales, comparte un link y da seguimiento hasta el pago. Empieza con 5 envíos gratis al mes y hasta 5 cotizaciones activas. Sin tarjeta.";
 
 // ── Datos estructurados adicionales (jul 2026) ──────────────────────────
 // Organization (Flouvia, la empresa creadora) + SoftwareApplication (Cord,
@@ -113,9 +113,7 @@ const softwareSchema = {
     applicationCategory: 'BusinessApplication',
     applicationSubCategory: isEn ? 'Commercial Closing Platform' : 'Plataforma de Cierre Comercial',
     operatingSystem: 'Web',
-    description: isEn
-        ? 'Cord is the platform that transforms proposals and agreements into instantly paid transactions. It centralizes negotiation, legally binding signatures, margin intelligence, and automated collections in a single interactive link.'
-        : 'Cord es la plataforma que transforma propuestas y acuerdos en transacciones pagadas al instante. Centraliza en un solo link interactivo la negociación, firmas legales, inteligencia de margen y cobros automatizados.',
+    description,
     audience: {
         '@type': 'BusinessAudience',
         audienceType: isEn ? 'Any business worldwide (distributors, wholesalers, manufacturers, service providers, SaaS, agencies)' : 'Cualquier negocio en cualquier país (distribuidoras, mayoristas, manufactura, servicios, SaaS, agencias)',
@@ -128,11 +126,11 @@ const softwareSchema = {
         // implícita de "ES = México" que contradice el posicionamiento universal.
         '@type': 'Offer',
         price: '0',
-        description: isEn ? 'Free plan, forever — no credit card required.' : 'Plan gratis para siempre — sin tarjeta de crédito.',
+        description: t('hero.free.note'),
     },
     featureList: isEn 
-        ? ['Negotiated pricing', 'One-click quote approval', 'Real-time view tracking', 'AI-powered collections', 'Legally binding contract signatures', 'Net 30/60 credit terms', 'Public API & webhooks']
-        : ['Precios negociados', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'Cobranza automatizada con IA', 'Firmas legales de contratos', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
+        ? ['Negotiated pricing', 'One-click quote approval', 'Real-time view tracking', 'AI-powered collections', 'Approval with technical evidence', 'Net 30/60 credit terms', 'Public API & webhooks']
+        : ['Precios negociados', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'Cobranza automatizada con IA', 'Aprobación con evidencia técnica', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
 };
 
 // Misma fuente (claves faq.1..faq.8 de ui.ts) que consume <Faq /> — el

@@ -1,0 +1,138 @@
+---
+import OpsLayout from '../../layouts/OpsLayout.astro';
+import OpsShell from '../../components/ops/OpsShell.astro';
+import { getPublicStatusSnapshot, HEALTH_SERVICES } from '../../lib/platform-health';
+import { opsDate } from '../../lib/ops-format';
+
+const operator = Astro.locals.opsOperator;
+if (!operator) return Astro.redirect('/ops/login');
+
+let snapshot;
+let unavailable = false;
+try {
+    snapshot = await getPublicStatusSnapshot();
+} catch {
+    unavailable = true;
+    snapshot = { state: 'unknown' as const, services: [], history: [], incidents: [], windowStart: null, windowEnd: null };
+}
+
+const serviceName = {
+    database: 'Neon / núcleo de datos',
+    stripe: 'Stripe API',
+    public_link: 'Link público /q/demo',
+};
+const stateLabel = {
+    operational: 'Operativa',
+    degraded: 'Degradada',
+    outage: 'Interrumpida',
+    unknown: 'Sin señal reciente',
+};
+const incidentState = {
+    investigating: 'Investigando',
+    identified: 'Identificado',
+    monitoring: 'Monitoreando',
+    resolved: 'Resuelto',
+};
+---
+
+<OpsLayout title="Disponibilidad | Cord Ops">
+  <OpsShell active="status" title="Disponibilidad" subtitle="Sondas verificables e incidentes publicados; sin porcentajes sembrados.">
+    <a slot="actions" class="ops-button secondary" href="/desarrolladores/status" target="_blank" rel="noopener">Ver página pública</a>
+
+    <section class="ops-card ops-metrics">
+      <div class="ops-metric"><span>Estado</span><strong>{stateLabel[snapshot.state]}</strong><small>Última muestra por servicio</small></div>
+      <div class="ops-metric"><span>Sondas</span><strong>{snapshot.services.length}/{HEALTH_SERVICES.length}</strong><small>Con señal en la ventana</small></div>
+      <div class="ops-metric"><span>Ventana</span><strong>{snapshot.windowStart ? opsDate(snapshot.windowStart) : 'Sin datos'}</strong><small>Primera muestra conservada</small></div>
+      <div class="ops-metric"><span>Incidentes</span><strong>{snapshot.incidents.filter((incident) => incident.status !== 'resolved').length}</strong><small>Abiertos</small></div>
+    </section>
+
+    {unavailable && <div class="ops-card ops-card-pad ops-status-warning">La migración de disponibilidad no está aplicada o Neon no respondió. La página pública mostrará “sin datos verificables”.</div>}
+
+    <section class="ops-section">
+      <header class="ops-section-header"><div><h2>Sondas recientes</h2><p>El cron autenticado ejecuta Neon, Stripe y el render de un link público una vez al día en Vercel Hobby.</p></div></header>
+      <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Servicio</th><th>Estado</th><th>Latencia</th><th>Muestras correctas</th><th>Última muestra</th></tr></thead><tbody>
+        {HEALTH_SERVICES.map((id) => {
+          const service = snapshot.services.find((item) => item.service === id);
+          return <tr><td>{serviceName[id]}</td><td>{!service || service.stale ? <span class="ops-badge amber">Sin señal</span> : service.ok ? <span class="ops-badge green">Correcta</span> : <span class="ops-badge red">Falló</span>}</td><td>{service ? `${service.latencyMs} ms` : '—'}</td><td>{service ? `${service.successPct.toFixed(2)}% · ${service.checks} muestras` : '—'}</td><td>{service ? opsDate(service.checkedAt) : '—'}</td></tr>;
+        })}
+      </tbody></table></div>
+    </section>
+
+    <section class="ops-section">
+      <header class="ops-section-header"><div><h2>Publicar un incidente</h2><p>Ambos idiomas son obligatorios. La página pública nunca traduce ni completa contenido automáticamente.</p></div></header>
+      <form id="ops-incident-form" class="ops-card ops-card-pad ops-incident-form">
+        <label><span>Título ES</span><input name="titleEs" minlength="3" maxlength="160" required /></label>
+        <label><span>Title EN</span><input name="titleEn" minlength="3" maxlength="160" required /></label>
+        <label><span>Resumen ES</span><textarea name="summaryEs" minlength="3" maxlength="4000" rows="4" required></textarea></label>
+        <label><span>Summary EN</span><textarea name="summaryEn" minlength="3" maxlength="4000" rows="4" required></textarea></label>
+        <div class="ops-incident-grid"><label><span>Severidad</span><select name="severity"><option value="minor">Menor</option><option value="major">Mayor</option><option value="critical">Crítica</option></select></label><label><span>Inicio</span><input name="startedAt" type="datetime-local" required /></label></div>
+        <div class="ops-incident-actions"><p id="ops-incident-result" role="status"></p><button class="ops-button" type="submit">Publicar como “Investigando”</button></div>
+      </form>
+    </section>
+
+    <section class="ops-section">
+      <header class="ops-section-header"><div><h2>Incidentes registrados</h2><p>Los incidentes se resuelven; no se eliminan desde la interfaz.</p></div></header>
+      <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Incidente</th><th>Severidad</th><th>Estado</th><th>Inicio</th><th>Actualizar</th></tr></thead><tbody>
+        {snapshot.incidents.map((incident) => <tr><td><strong>{incident.titleEs}</strong><span class="ops-sub">{incident.titleEn}</span></td><td><span class:list={['ops-badge', incident.severity === 'critical' ? 'red' : incident.severity === 'major' ? 'amber' : 'blue']}>{incident.severity}</span></td><td>{incidentState[incident.status]}</td><td>{opsDate(incident.startedAt)}</td><td><form class="ops-status-form" data-id={incident.id}><select name="status" aria-label={`Estado de ${incident.titleEs}`}><option value="investigating" selected={incident.status === 'investigating'}>Investigando</option><option value="identified" selected={incident.status === 'identified'}>Identificado</option><option value="monitoring" selected={incident.status === 'monitoring'}>Monitoreando</option><option value="resolved" selected={incident.status === 'resolved'}>Resuelto</option></select><button class="ops-button secondary" type="submit">Guardar</button></form></td></tr>)}
+        {snapshot.incidents.length === 0 && <tr><td colspan="5" class="ops-empty">No hay incidentes reales registrados.</td></tr>}
+      </tbody></table></div>
+    </section>
+  </OpsShell>
+</OpsLayout>
+
+<script>
+  const endpoint = '/api/ops/status-incidents';
+  const form = document.getElementById('ops-incident-form') as HTMLFormElement | null;
+  const result = document.getElementById('ops-incident-result');
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    button.disabled = true;
+    if (result) result.textContent = '';
+    const data = new FormData(form);
+    const localStart = String(data.get('startedAt') || '');
+    const payload = Object.fromEntries(data.entries());
+    payload.startedAt = new Date(localStart).toISOString();
+    try {
+      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || 'No se pudo publicar');
+      window.location.reload();
+    } catch (error) {
+      if (result) result.textContent = error instanceof Error ? error.message : 'No se pudo publicar';
+      button.disabled = false;
+    }
+  });
+
+  document.querySelectorAll<HTMLFormElement>('.ops-status-form').forEach((statusForm) => {
+    statusForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = statusForm.querySelector('button') as HTMLButtonElement;
+      const select = statusForm.querySelector('select') as HTMLSelectElement;
+      button.disabled = true;
+      try {
+        const response = await fetch(endpoint, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'set_status', targetId: statusForm.dataset.id, status: select.value }) });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error || 'No se pudo actualizar');
+        window.location.reload();
+      } catch (error) {
+        window.alert(error instanceof Error ? error.message : 'No se pudo actualizar');
+        button.disabled = false;
+      }
+    });
+  });
+</script>
+
+<style>
+  .ops-status-warning { margin-bottom: 30px; color: #8a5c17; background: #fff8e8; }
+  .ops-incident-form { display: grid; gap: 18px; }
+  .ops-incident-form label { display: grid; gap: 7px; }
+  .ops-incident-form label > span { color: #6e6e73; font-size: 12px; font-weight: 650; }
+  .ops-incident-form input,.ops-incident-form textarea,.ops-incident-form select,.ops-status-form select { width: 100%; border: 1px solid rgba(0,0,0,.12); border-radius: 12px; background: #fff; padding: 10px 12px; color: #1d1d1f; }
+  .ops-incident-form textarea { resize: vertical; line-height: 1.5; }
+  .ops-incident-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .ops-incident-actions,.ops-status-form { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+  .ops-incident-actions p { margin-right: auto; color: #c9343b; font-size: 13px; }
+  .ops-status-form select { min-width: 145px; }
+  @media (max-width: 760px) { .ops-incident-grid { grid-template-columns: 1fr; } .ops-status-form { align-items: stretch; flex-direction: column; } }
+</style>

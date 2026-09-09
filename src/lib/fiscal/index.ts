@@ -37,6 +37,7 @@ export interface FiscalRetencion {
   /** Fracción, no porcentaje: 0.10667, nunca 10.667. */
   tasa: number;
   base: number;
+  baseTipo?: 'subtotal' | 'impuesto';
   monto: number;
 }
 
@@ -71,6 +72,8 @@ export interface FiscalDocumentRequest {
   countryCode: string;
   /** 'commercial_invoice' | 'credit_note' | 'cfdi_40' | 'cfdi_egreso'… — determina p.ej. F1 vs R1 en Verifactu. */
   documentType?: string;
+  /** Folio fiscal del comprobante original de una nota de crédito. */
+  relatedFiscalId?: string;
   issuer: FiscalParty;
   recipient: FiscalParty;
   lines: FiscalLineItem[];
@@ -100,6 +103,8 @@ export interface FiscalDocumentResponse {
 export interface FiscalCancelRequest {
   /** Motivo del rail regulatorio. CFDI: 01..04; 02 = comprobante con errores. */
   reason?: string;
+  /** Consulta sin iniciar otra cancelación. */
+  checkOnly?: boolean;
   /**
    * Llave LIVE de la organización de ESTE emisor. Sin ella la cancelación va
    * contra la cuenta global y no encuentra un documento timbrado bajo el CSD
@@ -118,6 +123,7 @@ export interface FiscalCancelRequest {
 
 export interface FiscalCancelResponse {
   success: boolean;
+  status?: 'accepted' | 'pending' | 'verifying' | 'rejected' | 'expired' | 'none' | 'unknown';
   error?: string;
   rawProviderData?: Record<string, unknown>;
 }

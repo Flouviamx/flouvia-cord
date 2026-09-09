@@ -9,23 +9,66 @@ export interface Props {
   title: string;
   lang?: "es" | "en";
   description?: string;
+  lastUpdated?: string;
+  reviewedBy?: string;
+  appliesToMarkets?: string[];
+  availablePlans?: string[];
+  prerequisites?: string[];
 }
 
 import { altLangUrls } from "../i18n/utils";
 
-const { title, lang = "es", description, headings = [] } = Astro.props;
+const {
+  title,
+  lang = "es",
+  description,
+  headings = [],
+  lastUpdated,
+  reviewedBy,
+  appliesToMarkets = [],
+  availablePlans = [],
+  prerequisites = []
+} = Astro.props;
 const { esUrl, enUrl } = altLangUrls(Astro.url);
 
 const getUrl = (path: string) => lang === 'en' ? `/en${path}` : path;
 
 const isOverviewPage = Astro.url.pathname.endsWith('/resumen') || Astro.url.pathname.endsWith('/resumen/') || Astro.url.pathname === '/docs' || Astro.url.pathname === '/docs/' || Astro.url.pathname === '/en/docs' || Astro.url.pathname === '/en/docs/';
+const isPaymentsSection = Astro.url.pathname.includes(getUrl('/docs/pagos'));
+const isDeveloperSection = Astro.url.pathname.includes(getUrl('/docs/desarrolladores'));
+const isQuoteSection = [
+  getUrl('/docs/cotizacion'),
+  getUrl('/docs/interaccion'),
+  getUrl('/docs/gestion')
+].some((prefix) => Astro.url.pathname.includes(prefix));
+const isStartSection = !isPaymentsSection && !isDeveloperSection && !isQuoteSection;
 
 // Docs vive en el subdominio docs.cordhq.app (rewrite en src/middleware.ts) — el
 // breadcrumb/WebPage debe apuntar ahí, no al dominio apex (que 301-redirige a este
 // mismo subdominio, lo que dejaba el canonical/JSON-LD apuntando a sí mismo a
 // través de un redirect). Organization/WebSite SÍ se quedan en cordhq.app: son la
 // entidad de marca única, no la ubicación de esta página en particular.
-const pageOrigin = Astro.url.origin;
+// El canonical público es estable incluso detrás de proxies que entregan la
+// petición interna por HTTP. Usar Astro.url.origin podía publicar `http://` en
+// previews o adaptadores que no preservaran correctamente X-Forwarded-Proto.
+const pageOrigin = 'https://docs.cordhq.app';
+
+const marketNames: Record<string, { es: string; en: string }> = {
+  MX: { es: 'México', en: 'Mexico' },
+  US: { es: 'Estados Unidos', en: 'United States' },
+  CA: { es: 'Canadá', en: 'Canada' },
+  BR: { es: 'Brasil', en: 'Brazil' },
+  ES: { es: 'España', en: 'Spain' },
+  GB: { es: 'Reino Unido', en: 'United Kingdom' },
+  DE: { es: 'Alemania', en: 'Germany' },
+  FR: { es: 'Francia', en: 'France' },
+  CO: { es: 'Colombia', en: 'Colombia' },
+  AR: { es: 'Argentina', en: 'Argentina' },
+  CL: { es: 'Chile', en: 'Chile' },
+  PE: { es: 'Perú', en: 'Peru' }
+};
+const localizedMarkets = appliesToMarkets.map((code) => marketNames[code]?.[lang] || code);
+const hasEditorialMetadata = Boolean(lastUpdated || reviewedBy || localizedMarkets.length || availablePlans.length || prerequisites.length);
 
 // Build breadcrumb from URL path
 const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
@@ -68,14 +111,24 @@ const jsonLd = {
       }))
     },
     {
-      "@type": "WebPage",
-      "name": title,
+      "@type": "TechArticle",
+      "headline": title,
       ...(description ? { "description": description } : {}),
       "url": `${pageOrigin}${Astro.url.pathname}`,
+      "mainEntityOfPage": `${pageOrigin}${Astro.url.pathname}`,
       "inLanguage": lang === "es" ? "es-MX" : "en-US",
       "isPartOf": { "@id": "https://cordhq.app/#website" },
       "about": { "@id": "https://cordhq.app/#organization" },
-      "dateModified": new Date().toISOString().split('T')[0]
+      "author": { "@id": "https://cordhq.app/#organization" },
+      "publisher": { "@id": "https://cordhq.app/#organization" },
+      ...(lastUpdated ? { "dateModified": lastUpdated } : {}),
+      ...(localizedMarkets.length ? {
+        "spatialCoverage": localizedMarkets.map((name) => ({ "@type": "Place", "name": name }))
+      } : {}),
+      ...(availablePlans.length ? {
+        "audience": { "@type": "Audience", "audienceType": availablePlans.join(', ') }
+      } : {}),
+      ...(prerequisites.length ? { "dependencies": prerequisites.join('; ') } : {})
     }
   ]
 };
@@ -97,10 +150,10 @@ const jsonLd = {
     <header class="docs-header">
       <div class="header-top">
         <div class="header-left">
-          <button id="mobile-menu-trigger" class="mobile-menu-btn" aria-label="Menú">
+          <button id="mobile-menu-trigger" class="mobile-menu-btn" aria-label={lang === 'es' ? 'Abrir menú' : 'Open menu'}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
           </button>
-          <a href="/docs" class="logo">
+          <a href={getUrl('/docs')} class="logo">
             <img src="/imgs/logo-cord-navy.png" alt="Cord" height="24" style="height: 24px; margin-right: 6px;" />
             <span class="brand-docs">DOCS</span>
           </a>
@@ -108,7 +161,7 @@ const jsonLd = {
         
         <div class="header-center">
           <div class="search-container">
-            <button class="search-input" id="search-trigger">
+            <button class="search-input" id="search-trigger" aria-label={lang === 'es' ? 'Buscar en la documentación' : 'Search documentation'}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
               <span>{lang === 'es' ? 'Buscar en la document...' : 'Search docs...'}</span>
               <kbd>/</kbd>
@@ -118,25 +171,25 @@ const jsonLd = {
 
         <div class="header-right">
           <div class="lang-toggle">
-            <a href={esUrl} class={`lang-option ${lang === 'es' ? 'active' : ''}`}>ES</a>
-            <a href={enUrl} class={`lang-option ${lang === 'en' ? 'active' : ''}`}>EN</a>
+            <a href={esUrl} class={`lang-option ${lang === 'es' ? 'active' : ''}`} aria-current={lang === 'es' ? 'page' : undefined}>ES</a>
+            <a href={enUrl} class={`lang-option ${lang === 'en' ? 'active' : ''}`} aria-current={lang === 'en' ? 'page' : undefined}>EN</a>
           </div>
         </div>
       </div>
 
       <nav class="header-bottom">
         <ul class="nav-links">
-          <li class={!Astro.url.pathname.includes(getUrl('/docs/pagos')) && !Astro.url.pathname.includes(getUrl('/docs/desarrolladores')) ? 'active' : ''}><a href={getUrl('/docs')}>{lang === 'es' ? 'Empezar' : 'Get Started'}</a></li>
-          <li class={Astro.url.pathname.includes(getUrl('/docs/pagos')) ? 'active' : ''}><a href={getUrl('/docs/pagos/resumen')}>{lang === 'es' ? 'Pagos' : 'Payments'}</a></li>
-
-          <li class={Astro.url.pathname.includes(getUrl('/docs/desarrolladores')) ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/empezar/apikey')}>{lang === 'es' ? 'Desarrolladores' : 'Developers'}</a></li>
+          <li class={isStartSection ? 'active' : ''}><a href={getUrl('/docs')}>{lang === 'es' ? 'Empezar' : 'Get started'}</a></li>
+          <li class={isQuoteSection ? 'active' : ''}><a href={getUrl('/docs/cotizacion/resumen')}>{lang === 'es' ? 'Cotizar y cerrar' : 'Quote and close'}</a></li>
+          <li class={isPaymentsSection ? 'active' : ''}><a href={getUrl('/docs/pagos/resumen')}>{lang === 'es' ? 'Cobrar y facturar' : 'Get paid and invoice'}</a></li>
+          <li class={isDeveloperSection ? 'active' : ''}><a href={getUrl('/docs/desarrolladores/empezar/resumen')}>{lang === 'es' ? 'Desarrolladores' : 'Developers'}</a></li>
         </ul>
         <div class="nav-tools">
           <div class="nav-dropdown-wrapper">
             <button class="nav-dropdown">{lang === 'es' ? 'Ayuda' : 'Help'} <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
             <div class="dropdown-menu">
-              <a href="/soporte">{lang === 'es' ? 'Centro de soporte' : 'Support Center'}</a>
-              <a href="/contacto/ventas">{lang === 'es' ? 'Contactar a ventas' : 'Contact Sales'}</a>
+              <a href={lang === 'es' ? 'https://cordhq.app/soporte' : 'https://cordhq.app/en/support'}>{lang === 'es' ? 'Centro de soporte' : 'Support Center'}</a>
+              <a href={lang === 'es' ? 'https://cordhq.app/contacto/ventas' : 'https://cordhq.app/en/contacto/ventas'}>{lang === 'es' ? 'Contactar a ventas' : 'Contact Sales'}</a>
             </div>
           </div>
         </div>
@@ -150,8 +203,8 @@ const jsonLd = {
       <!-- Sidebar -->
       <aside class="docs-sidebar" id="docs-sidebar">
         <div class="sidebar-mobile-header">
-          <a href="/docs" class="logo"><img src="/imgs/logo-cord-navy.png" alt="Cord" height="20" style="height: 20px; margin-right: 4px;" /><span class="brand-docs">DOCS</span></a>
-          <button id="mobile-menu-close" class="mobile-menu-close"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+          <a href={getUrl('/docs')} class="logo"><img src="/imgs/logo-cord-navy.png" alt="Cord" height="20" style="height: 20px; margin-right: 4px;" /><span class="brand-docs">DOCS</span></a>
+          <button id="mobile-menu-close" class="mobile-menu-close" aria-label={lang === 'es' ? 'Cerrar menú' : 'Close menu'}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
         </div>
         <nav class="sidebar-nav">
           {Astro.url.pathname.includes(getUrl('/docs/pagos')) ? (
@@ -162,7 +215,7 @@ const jsonLd = {
               </ul>
 
               <div class="sidebar-section">
-                <h4 class="sidebar-heading">{lang === 'es' ? 'PAGOS EN COTIZACIONES' : 'PAYMENTS IN QUOTES'}</h4>
+                <p class="sidebar-heading">{lang === 'es' ? 'PAGOS EN COTIZACIONES' : 'PAYMENTS IN QUOTES'}</p>
                 <ul class="sidebar-menu">
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
@@ -197,6 +250,7 @@ const jsonLd = {
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/disputas')) ? 'active' : ''}><a href={getUrl('/docs/pagos/disputas')}>{lang === 'es' ? 'Disputas y contracargos' : 'Disputes and chargebacks'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/facturacion')) ? 'active' : ''}><a href={getUrl('/docs/pagos/facturacion')}>{lang === 'es' ? 'Facturación (CFDI 4.0)' : 'Invoicing (CFDI 4.0)'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/facturas-emitidas')) ? 'active' : ''}><a href={getUrl('/docs/pagos/facturas-emitidas')}>{lang === 'es' ? 'Facturas' : 'Invoices'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/facturas-recurrentes')) ? 'active' : ''}><a href={getUrl('/docs/pagos/facturas-recurrentes')}>{lang === 'es' ? 'Facturas recurrentes' : 'Recurring invoices'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -205,6 +259,7 @@ const jsonLd = {
                       {lang === 'es' ? 'Cobranza y tesorería' : 'Collections and treasury'}
                     </button>
                     <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/cartera-cobranza')) ? 'active' : ''}><a href={getUrl('/docs/pagos/cartera-cobranza')}>{lang === 'es' ? 'Cartera y seguimiento' : 'Receivables and follow-up'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/cobranza-ia')) ? 'active' : ''}><a href={getUrl('/docs/pagos/cobranza-ia')}>{lang === 'es' ? 'Cobranza autónoma (IA)' : 'Autonomous collections (AI)'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/pagos/tesoreria-fx')) ? 'active' : ''}><a href={getUrl('/docs/pagos/tesoreria-fx')}>{lang === 'es' ? 'Tesorería y FX Lock' : 'Treasury and FX Lock'}</a></li>
                     </ul>
@@ -219,7 +274,7 @@ const jsonLd = {
               </ul>
 
               <div class="sidebar-section">
-                <h4 class="sidebar-heading">{lang === 'es' ? 'DESARROLLADORES' : 'DEVELOPERS'}</h4>
+                <p class="sidebar-heading">{lang === 'es' ? 'DESARROLLADORES' : 'DEVELOPERS'}</p>
                 <ul class="sidebar-menu">
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
@@ -296,11 +351,12 @@ const jsonLd = {
             <>
               <ul class="sidebar-menu">
                 <li class={Astro.url.pathname === getUrl('/docs') || Astro.url.pathname === getUrl('/docs/') ? 'active' : ''}><a href={getUrl('/docs')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                <li class={Astro.url.pathname.includes(getUrl('/docs/operacion/mapa-de-la-app')) ? 'active' : ''}><a href={getUrl('/docs/operacion/mapa-de-la-app')}>{lang === 'es' ? 'Mapa completo de la app' : 'Complete app map'}</a></li>
                 <li class={Astro.url.pathname.includes(getUrl('/docs/productos')) ? 'active' : ''}><a href={getUrl('/docs/productos')}>{lang === 'es' ? 'Ver todos los productos' : 'See all products'}</a></li>
               </ul>
 
               <div class="sidebar-section">
-                <h4 class="sidebar-heading">{lang === 'es' ? 'EMPIEZA A DESARROLLARLA' : 'START BUILDING'}</h4>
+                <p class="sidebar-heading">{lang === 'es' ? 'PRIMEROS PASOS' : 'GET STARTED'}</p>
                 <ul class="sidebar-menu">
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
@@ -314,6 +370,8 @@ const jsonLd = {
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/catalogo')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/catalogo')}>{lang === 'es' ? 'Importa tu catálogo' : 'Import your catalog'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/marca')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/marca')}>{lang === 'es' ? 'Personaliza tu marca' : 'Customize your branding'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/suscripcion')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/suscripcion')}>{lang === 'es' ? 'Tu suscripción a Cord' : 'Your Cord subscription'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/equipo-seguridad')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/equipo-seguridad')}>{lang === 'es' ? 'Equipo y seguridad' : 'Team and security'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/cuenta/mapa-de-ajustes')) ? 'active' : ''}><a href={getUrl('/docs/cuenta/mapa-de-ajustes')}>{lang === 'es' ? 'Mapa de Ajustes' : 'Settings map'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -338,7 +396,7 @@ const jsonLd = {
                     </button>
                     <ul class="sidebar-submenu">
                       <li class={Astro.url.pathname === getUrl('/docs/interaccion/chat') || Astro.url.pathname === getUrl('/docs/interaccion/chat/') ? 'active' : ''}><a href={getUrl('/docs/interaccion/chat')}>{lang === 'es' ? 'Chat y negociación' : 'Chat and negotiation'}</a></li>
-                      <li class={Astro.url.pathname.includes(getUrl('/docs/interaccion/firma')) ? 'active' : ''}><a href={getUrl('/docs/interaccion/firma')}>{lang === 'es' ? 'Firma y auditoría' : 'Signature and audit'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/interaccion/firma')) ? 'active' : ''}><a href={getUrl('/docs/interaccion/firma')}>{lang === 'es' ? 'Aprobación y evidencia' : 'Approval and evidence'}</a></li>
                     </ul>
                   </li>
                   <li class="sidebar-dropdown open">
@@ -349,8 +407,10 @@ const jsonLd = {
                     <ul class="sidebar-submenu">
                       <li class={Astro.url.pathname === getUrl('/docs/gestion/dashboard') || Astro.url.pathname === getUrl('/docs/gestion/dashboard/') ? 'active' : ''}><a href={getUrl('/docs/gestion/dashboard')}>{lang === 'es' ? 'Dashboard y vistas' : 'Dashboard and views'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/cotizaciones')) ? 'active' : ''}><a href={getUrl('/docs/gestion/cotizaciones')}>{lang === 'es' ? 'Gestión de cotizaciones' : 'Quote management'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/clientes')) ? 'active' : ''}><a href={getUrl('/docs/gestion/clientes')}>{lang === 'es' ? 'Clientes y estado de cuenta' : 'Clients and statements'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/tareas')) ? 'active' : ''}><a href={getUrl('/docs/gestion/tareas')}>{lang === 'es' ? 'Tareas y seguimiento' : 'Tasks and follow-up'}</a></li>
                       <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/notificaciones')) ? 'active' : ''}><a href={getUrl('/docs/gestion/notificaciones')}>{lang === 'es' ? 'Notificaciones' : 'Notifications'}</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/informes')) ? 'active' : ''}><a href={getUrl('/docs/gestion/informes')}>{lang === 'es' ? 'Informes y desempeño' : 'Reports and performance'}</a></li>
                     </ul>
                   </li>
                 </ul>
@@ -366,12 +426,30 @@ const jsonLd = {
           <div class={`main-content-column ${isOverviewPage ? 'overview-layout' : ''}`}>
             <div class="content-container">
           <slot />
+
+          {hasEditorialMetadata && (
+            <aside class="doc-metadata" aria-label={lang === 'es' ? 'Datos de esta guía' : 'About this guide'}>
+              <p class="doc-metadata-title">{lang === 'es' ? 'Datos de esta guía' : 'About this guide'}</p>
+              <dl>
+                {lastUpdated && (
+                  <div>
+                    <dt>{lang === 'es' ? 'Actualizada' : 'Updated'}</dt>
+                    <dd><time datetime={lastUpdated}>{new Intl.DateTimeFormat(lang === 'es' ? 'es-MX' : 'en-US', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${lastUpdated}T00:00:00Z`))}</time></dd>
+                  </div>
+                )}
+                {reviewedBy && <div><dt>{lang === 'es' ? 'Revisada por' : 'Reviewed by'}</dt><dd>{reviewedBy}</dd></div>}
+                {localizedMarkets.length > 0 && <div><dt>{lang === 'es' ? 'Mercados' : 'Markets'}</dt><dd>{localizedMarkets.join(', ')}</dd></div>}
+                {availablePlans.length > 0 && <div><dt>{lang === 'es' ? 'Planes' : 'Plans'}</dt><dd>{availablePlans.join(', ')}</dd></div>}
+                {prerequisites.length > 0 && <div><dt>{lang === 'es' ? 'Antes de empezar' : 'Before you begin'}</dt><dd>{prerequisites.join(' · ')}</dd></div>}
+              </dl>
+            </aside>
+          )}
           
           <div class="docs-footer">
-            <div class="feedback-section">
+            <div class="feedback-section" role="group" aria-labelledby="feedback-question">
               <span class="feedback-title" id="feedback-question">{lang === 'es' ? '¿Te ha sido útil la página?' : 'Was this page helpful?'}</span>
-              <button class="feedback-btn" id="feedback-yes"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> {lang === 'es' ? 'Sí' : 'Yes'}</button>
-              <button class="feedback-btn" id="feedback-no"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg> {lang === 'es' ? 'No' : 'No'}</button>
+              <button class="feedback-btn" id="feedback-yes" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> {lang === 'es' ? 'Sí' : 'Yes'}</button>
+              <button class="feedback-btn" id="feedback-no" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg> {lang === 'es' ? 'No' : 'No'}</button>
               <span class="feedback-thanks" id="feedback-thanks" style="display: none;">{lang === 'es' ? '¡Gracias por tus comentarios!' : 'Thanks for your feedback!'}</span>
             </div>
             
@@ -381,27 +459,22 @@ const jsonLd = {
               <li>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle><line x1="21.17" y1="8" x2="12" y2="8"></line><line x1="3.95" y1="6.06" x2="8.54" y2="14"></line><line x1="10.88" y1="21.94" x2="15.46" y2="14"></line></svg>
                 {lang === 'es' ? '¿Necesitas ayuda? ' : 'Need help? '}
-                <a href="/soporte">{lang === 'es' ? 'Ponte en contacto con el equipo de soporte' : 'Contact support team'}</a>
-              </li>
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                {lang === 'es' ? 'Chatea con desarrolladores de Cord en ' : 'Chat with Cord developers on '}
-                <a href="/discord">Discord</a>
+                <a href={lang === 'es' ? 'https://cordhq.app/soporte' : 'https://cordhq.app/en/support'}>{lang === 'es' ? 'Consulta el Centro de soporte' : 'Visit the Support Center'}</a>
               </li>
               <li>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                {lang === 'es' ? 'Echa un vistazo a nuestro ' : 'Check out our '}
-                <a href="/changelog">{lang === 'es' ? 'registro de cambios' : 'changelog'}</a>
+                {lang === 'es' ? 'Revisa qué está disponible y qué viene después en el ' : 'See what is available and what comes next on the '}
+                <a href={lang === 'es' ? 'https://cordhq.app/roadmap' : 'https://cordhq.app/en/roadmap'}>{lang === 'es' ? 'roadmap de Cord' : 'Cord roadmap'}</a>
               </li>
               <li>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                 {lang === 'es' ? '¿Tienes alguna pregunta? ' : 'Have questions? '}
-                <a href="/ventas">{lang === 'es' ? 'Ponte en contacto con el equipo de ventas' : 'Contact sales team'}</a>
+                <a href={lang === 'es' ? 'https://cordhq.app/contacto/ventas' : 'https://cordhq.app/en/contacto/ventas'}>{lang === 'es' ? 'Ponte en contacto con el equipo de ventas' : 'Contact sales team'}</a>
               </li>
               <li>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                 {lang === 'es' ? '¿LLM? ' : 'LLM? '}
-                <a href="/llms.txt">{lang === 'es' ? 'Lee llms.txt' : 'Read llms.txt'}</a>
+                <a href="https://cordhq.app/llms.txt">{lang === 'es' ? 'Lee llms.txt' : 'Read llms.txt'}</a>
               </li>
             </ul>
           </div>
@@ -418,13 +491,13 @@ const jsonLd = {
   </div>
 
   <!-- Search Modal -->
-  <div id="search-modal" class="search-modal hidden">
+  <div id="search-modal" class="search-modal hidden" role="dialog" aria-modal="true" aria-label={lang === 'es' ? 'Buscar en la documentación' : 'Search documentation'}>
     <div class="search-modal-backdrop" id="search-backdrop"></div>
     <div class="search-modal-content">
       <div class="search-modal-header">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         <input type="text" id="search-input-field" placeholder={lang === 'es' ? 'Buscar en la documentación...' : 'Search documentation...'} autocomplete="off" spellcheck="false" />
-        <button id="search-close" class="search-close-btn">ESC</button>
+        <button id="search-close" class="search-close-btn" aria-label={lang === 'es' ? 'Cerrar búsqueda' : 'Close search'}>ESC</button>
       </div>
       <div class="search-modal-body">
         <div class="search-results-empty">
@@ -460,6 +533,47 @@ const jsonLd = {
   let fuse = null;
   let searchData = [];
   let isFetching = false;
+  let searchAnalyticsTimer = null;
+  let lastTrackedSearch = '';
+
+  function trackDocsEvent(event, properties = {}) {
+    (window as any).cordTrack?.(event, {
+      page_path: window.location.pathname,
+      language: document.documentElement.lang || 'es',
+      ...properties
+    });
+  }
+
+  // Search can contain contact or account data. Keep the useful intent while
+  // removing common direct identifiers before it reaches analytics.
+  function analyticsSafeQuery(query) {
+    return query
+      .trim()
+      .replace(/\s+/g, ' ')
+      .replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, '[email]')
+      .replace(/\b\d{6,}\b/g, '[number]')
+      .slice(0, 120);
+  }
+
+  function scheduleSearchAnalytics(query, resultCount) {
+    const safeQuery = analyticsSafeQuery(query);
+    if (safeQuery.length < 2) return;
+
+    if (searchAnalyticsTimer) window.clearTimeout(searchAnalyticsTimer);
+    searchAnalyticsTimer = window.setTimeout(() => {
+      const searchKey = `${safeQuery.toLocaleLowerCase()}:${resultCount}`;
+      if (searchKey === lastTrackedSearch) return;
+      lastTrackedSearch = searchKey;
+
+      const properties = {
+        query: safeQuery,
+        query_length: safeQuery.length,
+        results_count: resultCount
+      };
+      trackDocsEvent('docs_search_performed', properties);
+      if (resultCount === 0) trackDocsEvent('docs_search_zero_results', properties);
+    }, 700);
+  }
 
   async function fetchSearchData() {
     if (fuse || isFetching) return;
@@ -470,6 +584,7 @@ const jsonLd = {
         resultsContainer.innerHTML = `<div class="search-results-empty"><p>${document.documentElement.lang === 'en' ? 'Loading search index...' : 'Cargando índice de búsqueda...'}</p></div>`;
       }
       const res = await fetch('/api/docs-search.json');
+      if (!res.ok) throw new Error(`Search index returned ${res.status}`);
       searchData = await res.json();
       
       // Filter by current language
@@ -515,6 +630,7 @@ const jsonLd = {
     }
     
     const results = fuse.search(query).slice(0, 8); // Top 8 results
+    scheduleSearchAnalytics(query, results.length);
     
     if (results.length === 0) {
       resultsContainer.innerHTML = `<div class="search-results-empty"><p>${document.documentElement.lang === 'en' ? 'No results found for' : 'No se encontraron resultados para'} "${escapeHtml(query)}"</p></div>`;
@@ -522,10 +638,10 @@ const jsonLd = {
     }
 
     let html = '<ul class="search-results-list">';
-    results.forEach(({ item }) => {
+    results.forEach(({ item }, index) => {
       html += `
         <li class="search-result-item">
-          <a href="${item.url}">
+          <a href="${item.url}" data-search-position="${index + 1}">
             <span class="search-result-title">${escapeHtml(item.title)}</span>
             ${item.description ? `<span class="search-result-desc">${escapeHtml(item.description)}</span>` : ''}
           </a>
@@ -537,21 +653,23 @@ const jsonLd = {
     resultsContainer.innerHTML = html;
   }
 
-  function openSearch() {
+  function openSearch(source = 'button') {
     modal.classList.remove('hidden');
     input.focus();
     document.body.style.overflow = 'hidden';
+    trackDocsEvent('docs_search_opened', { source });
     fetchSearchData(); // Fetch JSON dynamically on first open
   }
 
   function closeSearch() {
     modal.classList.add('hidden');
     input.value = '';
+    if (searchAnalyticsTimer) window.clearTimeout(searchAnalyticsTimer);
     showEmptyState();
     document.body.style.overflow = '';
   }
 
-  if (trigger) trigger.addEventListener('click', openSearch);
+  if (trigger) trigger.addEventListener('click', () => openSearch('button'));
   if (backdrop) backdrop.addEventListener('click', closeSearch);
   if (closeBtn) closeBtn.addEventListener('click', closeSearch);
 
@@ -560,30 +678,74 @@ const jsonLd = {
       performSearch(e.target.value);
     });
   }
+
+  if (resultsContainer) {
+    resultsContainer.addEventListener('click', (event) => {
+      const link = event.target.closest('a[data-search-position]');
+      if (!link) return;
+      trackDocsEvent('docs_search_result_clicked', {
+        query: analyticsSafeQuery(input?.value || ''),
+        result_path: new URL(link.href, window.location.origin).pathname,
+        result_position: Number(link.dataset.searchPosition)
+      });
+    });
+  }
+
+  document.addEventListener('keydown', (event) => {
+    const target = event.target;
+    const isEditing = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable;
+    if (event.key === '/' && !isEditing && modal?.classList.contains('hidden')) {
+      event.preventDefault();
+      openSearch('keyboard_shortcut');
+    } else if (event.key === 'Escape' && !modal?.classList.contains('hidden')) {
+      closeSearch();
+      trigger?.focus();
+    }
+  });
+
 // Feedback Logic
   const btnYes = document.getElementById('feedback-yes');
   const btnNo = document.getElementById('feedback-no');
   const thanksMsg = document.getElementById('feedback-thanks');
 
-  function handleFeedbackClick(clickedBtn, otherBtn) {
+  const feedbackStorageKey = `cord_docs_feedback:${window.location.pathname}`;
+
+  function renderFeedback(response) {
+    const clickedBtn = response === 'yes' ? btnYes : btnNo;
+    const otherBtn = response === 'yes' ? btnNo : btnYes;
     if (!clickedBtn || !otherBtn || !thanksMsg) return;
-    
-    // Add active state to clicked button
+
     clickedBtn.classList.add('active');
-    
-    // Disable both buttons
+    clickedBtn.setAttribute('aria-pressed', 'true');
     clickedBtn.classList.add('disabled');
     otherBtn.classList.add('disabled');
-    
-    // Show thank you message
+    clickedBtn.disabled = true;
+    otherBtn.disabled = true;
     thanksMsg.style.display = 'inline-block';
   }
 
+  function handleFeedbackClick(response) {
+    renderFeedback(response);
+    try {
+      window.localStorage.setItem(feedbackStorageKey, response);
+    } catch {
+      // Feedback still works if storage is unavailable.
+    }
+    trackDocsEvent('docs_feedback_submitted', { helpful: response === 'yes' });
+  }
+
   if (btnYes) {
-    btnYes.addEventListener('click', () => handleFeedbackClick(btnYes, btnNo));
+    btnYes.addEventListener('click', () => handleFeedbackClick('yes'));
   }
   if (btnNo) {
-    btnNo.addEventListener('click', () => handleFeedbackClick(btnNo, btnYes));
+    btnNo.addEventListener('click', () => handleFeedbackClick('no'));
+  }
+
+  try {
+    const savedFeedback = window.localStorage.getItem(feedbackStorageKey);
+    if (savedFeedback === 'yes' || savedFeedback === 'no') renderFeedback(savedFeedback);
+  } catch {
+    // Ignore unavailable storage.
   }
 
   // Mobile Menu Logic
@@ -612,6 +774,29 @@ const jsonLd = {
 
 <style is:global>
   
+  /* Markdown tables keep their columns readable within the article on mobile. */
+  .docs-main .content-container table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .docs-main .content-container th,
+  .docs-main .content-container td {
+    padding: 12px 16px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+    min-width: 120px;
+  }
+  .docs-main .content-container th {
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.025);
+  }
+
   /* 3-Column Layout */
   .docs-content-area {
     display: flex;
@@ -775,6 +960,20 @@ const jsonLd = {
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     background: #ffffff;
   }
+  .search-input:focus-visible,
+  .lang-option:focus-visible,
+  .nav-links a:focus-visible,
+  .nav-dropdown:focus-visible,
+  .sidebar-nav a:focus-visible,
+  .sidebar-dropdown-toggle:focus-visible,
+  .resource-link:focus-visible,
+  .feedback-btn:focus-visible,
+  .mobile-menu-btn:focus-visible,
+  .mobile-menu-close:focus-visible,
+  .search-close-btn:focus-visible {
+    outline: 3px solid rgba(0, 113, 227, 0.45);
+    outline-offset: 3px;
+  }
   .search-input kbd {
     background: #f5f5f7;
     border: none;
@@ -801,7 +1000,7 @@ const jsonLd = {
   .lang-option {
     font-size: 12px;
     font-weight: 600;
-    color: #697386;
+    color: #4f566b;
     text-decoration: none;
     padding: 4px 12px;
     border-radius: 999px;
@@ -1412,7 +1611,7 @@ const jsonLd = {
     margin-top: 2px;
     flex-shrink: 0;
   }
-  .resource-link-content h4 {
+  .resource-link-content h3 {
     margin: 0 0 6px 0;
     font-size: 15px;
     font-weight: 600;
@@ -1467,6 +1666,45 @@ const jsonLd = {
   /* Footer */
   .docs-footer {
     margin-top: 120px;
+  }
+  .doc-metadata {
+    margin: 72px 0 32px;
+    padding: 20px 22px;
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.07);
+    border-radius: 14px;
+  }
+  .doc-metadata-title {
+    margin: 0 0 14px;
+    color: #050505;
+    font-size: 14px;
+    font-weight: 650;
+  }
+  .doc-metadata dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 28px;
+    margin: 0;
+  }
+  .doc-metadata dl > div {
+    min-width: 0;
+  }
+  .doc-metadata dt {
+    margin-bottom: 3px;
+    color: #4f566b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .doc-metadata dd {
+    margin: 0;
+    color: #202124;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  @media (max-width: 640px) {
+    .doc-metadata dl { grid-template-columns: 1fr; }
   }
   .feedback-section {
     display: flex;
@@ -1664,6 +1902,8 @@ const jsonLd = {
   .mobile-menu-close {
     background: none;
     border: none;
+    width: 40px;
+    height: 40px;
     padding: 4px;
     cursor: pointer;
     color: #4f566b;

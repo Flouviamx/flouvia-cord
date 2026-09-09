@@ -8,6 +8,10 @@ description: "How to give money back to a customer from My Payments: full or par
   <p class="page-subtitle">Give money back to a customer from the same panel where you see your payments — with identity confirmation along the way.</p>
 </header>
 
+<Callout type="info">
+This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
+</Callout>
+
 ## Where to refund
 
 Refunds live in **My Payments** (`/app/cobros`), not in the cotización's detail page. In the "Recent payments" widget, every row that corresponds to a payment **reconciled through Cord Payments** has a **Refund** button. A payment recorded manually (a transfer outside Cord Payments) doesn't have this button — for that case, you handle the refund directly with your customer outside Cord.
@@ -34,7 +38,7 @@ The refund is processed **automatically** as soon as you confirm it — no manua
 
 ### SPEI
 
-A SPEI transfer **cannot be automatically reversed** — unlike a card, there's no way to "give back" the money through the same channel without you making a new transfer. So a refund on a SPEI payment:
+In Cord, the SPEI refund flow requires a manual transfer by the business. Requesting it in the dashboard does not itself return the money:
 
 1. Gets recorded in Cord as "pending, manual refund".
 2. Cord automatically creates a task on your to-do list reminding you to transfer the amount back to the customer.
@@ -49,3 +53,11 @@ A SPEI transfer **cannot be automatically reversed** — unlike a card, there's 
 <Callout type="info">
 A refund **does not revert the cotización's status** — it stays marked as paid. If you also need to cancel the cotización itself (for example, because the entire order was called off), do that from the cotización's detail page separately.
 </Callout>
+
+## Effect on a linked invoice
+
+Cord distinguishes a requested refund from a confirmed one. Only confirmed refunds
+count toward money returned on the invoice; repeated events must not subtract it
+again. A refund can arrive before the payment record and await that link. A credit
+note reduces the document amount while a refund returns money: these are separate
+actions. Review [balance calculation](/en/docs/pagos/facturas-emitidas).

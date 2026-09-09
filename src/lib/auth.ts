@@ -1,7 +1,7 @@
 // src/lib/auth.ts — núcleo de autenticación propia de Cord.
 //
 // Reescritura completa (ago 2026) tras la auditoría de seguridad tras la
-// migración de Clerk. Ver docs/historial-auth-clerk.md para el detalle de
+// migración de Clerk. Ver docs/historial/auth-clerk.md para el detalle de
 // qué vulnerabilidades específicas cierra este archivo.
 //
 // Decisiones de diseño:
@@ -129,7 +129,7 @@ export function sha256Hex(input: string): string {
 // ── Sesiones ─────────────────────────────────────────────────────────────
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 días, deslizante
 const SESSION_ABSOLUTE_MS = 180 * 24 * 60 * 60 * 1000; // 180 días, tope duro (antes 90 — ver fix de cookie deslizante abajo)
-const SESSION_SLIDE_THROTTLE_MS = 5 * 60 * 1000; // no reescribir en cada request — cada 5 min basta
+const SESSION_SLIDE_THROTTLE_MS = 5 * 60 * 1000; // renovar expiración/cookie como máximo cada 5 min
 
 /** Crea una sesión y devuelve el token CRUDO (va en la cookie; nunca se guarda). */
 export async function createSession(userId: string, userAgent?: string, ip?: string): Promise<string> {
@@ -167,25 +167,43 @@ export async function validateSession(token: string): Promise<{ userId: string; 
         await sql`delete from sessions where id = ${tokenHash}`;
         return null;
     }
-    // idleMs = tiempo transcurrido desde el ÚLTIMO request verificado, leído
-    // ANTES de tocar la fila — es lo que el caller (middleware.ts) usa para
-    // aplicar `orgs.session_timeout_min` (cierre de sesión por inactividad
-    // configurable por org, independiente del TTL deslizante de 30d de abajo).
+    // Reading a cookie must not extend its lifetime. Public pages and recovery
+    // endpoints can inspect identity without laundering an expired idle window.
     const idleMs = now.getTime() - new Date(s.last_used_at).getTime();
-    // Sliding expiry, con throttle: solo se reescribe si pasaron ≥5 min desde el
-    // último uso — evita un UPDATE en cada request de una sesión activa.
-    // `slid` le dice al caller (middleware.ts) si debe re-emitir la cookie con
-    // un Max-Age renovado — antes la sesión se deslizaba en BD pero la cookie
-    // del navegador se quedaba con el maxAge fijo del login original, así que
-    // el navegador la borraba a los 30 días exactos aunque el usuario entrara
-    // todos los días.
-    let slid = false;
-    if (idleMs > SESSION_SLIDE_THROTTLE_MS) {
-        const newExpires = new Date(Math.min(now.getTime() + SESSION_TTL_MS, new Date(s.absolute_expires_at).getTime()));
-        await sql`update sessions set last_used_at = now(), expires_at = ${newExpires} where id = ${tokenHash}`;
-        slid = true;
-    }
-    return { userId: s.user_id as string, sessionId: tokenHash, slid, idleMs };
+    return { userId: s.user_id as string, sessionId: tokenHash, slid: false, idleMs };
+}
+
+/** Called only after resolving the active organization's security policy.
+ * Lock + check + touch happen in one statement, so concurrent requests cannot
+ * renew a session before another request checks the previous activity time. */
+export async function authorizeSessionActivity(sessionHash: string, userId: string, timeoutMin: number): Promise<{ slid: boolean } | null> {
+    if (!Number.isFinite(timeoutMin) || timeoutMin < 0) throw new Error('Política de sesión inválida');
+    const rows = await sql`
+        with locked as materialized (
+            select s.*, u.suspended_at from sessions s join users u on u.id = s.user_id
+            where s.id = ${sessionHash} and s.user_id = ${userId}
+            for update of s
+        ), timed as materialized (
+            select locked.*, clock_timestamp() as checked_at from locked
+        ), checked as materialized (
+            select timed.*,
+                (revoked_at is null and suspended_at is null
+                 and expires_at > checked_at and absolute_expires_at > checked_at
+                 and (${timeoutMin}::double precision = 0 or
+                      last_used_at > checked_at - ${timeoutMin}::double precision * interval '1 minute')) as allowed,
+                (expires_at < least(checked_at + ${SESSION_TTL_MS}::double precision * interval '1 millisecond', absolute_expires_at)
+                              - ${SESSION_SLIDE_THROTTLE_MS}::double precision * interval '1 millisecond') as slid
+            from timed
+        ), expired as (
+            delete from sessions s using checked c where s.id = c.id and not c.allowed returning s.id
+        )
+        update sessions s
+           set last_used_at = c.checked_at,
+               expires_at = case when c.slid then least(c.checked_at + ${SESSION_TTL_MS}::double precision * interval '1 millisecond', c.absolute_expires_at)
+                                 else s.expires_at end
+          from checked c where s.id = c.id and c.allowed
+        returning c.slid`;
+    return rows.length ? { slid: !!rows[0].slid } : null;
 }
 
 export async function invalidateSession(token: string): Promise<void> {

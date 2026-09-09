@@ -9,14 +9,16 @@ import { getActiveOrgId, reqIp } from '../../../lib/db';
 import { getCotizaciones } from '../../../lib/queries';
 import { createCotizacion, QuoteError } from '../../../lib/cotizaciones';
 import { ok, fail, pageParams, quoteListItem, readJsonBody } from '../../../lib/apiv1';
+import { publicDocumentUrl } from '../../../lib/public-links';
 
 export const GET = withApiAuth('read', async ({ url }) => {
+    const orgId = await getActiveOrgId();
     const all = await getCotizaciones();
     const status = url.searchParams.get('status');
     const filtered = status ? all.filter((q) => q.status === status) : all;
     const { limit, offset } = pageParams(url);
     const page = filtered.slice(offset, offset + limit);
-    return ok(page.map(quoteListItem), { limit, offset, total: filtered.length });
+    return ok(await Promise.all(page.map((q) => quoteListItem(q, orgId))), { limit, offset, total: filtered.length });
 });
 
 export const POST = withApiAuth('write', async ({ request }, auth) => {
@@ -40,7 +42,7 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
             folio: r.folio,
             // Absoluto: relativo obligaba al mismo parseo manual para construir
             // un link que enviar por correo/WhatsApp.
-            link_publico: `${origin}/q/${r.token}`,
+            link_publico: await publicDocumentUrl(orgId, 'q', r.token),
             needs_approval: r.needsApproval,
             motivo: r.motivo,
             email: r.email,

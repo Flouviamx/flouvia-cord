@@ -12,6 +12,7 @@ import { registerSchema, parseJsonBody } from '../../../lib/validation';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { trustedIp } from '../../../lib/ip';
 import { log } from '../../../lib/log';
+import { randomUUID } from 'node:crypto';
 
 export const POST: APIRoute = async ({ request }) => {
     const ip = trustedIp(request);
@@ -22,7 +23,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!parsed.ok) {
         return new Response(JSON.stringify({ error: parsed.error }), { status: parsed.status });
     }
-    const { email, password, firstName, lastName } = parsed.data;
+    const { email, password, firstName, lastName, termsAccepted, privacyAcknowledged, legalLocale } = parsed.data;
 
     try {
         const existing = await sql`select id from users where email = ${email} limit 1`;
@@ -35,13 +36,14 @@ export const POST: APIRoute = async ({ request }) => {
         }
 
         const passwordHash = await hashPassword(password);
-        const [user] = await sql`
-            insert into users (email, first_name, last_name, password_hash)
-            values (${email}, ${firstName || null}, ${lastName || null}, ${passwordHash})
-            returning id
-        `;
+        const userId = randomUUID();
+        const [created] = await sql`select cord_register_password_user(
+            ${userId}, ${email}, ${firstName || null}, ${lastName || null}, ${passwordHash},
+            ${legalLocale}, ${termsAccepted}, ${privacyAcknowledged},
+            ${ip}, ${request.headers.get('user-agent') || 'desconocido'}
+        ) as id`;
 
-        const token = await createEmailVerificationToken(user.id as string, email);
+        const token = await createEmailVerificationToken(created.id as string, email);
         const sendRes = await sendVerificationEmail(email, token);
         if (!sendRes.sent) {
             log.warn('no se pudo enviar el correo de verificación', { route: 'register', err: sendRes.error || sendRes.skipped });

@@ -12,7 +12,8 @@ import { currentUserId } from '../../../lib/context';
 import { requirePerm } from '../../../lib/queries';
 import { runARAgent, materializePlan } from '../../../lib/agents/ar-agent';
 import { getCobranzaConfig, renderCollectionEmail } from '../../../lib/agents/cobranza-run';
-import { sendEmail, siteOrigin } from '../../../lib/email';
+import { sendEmail } from '../../../lib/email';
+import { publicDocumentUrl } from '../../../lib/public-links';
 import { rateLimit } from '../../../lib/ratelimit';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 
@@ -47,12 +48,11 @@ async function loadContexto(orgId: string, cotizacionId: string) {
           and (vence is null or vence <= current_date)
         order by vence asc nulls first, created_at asc limit 1`);
     const cobraOnline = !!q.cobra_online;
-    const origin = siteOrigin();
     return {
         q, saldo, cobraOnline,
         diasVencido: Math.max(0, Number(q.dias_vencido) || 0),
         montoBoton: prox ? Number(prox.monto) : saldo,
-        payUrl: cobraOnline ? `${origin}/q/${q.public_token}/pay` : `${origin}/q/${q.public_token}`,
+        payUrl: await publicDocumentUrl(orgId, 'q', q.public_token as string, cobraOnline ? '/pay' : undefined),
     };
 }
 
@@ -188,9 +188,12 @@ export const POST: APIRoute = async ({ request, params }) => {
                 subject: cfg.idioma === 'en'
                     ? `Payment reminder — overdue balance (${ctx.diasVencido} days)`
                     : `Recordatorio de pago — saldo vencido (${ctx.diasVencido} días)`,
+                fromName: `${cfg.creditorName} vía Cord`,
+                replyTo: cfg.contactEmail,
                 html: renderCollectionEmail({
                     cuerpo: msg.mensaje, payUrl: ctx.payUrl, cobraOnline: ctx.cobraOnline,
                     montoBoton: ctx.montoBoton, idioma: cfg.idioma,
+                    creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
                 }),
             });
 

@@ -302,10 +302,16 @@ const CBR_T = {
                 <div><span>{es ? 'CORD PAGOS' : 'CORD PAYMENTS'}</span><h2 id="refundTitle">{es ? 'Reembolsar cobro' : 'Refund payment'}</h2></div>
                 <button type="button" class="cbr-refund-close" data-refund-close aria-label={es ? 'Cerrar' : 'Close'}>×</button>
             </div>
-            <p>{es ? 'El ingreso neto de tus reportes bajará por este importe. La comisión de procesamiento no se devuelve.' : 'Your reported net revenue will decrease by this amount. The processing fee is not returned.'}</p>
+            <p>{es ? 'El ingreso neto de tus reportes bajará por este importe. La tarifa de plataforma de Cord no se reembolsa automáticamente; las tarifas del proveedor se rigen por sus términos.' : 'Your reported net revenue will decrease by this amount. Cord’s platform fee is not refunded automatically; provider fees are governed by the provider’s terms.'}</p>
             <label>{es ? 'Monto a reembolsar' : 'Refund amount'}<input id="refundAmount" type="number" min="0.01" step="0.01" inputmode="decimal" required /></label>
             <label>{es ? 'Motivo interno (opcional)' : 'Internal reason (optional)'}<textarea id="refundReason" maxlength="240" rows="3"></textarea></label>
             <p class="cbr-refund-note" id="refundNote"></p>
+            <label class="cbr-refund-ack">
+                <input id="refundFeeAck" type="checkbox" required />
+                <span id="refundFeeAckText">{es
+                    ? 'Entiendo que este reembolso devuelve el monto indicado al cliente, pero no reembolsa automáticamente la tarifa de plataforma de Cord. Las tarifas del proveedor se rigen por sus términos.'
+                    : 'I understand that this refund returns the stated amount to the customer but does not automatically refund Cord’s platform fee. Provider fees are governed by the provider’s terms.'}</span>
+            </label>
             <p class="cbr-refund-error" id="refundError" role="alert" hidden></p>
             <div class="cbr-refund-actions">
                 <button type="button" class="cbr-refund-cancel" data-refund-close>{es ? 'Cancelar' : 'Cancel'}</button>
@@ -664,12 +670,14 @@ const CBR_T = {
         const refundAmount = document.querySelector<HTMLInputElement>('#refundAmount');
         const refundReason = document.querySelector<HTMLTextAreaElement>('#refundReason');
         const refundNote = document.querySelector<HTMLElement>('#refundNote');
+        const refundFeeAck = document.querySelector<HTMLInputElement>('#refundFeeAck');
+        const refundFeeAckText = document.querySelector<HTMLElement>('#refundFeeAckText');
         const refundError = document.querySelector<HTMLElement>('#refundError');
         let refundState: { cobroId: string; nonce: string; method: string; maxAmountCents: number; currency: string } | null = null;
 
         shell.addEventListener('click', async (event) => {
             const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-refund-cobro]');
-            if (!button || !refundDialog || !refundAmount || !refundNote || !refundError) return;
+            if (!button || !refundDialog || !refundAmount || !refundNote || !refundError || !refundFeeAck || !refundFeeAckText) return;
             refundError.hidden = true; button.disabled = true;
             try {
                 const res = await fetch(`/api/cobros/${encodeURIComponent(button.dataset.refundCobro || '')}/reembolso`);
@@ -682,6 +690,10 @@ const CBR_T = {
                 const maxAmount = fromMinorUnits(data.maxAmountCents, data.currency);
                 refundAmount.max = maxAmount.toFixed(2);
                 refundAmount.value = maxAmount.toFixed(2);
+                refundFeeAck.checked = false;
+                refundFeeAckText.textContent = data.method === 'spei'
+                    ? (locale.startsWith('es') ? 'Entiendo que Cord sólo registrará la solicitud: debo realizar y verificar la transferencia de devolución por separado.' : 'I understand that Cord only records the request: I must make and verify the return transfer separately.')
+                    : (locale.startsWith('es') ? 'Entiendo que este reembolso devuelve el monto indicado al cliente, pero no reembolsa automáticamente la tarifa de plataforma de Cord. Las tarifas del proveedor se rigen por sus términos.' : 'I understand that this refund returns the stated amount to the customer but does not automatically refund Cord’s platform fee. Provider fees are governed by the provider’s terms.');
                 refundNote.textContent = data.method === 'spei'
                     ? (locale.startsWith('es') ? 'SPEI requiere devolver el dinero por transferencia manual. Cord creará la tarea y el registro contable.' : 'SPEI requires a manual bank transfer. Cord will create the task and accounting record.')
                     : (locale.startsWith('es') ? `Máximo disponible: ${money(maxAmount, data.currency)}` : `Maximum available: ${money(maxAmount, data.currency)}`);
@@ -694,14 +706,20 @@ const CBR_T = {
         refundDialog?.addEventListener('click', (event) => { if (event.target === refundDialog) refundDialog.close(); });
         refundForm?.addEventListener('submit', async (event) => {
             event.preventDefault();
-            if (!refundState || !refundAmount || !refundReason || !refundError) return;
+            if (!refundState || !refundAmount || !refundReason || !refundError || !refundFeeAck?.checked) return;
             const amountCents = toMinorUnits(Number(refundAmount.value), refundState.currency);
             if (!(amountCents > 0) || amountCents > refundState.maxAmountCents) return;
             const submit = refundForm.querySelector<HTMLButtonElement>('.cbr-refund-submit');
             if (submit) submit.disabled = true;
             const send = () => fetch(`/api/cobros/${encodeURIComponent(refundState!.cobroId)}/reembolso`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nonce: refundState!.nonce, amountCents, reason: refundReason.value, manual: refundState!.method === 'spei' }),
+                body: JSON.stringify({
+                    nonce: refundState!.nonce,
+                    amountCents,
+                    reason: refundReason.value,
+                    manual: refundState!.method === 'spei',
+                    feeDisclosureAccepted: true,
+                }),
             });
             try {
                 let res = await send();
@@ -850,6 +868,8 @@ const CBR_T = {
     .cbr-refund-card > p { margin: 0; color: var(--color-text-muted); font-size: .82rem; line-height: 1.6; }
     .cbr-refund-card label { display: flex; flex-direction: column; gap: 7px; font-size: .75rem; font-weight: 650; }
     .cbr-refund-card input, .cbr-refund-card textarea { border: 0; border-radius: 14px; background: var(--color-bg-soft); color: var(--color-text); padding: 13px 14px; font: inherit; outline: none; resize: vertical; }
+    .cbr-refund-card .cbr-refund-ack { display:grid; grid-template-columns:auto 1fr; align-items:start; gap:10px; padding:13px 14px; border-radius:14px; background:var(--color-bg-soft); font-weight:500; line-height:1.55; }
+    .cbr-refund-card .cbr-refund-ack input { width:17px; height:17px; margin:2px 0 0; padding:0; accent-color:var(--color-blue-deep); }
     .cbr-refund-card input:focus, .cbr-refund-card textarea:focus { box-shadow: 0 0 0 2px rgba(10,25,47,.15); }
     .cbr-refund-close { border: 0; width: 34px; height: 34px; border-radius: 999px; background: var(--color-bg-soft); color: var(--color-text-muted); font-size: 1.25rem; cursor: pointer; }
     .cbr-refund-actions { display: flex; justify-content: flex-end; gap: 10px; }

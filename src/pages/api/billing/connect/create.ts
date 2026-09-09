@@ -62,7 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!accountId) {
         // País y divisa de la ORGANIZACIÓN: Stripe fija ambos al crear la cuenta
-        // y ya no se pueden cambiar. Ver docs/negocio-billing.md → cobros.
+        // y ya no se pueden cambiar. Ver docs/estado/cobros-facturacion.md → cobros.
         accountId = await createConnectAccount(
             orgId, business_type,
             String(org?.country_code || 'MX'),

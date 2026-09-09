@@ -90,7 +90,7 @@ const descId = `${id}Desc`;
 
         <div class="ppm-grid" data-count={options.length}>
             {options.map((p) => {
-                const anual = precioAnualMensualizado(p.precio[CUR]);
+                const anual = precioAnualMensualizado((p.precio[CUR] ?? 0));
                 return (
                     <article class:list={['ppm-card', { featured: p.id === requiredPlan }]}>
                         {p.id === requiredPlan && <span class="ppm-ribbon">{es ? 'Desbloquea esto' : 'Unlocks this'}</span>}
@@ -100,8 +100,8 @@ const descId = `${id}Desc`;
                                 <span class="editorial ppm-amount">{es ? 'A tu medida' : 'Custom'}</span>
                             </div>
                         ) : (
-                            <div class="ppm-price" data-monthly={money(p.precio[CUR])} data-annual={money(anual)}>
-                                <span class="editorial ppm-amount ppm-amount-val">{money(p.precio[CUR])}</span>
+                            <div class="ppm-price" data-monthly={money((p.precio[CUR] ?? 0))} data-annual={money(anual)}>
+                                <span class="editorial ppm-amount ppm-amount-val">{money((p.precio[CUR] ?? 0))}</span>
                                 <span class="ppm-cycle">{planCycleLabel(CUR, 'mensual', locale)}</span>
                             </div>
                         )}

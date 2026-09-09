@@ -15,8 +15,9 @@
 // `localStorage` se mantiene como respaldo/migración: si ya existe una decisión
 // ahí (usuarios de antes de este cambio) y no hay cookie, se lee de una vez y se
 // espeja a la cookie sin volver a preguntar.
-// Vercel Analytics NO se gatea aquí: no usa cookies ni identifica a nadie
-// (ver src/pages/privacidad.astro §05), así que corre siempre.
+// Vercel Web Analytics NO se gatea aquí: no usa cookies de terceros y Cord
+// elimina query strings e identificadores de rutas antes del envío. El aviso no
+// lo presenta como una garantía absoluta de anonimato (ver privacidad §05).
 
 interface Props {
   lang?: string; // 'es' | 'en' — cualquier valor distinto de 'en' cae a español
@@ -24,7 +25,7 @@ interface Props {
 
 const { lang = 'es' } = Astro.props;
 const isEn = lang === 'en';
-const privacyHref = isEn ? '/en/privacidad#cookies' : '/privacidad#cookies';
+const privacyHref = (Astro.locals.customerDomainOrgId ? 'https://cordhq.app' : '') + (isEn ? '/en/privacidad#cookies' : '/privacidad#cookies');
 ---
 
 <div id="cc-banner" class="cc-banner" hidden role="dialog" aria-live="polite" aria-labelledby="cc-title" aria-describedby="cc-body">
@@ -42,8 +43,8 @@ const privacyHref = isEn ? '/en/privacidad#cookies' : '/privacidad#cookies';
       <p id="cc-title" class="cc-title">{isEn ? 'Your privacy' : 'Tu privacidad'}</p>
       <p id="cc-body" class="cc-body">
         {isEn
-          ? <Fragment>We use essential cookies to run Cord, and analytics cookies (PostHog) to understand how the product is used. Vercel Analytics is cookieless and never gated. <a href={privacyHref}>Cookie policy</a></Fragment>
-          : <Fragment>Usamos cookies esenciales para que Cord funcione, y cookies de analítica (PostHog) para entender cómo se usa el producto. Vercel Analytics no usa cookies y nunca se bloquea. <a href={privacyHref}>Política de cookies</a></Fragment>
+          ? <Fragment>We use essential cookies to run Cord and, only if you accept, PostHog analytics cookies. Vercel Web Analytics runs without third-party cookies; Cord strips query strings and route identifiers before sending a page view. <a href={privacyHref}>Cookie policy</a></Fragment>
+          : <Fragment>Usamos cookies esenciales para que Cord funcione y, solo si acepta, cookies de analítica de PostHog. Vercel Web Analytics opera sin cookies de terceros; Cord elimina consultas e identificadores de ruta antes de enviar una vista. <a href={privacyHref}>Política de cookies</a></Fragment>
         }
       </p>
     </div>

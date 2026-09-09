@@ -1,0 +1,95 @@
+---
+title: "Recurring invoices"
+description: "How to repeat an invoice monthly, quarterly, or annually, what data is frozen, how each document is issued, and what happens when it pauses, fails, or is deleted."
+lastUpdated: "2026-09-08"
+reviewedBy: "Cord Product and Fiscal Operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Pro, Scale, Developer]
+prerequisites: ["Collections permission", "A successfully issued invoice", "Valid tax data for every issue"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Recurring invoices</h1>
+  <p class="page-subtitle">Repeat an issued invoice without recapturing the same lines every period.</p>
+</header>
+
+<Callout type="info">
+This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
+</Callout>
+
+A **recurring invoice** schedules new documents. It isn't the same as a **recurring
+retainer payment**: one repeats document issuance; the other creates a client-authorized
+monthly payment subscription.
+
+Creating an invoice recurrence doesn't currently store or automatically charge a
+payment method. Every new invoice enters collections according to its due date and
+recorded payments.
+
+## Create one from an existing invoice
+
+Open an issued invoice, choose **Repeat this invoice**, set an internal name, monthly,
+quarterly, or annual cadence, issue day, credit days, first issue, and optional end date.
+
+Cord copies the client, currency, notes, and line snapshot from the issued document.
+It doesn't reread current catalog prices, so later Product edits don't silently alter
+the schedule.
+
+## Calendar and due date
+
+- Cadence: monthly, quarterly, or annual.
+- Day of month: 1 through 28, avoiding skipped February issues.
+- Credit days: 0 through 365, added to each issue date.
+- First issue: optional; otherwise Cord calculates the next period.
+- End date: optional; no new issue is selected after it.
+
+A daily process selects active, due recurrences. Sandbox organizations don't issue
+recurring documents.
+
+## What each run does
+
+Cord first advances the next scheduled date, creates a new draft from frozen lines,
+calculates its due date, issues through the country's appropriate document rail, and
+attempts email delivery. Every issue receives its own number and immutable snapshot.
+
+<Callout type="warning">
+The date advances even when issuance fails. This prevents automatic duplicate invoices.
+The list exposes **Last error** so the cause can be corrected; don't assume it retries
+the same period every hour.
+</Callout>
+
+## Manage the list
+
+Open **Invoices > View recurring**. Pause stops future issues without deleting setup.
+Resume enables it again when the plan allows. Delete removes the schedule but preserves
+every issued invoice.
+
+Pausing remains available after a downgrade. Creating, editing, resuming, and each
+scheduled run validate Pro-or-higher access.
+
+## Email failure
+
+An issued invoice remains valid even if email fails. Open it from Invoices and resend;
+don't create another recurrence merely to replace delivery.
+
+## Common problems
+
+**Option is missing.** Check Collections permission, Pro-or-higher plan, and that the
+base invoice was issued.
+
+**New catalog price isn't reflected.** The recurrence keeps copied lines. Create a new
+schedule from an updated invoice for future terms.
+
+**Next date moved after an error.** This is duplicate protection. Correct the error and
+decide whether that period needs a manual invoice.
+
+## Scheduled-period protection
+
+Cord checks that the recurrence is still active and retains the date and settings
+read before claiming the period. This prevents two runs from claiming the same
+issuance or overlooking a concurrent edit or pause. The next date is calculated
+from the scheduled period and respects the end date. Invalid dates and an end
+before the start are rejected.
+
+Creating a recurrence does not add automatic charging. If issuance fails, review
+**Last error** and the document before repeating it; automatic recovery of every
+failed period is not implemented.

@@ -1,55 +1,97 @@
 ---
-title: "Guía Definitiva: CFDI 4.0 para mayoristas y distribuidores"
-excerpt: "Todo lo que necesitas saber sobre complementos de pago (REP), carta porte y validación fiscal en México para 2026."
+title: "CFDI 4.0 en 2026: datos, emisión y límites de Cord"
+excerpt: "Guía operativa para preparar un CFDI 4.0 en Cord, entender los datos mínimos del receptor y saber qué complementos siguen fuera del producto."
 category: "Fiscal"
 date: "12 Jun 2026"
+publishedAt: "2026-06-12"
+lastUpdated: "2026-08-28"
 readTime: "09 MIN"
-img: "/images/blog/guia-cfdi-4-0-2026.png"
-authorName: "Diego Fernández"
-authorRole: "Tax Tech Lead"
+img: "/og-cord.jpg"
+authorName: "Equipo Cord"
+authorRole: "Producto y facturación"
+reviewedBy: "Producto de Cord"
+reviewedByRole: "Revisión de alcance funcional; no constituye asesoría fiscal"
+keywords: ["CFDI 4.0", "facturación electrónica México", "datos receptor CFDI", "CSD", "timbrar factura"]
+faq:
+  - question: "¿Qué datos mínimos del receptor necesita un CFDI 4.0?"
+    answer: "El SAT identifica como mínimos RFC, nombre o razón social, régimen fiscal y código postal del domicilio fiscal; además deben capturarse los demás campos que correspondan a la operación, incluido el uso del CFDI."
+  - question: "¿Cord puede timbrar CFDI 4.0?"
+    answer: "Sí, para organizaciones mexicanas con perfil fiscal y CSD válidos. Cord envía el comprobante a Facturapi, que actúa como infraestructura de timbrado; el resultado incluye XML y representación PDF cuando el proveedor confirma la emisión."
+  - question: "¿Cord emite complementos de recepción de pagos o Carta Porte?"
+    answer: "No actualmente. Cord emite CFDI de ingreso dentro del alcance documentado. Los complementos de recepción de pagos, Carta Porte, nómina y otros comprobantes especializados deben resolverse fuera de Cord."
+sources:
+  - name: "SAT — servicio de facturación CFDI versión 4.0"
+    url: "https://wwwmat.sat.gob.mx/aplicacion/75169/servicio-de-facturacion-cfdi-version-4.0-%28vigente-a-partir-del-1-de-enero-de-2022%29"
+  - name: "SAT — material de ayuda y guías de llenado"
+    url: "https://www.sat.gob.mx/minisitio/Factura/emite_materialdeayudaparafactura.htm"
+  - name: "SAT — complemento de recepción de pagos"
+    url: "https://wwwmat.sat.gob.mx/consultas/92764/comprobante-de-recepcion-de-pagos"
+  - name: "Cord Docs — facturación fiscal"
+    url: "https://docs.cordhq.app/docs/pagos/facturacion"
 ---
 
-Facturar en México se ha convertido en un trabajo de ingeniería de software. Con la consolidación del CFDI 4.0, el Servicio de Administración Tributaria (SAT) ha cerrado las brechas de evasión exigiendo validaciones estrictas y catálogos exhaustivos.
+Para emitir un CFDI 4.0 no basta con poner un RFC. El SAT identifica como datos mínimos
+del receptor su **RFC, nombre o razón social, régimen fiscal y código postal del
+domicilio fiscal**. La operación también necesita los conceptos, impuestos, moneda,
+forma y método de pago y uso del CFDI que correspondan.
 
-Para las empresas B2B (mayoristas, distribuidores, agencias, y empresas de software), el error más mínimo en un código postal o un régimen fiscal puede retrasar un pago millonario durante semanas.
+Esta guía explica el flujo de Cord. No sustituye la revisión de tu contador ni las guías
+vigentes del SAT para tu tipo específico de operación.
 
-En esta guía, desglosaremos los tres pilares operativos del CFDI 4.0 que debes tener dominados para asegurar la cobranza fluida en tu negocio B2B.
+## Qué debes configurar una vez
 
-## 1. Validación de Datos (La Barrera de Entrada)
+En **Ajustes > Facturación > Datos fiscales** registra RFC, razón social, régimen,
+código postal fiscal, serie y el Certificado de Sello Digital vigente con su llave
+privada y contraseña.
 
-Con la versión 3.3, bastaba con tener el RFC del cliente. En el CFDI 4.0, el SAT compara matemáticamente tu XML contra su base de datos. Si un solo carácter no coincide, el timbre se rechaza.
+Cord valida el formato y envía el material al proveedor fiscal. No expongas el archivo
+`.key`, su contraseña ni el certificado en correo, chat o tickets. Si el CSD vence o se
+revoca, debes cargar uno vigente antes de volver a emitir.
 
-Los campos críticos que deben coincidir exactamente con la Constancia de Situación Fiscal (CSF) son:
-- **Nombre o Razón Social:** Debe ir en mayúsculas y *sin* el régimen societario. Es decir, "EMPRESA DE MÉXICO" y no "EMPRESA DE MÉXICO, S.A. DE C.V.".
-- **Código Postal del Domicilio Fiscal:** El del cliente, no el de la sucursal a la que entregas, sino el que el SAT tiene registrado como matriz o domicilio principal.
-- **Régimen Fiscal del Receptor.**
+## Qué debes revisar en cada factura
 
-> "El 40% de las facturas B2B rechazadas en 2025 se debieron a errores tipográficos en el campo de Nombre o a la inclusión del S.A. de C.V."
+Antes de timbrar, revisa receptor y RFC; nombre o razón social; régimen y código postal;
+uso del CFDI; partidas y unidades; objeto e importe de impuestos; moneda y tipo de
+cambio; y forma y método de pago.
 
-**La Solución:** Automatiza la validación. Plataformas como **Cord** escanean automáticamente la Constancia de Situación Fiscal en PDF del cliente al momento de su registro, extrayendo la información y autocompletando el CRM para evitar errores humanos.
+No inventes ni normalices por intuición el nombre legal. Cord tampoco escanea
+automáticamente la Constancia de Situación Fiscal ni decide el régimen, uso o tratamiento
+tributario correcto por ti.
 
-## 2. PPD vs PUE y los Complementos de Pago
+## Qué ocurre al timbrar
 
-En ventas B2B, es raro que un cliente corporativo te pague el total por adelantado o el mismo día que emites la factura. Aquí es donde entra la regla sagrada del SAT:
+Cord crea un snapshot de emisor, receptor, conceptos, impuestos y totales y solicita el
+timbrado mediante Facturapi. Cuando el proveedor confirma la emisión, Cord conserva el
+identificador fiscal, XML y representación PDF asociados al comprobante.
 
-### PUE (Pago en Una sola Exhibición)
-Solo debe usarse si el cliente **ya te pagó** o si te garantiza que pagará *antes* de que termine el mes calendario en el que emitiste la factura. Si marcas PUE y el cliente no te paga ese mes, estás incurriendo en una falta fiscal y deberás cancelar la factura.
+La emisión fiscal no es un simple cambio visual: las correcciones siguen los mecanismos
+fiscales aplicables, como cancelación o documentos relacionados. Revisa antes de confirmar.
 
-### PPD (Pago en Parcialidades o Diferido)
-Si das crédito (Net 30, Net 60), **siempre** debes emitir la factura como PPD con el Método de Pago "99" (Por definir). 
+## PUE, PPD y recepción de pagos
 
-Cuando el cliente finalmente te deposite el mes siguiente, tienes la obligación legal de emitir un **Complemento de Recepción de Pagos (REP o CRP)**. En el CFDI 4.0, este recibo de pago es tan complejo como una factura en sí misma, requiriendo desgloses de impuestos (IVA, retenciones) por cada pago recibido.
+El SAT distingue el momento en que se liquida la operación. En términos generales, PUE
+corresponde a una operación pagada en una sola exhibición bajo las reglas aplicables;
+PPD se utiliza cuando el pago queda diferido o en parcialidades y puede generar la
+obligación de emitir un CFDI de tipo Pago.
 
-Si no emites el complemento de pago antes del día 5 del mes siguiente al depósito, tu cliente no podrá deducir el gasto, y tú podrías ser acreedor a multas.
+Cord **no emite actualmente el complemento para recepción de pagos**. Registrar un pago
+en la cartera actualiza el control operativo dentro de Cord, pero no crea ese complemento
+fiscal. Coordina su emisión en tu sistema fiscal o con tu proveedor y asesor.
 
-## 3. Complemento Carta Porte (Distribuidores)
+## Carta Porte y otros complementos
 
-Si mueves mercancía por carreteras federales, el Complemento Carta Porte ya no es opcional.
+Cord tampoco emite Carta Porte, nómina, comercio exterior ni otros complementos
+especializados. Una factura de ingreso emitida en Cord no cubre automáticamente esas
+obligaciones. Determina con un especialista qué comprobante necesita tu operación.
 
-Para mayoristas, esto implica que el equipo de facturación ahora necesita conocer detalles de logística que antes ignoraba: modelo del camión, placas, nombre y RFC del chofer, peso exacto de la mercancía, y nodo de origen/destino según catálogos de la SCT.
+## Errores frecuentes
 
-**Estrategia:** La comunicación entre almacén/logística y finanzas debe ser en tiempo real. Utiliza ERPs modernos que generen el XML de la Carta Porte en el andén de carga al escanear la orden de salida, no desde la oficina contable.
+- El nombre del receptor no coincide con sus datos fiscales.
+- El código postal pertenece a una sucursal, no al domicilio fiscal requerido.
+- Régimen y uso del CFDI son incompatibles.
+- El CSD está vencido, revocado o la contraseña es incorrecta.
+- Se trata un pago registrado en Cord como si fuera un complemento fiscal.
+- Se timbra antes de resolver una diferencia de moneda, impuesto o total.
 
-## En Resumen
-
-El CFDI 4.0 es implacable. Ya no puedes depender de que "el contador lo arregle a final de mes". La facturación debe estar profundamente integrada en tu flujo de ventas y operaciones. Al usar infraestructura moderna como **Cord**, validas desde la cotización hasta el timbrado automático del complemento de pago cuando el dinero cae en tu cuenta bancaria.
+Consulta la [guía de facturación de Cord](https://docs.cordhq.app/docs/pagos/facturacion)
+para ver el flujo exacto de configuración, emisión, descarga y corrección.

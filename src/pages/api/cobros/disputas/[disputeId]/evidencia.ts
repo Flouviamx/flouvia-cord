@@ -27,7 +27,15 @@ const evidenceSchema = z.object({
     access_activity_log: z.string().trim().max(20_000).optional(),
 }).strict();
 
-const requestSchema = z.object({ evidence: evidenceSchema, submit: z.boolean().optional().default(false) }).strict();
+const requestSchema = z.object({
+    evidence: evidenceSchema,
+    submit: z.boolean().optional().default(false),
+    disclosureAccepted: z.literal(true).optional(),
+}).strict().superRefine((value, ctx) => {
+    if (value.submit && value.disclosureAccepted !== true) {
+        ctx.addIssue({ code: 'custom', path: ['disclosureAccepted'], message: 'Confirma la vista previa antes de enviar evidencia' });
+    }
+});
 
 export const POST: APIRoute = async ({ request, params }) => {
     const denied = await requirePermAny(['cobranza', 'cobros_config']);

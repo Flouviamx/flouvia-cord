@@ -1,0 +1,39 @@
+---
+import Analytics from '@vercel/analytics/astro';
+import { ANALYTICS_PRIVATE_ROUTE_RULES } from '../lib/privacy-safe-analytics';
+
+interface Props {
+  disabled?: boolean;
+}
+
+const { disabled = false } = Astro.props;
+const analyticsRouteRules = ANALYTICS_PRIVATE_ROUTE_RULES;
+---
+
+{!disabled && (
+  <Fragment>
+    <!-- El componente Astro de Vercel consulta este hook global al montarse. -->
+    <script is:inline define:vars={{ analyticsRouteRules }}>
+      window.webAnalyticsBeforeSend = function (event) {
+        try {
+          const url = new URL(event.url, window.location.origin);
+          const rule = analyticsRouteRules.find((candidate) => url.pathname.startsWith(candidate.prefix));
+          if (rule) {
+            url.pathname = rule.replacement;
+          } else {
+            url.pathname = url.pathname
+              .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?=\/|$)/gi, '/[id]')
+              .replace(/\/[A-Za-z0-9_-]{32,}(?=\/|$)/g, '/[token]');
+          }
+          url.search = '';
+          url.hash = '';
+          return { ...event, url: url.toString() };
+        } catch (_) {
+          return null;
+        }
+      };
+    </script>
+    <Analytics />
+  </Fragment>
+)}
+

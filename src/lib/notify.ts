@@ -2,7 +2,7 @@
 // Notificaciones al DUEÑO del negocio (correo + Slack), filtradas por la
 // matriz que la org configura en Ajustes › Notificaciones (orgs.notif_prefs).
 // Antes de este archivo, notif_prefs se guardaba pero NINGÚN emisor lo
-// consultaba — ver docs/historial-app-features.md. `notify()` es la única
+// consultaba — ver docs/historial/app-features.md. `notify()` es la única
 // puerta de salida: reemplaza el disparo incondicional de Slack que vivía en
 // webhooks.ts (dispatchSlack posteaba TODOS los eventos a TODAS las orgs con
 // webhook conectado, sin mirar la matriz).

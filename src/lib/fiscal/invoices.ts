@@ -25,6 +25,8 @@ import { FXService, FXUnavailableError } from '../fx/FXService';
 import { calculateDocumentTotals, type TaxBreakdown } from '../../../packages/elements/src/engine';
 import { FiscalFactory } from './FiscalFactory';
 import { partiesFrom } from './parties';
+import { creditNoteBreakdown } from './credit-note';
+import { invoiceBalanceLock, invoiceBalanceQuery, reconcileInvoice } from './reconciliation';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import {
   cleanPrefix,
@@ -38,6 +40,7 @@ import {
 import type {
   FiscalDocumentRequest,
   FiscalDocumentResponse,
+  FiscalCancelResponse,
   FiscalLineItem,
   FiscalParty,
   FiscalRetencion,
@@ -339,12 +342,13 @@ export async function updateInvoiceDraft(
   if (!input.clienteId) return { ok: false, error: 'La factura necesita un cliente.' };
 
   const [docRows] = await withOrgTx(orgId, sql`
-    select id, lifecycle, invoice_number, public_token, amount_paid
+    select id, lifecycle, invoice_number, public_token, amount_paid, credit_note_of
       from documentos_fiscales
      where id = ${documentId} and org_id = ${orgId}
      limit 1`);
   const doc = docRows[0];
   if (!doc) return { ok: false, error: 'Factura no encontrada.' };
+  if (doc.credit_note_of) return { ok: false, error: 'La nota de crédito conserva el desglose de la factura original; descártala y crea otra para cambiar el importe.' };
   if (doc.lifecycle !== 'draft' || doc.invoice_number) {
     return { ok: false, error: 'Esta factura ya fue emitida y no se puede editar. Anúlala o emite una nota de crédito.' };
   }
@@ -421,7 +425,7 @@ export async function updateInvoiceDraft(
       line_items_snapshot = ${JSON.stringify(lines)},
       updated_at = now()
     where id = ${documentId} and org_id = ${orgId}
-      and lifecycle = 'draft' and invoice_number is null
+      and lifecycle = 'draft' and invoice_number is null and credit_note_of is null
     returning id, public_token`);
   const row = rows[0];
   if (!row) return { ok: false, error: 'No se pudo actualizar el borrador.' };
@@ -449,11 +453,13 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
            d.subtotal, d.tax_total, d.total, d.retencion_total, d.retenciones_snapshot,
            d.invoice_number, d.public_token,
            d.issuer_snapshot, d.recipient_snapshot, d.line_items_snapshot,
-           d.fiscal_id, d.provider_data,
+           d.fiscal_id, d.provider_data, d.credit_note_of,
+           original.fiscal_id as original_fiscal_id, original.status as original_status,
            cl.uso_cfdi as cliente_uso
       from documentos_fiscales d
       join orgs o on o.id = d.org_id
-      left join clientes cl on cl.id = d.cliente_id
+      left join clientes cl on cl.id = d.cliente_id and cl.org_id = d.org_id
+      left join documentos_fiscales original on original.id = d.credit_note_of and original.org_id = d.org_id
      where d.id = ${documentId} and d.org_id = ${orgId}
      limit 1`);
   const head = headRows[0];
@@ -461,6 +467,7 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
 
   // Ya emitida: idempotente, no se vuelve a timbrar ni se cobra medidor otra vez.
   if (head.status === 'issued') {
+    if (head.credit_note_of) await reconcileInvoice(orgId, String(head.credit_note_of));
     return {
       emitted: true,
       documentId,
@@ -474,6 +481,19 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
   }
   if (head.lifecycle === 'void') {
     return { emitted: false, status: 'error', error: 'Esta factura está anulada.' };
+  }
+
+  if (head.credit_note_of) {
+    const [, allowed] = await withOrgTx(orgId,
+      invoiceBalanceLock(orgId, String(head.credit_note_of)),
+      sql`select original.id from documentos_fiscales original
+        where original.id = ${String(head.credit_note_of)} and original.org_id = ${orgId}
+          and original.status = 'issued' and original.lifecycle <> 'void'
+          and original.currency = ${String(head.currency)}
+          and coalesce((select sum(n.total) from documentos_fiscales n
+            where n.credit_note_of = original.id and n.org_id = original.org_id
+              and n.lifecycle <> 'void'), 0) <= original.total`);
+    if (!allowed.length) return { emitted: false, status: 'error', error: 'Las notas reservadas superan el importe disponible o la factura original ya no está vigente.' };
   }
 
   const country = String(head.doc_country || 'MX').toUpperCase();
@@ -542,6 +562,7 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
     quoteId: documentId,
     countryCode: country,
     documentType: docType,
+    relatedFiscalId: head.original_status === 'issued' ? String(head.original_fiscal_id || '') : undefined,
     issuer: head.issuer_snapshot as FiscalParty,
     recipient: head.recipient_snapshot as FiscalParty,
     lines: (head.line_items_snapshot as FiscalLineItem[]) || [],
@@ -599,7 +620,9 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
     ...(response.rawProviderData ?? {}),
     ...(!response.success ? { error: response.error || 'fallo del proveedor fiscal' } : {}),
   };
-  await withOrgTx(orgId, sql`
+  await withOrgTx(orgId,
+    ...(head.credit_note_of ? [invoiceBalanceLock(orgId, String(head.credit_note_of))] : []),
+    sql`
     update documentos_fiscales
        set status = ${response.success ? 'issued' : 'error'},
            lifecycle = ${response.success ? 'open' : 'draft'},
@@ -609,10 +632,12 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
            provider_data = ${JSON.stringify(providerData)},
            pdf_url = ${response.pdfUrl ?? null},
            xml_url = ${response.xmlUrl ?? null},
-           amount_remaining = coalesce(total, 0) - coalesce(amount_paid, 0),
+           amount_remaining = case when credit_note_of is not null then 0 else coalesce(total, 0) - coalesce(amount_paid, 0) end,
            issued_at = ${response.success ? new Date(issuedAt) : null},
            updated_at = now()
-     where id = ${documentId} and org_id = ${orgId}`);
+     where id = ${documentId} and org_id = ${orgId}`,
+    ...(response.success && head.credit_note_of ? [invoiceBalanceQuery(orgId, String(head.credit_note_of))] : []),
+  );
 
   await logInvoiceEvent(
     orgId, documentId,
@@ -637,6 +662,9 @@ export interface VoidResult {
   error?: string;
   /** true cuando el saldo ya tiene pagos: el camino correcto es nota de crédito. */
   requiresCreditNote?: boolean;
+  cancellationStatus?: FiscalCancelResponse['status'];
+  pending?: boolean;
+  reused?: boolean;
 }
 
 /**
@@ -651,9 +679,11 @@ export async function voidInvoice(
   orgId: string,
   documentId: string,
   reason?: string,
+  checkOnly = false,
 ): Promise<VoidResult> {
   const [rows] = await withOrgTx(orgId, sql`
-    select d.id, d.lifecycle, d.status, d.amount_paid, d.country_code,
+    select d.id, d.lifecycle, d.status, d.amount_paid, d.country_code, d.credit_note_of,
+           exists (select 1 from documentos_fiscales n where n.credit_note_of = d.id and n.org_id = d.org_id and n.lifecycle <> 'void') as has_credit_notes,
            d.provider_document_id, d.provider_data,
            o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of
       from documentos_fiscales d
@@ -662,9 +692,13 @@ export async function voidInvoice(
      limit 1`);
   const doc = rows[0];
   if (!doc) return { ok: false, error: 'Factura no encontrada.' };
-  if (doc.lifecycle === 'void') return { ok: true };
+  if (doc.lifecycle === 'void') {
+    if (doc.credit_note_of) await reconcileInvoice(orgId, String(doc.credit_note_of));
+    return { ok: true, reused: true, cancellationStatus: 'accepted' };
+  }
+  if (doc.has_credit_notes && !checkOnly) return { ok: false, error: 'Primero anula o descarta las notas de crédito vinculadas a esta factura.' };
 
-  if (Number(doc.amount_paid) > 0) {
+  if (Number(doc.amount_paid) > 0 && !checkOnly) {
     return {
       ok: false,
       requiresCreditNote: true,
@@ -673,42 +707,66 @@ export async function voidInvoice(
   }
 
   // Un borrador nunca llegó al proveedor: se anula localmente y ya.
-  if (doc.lifecycle === 'draft' || doc.status !== 'issued') {
-    await withOrgTx(orgId, sql`
+  if (doc.status !== 'issued') {
+    if (checkOnly || doc.provider_data?.delivery_uncertain || doc.provider_document_id && !String(doc.provider_document_id).startsWith('err_')) {
+      return { ok: false, error: 'Primero confirma el resultado de la emisión fiscal antes de anular este documento.' };
+    }
+    await withOrgTx(orgId,
+      ...(doc.credit_note_of ? [invoiceBalanceLock(orgId, String(doc.credit_note_of))] : []),
+      sql`
       update documentos_fiscales
          set lifecycle = 'void', status = 'cancelled',
              voided_at = now(), void_reason = ${reason || null}, updated_at = now()
-       where id = ${documentId} and org_id = ${orgId}`);
+       where id = ${documentId} and org_id = ${orgId}`,
+      ...(doc.credit_note_of ? [invoiceBalanceQuery(orgId, String(doc.credit_note_of))] : []),
+    );
     return { ok: true };
   }
 
   const country = String(doc.country_code || 'MX').toUpperCase();
-  const providerKey = decryptSecret(doc.facturapi_live_key_enc as string)
-    || (doc.facturapi_live_key as string)
-    || undefined;
-
-  const cancel = doc.sandbox_of
-    ? { success: true, rawProviderData: { simulado: true } }
+  if (checkOnly && country !== 'MX') return { ok: false, error: 'La consulta de cancelación solo aplica al CFDI de México.' };
+  const orgKey = decryptSecret(doc.facturapi_live_key_enc as string)
+    || (doc.facturapi_live_key as string) || undefined;
+  const scope = doc.provider_data?.credential_scope;
+  if (scope === 'organization' && !orgKey) return { ok: false, error: 'Falta la credencial del emisor original.' };
+  const providerKey = scope === 'platform' ? undefined : orgKey;
+  const simulated = doc.sandbox_of || doc.provider_data?.simulado === true;
+  if (!simulated && !doc.provider_document_id) return { ok: false, error: 'Falta el identificador del comprobante emitido.' };
+  const cancel: FiscalCancelResponse = simulated
+    ? { success: true, status: 'accepted', rawProviderData: { simulado: true } }
     : await FiscalFactory.getProvider(country).cancelDocument(
-        String(doc.provider_document_id || documentId),
-        { reason, providerApiKey: providerKey, orgId },
+        String(doc.provider_document_id), { reason, checkOnly, providerApiKey: providerKey, orgId },
       );
-
-  // Falla cerrada: si el SAT no confirmó la cancelación, la factura sigue viva
-  // ahí afuera. Pintarla como anulada en Cord sería mentirle al vendedor.
-  if (!cancel.success) {
-    return { ok: false, error: cancel.error || 'El proveedor fiscal rechazó la cancelación.' };
+  const confirmed = cancel.success && (cancel.status === 'accepted' || country !== 'MX' && !cancel.status);
+  if (!confirmed) {
+    const state = cancel.status || 'unknown';
+    await withOrgTx(orgId, sql`
+      update documentos_fiscales
+         set provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify({ cancelacion: { ...cancel.rawProviderData, status: state } })}::jsonb,
+             updated_at = now()
+       where id = ${documentId} and org_id = ${orgId} and lifecycle <> 'void'`);
+    if (cancel.success && ['pending', 'verifying'].includes(state)) {
+      return { ok: true, pending: true, cancellationStatus: state };
+    }
+    return { ok: false, cancellationStatus: state,
+      error: cancel.error || (state === 'rejected' ? 'La cancelación fue rechazada; la factura sigue vigente.'
+        : state === 'expired' ? 'La solicitud de cancelación expiró; la factura sigue vigente.'
+        : 'La cancelación aún no está confirmada; la factura sigue vigente.') };
   }
 
-  await withOrgTx(orgId, sql`
+  await withOrgTx(orgId,
+    ...(doc.credit_note_of ? [invoiceBalanceLock(orgId, String(doc.credit_note_of))] : []),
+    sql`
     update documentos_fiscales
        set lifecycle = 'void', status = 'cancelled',
            voided_at = now(), void_reason = ${reason || null},
-           provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify({ cancelacion: cancel.rawProviderData ?? {} })}::jsonb,
+           provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify({ cancelacion: { ...cancel.rawProviderData, status: 'accepted' } })}::jsonb,
            updated_at = now()
-     where id = ${documentId} and org_id = ${orgId}`);
+     where id = ${documentId} and org_id = ${orgId}`,
+    ...(doc.credit_note_of ? [invoiceBalanceQuery(orgId, String(doc.credit_note_of))] : []),
+  );
   await logInvoiceEvent(orgId, documentId, 'void', reason ? `Anulada: ${reason}` : 'Anulada');
-  return { ok: true };
+  return { ok: true, cancellationStatus: 'accepted' };
 }
 
 /**
@@ -724,62 +782,60 @@ export async function createCreditNote(
   const [rows] = await withOrgTx(orgId, sql`
     select id, cotizacion_id, cliente_id, country_code, currency, ledger_currency,
            fx_rate, total, tax_total, subtotal, lifecycle, status, due_date,
-           issuer_snapshot, recipient_snapshot
+           issuer_snapshot, recipient_snapshot, line_items_snapshot, retenciones_snapshot, retencion_total, credit_note_of,
+           (select coalesce(sum(n.total), 0) from documentos_fiscales n
+             where n.credit_note_of = documentos_fiscales.id and n.org_id = ${orgId}
+               and n.lifecycle <> 'void') as reserved_total
       from documentos_fiscales
      where id = ${documentId} and org_id = ${orgId}
      limit 1`);
   const doc = rows[0];
   if (!doc) return { ok: false, error: 'Factura no encontrada.' };
-  if (doc.status !== 'issued') {
-    return { ok: false, error: 'Solo una factura emitida admite nota de crédito.' };
+  if (doc.status !== 'issued' || doc.lifecycle === 'void' || doc.credit_note_of) {
+    return { ok: false, error: 'Solo una factura de ingreso vigente admite nota de crédito.' };
   }
 
   const total = money(Number(doc.total) || 0);
-  const monto = opts.monto !== undefined ? money(Number(opts.monto)) : total;
+  const monto = opts.monto !== undefined ? money(Number(opts.monto)) : money(total - Number(doc.reserved_total || 0));
   if (!(monto > 0) || monto > total) {
     return { ok: false, error: `El monto de la nota de crédito debe estar entre 0 y ${total}.` };
   }
 
-  // El impuesto se prorratea respecto del original: una nota de crédito parcial
-  // devuelve la misma proporción de base e impuesto que llevaba la factura.
-  const ratio = total > 0 ? monto / total : 0;
-  const subtotal = money((Number(doc.subtotal) || 0) * ratio);
-  const taxes = money(monto - subtotal);
+  let credit;
+  try { credit = creditNoteBreakdown(doc, monto); }
+  catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'No se pudo calcular la nota de crédito.' }; }
+  const { lines, subtotal, taxes, retenciones, retencionTotal } = credit;
   const country = String(doc.country_code || 'MX').toUpperCase();
-  const taxRate = subtotal > 0 ? taxes / subtotal : 0;
-  const lines: FiscalLineItem[] = [{
-    description: opts.motivo?.trim() || 'Nota de crédito',
-    quantity: 1,
-    unitPrice: subtotal,
-    taxRate,
-    subtotal,
-    taxAmount: taxes,
-    total: monto,
-  }];
 
   const publicToken = newInvoiceToken();
-  const [inserted] = await withOrgTx(orgId, sql`
+  const [, inserted] = await withOrgTx(orgId, invoiceBalanceLock(orgId, documentId), sql`
     insert into documentos_fiscales (
       org_id, cotizacion_id, cliente_id, country_code, document_type, status, provider,
       currency, ledger_currency, fx_rate, ledger_total, subtotal, tax_total, total,
       lifecycle, due_date, amount_paid, amount_remaining, public_token,
-      credit_note_of, notes, created_by,
+      credit_note_of, notes, created_by, retenciones_snapshot, retencion_total,
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
       schema_version, provider_data, updated_at
-    ) values (
+    ) select
       ${orgId}, ${doc.cotizacion_id || null}, ${doc.cliente_id || null}, ${country},
       ${country === 'MX' ? 'cfdi_egreso' : 'credit_note'}, 'pending',
       ${country === 'MX' ? 'facturapi' : 'cord'},
       ${doc.currency}, ${doc.ledger_currency}, ${doc.fx_rate},
       ${money(monto * (Number(doc.fx_rate) || 1))}, ${subtotal}, ${taxes}, ${monto},
-      'draft', ${doc.due_date}, 0, ${monto}, ${publicToken},
-      ${documentId}, ${opts.motivo || null}, ${opts.createdBy || null},
+      'draft', ${doc.due_date}, 0, 0, ${publicToken},
+      ${documentId}, ${opts.motivo || null}, ${opts.createdBy || null}, ${JSON.stringify(retenciones)}::jsonb, ${retencionTotal},
       ${JSON.stringify(doc.issuer_snapshot)}, ${JSON.stringify(doc.recipient_snapshot)},
       ${JSON.stringify(lines)},
       'cord.invoice.v1', '{}'::jsonb, now()
-    )
+    from documentos_fiscales original
+    where original.id = ${documentId} and original.org_id = ${orgId}
+      and original.status = 'issued' and original.lifecycle <> 'void'
+      and original.credit_note_of is null and original.currency = ${String(doc.currency)}
+      and ${monto} + coalesce((select sum(n.total) from documentos_fiscales n
+        where n.credit_note_of = original.id and n.org_id = original.org_id
+          and n.lifecycle <> 'void'), 0) <= original.total
     returning id, public_token`);
   const row = inserted[0];
-  if (!row) return { ok: false, error: 'No se pudo crear la nota de crédito.' };
+  if (!row) return { ok: false, error: 'No queda importe disponible: otra nota ya lo reservó o la factura dejó de estar vigente.' };
   return { ok: true, documentId: String(row.id), publicToken: String(row.public_token) };
 }

@@ -20,6 +20,8 @@ import { trackUser } from '../../../../lib/posthog-server';
 import { safeRelativeRedirect } from '../../../../lib/safe-redirect';
 import { ssoRequirementFor } from '../../../../lib/saml';
 import { log } from '../../../../lib/log';
+import { randomUUID } from 'node:crypto';
+import { legalIntentHash, SIGNUP_LEGAL_INTENT_COOKIE } from '../../../../lib/legal-signup';
 
 export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
     const ip = trustedIp(request);
@@ -42,6 +44,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
     const savedNonce = cookies.get('cord_apple_nonce')?.value;
     cookies.delete('cord_apple_state', { path: '/' });
     cookies.delete('cord_apple_nonce', { path: '/' });
+    const signupLegalIntent = cookies.get(SIGNUP_LEGAL_INTENT_COOKIE)?.value || null;
+    cookies.delete(SIGNUP_LEGAL_INTENT_COOKIE, { path: '/' });
     const dest = safeRelativeRedirect(cookies.get('cord_apple_redirect')?.value) || '/app';
     cookies.delete('cord_apple_redirect', { path: '/' });
 
@@ -98,11 +102,12 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
             if (userRows.length > 0) {
                 userId = userRows[0].id as string;
             } else {
-                const [newUser] = await sql`
-                    insert into users (email, first_name, last_name, email_verified_at)
-                    values (${email}, ${firstName || null}, ${lastName || null}, now())
-                    returning id
-                `;
+                if (!signupLegalIntent) return redirect('/sign-up?legal_required=1');
+                const proposedUserId = randomUUID();
+                const [newUser] = await sql`select cord_register_oauth_user_with_legal_intent(
+                    ${proposedUserId}, ${email}, ${firstName || null}, ${lastName || null}, ${null},
+                    ${'apple'}, ${providerUserId}, ${legalIntentHash(signupLegalIntent)}
+                ) as id`;
                 userId = newUser.id as string;
                 isNewUser = true;
             }
@@ -142,6 +147,9 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
         return redirect(dest);
     } catch (err) {
         log.error('Error', { route: 'apple/callback', err });
+        if (err instanceof Error && err.message.includes('legal_intent_invalid')) {
+            return redirect('/sign-up?legal_required=1');
+        }
         return redirect('/sign-in?sso_error=1');
     }
 };

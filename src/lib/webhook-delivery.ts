@@ -21,6 +21,7 @@ import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { sql, withOrgTx, withSystemTx, assertCronContext, logAudit } from './db';
 import { safeFetch, type SafeFetchResult } from './ssrf';
 import { sendEmail, siteOrigin } from './email';
+import { publicDocumentUrl } from './public-links';
 import { rateLimit } from './ratelimit';
 import { after } from './after';
 import { decryptSecret, encryptRequiredSecret } from './crypto-secret';
@@ -603,7 +604,6 @@ export async function sendTestEvent(orgId: string, webhookId: string): Promise<{
     catch { return { ok: false, status: 0, error: 'No se pudo consultar el endpoint' }; }
     if (!rows.length) return { ok: false, status: 0, error: 'Endpoint no encontrado' };
 
-    const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
     const eventId = newEventId();
     const body = JSON.stringify({
         id: eventId,
@@ -615,7 +615,7 @@ export async function sendTestEvent(orgId: string, webhookId: string): Promise<{
             status: 'sent',
             total: 12500,
             cliente: 'Cliente de prueba S.A. de C.V.',
-            link_publico: `${base}/q/demo`,
+            link_publico: await publicDocumentUrl(orgId, 'q', 'demo'),
             mensaje: 'Esta es una entrega de prueba enviada desde Ajustes › Developers.',
         },
     });

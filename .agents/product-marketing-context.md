@@ -1,24 +1,24 @@
 # Product Marketing Context
 
-*Last updated: 2026-07-01*
+*Last updated: 2026-08-28*
 *Generado por: auto-draft desde el código (opción 1 de la skill `product-marketing-context`) — falta revisión de André en las secciones marcadas ⚠️ REVISAR.*
 
 ## Product Overview
-**One-liner:** Cord es el SaaS de cotizaciones B2B para negocios en México — de la cotización a la factura, sin Excel ni PDFs perdidos por correo.
-**Qué hace:** Cord permite crear cotizaciones profesionales con marca propia, compartirlas por un link público donde el cliente aprueba/paga/firma digitalmente, dar seguimiento en tiempo real (saber exactamente cuándo se vio), cobrar (Stripe + cobranza autónoma con IA), y facturar CFDI 4.0 real ante el SAT — todo en un solo flujo conectado, sin recapturar datos en 4 sistemas distintos.
-**Categoría de producto:** Software de cotizaciones B2B / CPQ (Configure-Price-Quote) para el mercado mexicano.
+**One-liner:** Cord es la plataforma de cierre comercial que lleva una venta de la propuesta al pago en un solo link.
+**Qué hace:** Cord permite crear cotizaciones profesionales con marca propia, compartirlas mediante un enlace interactivo, registrar la aprobación y su evidencia técnica, cobrar en línea donde Cord Payments está disponible, emitir facturas y gestionar cobranza — todo en un flujo conectado. El CFDI 4.0 real está disponible para cuentas mexicanas con configuración fiscal válida.
+**Categoría de producto:** Plataforma de cierre comercial / software de cotizaciones y cobranza B2B, con capacidades CPQ.
 **Tipo de producto:** SaaS multi-tenant, freemium.
-**Modelo de negocio y pricing:** Freemium (5 cotizaciones activas gratis, con "Powered by Cord" visible) → 5 planes de pago vía Stripe Billing: Starter $240, **Profesional $590 (plan ancla/destacado)**, Scale $1,390, Developer $2,990 MXN/mes. Cada plan trae cuota mensual de IA/CFDI/API/usuarios incluida; el excedente se cobra por uso (Stripe Billing Meters).
+**Modelo de negocio y pricing:** Freemium sin vencimiento (5 envíos renovables cada mes y hasta 5 cotizaciones activas a la vez, con "Powered by Cord" visible) → Starter (más envíos y quitar la marca de Cord), **Profesional (plan destacado: equipo y cobranza)**, Scale y Developer a la medida. México paga en MXN; España, Alemania y Francia en EUR; los demás mercados soportados en USD. Los precios viven en `src/lib/precios.ts`; cuotas y permisos se aplican desde `billing.ts` y `entitlements.ts`. Los envíos se renuevan el día 1 (UTC). No hay umbral de facturación cobrada; dominio propio para enlaces no está disponible, SMTP desde el dominio del negocio corresponde a Scale.
 
 ## Target Audience
-**Tipo de empresa objetivo:** PyMEs y empresas medianas B2B en México — cualquier negocio que cotiza a otros negocios, no solo e-commerce/retail.
+**Tipo de empresa objetivo:** PyMEs y empresas medianas B2B que venden mediante cotizaciones en los 12 mercados ofrecidos: MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL y PE. Cord Payments está disponible en los primeros ocho; CO, AR, CL y PE operan con pagos registrados fuera de Cord.
 **Verticales documentadas en el producto:** distribuidoras (crédito Net30/60), constructoras (aprobación de obra, materiales), manufactura (specs de lote, evidencia), agencias (retainers, hitos), comercializadoras (multi-divisa, crédito B2B), SaaS/software factories (cobro por commits/T&M), servicios profesionales.
 **Decisores:** dueño de negocio, gerente de ventas (aprueba descuentos/márgenes vía "Auditor Silencioso"), vendedor (arma y envía cotizaciones), y en cuentas más grandes contador/CFO (factura, ve el dashboard financiero).
 **Caso de uso principal:** reemplazar Excel + Word + PDF por correo con un flujo de cotización profesional, rastreable y cobrable de punta a punta.
 **Jobs to be done:**
 - Verse profesional ante el cliente con cotizaciones de marca propia (no una hoja de Excel).
 - Saber EXACTAMENTE cuándo el cliente vio la cotización, para dar seguimiento en el momento justo (no "a ciegas").
-- Cobrar más rápido y facturar sin recapturar datos en el portal del SAT/PAC.
+- Cobrar más rápido y facturar sin recapturar datos; en México, timbrar CFDI 4.0 sin volver a entrar al portal del PAC.
 **Casos de uso específicos:**
 - Distribuidora que cotiza con precios por volumen y descuento por nivel de cliente.
 - Constructora que necesita aprobación gerencial cuando un vendedor da más descuento del permitido.
@@ -54,9 +54,9 @@
 - CFDI 4.0 real timbrado ante el SAT (vía Facturapi) directo desde la cotización aprobada — no un sistema aparte.
 - Seguimiento en vivo real: evento de "vista" con fecha/hora exacta y conteo de aperturas.
 - Cobranza con IA autónoma que negocia planes de pago con clientes morosos dentro de reglas que tú defines (opt-in por cliente).
-- Multi-divisa con cobertura cambiaria real: cotiza en USD, factura en MXN, con FX lock de 30 días que protege el margen.
+- Multi-divisa con una tasa fechada y congelada durante la vigencia configurada de la cotización; no se presenta como derivado financiero ni garantía bancaria.
 - Auditor Silencioso de márgenes: bloquea automáticamente el envío de una cotización si el descuento rompe el margen mínimo configurado.
-- Firma digital con hash SHA-256 en cada cotización aprobada — evidencia verificable del acuerdo.
+- Aprobación digital con identidad declarada, fecha, IP y huella criptográfica de la versión aceptada — evidencia técnica, no notarización ni garantía jurídica universal.
 **Por qué eso es mejor:** todo vive en un solo flujo conectado (cotizar → aprobar → cobrar → facturar), no 4 herramientas distintas pegadas con copy-paste.
 **Por qué los clientes eligen Cord:** dejan de perder tiempo recapturando datos y dejan de cotizar "a ciegas" sin saber si el cliente vio la propuesta.
 
@@ -67,7 +67,7 @@
 |-----------|----------|
 | "Ya uso Excel y me funciona" | Excel no te dice cuándo el cliente vio la cotización ni calcula márgenes en vivo — Cord hace ambas cosas sin que cambies tu forma de vender. |
 | "No quiero pagar otra suscripción" | El plan gratuito ya cubre 5 cotizaciones activas; los planes de pago se pagan solos con el tiempo que ahorras en seguimiento y facturación. |
-| "Mis datos fiscales son delicados, no confío en dar mi CSD a otro sistema" | El CSD se cifra y aísla por negocio; Cord no es el PAC, usa Facturapi (autorizado por el SAT) para timbrar. |
+| "Mis datos fiscales son delicados, no confío en dar mi CSD a otro sistema" | El CSD viaja por TLS al servidor y al proveedor fiscal; Cord conserva cifrada en reposo la referencia secreta necesaria para operar la integración. Cord usa Facturapi para timbrar y nunca debe pedir la FIEL. |
 
 **Anti-persona:** *(pendiente — a quién NO le sirve Cord: ¿negocios sin operación B2B/cotizaciones formales? ¿empresas ya atadas a un ERP grande tipo SAP?)*
 
@@ -107,6 +107,6 @@
 **Temas de valor principales:** velocidad de cotización, visibilidad de seguimiento, cobranza automatizada, cumplimiento fiscal sin fricción.
 
 ## Goals
-**Objetivo de negocio principal:** crecer usuarios de pago a partir del freemium (5 cotizaciones activas gratis).
-**Acción de conversión clave:** registro gratis → primera cotización enviada (activación) → upgrade a plan pagado (típicamente disparado por el límite de 5 cotizaciones activas o por necesitar quitar "Powered by Cord").
+**Objetivo de negocio principal:** crecer usuarios de pago a partir de un plan gratuito útil cada mes (5 envíos renovables y hasta 5 cotizaciones activas).
+**Acción de conversión clave:** registro gratis → primera cotización enviada (activación) → uso mensual recurrente → upgrade cuando se necesitan más envíos, quitar "Powered by Cord", trabajar en equipo o gestionar cobranza.
 **Métricas actuales:** *(pendiente — sin datos de producción confirmados en este documento)*

@@ -88,7 +88,7 @@ async function ensureUsd({ plan, dim, cycle, id, usd }, decimal) {
     const label = `${plan}/${dim ?? cycle}`.padEnd(20);
     let price;
     try {
-        price = await stripe(`/v1/prices/${id}`);
+        price = await stripe(`/v1/prices/${id}?expand[]=currency_options`);
     } catch (e) {
         console.log(`✗ ${label} ${id}  no se pudo leer: ${e.message}`);
         failed++;

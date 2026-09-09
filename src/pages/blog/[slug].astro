@@ -36,9 +36,17 @@ const authorAvatar = entry.data.authorAvatar || 'https://images.unsplash.com/pho
 const SITE = 'https://cordhq.app';
 const base = isEn ? `${SITE}/en` : SITE;
 const postUrl = `${base}/blog/${entry.id.replace(/^(es|en)\//, '')}`;
-const parsedDate = new Date(entry.data.date);
+const parsedDate = new Date(entry.data.publishedAt || entry.data.date);
 const isoDate = isNaN(parsedDate.getTime()) ? undefined : parsedDate.toISOString();
-const ogImage = entry.data.img?.startsWith('http') ? entry.data.img : `${SITE}${entry.data.img}`;
+const parsedUpdated = entry.data.lastUpdated ? new Date(entry.data.lastUpdated) : undefined;
+const isoUpdated = parsedUpdated && !isNaN(parsedUpdated.getTime()) ? parsedUpdated.toISOString() : isoDate;
+// Las portadas históricas apuntaban a /images/blog/*, un directorio que nunca
+// se publicó. Hasta que cada artículo tenga un asset real, el schema usa la
+// portada social existente y evita ofrecer a buscadores/IA una imagen 404.
+const ogImage = entry.data.img?.startsWith('http') ? entry.data.img : `${SITE}/og-cord.jpg`;
+const isTeamAuthor = /^(Equipo Cord|Cord Team)$/i.test(authorName);
+const faq = entry.data.faq || [];
+const sources = entry.data.sources || [];
 
 const articleSchema = {
     '@context': 'https://schema.org',
@@ -46,8 +54,11 @@ const articleSchema = {
     headline: entry.data.title,
     description: entry.data.excerpt,
     image: ogImage,
-    ...(isoDate ? { datePublished: isoDate, dateModified: isoDate } : {}),
-    author: { '@type': 'Person', name: authorName, jobTitle: authorRole },
+    ...(isoDate ? { datePublished: isoDate } : {}),
+    ...(isoUpdated ? { dateModified: isoUpdated } : {}),
+    author: isTeamAuthor
+        ? { '@type': 'Organization', name: authorName, url: SITE }
+        : { '@type': 'Person', name: authorName, jobTitle: authorRole },
     publisher: {
         '@type': 'Organization',
         name: 'Cord',
@@ -55,7 +66,19 @@ const articleSchema = {
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
     articleSection: entry.data.category,
+    ...(entry.data.keywords?.length ? { keywords: entry.data.keywords.join(', ') } : {}),
+    ...(sources.length ? { citation: sources.map((source) => source.url) } : {}),
 };
+
+const faqSchema = faq.length ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map((item) => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: { '@type': 'Answer', text: item.answer },
+    })),
+} : null;
 
 const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -71,9 +94,12 @@ const breadcrumbSchema = {
 <Layout
     title={isEn ? `${entry.data.title} | Cord Blog` : `${entry.data.title} | Blog de Cord`}
     description={entry.data.excerpt}
+    image={entry.data.img?.startsWith('http') ? entry.data.img : '/og-cord.jpg'}
+    ogType="article"
 >
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(articleSchema)} />
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
+    {faqSchema && <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(faqSchema)} />}
     <Nav />
     
     <!-- Ruido analógico de lujo -->
@@ -108,6 +134,15 @@ const breadcrumbSchema = {
                     <div class="author-details">
                         <strong>{authorName}</strong>
                         <span class="technical-meta">{authorRole}</span>
+                        {entry.data.reviewedBy && (
+                            <span class="technical-meta">
+                                {isEn ? 'Reviewed by' : 'Revisado por'} {entry.data.reviewedBy}
+                                {entry.data.reviewedByRole ? ` · ${entry.data.reviewedByRole}` : ''}
+                            </span>
+                        )}
+                        {entry.data.lastUpdated && (
+                            <span class="technical-meta">{isEn ? 'Updated' : 'Actualizado'} {entry.data.lastUpdated}</span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -147,6 +182,27 @@ const breadcrumbSchema = {
             <article class="article-body">
                 <div class="prose-container" id="prose-content">
                     <Content />
+                    {faq.length > 0 && (
+                        <section class="editorial-faq" aria-labelledby="faq-heading">
+                            <h2 id="faq-heading">{isEn ? 'Frequently asked questions' : 'Preguntas frecuentes'}</h2>
+                            {faq.map((item) => (
+                                <details>
+                                    <summary>{item.question}</summary>
+                                    <p>{item.answer}</p>
+                                </details>
+                            ))}
+                        </section>
+                    )}
+                    {sources.length > 0 && (
+                        <section class="editorial-sources" aria-labelledby="sources-heading">
+                            <h2 id="sources-heading">{isEn ? 'Sources and further reading' : 'Fuentes y lectura adicional'}</h2>
+                            <ul>
+                                {sources.map((source) => (
+                                    <li><a href={source.url} rel="noopener">{source.name}</a></li>
+                                ))}
+                            </ul>
+                        </section>
+                    )}
                 </div>
             </article>
 
@@ -159,13 +215,13 @@ const breadcrumbSchema = {
                         </div>
                         <span class="share-text" id="copy-text">Copiar link</span>
                     </button>
-                    <a href={`https://www.linkedin.com/sharing/share-offsite/?url=https://cordhq.app/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en LinkedIn">
+                    <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en LinkedIn">
                         <div class="share-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
                         </div>
                         <span class="share-text">LinkedIn</span>
                     </a>
-                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(entry.data.title)}&url=https://cordhq.app/blog/${entry.id}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X">
+                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(entry.data.title)}&url=${encodeURIComponent(postUrl)}`} target="_blank" rel="noopener noreferrer" class="share-btn" aria-label="Compartir en X">
                         <div class="share-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4l11.733 16h4.267l-11.733 -16z"></path><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path></svg>
                         </div>
@@ -183,7 +239,7 @@ const breadcrumbSchema = {
 
     <Footer 
         ctaTitle={isEn ? "Accelerate your sales cycles" : "Acelera tus ciclos de venta"}
-        ctaSub={isEn ? "With Cord, your prospects approve and pay quotes in minutes, not weeks." : "Con Cord, tus prospectos aprueban y pagan cotizaciones en minutos, no en semanas."}
+        ctaSub={isEn ? "Give clients one link to review, approve, and use the payment methods available to your account." : "Dale al cliente un solo enlace para revisar, aprobar y usar los métodos disponibles en tu cuenta."}
         isEn={isEn}
     />
     <PageAnims />
@@ -591,6 +647,17 @@ const breadcrumbSchema = {
     .toc-back-link:hover { color: #111827; }
     .toc-back-link svg { transition: transform 0.2s ease; }
     .toc-back-link:hover svg { transform: translateX(-3px); }
+
+    .editorial-faq details {
+        border-top: 1px solid rgba(10,25,47,0.1);
+        padding: 1rem 0;
+    }
+    .editorial-faq details:last-child { border-bottom: 1px solid rgba(10,25,47,0.1); }
+    .editorial-faq summary { cursor: pointer; font-weight: 700; color: #111827; }
+    .editorial-faq details p { margin: .75rem 0 0; }
+    .editorial-sources li { margin-bottom: .55rem; }
+    :global(html[data-theme="dark"]) .editorial-faq details { border-color: rgba(255,255,255,0.12); }
+    :global(html[data-theme="dark"]) .editorial-faq summary { color: #f3f4f6; }
 
     @media (max-width: 1024px) {
         .article-layout { grid-template-columns: 1fr; gap: 0; }

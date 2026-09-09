@@ -149,9 +149,9 @@ export const SOLUCIONES: Solution[] = [
         ],
 
         stats: [
-            { valor: '99.9', countup: 99.9, decimals: 1, suffix: '%', label: 'de uptime histórico en nuestra infraestructura' },
-            { valor: '10x', label: 'más velocidad en aprobaciones internas' },
-            { valor: '0', label: 'fugas de margen por errores de cálculo' },
+            { valor: 'RBAC', label: 'permisos por rol y organización' },
+            { valor: 'API', label: 'claves y webhooks administrables' },
+            { valor: 'SHA-256', label: 'huella de integridad en propuestas aprobadas' },
         ],
         blocks: [
             {
@@ -209,7 +209,7 @@ export const SOLUCIONES: Solution[] = [
             },
             {
                 q: '¿Cuáles son los estándares de seguridad de la plataforma?',
-                a: 'Todos los datos están encriptados en reposo y en tránsito. Las cotizaciones cerradas generan una firma hash SHA-256 que garantiza su inmutabilidad. Ofrecemos SLAs empresariales para disponibilidad y soporte técnico directo.',
+                a: 'Cord separa el acceso por organización y rol, registra eventos relevantes y protege credenciales sensibles con cifrado. Las propuestas aprobadas conservan una huella SHA-256 para detectar cambios. Todavía no publicamos métricas históricas de disponibilidad ni un SLA estándar.',
             },
         ],
         interlink: { href: '/desarrolladores/api', label: 'API y Webhooks para integraciones' },

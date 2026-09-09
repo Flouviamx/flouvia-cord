@@ -1,0 +1,114 @@
+---
+export const prerender = false;
+import Layout from '../../layouts/Layout.astro';
+import { currentLocale } from '../../lib/context';
+import { signupLegalBundle } from '../../lib/legal-corpus';
+
+const isEn = currentLocale() === 'en';
+const legalLocale = isEn ? 'en-US' : 'es-MX';
+const bundle = signupLegalBundle(legalLocale);
+---
+
+<Layout title={isEn ? 'Review updated legal documents | Cord' : 'Revisa los documentos legales | Cord'} noindex={true}>
+  <main class="legal-accept-page">
+    <section class="legal-accept-card" aria-labelledby="legal-title">
+      <a href="/" class="legal-accept-logo"><img src="/imgs/logo-cord-navy.png" alt="Cord" height="25" /></a>
+      <p class="legal-eyebrow">{isEn ? 'ACCOUNT AGREEMENTS' : 'ACUERDOS DE LA CUENTA'}</p>
+      <h1 id="legal-title">{isEn ? 'Review before continuing' : 'Revisa antes de continuar'}</h1>
+      <p class="legal-intro">
+        {isEn
+          ? 'We need a personal record of the current Terms and of the Privacy Notice presented to you. Optional analytics remains a separate choice.'
+          : 'Necesitamos una constancia personal de los Términos vigentes y del Aviso de privacidad que te presentamos. La analítica opcional sigue siendo una decisión separada.'}
+      </p>
+
+      <form id="legalAcceptForm">
+        <label class="legal-choice">
+          <input type="checkbox" id="legalTerms" required />
+          <span>
+            {isEn ? 'I accept the ' : 'Acepto los '}
+            <a href={bundle.terms.href} target="_blank" rel="noopener noreferrer">{isEn ? 'Terms and Conditions' : 'Términos y Condiciones'}</a>
+            {` (${bundle.terms.version}).`}
+          </span>
+        </label>
+        <label class="legal-choice">
+          <input type="checkbox" id="legalPrivacy" required />
+          <span>
+            {isEn ? 'I confirm that I read the ' : 'Confirmo que leí el '}
+            <a href={bundle.privacy.href} target="_blank" rel="noopener noreferrer">{isEn ? 'Privacy Notice' : 'Aviso de privacidad'}</a>.
+          </span>
+        </label>
+
+        <p id="legalError" class="legal-error" role="alert" hidden></p>
+        <button id="legalSubmit" type="submit">{isEn ? 'Accept and continue' : 'Aceptar y continuar'}</button>
+      </form>
+
+      <p class="legal-access-note">
+        {isEn ? 'You can still access billing, export or delete your data, and sign out without accepting.' : 'Puedes acceder a facturación, exportar o eliminar tus datos y cerrar sesión sin aceptar.'}
+      </p>
+      <div class="legal-safe-links">
+        <a href="/api/billing/handoff">{isEn ? 'Billing' : 'Facturación'}</a>
+        <a href="/app/ajustes/datos">{isEn ? 'Data and privacy' : 'Datos y privacidad'}</a>
+        <button type="button" id="legalLogout" class="legal-link-button">{isEn ? 'Sign out' : 'Cerrar sesión'}</button>
+      </div>
+    </section>
+  </main>
+
+  <script define:vars={{ legalLocale, isEn }}>
+    const form = document.getElementById('legalAcceptForm');
+    const button = document.getElementById('legalSubmit');
+    const error = document.getElementById('legalError');
+    form?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      button.disabled = true;
+      error.hidden = true;
+      try {
+        const response = await fetch('/api/legal/accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            termsAccepted: document.getElementById('legalTerms').checked,
+            privacyAcknowledged: document.getElementById('legalPrivacy').checked,
+            legalLocale,
+          }),
+        });
+        if (!response.ok) throw new Error('acceptance_failed');
+        const candidate = new URLSearchParams(window.location.search).get('redirect_url');
+        const destination = candidate?.startsWith('/') && !candidate.startsWith('//')
+          ? candidate
+          : '/app';
+        window.location.href = destination;
+      } catch {
+        error.textContent = isEn
+          ? 'We could not save the acknowledgement. Nothing was accepted; please try again.'
+          : 'No pudimos guardar la constancia. No se registró ninguna aceptación; intenta de nuevo.';
+        error.hidden = false;
+        button.disabled = false;
+      }
+    });
+    document.getElementById('legalLogout')?.addEventListener('click', async () => {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      if (response.ok) window.location.href = '/';
+    });
+  </script>
+</Layout>
+
+<style>
+  .legal-accept-page { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 2rem 1rem; background: #f6f7f9; }
+  .legal-accept-card { width: min(540px, 100%); padding: clamp(1.5rem, 4vw, 2.5rem); border: 1px solid rgba(10,25,47,.09); border-radius: 22px; background: #fff; box-shadow: 0 24px 70px -38px rgba(10,25,47,.38); }
+  .legal-accept-logo { display: inline-flex; margin-bottom: 2rem; }
+  .legal-eyebrow { margin: 0 0 .65rem; color: #7a8491; font-size: .67rem; font-weight: 750; letter-spacing: .14em; }
+  h1 { margin: 0 0 .85rem; color: #0a192f; font-size: clamp(1.65rem, 5vw, 2.2rem); letter-spacing: -.04em; }
+  .legal-intro, .legal-access-note { color: #5a6676; font-size: .9rem; line-height: 1.6; }
+  form { display: grid; gap: .75rem; margin-top: 1.5rem; }
+  .legal-choice { display: flex; gap: .75rem; padding: .9rem 1rem; border: 1px solid #e2e6eb; border-radius: 12px; color: #344154; font-size: .86rem; line-height: 1.5; cursor: pointer; }
+  .legal-choice:has(input:checked) { border-color: #9dafc2; background: #f8fafc; }
+  .legal-choice input { width: 18px; height: 18px; margin: .1rem 0 0; flex: 0 0 auto; accent-color: #0a192f; }
+  .legal-choice a, .legal-safe-links a { color: #0a192f; font-weight: 650; text-underline-offset: 2px; }
+  button { margin-top: .4rem; min-height: 46px; border: 0; border-radius: 11px; background: #0a192f; color: #fff; font: inherit; font-weight: 650; cursor: pointer; }
+  button:disabled { opacity: .55; cursor: wait; }
+  .legal-error { margin: .15rem 0; color: #b42318; font-size: .82rem; }
+  .legal-access-note { margin: 1.25rem 0 .45rem; font-size: .78rem; }
+  .legal-safe-links { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .78rem; }
+  .legal-link-button { min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: #0a192f; font-size: inherit; font-weight: 650; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  @media (max-width: 540px) { .legal-accept-page { padding: .75rem; } .legal-accept-card { border-radius: 17px; } }
+</style>

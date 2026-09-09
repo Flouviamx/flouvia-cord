@@ -30,7 +30,7 @@ interface ReqCtx {
     testMode?: boolean;
     // Idioma resuelto para este request (app interna /app/**, /q/[token] y
     // correos transaccionales). Se detecta del header Accept-Language del
-    // navegador — sin toggle manual, ver docs/app-rutas.md → i18n de la app.
+    // navegador — sin toggle manual, ver docs/estado/app-rutas.md → i18n de la app.
     //
     // Es el vocabulario CERRADO de la interfaz (qué diccionario de i18n/app.ts
     // usar), no el formato regional. NO se pasa a Intl.NumberFormat/DateTimeFormat

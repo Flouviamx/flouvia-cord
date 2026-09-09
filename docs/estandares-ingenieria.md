@@ -175,18 +175,19 @@ Tres decisiones distintas, tres fuentes, y no se mezclan:
   planes de Cord. Es de Cord, no del cliente — `/precios`, el checkout de
   suscripción y el paywall **no** heredan `orgs.moneda`, que el usuario edita
   libre en Ajustes y por tanto no puede decidir en qué cobra Cord.
-  Es un set **cerrado de dos**: `country_code = 'MX'` → MXN, cualquier otro país
-  → USD. Cada divisa nueva obliga a configurar todos los Price de Stripe (base y
-  medidos), así que ampliarlo es una decisión de negocio, no un `if`.
+  Es un set **cerrado de tres**: México → MXN; España, Alemania y Francia → EUR;
+  los demás mercados soportados → USD. Cada divisa nueva requiere tarifas
+  comerciales aprobadas y opciones en todos los Price aplicables (base y medidos).
+  Developer sigue por ventas: no tiene tarifa EUR de autoservicio.
   `orgs.billing_currency` —evidencia de una factura real— **gana sobre el país**:
-  Stripe congela `customer.currency` en el primer cobro, y mandar un `currency`
-  que lo contradice es un 400 con el cobro a medias. En Stripe son
+  Cord conserva la moneda de los contratos existentes. Si aún no hay evidencia
+  local, consulta la moneda del customer antes de mostrar el checkout. En Stripe son
   `currency_options` sobre los MISMOS Price, no precios paralelos: los existentes
   ya tienen suscripciones vivas y duplicarlos partiría el catálogo en dos.
   Formato: `planMoney()`/`planCycleLabel()` de `src/lib/plan-money.ts`, único
   formateador. Los importes viven en `src/lib/precios.ts` como
-  `precio: Record<PlatformCurrency, number>` — la divisa es un DATO, no un
-  comentario.
+  un mapa por divisa; EUR es obligatorio para los planes de autoservicio y
+  está ausente en Developer hasta acordar sus condiciones.
 
 Contratos ejecutables:
 
@@ -878,3 +879,59 @@ fijaba para toda ruta sin excepción, así que en Chromium el flujo del QR falla
 inexistente y por eso **ninguna sesión de captura se borró jamás**; el marco guía
 medía 1.23:1, que no corresponde a ningún documento real; y la cámara seguía
 encendida después de que la persona pulsara "Cancelar".
+
+### 35. Un evento de analítica sin catálogo es un embudo que se cae en silencio
+
+La analítica de producto no puede depender de que nadie escriba mal un nombre de
+evento ni de que nadie olvide instrumentar un carril. Un `quote_aproved` capturado
+por un typo se pierde para siempre; un carril entero que deja de emitir se lee
+igual que "todavía no lo usa nadie". Ninguno de los dos rompe el build.
+
+- **El catálogo es la fuente única.** `src/lib/analytics-events.ts` declara cada
+  evento: carril, superficie (`server`/`client`), ámbito (`org`/`user`), si es
+  ingreso, de qué propiedad sale el `$insert_id`, y `required`/`optional`
+  tipados. De ahí salen los tipos de `trackServer` / `trackUser` / `cordTrack` —
+  un nombre fuera del catálogo no compila. El archivo no tiene imports ni `enum`
+  a propósito: se carga con Node `--experimental-strip-types`.
+
+- **`npm run security:analytics` es el candado**, encadenado en `test:payments`
+  (`scripts/analytics-contract-check.mjs`). Falla CI si: se captura un evento que
+  no está en el catálogo, **una entrada del catálogo se queda sin call site**
+  (regla 15 aplicada a la analítica: si un evento aún no se emite a propósito, va
+  a `SIN_CALL_SITE` con el motivo escrito, y esa lista sólo encoge), un evento de
+  ingreso se emite sin clave de idempotencia (Stripe reintenta sus webhooks), o
+  un `trackServer` omite `is_sandbox`/`is_demo`. Detecta la llamada por la
+  construcción que la **encierra** (`after(...)`, `await`, `Promise.all`), igual
+  que `tenancy-lint`.
+
+- **Server: siempre por un helper tipado.** `posthogServer.capture(` sólo puede
+  aparecer en `src/lib/posthog-server.ts`. Eventos de organización →
+  `trackServer` (`distinctId: organization:<id>`, `$process_person_profile:
+  false`); eventos de persona (sólo el registro) → `trackUser`, que conserva el
+  perfil para atribuir la adquisición; ingreso → `trackPaymentReceived`, con
+  `metadata.payment_id` obligatorio a nivel de tipo.
+
+- **El tráfico interno de Cord se ETIQUETA, no se descarta.** `trackServer` /
+  `trackUser` / `<CordAnalytics>` mandan el evento con `is_internal: true` y
+  marcan `$internal_or_test_user` en persona y grupo `company`; PostHog lo
+  esconde con la cohorte de cuentas de prueba. Descartarlo dejaba "no llegó el
+  evento" indistinguible de "el evento no se emite" y silenció TODOS los eventos
+  comerciales un mes sin que nada avisara. Localhost sí sigue apagado del todo.
+
+- **Cliente: un solo bloque.** `src/components/CordAnalytics.astro` es el único
+  `<script is:inline>` de PostHog; lo montan `Layout.astro` y `AppLayout.astro`.
+  El `before_send` raspa `$current_url`/`$referrer`/`$pathname`/`$set` con
+  `cordScrubUrl` —gemelo de `redactAnalyticsUrl()`, paridad verificada en
+  `test/privacy-safe-analytics.test.ts`— porque PostHog copia la URL inicial al
+  perfil de persona y `/q/<token>` es una credencial portadora.
+
+El contrato completo y el mapa de eventos viven en
+[`docs/estado/analytics.md`](estado/analytics.md). El proyecto PostHog canónico
+es `535370`; hay un duplicado vacío `597277` ("Flouvia") que se ignora.
+
+Casos que originaron la regla (sep 2026): el carril de facturas se dio por
+instrumentado y emitía **cero** eventos; el cambio de política de tráfico interno
+del 14 ago **descartaba** todo evento de las orgs del equipo, así que el producto
+entero llevaba un mes mudo en producción; y PostHog almacenaba tokens portadores
+en crudo (`/q/<token>`) y UUIDs de cliente en `$pathname`, que Vercel Analytics sí
+limpiaba.

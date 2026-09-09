@@ -66,7 +66,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                     {BILL.status && <span class={`plan-badge st-${BILL.status}`}>{STATUS_LABEL[BILL.status] ?? BILL.status}</span>}
                 </span>
                 <span class="plan-price">
-                    <span class="editorial">{money(planActual ? planActual.precio[CUR] : 0)}</span> {planCycleLabel(CUR, 'mensual', L)} · {planTaxNote(L)}
+                    <span class="editorial">{planActual?.precio[CUR] === undefined ? (L === 'en' ? 'Custom pricing' : 'Precio a medida') : money(planActual.precio[CUR]!)}</span> {planActual?.precio[CUR] !== undefined && <Fragment>{planCycleLabel(CUR, 'mensual', L)} · {planTaxNote(L)}</Fragment>}
                     {BILL.cycle === 'anual' && t(L, 'set.plan.facturacion_anual')}
                     {BILL.periodFin && <i class="plan-renews">{tf('set.plan.renueva', { fecha: BILL.periodFin })}</i>}
                 </span>
@@ -85,7 +85,7 @@ const planActual = PLANES.find((p) => p.id === planRaw);
 
         <div class="pcard-grid">
             {PAID.map((p) => {
-                const anual = precioAnualMensualizado(p.precio[CUR]);
+                const anual = precioAnualMensualizado((p.precio[CUR] ?? 0));
                 const actual = p.id === planRaw;
                 return (
                     <article class:list={['pcard', { featured: p.destacado, current: actual, highlight: p.id === highlightPlan }]} data-pcard data-current={actual ? '1' : undefined}>
@@ -103,8 +103,8 @@ const planActual = PLANES.find((p) => p.id === planRaw);
                                         <span class="editorial pcard-amount">{t(L, 'set.plan.a_tu_medida')}</span>
                                     </div>
                                 ) : (
-                                    <div class="pcard-price" data-mensual={String(p.precio[CUR])} data-anual={String(anual)}>
-                                        <span class="editorial pcard-amount pcard-amount-val">{money(p.precio[CUR])}</span>
+                                    <div class="pcard-price" data-mensual={String((p.precio[CUR] ?? 0))} data-anual={String(anual)}>
+                                        <span class="editorial pcard-amount pcard-amount-val">{money((p.precio[CUR] ?? 0))}</span>
                                         <span class="pcard-cycle">{planCycleLabel(CUR, 'mensual', L)}</span>
                                     </div>
                                 )}

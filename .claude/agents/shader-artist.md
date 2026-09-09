@@ -22,7 +22,7 @@ tape botones, performance) antes de reportar terminado.
 
 ## Contexto obligatorio antes de tocar nada
 
-1. Lee `docs/historial.md` completo, sección por sección, buscando "GLSL",
+1. Lee `docs/historial/landing-marketing.md` completo, sección por sección, buscando "GLSL",
    "shader", "R3F", "aurora" — ahí está documentado CADA shader existente con su
    receta exacta (paleta, uniforms, técnica de ruido). No reinventes lo que ya
    existe; si necesitas una variante, PARAMETRIZA el componente existente (ver

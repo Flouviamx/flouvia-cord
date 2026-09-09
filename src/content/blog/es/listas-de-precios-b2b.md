@@ -5,8 +5,8 @@ category: "Operaciones"
 date: "15 May 2026"
 readTime: "08 MIN"
 img: "/images/blog/listas-de-precios-b2b.png"
-authorName: "Carlos Slim Jr."
-authorRole: "Consultor de Operaciones"
+authorName: "Equipo Cord"
+authorRole: "Producto y operaciones comerciales"
 ---
 
 A diferencia del comercio minorista (B2C) donde el precio de un par de zapatos es público y estático, el mundo B2B (Business-to-Business) opera sobre una red compleja de relaciones y negociaciones.

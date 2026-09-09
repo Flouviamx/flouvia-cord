@@ -12,12 +12,15 @@ en ningún otro lado — si algo de este archivo alguna vez contradice a CLAUDE.
 1. Lee **`/CLAUDE.md` completo Y los archivos de `docs/` que referencia**. CLAUDE.md
    se dividió (jul 2026): ahora contiene el core (comandos, reglas de diseño, stack,
    env, deploy) + un índice, y al final tiene líneas `@docs/...` que apuntan a:
-   - **`docs/historial.md`** — registro cronológico completo de features/decisiones/bugs
-     (aquí viven también los patrones de shaders/GLSL y de mockups).
-   - **`docs/app-rutas.md`** — cómo funciona la app: multi-tenant, rutas, API/MCP.
-   - **`docs/negocio-billing.md`** — planes freemium y Stripe Billing.
-   - **`docs/landing.md`** — estructura de la landing, fases, Support Hub.
-   - **`docs/sistema-de-diseno.md`** — tokens y sistema visual detallado.
+   - **`docs/historial/README.md`** — índice del registro cronológico completo de
+     features/decisiones/bugs (aquí viven también los patrones de shaders/GLSL y de mockups).
+   - **`docs/estado/app-rutas.md`** + **`docs/estado/multi-tenant.md`** — cómo funciona
+     la app: rutas, API/MCP, y el modelo multi-tenant / RLS.
+   - **`docs/estado/negocio-billing.md`** — la suscripción de Cord: planes freemium y
+     Stripe Billing. **`docs/estado/cobros-facturacion.md`** — lo que el negocio cobra
+     a sus clientes: Connect, facturación, impuestos, KYC.
+   - **`docs/estado/landing.md`** — estructura de la landing, fases, Support Hub.
+   - **`docs/estado/sistema-de-diseno.md`** — tokens y sistema visual detallado.
    - **`MOCKUP_STANDARDS.md`** — estándar obligatorio para mockups.
    ⚠️ Claude Code auto-carga esos `@imports`, pero **tú (Gemini) NO los sigues solo** —
    ábrelos y léelos manualmente. Documentan decisiones que existen porque André ya las

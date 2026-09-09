@@ -8,7 +8,12 @@ const lang = "en";
 
 // Redirect query-param styled urls just in case someone lands here with ?lang=es
 if (Astro.url.searchParams.get("lang") === "es") {
-  return Astro.redirect(`/docs/${Astro.params.slug || ''}`);
+  const querySlug = Astro.params.slug && Astro.params.slug !== 'resumen' ? `/${Astro.params.slug}` : '';
+  return Astro.redirect(`/docs${querySlug}`);
+}
+
+if (slug === "resumen") {
+  return Astro.redirect('/en/docs', 301);
 }
 
 const entrySlug = slug === "index" ? "resumen" : slug;
@@ -26,8 +31,13 @@ import Steps from "../../../components/docs/mdx/Steps.astro";
 
 const { Content, headings } = await render(doc);
 const description = doc.data.description || undefined;
+const lastUpdated = doc.data.lastUpdated || undefined;
+const reviewedBy = doc.data.reviewedBy || undefined;
+const appliesToMarkets = doc.data.appliesToMarkets || undefined;
+const availablePlans = doc.data.availablePlans || undefined;
+const prerequisites = doc.data.prerequisites || undefined;
 ---
 
-<DocsLayout title={doc.data.title} lang={lang} description={description} headings={headings}>
+<DocsLayout title={doc.data.title} lang={lang} description={description} headings={headings} lastUpdated={lastUpdated} reviewedBy={reviewedBy} appliesToMarkets={appliesToMarkets} availablePlans={availablePlans} prerequisites={prerequisites}>
   <Content components={{ Callout, Tabs, TabItem, Steps }} />
 </DocsLayout>

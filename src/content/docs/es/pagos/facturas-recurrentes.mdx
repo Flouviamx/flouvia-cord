@@ -1,0 +1,116 @@
+---
+title: "Facturas recurrentes"
+description: "Cómo repetir una factura mensual, trimestral o anualmente, qué datos se congelan, cómo se emite cada documento y qué ocurre al pausar, fallar o eliminar la recurrencia."
+lastUpdated: "2026-09-08"
+reviewedBy: "Producto y operaciones fiscales de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Pro, Scale, Developer]
+prerequisites: ["Permiso Cobranza", "Una factura emitida correctamente", "Datos fiscales vigentes para cada emisión"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Facturas recurrentes</h1>
+  <p class="page-subtitle">Repite una factura emitida sin volver a capturar los mismos conceptos cada periodo.</p>
+</header>
+
+<Callout type="info">
+Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
+</Callout>
+
+Una **factura recurrente** es una instrucción para crear y emitir documentos nuevos en
+un calendario. No es el mismo producto que una **iguala con cobro recurrente**:
+
+- la factura recurrente repite la **emisión del documento**;
+- la iguala crea una **suscripción de cobro mensual** autorizada por el cliente.
+
+Hoy, crear una recurrencia de factura no guarda ni cobra automáticamente un método de
+pago. Cada factura nueva entra a cobranza según su vencimiento y pagos registrados.
+
+## Crear desde una factura existente
+
+La recurrencia nace desde una factura que ya se emitió correctamente:
+
+1. abre **Facturas** y entra al detalle de la factura base;
+2. elige **Repetir esta factura** o **Crear recurrencia**;
+3. asigna un nombre interno;
+4. selecciona cadencia mensual, trimestral o anual;
+5. define día de emisión, días de crédito, primera emisión y, si aplica, fecha final;
+6. confirma.
+
+Cord copia cliente, moneda, notas y los conceptos del snapshot emitido. No vuelve a
+leer el precio actual del catálogo. Así, un cambio posterior en Productos no altera
+la programación silenciosamente.
+
+## Calendario y vencimiento
+
+- **Cadencia:** mensual, trimestral o anual.
+- **Día del mes:** de 1 a 28. El límite evita saltarse febrero.
+- **Días de crédito:** de 0 a 365; se suman a la fecha de cada emisión.
+- **Primera emisión:** si no la indicas, Cord calcula el próximo periodo según cadencia
+  y día.
+- **Fecha final:** opcional; después de ella no se seleccionan nuevas emisiones.
+
+Un proceso diario busca recurrencias activas cuya próxima fecha ya llegó. Las
+organizaciones sandbox no emiten documentos recurrentes.
+
+## Qué ocurre en cada corrida
+
+1. Cord avanza primero la siguiente fecha programada.
+2. Crea un borrador nuevo con las líneas congeladas de la recurrencia.
+3. Calcula su vencimiento usando los días de crédito.
+4. Emite el documento por el carril fiscal correspondiente al país.
+5. Intenta enviarlo por correo y registra emisión y envío en la actividad.
+
+Cada emisión obtiene su propio folio y snapshot. Editar o eliminar la recurrencia no
+reescribe facturas ya emitidas.
+
+<Callout type="warning">
+La fecha avanza incluso si una emisión falla. Esto evita crear duplicados en cada
+reintento automático. La lista muestra **Último error** para que corrijas la causa;
+revisa el documento y la programación en vez de asumir que se reintentará en cada hora.
+</Callout>
+
+## Administrar la lista
+
+Abre **Facturas > Ver recurrentes**. Cada fila muestra cliente, nombre, cadencia, día,
+próxima fecha, número de documentos emitidos, estado y último error.
+
+- **Pausar** evita nuevas emisiones sin borrar la configuración.
+- **Reanudar** vuelve a habilitarla si el plan sigue incluyendo recurrencias.
+- **Eliminar** borra la programación, no las facturas que ya produjo.
+
+Pausar siempre debe estar disponible, incluso después de bajar de plan. Crear, editar
+o reanudar requiere Pro o superior y se vuelve a validar en cada corrida.
+
+## Si el correo falla
+
+La factura emitida sigue siendo un documento independiente. Un fallo de correo no
+revierte el folio ni elimina la emisión. Ábrela desde Facturas y reenvíala; no crees
+otra recurrencia para reemplazar ese envío.
+
+## Problemas frecuentes
+
+**No aparece la opción.** Revisa permiso Cobranza, plan Pro o superior y que la factura
+base esté emitida.
+
+**El precio nuevo del catálogo no se refleja.** La recurrencia conserva las líneas
+copiadas. Crea otra programación desde una factura actualizada si quieres cambiar el
+contrato futuro.
+
+**La siguiente fecha cambió después de un error.** Es el comportamiento de seguridad
+contra duplicados. Corrige el error y decide si necesitas emitir manualmente el periodo.
+
+**El cliente no recibió correo.** La emisión puede haber terminado; revisa el documento
+y su actividad antes de volver a enviar.
+
+## Protección del periodo programado
+
+Cord comprueba que la recurrencia siga activa y conserve la fecha y configuración
+leídas antes de reservar el periodo. Esto evita que dos ejecuciones tomen la misma
+emisión o que una edición o pausa concurrente pase inadvertida. La siguiente fecha
+se calcula desde el periodo programado y respeta la fecha final. Una fecha inválida
+o un fin anterior al inicio no se acepta.
+
+No hay cobro automático nuevo por crear una recurrencia. Si la emisión falla, revisa
+**Último error** y el documento antes de repetirla; no existe una recuperación
+automática completa de todos los periodos fallidos.

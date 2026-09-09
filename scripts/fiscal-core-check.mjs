@@ -57,12 +57,14 @@ assert.ok(listOfferedCurrencies('VND').includes('VND'), 'una divisa ya guardada 
 assert.ok(!OFFERED_CURRENCIES.includes('VND'), 'VND no se ofrece: no se puede convertir ni cobrar');
 assert.ok(Intl.supportedValuesOf('timeZone').includes('Europe/Copenhagen'));
 
-const [schema, emit, provider, mexicoProvider, route] = await Promise.all([
+const [schema, emit, provider, mexicoProvider, route, download, publicDownload] = await Promise.all([
     readFile(new URL('../db/schema.sql', import.meta.url), 'utf8'),
     readFile(new URL('../src/lib/fiscal/emit.ts', import.meta.url), 'utf8'),
     readFile(new URL('../src/lib/fiscal/providers/CommercialInvoiceProvider.ts', import.meta.url), 'utf8'),
     readFile(new URL('../src/lib/fiscal/providers/MexicoSatProvider.ts', import.meta.url), 'utf8'),
     readFile(new URL('../src/pages/api/fiscal/documents/[id]/[format].ts', import.meta.url), 'utf8'),
+    readFile(new URL('../src/lib/fiscal/invoice-download.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../src/pages/api/i/[token]/documents/[format].ts', import.meta.url), 'utf8'),
 ]);
 
 assert.match(schema, /uq_documentos_fiscales_idempotency/);
@@ -76,7 +78,14 @@ assert.match(provider, /regulatory_status: 'commercial_only'/);
 assert.match(provider, /authority_submission: false/);
 assert.match(mexicoProvider, /delivery_uncertain: true/);
 assert.match(mexicoProvider, /idempotency_key: request\.idempotencyKey/);
-assert.match(route, /d\.id = \$\{id\} and d\.org_id = \$\{orgId\}/);
+assert.match(route, /const orgId = await getActiveOrgId\(\)/);
+assert.match(route, /return downloadInvoiceDocument\(orgId, params\.id/);
+assert.match(download, /withOrgTx\(orgId, sql`/);
+assert.match(download, /d\.id = \$\{id\} and d\.org_id = \$\{orgId\}/);
+assert.match(download, /d\.public_token = \$\{publicToken \?\? null\}/);
+assert.match(download, /d\.lifecycle not in \('draft', 'void'\)/);
+assert.match(publicDownload, /await resolvePublicInvoice\(token\)/);
+assert.match(publicDownload, /downloadInvoiceDocument\(identity\.orgId, identity\.id, format, token\)/);
 
 // ── Estados Unidos: sales tax es estatal, no nacional ──────────────────────
 // US no está en TAX_PRESETS a propósito (sin tasa nacional que sugerir), pero

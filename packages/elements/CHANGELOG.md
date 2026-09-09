@@ -163,5 +163,5 @@ Web Component nativo + wrappers de React/Vue/Framer/Webflow, patrón compound (`
 con slots), hooks headless (`useCordCatalog`/`useCordClients`/`useCreateQuote`), llaves
 publishable/secret (`pk_`/`sk_`), motor de cálculo compartido con el backend (`engine.ts`),
 y Server SDK con verificación de webhooks. El detalle línea-por-línea de este tramo no se
-reconstruyó aquí con precisión de commit — ver `docs/historial.md` del repo `flouvia-cord`
+reconstruyó aquí con precisión de commit — ver `docs/historial/README.md` del repo `flouvia-cord`
 para el registro narrativo completo de esa etapa.

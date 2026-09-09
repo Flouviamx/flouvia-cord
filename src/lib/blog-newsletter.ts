@@ -8,7 +8,7 @@ const CONTACTS_KEY = import.meta.env.RESEND_MARKETING_CONTACTS_API_KEY
     || process.env.RESEND_MARKETING_CONTACTS_API_KEY;
 const MARKETING_FROM = import.meta.env.RESEND_MARKETING_FROM
     || process.env.RESEND_MARKETING_FROM
-    || 'Cord Blog <blog@updates.cordhq.app>';
+    || 'Cord Blog <blog@cordhq.app>';
 const SEGMENT_ES = import.meta.env.RESEND_MARKETING_SEGMENT_ES
     || process.env.RESEND_MARKETING_SEGMENT_ES;
 const SEGMENT_EN = import.meta.env.RESEND_MARKETING_SEGMENT_EN

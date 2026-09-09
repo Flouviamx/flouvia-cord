@@ -18,13 +18,13 @@ const check = (condition, message) => { assertions++; assert.ok(condition, messa
 // Pro (van con cfo_dashboard, que ya vivía ahí) y la facturación electrónica se
 // abre temporalmente a Gratis con un hard cap de 3/mes. Los dos carriles siguen
 // en el mismo peldaño: CFDI en México, factura comercial fuera. Ver
-// entitlements.ts y docs/negocio-billing.md.
+// entitlements.ts y docs/estado/negocio-billing.md.
 // `recurring_invoices` (ago 2026) entra en Pro: la recurrencia es lo que
 // convierte la facturación en operación repetible y va con el resto de la
 // cobranza automática, no con el documento suelto.
 const expectedFeatures = {
   cfdi: 'free', recurring_invoices: 'pro',
-  remove_branding: 'starter', custom_email: 'starter', advanced_forecast: 'starter',
+  remove_branding: 'starter', custom_email: 'starter', custom_domain: 'pro', advanced_forecast: 'starter',
   international_invoicing: 'free',
   team: 'pro', roles: 'pro', multi_org: 'pro', live_presence: 'pro', quote_attention: 'pro',
   cfo_dashboard: 'pro',
@@ -33,6 +33,7 @@ const expectedFeatures = {
   smtp: 'scale', sso: 'scale', agent_governance: 'scale',
 };
 check(JSON.stringify(FEATURE_MIN_PLAN) === JSON.stringify(expectedFeatures), 'La matriz de features cambió sin actualizar la prueba contractual.');
+check(!planIncludes('starter', 'custom_domain') && planIncludes('pro', 'custom_domain'), 'Dominio propio debe iniciar en Pro.');
 check(normalizePlan('business') === 'pro' && normalizePlan('negocio') === 'pro', 'Los aliases históricos deben normalizarse.');
 check(normalizePlan('admin') === 'free' && normalizePlan('') === 'free', 'Un plan desconocido debe caer a Gratis.');
 check(planIncludes('free', 'cfdi'), 'CFDI debe estar disponible temporalmente en Gratis.');

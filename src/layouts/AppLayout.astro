@@ -12,11 +12,11 @@ import CordDynamicBg from '../components/CordDynamicBg.jsx';
 // (navy casi negro + teal profundo + cobalto).
 const SUPPORT_PAL = { base: '#0A0F1C', color1: '#075E5A', color2: '#0D1E61', color3: '#0F3F7A' };
 // Autenticación propia (Custom Auth Fase 2+)
-import Analytics from '@vercel/analytics/astro';
 import { memberCan } from '../lib/permissions';
 import { currentLocale, currentUserId } from '../lib/context';
 import { t, getAppRuntimeI18n } from '../i18n/app';
 import CookieConsent from '../components/CookieConsent.astro';
+import PrivacySafeAnalytics from '../components/PrivacySafeAnalytics.astro';
 import { isInternalAnalyticsOrg } from '../lib/analytics-internal';
 import CordAnalytics from '../components/CordAnalytics.astro';
 import { localizeCategories } from '../lib/settings';
@@ -476,7 +476,7 @@ html[data-theme="dark"] .help-panel.ai-active .ai-flare { opacity: 0.15; }
         {!setup.complete && <OnboardingWidget progress={setup} />}
         {canDev && <DevWorkbench locale={L} currentPlan={ORG.plan_raw} />}
 
-        <Analytics />
+        <PrivacySafeAnalytics />
         <CookieConsent lang={L} />
     </body>
 </html>

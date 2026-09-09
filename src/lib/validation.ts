@@ -16,6 +16,12 @@ export const registerSchema = z.object({
     password: passwordSchema,
     firstName: nameSchema,
     lastName: nameSchema,
+    // Son actos distintos: contratación y constancia de que el aviso fue
+    // presentado. Ninguno equivale a consentir analítica u otros tratamientos
+    // opcionales (eso sigue en CookieConsent).
+    termsAccepted: z.literal(true),
+    privacyAcknowledged: z.literal(true),
+    legalLocale: z.enum(['es-MX', 'en-US']),
 });
 
 export const loginSchema = z
@@ -45,6 +51,16 @@ export const twoFactorVerifySchema = z
 export const profileUpdateSchema = z.object({
     firstName: nameSchema,
     lastName: nameSchema,
+});
+
+export const currentLegalAcceptanceSchema = z.object({
+    termsAccepted: z.literal(true),
+    privacyAcknowledged: z.literal(true),
+    legalLocale: z.enum(['es-MX', 'en-US']),
+});
+
+export const oauthLegalIntentSchema = currentLegalAcceptanceSchema.extend({
+    provider: z.enum(['google', 'apple']),
 });
 
 // `currentPassword` es OPCIONAL a propósito: una cuenta creada con Google/Apple

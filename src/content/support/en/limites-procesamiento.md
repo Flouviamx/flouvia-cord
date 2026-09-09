@@ -1,28 +1,22 @@
 ---
 title: "Processing limits"
-description: "Maximum transaction amounts and how to request an increase."
+description: "How payment limits are determined and what to do when a transaction is declined."
 category: "Payments & Deposits"
 ---
 
-Like any payment provider subject to anti-money-laundering rules, the processors integrated into Cord set transaction processing limits for new accounts. These limits apply to the connected payment account, available today for businesses domiciled in Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France.
+Cord does not publish a universal per-transaction or monthly limit. Payment availability and limits may vary with the connected account, currency, payment method, country, and the payment provider's assessment.
 
-### Limits per card transaction (payments in Mexican pesos)
+A Cord plan does not guarantee that a specific transaction will be accepted. The issuing bank, connected account, or payment provider may also decline it or request additional authentication.
 
-For recently created accounts (first 30 days) billing in Mexican pesos:
-- **Maximum charge per transaction:** $50,000 MXN.
-- **Maximum monthly volume:** $300,000 MXN.
+### If a payment is declined
 
-If you send a payment link to a customer for $100,000 MXN and they attempt to pay it with a card during this initial period, the transaction will be declined by our fraud engine.
+1. Review the message and reference shown by Cord.
+2. Confirm that the method, currency, and amount are enabled for your payment account.
+3. Ask the customer to check with their bank when the decline comes from the issuer.
+4. If the issue continues, contact support with the approximate time and reference. Do not send full card details.
 
-For charges in other supported currencies (USD, CAD, BRL, EUR, GBP), the account's initial limit is set by that country's risk review and may differ from the figures above; check it directly in **Settings › Payments**.
+Recording a manual payment in Cord does not process or move money. Use it only after verifying the transfer or payment through an independent channel.
 
-### Payments via bank transfer (SPEI, Mexico only)
+### Fraud prevention
 
-Payments received via electronic transfer (SPEI) using the dynamic CLABE accounts that Cord generates per quote **have no limit**. You can collect invoices worth millions of pesos through this channel without friction, since the risk of fraud/chargeback is zero. This transfer only exists for payments in Mexican pesos; in every other supported country there is no equivalent, and online payment is always by card.
-
-### Requesting a card limit increase
-
-If your corporate billing requires processing higher charges with corporate cards (B2B):
-1. Go to **Settings › Payments**.
-2. Upload your bank statements from the last 3 months and, if your business is in Mexico, your Annual Tax Return (elsewhere, the equivalent proof of income).
-3. Our risk team will permanently raise your transactional processing limit in less than 48 hours.
+The payment provider may assess risk and request 3D Secure or another authentication step. Cord displays the available outcome, but does not promise transaction approval or operate a separate proprietary fraud engine.

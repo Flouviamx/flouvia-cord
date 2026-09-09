@@ -136,6 +136,26 @@ body:has(.auth-page) footer { display: none !important; }
     user-select: none;
 }
 
+.auth-legal-consents {
+    display: grid;
+    gap: .65rem;
+    padding: .85rem .9rem;
+    border: 1px solid #e4e8ee;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+.auth-legal-row {
+    display: flex;
+    align-items: flex-start;
+    font-size: .78rem;
+    line-height: 1.45;
+    color: #526071;
+}
+.auth-legal-row input[type="checkbox"] { margin-top: .13rem; flex: 0 0 auto; }
+.auth-legal-row a { color: #0a192f; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.auth-legal-row a:hover { color: #15365f; }
+.btn-social:disabled { cursor: not-allowed; opacity: .48; }
+
 .form-input {
     width: 100%;
     box-sizing: border-box;

@@ -4,7 +4,7 @@
 // respaldo) y type-to-confirm del correo exacto de la cuenta.
 //
 // Antes esto era un alert() pidiendo escribir a soporte@flouvia.com — ver
-// docs/historial-auth-clerk.md. El flujo real:
+// docs/historial/auth-clerk.md. El flujo real:
 //   1) Si el usuario es dueño ÚNICO de alguna org con OTROS miembros
 //      activos, se rechaza — transferir/eliminar esas orgs es decisión
 //      suya, no algo para auto-resolver en silencio.

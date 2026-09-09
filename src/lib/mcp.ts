@@ -14,6 +14,7 @@ import { createCotizacion, QuoteError } from './cotizaciones';
 import type { ApiScope } from './apikey';
 import { checkEntitlement } from './org-entitlements';
 import { createInvoiceDraft } from './fiscal/invoices';
+import { publicDocumentUrl } from './public-links';
 import { invoicingFeatureFor } from './fiscal/gate';
 import { invoiceListItem, invoiceDetail } from './apiv1';
 
@@ -157,7 +158,7 @@ export const MCP_TOOLS: McpToolDef[] = [
             const entitlement = await checkEntitlement(await getActiveOrgId(), 'collections');
             if (!entitlement.ok) throw new Error('Esta herramienta requiere el plan Scale o superior.');
             const cob = await getCobranza();
-            const vencidas = cob.items.filter((i) => i.overdue).map(({ token, ...r }) => r);
+            const vencidas = cob.items.filter((i) => i.overdue).map(({ token, publicUrl, ...r }) => r);
             return { resumen: cob.resumen, aging: cob.aging, vencidas };
         },
     },
@@ -319,7 +320,7 @@ export const MCP_TOOLS: McpToolDef[] = [
                     items: Array.isArray(args?.items) ? args.items : [],
                     send: false,
                 }, { origin: 'https://cordhq.app', ip: ctx.ip, actor: `mcp:${ctx.keyId}` });
-                const result = { id: r.id, folio: r.folio, link_publico: `/q/${r.token}`, estado: 'borrador' };
+                const result = { id: r.id, folio: r.folio, link_publico: await publicDocumentUrl(orgId, 'q', r.token), estado: 'borrador' };
 
                 if (idemKey) {
                     // on conflict do nothing: si por la ventana de carrera de

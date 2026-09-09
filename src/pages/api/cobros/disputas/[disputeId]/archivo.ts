@@ -21,6 +21,9 @@ export const POST: APIRoute = async ({ request, params }) => {
     if (!dispute) return json({ error: 'Contracargo no encontrado' }, 404);
     if (!dispute.stripe_account_id) return json({ error: 'La cuenta de cobros no está disponible' }, 409);
     const form = await request.formData();
+    if (form.get('disclosureAccepted') !== 'true') {
+        return json({ error: 'Confirma la vista previa antes de transferir archivos al proveedor de pagos' }, 422);
+    }
     const file = form.get('file');
     if (!(file instanceof File)) return json({ error: 'Selecciona un archivo' }, 400);
     try {

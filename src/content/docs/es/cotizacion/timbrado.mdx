@@ -5,7 +5,7 @@ description: "Convierte una cotización aprobada en el documento fiscal que corr
 
 <header class="content-header">
   <h1 class="page-title">Aprobación y facturación</h1>
-  <p class="page-subtitle">El cierre del ciclo. Cord emite el documento fiscal de tu país en cuanto el cliente aprueba, y te apoya a dar seguimiento a los saldos pendientes.</p>
+  <p class="page-subtitle">El cierre del ciclo. Tras la aprobación puedes cobrar, emitir el comprobante disponible para tu mercado y dar seguimiento a saldos pendientes.</p>
 </header>
 
 ## Aprobación Digital
@@ -20,8 +20,8 @@ Cuando el cliente revisa el Enlace Mágico y hace clic en **Aprobar Cotización*
 Cord no emite el mismo tipo de comprobante en todos lados — el país de tu negocio decide el carril:
 
 - **México:** timbrado CFDI 4.0 ante el SAT, a través de un proveedor certificado de facturación electrónica.
-- **España:** factura con base legal completa y el registro de facturación certificado que exige **Verifactu** (RD 1007/2023).
-- **Resto de países soportados por Cord** (Estados Unidos, Canadá, Brasil, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú): factura comercial completa, con folio, impuestos por línea y validez plena entre las partes — sin timbrado ante ninguna autoridad, porque ese mecanismo no existe ahí.
+- **España:** factura comercial. El registro encadenado de Verifactu solo se genera cuando el certificado de la organización y el carril regulatorio de Cord están activos; si no, el estado es `commercial_only`.
+- **Demás mercados soportados** (Estados Unidos, Canadá, Brasil, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú): factura comercial con folio e impuestos configurados por el negocio, sin presentación automática ante la autoridad fiscal local.
 
 Ver el detalle completo por país en [Facturación fiscal por país](/docs/pagos/facturacion).
 

@@ -1,6 +1,11 @@
 ---
 title: "Agrega la información fiscal (CSD)"
 description: "Sube tu Certificado de Sello Digital para habilitar la facturación CFDI 4.0."
+lastUpdated: "2026-08-28"
+reviewedBy: "Operaciones fiscales y seguridad de Cord"
+appliesToMarkets: [MX]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["RFC del emisor", "Archivos .cer y .key del CSD", "Contraseña de la llave privada", "CSD vigente emitido por el SAT"]
 ---
 
 <header class="content-header">
@@ -14,8 +19,9 @@ CFDI 4.0 son un requisito exclusivamente mexicano. Si tu negocio opera en otro p
 tu pantalla de **Ajustes > Facturación** no muestra el CSD: captura ahí tu identidad
 de facturación local en su lugar (razón social, tu identificador fiscal — NIF/CIF,
 EIN/Tax ID, según tu país — y domicilio) y Cord emite tu factura con folio, copia
-inmutable y PDF. España tiene, además, su propio mecanismo de registro certificado
-(Verifactu); el resto de los países usa el documento comercial como respaldo del cobro.
+inmutable y PDF. En España, el registro encadenado de Verifactu solo se genera
+cuando el certificado de la empresa y el carril regulatorio de Cord están activos;
+en otro caso la emisión permanece como `commercial_only`.
 </Callout>
 
 ## ¿Qué es el CSD y por qué lo necesitas?
@@ -34,7 +40,7 @@ Para que Cord pueda convertir tus cotizaciones aprobadas o pedidos directamente 
    - **Contraseña de la Llave Privada**: La clave que elegiste al tramitar tu CSD en el SAT (Ojo: esta suele ser distinta a la contraseña de tu FIEL).
 
 <Callout type="warning">
-**Advertencia:** Cord encripta tus archivos `.key` y contraseñas de extremo a extremo (AES-256) antes de guardarlos. Nunca utilizamos tu FIEL; estrictamente el CSD. Nunca subas tu FIEL (e.firma) para facturar.
+**Advertencia:** el archivo y la contraseña viajan por HTTPS/TLS hasta el servidor y el proveedor fiscal. Cord conserva cifrada en reposo únicamente la referencia secreta necesaria para operar la integración; no presentes esto como cifrado de extremo a extremo. Nunca utilizamos tu FIEL: sube estrictamente el CSD y nunca tu FIEL (e.firma) para facturar.
 </Callout>
 
 ## Validaciones y Errores Comunes

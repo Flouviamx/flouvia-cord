@@ -573,6 +573,326 @@ alter table stripe_events add column if not exists attempt_count int not null de
 alter table stripe_events add column if not exists last_error text;
 create index if not exists idx_stripe_events_processing on stripe_events(processed_at, claimed_at);
 
+-- The Cord Build — inventario público de diez posiciones. El navegador nunca
+-- decide precio ni disponibilidad: el endpoint toma ambos de esta tabla y
+-- adquiere una reserva atómica antes de crear el PaymentIntent. La expiración
+-- recupera intentos abandonados; sólo el webhook firmado cambia a `paid`.
+create table if not exists build_positions (
+  position_id              text primary key check (position_id ~ '^([0][1-9]|10)$'),
+  tier                     text not null,
+  amount_cents             int not null check (amount_cents > 0),
+  currency                 text not null default 'mxn' check (currency = 'mxn'),
+  status                   text not null default 'available' check (status in ('available','reserved','paid')),
+  request_id               uuid unique,
+  hold_token               uuid unique,
+  hold_expires_at          timestamptz,
+  stripe_payment_intent_id text unique,
+  paid_at                  timestamptz,
+  created_at               timestamptz not null default now(),
+  updated_at               timestamptz not null default now()
+);
+insert into build_positions (position_id, tier, amount_cents) values
+  ('01', 'Presenting Partner', 5000000),
+  ('02', 'Flow Partner', 2000000),
+  ('03', 'Flow Partner', 2000000),
+  ('04', 'Flow Partner', 2000000),
+  ('05', 'Flow Partner', 750000),
+  ('06', 'Founding Partner', 750000),
+  ('07', 'Founding Partner', 750000),
+  ('08', 'Founding Partner', 750000),
+  ('09', 'Founding Partner', 750000),
+  ('10', 'Founding Partner', 750000)
+on conflict (position_id) do update
+set tier = excluded.tier, amount_cents = excluded.amount_cents, updated_at = now();
+create index if not exists idx_build_positions_status on build_positions(status, hold_expires_at);
+
+-- The Cord Build / Flow — subasta pública verificable. `build_positions`
+-- conserva las columnas del primer experimento de compra a precio fijo para no
+-- destruir cobros existentes, pero la subasta usa su propio ledger append-only.
+-- El cliente sólo propone una oferta: el depósito, el mínimo siguiente y el
+-- liderazgo se resuelven en servidor y se concilian únicamente por webhook.
+create table if not exists build_auction (
+  id                    text primary key default 'cord-flow-2026',
+  status                text not null default 'live' check (status in ('draft','live','closed','cancelled')),
+  starts_at             timestamptz not null default now(),
+  ends_at               timestamptz not null default (now() + interval '7 days'),
+  hard_ends_at          timestamptz not null default (now() + interval '14 days'),
+  anti_snipe_minutes    int not null default 10 check (anti_snipe_minutes between 0 and 60),
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now(),
+  check (ends_at > starts_at),
+  check (hard_ends_at >= ends_at)
+);
+insert into build_auction (id) values ('cord-flow-2026') on conflict (id) do nothing;
+alter table build_auction drop column if exists deposit_percent;
+
+alter table build_positions add column if not exists auction_status text not null default 'open';
+alter table build_positions add column if not exists starting_offer_cents int;
+alter table build_positions add column if not exists min_increment_cents int;
+alter table build_positions add column if not exists bid_deposit_cents int;
+alter table build_positions add column if not exists current_offer_cents int;
+alter table build_positions add column if not exists current_bid_id uuid;
+alter table build_positions add column if not exists current_brand_name text;
+alter table build_positions add column if not exists current_logo_url text;
+alter table build_positions add column if not exists current_website_url text;
+alter table build_positions add column if not exists bid_count int not null default 0;
+update build_positions
+   set starting_offer_cents = coalesce(starting_offer_cents, amount_cents),
+       min_increment_cents = coalesce(min_increment_cents,
+         case when position_id = '01' then 250000
+              when position_id in ('02','03','04') then 100000
+              else 50000 end),
+       bid_deposit_cents = coalesce(bid_deposit_cents,
+         case when position_id = '01' then 500000
+              when position_id in ('02','03','04') then 200000
+              else 100000 end),
+       auction_status = case when status = 'paid' then 'closed' else auction_status end;
+alter table build_positions alter column starting_offer_cents set not null;
+alter table build_positions alter column min_increment_cents set not null;
+alter table build_positions alter column bid_deposit_cents set not null;
+alter table build_positions drop constraint if exists build_positions_auction_status_check;
+alter table build_positions add constraint build_positions_auction_status_check
+  check (auction_status in ('open','closed','paused'));
+alter table build_positions drop constraint if exists build_positions_starting_offer_check;
+alter table build_positions add constraint build_positions_starting_offer_check check (starting_offer_cents > 0);
+alter table build_positions drop constraint if exists build_positions_min_increment_check;
+alter table build_positions add constraint build_positions_min_increment_check check (min_increment_cents > 0);
+alter table build_positions drop constraint if exists build_positions_bid_deposit_check;
+alter table build_positions add constraint build_positions_bid_deposit_check check (bid_deposit_cents > 0);
+
+create table if not exists build_bids (
+  id                         uuid primary key,
+  auction_id                 text not null references build_auction(id),
+  position_id                text not null references build_positions(position_id),
+  request_id                 uuid not null unique,
+  brand_name                 text not null check (char_length(brand_name) between 2 and 80),
+  contact_email              text not null,
+  website_url                text,
+  logo_url                   text,
+  offer_amount_cents         int not null check (offer_amount_cents > 0),
+  deposit_amount_cents       int not null check (deposit_amount_cents > 0),
+  currency                   text not null default 'mxn' check (currency = 'mxn'),
+  status                     text not null default 'pending' check (status in (
+    'pending','leading','outbid_refunding','outbid','stale_refunding','stale',
+    'won','failed','rejected_refunding','rejected'
+  )),
+  stripe_payment_intent_id   text unique,
+  stripe_refund_id           text unique,
+  balance_payment_intent_id  text unique,
+  balance_paid_at            timestamptz,
+  moderation_status          text not null default 'pending' check (moderation_status in ('pending','approved','rejected')),
+  terms_version              text not null default 'cord-flow-2026-08-29',
+  terms_accepted_at          timestamptz not null default now(),
+  confirmed_at               timestamptz,
+  outbid_at                  timestamptz,
+  refunded_at                timestamptz,
+  created_at                 timestamptz not null default now(),
+  updated_at                 timestamptz not null default now()
+);
+alter table build_bids add column if not exists logo_url text;
+alter table build_bids add column if not exists balance_payment_intent_id text;
+alter table build_bids add column if not exists balance_paid_at timestamptz;
+create unique index if not exists idx_build_bids_balance_intent
+  on build_bids(balance_payment_intent_id) where balance_payment_intent_id is not null;
+create index if not exists idx_build_bids_position_history on build_bids(position_id, created_at desc);
+create index if not exists idx_build_bids_public_history on build_bids(created_at desc)
+  where status in ('leading','outbid_refunding','outbid','won');
+
+-- Serializa pagos concurrentes por posición. Devuelve el PaymentIntent cuyo
+-- depósito debe reembolsarse; Stripe se llama después con idempotencia y el
+-- resultado vuelve al ledger. Un pago viejo nunca puede desplazar una oferta
+-- más alta porque el mínimo se recalcula dentro del lock.
+create or replace function cord_settle_build_bid(
+  p_bid_id uuid,
+  p_payment_intent_id text,
+  p_paid_amount int,
+  p_currency text
+) returns table(outcome text, refund_bid_id uuid, refund_payment_intent_id text)
+language plpgsql
+as $$
+declare
+  v_bid build_bids%rowtype;
+  v_pos build_positions%rowtype;
+  v_auction build_auction%rowtype;
+  v_minimum int;
+  v_previous build_bids%rowtype;
+begin
+  select * into v_bid from build_bids where id = p_bid_id for update;
+  if not found then raise exception 'build bid not found'; end if;
+  if v_bid.stripe_payment_intent_id is distinct from p_payment_intent_id
+     or v_bid.deposit_amount_cents <> p_paid_amount
+     or v_bid.currency <> lower(p_currency) then
+    raise exception 'build bid payment mismatch';
+  end if;
+
+  if v_bid.status = 'leading' or v_bid.status = 'won' then
+    return query select 'accepted'::text, null::uuid, null::text;
+    return;
+  elsif v_bid.status in ('stale_refunding','stale','rejected_refunding','rejected') then
+    return query select 'stale'::text, v_bid.id, v_bid.stripe_payment_intent_id;
+    return;
+  elsif v_bid.status not in ('pending','failed') then
+    return query select 'ignored'::text, null::uuid, null::text;
+    return;
+  end if;
+
+  select * into v_auction from build_auction where id = v_bid.auction_id for update;
+  select * into v_pos from build_positions where position_id = v_bid.position_id for update;
+  if v_auction.status <> 'live' or v_pos.auction_status <> 'open'
+     or now() > v_auction.ends_at + interval '15 minutes' then
+    update build_bids set status = 'stale_refunding', confirmed_at = now(), updated_at = now()
+     where id = v_bid.id;
+    return query select 'stale'::text, v_bid.id, v_bid.stripe_payment_intent_id;
+    return;
+  end if;
+
+  v_minimum := case when v_pos.current_bid_id is null
+    then v_pos.starting_offer_cents
+    else v_pos.current_offer_cents + v_pos.min_increment_cents end;
+  if v_bid.offer_amount_cents < v_minimum then
+    update build_bids set status = 'stale_refunding', confirmed_at = now(), updated_at = now()
+     where id = v_bid.id;
+    return query select 'stale'::text, v_bid.id, v_bid.stripe_payment_intent_id;
+    return;
+  end if;
+
+  if v_pos.current_bid_id is not null then
+    select * into v_previous from build_bids where id = v_pos.current_bid_id for update;
+    update build_bids set status = 'outbid_refunding', outbid_at = now(), updated_at = now()
+     where id = v_previous.id and status = 'leading';
+  end if;
+
+  update build_bids set status = 'leading', confirmed_at = coalesce(confirmed_at, now()), updated_at = now()
+   where id = v_bid.id;
+  update build_positions
+     set current_bid_id = v_bid.id, current_offer_cents = v_bid.offer_amount_cents,
+         current_brand_name = v_bid.brand_name, current_logo_url = v_bid.logo_url,
+         current_website_url = v_bid.website_url, bid_count = bid_count + 1, updated_at = now()
+   where position_id = v_bid.position_id;
+
+  if v_auction.ends_at - now() <= make_interval(mins => v_auction.anti_snipe_minutes)
+     and v_auction.ends_at < v_auction.hard_ends_at then
+    update build_auction
+       set ends_at = least(hard_ends_at, now() + make_interval(mins => anti_snipe_minutes)), updated_at = now()
+     where id = v_auction.id;
+  end if;
+
+  return query select 'accepted'::text,
+    case when v_previous.id is null then null else v_previous.id end,
+    case when v_previous.id is null then null else v_previous.stripe_payment_intent_id end;
+end;
+$$;
+revoke all on function cord_settle_build_bid(uuid, text, int, text) from public;
+
+-- El premio de Scale no nace con la garantía. Sólo un saldo final conciliado
+-- por webhook crea el derecho, y sus seis meses empiezan al vincularlo a una
+-- organización cuyo owner/miembro coincide con el correo de la oferta.
+create table if not exists build_scale_entitlements (
+  id               uuid primary key default gen_random_uuid(),
+  bid_id           uuid not null unique references build_bids(id) on delete restrict,
+  contact_email    text not null,
+  org_id           uuid references orgs(id) on delete restrict,
+  plan             text not null default 'scale' check (plan = 'scale'),
+  duration_months  int not null default 6 check (duration_months = 6),
+  status           text not null default 'pending' check (status in ('pending','active','expired','revoked')),
+  starts_at        timestamptz,
+  expires_at       timestamptz,
+  activated_at     timestamptz,
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now(),
+  check ((status = 'active' and org_id is not null and starts_at is not null and expires_at is not null)
+      or status <> 'active')
+);
+create index if not exists idx_build_scale_entitlements_org
+  on build_scale_entitlements(org_id, expires_at) where status = 'active';
+alter table build_scale_entitlements enable row level security;
+alter table build_scale_entitlements no force row level security;
+revoke all on table build_scale_entitlements from public;
+
+create or replace function cord_settle_build_balance(
+  p_bid_id uuid,
+  p_payment_intent_id text,
+  p_paid_amount int,
+  p_currency text
+) returns text
+language plpgsql
+as $$
+declare
+  v_bid build_bids%rowtype;
+  v_pos build_positions%rowtype;
+  v_auction build_auction%rowtype;
+  v_expected int;
+begin
+  select * into v_bid from build_bids where id = p_bid_id for update;
+  if not found then raise exception 'build winning bid not found'; end if;
+  select * into v_auction from build_auction where id = v_bid.auction_id for update;
+  select * into v_pos from build_positions where position_id = v_bid.position_id for update;
+
+  v_expected := v_bid.offer_amount_cents - v_bid.deposit_amount_cents;
+  if v_bid.balance_payment_intent_id is distinct from p_payment_intent_id
+     or v_expected <> p_paid_amount
+     or v_bid.currency <> lower(p_currency) then
+    raise exception 'build balance payment mismatch';
+  end if;
+  if v_bid.status = 'won' then return 'accepted'; end if;
+  if v_auction.status <> 'closed' or v_bid.status <> 'leading'
+     or v_pos.current_bid_id is distinct from v_bid.id then
+    raise exception 'build bid is not the closed auction winner';
+  end if;
+
+  update build_bids
+     set status = 'won', balance_paid_at = now(), updated_at = now()
+   where id = v_bid.id;
+  update build_positions
+     set status = 'paid', auction_status = 'closed', paid_at = now(), updated_at = now()
+   where position_id = v_bid.position_id and current_bid_id = v_bid.id;
+  insert into build_scale_entitlements (bid_id, contact_email)
+    values (v_bid.id, lower(v_bid.contact_email))
+    on conflict (bid_id) do nothing;
+  return 'accepted';
+end;
+$$;
+
+create or replace function cord_activate_build_scale(p_bid_id uuid, p_org_id uuid)
+returns table(starts_at timestamptz, expires_at timestamptz)
+language plpgsql volatile security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_entitlement build_scale_entitlements%rowtype;
+  v_now timestamptz := now();
+begin
+  select * into v_entitlement from build_scale_entitlements where bid_id = p_bid_id for update;
+  if not found then raise exception 'build scale entitlement not found'; end if;
+  if v_entitlement.status = 'active' then
+    return query select v_entitlement.starts_at, v_entitlement.expires_at;
+    return;
+  end if;
+  if v_entitlement.status <> 'pending' then raise exception 'build scale entitlement unavailable'; end if;
+  if not exists (
+    select 1
+      from users u
+      left join org_members m on m.user_id = u.id and m.org_id = p_org_id and m.estado = 'activo'
+      join orgs o on o.id = p_org_id
+     where lower(u.email) = lower(v_entitlement.contact_email)
+       and (o.owner_id = u.id or m.user_id is not null)
+  ) then
+    raise exception 'build entitlement email does not belong to organization';
+  end if;
+
+  update build_scale_entitlements
+     set org_id = p_org_id, status = 'active', starts_at = v_now,
+         expires_at = v_now + interval '6 months', activated_at = v_now, updated_at = v_now
+   where id = v_entitlement.id
+   returning build_scale_entitlements.starts_at, build_scale_entitlements.expires_at
+        into starts_at, expires_at;
+  return next;
+end;
+$$;
+
+revoke all on function cord_settle_build_balance(uuid, text, int, text) from public;
+revoke all on function cord_activate_build_scale(uuid, uuid) from public;
+
 create table if not exists platform_health (
   key             text primary key,
   last_success_at timestamptz,
@@ -580,6 +900,43 @@ create table if not exists platform_health (
   metadata        jsonb not null default '{}'::jsonb,
   updated_at      timestamptz not null default now()
 );
+
+-- Disponibilidad pública demostrable. Son muestras sintéticas de plataforma,
+-- no datos de clientes ni métricas inventadas. El cron autenticado escribe por
+-- el carril de sistema; la página pública solo agrega estas filas.
+create table if not exists health_checks (
+  id          bigint generated always as identity primary key,
+  service     text        not null check (service in ('database', 'stripe', 'public_link')),
+  ok          boolean     not null,
+  latency_ms  int         not null check (latency_ms >= 0 and latency_ms <= 60000),
+  checked_at  timestamptz not null default now()
+);
+create index if not exists idx_health_checks_service_checked
+  on health_checks(service, checked_at desc);
+create index if not exists idx_health_checks_checked
+  on health_checks(checked_at desc);
+
+-- Incidentes públicos redactados manualmente desde Cord Ops. No se siembran
+-- incidentes: una fila existe solo cuando un operador documenta un hecho real.
+create table if not exists status_incidents (
+  id           uuid        primary key default gen_random_uuid(),
+  status       text        not null default 'investigating'
+                           check (status in ('investigating', 'identified', 'monitoring', 'resolved')),
+  severity     text        not null default 'minor'
+                           check (severity in ('minor', 'major', 'critical')),
+  title_es     text        not null check (char_length(title_es) between 3 and 160),
+  title_en     text        not null check (char_length(title_en) between 3 and 160),
+  summary_es   text        not null check (char_length(summary_es) between 3 and 4000),
+  summary_en   text        not null check (char_length(summary_en) between 3 and 4000),
+  started_at   timestamptz not null,
+  resolved_at  timestamptz,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  check ((status = 'resolved' and resolved_at is not null) or (status <> 'resolved' and resolved_at is null)),
+  check (resolved_at is null or resolved_at >= started_at)
+);
+create index if not exists idx_status_incidents_public
+  on status_incidents(status, started_at desc);
 
 -- ── Stripe Connect Custom (Onboarding API MX) ────────────────────────────────
 alter table orgs add column if not exists stripe_payouts_enabled boolean not null default false;
@@ -1396,6 +1753,31 @@ alter table cotizacion_cobros add column if not exists refunded_at timestamptz;
 create unique index if not exists idx_cotizacion_cobros_org_payment_intent
   on cotizacion_cobros(org_id, stripe_payment_intent_id) where stripe_payment_intent_id is not null;
 
+-- BEGIN quote-payment-attempts
+-- One durable creation per predecessor, shared by competing payment methods.
+-- Do not delete an unresolved attempt: the provider may already have created it.
+create unique index if not exists uq_cotizacion_cobros_org_id_id
+  on cotizacion_cobros(org_id, id);
+create table if not exists cotizacion_pago_intentos (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs(id),
+  cobro_id uuid not null,
+  predecessor text not null,
+  request_hash text not null check (request_hash ~ '^[0-9a-f]{64}$'),
+  stripe_payment_intent_id text,
+  created_at timestamptz not null default now(),
+  unique (org_id, cobro_id, predecessor),
+  foreign key (org_id, cobro_id) references cotizacion_cobros(org_id, id)
+);
+alter table cotizacion_pago_intentos enable row level security;
+alter table cotizacion_pago_intentos force row level security;
+drop policy if exists rls_cotizacion_pago_intentos on cotizacion_pago_intentos;
+create policy rls_cotizacion_pago_intentos on cotizacion_pago_intentos
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+-- END quote-payment-attempts
+
+
 create table if not exists comisiones (
   id                            uuid primary key default gen_random_uuid(),
   org_id                        uuid not null references orgs(id) on delete cascade,
@@ -2115,8 +2497,8 @@ alter table users add column if not exists puesto        text;        -- dueno|v
 -- Marcador de "ya emitido" para el evento de analítica `setup_step_completed`.
 -- getSetupProgress() (src/lib/queries.ts) es una LECTURA que AppLayout invoca en
 -- CADA página mientras el setup no está completo; sin este marcador, emitir el
--- evento dispararía el evento en cada navegación. Guarda los task_id de la guía
--- de configuración cuyo paso ya se reportó a PostHog.
+-- evento dispararía en cada navegación. Guarda los task_id de la guía de
+-- configuración cuyo paso ya se reportó a PostHog.
 alter table orgs  add column if not exists setup_steps_emitted text[] not null default '{}'::text[];
 
 -- ── Cord Ops preparado para 10k+ usuarios (ago 2026) ───────────────────────
@@ -2486,7 +2868,7 @@ as $$
     select coalesce(sandbox_of, id) as billing_org_id
       from orgs where id = p_org
   ), billing as (
-    select case
+    select r.billing_org_id, case
       when lower(coalesce(o.plan, 'free')) in ('business', 'negocio') then 'pro'
       when lower(coalesce(o.plan, 'free')) in ('free', 'starter', 'pro', 'scale', 'developer')
         then lower(coalesce(o.plan, 'free'))
@@ -2501,10 +2883,9 @@ as $$
     end as paid_plan,
     o.stripe_subscription_id, o.stripe_customer_id
     from requested r join orgs o on o.id = r.billing_org_id
-  )
-  select case
-    when stored_plan = 'free' then 'free'
-    when subscription_status = 'active'
+  ), access as (
+    select billing_org_id, case
+    when stored_plan <> 'free' and subscription_status = 'active'
       and current_period_end is not null and current_period_end > now()
       and billing_paid_through is not null and billing_paid_through >= current_period_end
       and (case paid_plan when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end)
@@ -2512,8 +2893,22 @@ as $$
       and stripe_subscription_id is not null and stripe_customer_id is not null
       then stored_plan
     else 'free'
-  end
-  from billing
+    end as paid_access
+    from billing
+  ), effective as (
+    select paid_access,
+      case when exists (
+        select 1 from build_scale_entitlements e
+         where e.org_id = access.billing_org_id and e.status = 'active'
+           and e.starts_at <= now() and e.expires_at > now()
+      ) then 'scale' else 'free' end as promo_access
+    from access
+  )
+  select case
+    when (case paid_access when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end)
+       >= (case promo_access when 'developer' then 4 when 'scale' then 3 when 'pro' then 2 when 'starter' then 1 else 0 end)
+      then paid_access else promo_access end
+  from effective
 $$;
 revoke all on function cord_effective_plan(uuid) from public;
 
@@ -3754,6 +4149,397 @@ create index if not exists idx_mcp_outbox_session on mcp_session_outbox(session_
 create index if not exists idx_mcp_outbox_expires on mcp_session_outbox(expires_at);
 
 -- ════════════════════════════════════════════════════════════════════════════
+-- Corpus legal versionado y evidencia de clickwrap (ago 2026)
+-- ════════════════════════════════════════════════════════════════════════════
+-- Una versión lógica puede tener traducciones y anexos distintos. Por eso el
+-- hash vive en la VARIANTE (doc + versión + locale + jurisdicción), no solo en
+-- doc + versión. El hash corresponde al <main> legal renderizado y publicado.
+create table if not exists legal_documents (
+  doc_id             text        not null,
+  version            text        not null,
+  document_type      text        not null check (document_type in ('terms', 'privacy', 'dpa', 'aup', 'sla', 'annex', 'other')),
+  effective_date     date        not null,
+  supersedes_version text,
+  requires_action    boolean     not null default false,
+  required_action    text        not null check (required_action in ('accepted', 'acknowledged', 'none')),
+  acceptance_scope   text        not null check (acceptance_scope in ('personal', 'organization', 'none')),
+  created_at         timestamptz not null default now(),
+  primary key (doc_id, version),
+  check (requires_action = (required_action <> 'none')),
+  check ((requires_action and acceptance_scope <> 'none') or (not requires_action and acceptance_scope = 'none'))
+);
+
+create table if not exists legal_document_variants (
+  doc_id           text        not null,
+  version          text        not null,
+  locale           text        not null check (locale in ('es-MX', 'en-US', 'pt-BR')),
+  jurisdiction     text        not null,
+  artifact_sha256  text        not null check (artifact_sha256 ~ '^[a-f0-9]{64}$'),
+  artifact_route   text        not null check (artifact_route like '/%'),
+  source_path      text        not null,
+  status           text        not null check (status in ('draft', 'published', 'retired')),
+  is_current       boolean     not null default false,
+  published_at     timestamptz,
+  created_at       timestamptz not null default now(),
+  primary key (doc_id, version, locale, jurisdiction),
+  unique (doc_id, version, locale, jurisdiction, artifact_sha256),
+  foreign key (doc_id, version) references legal_documents(doc_id, version),
+  check ((status = 'published' and published_at is not null) or status <> 'published'),
+  check (not is_current or status = 'published')
+);
+create unique index if not exists uq_legal_variant_current
+  on legal_document_variants(doc_id, locale, jurisdiction) where is_current;
+
+-- Evidencia append-only a nivel de aplicación. `subject_user_id` no lleva FK a
+-- users deliberadamente: una baja de cuenta no debe borrar retroactivamente la
+-- prueba contractual. La política de retención/redacción se definirá en la fase
+-- de privacidad; no se fija aquí un plazo inventado.
+create table if not exists legal_acceptances (
+  id                 uuid        primary key default gen_random_uuid(),
+  subject_user_id    uuid        not null,
+  org_id              uuid,
+  doc_id              text        not null,
+  version             text        not null,
+  locale              text        not null,
+  jurisdiction        text        not null,
+  artifact_sha256     text        not null,
+  action              text        not null check (action in ('accepted', 'acknowledged')),
+  acceptance_scope    text        not null check (acceptance_scope in ('personal', 'organization')),
+  surface             text        not null check (surface in ('signup_password', 'signup_google', 'signup_apple', 'invitation', 'reacceptance', 'admin')),
+  ip                  text        not null,
+  user_agent          text        not null,
+  accepted_at         timestamptz not null,
+  evidence            jsonb       not null default '{}'::jsonb,
+  created_at          timestamptz not null default now(),
+  foreign key (doc_id, version, locale, jurisdiction, artifact_sha256)
+    references legal_document_variants(doc_id, version, locale, jurisdiction, artifact_sha256),
+  check ((acceptance_scope = 'personal' and org_id is null) or (acceptance_scope = 'organization' and org_id is not null))
+);
+create unique index if not exists uq_legal_acceptance_personal
+  on legal_acceptances(subject_user_id, doc_id, version, locale, jurisdiction)
+  where acceptance_scope = 'personal';
+create unique index if not exists uq_legal_acceptance_org
+  on legal_acceptances(subject_user_id, org_id, doc_id, version, locale, jurisdiction)
+  where acceptance_scope = 'organization';
+create index if not exists idx_legal_acceptance_subject
+  on legal_acceptances(subject_user_id, accepted_at desc);
+
+-- Intención efímera para OAuth. Guarda un snapshot exacto del bundle visto al
+-- pulsar Google/Apple; si una publicación cambia durante el roundtrip, el alta
+-- conserva el artefacto que realmente se presentó.
+create table if not exists legal_acceptance_intents (
+  token_hash    text        primary key check (token_hash ~ '^[a-f0-9]{64}$'),
+  locale        text        not null check (locale in ('es-MX', 'en-US')),
+  surface       text        not null check (surface in ('signup_google', 'signup_apple')),
+  bundle        jsonb       not null,
+  ip            text        not null,
+  user_agent    text        not null,
+  accepted_at   timestamptz not null default now(),
+  expires_at    timestamptz not null,
+  consumed_at   timestamptz,
+  check (expires_at > accepted_at)
+);
+create index if not exists idx_legal_intents_expires on legal_acceptance_intents(expires_at);
+
+alter table legal_acceptances enable row level security;
+alter table legal_acceptances force row level security;
+alter table legal_acceptance_intents enable row level security;
+alter table legal_acceptance_intents force row level security;
+
+drop policy if exists "rls_legal_acceptances_own" on legal_acceptances;
+create policy "rls_legal_acceptances_own" on legal_acceptances for select
+  using (subject_user_id = nullif(current_setting('app.user_id', true), '')::uuid);
+-- Intents no tienen política: solo las funciones SECURITY DEFINER estrechas
+-- pueden crearlas/consumirlas. Acceptances tampoco admite INSERT/UPDATE/DELETE
+-- directo bajo cord_app.
+
+insert into legal_documents
+  (doc_id, version, document_type, effective_date, supersedes_version, requires_action, required_action, acceptance_scope)
+values
+  ('terms',   '2026-08-11', 'terms',   '2026-08-11', null, true, 'accepted',     'personal'),
+  ('privacy', '2026-08-11', 'privacy', '2026-08-11', null, true, 'acknowledged', 'personal'),
+  ('privacy', '2026-08-29', 'privacy', '2026-08-29', '2026-08-11', true, 'acknowledged', 'personal')
+on conflict (doc_id, version) do nothing;
+
+-- Publicar una variante nueva nunca reescribe la anterior: solo mueve el
+-- puntero de vigencia. Las aceptaciones históricas siguen referenciando el hash
+-- exacto de 2026-08-11.
+update legal_document_variants
+set is_current = false
+where doc_id = 'privacy' and version <> '2026-08-29' and is_current = true;
+
+insert into legal_document_variants
+  (doc_id, version, locale, jurisdiction, artifact_sha256, artifact_route, source_path, status, is_current, published_at)
+values
+  ('terms', '2026-08-11', 'es-MX', 'GLOBAL', 'caca9992c20c9db7f6270285c57808f9a249d15579a03497b99bc621590db369', '/terminos',       'src/pages/terminos.astro',   'published', true, '2026-08-11T00:00:00Z'),
+  ('terms', '2026-08-11', 'en-US', 'GLOBAL', '891f4c861dae2d5fcbf93737cb93e8470582b430c01de4ee33220a5e29c18fd7', '/en/terminos',    'src/pages/terminos.astro',   'published', true, '2026-08-11T00:00:00Z'),
+  ('privacy', '2026-08-11', 'es-MX', 'GLOBAL', '5c33c6009707f05f34aa9220f7421402022089f47274095ef3e9d321c8360881', '/privacidad',      'src/pages/privacidad.astro', 'published', false, '2026-08-11T00:00:00Z'),
+  ('privacy', '2026-08-11', 'en-US', 'GLOBAL', '4d2674efa18062a57988e415ee0696dc3c89fb2e17ef9de92c0bdcd57159e597', '/en/privacidad',   'src/pages/privacidad.astro', 'published', false, '2026-08-11T00:00:00Z'),
+  ('privacy', '2026-08-29', 'es-MX', 'GLOBAL', '469dd0c23ed4626059b8869951d8bf8842cfc7e1dc0122b3c1da4652bae6dbf4', '/privacidad',      'src/pages/privacidad.astro', 'published', true, '2026-08-29T00:00:00Z'),
+  ('privacy', '2026-08-29', 'en-US', 'GLOBAL', '4f10b3260909d902e7aaacf2ef40c05a000a4ed4a9154176b19050a3e0b9bb10', '/en/privacidad',   'src/pages/privacidad.astro', 'published', true, '2026-08-29T00:00:00Z')
+on conflict (doc_id, version, locale, jurisdiction) do nothing;
+
+create or replace function cord_register_password_user(
+  p_user_id uuid,
+  p_email text,
+  p_first_name text,
+  p_last_name text,
+  p_password_hash text,
+  p_locale text,
+  p_terms_accepted boolean,
+  p_privacy_acknowledged boolean,
+  p_ip text,
+  p_user_agent text
+) returns uuid
+language plpgsql volatile security definer
+set search_path = public, pg_temp
+as $$
+declare
+  inserted_acceptances integer;
+begin
+  if p_user_id is null or p_email is null or p_password_hash is null
+     or p_locale not in ('es-MX', 'en-US')
+     or p_terms_accepted is distinct from true
+     or p_privacy_acknowledged is distinct from true then
+    raise exception 'legal_acceptance_required' using errcode = 'P0001';
+  end if;
+
+  insert into users (id, email, first_name, last_name, password_hash)
+  values (p_user_id, p_email, left(p_first_name, 80), left(p_last_name, 80), p_password_hash);
+
+  insert into legal_acceptances
+    (subject_user_id, doc_id, version, locale, jurisdiction, artifact_sha256,
+     action, acceptance_scope, surface, ip, user_agent, accepted_at, evidence)
+  select p_user_id, v.doc_id, v.version, v.locale, v.jurisdiction, v.artifact_sha256,
+         d.required_action, d.acceptance_scope, 'signup_password',
+         left(coalesce(nullif(p_ip, ''), 'desconocida'), 128),
+         left(coalesce(nullif(p_user_agent, ''), 'desconocido'), 1024),
+         now(), jsonb_build_object('bundle_locale', p_locale)
+    from legal_document_variants v
+    join legal_documents d using (doc_id, version)
+   where v.locale = p_locale
+     and v.jurisdiction = 'GLOBAL'
+     and v.is_current
+     and v.status = 'published'
+     and v.doc_id in ('terms', 'privacy')
+     and d.requires_action;
+
+  get diagnostics inserted_acceptances = row_count;
+  if inserted_acceptances <> 2 then
+    raise exception 'legal_bundle_unavailable' using errcode = 'P0001';
+  end if;
+  return p_user_id;
+end
+$$;
+
+create or replace function cord_create_signup_legal_intent(
+  p_token_hash text,
+  p_locale text,
+  p_surface text,
+  p_ip text,
+  p_user_agent text
+) returns void
+language plpgsql volatile security definer
+set search_path = public, pg_temp
+as $$
+declare
+  legal_bundle jsonb;
+  bundle_size integer;
+begin
+  if p_token_hash !~ '^[a-f0-9]{64}$'
+     or p_locale not in ('es-MX', 'en-US')
+     or p_surface not in ('signup_google', 'signup_apple') then
+    raise exception 'legal_intent_invalid' using errcode = 'P0001';
+  end if;
+
+  -- Limpieza acotada de material efímero. No contiene ids de usuario y un token
+  -- vencido jamás puede volver a consumirse.
+  delete from legal_acceptance_intents where expires_at < now() - interval '1 day';
+
+  select jsonb_agg(jsonb_build_object(
+           'doc_id', v.doc_id,
+           'version', v.version,
+           'locale', v.locale,
+           'jurisdiction', v.jurisdiction,
+           'artifact_sha256', v.artifact_sha256,
+           'action', d.required_action,
+           'acceptance_scope', d.acceptance_scope
+         ) order by v.doc_id), count(*)
+    into legal_bundle, bundle_size
+    from legal_document_variants v
+    join legal_documents d using (doc_id, version)
+   where v.locale = p_locale
+     and v.jurisdiction = 'GLOBAL'
+     and v.is_current
+     and v.status = 'published'
+     and v.doc_id in ('terms', 'privacy')
+     and d.requires_action;
+
+  if bundle_size <> 2 then
+    raise exception 'legal_bundle_unavailable' using errcode = 'P0001';
+  end if;
+
+  insert into legal_acceptance_intents
+    (token_hash, locale, surface, bundle, ip, user_agent, accepted_at, expires_at)
+  values (
+    p_token_hash, p_locale, p_surface, legal_bundle,
+    left(coalesce(nullif(p_ip, ''), 'desconocida'), 128),
+    left(coalesce(nullif(p_user_agent, ''), 'desconocido'), 1024),
+    now(), now() + interval '15 minutes'
+  );
+end
+$$;
+
+create or replace function cord_user_needs_legal_acceptance(p_user_id uuid, p_locale text)
+returns boolean
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select p_user_id is null or exists (
+    select 1
+      from legal_document_variants required
+      join legal_documents d using (doc_id, version)
+     where required.locale = p_locale
+       and required.jurisdiction = 'GLOBAL'
+       and required.is_current
+       and required.status = 'published'
+       and d.requires_action
+       and not exists (
+         select 1
+           from legal_acceptances accepted
+          where accepted.subject_user_id = p_user_id
+            and accepted.doc_id = required.doc_id
+            and accepted.version = required.version
+            and accepted.jurisdiction = required.jurisdiction
+            and accepted.action = d.required_action
+       )
+  )
+$$;
+
+create or replace function cord_accept_current_legal_bundle(
+  p_user_id uuid,
+  p_locale text,
+  p_terms_accepted boolean,
+  p_privacy_acknowledged boolean,
+  p_ip text,
+  p_user_agent text
+) returns void
+language plpgsql volatile security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if p_user_id is null
+     or p_locale not in ('es-MX', 'en-US')
+     or p_terms_accepted is distinct from true
+     or p_privacy_acknowledged is distinct from true then
+    raise exception 'legal_acceptance_required' using errcode = 'P0001';
+  end if;
+
+  insert into legal_acceptances
+    (subject_user_id, doc_id, version, locale, jurisdiction, artifact_sha256,
+     action, acceptance_scope, surface, ip, user_agent, accepted_at, evidence)
+  select p_user_id, v.doc_id, v.version, v.locale, v.jurisdiction, v.artifact_sha256,
+         d.required_action, d.acceptance_scope, 'reacceptance',
+         left(coalesce(nullif(p_ip, ''), 'desconocida'), 128),
+         left(coalesce(nullif(p_user_agent, ''), 'desconocido'), 1024),
+         now(), jsonb_build_object('bundle_locale', p_locale)
+    from legal_document_variants v
+    join legal_documents d using (doc_id, version)
+   where v.locale = p_locale
+     and v.jurisdiction = 'GLOBAL'
+     and v.is_current
+     and v.status = 'published'
+     and v.doc_id in ('terms', 'privacy')
+     and d.requires_action
+  on conflict (subject_user_id, doc_id, version, locale, jurisdiction)
+    where acceptance_scope = 'personal'
+  do nothing;
+
+  if cord_user_needs_legal_acceptance(p_user_id, p_locale) then
+    raise exception 'legal_bundle_unavailable' using errcode = 'P0001';
+  end if;
+end
+$$;
+
+create or replace function cord_register_oauth_user_with_legal_intent(
+  p_user_id uuid,
+  p_email text,
+  p_first_name text,
+  p_last_name text,
+  p_avatar_url text,
+  p_provider text,
+  p_provider_user_id text,
+  p_intent_hash text
+) returns uuid
+language plpgsql volatile security definer
+set search_path = public, pg_temp
+as $$
+declare
+  intent legal_acceptance_intents%rowtype;
+  inserted_acceptances integer;
+begin
+  if p_provider not in ('google', 'apple') or p_user_id is null or p_email is null then
+    raise exception 'legal_intent_invalid' using errcode = 'P0001';
+  end if;
+
+  select * into intent
+    from legal_acceptance_intents
+   where token_hash = p_intent_hash
+     and surface = ('signup_' || p_provider)
+     and consumed_at is null
+     and expires_at > now()
+   for update;
+
+  if not found then
+    raise exception 'legal_intent_invalid' using errcode = 'P0001';
+  end if;
+
+  insert into users (id, email, first_name, last_name, avatar_url, email_verified_at)
+  values (p_user_id, p_email, left(p_first_name, 80), left(p_last_name, 80), p_avatar_url, now());
+
+  insert into oauth_accounts (user_id, provider, provider_user_id, email)
+  values (p_user_id, p_provider, p_provider_user_id, p_email);
+
+  insert into legal_acceptances
+    (subject_user_id, doc_id, version, locale, jurisdiction, artifact_sha256,
+     action, acceptance_scope, surface, ip, user_agent, accepted_at, evidence)
+  select p_user_id, b.doc_id, b.version, b.locale, b.jurisdiction, b.artifact_sha256,
+         b.action, b.acceptance_scope, intent.surface, intent.ip, intent.user_agent,
+         intent.accepted_at, jsonb_build_object('bundle_locale', intent.locale, 'intent', true)
+    from jsonb_to_recordset(intent.bundle) as b(
+      doc_id text, version text, locale text, jurisdiction text, artifact_sha256 text,
+      action text, acceptance_scope text
+    );
+
+  get diagnostics inserted_acceptances = row_count;
+  if inserted_acceptances <> 2 then
+    raise exception 'legal_bundle_unavailable' using errcode = 'P0001';
+  end if;
+
+  update legal_acceptance_intents set consumed_at = now() where token_hash = p_intent_hash;
+  return p_user_id;
+end
+$$;
+
+revoke all on function cord_register_password_user(uuid, text, text, text, text, text, boolean, boolean, text, text) from public;
+revoke all on function cord_create_signup_legal_intent(text, text, text, text, text) from public;
+revoke all on function cord_register_oauth_user_with_legal_intent(uuid, text, text, text, text, text, text, text) from public;
+revoke all on function cord_user_needs_legal_acceptance(uuid, text) from public;
+revoke all on function cord_accept_current_legal_bundle(uuid, text, boolean, boolean, text, text) from public;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant execute on function cord_register_password_user(uuid, text, text, text, text, text, boolean, boolean, text, text) to cord_app;
+    grant execute on function cord_create_signup_legal_intent(text, text, text, text, text) to cord_app;
+    grant execute on function cord_register_oauth_user_with_legal_intent(uuid, text, text, text, text, text, text, text) to cord_app;
+    grant execute on function cord_user_needs_legal_acceptance(uuid, text) to cord_app;
+    grant execute on function cord_accept_current_legal_bundle(uuid, text, boolean, boolean, text, text) to cord_app;
+  end if;
+end
+$$;
+
+-- ════════════════════════════════════════════════════════════════════════════
 -- Baja de cuenta (ago 2026) — carril propio, porque no cabe en ningún otro
 -- ════════════════════════════════════════════════════════════════════════════
 -- Borrar una cuenta cruza TODAS las organizaciones del usuario y además tiene
@@ -3987,3 +4773,79 @@ as $$
 $$;
 
 revoke all on function cord_resolve_inbound_email(text, text) from public;
+
+-- Conciliación de facturas: pagos brutos, notas emitidas y devoluciones efectivas.
+-- amount_paid conserva los cobros históricos; un crédito fiscal no es dinero recibido.
+alter table documentos_fiscales add column if not exists amount_credited numeric not null default 0;
+alter table documentos_fiscales add column if not exists amount_refunded numeric not null default 0;
+alter table documentos_fiscales add column if not exists refund_due numeric not null default 0;
+create index if not exists idx_documentos_credit_note_parent
+  on documentos_fiscales(org_id, credit_note_of) where credit_note_of is not null;
+
+-- La identidad PI permite guardar un refund antes de recibir el webhook del pago.
+create table if not exists documento_reembolsos (
+  org_id uuid not null references orgs(id) on delete cascade,
+  stripe_refund_id text not null,
+  stripe_payment_intent_id text not null,
+  monto numeric not null check (monto > 0),
+  currency text not null check (currency ~ '^[A-Z]{3}$'),
+  status text not null check (status in ('pending', 'requires_action', 'succeeded', 'failed', 'canceled')),
+  provider_event_created bigint not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (org_id, stripe_refund_id)
+);
+create index if not exists idx_documento_reembolsos_pi on documento_reembolsos(org_id, stripe_payment_intent_id);
+alter table documento_reembolsos enable row level security;
+alter table documento_reembolsos force row level security;
+drop policy if exists rls_documento_reembolsos on documento_reembolsos;
+create policy rls_documento_reembolsos on documento_reembolsos
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+-- Fin de migración de conciliación de facturas.
+
+-- Custom customer subdomains. Additive; also embedded in db/schema.sql.
+create table if not exists org_domains (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null unique references orgs(id) on delete cascade,
+  hostname text not null unique check (hostname = lower(hostname) and length(hostname) <= 253),
+  verification_token text not null,
+  probe_secret text not null,
+  status text not null default 'pending' check (status in ('pending','dns_pending','tls_pending','active','error')),
+  records jsonb not null default '[]'::jsonb,
+  provider_project text,
+  provider_team text,
+  provider_owned boolean not null default false,
+  removing boolean not null default false,
+  operation_token uuid,
+  operation_expires_at timestamptz,
+  last_checked_at timestamptz,
+  verified_at timestamptz,
+  error_code text,
+  created_at timestamptz not null default now()
+);
+alter table org_domains enable row level security;
+alter table org_domains force row level security;
+drop policy if exists org_domains_tenant on org_domains;
+create policy org_domains_tenant on org_domains
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+-- Discovery returns identity only, never configuration/secrets or other orgs.
+create or replace function cord_resolve_customer_domain(p_hostname text)
+returns table(org_id uuid)
+language sql stable security definer
+set search_path = public, pg_temp
+as $$
+  select d.org_id from org_domains d
+  where p_hostname is not null and p_hostname <> ''
+    and d.hostname = p_hostname and not d.removing
+  limit 1
+$$;
+revoke all on function cord_resolve_customer_domain(text) from public;
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant select, insert, update, delete on org_domains to cord_app;
+    grant execute on function cord_resolve_customer_domain(text) to cord_app;
+  end if;
+end $$;

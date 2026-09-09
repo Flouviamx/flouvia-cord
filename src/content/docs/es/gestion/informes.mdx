@@ -1,0 +1,137 @@
+---
+title: "Informes y desempeño comercial"
+description: "Qué mide cada informe de Cord, qué datos respetan el rango, cuáles son una foto de hoy y cómo se atribuye el desempeño por vendedor."
+lastUpdated: "2026-08-28"
+reviewedBy: "Producto y analítica de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Analítica", "Permiso Cobranza para el informe de cartera"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Informes y desempeño comercial</h1>
+  <p class="page-subtitle">Cómo leer las métricas sin confundir una cohorte histórica con la situación actual.</p>
+</header>
+
+**Informes** es la única superficie analítica de Cord. Reúne siete vistas y un
+selector común, mientras **Desempeño** compara resultados por la persona que creó o
+duplicó cada cotización.
+
+## Los siete informes
+
+| Informe | Qué responde | Alcance temporal |
+|---|---|---|
+| Resumen | Tasa de cierre, valor cerrado y perdido, velocidad y madurez. | Rango elegido |
+| Diagnóstico comercial | Embudo, pipeline, detenidas, descuento cedido y tiempo por etapa. | Mixto: cohorte + foto de hoy |
+| Finanzas | MRR, ARR, DSO, MRR en riesgo, pipeline ponderado y concentración. | Foto de hoy |
+| Flujo de caja · 90 días | Cartera, pipeline probable, igualas y concentración próxima. | Foto y proyección actual |
+| Cobranza y cartera | Por cobrar, vencido, aging, promesas y comportamiento de pago. | Foto de hoy |
+| Clientes | Valor y conversión por cliente, cohortes y clientes sin actividad. | Mixto: rango + foto de hoy |
+| Productos | Importe, volumen, elasticidad del descuento y cierre por producto. | Rango elegido |
+
+Los informes **Finanzas**, **Flujo** y **Cobranza** requieren Pro o superior. Cobranza
+exige además el permiso Cobranza; los demás parten del permiso Analítica.
+
+## Informes con rango
+
+Resumen, Diagnóstico comercial, Clientes y Productos muestran selector de fechas. El
+rango máximo consultable en esta interfaz es el último año. Cuando cambias fechas,
+Cord vuelve a cargar la cohorte sin recargar toda la página.
+
+En métricas de cohorte, una cotización pertenece al rango por su fecha de origen. Una
+cotización creada ayer puede seguir abierta: no debe compararse directamente con una
+cohorte de hace seis meses que ya tuvo tiempo de cerrar.
+
+<Callout type="info">
+Una tasa baja en un rango reciente puede significar **cohorte inmadura**, no un equipo
+peor. Revisa la proporción “aún abierto” antes de concluir.
+</Callout>
+
+## Informes de foto actual
+
+Finanzas, Flujo y Cobranza muestran **Al día de hoy** en vez de un selector que no
+tendría efecto. Usan saldos, suscripciones, vencimientos y pipeline existentes ahora.
+
+Dentro de informes mixtos, los widgets marcados **hoy** también ignoran el rango. Por
+ejemplo, Pipeline y cotizaciones detenidas describen el estado actual aunque el embudo
+del mismo informe use una cohorte de fechas.
+
+## Cómo se calcula el embudo
+
+El embudo comercial sigue:
+
+```text
+enviada → vista → aprobada → pagada
+```
+
+La base incluye toda cotización que salió del borrador, incluso si después quedó
+rechazada o vencida. La vista cuenta la primera apertura real del cliente; recargas y
+actividad interna no crean conversiones nuevas.
+
+## Finanzas: qué significan las métricas
+
+- **MRR contratado:** importe mensual de igualas activas.
+- **ARR:** MRR anualizado; no es ingreso bancario ya recibido.
+- **MRR en riesgo:** suscripciones `past_due` o programadas para cancelación.
+- **DSO:** tiempo estimado hasta el cobro a partir del historial disponible.
+- **Pipeline ponderado:** valor esperado usando probabilidad y tiempo derivados del
+  comportamiento histórico; no es efectivo garantizado.
+- **Concentración:** proporción del pipeline asociada al cliente de mayor peso.
+
+## Flujo de caja: tres fuentes distintas
+
+La proyección de 90 días separa:
+
+1. **Cartera cierta:** saldos ya aprobados o facturados; el momento de cobro sigue
+   siendo estimado.
+2. **Pipeline:** oportunidades abiertas ponderadas por probabilidad.
+3. **MRR:** cuotas recurrentes contratadas en el horizonte.
+
+El total es un escenario esperado, no un saldo bancario. Los movimientos desde el día
+91 aparecen fuera del horizonte para no desaparecer de la lectura.
+
+## Cobranza y comportamiento
+
+El informe de cobranza usa la misma cartera unificada que el módulo operativo:
+
+- total por cobrar y total vencido;
+- cobranza esperada en 30 días;
+- retraso medio contra el plazo pactado;
+- aging y exposición contra el límite del cliente;
+- promesas cumplidas, incumplidas o vencidas pendientes;
+- distribución del pago real frente al término acordado.
+
+Una promesa de pago registra el compromiso; no mueve dinero ni cambia por sí sola el
+saldo.
+
+## Personalizar widgets
+
+Cada informe conserva su propio layout. En modo edición puedes reordenar, cambiar
+tamaño u ocultar widgets; **Restablecer** vuelve al orden predeterminado de ese informe.
+La preferencia pertenece al miembro, no a todos los usuarios de la organización.
+
+Ocultar un widget no elimina datos ni cambia los cálculos.
+
+## Desempeño por vendedor
+
+`/app/desempeno` atribuye una cotización a `creado_por`: la persona que la creó o la
+duplicó. Muestra cotizaciones creadas, tasa de cierre, valor cerrado, cobrado, ticket
+promedio y días al cierre.
+
+Los documentos antiguos sin creador aparecen como **Sin asignar**. La página no
+redistribuye ese historial ni atribuye automáticamente una venta al último editor.
+La tasa del equipo es el promedio de las tasas mostradas por vendedor, no una comisión
+ni un cálculo de nómina.
+
+## Problemas frecuentes
+
+**No aparece un informe.** Revisa permiso Analítica; Cobranza requiere además su
+permiso propio. Finanzas, Flujo y Cobranza requieren Pro o superior.
+
+**Cambiar fechas no modifica un widget.** Es una foto actual y aparece marcado “hoy”.
+
+**El valor cerrado de una cohorte parece bajo.** Parte puede seguir abierta; revisa
+madurez y vuelve a comparar cuando haya transcurrido el ciclo normal de venta.
+
+**Un cierre sale Sin asignar.** La cotización no conserva un `creado_por`, normalmente
+por ser anterior a la atribución actual.

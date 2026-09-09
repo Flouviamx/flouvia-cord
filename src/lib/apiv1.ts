@@ -5,6 +5,7 @@
 // el resultado por estos serializadores.
 
 import type { MockQuote } from './queries';
+import { publicDocumentUrl } from './public-links';
 
 export function ok(data: unknown, meta?: Record<string, unknown>): Response {
     return new Response(JSON.stringify(meta ? { data, meta } : { data }), {
@@ -62,7 +63,7 @@ export function pageParams(url: URL): { limit: number; offset: number } {
 }
 
 // ── Serializadores ───────────────────────────────────────────────────────────
-export function quoteListItem(q: MockQuote) {
+export async function quoteListItem(q: MockQuote, orgId: string) {
     return {
         id: q.id,
         folio: q.folio,
@@ -72,13 +73,13 @@ export function quoteListItem(q: MockQuote) {
         terminos: q.terminos,
         vigencia: q.vigencia,
         creada: q.creada,
-        link_publico: `/q/${q.token}`,
+        link_publico: await publicDocumentUrl(orgId, 'q', q.token),
     };
 }
 
-export function quoteDetail(q: MockQuote) {
+export async function quoteDetail(q: MockQuote, orgId: string) {
     return {
-        ...quoteListItem(q),
+        ...await quoteListItem(q, orgId),
         notas: q.notas ?? null,
         aprobacion: q.aprobEstado ? { estado: q.aprobEstado, motivo: q.aprobMotivo ?? null } : null,
         items: q.items.map((it) => ({

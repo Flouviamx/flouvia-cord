@@ -1,11 +1,11 @@
 ---
 title: "Treasury and FX Lock"
-description: "Where to see your cash-flow forecast, how automatic late-payment interest works, and 30-day FX coverage."
+description: "Where to see your cash-flow forecast, the status of late interest, and 30-day FX coverage."
 ---
 
 <header class="content-header">
   <h1 class="page-title">Predictive Treasury and FX Lock</h1>
-  <p class="page-subtitle">Cash-flow forecasting, automatic late-payment interest, and currency protection — each living in its own place inside Cord.</p>
+  <p class="page-subtitle">Cash-flow forecasting, late-interest controls, and currency protection — each living in its own place inside Cord.</p>
 </header>
 
 ## Where each thing lives
@@ -22,13 +22,12 @@ In `/app/informes`, the cash-flow report cross-references the credit terms of yo
 
 If a client has Net 30 terms but historically pays 15 days late on average, the forecast adjusts the expected incoming capital based on that real behavior — it doesn't assume everything gets paid exactly on the due date — giving you a more realistic view of your 90-day liquidity.
 
-## Automatic Late-Payment Interest
+## Late-Payment Interest
 
-Available starting on the **Scale** plan (also included on **Developer**), Cord includes a configurable financial penalty engine, set up in **Settings › Approvals**:
-
-- **Monthly cron job:** on the first day of every month, an automated process reviews all overdue quotes in your portfolio.
-- **Compound interest:** if you configured a late-payment interest rate above 0%, the system applies that monthly interest to the outstanding capital.
-- **Instant reflection:** the new outstanding balance updates on the client's portal and in the Cord Payments checkout transparently — the client sees the correct amount to pay, interest already included.
+Automatic application is suspended while the country-by-country legal review is
+completed. Settings displays any historical rate as inactive, and the monthly process
+creates no new charges. Cord keeps previously recorded charges so balances and audit
+history remain traceable.
 
 ## Currency coverage (FX Lock)
 

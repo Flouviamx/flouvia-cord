@@ -16,6 +16,7 @@ const schema = z.object({
     communication: z.string().trim().max(20_000).optional(),
     receiptId: fileId.optional(),
     forceCommunication: z.boolean().optional().default(false),
+    disclosureAccepted: z.literal(true),
 }).strict();
 
 export const POST: APIRoute = async ({ request, params }) => {
@@ -28,7 +29,7 @@ export const POST: APIRoute = async ({ request, params }) => {
     const parsed = await parseJsonBody(request, schema);
     if (!parsed.ok) return json({ error: parsed.error }, parsed.status);
 
-    const [[row], items, comments] = await withOrgTx(orgId,
+    const [[row], items] = await withOrgTx(orgId,
         sql`select d.id, d.status, d.evidence_draft, d.evidence_submitted_at, d.amount_cents, d.currency,
                    cc.stripe_charge_id, cc.paid_at, cc.metodo_pago, cc.payment_method,
                    c.id as cotizacion_id, c.folio, c.approved_at,
@@ -55,13 +56,6 @@ export const POST: APIRoute = async ({ request, params }) => {
                             join cotizacion_cobros cc on cc.id = d.cobro_id
                            where d.org_id = ${orgId} and d.stripe_dispute_id = ${disputeId} limit 1)
              order by ci.orden`,
-        sql`select autor_nombre, contenido, created_at
-              from cotizacion_comentarios
-             where org_id = ${orgId}
-               and cotizacion_id = (select cc.cotizacion_id from cobro_disputas d
-                                     join cotizacion_cobros cc on cc.id = d.cobro_id
-                                    where d.org_id = ${orgId} and d.stripe_dispute_id = ${disputeId} limit 1)
-             order by created_at`,
     );
     if (!row) return json({ error: 'Contracargo no encontrado' }, 404);
     if (['won', 'lost', 'warning_closed'].includes(String(row.status))) {
@@ -74,10 +68,10 @@ export const POST: APIRoute = async ({ request, params }) => {
 
     const existing = (row.evidence_draft || {}) as Record<string, unknown>;
     let receipt = parsed.data.receiptId || (typeof existing.receipt === 'string' ? existing.receipt : '');
-    let communicationFile = typeof existing.customer_communication === 'string' ? existing.customer_communication : '';
-    const communicationText = parsed.data.communication || comments.map((comment: any) =>
-        `${new Date(comment.created_at).toISOString()} ${comment.autor_nombre || 'Cliente'}: ${comment.contenido || ''}`,
-    ).join('\n');
+    const communicationText = parsed.data.communication || '';
+    let communicationFile = communicationText && typeof existing.customer_communication === 'string'
+        ? existing.customer_communication
+        : '';
 
     try {
         if (!receipt) {

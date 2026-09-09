@@ -1,0 +1,175 @@
+---
+title: "Complete Settings map"
+description: "Reference for every Cord Settings section: business, brand, quotes, taxes, invoicing, payments, team, security, integrations, AI, data, and personal account."
+lastUpdated: "2026-08-28"
+reviewedBy: "Cord Product"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Settings permission to change organization configuration", "Some sections require additional permissions or plans"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Complete Settings map</h1>
+  <p class="page-subtitle">What every setting changes, who it affects, and what to check before saving.</p>
+</header>
+
+Open **Settings** from the app navigation. The page groups personal settings,
+organization configuration, commercial operations, and developer tools. Settings
+search also recognizes alternative terms such as VAT, tax ID, CSD, SAML, and API.
+
+<Callout type="info">
+Organization changes affect everyone working in that workspace. Your password, 2FA,
+passkeys, and sessions are personal and do not change when you switch organizations.
+</Callout>
+
+## Before changing anything
+
+- Confirm that you are in the correct organization, particularly if you manage more
+  than one business or a test organization.
+- **Settings** controls most sections; **Team**, **Configure payments**, and other
+  sensitive operations have separate permissions.
+- Some changes apply only to new documents. Issued documents retain their tax and
+  commercial snapshot.
+- Each screen shows country and plan availability. Inclusion in this map does not mean
+  that a setting is enabled for every account.
+
+## Your account
+
+### Profile and security
+
+Manage your name, image, email addresses, password, connected Google or Apple accounts,
+2FA, recovery codes, passkeys, and active sessions. This is also where you permanently
+delete your personal account.
+
+This section belongs to your identity. Use **Team & permissions > Security** for shared
+rules such as allowed domains, inactivity timeouts, or mandatory 2FA. Read
+[Team, permissions, and security](/en/docs/cuenta/equipo-seguridad) before removing an
+access method or deleting the only owner account.
+
+## Organization configuration
+
+### General
+
+Set the business name, base currency, contact email and phone, address, website,
+WhatsApp number, country of operation, language, and time zone. These values feed
+documents, communications, date formats, and country-specific behavior.
+
+Changing the base currency does not automatically convert historical amounts. Review
+open documents and tax configuration first.
+
+### Branding and client portal
+
+Upload a logo, choose primary and secondary colors, and set the welcome message. The
+client portal settings add a banner, accent color, chat control, and the **Powered by
+Cord** label. Removing Cord branding requires **Starter or higher**.
+
+The portal is the secure link where a client reviews the quote, communicates, and,
+depending on status and configuration, approves or pays. Turning chat off does not
+delete earlier messages.
+
+### Team, security, and SSO
+
+Invite members, resend or revoke invitations, and assign permissions. Team access starts
+on **Pro**; pending invitations reserve a seat and expire after seven days.
+
+Organization security can require 2FA, restrict invitation domains, and set an
+inactivity timeout. SAML 2.0 connections add Entity ID, sign-in URL, certificates,
+verified domains, JIT provisioning, and attribute-to-role rules. SSO requires **Scale
+or Developer** and the Team permission.
+
+### Notifications and email
+
+Choose which events notify each available channel: in-app, email, and Slack when it is
+connected. Email settings customize the sender name, reply-to address, introduction,
+and signature. Send a test quote to verify rendering in your mail provider.
+
+### Plan and subscription
+
+View the effective plan, subscription status, renewal, available plans, period usage,
+and the payment method used to pay Cord. Cord subscription billing is separate from
+payments collected from your clients. See [plans, limits, and billing](/en/docs/cuenta/suscripcion).
+
+### Data, privacy, and audit log
+
+Export the organization, products, or clients, review retention, and enter the danger
+zone to delete the organization. Deletion requires recent authentication and extra
+confirmation. Export first and preserve documents required by local law separately.
+
+The audit log records relevant actions with actor, time, resource, and available
+context. It requires **Pro or higher** and supports investigations; it does not replace
+access controls or an internal retention policy.
+
+## Commercial configuration
+
+### Quote defaults, taxes, and PDF
+
+Configure prefix, series, default tax rate, validity, payment terms, deposit, and legal
+text. Build reusable tax profiles and decide whether prices include tax by default.
+Choose a minimal, classic, or detailed PDF template and control logo, footer message,
+terms, and line-item visibility.
+
+These are starting values for new documents. Review every quote before sending and test
+long names, discounts, taxes, and page breaks in the preview.
+
+### Approvals and message templates
+
+Set maximum discount and amount thresholds plus minimum margin. Quotes outside a rule
+enter the applicable internal approval flow. Approval workflows require **Scale or
+Developer**.
+
+Reusable email and WhatsApp templates support the variables shown in Settings. Always
+preview the result because missing source data can leave a message incomplete.
+
+### Invoicing
+
+In Mexico, configure RFC, legal name, tax regime, postal code, CFDI use, and CSD to
+issue CFDI 4.0. In other markets, set invoice identity, address, tax number, and prefix
+for commercial invoices. See [invoicing by market](/en/docs/pagos/facturacion).
+
+### Payments
+
+Connect the payment account, complete provider verification, and enable available
+methods. Card payments use Cord Payments in supported markets; automated SPEI is only
+available in Mexico. Manual bank-transfer instructions can work without a connected
+payment account.
+
+The screen displays the applicable fee before acceptance. Deposit account details are
+sensitive, and changing them requires recent authentication.
+
+## Integrations and developer tools
+
+The developer block stays hidden on the Settings index until you enable **Developer
+mode**. Direct URLs still work when you have access.
+
+### Integrations and MCP
+
+Connect Slack using a webhook URL, then select its events under Notifications. Items
+marked as upcoming do not promise a release date.
+
+The MCP screen checks for an active API key, provides connection configuration, and
+lists the tools exposed to a compatible Model Context Protocol client. Manage the key
+in Workbench and never paste it into screenshots, chat, or browser code. See the
+[MCP guide](/en/docs/desarrolladores/herramientas/mcp).
+
+### Artificial intelligence
+
+Govern AI collections and the MCP connections an agent may use. The page shows status,
+pending items, and controls to grant or withdraw autonomy. Agent governance requires
+**Scale or Developer**; every action remains subject to permissions, limits, and
+organization configuration.
+
+### Embeddable quote builder
+
+Preview the builder, restrict allowed domains, and copy installation code for another
+site. Domain restrictions are an origin layer; the integrating site must still enforce
+its own authentication and authorization.
+
+## If a change does not appear
+
+1. confirm that saving completed without an error;
+2. verify the organization, permission, country, and effective plan;
+3. create a new document if the setting is only a default;
+4. leave test mode when validating an external provider;
+5. if the problem remains, record the route, time, user, expected result, and visible
+   message before contacting support.
+

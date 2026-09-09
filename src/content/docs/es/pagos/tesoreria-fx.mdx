@@ -1,11 +1,11 @@
 ---
 title: "Tesorería y FX Lock"
-description: "Dónde ver la predicción de flujo de caja de tu negocio, cómo funcionan los intereses moratorios automáticos y la cobertura cambiaria a 30 días."
+description: "Dónde ver la predicción de flujo de caja, el estado del interés moratorio y la cobertura cambiaria a 30 días."
 ---
 
 <header class="content-header">
   <h1 class="page-title">Tesorería Predictiva y FX Lock</h1>
-  <p class="page-subtitle">Predicción de flujo de caja, cobro de mora automático y protección de divisas — cada una en su propio lugar dentro de Cord.</p>
+  <p class="page-subtitle">Predicción de flujo de caja, control de mora y protección de divisas — cada una en su propio lugar dentro de Cord.</p>
 </header>
 
 ## Dónde vive cada cosa
@@ -22,13 +22,12 @@ En `/app/informes`, el informe de flujo cruza los términos de crédito de tus c
 
 Si un cliente tiene términos Net 30 pero históricamente se retrasa 15 días en promedio, la predicción ajusta la entrada esperada de capital con ese comportamiento real — no asume que todo se cobra exactamente en la fecha de vencimiento — dándote una visibilidad más realista de tu liquidez a 90 días.
 
-## Intereses Moratorios Automáticos
+## Intereses Moratorios
 
-Disponible a partir del plan **Scale** (incluye **Developer**), Cord incluye un motor de penalización financiera configurable desde **Ajustes › Aprobaciones**:
-
-- **Cron mensual:** el primer día de cada mes, un proceso automático revisa todas las cotizaciones vencidas de tu cartera.
-- **Interés compuesto:** si configuraste una tasa de interés moratorio mayor a 0%, el sistema aplica ese interés mensual al capital adeudado.
-- **Reflejo inmediato:** el nuevo saldo adeudado se actualiza en el portal del cliente y en el checkout de Cord Payments de forma transparente — el cliente ve el monto correcto a pagar, con el interés ya incluido.
+La aplicación automática está suspendida mientras concluye la revisión jurídica por
+país. Ajustes muestra cualquier tasa histórica como inactiva y el proceso mensual no
+genera cargos nuevos. Cord conserva los cargos registrados anteriormente para que el
+saldo y la auditoría no pierdan trazabilidad.
 
 ## Cobertura Cambiaria (FX Lock)
 

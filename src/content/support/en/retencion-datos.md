@@ -5,12 +5,12 @@ category: "Security & Privacy"
 order: 2
 ---
 
-All commercial, personal, and financial information that crosses the Cord platform is subject to clear retention policies, designed to protect your privacy rights — ARCO in Mexico, GDPR in the EU/UK, LGPD in Brazil, and the equivalent law in every other country where Cord operates — and be honest about what happens to your data if you delete your account. The full detail by jurisdiction lives in the [Privacy Policy](/en/privacidad).
+Retention depends on the record, Cord's role, and the duties of the business or provider involved. The [Privacy Policy](/en/privacidad) describes the current state and expressly identifies schedules that still need record-by-record documentation.
 
 ### Who keeps what, and for how long
 
-- **Tax Documents (XML/PDF):** Mexico's Código Fiscal de la Federación (Art. 30) requires keeping accounting records and tax receipts for **5 years** — but that obligation belongs to **your business as the taxpayer**, not to Cord as a software platform. Cord keeps your CFDI for as long as your organization exists, but it isn't a long-term fiscal archive: if you delete your organization, the documents are deleted with it (see below). That's why we ask you to export them first.
-- **Access Audit Logs:** Session records, IP addresses, and destructive actions (Audit Trails) of your workforce are kept in hot access for 1 year for forensic investigations.
-- **Cardholder Bank Data:** Cord **NEVER** stores CVVs or the complete magnetic stripe track. Tokenized Primary Account Numbers (PAN) can be deleted upon explicit request from the end user exercising their privacy rights (ARCO, GDPR, LGPD, or the equivalent in their country) by sending an email to `legal@flouvia.com`.
+- **Tax documents (XML/PDF):** Mexico's Código Fiscal de la Federación (Article 30) imposes the taxpayer's own retention duties. Cord keeps CFDI inside the organization while it exists, but it does not replace the business's tax archive. Deleting the organization also deletes its documents from Cord's primary database; export them first.
+- **Audit and contract evidence:** selected security events and pseudonymous legal-acceptance evidence may remain outside the operational organization row to investigate incidents or establish the contract. The repository does not yet publish one approved period for that entire set, so this article does not invent one.
+- **Card data:** Cord does not store CVV, magnetic-stripe track, or a tokenized PAN in its database. Stripe collects and tokenizes card details on its own surface and may retain records under its own financial duties. A request about those records must follow the role and procedure applicable to Stripe; deleting a Cord organization does not automatically erase them.
 
-If you decide to delete your corporate Cord account, the deletion is real, immediate, and total — it includes the tax documents, not just the transactional databases. Export your CFDI first from Settings › Data & privacy; if you need to recover an already-stamped receipt later, you can also get it directly from the SAT using the folio fiscal.
+If you delete your organization, Cord deletes its primary row and dependent operational records, including tax documents stored in that organization. It does not automatically erase backups still in rotation, pseudonymous contract evidence, records a provider retains under its own duties, or data sent to an integration under Customer instruction. Export your CFDI first from Settings › Data & privacy.

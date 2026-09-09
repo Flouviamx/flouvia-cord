@@ -10,6 +10,7 @@ import { payerError } from '../../../../lib/pay-errors';
 import { after } from '../../../../lib/after';
 import { log } from '../../../../lib/log';
 import { limitPublicPayment } from '../../../../lib/connect-security';
+import { claimQuotePaymentAttempt, publishQuotePaymentAttempt, QuotePaymentConflict } from '../../../../lib/quote-payment-attempts';
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
@@ -104,37 +105,13 @@ export const POST: APIRoute = async ({ params, request }) => {
         from cotizacion_cobros where org_id = ${orgId} and cotizacion_id = ${c.id}
         order by vence asc nulls first, created_at asc`);
 
-    // Re-versión: si el total cambió después de materializar los cobros y aún
-    // no se pagó NINGUNO, se regeneran (sus montos congelados ya no suman el total).
-    // ANTES de borrar, se cancelan sus PaymentIntents en Stripe: un PI en vuelo
-    // (CLABE SPEI emitida) podría liquidarse después y quedaría huérfano. Si
-    // algún PI no se puede cancelar (p. ej. SPEI 'processing'), se ABORTA la
-    // regeneración — mejor un desglose desactualizado que un pago sin rastro.
+    // Never delete a payable row while an external creation may be in flight.
+    // Keep its identity/history and ask the seller to reconcile the revised quote.
     const activos = cobros.filter((co: any) => co.status !== 'cancelado');
-    const sumCents = activos.reduce((s: number, co: any) => s + toCents(co.monto), 0);
+    const sumCents = activos.reduce((sum: number, co: any) => sum + toCents(co.monto), 0);
     const nadaPagado = cobros.every((co: any) => co.status !== 'pagado');
     if (cobros.length && nadaPagado && sumCents !== totalCents) {
-        let cancelablesOk = true;
-        for (const co of cobros) {
-            if (co.status !== 'pendiente' || !co.stripe_payment_intent_id) continue;
-            try {
-                const r = await fetch(`https://api.stripe.com/v1/payment_intents/${co.stripe_payment_intent_id}/cancel`, {
-                    method: 'POST', headers: connectHeaders,
-                });
-                if (!r.ok) {
-                    const d: any = await r.json().catch(() => ({}));
-                    // "ya cancelado" es aceptable; cualquier otro fallo aborta.
-                    const yaCancelado = String(d?.error?.message || '').includes('canceled');
-                    if (!yaCancelado) { cancelablesOk = false; break; }
-                }
-            } catch { cancelablesOk = false; break; }
-        }
-        if (cancelablesOk) {
-            await withOrgTx(orgId, sql`delete from cotizacion_cobros
-                where org_id = ${orgId} and cotizacion_id = ${c.id} and status = 'pendiente'`);
-            cobros = [];
-            requestedCobroId = '';
-        }
+        return json({ error: 'El importe de la cotización cambió. Pide al vendedor que revise el desglose antes de pagar.', code: 'payment_changed' }, 409);
     }
 
     if (!cobros.length) {
@@ -208,72 +185,103 @@ export const POST: APIRoute = async ({ params, request }) => {
         return json({ error: 'El vendedor no tiene un método de pago disponible para la moneda de esta cotización.' }, 409);
     }
 
+    async function presentIntent(intent: any): Promise<Response> {
+        let current = intent;
+        if (method === 'spei' && ['requires_payment_method', 'requires_confirmation'].includes(current.status)) {
+            // The intent is durably linked BEFORE confirmation, so an immediate
+            // cash-balance settlement cannot race an untracked creation.
+            const result = await fetch(`https://api.stripe.com/v1/payment_intents/${current.id}/confirm`, {
+                method: 'POST', headers: { ...connectHeaders, 'Idempotency-Key': `cord-quote-confirm-${current.id}` },
+                body: new URLSearchParams({ 'payment_method_data[type]': 'customer_balance' }).toString(),
+                signal: AbortSignal.timeout(15000),
+            });
+            const confirmed: any = await result.json();
+            if (!result.ok || confirmed.id !== current.id) return json({ error: 'No pudimos confirmar las instrucciones. Actualiza el enlace para consultar este mismo pago.' }, 502);
+            current = confirmed;
+        }
+        if (['succeeded', 'processing', 'requires_capture'].includes(current.status)) return pendingPayment();
+        if (current.status === 'canceled') throw new QuotePaymentConflict('payment_changed');
+        if (method === 'spei') {
+            const instructions = bankTransferInstructions(current, c.org_nombre as string);
+            if (!instructions) return json({ error: 'No pudimos generar las instrucciones SPEI. Intenta de nuevo.' }, 502);
+            return json({ metodo: method, instructions, amount, cobroId: cobro.id, cobroTipo: cobro.tipo });
+        }
+        if (!current.client_secret) return json({ error: 'No pudimos preparar el pago. Actualiza el enlace.' }, 502);
+        return json({ metodo: method, clientSecret: current.client_secret, publishableKey: pubKey, accountId: acct, amount, cobroId: cobro.id, cobroTipo: cobro.tipo });
+    }
+
     try {
         // ── 1) Reutilizar el PaymentIntent existente del COBRO si sigue vigente ──
         // Crucial para SPEI: la CLABE se asigna por customer — un PI/customer nuevo
         // en cada visita significaría una CLABE distinta en cada recarga.
         const prevId = cobro.stripe_payment_intent_id as string | null;
+        let previousCustomer = '';
         if (prevId) {
             const prevRes = await fetch(`https://api.stripe.com/v1/payment_intents/${prevId}`, {
-                headers: connectHeaders,
+                headers: connectHeaders, signal: AbortSignal.timeout(15000),
             });
             const prev: any = await prevRes.json();
-            if (prevRes.ok && prev?.id) {
-                if (prev.status === 'succeeded') {
-                    return json({ alreadyPaid: true });
-                }
-                const sameMethods = Array.isArray(prev.payment_method_types)
-                    && prev.payment_method_types.length === pmTypes.length
-                    && pmTypes.every((t) => prev.payment_method_types.includes(t));
-                const sameFee = Number(prev.application_fee_amount || 0) === fee.applicationFeeCents;
-                const updateable = ['requires_payment_method', 'requires_confirmation'].includes(prev.status);
-                const reusable = !['canceled'].includes(prev.status) && sameMethods
-                    && ((prev.amount === amount && sameFee) || (method !== 'spei' && updateable));
-                if (reusable) {
-                    // Tarjeta: si cambia el monto, cambia también la comisión del
-                    // MISMO PI. SPEI ya confirmado conserva instrucciones estables.
-                    let current = prev;
-                    if ((prev.amount !== amount || !sameFee) && updateable) {
-                        const upd = new URLSearchParams({ amount: String(amount) });
-                        if (fee.applicationFeeCents > 0) upd.set('application_fee_amount', String(fee.applicationFeeCents));
-                        const updated = await fetch(`https://api.stripe.com/v1/payment_intents/${prevId}`, {
-                            method: 'POST', headers: connectHeaders, body: upd.toString(),
-                        });
-                        current = await updated.json();
-                        if (!updated.ok) throw current?.error || new Error('No se pudo actualizar el cobro');
-                    }
-                    await withOrgTx(orgId, sql`update cotizacion_cobros set
-                        metodo_pago = ${method}, application_fee_cents = ${fee.applicationFeeCents},
-                        fee_base_cents = ${fee.feeBaseCents}, fee_iva_cents = ${fee.feeIvaCents},
-                        fee_total_cents = ${fee.applicationFeeCents}
-                        where id = ${cobro.id} and org_id = ${orgId}`);
-                    after(trackServer('checkout_resumed', orgId, {
-                        quote_id: c.id,
-                        cobro_id: cobro.id,
-                        cobro_tipo: cobro.tipo,
-                        checkout_id: current.id,
-                        amount: fromMinorUnits(amount, currency),
-                        currency,
-                        payment_method: method || 'choice',
-                        checkout_version: checkoutV2 ? 2 : 1,
-                        source: 'public_link',
-                    }, !!c.sandbox_of, !!c.is_demo));
-                    if (method === 'spei') {
-                        const instructions = bankTransferInstructions(current, c.org_nombre as string);
-                        if (!instructions) return json({ error: 'No pudimos generar las instrucciones SPEI. Intenta de nuevo.' }, 502);
-                        return json({ metodo: method, instructions, amount, cobroId: cobro.id, cobroTipo: cobro.tipo });
-                    }
-                    return json({ metodo: method, clientSecret: current.client_secret, publishableKey: pubKey, accountId: acct, amount, cobroId: cobro.id, cobroTipo: cobro.tipo });
-                }
+            if (!prevRes.ok || prev?.id !== prevId) {
+                return json({ error: 'No pudimos verificar el pago anterior. Intenta de nuevo antes de cambiar de método.' }, 502);
             }
-            // No existe / cancelado / cambió la config → crear uno nuevo abajo.
+            previousCustomer = typeof prev.customer === 'string' ? prev.customer : String(prev.customer?.id || '');
+            if (['succeeded', 'processing', 'requires_capture'].includes(prev.status)) return pendingPayment();
+            if (prev.metadata?.cobro_id && prev.metadata.cobro_id !== cobro.id) return pendingPayment();
+            const sameMethods = Array.isArray(prev.payment_method_types)
+                && prev.payment_method_types.length === pmTypes.length
+                && pmTypes.every((type) => prev.payment_method_types.includes(type));
+            const sameTerms = sameMethods && prev.amount === amount
+                && String(prev.currency).toLowerCase() === stripeCurrency(currency)
+                && Number(prev.application_fee_amount || 0) === fee.applicationFeeCents;
+            if (sameTerms && ['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(prev.status)) {
+                const [currentRows] = await withOrgTx(orgId, sql`update cotizacion_cobros set
+                    metodo_pago = ${method}, application_fee_cents = ${fee.applicationFeeCents},
+                    fee_base_cents = ${fee.feeBaseCents}, fee_iva_cents = ${fee.feeIvaCents},
+                    fee_total_cents = ${fee.applicationFeeCents}
+                    where id = ${cobro.id} and org_id = ${orgId} and status = 'pendiente'
+                      and monto = ${Number(cobro.monto)} and stripe_payment_intent_id = ${prevId}
+                      and exists (select 1 from cotizaciones q where q.id = ${c.id} and q.org_id = ${orgId}
+                                  and q.status in ('approved', 'invoiced') and q.total = ${Number(c.total)}
+                                  and upper(coalesce(q.base_currency, ${currency})) = ${currency})
+                    returning id`);
+                if (!currentRows.length) throw new QuotePaymentConflict('payment_changed');
+                after(trackServer('checkout_resumed', orgId, {
+                    quote_id: c.id, cobro_id: cobro.id, cobro_tipo: cobro.tipo, checkout_id: prev.id,
+                    amount: fromMinorUnits(amount, currency), currency, payment_method: method || 'choice',
+                    checkout_version: checkoutV2 ? 2 : 1, source: 'public_link',
+                }, !!c.sandbox_of, !!c.is_demo));
+                return await presentIntent(prev);
+            }
+            if (prev.status !== 'canceled') {
+                // An authorization, processing payment or partially funded SPEI
+                // must not be canceled/replaced to offer a different method.
+                const remaining = prev.next_action?.display_bank_transfer_instructions?.amount_remaining;
+                const funded = Number(prev.amount_received || 0) > 0 || Number(prev.amount_capturable || 0) > 0
+                    || (remaining != null && Number(remaining) < Number(prev.amount));
+                if (funded || !['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(prev.status)) return pendingPayment();
+                let canceled = false;
+                try {
+                    const result = await fetch(`https://api.stripe.com/v1/payment_intents/${prevId}/cancel`, {
+                        method: 'POST', headers: { ...connectHeaders, 'Idempotency-Key': `cord-quote-cancel-${prevId}` },
+                        signal: AbortSignal.timeout(15000),
+                    });
+                    const data: any = await result.json();
+                    canceled = result.ok && data.id === prevId && data.status === 'canceled';
+                } catch { /* response loss is resolved by a fresh authoritative read below */ }
+                if (!canceled) {
+                    const result = await fetch(`https://api.stripe.com/v1/payment_intents/${prevId}`, { headers: connectHeaders, signal: AbortSignal.timeout(15000) });
+                    const data: any = await result.json();
+                    canceled = result.ok && data.id === prevId && data.status === 'canceled';
+                }
+                if (!canceled) return pendingPayment();
+            }
         }
 
         // ── 2) Customer (solo requerido por customer_balance / SPEI) ──────────
         // Un customer POR COBRO (no por cotización): la CLABE de SPEI se asigna
         // por customer, y cada cobro necesita la suya para conciliarse solo.
-        let customerId = '';
-        if (method === 'spei' || (!checkoutV2 && c.cobro_spei_auto && speiDisponible)) {
+        let customerId = previousCustomer;
+        if (!customerId && (method === 'spei' || (!checkoutV2 && c.cobro_spei_auto && speiDisponible))) {
             const cusForm = new URLSearchParams();
             cusForm.set('metadata[cotizacion_id]', c.id as string);
             cusForm.set('metadata[cobro_id]', cobro.id as string);
@@ -319,41 +327,43 @@ export const POST: APIRoute = async ({ params, request }) => {
             form.set('payment_method_options[customer_balance][funding_type]', 'bank_transfer');
             form.set('payment_method_options[customer_balance][bank_transfer][type]', 'mx_bank_transfer');
         }
+        // Carry the existing customer through card switches as well, so a
+        // later return to SPEI can reuse its bank-transfer destination.
         if (customerId) form.set('customer', customerId);
         if (fee.applicationFeeCents > 0) form.set('application_fee_amount', String(fee.applicationFeeCents));
-        if (method === 'spei') {
-            form.set('confirm', 'true');
-            form.set('payment_method_data[type]', 'customer_balance');
-        }
 
-        const res = await fetch('https://api.stripe.com/v1/payment_intents', {
-            method: 'POST',
-            headers: {
-                ...connectHeaders,
-                'Idempotency-Key': `cord-pi-${cobro.id}-${method || 'legacy'}-${amount}-${prevId || 'new'}`,
-            },
-            body: form.toString(),
-        });
-        const data: any = await res.json();
-        if (!res.ok) {
-            const safe = payerError(data?.error);
-            log.error('el proveedor rechazó el payment intent', { route: 'cord-pagos', reference: safe.reference, err: data?.error });
-            return json({ error: `${safe.message} Ref: ${safe.reference}` }, 502);
-        }
 
-        const [updated] = await withOrgTx(orgId, sql`update cotizacion_cobros
-                  set stripe_payment_intent_id = ${data.id}, metodo_pago = ${method},
-                      application_fee_cents = ${fee.applicationFeeCents},
-                      fee_base_cents = ${fee.feeBaseCents}, fee_iva_cents = ${fee.feeIvaCents},
-                      fee_total_cents = ${fee.applicationFeeCents}
-                  where id = ${cobro.id} and org_id = ${orgId}
-                  returning id`);
-        if (!updated.length) throw new Error('No se pudo ligar el cobro preparado');
+        const attemptInput = { orgId, quoteId: String(c.id), cobroId: String(cobro.id), previousId: prevId,
+            amount: Number(cobro.monto), quoteTotal: Number(c.total), currency, request: form };
+        const attempt = await claimQuotePaymentAttempt(attemptInput);
+        form.set('metadata[cord_attempt_id]', attempt.id);
+        let data: any;
+        if (attempt.paymentIntentId) {
+            const res = await fetch(`https://api.stripe.com/v1/payment_intents/${attempt.paymentIntentId}`, { headers: connectHeaders, signal: AbortSignal.timeout(15000) });
+            data = await res.json();
+            if (!res.ok || data.id !== attempt.paymentIntentId) throw new Error('No se pudo recuperar el intento');
+        } else {
+            const res = await fetch('https://api.stripe.com/v1/payment_intents', {
+                method: 'POST', headers: { ...connectHeaders, 'Idempotency-Key': `cord-quote-attempt-${attempt.id}` },
+                body: form.toString(), signal: AbortSignal.timeout(15000),
+            });
+            data = await res.json();
+            if (!res.ok || !data?.id) {
+                if (data?.error?.type === 'idempotency_error' || data?.error?.code === 'idempotency_key_in_use') return pendingPayment();
+                const safe = payerError(data?.error);
+                log.error('el proveedor rechazó el payment intent', { route: 'cord-pagos', reference: safe.reference, err: data?.error });
+                return json({ error: `${safe.message} Ref: ${safe.reference}` }, 502);
+            }
+        }
+        if (data.amount !== amount || data.currency !== stripeCurrency(currency)) throw new QuotePaymentConflict('payment_changed');
+        await publishQuotePaymentAttempt(attemptInput, attempt.id, data.id, fee, method);
         // Compat: la columna legacy sigue reflejando el PI del pago total simple
         // (nadie más la escribe; queda de solo-lectura para cotizaciones viejas).
         if (cobro.tipo === 'total') {
             await withOrgTx(orgId, sql`update cotizaciones set stripe_payment_intent_id = ${data.id}
-                where id = ${c.id} and org_id = ${orgId}`);
+                where id = ${c.id} and org_id = ${orgId}
+                  and exists (select 1 from cotizacion_cobros co where co.id = ${cobro.id} and co.org_id = ${orgId}
+                              and co.stripe_payment_intent_id = ${data.id})`);
         }
 
         // `checkout_started` significa un checkout NUEVO, no cada recarga del
@@ -371,20 +381,20 @@ export const POST: APIRoute = async ({ params, request }) => {
             source: 'public_link',
         }, !!c.sandbox_of, !!c.is_demo));
 
-        if (method === 'spei') {
-            const instructions = bankTransferInstructions(data, c.org_nombre as string);
-            if (!instructions) return json({ error: 'No pudimos generar las instrucciones SPEI. Intenta de nuevo.' }, 502);
-            return json({ metodo: method, instructions, amount, cobroId: cobro.id, cobroTipo: cobro.tipo });
-        }
-        return json({ metodo: method, clientSecret: data.client_secret, publishableKey: pubKey, accountId: acct, amount, cobroId: cobro.id, cobroTipo: cobro.tipo });
+        return await presentIntent(data);
     } catch (e) {
+        if (e instanceof QuotePaymentConflict) return json({ error: e.message, code: e.code }, 409);
         log.error('error no controlado', { route: 'cord-pagos', err: e });
         return json({ error: 'No pudimos conectar con el procesador de pagos' }, 502);
     }
 };
 
 function json(data: unknown, status = 200) {
-    return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer' } });
+}
+
+function pendingPayment() {
+    return json({ error: 'Hay un pago recibido o en proceso de confirmación. Actualiza el enlace en unos momentos antes de intentar otro método.', code: 'payment_pending' }, 409);
 }
 
 function bankTransferInstructions(paymentIntent: any, beneficiary: string) {

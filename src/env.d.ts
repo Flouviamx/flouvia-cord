@@ -9,6 +9,7 @@
 // futuro sea un error de compilación, no un 500 en producción.
 declare namespace App {
     interface Locals {
+        customerDomainOrgId?: string;
         opsOperator?: import('./lib/ops-auth').OpsOperator;
     }
 }

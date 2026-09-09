@@ -24,6 +24,9 @@ import { sendOpsAlert } from '../../../lib/ops-alert';
 import { sendEmail, siteOrigin } from '../../../lib/email';
 import { computeSubscriptionFee } from '../../../lib/fees';
 import { applyPayment } from '../../../lib/fiscal/payments';
+import { recordInvoiceRefund } from '../../../lib/fiscal/reconciliation';
+import { reconcileInvoiceCommission } from '../../../lib/invoice-payment-fees';
+import { invalidateMoneyCaches } from '../../../lib/queries';
 import { fromMinorUnits, normalizeCurrency, toMinorUnits } from '../../../lib/currency';
 import { log } from '../../../lib/log';
 
@@ -179,6 +182,7 @@ async function handleStripeEvent(event: any): Promise<void> {
             break;
         }
         case 'payment_intent.succeeded': {
+            await markBuildPayment(obj);
             await markQuotePaid(obj, event.account, event.type);
             // Y, por separado, el saldo de la FACTURA. Son dos ledgers: el de
             // la cotización (cotizacion_cobros) y el del documento fiscal.
@@ -186,6 +190,7 @@ async function handleStripeEvent(event: any): Promise<void> {
             break;
         }
         case 'payment_intent.payment_failed': {
+            await markBuildBidFailed(obj);
             await markPaymentFailed(obj, event.account);
             await failInvoiceFromIntent(obj, event.account);
             break;
@@ -267,7 +272,8 @@ async function handleStripeEvent(event: any): Promise<void> {
         case 'refund.created':
         case 'refund.updated':
         case 'refund.failed': {
-            await recordRefundEvent(obj, event.account, event.type);
+            if (event.type === 'refund.updated') await syncBuildBidRefund(obj);
+            await recordRefundEvent(obj, event.account, event.type, Number(event.created || 0));
             break;
         }
         case 'application_fee.created':
@@ -287,17 +293,17 @@ async function handleStripeEvent(event: any): Promise<void> {
     }
 }
 
+async function orgForConnectedAccount(account: string | undefined): Promise<string | null> {
+    if (!account) return null;
+    const [row] = await sql`select cord_resolve_org_for_connected_account(${account}) as id`;
+    return (row?.id as string | undefined) ?? null;
+}
+
 /** Banderas sandbox/demo de una org — para no meter datos ficticios en dashboards. */
 async function orgAnalyticsFlags(orgId: string): Promise<{ isSandbox: boolean; isDemo: boolean }> {
     const [[row]] = await withOrgTx(orgId, sql`
         select (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);
     return { isSandbox: !!row?.is_sandbox, isDemo: !!row?.is_demo };
-}
-
-async function orgForConnectedAccount(account: string | undefined): Promise<string | null> {
-    if (!account) return null;
-    const [row] = await sql`select cord_resolve_org_for_connected_account(${account}) as id`;
-    return (row?.id as string | undefined) ?? null;
 }
 
 async function orgForQuote(quoteId: string, account?: string): Promise<string | null> {
@@ -344,7 +350,8 @@ async function settleInvoiceFromIntent(intent: any, account?: string): Promise<v
         const [rows] = await withOrgTx(orgId, sql`
             select id from documentos_fiscales
              where org_id = ${orgId} and cotizacion_id = ${quoteId}
-               and lifecycle = 'open'
+               and lifecycle = 'open' and credit_note_of is null
+               and document_type not in ('credit_note', 'cfdi_egreso')
              order by created_at desc limit 1`);
         if (!rows.length) return;
         targetId = String(rows[0].id);
@@ -360,13 +367,21 @@ async function settleInvoiceFromIntent(intent: any, account?: string): Promise<v
     if (!result.ok) {
         await sendOpsAlert('Pago sin aplicar a factura',
             `Organización ${orgId}; documento ${targetId}; PI ${intent?.id}; ${result.error}`);
-        return;
+        throw new Error('No se pudo conciliar el pago de la factura.');
     }
+    // Enqueue the paid transition before fee reconciliation can request a retry;
+    // applyPayment is idempotent and will not repeat justPaid on that retry.
+    if (result.justPaid) after(dispatchInvoiceEvent(orgId, targetId, 'invoice.paid'));
     // Ingreso real de una factura PURA (pagada desde su hosted page). Solo el
     // camino `metadata.documento_id`: el camino `cotizacion_id` es un pago del
     // link de la cotización que markQuotePaid ya contó como payment_received —
     // emitir aquí otra vez lo duplicaría.
     if (docId) {
+        const commissionStatus = await reconcileInvoiceCommission(orgId, targetId, intent, account);
+        if (commissionStatus === 'needs_review') {
+            after(sendOpsAlert('Comisión de factura pendiente de revisión',
+                `Organización ${orgId}; documento ${targetId}; pago ${intent.id}. Revisar desglose o divisa antes de facturar la comisión.`));
+        }
         const pm = Array.isArray(intent?.payment_method_types) && intent.payment_method_types.includes('customer_balance')
             ? 'spei' : 'tarjeta';
         const flags = await orgAnalyticsFlags(orgId);
@@ -376,7 +391,6 @@ async function settleInvoiceFromIntent(intent: any, account?: string): Promise<v
             { payment_id: String(intent?.id || ''), invoice_id: targetId, payment_kind: 'invoice' },
         );
     }
-    if (result.justPaid) after(dispatchInvoiceEvent(orgId, targetId, 'invoice.paid'));
 }
 
 /** Un intento fallido no toca el saldo, pero sí avisa a quien escucha facturas. */
@@ -493,25 +507,57 @@ async function recordPayoutStatus(payout: any, account: string | undefined, even
     }
 }
 
-async function recordRefundEvent(refundOrCharge: any, account: string | undefined, eventType: string): Promise<void> {
+async function recordRefundEvent(refundOrCharge: any, account: string | undefined, eventType: string, eventCreated = 0): Promise<void> {
     const orgId = await orgForConnectedAccount(account);
     if (!orgId) return;
 
     if (eventType === 'charge.refunded') {
-        for (const refund of refundOrCharge?.refunds?.data ?? []) {
-            await recordRefundEvent(refund, account, 'refund.updated');
-        }
+        let page = refundOrCharge?.refunds;
+        do {
+            for (const refund of page?.data ?? []) {
+                await recordRefundEvent(refund, account, 'refund.updated', eventCreated);
+            }
+            if (!page?.has_more) break;
+            const last = page.data?.at(-1)?.id;
+            if (!last || !refundOrCharge?.id) throw new Error('No se pudo paginar el historial de reembolsos.');
+            page = await stripe('/v1/refunds', { charge: String(refundOrCharge.id), starting_after: String(last), limit: '100' }, 'GET', { stripeAccount: account });
+            if (!Array.isArray(page?.data) || page.has_more && !page.data.length) throw new Error('Historial de reembolsos incompleto.');
+        } while (true);
         return;
     }
 
     const refundId = String(refundOrCharge?.id || '');
     if (!refundId.startsWith('re_')) return;
+    // El evento puede llegar tarde: se lee el estado vigente en la misma cuenta.
+    const currentRefund = await stripe(`/v1/refunds/${encodeURIComponent(refundId)}`, undefined, 'GET', { stripeAccount: account });
+    if (!currentRefund || currentRefund.id !== refundId) throw new Error('No se pudo verificar el reembolso recibido.');
+    refundOrCharge = currentRefund;
     const chargeId = typeof refundOrCharge?.charge === 'string'
         ? refundOrCharge.charge
         : String(refundOrCharge?.charge?.id || '');
     const paymentIntentId = typeof refundOrCharge?.payment_intent === 'string'
         ? refundOrCharge.payment_intent
         : String(refundOrCharge?.payment_intent?.id || '');
+    const status = String(refundOrCharge.status || '');
+    const amount = Number(refundOrCharge.amount);
+    const currency = String(refundOrCharge.currency || '').toUpperCase();
+    if (!Number.isSafeInteger(amount) || amount <= 0 || !/^[A-Z]{3}$/.test(currency)) throw new Error('Importe o divisa del reembolso inválidos.');
+    if (paymentIntentId) {
+        await recordInvoiceRefund(orgId, { id: refundId, paymentIntentId, amount: fromMinorUnits(amount, currency), currency, status, eventCreated });
+        invalidateMoneyCaches(orgId);
+    }
+    // Reembolso EFECTIVO: monto negativo contra el revenue. Va antes del enlace
+    // con cobro para cubrir también los reembolsos de facturas puras. Dedup por
+    // refund_id ($insert_id): `refund.updated` puede llegar varias veces.
+    if (status === 'succeeded') {
+        const refFlags = await orgAnalyticsFlags(orgId);
+        await trackServer('refund_issued', orgId, {
+            refund_id: refundId,
+            amount: fromMinorUnits(amount, currency),
+            currency,
+            reason: (refundOrCharge?.reason as string) ?? undefined,
+        }, refFlags.isSandbox, refFlags.isDemo);
+    }
     const [[cobro]] = await withOrgTx(orgId, sql`
         select id from cotizacion_cobros
          where org_id = ${orgId}
@@ -519,9 +565,6 @@ async function recordRefundEvent(refundOrCharge: any, account: string | undefine
          limit 1`);
     if (!cobro) return;
 
-    const status = eventType === 'refund.failed' ? 'failed' : String(refundOrCharge?.status || 'pending');
-    const amount = Math.max(0, Number(refundOrCharge?.amount || 0));
-    const currency = String(refundOrCharge?.currency || 'mxn').toUpperCase();
     await withOrgTx(orgId,
         sql`insert into cobro_reembolsos
               (org_id, cobro_id, stripe_refund_id, amount_cents, currency, status, reason, failure_reason, updated_at)
@@ -541,18 +584,6 @@ async function recordRefundEvent(refundOrCharge: any, account: string | undefine
         entidad: 'refund', entidad_id: refundId,
         detalle: `${fromMinorUnits(amount, currency)} ${currency}; ${status}`,
     });
-    // Reembolso EFECTIVO: monto negativo contra el revenue. Dedup por refund_id
-    // ($insert_id): `refund.updated` puede llegar varias veces.
-    if (status === 'succeeded') {
-        const flags = await orgAnalyticsFlags(orgId);
-        await trackServer('refund_issued', orgId, {
-            refund_id: refundId,
-            amount: fromMinorUnits(amount, currency),
-            currency,
-            cobro_id: cobro.id as string,
-            reason: (refundOrCharge?.reason as string) ?? undefined,
-        }, flags.isSandbox, flags.isDemo);
-    }
 }
 
 async function recordDisputeEvent(dispute: any, account: string | undefined, eventType: string): Promise<void> {
@@ -631,13 +662,132 @@ async function recordApplicationFeeEvent(fee: any, eventType: string): Promise<v
     const refunded = Math.max(0, Number(parent?.amount_refunded ?? fee?.amount ?? 0) || 0);
     const [updated] = await withOrgTx(orgId, sql`update comisiones set
         stripe_application_fee_id = coalesce(stripe_application_fee_id, ${feeId}),
-        status = ${eventType === 'application_fee.created' ? 'settled' : 'fee_refunded'},
+        status = case when status = 'needs_review' then status
+                      when ${eventType === 'application_fee.created'} then status else 'fee_refunded' end,
         refunded_cents = case when ${eventType === 'application_fee.created'} then refunded_cents else greatest(refunded_cents, ${refunded}) end,
         updated_at = now()
       where org_id = ${orgId}
         and (stripe_application_fee_id = ${feeId} or stripe_charge_id = ${String(parent?.charge || '')})
       returning id`);
     if (!updated.length) throw new Error(`Comisión no conciliada para ${feeId}`);
+}
+
+async function markBuildPayment(intent: any): Promise<void> {
+    if (intent?.metadata?.flow === 'cord_build_bid') {
+        await settleBuildBid(intent);
+        return;
+    }
+    if (intent?.metadata?.flow === 'cord_build_balance') {
+        await settleBuildBalance(intent);
+        return;
+    }
+    await markBuildPositionPaid(intent);
+}
+
+async function settleBuildBalance(intent: any): Promise<void> {
+    if (intent?.status !== 'succeeded') throw new Error('Saldo final Build no está succeeded');
+    const bidId = String(intent?.metadata?.bid_id || '');
+    if (!/^[0-9a-f-]{36}$/i.test(bidId) || !intent?.id) throw new Error('Saldo final Build sin metadatos completos');
+    const [settled] = await sql`
+        select cord_settle_build_balance(
+          ${bidId}::uuid, ${String(intent.id)}, ${Number(intent.amount)}, ${String(intent.currency || '').toLowerCase()}
+        ) as outcome`;
+    if (settled?.outcome !== 'accepted') throw new Error(`No se pudo conciliar el saldo ganador Build ${bidId}`);
+}
+
+async function settleBuildBid(intent: any): Promise<void> {
+    if (intent?.status !== 'succeeded') throw new Error('Depósito Build no está succeeded');
+    const bidId = String(intent?.metadata?.bid_id || '');
+    if (!/^[0-9a-f-]{36}$/i.test(bidId) || !intent?.id) throw new Error('Depósito Build sin metadatos completos');
+
+    const [settled] = await sql`
+        select * from cord_settle_build_bid(
+          ${bidId}::uuid, ${String(intent.id)}, ${Number(intent.amount)}, ${String(intent.currency || '').toLowerCase()}
+        )`;
+    if (!settled) throw new Error(`No se pudo conciliar la oferta Build ${bidId}`);
+
+    // Si el proceso cayó después de mover el liderazgo pero antes del refund,
+    // el retry recupera cualquier depósito todavía marcado para reembolso.
+    let refundBidId = settled.refund_bid_id as string | null;
+    let refundIntentId = settled.refund_payment_intent_id as string | null;
+    if (!refundIntentId && settled.outcome === 'accepted') {
+        const [pendingRefund] = await sql`
+            select id, stripe_payment_intent_id from build_bids
+             where position_id = ${String(intent.metadata.position_id || '')}
+               and status = 'outbid_refunding'
+             order by outbid_at asc limit 1`;
+        refundBidId = pendingRefund?.id || null;
+        refundIntentId = pendingRefund?.stripe_payment_intent_id || null;
+    }
+    if (!refundIntentId || !refundBidId) return;
+
+    const refund = await stripe('/v1/refunds', {
+        payment_intent: refundIntentId,
+        'metadata[flow]': 'cord_build_bid_refund',
+        'metadata[bid_id]': refundBidId,
+    }, 'POST', { idempotencyKey: `cord-build-bid-refund-${refundBidId}` });
+    if (!refund?.id) throw new Error(`Stripe no devolvió refund para Build ${refundBidId}`);
+
+    const [bid] = await sql`select status from build_bids where id = ${refundBidId}::uuid`;
+    const terminalStatus = bid?.status === 'stale_refunding' ? 'stale' : bid?.status === 'rejected_refunding' ? 'rejected' : 'outbid';
+    await sql`
+        update build_bids
+           set stripe_refund_id = ${refund.id},
+               status = case when ${String(refund.status || '')} = 'succeeded' then ${terminalStatus} else status end,
+               refunded_at = case when ${String(refund.status || '')} = 'succeeded' then now() else refunded_at end,
+               updated_at = now()
+         where id = ${refundBidId}::uuid
+           and stripe_payment_intent_id = ${refundIntentId}`;
+}
+
+async function markBuildBidFailed(intent: any): Promise<void> {
+    if (intent?.metadata?.flow !== 'cord_build_bid' || !intent?.id) return;
+    await sql`
+        update build_bids set status = 'failed', updated_at = now()
+         where stripe_payment_intent_id = ${String(intent.id)} and status = 'pending'`;
+}
+
+async function syncBuildBidRefund(refund: any): Promise<void> {
+    if (refund?.metadata?.flow !== 'cord_build_bid_refund' || !refund?.id) return;
+    const bidId = String(refund.metadata.bid_id || '');
+    if (!/^[0-9a-f-]{36}$/i.test(bidId)) throw new Error('Refund Build sin bid_id');
+    if (refund.status === 'failed' || refund.failure_reason) {
+        throw new Error(`Refund Build falló: ${String(refund.failure_reason || refund.status)}`);
+    }
+    if (refund.status !== 'succeeded') return;
+    await sql`
+        update build_bids
+           set status = case status when 'stale_refunding' then 'stale' when 'rejected_refunding' then 'rejected' else 'outbid' end,
+               stripe_refund_id = ${String(refund.id)}, refunded_at = coalesce(refunded_at, now()), updated_at = now()
+         where id = ${bidId}::uuid and status in ('outbid_refunding','stale_refunding','rejected_refunding')`;
+}
+
+// The Cord Build: el navegador nunca puede marcar una posición como pagada.
+// Sólo llega aquí tras verificar la firma del webhook y reclamar event.id de
+// forma idempotente. Se exige coincidencia de posición + request + hold + PI;
+// cualquier desajuste hace fallar el evento para revisión/retry, no concede el lugar.
+async function markBuildPositionPaid(intent: any): Promise<void> {
+    if (intent?.metadata?.flow !== 'cord_build') return;
+    if (intent?.status !== 'succeeded') throw new Error('PaymentIntent de Build no está succeeded');
+    const positionId = String(intent?.metadata?.position_id || '');
+    const requestId = String(intent?.metadata?.request_id || '');
+    const holdToken = String(intent?.metadata?.hold_token || '');
+    if (!/^([0][1-9]|10)$/.test(positionId) || !requestId || !holdToken || !intent?.id) {
+        throw new Error('PaymentIntent de Build sin metadatos completos');
+    }
+    const [updated] = await sql`
+        update build_positions
+           set status = 'paid', paid_at = coalesce(paid_at, now()),
+               hold_expires_at = null, updated_at = now()
+         where position_id = ${positionId}
+           and request_id = ${requestId}::uuid
+           and hold_token = ${holdToken}::uuid
+           and stripe_payment_intent_id = ${intent.id}
+           and amount_cents = ${Number(intent.amount)}
+           and currency = ${String(intent.currency || '').toLowerCase()}
+           and status in ('reserved','paid')
+        returning position_id`;
+    if (!updated) throw new Error(`No se pudo conciliar la posición Build ${positionId}`);
 }
 
 // Marca la cotización como pagada (flujo de pago en línea por link público o Payment Intent directo).
@@ -958,7 +1108,7 @@ function invoiceLinePriceId(line: any): string | null {
 }
 
 // Ranking de planes para distinguir upgrade vs downgrade en PostHog — orden
-// real de negocio (ver docs/negocio-billing.md), no alfabético.
+// real de negocio (ver docs/estado/cobros-facturacion.md), no alfabético.
 const PLAN_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, scale: 3, developer: 4 };
 
 async function retrieveAndSyncSubscription(subscriptionId: string | undefined) {

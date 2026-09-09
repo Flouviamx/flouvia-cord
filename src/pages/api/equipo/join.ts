@@ -5,7 +5,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { sql, logAudit, reqIp, withOrgTx, withUserTx } from '../../../lib/db';
-import { currentUserId } from '../../../lib/context';
+import { currentLocale, currentUserId } from '../../../lib/context';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../lib/billing';
 import { sha256Hex } from '../../../lib/auth';
@@ -30,6 +30,16 @@ export const POST: APIRoute = async ({ request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     const token = String(body.token ?? '').trim();
     if (!token) return json({ error: 'Falta el token de invitación' }, 400);
+
+    // La aceptación es personal, no de la organización. Una cuenta antigua sin
+    // evidencia debe resolverla antes de incorporarse a otra empresa.
+    try {
+        const locale = currentLocale() === 'en' ? 'en-US' : 'es-MX';
+        const [legal] = await sql`select cord_user_needs_legal_acceptance(${userId}, ${locale}) as needed`;
+        if (legal?.needed) return json({ error: 'legal_acceptance_required', redirect: '/app/aceptacion-legal' }, 428);
+    } catch {
+        return json({ error: 'No pudimos verificar los acuerdos de la cuenta.' }, 503);
+    }
 
     // El token se guarda hasheado (sha256) — ver equipo.ts. Buscar por el hash
     // del token recibido, nunca por el valor crudo.

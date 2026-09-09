@@ -1,0 +1,116 @@
+---
+title: "Complete application map"
+description: "What every Cord section does, how quotes, clients, invoices, payments, collections, reports, and settings connect, and where to perform each task."
+lastUpdated: "2026-08-28"
+reviewedBy: "Cord Product and Operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Have a Cord account", "Select the correct organization before changing data"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Complete application map</h1>
+  <p class="page-subtitle">An end-to-end view of where every Cord operation begins, changes, and finishes.</p>
+</header>
+
+Cord organizes work around one commercial cycle: **record the client, prepare the
+offer, negotiate, approve, collect, invoice, and follow up**. Sections aren't
+isolated databases; they expose different stages of the same clients, documents,
+and money movements.
+
+## The primary workflow
+
+1. Create or import the client under **Clients**.
+2. Create reusable products, services, or kits under **Products**.
+3. Prepare a quote manually, from a kit, or with an AI draft.
+4. Send the public link. Cord records the first view and keeps document activity.
+5. The client can chat, approve or reject, and choose a payment method when one is
+   available.
+6. Cord records an online payment or a manually marked payment.
+7. The operation appears under **Invoices** and **Collections** according to its
+   document, outstanding balance, and due date.
+8. **Reports** and **Performance** aggregate those results without creating another
+   copy of the operation.
+
+## Where each task lives
+
+| Section | Route | Purpose |
+|---|---|---|
+| Home | `/app` | KPIs, pipeline, recent activity, and follow-up items. |
+| Quotes | `/app/cotizaciones` | Create, search, filter, open, edit, duplicate, send, and print quotes. |
+| Clients | `/app/clientes` | Directory, CSV import, commercial terms, tax data, credit, and statements. |
+| Products | `/app/productos` | Catalog, prices, taxes, volume pricing, import, and export. |
+| Kits | `/app/productos/kits` | Bundles of line items inserted together into a quote. |
+| Collections | `/app/cobranza` | Receivables, overdue balances, aging, client exposure, and follow-up. |
+| Collections agent | `/app/cobranza/agente` | Configure and supervise AI collections when included in the plan. |
+| My money | `/app/cobros` | Payments, payouts, balances, refunds, and dispute access. |
+| Invoices | `/app/facturas` | Issue, inspect, export, and follow up on fiscal or commercial documents. |
+| Recurring invoices | `/app/facturas/recurrentes` | Schedule repeated issues; requires Pro or above. |
+| Reports | `/app/informes` | Overview, commercial diagnosis, finance, cash flow, collections, clients, and products. |
+| Performance | `/app/desempeno` | Results attributed to the person who created or duplicated each quote. |
+| Settings | `/app/ajustes` | Account, business, branding, fiscal, payments, team, security, integrations, and plan. |
+
+<Callout type="info">
+Visible options depend on **permissions**, the **effective plan**, the **country of
+operation**, and account setup. A page existing doesn't mean every member can change it.
+</Callout>
+
+## Quote states
+
+| State | Operational meaning |
+|---|---|
+| `draft` | Editable draft that hasn't been sent. |
+| `sent` | Sent; the public link is available to the client. |
+| `viewed` | The client opened the quote for the first time. |
+| `approved` | The client recorded approval. A balance may remain outstanding. |
+| `rejected` | The client rejected the proposal. |
+| `expired` | Its validity period ended without closing. |
+| `paid` | A non-recurring flow is paid according to its recorded charges. |
+| `invoiced` | An invoice document is associated with the operation. |
+
+A recurring quote doesn't become permanently `paid`: each installment creates its
+own payment and the subscription keeps a separate status.
+
+## Active organization and test mode
+
+Cord is multi-company. Every client, product, quote, invoice, member, and setting
+belongs to the **active organization**. If you can access more than one, verify the
+organization switcher before importing, issuing, or configuring anything.
+
+**Test mode** uses a separate sandbox organization. Its data doesn't mix with
+production, and its keys, webhooks, and operations are test assets. Records created
+inside the sandbox won't appear after returning to live mode.
+
+## Permissions that change the experience
+
+The owner always has full access. Other members receive presets or section-level
+permissions for quotes, approvals, collections, clients, products, analytics,
+settings, payment configuration, refunds, and team administration.
+
+If an action is missing, first check the member's permission, then the plan and the
+setup required by that capability.
+
+## What changes by country
+
+- Signup is available in 12 markets: Mexico, the United States, Canada, Brazil,
+  Spain, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru.
+- Online payments are available in the first eight. The last four can quote, issue
+  commercial invoices, and manage collections, but can't activate Cord Payments yet.
+- Dynamic SPEI is Mexico-only.
+- Mexico can issue CFDI 4.0 with a valid CSD.
+- Outside Mexico, Cord issues a commercial invoice. Spain uses the Verifactu rail
+  only when both the account and Cord's regulatory integration are enabled.
+
+## Before treating something as an error
+
+Check these in order:
+
+1. active organization and test mode;
+2. member permission;
+3. plan limit or capability;
+4. operating country and compatible method;
+5. required client, issuer, or document fields;
+6. previous quote, invoice, or payment state.
+
+Then open the guide for that section. The [Support Center](https://cordhq.app/en/support)
+handles specific incidents; these guides explain the complete operating model.

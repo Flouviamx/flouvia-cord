@@ -20,7 +20,7 @@ puedes confirmar que algo es un bug con evidencia concreta del código, dilo com
 
 ## Contexto obligatorio antes de auditar
 
-1. Lee `docs/app-rutas.md`, sección "Multi-tenant" — el patrón RLS/withOrgTx
+1. Lee `docs/estado/multi-tenant.md` — el patrón RLS/withOrgTx
    correcto, para saber qué se ve mal contra qué se ve bien.
 2. Corre `git diff` (o revisa los archivos que te indique el usuario) — audita
    el cambio real, no el proyecto entero salvo que te lo pidan explícitamente.

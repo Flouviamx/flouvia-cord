@@ -1,6 +1,11 @@
 ---
 title: "Add tax information (CSD)"
 description: "Upload your Digital Seal Certificate to enable CFDI 4.0 invoicing."
+lastUpdated: "2026-08-28"
+reviewedBy: "Cord Fiscal Operations and Security"
+appliesToMarkets: [MX]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Issuer RFC", "CSD .cer and .key files", "Private-key password", "A valid CSD issued by SAT"]
 ---
 
 <header class="content-header">
@@ -14,9 +19,9 @@ CFDI 4.0 are a Mexico-only requirement. If your business operates in another cou
 your **Settings > Invoicing** screen doesn't show the CSD: you capture your local
 invoicing identity there instead (legal name, your local tax ID — NIF/CIF, EIN/Tax ID,
 depending on your country — and address), and Cord issues your invoice with a number,
-an immutable copy, and a PDF. Spain additionally has its own certified registration
-mechanism (Verifactu); every other country relies on the commercial document as proof
-of the charge.
+an immutable copy, and a PDF. In Spain, a chained Verifactu record is created only
+when the company's certificate and Cord's regulatory rail are active; otherwise the
+issuance remains `commercial_only`.
 </Callout>
 
 ## What is a CSD and why do you need it?
@@ -35,7 +40,7 @@ For Cord to convert your approved quotes or orders directly into an official inv
    - **Private Key Password**: The password you chose when processing your CSD with the SAT (Note: this is usually different from your FIEL password).
 
 <Callout type="warning">
-**Warning:** Cord encrypts your `.key` files and passwords end-to-end (AES-256) before storing them. We never use your FIEL; strictly the CSD. Never upload your FIEL (e.firma) for invoicing.
+**Warning:** the file and password travel over HTTPS/TLS to the server and fiscal provider. Cord keeps only the secret reference required to operate the integration encrypted at rest; do not describe this as end-to-end encryption. We never use your FIEL: upload only the CSD and never your FIEL (e.firma) for invoicing.
 </Callout>
 
 ## Validations and Common Errors

@@ -1,0 +1,78 @@
+---
+title: "Receivables and operating collections"
+description: "How to prioritize receivables, record promises, prepare reminders, mark manual payments, and distinguish daily work from the collections report."
+lastUpdated: "2026-08-29"
+reviewedBy: "Cord Product and Operations"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Pro, Scale, Developer]
+prerequisites: ["Collections permission", "Approved quotes or open invoices with a balance"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Receivables and operating collections</h1>
+  <p class="page-subtitle">What to collect today, who to contact, and how to record agreements without duplicating balances.</p>
+</header>
+
+**Collections** (`/app/cobranza`) is a current operating list. Historical aging, DSO,
+and behavior analysis lives under **Reports > Collections and receivables**. The module
+requires Pro or above and Collections permission.
+
+## What enters receivables
+
+Cord combines approved quotes with an outstanding balance and open invoices with an
+outstanding balance. When a quote already has an open invoice, only the invoice appears,
+avoiding a duplicate operation. Balance reflects partial payments and recorded interest.
+
+## Today's operating summary
+
+Widgets highlight overdue total, due in seven days, promises due now, overdue items
+without a promise, amount-and-age priority, clients above their credit limit, and a
+compact aging view. Member-level customization doesn't change calculations.
+
+## Filters and actions
+
+Filter all, overdue, promised, or untouched accounts. Rows expose client, number, terms,
+due date, state, and balance. Actions can record a promise, prepare a WhatsApp reminder,
+mark an operation paid manually, or open its source document.
+
+<Callout type="warning">
+**Mark paid** is a manual record. It doesn't create a charge or confirm a Stripe payout.
+Verify the external payment before confirming it.
+</Callout>
+
+## Payment promises
+
+A promise stores a date, optional amount, and a note up to 400 characters. It can be
+pending, fulfilled, or missed. It organizes follow-up and measures compliance; it
+doesn't reduce balance, extend the due date automatically, or execute a payment.
+
+## WhatsApp reminder
+
+Cord prepares a message with client, document, balance, due date, and link. Delivery
+happens in WhatsApp and depends on the saved phone number. Review recipient and text
+before sending.
+
+## Late interest
+
+Automatic application is suspended while the country-by-country legal review is
+completed. A previously saved rate remains as historical configuration, but the
+monthly process creates no new charges. Previously recorded interest remains visible
+to preserve balance traceability.
+
+## Manual and AI collections
+
+Pro includes operating receivables, priority, promises, and manual follow-up. Scale
+and Developer may also enable the [AI collections agent](/en/docs/pagos/cobranza-ia).
+Review exclusions and limits before automatic mode.
+
+## Common problems
+
+**An operation appears twice.** Verify they are distinct documents; an associated open
+invoice should replace its quote in unified receivables.
+
+**Promise didn't lower balance.** Only a recorded payment lowers it.
+
+**Collections is missing.** Check Pro-or-higher plan and Collections permission.
+
+**Balance differs from original total.** Review partial payments, credits, refunds,
+and interest on the remaining balance.

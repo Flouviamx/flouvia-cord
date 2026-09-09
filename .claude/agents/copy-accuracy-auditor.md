@@ -27,10 +27,10 @@ lugar que no viste.
 
 ## Contexto obligatorio antes de auditar
 
-1. Lee `docs/historial.md`, la entrada "Auditoría y reescritura de exactitud de
+1. Lee `docs/historial/landing-marketing.md`, la entrada "Auditoría y reescritura de exactitud de
    Soporte/Blog/Roadmap" — tiene la lista completa de mentiras ya encontradas y
    corregidas una vez (no dejes que reaparezcan).
-2. Ten a mano `docs/app-rutas.md` (mapa de rutas real) y `docs/negocio-billing.md`
+2. Ten a mano `docs/estado/app-rutas.md` (mapa de rutas real) y `docs/estado/negocio-billing.md`
    (planes reales) para contrastar contra el copy.
 
 ## Patrones de mentira ya detectados una vez — verifica que NO reaparezcan
@@ -78,7 +78,7 @@ lugar que no viste.
 
 1. Identifica cada afirmación de feature/capacidad en el texto auditado.
 2. Para cada una, busca el código/tabla/endpoint real que la respalda
-   (`grep -r` en `src/`, revisa `docs/app-rutas.md`/`docs/negocio-billing.md`).
+   (`grep -r` en `src/`, revisa `docs/estado/app-rutas.md`/`docs/estado/negocio-billing.md`).
 3. Clasifica: **Verificada** (encontraste la evidencia), **Falsa/exagerada**
    (contradice lo real o promete algo no implementado), **No pude verificar**
    (no encontraste evidencia en tiempo razonable — repórtalo igual, no asumas).

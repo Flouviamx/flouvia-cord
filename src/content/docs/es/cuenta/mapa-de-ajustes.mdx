@@ -1,0 +1,219 @@
+---
+title: "Mapa completo de Ajustes"
+description: "Referencia de cada sección de Ajustes en Cord: negocio, marca, cotizaciones, impuestos, facturación, cobros, equipo, seguridad, integraciones, IA, datos y cuenta personal."
+lastUpdated: "2026-08-28"
+reviewedBy: "Producto de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+prerequisites: ["Permiso Ajustes para cambiar la configuración de la organización", "Algunas secciones exigen permisos o planes adicionales"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Mapa completo de Ajustes</h1>
+  <p class="page-subtitle">Qué cambia cada opción, a quién afecta y qué debes revisar antes de guardarla.</p>
+</header>
+
+Abre **Ajustes** desde la navegación de la app. La página agrupa la configuración
+personal, la de la organización, la operación comercial y las herramientas para
+desarrolladores. El buscador de Ajustes también reconoce términos alternativos como
+IVA, VAT, RFC, NIF, CSD, SAML o API.
+
+<Callout type="info">
+Los cambios de organización afectan a todas las personas que trabajan en ese espacio.
+Tu contraseña, 2FA, passkeys y sesiones son personales y no cambian al alternar de
+organización.
+</Callout>
+
+## Antes de cambiar algo
+
+- Confirma que estás dentro de la organización correcta, especialmente si administras
+  más de un negocio o una organización de prueba.
+- **Ajustes** controla la mayoría de las secciones; **Equipo**, **Configurar cobros**
+  y otras operaciones sensibles tienen permisos independientes.
+- Algunos cambios se reflejan en documentos nuevos. Los documentos ya emitidos
+  conservan su snapshot fiscal y comercial.
+- La disponibilidad por país y plan se muestra dentro de cada pantalla. Que una opción
+  aparezca en este mapa no significa que esté habilitada para todas las cuentas.
+
+## Tu cuenta
+
+### Perfil y seguridad
+
+Administra tu nombre, imagen, correos, contraseña, cuentas Google o Apple conectadas,
+2FA, códigos de respaldo, passkeys y sesiones activas. También contiene la eliminación
+de la cuenta personal.
+
+Esta sección pertenece a tu identidad. Para reglas compartidas —dominios permitidos,
+tiempo de inactividad o 2FA obligatorio— usa **Equipo y permisos > Seguridad**.
+
+Consulta [Equipo, permisos y seguridad](/docs/cuenta/equipo-seguridad) antes de retirar
+un método de acceso o eliminar la única cuenta dueña.
+
+## Configuración de la organización
+
+### General
+
+Define el nombre comercial, moneda base, correo y teléfono de contacto, dirección,
+sitio web, número de WhatsApp, país de operación, idioma y zona horaria. Estos valores
+alimentan documentos, comunicaciones, formatos de fecha y reglas disponibles por país.
+
+Cambiar la moneda base no convierte automáticamente importes históricos. Revisa antes
+los documentos abiertos y la configuración fiscal.
+
+### Branding
+
+Sube el logo, elige colores principal y secundario y escribe el mensaje de bienvenida.
+La vista previa muestra cómo aparecerá la marca en el portal del cliente. El logo se
+reutiliza en documentos cuando la plantilla lo permite.
+
+### Portal del cliente
+
+Configura banner, bienvenida, color de acento, chat y la leyenda **Powered by Cord**.
+El portal es el enlace seguro donde el cliente consulta la cotización, conversa y,
+según el estado y la configuración, aprueba o paga.
+
+Quitar la marca de Cord requiere **Starter o superior**. Desactivar el chat no elimina
+mensajes anteriores; deja de ofrecer ese canal en la experiencia pública.
+
+### Equipo y roles
+
+Invita miembros, reenvía o revoca invitaciones y asigna permisos. El equipo empieza
+en **Pro**. Las invitaciones pendientes consumen un asiento y vencen en siete días.
+
+### Seguridad
+
+Exige 2FA, limita dominios aceptados para nuevas invitaciones y define el cierre por
+inactividad. Estas políticas se aplican a la organización completa.
+
+### SSO
+
+Crea conexiones SAML 2.0, configura Entity ID, URL de inicio, certificados, dominios
+verificados, aprovisionamiento JIT y reglas para mapear atributos a roles. Requiere
+**Scale o Developer** y permiso Equipo.
+
+### Notificaciones
+
+Elige qué eventos avisan por cada canal disponible. La matriz permite configurar correo,
+notificación dentro de Cord y Slack cuando el canal está conectado. Revisa la dirección
+del webhook antes de habilitar Slack.
+
+### Correo
+
+Personaliza el nombre visible del remitente, la dirección de respuesta, el párrafo de
+introducción y la firma de las cotizaciones. La vista previa enseña la estructura, pero
+conviene enviar una cotización de prueba para validar cómo la renderiza tu proveedor.
+
+### Planes y suscripción
+
+Muestra el plan efectivo, estado de suscripción, próxima renovación, alternativas de
+plan, consumo del periodo y método de pago de Cord. Los medidores incluyen, cuando
+aplican, cotizaciones activas, envíos, armados con IA, facturas y llamadas API.
+
+La facturación de tu suscripción a Cord es distinta de los cobros que reciben tus
+clientes. Consulta [planes, límites y cobro](/docs/cuenta/suscripcion).
+
+### Datos y privacidad
+
+Exporta la organización, productos o clientes; consulta la política de retención; y
+entra a la zona de peligro para eliminar la organización. La eliminación exige
+autenticación reciente y confirmaciones adicionales. Exporta primero y conserva por
+separado los comprobantes que tu regulación obligue a resguardar.
+
+### Auditoría
+
+Consulta acciones relevantes con actor, fecha, recurso y contexto disponible. El
+registro de auditoría requiere **Pro o superior** y sirve para investigar cambios; no
+reemplaza los controles de acceso ni una política interna de conservación.
+
+## Configuración comercial
+
+### Folio, impuestos y valores predeterminados
+
+Configura prefijo, serie, tasa de impuesto predeterminada, vigencia, condiciones de
+pago, anticipo y texto legal. Son valores iniciales para documentos nuevos: cada
+cotización puede revisarse antes de enviarse.
+
+### Impuestos
+
+Crea perfiles fiscales reutilizables con nombre, tipo y tasa, y decide si los precios
+incluyen impuesto por defecto. Los nombres y presets dependen del país de la organización.
+Verifica retenciones y tratamientos especiales con tu asesor fiscal.
+
+### Documento PDF
+
+Elige plantilla minimalista, clásica o detallada; define logo, mensaje al pie,
+condiciones y si se muestra el listado de partidas. Usa la vista previa para revisar
+saltos de página, nombres largos, descuentos e impuestos antes de enviarlo.
+
+### Aprobaciones
+
+Define umbrales de descuento máximo, monto máximo y margen mínimo. Una cotización que
+rebasa una regla entra al flujo interno correspondiente. Los flujos de aprobación
+requieren **Scale o Developer**.
+
+Una tasa de interés moratorio guardada también aparece aquí, pero la automatización
+está suspendida mientras concluye la revisión jurídica por país. No se generan cargos
+nuevos durante este periodo. Consulta [crédito y condiciones](/docs/pagos/credito).
+
+### Plantillas de mensaje
+
+Crea mensajes reutilizables para correo o WhatsApp y utiliza las variables disponibles
+para cliente, negocio, folio, total y enlace. Revisa siempre la vista previa: una
+variable sin dato puede producir un mensaje incompleto.
+
+### Facturación
+
+En México, registra RFC, razón social, régimen, código postal, uso de CFDI y CSD para
+emitir CFDI 4.0. En los demás mercados, configura identidad fiscal, dirección, número
+tributario y prefijo para factura comercial. Las reglas y el documento generado cambian
+por país; consulta [facturación por mercado](/docs/pagos/facturacion).
+
+### Cobros
+
+Conecta la cuenta de pagos, completa la verificación del proveedor y habilita los
+métodos disponibles. Tarjeta funciona mediante Cord Payments en los mercados
+compatibles; SPEI automático es exclusivo de México. La transferencia manual puede
+mostrar instrucciones bancarias sin una cuenta de pagos conectada.
+
+La pantalla también muestra la tarifa aplicable antes de aceptarla. La cuenta de
+depósito es un dato sensible y cambiarla exige autenticación reciente.
+
+## Integraciones y desarrolladores
+
+El bloque para desarrolladores permanece oculto en el índice hasta activar **Modo
+desarrollador**. La URL directa sigue funcionando si tienes acceso.
+
+### Integraciones
+
+Conecta Slack mediante una URL de webhook y luego elige qué eventos debe recibir en
+Notificaciones. Las integraciones marcadas como próximas todavía no son una promesa de
+fecha; el enlace de contacto sirve para registrar prioridad comercial.
+
+### MCP
+
+Comprueba si existe una llave API activa, copia la configuración de conexión y revisa
+las herramientas que Cord expone a un cliente compatible con Model Context Protocol.
+La llave se administra desde Workbench; no la compartas en capturas, chats o código
+del navegador. Consulta la [guía de MCP](/docs/desarrolladores/herramientas/mcp).
+
+### Inteligencia artificial
+
+Gobierna la cobranza con IA y las conexiones MCP que un agente puede utilizar. Muestra
+estado, pendientes y controles para activar o retirar autonomía. La gobernanza de
+agentes requiere **Scale o Developer**; las decisiones siguen sujetas a permisos,
+límites y configuración de la organización.
+
+### Cotizador embebible
+
+Genera una vista previa, restringe dominios permitidos y copia el código de instalación
+para incrustar el cotizador en otro sitio. Los dominios son una capa de origen; el sitio
+que lo integra todavía debe aplicar su propia autenticación y autorización.
+
+## Qué hacer si un cambio no aparece
+
+1. confirma que el guardado terminó sin error;
+2. revisa organización, permiso, país y plan efectivos;
+3. abre un documento nuevo si la opción solo funciona como valor predeterminado;
+4. prueba sin el modo de prueba si estás validando un proveedor externo;
+5. si persiste, anota la ruta, hora, usuario, resultado esperado y mensaje visible
+   antes de contactar a soporte.

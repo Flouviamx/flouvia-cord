@@ -1,22 +1,42 @@
 ---
-title: "Configurar autenticación en dos pasos (2FA)"
-description: "Protege tu cuenta de Cord y los datos de tu empresa añadiendo una capa de seguridad extra."
+title: "Configurar autenticación en dos pasos"
+description: "Configura 2FA y entiende cuándo se exige para continuar."
 category: "Cuenta y Equipo"
-order: 1
 ---
 
-La Autenticación de Dos Pasos (2FA) añade una capa extra de seguridad. Recomendamos que todo tu equipo lo habilite, en especial quienes tienen rol de Administrador o Finanzas.
+# Configurar autenticación en dos pasos
 
-### Habilitar 2FA en tu Perfil
-1. Haz clic en tu avatar en la esquina superior derecha y selecciona **Mi Perfil**.
-2. Bajo *Seguridad*, activa **Autenticación en dos pasos**.
-3. Se mostrará un código QR. Escanéalo usando una app como Google Authenticator, Authy o 1Password.
-4. Introduce el código de 6 dígitos para confirmar.
 
-**Guardado de Códigos de Respaldo:** El sistema te entregará 10 códigos de un solo uso. ¡Guárdalos en un lugar seguro! Si pierdes tu celular, estos códigos son la única manera de recuperar el acceso a tu cuenta de Cord.
+## Verificación en dos pasos y acceso
 
-### Forzar 2FA para el Equipo
-Cualquier dueño de cuenta, sin importar el plan, puede forzar a que todos los miembros activen 2FA:
-1. Ve a **Ajustes > Seguridad**.
-2. Activa *Exigir verificación en dos pasos para todos los miembros*.
-Cualquier empleado que no tenga 2FA habilitado será deslogueado y obligado a configurarlo en su próximo inicio de sesión.
+Activa 2FA desde **Ajustes > Tu cuenta**: escanea el QR con tu app autenticadora,
+confirma el código y guarda los diez códigos de respaldo de un solo uso que se
+muestran al activarlo.
+
+Cuando la organización exige 2FA y todavía no lo configuraste, debes completarlo
+antes de continuar. La protección aplica también a las solicitudes del panel,
+no solo a la pantalla visible. Se conservan las acciones necesarias para configurar
+2FA, confirmar tu identidad o cerrar sesión.
+
+Si una acción sensible pide verificar tu identidad de nuevo, complétala antes de
+reintentar. Los permisos del equipo siguen siendo necesarios; tener 2FA no concede
+permiso para reembolsar o administrar el negocio.
+
+> La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.
+
+## Cierre por inactividad: implementación en validación
+
+El plazo que el negocio configura en **Ajustes › Seguridad** se comprueba al
+entrar a la aplicación, a facturación y a las API internas protegidas. Cuando
+vence, la operación se detiene y debes iniciar sesión otra vez. También se
+comprueba al registrar una passkey.
+
+Visitar una página pública o usar las rutas de recuperación de 2FA no reinicia
+ese plazo. La actividad se mide por solicitudes autenticadas a las superficies
+protegidas, no por mover el mouse; las consultas automáticas de la app también
+pueden contar. El valor cero desactiva el límite de inactividad, pero conserva
+la expiración máxima, las revocaciones y la suspensión de cuenta.
+
+La comprobación y renovación ocurren juntas para impedir que solicitudes
+simultáneas renueven una sesión ya vencida. Este refuerzo tiene pruebas locales;
+falta verificar su publicación y el recorrido integrado de inicio de sesión.

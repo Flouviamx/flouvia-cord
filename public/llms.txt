@@ -1,90 +1,124 @@
 # Cord
 
-> Cord is transactional infrastructure. It transforms verbal agreements and proposals
-> into paid, legally binding transactions. Businesses use Cord to centralize negotiation,
-> contract signatures, margin intelligence, and automated collections in a single interactive
-> link. Built and maintained by Flouvia (flouvia.com), Cord is a standalone product with its
-> own domain (cordhq.app), billing, and signup — open to any business worldwide.
-> CFDI 4.0 e-invoicing is available for businesses based in Mexico.
+> Last reviewed: 2026-08-28
+>
+> Cord is a commercial-closing platform built by Flouvia. It connects an
+> interactive quote, client approval, payment, invoicing, and collections in one
+> workflow. Cord is a standalone product at cordhq.app; it is not a CRM, ERP,
+> payment processor, tax authority, or notarial service.
 
-Cord is not a CRM, not a simple quoting tool, and not an ERP. It is the operational layer
-between a verbal "yes" and a paid transaction — purpose-built to eliminate the gap where
-revenue leaks: between proposal and payment. Cord governs the entire commercial
-transaction lifecycle: margin-aware pricing, interactive proposals, cryptographic signatures,
-credit governance (Net 30/60), autonomous AI collections, and automated invoicing.
+## Availability
+
+Cord currently offers signup in 12 markets:
+
+- Mexico (MX)
+- United States (US)
+- Canada (CA)
+- Brazil (BR)
+- Spain (ES)
+- United Kingdom (GB)
+- Germany (DE)
+- France (FR)
+- Colombia (CO)
+- Argentina (AR)
+- Chile (CL)
+- Peru (PE)
+
+Online payments through Cord Payments are currently available for businesses in
+MX, US, CA, BR, ES, GB, DE, and FR. Businesses in CO, AR, CL, and PE can quote,
+invoice, track collections, and record payments received outside Cord, but cannot
+activate online payments inside the Cord link yet. SPEI is available only for
+eligible Mexican accounts and MXN transactions.
+
+Cord offers these transaction currencies: MXN, USD, CAD, BRL, EUR, GBP, COP,
+ARS, CLP, PEN, JPY, CNY, CHF, and AUD. Availability of an online payment also
+depends on the business country, currency, provider, and account eligibility.
 
 ## Core capabilities
 
-- Margin-intelligent quote editor with negotiated pricing, volume tiers, and credit terms (Cash / Net 30 / Net 60)
-- Interactive transaction links with e-signature, line-item negotiation, and partial approval
-- Direct payments via Stripe Connect (cards + SPEI for Mexico), split into deposit/balance/installments
-- Autonomous AI collections agent (opt-in) that negotiates payment plans over email — 24/7, auditable
-- CFDI 4.0 electronic invoicing for Mexico via Facturapi — zero re-entry from approved quote to stamped invoice
-- Multi-currency transactions (MXN/USD/EUR) with FX rate locking and configurable hedge buffer
-- Team roles, approval thresholds, credit limits per client, and immutable audit logging
-- AI-powered quote generation from text, PDF, or images (Cord AI)
+- Create quotes manually or generate a draft from text, PDF, or images with Cord AI.
+- Configure products, services, negotiated pricing, volume tiers, costs, margins,
+  advance payments, recurring retainers, and Net credit terms.
+- Send an interactive client link with general and line-item comments, partial
+  approval, declared signer identity, timestamp, IP address, and a fingerprint of
+  the approved version.
+- Collect eligible online payments through Stripe Connect, or record external
+  payments where Cord Payments is unavailable.
+- Create invoices, recurring invoices, reminders, balances, and collections flows.
+- Run an opt-in AI collections agent in approval or automatic mode, within rules
+  configured by the business.
+- Quote in one currency and keep books in another using a dated FX rate. FX Lock
+  preserves the accepted rate for the configured quote window; it is not a
+  financial derivative or a guarantee from a bank.
+- Use a public REST API, signed webhooks, an MCP server, and Cord Elements.
 
-- Public REST API, webhooks, MCP server for AI agents, and embeddable Web Component (Cord Elements)
+## Fiscal boundaries
 
-## Who uses Cord
+- Mexico: Cord can issue real CFDI 4.0 through Facturapi when the organization has
+  valid fiscal data and a valid CSD. XML and PDF are tied to the stamped document.
+- Spain: Cord can issue a commercial invoice. A chained Verifactu record is created
+  only when the organization has a valid electronic certificate and Cord's
+  software-system identity and regulatory rail are enabled. Otherwise the status
+  is `commercial_only`. Submission to the Spanish tax authority is a separate,
+  asynchronous status.
+- Other supported markets: Cord issues a commercial invoice and does not
+  automatically file it with the local tax authority. The business must confirm
+  local reporting and tax obligations with its adviser.
 
-Cord is designed for businesses that sell products or services to clients:
-distributors, wholesalers, manufacturers, SaaS companies, agencies, consultancies, and
-software development firms. It serves businesses of any size, from solo operators to
-enterprise sales teams, in any country. Mexican businesses additionally get automated
-CFDI 4.0 e-invoicing.
+Cord stores technical evidence of an approval. It does not provide legal advice,
+notarial certification, or a guarantee that evidence will win a dispute or have
+the same legal effect in every jurisdiction.
 
 ## Documentation
 
-- [Product docs](https://cordhq.app/docs): Complete user guide covering quotes, payments, integrations, and account setup
-- [API reference](https://cordhq.app/docs/desarrolladores/empezar/apikey): REST API for quotes, clients, products, collections
-- [OpenAPI spec](https://cordhq.app/openapi.yaml): machine-readable schema for the full API
-- [Webhooks](https://cordhq.app/docs/desarrolladores/herramientas/webhooks): outbound event notifications (quote.sent, quote.paid, etc.), HMAC-signed
-- [MCP server](https://cordhq.app/docs/desarrolladores/herramientas/mcp): Model Context Protocol tools for AI agents to query quotes, clients, and receivables
-- [Cord Elements](https://cordhq.app/docs/desarrolladores/herramientas/elements/resumen): embeddable quote builder (Web Component, React, Vue) — npm package `@flouviahq/elements`
-- [Authentication](https://cordhq.app/docs/desarrolladores/esenciales/autenticacion): API key auth, SSO, and SAML
-- [Error handling](https://cordhq.app/docs/desarrolladores/esenciales/errores): standard error codes and responses
+## Plans and free allowance
 
-## Developer Blog
+Free has no expiry date and requires no credit card. It includes 5 quote sends
+per calendar month (renewed on the first day, UTC) and up to 5 active quotes at
+once. Closing a quote frees an active slot, not a monthly send. Free includes
+the business's logo and colors alongside “Powered by Cord”. Removing that
+branding starts at Starter; Professional adds unlimited quotes, 5 included
+users and collections. Scale supports email from the business's domain;
+custom domains for hosted quote links are not currently available.
+Online payment processing fees are separate. See [current pricing](https://cordhq.app/pricing.md)
+for prices, currencies and included usage.
 
-Technical articles from the Cord engineering team:
+## Documentation links
 
-- [Billing models for autonomous AI agents](https://cordhq.app/dev-blog/ai-agent-billing): Dimensional usage metering for non-deterministic AI workloads
-- [API idempotency patterns](https://cordhq.app/dev-blog/api-idempotency): Safely retry financial API calls with idempotency keys
-- [Billing best practices](https://cordhq.app/dev-blog/billing-best-practices): Revenue recognition, proration, and subscription lifecycle
-- [Multi-tenant architecture with Neon](https://cordhq.app/dev-blog/building-multi-tenant-architecture): Row-Level Security and connection pooling at scale
-- [CLI schema validation](https://cordhq.app/dev-blog/cord-cli-schema-validation): Validate quote schemas before deployment
-- [Financial reconciliation with webhooks](https://cordhq.app/dev-blog/financial-reconciliation-webhooks): HMAC verification, idempotent processing, and out-of-order event handling
+- [Product documentation](https://docs.cordhq.app/docs)
+- [Complete app map](https://docs.cordhq.app/docs/operacion/mapa-de-la-app)
+- [Complete Settings map](https://docs.cordhq.app/docs/cuenta/mapa-de-ajustes)
+- [Clients and account statements](https://docs.cordhq.app/docs/gestion/clientes)
+- [Reports and performance](https://docs.cordhq.app/docs/gestion/informes)
+- [Payments overview](https://docs.cordhq.app/docs/pagos/resumen)
+- [Receivables and follow-up](https://docs.cordhq.app/docs/pagos/cartera-cobranza)
+- [Recurring invoices](https://docs.cordhq.app/docs/pagos/facturas-recurrentes)
+- [Fiscal invoicing by country](https://docs.cordhq.app/docs/pagos/facturacion)
+- [Quotes overview](https://docs.cordhq.app/docs/cotizacion/resumen)
+- [Approval and technical evidence](https://docs.cordhq.app/docs/interaccion/firma)
+- [Developer overview](https://docs.cordhq.app/docs/desarrolladores/empezar/resumen)
+- [API authentication](https://docs.cordhq.app/docs/desarrolladores/esenciales/autenticacion)
+- [Webhooks](https://docs.cordhq.app/docs/desarrolladores/herramientas/webhooks)
+- [MCP server](https://docs.cordhq.app/docs/desarrolladores/herramientas/mcp)
+- [Cord Elements](https://docs.cordhq.app/docs/desarrolladores/herramientas/elements/resumen)
+- [OpenAPI specification](https://cordhq.app/openapi.yaml)
+- [Machine-readable pricing](https://cordhq.app/pricing.md)
 
-## Key Documentation Pages
+## Problem-oriented guides
 
-### Payments
-- [Payments overview](https://cordhq.app/docs/pagos/resumen): card payment infrastructure for any business, plus SPEI bank transfer for Mexico
-- [Payment methods](https://cordhq.app/docs/pagos/metodos): Bank transfer (SPEI), credit/debit cards, credit terms
-- [Advance payments](https://cordhq.app/docs/pagos/anticipos): Deposit and balance payment splitting
-- [Recurring retainers](https://cordhq.app/docs/pagos/igualas): Monthly retainer billing for service businesses
-- [AI collections agent](https://cordhq.app/docs/pagos/cobranza-ia): Autonomous collection negotiation via email
-- [CFDI invoicing](https://cordhq.app/docs/pagos/facturacion): CFDI 4.0 electronic invoice stamping via Facturapi
+- [How to make B2B sales easier from quote to payment](https://cordhq.app/blog/como-vender-mas-facil-b2b)
+- [How to create quotes faster without introducing errors](https://cordhq.app/blog/como-hacer-cotizaciones-rapido)
+- [How to collect invoices faster](https://cordhq.app/blog/como-cobrar-facturas-mas-rapido)
+- [What a professional quote should include](https://cordhq.app/blog/formatos-de-cotizacion-profesional)
+- [How to offer Net 30 credit with controls](https://cordhq.app/blog/credito-b2b-net30)
 
-### Quoting
-- [Quotes overview](https://cordhq.app/docs/cotizacion/resumen): Create and send quotes with negotiated pricing
-- [AI quote generation](https://cordhq.app/docs/cotizacion/ia): Generate quotes from text, PDF, or photos using AI
-- [E-signature and audit](https://cordhq.app/docs/interaccion/firma): Legally binding e-signatures with immutable audit trails
+## Product and support
 
-
-
-## Product
-
-- [Pricing](https://cordhq.app/precios): 5 plans (Free through Developer), starting at $0
-- [Pricing data (machine-readable)](https://cordhq.app/pricing.md): structured pricing for AI agents
-- [Product overview](https://cordhq.app/producto/editor): the quote editor and full feature set
-- [Invoicing (Cord Invoicing)](https://cordhq.app/producto/facturacion): issue invoices with your own numbering, a payment link per invoice, and a live balance; real CFDI 4.0 stamped with the SAT in Mexico, commercial invoices elsewhere
-- [Multi-currency and FX](https://cordhq.app/producto/divisas): quote in one currency and keep your books in another, with a dated exchange rate
-- [Invoicing vs. the PAC portal + spreadsheet](https://cordhq.app/comparar/facturacion): what changes when the invoice carries its own state, link and balance
-- [Solutions by industry](https://cordhq.app/soluciones/empresas): enterprise and startup use cases
-- [Use cases](https://cordhq.app/casos-de-uso/saas): SaaS, agencies, distributors, software factories
-
-## Support
-
-- [Help center](https://cordhq.app/soporte): setup guides, billing, fiscal (CFDI), API troubleshooting
-- [Roadmap](https://cordhq.app/roadmap): shipped, in-progress, and planned features
+- [Product overview](https://cordhq.app/producto/editor)
+- [Pricing](https://cordhq.app/precios)
+- [Invoicing](https://cordhq.app/producto/facturacion)
+- [Multi-currency and FX](https://cordhq.app/producto/divisas)
+- [Help center](https://cordhq.app/soporte)
+- [Public roadmap](https://cordhq.app/roadmap)
+- [Terms](https://cordhq.app/terminos)
+- [Privacy](https://cordhq.app/privacidad)

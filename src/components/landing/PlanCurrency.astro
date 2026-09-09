@@ -1,0 +1,72 @@
+---
+import { PLATFORM_CURRENCIES } from '../../lib/plan-currency';
+---
+<script define:vars={{ currencies: PLATFORM_CURRENCIES }}>
+    // Divisa de los planes. Corre antes del primer paint: `localStorage` es
+    // síncrono, así que un visitante recurrente nunca ve el parpadeo. La primera
+    // visita sí puede repintar una vez, cuando llega el país desde /api/geo —
+    // esa consulta es una SUGERENCIA de presentación, no autorización.
+    (function () {
+        var KEY = 'cord.planCurrency';
+        var VALID = currencies;
+        var manuallySelected = false;
+
+        function apply(cur, persist) {
+            if (VALID.indexOf(cur) < 0) return;
+            var suffix = cur.toLowerCase();
+            var annual = document.querySelector('.billing-toggle-checkbox');
+            var isAnnual = !!(annual && annual.checked);
+
+            document.querySelectorAll('.plan-price').forEach(function (el) {
+                var m = el.getAttribute('data-' + suffix + '-monthly');
+                var a = el.getAttribute('data-' + suffix + '-annual');
+                if (!m || !a) return;
+                // Se reescriben data-monthly/data-annual para que el toggle
+                // mensual/anual, que ya existía, siga leyendo de un solo lugar.
+                el.setAttribute('data-monthly', m);
+                el.setAttribute('data-annual', a);
+                var val = el.querySelector('.plan-amount-val');
+                if (val) val.textContent = isAnnual ? a : m;
+            });
+
+            document.querySelectorAll('[data-cycle-label]').forEach(function (el) {
+                var en = document.documentElement.lang === 'en';
+                el.textContent = cur + ' / ' + (en ? 'month' : 'mes');
+            });
+
+            document.querySelectorAll('[data-table-price]').forEach(function (el) {
+                var v = el.getAttribute('data-' + suffix);
+                if (v) el.textContent = v;
+            });
+
+            document.querySelectorAll('[data-annual-total]').forEach(function (el) {
+                var total = el.getAttribute('data-' + suffix);
+                if (total) el.textContent = (document.documentElement.lang === 'en' ? 'Billed yearly' : 'Cobro anual') + ' · ' + total;
+            });
+
+            document.querySelectorAll('[data-currency-btn]').forEach(function (b) {
+                var on = b.getAttribute('data-currency-btn') === cur;
+                b.classList.toggle('is-active', on);
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+
+            if (persist) { try { localStorage.setItem(KEY, cur); } catch (e) {} }
+        }
+
+        var saved = null;
+        try { saved = localStorage.getItem(KEY); } catch (e) {}
+        if (VALID.indexOf(saved) >= 0) {
+            apply(saved, false);
+        } else {
+            fetch('/api/geo')
+                .then(function (r) { return r.json(); })
+                .then(function (d) { if (!manuallySelected) apply(d && d.currency ? d.currency : 'USD', false); })
+                .catch(function () {});
+        }
+
+        document.addEventListener('click', function (e) {
+            var btn = e.target && e.target.closest ? e.target.closest('[data-currency-btn]') : null;
+            if (btn) { manuallySelected = true; apply(btn.getAttribute('data-currency-btn'), true); }
+        });
+    })();
+</script>

@@ -21,6 +21,7 @@ import type { APIRoute } from 'astro';
 import { sql, resolvePublicInvoice, withOrgTx } from '../../../../lib/db';
 import { currencyDecimals, normalizeCurrency, stripeCurrency, stripeSupportsCurrency, toMinorUnits } from '../../../../lib/currency';
 import { computeFee, isFeeScheduleActive } from '../../../../lib/fees';
+import { setInvoiceFeeMetadata } from '../../../../lib/invoice-payment-fees';
 import { payerError } from '../../../../lib/pay-errors';
 import { log } from '../../../../lib/log';
 import { limitPublicPayment } from '../../../../lib/connect-security';
@@ -40,7 +41,10 @@ export const POST: APIRoute = async ({ params, request }) => {
 
     const [rows] = await withOrgTx(identity.orgId, sql`
         select d.id, d.org_id, d.invoice_number, d.lifecycle, d.currency,
-               d.total, d.amount_remaining, d.stripe_payment_intent_id,
+               d.total, d.amount_remaining, d.stripe_payment_intent_id, d.credit_note_of, d.document_type,
+               exists (select 1 from documento_pagos p
+                       where p.documento_id = d.id and p.org_id = d.org_id
+                         and p.stripe_payment_intent_id = d.stripe_payment_intent_id) as previous_payment_applied,
                d.provider_data,
                o.sandbox_of, o.is_demo, o.stripe_account_id, o.stripe_charges_enabled,
                o.acepta_tarjeta, o.nombre as org_nombre, o.moneda,
@@ -52,6 +56,9 @@ export const POST: APIRoute = async ({ params, request }) => {
     const d = rows[0];
     const orgId = d.org_id as string;
 
+    if (d.credit_note_of || ['cfdi_egreso', 'credit_note'].includes(String(d.document_type))) {
+        return json({ error: 'Una nota de crédito no admite cobros.' }, 409);
+    }
     if (d.lifecycle === 'paid') return json({ alreadyPaid: true });
     if (d.lifecycle !== 'open') {
         return json({ error: 'Esta factura no está abierta a pago.' }, 409);
@@ -138,16 +145,27 @@ export const POST: APIRoute = async ({ params, request }) => {
         if (prevId) {
             const prevRes = await fetch(`https://api.stripe.com/v1/payment_intents/${prevId}`, { headers });
             const prev: any = await prevRes.json();
+            // Una respuesta fallida no demuestra que el intento ya no exista.
+            if (!prevRes.ok || prev?.id !== prevId) throw prev?.error || new Error('No se pudo verificar el abono anterior');
             if (prevRes.ok && prev?.id) {
-                if (prev.status === 'succeeded') return json({ alreadyPaid: true });
+                // El éxito de UN abono no liquida necesariamente la factura.
+                // Esperar su asiento antes de ofrecer el siguiente evita cobrar
+                // otra vez el saldo viejo mientras llega el webhook.
+                if (prev.status === 'succeeded' && !d.previous_payment_applied) {
+                    return json({ error: 'Estamos confirmando tu abono. Actualiza la factura en unos momentos.', code: 'payment_pending' }, 409);
+                }
                 const updateable = ['requires_payment_method', 'requires_confirmation'].includes(prev.status);
                 const sameAmount = prev.amount === amount
                     && Number(prev.application_fee_amount || 0) === fee.applicationFeeCents;
-                if (prev.status !== 'canceled' && (sameAmount || updateable)) {
+                const terminal = ['canceled', 'succeeded'].includes(prev.status);
+                if (!terminal && (sameAmount || updateable)) {
                     let current = prev;
                     if (!sameAmount && updateable) {
                         const upd = new URLSearchParams({ amount: String(amount) });
-                        if (fee.applicationFeeCents > 0) upd.set('application_fee_amount', String(fee.applicationFeeCents));
+                        setInvoiceFeeMetadata(upd, fee);
+                        if (fee.applicationFeeCents > 0 || Number(prev.application_fee_amount) > 0) {
+                            upd.set('application_fee_amount', String(fee.applicationFeeCents));
+                        }
                         const updated = await fetch(`https://api.stripe.com/v1/payment_intents/${prevId}`, {
                             method: 'POST', headers, body: upd.toString(),
                         });
@@ -158,6 +176,9 @@ export const POST: APIRoute = async ({ params, request }) => {
                         clientSecret: current.client_secret, publishableKey: pubKey,
                         accountId: acct, amount, currency,
                     });
+                }
+                if (!terminal) {
+                    return json({ error: 'Hay un abono en proceso. Espera su confirmación antes de cambiar el importe.', code: 'payment_pending' }, 409);
                 }
             }
         }
@@ -172,33 +193,44 @@ export const POST: APIRoute = async ({ params, request }) => {
         form.set('metadata[documento_id]', d.id as string);
         form.set('metadata[invoice_token]', token);
         form.set('metadata[invoice_number]', String(d.invoice_number ?? ''));
+        setInvoiceFeeMetadata(form, fee);
         if (fee.applicationFeeCents > 0) form.set('application_fee_amount', String(fee.applicationFeeCents));
 
-        // Misma idempotencia determinística que el carril de cotización: la clave
-        // incluye el MONTO porque este endpoint acepta abonos parciales, así que
-        // dos abonos distintos sobre la misma factura son operaciones distintas y
-        // deben poder crear cada uno su PaymentIntent. Sin clave, un reintento
-        // dejaba dos cobros en vuelo por el mismo saldo.
+        // Una sola operación sucesora por intento anterior, independiente del
+        // importe solicitado. Dos pestañas con montos distintos no crean dos PI;
+        // Stripe rechaza parámetros distintos para la misma operación. Después
+        // de registrar un abono, su id permite otro abono incluso del mismo monto.
         const res = await fetch('https://api.stripe.com/v1/payment_intents', {
             method: 'POST',
-            headers: { ...headers, 'Idempotency-Key': `cord-inv-${d.id}-${amount}` },
+            headers: { ...headers, 'Idempotency-Key': `cord-inv-v2-${d.id}-${prevId || 'first'}` },
             body: form.toString(),
         });
         const data: any = await res.json();
         if (!res.ok || !data?.client_secret) {
+            if (data?.error?.type === 'idempotency_error' || data?.error?.code === 'idempotency_key_in_use') {
+                return json({ error: 'Ya se está preparando un abono. Actualiza la factura antes de continuar.', code: 'payment_changed' }, 409);
+            }
             const safe = payerError(data?.error);
             log.error('el proveedor rechazó el cobro de factura', { route: 'cord-pagos', reference: safe.reference, err: data?.error });
             return json({ error: `${safe.message} Ref: ${safe.reference}` }, 502);
         }
 
-        await withOrgTx(orgId, sql`
+        const [saved] = await withOrgTx(orgId, sql`
             update documentos_fiscales
                set stripe_payment_intent_id = ${data.id}, updated_at = now()
-             where id = ${d.id} and org_id = ${orgId}`);
+             where id = ${d.id} and org_id = ${orgId}
+               and lifecycle = 'open' and amount_remaining = ${saldo}
+               and (stripe_payment_intent_id is not distinct from ${prevId}
+                    or stripe_payment_intent_id = ${data.id})
+             returning id`);
+        if (!saved.length) {
+            return json({ error: 'El saldo o el abono cambió. Actualiza la factura antes de continuar.', code: 'payment_changed' }, 409);
+        }
 
         // Checkout NUEVO de una factura desde su hosted page — el gemelo del
         // `checkout_started` que ya emite /api/q/[token]/payment-intent. Las
-        // banderas salen de la fila ya cargada: sin query extra.
+        // banderas salen de la fila ya cargada: sin query extra (una query de
+        // más aquí desincroniza los mocks de tests que encolan resultados).
         after(trackServer('checkout_started', orgId, {
             event_id: String(data.id),
             checkout_id: String(data.id),
@@ -222,5 +254,5 @@ export const POST: APIRoute = async ({ params, request }) => {
 };
 
 function json(data: unknown, status = 200) {
-    return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 }

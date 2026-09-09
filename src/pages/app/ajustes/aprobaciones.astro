@@ -40,8 +40,8 @@ const L = currentLocale();
         <div class="s-body">
             <div class="s-field">
                 <label for="oInteres">{t(L, 'set.aprob.interes')}</label>
-                <input class="s-input" id="oInteres" data-field="interes_moratorio_pct" type="number" min="0" max="100" step="0.5" value={ORG.interesMoratorioPct} />
-                <span class="s-hint">{t(L, 'set.aprob.interes_hint')}</span>
+                <input class="s-input" id="oInteres" type="number" min="0" max="0" value={ORG.interesMoratorioPct} disabled aria-describedby="late-interest-note" />
+                <span class="s-hint" id="late-interest-note">{t(L, 'set.aprob.interes_hint')}</span>
             </div>
         </div>
     </div>

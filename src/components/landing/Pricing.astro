@@ -4,9 +4,11 @@ const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 const l = (p: string) => publicPath(p, lang);
 
-import { PLANES as PLANES_ES, precioAnualMensualizado } from '../../lib/precios';
+import { PLANES as PLANES_ES, precioAnualMensualizado, precioAnualTotal } from '../../lib/precios';
 import { PLANES_EN } from '../../lib/precios.en';
 import { type PlatformCurrency } from '../../lib/plan-currency';
+import PlanCurrency from './PlanCurrency.astro';
+import PlanValue from './PlanValue.astro';
 import { planMoney, planCycleLabel } from '../../lib/plan-money';
 
 // El idioma elige la COPY, nunca la divisa: son preguntas distintas (regla 21).
@@ -49,14 +51,15 @@ const money0 = (n: number, cur: PlatformCurrency = STATIC_CURRENCY) => planMoney
                                     </div>
                                 ) : p.precio[STATIC_CURRENCY] === 0 ? (
                                     <div class="plan-price">
-                                        <span class="editorial plan-amount">$0</span>
+                                        <span class="editorial plan-amount" data-table-price data-mxn="$0" data-usd="$0" data-eur="€0">$0</span>
                                         <span class="plan-cycle">{isEn ? 'forever' : 'siempre'}</span>
                                     </div>
                                 ) : (
                                     <div class="plan-price"
                                         data-monthly={money0(p.precio[STATIC_CURRENCY])} data-annual={money0(anual)}
                                         data-mxn-monthly={money0(p.precio.MXN, 'MXN')} data-mxn-annual={money0(precioAnualMensualizado(p.precio.MXN), 'MXN')}
-                                        data-usd-monthly={money0(p.precio.USD, 'USD')} data-usd-annual={money0(precioAnualMensualizado(p.precio.USD), 'USD')}>
+                                        data-usd-monthly={money0(p.precio.USD, 'USD')} data-usd-annual={money0(precioAnualMensualizado(p.precio.USD), 'USD')}
+                                            data-eur-monthly={p.precio.EUR === undefined ? undefined : money0(p.precio.EUR, 'EUR')} data-eur-annual={p.precio.EUR === undefined ? undefined : money0(precioAnualMensualizado(p.precio.EUR), 'EUR')}>
                                         <span class="editorial plan-amount plan-amount-val">{money0(p.precio[STATIC_CURRENCY])}</span>
                                         <span class="plan-cycle" data-cycle-label>{planCycleLabel(STATIC_CURRENCY, 'mensual', lang)}</span>
                                     </div>
@@ -70,10 +73,13 @@ const money0 = (n: number, cur: PlatformCurrency = STATIC_CURRENCY) => planMoney
                             {p.precio[STATIC_CURRENCY] > 0 && !p.custom && (
                                 <div class="plan-billing-toggle">
                                     <label class="toggle-switch">
-                                        <input type="checkbox" class="billing-toggle-checkbox" />
+                                        <input type="checkbox" class="billing-toggle-checkbox" aria-label={isEn ? `Annual billing for ${p.nombre}` : `Cobro anual de ${p.nombre}`} />
                                         <span class="toggle-slider"></span>
                                     </label>
-                                    <span class="toggle-label">{isEn ? 'Billed yearly' : 'Cobro anual'}</span>
+                                    <span class="toggle-label" data-annual-total
+                                        data-mxn={planMoney(precioAnualTotal(p.precio.MXN), 'MXN', lang)}
+                                        data-usd={planMoney(precioAnualTotal(p.precio.USD), 'USD', lang)}
+                                        data-eur={p.precio.EUR === undefined ? undefined : planMoney(precioAnualTotal(p.precio.EUR), 'EUR', lang)}>{isEn ? 'Billed yearly' : 'Cobro anual'} · {planMoney(precioAnualTotal(p.precio[STATIC_CURRENCY]), STATIC_CURRENCY, lang)}</span>
                                 </div>
                             )}
 
@@ -85,11 +91,11 @@ const money0 = (n: number, cur: PlatformCurrency = STATIC_CURRENCY) => planMoney
                                         : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}&cycle=mensual`)}`}
                                 class="plan-cta plan-cta-solid"
                                 data-plan-id={p.id}
-                                data-base-href={p.custom ? undefined : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
+                                data-base-href={p.custom || p.precio.MXN === 0 ? undefined : `/registro?redirect_url=${encodeURIComponent(`/app/checkout?plan=${p.id}`)}`}
                             >{p.ctaLabel}</a>
 
                             <div class="plan-feats-wrap">
-                                <p class="plan-feats-title">{p.id === 'free' ? (isEn ? 'Includes:' : 'Incluye:') : (isEn ? 'Everything above +' : 'Todo lo anterior +')}</p>
+                                <p class="plan-feats-title">{isEn ? 'What you get:' : 'Lo que incluye:'}</p>
                                 <ul class="plan-feats">
                                     {p.feats.map((f) => (
                                         <li>
@@ -113,10 +119,13 @@ const money0 = (n: number, cur: PlatformCurrency = STATIC_CURRENCY) => planMoney
         <p class="pr-note reveal">
             <a href={l("/precios")} class="pr-compare-link">{t("pr.note")}</a>
         </p>
+        <PlanValue />
     </div>
 </section>
+<PlanCurrency />
 
 <script>
+    import { planCheckoutLink } from '../../lib/plan-checkout-link';
     document.addEventListener('DOMContentLoaded', () => {
         const section = document.querySelector('.pricing');
         if (!section) return;
@@ -137,7 +146,7 @@ const money0 = (n: number, cur: PlatformCurrency = STATIC_CURRENCY) => planMoney
                 });
                 section.querySelectorAll('.plan-cta').forEach(cta => {
                     const baseHref = cta.getAttribute('data-base-href');
-                    if (baseHref) cta.setAttribute('href', `${baseHref}&cycle=${isAnnual ? 'anual' : 'mensual'}`);
+                    if (baseHref) cta.setAttribute('href', planCheckoutLink(baseHref, isAnnual ? 'anual' : 'mensual'));
                 });
             });
         });

@@ -19,7 +19,7 @@ function intlLocale(locale?: string): string {
 
 /**
  * Importe de un plan. Sin decimales: todos los precios de Cord son enteros en
- * ambas divisas, y "$590.00" sólo agrega ruido a una tarjeta de precio.
+ * las divisas ofrecidas, y "$590.00" sólo agrega ruido a una tarjeta de precio.
  */
 export function planMoney(amount: number, currency: PlatformCurrency, locale?: string): string {
     const value = Number(amount) || 0;

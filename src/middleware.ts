@@ -1,5 +1,6 @@
 
 import { sequence } from "astro:middleware";
+import { customerDomainBoundary } from './lib/customer-domain-middleware';
 import { reqContext } from "./lib/context";
 import { LEGACY_ROUTES } from "./lib/informes";
 import { isAllowedMutationOrigin, isCsrfExemptWrite } from './lib/csrf-policy';
@@ -9,6 +10,7 @@ import { canonicalPathForInvalidEnglishRoute, preferredPublicLang } from './i18n
 //   /api/q/*         → vista pública del cliente (token secreto)
 //   /api/stripe/*    → webhook de Stripe (firma propia)
 //   /api/cron/*      → cron de Vercel (protegido por CRON_SECRET)
+//   /api/health      → sonda de Vercel (protegida por CRON_SECRET)
 //   /api/v1/*        → API PÚBLICA (cada ruta se autentica por API key: Bearer)
 //   /api/mcp/sse|message → transporte MCP (se autentica por API key: Bearer)
 //   /api/stripe/*    → webhooks de Stripe (se autentican por firma Stripe)
@@ -47,7 +49,9 @@ const OPS_PUBLIC_API_EXACT = [
     "/api/ops/passkey-options",
     "/api/ops/passkey-verify",
 ];
-const PUBLIC_API_EXACT = ["/api/mcp", "/api/docs-search.json", "/api/geo", "/api/resend/marketing-webhook", ...OPS_PUBLIC_API_EXACT];
+// OAuth legal intent is unauthenticated by definition (the account does not
+// exist yet), but it remains a same-origin POST subject to the CSRF check.
+const PUBLIC_API_EXACT = ["/api/mcp", "/api/health", "/api/docs-search.json", "/api/geo", "/api/legal/oauth-intent", "/api/resend/marketing-webhook", "/api/build/payment-intent", ...OPS_PUBLIC_API_EXACT];
 
 // Exención CSRF independiente de "API pública". Solo entra aquí una mutación
 // que se autentica con una credencial que el navegador no adjunta por sí solo
@@ -104,18 +108,21 @@ function allow(ip: string, scope: string, limit: number): boolean {
 // "/en/docs" necesita su PROPIA entrada en la whitelist o el guard de abajo la
 // trata como una ruta cualquiera y la reescribe mal (ver bug documentado abajo).
 const SUBDOMAINS = [
-    { host: "dev.cordhq.app", prefixes: ["/dev-blog"] },
-    { host: "docs.cordhq.app", prefixes: ["/docs", "/en/docs"] },
+    { host: "dev.cordhq.app", prefixes: ["/dev-blog"], passthrough: ["/robots.txt", "/sitemap.xml"] },
+    // La búsqueda vive fuera del árbol /docs. Debe pasar con su URL real o el
+    // rewrite la convertiría en /docs/api/docs-search.json y devolvería HTML al
+    // modal que espera JSON.
+    { host: "docs.cordhq.app", prefixes: ["/docs", "/en/docs"], passthrough: ["/api/docs-search.json", "/robots.txt", "/sitemap.xml"] },
     // /api/ops debe pasar sin reescribirse: el formulario vive en el mismo
     // subdominio y llama a esos endpoints. Antes terminaba como
     // /ops/api/ops/auth y el login devolvía 404 en producción.
-    { host: "ops.cordhq.app", prefixes: ["/ops", "/api/ops"] },
+    { host: "ops.cordhq.app", prefixes: ["/ops", "/api/ops"], passthrough: ["/robots.txt", "/sitemap.xml"] },
     // Facturación de la suscripción a Cord: superficie propia, fuera del chrome
     // de la app, como la del procesador que sustituye. `/api/billing` viaja con
     // ella porque la página llama a esos endpoints y la política CSRF exige
     // mismo origen: servida desde billing.cordhq.app, un fetch al apex sería
     // cross-origin y se rechazaría con 403.
-    { host: "billing.cordhq.app", prefixes: ["/billing", "/api/billing"] },
+    { host: "billing.cordhq.app", prefixes: ["/billing", "/api/billing"], passthrough: ["/robots.txt", "/sitemap.xml"] },
 ];
 
 function normalizedHostname(value: string): string {
@@ -149,7 +156,8 @@ const subdomainRewrite = async (context: any, next: any) => {
         // Con "/en/docs" en la whitelist, ese path pasa tal cual y llega a la ruta
         // real src/pages/en/docs/[...slug].astro.
         const matchedPrefix = sub.prefixes.find((p) => path === p || path.startsWith(p + "/"));
-        if (matchedPrefix || path.startsWith("/_") || path === "/404") {
+        const matchedPassthrough = sub.passthrough?.includes(path);
+        if (matchedPrefix || matchedPassthrough || path.startsWith("/_") || path === "/404") {
             return next();
         }
         // Reescritura INTERNA: la URL del navegador no cambia; se sirve el árbol del
@@ -212,6 +220,7 @@ function languageVary(headers: Headers): void {
 // puede estar viajando o usar VPN). El selector ES/EN fija una cookie para que
 // la elección explícita gane en visitas posteriores.
 const publicLanguageRouting = async (context: any, next: any) => {
+    if (context.locals.customerDomainOrgId) return next();
     const path = context.url.pathname;
     const method = context.request.method;
     const host = normalizedHostname(context.url.hostname || '');
@@ -243,14 +252,14 @@ const publicLanguageRouting = async (context: any, next: any) => {
         return response;
     }
 
-    if (path === '/') {
+    if (path === '/' || path === '/build' || path === '/build/') {
         const saved = context.cookies.get(PUBLIC_LANG_COOKIE)?.value;
         const lang = saved === 'es' || saved === 'en'
             ? saved
             : preferredPublicLang(context.request.headers.get('accept-language'));
 
         if (lang === 'en') {
-            const destination = `/en${context.url.search}`;
+            const destination = `${path === '/' ? '/en' : '/en/build'}${context.url.search}`;
             const response = context.redirect(destination, 302);
             response.headers.set('Cache-Control', 'private, no-store');
             languageVary(response.headers);
@@ -266,13 +275,14 @@ const publicLanguageRouting = async (context: any, next: any) => {
     return next();
 };
 
-import { validateSession, invalidateSession, SESSION_COOKIE, setSessionCookies, clearSessionCookies } from './lib/auth';
+import { validateSession, authorizeSessionActivity, SESSION_COOKIE, setSessionCookies, clearSessionCookies } from './lib/auth';
 import { OPS_SESSION_COOKIE, validateOpsSession } from './lib/ops-auth';
 import { trustedIp } from './lib/ip';
 import { getAppGates, getActiveOrgId, resolvePresentationContext } from './lib/db';
 import { checkMemberSeatAccess } from './lib/org-entitlements';
 import { strictLimitResponse, strictRateLimit } from './lib/ratelimit';
 import { log } from './lib/log';
+import { isTwoFactorRecoveryApi } from './lib/two-factor-gate';
 
 const mainHandler = async (context: any, next: any) => {
     const path = context.url.pathname;
@@ -283,30 +293,15 @@ const mainHandler = async (context: any, next: any) => {
     // Las rutas CSRF-exempt son deliberadamente ciegas a cookies. Si una ruta se
     // agrega por error a la lista, pierde el contexto de usuario/org y falla 401
     // dentro de su handler en vez de heredar autoridad ambiental del navegador.
-    const sessionId = csrfExempt ? undefined : context.cookies.get(SESSION_COOKIE)?.value;
+    const cookieBlind = csrfExempt || !!context.locals.customerDomainOrgId;
+    const sessionId = cookieBlind ? undefined : context.cookies.get(SESSION_COOKIE)?.value;
     let userId = null;
     let validatedSessionId: string | null = null;
-    let sessionIdleMs = 0;
     if (sessionId) {
         const session = await validateSession(sessionId);
         userId = session?.userId || null;
         validatedSessionId = session?.sessionId || null;
-        sessionIdleMs = session?.idleMs ?? 0;
-        if (session) {
-            // La sesión se desliza en BD en cada visita (validateSession), pero el
-            // Max-Age de la cookie del navegador se fijaba una sola vez al hacer
-            // login — sin esto, el navegador borraba la cookie a los 30 días
-            // exactos del login aunque el usuario entrara todos los días. Cuando
-            // `slid` viene true (throttle de 5 min ya cumplido) se re-emiten
-            // AMBAS cookies (la de sesión con el mismo token crudo ya en la mano,
-            // y el hint no-httpOnly que lee el navbar público) con un Max-Age
-            // renovado — `context.cookies.set(...)` se adjunta a la respuesta que
-            // sea que este handler termine devolviendo (attachCookiesToResponse
-            // de Astro tagea el jar completo sobre el Response final).
-            if (session.slid) {
-                setSessionCookies(context.cookies, sessionId);
-            }
-        } else {
+        if (!session) {
             // Cookie presente pero la sesión ya no es válida (expiró, fue
             // revocada, o la cuenta se suspendió) — sin esto la cookie muerta
             // se quedaba en el navegador hasta su Max-Age original, y el hint
@@ -314,7 +309,7 @@ const mainHandler = async (context: any, next: any) => {
             clearSessionCookies(context.cookies);
         }
     }
-    const orgId = csrfExempt ? null : (context.cookies.get('cord_active_org')?.value || null); // Fase 3: Active Org picker
+    const orgId = cookieBlind ? null : (context.cookies.get('cord_active_org')?.value || null); // Fase 3: Active Org picker
 
     // IP confiable (x-real-ip/x-vercel-forwarded-for — no spoofeable por el
     // cliente). x-forwarded-for[0] SÍ es spoofeable: un atacante que lo manda
@@ -528,7 +523,7 @@ const mainHandler = async (context: any, next: any) => {
     // switcher) hace que getActiveOrgId() resuelva la org SANDBOX espejo. Solo
     // aplica al carril de SESIÓN (app + APIs internas): las rutas públicas y el
     // carril de API key (sk_test_) tienen su propia resolución.
-    const testMode = !csrfExempt && context.cookies.get("cord_test_mode")?.value === "1";
+    const testMode = !cookieBlind && context.cookies.get("cord_test_mode")?.value === "1";
 
     // Idioma: este es solo el VALOR INICIAL, adivinado del header Accept-Language.
     // Dentro de /app y de las APIs internas lo pisa el idioma de la ORGANIZACIÓN
@@ -565,12 +560,64 @@ const mainHandler = async (context: any, next: any) => {
             await resolvePresentationContext();
         }
 
+        // Public cookie reads and 2FA recovery do not refresh activity. Business
+        // APIs, app/billing pages and session-bound passkey enrollment enforce
+        // the same idle policy before their handlers can run.
+        const sessionBoundAuth = path === '/api/auth/passkeys/register' || path === '/api/auth/passkeys/register-options';
+        const privateSessionApi = isApi && !isPublicApi && !isOpsApi && !isTwoFactorRecoveryApi(path, method);
+        let securityGates: Awaited<ReturnType<typeof getAppGates>> | undefined;
+        if (userId && validatedSessionId && (isApp || (isBillingPage && !isBillingEntry) || privateSessionApi || sessionBoundAuth)) {
+            try {
+                securityGates = await getAppGates(userId, { strictSecurity: true });
+                const active = await authorizeSessionActivity(validatedSessionId, userId, securityGates.sessionTimeoutMin ?? 0);
+                if (!active) {
+                    clearSessionCookies(context.cookies);
+                    if (isApi) return new Response(JSON.stringify({ error: 'Tu sesión venció. Inicia sesión de nuevo.', code: 'session_expired' }), {
+                        status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+                    });
+                    if (isBillingPage) {
+                        const signIn = `/sign-in?redirect_url=${encodeURIComponent('/api/billing/handoff')}`;
+                        return context.redirect(import.meta.env.PROD ? `https://cordhq.app${signIn}` : signIn);
+                    }
+                    return context.redirect(`/sign-in?redirect_url=${encodeURIComponent(path)}`);
+                }
+                if (active.slid && sessionId) setSessionCookies(context.cookies, sessionId);
+            } catch (error) {
+                log.error('no se pudo verificar la vigencia de la sesión', { route: 'session-security', err: error });
+                return new Response(JSON.stringify({ error: 'No pudimos verificar el acceso. Intenta de nuevo.' }), {
+                    status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+                });
+            }
+        }
+
+        // El confinamiento por 2FA también protege llamadas directas a APIs de
+        // negocio. Las excepciones solo permiten completar la verificación.
+        if (userId && isApi && !isPublicApi && !isOpsApi && !isTwoFactorRecoveryApi(path, method)) {
+            try {
+                const gates = securityGates ?? await getAppGates(userId, { strictSecurity: true });
+                if (gates.needs2fa) {
+                    return new Response(JSON.stringify({
+                        error: 'Activa la verificación en dos pasos para continuar.',
+                        code: 'two_factor_required',
+                        redirectUrl: '/app/ajustes/cuenta?require2fa=1',
+                    }), { status: 403, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+                }
+            } catch (error) {
+                log.error('no se pudo verificar la política de 2FA', { route: 'session-security', err: error });
+                return new Response(JSON.stringify({ error: 'No pudimos verificar el acceso. Intenta de nuevo.' }), {
+                    status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+                });
+            }
+        }
+
         // Un downgrade conserva miembros y datos, pero no puede seguir otorgando
         // asientos premium. El owner siempre conserva acceso para recuperar el
         // pago; los miembros fuera del cupo quedan confinados a su propia cuenta.
         if (userId && (isApp || (isApi && !isPublicApi && !isOpsApi))) {
             const selfServiceApi = path.startsWith('/api/account/') || path === '/api/account' || path === '/api/auth/logout';
-            const selfServicePage = path === '/app/ajustes/cuenta' || path.startsWith('/app/ajustes/cuenta/');
+            const selfServicePage = path === '/app/aceptacion-legal' ||
+                ['/app/ajustes/cuenta', '/app/ajustes/datos', '/app/ajustes/plan']
+                    .some((p) => path === p || path.startsWith(p + '/'));
             if (!selfServiceApi && !selfServicePage) {
                 try {
                     const active = await getActiveOrgId();
@@ -600,45 +647,41 @@ const mainHandler = async (context: any, next: any) => {
         // el paywall persuasivo; el usuario solo veía "me mandó a Planes".
         // Gates de entrada a /app, resueltos en una sola query (getAppGates).
         if (isApp && userId) {
-            const gatePaths = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];
-            const onGatePath = gatePaths.some((p) => path === p || path.startsWith(p + '/'));
+            const securityGatePaths = ['/app/ajustes/cuenta', '/app/ajustes/seguridad'];
+            const onSecurityGatePath = securityGatePaths.some((p) => path === p || path.startsWith(p + '/'));
+            const legalExemptPaths = ['/app/aceptacion-legal', '/app/ajustes/cuenta', '/app/ajustes/datos', '/app/ajustes/plan'];
+            const onLegalExemptPath = legalExemptPaths.some((p) => path === p || path.startsWith(p + '/'));
 
-            // 0) Cierre de sesión por inactividad (orgs.session_timeout_min):
-            // se guardaba en Ajustes › Seguridad desde jul 2026 pero ningún
-            // código lo aplicaba — una org podía "exigir" cierre a 1h y la
-            // sesión seguía viva 30 días igual. `sessionIdleMs` es el tiempo
-            // transcurrido desde el ÚLTIMO request verificado (calculado en
-            // validateSession ANTES de tocar la fila), comparado contra el
-            // límite de la org ACTIVA (0 = sin límite). Al vencer: se invalida
-            // la sesión en BD, se limpian ambas cookies, y se manda a
-            // /sign-in — igual que una sesión expirada por cualquier otra vía.
-            const gates = await getAppGates(userId);
-            if (gates.sessionTimeoutMin > 0 && sessionIdleMs > gates.sessionTimeoutMin * 60_000) {
-                if (sessionId) await invalidateSession(sessionId);
-                clearSessionCookies(context.cookies);
-                return context.redirect(`/sign-in?redirect_url=${encodeURIComponent(path)}`);
-            }
+            // The shared session gate above already checked inactivity atomically.
+            const gates = securityGates ?? await getAppGates(userId, { strictSecurity: true });
 
             // 1) Gate de 2FA obligatorio (jul 2026: el toggle "Exigir 2FA al
             // equipo" en Ajustes › Seguridad se podía prender y no hacía NADA
             // — quedaba guardado en BD sin ningún enforcement). Si la org
             // activa lo exige y el usuario no tiene TOTP, se confina a las
             // dos páginas que le permiten salir de ese estado: activar 2FA, o
-            // (si es el dueño) apagar el requisito. Nunca bloquea las APIs
-            // internas — ajustes/cuenta y ajustes/seguridad dependen de ellas
-            // para operar. Tiene prioridad sobre el gate de onboarding: si
+            // consultar la configuración. Las APIs de negocio exigen 2FA arriba;
+            // solo sus rutas de recuperación quedan disponibles sin completarlo.
+            // Tiene prioridad sobre el gate de onboarding: si
             // faltan ambos, primero se resuelve seguridad.
-            if (!onGatePath && gates.needs2fa) {
+            if (!onSecurityGatePath && gates.needs2fa) {
                 return context.redirect('/app/ajustes/cuenta?require2fa=1');
             }
 
-            // 2) Gate de onboarding (ago 2026): el dueño de una org que nunca
+            // 2) El clickwrap personal es obligatorio para operar, pero nunca
+            // secuestra las salidas de seguridad/privacidad ni billing: cerrar
+            // sesión, exportar o borrar datos y resolver pagos siguen accesibles.
+            if (!onLegalExemptPath && !gates.needs2fa && gates.needsLegalAcceptance) {
+                return context.redirect(`/app/aceptacion-legal?redirect_url=${encodeURIComponent(path)}`);
+            }
+
+            // 3) Gate de onboarding (ago 2026): el dueño de una org que nunca
             // completó el wizard de /onboarding (nombre real de la empresa,
             // rol, giro, para qué usará Cord) se confina ahí. Solo aplica al
             // DUEÑO — un miembro invitado no debe terminar configurando el
             // negocio de otra persona. /onboarding y /api/** viven fuera de
             // isApp, así que nunca se auto-redirige en loop.
-            if (!onGatePath && !gates.needs2fa && gates.needsOnboarding) {
+            if (!onSecurityGatePath && !gates.needs2fa && !gates.needsLegalAcceptance && gates.needsOnboarding) {
                 return context.redirect('/onboarding');
             }
         }
@@ -676,7 +719,8 @@ const securityHeaders = async (context: any, next: any) => {
             "script-src 'self' 'unsafe-inline' https://us.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://accounts.google.com https://appleid.apple.com https://js.stripe.com; " +
             "connect-src 'self' https://us.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://vitals.vercel-insights.com https://api.stripe.com; " +
             "img-src 'self' data: https:; " +
-            "style-src 'self' 'unsafe-inline'; " +
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+            "font-src 'self' https://fonts.gstatic.com; " +
             "frame-src 'self' https://accounts.google.com https://appleid.apple.com https://js.stripe.com https://hooks.stripe.com; " +
             "frame-ancestors 'self'; " +
             "base-uri 'self'; " +
@@ -693,10 +737,11 @@ const securityHeaders = async (context: any, next: any) => {
     // puede filtrar su URL por `Referer`, igual que el enlace de recuperación de
     // contraseña.
     const isCapturaIdentidad = path === "/verificar-identidad" || path.startsWith("/verificar-identidad/");
+    const isPublicInvoice = path.startsWith('/i/') || path.startsWith('/api/i/');
 
     secureRes.headers.set(
         "Referrer-Policy",
-        path.startsWith("/reset-password") || isCapturaIdentidad ? "no-referrer" : "strict-origin-when-cross-origin",
+        path.startsWith("/reset-password") || isCapturaIdentidad || isPublicInvoice ? "no-referrer" : "strict-origin-when-cross-origin",
     );
     // `camera=()` es una allowlist VACÍA: deshabilita getUserMedia incluso para el
     // documento de nivel superior, no sólo para iframes. Se aplicaba a TODA ruta
@@ -711,7 +756,7 @@ const securityHeaders = async (context: any, next: any) => {
         "Permissions-Policy",
         `camera=${isCapturaIdentidad ? "(self)" : "()"}, microphone=(), geolocation=(), payment=(self)`,
     );
-    if (isCapturaIdentidad) {
+    if (isCapturaIdentidad || isPublicInvoice) {
         // Una página que lleva una credencial portadora en la URL no se cachea ni
         // se indexa. El `noindex` del layout es un meta tag; esto es el header,
         // que también cubre respuestas no-HTML y crawlers que no ejecutan JS.
@@ -760,4 +805,4 @@ const securityHeaders = async (context: any, next: any) => {
     return secureRes;
 };
 
-export const onRequest = sequence(subdomainRewrite, securityHeaders, publicLanguageRouting, mainHandler);
+export const onRequest = sequence(customerDomainBoundary, subdomainRewrite, securityHeaders, publicLanguageRouting, mainHandler);

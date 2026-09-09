@@ -5,15 +5,15 @@ category: "Ventas B2B"
 date: "20 Abr 2026"
 readTime: "06 MIN"
 img: "/images/blog/tasas-cierre-b2b.png"
-authorName: "Lorena Silva"
-authorRole: "Sales Engineering"
+authorName: "Equipo Cord"
+authorRole: "Producto y operaciones comerciales"
 ---
 
 Una cotización B2B no es un simple recibo anticipado; es el documento comercial más importante de tu embudo de ventas. Es la última pieza de información que el tomador de decisiones (que muchas veces no estuvo presente en tus brillantes presentaciones de venta) verá antes de decidir si aprueba o no el presupuesto de miles de dólares.
 
 A pesar de esta responsabilidad crítica, la mayoría de las empresas envían hojas de Excel exportadas a PDF que parecen reportes contables de los años 90.
 
-Analizando miles de transacciones procesadas y aprobadas en tiempo récord a través de **Cord**, hemos decodificado los 4 patrones visuales y psicológicos que separan a una cotización promedio de una máquina de cierres.
+Los siguientes cuatro patrones son principios prácticos para hacer una cotización más fácil de entender y aprobar. No garantizan una conversión.
 
 ## 1. El Resumen Ejecutivo Inmediato
 

@@ -1,0 +1,522 @@
+---
+import SettingsShell from '../../../components/app/SettingsShell.astro';
+import { currentLocale, currentFormatLocale, currentTimeZone } from '../../../lib/context';
+
+const L = currentLocale();
+const copy = {
+    es: {
+        title: 'Dominio propio', pageTitle: 'Dominio propio — Ajustes',
+        intro: 'Dale a tus cotizaciones una dirección de tu marca. Conecta un subdominio y conserva tu sitio web donde está.',
+        loading: 'Consultando el estado del dominio…', refreshing: 'Actualizando el estado…', retry: 'Actualizar estado',
+        preparationTitle: 'Estamos preparando los dominios propios',
+        preparation: 'La conexión todavía no está disponible. Podrás configurarla aquí cuando esté lista.',
+        planTitle: 'Tu marca, también en la dirección',
+        plan: 'Los dominios propios están disponibles desde el plan Profesional.', upgrade: 'Ver plan Profesional',
+        sandboxTitle: 'No disponible en el entorno de prueba',
+        sandbox: 'Sal del modo de prueba desde el selector de organización para conectar un dominio.',
+        stepOne: 'Elige tu dominio', stepTwo: 'Configura el DNS', stepThree: 'Verifica la conexión',
+        recommendation: 'Recomendamos un subdominio dedicado, como', example: 'cotizaciones.tuempresa.com',
+        preserve: 'Si ya tienes un dominio, no necesitas comprar otro. Usa una dirección libre dentro de él y conserva tu web principal donde está.',
+        hostname: 'Subdominio', hostnameHint: 'Solo el nombre, sin https://, rutas ni puertos.',
+        invalidHostname: 'Escribe un nombre de dominio válido, sin protocolo, rutas ni puertos.',
+        save: 'Guardar dominio', saving: 'Guardando dominio…', saved: 'Dominio guardado. Continúa con los registros DNS.',
+        savedDomain: 'Dominio guardado', changeHint: 'Para usar otro dominio, desconecta primero el actual.',
+        dnsIntro: 'En el panel donde administras el DNS de tu dominio, añade estos registros exactamente como aparecen.',
+        dnsHint: 'Primero verifica el TXT de propiedad; después aparecerá el CNAME para conectar la dirección. Conserva el TXT para las revisiones posteriores. Modifica solo este subdominio, sin cambiar los registros de tu web ni correo. Si tu panel añade el dominio al nombre automáticamente, evita duplicarlo.',
+        noRecords: 'Todavía no hay registros DNS disponibles. Actualiza el estado más tarde para consultar las instrucciones.',
+        type: 'Tipo', name: 'Nombre', value: 'Valor', copyName: 'Copiar nombre', copyValue: 'Copiar valor',
+        copied: 'Copiado', copyFailed: 'No se pudo copiar. Selecciona el texto y cópialo manualmente.',
+        verifyIntro: 'Cuando hayas guardado los registros, verifica la conexión. Los cambios DNS pueden tardar en propagarse; el certificado HTTPS también puede necesitar tiempo.',
+        manual: 'El estado se consulta al abrir esta página o cuando lo solicitas. Si sigue pendiente, espera unos minutos antes de volver a verificar.',
+        verify: 'Verificar conexión', verifying: 'Verificando conexión…', checked: 'Estado actualizado.',
+        lastChecked: 'Última verificación', neverChecked: 'Aún no se ha verificado', unknownDate: 'Fecha no disponible',
+        activeTitle: 'Tu dominio está activo', activeIntro: 'La dirección raíz muestra una página mínima con la marca de tu negocio.',
+        open: 'Abrir dominio', newTab: 'Se abre en una pestaña nueva',
+        disconnect: 'Desconectar dominio', disconnectHint: 'Los enlaces que usen este dominio dejarán de estar disponibles en esta dirección. Los registros de tu proveedor DNS no se eliminan desde Cord.',
+        disconnectTitle: '¿Desconectar este dominio?',
+        disconnectBody: 'Se desconectará {hostname}. Los enlaces con esta dirección dejarán de estar disponibles. Esta acción no elimina los registros de tu proveedor DNS.',
+        cancel: 'Cancelar', disconnecting: 'Desconectando dominio…', disconnected: 'Dominio desconectado.',
+        loadError: 'No pudimos consultar el estado del dominio. Actualiza el estado para intentarlo de nuevo.',
+        actionError: 'No pudimos confirmar el resultado de la operación. Actualiza el estado antes de volver a intentarlo.',
+        unavailable: 'No pudimos consultar los dominios propios. El servicio puede no estar disponible todavía; vuelve a intentarlo más tarde.',
+        sessionError: 'Tu sesión terminó. Vuelve a iniciar sesión y recarga esta página.',
+        forbidden: 'No tienes permiso para gestionar dominios. Consulta con quien administra tu organización.',
+        rateLimit: 'Hay demasiadas solicitudes. Espera unos minutos y actualiza el estado.',
+        stale: 'El estado mostrado es el último que recibimos; no pudimos confirmar si ha cambiado.',
+        noScript: 'Activa JavaScript para consultar y gestionar tu dominio.',
+        status: { pending: 'Pendiente de configuración', dns_pending: 'Esperando DNS', tls_pending: 'Preparando HTTPS', active: 'Activo', error: 'Requiere atención' },
+        detail: {
+            pending: 'El dominio está guardado, pero la conexión aún no está activa. Revisa los registros DNS y verifica.',
+            dns_pending: 'Los registros DNS aún no se han confirmado. Revisa los nombres y valores y vuelve a verificar más tarde.',
+            tls_pending: 'El certificado HTTPS aún está en preparación. Espera unos minutos y vuelve a verificar.',
+            active: 'La conexión está activa y protegida con HTTPS.',
+            error: 'No se pudo completar la conexión. Revisa los registros DNS y vuelve a verificar. Si persiste, contacta a soporte.',
+        },
+        issues: {
+            ownership_pending: 'No encontramos el TXT de propiedad. Añádelo exactamente como aparece abajo y consérvalo después de activar el dominio.',
+            dns_unavailable: 'El servidor DNS no respondió. No cambies los registros por este error: espera un minuto y verifica de nuevo.',
+            provider_unavailable: 'No pudimos consultar el servicio de dominios. Actualiza el estado y vuelve a verificar en unos minutos.',
+            domain_requires_support: 'Esta dirección ya está asignada o necesita una revisión. Contacta a soporte; no borres su configuración para intentar conectarla.',
+            provider_scope_changed: 'La configuración del servicio cambió. Soporte debe revisar la conexión; no necesitas modificar tu DNS.',
+            disconnect_failed: 'El acceso por este dominio ya está bloqueado, pero falta completar la desconexión. Pulsa Desconectar dominio para reintentar.',
+        },
+    },
+    en: {
+        title: 'Custom domain', pageTitle: 'Custom domain — Settings',
+        intro: 'Give your quotes an address that carries your brand. Connect a subdomain and keep your website where it is.',
+        loading: 'Checking domain status…', refreshing: 'Refreshing status…', retry: 'Refresh status',
+        preparationTitle: 'Custom domains are being prepared',
+        preparation: 'Domain connections are not available yet. You will be able to set yours up here when they are ready.',
+        planTitle: 'Your brand, right in the address',
+        plan: 'Custom domains are available on the Professional plan and above.', upgrade: 'View Professional plan',
+        sandboxTitle: 'Unavailable in the test environment',
+        sandbox: 'Exit test mode using the organization switcher to connect a domain.',
+        stepOne: 'Choose your domain', stepTwo: 'Configure DNS', stepThree: 'Verify the connection',
+        recommendation: 'We recommend a dedicated subdomain, such as', example: 'quotes.yourcompany.com',
+        preserve: 'If you already own a domain, you do not need to buy another one. Use an unused address within it and keep your main website where it is.',
+        hostname: 'Subdomain', hostnameHint: 'Enter only the hostname, without https://, paths, or ports.',
+        invalidHostname: 'Enter a valid domain name, without a protocol, paths, or ports.',
+        save: 'Save domain', saving: 'Saving domain…', saved: 'Domain saved. Continue with the DNS records.',
+        savedDomain: 'Saved domain', changeHint: 'To use a different domain, disconnect the current one first.',
+        dnsIntro: 'In the panel where you manage your domain’s DNS, add these records exactly as shown.',
+        dnsHint: 'First verify the ownership TXT; then the CNAME for your address will appear. Keep the TXT for future checks. Only change this subdomain, not your website or email records. If your panel automatically appends the domain to the name, avoid adding it twice.',
+        noRecords: 'No DNS records are available yet. Refresh the status later to check for instructions.',
+        type: 'Type', name: 'Name', value: 'Value', copyName: 'Copy name', copyValue: 'Copy value',
+        copied: 'Copied', copyFailed: 'Could not copy. Select the text and copy it manually.',
+        verifyIntro: 'After saving the records, verify the connection. DNS changes can take time to propagate, and the HTTPS certificate may also need time.',
+        manual: 'Status is checked when you open this page or request an update. If it is still pending, wait a few minutes before verifying again.',
+        verify: 'Verify connection', verifying: 'Verifying connection…', checked: 'Status updated.',
+        lastChecked: 'Last verified', neverChecked: 'Not verified yet', unknownDate: 'Date unavailable',
+        activeTitle: 'Your domain is active', activeIntro: 'The root address displays a minimal page with your business branding.',
+        open: 'Open domain', newTab: 'Opens in a new tab',
+        disconnect: 'Disconnect domain', disconnectHint: 'Links using this domain will no longer be available at this address. Cord does not remove records from your DNS provider.',
+        disconnectTitle: 'Disconnect this domain?',
+        disconnectBody: '{hostname} will be disconnected. Links using this address will no longer be available. This does not remove records from your DNS provider.',
+        cancel: 'Cancel', disconnecting: 'Disconnecting domain…', disconnected: 'Domain disconnected.',
+        loadError: 'We could not check your domain status. Refresh the status to try again.',
+        actionError: 'We could not confirm the result of this operation. Refresh the status before trying again.',
+        unavailable: 'We could not check custom domains. The service may not be available yet; try again later.',
+        sessionError: 'Your session has ended. Sign in again and reload this page.',
+        forbidden: 'You do not have permission to manage domains. Contact your organization administrator.',
+        rateLimit: 'Too many requests. Wait a few minutes and refresh the status.',
+        stale: 'This is the last status we received; we could not confirm whether it has changed.',
+        noScript: 'Enable JavaScript to view and manage your domain.',
+        status: { pending: 'Setup pending', dns_pending: 'Waiting for DNS', tls_pending: 'Preparing HTTPS', active: 'Active', error: 'Needs attention' },
+        detail: {
+            pending: 'Your domain is saved, but the connection is not active yet. Review the DNS records and verify.',
+            dns_pending: 'DNS records have not been confirmed yet. Check the names and values, then verify again later.',
+            tls_pending: 'The HTTPS certificate is still being prepared. Wait a few minutes and verify again.',
+            active: 'Your connection is active and secured with HTTPS.',
+            error: 'The connection could not be completed. Review your DNS records and verify again. If the issue persists, contact support.',
+        },
+        issues: {
+            ownership_pending: 'We could not find the ownership TXT. Add it exactly as shown below and keep it after activating your domain.',
+            dns_unavailable: 'The DNS server did not respond. Do not change your records because of this error: wait one minute and verify again.',
+            provider_unavailable: 'We could not reach the domain service. Refresh the status and verify again in a few minutes.',
+            domain_requires_support: 'This address is already assigned or needs a review. Contact support; do not delete its configuration to try connecting it.',
+            provider_scope_changed: 'The service configuration changed. Support needs to review the connection; you do not need to change your DNS.',
+            disconnect_failed: 'Access through this domain is already blocked, but disconnection is not complete. Select Disconnect domain to retry.',
+        },
+    },
+}[L];
+---
+
+<SettingsShell title={copy.pageTitle} tab="dominio" perm="ajustes">
+    <div data-domain-settings data-copy={JSON.stringify(copy)} data-locale={currentFormatLocale() || L} data-time-zone={currentTimeZone()}>
+        <header class="domain-header">
+            <h1>{copy.title}</h1>
+            <p>{copy.intro}</p>
+        </header>
+
+        <div class="domain-feedback" aria-live="polite" aria-atomic="true"><p data-feedback>{copy.loading}</p></div>
+        <div class="domain-notice domain-error" role="alert" data-request-error hidden>
+            <p data-error-message></p>
+            <p data-stale hidden>{copy.stale}</p>
+        </div>
+        <div class="domain-notice" data-sandbox hidden>
+            <h2>{copy.sandboxTitle}</h2><p>{copy.sandbox}</p>
+        </div>
+        <div class="domain-notice" data-preparation hidden>
+            <h2>{copy.preparationTitle}</h2><p>{copy.preparation}</p>
+        </div>
+        <div class="domain-notice" data-plan hidden>
+            <h2>{copy.planTitle}</h2><p>{copy.plan}</p>
+            <a class="domain-button" href="/app/ajustes/plan">{copy.upgrade}</a>
+        </div>
+        <button class="domain-button domain-refresh" type="button" data-refresh hidden>{copy.retry}</button>
+
+        <div data-content aria-busy="true" hidden>
+            <section class="domain-step" aria-labelledby="domain-choose-title">
+                <div class="domain-step-heading"><span class="domain-number" aria-hidden="true">01</span><h2 id="domain-choose-title">{copy.stepOne}</h2></div>
+                <div class="domain-step-body">
+                    <p>{copy.recommendation} <span class="domain-example">{copy.example}</span>. {copy.preserve}</p>
+                    <form data-domain-form hidden>
+                        <label for="domain-hostname">{copy.hostname}</label>
+                        <div class="domain-form-row">
+                            <input id="domain-hostname" name="hostname" type="text" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="253" placeholder={copy.example} aria-describedby="domain-hostname-hint domain-hostname-error" disabled />
+                            <button type="submit" class="domain-button domain-primary" data-save disabled>{copy.save}</button>
+                        </div>
+                        <p class="domain-hint" id="domain-hostname-hint">{copy.hostnameHint}</p>
+                        <p class="domain-field-error" id="domain-hostname-error" role="alert" hidden>{copy.invalidHostname}</p>
+                    </form>
+                    <div data-saved-domain hidden>
+                        <span class="domain-label">{copy.savedDomain}</span>
+                        <div class="domain-summary"><strong data-hostname></strong><span class="domain-status" data-status></span></div>
+                        <p data-status-detail></p>
+                        <p class="domain-hint">{copy.changeHint}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="domain-step" data-dns hidden aria-labelledby="domain-dns-title">
+                <div class="domain-step-heading"><span class="domain-number" aria-hidden="true">02</span><h2 id="domain-dns-title">{copy.stepTwo}</h2></div>
+                <div class="domain-step-body">
+                    <p>{copy.dnsIntro}</p>
+                    <div data-records></div>
+                    <p data-no-records hidden>{copy.noRecords}</p>
+                    <p class="domain-hint">{copy.dnsHint}</p>
+                </div>
+            </section>
+
+            <section class="domain-step" data-connection hidden aria-labelledby="domain-connection-title">
+                <div class="domain-step-heading"><span class="domain-number" aria-hidden="true">03</span><h2 id="domain-connection-title">{copy.stepThree}</h2></div>
+                <div class="domain-step-body">
+                    <p data-verify-intro>{copy.verifyIntro}</p>
+                    <div data-active hidden><h3>{copy.activeTitle}</h3><p>{copy.activeIntro}</p></div>
+                    <p class="domain-hint">{copy.lastChecked}: <time data-last-checked>{copy.neverChecked}</time></p>
+                    <div class="domain-actions">
+                        <button type="button" class="domain-button domain-primary" data-verify disabled>{copy.verify}</button>
+                        <a class="domain-button" data-open target="_blank" rel="noopener noreferrer" aria-label={`${copy.open} · ${copy.newTab}`} hidden>{copy.open}<span aria-hidden="true">↗</span></a>
+                    </div>
+                    <p class="domain-hint">{copy.manual}</p>
+                </div>
+            </section>
+
+            <section class="domain-step" data-disconnect-section hidden aria-labelledby="domain-disconnect-title">
+                <div class="domain-step-heading"><h2 id="domain-disconnect-title">{copy.disconnect}</h2></div>
+                <div class="domain-step-body">
+                    <p>{copy.disconnectHint}</p>
+                    <button type="button" class="domain-button domain-danger" data-disconnect disabled>{copy.disconnect}</button>
+                </div>
+            </section>
+        </div>
+        <noscript><p class="domain-notice">{copy.noScript}</p></noscript>
+    </div>
+</SettingsShell>
+
+<style is:global>
+    [data-domain-settings] { min-width: 0; color: var(--color-text); }
+    [data-domain-settings] [hidden] { display: none !important; }
+    [data-domain-settings] p { margin: 0; font-size: 0.86rem; line-height: 1.65; color: var(--color-text-muted); overflow-wrap: anywhere; }
+    [data-domain-settings] h1 { margin: 0 0 0.7rem; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 650; letter-spacing: -0.04em; line-height: 1.15; }
+    [data-domain-settings] h2, [data-domain-settings] h3 { margin: 0; font-size: 0.95rem; line-height: 1.4; font-weight: 600; letter-spacing: -0.015em; }
+    [data-domain-settings] .domain-header { max-width: 65ch; padding-bottom: 1.4rem; }
+    [data-domain-settings] .domain-feedback { min-height: 1.7rem; margin-bottom: 0.65rem; }
+    [data-domain-settings] .domain-feedback p { font-size: 0.78rem; }
+    [data-domain-settings] .domain-notice { border-block: 1px solid var(--color-border); padding: 1.4rem 0; display: grid; gap: 0.7rem; }
+    [data-domain-settings] .domain-error { border-inline-start: 2px solid var(--color-danger); padding-inline-start: 1rem; }
+    [data-domain-settings] [data-sandbox] { border-inline-start: 2px solid var(--color-warn); padding-inline-start: 1rem; }
+    [data-domain-settings] .domain-refresh { margin-block: 0.6rem 1.3rem; }
+    [data-domain-settings] .domain-step { display: grid; grid-template-columns: minmax(170px, 0.8fr) minmax(0, 2fr); gap: 2.5rem; padding: 2rem 0; border-top: 1px solid var(--color-border); }
+    [data-domain-settings] .domain-step-heading { display: flex; gap: 0.8rem; align-items: baseline; }
+    [data-domain-settings] .domain-number { font-size: 0.74rem; font-variant-numeric: tabular-nums; color: var(--color-text-muted); }
+    [data-domain-settings] .domain-step-body { display: grid; gap: 1rem; min-width: 0; }
+    [data-domain-settings] .domain-example { color: var(--color-text); font-weight: 550; }
+    [data-domain-settings] label, [data-domain-settings] .domain-label { display: block; margin-bottom: 0.55rem; font-size: 0.78rem; font-weight: 550; color: var(--color-text-muted); }
+    [data-domain-settings] .domain-form-row { display: flex; align-items: start; gap: 0.65rem; }
+    [data-domain-settings] input { width: 100%; min-width: 0; min-height: 46px; padding: 11px 14px; box-sizing: border-box; border: 1px solid transparent; border-radius: 12px; background: var(--color-bg-soft); color: var(--color-text); font: inherit; font-size: 0.9rem; }
+    [data-domain-settings] input::placeholder { color: var(--color-text-muted); opacity: 0.8; }
+    [data-domain-settings] input[aria-invalid="true"] { border-color: var(--color-danger); }
+    [data-domain-settings] .domain-button { display: inline-flex; align-items: center; justify-content: center; justify-self: start; gap: 0.5rem; min-height: 44px; box-sizing: border-box; padding: 10px 17px; border: 1px solid var(--color-border); border-radius: 999px; background: transparent; color: var(--color-text); font: inherit; font-size: 0.8rem; font-weight: 600; text-decoration: none; cursor: pointer; transition: background 0.18s, transform 0.18s; }
+    [data-domain-settings] .domain-button:hover:not(:disabled) { background: var(--color-bg-soft); }
+    [data-domain-settings] .domain-button:active:not(:disabled) { transform: scale(0.98); }
+    [data-domain-settings] .domain-primary { background: var(--color-text); color: var(--surface); border-color: transparent; }
+    [data-domain-settings] .domain-primary:hover:not(:disabled) { background: var(--color-text); opacity: 0.9; }
+    [data-domain-settings] .domain-danger { color: var(--color-danger); }
+    [data-domain-settings] :is(button, input):disabled { opacity: 0.55; cursor: not-allowed; }
+    [data-domain-settings] :is(button, a, input):focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; }
+    [data-domain-settings] .domain-hint { font-size: 0.76rem; }
+    [data-domain-settings] form .domain-hint { margin-top: 0.6rem; }
+    [data-domain-settings] .domain-field-error { margin-top: 0.5rem; color: var(--color-danger); }
+    [data-domain-settings] .domain-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; margin-bottom: 0.65rem; }
+    [data-domain-settings] .domain-summary strong { font-size: 1.05rem; font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+    [data-domain-settings] .domain-status { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.74rem; color: var(--color-text); }
+    [data-domain-settings] .domain-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--color-warn); flex-shrink: 0; }
+    [data-domain-settings] .domain-status[data-state="active"]::before { background: var(--color-ok); }
+    [data-domain-settings] .domain-status[data-state="error"]::before { background: var(--color-danger); }
+    [data-domain-settings] .domain-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+    [data-domain-settings] .domain-record { padding: 1rem 0; border-block-end: 1px solid var(--color-border); display: grid; gap: 0.65rem; }
+    [data-domain-settings] .domain-record:first-child { border-block-start: 1px solid var(--color-border); }
+    [data-domain-settings] .domain-record dl { display: grid; grid-template-columns: 4rem minmax(0, 1fr); gap: 0.65rem 1rem; margin: 0; align-items: baseline; }
+    [data-domain-settings] .domain-record dt { font-size: 0.75rem; color: var(--color-text-muted); }
+    [data-domain-settings] .domain-record dd { display: flex; align-items: start; gap: 0.75rem; margin: 0; min-width: 0; }
+    [data-domain-settings] .domain-record code { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-sans); font-size: 0.83rem; line-height: 1.7; user-select: text; }
+    [data-domain-settings] .domain-copy { flex-shrink: 0; min-width: 44px; padding: 8px 12px; font-size: 0.72rem; }
+    [data-domain-settings] [data-active] { display: grid; gap: 0.5rem; }
+    @media (max-width: 880px) {
+        [data-domain-settings] .domain-step { grid-template-columns: minmax(0, 1fr); gap: 1.15rem; padding-block: 1.6rem; }
+        [data-domain-settings] input { font-size: 16px; min-height: 48px; }
+    }
+    @media (max-width: 540px) {
+        [data-domain-settings] .domain-form-row { flex-direction: column; align-items: stretch; }
+        [data-domain-settings] .domain-actions { flex-direction: column; align-items: stretch; }
+        [data-domain-settings] .domain-record dl { grid-template-columns: minmax(0, 1fr); gap: 0.35rem; }
+        [data-domain-settings] .domain-record dd { margin-bottom: 0.65rem; }
+        [data-domain-settings] .domain-record dd:last-child { margin-bottom: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        [data-domain-settings] .domain-button { transition: none; }
+    }
+</style>
+
+<script>
+    type DomainStatus = 'pending' | 'dns_pending' | 'tls_pending' | 'active' | 'error';
+    interface DomainState {
+        enabled: boolean;
+        eligible: boolean;
+        isSandbox: boolean;
+        domain: null | {
+            hostname: string;
+            status: DomainStatus;
+            records: Array<{ type: 'TXT' | 'CNAME'; name: string; value: string }>;
+            lastCheckedAt: string | null;
+            errorCode: string | null;
+        };
+    }
+    type Copy = Record<string, string> & { status: Record<DomainStatus, string>; detail: Record<DomainStatus, string>; issues: Record<string, string> };
+
+    function initDomainSettings() {
+        const root = document.querySelector<HTMLElement>('[data-domain-settings]');
+        if (!root || root.dataset.initialized) return;
+        root.dataset.initialized = 'true';
+        const c = JSON.parse(root.dataset.copy!) as Copy;
+        const el = <T extends HTMLElement = HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
+        const form = el<HTMLFormElement>('[data-domain-form]');
+        const input = el<HTMLInputElement>('#domain-hostname');
+        const feedback = el('[data-feedback]');
+        const save = el<HTMLButtonElement>('[data-save]');
+        const verify = el<HTMLButtonElement>('[data-verify]');
+        const disconnect = el<HTMLButtonElement>('[data-disconnect]');
+        const refresh = el<HTMLButtonElement>('[data-refresh]');
+        const open = el<HTMLAnchorElement>('[data-open]');
+        let state: DomainState | null = null;
+        let busy = false;
+        let stale = false;
+        let planRequired = false;
+
+        // Validate host-only values before sending them or constructing an external URL.
+        function validHostname(hostname: string): boolean {
+            return hostname.length <= 253 && hostname.includes('.') &&
+                hostname.split('.').every(label => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(label)) &&
+                /[a-z]/i.test(hostname.split('.').at(-1)!);
+        }
+
+        function parseState(value: unknown): DomainState {
+            if (!value || typeof value !== 'object') throw new Error(c.loadError);
+            const s = value as DomainState;
+            if (typeof s.enabled !== 'boolean' || typeof s.eligible !== 'boolean' || typeof s.isSandbox !== 'boolean') throw new Error(c.loadError);
+            const d = s.domain;
+            if (d !== null && (!d || typeof d.hostname !== 'string' || !validHostname(d.hostname) ||
+                !['pending', 'dns_pending', 'tls_pending', 'active', 'error'].includes(d.status) ||
+                !Array.isArray(d.records) || !d.records.every(r => r && ['TXT', 'CNAME'].includes(r.type) && typeof r.name === 'string' && typeof r.value === 'string') ||
+                !(d.lastCheckedAt === null || typeof d.lastCheckedAt === 'string') ||
+                !(d.errorCode === null || typeof d.errorCode === 'string'))) throw new Error(c.loadError);
+            return s;
+        }
+
+        function allowed() { return !!state?.enabled && state.eligible && !state.isSandbox && !planRequired && !stale; }
+        function canDisconnect() { return !!state?.domain && !state.isSandbox && !stale; }
+
+        function render() {
+            const d = state?.domain;
+            const usable = allowed();
+            el('[data-sandbox]').hidden = !state?.isSandbox;
+            el('[data-preparation]').hidden = !state || state.enabled || state.isSandbox;
+            el('[data-plan]').hidden = !!state?.isSandbox || !(planRequired || (state && !state.eligible));
+            el('[data-content]').hidden = !state || state.isSandbox || (!usable && !d);
+            el('[data-content]').setAttribute('aria-busy', String(busy));
+            form.hidden = !usable || !!d;
+            input.disabled = busy || !usable || !!d;
+            save.disabled = input.disabled;
+            verify.disabled = busy || !usable || !d || d.errorCode === 'disconnect_failed';
+            disconnect.disabled = busy || !canDisconnect();
+            refresh.hidden = false;
+            refresh.disabled = busy;
+            el('[data-saved-domain]').hidden = !d;
+            el('[data-dns]').hidden = !d || !state?.enabled;
+            el('[data-connection]').hidden = !d;
+            el('[data-disconnect-section]').hidden = !d;
+            el('[data-stale]').hidden = !stale || !state;
+            open.hidden = true;
+            open.removeAttribute('href');
+            if (!d) return;
+            el('[data-hostname]').textContent = d.hostname;
+            el('[data-status]').textContent = c.status[d.status];
+            el('[data-status]').dataset.state = d.status;
+            el('[data-status-detail]').textContent = (d.errorCode && Object.hasOwn(c.issues, d.errorCode) ? c.issues[d.errorCode] : null) || c.detail[d.status];
+            const active = d.status === 'active' && usable;
+            el('[data-active]').hidden = !active;
+            el('[data-verify-intro]').hidden = active;
+            if (active && !busy) { open.href = `https://${d.hostname}/`; open.hidden = false; }
+            const time = el<HTMLTimeElement>('[data-last-checked]');
+            time.removeAttribute('datetime');
+            if (d.lastCheckedAt === null) time.textContent = c.neverChecked;
+            else {
+                const date = new Date(d.lastCheckedAt);
+                time.textContent = Number.isNaN(date.getTime()) ? c.unknownDate : new Intl.DateTimeFormat(root!.dataset.locale, {
+                    dateStyle: 'medium', timeStyle: 'short', timeZone: root!.dataset.timeZone || undefined,
+                }).format(date);
+                if (!Number.isNaN(date.getTime())) time.dateTime = date.toISOString();
+            }
+        }
+
+        function renderRecords() {
+            const records = state?.domain?.records || [];
+            const container = el('[data-records]');
+            container.replaceChildren();
+            el('[data-no-records]').hidden = records.length > 0;
+            for (const record of records) {
+                const row = document.createElement('div');
+                row.className = 'domain-record';
+                const list = document.createElement('dl');
+                for (const key of ['type', 'name', 'value'] as const) {
+                    const label = document.createElement('dt');
+                    label.textContent = c[key];
+                    const value = document.createElement('dd');
+                    const text = document.createElement('code');
+                    text.textContent = record[key];
+                    value.append(text);
+                    if (key !== 'type') {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'domain-button domain-copy';
+                        const labelText = key === 'name' ? c.copyName : c.copyValue;
+                        button.textContent = labelText;
+                        button.setAttribute('aria-label', `${labelText}: ${record[key]}`);
+                        button.addEventListener('click', async () => {
+                            button.disabled = true;
+                            try {
+                                await navigator.clipboard.writeText(record[key]);
+                                button.textContent = c.copied;
+                                feedback.textContent = `${labelText}: ${c.copied.toLowerCase()}.`;
+                            } catch { feedback.textContent = c.copyFailed; }
+                            finally { button.disabled = false; }
+                            window.setTimeout(() => { button.textContent = labelText; }, 2000);
+                        });
+                        value.append(button);
+                    }
+                    list.append(label, value);
+                }
+                row.append(list);
+                container.append(row);
+            }
+        }
+
+        async function request(path: string, method = 'GET', hostname?: string, retried = false): Promise<unknown> {
+            const controller = new AbortController();
+            const timeout = window.setTimeout(() => controller.abort(), 90000);
+            try {
+                const response = await fetch(path, {
+                    method, credentials: 'same-origin', cache: 'no-store', signal: controller.signal,
+                    headers: { Accept: 'application/json', ...(hostname ? { 'Content-Type': 'application/json' } : {}) },
+                    ...(hostname ? { body: JSON.stringify({ hostname }) } : {}),
+                });
+                const data: unknown = await response.json().catch(() => null);
+                if (!response.ok) {
+                    if (response.status === 428 && !retried) {
+                        window.clearTimeout(timeout);
+                        if (await (window as any).cordStepUp?.()) return request(path, method, hostname, true);
+                        throw new Error(c.actionError);
+                    }
+                    if (response.status === 402) { planRequired = true; throw new Error(c.plan); }
+                    if (response.status === 401) throw new Error(c.sessionError);
+                    if (response.status === 403) throw new Error(c.forbidden);
+                    if (response.status === 404 || response.status === 503) throw new Error(c.unavailable);
+                    if (response.status === 429) throw new Error(c.rateLimit);
+                    // Server errors use localized UI copy; API validation messages are text, never HTML.
+                    if (response.status < 500 && data && typeof data === 'object' && 'error' in data && typeof data.error === 'string') throw new Error(data.error);
+                    throw new Error(method === 'GET' ? c.loadError : c.actionError);
+                }
+                // An auth redirect / HTML response must never count as a successful write.
+                if (response.redirected || (response.status !== 204 && !response.headers.get('content-type')?.includes('application/json'))) throw new Error(c.loadError);
+                return data;
+            } finally { window.clearTimeout(timeout); }
+        }
+
+        async function run(action: 'load' | 'save' | 'verify' | 'disconnect') {
+            if (busy) return;
+            busy = true;
+            el('[data-request-error]').hidden = true;
+            feedback.textContent = action === 'load' ? (state ? c.refreshing : c.loading) : action === 'save' ? c.saving : action === 'verify' ? c.verifying : c.disconnecting;
+            const button = action === 'save' ? save : action === 'verify' ? verify : action === 'disconnect' ? disconnect : refresh;
+            button.textContent = feedback.textContent;
+            render();
+            try {
+                let result: unknown;
+                if (action === 'verify') result = await request('/api/domains/verify', 'POST');
+                else {
+                    if (action === 'save') await request('/api/domains', 'POST', input.value.trim().toLowerCase());
+                    if (action === 'disconnect') await request('/api/domains', 'DELETE');
+                    // POST/DELETE response bodies are unspecified: reconcile with the authoritative GET.
+                    result = await request('/api/domains');
+                }
+                const next = parseState(result);
+                if (action === 'save' && !next.domain) throw new Error(c.actionError);
+                if (action === 'disconnect' && next.domain) throw new Error(c.actionError);
+                state = next;
+                stale = false;
+                planRequired = false;
+                renderRecords();
+                if (action === 'disconnect') input.value = '';
+                feedback.textContent = action === 'load' ? '' : action === 'save' ? c.saved : action === 'disconnect' ? c.disconnected : c.checked;
+            } catch (error) {
+                stale = true;
+                feedback.textContent = '';
+                el('[data-error-message]').textContent = error instanceof Error && error.name !== 'AbortError' && !(error instanceof TypeError)
+                    ? error.message : action === 'load' ? c.loadError : c.actionError;
+                el('[data-request-error]').hidden = false;
+            } finally {
+                busy = false;
+                save.textContent = c.save;
+                verify.textContent = c.verify;
+                disconnect.textContent = c.disconnect;
+                refresh.textContent = c.retry;
+                render();
+                if (action === 'save' && state?.domain && !stale) verify.focus();
+                if (action === 'disconnect' && !stale) input.focus();
+                if (stale) refresh.focus();
+            }
+        }
+
+        input.addEventListener('input', () => { input.removeAttribute('aria-invalid'); el('#domain-hostname-error').hidden = true; });
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            if (!allowed() || state?.domain || busy) return;
+            if (!validHostname(input.value.trim())) {
+                input.setAttribute('aria-invalid', 'true');
+                el('#domain-hostname-error').hidden = false;
+                input.focus();
+                return;
+            }
+            void run('save');
+        });
+        refresh.addEventListener('click', () => void run('load'));
+        verify.addEventListener('click', () => { if (allowed() && state?.domain) void run('verify'); });
+        disconnect.addEventListener('click', async () => {
+            if (busy || !canDisconnect()) return;
+            const cordConfirm = (window as Window & { cordConfirm?: (options: { title: string; body: string; danger: boolean; confirmText: string; cancelText: string }) => Promise<boolean> }).cordConfirm;
+            if (!cordConfirm) { feedback.textContent = c.actionError; return; }
+            busy = true;
+            render();
+            let confirmed = false;
+            try {
+                confirmed = await cordConfirm({ title: c.disconnectTitle, body: c.disconnectBody.replace('{hostname}', state!.domain!.hostname), danger: true, confirmText: c.disconnect, cancelText: c.cancel });
+            } finally { busy = false; render(); disconnect.focus(); }
+            if (confirmed && canDisconnect()) await run('disconnect');
+        });
+        void run('load');
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDomainSettings, { once: true });
+    else initDomainSettings();
+</script>

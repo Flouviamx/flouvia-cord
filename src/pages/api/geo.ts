@@ -10,11 +10,12 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import { platformCurrencyFor } from '../../lib/plan-currency';
 
 export const GET: APIRoute = async ({ request }) => {
     const raw = request.headers.get('x-vercel-ip-country') || '';
     const country = /^[A-Za-z]{2}$/.test(raw) ? raw.toUpperCase() : null;
-    return new Response(JSON.stringify({ country }), {
+    return new Response(JSON.stringify({ country, currency: platformCurrencyFor(country) }), {
         headers: {
             'Content-Type': 'application/json',
             // Varía por visitante: una respuesta cacheada en un CDN compartido le

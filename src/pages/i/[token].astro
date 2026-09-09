@@ -19,6 +19,7 @@ import { moneyFull } from '../../lib/fmt';
 import { getCountryProfile } from '../../lib/countries';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
+import { publicInvoiceGuidance, publicInvoiceContact } from '../../lib/fiscal/public-invoice-state';
 
 const { token } = Astro.params;
 const f = await getFacturaByToken(token ?? '');
@@ -34,17 +35,21 @@ const esVistaPrevia = viewer.rol === 'seller';
 
 const color = /^#[0-9a-fA-F]{6}$/.test(f.org.color ?? '') ? f.org.color! : '#0a192f';
 const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const puedePagar = pagoActivo && f.pagoDisponible && f.aceptaTarjeta
+const puedePagar = !f.esNotaCredito && pagoActivo && f.pagoDisponible && f.aceptaTarjeta
     && !f.esPrueba && !f.simulado && !f.testMode;
 const regresoDePago = Astro.url.searchParams.get('pagado') === '1' && f.estado !== 'paid';
+const guidance = publicInvoiceGuidance({ ...f, puedePagar, regresoDePago }, L);
+const contact = publicInvoiceContact(f.org.email, f.org.telefono, f.numero ?? '', L);
 
 const ESTADO: Record<string, { label: string; tone: string }> = {
     open: { label: t(L, 'fact.p_estado_open'), tone: 'wait' },
-    paid: { label: t(L, 'fact.p_estado_paid'), tone: 'ok' },
+    paid: { label: f.acreditado ? (L === 'en' ? 'Settled' : 'Saldada') : t(L, 'fact.p_estado_paid'), tone: 'ok' },
     void: { label: t(L, 'fact.p_estado_void'), tone: 'off' },
     uncollectible: { label: t(L, 'fact.p_estado_uncollectible'), tone: 'off' },
 };
-const estado = ESTADO[f.estado] ?? { label: t(L, 'fact.p_emitida'), tone: 'wait' };
+const estado = f.esNotaCredito && f.estado !== 'void'
+    ? { label: t(L, 'fact.p_emitida'), tone: 'ok' }
+    : ESTADO[f.estado] ?? { label: t(L, 'fact.p_emitida'), tone: 'wait' };
 const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_factura');
 ---
 
@@ -72,13 +77,6 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
                 <span>{t(L, 'fact.p_vista_previa')}</span>
             </div>
         )}
-        {regresoDePago && (
-            <div class="iv-note iv-note-ok" role="status">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.1"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg>
-                <span>{t(L, 'fact.p_pago_recibido')}</span>
-            </div>
-        )}
-
         <article class="iv-card">
             {(f.simulado || f.testMode || f.esPrueba) && (
                 <div class="iv-test-ribbon" role="status">
@@ -110,18 +108,35 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
             <div class="iv-rule"></div>
 
             <section class="iv-total-hero">
-                <span class="iv-total-label">{f.estado === 'paid'
-                    ? (L === 'en' ? 'Invoice paid' : 'Factura pagada')
+                <span class="iv-total-label">{f.esNotaCredito
+                    ? (L === 'en' ? 'Credit note amount' : 'Importe de la nota de crédito')
+                    : f.estado === 'void' ? (L === 'en' ? 'Cancelled document' : 'Documento cancelado')
+                    : f.estado === 'paid'
+                    ? (f.acreditado ? (L === 'en' ? 'Invoice settled' : 'Factura saldada') : (L === 'en' ? 'Invoice paid' : 'Factura pagada'))
                     : (L === 'en' ? 'Balance due' : 'Saldo pendiente')}</span>
-                <h1 class="editorial" style={`color:${color}`}>{moneyFull(f.saldo)}</h1>
+                <h1 class="editorial" style={`color:${color}`}>{moneyFull(f.esNotaCredito ? f.total : f.saldo)}</h1>
                 <div class="iv-headmeta">
                     <span class={`iv-chip iv-chip-${estado.tone}`}>{estado.label}</span>
-                    {f.vencida && <span class="iv-chip iv-chip-late">{t(L, 'fact.p_vencida')}</span>}
+                    {f.vencida && !f.esNotaCredito && <span class="iv-chip iv-chip-late">{t(L, 'fact.p_vencida')}</span>}
                 </div>
                 <p class="iv-sub">
                     <span>{t(L, 'fact.p_emitida')} {f.emitida}</span>
-                    {f.venceLegible && <span>{t(L, 'fact.p_vence_el')} {f.venceLegible}</span>}
+                    {f.venceLegible && !f.esNotaCredito && <span>{t(L, 'fact.p_vence_el')} {f.venceLegible}</span>}
                 </p>
+            </section>
+
+            <section class="iv-next" aria-label={L === 'en' ? 'Next steps' : 'Siguiente paso'}>
+                <p>{guidance}</p>
+                <div class="iv-next-actions">
+                    <button type="button" id="ivRefresh" data-pending={regresoDePago ? 'true' : 'false'} data-locale={L}>{L === 'en' ? 'Refresh balance' : 'Actualizar saldo'}</button>
+                    {contact.mailto && <a href={contact.mailto}>{L === 'en' ? 'Email the business' : 'Escribir a la empresa'}</a>}
+                    {contact.tel && <a href={contact.tel}>{L === 'en' ? 'Call the business' : 'Llamar a la empresa'}</a>}
+                </div>
+                <p class="iv-refresh-status" id="ivRefreshStatus" role="status" aria-live="polite"></p>
+                {regresoDePago && <p class="iv-retry-options" id="ivRetryOptions" hidden>
+                    <a href={Astro.url.pathname}>{L === 'en' ? 'Review payment options' : 'Revisar opciones de pago'}</a>
+                </p>}
+                <noscript><p>{L === 'en' ? 'Reload this page to check the latest balance.' : 'Recarga esta página para consultar el saldo actualizado.'}</p></noscript>
             </section>
 
             <section class="iv-parties">
@@ -137,7 +152,8 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
                 </div>
             </section>
 
-            <section class="iv-lines">
+            <p class="iv-lines-hint">{L === 'en' ? 'Swipe the table to see all amounts.' : 'Desliza la tabla para ver todos los importes.'}</p>
+            <section class="iv-lines" tabindex="0" aria-label={L === 'en' ? 'Invoice items' : 'Conceptos de la factura'}>
                 <table>
                     <thead>
                         <tr>
@@ -169,7 +185,10 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
                 {f.pagado > 0 && (
                     <div class="iv-row"><span>{t(L, 'fact.p_pagado')}</span><span class="editorial">−{moneyFull(f.pagado)}</span></div>
                 )}
-                <div class="iv-row iv-row-due"><span>{t(L, 'fact.p_saldo')}</span><span class="editorial">{moneyFull(f.saldo)}</span></div>
+                {f.acreditado > 0 && <div class="iv-row"><span>{L === 'en' ? 'Credit notes applied' : 'Notas de crédito aplicadas'}</span><span class="editorial">−{moneyFull(f.acreditado)}</span></div>}
+                {f.reembolsado > 0 && <div class="iv-row"><span>{L === 'en' ? 'Refunded' : 'Reembolsado'}</span><span class="editorial">+{moneyFull(f.reembolsado)}</span></div>}
+                {f.porDevolver > 0 && <div class="iv-row"><span>{L === 'en' ? 'Amount to be returned to you' : 'Importe por devolverte'}</span><span class="editorial">{moneyFull(f.porDevolver)}</span></div>}
+                {!f.esNotaCredito && <div class="iv-row iv-row-due"><span>{t(L, 'fact.p_saldo')}</span><span class="editorial">{moneyFull(f.saldo)}</span></div>}
                 {f.fxRate && f.fxRate !== 1 && f.ledgerCurrency && (
                     <p class="iv-fx">
                         {t(L, 'fact.p_tc')}: 1 {f.currency} = {f.fxRate} {f.ledgerCurrency}
@@ -191,7 +210,7 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
             {f.notas && <p class="iv-notas">{f.notas}</p>}
 
             <footer class="iv-foot">
-                {puedePagar && (
+                {puedePagar && !regresoDePago && (
                     <Fragment>
                         <button type="button" class="iv-pay" id="ivPay" style={`background:${color}`}>
                             {t(L, 'fact.p_pagar')} {moneyFull(f.saldo)}
@@ -216,12 +235,13 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
                         </div>
                     </Fragment>
                 )}
-                <div class="iv-dl">
-                    <a href={`/api/fiscal/documents/${f.id}/pdf`}>{t(L, 'fact.p_pdf')}</a>
+                <p class="iv-payerr" id="ivPayErr" role="alert" hidden></p>
+                {f.estado !== 'void' && <div class="iv-dl">
+                    <a href={`/api/i/${token}/documents/pdf`}>{t(L, 'fact.p_pdf')}</a>
                     {f.pais === 'MX' && f.fiscalId && (
-                        <a href={`/api/fiscal/documents/${f.id}/xml`}>{t(L, 'fact.p_xml')}</a>
+                        <a href={`/api/i/${token}/documents/xml`}>{t(L, 'fact.p_xml')}</a>
                     )}
-                </div>
+                </div>}
                 {f.fiscalId && <p class="iv-uuid">{t(L, 'fact.p_folio_fiscal')} {f.fiscalId}</p>}
                 {f.org.powered && <p class="iv-powered">{f.org.nombre} · {t(L, 'fact.p_enviado_con')}</p>}
             </footer>
@@ -237,11 +257,67 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
             <div class="iv-payinner">
                 <div id="ivPayEl"></div>
                 <button type="button" class="iv-pay" id="ivPayConfirm" style={`background:${color}`}>{t(L, 'fact.p_confirmar')}</button>
-                <p class="iv-payerr" id="ivPayErr" hidden></p>
             </div>
         </div>
     </main>
 </Layout>
+
+<script>
+    import { publicPaymentIntent } from '../../lib/fiscal/public-invoice-state';
+    const refresh = document.getElementById('ivRefresh') as HTMLButtonElement | null;
+    const status = document.getElementById('ivRefreshStatus');
+    if (refresh && status) {
+        const en = refresh.dataset.locale === 'en';
+        const pending = refresh.dataset.pending === 'true';
+        const url = new URL(location.href);
+        const pi = publicPaymentIntent(url.searchParams.get('payment_intent'));
+        // The redirect secret is not needed to read our ledger. Remove it from
+        // browser history, and never include it in a balance request.
+        url.searchParams.delete('payment_intent_client_secret');
+        url.searchParams.delete('redirect_status');
+        if (!pending) { url.searchParams.delete('pagado'); url.searchParams.delete('payment_intent'); }
+        history.replaceState(null, '', url);
+        const endpoint = `/api/i/${encodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '')}`;
+        let busy = false;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const deadline = Date.now() + 30_000;
+        const retryOptions = document.getElementById('ivRetryOptions');
+        const check = async (manual = false) => {
+            if (busy || (!manual && document.visibilityState !== 'visible')) return;
+            busy = true;
+            refresh.disabled = true;
+            status.textContent = en ? 'Checking the latest balance…' : 'Consultando el saldo actualizado…';
+            try {
+                const response = await fetch(endpoint + (pi ? `?payment_intent=${encodeURIComponent(pi)}` : ''), {
+                    cache: 'no-store', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(8000),
+                });
+                if (!response.ok) throw new Error('unavailable');
+                const data = await response.json();
+                if (!pending || data.paymentRecorded === true || data.estado === 'paid' || data.estado === 'void') {
+                    url.searchParams.delete('pagado'); url.searchParams.delete('payment_intent');
+                    location.replace(url.toString());
+                    return;
+                }
+                status.textContent = en ? 'Your payment is not recorded yet. You can refresh again or contact the business. Do not pay again while it is being verified.' : 'Tu pago aún no aparece registrado. Puedes volver a actualizar o contactar a la empresa. No repitas el pago mientras se verifica.';
+            } catch {
+                status.textContent = en ? 'We could not check the balance. Try refreshing again or contact the business.' : 'No pudimos consultar el saldo. Intenta actualizar de nuevo o contacta a la empresa.';
+                if (retryOptions) retryOptions.hidden = false;
+            } finally {
+                busy = false;
+                refresh.disabled = false;
+                if (!manual && pending && Date.now() < deadline) timer = setTimeout(() => check(), 2500);
+                else if (retryOptions) retryOptions.hidden = false;
+            }
+        };
+        refresh.addEventListener('click', () => { clearTimeout(timer); void check(true); });
+        // The refresh is bounded; a slow webhook must not create an endless poll.
+        if (pending) void check();
+        document.addEventListener('visibilitychange', () => {
+            if (pending && document.visibilityState === 'visible' && Date.now() < deadline) { clearTimeout(timer); void check(); }
+        });
+        window.addEventListener('pagehide', () => clearTimeout(timer), { once: true });
+    }
+</script>
 
 <script define:vars={{ token: token }}>
     // Regla 19: la vista se registra DESDE AQUÍ, con la pestaña visible, no en
@@ -284,6 +360,7 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
         const iniciarPago = async (monto?: number) => {
             boton.disabled = true;
             boton.textContent = T.preparando;
+            if (errEl) errEl.hidden = true;
             try {
                 const res = await fetch(`/api/i/${token}/payment-intent`, {
                     method: 'POST',
@@ -366,6 +443,16 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
 </script>
 
 <style>
+    .iv-next { margin: -0.6rem 0 2rem; color: #4a5567; font-size: 0.88rem; line-height: 1.6; }
+    .iv-next p { margin: 0; }
+    .iv-next-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.25rem; margin-top: 0.65rem; }
+    .iv-next-actions a, .iv-next-actions button { display: inline-flex; align-items: center; min-height: 44px; color: #0a192f; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+    .iv-next-actions button { background: none; border: 0; padding: 0; cursor: pointer; }
+    .iv-next-actions button:disabled { opacity: 0.5; cursor: wait; }
+    .iv-next-actions :focus-visible { outline: 2px solid #0a192f; outline-offset: 4px; border-radius: 3px; }
+    .iv-next .iv-refresh-status:not(:empty) { margin-top: 0.65rem; font-size: 0.8rem; }
+    .iv-next .iv-retry-options { margin-top: 0.65rem; }
+    .iv-retry-options a { display: inline-flex; align-items: center; min-height: 44px; color: #0a192f; text-underline-offset: 4px; }
     /* Abono parcial. La caja vive en el pie, junto al botón de pago, para que
        la decisión de "cuánto" esté donde está la de "pagar". */
     .iv-pay-partial {
@@ -471,6 +558,8 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
     .iv-party-sub { font-size: 0.74rem; color: #8a8f99; margin: 3px 0 0; }
 
     .iv-lines { overflow-x: auto; }
+    .iv-lines:focus-visible { outline: 2px solid #0a192f; outline-offset: 4px; }
+    .iv-lines-hint { display: none; font-size: 0.75rem; color: #6b7280; }
     .iv-lines table { width: 100%; border-collapse: collapse; min-width: 420px; }
     .iv-lines th {
         text-align: left; font-size: 0.52rem; letter-spacing: 1.35px; text-transform: uppercase;
@@ -530,8 +619,9 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
     }
 
     @media print {
-        .iv-bg, .iv-note, .iv-aviso, .iv-paywrap, .iv-pay, .iv-pay-partial { display: none !important; }
+        .iv-bg, .iv-note, .iv-aviso, .iv-paywrap, .iv-pay, .iv-pay-partial, .iv-next-actions, .iv-refresh-status, .iv-lines-hint { display: none !important; }
         .iv-main { max-width: none; padding: 0; }
         .iv-card { border: 0; box-shadow: none; animation: none; }
     }
+    @media screen and (max-width: 480px) { .iv-lines-hint { display: block; } }
 </style>

@@ -1,9 +1,8 @@
 // Sitemap XML de las páginas públicas y estáticas de Cord (ES + EN), más
-// blog/soporte/roadmap (Content Collections + roadmap-data.ts) — jul 2026,
-// auditoría SEO/AI-SEO. Los slugs de blog/soporte son idénticos entre
-// es/ y en/ (verificado: mismos nombres de archivo), así que se pueden
-// emparejar 1:1 para hreflang.
-export const prerender = true;
+// blog/soporte/roadmap (Content Collections + roadmap-data.ts). Cada host recibe
+// solo sus propias URLs y los pares hreflang se crean únicamente cuando ambos
+// contenidos existen; los slugs no se asumen idénticos entre idiomas.
+export const prerender = false;
 
 import { getCollection } from 'astro:content';
 import { FEATURES } from '../lib/producto';
@@ -44,6 +43,12 @@ const DEV_PATHS = DEV_PAGES.filter((d) => d.slug !== 'elements').map((d) => ({ p
 const ROADMAP_PATHS = roadmapData.map((r) => ({ path: `/roadmap/${r.slug}`, priority: '0.4', changefreq: 'monthly' }));
 
 const ALL_PATHS = [...STATIC_PATHS, ...PRODUCT_PATHS, ...SOLUTION_PATHS, ...DEV_PATHS, ...ROADMAP_PATHS];
+const ES_ONLY_PATHS = new Set([
+    '/casos-de-uso/saas',
+    '/casos-de-uso/agencias',
+    '/casos-de-uso/comercializadoras',
+    '/casos-de-uso/software-factory',
+]);
 
 // path/en-prefix par (mismo slug, mismo patrón de ruta en ambos idiomas)
 const urlEntry = (path: string, priority: string, changefreq: string) => {
@@ -70,18 +75,40 @@ const pairEntry = (es: string, en: string, priority: string, changefreq: string)
     <priority>${priority}</priority>
   </url>`;
 
-export async function GET() {
+const singleEntry = (loc: string, lang: 'es' | 'en', priority: string, changefreq: string) => `  <url>
+    <loc>${loc}</loc>
+    <xhtml:link rel="alternate" hreflang="${lang}" href="${loc}" />
+    ${lang === 'es' ? `<xhtml:link rel="alternate" hreflang="x-default" href="${loc}" />` : ''}
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`;
+
+export async function GET({ url }: { url: URL }) {
     const blogEntries = await getCollection('blog');
-    const blogSlugs = [...new Set(blogEntries.map((e) => e.id.replace(/^(es|en)\//, '')))];
-    const blogXml = blogSlugs
-        .map((slug) => pairEntry(`${SITE}/blog/${slug}`, `${SITE}/en/blog/${slug}`, '0.5', 'monthly'))
-        .join('\n');
+    const blogEsSlugs = new Set(blogEntries.filter((e) => e.id.startsWith('es/')).map((e) => e.id.replace(/^es\//, '')));
+    const blogEnSlugs = new Set(blogEntries.filter((e) => e.id.startsWith('en/')).map((e) => e.id.replace(/^en\//, '')));
+    const blogSlugs = [...new Set([...blogEsSlugs, ...blogEnSlugs])];
+    const blogXml = blogSlugs.map((slug) => {
+        if (blogEsSlugs.has(slug) && blogEnSlugs.has(slug)) {
+            return pairEntry(`${SITE}/blog/${slug}`, `${SITE}/en/blog/${slug}`, '0.5', 'monthly');
+        }
+        return blogEsSlugs.has(slug)
+            ? singleEntry(`${SITE}/blog/${slug}`, 'es', '0.5', 'monthly')
+            : singleEntry(`${SITE}/en/blog/${slug}`, 'en', '0.5', 'monthly');
+    }).join('\n');
 
     const supportEntries = await getCollection('support');
-    const supportSlugs = [...new Set(supportEntries.map((e) => e.id.replace(/^(es|en)\//, '')))];
-    const supportXml = supportSlugs
-        .map((slug) => pairEntry(`${SITE}/soporte/${slug}`, `${SITE}/en/support/${slug}`, '0.4', 'monthly'))
-        .join('\n');
+    const supportEsSlugs = new Set(supportEntries.filter((e) => e.id.startsWith('es/')).map((e) => e.id.replace(/^es\//, '')));
+    const supportEnSlugs = new Set(supportEntries.filter((e) => e.id.startsWith('en/')).map((e) => e.id.replace(/^en\//, '')));
+    const supportSlugs = [...new Set([...supportEsSlugs, ...supportEnSlugs])];
+    const supportXml = supportSlugs.map((slug) => {
+        if (supportEsSlugs.has(slug) && supportEnSlugs.has(slug)) {
+            return pairEntry(`${SITE}/soporte/${slug}`, `${SITE}/en/support/${slug}`, '0.4', 'monthly');
+        }
+        return supportEsSlugs.has(slug)
+            ? singleEntry(`${SITE}/soporte/${slug}`, 'es', '0.4', 'monthly')
+            : singleEntry(`${SITE}/en/support/${slug}`, 'en', '0.4', 'monthly');
+    }).join('\n');
 
     // dev.cordhq.app — EN vive en /dev-blog/en/* (rutas reales, ver
     // src/pages/dev-blog/en/*.astro), así que se empareja hreflang igual que
@@ -108,30 +135,37 @@ export async function GET() {
     )];
     const docsXml = docsEsPaths
         .map((path) => {
-            const es = `${DOCS_SITE}/docs/${path}`;
+            const es = path === 'resumen' ? `${DOCS_SITE}/docs` : `${DOCS_SITE}/docs/${path}`;
             if (docsEnPaths.has(path)) {
-                const en = `${DOCS_SITE}/en/docs/${path}`;
+                const en = path === 'resumen' ? `${DOCS_SITE}/en/docs` : `${DOCS_SITE}/en/docs/${path}`;
                 return pairEntry(es, en, '0.4', 'monthly');
             }
-            return `  <url>
-    <loc>${es}</loc>
-    <xhtml:link rel="alternate" hreflang="es" href="${es}" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="${es}" />
-    <changefreq>monthly</changefreq>
-    <priority>0.4</priority>
-  </url>`;
+            return singleEntry(es, 'es', '0.4', 'monthly');
         })
         .join('\n');
 
+    const host = url.hostname.toLowerCase();
+    let entries = '';
+    if (host === 'docs.cordhq.app') {
+        entries = docsXml;
+    } else if (host === 'dev.cordhq.app') {
+        entries = `${devHome}\n${devBlogListing}\n${devBlogXml}`;
+    } else if (host === 'cordhq.app' || host === 'www.cordhq.app' || host === 'localhost' || host === '127.0.0.1') {
+        const staticXml = ALL_PATHS.map((p) => {
+            if (p.path === '/soporte') {
+                return pairEntry(`${SITE}/soporte`, `${SITE}/en/support`, p.priority, p.changefreq);
+            }
+            if (ES_ONLY_PATHS.has(p.path)) {
+                return singleEntry(`${SITE}${p.path}`, 'es', p.priority, p.changefreq);
+            }
+            return urlEntry(p.path, p.priority, p.changefreq);
+        }).join('\n');
+        entries = `${staticXml}\n${blogXml}\n${supportXml}`;
+    }
+
     const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-${ALL_PATHS.map((p) => urlEntry(p.path, p.priority, p.changefreq)).join('\n')}
-${blogXml}
-${supportXml}
-${devHome}
-${devBlogListing}
-${devBlogXml}
-${docsXml}
+${entries}
 </urlset>
 `;
     return new Response(body, {

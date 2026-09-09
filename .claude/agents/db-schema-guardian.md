@@ -20,7 +20,7 @@ SECURITY` de la tabla específica que estás tocando.
 
 ## Contexto obligatorio antes de tocar nada
 
-1. Lee `docs/app-rutas.md` completo, sección "Multi-tenant" — ahí está el patrón
+1. Lee `docs/estado/multi-tenant.md` — ahí está el patrón
    RLS exacto y la lista de tablas del sistema.
 2. Lee `db/schema.sql` — es la fuente de verdad del schema real, no confíes solo
    en lo que dice la documentación (puede haber quedado desactualizada).

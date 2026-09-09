@@ -1,7 +1,8 @@
 ---
 // Layout base de Cord — hereda el sistema de diseño Flouvia.
-// Producto global (signup abierto a cualquier país); CFDI/SAT es una función
-// adicional para negocios en México, no un gate de quién puede usar Cord.
+// Producto multi-país. La lista ofrecida vive en SUPPORTED_COUNTRIES; no se
+// describe como global porque registro, pagos y carriles fiscales no tienen la
+// misma cobertura.
 
 interface Props {
     title: string;
@@ -22,15 +23,15 @@ interface Props {
     analyticsIsDemo?: boolean;
 }
 
-import Analytics from '@vercel/analytics/astro';
 import { getLangFromUrl, altLangUrls } from '../i18n/utils';
 import CookieConsent from '../components/CookieConsent.astro';
 import CordAnalytics from '../components/CordAnalytics.astro';
+import PrivacySafeAnalytics from '../components/PrivacySafeAnalytics.astro';
 import SpeedInsights from '../components/SpeedInsights.astro';
 
 const {
     title,
-    description = 'Cord — la plataforma que transforma propuestas y acuerdos en transacciones pagadas al instante. Centraliza en un solo link interactivo la negociación, firmas legales, inteligencia de margen y cobros automatizados. Para cualquier negocio, en cualquier país.',
+    description = 'Cord lleva una venta de la propuesta al pago en un solo link: cotizaciones interactivas, evidencia de aprobación, control de margen, cobros y facturación en los mercados disponibles.',
     image = '/og-cord.jpg',
     noindex = false,
     ogType = 'website',
@@ -127,7 +128,7 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
             de identidad ese pathname CONTIENE el token de captura, que es una
             credencial portadora viva — por eso comparte el mismo interruptor que
             PostHog en vez de ir siempre. */}
-        {!analyticsDisabled && <Analytics />}
+        <PrivacySafeAnalytics disabled={analyticsDisabled} />
         {/* Web Vitals de las páginas públicas. Comparte el interruptor de
             analytics: en la pantalla de verificación de identidad el pathname
             lleva un token portador vivo. */}

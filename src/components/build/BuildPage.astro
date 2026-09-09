@@ -1,0 +1,820 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../landing/Nav.astro';
+import Footer from '../landing/Footer.astro';
+import BuildWall3D from './BuildWall3D';
+import '../../styles/build-edition.css';
+import { getLangFromUrl } from '../../i18n/utils';
+import { buildText } from '../../i18n/build';
+const lang = getLangFromUrl(Astro.url);
+const t = buildText(lang);
+
+const positions = [
+    { id: '01', tier: 'Presenting Partner', price: '$50,000', startingOfferCents: 5000000, size: 'principal', label: t("Presenta Cord Flow completo"), available: true },
+    { id: '02', tier: 'Flow Partner', price: '$20,000', startingOfferCents: 2000000, size: 'feature', label: t("Etapa · Propuesta"), available: true },
+    { id: '03', tier: 'Flow Partner', price: '$20,000', startingOfferCents: 2000000, size: 'feature', label: t("Etapa · Aprobación"), available: true },
+    { id: '04', tier: 'Flow Partner', price: '$20,000', startingOfferCents: 2000000, size: 'feature', label: t("Etapa · Pago"), available: true },
+    { id: '05', tier: 'Flow Partner', price: '$7,500', startingOfferCents: 750000, size: 'build', label: t("Etapa · Negocio activo"), available: true },
+    { id: '06', tier: 'Founding Partner', price: '$7,500', startingOfferCents: 750000, size: 'build', label: t("Nodo fundador 01"), available: true },
+    { id: '07', tier: 'Founding Partner', price: '$7,500', startingOfferCents: 750000, size: 'build', label: t("Nodo fundador 02"), available: true },
+    { id: '08', tier: 'Founding Partner', price: '$7,500', startingOfferCents: 750000, size: 'build', label: t("Nodo fundador 03"), available: true },
+    { id: '09', tier: 'Founding Partner', price: '$7,500', startingOfferCents: 750000, size: 'build', label: t("Nodo fundador 04"), available: true },
+    { id: '10', tier: 'Founding Partner', price: '$7,500', startingOfferCents: 750000, size: 'build', label: t("Nodo fundador 05"), available: true },
+] as const;
+---
+
+<Layout
+    title={t("The Cord Build — Tu marca en la historia de Cord")}
+    description={t("Diez marcas acompañarán el próximo sprint público de Cord. Elige una posición en Cord Flow y forma parte del camino a 100 negocios activos.")}
+    image="/build-og.png"
+    noindex={true}
+>
+    <Nav />
+
+    <main class="build-page">
+        <section class="hero" aria-labelledby="hero-title">
+            <div class="hero-aurora" aria-hidden="true"></div>
+            <div class="hero-inner">
+                <div class="hero-top">
+                    <h1 id="hero-title" class="masked-title">{t("Tu marca en la próxima etapa de Cord.")}</h1>
+                    <div class="hero-copy">
+                    <p>{t("Durante 30 días construiremos Cord Flow en público: una venta que pasa de propuesta a pago sin romperse. Diez marcas fundadoras acompañarán cada entrega.")}</p>
+                    <div class="hero-actions">
+                        <a class="primary-cta" href="#posiciones"><span>{t("Elegir una posición")}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg><i aria-hidden="true"></i></a>
+                        <a class="text-link" href="#historial">{t("Ver disponibilidad")}</a>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="founder-bento" aria-label={t("La edición fundadora de Cord")}>
+                    <article class="founder-edition">
+                        <div class="edition-signature"><img src="/imgs/logo-cord-white.png" alt="Cord" width="78" height="30" /><span>Build / 001</span></div>
+                        <div class="edition-title"><span class="edition-ten editorial" aria-hidden="true">10</span><h2>{t("Diez marcas. El primer capítulo.")}</h2></div>
+                        <div class="edition-places" aria-label={t("Diez posiciones de la edición fundadora")}>
+                            {positions.map((position) => <a href="#posiciones" data-edition-position={position.id} aria-label={`${lang === 'en' ? 'Explore spot' : 'Explorar posición'} ${position.id}`}><span>{position.id}</span><i aria-hidden="true"></i></a>)}
+                        </div>
+                        <div class="edition-foot"><span id="hero-bid-count">{t("Consultando ofertas…")}</span><a href="#historial">{t("Historial público")} <span aria-hidden="true">↗</span></a></div>
+                    </article>
+                    <article class="founder-presence">
+                        <div class="presence-symbol" aria-hidden="true"><svg viewBox="0 0 260 100" fill="none"><path d="M-15 36C50 70 64 10 112 42S190 73 275 28" stroke="currentColor" stroke-width="2"/><circle cx="131" cy="51" r="23" fill="#fcfcfc" stroke="currentColor" stroke-width="1.5"/><path d="M123 59l16-16m-13 0h13v13" stroke="currentColor" stroke-width="1.5"/></svg></div>
+                        <h3>{t("Tu logo. Tu sitio. Tu lugar en Cord.")}</h3>
+                        <p>{t("Una marca visible, un enlace directo. El cordón cambia con cada oferta confirmada.")}</p>
+                    </article>
+                    <article class="founder-scale">
+                        <span class="scale-duration editorial" aria-hidden="true">06<span>{t("meses")}</span></span>
+                        <div><h3>{t("Cord Scale incluido.")}</h3><p>{t("Seis meses para las marcas ganadoras, después de liquidar su posición.")}</p></div>
+                    </article>
+                </div>
+                <div class="build-facts" aria-label={t("Datos del sprint")}>
+                    <p><strong>{t("30 días")}</strong><span>{t("de construcción pública")}</span></p>
+                    <p><strong>{t("10 lugares")}</strong><span>{t("para marcas partner")}</span></p>
+                    <p><strong>{t("100 negocios")}</strong><span>{t("como meta verificable")}</span></p>
+                    <p><strong id="hero-countdown">{t("7 días")}</strong><span>{t("para cerrar la subasta")}</span></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="promise" aria-labelledby="promise-title">
+            <div class="section-intro">
+                <h2 id="promise-title">{t("Tu marca entra al flujo que Cord está construyendo.")}</h2>
+                <p>{t("No es inventario decorativo. Cada posición queda vinculada a una etapa del producto, a entregas públicas y a un archivo permanente y verificable.")}</p>
+            </div>
+            <div class="promise-list">
+                <article><span>01</span><div><h3>{t("Producto, no sólo presencia")}</h3><p>{t("Tu posición aparece dentro de Cord Flow, en el muro físico y en las demostraciones públicas del sprint.")}</p></div></article>
+                <article><span>02</span><div><h3>{t("Distribución con contexto")}</h3><p>{t("Build updates, launch report, perfil con backlink y una pieza conjunta conectan tu marca con una entrega real.")}</p></div></article>
+                <article><span>03</span><div><h3>Founding access</h3><p>{t("Cord Scale durante 6 meses, acceso anticipado, sesión privada de producto y lugar permanente en el archivo del build.")}</p></div></article>
+            </div>
+        </section>
+
+        <section class="positions" id="posiciones" aria-labelledby="positions-title">
+            <div class="section-intro positions-intro">
+                <h2 id="positions-title">{t("Una subasta que cualquiera puede auditar.")}</h2>
+                <p>{t("Elige una posición, supera la oferta vigente y deja una garantía fija reembolsable. Si otra marca te supera, el reembolso se inicia automáticamente.")}</p>
+            </div>
+
+            <div class="position-experience">
+                <BuildWall3D positions={positions} lang={lang} client:only="react">
+                    <div slot="fallback" class="bw3-loading"><span></span><small>{t("INICIANDO CORD FLOW")}</small></div>
+                </BuildWall3D>
+
+                <aside class="position-detail" aria-live="polite">
+                    <div class="detail-status"><span id="detail-number">{t("POSICIÓN 01")}</span><span id="detail-status">{t("CONSULTANDO")}</span></div>
+                    <div>
+                        <p id="detail-label">{t("Presenta todo el sprint")}</p>
+                        <h3 id="detail-tier">Presenting Partner</h3>
+                    </div>
+                    <ul id="detail-benefits">
+                        <li>{t("Naming “Cord Flow presented by [tu marca]”")}</li>
+                        <li>{t("Presencia principal en producto, muro físico y build updates")}</li>
+                        <li>{t("Caso conjunto, perfil y lugar en el launch report")}</li>
+                        <li>{t("Cord Scale durante 6 meses")}</li>
+                    </ul>
+                    <div class="detail-price"><small id="detail-price-label">{t("OFERTA INICIAL · MXN")}</small><strong class="editorial" id="detail-price">$50,000</strong><span id="detail-owner">{t("Sin ofertas todavía")}</span></div>
+                    <button class="proposal-cta" id="proposal-cta" type="button" disabled>{t("Consultando posición…")}</button>
+                    <small class="detail-note" id="payment-status">{t("Comprobando disponibilidad y oferta mínima.")}</small>
+                </aside>
+            </div>
+
+            <div class="auction-ledger" id="historial">
+                <div class="ledger-head">
+                    <div><h3>{t("Posiciones e historial.")}</h3></div>
+                    <div class="ledger-tabs" role="tablist" aria-label={t("Vista de subasta")}>
+                        <button type="button" class="is-active" role="tab" aria-selected="true" data-ledger-tab="positions">{t("Posiciones")}</button>
+                        <button type="button" role="tab" aria-selected="false" data-ledger-tab="history">{t("Historial")} <span id="history-count">0</span></button>
+                    </div>
+                </div>
+                <div id="ledger-content" class="ledger-content" aria-live="polite"><p>{t("Cargando actividad verificada…")}</p></div>
+            </div>
+        </section>
+
+        <section class="auction-rules" id="reglas" aria-labelledby="rules-title">
+            <div class="section-intro">
+                <h2 id="rules-title">{t("Gana la oferta más alta. El historial no se borra.")}</h2>
+                <p>{t("Cada pago deja una entrada verificable. Una oferta en los últimos 10 minutos extiende el cierre otros 10 para evitar que alguien gane en el último segundo.")}</p>
+            </div>
+            <div class="rules-grid">
+                <article><span>01</span><h3>{t("Oferta y garantía")}</h3><p>{t("Cada posición tiene una garantía fija y visible para todos. Sólo un webhook firmado puede convertir el pago en oferta líder.")}</p></article>
+                <article><span>02</span><h3>{t("Si te superan")}</h3><p>{t("Tu marca sale de la posición y el reembolso de la garantía se solicita automáticamente. Tu participación permanece en el historial.")}</p></article>
+                <article><span>03</span><h3>{t("Al cierre")}</h3><p>{t("La garantía se descuenta del total. La marca ganadora liquida el saldo antes de activar sus seis meses de Cord Scale.")}</p></article>
+            </div>
+        </section>
+
+        <section class="sprint" aria-labelledby="sprint-title">
+            <div class="section-intro sprint-intro">
+                <h2 id="sprint-title">{t("30 días. Una meta que cualquiera puede comprobar.")}</h2>
+                <p>{t("No prometemos impresiones inventadas. Publicaremos el progreso real del producto y el camino a 100 negocios activos.")}</p>
+            </div>
+            <div class="sprint-track">
+                <article><span>{t("DÍA 01")}</span><h3>{t("Abrimos Cord Flow")}</h3><p>{t("Confirmamos partners, publicamos la meta y abrimos el tablero de progreso.")}</p></article>
+                <article><span>{t("DÍA 10")}</span><h3>{t("Primer lanzamiento")}</h3><p>{t("Entregamos la primera mejora del sprint y contamos qué aprendimos construyéndola.")}</p></article>
+                <article><span>{t("DÍA 20")}</span><h3>{t("El producto en uso")}</h3><p>{t("Compartimos negocios activos, propuestas enviadas y los primeros casos reales.")}</p></article>
+                <article><span>{t("DÍA 30")}</span><h3>Launch report</h3><p>{t("Cerramos con resultados, contenido de partners y el reporte público del reto.")}</p></article>
+            </div>
+        </section>
+
+        <div class="payment-modal" id="payment-modal" hidden>
+            <button class="payment-backdrop" id="payment-backdrop" type="button" aria-label={t("Cerrar pago")}></button>
+            <section class="payment-sheet" role="dialog" aria-modal="true" aria-labelledby="payment-title">
+                <button class="payment-close" id="payment-close" type="button" aria-label={t("Cerrar")}>×</button>
+                <div class="payment-summary">
+                    <img src="/imgs/logo-cord-navy.png" alt="Cord" />
+                    <div>
+                        <span>{t("CORD FLOW · POSICIÓN")} <b id="payment-position">01</b></span>
+                        <h2 id="payment-title">Presenting Partner</h2>
+                    </div>
+                    <div class="payment-total"><small>{t("GARANTÍA REEMBOLSABLE · MXN")}</small><strong class="editorial" id="payment-price">$5,000</strong><span>{t("Oferta total:")} <b id="payment-offer">$50,000</b></span></div>
+                    <ul>
+                        <li>{t("Tu oferta sólo entra al historial después del pago")}</li>
+                        <li>{t("Cord Scale incluido durante 6 meses para ganadores")}</li>
+                        <li>{t("Garantía acreditada al ganador o reembolsada si lo superan")}</li>
+                    </ul>
+                    <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> {t("El número de tu tarjeta nunca toca los servidores de Cord.")}</p>
+                </div>
+                <div class="payment-form">
+                    <h3>{t("Presenta tu oferta")}</h3>
+                    <p>{t("La garantía confirma que la oferta es real. Su monto y la oferta mínima se validan otra vez en el servidor.")}</p>
+                    <p class="payment-preview-note" id="payment-preview-note" hidden>{t("Vista previa: puedes preparar tu marca, pero la subasta todavía no acepta pagos ni registra ofertas.")}</p>
+                    <div class="bid-fields" id="bid-fields">
+                        <label>{t("Marca")}<input id="bid-brand" name="brand" autocomplete="organization" maxlength="80" required /></label>
+                        <label>{t("Correo de contacto")}<input id="bid-email" name="email" type="email" autocomplete="email" required /></label>
+                        <label>{t("Sitio web")}<input id="bid-website" name="website" type="url" inputmode="url" placeholder="https://" required /></label>
+                        <label>{t("Tu oferta · MXN")}<input id="bid-offer" name="offer" type="number" inputmode="numeric" min="50000" step="500" required /></label>
+                        <label class="bid-logo">Logo <small>{t("PNG, JPG o WebP · máximo 256 KB")}</small>
+                            <span class="bid-logo-drop">
+                                <input id="bid-logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp" required />
+                                <img id="bid-logo-preview" alt={t("Vista previa del logo")} hidden />
+                                <span id="bid-logo-label"><b aria-hidden="true">＋</b> {t("Subir logo")}</span>
+                            </span>
+                        </label>
+                        <label class="bid-consent"><input id="bid-terms" name="terms" type="checkbox" required /><span>{t("Acepto las")} <a href="#reglas">{t("reglas de la subasta")}</a> {t("y autorizo el cobro de la garantía.")}</span></label>
+                        <button class="bid-continue" id="bid-continue" type="button">{t("Continuar al pago seguro")} <span aria-hidden="true">→</span></button>
+                    </div>
+                    <div class="payment-loading" id="payment-loading" hidden><span></span><span></span><span></span></div>
+                    <div id="payment-element"></div>
+                    <p class="payment-error" id="payment-error" hidden></p>
+                    <button class="payment-confirm" id="payment-confirm" type="button" hidden>{t("Pagar garantía")} <span aria-hidden="true">→</span></button>
+                    <small class="payment-powered">{t("Procesamiento seguro de pagos")}</small>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <Footer
+        ctaTitle={t("Tu marca puede entrar a Cord Flow.")}
+        ctaSub={t("Diez posiciones, una semana de subasta y un historial que cualquiera puede comprobar.")}
+    />
+</Layout>
+
+<script>
+    import { buildText } from '../../i18n/build';
+    const lang = document.documentElement.lang === 'en' ? 'en' : 'es';
+    const t = buildText(lang);
+    const number = document.querySelector<HTMLElement>('#detail-number');
+    const label = document.querySelector<HTMLElement>('#detail-label');
+    const tier = document.querySelector<HTMLElement>('#detail-tier');
+    const price = document.querySelector<HTMLElement>('#detail-price');
+    const priceLabel = document.querySelector<HTMLElement>('#detail-price-label');
+    const owner = document.querySelector<HTMLElement>('#detail-owner');
+    const detailStatus = document.querySelector<HTMLElement>('#detail-status');
+    const benefits = document.querySelector<HTMLUListElement>('#detail-benefits');
+    const cta = document.querySelector<HTMLButtonElement>('#proposal-cta');
+    const paymentStatus = document.querySelector<HTMLElement>('#payment-status');
+    let selectedPosition = '01';
+    let selectedTier = 'Presenting Partner';
+    let selectedPrice = '$50,000';
+    let selectedMinimumCents = 5000000;
+    let selectedDepositCents = 500000;
+    let auctionReady = false;
+    let selectedClosed = false;
+    let bidPreparing = false;
+    let paymentSubmitting = false;
+    let stripe: any = null;
+    let elements: any = null;
+    let paymentElement: any = null;
+    let paymentRequestId: string | null = null;
+    let paymentRequestPosition: string | null = null;
+    const modal = document.querySelector<HTMLElement>('#payment-modal');
+    const paymentPosition = document.querySelector<HTMLElement>('#payment-position');
+    const paymentTier = document.querySelector<HTMLElement>('#payment-title');
+    const paymentPrice = document.querySelector<HTMLElement>('#payment-price');
+    const paymentOffer = document.querySelector<HTMLElement>('#payment-offer');
+    const paymentLoading = document.querySelector<HTMLElement>('#payment-loading');
+    const paymentError = document.querySelector<HTMLElement>('#payment-error');
+    const paymentConfirm = document.querySelector<HTMLButtonElement>('#payment-confirm');
+    const bidFields = document.querySelector<HTMLElement>('#bid-fields');
+    const bidContinue = document.querySelector<HTMLButtonElement>('#bid-continue');
+    const bidBrand = document.querySelector<HTMLInputElement>('#bid-brand');
+    const bidEmail = document.querySelector<HTMLInputElement>('#bid-email');
+    const bidWebsite = document.querySelector<HTMLInputElement>('#bid-website');
+    const bidOffer = document.querySelector<HTMLInputElement>('#bid-offer');
+    const bidLogo = document.querySelector<HTMLInputElement>('#bid-logo');
+    const bidLogoPreview = document.querySelector<HTMLImageElement>('#bid-logo-preview');
+    const bidLogoLabel = document.querySelector<HTMLElement>('#bid-logo-label');
+    const bidTerms = document.querySelector<HTMLInputElement>('#bid-terms');
+    const previewNote = document.querySelector<HTMLElement>('#payment-preview-note');
+    let selectedLogoDataUrl = '';
+
+    const formatMoney = (cents: number) => new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX', {
+        style: 'currency', currency: 'MXN', maximumFractionDigits: 0,
+    }).format(cents / 100);
+
+    const tierBenefits: Record<string, string[]> = {
+        principal: [t("Naming “Cord Flow presented by [tu marca]”"), t("Presencia principal en producto, muro físico y build updates"), t("Caso conjunto, perfil y lugar en el launch report"), t("Cord Scale durante 6 meses")],
+        feature: [t("Posición vinculada a una etapa real de Cord Flow"), t("Cuatro menciones durante el sprint"), t("Pieza conjunta, perfil y backlink permanente"), t("Cord Scale durante 6 meses")],
+        build: [t("Nodo fundador dentro de Cord Flow"), t("Presencia en fotografías y archivo del sprint"), t("Mención en el launch report y sesión de producto"), t("Cord Scale durante 6 meses")],
+    };
+
+    type BuildPosition = { id: string; tier: string; price: string; startingOfferCents: number; size: 'principal' | 'feature' | 'build'; label: string; currentOfferCents?: number | null; nextOfferCents?: number; bidDepositCents?: number; currentBrand?: string | null; bidCount?: number; status?: string };
+
+    window.addEventListener('build-position-select', (event) => {
+            const position = (event as CustomEvent<BuildPosition>).detail;
+            if (!position?.id) return;
+            if (number) number.textContent = `${lang === 'en' ? 'SPOT' : 'POSICIÓN'} ${position.id}`;
+            if (label) label.textContent = position.label;
+            if (tier) tier.textContent = position.tier;
+            const nextOffer = Number(position.nextOfferCents || position.startingOfferCents);
+            const hasLeader = Number(position.currentOfferCents || 0) > 0;
+            if (price) price.textContent = formatMoney(nextOffer);
+            if (priceLabel) priceLabel.textContent = hasLeader ? t("SIGUIENTE OFERTA MÍNIMA · MXN") : t("OFERTA INICIAL · MXN");
+            if (owner) owner.textContent = hasLeader ? `${position.currentBrand || t("Marca verificada")} ${lang === 'en' ? 'leads' : 'lidera'} · ${position.bidCount || 1} ${lang === 'en' ? 'bid' : 'oferta'}${position.bidCount === 1 ? '' : 's'}` : t("Sin ofertas todavía");
+            selectedClosed = position.status !== 'open';
+            if (benefits) benefits.innerHTML = tierBenefits[position.size].map((item) => `<li>${item}</li>`).join('');
+            selectedPosition = position.id;
+            selectedTier = position.tier;
+            selectedPrice = formatMoney(nextOffer);
+            selectedMinimumCents = nextOffer;
+            selectedDepositCents = Number(position.bidDepositCents || (position.id === '01' ? 500000 : ['02','03','04'].includes(position.id) ? 200000 : 100000));
+            if (paymentRequestPosition && paymentRequestPosition !== position.id) {
+                paymentElement?.destroy();
+                paymentElement = null;
+                elements = null;
+                paymentRequestId = null;
+                paymentRequestPosition = null;
+                if (bidContinue) bidContinue.disabled = false;
+            }
+            if (paymentStatus) paymentStatus.textContent = lang === 'en' ? `Fixed ${formatMoney(selectedDepositCents)} deposit, securely processed by Stripe.` : `Garantía fija de ${formatMoney(selectedDepositCents)} procesada de forma segura por Stripe.`;
+            syncControls();
+    });
+
+    const closePayment = () => {
+        if (!modal) return;
+        modal.hidden = true;
+        document.documentElement.style.overflow = '';
+        cta?.focus();
+    };
+    document.querySelector('#payment-close')?.addEventListener('click', closePayment);
+    document.querySelector('#payment-backdrop')?.addEventListener('click', closePayment);
+
+    cta?.addEventListener('click', () => {
+        if (!auctionReady || selectedClosed) return;
+        if (paymentPosition) paymentPosition.textContent = selectedPosition;
+        if (paymentTier) paymentTier.textContent = selectedTier;
+        if (paymentOffer) paymentOffer.textContent = selectedPrice;
+        if (paymentPrice) paymentPrice.textContent = formatMoney(selectedDepositCents);
+        if (bidOffer) { bidOffer.min = String(selectedMinimumCents / 100); bidOffer.value = String(selectedMinimumCents / 100); }
+        if (modal) modal.hidden = false;
+        document.documentElement.style.overflow = 'hidden';
+        const resume = Boolean(paymentElement && elements && paymentRequestPosition === selectedPosition);
+        if (bidFields) bidFields.hidden = resume;
+        if (paymentLoading) paymentLoading.hidden = true;
+        if (paymentConfirm) paymentConfirm.hidden = !resume;
+        if (paymentError) paymentError.hidden = true;
+        syncControls();
+        (resume ? paymentConfirm : bidBrand)?.focus();
+    });
+
+    modal?.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') { closePayment(); return; }
+        if (event.key !== 'Tab') return;
+        const focusable = Array.from(modal.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input:not(:disabled),iframe,[tabindex="0"]'))
+            .filter((element) => element.getClientRects().length > 0 && !element.classList.contains('payment-backdrop'));
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    });
+    bidTerms?.closest('label')?.querySelector('a')?.addEventListener('click', closePayment);
+
+    bidOffer?.addEventListener('input', () => {
+        const cents = Math.round(Number(bidOffer.value || 0) * 100);
+        if (paymentOffer) paymentOffer.textContent = formatMoney(cents);
+    });
+
+    bidLogo?.addEventListener('change', async () => {
+        selectedLogoDataUrl = '';
+        bidLogo.setCustomValidity('');
+        if (bidLogoPreview) { bidLogoPreview.hidden = true; bidLogoPreview.removeAttribute('src'); }
+        if (bidLogoLabel) bidLogoLabel.textContent = t("Subir logo");
+        const file = bidLogo.files?.[0];
+        if (!file) return;
+        if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 256 * 1024) {
+            bidLogo.setCustomValidity(t("Usa un PNG, JPG o WebP de máximo 256 KB."));
+            bidLogo.reportValidity();
+            bidLogo.value = '';
+            return;
+        }
+        bidLogo.setCustomValidity('');
+        selectedLogoDataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ''));
+            reader.onerror = () => reject(new Error(t("No pudimos leer el logo.")));
+            reader.readAsDataURL(file);
+        }).catch(() => '');
+        if (!selectedLogoDataUrl) {
+            bidLogo.setCustomValidity(t("No pudimos leer este archivo."));
+            bidLogo.reportValidity();
+            return;
+        }
+        if (bidLogoPreview) { bidLogoPreview.src = selectedLogoDataUrl; bidLogoPreview.hidden = false; }
+        if (bidLogoLabel) bidLogoLabel.textContent = t("Cambiar logo");
+    });
+
+    bidContinue?.addEventListener('click', async () => {
+        if (!auctionReady || auctionData.paymentsEnabled !== true || selectedClosed) return;
+        const fields = [bidBrand, bidEmail, bidWebsite, bidOffer, bidLogo, bidTerms].filter(Boolean) as HTMLInputElement[];
+        const invalid = fields.find((field) => !field.reportValidity());
+        if (invalid) return invalid.focus();
+        const offerAmountCents = Math.round(Number(bidOffer?.value || 0) * 100);
+        if (offerAmountCents < selectedMinimumCents) {
+            bidOffer?.setCustomValidity(lang === 'en' ? `The minimum bid is ${formatMoney(selectedMinimumCents)}.` : `La oferta mínima es ${formatMoney(selectedMinimumCents)}.`);
+            bidOffer?.reportValidity();
+            bidOffer?.setCustomValidity('');
+            return;
+        }
+        if (!bidBrand?.value.trim() || !bidEmail?.value.trim() || !bidWebsite?.value.trim() || !selectedLogoDataUrl) return;
+        bidContinue.disabled = true;
+        bidPreparing = true;
+        bidContinue.textContent = t("Validando oferta…");
+        if (paymentLoading) paymentLoading.hidden = false;
+        if (paymentError) paymentError.hidden = true;
+        try {
+            const requestId = paymentRequestId || crypto.randomUUID();
+            paymentRequestId = requestId;
+            paymentRequestPosition = selectedPosition;
+            const response = await fetch('/api/build/payment-intent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    positionId: selectedPosition,
+                    requestId,
+                    brandName: bidBrand.value.trim(),
+                    contactEmail: bidEmail.value.trim(),
+                    websiteUrl: bidWebsite.value.trim(),
+                    logoDataUrl: selectedLogoDataUrl,
+                    offerAmountCents,
+                    acceptedTerms: Boolean(bidTerms?.checked),
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.clientSecret || !data.publishableKey) {
+                if (data.nextOfferCents && bidOffer) {
+                    selectedMinimumCents = Number(data.nextOfferCents);
+                    bidOffer.min = String(selectedMinimumCents / 100);
+                    bidOffer.value = String(selectedMinimumCents / 100);
+                    paymentRequestId = null;
+                }
+                throw new Error(lang === 'en' ? (data.nextOfferCents ? `The minimum bid has changed to ${formatMoney(Number(data.nextOfferCents))}.` : t("No pudimos iniciar la garantía.")) : data.error || t("No pudimos iniciar la garantía."));
+            }
+            if (!(window as any).Stripe) {
+                await new Promise<void>((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://js.stripe.com/v3/';
+                    script.onload = () => resolve();
+                    script.onerror = () => reject(new Error(t("No pudimos cargar el formulario seguro.")));
+                    document.head.appendChild(script);
+                });
+            }
+            stripe = (window as any).Stripe(data.publishableKey, { locale: lang });
+            elements = stripe.elements({
+                clientSecret: data.clientSecret,
+                appearance: {
+                    theme: 'stripe',
+                    variables: { colorPrimary: '#0a192f', colorText: '#0a192f', borderRadius: '12px', fontFamily: 'Inter, system-ui, sans-serif' },
+                },
+            });
+            paymentElement?.destroy();
+            paymentElement = elements.create('payment', { layout: 'tabs' });
+            paymentElement.mount('#payment-element');
+            if (paymentOffer) paymentOffer.textContent = formatMoney(Number(data.offerAmountCents));
+            if (paymentPrice) paymentPrice.textContent = formatMoney(Number(data.depositAmountCents));
+            if (paymentLoading) paymentLoading.hidden = true;
+            if (bidFields) bidFields.hidden = true;
+            if (paymentConfirm) paymentConfirm.hidden = false;
+        } catch (error) {
+            bidContinue.disabled = false;
+            bidContinue.innerHTML = `${t('Continuar al pago seguro')} <span aria-hidden="true">→</span>`;
+            const message = error instanceof Error ? error.message : t("No pudimos iniciar la garantía. Intenta de nuevo.");
+            if (paymentStatus) paymentStatus.textContent = message;
+            if (paymentLoading) paymentLoading.hidden = true;
+            if (paymentError) { paymentError.textContent = message; paymentError.hidden = false; }
+        } finally {
+            bidPreparing = false;
+        }
+    });
+
+    paymentConfirm?.addEventListener('click', async () => {
+        if (!stripe || !elements || !auctionReady || auctionData.paymentsEnabled !== true || selectedClosed) return;
+        paymentConfirm.disabled = true;
+        paymentSubmitting = true;
+        paymentConfirm.textContent = t("Procesando…");
+        try {
+            const { error } = await stripe.confirmPayment({
+                elements,
+                confirmParams: { return_url: `${location.origin}${lang === 'en' ? '/en/build' : '/build'}?payment=return&position=${selectedPosition}` },
+            });
+            if (error && paymentError) {
+                paymentError.textContent = error.message || t("No pudimos confirmar el pago.");
+                paymentError.hidden = false;
+            }
+        } catch {
+            if (paymentError) {
+                paymentError.textContent = t("Se interrumpió la conexión. Comprueba el estado del pago antes de reintentarlo.");
+                paymentError.hidden = false;
+            }
+        } finally {
+            paymentSubmitting = false;
+            paymentConfirm.disabled = false;
+            paymentConfirm.innerHTML = `${t('Pagar garantía')} <span aria-hidden="true">→</span>`;
+            syncControls();
+        }
+    });
+
+    type AuctionPosition = { id: string; tier: string; status: string; startingOfferCents: number; currentOfferCents: number | null; nextOfferCents: number; minIncrementCents: number; bidDepositCents: number; currentBrand: string | null; logoUrl?: string | null; websiteUrl?: string | null; bidCount: number };
+    type AuctionHistory = { id: string; positionId: string; brandName: string; offerAmountCents: number; status: string; at: string; outbidAt?: string | null };
+    type AuctionData = { auction?: { status: string; endsAt: string }; positions?: AuctionPosition[]; history?: AuctionHistory[]; committedAmountCents?: number; paymentsEnabled?: boolean };
+    let auctionData: AuctionData = {};
+    const syncControls = () => {
+        const ended = auctionData.auction?.status === 'closed' || auctionData.auction?.status === 'cancelled'
+            || (auctionData.paymentsEnabled === true && Date.parse(auctionData.auction?.endsAt || '') <= Date.now());
+        const canPay = auctionReady && !ended && !selectedClosed && auctionData.auction?.status === 'live' && auctionData.paymentsEnabled === true;
+        const preview = auctionReady && !ended && !selectedClosed && !canPay;
+        if (cta) {
+            cta.disabled = !auctionReady || selectedClosed || ended;
+            cta.textContent = !auctionReady ? t("Consultando posición…") : ended || selectedClosed ? t("Posición no disponible") : preview ? t("Preparar mi marca →") : t("Ofertar por esta posición →");
+        }
+        if (detailStatus) detailStatus.textContent = !auctionReady ? t("SIN CONEXIÓN") : ended || selectedClosed ? t("CERRADA") : preview ? t("VISTA PREVIA") : t("SUBASTA ABIERTA");
+        if (paymentStatus && !canPay) paymentStatus.textContent = !auctionReady
+            ? t("No podemos confirmar la disponibilidad. Reintenta abajo.")
+            : ended || selectedClosed ? t("Esta posición no acepta nuevas ofertas.")
+            : t("Puedes preparar tu marca. Los pagos aún no están habilitados.");
+        if (previewNote) previewNote.hidden = !preview;
+        if (bidContinue && !bidPreparing) {
+            bidContinue.disabled = !canPay;
+            bidContinue.textContent = canPay ? t("Continuar al pago seguro →") : t("Pagos aún no habilitados");
+        }
+        if (paymentConfirm) paymentConfirm.disabled = !canPay || paymentSubmitting;
+    };
+    let ledgerMode: 'positions' | 'history' = 'positions';
+    const ledger = document.querySelector<HTMLElement>('#ledger-content');
+    const escapeHTML = (value: unknown) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] || character);
+    const relativeTime = (iso: string) => {
+        const delta = Math.max(0, Date.now() - new Date(iso).getTime());
+        const minutes = Math.floor(delta / 60000);
+        if (minutes < 1) return t("ahora");
+        if (minutes < 60) return lang === 'en' ? `${minutes} min ago` : `hace ${minutes} min`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return lang === 'en' ? `${hours} h ago` : `hace ${hours} h`;
+        return lang === 'en' ? `${Math.floor(hours / 24)} d ago` : `hace ${Math.floor(hours / 24)} d`;
+    };
+    const renderLedger = () => {
+        if (!ledger) return;
+        if (!auctionReady) {
+            ledger.innerHTML = `<div class="ledger-empty"><strong>${t("No pudimos actualizar la subasta.")}</strong><p>${t("Comprueba tu conexión. No se aceptan pagos sin verificar la disponibilidad.")}</p><button type="button" data-auction-retry>${t("Volver a intentar")}</button></div>`;
+            return;
+        }
+        if (ledgerMode === 'history') {
+            const rows = auctionData.history || [];
+            ledger.innerHTML = rows.length ? `<div class="ledger-table">${rows.map((item) => `
+                <article class="ledger-row history-row">
+                    <span class="ledger-id">${escapeHTML(item.positionId)}</span>
+                    <div><strong>${escapeHTML(item.brandName)}</strong><small>${item.status === 'leading' ? t("Lidera la posición") : item.status === 'won' ? t("Oferta ganadora") : item.status === 'outbid_refunding' ? t("Oferta superada · reembolso en proceso") : t("Oferta superada · reembolso procesado")}</small></div>
+                    <strong class="editorial">${formatMoney(item.offerAmountCents)} MXN</strong>
+                    <time datetime="${escapeHTML(item.at)}">${relativeTime(item.at)}</time>
+                </article>`).join('')}</div>` : `<div class="ledger-empty"><strong>${t("El historial empieza con la primera oferta verificada.")}</strong><p>${t("No mostramos actividad simulada.")}</p></div>`;
+            return;
+        }
+        const rows = auctionData.positions || [];
+        ledger.innerHTML = rows.length ? `<div class="ledger-table">${rows.map((item) => `
+            <article class="ledger-row">
+                <span class="ledger-id">${escapeHTML(item.id)}</span>
+                <div><strong>${escapeHTML(item.tier)}</strong><small>${item.currentBrand ? `${lang === 'en' ? 'Leading: ' : 'Lidera '}${escapeHTML(item.currentBrand)}` : item.status === 'open' ? t("Sin ofertas todavía") : t("No disponible")}</small></div>
+                <div><strong class="editorial">${formatMoney(item.currentOfferCents || item.startingOfferCents)} MXN</strong><small>${item.bidCount} ${lang === 'en' ? 'bid' : 'oferta'}${item.bidCount === 1 ? '' : 's'}</small></div>
+                <button type="button" data-position="${escapeHTML(item.id)}">${auctionData.paymentsEnabled !== true ? t("Ver posición") : item.currentOfferCents ? t("Sobrepujar") : t("Ofertar")}</button>
+            </article>`).join('')}</div>` : `<div class="ledger-empty"><strong>${t("No pudimos cargar las posiciones.")}</strong><p>${t("Actualiza la página para intentarlo de nuevo.")}</p></div>`;
+    };
+
+    document.querySelectorAll<HTMLButtonElement>('[data-ledger-tab]').forEach((button) => {
+        button.addEventListener('click', () => {
+            ledgerMode = button.dataset.ledgerTab === 'history' ? 'history' : 'positions';
+            document.querySelectorAll<HTMLButtonElement>('[data-ledger-tab]').forEach((tab) => {
+                const active = tab === button;
+                tab.classList.toggle('is-active', active);
+                tab.setAttribute('aria-selected', String(active));
+            });
+            renderLedger();
+        });
+    });
+    ledger?.addEventListener('click', (event) => {
+        const retry = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-auction-retry]');
+        if (retry) {
+            retry.disabled = true;
+            retry.textContent = t("Actualizando…");
+            window.dispatchEvent(new CustomEvent('build-auction-refresh'));
+            return;
+        }
+        const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-position]');
+        if (!button?.dataset.position) return;
+        window.dispatchEvent(new CustomEvent('build-position-request', { detail: { id: button.dataset.position } }));
+        document.querySelector('.position-detail')?.scrollIntoView({ behavior: reducedMotion.matches ? 'auto' : 'smooth', block: 'center' });
+    });
+
+    let countdownTimer = 0;
+    const updateCountdown = () => {
+        const output = document.querySelector<HTMLElement>('#hero-countdown');
+        if (output && auctionData.paymentsEnabled !== true) { output.textContent = t("Próximamente"); return; }
+        const end = auctionData.auction?.endsAt ? new Date(auctionData.auction.endsAt).getTime() : 0;
+        if (!output || !end) return;
+        const remaining = Math.max(0, end - Date.now());
+        const days = Math.floor(remaining / 86400000);
+        const hours = Math.floor((remaining % 86400000) / 3600000);
+        const minutes = Math.floor((remaining % 3600000) / 60000);
+        output.textContent = remaining ? `${days}d ${hours}h ${minutes}m` : t("Subasta cerrada");
+    };
+    window.addEventListener('build-auction-update', (event) => {
+        auctionData = (event as CustomEvent<AuctionData>).detail || {};
+        auctionReady = true;
+        const totalBids = (auctionData.positions || []).reduce((sum, item) => sum + item.bidCount, 0);
+        const heroBidCount = document.querySelector<HTMLElement>('#hero-bid-count');
+        const historyCount = document.querySelector<HTMLElement>('#history-count');
+        if (heroBidCount) heroBidCount.textContent = lang === 'en' ? `${totalBids} VERIFIED BID${totalBids === 1 ? '' : 'S'}` : `${totalBids} OFERTA${totalBids === 1 ? '' : 'S'} VERIFICADA${totalBids === 1 ? '' : 'S'}`;
+        if (historyCount) historyCount.textContent = String((auctionData.history || []).length);
+        document.querySelectorAll<HTMLAnchorElement>('[data-edition-position]').forEach((spot) => {
+            const position = auctionData.positions?.find((item) => item.id === spot.dataset.editionPosition);
+            spot.classList.toggle('has-brand', Boolean(position?.currentBrand));
+            spot.title = position?.currentBrand || `${lang === 'en' ? 'Explore spot' : 'Explorar posición'} ${position?.id || ''}`;
+        });
+        syncControls();
+        renderLedger(); updateCountdown();
+        clearInterval(countdownTimer);
+        countdownTimer = window.setInterval(updateCountdown, 30000);
+    });
+    window.addEventListener('build-auction-error', () => {
+        auctionReady = false;
+        syncControls();
+        renderLedger();
+    });
+
+    window.dispatchEvent(new CustomEvent('build-auction-ready'));
+
+    const anchorLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'));
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let scrollAnimation = 0;
+
+    anchorLinks.forEach((link) => {
+        link.addEventListener('click', (event) => {
+            const hash = link.getAttribute('href');
+            if (!hash || hash === '#') return;
+            const target = document.querySelector<HTMLElement>(hash);
+            if (!target) return;
+            event.preventDefault();
+            if (link.dataset.editionPosition) window.dispatchEvent(new CustomEvent('build-position-request', { detail: { id: link.dataset.editionPosition } }));
+            cancelAnimationFrame(scrollAnimation);
+
+            const start = window.scrollY;
+            const destination = Math.max(0, start + target.getBoundingClientRect().top - 92);
+            if (reducedMotion.matches) {
+                window.scrollTo(0, destination);
+                history.replaceState(null, '', hash);
+                return;
+            }
+
+            const distance = destination - start;
+            const duration = Math.min(1100, Math.max(680, Math.abs(distance) * .46));
+            const startedAt = performance.now();
+            const step = (now: number) => {
+                const progress = Math.min(1, (now - startedAt) / duration);
+                const eased = progress < .5
+                    ? 8 * Math.pow(progress, 4)
+                    : 1 - Math.pow(-2 * progress + 2, 4) / 2;
+                window.scrollTo(0, start + distance * eased);
+                if (progress < 1) {
+                    scrollAnimation = requestAnimationFrame(step);
+                    return;
+                }
+                history.replaceState(null, '', hash);
+                const arrival = target.querySelector<HTMLElement>('.section-intro') || target;
+                arrival.animate(
+                    [{ opacity: .72, transform: 'translateY(14px)' }, { opacity: 1, transform: 'translateY(0)' }],
+                    { duration: 620, easing: 'cubic-bezier(.16,1,.3,1)' },
+                );
+            };
+            scrollAnimation = requestAnimationFrame(step);
+        });
+    });
+</script>
+
+<style>
+    :global(.js-anim body:has(.build-page) #navbar) { opacity: 1; }
+    :global(html), :global(body) { background: var(--color-bg-soft) !important; color-scheme: light; }
+    .build-page { overflow: hidden; background: var(--color-bg-soft); color: #0a192f; }
+    .hero { position: relative; padding: clamp(8rem,13vh,10rem) 5% 4rem; background: var(--color-bg-soft); overflow: hidden; }
+    .hero-aurora { position: absolute; inset: 0; background: radial-gradient(ellipse at 25% 8%,rgba(16,185,129,.055),transparent 45%),radial-gradient(ellipse at 78% 35%,rgba(10,25,47,.045),transparent 48%); filter: blur(70px); pointer-events: none; }
+    .hero-inner { position: relative; z-index: 1; width: min(1180px,100%); margin: 0 auto; }
+    .hero-top { display: grid; grid-template-columns: 1.25fr 1fr; gap: 3.5rem; align-items: start; margin-bottom: 3rem; }
+    .hero-top :global(h1.masked-title) { max-width: none !important; margin: 0 !important; text-align: left !important; }
+    .hero-copy > p { max-width: 460px; margin: .4rem 0 0; color: #555c68; font-size: 1.02rem; line-height: 1.65; }
+    .hero-actions { display: flex; gap: 1.35rem; align-items: center; margin-top: 2rem; }
+    .primary-cta,.proposal-cta { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .45rem; overflow: hidden; border-radius: 999px; background: #0a192f; color: #fff; font-size: .95rem; font-weight: 600; text-decoration: none; box-shadow: inset 0 1px 0 rgba(255,255,255,.15),0 8px 24px rgba(10,25,47,.18); transition: transform .6s cubic-bezier(.16,1,.3,1),box-shadow .6s cubic-bezier(.16,1,.3,1); }
+    .primary-cta { min-height: 55px; padding: 0 38px; }.primary-cta span,.primary-cta svg { position: relative; z-index: 2; }.primary-cta svg { width: 16px; height: 16px; transition: transform .6s cubic-bezier(.16,1,.3,1); }.primary-cta i { position: absolute; z-index: 1; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent); transform: skew(-20deg); }.primary-cta:hover,.proposal-cta:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.2),0 12px 32px rgba(10,25,47,.24); }.primary-cta:hover svg { transform: translateX(4px); }.primary-cta:hover i { left: 150%; transition: left .9s cubic-bezier(.16,1,.3,1); }.primary-cta:active,.proposal-cta:active { transform: scale(.98); }.text-link { padding: .75rem .2rem; color: #0a192f; font-size: .88rem; font-weight: 600; text-decoration: none; border-bottom: 1px solid rgba(10,25,47,.28); }
+    .hero-board { position: relative; overflow: hidden; border: 1px solid rgba(10,25,47,.08); border-radius: 18px; background: #fff; box-shadow: 0 2px 4px rgba(10,25,47,.05),0 30px 60px rgba(10,25,47,.18),0 15px 30px rgba(10,25,47,.1); }
+    .board-chrome,.board-foot { display: flex; justify-content: space-between; padding: 1.2rem 1.35rem; color: #737d8f; font-size: .58rem; font-weight: 700; letter-spacing: .09em; }.board-chrome { border-bottom: 1px solid rgba(10,25,47,.08); }.board-foot { border-top: 1px solid rgba(10,25,47,.08); }
+    .board-preview { display: grid; grid-template-columns: repeat(6,1fr); gap: .55rem; padding: 1.1rem; min-height: 420px; }.board-preview > div { display: flex; align-items: center; justify-content: center; border: 1px solid rgba(10,25,47,.08); border-radius: 12px; background: #f6f7f9; color: #7d8798; font-size: .62rem; font-weight: 700; }.preview-main { grid-column: 1/-1; min-height: 175px; flex-direction: column; gap: .35rem; background: #0a192f !important; color: #fff !important; }.preview-main small { color: #8494a9; }.preview-main strong { font-size: clamp(2.2rem,4vw,4.3rem); letter-spacing: -.05em; }.preview-main span { color: #aeb9c8; }.preview-feature { grid-column: span 2; min-height: 100px; }.preview-small { min-height: 85px; }
+    .flow-preview { position: relative; display: grid; min-height: 390px; grid-template-columns: repeat(4,1fr); gap: 1rem; align-items: center; padding: 3rem 2rem; background: radial-gradient(circle at 50% 40%,#fff,transparent 60%),#f3f5f7; }.flow-preview > .flow-preview-line { position: absolute; z-index: 0; right: 8%; bottom: 5.2rem; left: 8%; display: block; height: 2px; border: 0; border-radius: 0; background: linear-gradient(90deg,#a9b3c1,#536b85 55%,#5ab8a5); }.flow-preview-line::after { position: absolute; top: -4px; left: 63%; width: 10px; height: 10px; border-radius: 50%; background: #56bda7; box-shadow: 0 0 0 7px rgba(86,189,167,.11); content: ''; }.flow-preview > .flow-preview-step { position: relative; z-index: 1; display: flex; min-height: 245px; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 1.35rem; border: 1px solid rgba(10,25,47,.09); border-radius: 17px; background: rgba(255,255,255,.9); box-shadow: 0 14px 36px rgba(26,39,60,.08); color: #0a192f; }.flow-preview-step small { color: #9aa3b1; font-size: .56rem; letter-spacing: .12em; }.flow-preview-step span { margin-top: 3.4rem; color: #7a8596; font-size: .55rem; letter-spacing: .11em; }.flow-preview-step strong { margin-top: .55rem; font-size: clamp(.85rem,1.1vw,1.02rem); letter-spacing: -.025em; }.flow-preview-step i { width: 7px; height: 7px; margin-top: auto; border-radius: 50%; background: #5368dc; }.flow-preview-step:nth-of-type(4) i,.flow-preview-step:nth-of-type(5) i { background: #45af98; }
+    .build-facts { display: grid; grid-template-columns: repeat(4,1fr); margin-top: 2.4rem; border-top: 1px solid rgba(10,25,47,.1); }.build-facts p { display: flex; flex-direction: column; gap: .35rem; margin: 0; padding: 1.35rem 1.5rem 0 0; }.build-facts strong { color: #0a192f; font-size: .88rem; font-weight: 650; }.build-facts span { color: #7b8496; font-size: .72rem; }
+    .promise,.positions,.sprint { padding: clamp(5rem,6.5vw,6.5rem) 5%; }.promise,.sprint { width: min(1400px,100%); margin-inline: auto; }.section-intro { display: grid; max-width: 1180px; grid-template-columns: 1.25fr 1fr; column-gap: 3.5rem; align-items: start; }.section-intro > span { grid-column: 1/-1; display: block; margin-bottom: 1.2rem; color: #687386; font-size: .65rem; font-weight: 800; letter-spacing: 3px; }.section-intro h2 { margin: 0; color: #0a192f; font-size: clamp(2.1rem,3.4vw,3.6rem); font-weight: 700; letter-spacing: -.035em; line-height: 1.1; text-wrap: balance; }.section-intro > p { max-width: 460px; margin: .4rem 0 0; color: #555c68; font-size: 1.02rem; line-height: 1.65; }
+    .promise-list { margin-top: 3.5rem; border-top: 1px solid rgba(10,25,47,.1); }.promise-list article { display: grid; grid-template-columns: 100px 1fr; gap: 2rem; padding: 2.3rem 0; border-bottom: 1px solid rgba(10,25,47,.1); }.promise-list article > span { color: #8a94a6; font-size: .72rem; }.promise-list article div { display: grid; grid-template-columns: .65fr 1fr; gap: 4rem; }.promise-list h3 { margin: 0; color: #050505; font-size: 1.45rem; letter-spacing: -.035em; }.promise-list p { max-width: 580px; margin: 0; color: #687386; line-height: 1.6; }
+    .positions { scroll-margin-top: 7rem; background: radial-gradient(circle at 15% 34%,rgba(210,218,255,.2),transparent 30rem); }.positions-intro,.position-experience { width: min(1320px,100%); margin-inline: auto; }.position-experience { display: grid; gap: 1.1rem; margin-top: 3rem; }
+    :global(.bw3-shell) { position: relative; height: clamp(620px,58vw,760px); overflow: hidden; border: 1px solid rgba(255,255,255,.14); border-radius: 38px; background: #061225; box-shadow: 0 45px 100px rgba(20,34,61,.22),inset 0 1px 0 rgba(255,255,255,.12); isolation: isolate; contain: layout style paint; }
+    :global(.bw3-shell::after) { position: absolute; z-index: 1; inset: 0; border-radius: inherit; background: linear-gradient(135deg,rgba(255,255,255,.07),transparent 28%,transparent 72%,rgba(2,8,18,.28)); box-shadow: inset 0 0 110px rgba(0,5,15,.32); pointer-events: none; content: ''; }
+    :global(.bw3-shell canvas) { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
+    .bw3-loading { display: grid; height: clamp(620px,58vw,760px); place-items: center; align-content: center; gap: 1rem; border-radius: 38px; background: #061225; color: #91a0b3; }.bw3-loading span { width: 28px; height: 28px; border: 1px solid rgba(255,255,255,.15); border-top-color: #fff; border-radius: 50%; animation: build-spin 1s linear infinite; }.bw3-loading small { font-size: .55rem; font-weight: 800; letter-spacing: .13em; }
+    :global(.bw3-top) { position: absolute; z-index: 3; top: 1.65rem; left: 1.85rem; right: 1.85rem; display: flex; justify-content: space-between; color: #91a0b3; font-size: .56rem; font-weight: 800; letter-spacing: .13em; pointer-events: none; }
+    :global(.bw3-top span:last-child) { display: inline-flex; gap: .55rem; align-items: center; }
+    :global(.bw3-top i) { display: block; width: 6px; height: 6px; border-radius: 50%; background: #78cab8; box-shadow: 0 0 0 4px rgba(120,202,184,.1); }
+    :global(.bw3-story) { position: absolute; z-index: 3; bottom: 5rem; left: 1.85rem; display: flex; width: min(320px,32%); flex-direction: column; gap: .65rem; color: #fff; pointer-events: none; }
+    :global(.bw3-story span) { color: #8f9fb3; font-size: .55rem; font-weight: 800; letter-spacing: .14em; }
+    :global(.bw3-story strong) { font-size: clamp(1rem,1.5vw,1.28rem); font-weight: 560; letter-spacing: -.025em; line-height: 1.25; }
+    :global(.bw3-hint) { position: absolute; z-index: 3; bottom: 1.65rem; left: 1.85rem; color: #8d9bad; font-size: .58rem; font-weight: 650; letter-spacing: .04em; pointer-events: none; }
+    :global(.bw3-hint::before) { display: inline-block; width: 20px; height: 1px; margin-right: .55rem; background: #718299; vertical-align: middle; content: ''; }
+    :global(.bw3-controls) { position: absolute; z-index: 4; bottom: 1.4rem; left: 50%; display: flex; gap: .22rem; padding: .32rem; border: 1px solid rgba(255,255,255,.15); border-radius: 999px; background: rgba(5,16,32,.62); box-shadow: 0 12px 34px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.08); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); transform: translateX(-50%); }
+    :global(.bw3-controls button) { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #91a0b3; font: 700 .56rem var(--font-sans); cursor: pointer; transition: color .2s ease,background .2s ease,transform .2s var(--ease-ios); }
+    :global(.bw3-controls button:hover:not(:disabled)) { transform: translateY(-2px); }
+    :global(.bw3-controls button.is-active) { background: #f7fafc; color: #07162a; box-shadow: 0 5px 18px rgba(0,0,0,.32); }
+    :global(.bw3-controls button:disabled) { color: #3e4c5f; cursor: not-allowed; text-decoration: line-through; }
+    :global(.bw3-controls button:focus-visible) { outline: 2px solid #fff; outline-offset: 2px; }
+    .position-detail { display: grid; width: 100%; grid-template-columns: minmax(230px,.72fr) minmax(360px,1.18fr) minmax(230px,.62fr); grid-template-rows: auto auto auto auto; gap: 0 3rem; padding: 1.8rem 2rem; border: 1px solid rgba(10,25,47,.09); border-radius: 30px; background: rgba(255,255,255,.9); box-shadow: 0 20px 60px rgba(19,33,59,.1); backdrop-filter: blur(24px) saturate(1.08); -webkit-backdrop-filter: blur(24px) saturate(1.08); }.detail-status { grid-column: 1/-1; display: flex; justify-content: space-between; margin-bottom: 1.7rem; color: #748094; font-size: .58rem; font-weight: 750; letter-spacing: .08em; }.detail-status span:last-child { padding: .4rem .65rem; border-radius: 999px; background: #eef0ff; color: #4356d8; }.position-detail > div:nth-child(2) { grid-column: 1; grid-row: 2/5; align-self: start; margin: 0; }.position-detail > div:nth-child(2) p { margin: 0 0 .5rem; color: #667085; font-size: .72rem; }.position-detail h3 { max-width: 300px; margin: 0; color: #050505; font-size: clamp(2rem,2.8vw,3.2rem); letter-spacing: -.055em; line-height: .96; }.position-detail ul { grid-column: 2; grid-row: 2/5; display: grid; gap: .75rem; align-content: start; margin: .1rem 0 0; padding: 0; list-style: none; }.position-detail li { color: #536078; font-size: .8rem; line-height: 1.45; }.position-detail li::before { display: inline-block; width: 1.15rem; color: #5866dc; content: '—'; }.detail-price { grid-column: 3; grid-row: 2; display: flex; flex-direction: column; gap: .45rem; padding-top: 0; border: 0; }.detail-price small { color: #8b94a7; font-size: .58rem; letter-spacing: .08em; }.detail-price strong { color: #050505; font-size: 2.15rem; }.proposal-cta { grid-column: 3; grid-row: 3; width: 100%; align-self: end; margin-top: 1.1rem; padding: 1rem 1.25rem; border: 0; cursor: pointer; font-family: inherit; }.proposal-cta:disabled { cursor: wait; opacity: .72; transform: none; }.detail-note { grid-column: 3; grid-row: 4; min-height: 1.2em; margin-top: .65rem; color: #929bad; text-align: center; }
+    .sprint { padding-inline: 0; }.sprint-intro,.sprint-track { width: min(1280px,calc(100% - 10%)); margin-inline: auto; }.sprint-track { display: grid; grid-template-columns: repeat(4,1fr); margin-top: 3.5rem; border-top: 1px solid rgba(10,25,47,.12); }.sprint-track article { min-height: 260px; padding: 2rem 1.6rem; border-right: 1px solid rgba(10,25,47,.1); }.sprint-track article:first-child { padding-left: 0; }.sprint-track article:last-child { border-right: 0; }.sprint-track span { color: #5866dc; font-size: .63rem; font-weight: 750; letter-spacing: .08em; }.sprint-track h3 { margin: 4rem 0 .8rem; color: #050505; font-size: 1.3rem; letter-spacing: -.03em; }.sprint-track p { margin: 0; color: #687386; font-size: .85rem; line-height: 1.6; }
+    .payment-modal[hidden] { display: none; }.payment-modal { position: fixed; z-index: 10000; inset: 0; display: grid; place-items: center; padding: 1.25rem; }.payment-backdrop { position: absolute; inset: 0; width: 100%; border: 0; background: rgba(4,13,27,.64); backdrop-filter: blur(14px) saturate(1.1); -webkit-backdrop-filter: blur(14px) saturate(1.1); cursor: pointer; }.payment-sheet { position: relative; display: grid; width: min(980px,100%); max-height: calc(100dvh - 2.5rem); grid-template-columns: .86fr 1.14fr; overflow: auto; border: 1px solid rgba(255,255,255,.3); border-radius: 28px; background: #fff; box-shadow: 0 40px 120px rgba(0,0,0,.35); }.payment-close { position: absolute; z-index: 3; top: 1rem; right: 1rem; display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid rgba(10,25,47,.08); border-radius: 50%; background: rgba(255,255,255,.85); color: #0a192f; font: 400 1.35rem/1 var(--font-sans); cursor: pointer; }.payment-summary { display: flex; min-height: 610px; flex-direction: column; padding: 2.7rem; background: radial-gradient(circle at 25% 15%,rgba(86,108,229,.16),transparent 17rem),#f5f5f7; }.payment-summary > img { width: 86px; height: auto; margin-bottom: 5rem; }.payment-summary > div > span,.payment-eyebrow { color: #69758a; font-size: .6rem; font-weight: 800; letter-spacing: .12em; }.payment-summary h2 { max-width: 330px; margin: .75rem 0 0; color: #0a192f; font-size: clamp(2rem,3.2vw,3.1rem); letter-spacing: -.05em; line-height: 1; }.payment-total { display: flex; flex-direction: column; gap: .35rem; margin-top: 2.5rem; }.payment-total small { color: #7d8798; font-size: .6rem; letter-spacing: .09em; }.payment-total strong { color: #0a192f; font-size: 2.1rem; }.payment-summary ul { display: grid; gap: .75rem; margin: auto 0 2rem; padding: 1.5rem 0 0; border-top: 1px solid rgba(10,25,47,.1); list-style: none; }.payment-summary li { color: #5b6678; font-size: .78rem; line-height: 1.45; }.payment-summary li::before { margin-right: .6rem; color: #5667d8; content: '—'; }.payment-summary > p { display: flex; gap: .55rem; align-items: center; margin: 0; color: #788396; font-size: .68rem; line-height: 1.45; }.payment-summary > p svg { width: 16px; height: 16px; flex: 0 0 auto; }.payment-form { display: flex; min-height: 610px; flex-direction: column; padding: 4.5rem 3.6rem 2.6rem; }.payment-form h3 { margin: .7rem 0 .55rem; color: #0a192f; font-size: 1.85rem; letter-spacing: -.04em; }.payment-form > p:not(.payment-error) { max-width: 420px; margin: 0 0 2rem; color: #687386; font-size: .82rem; line-height: 1.55; }.payment-loading { display: grid; gap: .8rem; }.payment-loading[hidden] { display: none; }.payment-loading span { display: block; height: 48px; border-radius: 12px; background: linear-gradient(100deg,#f0f2f5 30%,#fafbfc 50%,#f0f2f5 70%); background-size: 200% 100%; animation: payment-shimmer 1.3s ease-in-out infinite; }.payment-loading span:nth-child(2) { height: 94px; }.payment-confirm { display: inline-flex; min-height: 54px; align-items: center; justify-content: center; gap: .5rem; margin-top: 1.4rem; border: 0; border-radius: 999px; background: #0a192f; color: #fff; font: 600 .92rem var(--font-sans); box-shadow: 0 10px 28px rgba(10,25,47,.2); cursor: pointer; transition: transform .2s var(--ease-ios),box-shadow .2s ease; }.payment-confirm:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(10,25,47,.27); }.payment-confirm:disabled { cursor: wait; opacity: .7; transform: none; }.payment-error { margin: 1rem 0 0; padding: .8rem 1rem; border-radius: 10px; background: #fff2f1; color: #a23b32; font-size: .75rem; line-height: 1.45; }.payment-powered { margin-top: auto; padding-top: 1.5rem; color: #9aa2af; text-align: center; font-size: .65rem; }.payment-close:focus-visible,.payment-confirm:focus-visible { outline: 2px solid #0a192f; outline-offset: 3px; }
+    @keyframes payment-shimmer { to { background-position: -200% 0; } }
+    @keyframes build-spin { to { transform: rotate(360deg); } }
+    @media(prefers-reduced-motion:reduce){.payment-loading span,.bw3-loading span { animation: none; }.payment-confirm { transition: none; }:global(.flow-product),:global(.flow-track-line i),:global(.flow-track-line em),:global(.flow-plaque){transition:none!important}}
+    .primary-cta:focus-visible,.proposal-cta:focus-visible,.text-link:focus-visible { outline: 2px solid #0a192f; outline-offset: 4px; }
+    @media(max-width:1000px){.position-detail { grid-template-columns: 1fr 1fr; gap: 1.7rem 2.5rem; }.detail-status { grid-column: 1/-1; }.position-detail > div:nth-child(2) { grid-column: 1; grid-row: 2; }.position-detail ul { grid-column: 2; grid-row: 2/5; }.detail-price { grid-column: 1; grid-row: 3; }.proposal-cta { grid-column: 1; grid-row: 4; }.detail-note { grid-column: 1; grid-row: 5; }.promise-list article div { grid-template-columns: 1fr; gap: .7rem; }:global(.bw3-shell) { height: 620px; }:global(.bw3-hint) { display: none; }}
+    @media(max-width:880px){.hero { padding-inline: 1rem; }.hero-top,.section-intro { grid-template-columns: 1fr; gap: 1.5rem; }.hero-top { margin-bottom: 2.5rem; }.hero-copy > p,.section-intro > p { max-width: 620px; }.build-facts { grid-template-columns: 1fr 1fr; }.promise,.positions,.sprint { padding-block: 4.5rem; }.promise { padding-inline: 1rem; }.positions { padding-inline: 1rem; }.sprint-intro,.sprint-track { width: calc(100% - 2rem); }.sprint-track { grid-template-columns: 1fr 1fr; }.sprint-track article:nth-child(2) { border-right: 0; }.sprint-track article:first-child { padding-left: 1.6rem; }}
+    @media(max-width:620px){.hero-actions { align-items: flex-start; flex-direction: column; }.primary-cta { width: 100%; }.board-preview { grid-template-columns: repeat(3,1fr); min-height: 400px; }.preview-main { grid-column: 1/-1; }.preview-feature { grid-column: span 1; }.preview-main strong { font-size: 2.5rem; }.build-facts { grid-template-columns: 1fr; }.build-facts p { padding-block: 1rem; border-bottom: 1px solid rgba(10,25,47,.08); }.promise-list article { grid-template-columns: 40px 1fr; gap: 1rem; }:global(.bw3-shell) { height: 500px; min-height: 500px; border-radius: 25px; }:global(.bw3-top) { top: 1.1rem; left: 1.15rem; right: 1.15rem; }:global(.bw3-top span:last-child),:global(.bw3-story) { display: none; }:global(.bw3-controls) { bottom: .9rem; max-width: calc(100% - 1.5rem); gap: .08rem; }:global(.bw3-controls button) { width: 27px; height: 27px; }.position-detail { display: grid; grid-template-columns: 1fr; gap: 1.5rem; padding: 1.5rem; border-radius: 25px; }.detail-status,.position-detail > div:nth-child(2),.position-detail ul,.detail-price,.proposal-cta,.detail-note { grid-column: 1; grid-row: auto; }.detail-status { margin-bottom: .5rem; }.position-detail ul { margin: 0; }.proposal-cta { margin-top: 0; }.detail-note { margin-top: -.8rem; }.sprint-track { grid-template-columns: 1fr; }.sprint-track article { min-height: 220px; border-right: 0; border-bottom: 1px solid rgba(10,25,47,.1); }.sprint-track h3 { margin-top: 3.5rem; }}
+    @media(max-width:760px){.payment-modal { padding: .5rem; }.payment-sheet { max-height: calc(100dvh - 1rem); grid-template-columns: 1fr; border-radius: 22px; }.payment-summary { min-height: auto; padding: 2rem 1.4rem; }.payment-summary > img { margin-bottom: 2.5rem; }.payment-summary ul { margin-top: 2.5rem; }.payment-form { min-height: 520px; padding: 2.4rem 1.4rem 1.5rem; }}
+
+    /* Cord Flow: una sola pieza de producto; sin mockups 3D ni tarjetas flotantes. */
+    :global(.cord-flow) { --pointer-x:0deg; --pointer-y:0deg; --flow-progress:100%; position: relative; height: clamp(680px,60vw,790px); overflow: hidden; border: 1px solid rgba(10,25,47,.075); border-radius: 38px; background: radial-gradient(circle at 50% 28%,#fff 0,rgba(255,255,255,.78) 26%,transparent 62%),linear-gradient(155deg,#f7f8fa,#edf1f4); box-shadow: 0 38px 100px rgba(25,37,58,.12),inset 0 1px 0 #fff; isolation: isolate; contain: layout paint style; }
+    :global(.cord-flow::before) { position: absolute; inset: -35% 8% auto; height: 70%; border-radius: 50%; background: rgba(255,255,255,.86); filter: blur(75px); pointer-events: none; content: ''; }
+    :global(.flow-top) { position: absolute; z-index: 3; top: 1.7rem; left: 1.9rem; right: 1.9rem; display: flex; justify-content: space-between; color: #707b8d; font-size: .56rem; font-weight: 800; letter-spacing: .13em; pointer-events: none; }
+    :global(.flow-top span:last-child) { display: inline-flex; gap: .5rem; align-items: center; }
+    :global(.flow-top i) { width: 6px; height: 6px; border-radius: 50%; background: #3bb293; box-shadow: 0 0 0 5px rgba(59,178,147,.1); }
+    :global(.flow-product) { position: absolute; z-index: 2; top: 4.9rem; left: 50%; width: min(1060px,calc(100% - 4rem)); padding: .75rem; border: 1px solid rgba(255,255,255,.12); border-radius: 27px; background: linear-gradient(155deg,#14243a,#071526 72%); box-shadow: 0 2px 0 rgba(255,255,255,.17) inset,0 -1px 0 rgba(0,0,0,.5) inset,0 46px 75px -34px rgba(7,21,38,.52),0 18px 34px -20px rgba(7,21,38,.4); transform: translateX(-50%) perspective(1200px) rotateY(var(--pointer-x)) rotateX(var(--pointer-y)); transform-style: preserve-3d; transition: transform .75s cubic-bezier(.16,1,.3,1); }
+    :global(.flow-product::after) { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(115deg,rgba(255,255,255,.09),transparent 18%,transparent 72%,rgba(96,196,175,.035)); pointer-events: none; content: ''; }
+    :global(.flow-product-bar) { display: flex; height: 43px; align-items: center; gap: .55rem; padding: 0 .55rem; color: #fff; }
+    :global(.flow-product-bar strong) { font-size: 1rem; font-weight: 850; letter-spacing: -.06em; }
+    :global(.flow-product-bar > span) { color: #8fa0b6; font-size: .66rem; font-weight: 750; letter-spacing: .14em; }
+    :global(.flow-product-bar small) { margin-left: auto; color: #687a91; font-size: .48rem; font-weight: 750; letter-spacing: .13em; }
+    :global(.flow-screen) { position: relative; display: grid; min-height: 330px; grid-template-columns: .9fr 1.6fr .38fr; gap: clamp(1.2rem,2.2vw,2.5rem); align-items: center; padding: clamp(1.6rem,3vw,3.2rem); overflow: hidden; border: 1px solid rgba(156,187,220,.13); border-radius: 18px; background: radial-gradient(circle at 80% 12%,rgba(78,135,154,.14),transparent 32%),linear-gradient(145deg,#071426,#0a1c32 64%,#0a2034); box-shadow: 0 1px 0 rgba(255,255,255,.08) inset,0 18px 40px rgba(0,0,0,.24) inset; }
+    :global(.flow-screen::after) { position: absolute; inset: 0; background: linear-gradient(105deg,rgba(255,255,255,.045),transparent 22%,transparent 70%,rgba(255,255,255,.025)); pointer-events: none; content: ''; }
+    :global(.flow-screen-copy) { position: relative; z-index: 2; }
+    :global(.flow-screen-copy > span) { color: #80d0bf; font-size: .5rem; font-weight: 800; letter-spacing: .15em; }
+    :global(.flow-screen-copy h3) { margin: .85rem 0 .8rem; color: #f7fafc; font-size: clamp(1.85rem,3vw,3rem); font-weight: 620; letter-spacing: -.055em; line-height: .96; }
+    :global(.flow-screen-copy p) { margin: 0; color: #71839a; font-size: .67rem; line-height: 1.55; }
+    :global(.flow-track) { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(4,1fr); gap: .25rem; align-items: start; padding-top: 1.9rem; }
+    :global(.flow-track-line) { position: absolute; top: 2.56rem; right: 12.5%; left: 12.5%; height: 1px; overflow: visible; background: #263b54; }
+    :global(.flow-track-line i) { position: absolute; top: 0; left: 0; width: var(--flow-progress); height: 1px; background: linear-gradient(90deg,#66889a,#68d2bc); box-shadow: 0 0 14px rgba(104,210,188,.34); transition: width .8s cubic-bezier(.16,1,.3,1); }
+    :global(.flow-track-line em) { position: absolute; top: -3px; left: var(--flow-progress); width: 7px; height: 7px; border-radius: 50%; background: #d5fff6; box-shadow: 0 0 0 6px rgba(93,203,181,.12),0 0 18px rgba(110,225,202,.7); transform: translateX(-50%); transition: left .8s cubic-bezier(.16,1,.3,1); }
+    :global(.flow-stage) { position: relative; display: flex; min-width: 0; align-items: center; flex-direction: column; text-align: center; }
+    :global(.flow-stage > span) { margin-bottom: .68rem; color: #50627a; font-size: .54rem; font-weight: 750; letter-spacing: .08em; transition: color .45s ease; }
+    :global(.flow-stage > i) { position: relative; z-index: 2; width: 11px; height: 11px; margin-bottom: 1rem; border: 2px solid #344860; border-radius: 50%; background: #0b1d32; box-shadow: 0 0 0 5px #0a1b30; transition: border-color .45s ease,background .45s ease,box-shadow .45s ease; }
+    :global(.flow-stage strong) { color: #708096; font-size: clamp(.62rem,.8vw,.75rem); font-weight: 650; transition: color .45s ease; }
+    :global(.flow-stage small) { margin-top: .28rem; color: #42546b; font-size: .55rem; }
+    :global(.flow-stage.is-complete > span),:global(.flow-stage.is-complete strong) { color: #eef5f8; }
+    :global(.flow-stage.is-complete > i) { border-color: #73cbb9; background: #b7f5e8; box-shadow: 0 0 0 5px #0a1b30,0 0 18px rgba(94,205,182,.36); }
+    :global(.flow-stage.is-current > i) { transform: scale(1.12); }
+    :global(.flow-screen-proof) { position: relative; z-index: 2; display: flex; min-height: 190px; align-items: center; justify-content: center; flex-direction: column; border-left: 1px solid rgba(154,179,207,.13); }
+    :global(.flow-screen-proof span),:global(.flow-screen-proof small) { color: #60738a; font-size: .46rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; writing-mode: vertical-rl; }
+    :global(.flow-screen-proof strong) { max-height: 150px; margin: .75rem 0; overflow: hidden; color: #f5f8fb; font-size: .65rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; writing-mode: vertical-rl; }
+    :global(.flow-plaque-row) { position: relative; z-index: 3; display: grid; grid-template-columns: repeat(5,1fr); gap: .45rem; padding: .55rem .15rem; }
+    :global(.flow-plaque) { display: grid; min-width: 0; height: 42px; grid-template-columns: auto 1fr; gap: .55rem; align-items: center; padding: 0 .8rem; overflow: hidden; border: 1px solid rgba(175,198,220,.13); border-radius: 9px; background: rgba(255,255,255,.045); color: #8190a4; text-align: left; cursor: pointer; box-shadow: 0 1px 0 rgba(255,255,255,.04) inset; transition: color .35s ease,border-color .35s ease,background .35s ease,transform .5s cubic-bezier(.16,1,.3,1),box-shadow .35s ease; }
+    :global(.flow-plaque b) { color: #dce4ec; font: 700 .66rem var(--font-sans); }
+    :global(.flow-plaque span) { min-width: 0; overflow: hidden; font: 750 .48rem var(--font-sans); letter-spacing: .1em; text-overflow: ellipsis; white-space: nowrap; }
+    :global(.flow-plaque:hover:not(:disabled)) { border-color: rgba(171,218,209,.38); background: rgba(255,255,255,.08); color: #cbd8e3; transform: translateY(-1px); }
+    :global(.flow-plaque.is-active) { border-color: rgba(125,220,201,.72); background: #f4f8f8; color: #345b59; box-shadow: 0 0 0 1px rgba(113,213,193,.13),0 8px 22px rgba(0,0,0,.22); }
+    :global(.flow-plaque.is-active b) { color: #0a192f; }
+    :global(.flow-plaque:disabled) { opacity: .32; cursor: not-allowed; }
+    :global(.flow-plaque:focus-visible) { outline: 2px solid #9be3d4; outline-offset: 2px; }
+    :global(.flow-caption) { position: absolute; z-index: 3; bottom: 5.4rem; left: 1.9rem; display: flex; width: min(300px,31%); flex-direction: column; gap: .55rem; color: #0a192f; pointer-events: none; }
+    :global(.flow-caption span) { color: #7c8798; font-size: .55rem; font-weight: 800; letter-spacing: .14em; }
+    :global(.flow-caption strong) { font-size: clamp(1rem,1.4vw,1.2rem); font-weight: 620; letter-spacing: -.025em; line-height: 1.25; }
+    :global(.flow-selection) { position: absolute; z-index: 3; right: 1.9rem; bottom: 1.65rem; display: grid; min-width: 215px; grid-template-columns: auto 1fr; gap: .2rem .8rem; padding-left: 1rem; border-left: 1px solid rgba(10,25,47,.13); pointer-events: none; }
+    :global(.flow-selection span) { grid-row: 1/3; align-self: center; color: #7c8798; font-size: .56rem; font-weight: 800; letter-spacing: .09em; }
+    :global(.flow-selection strong) { color: #0a192f; font-size: .72rem; font-weight: 650; }
+    :global(.flow-selection small) { color: #687386; font-size: .66rem; }
+    .bw3-loading { height: clamp(680px,60vw,790px); background: #f2f4f6; color: #687386; box-shadow: 0 36px 90px rgba(25,37,58,.14); }.bw3-loading span { border-color: rgba(10,25,47,.12); border-top-color: #0a192f; }
+    .detail-price > span { color: #69758a; font-size: .68rem; line-height: 1.35; }
+
+    .auction-ledger { width: min(1320px,100%); margin: 1.1rem auto 0; overflow: hidden; border: 1px solid rgba(10,25,47,.09); border-radius: 30px; background: rgba(255,255,255,.82); box-shadow: 0 20px 60px rgba(19,33,59,.08); }
+    .ledger-head { display: flex; align-items: end; justify-content: space-between; gap: 2rem; padding: 2rem; border-bottom: 1px solid rgba(10,25,47,.08); }.ledger-head > div:first-child > span { color: #7f8999; font-size: .57rem; font-weight: 800; letter-spacing: .13em; }.ledger-head h3 { margin: .45rem 0 0; color: #0a192f; font-size: clamp(1.6rem,2.4vw,2.3rem); letter-spacing: -.045em; }.ledger-tabs { display: flex; padding: .25rem; border-radius: 999px; background: #eef0f3; }.ledger-tabs button { min-height: 36px; padding: 0 1rem; border: 0; border-radius: 999px; background: transparent; color: #737d8d; font: 650 .7rem var(--font-sans); cursor: pointer; }.ledger-tabs button.is-active { background: #fff; color: #0a192f; box-shadow: 0 2px 9px rgba(10,25,47,.1); }.ledger-tabs span { margin-left: .3rem; color: #929baa; }
+    :global(.ledger-table) { display: grid; }
+    :global(.ledger-row) { display: grid; min-height: 86px; grid-template-columns: 48px minmax(240px,1.3fr) minmax(160px,.7fr) auto; gap: 1.25rem; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid rgba(10,25,47,.075); }
+    :global(.ledger-row:last-child) { border-bottom: 0; }
+    :global(.ledger-id) { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; background: #f0f2f5; color: #606b7c; font-size: .64rem; font-weight: 800; }
+    :global(.ledger-row > div) { display: flex; min-width: 0; flex-direction: column; gap: .28rem; }
+    :global(.ledger-row strong) { color: #0a192f; font-size: .82rem; }
+    :global(.ledger-row small),:global(.ledger-row time) { color: #7e8898; font-size: .67rem; }
+    :global(.ledger-row button) { min-height: 40px; padding: 0 1.15rem; border: 1px solid rgba(10,25,47,.18); border-radius: 999px; background: #fff; color: #0a192f; font: 650 .72rem var(--font-sans); cursor: pointer; transition: background .2s ease,color .2s ease,transform .2s var(--ease-ios); }
+    :global(.ledger-row button:hover) { background: #0a192f; color: #fff; transform: translateY(-1px); }
+    :global(.history-row) { grid-template-columns: 48px minmax(240px,1.3fr) minmax(160px,.7fr) minmax(90px,.3fr); }
+    :global(.ledger-empty) { padding: 4rem 2rem; text-align: center; }
+    :global(.ledger-empty strong) { color: #0a192f; }
+    :global(.ledger-empty p) { margin: .55rem 0 0; color: #7b8494; font-size: .78rem; }
+    .auction-rules { width: min(1400px,100%); margin: 0 auto; padding: clamp(4.5rem,6vw,6rem) 5%; }.rules-grid { display: grid; grid-template-columns: repeat(3,1fr); margin-top: 3rem; border-top: 1px solid rgba(10,25,47,.12); }.rules-grid article { min-height: 250px; padding: 1.8rem 2rem; border-right: 1px solid rgba(10,25,47,.1); }.rules-grid article:first-child { padding-left: 0; }.rules-grid article:last-child { border-right: 0; }.rules-grid span { color: #5969d8; font-size: .62rem; font-weight: 800; }.rules-grid h3 { margin: 4.2rem 0 .75rem; color: #0a192f; font-size: 1.25rem; letter-spacing: -.03em; }.rules-grid p { margin: 0; color: #687386; font-size: .8rem; line-height: 1.6; }
+
+    .bid-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }.bid-fields[hidden] { display: none; }.bid-fields label { display: grid; gap: .45rem; color: #596477; font-size: .68rem; font-weight: 650; }.bid-fields label:nth-child(2),.bid-fields label:nth-child(4) { grid-column: auto; }.bid-fields label:nth-child(3) { grid-column: 1/-1; }.bid-fields label small { color: #9aa2af; font-weight: 500; }.bid-fields input:not([type="checkbox"]) { width: 100%; min-height: 48px; padding: 0 .9rem; border: 1px solid #d9dee6; border-radius: 12px; outline: 0; background: #fff; color: #0a192f; font: 500 .82rem var(--font-sans); box-shadow: inset 0 1px 2px rgba(10,25,47,.03); transition: border-color .2s ease,box-shadow .2s ease; }.bid-fields input:not([type="checkbox"]):focus { border-color: #7b89e6; box-shadow: 0 0 0 3px rgba(86,103,216,.1); }.bid-consent { grid-column: 1/-1 !important; display: flex !important; grid-template-columns: none; gap: .65rem !important; align-items: flex-start; line-height: 1.45; }.bid-consent input { width: 17px; height: 17px; margin: .05rem 0 0; accent-color: #0a192f; }.bid-consent span { flex: 1; }.bid-consent a { color: #0a192f; text-underline-offset: 3px; }.bid-continue { grid-column: 1/-1; display: inline-flex; min-height: 52px; align-items: center; justify-content: center; gap: .5rem; margin-top: .25rem; border: 0; border-radius: 999px; background: #0a192f; color: #fff; font: 650 .86rem var(--font-sans); cursor: pointer; }.bid-continue:disabled { opacity: .65; cursor: wait; }.payment-total > span { color: #7b8494; font-size: .68rem; }.payment-total > span b { color: #0a192f; }
+
+    @media(max-width:900px){:global(.cord-flow){height:650px}:global(.flow-product){top:4.5rem;width:calc(100% - 2rem);transform:translateX(-50%)}:global(.flow-screen){min-height:345px;grid-template-columns:.78fr 1.5fr}:global(.flow-screen-proof){display:none}:global(.flow-caption){bottom:4.7rem}:global(.flow-selection){display:none}:global(.ledger-row){grid-template-columns:42px 1fr auto}:global(.ledger-row>div:nth-child(3)){display:none}:global(.history-row){grid-template-columns:42px 1fr auto}.rules-grid{grid-template-columns:1fr}.rules-grid article,.rules-grid article:first-child{min-height:190px;padding:1.5rem 0;border-right:0;border-bottom:1px solid rgba(10,25,47,.1)}.rules-grid h3{margin-top:2.7rem}}
+    @media(max-width:620px){.flow-preview{min-height:480px;grid-template-columns:repeat(2,1fr);padding:1rem}.flow-preview>.flow-preview-step{min-height:210px}.flow-preview-step span{margin-top:2rem}.flow-preview-line{display:none!important}:global(.flow-top){top:1.1rem;left:1.15rem;right:1.15rem}:global(.flow-top span:last-child),:global(.flow-caption){display:none}:global(.flow-product){top:3.7rem;width:calc(100% - 1rem);padding:.45rem;border-radius:20px}:global(.flow-product-bar){height:38px}:global(.flow-product-bar small){display:none}:global(.flow-screen){display:block;min-height:388px;padding:1.35rem;border-radius:15px}:global(.flow-screen-copy h3){font-size:2rem}:global(.flow-screen-copy p){display:none}:global(.flow-track){margin-top:3.3rem}:global(.flow-stage strong){font-size:.58rem}:global(.flow-stage small){display:none}:global(.flow-plaque-row){gap:.25rem;padding:.38rem .05rem}:global(.flow-plaque){height:36px;display:grid;place-items:center;padding:0}:global(.flow-plaque span){display:none}:global(.flow-plaque b){font-size:.6rem}.ledger-head{align-items:flex-start;flex-direction:column;padding:1.5rem}:global(.ledger-row){min-height:92px;grid-template-columns:36px 1fr auto;gap:.75rem;padding:1rem}:global(.ledger-row button){padding:0 .8rem}:global(.history-row){grid-template-columns:36px 1fr}:global(.history-row>strong),:global(.history-row>time){grid-column:2}.bid-fields{grid-template-columns:1fr}.bid-fields label:nth-child(n){grid-column:1}.auction-rules{padding-inline:1rem}}
+
+    /* Cordones de marcas: una composición abierta, sin pantallas ni tarjetas anidadas. */
+    :global(.cord-flow) { position: relative; width: 100vw; margin-left: calc(50% - 50vw); height: clamp(430px,42vw,600px); overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none; isolation: isolate; contain: layout style; }
+    :global(.cord-flow::before) { display: none; }
+    :global(.clotheslines) { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+    :global(.clotheslines path) { fill: none; vector-effect: non-scaling-stroke; }
+    :global(.cord-shadow-line) { stroke: rgba(10,25,47,.13); stroke-width: 11; filter: url(#cord-shadow); }
+    :global(.cord-main-line) { stroke: url(#cord-line); stroke-width: 6; stroke-linecap: round; }
+    :global(.cord-highlight-line) { stroke: rgba(255,255,255,.72); stroke-width: 1.2; stroke-linecap: round; opacity: .82; }
+    :global(.cord-marks) { position: absolute; inset: 0; }
+    :global(.cord-mark-anchor) { --item-wind:0deg; position: absolute; z-index: 2; top: var(--spot-y); left: var(--spot-x); width: clamp(76px,7.5vw,120px); transform: translateX(-50%) rotate(calc(var(--spot-rest) + var(--item-wind))); transform-origin: 50% 0; }
+    :global(.cord-mark-anchor::before) { position: absolute; z-index: -1; top: -1px; left: 50%; width: 1px; height: 25px; background: linear-gradient(#465268,#aab2bf 65%,#f7f8fa); box-shadow: 1px 0 0 rgba(255,255,255,.72); content: ''; }
+    :global(.cord-clip) { position: absolute; z-index: 3; top: -8px; left: 50%; width: 15px; height: 23px; border: 1px solid rgba(10,25,47,.18); border-radius: 6px 6px 4px 4px; background: linear-gradient(100deg,#5d6675 0,#dfe3e8 27%,#8e98a6 56%,#f6f7f8 76%,#697383 100%); box-shadow: 0 5px 9px rgba(10,25,47,.16),inset 0 1px 0 rgba(255,255,255,.85); transform: translateX(-50%); }
+    :global(.cord-clip::after) { position: absolute; top: 5px; right: 3px; left: 3px; height: 1px; background: rgba(10,25,47,.22); box-shadow: 0 2px 0 rgba(255,255,255,.5); content: ''; }
+    :global(.cord-mark) { display: grid; width: 100%; aspect-ratio: 1; place-items: center; margin-top: 20px; padding: 0; overflow: hidden; border: 1px solid rgba(10,25,47,.11); border-radius: 24%; outline: 0; background: linear-gradient(145deg,rgba(255,255,255,.98),rgba(242,245,248,.94)); color: #0a192f; box-shadow: 0 1px 0 #fff inset,0 14px 28px rgba(10,25,47,.13),0 3px 8px rgba(10,25,47,.08); cursor: pointer; backdrop-filter: blur(18px) saturate(1.12); -webkit-backdrop-filter: blur(18px) saturate(1.12); transition: border-color .35s ease,box-shadow .55s cubic-bezier(.16,1,.3,1),filter .35s ease; }
+    :global(.cord-mark::after) { position: absolute; inset: 21px 0 0; border-radius: 24%; background: linear-gradient(125deg,rgba(255,255,255,.52),transparent 34%); pointer-events: none; content: ''; }
+    :global(.cord-mark:hover) { border-color: rgba(10,25,47,.23); box-shadow: 0 1px 0 #fff inset,0 22px 42px rgba(10,25,47,.19),0 5px 12px rgba(10,25,47,.1); filter: saturate(1.06); }
+    :global(.cord-mark:focus-visible) { outline: 2px solid #5969d8; outline-offset: 5px; }
+    :global(.cord-mark.is-active) { border-color: rgba(68,179,154,.48); box-shadow: 0 0 0 5px rgba(68,179,154,.1),0 18px 38px rgba(10,25,47,.17); }
+    :global(.cord-mark img) { position: relative; z-index: 1; width: 72%; height: 72%; object-fit: contain; }
+    :global(.cord-mark-empty) { position: relative; z-index: 1; display: grid; width: 100%; height: 100%; place-items: center; }
+    :global(.cord-mark-empty::before) { width: 28%; aspect-ratio: 1; border: 1px solid rgba(10,25,47,.14); border-radius: 50%; background: rgba(255,255,255,.68); box-shadow: 0 4px 12px rgba(10,25,47,.06); content: ''; }
+    :global(.cord-mark-empty i),:global(.cord-mark-empty i::after) { position: absolute; width: 13%; height: 1px; background: #7d8797; content: ''; }
+    :global(.cord-mark-empty i::after) { inset: 0; width: 100%; transform: rotate(90deg); }
+    .bw3-loading { height: clamp(430px,42vw,560px); border-radius: 0; background: transparent; box-shadow: none; }
+
+    .bid-logo { grid-column: 1/-1 !important; }
+    .bid-logo-drop { position: relative; display: grid; min-height: 110px; place-items: center; overflow: hidden; border: 1px dashed #b9c1cd; border-radius: 15px; background: #f7f8fa; color: #687386; cursor: pointer; transition: border-color .2s ease,background .2s ease; }
+    .bid-logo-drop:hover { border-color: #6977dc; background: #f4f5fb; }
+    .bid-logo-drop input { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+    .bid-logo-drop > span { display: flex; align-items: center; gap: .45rem; font-size: .72rem; }
+    .bid-logo-drop b { font-size: 1.1rem; font-weight: 400; }
+    .bid-logo-drop img { width: 72px; height: 72px; object-fit: contain; }
+    .bid-logo-drop img:not([hidden]) + span { position: absolute; right: .75rem; bottom: .6rem; padding: .3rem .5rem; border-radius: 999px; background: rgba(255,255,255,.9); font-size: .58rem; }
+
+    @keyframes cord-breathe { 0%,100% { transform: translateX(-50%) rotate(var(--spot-rest)); } 50% { transform: translateX(-50%) translateY(2px) rotate(calc(var(--spot-rest) + 1.2deg)); } }
+    @media(max-width:900px) { :global(.cord-flow),.bw3-loading { height: 470px; } :global(.cord-mark-anchor) { width: clamp(62px,9vw,82px); } }
+    @media(max-width:620px) { :global(.cord-flow),.bw3-loading { height: 410px; } :global(.cord-mark-anchor) { width: clamp(52px,14vw,66px); } :global(.cord-clip) { width: 12px; height: 19px; } :global(.cord-mark-anchor::before) { height: 20px; } :global(.cord-mark) { margin-top: 16px; border-radius: 20%; } }
+    @media(prefers-reduced-motion:reduce) { :global(.cord-mark-anchor) { animation: none; transition: none; } }
+</style>

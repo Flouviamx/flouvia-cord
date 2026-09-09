@@ -11,6 +11,7 @@
 
 import { sql, withOrgTx } from './db';
 import { after } from './after';
+import { publicDocumentUrl } from './public-links';
 import { enqueueForSubscribers, flushNow, newEventId } from './webhook-delivery';
 
 // Catálogo de eventos públicos (lo consume la UI y la validación de la API).
@@ -120,14 +121,13 @@ export async function dispatchPaymentPartial(orgId: string, cotizacionId: string
 // eventos como payment.partial pueden llevar campos propios sin que
 // dispatchQuoteEvent tenga que conocerlos.
 async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSummary, extra?: Record<string, unknown>): Promise<void> {
-    const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
     return emitToSubscribers(orgId, evento, {
         id: q.id,
         folio: q.folio,
         status: q.status,
         total: Number(q.total ?? 0),
         cliente: q.empresa ?? null,
-        link_publico: `${base}/q/${q.public_token}`,
+        link_publico: await publicDocumentUrl(orgId, 'q', q.public_token),
         ...extra,
     });
 }
@@ -151,7 +151,6 @@ export async function dispatchInvoiceEvent(orgId: string, documentoId: string, e
              where d.id = ${documentoId} and d.org_id = ${orgId}`);
         const d = dRows[0];
         if (!d) return;
-        const base = import.meta.env.PUBLIC_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://cordhq.app';
         await emitToSubscribers(orgId, evento, {
             id: d.id,
             object: 'invoice',
@@ -169,7 +168,7 @@ export async function dispatchInvoiceEvent(orgId: string, documentoId: string, e
             vence: d.due_date ?? null,
             cliente: d.empresa ?? null,
             cotizacion_id: d.cotizacion_id ?? null,
-            link_publico: d.public_token ? `${base}/i/${d.public_token}` : null,
+            link_publico: d.public_token ? await publicDocumentUrl(orgId, 'i', d.public_token as string) : null,
         });
     } catch {
         /* nunca romper la operación principal por un webhook */

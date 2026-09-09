@@ -1,0 +1,108 @@
+---
+title: "Cartera y cobranza operativa"
+description: "Cómo priorizar cuentas por cobrar, registrar promesas, enviar recordatorios, marcar pagos manuales y distinguir la operación diaria del informe de cobranza."
+lastUpdated: "2026-08-29"
+reviewedBy: "Producto y operaciones de Cord"
+appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
+availablePlans: [Pro, Scale, Developer]
+prerequisites: ["Permiso Cobranza", "Cotizaciones aprobadas o facturas abiertas con saldo"]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Cartera y cobranza operativa</h1>
+  <p class="page-subtitle">Qué cobrar hoy, a quién contactar y cómo registrar el acuerdo sin duplicar saldos.</p>
+</header>
+
+**Cobranza** (`/app/cobranza`) es una lista operativa al día de hoy. No tiene selector
+histórico porque responde “¿qué necesita acción ahora?”. El análisis de aging, DSO y
+comportamiento vive en **Informes > Cobranza y cartera**.
+
+El módulo requiere Pro o superior y el permiso **Cobranza**.
+
+## Qué entra a cuentas por cobrar
+
+Cord unifica dos orígenes:
+
+- cotizaciones aprobadas con saldo pendiente;
+- facturas abiertas con saldo pendiente.
+
+Cuando una cotización ya tiene una factura abierta, la cartera muestra la factura y
+no duplica la misma operación como cotización. El saldo considera pagos parciales e
+interés moratorio registrado.
+
+## Resumen de hoy
+
+Los widgets destacan:
+
+- total vencido y número de cuentas;
+- documentos que vencen en los próximos siete días;
+- promesas cuya fecha ya llegó;
+- vencidos sin una promesa registrada;
+- prioridad por combinación de monto y días vencidos;
+- clientes que superan su límite de crédito;
+- distribución compacta de antigüedad.
+
+Puedes ocultar, ordenar o redimensionar widgets. Esa preferencia es personal y no
+cambia el cálculo de la cartera.
+
+## Filtros y tabla accionable
+
+La tabla permite ver todas, vencidas, con promesa o sin gestión. Cada fila muestra
+cliente, folio, términos, vencimiento, estado y saldo. Las acciones principales son:
+
+- registrar o editar una promesa de pago;
+- preparar un recordatorio por WhatsApp;
+- marcar manualmente como cobrada una operación;
+- abrir el documento de origen.
+
+<Callout type="warning">
+**Marcar cobrada** es un registro manual. No crea un cargo, no confirma un depósito del proveedor
+y no debe usarse para simular ingreso procesado. Verifica el pago externo antes
+de confirmar.
+</Callout>
+
+## Promesas de pago
+
+Una promesa guarda fecha, monto opcional y una nota de hasta 400 caracteres. Su estado
+puede ser pendiente, cumplida o incumplida.
+
+La promesa sirve para ordenar seguimiento y medir cumplimiento. No modifica el saldo,
+no extiende automáticamente el vencimiento, no ejecuta un cobro y no evita que la
+cuenta siga apareciendo vencida.
+
+Al editar una promesa vigente, Cord sustituye el registro operativo actual. Puedes
+marcarla cumplida desde la lista o eliminarla si fue capturada por error.
+
+## Recordatorio por WhatsApp
+
+Cord prepara un mensaje con cliente, folio, saldo, vencimiento y enlace del documento.
+La entrega ocurre en WhatsApp y depende del número guardado en la ficha del cliente.
+Revisa destinatario, texto y enlace antes de enviarlo.
+
+## Interés moratorio
+
+La aplicación automática está suspendida mientras concluye la revisión jurídica por
+país. Una tasa guardada anteriormente permanece como dato histórico, pero el proceso
+mensual no genera cargos nuevos. Los intereses ya registrados siguen apareciendo
+separados para conservar la trazabilidad del saldo.
+
+## Cobranza manual e IA
+
+- **Pro:** cartera, prioridades, promesas y seguimiento manual.
+- **Scale y Developer:** además pueden activar el [Agente de cobranza con IA](/docs/pagos/cobranza-ia).
+
+El modo de aprobación del agente conserva revisión humana antes del envío. El modo
+automático amplía su autoridad según la configuración; revisa exclusiones y límites
+antes de activarlo.
+
+## Problemas frecuentes
+
+**Una operación aparece dos veces.** Comprueba si realmente son documentos distintos;
+la vista unificada debe ocultar la cotización cuando existe factura abierta asociada.
+
+**Una promesa no bajó el saldo.** Es intencional: solo un pago registrado lo reduce.
+
+**No aparece Cobranza.** Revisa plan Pro o superior y permiso Cobranza.
+
+**El saldo no coincide con el total original.** Revisa pagos parciales, notas de crédito,
+reembolsos e intereses sobre saldo.

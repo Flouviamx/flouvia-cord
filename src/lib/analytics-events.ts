@@ -490,10 +490,47 @@ export const ANALYTICS_EVENTS = {
     since: 2,
   },
 
-  // Carril `docs` (buscador de la documentación): lo instrumenta DocsLayout.astro
-  // vía `trackDocsEvent` → `cordTrack`. Cuando ese cambio aterrice, agrega aquí
-  // docs_search_opened / _performed / _zero_results / _result_clicked /
-  // docs_feedback_submitted y registra el envoltorio en analytics-contract-check.
+  // Documentación pública: eventos existentes de trackDocsEvent.
+  docs_search_opened: {
+    rail: 'docs', surface: 'client', scope: 'user', revenue: false,
+    insertIdFrom: null,
+    required: { page_path: 'string', language: 'string', source: ['button', 'keyboard_shortcut'] },
+    optional: {},
+    description: 'Se abrió el buscador de documentación.',
+    since: 2,
+  },
+  docs_search_performed: {
+    rail: 'docs', surface: 'client', scope: 'user', revenue: false,
+    insertIdFrom: null,
+    required: { page_path: 'string', language: 'string', query: 'string', query_length: 'number', results_count: 'number' },
+    optional: {},
+    description: 'Se buscó en la documentación; el término pasa por el saneamiento del buscador.',
+    since: 2,
+  },
+  docs_search_zero_results: {
+    rail: 'docs', surface: 'client', scope: 'user', revenue: false,
+    insertIdFrom: null,
+    required: { page_path: 'string', language: 'string', query: 'string', query_length: 'number', results_count: 'number' },
+    optional: {},
+    description: 'Una búsqueda de documentación no encontró resultados.',
+    since: 2,
+  },
+  docs_search_result_clicked: {
+    rail: 'docs', surface: 'client', scope: 'user', revenue: false,
+    insertIdFrom: null,
+    required: { page_path: 'string', language: 'string', query: 'string', result_path: 'string', result_position: 'number' },
+    optional: {},
+    description: 'Se abrió un resultado del buscador de documentación.',
+    since: 2,
+  },
+  docs_feedback_submitted: {
+    rail: 'docs', surface: 'client', scope: 'user', revenue: false,
+    insertIdFrom: null,
+    required: { page_path: 'string', language: 'string', helpful: 'boolean' },
+    optional: {},
+    description: 'El visitante indicó si una página de documentación le resultó útil.',
+    since: 2,
+  },
 } as const satisfies Record<string, EventSpec>;
 
 // ── Máquina de tipos ───────────────────────────────────────────────────────

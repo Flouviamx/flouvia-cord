@@ -1,38 +1,92 @@
 ---
-title: "Change your Cord plan"
-description: "Manage your Cord subscription: plans, monthly usage, and payment method."
+title: "Your Cord subscription"
+description: "Plans in MXN, USD and EUR, allowances, overage and existing contracts."
 category: "Account & Team"
-order: 4
 ---
 
-Cord is a freemium SaaS: you pay a monthly fee to use the platform. Payments handled by Cord Payments have a separate method-specific fee that is shown and accepted before activation.
+# Your Cord subscription
 
-### The plans
 
-Your currency follows your business's country: **Mexico is billed in pesos (MXN)**,
-everywhere else **in US dollars (USD)**. That's the currency of your Cord
-subscription, not of your sales — you can still quote your own clients in any
-currency you want.
+## Currency and base price
 
-| Plan | USD/mo | MXN/mo | For whom |
-| :--- | :--- | :--- | :--- |
-| **Free** | $0 | $0 | Try it: 5 quotes, 50 products/clients, 3 AI drafts per month, "Powered by Cord". |
-| **Starter** | $12 | $240 | Solo sellers: 50 quotes, 500 products/clients, 20 AI + 3 CFDI per month, your brand, CSV. |
-| **Professional** | $30 | $590 | Teams: unlimited quotes, 5 users, 50 AI + 20 CFDI, live tracking, analytics, audit log. |
-| **Scale** | $70 | $1,390 | Operations: 15 users, 500 AI + 100 CFDI, approvals, collections, custom SMTP. |
-| **Developer** | $150 | $2,990 | Integrate: unlimited users/AI, 1,000 CFDI + 50,000 API per month, cheaper overages. |
+Your subscription pays for Cord. Cord Payments transaction fees and the currency
+you use to sell to customers are managed separately.
 
-What you see is what you pay: nothing is added at checkout. **Annual** billing
-gives you 2 months free (you pay for 10).
+| Country for new subscriptions | Currency |
+| --- | --- |
+| Mexico | MXN |
+| Spain, Germany and France | EUR |
+| Other supported markets | USD |
 
-### Changing plans
+Existing contracts keep their currency. Changing country, language or the pricing
+selector does not convert an active subscription. Check the currency and total
+in the checkout summary; refresh before paying if they do not match.
 
-1. Go to **Settings > Plans & subscription > Subscription** (`/app/ajustes/plan`).
-2. Pick the plan and cycle (monthly or annual). The secure billing checkout opens.
-3. The change applies immediately; your included quota adjusts to the new plan.
+| Plan | MXN monthly | USD monthly | EUR monthly | EUR annually |
+| --- | --- | --- | --- | --- |
+| Free | 0 | 0 | 0 | 0 |
+| Starter | 240 | 12 | 12 | 120 |
+| Professional | 590 | 30 | 30 | 300 |
+| Scale | 1,390 | 70 | 70 | 700 |
+| Developer | 2,990 | 150 | Custom | Custom |
 
-To change your card, view receipts, update your billing details, or cancel, go to [billing.cordhq.app](https://billing.cordhq.app), your billing portal. You get there from **Settings > Plans & subscription** with the session you already have. If your business is in Mexico, you can also **issue the CFDI** for each subscription payment there.
+The annual base price equals ten monthly payments and is billed yearly. Overage
+is calculated separately; it is not part of the two-month saving. Annual selection
+is preserved through registration and checkout.
 
-### Overages (usage-based)
+## Included usage and overage
 
-Each paid plan includes a monthly quota of AI, CFDI, API, and users. If you exceed it, from the Professional plan onward the **overage is billed by usage** (e.g. extra CFDI per stamp, extra AI per use) at the end of the period. Free and Starter plans have hard caps instead of overage. You can see your monthly usage on the same Subscription screen.
+| Plan | AI actions monthly | Invoices monthly | API requests monthly | Included users |
+| --- | --- | --- | --- | --- |
+| Free | 3 | 3 | 100 | 1 |
+| Starter | 20 | 3 | 1,000 | 1 |
+| Professional | 50 | 20 | 5,000 | 5 |
+| Scale | 500 | 100 | 10,000 | 15 |
+| Developer | No numeric quota | 1,000 | 50,000 | No numeric quota |
+
+Free has hard limits. Starter supports AI, invoice and API overage but keeps a
+single user. Professional and Scale also support additional users. Free quote
+sending has a five-per-month cap; it cannot be bypassed by paying overage. Review
+usage and limits under **Settings > Plans and subscription**.
+
+For EUR contracts, rates above the included quota are:
+
+| Extra usage | Starter | Professional | Scale |
+| --- | --- | --- | --- |
+| AI action | EUR 0.20 | EUR 0.175 | EUR 0.15 |
+| Invoice | EUR 0.15 | EUR 0.15 | EUR 0.10 |
+| 100 API requests | EUR 0.03 | EUR 0.03 | EUR 0.02 |
+| User per month | Unavailable | EUR 15 | EUR 15 |
+
+These are fixed contract rates, not daily currency conversions. Only usage above
+the allowance is billed; included usage is not charged twice. Contact sales for
+Developer pricing in EUR.
+
+## Manage your plan and payments
+
+**Settings > Plans and subscription** shows your plan, usage and change options.
+Open [the billing portal](https://billing.cordhq.app) from there to manage your
+card and view charges and receipts.
+
+- **Upgrade:** requires confirmation of the relevant payment before new paid
+  capabilities become active.
+- **Downgrade or cancellation:** follows the paid period; check the effective
+  date displayed in the portal.
+- **Pending payment:** does not guarantee paid access. Cord verifies an active
+  subscription with a covered period. Without that evidence, Free permissions
+  apply while payment recovery remains accessible.
+
+Data is preserved after a downgrade; features and resources beyond the new
+contract stop operating. Removing Cord branding requires Starter or above. Public
+surfaces restore the branding when the entitlement no longer applies. Custom link
+domains are not part of this update; activation is communicated separately.
+
+## Subscription documents
+
+A charge receipt and a fiscal invoice are different documents. For an invoice
+for a payment in Mexico, complete your tax details and use the available option
+in the portal. Check the details before issuing. Availability and status are
+shown per charge; a receipt does not replace reviewing your accounting obligations
+in each country.
+
+> Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.

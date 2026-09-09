@@ -22,4 +22,7 @@ export const OPS_AUDIT_LABELS: Record<string, string> = {
   'ops.organization_deleted': 'Organización eliminada',
   'ops.database_table_viewed': 'Tabla consultada',
   'ops.privileged_session_revoked': 'Sesión Ops revocada',
+  'ops.status_incident_created': 'Incidente público creado',
+  'ops.status_incident_updated': 'Incidente público actualizado',
+  'ops.status_incident_status_changed': 'Estado de incidente actualizado',
 };

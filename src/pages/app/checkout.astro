@@ -29,7 +29,7 @@ const CUR = await platformCurrencyForOrg(await getActiveOrgId());
 
 // Validar contra el catálogo (gratis, inexistentes o `custom` no van a checkout
 // — Developer no tiene precio de autoservicio, se contrata hablando con ventas).
-const plan = PLANES.find((p) => p.id === planId && p.precio[CUR] > 0 && !p.custom);
+const plan = PLANES.find((p) => p.id === planId && (p.precio[CUR] ?? 0) > 0 && !p.custom);
 if (!plan) {
     const requested = PLANES.find((p) => p.id === planId);
     if (requested?.custom) return Astro.redirect(requested.ctaHref);
@@ -37,7 +37,7 @@ if (!plan) {
 }
 
 const money = (n: number) => planMoney(n, CUR, L);
-const precio = cycle === 'anual' ? precioAnualTotal(plan.precio[CUR]) : plan.precio[CUR];
+const precio = cycle === 'anual' ? precioAnualTotal((plan.precio[CUR] ?? 0)) : (plan.precio[CUR] ?? 0);
 
 const CHK_T = {
     facturacionNoConfig: t(L, 'chk.facturacion_no_config'),
@@ -70,7 +70,7 @@ const CHK_T = {
             <a href="/app/ajustes/plan" class="co-back">{t(L, 'chk.cambiar_plan')}</a>
         </aside>
 
-        <div class="co-form" data-plan={plan.id} data-cycle={cycle} data-i18n={JSON.stringify(CHK_T)}>
+        <div class="co-form" data-plan={plan.id} data-cycle={cycle} data-currency={CUR} data-i18n={JSON.stringify(CHK_T)}>
             <div id="payment-element">
                 <div class="co-loading">{t(L, 'chk.cargando_pago')}</div>
             </div>
@@ -113,7 +113,7 @@ const CHK_T = {
             const r = await fetch('/api/billing/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan: form?.dataset.plan, cycle: form?.dataset.cycle, ui: 'element' }),
+                body: JSON.stringify({ plan: form?.dataset.plan, cycle: form?.dataset.cycle, expectedCurrency: form?.dataset.currency, ui: 'element' }),
             });
             const data = await r.json().catch(() => ({}));
             if (r.ok && data.redirect_url) {

@@ -404,7 +404,7 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   //
   // Antes se tomaba `fiscal_currency` como etiqueta de importes que seguían en
   // `base_currency` y `fx_rate` no se leía en ningún lado: una venta de USD 1,000
-  // se facturaba como "MXN 1,000". Ver docs/historial-billing-cobros.md.
+  // se facturaba como "MXN 1,000". Ver docs/historial/billing-cobros.md.
   const currency = normalizeCurrency(
     (head.base_currency as string) || (head.org_moneda as string) || profile.currency,
   );

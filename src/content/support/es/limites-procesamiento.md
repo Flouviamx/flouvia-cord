@@ -1,28 +1,22 @@
 ---
 title: "Límites de procesamiento"
-description: "Montos máximos transaccionales y cómo solicitar un aumento."
+description: "Cómo se determinan los límites de pago y qué hacer si una operación es rechazada."
 category: "Pagos y Depósitos"
 ---
 
-Como cualquier proveedor de pagos sujeto a reglas contra el lavado de dinero, los procesadores integrados en Cord establecen límites de procesamiento de transacciones para cuentas nuevas. Estos límites aplican a la cuenta conectada de pagos, disponible hoy para negocios domiciliados en México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia.
+Cord no publica un tope universal por transacción o por mes. La disponibilidad y los límites de cada cobro pueden variar según la cuenta conectada, la divisa, el método de pago, el país y la evaluación del proveedor de pagos.
 
-### Límites por transacción con tarjeta (cobros en pesos mexicanos)
+Un plan de Cord no garantiza que una operación concreta será aceptada. El banco emisor, la cuenta conectada o el proveedor también pueden rechazarla o pedir autenticación adicional.
 
-Para cuentas de reciente creación (primeros 30 días) que cobran en pesos mexicanos:
-- **Cobro máximo por transacción:** $50,000 MXN.
-- **Volumen máximo mensual:** $300,000 MXN.
+### Si un cobro es rechazado
 
-Si envías una liga de pago a un cliente por $100,000 MXN e intenta pagarla con tarjeta en este periodo inicial, la transacción será declinada por nuestro motor de fraude.
+1. Revisa el mensaje y la referencia mostrados por Cord.
+2. Confirma que el método, la divisa y el monto estén habilitados en tu cuenta de cobros.
+3. Pide al cliente que verifique la operación con su banco cuando el rechazo provenga del emisor.
+4. Si el problema continúa, contacta a soporte con la hora aproximada y la referencia. No envíes datos completos de tarjeta.
 
-Para cobros en otras divisas soportadas (USD, CAD, BRL, EUR, GBP), el límite inicial de la cuenta lo determina la verificación de riesgo del país correspondiente y puede diferir de las cifras anteriores; consúltalo directamente en **Ajustes › Cobros**.
+Registrar un pago manual en Cord no procesa ni mueve dinero. Úsalo solamente después de verificar la transferencia o el pago por un canal independiente.
 
-### Pagos por transferencia (SPEI, exclusivo de México)
+### Prevención de fraude
 
-Los pagos recibidos vía transferencia electrónica (SPEI) utilizando las cuentas CLABE dinámicas que Cord genera por cotización **no tienen límite**. Puedes cobrar facturas de millones de pesos por esta vía sin fricciones, ya que el riesgo de fraude/contracargo es nulo. Esta transferencia solo existe para cobros en pesos mexicanos; en el resto de los países soportados no hay un equivalente y el cobro en línea es siempre con tarjeta.
-
-### Solicitar aumento de límites de tarjeta
-
-Si tu facturación corporativa requiere procesar cobros más altos con tarjeta corporativa (B2B):
-1. Ve a **Ajustes › Cobros**.
-2. Sube tus estados de cuenta bancarios de los últimos 3 meses y, si tu negocio está en México, tu Declaración Anual (en otros países, el equivalente que acredite tus ingresos).
-3. Nuestro equipo de riesgos elevará tu límite de procesamiento transaccional de forma permanente en menos de 48 horas.
+El proveedor de pagos puede evaluar el riesgo y solicitar 3D Secure u otra autenticación. Cord muestra el resultado disponible, pero no promete la aprobación de una transacción ni opera un motor antifraude propio independiente del proveedor.

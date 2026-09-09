@@ -11,7 +11,8 @@ import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db
 import { currentUserId } from '../../../lib/context';
 import { requirePerm } from '../../../lib/queries';
 import { getCobranzaConfig, renderCollectionEmail } from '../../../lib/agents/cobranza-run';
-import { sendEmail, siteOrigin } from '../../../lib/email';
+import { sendEmail } from '../../../lib/email';
+import { publicDocumentUrl } from '../../../lib/public-links';
 import { rateLimit } from '../../../lib/ratelimit';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 
@@ -52,16 +53,18 @@ export const POST: APIRoute = async ({ request }) => {
     if (!q.cliente_email) return json({ error: 'Este cliente no tiene correo registrado.' }, 422);
 
     const cfg = await getCobranzaConfig(orgId);
-    const origin = siteOrigin();
     const cobraOnline = !!q.cobra_online;
-    const payUrl = cobraOnline ? `${origin}/q/${q.public_token}/pay` : `${origin}/q/${q.public_token}`;
+    const payUrl = await publicDocumentUrl(orgId, 'q', q.public_token as string, cobraOnline ? '/pay' : undefined);
     const saldo = Math.max(0, Number(q.total) - Number(q.pagado ?? 0));
 
     const envio = await sendEmail({
         orgId, operation: 'collection_manual', to: q.cliente_email,
         subject: cfg.idioma === 'en' ? 'About your outstanding balance' : 'Sobre tu saldo pendiente',
+        fromName: `${cfg.creditorName} vía Cord`,
+        replyTo: cfg.contactEmail,
         html: renderCollectionEmail({
             cuerpo: texto, payUrl, cobraOnline, montoBoton: saldo, idioma: cfg.idioma,
+            creditorName: cfg.creditorName, creditorTaxId: cfg.creditorTaxId, contactEmail: cfg.contactEmail,
         }),
     });
 

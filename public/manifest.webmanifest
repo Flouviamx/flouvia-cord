@@ -1,7 +1,7 @@
 {
-  "name": "Cord — Cotizaciones y Cobranza B2B",
+  "name": "Cord — De la propuesta al pago",
   "short_name": "Cord",
-  "description": "Plataforma de cotizaciones y cobranza B2B para negocios en cualquier país",
+  "description": "Plataforma de cierre comercial: el ciclo de ventas desde la propuesta hasta el pago, en un solo link.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -706,10 +706,61 @@ A milestone that can be charged before it's met is a money problem, not an inter
         area: 'finanzas',
         status: 'next',
         api: true
-    }
+    },
+{
+    "id": "20",
+    "slug": "confiabilidad-operativa",
+    "title": {
+        "es": "Confiabilidad de pagos y facturas",
+        "en": "Payment and invoice reliability"
+    },
+    "shortDesc": {
+        "es": "Correcciones construidas para pagos parciales, créditos, recurrencias y cambios de método. La fase continúa con validación integrada y recuperación operativa.",
+        "en": "Implemented fixes for partial payments, credits, recurrence and method switching. Work continues with integrated validation and operational recovery."
+    },
+    "content": {
+        "es": "## Fase 1: operaciones comprobables\n\nEl programa sigue abierto. Hay correcciones implementadas y probadas, pero todavía falta completar la validación integrada y comprobar su publicación.\n\n### Construido y probado\n\n- Verificación 2FA también en solicitudes del panel cuando la organización la exige.\n- Pagos sucesivos por el saldo de una factura y registro separado de pagos, créditos y reembolsos confirmados.\n- Impuestos y retenciones por concepto, notas de crédito relacionadas y cancelaciones que esperan confirmación.\n- PDF/XML disponibles desde el enlace de la factura, saldo actualizable y siguiente acción según el estado.\n- Reserva del periodo de facturas recurrentes frente a ejecuciones simultáneas y cambios de calendario.\n- Contratación en EUR con precios fijos y conservación de la moneda de contratos existentes; personalización según el plan efectivo.\n- Cambio SPEI/tarjeta con verificación del intento anterior y registro durable de reintentos. Pendiente de prueba integrada antes de publicarse.\n- Registro de comisiones de facturas directas con desglose conservado, costos verificables y revisión de datos inciertos; probado localmente.\n- Inactividad comprobada también en API y facturación, con renovación atómica y sin extender la sesión desde páginas públicas; probado localmente.\n- API del checkout anterior unificada con la pantalla actual, conservando su respuesta y tarifas; pendiente de publicación.\n- Comprobación automática de pruebas, tipos y compilación preparada; falta su primera ejecución en GitHub.\n\n### Pendiente de cerrar\n\nAceptación integrada y recuperación de comisiones pendientes, aislamiento con el rol real de base de datos, aceptación integrada de sesiones por inactividad, recuperación de eventos, alertas y restauración de respaldos. Repetir la auditoría de sesiones anteriores antes de publicar; las transferencias tardías requieren recuperación adicional.\n\nLas pruebas reducen regresiones en los escenarios cubiertos; no prometen cero fallos ni sustituyen una prueba de operación completa. Consulta [las guías actualizadas](https://docs.cordhq.app/pagos/mejoras-confiabilidad).\n\n### Después: fase 2\n\nMayor continuidad del trato, acciones y responsables, seguimiento y flujos útiles para negocios que venden productos o servicios. Estas iniciativas siguen planeadas; no forman parte de la entrega actual.",
+        "en": "## Phase 1: verifiable operations\n\nThe program remains open. Fixes are implemented and tested, but integrated validation and publication checks are not yet complete.\n\n### Implemented and tested\n\n- 2FA on dashboard requests when required by the organization.\n- Subsequent invoice payments use the current balance, with payments, credits and confirmed refunds kept separate.\n- Per-line taxes and withholdings, linked credit notes and cancellation that waits for confirmation.\n- Available PDF/XML downloads from invoice links, refreshable balances and next actions based on status.\n- Recurring-period claims protect against concurrent runs and calendar edits.\n- Fixed EUR subscription pricing and preservation of existing contract currency; customization follows the effective plan.\n- SPEI/card switching verifies the previous attempt and stores retries durably. Integrated testing remains pending before publication.\n\n- Direct-invoice fee ledger with preserved splits, verifiable costs and review of uncertain data; tested locally.\n- Idle timeout also checked on APIs and billing, with atomic refresh and no renewal from public pages; tested locally.\n- Previous checkout API unified with the current payment screen, preserving its response and accepted rates; publication pending.\n- Automated tests, type checks and build verification prepared; its first GitHub run remains pending.\n\n### Still to complete\n\nIntegrated acceptance and recovery of pending fees, isolation using the actual database role, integrated idle-session acceptance, event recovery, alerts and backup restoration. Repeat the legacy-session audit before release; late bank transfers need additional recovery work.\n\nTests reduce regressions in covered scenarios; they do not promise zero failures or replace a complete operational test. See [the updated guides](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad).\n\n### Next: phase 2\n\nGreater deal continuity, actions and owners, follow-up and useful workflows for businesses selling products or services. These initiatives remain planned and are not part of this delivery."
+    },
+    "area": "finanzas",
+    "status": "next",
+    "api": false
+}
 ];
 
 const roadmapEnhancements = {
+"confiabilidad-operativa": {
+    "family": "payments",
+    "market": {
+        "es": "Payments, Invoicing y cuenta",
+        "en": "Payments, Invoicing and account"
+    },
+    "workflow": {
+        "es": [
+            "Verifica saldo, moneda y estado antes de intentar otro cobro.",
+            "Consulta el resultado de pagos, cancelaciones y emisiones sin asumir confirmación.",
+            "Resuelve los movimientos pendientes y valida el flujo integrado antes de activar cambios."
+        ],
+        "en": [
+            "Verify balance, currency and status before trying another payment.",
+            "Check payment, cancellation and issuance results without assuming confirmation.",
+            "Resolve pending movements and validate the integrated flow before enabling changes."
+        ]
+    },
+    "scope": {
+        "es": "Fase 1 en curso: correcciones de código con pruebas y migraciones autorizadas. Incluye documentación del alcance y de los pendientes.",
+        "en": "Phase 1 in progress: code fixes with tests and authorized migrations, including documented scope and remaining work."
+    },
+    "boundaries": {
+        "es": "Implementado no equivale a publicado. No se promete recuperación total, devolución automática de transferencias tardías ni aislamiento real ya activado.",
+        "en": "Implemented does not mean published. Full recovery, automatic late-transfer refunds and activated real-role isolation are not promised."
+    },
+    "related": [
+        "cord-payments",
+        "facturas-emitidas",
+        "link-publico"
+    ]
+},
     'editor-cotizaciones': {
         family: 'quotes', market: { es: '12 mercados soportados', en: '12 supported markets' },
         workflow: {
