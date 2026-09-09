@@ -288,18 +288,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         fiscalCountry = String(orgFiscal.country_code);
         const subscriptionDenied = await requireEntitlement(
             orgId,
-            isMexico ? 'cfdi' : 'international_invoicing',
+            'international_invoicing',
         );
         if (subscriptionDenied) return subscriptionDenied;
-        let fiscalUsageId: string | null = null;
-        if (isMexico) {
-            const usage = await reserveUsage(orgId, 'timbrado', 1);
-            if (!usage.ok || !usage.id) {
-                const unavailable = /verificar|registrar/i.test(usage.reason || '');
-                return json({ error: usage.reason }, unavailable ? 503 : 429);
-            }
-            fiscalUsageId = usage.id;
-        }
         // Cuenta ANTES de timbrar — para detectar si este va a ser el PRIMER
         // CFDI real de la org ("aha moment" fiscal, distinto del genérico de cotizar).
         const [priorCountRows] = await withOrgTx(orgId, sql`
@@ -310,17 +301,9 @@ export const PATCH: APIRoute = async ({ params, request }) => {
                and coalesce((provider_data->>'livemode')::boolean, true) = true
                and provider_data->>'facturapi_id' is not null`);
         const priorCount = priorCountRows[0];
-        fiscal = await emitFiscalDocument(orgId, id);
+        fiscal = await emitFiscalDocument(orgId, id, body.document_mode);
         if (!fiscal.emitted) {
-            if (fiscalUsageId) await cancelUsage(orgId, fiscalUsageId);
-            return json({ error: fiscal.error || 'No se pudo emitir el documento fiscal', fiscal }, 502);
-        }
-        // Una respuesta idempotente puede devolver el documento ya emitido. En
-        // ese caso la reserva nueva se cancela para no cobrar dos timbrados por
-        // el mismo CFDI; solo una emisión realmente nueva llega al medidor.
-        if (fiscalUsageId) {
-            if (fiscal.reused || fiscal.billable === false) await cancelUsage(orgId, fiscalUsageId);
-            else void flushUsageReservation(orgId, fiscalUsageId);
+            return json({ error: fiscal.error || 'No se pudo emitir el documento fiscal', fiscal }, fiscal.httpStatus || 502);
         }
         if (isMexico && fiscal.billable === true && (priorCount?.n ?? 0) === 0) {
             const [orgFlagsRows] = await withOrgTx(orgId, sql`select created_at, (sandbox_of is not null) as is_sandbox, is_demo from orgs where id = ${orgId}`);

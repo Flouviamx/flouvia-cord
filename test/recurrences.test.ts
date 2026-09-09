@@ -43,7 +43,7 @@ describe('ejecución de un periodo', () => {
         expect(m.draft).toHaveBeenCalledWith('org-a', expect.objectContaining({ dueDate: '2026-10-06' }));
         const claim = m.tx.mock.calls.find(([, q]) => q.text.includes('returning r.id'))![1];
         expect(claim.text).toContain('r.updated_at ='); expect(claim.values).toContain('2026-10-06');
-        expect(m.flush).toHaveBeenCalledWith('org-a', 'usage-a');
+        expect(m.issue).toHaveBeenCalledTimes(1); expect(m.reserve).not.toHaveBeenCalled();
     });
     it('una fecha defectuosa no interrumpe las demás recurrencias', async () => {
         m.system.mockResolvedValue([[row({ id: 'bad', next_run_at: 'invalid' }), row()]]);
@@ -53,14 +53,14 @@ describe('ejecución de un periodo', () => {
         m.tx.mockResolvedValue([[]]); await runRecurrencias();
         expect(m.draft).not.toHaveBeenCalled(); expect(m.reserve).not.toHaveBeenCalled();
     });
-    it('libera la reserva cuando falla la emisión', async () => {
+    it('no envía ni duplica compensaciones cuando el dominio rechaza la emisión', async () => {
         m.issue.mockResolvedValue({ emitted: false, error: 'No emitida' });
         expect((await runRecurrencias()).fallidas).toBe(1);
-        expect(m.cancel).toHaveBeenCalledWith('org-a', 'usage-a'); expect(m.email).not.toHaveBeenCalled();
+        expect(m.cancel).not.toHaveBeenCalled(); expect(m.email).not.toHaveBeenCalled();
     });
     it('una emisión de prueba no consume timbrado', async () => {
         m.issue.mockResolvedValue({ emitted: true, billable: false }); await runRecurrencias();
-        expect(m.cancel).toHaveBeenCalledWith('org-a', 'usage-a'); expect(m.flush).not.toHaveBeenCalled();
+        expect(m.cancel).not.toHaveBeenCalled(); expect(m.flush).not.toHaveBeenCalled();
     });
     it('conserva el aviso cuando la factura existe pero el correo falla', async () => {
         m.email.mockResolvedValue(false);
@@ -68,7 +68,7 @@ describe('ejecución de un periodo', () => {
         expect(m.tx.mock.calls.some(([, q]) => q.values.includes('Factura emitida; falta reenviar el correo desde su detalle.'))).toBe(true);
     });
     it('no emite sin plan o sin reserva disponible', async () => {
-        m.reserve.mockResolvedValue({ ok: false, reason: 'Límite' }); await runRecurrencias(); expect(m.issue).not.toHaveBeenCalled();
+        m.issue.mockResolvedValue({ emitted: false, error: 'Límite' }); expect((await runRecurrencias()).fallidas).toBe(1); expect(m.email).not.toHaveBeenCalled();
         m.gate.mockResolvedValue({ ok: false }); m.draft.mockClear(); await runRecurrencias(); expect(m.draft).not.toHaveBeenCalled();
     });
     it('rechaza fechas imposibles y finales anteriores sin escribir', async () => {

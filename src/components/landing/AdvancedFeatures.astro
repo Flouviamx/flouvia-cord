@@ -743,15 +743,91 @@ const t = useTranslations(lang);
         .cn-left { flex: none; width: 100%; }
         .cn-right { min-height: 600px; width: 100%; }
     }
+    /* ══════════════════════════════════════════════════════════════════
+       MÓVIL — los paneles dejan de ser un lienzo con piezas superpuestas.
+       En 390px la caja flotante tapaba los botones, el ticker tapaba su
+       propia etiqueta y el tooltip caía encima del runway. Aquí cada panel
+       se apila en una columna: mismo contenido, sin colisiones.
+    ══════════════════════════════════════════════════════════════════ */
     @media (max-width: 768px) {
         .cord-notion-section { padding: 4rem 5% 6rem; }
-        .full-canvas { padding: 40px 20px; justify-content: flex-start; }
-        .cn-float-box { right: 20px; left: 20px; width: auto; max-width: none; bottom: 20px; transform: scale(0.9) translateY(0); }
-        .cfo-full-ui { height: auto; padding: 0 10px; margin-top: auto; }
-        .chat-full-ui { margin-top: auto; }
-        .ia-full-ui { margin-top: 10px; }
-        .fx-full-ui { margin-top: auto; }
-        .cfo-header { flex-direction: column; gap: 16px; }
-        .cfo-chart-area { height: 200px; margin-top: 20px; }
+        /* El panel activo define la altura (los inactivos siguen absolutos y
+           ocultos), así el lienzo se ajusta a su contenido en vez de dejar
+           600px fijos con las piezas peleando por el espacio. */
+        .cn-right { min-height: 0; }
+        .cn-pane.active { position: relative; }
+        .full-canvas { height: auto; padding: 24px 16px 26px; justify-content: flex-start; gap: 18px; }
+
+        /* La caja flotante entra al flujo: debajo de la pieza, no encima. */
+        .cn-float-box {
+            position: static;
+            width: 100%; max-width: 500px;
+            right: auto; left: auto; bottom: auto;
+            padding: 15px 16px; gap: 12px;
+            background: rgba(255,255,255,0.92);
+        }
+        .cn-avatar { width: 34px; height: 34px; }
+        .cn-float-name { font-size: 14px; }
+        .cn-float-msg { font-size: 13.5px; }
+        .cn-float-meta { font-size: 12.5px; }
+
+        .cfo-full-ui, .chat-full-ui, .ia-full-ui, .fx-full-ui { margin-top: 0; margin-bottom: 0; }
+
+        /* ── Pane 1: IA ── */
+        .ia-full-ui { gap: 16px; }
+        .ia-search { padding: 13px 14px; gap: 10px; border-radius: 14px; }
+        .ia-icon-sparkle svg { width: 19px; height: 19px; }
+        .type-wrap { min-width: 0; }
+        .cn-pane.active .type-text::before { content: '"Cotízame 2 tons de varilla"'; font-size: 13.5px; }
+        .ia-submit { flex-shrink: 0; font-size: 11px; padding: 5px 8px; }
+        .qc-header { padding: 14px 16px; gap: 10px; }
+        .qc-badge { flex-shrink: 0; white-space: nowrap; font-size: 11px; padding: 5px 10px; }
+        .qc-title { font-size: 13.5px; white-space: nowrap; }
+        .qc-body { padding: 16px; gap: 12px; }
+        .qc-row { gap: 14px; font-size: 13.5px; }
+        .qc-row span:first-child { min-width: 0; }
+        .qc-row strong { flex-shrink: 0; }
+        .qc-footer { padding: 14px 16px; gap: 12px; }
+        .qc-total-lbl { font-size: 13.5px; }
+        .qc-total-val { font-size: 19px; white-space: nowrap; }
+        .qc-actions { padding: 14px 16px; gap: 10px; }
+        .qc-btn { flex: 1; text-align: center; white-space: nowrap; font-size: 13px; padding: 11px 12px; }
+
+        /* ── Pane 2: Cobranza ── */
+        .chat-b { max-width: 100%; font-size: 14px; padding: 14px 16px; }
+
+        /* ── Pane 3: CFO ── */
+        .cfo-full-ui { gap: 20px; }
+        .cfo-header { flex-direction: row; flex-wrap: wrap; gap: 20px 28px; padding-bottom: 16px; }
+        .cfo-m-lbl { font-size: 11.5px; }
+        .cfo-m-val { font-size: 23px; }
+        /* El tooltip cuelga desde el borde superior del área de barras: sin
+           ese aire caía encima del runway. */
+        .cfo-chart-area { height: 168px; margin-top: 104px; }
+        .c-bar { width: 16px; }
+        .c-bars-group { gap: 3px; }
+        .b-lbl { font-size: 11.5px; }
+        /* La etiqueta de la meta se sale del área de barras hacia arriba */
+        .cfo-target-line span { top: -20px; right: auto; left: 0; font-size: 10px; padding: 3px 7px; }
+        /* El tooltip se ancla al borde de su columna, no al centro del panel */
+        .cfo-tooltip { width: 138px; margin-left: -69px; padding: 10px 12px; margin-bottom: 10px; }
+        .cfo-grid-full { padding-bottom: 40px; }
+        .g-line { margin-bottom: 34px; }
+
+        /* ── Pane 4: Divisas ── */
+        .fx-ticket-header { padding: 15px 16px; gap: 10px; }
+        .fx-pair { font-size: 16px; }
+        .fx-flag { width: 21px; height: 21px; }
+        .fx-live-badge { flex-shrink: 0; white-space: nowrap; font-size: 11px; padding: 5px 10px; }
+        .fx-ticket-body { padding: 16px; gap: 16px; }
+        .fx-amt-box { padding: 12px 14px; font-size: 18px; }
+        .fx-curr { font-size: 14px; }
+        .fx-rate-row { gap: 12px; padding: 14px; }
+        .fx-lock-icon { width: 32px; height: 32px; }
+        .fx-r-val { font-size: 16px; }
+        /* La sparkline se iba encima de la etiqueta y del delta */
+        .fx-rate-chart { display: none; }
+        .fx-ticket-footer { padding: 15px 16px; }
+        .fx-btn { padding: 13px; font-size: 14px; }
     }
 </style>

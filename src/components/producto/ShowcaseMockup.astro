@@ -1711,4 +1711,78 @@ const { slug, index } = Astro.props as { slug: string; index: number };
   .shwm-sign-hash code { display: block; font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.74rem; color: #2563eb; word-break: break-all; line-height: 1.5; }
   .shwm-sign-verify { display: inline-flex; align-items: center; gap: 8px; font-size: 0.76rem; color: #059669; font-weight: 600; }
 
+
+  /* ══════════════════════════════════════════════════════════════════
+     MÓVIL (<=760px) — el lienzo mide ~350px, no 1100.
+     Las escenas partidas (antes vs. ahora) se apilan, el marco pierde
+     su padding de escritorio y el teléfono cabe. La altura del stage la
+     ajusta FeatureShowcase.astro con JS a la escena más alta.
+  ══════════════════════════════════════════════════════════════════ */
+  @media (max-width: 760px) {
+    .shwm-wrap { height: auto; min-height: 100%; font-size: 0.82rem; }
+    .shwm-frame { height: auto; min-height: 100%; padding: 1.15rem 1.1rem; }
+    .shwm-frame.shwm-center { gap: 1rem; }
+
+    .shwm-app { border-radius: 14px; }
+    .shwm-bar { padding: 12px 14px; gap: 10px; }
+    .shwm-bar-t { font-size: 0.82rem; }
+    .shwm-badge { font-size: 0.58rem; padding: 4px 9px; }
+    .shwm-body { padding: 8px 10px 10px; }
+    .shwm-foot { padding: 12px 14px; gap: 10px; font-size: 0.74rem; }
+    .shwm-search { padding: 10px 12px; gap: 8px; }
+    .shwm-search-q { font-size: 0.8rem; }
+    .shwm-g { gap: 9px; padding: 10px; font-size: 0.79rem; }
+    .shwm-g-head { font-size: 0.58rem; }
+    .shwm-kv, .shwm-inbox-r { padding: 10px 11px; }
+    /* El chip "soltar aquí" se montaba sobre el precio: en móvil baja a su
+       propio renglón dentro de la fila. */
+    .shwm-drop-r { grid-template-columns: auto 1fr auto; }
+    .shwm-drop-hint {
+        position: static; transform: none;
+        grid-column: 1 / -1; justify-self: start; margin-top: 6px;
+        font-size: 0.54rem; padding: 3px 8px;
+    }
+
+    /* Antes vs. ahora: en columna, con la flecha girada entre los dos */
+    .shwm-split { flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 1.15rem 1.1rem; }
+    .shwm-half { flex: none; justify-content: flex-start; }
+    .shwm-live { flex: none; }
+    .shwm-dead { padding-right: 0; }
+    .shwm-arrow { width: 100%; height: 30px; padding: 0; transform: rotate(90deg); }
+    .shwm-arrow svg { width: 22px; height: 22px; }
+    .shwm-xls-r { grid-template-columns: 1.4fr 0.6fr 0.8fr; gap: 7px; padding: 8px 10px; font-size: 0.7rem; }
+    .shwm-xls-r > *:nth-child(4) { display: none; }
+    .shwm-side-label, .shwm-live-tag { margin-top: 10px; font-size: 0.7rem; }
+
+    /* El teléfono se ajusta al lienzo en vez de sangrar por los lados */
+    .shwm-phone { width: 100%; max-width: 268px; border-radius: 34px; }
+    .shwm-sign { padding: 22px 18px; border-radius: 16px; }
+    .shwm-sign-seal { width: 52px; height: 52px; margin-bottom: 12px; }
+    .shwm-sign-hash { margin: 16px 0 12px; padding: 12px 13px; }
+
+    /* KPIs: tres o cuatro columnas no caben en 350px */
+    .shwm-kpis { grid-template-columns: repeat(2, 1fr); gap: 9px; padding: 12px 12px 6px; }
+    .shwm-kpis-3, .shwm-kpis-4 { grid-template-columns: repeat(2, 1fr); }
+    .shwm-kpi { padding: 11px 12px; }
+    .shwm-kpi span { font-size: 0.56rem; }
+    .shwm-kpi b { font-size: 1.08rem; }
+
+    /* DSO: el nombre arriba, la comparación abajo y el badge a la derecha */
+    .shwm-dso { padding: 8px 12px; }
+    .shwm-dso-r { grid-template-columns: 1fr auto; gap: 8px 10px; padding: 13px 6px; }
+    .shwm-dso-who { grid-column: 1; }
+    .shwm-dso-r > .shwm-badge { grid-column: 2; grid-row: 1; }
+    .shwm-dso-cmp { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; gap: 8px; font-size: 0.76rem; }
+    .shwm-dso-who b { font-size: 0.82rem; }
+
+    /* Divisas: las dos columnas se apilan con el "=" girado en medio */
+    .shwm-dual { grid-template-columns: 1fr; gap: 8px; padding: 14px 14px 10px; }
+    .shwm-dual-col { padding: 14px; }
+    .shwm-dual-amt { font-size: 1.4rem; }
+    .shwm-dual-eq { padding: 0; text-align: center; }
+    .shwm-dual-rate { margin: 6px 14px 0; padding: 10px 12px; font-size: 0.74rem; }
+
+    /* Frontera: tres nodos en fila tampoco caben */
+    .shwm-border { grid-template-columns: 1fr; gap: 10px; padding: 16px 14px; }
+  }
 </style>

@@ -743,3 +743,14 @@ con `cobro_id = null`, ligado por `documento_pagos`. Preserva el desglose del
 intento y consulta costos/neto del cargo en su cuenta. Datos inciertos quedan en
 revisión; no entran al borrador mensual. No requiere migración ni cambia tarifas.
 Aceptación integrada y recuperación pendientes: [confiabilidad](confiabilidad.md).
+
+## Tipos documentales y cuota por plan — implementación local
+
+El contrato vigente preparado está en [Negocio y Billing](negocio-billing.md#contrato-documental-implementado-localmente).
+Free permite cinco documentos comerciales al mes; Starter habilita la integración
+fiscal donde esté configurada. El tipo se guarda en `documentos_fiscales` y manda
+sobre el país o plan actual en emisión, descarga y anulación. Los documentos
+comerciales MX/ES son proformas; sus notas son `commercial_credit_note`, no CFDI E.
+La emisión desde cotizaciones delega en `finalizeInvoice` para compartir el mismo
+control concurrente y contador. La recuperación de intentos inciertos requiere
+revisión; no se vuelven a emitir automáticamente al pasar dos minutos.

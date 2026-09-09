@@ -18,7 +18,6 @@ import { checkEntitlement } from '../org-entitlements';
 import { venceDia } from '../cobros';
 
 import { recurrenceDay, proximaEmision, type Cadencia } from './recurrence-calendar';
-import { reserveUsage, cancelUsage, flushUsageReservation } from '../billing';
 export { proximaEmision, type Cadencia } from './recurrence-calendar';
 
 export interface RecurrenciaInput {
@@ -113,7 +112,6 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
         const orgId = String(r.org_id);
         const recId = String(r.id);
 
-        let usageId: string | null = null;
         let emissionConfirmed = false;
         try {
             const period = recurrenceDay(venceDia(r.next_run_at));
@@ -154,14 +152,8 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
                 update documentos_fiscales set recurrencia_id = ${recId}
                  where id = ${draft.documentId} and org_id = ${orgId}`);
 
-            if (String(r.org_country_code).toUpperCase() === 'MX') {
-                const usage = await reserveUsage(orgId, 'timbrado', 1);
-                if (!usage.ok || !usage.id) throw new Error(usage.reason || 'No se pudo reservar el timbrado.');
-                usageId = usage.id;
-            }
             const emitida = await finalizeInvoice(orgId, draft.documentId);
             if (!emitida.emitted) {
-                if (usageId) { await cancelUsage(orgId, usageId); usageId = null; }
                 await marcarError(orgId, recId, emitida.error || 'No se pudo emitir');
                 out.fallidas++;
                 out.detalle.push({ recurrenciaId: recId, ok: false, error: emitida.error });
@@ -169,11 +161,6 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
             }
 
             emissionConfirmed = true;
-            if (usageId) {
-                if (emitida.reused || emitida.billable === false) await cancelUsage(orgId, usageId);
-                else await flushUsageReservation(orgId, usageId);
-                usageId = null;
-            }
             out.emitidas++;
             await logInvoiceEvent(orgId, draft.documentId, 'issued', 'Emitida por recurrencia');
 
@@ -192,7 +179,6 @@ export async function runRecurrencias(opts: { limit?: number } = {}): Promise<Ru
                  where id = ${recId} and org_id = ${orgId}`);
             out.detalle.push({ recurrenciaId: recId, ok: true, ...(!enviada ? { error: 'correo_no_enviado' } : {}) });
         } catch (error: any) {
-            if (usageId && !emissionConfirmed) await cancelUsage(orgId, usageId).catch(() => {});
             await marcarError(orgId, recId, error?.message || 'Error inesperado');
             out.fallidas++;
             out.detalle.push({ recurrenciaId: recId, ok: false, error: error?.message });

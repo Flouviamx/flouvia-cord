@@ -14,9 +14,8 @@ import { applyPayment } from '../../../../lib/fiscal/payments';
 import { notifyInvoiceIssued } from '../../../../lib/email';
 import { ok, fail, invoiceDetail, readJsonBody } from '../../../../lib/apiv1';
 import { requireEntitlement } from '../../../../lib/org-entitlements';
-import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../../lib/billing';
 import { dispatchInvoiceEvent } from '../../../../lib/webhooks';
-import { invoicingFeatureFor, orgCountry } from '../../../../lib/fiscal/gate';
+import { invoicingFeatureFor } from '../../../../lib/fiscal/gate';
 import { after } from '../../../../lib/after';
 
 export const GET = withApiAuth('read', async ({ params }) => {
@@ -39,26 +38,9 @@ export const POST = withApiAuth('write', async ({ params, request }, auth) => {
         const denied = await requireEntitlement(orgId, await invoicingFeatureFor(orgId));
         if (denied) return denied;
 
-        // Misma coreografía de medidor que la app: reservar antes del
-        // proveedor, cancelar si falla o si la respuesta fue idempotente.
-        const isMexico = (await orgCountry(orgId)) === 'MX';
-        let usageId: string | null = null;
-        if (isMexico) {
-            const usage = await reserveUsage(orgId, 'timbrado', 1);
-            if (!usage.ok || !usage.id) {
-                const unavailable = /verificar|registrar/i.test(usage.reason || '');
-                return fail(usage.reason!, unavailable ? 'usage_verification_unavailable' : 'plan_limit_reached', unavailable ? 503 : 429);
-            }
-            usageId = usage.id;
-        }
         const result = await finalizeInvoice(orgId, id);
         if (!result.emitted) {
-            if (usageId) await cancelUsage(orgId, usageId);
-            return fail(result.error || 'No se pudo emitir la factura', 'provider_error', 502);
-        }
-        if (usageId) {
-            if (result.reused || result.billable === false) await cancelUsage(orgId, usageId);
-            else void flushUsageReservation(orgId, usageId);
+                return fail(result.error || 'No se pudo emitir la factura', 'provider_error', result.httpStatus || 502);
         }
         await logAudit(orgId, {
             accion: 'factura.emitida', entidad: 'factura', entidad_id: id,

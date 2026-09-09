@@ -3762,6 +3762,32 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
         .dash-table-wrap { overflow-x: auto; }
         .dash-th-r, .dash-tr-r { grid-template-columns: 70px 1fr 90px 90px 70px; font-size: 0.7rem; }
     }
+
+    /* ══════════════════════════════════════════════════════════════════
+       MÓVIL — los mockups de integraciones viven en una tarjeta de 85vw.
+       A ese ancho la tabla de cinco columnas se encimaba, el teléfono se
+       cortaba y la terminal partía sus líneas a media bandera.
+    ══════════════════════════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+        .int-card-graphic { padding: 1.1rem 1.1rem 1.4rem; }
+        .mock-ui { height: auto; min-height: 210px; padding: 12px 0; }
+
+        .imk-t1 { font-size: 12px; }
+        .imk-t2 { font-size: 10.5px; }
+
+        /* Se va el precio de lista: cantidad, negociado y total cuentan la historia */
+        .imk-tbl-head-5, .imk-tbl-row-5 { grid-template-columns: 1.8fr 0.45fr 1fr 1fr; }
+        .imk-tbl-head-5 > *:nth-child(3),
+        .imk-tbl-row-5 > *:nth-child(3) { display: none; }
+        .imk-tbl-head, .imk-tbl-row { padding: 0 10px; }
+        .imk-tbl-head span { font-size: 8px; }
+        .imk-tbl-row { height: auto; min-height: 34px; padding-top: 5px; padding-bottom: 5px; }
+
+        /* La terminal reduce su cuerpo para que cada línea quepa entera */
+        .imk-term-body { font-size: 8px; line-height: 1.75; padding: 10px 11px; }
+        .imk-term-indent { padding-left: 9px; }
+    }
+
 </style>
 
 <script>

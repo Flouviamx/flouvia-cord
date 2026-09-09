@@ -126,3 +126,59 @@ Fuentes cuarta tanda:
 - Ropa Moda Gdl: https://ropamodagdl.com/contacto/
 - Nihao Jewelry y Oro Boleado: https://expojoya.com.mx/wp-content/uploads/2023/07/DIRECTORIO-FINAL-JUNIO-2023.pdf
 - Grupo Dapsa: https://www.grupodapsa.com/contacto
+
+## Quinta tanda — deep research, borradores no enviados
+
+Se excluyeron empresas y direcciones ya contactadas en tandas anteriores. Cada
+prospecto tiene una señal pública de operación basada en propuestas,
+paquetes/servicios personalizados, ventas por volumen o atención a
+distribuidores. Se confirmó que los 20 dominios publican la dirección elegida y
+que tienen registros MX activos al preparar la tanda. Esto reduce el riesgo de
+rebote, aunque solo una respuesta SMTP del destinatario puede confirmar que una
+cuenta concreta acepta correo.
+
+| Empresa | Segmento | Correo público | Señal investigada | Estado |
+|---|---|---|---|---|
+| Dupla | Agencia web/creativa | info@dupla.mx | Proyectos web para industrias creativas, e-commerce y consultoría | Borrador |
+| La vida en un pixel | Agencia web/creativa | info@lavidaenunpixel.com.mx | Páginas, tiendas, marketing y diseño personalizado | Borrador |
+| Inventa Marketing | Agencia web/marketing | info@inventamarketing.com.mx | Branding, contenido, web y consultoría de ventas | Borrador |
+| Detalleweb | Agencia web | info@detalleweb.com | Paquetes de páginas, tiendas, campañas y renovación | Borrador |
+| Paradigma Estudio | Agencia creativa | info@paradigmaestudio.com.mx | Branding, web, redes y atención personalizada | Borrador |
+| Band of Coders | Agencia web | info@bandofcoders.mx | Paquetes de diseño, desarrollo, SEO y hosting | Borrador |
+| La Web de Monterrey | Agencia digital | info@lawebdemonterrey.com | Web personalizada, e-commerce, SEO y marketing | Borrador |
+| Imaginexia | Agencia de marketing | info@imaginexia.com | Marketing, branding y desarrollo web | Borrador |
+| Agencia Meta Web | Agencia digital | contacto@agenciametaweb.com | Web, e-commerce y marketing para PYMES | Borrador |
+| Puntoasterisco | Agencia creativa | info@puntoasterisco.com | Branding, web, publicidad, packaging e igualas | Borrador |
+| Comercializadora Sadha | Distribuidor foodservice | ventas@sadha.com.mx | Atiende restaurantes, hoteles, hospitales y comedores | Borrador |
+| Nutricarnes | Comercializadora de alimentos | ventas@nutricarnes.mx | Operación desde Central de Abastos y atención de pedidos | Borrador |
+| Distribuidora Mem | Distribuidor de vinos y licores | ventas@distribuidoramem.com.mx | Catálogo nacional/importado y clientes mayoristas | Borrador |
+| DARO Vinos & Licores | Comercializadora | ventas@comercializadoradaro.com.mx | Cotiza marcas y cantidades para envíos a todo México | Borrador |
+| Prinsa | Alimentos y mayoreo | mayoreo@prinsa.com.mx | Distribución nacional/internacional, maquila y presentaciones | Borrador |
+| Thatonia Mercadeo | Comercializadora/intermediario | contacto@thatoniamercadeo.com.mx | Abasto, consolidación y propuestas según especificación/volumen | Borrador |
+| IT Mex Industrial | Fabricante/distribuidor | ventas@itmexindustrial.com | Productos de limpieza y distribución nacional | Borrador |
+| Diprolina | Distribuidor de limpieza | ventas1@diprolina.com.mx | Venta y atención de pedidos desde Tultitlán | Borrador |
+| Oval México | Fabricante/distribuidor | contacto@ovalmexico.com | Escalas de precio para distribuidores y mayoristas | Borrador |
+| Evena Foods | Alimentos/distribuidores | ventasmayoreo@evena.mx | Red de distribuidores, descuentos y promociones por volumen | Borrador |
+
+Fuentes quinta tanda:
+
+- Dupla: https://dupla.mx/info/
+- La vida en un pixel: https://lavidaenunpixel.com.mx/quienes-somos/
+- Inventa Marketing: https://inventamarketing.com.mx/nosotros
+- Detalleweb: https://www.detalleweb.com.mx/
+- Paradigma Estudio: https://www.paradigmaestudio.com.mx/
+- Band of Coders: https://bandofcoders.com.mx/
+- La Web de Monterrey: https://lawebdemonterrey.com/
+- Imaginexia: https://imaginexia.com/
+- Agencia Meta Web: https://www.agenciametaweb.com/
+- Puntoasterisco: https://www.puntoasterisco.com/
+- Comercializadora Sadha: https://www.sadha.com.mx/contacto
+- Nutricarnes: https://www.nutricarnes.mx/contactanos
+- Distribuidora Mem: https://distribuidoramem.com.mx/contacto/
+- DARO: https://comercializadoradaro.com.mx/
+- Prinsa: https://www.prinsa.com.mx/
+- Thatonia Mercadeo: https://thatoniamercadeo.com.mx/
+- IT Mex Industrial / Easy Cleaning: https://easycleaning.mx/contacto/
+- Diprolina: https://diprolina.com.mx/contacto/
+- Oval México: https://ovalmexico.com/
+- Evena Foods: https://evena.mx/contacto/

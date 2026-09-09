@@ -44,9 +44,9 @@ describe('normalizePlan', () => {
 });
 
 describe('matriz de capacidades', () => {
-    it('Gratis habilita temporalmente solo los dos carriles de facturación', () => {
+    it('Gratis permite documentos comerciales; la emisión fiscal requiere Starter', () => {
         const freeFeatures = FEATURES.filter((feature) => planIncludes('free', feature));
-        expect(freeFeatures.sort()).toEqual(['cfdi', 'international_invoicing']);
+        expect(freeFeatures.sort()).toEqual(['international_invoicing']);
     });
 
     it('developer (el rango más alto) incluye todo', () => {

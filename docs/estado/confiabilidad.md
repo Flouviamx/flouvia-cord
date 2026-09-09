@@ -115,3 +115,17 @@ hasta completar la aceptación, sin convertir las propuestas de fase 2 en `live`
 
 Las decisiones fechadas se registran solo en
 [historial de billing y cobros](../historial/billing-cobros.md).
+
+## Ampliación autorizada: facturación en Free
+
+Implementación local, pendiente de publicación: documentos comerciales en Free,
+emisión fiscal integrada desde Starter y cuota mensual 5/20/500/100 (Developer
+conserva 1.000). Contrato en [Negocio y Billing](negocio-billing.md#contrato-documental-implementado-localmente).
+Se comparte emisión y medición para cotizaciones, facturas directas, API y
+recurrencias. Una reserva pendiente no dispara excedentes sobre otra factura;
+los documentos confirmados permiten recuperar su reserva de consumo en el cron.
+
+Este bloque **no cierra la fase 1**: siguen pendientes recuperación durable de
+los eventos de negocio, aislamiento con la conexión real, restauración demostrada
+de respaldos y pruebas integradas con proveedores. Recuperar el consumo de una
+factura no equivale a recuperar todos sus eventos ni una emisión fiscal incierta.

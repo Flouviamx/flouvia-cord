@@ -28,6 +28,7 @@ export const PLANES_EN: Plan[] = [
             'Up to 5 active quotes at a time',
             '50 products and 50 clients',
             '3 AI generations per month',
+            '5 commercial documents per month',
             '"Powered by Cord" branding',
         ],
     },
@@ -42,8 +43,8 @@ export const PLANES_EN: Plan[] = [
         feats: [
             'Unlimited sends; up to 50 active quotes',
             '500 products and clients',
-            '20 AI generations + 3 invoices/mo',
-            'CFDI in Mexico; commercial invoices elsewhere',
+            '20 AI generations + 20 invoices/mo',
+            'Commercial documents and enabled fiscal integrations',
             'Your brand (no "Powered by")',
         ],
     },
@@ -60,7 +61,7 @@ export const PLANES_EN: Plan[] = [
         feats: [
             'Unlimited quotes',
             '5 users included',
-            '50 AI generations + 20 invoices/mo',
+            '50 AI generations + 500 invoices/mo',
             'Collections and 90-day cash flow forecast',
             'Live tracking and no Cord branding',
         ],
@@ -115,7 +116,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
         rows: [
             { label: 'Sent quotes', free: '5 / mo', starter: 'Unlimited', pro: 'Unlimited', scale: 'Unlimited', developer: 'Unlimited' },
             { label: 'AI quote generation', free: '3 / mo', starter: '20 / mo', pro: '50 / mo', scale: '500 / mo', developer: 'Unlimited' },
-            { label: 'E-invoices issued', free: '3 / mo', starter: '3 / mo', pro: '20 / mo', scale: '100 / mo', developer: '1,000 / mo', hint: 'CFDI 4.0 in Mexico, commercial invoice everywhere else.' },
+            { label: 'Documents issued', free: '5 / mo', starter: '20 / mo', pro: '500 / mo', scale: '100 / mo', developer: '1,000 / mo', hint: 'Commercial documents in Free; integrated fiscal issuance from Starter where enabled. Mexico and Spain use pro formas for the commercial option.' },
             { label: 'Public API calls', free: '100 / mo', starter: '1,000 / mo', pro: '5,000 / mo', scale: '10,000 / mo', developer: '50,000 / mo' },
         ],
     },
@@ -159,7 +160,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
     {
         titulo: 'Tax and Multi-currency',
         rows: [
-            { label: 'Automated e-invoicing', free: true, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 with the SAT in Mexico; Cord’s own commercial invoice everywhere else.' },
+            { label: 'Integrated fiscal issuance', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 in Mexico with a configured issuer. VERI*FACTU in Spain requires activation and validation. No universal tax compliance promise.' },
             { label: 'Your own CSD (digital seal, Mexico)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Multi-currency with FX hedging (rate lock)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
@@ -255,7 +256,7 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'What happens if I exceed the included consumption?',
-        a: 'It depends on the plan. In Free and Starter, some limits are hard caps (they pause until the next cycle or until you upgrade). From Professional onwards, overages are charged per use at the end of the month via Stripe: AI generations, invoices issued, users, and API calls. No surprises: you can see your consumption in real time inside the app.',
+        a: 'Free has hard limits. From Starter, extra AI actions, documents and API requests are billed at the published rates; Starter retains one user. Professional and Scale also support paid additional users. You can review usage in the app.',
     },
     {
         q: 'Can I change plans anytime?',
@@ -267,7 +268,7 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'How does e-invoicing work?',
-        a: "It depends on your business's country, from the Starter plan onwards. In Mexico, you connect your Digital Seal Certificate (CSD) once, and when you close a quote, Cord stamps the CFDI 4.0 with the SAT using the exact same data. Outside Mexico, Cord issues its own commercial invoice with a sequential number and PDF — not a stamp with a local tax authority, but it documents the sale with the same quote data, with no retyping in another system.",
+        a: 'Free includes 5 commercial documents each month. Starter, Professional and Scale include 20, 500 and 100 respectively, shared between commercial and fiscal documents. Integrated fiscal issuance starts at Starter where enabled. In Mexico, a pro forma does not replace a CFDI. Spanish fiscal issuance requires completed activation and validation.',
     },
     {
         q: 'What happens after my 5 free sends?',

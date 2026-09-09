@@ -55,6 +55,7 @@ export const POST: APIRoute = async ({ request }) => {
     const result = await createInvoiceDraft(orgId, {
         clienteId: String(body.cliente_id ?? '').trim(),
         items,
+        documentMode: body.document_mode,
         currency: body.currency ? String(body.currency) : undefined,
         dueDate: dueDate || null,
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,

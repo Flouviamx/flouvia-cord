@@ -789,6 +789,12 @@ const howtoSchema = howto ? {
     @media (max-width: 1000px) {
         .pp-scaler { width: 900px; flex-shrink: 0; }
     }
+    /* Bajo 760px el mockup NO se encoge: se re-compone (bloque MÓVIL al final
+       del <style>). Escalar 900px a 390 lo recortaba por ambos lados y dejaba
+       la tipografía en 6px. */
+    @media (max-width: 760px) {
+        .pp-scaler { width: 100%; flex-shrink: 1; }
+    }
     .pp-mockup-wrap { position: relative; max-width: 1000px; width: 100%; margin: 0; perspective: 1500px; transform-style: preserve-3d; }
 
     /* ── Satélites flotantes (viven FUERA de la card, en el espacio libre — estilo Stripe) ── */
@@ -1528,6 +1534,67 @@ const howtoSchema = howto ? {
         .mk-credit { display: none; }
         .mk-term { justify-self: end; }
     }
+
+    /* ══════════════════════════════════════════════════════════════════
+       MÓVIL (<=760px) — el mockup del hero se RE-COMPONE, no se encoge.
+       Antes se escalaba una ventana de 900px a 390: quedaba recortada por
+       ambos lados y con tipografía de 6px. Aquí cada mockup adopta la
+       forma que la app real toma en móvil.
+    ══════════════════════════════════════════════════════════════════ */
+    @media (max-width: 760px) {
+        .pp-hero-visual { overflow: visible; }
+        .pp-mockup-wrap { perspective: none; }
+        .mk-window { border-radius: 14px; }
+        .mk-window::before { border-radius: 14px; }
+        .mk-bar { padding: 11px 13px; gap: 10px; }
+        .mk-bar-title { font-size: 0.8rem; }
+        .mk-bar-actions { flex-shrink: 0; }
+
+        /* ── editor: el sidebar vive detrás de un drawer en la app real ── */
+        .mk-sidebar { display: none; }
+        .mk-body { height: auto; }
+        .mk-content { padding: 1rem; }
+        .mk-row { grid-template-columns: 1fr 46px 92px; gap: 10px; padding: 9px 8px; font-size: 0.82rem; }
+        .mk-row-head { font-size: 0.62rem; }
+        .mk-rows { gap: 2px; }
+        /* Los totales dejan de ser tres columnas: se apilan como renglones */
+        .mk-totals { flex-direction: column; gap: 0.45rem; margin-top: 1rem; }
+        .mk-tot-col { flex-direction: row; align-items: baseline; justify-content: space-between; text-align: left; gap: 1rem; }
+        .mk-tot-col span { font-size: 0.68rem; }
+        .mk-tot-col b { font-size: 0.9rem; }
+        .mk-tot-final { padding-top: 0.45rem; border-top: 1px solid rgba(0,0,0,0.06); }
+        .mk-tot-final b { font-size: 1.15rem; }
+        .mk-cursor { display: none; }
+
+        /* ── link público: las burbujas flotantes caían encima de la card ── */
+        .pp-lp-bub { display: none; }
+        .mk-public-card { width: 100%; }
+        .mk-public-head { gap: 10px; }
+        .mk-public-head > div { min-width: 0; }
+        .mk-public-head b { font-size: 0.9rem; }
+        .mk-public-head .mk-badge { flex-shrink: 0; }
+        .mk-public-total { padding: 1.4rem 0.9rem; }
+        .mk-public-total b { font-size: 1.85rem; }
+
+        /* ── cobranza IA: el chat estaba corrido 22% a la derecha ── */
+        .mk-chatfree { margin: 0 auto; max-width: 100%; }
+        .cf-msg { max-width: 100%; }
+        .cf-plan { width: 100%; }
+
+        /* ── clientes y crédito: el plazo vuelve al renglón del nombre ── */
+        .mk-cli-row { grid-template-columns: auto 1fr auto; gap: 12px; }
+        .mk-term-wrap { justify-content: flex-end; }
+        .mk-cli-info b { font-size: 0.86rem; }
+        .mk-cli-info i { font-size: 0.72rem; }
+
+        /* ── facturación: el sello se movía sobre el encabezado ── */
+        .mk-intl-pill { position: static; margin: 0 0 2px auto; box-shadow: none; }
+
+        /* ── finanzas: la etiqueta de dos renglones desalineaba el KPI ── */
+        .mk-fin-kpi { justify-content: space-between; }
+        .mk-fin-kpi span { font-size: 0.55rem; }
+        .mk-fin-body { padding: 1rem 1rem 1.15rem; }
+    }
 </style>
 
 <!-- Global override: GSAP wrapLines() inyecta .m-line/.m-line-in sin data-astro-cid,
@@ -1707,11 +1774,16 @@ const howtoSchema = howto ? {
         const heroScaler = document.querySelector('.pp-scaler');
         const heroMk = document.querySelector('.pp-mockup');
         if (heroWrap && heroSpace && heroScaler && heroMk) {
+            // Bajo 760px el mockup tiene layout propio y no se escala.
+            const MOBILE_MAX = 760;
             const scaleHero = () => {
                 gsap.set(heroScaler, { clearProps: 'scale,transform' });
                 const baseWidth = (heroScaler as HTMLElement).offsetWidth;
-                
-                if (window.innerWidth <= baseWidth) {
+
+                if (window.innerWidth <= MOBILE_MAX) {
+                    gsap.set(heroScaler, { scale: 1, clearProps: 'transform' });
+                    (heroSpace as HTMLElement).style.height = 'auto';
+                } else if (window.innerWidth <= baseWidth) {
                     const scale = window.innerWidth / baseWidth;
                     gsap.set(heroScaler, { scale: scale, transformOrigin: 'center top' });
                     (heroSpace as HTMLElement).style.height = `${(heroMk as HTMLElement).offsetHeight * scale}px`;

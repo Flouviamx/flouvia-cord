@@ -13,11 +13,10 @@ import { requirePerm, invalidateMoneyCaches, getFacturaDetalle } from '../../../
 import { createInvoiceDraft, finalizeInvoice, voidInvoice, createCreditNote, updateInvoiceDraft, parseInvoiceItems, MAX_INVOICE_ITEMS } from '../../../lib/fiscal/invoices';
 import { applyPayment } from '../../../lib/fiscal/payments';
 import { requireEntitlement } from '../../../lib/org-entitlements';
-import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../lib/billing';
 import { dispatchInvoiceEvent } from '../../../lib/webhooks';
 import { notifyInvoiceIssued } from '../../../lib/email';
 import { logInvoiceEvent } from '../../../lib/fiscal/timeline';
-import { invoicingFeatureFor, orgCountry } from '../../../lib/fiscal/gate';
+import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
 import { currentUserId } from '../../../lib/context';
 import { after } from '../../../lib/after';
 
@@ -79,6 +78,7 @@ async function updateDraft(orgId: string, id: string, body: any, request: Reques
     const result = await updateInvoiceDraft(orgId, id, {
         clienteId: String(body.cliente_id ?? '').trim(),
         items,
+        documentMode: body.document_mode,
         currency: body.currency ? String(body.currency) : undefined,
         dueDate: dueDate || null,
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,
@@ -111,27 +111,10 @@ async function finalize(orgId: string, id: string, request: Request) {
     const subscriptionDenied = await requireEntitlement(orgId, await invoicingFeatureFor(orgId));
     if (subscriptionDenied) return subscriptionDenied;
 
-    const isMexico = (await orgCountry(orgId)) === 'MX';
-    let usageId: string | null = null;
-    if (isMexico) {
-        const usage = await reserveUsage(orgId, 'timbrado', 1);
-        if (!usage.ok || !usage.id) {
-            const unavailable = /verificar|registrar/i.test(usage.reason || '');
-            return json({ error: usage.reason }, unavailable ? 503 : 429);
-        }
-        usageId = usage.id;
-    }
-
     const result = await finalizeInvoice(orgId, id);
     if (!result.emitted) {
-        if (usageId) await cancelUsage(orgId, usageId);
-        return json({ error: result.error || 'No se pudo emitir la factura', fiscal: result }, 502);
+        return json({ error: result.error || 'No se pudo emitir la factura', fiscal: result }, result.httpStatus || 502);
     }
-    if (usageId) {
-        if (result.reused || result.billable === false) await cancelUsage(orgId, usageId);
-        else void flushUsageReservation(orgId, usageId);
-    }
-
     await logAudit(orgId, {
         accion: 'factura.emitida', entidad: 'factura', entidad_id: id,
         detalle: result.invoiceNumber || id, ip: reqIp(request),
@@ -306,7 +289,7 @@ export const DELETE: APIRoute = async ({ params, request }) => {
     const orgId = await getActiveOrgId();
     const [rows] = await withOrgTx(orgId, sql`
         delete from documentos_fiscales
-         where id = ${id} and org_id = ${orgId} and lifecycle = 'draft' and invoice_number is null
+         where id = ${id} and org_id = ${orgId} and lifecycle = 'draft' and invoice_number is null and provider_data->'cord_issuance' is null
         returning id`);
     if (!rows.length) {
         return json({ error: 'Solo se puede eliminar un borrador que todavía no tiene folio.' }, 409);

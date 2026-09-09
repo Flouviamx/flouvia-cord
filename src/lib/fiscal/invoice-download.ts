@@ -101,7 +101,8 @@ async function invoicePdf(orgId: string, doc: any, simulated: boolean): Promise<
   const term = String(doc.terminos || '');
   const pdf = createInvoicePdf({
     invoiceNumber: String(doc.invoice_number || 'INV'),
-    countryCode: String(doc.country_code || 'US'),
+    documentType: String(doc.document_type),
+            countryCode: String(doc.country_code || 'US'),
     currency: String(doc.currency || 'USD'),
     subtotal: Number(doc.subtotal || 0),
     taxTotal: Number(doc.tax_total || 0),

@@ -26,6 +26,7 @@ import {
 import { memberCan } from '../../../lib/permissions';
 import { getActiveOrgId } from '../../../lib/db';
 import { checkEntitlement } from '../../../lib/org-entitlements';
+import { documentTypeForOrg, isFiscalDocument } from '../../../lib/fiscal/document-kind';
 import { invoicingFeatureFor } from '../../../lib/fiscal/gate';
 import { getCountryProfile } from '../../../lib/countries';
 import { buildTaxOptions, defaultTaxRate, retencionesFrom } from '../../../lib/impuestos';
@@ -66,6 +67,10 @@ const [productos, CLIENTES, ORG, kits, IMPUESTOS] = hasAccess
 const country = String(ORG.countryCode || 'MX').toUpperCase();
 const profile = getCountryProfile(country);
 const isMx = country === 'MX';
+const defaultDocumentType = draft?.tipo || (hasAccess ? await documentTypeForOrg(orgId, country) : 'proforma');
+const fiscalAccess = hasAccess ? await checkEntitlement(orgId, 'cfdi') : null;
+const fiscalSelected = isFiscalDocument(defaultDocumentType, country);
+const selectableFiscal = fiscalAccess?.ok && ['MX', 'ES'].includes(country);
 // El vocabulario fiscal sale del país del EMISOR, no de un default mexicano:
 // un negocio en Madrid factura con "NIF" e "IVA"; uno en Austin, con "Tax ID".
 const TAX_ID_LABEL = profile.taxIdLabel;
@@ -344,6 +349,18 @@ const BOOT = {
                         {L === 'en' ? 'Type, then press' : 'Escribe y pulsa'} <kbd>Enter</kbd>
                         {L === 'en' ? ' to add without leaving the keyboard.' : ' para agregar sin soltar el teclado.'}
                     </p>
+                </section>
+
+                <section class="ed-block">
+                    <div class="section-head"><h2>{L === 'en' ? 'Document type' : 'Tipo de documento'}</h2></div>
+                    <label for="documentMode">{L === 'en' ? 'Issuance' : 'Emisión'}</label>
+                    <select id="documentMode" class="ed-select">
+                        <option value="commercial" selected={!fiscalSelected}>{['MX', 'ES'].includes(country) ? 'Proforma' : (L === 'en' ? 'Commercial invoice' : 'Factura comercial')}</option>
+                        {(selectableFiscal || fiscalSelected) && <option value="fiscal" selected={fiscalSelected} disabled={!selectableFiscal}>{isMx ? 'CFDI 4.0' : 'VERI*FACTU'}</option>}
+                    </select>
+                    <p class="add-hint">{L === 'en'
+                        ? 'Commercial documents are included in Free. Integrated fiscal issuance requires Starter and an enabled fiscal setup. A pro forma does not replace a tax invoice.'
+                        : 'Los documentos comerciales están incluidos en Gratis. La emisión fiscal integrada requiere Starter y configuración fiscal habilitada. Una proforma no sustituye una factura fiscal.'}</p>
                 </section>
 
                 <!-- Notas -->
@@ -979,6 +996,7 @@ const BOOT = {
         // ── Guardar y emitir ────────────────────────────────────────────────
         const payload = () => ({
             cliente_id: $client.value,
+            document_mode: ($('documentMode') as HTMLSelectElement).value,
             currency,
             due_date: ($('dueDate') as HTMLInputElement).value || undefined,
             notas: ($('notas') as HTMLTextAreaElement).value.trim() || undefined,

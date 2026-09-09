@@ -124,9 +124,9 @@ export async function platformCurrencyForOrg(orgId: string): Promise<PlatformCur
 // palanca de negocio — el tope de envíos es puramente el gancho de conversión
 // de Gratis.
 export const INCLUDED: Record<PlanId, { ia: number | null; cfdi: number; api: number; usuarios: number | null; envios: number | null }> = {
-    free:      { ia: 3,    cfdi: 3,    api: 100,   usuarios: 1,    envios: 5 },
-    starter:   { ia: 20,   cfdi: 3,    api: 1000,  usuarios: 1,    envios: null },
-    pro:       { ia: 50,   cfdi: 20,   api: 5000,  usuarios: 5,    envios: null },
+    free:      { ia: 3,    cfdi: 5,    api: 100,   usuarios: 1,    envios: 5 },
+    starter:   { ia: 20,   cfdi: 20,    api: 1000,  usuarios: 1,    envios: null },
+    pro:       { ia: 50,   cfdi: 500,   api: 5000,  usuarios: 5,    envios: null },
     scale:     { ia: 500,  cfdi: 100,  api: 10000, usuarios: 15,   envios: null },
     developer: { ia: null, cfdi: 1000, api: 50000, usuarios: null, envios: null },
 };
@@ -289,7 +289,7 @@ export interface UsageReservation {
  * La fila de outbox queda COMMITTED antes de ejecutar el proveedor externo: si
  * el worker muere después, el cron aún puede entregar el meter event a Stripe.
  */
-export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1): Promise<UsageReservation> {
+export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1, options: { deferMeter?: boolean } = {}): Promise<UsageReservation> {
     const value = Math.trunc(Number(rawValue));
     if (!Number.isFinite(value) || value <= 0 || value > 10_000) {
         return { ok: false, reason: 'Cantidad de consumo inválida.' };
@@ -367,8 +367,8 @@ export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1): 
                      meter_status, stripe_customer_id, committed_at)
                   select ${id}, ${orgId}, ${context.billingOrgId}, ${dim}, ${value},
                          case when ${meterEligible} then greatest(0, least(${value}, consumed.cfdi - ${includedForMeter})) else 0 end,
-                         ${periodo}, 'committed',
-                         case when ${meterEligible} and consumed.cfdi > ${includedForMeter} then 'pending' else 'skipped' end,
+                         ${periodo}, ${options.deferMeter ? 'reserved' : 'committed'},
+                         case when ${meterEligible} and ${!options.deferMeter} and consumed.cfdi > ${includedForMeter} then 'pending' else 'skipped' end,
                          ${context.stripeCustomerId}, now()
                   from consumed returning id
                 )
@@ -426,7 +426,7 @@ export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1): 
 
         const [[result]] = await withOrgTx(orgId, queryFor(col));
         if (!result?.ok) {
-            return { ok: false, reason: `Alcanzaste el límite de tu plan para ${dim}. Sube de plan para continuar.` };
+            return { ok: false, reason: `Alcanzaste el límite de tu plan para ${dim === 'timbrado' ? 'facturas' : dim}. Sube de plan para continuar.` };
         }
         return { ok: true, id };
     } catch (error) {
@@ -443,7 +443,7 @@ export async function cancelUsage(orgId: string, reservationId: string): Promise
               update usage_reservations
                  set status = 'canceled', canceled_at = now(), updated_at = now()
                where id = ${reservationId} and org_id = ${orgId}
-                 and status = 'committed' and meter_status not in ('sending','sent')
+                 and status in ('reserved', 'committed') and meter_status not in ('sending','sent')
               returning dimension, value, periodo
             ), reverted as (
               update uso_periodo u set
@@ -462,6 +462,28 @@ export async function cancelUsage(orgId: string, reservationId: string): Promise
         log.error('no se pudo cancelar la reserva', { route: 'billing', reservationId, err: error });
         return false;
     }
+}
+
+/** Confirma consumo de factura bajo el mismo lock de la cuota. Las reservas
+ * todavía no emitidas no empujan otro documento hacia un excedente falso. */
+export async function commitInvoiceUsage(orgId: string, reservationId: string): Promise<void> {
+    const context = await getEntitlementContext(orgId);
+    const included = INCLUDED[context.effectivePlan].cfdi;
+    const eligible = !context.isSandbox && context.effectivePlan !== 'free' && !!context.stripeCustomerId;
+    // Sentencias separadas en la MISMA transacción: tras esperar el lock, la
+    // lectura obtiene un snapshot nuevo con las confirmaciones anteriores.
+    await withOrgTx(orgId,
+        sql`select pg_advisory_xact_lock(hashtextextended(${orgId + ':timbrado'}, 0))`,
+        sql`with amount as (
+            select r.id, case when ${eligible} then greatest(0, least(r.value,
+                p.cfdi - coalesce((select sum(h.value) from usage_reservations h
+                    where h.org_id = r.org_id and h.periodo = r.periodo and h.dimension = 'timbrado'
+                      and h.status = 'reserved'), 0) + r.value - ${included})) else 0 end as billable
+            from usage_reservations r join uso_periodo p on p.org_id = r.org_id and p.periodo = r.periodo
+            where r.id = ${reservationId} and r.org_id = ${orgId} and r.dimension = 'timbrado' and r.status = 'reserved'
+        ) update usage_reservations r set status = 'committed', meter_value = amount.billable,
+            meter_status = case when amount.billable > 0 then 'pending' else 'skipped' end, updated_at = now()
+          from amount where r.id = amount.id and r.org_id = ${orgId}`);
 }
 
 async function sendUsageRow(row: any): Promise<void> {
@@ -501,6 +523,22 @@ export async function flushUsageReservation(orgId: string, reservationId: string
 export async function flushPendingUsage(limit = 100): Promise<{ sent: number; failed: number }> {
     if (!STRIPE_KEY) throw new Error('Stripe Billing no está configurado');
     const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 500);
+    // Recuperación limitada a reservas vinculadas a una emisión confirmada.
+    const [heldRows] = await withSystemTx(sql`
+        select u.id, u.org_id from usage_reservations u
+        join documentos_fiscales d on d.org_id = u.org_id
+          and d.provider_data->'cord_issuance'->>'usage_id' = u.id::text
+        where u.dimension = 'timbrado' and u.status = 'reserved'
+          and d.status = 'issued' limit ${safeLimit}`);
+    for (const held of heldRows) {
+        const heldOrg = String(held.org_id);
+        const [[doc]] = await withOrgTx(heldOrg, sql`
+            select provider_data from documentos_fiscales where org_id = ${heldOrg}
+              and provider_data->'cord_issuance'->>'usage_id' = ${String(held.id)} and status = 'issued' limit 1`);
+        if (!doc) continue;
+        if (doc.provider_data?.simulado === true || doc.provider_data?.livemode === false) await cancelUsage(heldOrg, String(held.id));
+        else await commitInvoiceUsage(heldOrg, String(held.id));
+    }
     const [rows] = await withSystemTx(sql`
         with candidates as (
           select id from usage_reservations

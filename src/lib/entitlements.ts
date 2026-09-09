@@ -54,17 +54,10 @@ export type FeatureKey =
     | 'sso'
     | 'agent_governance';
 
-/** Plan mínimo de cada capacidad.
- *
- * Matriz ago 2026 (delimitación de planes): `collections` y `cashflow_90` bajan
- * de Scale a Pro (van con `cfo_dashboard`, que ya vivía en Pro — separarlos no
- * respondía a ninguna lógica de valor). La facturación electrónica queda
- * temporalmente disponible en Gratis, con el tope mensual definido en
- * `billing.INCLUDED`; `international_invoicing` y `cfdi` permanecen en el mismo
- * peldaño porque son el mismo carril, distinto solo por país (Regla 10,
- * posicionamiento horizontal). Ver docs/estado/negocio-billing.md. */
+/** Documentos comerciales desde Free; integración fiscal desde Starter.
+ * Los identificadores históricos se conservan para API y configuración. */
 export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanId> = {
-    cfdi: 'free',
+    cfdi: 'starter',
     // La recurrencia es lo que convierte la facturación en operación repetible:
     // vive con el resto de la cobranza automática, no con el documento suelto.
     recurring_invoices: 'pro',
@@ -91,14 +84,8 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanId> = {
     agent_governance: 'scale',
 };
 
-// Vocabulario de facturación: la capacidad se llama **Cord Invoicing** en los
-// dos idiomas. `cfdi` e `international_invoicing` son dos CARRILES de la misma
-// capacidad (México ante el SAT, factura comercial en el resto), por eso
-// comparten etiqueta: al usuario le decimos qué producto necesita, no qué
-// regulación le toca. Las FeatureKey NO se renombran — son identificadores con
-// consumidores en BD, cron, API pública y MCP.
 export const FEATURE_LABEL: Record<FeatureKey, string> = {
-    cfdi: 'Cord Invoicing',
+    cfdi: 'Emisión fiscal integrada',
     recurring_invoices: 'Facturas recurrentes',
     remove_branding: 'Quitar la marca de Cord',
     custom_email: 'Personalización de correos',

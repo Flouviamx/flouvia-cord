@@ -59,6 +59,7 @@ export const POST = withApiAuth('write', async ({ request }, auth) => {
     const result = await createInvoiceDraft(orgId, {
         clienteId,
         items,
+        documentMode: body.document_mode,
         currency: body.currency ? String(body.currency) : undefined,
         dueDate: dueDate || null,
         notes: String(body.notas ?? '').trim().slice(0, 1000) || null,

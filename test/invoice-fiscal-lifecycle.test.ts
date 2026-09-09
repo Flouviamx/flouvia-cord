@@ -1,3 +1,5 @@
+vi.mock('../src/lib/fiscal/issuance-usage', () => ({ meterInvoiceEmission: (_org: string, _id: string, emit: () => unknown) => emit() }));
+vi.mock('../src/lib/org-entitlements', () => ({ getEffectivePlan: async () => 'starter' }));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const m = vi.hoisted(() => ({ tx: vi.fn(), cancel: vi.fn(), issue: vi.fn(), event: vi.fn() }));
 vi.mock('../src/lib/db', () => ({ withOrgTx: m.tx, sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ text: strings.join('?'), values }) }));
@@ -57,7 +59,7 @@ describe('persistencia de cancelaciones', () => {
     expect((await voidInvoice('org-a', 'doc-a', undefined, true)).ok).toBe(false); expect(m.cancel).not.toHaveBeenCalled();
   });
   it('la cancelación comercial existente conserva su contrato', async () => {
-    m.tx.mockResolvedValueOnce([[doc({ country_code: 'US' })]]); m.cancel.mockResolvedValue({ success: true });
+    m.tx.mockResolvedValueOnce([[doc({ country_code: 'US', document_type: 'commercial_invoice' })]]); m.cancel.mockResolvedValue({ success: true });
     expect((await voidInvoice('org-a', 'doc-a')).ok).toBe(true);
   });
 });

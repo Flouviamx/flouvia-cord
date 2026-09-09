@@ -15,6 +15,10 @@
 // `emitFiscalDocument()` (emit.ts) no cambia: sigue siendo el carril de la
 // cotización, que ya está en producción timbrando CFDI real.
 
+import { documentTypeForOrg, documentPrefix, isFiscalDocument } from './document-kind';
+import { getEffectivePlan } from '../org-entitlements';
+import { planIncludes } from '../entitlements';
+import { meterInvoiceEmission } from './issuance-usage';
 import { sql, withOrgTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
 import { getCountryProfile } from '../countries';
@@ -64,6 +68,7 @@ export interface DraftLineInput {
 }
 
 export interface CreateDraftInput {
+  documentMode?: unknown;
   clienteId: string;
   items: DraftLineInput[];
   /** Divisa de la VENTA. Por defecto la contable de la org (Regla 21). */
@@ -191,6 +196,7 @@ async function resolveFxRate(
   total: number,
   bufferPct: number | null | undefined,
   country: string,
+  fiscal = true,
 ): Promise<{ rate: number } | { error: string }> {
   let rate = 1;
   if (currency !== ledgerCurrency) {
@@ -215,7 +221,7 @@ async function resolveFxRate(
   // comprobante ni los libros están en pesos, la tasa que pide el SAT no
   // existe: se dice aquí, con un mensaje accionable, en vez de mandar el
   // timbrado a fallar contra el PAC con un error críptico.
-  if (country === 'MX' && currency !== 'MXN' && ledgerCurrency !== 'MXN') {
+  if (fiscal && country === 'MX' && currency !== 'MXN' && ledgerCurrency !== 'MXN') {
     return {
       error: `Un CFDI en ${currency} necesita su tipo de cambio a pesos mexicanos, y tu contabilidad está en ${ledgerCurrency}. Cambia la moneda contable a MXN en Ajustes para poder timbrar.`,
     };
@@ -256,6 +262,9 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
 
   const country = String(head.country_code || 'MX').toUpperCase();
   const profile = getCountryProfile(country);
+  let docType: string;
+  try { docType = await documentTypeForOrg(orgId, country, input.documentMode); }
+  catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'No se pudo verificar el tipo de documento.' }; }
   // Mismo catálogo y misma validación de servidor que las cotizaciones (regla
   // 23): sin esto, un POST a /api/facturas podía declarar cualquier tax_rate y
   // el único freno era el rango [0,1] del motor. Las retenciones tampoco se
@@ -287,7 +296,7 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
   const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
   const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
 
-  const fx = await resolveFxRate(currency, ledgerCurrency, total, input.bufferPct, country);
+  const fx = await resolveFxRate(currency, ledgerCurrency, total, input.bufferPct, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
   const fxRate = fx.rate;
 
@@ -305,8 +314,8 @@ export async function createInvoiceDraft(orgId: string, input: CreateDraftInput)
       issuer_snapshot, recipient_snapshot, line_items_snapshot,
       schema_version, provider_data, updated_at
     ) values (
-      ${orgId}, null, ${String(head.cliente_id)}, ${country}, ${documentTypeFor(country)}, 'pending',
-      ${country === 'MX' ? 'facturapi' : 'cord'},
+      ${orgId}, null, ${String(head.cliente_id)}, ${country}, ${docType}, 'pending',
+      ${docType === 'cfdi_40' ? 'facturapi' : 'cord'},
       ${currency}, ${ledgerCurrency}, ${fxRate}, ${money(total * fxRate)},
       ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(retenciones)}::jsonb,
       'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
@@ -342,14 +351,14 @@ export async function updateInvoiceDraft(
   if (!input.clienteId) return { ok: false, error: 'La factura necesita un cliente.' };
 
   const [docRows] = await withOrgTx(orgId, sql`
-    select id, lifecycle, invoice_number, public_token, amount_paid, credit_note_of
+    select id, lifecycle, invoice_number, public_token, amount_paid, credit_note_of, document_type, country_code, provider_data
       from documentos_fiscales
      where id = ${documentId} and org_id = ${orgId}
      limit 1`);
   const doc = docRows[0];
   if (!doc) return { ok: false, error: 'Factura no encontrada.' };
   if (doc.credit_note_of) return { ok: false, error: 'La nota de crédito conserva el desglose de la factura original; descártala y crea otra para cambiar el importe.' };
-  if (doc.lifecycle !== 'draft' || doc.invoice_number) {
+  if (doc.lifecycle !== 'draft' || doc.invoice_number || doc.provider_data?.cord_issuance) {
     return { ok: false, error: 'Esta factura ya fue emitida y no se puede editar. Anúlala o emite una nota de crédito.' };
   }
 
@@ -374,6 +383,11 @@ export async function updateInvoiceDraft(
 
   const country = String(head.country_code || 'MX').toUpperCase();
   const profile = getCountryProfile(country);
+  let docType = String(doc.document_type);
+  if (input.documentMode !== undefined) {
+    try { docType = await documentTypeForOrg(orgId, country, input.documentMode); }
+    catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'Tipo de documento no disponible.' }; }
+  } else if (country !== doc.country_code) return { ok: false, error: 'El país del emisor cambió. Crea un borrador nuevo.' };
   let catalogo;
   try {
     catalogo = await taxCatalogFor(orgId);
@@ -396,7 +410,7 @@ export async function updateInvoiceDraft(
 
   const ledgerCurrency = normalizeCurrency((head.org_moneda as string) || profile.currency);
   const currency = normalizeCurrency(input.currency || ledgerCurrency, ledgerCurrency);
-  const fx = await resolveFxRate(currency, ledgerCurrency, total, input.bufferPct, country);
+  const fx = await resolveFxRate(currency, ledgerCurrency, total, input.bufferPct, country, isFiscalDocument(docType, country));
   if ('error' in fx) return { ok: false, error: fx.error };
 
   const { issuer, recipient } = partiesFrom(head, country);
@@ -407,7 +421,7 @@ export async function updateInvoiceDraft(
     update documentos_fiscales set
       cliente_id = ${String(head.cliente_id)},
       country_code = ${country},
-      document_type = ${documentTypeFor(country)},
+      document_type = ${docType},
       currency = ${currency},
       ledger_currency = ${ledgerCurrency},
       fx_rate = ${fx.rate},
@@ -426,6 +440,7 @@ export async function updateInvoiceDraft(
       updated_at = now()
     where id = ${documentId} and org_id = ${orgId}
       and lifecycle = 'draft' and invoice_number is null and credit_note_of is null
+      and provider_data->'cord_issuance' is null
     returning id, public_token`);
   const row = rows[0];
   if (!row) return { ok: false, error: 'No se pudo actualizar el borrador.' };
@@ -441,6 +456,10 @@ export async function updateInvoiceDraft(
  * no debe dejar un hueco en la numeración fiscal.
  */
 export async function finalizeInvoice(orgId: string, documentId: string): Promise<EmitResult> {
+  return meterInvoiceEmission(orgId, documentId, () => finalizeReservedInvoice(orgId, documentId));
+}
+
+async function finalizeReservedInvoice(orgId: string, documentId: string): Promise<EmitResult> {
   const [headRows] = await withOrgTx(orgId, sql`
     select o.nombre as org_nombre, o.razon_social as org_razon_social, o.rfc as org_tax_id,
            o.regimen_fiscal as org_tax_system, o.country_code, o.iva_pct,
@@ -448,12 +467,12 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
            o.direccion as org_direccion, o.moneda as org_moneda,
            o.fiscal_metadata, o.serie_folio,
            o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of,
-           d.id, d.lifecycle, d.status, d.country_code as doc_country, d.document_type,
+           d.id, d.cotizacion_id, d.lifecycle, d.status, d.country_code as doc_country, d.document_type,
            d.currency, d.ledger_currency, d.fx_rate, d.ledger_total,
            d.subtotal, d.tax_total, d.total, d.retencion_total, d.retenciones_snapshot,
-           d.invoice_number, d.public_token,
+           d.invoice_number, d.public_token, d.idempotency_key,
            d.issuer_snapshot, d.recipient_snapshot, d.line_items_snapshot,
-           d.fiscal_id, d.provider_data, d.credit_note_of,
+           d.fiscal_id, d.provider, d.provider_data, d.credit_note_of,
            original.fiscal_id as original_fiscal_id, original.status as original_status,
            cl.uso_cfdi as cliente_uso
       from documentos_fiscales d
@@ -499,12 +518,16 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
   const country = String(head.doc_country || 'MX').toUpperCase();
   const profile = getCountryProfile(country);
   const docType = String(head.document_type || documentTypeFor(country));
+  const regulatory = isFiscalDocument(docType, country, String(head.provider));
+  if (regulatory && !planIncludes(await getEffectivePlan(orgId), 'cfdi')) {
+    return { emitted: false, status: 'error', httpStatus: 402, error: 'La emisión fiscal integrada requiere Starter o un plan superior. El documento conserva su tipo original.' };
+  }
   const fiscalMetadata = metadata(head.fiscal_metadata);
-  const prefix = cleanPrefix(
+  const prefix = documentPrefix(docType, cleanPrefix(
     fiscalMetadata.invoice_prefix || (country === 'MX' ? head.serie_folio : ''),
     profile.invoicePrefix,
-  );
-  const idempotencyKey = `invoice:${documentId}:v1`;
+  ));
+  const idempotencyKey = String(head.idempotency_key || `invoice:${documentId}:v1`);
   const issuedAt = new Date().toISOString();
   // Serie + ejercicio: mismo criterio que emit.ts — la serie es el propio
   // `prefix` (cambiarlo en Ajustes reinicia el contador, en vez de reutilizar
@@ -559,9 +582,9 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
     invoiceNumber,
     idempotencyKey,
     orgId,
-    quoteId: documentId,
+    quoteId: String(head.cotizacion_id || documentId),
     countryCode: country,
-    documentType: docType,
+    documentType: regulatory && country === 'ES' ? (head.credit_note_of ? 'verifactu_credit_note' : 'verifactu_invoice') : docType,
     relatedFiscalId: head.original_status === 'issued' ? String(head.original_fiscal_id || '') : undefined,
     issuer: head.issuer_snapshot as FiscalParty,
     recipient: head.recipient_snapshot as FiscalParty,
@@ -595,23 +618,24 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
       success: true,
       provider: 'cord-sandbox',
       documentId,
-      fiscalId: country === 'MX' ? `SIM-${documentId.slice(0, 8).toUpperCase()}` : undefined,
+      fiscalId: regulatory && country === 'MX' ? `SIM-${documentId.slice(0, 8).toUpperCase()}` : undefined,
       pdfUrl: `/api/fiscal/documents/${documentId}/pdf`,
       rawProviderData: {
         simulado: true,
         modo_prueba: true,
-        regulatory_status: country === 'MX' ? 'not_stamped' : 'commercial_only',
+        regulatory_status: regulatory && country === 'MX' ? 'not_stamped' : 'commercial_only',
       },
     };
   } else {
     try {
-      response = await FiscalFactory.getProvider(country).issueDocument(request);
+      response = await FiscalFactory.getProvider(country, regulatory && country === 'ES' ? (head.credit_note_of ? 'verifactu_credit_note' : 'verifactu_invoice') : docType).issueDocument(request);
     } catch (error: unknown) {
       response = {
         success: false,
         provider: country === 'MX' ? 'facturapi' : 'cord',
         documentId,
         error: error instanceof Error ? error.message : 'fallo del proveedor fiscal',
+        rawProviderData: { delivery_uncertain: true },
       };
     }
   }
@@ -629,7 +653,7 @@ export async function finalizeInvoice(orgId: string, documentId: string): Promis
            provider = ${response.provider},
            provider_document_id = ${response.documentId || null},
            fiscal_id = ${response.fiscalId ?? null},
-           provider_data = ${JSON.stringify(providerData)},
+           provider_data = coalesce(provider_data, '{}'::jsonb) || ${JSON.stringify(providerData)}::jsonb,
            pdf_url = ${response.pdfUrl ?? null},
            xml_url = ${response.xmlUrl ?? null},
            amount_remaining = case when credit_note_of is not null then 0 else coalesce(total, 0) - coalesce(amount_paid, 0) end,
@@ -684,7 +708,7 @@ export async function voidInvoice(
   const [rows] = await withOrgTx(orgId, sql`
     select d.id, d.lifecycle, d.status, d.amount_paid, d.country_code, d.credit_note_of,
            exists (select 1 from documentos_fiscales n where n.credit_note_of = d.id and n.org_id = d.org_id and n.lifecycle <> 'void') as has_credit_notes,
-           d.provider_document_id, d.provider_data,
+           d.provider_document_id, d.provider_data, d.document_type, d.provider,
            o.facturapi_live_key, o.facturapi_live_key_enc, o.sandbox_of
       from documentos_fiscales d
       join orgs o on o.id = d.org_id
@@ -708,7 +732,7 @@ export async function voidInvoice(
 
   // Un borrador nunca llegó al proveedor: se anula localmente y ya.
   if (doc.status !== 'issued') {
-    if (checkOnly || doc.provider_data?.delivery_uncertain || doc.provider_document_id && !String(doc.provider_document_id).startsWith('err_')) {
+    if (checkOnly || doc.provider_data?.cord_issuance || doc.provider_data?.delivery_uncertain || doc.provider_document_id && !String(doc.provider_document_id).startsWith('err_')) {
       return { ok: false, error: 'Primero confirma el resultado de la emisión fiscal antes de anular este documento.' };
     }
     await withOrgTx(orgId,
@@ -724,7 +748,8 @@ export async function voidInvoice(
   }
 
   const country = String(doc.country_code || 'MX').toUpperCase();
-  if (checkOnly && country !== 'MX') return { ok: false, error: 'La consulta de cancelación solo aplica al CFDI de México.' };
+  const regulatory = isFiscalDocument(String(doc.document_type || documentTypeFor(country)), country, String(doc.provider));
+  if (checkOnly && (country !== 'MX' || !regulatory)) return { ok: false, error: 'La consulta de cancelación solo aplica al CFDI de México.' };
   const orgKey = decryptSecret(doc.facturapi_live_key_enc as string)
     || (doc.facturapi_live_key as string) || undefined;
   const scope = doc.provider_data?.credential_scope;
@@ -734,10 +759,10 @@ export async function voidInvoice(
   if (!simulated && !doc.provider_document_id) return { ok: false, error: 'Falta el identificador del comprobante emitido.' };
   const cancel: FiscalCancelResponse = simulated
     ? { success: true, status: 'accepted', rawProviderData: { simulado: true } }
-    : await FiscalFactory.getProvider(country).cancelDocument(
+    : await FiscalFactory.getProvider(country, regulatory && country === 'ES' ? 'verifactu_invoice' : String(doc.document_type || documentTypeFor(country))).cancelDocument(
         String(doc.provider_document_id), { reason, checkOnly, providerApiKey: providerKey, orgId },
       );
-  const confirmed = cancel.success && (cancel.status === 'accepted' || country !== 'MX' && !cancel.status);
+  const confirmed = cancel.success && (cancel.status === 'accepted' || country !== 'MX' && !cancel.status || !regulatory && !cancel.status);
   if (!confirmed) {
     const state = cancel.status || 'unknown';
     await withOrgTx(orgId, sql`
@@ -780,7 +805,7 @@ export async function createCreditNote(
   opts: { monto?: number; motivo?: string; createdBy?: string | null } = {},
 ): Promise<DraftResult> {
   const [rows] = await withOrgTx(orgId, sql`
-    select id, cotizacion_id, cliente_id, country_code, currency, ledger_currency,
+    select id, cotizacion_id, cliente_id, country_code, document_type, provider, currency, ledger_currency,
            fx_rate, total, tax_total, subtotal, lifecycle, status, due_date,
            issuer_snapshot, recipient_snapshot, line_items_snapshot, retenciones_snapshot, retencion_total, credit_note_of,
            (select coalesce(sum(n.total), 0) from documentos_fiscales n
@@ -807,6 +832,8 @@ export async function createCreditNote(
   const { lines, subtotal, taxes, retenciones, retencionTotal } = credit;
   const country = String(doc.country_code || 'MX').toUpperCase();
 
+  const regulatory = isFiscalDocument(String(doc.document_type || documentTypeFor(country)), country, String(doc.provider));
+  const creditType = regulatory ? (country === 'MX' ? 'cfdi_egreso' : 'verifactu_credit_note') : 'commercial_credit_note';
   const publicToken = newInvoiceToken();
   const [, inserted] = await withOrgTx(orgId, invoiceBalanceLock(orgId, documentId), sql`
     insert into documentos_fiscales (
@@ -818,8 +845,8 @@ export async function createCreditNote(
       schema_version, provider_data, updated_at
     ) select
       ${orgId}, ${doc.cotizacion_id || null}, ${doc.cliente_id || null}, ${country},
-      ${country === 'MX' ? 'cfdi_egreso' : 'credit_note'}, 'pending',
-      ${country === 'MX' ? 'facturapi' : 'cord'},
+      ${creditType}, 'pending',
+      ${regulatory && country === 'MX' ? 'facturapi' : 'cord'},
       ${doc.currency}, ${doc.ledger_currency}, ${doc.fx_rate},
       ${money(monto * (Number(doc.fx_rate) || 1))}, ${subtotal}, ${taxes}, ${monto},
       'draft', ${doc.due_date}, 0, 0, ${publicToken},

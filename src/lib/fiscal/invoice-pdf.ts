@@ -22,6 +22,7 @@ import type { FiscalLineItem, FiscalParty, FiscalRetencion } from './index';
 export interface InvoicePdfInput {
   invoiceNumber: string;
   countryCode: string;
+  documentType?: string;
   currency: string;
   subtotal: number;
   taxTotal: number;
@@ -182,7 +183,7 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   }
 
   const headRight = PAGE_W - MARGIN - 220;
-  doc.text(t('FACTURA', 'INVOICE'), headRight, 42, {
+  doc.text(input.documentType === 'proforma' ? 'PROFORMA' : input.creditNoteOfNumber ? t('NOTA DE CRÉDITO', 'CREDIT NOTE') : t('FACTURA', 'INVOICE'), headRight, 42, {
     size: 9, font: 'bold', color: onBrand, align: 'right', width: 220, tracking: 2.4,
   });
   doc.text(truncateText(input.invoiceNumber, 220, 19, 'bold'), headRight, 66, {
@@ -453,7 +454,10 @@ export function createInvoicePdf(input: InvoicePdfInput): Buffer {
   // ── Pie legal y numeración, en TODAS las páginas ───────────────────────────
   // Este texto es la diferencia entre una factura comercial y una fiscal: se
   // conserva palabra por palabra y nunca se omite.
-  const disclaimer = input.countryCode.toUpperCase() === 'MX'
+  const disclaimer = input.documentType === 'proforma'
+    ? t('Documento comercial proforma. No sustituye una factura fiscal ni acredita envío a una autoridad tributaria.',
+        'Pro forma commercial document. It does not replace a tax invoice or certify submission to a tax authority.')
+    : input.countryCode.toUpperCase() === 'MX' && ['cfdi_40', 'cfdi_egreso'].includes(input.documentType || 'cfdi_40')
     ? t('Representación de un comprobante emitido con Cord. La validez fiscal la determina el CFDI timbrado y su XML.',
         'Representation of a receipt issued with Cord. Tax validity is determined by the stamped CFDI and its XML.')
     : t('Documento comercial emitido por Cord. No representa por sí solo una transmisión, autorización o timbrado ante la autoridad fiscal local.',

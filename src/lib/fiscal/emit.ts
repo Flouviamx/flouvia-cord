@@ -3,6 +3,7 @@
 // Así una falla de Facturapi no borra el intento ni convierte al proveedor en
 // la fuente de verdad del producto.
 
+import { documentTypeForOrg, documentPrefix } from './document-kind';
 import { sql, withOrgTx, withSystemTx } from '../db';
 import { decryptSecret } from '../crypto-secret';
 import { getCountryProfile } from '../countries';
@@ -27,6 +28,7 @@ export interface EmitResult {
   billable?: boolean;
   status: 'issued' | 'error';
   error?: string;
+  httpStatus?: number;
 }
 
 export const money = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
@@ -300,7 +302,7 @@ export async function emitSubscriptionInvoice(
   };
 }
 
-export async function emitFiscalDocument(orgId: string, cotizacionId: string): Promise<EmitResult> {
+export async function emitFiscalDocument(orgId: string, cotizacionId: string, documentMode?: unknown): Promise<EmitResult> {
   const [headRows, allItems] = await withOrgTx(orgId,
     sql`select
           o.nombre as org_nombre, o.razon_social as org_razon_social, o.rfc as org_tax_id,
@@ -336,7 +338,9 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
 
   const country = String(head.country_code || 'MX').toUpperCase();
   const profile = getCountryProfile(country);
-  const docType = documentTypeFor(country);
+  let docType: string;
+  try { docType = await documentTypeForOrg(orgId, country, documentMode); }
+  catch (error) { return { emitted: false, status: 'error', error: error instanceof Error ? error.message : 'No se pudo verificar el tipo de documento.' }; }
   const approvedItems = allItems.filter((item: any) => item.aprobado !== false);
   if (!approvedItems.length) {
     return { emitted: false, status: 'error', error: 'no hay líneas aprobadas para facturar' };
@@ -431,17 +435,17 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
   // comprobante no va en pesos y la contabilidad de la organización tampoco, no
   // existe la tasa que el SAT pide. Se dice aquí, con un mensaje accionable, en
   // vez de mandar el timbrado a fallar contra el PAC con un error críptico.
-  if (country === 'MX' && currency !== 'MXN' && ledgerCurrency !== 'MXN') {
+  if (docType === 'cfdi_40' && currency !== 'MXN' && ledgerCurrency !== 'MXN') {
     return {
       emitted: false,
       status: 'error',
       error: `Un CFDI en ${currency} necesita su tipo de cambio a pesos mexicanos, y tu contabilidad está configurada en ${ledgerCurrency}. Cambia la moneda contable a MXN en Ajustes para poder timbrar.`,
     };
   }
-  const prefix = cleanPrefix(
+  const prefix = documentPrefix(docType, cleanPrefix(
     fiscalMetadata.invoice_prefix || (country === 'MX' ? head.serie_folio : ''),
     profile.invoicePrefix,
-  );
+  ));
   const idempotencyKey = `quote:${cotizacionId}:invoice:v1`;
   const issuedAt = new Date().toISOString();
   // Serie + ejercicio: `invoice_sequences` numeraba indefinidamente sin año ni
@@ -497,150 +501,25 @@ export async function emitFiscalDocument(orgId: string, cotizacionId: string): P
           )
           select ${orgId}, ${cotizacionId}, ${(head.cliente_id as string) || null},
                  ${country}, ${docType}, 'pending',
-                 ${country === 'MX' ? 'facturapi' : 'cord'},
+                 ${docType === 'cfdi_40' ? 'facturapi' : 'cord'},
                  ${folioPrefix} || '-' || lpad(sequence_value::text, 6, '0'),
                  ${currency}, ${ledgerCurrency}, ${fxRate}, ${ledgerTotal},
                  ${subtotal}, ${taxes}, ${total}, ${retencionTotal}, ${JSON.stringify(totals.retenciones)}::jsonb,
                  'draft', ${dueDate}::date, 0, ${total}, ${publicToken},
                  ${JSON.stringify(issuer)}, ${JSON.stringify(recipient)}, ${JSON.stringify(lines)},
-                 ${idempotencyKey}, 'cord.invoice.v1', '{}'::jsonb, now()
+                 ${idempotencyKey}, 'cord.invoice.v1', ${JSON.stringify(isPartial ? { aprobacion_parcial: true, lineas_facturadas: approvedItems.length, lineas_totales: allItems.length } : {})}::jsonb, now()
             from next_number
-          returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, public_token, created_at, updated_at
-        ), claimed as (
-          update documentos_fiscales d
-             set status = 'pending', updated_at = now()
-           where d.id = (select id from existing)
-             and (
-               d.status = 'error'
-               or (d.status = 'pending' and d.updated_at < now() - interval '2 minutes')
-             )
           returning id, invoice_number, fiscal_id, status, provider_data, pdf_url, xml_url, public_token, created_at, updated_at
         )
         select inserted.*, true as created from inserted
         union all
-        select claimed.*, true as created from claimed
-        union all
         select existing.*, false as created from existing
-         where not exists (select 1 from claimed)
         limit 1`,
   );
   const reserved = reservedRows[0];
   if (!reserved) return { emitted: false, status: 'error', error: 'no se pudo reservar el folio fiscal' };
-  const localDocumentId = String(reserved.id);
-  const invoiceNumber = String(reserved.invoice_number || '');
-  const token = (reserved.public_token as string) || publicToken;
-
-  if (!reserved.created && reserved.status === 'issued') {
-    return {
-      emitted: true,
-      documentId: localDocumentId,
-      fiscalId: reserved.fiscal_id ? String(reserved.fiscal_id) : undefined,
-      invoiceNumber,
-      publicToken: token,
-      reused: true,
-      billable: isBillableCfdi(country, reserved.provider_data),
-      status: 'issued',
-    };
-  }
-  if (!reserved.created && reserved.status === 'pending') {
-    return {
-      emitted: false,
-      documentId: localDocumentId,
-      invoiceNumber,
-      status: 'error',
-      error: 'la emisión de esta factura ya está en proceso; vuelve a consultar en unos segundos',
-    };
-  }
-  const request: FiscalDocumentRequest = {
-    documentId: localDocumentId,
-    invoiceNumber,
-    idempotencyKey,
-    orgId,
-    quoteId: cotizacionId,
-    countryCode: country,
-    documentType: docType,
-    issuer,
-    recipient,
-    lines,
-    totals: {
-      subtotal, taxes, total, currency,
-      ...(fxRate !== 1 ? { exchangeRate: fxRate, ledgerCurrency } : {}),
-      ...(retencionTotal > 0 ? { retenciones: totals.retenciones, retencionTotal } : {}),
-    },
-    issuedAt,
-    providerApiKey: decryptSecret(head.facturapi_live_key_enc as string)
-      || (head.facturapi_live_key as string)
-      || undefined,
-    cfdi: {
-      use: String(head.cliente_uso || head.org_uso || 'G03'),
-      paymentForm: '03',
-      paymentMethod: 'PUE',
-    },
-  };
-
-  let response: FiscalDocumentResponse;
-  if (head.sandbox_of) {
-    response = {
-      success: true,
-      provider: 'cord-sandbox',
-      documentId: localDocumentId,
-      fiscalId: country === 'MX' ? `SIM-${cotizacionId.slice(0, 8).toUpperCase()}` : undefined,
-      pdfUrl: `/api/fiscal/documents/${localDocumentId}/pdf`,
-      rawProviderData: {
-        simulado: true,
-        modo_prueba: true,
-        regulatory_status: country === 'MX' ? 'not_stamped' : 'commercial_only',
-      },
-    };
-  } else {
-    try {
-      response = await FiscalFactory.getProvider(country).issueDocument(request);
-    } catch (error: unknown) {
-      response = {
-        success: false,
-        provider: country === 'MX' ? 'facturapi' : 'cord',
-        documentId: localDocumentId,
-        error: error instanceof Error ? error.message : 'fallo del proveedor fiscal',
-      };
-    }
-  }
-
-  const status: 'issued' | 'error' = response.success ? 'issued' : 'error';
-  const providerData = {
-    ...(response.rawProviderData ?? {}),
-    ...(isPartial ? {
-      aprobacion_parcial: true,
-      lineas_facturadas: approvedItems.length,
-      lineas_totales: allItems.length,
-    } : {}),
-    ...(!response.success ? { error: response.error || 'fallo del proveedor fiscal' } : {}),
-  };
-  await withOrgTx(orgId, sql`
-    update documentos_fiscales
-       set status = ${status},
-           -- lifecycle solo avanza a 'open' cuando el rail fiscal confirmó.
-           -- Si el proveedor falló, el documento sigue siendo un borrador y no
-           -- entra al aging ni a cobranza: cobrar una factura que nunca se
-           -- timbró es exactamente el error que esta separación evita.
-           lifecycle = ${response.success ? 'open' : 'draft'},
-           provider = ${response.provider},
-           provider_document_id = ${response.documentId || null},
-           fiscal_id = ${response.fiscalId ?? null},
-           provider_data = ${JSON.stringify(providerData)},
-           pdf_url = ${response.pdfUrl ?? null},
-           xml_url = ${response.xmlUrl ?? null},
-           issued_at = ${response.success ? new Date(issuedAt) : null},
-           updated_at = now()
-     where id = ${localDocumentId} and org_id = ${orgId}`);
-
-  return {
-    emitted: response.success,
-    documentId: localDocumentId,
-    fiscalId: response.fiscalId,
-    invoiceNumber,
-    publicToken: token,
-    billable: response.success && isBillableCfdi(country, providerData),
-    status,
-    error: response.error,
-  };
+  // Cotizaciones y facturas independientes comparten cuota, autorización,
+  // proveedor y confirmación. El documento guardado conserva tipo y snapshots.
+  const { finalizeInvoice } = await import('./invoices');
+  return finalizeInvoice(orgId, String(reserved.id));
 }

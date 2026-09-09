@@ -69,11 +69,12 @@ export async function buildInvoicePdfAttachment(orgId: string, documentoId: stri
         // CFDI timbrado: el archivo con validez es el del PAC, no uno que Cord
         // vuelva a dibujar. Se deja fuera del adjunto en vez de mandar dos
         // documentos que dicen lo mismo con distinta autoridad.
-        if (doc.document_type === 'cfdi_40' && doc.provider_data?.facturapi_id) return null;
+        if (['cfdi_40', 'cfdi_egreso'].includes(doc.document_type) && doc.provider_data?.facturapi_id) return null;
 
         const term = String(doc.terminos || '');
         const pdf = createInvoicePdf({
             invoiceNumber: String(doc.invoice_number || 'INV'),
+            documentType: String(doc.document_type),
             countryCode: String(doc.country_code || 'US'),
             currency: String(doc.currency || 'USD'),
             subtotal: Number(doc.subtotal || 0),

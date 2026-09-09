@@ -38,9 +38,9 @@ La selección anual se conserva durante el registro y el checkout.
 
 | Plan | IA al mes | Facturas al mes | Solicitudes API al mes | Usuarios incluidos |
 | --- | --- | --- | --- | --- |
-| Gratis | 3 | 3 | 100 | 1 |
-| Starter | 20 | 3 | 1.000 | 1 |
-| Profesional | 50 | 20 | 5.000 | 5 |
+| Gratis | 3 | 5 | 100 | 1 |
+| Starter | 20 | 20 | 1.000 | 1 |
+| Profesional | 50 | 500 | 5.000 | 5 |
 | Scale | 500 | 100 | 10.000 | 15 |
 | Developer | Sin cuota numérica | 1.000 | 50.000 | Sin cuota numérica |
 
@@ -91,3 +91,13 @@ se muestran por cargo; un comprobante no sustituye la revisión de tus obligacio
 contables en cada país.
 
 > La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.
+
+## Documentos comerciales y fiscales
+
+Gratis incluye **5 documentos comerciales por mes natural (UTC)**, independientes de sus cinco envíos de cotizaciones. Starter/Profesional/Scale incluyen **20/500/100 documentos**, respectivamente; Developer conserva 1.000. Los documentos comerciales y fiscales comparten esa cuota. La cuota de facturas de Profesional mayor que Scale es intencional en esta configuración; Scale añade otras capacidades.
+
+La opción comercial de México y España genera **proformas** identificadas; no sustituyen facturas fiscales. La emisión fiscal integrada requiere Starter o superior, emisor configurado e integración habilitada. La activación fiscal española y su aceptación integrada siguen pendientes: pagar el plan no las activa. Los demás mercados admitidos conservan facturas comerciales, sin promesa de integración ante su autoridad fiscal local.
+
+Crear borradores, descargar y reenviar no consume otro documento. Una emisión comercial exitosa consume una unidad, igual que la fiscal; los documentos de prueba no consumen. Una emisión incierta conserva su reserva hasta revisar el resultado. Alcanzar el límite no desactiva las descargas ni los pagos de documentos existentes. Cambiar de plan no transforma documentos emitidos. Una nueva emisión fiscal después de bajar de plan requiere recuperar un plan elegible.
+
+Implementación local; publicación pendiente. Los precios base y las tarifas publicadas de excedentes se conservan.

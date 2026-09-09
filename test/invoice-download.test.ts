@@ -1,3 +1,4 @@
+import { inflateSync } from 'node:zlib';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ resolve: vi.fn(), tx: vi.fn(), active: vi.fn() }));
@@ -67,6 +68,18 @@ describe('descarga pública limitada a una factura', () => {
     });
     it('no inventa XML de una factura comercial', async () => {
         expect((await publicDownload('public-token', 'xml')).status).toBe(404);
+    });
+    it.each(['MX', 'ES'])('la proforma de %s genera PDF identificado y nunca consulta un proveedor fiscal', async country => {
+        mocks.tx.mockResolvedValue([[fixture({ country_code: country, document_type: 'proforma' })]]);
+        const response = await publicDownload();
+        expect(response.status).toBe(200);
+        // El escritor vectorial conserva los textos del encabezado en el PDF.
+        const pdf = Buffer.from(await response.arrayBuffer()).toString('latin1');
+        const stream = pdf.match(/stream\n([\s\S]*?)\nendstream/);
+        expect(stream).not.toBeNull();
+        expect(inflateSync(Buffer.from(stream![1], 'latin1')).toString('latin1')).toContain('PROFORMA');
+        expect((await publicDownload('public-token', 'xml')).status).toBe(404);
+        expect(fetchMock).not.toHaveBeenCalled();
     });
     it('rechaza formatos arbitrarios antes de resolver el token', async () => {
         expect((await publicDownload('public-token', '../secrets')).status).toBe(404);

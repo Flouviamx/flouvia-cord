@@ -1490,3 +1490,20 @@ en la base configurada, no de equivalencia entre esa base y todo despliegue.
 Se repetirá antes del push/despliegue; no hubo expiraciones ni reembolsos.
 Pruebas locales: 11 casos del puente de compatibilidad; contrato de dinero
 reconoce ahora 15 rutas creadoras de operaciones (checkout dejó de crear dinero).
+
+## 2026-09-09 — Facturación comercial en Free y separación fiscal
+
+André autorizó ejecutar las cuotas **Free 5, Starter 20, Profesional 500 y Scale
+100** por mes. Developer conserva 1.000. Se respeta explícitamente que Pro tenga
+más documentos que Scale; no se ordenaron ni cambiaron precios. Free recibe
+comerciales (proforma en MX/ES); la emisión fiscal integrada empieza en Starter,
+condicionada a la configuración y habilitación de cada mercado.
+
+Se unificó el consumo en el dominio de emisión para todos los países; el tipo
+persistido se usa para proveedor, PDF, XML y anulación. Un claim durable impide
+emitir el mismo borrador simultáneamente. Cuota reservada y excedente confirmado
+son estados separados; se recupera desde el cron el consumo de documentos cuya
+emisión ya está confirmada. Sin transformación automática de documentos históricos,
+sin migración, sin cambios LIVE, sin push en esta entrega. Precios y documentación
+ES/EN, ayuda y roadmap se alinearon localmente. No completa los cuatro pendientes
+operativos/integrados de la fase 1.

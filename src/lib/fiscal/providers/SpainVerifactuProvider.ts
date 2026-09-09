@@ -37,6 +37,7 @@ export class SpainVerifactuProvider implements FiscalProvider {
     async issueDocument(request: FiscalDocumentRequest): Promise<FiscalDocumentResponse> {
         const modo = await this.verifactuModo(request.orgId);
         if (modo !== 'verifactu') {
+            if (request.documentType?.startsWith('verifactu_')) throw new Error('Activa la configuración fiscal de España antes de emitir este documento.');
             // Mismo contrato que CommercialInvoiceProvider: la app no puede
             // aparentar un registro que nunca se generó.
             return {
@@ -69,7 +70,7 @@ export class SpainVerifactuProvider implements FiscalProvider {
 
         const issuedAt = new Date(request.issuedAt);
         const fechaExpedicionFactura = fechaExpedicionAEAT(issuedAt);
-        const isRectificativa = request.documentType === 'credit_note';
+        const isRectificativa = ['credit_note', 'verifactu_credit_note'].includes(request.documentType || '');
         const tipoFactura = isRectificativa ? 'R1' : 'F1';
         const cuotaTotal = Number(request.totals.taxes || 0).toFixed(2);
         const importeTotal = Number(request.totals.total || 0).toFixed(2);
@@ -134,11 +135,8 @@ export class SpainVerifactuProvider implements FiscalProvider {
         if (!orgId) {
             throw new Error('Falta orgId: no se puede anular un registro Verifactu sin saber de qué organización es.');
         }
-        const modo = await this.verifactuModo(orgId);
-        if (modo !== 'verifactu') {
-            return { success: true, rawProviderData: { regulatory_status: 'commercial_only' } };
-        }
-
+        // La anulación sigue el documento original, aunque después cambie el
+        // plan o se desactive el modo. Las proformas usan el proveedor comercial.
         const [rows] = await withOrgTx(orgId, sql`
             select invoice_number, issued_at, issuer_snapshot
               from documentos_fiscales

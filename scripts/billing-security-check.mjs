@@ -14,16 +14,9 @@ const read = (path) => readFileSync(join(root, path), 'utf8');
 let assertions = 0;
 const check = (condition, message) => { assertions++; assert.ok(condition, message); };
 
-// Matriz ago 2026 (delimitación de planes): `collections`/`cashflow_90` bajan a
-// Pro (van con cfo_dashboard, que ya vivía ahí) y la facturación electrónica se
-// abre temporalmente a Gratis con un hard cap de 3/mes. Los dos carriles siguen
-// en el mismo peldaño: CFDI en México, factura comercial fuera. Ver
-// entitlements.ts y docs/estado/negocio-billing.md.
-// `recurring_invoices` (ago 2026) entra en Pro: la recurrencia es lo que
-// convierte la facturación en operación repetible y va con el resto de la
-// cobranza automática, no con el documento suelto.
+// Contrato aprobado: documentos comerciales Free, emisión fiscal Starter.
 const expectedFeatures = {
-  cfdi: 'free', recurring_invoices: 'pro',
+  cfdi: 'starter', recurring_invoices: 'pro',
   remove_branding: 'starter', custom_email: 'starter', custom_domain: 'pro', advanced_forecast: 'starter',
   international_invoicing: 'free',
   team: 'pro', roles: 'pro', multi_org: 'pro', live_presence: 'pro', quote_attention: 'pro',
@@ -36,8 +29,8 @@ check(JSON.stringify(FEATURE_MIN_PLAN) === JSON.stringify(expectedFeatures), 'La
 check(!planIncludes('starter', 'custom_domain') && planIncludes('pro', 'custom_domain'), 'Dominio propio debe iniciar en Pro.');
 check(normalizePlan('business') === 'pro' && normalizePlan('negocio') === 'pro', 'Los aliases históricos deben normalizarse.');
 check(normalizePlan('admin') === 'free' && normalizePlan('') === 'free', 'Un plan desconocido debe caer a Gratis.');
-check(planIncludes('free', 'cfdi'), 'CFDI debe estar disponible temporalmente en Gratis.');
-check(planIncludes('free', 'international_invoicing'), 'Facturación internacional debe estar disponible temporalmente en Gratis, en paridad con CFDI.');
+check(!planIncludes('free', 'cfdi') && planIncludes('starter', 'cfdi'), 'La emisión fiscal integrada requiere Starter.');
+check(planIncludes('free', 'international_invoicing'), 'Los documentos comerciales deben estar disponibles en Gratis.');
 check(!planIncludes('starter', 'collections') && planIncludes('pro', 'collections'), 'Cobranza debe iniciar en Pro.');
 check(!planIncludes('pro', 'collections_ai') && planIncludes('scale', 'collections_ai'), 'Cobranza autónoma con IA debe iniciar en Scale.');
 check(!planIncludes('pro', 'approvals') && planIncludes('scale', 'approvals'), 'Aprobaciones deben iniciar en Scale.');
@@ -89,7 +82,7 @@ const webhooksApi = read('src/pages/api/webhooks.ts');
 const vercel = read('vercel.json');
 
 check(billing.includes('envios: 5') && /starter:\s*\{[^}]*envios:\s*null/.test(billing), 'El tope de envíos/mes debe ser exclusivo de Gratis (5), sin número en el resto de los planes.');
-check(/free:\s*\{[^}]*cfdi:\s*3/.test(billing), 'Gratis debe incluir temporalmente 3 facturas electrónicas al mes.');
+check(/free:\s*\{[^}]*cfdi:\s*5/.test(billing), 'Gratis debe incluir 5 documentos comerciales al mes.');
 check(billing.includes("if (dim === 'envios') return false;"), 'Envíos nunca debe tener excedente facturable — es tope duro puro, sin meter.');
 check(billing.includes("'payload[value]': String(row.meter_value)"), 'Stripe debe recibir solo meter_value.');
 check(!billing.includes("'payload[value]': String(row.value)"), 'Nunca se debe cobrar el consumo total incluido.');
@@ -130,7 +123,7 @@ check(schema.includes("cord_effective_plan(c.org_id) in ('scale', 'developer')")
 check(schema.includes("cord_effective_plan(o.id) in ('scale', 'developer')")
       && ssoDiscover.includes('cord_resolve_sso_domain'),
       'SSO discovery debe usar el plan efectivo.');
-check(quoteApi.includes("isMexico ? 'cfdi' : 'international_invoicing'"), 'La emisión debe rutear por país a su propio feature — CFDI en México, factura comercial en el resto — sin consumir la cuota de la otra.');
+check(quoteApi.includes("'international_invoicing'") && read('src/lib/fiscal/invoices.ts').includes("planIncludes(await getEffectivePlan(orgId), 'cfdi')"), 'El acceso comercial es Free; la emisión fiscal valida el plan efectivo en el dominio.');
 check(apiKeyAuth.includes('active_rank') && apiKeyAuth.includes('subscription_key_limit'), 'Las API keys excedentes deben apagarse tras downgrade.');
 check(apiKeys.includes("pg_advisory_xact_lock(hashtextextended(${'api_keys:' + orgId}"), 'La creación concurrente de API keys debe serializarse.');
 check(outgoingWebhooks.includes('position <= allowance'), 'Los webhooks excedentes deben apagarse tras downgrade.');

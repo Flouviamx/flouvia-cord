@@ -1017,6 +1017,29 @@ const { slug, index } = Astro.props;
   .bm-chart-col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
   .bm-chart-col-fill { width: 100%; background: rgba(255,255,255,0.08); border-radius: 4px 4px 0 0; height: 0%; transition: height 0.3s; }
   .bm-chart-active .bm-chart-col-fill { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+  /* ── MÓVIL: la ventana del bento pierde columnas, no tamaño de letra ──
+     A 390px las cinco columnas dejaban los nombres en tres renglones y los
+     importes pegados. Se van las columnas que el copy no necesita (el precio
+     de lista, el SKU) y el resto respira. */
+  @media (max-width: 700px) {
+    .bm-app { font-size: 0.8rem; }
+    .bm-app-bar { padding: 11px 12px; gap: 8px; }
+    .bm-app-title { font-size: 0.76rem; }
+    .bm-app-badge { font-size: 0.56rem; padding: 4px 8px; }
+    .bm-app-body { padding: 4px 4px 6px; }
+    .bm-g { gap: 8px; padding: 9px 8px; font-size: 0.76rem; }
+    .bm-g-head { font-size: 0.55rem; }
+    .bm-g5 { grid-template-columns: 1.5fr 0.5fr 1fr 0.95fr; }
+    .bm-g5 > *:nth-child(3) { display: none; }            /* precio de lista */
+    .bm-gcat { grid-template-columns: 1.6fr 0.85fr 0.85fr; }
+    .bm-gcat > *:nth-child(2) { display: none; }           /* SKU */
+    .bm-app-search { margin: 9px 6px 2px; padding: 8px 10px; font-size: 0.76rem; }
+    .bm-app-foot { padding: 11px 12px; gap: 10px; font-size: 0.7rem; }
+    .bm-app-tot { margin: 6px 4px 2px; padding: 9px 8px 4px; }
+    .bm-tot-r { font-size: 0.78rem; }
+    .bm-kv { padding: 10px; font-size: 0.78rem; }
+  }
+
   /* ── Responsive ── */
   @media (max-width: 860px) {
     .bm-wrap { min-height: 220px; padding: 1.5rem 1rem; }

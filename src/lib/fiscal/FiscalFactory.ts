@@ -17,7 +17,10 @@ export class FiscalFactory {
     // El documento canónico y el folio permanecen iguales.
   ];
 
-  static getProvider(countryCode: string): FiscalProvider {
+  static getProvider(countryCode: string, documentType?: string): FiscalProvider {
+    // El documento persistido manda, incluso después de cambiar plan/país.
+    if (['proforma', 'commercial_credit_note'].includes(documentType || '')
+      || documentType === 'commercial_invoice') return new CommercialInvoiceProvider();
     const provider = this.providers.find(p => p.supports(countryCode));
     if (!provider) {
       throw new Error(`No existe proveedor fiscal soportado para el país: ${countryCode}`);

@@ -150,6 +150,9 @@ const METODOS = [
                             : 'La factura sí fue emitida, pero el correo no pudo entregarse. Puedes reintentar el envío con seguridad.'}
                     </div>
                 )}
+                {f.tipo === 'proforma' && <div class="fd-alert fd-alert-warn">{L === 'en'
+                    ? 'Pro forma commercial document. It does not replace a tax invoice. Integrated fiscal issuance is available from Starter where enabled.'
+                    : 'Documento comercial proforma. No sustituye una factura fiscal. La emisión fiscal integrada está disponible desde Starter donde esté habilitada.'}</div>}
                 {f.simulado && (
                     <div class="fd-sim-note" role="status">
                         <span class="fd-sim-icon" aria-hidden="true">

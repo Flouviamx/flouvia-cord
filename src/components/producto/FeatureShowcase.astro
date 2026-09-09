@@ -313,6 +313,7 @@ const { slug, tabs, nav, isEn = false } = Astro.props as Props;
                 tabs[active].setAttribute('aria-selected', 'true');
                 crossfade(panels[active], prevPanel);
                 placeIndicator(active, true);
+                fitStage(true);
                 startFill();
             };
 
@@ -322,9 +323,30 @@ const { slug, tabs, nav, isEn = false } = Astro.props as Props;
 
             placeIndicator(0, false);
 
-            const resync = () => placeIndicator(active, false);
+            // En móvil las escenas se re-componen (ver el bloque @media de
+            // ShowcaseMockup.astro) y su alto real deja de ser el de escritorio.
+            // El stage se ajusta a la escena MÁS ALTA: con un alto fijo unas
+            // quedaban cortadas y otras con medio lienzo vacío.
+            const stage = section.querySelector<HTMLElement>('.shw-stage');
+            const MOBILE_MAX = 760;
+            const panelHeight = (p: HTMLElement) => {
+                const frame = p.querySelector<HTMLElement>('.shwm-frame');
+                return frame ? Math.ceil(frame.scrollHeight) : 0;
+            };
+            const fitStage = (animate = false) => {
+                if (!stage) return;
+                if (window.innerWidth > MOBILE_MAX) { stage.style.height = ''; return; }
+                const h = panelHeight(panels[active]);
+                if (!h) return;
+                if (animate && !reduced) gsap.to(stage, { height: h, duration: 0.5, ease: 'power2.out' });
+                else stage.style.height = `${h}px`;
+            };
+
+            const resync = () => { placeIndicator(active, false); fitStage(); };
             window.addEventListener('resize', resync);
             (document as any).fonts?.ready?.then(resync);
+            fitStage();
+            window.addEventListener('load', fitStage, { once: true });
 
             if (!reduced) {
                 const io = new IntersectionObserver((entries) => {

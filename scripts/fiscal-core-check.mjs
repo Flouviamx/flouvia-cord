@@ -72,7 +72,8 @@ assert.match(schema, /create table if not exists invoice_sequences/);
 assert.match(schema, /alter table invoice_sequences force row level security/);
 assert.match(emit, /pg_advisory_xact_lock/);
 assert.match(emit, /quote:\$\{cotizacionId\}:invoice:v1/);
-assert.match(emit, /interval '2 minutes'/);
+assert.match(emit, /return finalizeInvoice\(orgId, String\(reserved.id\)\)/);
+assert.match(await readFile(new URL('../src/lib/fiscal/issuance-usage.ts', import.meta.url), 'utf8'), /delivery_uncertain/);
 assert.match(emit, /isBillableCfdi/);
 assert.match(provider, /regulatory_status: 'commercial_only'/);
 assert.match(provider, /authority_submission: false/);
@@ -164,8 +165,8 @@ assert.match(spainProvider, /await appendVerifactuAlta\(/);
 assert.match(spainProvider, /await appendVerifactuAnulacion\(/);
 // documentType viaja desde ambos caminos de emisión hasta el provider — sin
 // esto una rectificativa española se firmaría como F1 en vez de R1.
-assert.match(emit, /documentType: docType/);
-assert.match(invoicesSrc, /documentType: docType/);
+assert.match(emit, /documentTypeForOrg/);
+assert.match(invoicesSrc, /documentType: regulatory/);
 assert.match(spainProvider, /isRectificativa \? 'R1' : 'F1'/);
 
 // El driver HTTP de Neon (ver src/lib/db.ts) no sostiene una transacción

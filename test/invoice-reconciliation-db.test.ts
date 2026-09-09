@@ -1,3 +1,5 @@
+vi.mock('../src/lib/fiscal/issuance-usage', () => ({ meterInvoiceEmission: (_org: string, _id: string, emit: () => unknown) => emit() }));
+vi.mock('../src/lib/org-entitlements', () => ({ getEffectivePlan: async () => 'starter' }));
 import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';

@@ -63,6 +63,7 @@ export const PLANES: Plan[] = [
             'Hasta 5 cotizaciones activas a la vez',
             '50 productos y 50 clientes',
             '3 armados con IA al mes',
+            '5 documentos comerciales al mes',
             'Marca “Powered by Cord”',
         ],
     },
@@ -77,8 +78,8 @@ export const PLANES: Plan[] = [
         feats: [
             'Envíos ilimitados; hasta 50 activas',
             '500 productos y clientes',
-            '20 armados con IA + 3 facturas al mes',
-            'CFDI 4.0 en México; factura comercial en otros mercados',
+            '20 armados con IA + 20 facturas al mes',
+            'Documentos comerciales e integración fiscal habilitada',
             'Tu marca (sin “Powered by”)',
         ],
     },
@@ -95,7 +96,7 @@ export const PLANES: Plan[] = [
         feats: [
             'Cotizaciones ilimitadas',
             '5 usuarios incluidos',
-            '50 armados con IA + 20 facturas al mes',
+            '50 armados con IA + 500 facturas al mes',
             'Cobranza y flujo de caja a 90 días',
             'Seguimiento en vivo y sin marca de Cord',
         ],
@@ -167,7 +168,7 @@ export const COMPARATIVA: CompareGroup[] = [
         rows: [
             { label: 'Cotizaciones enviadas', free: '5 / mes', starter: 'Ilimitadas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas' },
             { label: 'Armado de cotizaciones con IA', free: '3 / mes', starter: '20 / mes', pro: '50 / mes', scale: '500 / mes', developer: 'Ilimitado' },
-            { label: 'Facturas emitidas', free: '3 / mes', starter: '3 / mes', pro: '20 / mes', scale: '100 / mes', developer: '1,000 / mes', hint: 'CFDI 4.0 en México; factura comercial en los demás mercados soportados.' },
+            { label: 'Facturas emitidas', free: '5 / mes', starter: '20 / mes', pro: '500 / mes', scale: '100 / mes', developer: '1,000 / mes', hint: 'Documentos comerciales en Gratis; emisión fiscal integrada desde Starter donde esté habilitada. La opción comercial en México y España es proforma.' },
             { label: 'Llamadas a la API pública', free: '100 / mes', starter: '1,000 / mes', pro: '5,000 / mes', scale: '10,000 / mes', developer: '50,000 / mes' },
         ],
     },
@@ -211,7 +212,7 @@ export const COMPARATIVA: CompareGroup[] = [
     {
         titulo: 'Fiscal y multi-divisa',
         rows: [
-            { label: 'Emisión de facturas', free: true, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 ante el SAT en México; factura comercial en los demás mercados soportados.' },
+            { label: 'Emisión fiscal integrada', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 en México con emisor configurado. VERI*FACTU en España requiere activación y validación. Sin promesa de cumplimiento fiscal universal.' },
             { label: 'Tu propio CSD (sello digital, México)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Multi-divisa con cobertura cambiaria (FX lock)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
@@ -305,7 +306,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Qué pasa si me paso del consumo incluido?',
-        a: 'Depende del plan. En Gratis y Starter algunos límites son topes duros (se pausan hasta el siguiente ciclo o hasta que subas de plan). De Profesional en adelante, el excedente se cobra por uso al final del mes vía Stripe: armados con IA, facturas emitidas, usuarios y llamadas a la API. Sin sorpresas: ves el consumo en tiempo real dentro de la app.',
+        a: 'Gratis tiene topes duros. Desde Starter se cobran los excedentes de IA, documentos y API a las tarifas publicadas; Starter conserva un usuario. Profesional y Scale también permiten usuarios adicionales de pago. Puedes consultar tu consumo en la app.',
     },
     {
         q: '¿Puedo cambiar de plan cuando quiera?',
@@ -317,7 +318,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Cómo funciona la facturación electrónica?',
-        a: 'Depende del país de tu negocio, desde el plan Starter. En México conectas tu Certificado de Sello Digital (CSD) una vez y, al cerrar una cotización, Cord timbra el CFDI 4.0 ante el SAT con los mismos datos. Fuera de México, Cord emite una factura comercial propia con folio y PDF — no es un timbre ante una autoridad fiscal local, pero documenta la venta con los mismos datos de la cotización, sin recapturar en otro sistema.',
+        a: 'Gratis incluye 5 documentos comerciales al mes. Starter, Profesional y Scale incluyen 20, 500 y 100 respectivamente, compartidos entre documentos comerciales y fiscales. La emisión fiscal integrada empieza en Starter donde esté habilitada. En México una proforma no sustituye el CFDI. La emisión fiscal española requiere completar su activación y validación.',
     },
     {
         q: '¿Qué pasa después de mis 5 envíos gratis?',

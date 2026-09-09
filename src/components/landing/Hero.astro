@@ -38,15 +38,6 @@ const l = (p: string) => publicPath(p, lang);
                 <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 <div class="btn-shimmer"></div>
             </a>
-            
-            <a href="https://www.producthunt.com/products/cord-4?embed=true&utm_source=embed&utm_medium=post_embed" target="_blank" rel="noopener" class="ph-widget">
-                <img alt="Cord" src="https://ph-files.imgix.net/47690456-df89-4caf-9d90-e67e6d24be43.png?auto=compress,format&codec=mozjpeg&cs=strip&fit=crop&h=80&w=80" class="ph-widget-img">
-                <div class="ph-widget-info">
-                    <span class="ph-widget-title">Cord on Product Hunt</span>
-                    <span class="ph-widget-desc">From proposal to payment. All in a single link.</span>
-                </div>
-                <div class="ph-widget-cta">Check it out →</div>
-            </a>
         </div>
         <p class="hero-free-note">{t('hero.free.note')}</p>
     </div>
@@ -66,6 +57,15 @@ const l = (p: string) => publicPath(p, lang);
 
         <div class="mockup-glow" aria-hidden="true"></div>
         <div class="mockup">
+            <!-- Chrome móvil: la app real esconde el sidebar tras un drawer bajo 880px
+                 (src/styles/mobile-app.css). El mockup calca ESO en móvil, no el
+                 escritorio encogido. -->
+            <div class="mk-mobilebar" aria-hidden="true">
+                <span class="mk-mb-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></svg></span>
+                <img src="/imgs/logo-cord-navy.png" alt="" class="mk-mb-logo" />
+                <span class="mk-mb-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span>
+                <span class="mk-mb-avatar">MV</span>
+            </div>
             <div class="mk-body">
                 <aside class="mk-side">
                     <div class="mk-brand"><img src="/imgs/logo-cord-navy.png" alt="Cord" /></div>
@@ -392,59 +392,6 @@ const l = (p: string) => publicPath(p, lang);
         transition: left 0.9s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* ── PRODUCT HUNT WIDGET ── */
-    .ph-widget {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 8px 12px 8px 8px;
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        border: 1px solid rgba(10, 25, 47, 0.08);
-        border-radius: 100px;
-        text-decoration: none;
-        transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-spring), background 0.4s;
-        box-shadow: 0 4px 12px rgba(10, 25, 47, 0.03);
-    }
-    .ph-widget:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(10, 25, 47, 0.08);
-        background: rgba(255, 255, 255, 0.9);
-    }
-    .ph-widget-img {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-    .ph-widget-info {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    .ph-widget-title {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: #0a192f;
-        line-height: 1.1;
-    }
-    .ph-widget-desc {
-        font-size: 0.65rem;
-        color: #555c68;
-        margin-top: 2px;
-    }
-    .ph-widget-cta {
-        margin-left: 6px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: #ff6154; /* PH Orange */
-        background: rgba(255, 97, 84, 0.1);
-        padding: 6px 12px;
-        border-radius: 100px;
-        white-space: nowrap;
-    }
-
     .hero-microcopy { font-size: 0.85rem; color: var(--color-text-muted); margin: 0 0 4rem 0; }
 
     /* ── MOCKUP ── */
@@ -676,6 +623,114 @@ const l = (p: string) => publicPath(p, lang);
         .hero-desc { max-width: none; padding-top: 0; }
     }
 
+    /* ══════════════════════════════════════════════════════════════════
+       MÓVIL (<=760px) — el mockup NO se encoge: se re-compone.
+       Escalar 900px a 390 dejaba la tipografía en 3–6px, ilegible. Aquí el
+       mockup calca la app REAL en móvil: sidebar detrás de un drawer
+       (topbar con burger), una sola columna y actividad apilada debajo.
+       El escalador de JS se apaga bajo este breakpoint.
+    ══════════════════════════════════════════════════════════════════ */
+    .mk-mobilebar { display: none; }
+
+    @media (max-width: 760px) {
+        .mk-space { height: auto !important; }
+        .mk-scaler { width: 100%; transform: none !important; }
+        .mockup-wrap { width: 100%; }
+
+        .mockup { border-radius: 16px; }
+        .mockup-glow { inset: -4% -6% 6%; }
+
+        /* Topbar móvil (calca del shell real) */
+        .mk-mobilebar {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px;
+            background: #fbfcfd;
+            border-bottom: 1px solid rgba(10,25,47,0.06);
+        }
+        .mk-mb-ico {
+            width: 28px; height: 28px; flex-shrink: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 8px; color: #5b6472;
+        }
+        .mk-mb-ico svg { width: 16px; height: 16px; }
+        .mk-mb-ico:last-of-type { margin-left: auto; }
+        .mk-mb-logo { height: 15px; width: auto; display: block; }
+        .mk-mb-avatar {
+            width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+            background: #0a192f; color: #fff;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.62rem; font-weight: 800; letter-spacing: -0.02em;
+        }
+
+        /* Una sola columna: fuera sidebar y breadcrumbs */
+        .mk-body { grid-template-columns: 1fr; min-height: 0; }
+        .mk-side { display: none; }
+        .mk-crumbs { display: none; }
+
+        .mk-main { padding: 1rem 1rem 1.15rem; }
+        .mk-folio { font-size: 1.15rem; }
+        .mk-client { font-size: 0.78rem; }
+        .mk-action { display: none; }
+        .mk-badge { font-size: 0.68rem; padding: 5px 11px; }
+
+        /* Stepper: se desliza en horizontal sin barra visible */
+        .mk-stepper {
+            margin: 0.9rem 0 0.75rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .mk-stepper::-webkit-scrollbar { display: none; }
+        .mk-stp { font-size: 0.68rem; }
+        .mk-stp-line { min-width: 14px; margin: 0 7px; }
+
+        /* Tabla: 3 columnas. El precio unitario se va — la cantidad y el
+           importe son lo que sostiene el copy. */
+        .mk-row { grid-template-columns: 1fr 48px 92px; gap: 0.6rem; padding: 0.7rem 0; font-size: 0.85rem; }
+        .mk-row > span:nth-child(3) { display: none; }
+        .mk-row-head { font-size: 0.62rem; }
+        .mk-sub { font-size: 0.68rem; }
+
+        .mk-total { padding-top: 1rem; align-items: stretch; }
+        .mk-total-line { min-width: 0; gap: 1rem; font-size: 0.85rem; }
+        .mk-total-line .editorial { font-size: 0.95rem; }
+        .mk-total-grand span:first-child { font-size: 0.95rem; }
+        .mk-grand { font-size: 1.4rem !important; }
+
+        /* Actividad: deja de ser columna lateral y se apila debajo */
+        .mk-timeline {
+            border-left: none;
+            border-top: 1px solid rgba(10,25,47,0.06);
+            padding: 1.1rem 1rem 1.2rem;
+            gap: 0.9rem;
+        }
+        .mk-tl-title { font-size: 0.62rem; }
+        .mk-tl-text { font-size: 0.82rem; }
+        .mk-tl-time { font-size: 0.7rem; }
+
+        /* Flotantes: uno solo, y dentro de la pantalla */
+        .mk-chip { display: none; }
+        .mk-toast {
+            bottom: -16px; top: auto; right: 12px; left: auto;
+            padding: 9px 14px; font-size: 0.76rem; border-radius: 12px;
+            animation: none;
+        }
+
+        /* Control de pasos: carrusel táctil en vez de wrap a tres renglones */
+        .demo-steps {
+            width: 100%; max-width: 100%;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 100px;
+            margin-bottom: 1.25rem;
+        }
+        .demo-steps::-webkit-scrollbar { display: none; }
+        .demo-step { flex: 0 0 auto; font-size: 0.8rem; padding: 9px 14px; }
+    }
+
     /* Sin animación: el mockup queda en su estado final estático (HTML) y el
        control de pasos se oculta (el controlador JS no corre en reduced-motion). */
     @media (prefers-reduced-motion: reduce) {
@@ -689,8 +744,12 @@ const l = (p: string) => publicPath(p, lang);
         const space = document.querySelector('.mk-space') as HTMLElement;
         if (!scaler || !space) return;
 
+        // Bajo 760px el mockup tiene layout propio (ver el bloque @media del
+        // <style>): re-compone en vez de encogerse, así que NO se escala.
+        const MOBILE_MAX = 760;
+
         function scaleMockup() {
-            if (window.innerWidth > 1080) {
+            if (window.innerWidth > 1080 || window.innerWidth <= MOBILE_MAX) {
                 scaler.style.transform = 'none';
                 space.style.height = 'auto';
                 return;
@@ -699,7 +758,10 @@ const l = (p: string) => publicPath(p, lang);
             // Available width (viewport width minus some padding)
             const padding = window.innerWidth < 768 ? 20 : 40;
             const availableWidth = window.innerWidth - padding;
-            const originalWidth = 1080;
+            // El ancho REAL del scaler, no un 1080 fijo: bajo 900px el CSS lo
+            // baja a 900 y con la constante el mockup quedaba escalado de más
+            // (72% en una tablet) y descuadrado respecto al texto.
+            const originalWidth = scaler.offsetWidth || 1080;
             
             const scale = availableWidth / originalWidth;
             scaler.style.transform = `scale(${scale})`;

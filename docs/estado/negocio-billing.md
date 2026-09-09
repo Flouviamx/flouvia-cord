@@ -57,17 +57,19 @@ de precio — los price ID de Stripe LIVE ya tienen suscripciones activas.
 
 | Plan | Precio | Posición | Incluye (resumen) |
 |------|--------|----------|-------------------|
-| Gratis | $0 | gancho | 5 cotizaciones activas, 5 **enviadas/mes**, 50 prod/cli, 3 IA y **3 facturas/mes** (habilitación temporal), "Powered by Cord" |
-| Starter | $240 | freelance | 50 cotizaciones, 500 prod/cli, 20 IA + 3 facturas/mes (MX o resto del mundo), tu marca, CSV |
-| **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 20 facturas/mes, **cobranza + flujo a 90 días**, seguimiento en vivo, analítica |
+| Gratis | $0 | gancho | 5 cotizaciones activas, 5 **enviadas/mes**, 50 prod/cli, 3 IA y **5 documentos comerciales/mes**, "Powered by Cord" |
+| Starter | $240 | freelance | 50 cotizaciones, 500 prod/cli, 20 IA + 20 documentos/mes, emisión fiscal integrada donde esté habilitada, tu marca, CSV |
+| **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 500 documentos/mes, **cobranza + flujo a 90 días**, seguimiento en vivo, analítica |
 | Scale | $1,390 | automatización | + 15 usuarios, 500 IA + 100 facturas/mes, aprobaciones, **cobranza autónoma con IA**, SMTP propio, SSO |
 | Developer | — | **sin autoservicio** | + usuarios/IA ilimitados, 1,000 facturas + 50,000 API/mes, excedentes al menor costo. Se contrata hablando con ventas (`/contacto/ventas`); `/api/billing/subscribe` rechaza `plan=developer` |
 
 Movimientos de gate respecto a la matriz de jun 2026 (`FEATURE_MIN_PLAN` en
 `src/lib/entitlements.ts`): `collections` y `cashflow_90` bajan de Scale a Pro
 (van con `cfo_dashboard`, que ya vivía ahí); `international_invoicing` y `cfdi`
-quedan temporalmente en Gratis con 3 documentos al mes — mismo carril de
-facturación electrónica, distinto solo por país (Regla 10). `collections_ai`
+se separan por tipo documental: comerciales en Gratis y emisión fiscal
+integrada desde Starter. La cuota es 5/20/500/100/1.000 documentos para
+Free/Starter/Pro/Scale/Developer; Pro mayor que Scale es la decisión autorizada,
+no un ordenamiento automático. `collections_ai`
 (la cobranza *autónoma*) sigue siendo exclusiva de Scale.
 
 ### Qué es "en vivo" en cada plan
@@ -259,3 +261,28 @@ Una factura de Stripe con `status='paid'` pero importe cero (cortesía, cupón d
 cortesías se conceden por este carril explícito y auditable, no aflojando la
 regla que autoriza a los clientes de verdad.
 
+
+## Contrato documental implementado localmente
+
+`international_invoicing` permite entrar a Cord Invoicing en todos los planes y
+países admitidos; `cfdi` conserva su identificador histórico y ahora autoriza la
+emisión fiscal integrada desde Starter. El dominio vuelve a comprobar el plan
+efectivo antes de emitir un documento fiscal. Emisión comercial MX/ES → proforma;
+resto → factura comercial. España exige modo VERI*FACTU y habilitación operativa,
+y sigue pendiente de aceptación integrada; no se vende NO VERI*FACTU como fallback
+comercial conforme. Un cambio de plan no convierte documentos guardados.
+
+La cuota se comparte entre comerciales y fiscales, independientemente del país,
+y es independiente de envíos de cotización. `meterInvoiceEmission` reclama cada
+documento en `provider_data.cord_issuance`; `reserveUsage(..., {deferMeter:true})`
+reserva sin mandar excedente al proveedor. `commitInvoiceUsage` excluye las otras
+reservas pendientes al calcular el excedente confirmado. El cron recupera reservas
+vinculadas a documentos emitidos; resultados inciertos quedan retenidos para revisión.
+Las pruebas y simulaciones liberan consumo. El acceso a documentos ya emitidos y
+sus pagos no se bloquea al agotar cuota ni por downgrade. Las nuevas emisiones
+fiscales sí requieren Starter, incluyendo nuevos egresos fiscales.
+
+No requiere migración: usa columnas y estados existentes. Precios base, monedas,
+identificadores Stripe y tarifas de excedente se conservan. Publicación pendiente;
+no se cambiaron suscripciones ni consumo histórico. Decisión registrada una sola
+vez en `../historial/billing-cobros.md` (2026-09-09).

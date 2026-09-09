@@ -50,7 +50,7 @@ const ESTADO: Record<string, { label: string; tone: string }> = {
 const estado = f.esNotaCredito && f.estado !== 'void'
     ? { label: t(L, 'fact.p_emitida'), tone: 'ok' }
     : ESTADO[f.estado] ?? { label: t(L, 'fact.p_emitida'), tone: 'wait' };
-const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_factura');
+const titulo = f.tipo === 'proforma' ? 'Proforma' : f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_factura');
 ---
 
 <Layout
@@ -78,6 +78,9 @@ const titulo = f.esNotaCredito ? t(L, 'fact.p_nota_credito') : t(L, 'fact.p_fact
             </div>
         )}
         <article class="iv-card">
+            {f.tipo === 'proforma' && <div class="iv-note" role="note">{L === 'en'
+                ? 'Pro forma commercial document. It does not replace a tax invoice.'
+                : 'Documento comercial proforma. No sustituye una factura fiscal.'}</div>}
             {(f.simulado || f.testMode || f.esPrueba) && (
                 <div class="iv-test-ribbon" role="status">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 9v4.5"/><path d="M12 17h.01"/></svg>

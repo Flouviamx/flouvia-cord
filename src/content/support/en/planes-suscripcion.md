@@ -38,9 +38,9 @@ is preserved through registration and checkout.
 
 | Plan | AI actions monthly | Invoices monthly | API requests monthly | Included users |
 | --- | --- | --- | --- | --- |
-| Free | 3 | 3 | 100 | 1 |
-| Starter | 20 | 3 | 1,000 | 1 |
-| Professional | 50 | 20 | 5,000 | 5 |
+| Free | 3 | 5 | 100 | 1 |
+| Starter | 20 | 20 | 1,000 | 1 |
+| Professional | 50 | 500 | 5,000 | 5 |
 | Scale | 500 | 100 | 10,000 | 15 |
 | Developer | No numeric quota | 1,000 | 50,000 | No numeric quota |
 
@@ -90,3 +90,13 @@ shown per charge; a receipt does not replace reviewing your accounting obligatio
 in each country.
 
 > Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
+
+## Commercial and fiscal documents
+
+Free includes **5 commercial documents per calendar month (UTC)**, separately from its five quote sends. Starter/Professional/Scale include **20/500/100 documents**, respectively; Developer keeps 1,000. Commercial and fiscal documents share this allowance. The higher Professional invoice allowance is intentional in this configuration; Scale adds other capabilities.
+
+Mexico and Spain use clearly labeled **pro formas** for the commercial option; they do not replace tax invoices. Integrated fiscal issuance requires Starter or above, a configured issuer and an enabled integration. Spanish fiscal activation and integrated acceptance remain pending; paying for a plan does not activate them. Other supported markets retain commercial invoices without a promise of local tax-authority integration.
+
+Drafts, downloads and resends do not consume another document. A successful commercial issuance consumes one unit, just like a fiscal issuance; test documents do not. An uncertain issuance keeps its reservation until its result is reviewed. Reaching the limit does not disable existing document downloads or payments. Changing plans does not convert issued documents. New fiscal issuance after a downgrade requires an eligible plan.
+
+Implementation is local; publication remains pending. Base prices and published overage rates are unchanged.
