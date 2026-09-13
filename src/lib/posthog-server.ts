@@ -90,8 +90,10 @@ export async function trackServer<E extends ServerEvent & OrgEvent>(
     properties: EventProps<E>,
     isSandbox = false,
     isDemo = false,
-): Promise<void> {
-    if (!posthogServer) return;
+): Promise<boolean> {
+    // Callers with durable delivery markers must distinguish disabled capture
+    // from an acknowledged flush. Failures still reject so they can retry.
+    if (!posthogServer) return false;
     const internal = await isInternalAnalyticsOrg(orgId);
     if (internal) markCompanyInternal(orgId);
     const props = properties as Record<string, unknown>;
@@ -115,6 +117,7 @@ export async function trackServer<E extends ServerEvent & OrgEvent>(
         },
     });
     await posthogServer.flush();
+    return true;
 }
 
 // ── Eventos a nivel PERSONA ────────────────────────────────────────────────

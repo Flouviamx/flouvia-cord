@@ -56,10 +56,10 @@ const CADENCIA_LABEL: Record<string, string> = {
 };
 ---
 
-<AppLayout title={t(L, 'rec.titulo')} active="facturas">
+<AppLayout title={t(L, 'rec.titulo')} page="facturas" heading={t(L, 'fact.heading')}>
     <div class="sec-head">
         <h1 class="sec-title">{t(L, 'rec.titulo')}</h1>
-        <a class="rec-back" href="/app/facturas">{t(L, 'fact.titulo')} →</a>
+        <a class="rec-back" href="/app/facturas">{t(L, 'fact.heading')} →</a>
     </div>
 
     {!hasPerm && <AccessGate title={t(L, 'fact.sin_acceso_titulo')} desc={t(L, 'fact.sin_acceso_desc')} />}
@@ -197,6 +197,7 @@ const CADENCIA_LABEL: Record<string, string> = {
     }
     .rec-btn:hover { border-color: var(--color-blue-deep); color: var(--color-blue-deep); }
     .rec-btn-danger:hover { border-color: var(--color-danger); color: var(--color-danger); }
+    .status-pill.is-ok { color: #059669; background: rgba(16,185,129,0.12); }
     .status-pill.is-off { color: var(--color-text-muted); background: rgba(0,0,0,0.05); }
 
     @media (max-width: 880px) {

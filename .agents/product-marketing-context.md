@@ -8,7 +8,7 @@
 **Qué hace:** Cord permite crear cotizaciones profesionales con marca propia, compartirlas mediante un enlace interactivo, registrar la aprobación y su evidencia técnica, cobrar en línea donde Cord Payments está disponible, emitir facturas y gestionar cobranza — todo en un flujo conectado. El CFDI 4.0 real está disponible para cuentas mexicanas con configuración fiscal válida.
 **Categoría de producto:** Plataforma de cierre comercial / software de cotizaciones y cobranza B2B, con capacidades CPQ.
 **Tipo de producto:** SaaS multi-tenant, freemium.
-**Modelo de negocio y pricing:** Freemium sin vencimiento (5 envíos renovables cada mes y hasta 5 cotizaciones activas a la vez, con "Powered by Cord" visible) → Starter (más envíos y quitar la marca de Cord), **Profesional (plan destacado: equipo y cobranza)**, Scale y Developer a la medida. México paga en MXN; España, Alemania y Francia en EUR; los demás mercados soportados en USD. Los precios viven en `src/lib/precios.ts`; cuotas y permisos se aplican desde `billing.ts` y `entitlements.ts`. Los envíos se renuevan el día 1 (UTC). No hay umbral de facturación cobrada; dominio propio para enlaces no está disponible, SMTP desde el dominio del negocio corresponde a Scale.
+**Modelo de negocio y pricing:** Freemium sin vencimiento (5 envíos renovables cada mes, 5 documentos comerciales al mes y hasta 5 cotizaciones activas a la vez, con "Powered by Cord" visible) → Starter (más envíos y quitar la marca de Cord), **Profesional (plan destacado: equipo y cobranza)**, Scale y Developer a la medida. México paga en MXN; España, Alemania y Francia en EUR; los demás mercados soportados en USD. Los precios viven en `src/lib/precios.ts`; cuotas y permisos se aplican desde `billing.ts` y `entitlements.ts`. Los envíos se renuevan el día 1 (UTC). No hay umbral de facturación cobrada; dominio propio para enlaces no está disponible, SMTP desde el dominio del negocio corresponde a Scale.
 
 ## Target Audience
 **Tipo de empresa objetivo:** PyMEs y empresas medianas B2B que venden mediante cotizaciones en los 12 mercados ofrecidos: MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL y PE. Cord Payments está disponible en los primeros ocho; CO, AR, CL y PE operan con pagos registrados fuera de Cord.
@@ -110,3 +110,11 @@
 **Objetivo de negocio principal:** crecer usuarios de pago a partir de un plan gratuito útil cada mes (5 envíos renovables y hasta 5 cotizaciones activas).
 **Acción de conversión clave:** registro gratis → primera cotización enviada (activación) → uso mensual recurrente → upgrade cuando se necesitan más envíos, quitar "Powered by Cord", trabajar en equipo o gestionar cobranza.
 **Métricas actuales:** *(pendiente — sin datos de producción confirmados en este documento)*
+
+## Facturación: contrato preparado para publicación
+
+Free/Starter/Profesional/Scale: 5/20/500/100 documentos al mes; Developer 1.000.
+Documentos comerciales en Free, con proforma en MX/ES; emisión fiscal integrada
+desde Starter donde esté habilitada. No vender validez legal como atributo del
+plan ni prometer activación española concluida. Documentos existentes se conservan
+al cambiar de plan. Código y negocio-billing.md mandan sobre descripciones previas.

@@ -384,12 +384,16 @@ async function settleInvoiceFromIntent(intent: any, account?: string): Promise<v
         }
         const pm = Array.isArray(intent?.payment_method_types) && intent.payment_method_types.includes('customer_balance')
             ? 'spei' : 'tarjeta';
-        const flags = await orgAnalyticsFlags(orgId);
-        await trackPaymentReceived(
-            orgId, monto, currency, pm, false, undefined,
-            flags.isSandbox, flags.isDemo,
-            { payment_id: String(intent?.id || ''), invoice_id: targetId, payment_kind: 'invoice' },
-        );
+        // Neither analytics DB lookups nor PostHog delivery may delay Stripe's
+        // acknowledgement or interrupt the already-recorded paid transition.
+        after((async () => {
+            const flags = await orgAnalyticsFlags(orgId);
+            await trackPaymentReceived(
+                orgId, monto, currency, pm, false, undefined,
+                flags.isSandbox, flags.isDemo,
+                { payment_id: String(intent?.id || ''), invoice_id: targetId, payment_kind: 'invoice' },
+            );
+        })());
     }
 }
 

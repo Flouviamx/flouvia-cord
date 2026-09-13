@@ -31,12 +31,13 @@ const feature = isEn && currentFeature ? FEATURES_EN.find((f) => f.slug === curr
 // con 'cfdi', que quedó huérfano cuando el feature se renombró a 'facturacion'.
 const RELATED: Record<string, string[]> = {
     'editor':          ['link-publico', 'seguimiento', 'facturacion'],
-    'link-publico':    ['editor', 'seguimiento', 'negociacion'],
+    'link-publico':    ['pagos', 'editor', 'seguimiento'],
     'seguimiento':     ['link-publico', 'editor', 'cobranza-ia'],
     'clientes-credito':['facturacion', 'cobranza-ia', 'finanzas'],
     'cobranza-ia':     ['clientes-credito', 'seguimiento', 'finanzas'],
-    'divisas':         ['facturacion', 'editor', 'clientes-credito'],
-    'facturacion':     ['divisas', 'cobranza-ia', 'clientes-credito'],
+    'divisas':         ['pagos', 'facturacion', 'clientes-credito'],
+    'facturacion':     ['pagos', 'divisas', 'clientes-credito'],
+    'pagos':           ['facturacion', 'link-publico', 'divisas'],
     'finanzas':        ['cobranza-ia', 'clientes-credito'],
     'aprobaciones':    ['editor', 'equipo', 'negociacion'],
     'equipo':          ['aprobaciones', 'editor', 'clientes-credito'],
@@ -55,6 +56,7 @@ const DOCS_PATH: Record<string, string> = {
     'cobranza-ia':      'pagos/cobranza-ia',
     'divisas':          'pagos/tesoreria-fx',
     'facturacion':      'pagos/facturacion',
+    'pagos':            'pagos/onboarding',
     'finanzas':         'gestion/dashboard',
     'aprobaciones':     'cuenta/configuracion',
     'equipo':           'cuenta/resumen',
@@ -437,6 +439,96 @@ const howtoSchema = howto ? {
                                         <div class="mk-fx-total"><span>El cliente ve</span><b class="editorial">USD 10,620.50</b></div>
                                         <div class="mk-fx-total mk-fx-total-mxn" id="fxMxn"><span>Se factura</span><b class="editorial">$196,469.20 MXN</b></div>
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {feature.slug === 'pagos' && (
+                            <div class="mk-window mk-pay" id="payHero">
+                                <div class="mk-bar">
+                                    <span class="mk-bar-title">{isEn ? 'Quote COT-0148' : 'Cotización COT-0148'}</span>
+                                    <div class="mk-bar-actions">
+                                        <span class="mk-pay-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> cordhq.app/q/8f2a</span>
+                                        <span class="mk-badge mk-badge-ok">● {isEn ? 'Approved' : 'Aprobada'}</span>
+                                    </div>
+                                </div>
+                                <div class="mk-pay-body">
+                                    <div class="mk-pay-sum">
+                                        <div class="mk-pay-org">
+                                            <span class="mk-avatar">MV</span>
+                                            <div>
+                                                <b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b>
+                                                <i>{isEn ? 'Approved today 12:36 · Net 30' : 'Aprobada hoy 12:36 · Net 30'}</i>
+                                            </div>
+                                        </div>
+                                        <div class="mk-pay-lines">
+                                            <div class="mk-pay-line"><span>{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}<em>× 120</em></span><b class="editorial">$21,840.00</b></div>
+                                            <div class="mk-pay-line"><span>{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}<em>× 340</em></span><b class="editorial">$57,290.00</b></div>
+                                            <div class="mk-pay-line"><span>{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}<em>× 2,400</em></span><b class="editorial">$34,080.00</b></div>
+                                            <div class="mk-pay-line"><span>{isEn ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6'}<em>× 180</em></span><b class="editorial">$56,160.00</b></div>
+                                        </div>
+                                        <div class="mk-pay-tots">
+                                            <div class="mk-pay-tot"><span>Subtotal</span><b class="editorial">$169,370.00</b></div>
+                                            <div class="mk-pay-tot"><span>{isEn ? 'Tax 16%' : 'IVA 16%'}</span><b class="editorial">$27,099.20</b></div>
+                                            <div class="mk-pay-tot mk-pay-tot-final"><span>{isEn ? 'Total due' : 'Total a pagar'}</span><b class="editorial">$196,469.20</b></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mk-pay-sheet">
+                                        <div class="mk-pay-form" id="payForm">
+                                            <div class="mk-pay-sheet-head">
+                                                <b>{isEn ? 'Pay by card' : 'Pagar con tarjeta'}</b>
+                                                <span class="mk-pay-cur">MXN</span>
+                                            </div>
+                                            <div class="mk-pay-fg">
+                                                <span class="mk-pay-lbl">{isEn ? 'Email' : 'Correo'}</span>
+                                                <div class="mk-pay-field"><span class="mk-pay-val">compras@elzarco.mx</span></div>
+                                            </div>
+                                            <div class="mk-pay-fg">
+                                                <span class="mk-pay-lbl">{isEn ? 'Card details' : 'Datos de la tarjeta'}</span>
+                                                <div class="mk-pay-field mk-pay-cardf" id="payCardField">
+                                                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://visa.com&size=128" alt="Visa" width="18" height="18" loading="lazy" />
+                                                    <span class="mk-pay-val editorial">•••• •••• •••• 4242</span>
+                                                    <span class="mk-pay-mini editorial">04 / 29</span>
+                                                    <span class="mk-pay-mini editorial mk-pay-cvc">•••</span>
+                                                </div>
+                                            </div>
+                                            <div class="mk-pay-fg">
+                                                <span class="mk-pay-lbl">{isEn ? 'Country' : 'País'}</span>
+                                                <div class="mk-pay-field"><span class="mk-pay-val">México</span><svg class="mk-pay-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+                                            </div>
+                                            <div class="mk-pay-btn" id="payBtn">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.18"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                                                {isEn ? 'Pay $196,469.20' : 'Pagar $196,469.20'}
+                                            </div>
+                                            <div class="mk-pay-note">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.13" d="M12 2.6 4.5 5.6v6c0 4.4 3.1 8.5 7.5 9.8 4.4-1.3 7.5-5.4 7.5-9.8v-6z"/><path d="m9.2 12.1 2 2 3.6-4"/></svg>
+                                                <span>{isEn ? 'Funds land in Valle Materials’ connected account.' : 'El dinero llega a la cuenta conectada de Materiales del Valle.'}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="mk-pay-ok" id="paySuccess">
+                                            <div class="mk-pay-tickwrap">
+                                                <div class="mk-pay-ring" aria-hidden="true"></div>
+                                                <i class="mk-pay-tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></i>
+                                            </div>
+                                            <b>{isEn ? 'Payment received' : 'Pago recibido'}</b>
+                                            <span class="editorial mk-pay-ok-amt">$196,469.20</span>
+                                            <i class="mk-pay-ok-sub">{isEn ? 'To the connected account of Valle Materials' : 'A la cuenta conectada de Materiales del Valle'}</i>
+                                            <div class="mk-pay-ok-dep">
+                                                <span>{isEn ? 'Payout' : 'Depósito'}</span>
+                                                <b>CLABE •••• 4821 · 15 {isEn ? 'Sep' : 'sep'}</b>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mk-pay-foot">
+                                    <span class="mk-pay-via">{isEn ? 'via' : 'vía'} <b>cord</b></span>
+                                    <span class="mk-pay-sep" aria-hidden="true"></span>
+                                    <span class="mk-pay-vpill">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+                                        {isEn ? 'Payout account verified inside Cord' : 'Cuenta de cobro verificada dentro de Cord'}
+                                    </span>
                                 </div>
                             </div>
                         )}
@@ -1220,6 +1312,82 @@ const howtoSchema = howto ? {
     .mk-fx-total b { font-size: 1.05rem; color: #0f172a; }
     .mk-fx-total-mxn b { color: #059669; }
 
+    /* ── CORD PAYMENTS — checkout dentro del link público ── */
+    .mk-pay-url { display: inline-flex; align-items: center; gap: 5px; font-size: 0.64rem; font-weight: 600; color: #64748b; background: #f1f5f9; border: 1px solid rgba(10,25,47,0.06); padding: 4px 10px; border-radius: 100px; }
+    .mk-pay-url svg { width: 11px; height: 11px; flex-shrink: 0; color: #94a3b8; }
+    .mk-pay-body { display: grid; grid-template-columns: 1.12fr 0.98fr; align-items: stretch; }
+
+    /* Columna izquierda — resumen de lo que se está pagando */
+    .mk-pay-sum { display: flex; flex-direction: column; padding: 1.15rem 1.3rem 1.25rem; border-right: 1px solid rgba(10,25,47,0.06); background: #fff; }
+    .mk-pay-org { display: flex; align-items: center; gap: 11px; padding-bottom: 0.85rem; border-bottom: 1px solid rgba(10,25,47,0.06); }
+    .mk-pay-org b { display: block; font-size: 0.88rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; }
+    .mk-pay-org i { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
+    .mk-pay-lines { display: flex; flex-direction: column; }
+    .mk-pay-line { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 9px 0; border-bottom: 1px solid rgba(10,25,47,0.045); }
+    .mk-pay-line > span { font-size: 0.76rem; font-weight: 500; color: #334155; min-width: 0; }
+    .mk-pay-line em { font-style: normal; font-size: 0.68rem; font-weight: 500; color: #94a3b8; margin-left: 7px; }
+    .mk-pay-line b { font-size: 0.78rem; font-weight: 600; color: #334155; white-space: nowrap; }
+    .mk-pay-tots { margin-top: auto; padding-top: 0.9rem; display: flex; flex-direction: column; gap: 7px; }
+    .mk-pay-tot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .mk-pay-tot span { font-size: 0.7rem; color: #94a3b8; }
+    .mk-pay-tot b { font-size: 0.8rem; font-weight: 600; color: #475569; }
+    .mk-pay-tot-final { align-items: baseline; margin-top: 3px; padding-top: 0.75rem; border-top: 1px solid rgba(10,25,47,0.08); }
+    .mk-pay-tot-final span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: #64748b; }
+    .mk-pay-tot-final b { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.03em; color: #0a192f; }
+
+    /* Columna derecha — la hoja de cobro */
+    .mk-pay-sheet { position: relative; padding: 1.15rem 1.3rem 1.25rem; background: #fbfcfd; }
+    .mk-pay-form { display: flex; flex-direction: column; gap: 11px; }
+    .mk-pay-sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 1px; }
+    .mk-pay-sheet-head b { font-size: 0.82rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; }
+    .mk-pay-cur { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.7px; color: #64748b; background: #eef2f7; border: 1px solid rgba(10,25,47,0.06); padding: 3px 8px; border-radius: 100px; }
+    .mk-pay-fg { display: flex; flex-direction: column; gap: 5px; }
+    .mk-pay-lbl { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: #94a3b8; }
+    .mk-pay-field { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 9px; background: #fff; border: 1px solid rgba(10,25,47,0.10); box-shadow: 0 1px 2px rgba(10,25,47,0.04); }
+    .mk-pay-field img { flex-shrink: 0; border-radius: 4px; }
+    .mk-pay-val { font-size: 0.76rem; font-weight: 500; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-pay-cardf .mk-pay-val { flex: 1; letter-spacing: 0.02em; }
+    .mk-pay-mini { font-size: 0.72rem; font-weight: 500; color: #64748b; white-space: nowrap; }
+    .mk-pay-cvc { letter-spacing: 0.06em; }
+    .mk-pay-chev { width: 14px; height: 14px; margin-left: auto; color: #94a3b8; flex-shrink: 0; }
+    .mk-pay-btn {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        margin-top: 3px; padding: 12px; border-radius: 10px;
+        background: #0a192f; color: #fff; font-size: 0.84rem; font-weight: 700; letter-spacing: -0.01em;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.20), 0 8px 20px -8px rgba(10,25,47,0.55);
+    }
+    .mk-pay-btn svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.85; }
+    .mk-pay-note { display: flex; align-items: flex-start; gap: 7px; padding-top: 1px; }
+    .mk-pay-note svg { width: 14px; height: 14px; flex-shrink: 0; color: #059669; margin-top: 1px; }
+    .mk-pay-note span { font-size: 0.67rem; line-height: 1.45; color: #94a3b8; }
+
+    /* Confirmación — reemplaza la hoja de cobro, no la ventana entera */
+    .mk-pay-ok {
+        position: absolute; inset: 0; z-index: 5;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+        padding: 1.2rem 1.3rem; text-align: center;
+        background: #fbfcfd; opacity: 0; pointer-events: none;
+    }
+    .mk-pay-tickwrap { position: relative; display: flex; margin-bottom: 6px; }
+    .mk-pay-ring { position: absolute; inset: -7px; border-radius: 50%; border: 2px solid rgba(16,185,129,0.5); opacity: 0; }
+    .mk-pay-tick { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #059669; background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.28); }
+    .mk-pay-tick svg { width: 24px; height: 24px; }
+    .mk-pay-ok b { font-size: 0.86rem; font-weight: 600; color: #0f172a; }
+    .mk-pay-ok-amt { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em; color: #0a192f; }
+    .mk-pay-ok-sub { font-style: normal; font-size: 0.7rem; line-height: 1.45; color: #94a3b8; max-width: 250px; text-wrap: balance; }
+    .mk-pay-ok-dep { display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; max-width: 260px; margin-top: 10px; padding: 9px 12px; border-radius: 10px; background: #fff; border: 1px solid rgba(10,25,47,0.08); }
+    .mk-pay-ok-dep span { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #94a3b8; }
+    .mk-pay-ok-dep b { font-size: 0.7rem; font-weight: 600; color: #475569; }
+
+    /* El footer se alinea a la IZQUIERDA a propósito: con el sangrado derecho del
+       hero, lo que se lee va del lado que no se corta. */
+    .mk-pay-foot { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-top: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; }
+    .mk-pay-sep { width: 1px; height: 13px; background: rgba(10,25,47,0.10); flex-shrink: 0; }
+    .mk-pay-via { font-size: 0.68rem; color: #94a3b8; white-space: nowrap; }
+    .mk-pay-via b { color: #64748b; font-weight: 700; letter-spacing: -0.02em; }
+    .mk-pay-vpill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.63rem; font-weight: 600; color: #475569; background: #f1f5f9; border: 1px solid rgba(10,25,47,0.06); padding: 4px 10px; border-radius: 100px; }
+    .mk-pay-vpill svg { width: 12px; height: 12px; flex-shrink: 0; color: #059669; }
+
     /* ── FACTURACIÓN INTERNACIONAL (US/MX) ── */
     .mk-intl { position: relative; }
     .mk-intl-body { padding: 1.1rem 1.2rem 1.3rem; }
@@ -1589,6 +1757,16 @@ const howtoSchema = howto ? {
 
         /* ── facturación: el sello se movía sobre el encabezado ── */
         .mk-intl-pill { position: static; margin: 0 0 2px auto; box-shadow: none; }
+
+        /* ── pagos: el checkout de dos columnas se apila (resumen arriba, cobro abajo) ── */
+        .mk-pay-url { display: none; }
+        .mk-pay-body { grid-template-columns: 1fr; }
+        .mk-pay-sum { border-right: none; border-bottom: 1px solid rgba(10,25,47,0.06); padding: 1rem 1.05rem 1.1rem; }
+        .mk-pay-sheet { padding: 1rem 1.05rem 1.15rem; }
+        .mk-pay-line > span, .mk-pay-line b, .mk-pay-val { font-size: 0.82rem; }
+        .mk-pay-tot-final b { font-size: 1.3rem; }
+        .mk-pay-cvc { display: none; }
+        .mk-pay-vpill { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* ── finanzas: la etiqueta de dos renglones desalineaba el KPI ── */
         .mk-fin-kpi { justify-content: space-between; }
@@ -1971,6 +2149,39 @@ const howtoSchema = howto ? {
                                 .to(obj, { v: 18.50, duration: 1, ease: 'power2.out', onUpdate: () => { if (rate) rate.textContent = '$' + obj.v.toFixed(2) + ' MXN'; } })
                                 .to(lock, { opacity: 1, scale: 1, duration: 0.45, ease: 'back.out(1.6)' }, '-=0.25')
                                 .fromTo(mxn, { backgroundColor: 'rgba(16,185,129,0.18)' }, { backgroundColor: '#f8fafc', duration: 1.1, ease: 'power2.out' }, '-=0.1');
+                        },
+                    });
+                }
+
+                // Cord Payments — el cliente paga con tarjeta dentro del link y el cobro
+                // se confirma hacia la cuenta conectada del negocio (loop auto-reproducido).
+                const payHero = document.getElementById('payHero');
+                if (payHero) {
+                    const payLines = payHero.querySelectorAll('.mk-pay-line');
+                    const cardField = document.getElementById('payCardField');
+                    const payForm = document.getElementById('payForm');
+                    const payBtn = document.getElementById('payBtn');
+                    const payOk = document.getElementById('paySuccess');
+                    const payRing = payHero.querySelector('.mk-pay-ring');
+                    const payTick = payHero.querySelector('.mk-pay-tick');
+                    const payDep = payHero.querySelector('.mk-pay-ok-dep');
+                    gsap.set(payLines, { opacity: 0, x: -10 });
+                    ScrollTrigger.create({
+                        trigger: payHero, start: 'top 78%', once: true,
+                        onEnter: () => {
+                            gsap.to(payLines, { opacity: 1, x: 0, duration: 0.5, stagger: 0.09, ease: 'power2.out', delay: 0.3 });
+                            gsap.timeline({ delay: 1.25, repeat: -1, repeatDelay: 2.2 })
+                                .fromTo(cardField, { boxShadow: '0 1px 2px rgba(10,25,47,0.04)' }, { boxShadow: '0 1px 2px rgba(10,25,47,0.04), 0 0 0 3px rgba(10,25,47,0.10)', duration: 0.45, ease: 'sine.out' })
+                                .to(cardField, { boxShadow: '0 1px 2px rgba(10,25,47,0.04)', duration: 0.4, ease: 'sine.in' }, '+=0.35')
+                                .to(payBtn, { scale: 0.97, duration: 0.12, ease: 'power2.in' })
+                                .to(payBtn, { scale: 1, duration: 0.18, ease: 'power2.out' })
+                                .to(payForm, { opacity: 0, y: -6, duration: 0.35, ease: 'power2.in' }, '+=0.15')
+                                .to(payOk, { opacity: 1, duration: 0.3 }, '-=0.12')
+                                .fromTo(payRing, { scale: 0.55, opacity: 1 }, { scale: 1.7, opacity: 0, duration: 0.9, ease: 'power2.out' }, '<')
+                                .fromTo(payTick, { scale: 0, rotation: -32 }, { scale: 1, rotation: 0, duration: 0.55, ease: 'back.out(2)' }, '<0.05')
+                                .fromTo(payDep, { opacity: 0, y: 9 }, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, '-=0.2')
+                                .to(payOk, { opacity: 0, duration: 0.45 }, '+=2.6')
+                                .to(payForm, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, '<');
                         },
                     });
                 }

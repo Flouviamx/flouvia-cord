@@ -214,7 +214,7 @@ export default function ConnectPersonasStep(props: Props) {
             else await props.onCrear(payload);
             setEditando(null);
         } catch (e: any) {
-            setError(e?.message || 'No se pudo guardar.');
+            setError(e?.message || (locale === 'en' ? 'Could not save.' : 'No se pudo guardar.'));
         }
     };
 
@@ -224,7 +224,7 @@ export default function ConnectPersonasStep(props: Props) {
             await props.onQuitar(stripePersonId);
             setConfirmando(null);
         } catch (e: any) {
-            setError(e?.message || 'No se pudo quitar.');
+            setError(e?.message || (locale === 'en' ? 'Could not remove.' : 'No se pudo quitar.'));
         }
     };
 

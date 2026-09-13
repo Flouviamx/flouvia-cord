@@ -166,7 +166,7 @@ export const FEATURES: Feature[] = [
                 copy: 'Cuando tu cliente aprueba, tú recibes el aviso al instante y la cotización cambia de estado sola. Si tiene pago en línea habilitado, puede pagar ahí mismo; si maneja crédito, queda registrado bajo sus términos Net 30/60.',
                 bullets: [
                     'Notificación inmediata de aprobación',
-                    'Pago en línea con Stripe (plan Profesional)',
+                    'Pago en línea con tarjeta, disponible en todos los planes',
                     'El historial completo queda en el timeline',
                 ],
             },
@@ -519,6 +519,97 @@ export const FEATURES: Feature[] = [
             },
         ],
         cta: { titulo: 'Vende en dólares sin perder en el cambio.', sub: 'Cotiza en USD o EUR, factura en pesos y deja que Cord proteja tu margen. Gratis para empezar.' },
+    },
+    {
+        slug: 'pagos',
+        nav: 'Cord Payments',
+        eyebrow: 'CORD PAYMENTS',
+        titulo: 'El cobro con tarjeta, dentro de tu propio link.',
+        sub: 'Tu cliente paga con tarjeta sin salir de la cotización ni de la factura. Tú das de alta tu cuenta de cobro —documentos, socios y cuenta de depósito— sin que Cord te mande a un formulario ajeno.',
+        metaTitle: 'Cord Payments: cobro con tarjeta y alta de cuenta de cobro — Cord',
+        metaDescription: 'Cobra con tarjeta directo en el link de tu cotización o factura, con el dinero llegando a tu propia cuenta. Completa el alta (KYC, documentos, socios y cuenta de depósito) sin salir de Cord. Disponible en 8 países, en todos los planes.',
+        plan: 'Disponible en todos los planes, incluido el gratuito — se cobra comisión por transacción, no por plan',
+        stats: [
+            { valor: '8', countup: 8, label: 'de los 12 países que sostiene Cord ya cobran con tarjeta directo a tu cuenta' },
+            { valor: '1', countup: 1, label: 'pantalla para completar el alta: documentos, socios y cuenta de depósito, sin salir de Cord' },
+            { valor: '5', countup: 5, suffix: ' años', label: 'de evidencia de verificación conservada por cumplimiento' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'COBRO DENTRO DEL LINK',
+                titulo: 'Tu cliente paga donde ya está aprobando.',
+                copy: 'La tarjeta se cobra en la misma pantalla donde tu cliente aprobó la cotización o abrió la factura — sin redirigirlo a un checkout ajeno, sin que descargue nada. El cobro se procesa en la divisa en la que negociaste y el dinero llega directo a tu cuenta conectada, no a la de Cord.',
+                bullets: [
+                    'Tarjeta directo en el link de la cotización o la factura',
+                    'El dinero llega a tu cuenta conectada, no a la de Cord',
+                    'Se cobra en la misma divisa en la que tu cliente aprobó',
+                ],
+            },
+            {
+                eyebrow: 'ALTA DENTRO DE CORD',
+                titulo: 'El KYC lo llenas en Cord, no en un formulario ajeno.',
+                copy: 'A diferencia de un checkout que te saca a un panel de un tercero, dar de alta tu cuenta de cobro es una pantalla más de Cord, con tu propia sesión y sin redirecciones. Si tu negocio tiene varios socios, cada uno se registra como una persona real con su propio porcentaje — Cord no te obliga a declarar un solo dueño al 100% cuando no es cierto.',
+                bullets: [
+                    'Varios socios o beneficiarios reales, no un solo dueño forzado al 100%',
+                    'Sube tus documentos desde la computadora o continúa en tu teléfono con un link',
+                    'Qué documento pedirte depende de tu país, no de una lista genérica',
+                ],
+            },
+            {
+                eyebrow: 'EL DEPÓSITO, SIN SORPRESAS',
+                titulo: 'Ves cuándo te pagan, no adivinas.',
+                copy: 'Cada depósito queda en un historial con su fecha y su estado, con la frecuencia que definiste en Ajustes. La cuenta bancaria se captura en el formato correcto de tu país —CLABE, IBAN, routing number, sort code— y Cord valida los dígitos antes de guardarla, en vez de dejar que el banco rebote una cuenta mal tecleada semanas después.',
+                bullets: [
+                    'Historial de depósitos con fecha y estado, no una promesa de "ya te llegará"',
+                    'Frecuencia de depósito configurable desde Ajustes',
+                    'El formato de cuenta de tu país, validado antes de guardarlo',
+                ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'EL DINERO QUE SE QUEDA ATASCADO',
+                titulo: 'Cada "te transfiero mañana" es una venta que tardó una semana en cobrarse.',
+                copy: 'Una transferencia manual depende de que tu cliente se acuerde. Un botón de pago con tarjeta en el mismo link que ya está viendo no depende de nadie más.',
+            },
+            {
+                eyebrow: 'UN SOLO DUEÑO NO ALCANZA',
+                titulo: 'Una sociedad con tres socios no cabe en un formulario que solo admite uno.',
+                copy: 'El alta de cobro de Cord pregunta los roles reales de cada persona y construye la lista completa, en vez de forzar una atestación de dueño único que no es cierta.',
+            },
+            {
+                eyebrow: 'EL DEPÓSITO QUE NADIE EXPLICABA',
+                titulo: 'Dejaste de escribir a soporte para preguntar cuándo te llega tu dinero.',
+                copy: 'El historial y la frecuencia de depósito viven en tu cuenta, no en un correo que hay que pedir.',
+            },
+        ],
+        faqs: [
+            {
+                q: '¿Cord Payments cuesta extra según mi plan?',
+                a: 'No por plan. El cobro con tarjeta está disponible desde el plan Gratis: lo que se cobra es una comisión por transacción procesada, no una cuota mensual adicional. Las tarifas vigentes están en la página de Precios.',
+            },
+            {
+                q: '¿En qué países puedo cobrar con tarjeta con Cord?',
+                a: 'Hoy en 8 de los 12 países que Cord sostiene de punta a punta: México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia. En Colombia, Argentina, Chile y Perú tu cuenta cotiza, factura y lleva cobranza igual, pero el cobro con tarjeta todavía no está disponible ahí y Cord lo dice antes de que empieces el alta, no después de que falle.',
+            },
+            {
+                q: '¿Cómo doy de alta mi cuenta para poder cobrar?',
+                a: 'Desde Ajustes, sin salir de Cord: verificas tu identidad, registras a los socios o beneficiarios de la empresa y capturas tu cuenta de depósito. No hay panel de un tercero ni una segunda cuenta que crear aparte.',
+            },
+            {
+                q: '¿Qué pasa si mi negocio tiene varios socios o dueños?',
+                a: 'Cada socio se registra como una persona propia con su porcentaje real de participación. Cord no te obliga a declarar a una sola persona como dueña al 100% cuando la sociedad tiene varios socios — eso era una limitación real que ya se corrigió.',
+            },
+            {
+                q: '¿Puedo tomar la foto de mi identificación desde el celular?',
+                a: 'Sí. En el paso de subir tu documento, Cord te da un link para continuar desde tu teléfono sin perder lo que ya llenaste en la computadora — tomas la foto con la cámara del celular y sigues donde ibas.',
+            },
+            {
+                q: '¿Cómo sé cuándo me van a depositar?',
+                a: 'En tu cuenta queda el historial completo de depósitos, con fecha y estado, y la frecuencia con la que se procesan según lo que configuraste en Ajustes. No es un correo que hay que pedir a soporte.',
+            },
+        ],
+        cta: { titulo: 'Cobra la próxima venta sin pedirle a tu cliente que te transfiera.', sub: 'Activa Cord Payments desde Ajustes y cobra con tarjeta en tu propio link. Gratis para empezar.' },
     },
     {
         slug: 'facturacion',

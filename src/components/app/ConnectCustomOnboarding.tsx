@@ -110,6 +110,46 @@ const CO_STRINGS = {
     consentTerminos: 'Términos de Cord Payments',
     consentCierre: 'y el acuerdo de Stripe. Autorizo el tratamiento y las transferencias descritas de mis datos financieros, patrimoniales y de verificación de identidad.',
     consentRegistro: 'Tu aceptación se registra con fecha, dirección IP y versión de términos.',
+    pasoDe: 'Paso {n} de {total}',
+    conTelefono: 'Con tu teléfono',
+    subirArchivo: 'Subir archivo',
+    generarQr: 'Generar código QR',
+    identidadVerificadaTel: 'Identidad verificada desde tu teléfono. Continuando…',
+    lista: 'Lista',
+    guardando: 'Guardando…',
+    aceptarFinalizar: 'Aceptar y finalizar',
+    continuar: 'Continuar',
+    razonSocial: 'Razón social',
+    nombreNegocio: 'Nombre completo (negocio)',
+    phRazonSocial: 'Ej. Mi Empresa S.A. de C.V.',
+    phNombre: 'Ej. Juan Pérez',
+    repFisica: 'Como persona física, necesitamos verificar tu identidad para activar Cord Payments.',
+    repMoral: 'Persona autorizada para operar la cuenta bancaria de la empresa.',
+    errRepresentanteAntes: 'Primero completa los datos del representante (paso 4 del asistente)',
+    errTipoRegistro: 'Selecciona un tipo de registro',
+    errFaltanDatos: 'Faltan datos obligatorios',
+    errRfc: 'El RFC no tiene un formato válido (12 o 13 caracteres, formato oficial)',
+    errNifEs: 'Ese NIF, NIE o CIF no es válido — revisa la letra de control.',
+    errCapturaTaxId: 'Captura tu {label}',
+    errDireccion: 'Completa la dirección fiscal',
+    errDatosPersonales: 'Completa los datos personales',
+    errSsn: 'Captura los últimos 4 dígitos del SSN',
+    errNacimiento: 'Revisa la fecha de nacimiento (debes ser mayor de 18 años)',
+    errDuenos: 'Confirma que la lista de dueños está completa para continuar',
+    errEsperaTelefono: 'Espera a que termines la verificación desde tu teléfono, o cambia a "Subir archivo".',
+    errFrente: 'Sube al menos el frente de tu identificación',
+    errTitular: 'Escribe el nombre del titular de la cuenta',
+    errCuenta: 'Revisa los datos de tu cuenta',
+    errConsent: 'Confirma los términos y el tratamiento de datos para continuar',
+    cuentaBancaria: 'Cuenta bancaria',
+    bancoTerminacion: '{label} terminación •••• {last4}. Aquí llegan tus depósitos.',
+    revisionDetalle: 'Cord Payments está verificando tu información. Normalmente toma un par de minutos. Esta página se actualizará sola en cuanto tus cobros estén activos.',
+    dia: 'Día',
+    mes: 'Mes',
+    anio: 'Año',
+    phAnio: 'AAAA',
+    dirPersonalTuya: 'Tu dirección personal',
+    dirPersonalRep: 'Dirección personal del representante',
     atras: 'Atrás',
     personas: {
       titulo: 'Personas y control',
@@ -225,6 +265,46 @@ const CO_STRINGS = {
     consentTerminos: 'Cord Payments Terms',
     consentCierre: "and the Stripe agreement. I authorize the described processing and transfers of my financial, asset and identity-verification data.",
     consentRegistro: 'Your acceptance is recorded with date, IP address and terms version.',
+    pasoDe: 'Step {n} of {total}',
+    conTelefono: 'With your phone',
+    subirArchivo: 'Upload file',
+    generarQr: 'Generate QR code',
+    identidadVerificadaTel: 'Identity verified from your phone. Continuing…',
+    lista: 'Ready',
+    guardando: 'Saving…',
+    aceptarFinalizar: 'Accept and finish',
+    continuar: 'Continue',
+    razonSocial: 'Legal business name',
+    nombreNegocio: 'Full name (business)',
+    phRazonSocial: 'e.g. Acme Inc.',
+    phNombre: 'e.g. Jane Smith',
+    repFisica: 'As an individual, we need to verify your identity to activate Cord Payments.',
+    repMoral: 'Person authorized to operate the company bank account.',
+    errRepresentanteAntes: 'First complete the representative details (step 4 of the setup)',
+    errTipoRegistro: 'Choose a registration type',
+    errFaltanDatos: 'Required details are missing',
+    errRfc: 'The RFC format is not valid (12 or 13 characters, official format)',
+    errNifEs: 'That NIF, NIE, or CIF is not valid — check the control letter.',
+    errCapturaTaxId: 'Enter your {label}',
+    errDireccion: 'Complete the registered address',
+    errDatosPersonales: 'Complete the personal details',
+    errSsn: 'Enter the last 4 digits of the SSN',
+    errNacimiento: 'Check the date of birth (you must be over 18)',
+    errDuenos: 'Confirm the list of owners is complete to continue',
+    errEsperaTelefono: 'Finish the verification on your phone first, or switch to "Upload file".',
+    errFrente: 'Upload at least the front of your ID',
+    errTitular: 'Enter the account holder name',
+    errCuenta: 'Check your account details',
+    errConsent: 'Accept the terms and data processing to continue',
+    cuentaBancaria: 'Bank account',
+    bancoTerminacion: '{label} ending in •••• {last4}. Your payouts arrive here.',
+    revisionDetalle: 'Cord Payments is verifying your information. It usually takes a couple of minutes. This page will update on its own as soon as your payments are active.',
+    dia: 'Day',
+    mes: 'Month',
+    anio: 'Year',
+    phAnio: 'YYYY',
+    dirPersonalTuya: 'Your personal address',
+    dirPersonalRep: "Representative's personal address",
     atras: 'Back',
     personas: {
       titulo: 'People and control',
@@ -278,21 +358,23 @@ const CO_STRINGS = {
  * `window.cordStepUp` lo publica AppLayout: abre el diálogo de confirmación de
  * identidad y resuelve `true` si el usuario se reautenticó.
  */
+const htmlEn = () => typeof document !== 'undefined' && document.documentElement.lang === 'en';
+
 async function postConnect(url: string, init: RequestInit): Promise<any> {
     const enviar = () => fetch(url, init);
     let res = await enviar();
     if (res.status === 428) {
         const stepUp = (window as any).cordStepUp;
         if (typeof stepUp !== 'function') {
-            throw new Error('Necesitas confirmar tu identidad para continuar. Recarga la página e intenta de nuevo.');
+            throw new Error(htmlEn() ? 'You need to confirm your identity to continue. Reload the page and try again.' : 'Necesitas confirmar tu identidad para continuar. Recarga la página e intenta de nuevo.');
         }
         if (!await stepUp()) {
-            throw new Error('Necesitas confirmar tu identidad para continuar.');
+            throw new Error(htmlEn() ? 'You need to confirm your identity to continue.' : 'Necesitas confirmar tu identidad para continuar.');
         }
         res = await enviar();
     }
     const data = await res.json().catch(() => null);
-    if (!data?.ok) throw new Error(data?.error || 'No se pudo completar la operación.');
+    if (!data?.ok) throw new Error(data?.error || (htmlEn() ? 'The operation could not be completed.' : 'No se pudo completar la operación.'));
     return data;
 }
 
@@ -509,7 +591,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
     const startPhoneCapture = async () => {
         setError(null);
         if (businessType === 'company' && !personId) {
-            setError('Primero completa los datos del representante (paso 4 del asistente)');
+            setError(S.errRepresentanteAntes);
             return;
         }
         setCaptureStatus('creating');
@@ -617,7 +699,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
         setLoading(true);
         try {
             if (step === 0) {
-                if (!businessType) throw new Error('Selecciona un tipo de registro');
+                if (!businessType) throw new Error(S.errTipoRegistro);
                 const data = await postConnectJson('/api/billing/connect/create', { business_type: businessType });
                 setAccountId(data.accountId);
                 setRequirements(data.requirements);
@@ -626,16 +708,16 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 }
                 setStep(1);
             } else if (step === 1) {
-                if (!name || !taxId || !mcc) throw new Error('Faltan datos obligatorios');
+                if (!name || !taxId || !mcc) throw new Error(S.errFaltanDatos);
                 // El checksum se verifica AQUÍ y no se deja para que Stripe lo
                 // rechace con un error que no le dice nada al vendedor (regla
                 // 14) — mismo criterio que la CLABE en payout-fields.ts.
                 if (esMx) {
-                    if (!validRfc(taxId)) throw new Error('El RFC no tiene un formato válido (12 o 13 caracteres, formato oficial)');
+                    if (!validRfc(taxId)) throw new Error(S.errRfc);
                 } else if (PAIS === 'ES') {
-                    if (!validSpainTaxId(taxId)) throw new Error('Ese NIF, NIE o CIF no es válido — revisa la letra de control.');
+                    if (!validSpainTaxId(taxId)) throw new Error(S.errNifEs);
                 } else if (taxId.trim().length < 5) {
-                    throw new Error(`Captura tu ${TAX_ID_LABEL}`);
+                    throw new Error(S.errCapturaTaxId.replace('{label}', TAX_ID_LABEL));
                 }
 
                 const payload: any = {
@@ -650,7 +732,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 setRequirements(data.requirements);
                 setStep(2);
             } else if (step === 2) {
-                if (!address.line1 || !address.state || !address.postal_code) throw new Error('Completa la dirección fiscal');
+                if (!address.line1 || !address.state || !address.postal_code) throw new Error(S.errDireccion);
                 const payload: any = {};
                 if (businessType === 'company') {
                     payload.company = { address };
@@ -661,14 +743,14 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 setRequirements(data.requirements);
                 setStep(3); // Empresa Y persona física pasan por el paso 3 (datos personales + DOB)
             } else if (step === 3) { // Datos personales (representante o persona física)
-                if (!person.first_name || !person.last_name) throw new Error('Completa los datos personales');
+                if (!person.first_name || !person.last_name) throw new Error(S.errDatosPersonales);
                 // Sólo se exige lo que Stripe pidió para ESTA cuenta. Antes se
                 // exigía `id_number` en los ocho países (bloqueo duro en ES/DE/GB)
                 // y `ssn_last_4` con una rama por país.
                 if (exigirIdNumber && !person.id_number.trim()) {
                     throw new Error(locale === 'en' ? `Enter the ${PERSON_ID_LABEL}` : `Captura el ${PERSON_ID_LABEL}`);
                 }
-                if (exigirSsn && person.ssn_last_4.length !== 4) throw new Error('Captura los últimos 4 dígitos del SSN');
+                if (exigirSsn && person.ssn_last_4.length !== 4) throw new Error(S.errSsn);
                 if (person.is_owner) {
                     const pct = Number(person.percent_ownership);
                     if (!Number.isFinite(pct) || pct <= 0 || pct > 100) {
@@ -679,7 +761,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 }
                 const d = Number(person.dob_day), m = Number(person.dob_month), y = Number(person.dob_year);
                 if (!d || !m || !y || d < 1 || d > 31 || m < 1 || m > 12 || y < 1900 || y > new Date().getFullYear() - 18) {
-                    throw new Error('Revisa la fecha de nacimiento (debes ser mayor de 18 años)');
+                    throw new Error(S.errNacimiento);
                 }
                 const dob = { day: person.dob_day, month: person.dob_month, year: person.dob_year };
                 const personAddress = {
@@ -746,7 +828,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                     setStep(4);
                 }
             } else if (step === 4) { // Dueños Beneficiarios
-                if (!ownersProvided) throw new Error('Confirma que la lista de dueños está completa para continuar');
+                if (!ownersProvided) throw new Error(S.errDuenos);
                 const data = await postConnectJson('/api/billing/connect/account',
                     { company: { owners_provided: true, directors_provided: true, executives_provided: true } }, 'PATCH');
                 setRequirements(data.requirements);
@@ -755,12 +837,12 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 if (uploadMode === 'phone') {
                     // El teléfono ya subió las fotos directo a Stripe (ver polling arriba);
                     // aquí solo refrescamos requisitos y avanzamos.
-                    if (captureStatus !== 'completed') throw new Error('Espera a que termines la verificación desde tu teléfono, o cambia a "Subir archivo".');
+                    if (captureStatus !== 'completed') throw new Error(S.errEsperaTelefono);
                     await fetchStatus();
                     setStep(6);
                 } else {
-                    if (!docFront) throw new Error('Sube al menos el frente de tu identificación');
-                    if (businessType === 'company' && !personId) throw new Error('Primero completa los datos del representante (paso 4 del asistente)');
+                    if (!docFront) throw new Error(S.errFrente);
+                    if (businessType === 'company' && !personId) throw new Error(S.errRepresentanteAntes);
 
                     const uploadDoc = async (file: File, side: string) => {
                         const fd = new FormData();
@@ -786,10 +868,10 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                     setStep(6);
                 }
             } else if (step === 6) { // Cuenta Bancaria
-                if (!accountHolder.trim()) throw new Error('Escribe el nombre del titular de la cuenta');
+                if (!accountHolder.trim()) throw new Error(S.errTitular);
                 // Misma validación que el servidor, con el formato del país.
                 const check = validatePayout(String(org?.countryCode || 'MX'), bankFields, locale);
-                if (!check.ok) throw new Error(check.error || 'Revisa los datos de tu cuenta');
+                if (!check.ok) throw new Error(check.error || S.errCuenta);
                 // El ciclo de step-up vive en `postConnect`, no aquí: era el único
                 // camino del wizard que lo manejaba, y estaba escrito a mano.
                 const data = await postConnectJson('/api/billing/connect/external-account',
@@ -798,7 +880,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 if (data.external_account?.last4) setBankInfo({ bank_name: data.external_account.bank_name, last4: data.external_account.last4 });
                 setStep(7);
             } else if (step === 7) { // TOS Acceptance
-                if (!legalConsent) throw new Error('Confirma los términos y el tratamiento de datos para continuar');
+                if (!legalConsent) throw new Error(S.errConsent);
                 await postConnectJson('/api/billing/connect/account', {
                     tos_acceptance: true,
                     legal_consents: {
@@ -861,8 +943,8 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11" fill="currentColor" fillOpacity="0.1"/><path d="M9 21v-6h6v6"/></svg>
                                 </div>
                                 <div className="co-bank-text">
-                                    <strong>{bankInfo.bank_name || 'Cuenta bancaria'}</strong>
-                                    <span>{payoutSpec.label} terminación •••• {bankInfo.last4}. Aquí llegan tus depósitos.</span>
+                                    <strong>{bankInfo.bank_name || S.cuentaBancaria}</strong>
+                                    <span>{S.bancoTerminacion.replace('{label}', payoutSpec.label).replace('{last4}', bankInfo.last4)}</span>
                                 </div>
                                 <button type="button" className="co-btn co-btn-ghost" onClick={() => setStep(6)}>{S.cambiar}</button>
                             </div>
@@ -882,10 +964,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                         <div className="co-review">
                             <span className="co-spinner co-spinner-lg" aria-hidden="true"></span>
                             <h3>{S.enRevision}</h3>
-                            <p>
-                                Cord Payments está verificando tu información. Normalmente toma un par de minutos.
-                                Esta página se actualizará sola en cuanto tus cobros estén activos.
-                            </p>
+                            <p>{S.revisionDetalle}</p>
                             {disabledReason && disabledReason !== 'requirements.pending_verification' && (
                                 <p className="co-review-reason">{locale === 'en' ? 'Detail' : 'Detalle'}: {translateRequirement(disabledReason, locale, PAIS).mensaje}</p>
                             )}
@@ -904,7 +983,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
             <div className="co-header">
                 <div className="co-header-text">
                     <h3>{S.pasos[step]}</h3>
-                    <span className="co-step-count">Paso {step + 1} de {totalSteps}</span>
+                    <span className="co-step-count">{S.pasoDe.replace('{n}', String(step + 1)).replace('{total}', String(totalSteps))}</span>
                 </div>
                 {accountId && <span className="co-account-id">{accountId}</span>}
             </div>
@@ -940,8 +1019,8 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 {step === 1 && (
                     <div className="co-step">
                         <div className="s-field">
-                            <label>{businessType === 'company' ? 'Razón Social' : 'Nombre Completo (Negocio)'}</label>
-                            <input className="s-input" value={name} onChange={e => setName(e.target.value)} placeholder={businessType === 'company' ? 'Ej. Mi Empresa S.A. de C.V.' : 'Ej. Juan Pérez'} />
+                            <label>{businessType === 'company' ? S.razonSocial : S.nombreNegocio}</label>
+                            <input className="s-input" value={name} onChange={e => setName(e.target.value)} placeholder={businessType === 'company' ? S.phRazonSocial : S.phNombre} />
                         </div>
                         <div className="s-row">
                             <div className="s-field">
@@ -1024,7 +1103,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
 
                 {step === 3 && (
                     <div className="co-step">
-                        <p className="co-sub">{businessType === 'individual' ? 'Como persona física, necesitamos verificar tu identidad para activar Cord Payments.' : 'Persona autorizada para operar la cuenta bancaria de la empresa.'}</p>
+                        <p className="co-sub">{businessType === 'individual' ? S.repFisica : S.repMoral}</p>
                         <div className="s-row">
                             <div className="s-field">
                                 <label>{S.nombres}</label>
@@ -1055,11 +1134,11 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                             <div className="s-field">
                                 <label>{S.fechaNacimiento}</label>
                                 <div className="co-dob">
-                                    <input className="s-input" placeholder="DD" value={person.dob_day} onChange={e => setPerson({...person, dob_day: e.target.value.replace(/\D/g, '')})} maxLength={2} inputMode="numeric" aria-label="Día" />
+                                    <input className="s-input" placeholder="DD" value={person.dob_day} onChange={e => setPerson({...person, dob_day: e.target.value.replace(/\D/g, '')})} maxLength={2} inputMode="numeric" aria-label={S.dia} />
                                     <span className="co-dob-sep">/</span>
-                                    <input className="s-input" placeholder="MM" value={person.dob_month} onChange={e => setPerson({...person, dob_month: e.target.value.replace(/\D/g, '')})} maxLength={2} inputMode="numeric" aria-label="Mes" />
+                                    <input className="s-input" placeholder="MM" value={person.dob_month} onChange={e => setPerson({...person, dob_month: e.target.value.replace(/\D/g, '')})} maxLength={2} inputMode="numeric" aria-label={S.mes} />
                                     <span className="co-dob-sep">/</span>
-                                    <input className="s-input" placeholder="AAAA" value={person.dob_year} onChange={e => setPerson({...person, dob_year: e.target.value.replace(/\D/g, '')})} maxLength={4} inputMode="numeric" aria-label="Año" />
+                                    <input className="s-input" placeholder={S.phAnio} value={person.dob_year} onChange={e => setPerson({...person, dob_year: e.target.value.replace(/\D/g, '')})} maxLength={4} inputMode="numeric" aria-label={S.anio} />
                                 </div>
                             </div>
                         </div>
@@ -1107,7 +1186,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                             </>
                         )}
                         <div className="co-divider"></div>
-                        <p className="co-sub co-sub-strong">{businessType === 'individual' ? 'Tu dirección personal' : 'Dirección personal del representante'}</p>
+                        <p className="co-sub co-sub-strong">{businessType === 'individual' ? S.dirPersonalTuya : S.dirPersonalRep}</p>
                         <div className="s-field">
                             <label>{S.calle}</label>
                             <input className="s-input" value={person.address_line1} onChange={e => setPerson({...person, address_line1: e.target.value})} />
@@ -1182,12 +1261,12 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                         <div className="co-mode-tabs" role="tablist">
                             <button type="button" role="tab" aria-selected={uploadMode === 'phone'} className={`co-mode-tab ${uploadMode === 'phone' ? 'active' : ''}`} onClick={() => setUploadMode('phone')}>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5" fill="currentColor" fillOpacity="0.12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-                                Con tu teléfono
+                                {S.conTelefono}
                                 <span className="co-mode-tab-tag">{S.recomendado}</span>
                             </button>
                             <button type="button" role="tab" aria-selected={uploadMode === 'file'} className={`co-mode-tab ${uploadMode === 'file' ? 'active' : ''}`} onClick={() => setUploadMode('file')}>
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12" /><path d="m7 8 5-5 5 5" fill="currentColor" fillOpacity="0.12"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg>
-                                Subir archivo
+                                {S.subirArchivo}
                             </button>
                         </div>
 
@@ -1200,7 +1279,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                         </div>
                                         <p>{S.qrNota}</p>
                                         <button type="button" className="co-btn co-btn-primary" onClick={startPhoneCapture} disabled={captureStatus === 'creating'}>
-                                            {captureStatus === 'creating' ? (<><span className="co-spinner co-spinner-btn" aria-hidden="true"></span> {S.generando}</>) : (locale === 'en' ? 'Generate QR code' : 'Generar código QR')}
+                                            {captureStatus === 'creating' ? (<><span className="co-spinner co-spinner-btn" aria-hidden="true"></span> {S.generando}</>) : S.generarQr}
                                         </button>
                                     </div>
                                 )}
@@ -1222,7 +1301,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                         ) : (
                                             <span className="co-phone-done">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                Identidad verificada desde tu teléfono. Continuando…
+                                                {S.identidadVerificadaTel}
                                             </span>
                                         )}
                                     </div>
@@ -1241,16 +1320,16 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                     <label>{S.frenteId}</label>
                                     {previewFront ? (
                                         <div className="co-doc-preview">
-                                            <img src={previewFront} alt="Frente" />
+                                            <img src={previewFront} alt={S.frente} />
                                             <span className="co-doc-ok">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                Lista
+                                                {S.lista}
                                             </span>
                                             <button type="button" className="co-btn co-btn-ghost co-btn-sm" onClick={() => { setDocFront(null); setPreviewFront(null); }}>{S.quitar}</button>
                                         </div>
                                     ) : (
                                         <label className="co-btn co-btn-ghost co-upload co-upload-block">
-                                            Subir archivo
+                                            {S.subirArchivo}
                                             <input type="file" accept="image/jpeg,image/png" onChange={e => {
                                                 const file = e.target.files?.[0];
                                                 if (file) { setDocFront(file); setPreviewFront(file.type.startsWith('image/') ? URL.createObjectURL(file) : '/imgs/logo-cord-navy.png'); }
@@ -1263,16 +1342,16 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                     <label>{S.reversoId}</label>
                                     {previewBack ? (
                                         <div className="co-doc-preview">
-                                            <img src={previewBack} alt="Reverso" />
+                                            <img src={previewBack} alt={S.reverso} />
                                             <span className="co-doc-ok">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                Lista
+                                                {S.lista}
                                             </span>
                                             <button type="button" className="co-btn co-btn-ghost co-btn-sm" onClick={() => { setDocBack(null); setPreviewBack(null); }}>{S.quitar}</button>
                                         </div>
                                     ) : (
                                         <label className="co-btn co-btn-ghost co-upload co-upload-block">
-                                            Subir archivo
+                                            {S.subirArchivo}
                                             <input type="file" accept="image/jpeg,image/png" onChange={e => {
                                                 const file = e.target.files?.[0];
                                                 if (file) { setDocBack(file); setPreviewBack(file.type.startsWith('image/') ? URL.createObjectURL(file) : '/imgs/logo-cord-navy.png'); }
@@ -1308,7 +1387,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                                         inputMode={f.kind === 'digits' ? 'numeric' : 'text'}
                                     />
                                     {completo && check && (check.ok
-                                        ? <span className="s-hint co-hint-ok">{f.label} válido</span>
+                                        ? <span className="s-hint co-hint-ok">{f.label} {S.valido}</span>
                                         : <span className="s-hint co-hint-bad">{check.error}</span>)}
                                 </div>
                             );
@@ -1346,7 +1425,7 @@ export default function ConnectCustomOnboarding({ org, locale = 'es' }: ConnectC
                 {!(step === 5 && uploadMode === 'phone' && captureStatus !== 'completed') && (
                     <button type="button" className="co-btn co-btn-primary" onClick={handleNext} disabled={loading || (step === 7 && !legalConsent)}>
                         {loading && <span className="co-spinner co-spinner-btn" aria-hidden="true"></span>}
-                        {loading ? 'Guardando…' : step === 7 ? 'Aceptar y finalizar' : 'Continuar'}
+                        {loading ? S.guardando : step === 7 ? S.aceptarFinalizar : S.continuar}
                     </button>
                 )}
             </div>

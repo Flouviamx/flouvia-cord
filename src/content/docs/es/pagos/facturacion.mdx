@@ -1,7 +1,7 @@
 ---
 title: "Facturación fiscal por país"
 description: "Cómo Cord emite CFDI 4.0 en México y facturas comerciales en los demás mercados disponibles, incluido el estado operativo de Verifactu en España."
-lastUpdated: "2026-09-08"
+lastUpdated: "2026-09-09"
 reviewedBy: "Producto y operaciones fiscales de Cord"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -17,19 +17,23 @@ prerequisites: ["Completar la identidad fiscal del negocio", "En México, cargar
 Esta guía incluye las mejoras de septiembre. Su publicación conjunta y aceptación integrada siguen pendientes de verificación. Consulta [alcance y disponibilidad](/docs/pagos/mejoras-confiabilidad).
 </Callout>
 
-## Un documento, tres carriles regulatorios
+## Documentos y planes
+
+Gratis incluye 5 documentos comerciales al mes, independientes de los envíos de cotizaciones. Starter/Profesional/Scale incluyen 20/500/100 documentos compartidos entre emisión comercial y fiscal. Una proforma no sustituye una factura fiscal. Contratar un plan no activa por sí solo una integración fiscal.
+
+## Tipos de documento por país
 
 Cord no trata la factura como un PDF genérico con folio: el tipo de comprobante que se emite depende del país de tu negocio. Hoy hay tres carriles:
 
-- **México:** CFDI 4.0 timbrado ante el SAT.
-- **España:** factura comercial. El carril Verifactu solo genera registros encadenados cuando la cuenta tiene certificado válido y la integración regulatoria de Cord está activada.
+- **México:** proforma en Gratis; CFDI 4.0 desde Starter con configuración fiscal. Los planes de pago también pueden elegir proforma.
+- **España:** proforma en la opción comercial; emisión fiscal integrada desde Starter donde esté habilitada. El carril Verifactu solo genera registros encadenados cuando la cuenta tiene certificado válido y la integración regulatoria de Cord está activada.
 - **Demás mercados soportados:** factura comercial con folio, impuestos y retenciones configurados por el negocio, sin presentación automática ante una autoridad fiscal.
 
 En los tres casos, el impuesto se calcula **por línea**, no por documento: puedes mezclar un concepto gravado con uno exento en la misma factura, y cada uno imprime la tasa y el nombre del impuesto que corresponde a tu país (IVA en México y España, VAT en Reino Unido, GST en Canadá, Sales tax por estado en Estados Unidos, y así según el perfil fiscal de tu cuenta).
 
 ## México: CFDI 4.0 Nominativo
 
-Para cuentas en México, Cord timbra ante el SAT usando un proveedor certificado de
+Para cuentas elegibles en México con Starter o superior, Cord timbra ante el SAT usando un proveedor certificado de
 facturación electrónica. Antes debes cargar y validar en Cord el Certificado de Sello
 Digital (CSD) vigente del emisor; después, el flujo cotidiano ya no requiere entrar a
 otro portal ni volver a adjuntar el certificado en cada factura.
@@ -62,12 +66,12 @@ que se confirma. Consulta [facturas y saldo](/docs/pagos/facturas-emitidas).
 El módulo Verifactu está construido, pero su disponibilidad operativa depende de dos fronteras: la organización debe tener un certificado electrónico válido y Cord debe tener activados sus datos de sistema informático y el carril regulatorio. Solo cuando ambas condiciones se cumplen, cada factura genera un registro con **huella SHA-256 encadenada** al registro anterior de esa organización.
 
 <Callout type="warning">
-Mientras alguna condición falte, Cord emite con estado `commercial_only`: no crea una huella Verifactu, no añade un registro a una cadena y no afirma haberlo enviado a la AEAT. El envío en línea se activa por separado; un registro encadenado no significa por sí solo que la autoridad ya lo recibió. Consulta siempre el estado mostrado por Cord.
+La activación fiscal española y su validación integrada siguen pendientes. La opción comercial emite una proforma sin registro VERI*FACTU; una solicitud fiscal explícita falla si la integración no está disponible. No es una implementación conforme de NO VERI*FACTU. Crear un registro encadenado no confirma por sí solo su recepción por la AEAT.
 </Callout>
 
 ## Otros mercados soportados: factura comercial
 
-En Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú, Cord puede emitir una **factura comercial** con folio consecutivo, impuestos y retenciones por línea configurados por el negocio, y los datos fiscales capturados de las partes. Cord no la presenta automáticamente ante la autoridad fiscal local. La obligación de emitir, reportar o complementar ese documento depende del país y régimen del negocio; confírmala con tu asesor fiscal.
+En Estados Unidos, Canadá, Brasil, Reino Unido, Alemania, Francia, Colombia, Argentina, Chile y Perú, Cord puede emitir una **factura comercial** con folio consecutivo, impuestos y retenciones por línea configurados por el negocio, y los datos fiscales capturados de las partes. Cord no la presenta automáticamente ante la autoridad fiscal local. La obligación de emitir, reportar o complementar ese documento depende del país y régimen del negocio; confírmala con tu asesor fiscal.
 
 ## El comprobante de la comisión de Cord Payments (México)
 

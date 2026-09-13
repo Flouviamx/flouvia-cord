@@ -1,833 +1,1161 @@
 ---
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import CordDynamicBg from '../CordDynamicBg.jsx';
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
+const en = lang === 'en';
+
+// Funciones avanzadas — tabs verticales a la izquierda y un panel grande a la
+// derecha con la pieza de la app calcada de cada feature:
+//   1 · /app/cotizaciones/nueva — bloque "Arma la cotización con IA" + filas del editor
+//   2 · /app/cobranza/agente — KPIs + borrador de la bandeja de aprobación
+//   3 · FlujoReport (informes) — "Próximos 90 días" + flujo semanal apilado
+//   4 · /app/cotizaciones/nueva — sidebar "Revisa y envía" con la cobertura FX
+// Cada mockup vive en un marco de 28em × 35em; el panel fija 1em por su alto
+// (apaisado en escritorio) y en móvil por su ancho (tarjeta 4:5 apilada).
+// Formatos = los reales de cada pantalla: el editor usa 2 decimales; KPIs y
+// bandeja, 0.
+
+const PAL_AGENTE = { base: '#120E2A', color1: '#33236B', color2: '#6B48C2', color3: '#B9A2EE' };
+const PAL_DIVISA = { base: '#071F1C', color1: '#0F5446', color2: '#228C6E', color3: '#9ADBBF' };
+
+// money() de la app: es-MX '$44,200.00' · en-US 'MX$44,200.00' (divisa MXN).
+const CUR = en ? 'MX$' : '$';
+const n2 = (n: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+const n0 = (n: number) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n);
+
+// ── 1 · Pedido pegado → partidas emparejadas con el catálogo ──
+const PEDIDO = en
+    ? 'Hi, I need 200 bags of gray cement, 50 3/8" rebars, and 2 m³ of sand. Can you send me a price?'
+    : 'Hola, necesito 200 sacos de cemento gris, 50 varillas de 3/8 y 2 m³ de arena. ¿Me pasas precio?';
+const LINEAS = [
+    { nombre: 'Cemento gris 50kg', unidad: 'saco', vol: 100, cant: 200, precio: 221, costo: 181 },
+    { nombre: 'Varilla 3/8" × 12m', unidad: 'pieza', vol: 0, cant: 50, precio: 189.5, costo: 162 },
+    { nombre: 'Arena de río m³', unidad: 'm³', vol: 0, cant: 2, precio: 465, costo: 318 },
+].map((l) => ({ ...l, importe: l.cant * l.precio, margen: Math.round(((l.precio - l.costo) / l.precio) * 100) }));
+
+// ── 2 · Borrador del agente (plan de cuotas: suma exacta del saldo, 1ª vence hoy) ──
+const SALDO = 97440;
+const CUOTAS = 3;
+const CUOTA = SALDO / CUOTAS;
+const CORREO = en
+    ? `Hi Laura, thanks for getting back to me. As we discussed, we split the COT-0139 balance into ${CUOTAS} monthly instalments of ${CUR}${n0(CUOTA)}. The first one is due today and you can pay it with the button below.\n\nAny questions, just reply.\nMateriales del Valle`
+    : `Hola Laura, gracias por responder. Como lo platicamos, dejamos el saldo de COT-0139 en ${CUOTAS} cuotas mensuales de ${CUR}${n0(CUOTA)}. La primera vence hoy y puedes pagarla con el botón de abajo.\n\nQuedo al pendiente.\nMateriales del Valle`;
+
+// ── 3 · Flujo semanal: 13 semanas desde mañana (weekLabel de queries.ts, hoy = 12 sep) ──
+const WK_ES = ['13 sep – 19 sep', '20 sep – 26 sep', '27 sep – 3 oct', '4 oct – 10 oct', '11 oct – 17 oct', '18 oct – 24 oct', '25 oct – 31 oct', '1 nov – 7 nov', '8 nov – 14 nov', '15 nov – 21 nov', '22 nov – 28 nov', '29 nov – 5 dic', '6 dic – 11 dic'];
+const WK_EN = ['Sep 13 – Sep 19', 'Sep 20 – Sep 26', 'Sep 27 – Oct 3', 'Oct 4 – Oct 10', 'Oct 11 – Oct 17', 'Oct 18 – Oct 24', 'Oct 25 – Oct 31', 'Nov 1 – Nov 7', 'Nov 8 – Nov 14', 'Nov 15 – Nov 21', 'Nov 22 – Nov 28', 'Nov 29 – Dec 5', 'Dec 6 – Dec 11'];
+// [cartera, pipeline ponderado, igualas]: la cartera cierta pesa al principio,
+// el pipeline crece a media ventana y las igualas caen al inicio de cada mes.
+const SEMANAS_RAW: [number, number, number][] = [
+    [96420, 18300, 0], [142860, 24150, 0], [61300, 31800, 38500], [88940, 42600, 0],
+    [37200, 55900, 0], [52480, 47300, 0], [21900, 63200, 0], [18600, 39700, 38500],
+    [12300, 58400, 0], [9800, 44900, 0], [0, 51600, 0], [6200, 28300, 38500], [0, 22100, 0],
+];
+const SEMANAS = SEMANAS_RAW.map(([c, p, r], i) => ({ label: (en ? WK_EN : WK_ES)[i], c, p, r, total: c + p + r }));
+const MAX_SEM = Math.max(...SEMANAS.map((s) => s.total));
+const TOTAL_90 = SEMANAS.reduce((sum, s) => sum + s.total, 0);
+const pct = (v: number) => `${((v / MAX_SEM) * 100).toFixed(2)}%`;
+
+// ── 4 · Cobertura FX: applied = spot × (1 + buffer/100) (FXService) ──
+const SPOT = 18.42;
+const TOTAL_USD = 10480;
+const BUFS = [
+    { buf: 1, label: en ? 'Slightly' : 'Poco' },
+    { buf: 2, label: 'Normal' },
+    { buf: 5, label: en ? 'Cautious' : 'Cauto' },
+];
+const APPLIED = SPOT * 1.02;
+
+// Copy de las tabs (claves adv.step.N.*) e iconos Glass Duotone por feature.
+const STEPS = [
+    { h: t('adv.step.1.h'), p: t('adv.step.1.p') },
+    { h: t('adv.step.2.h'), p: t('adv.step.2.p') },
+    { h: t('adv.step.3.h'), p: t('adv.step.3.p') },
+    { h: t('adv.step.4.h'), p: t('adv.step.4.p') },
+];
+const ICONS = [
+    // 1 · IA: procesador
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.15"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M6 9H4M6 15H4M18 9h2M18 15h2M9 6V4M15 6V4M9 18v2M15 18v2"/></svg>',
+    // 2 · Agente: el correo que redacta
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="currentColor" fill-opacity="0.14"/><path d="m3.8 7.2 8.2 5.8 8.2-5.8"/></svg>',
+    // 3 · Flujo: barras
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><rect x="5" y="12" width="3.5" height="8" rx="1" fill="currentColor" fill-opacity="0.15"/><rect x="10.25" y="6" width="3.5" height="14" rx="1" fill="currentColor" fill-opacity="0.15"/><rect x="15.5" y="9.5" width="3.5" height="10.5" rx="1" fill="currentColor" fill-opacity="0.15"/></svg>',
+    // 4 · Divisas: globo
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="M12 3a14 14 0 0 1 3.6 9A14 14 0 0 1 12 21a14 14 0 0 1-3.6-9A14 14 0 0 1 12 3z"/><path d="M3 12h18"/></svg>',
+];
 ---
 
-<section class="cord-notion-section" id="avanzado">
-    <div class="cn-container reveal">
-        
-        <!-- Lado Izquierdo: Headers y Tabs Verticales -->
-        <div class="cn-left">
-            <div class="cn-header">
-                <h2 class="cn-title" set:html={t("adv.title").replace(' ', ' ').replace('<br />', ' ')} />
-                <p class="cn-lead">{t("adv.sub")}</p>
+<section class="cav" id="avanzado">
+    <div class="cav-wrap">
+        <!-- ── Izquierda: cabecera + tabs verticales ── -->
+        <div class="cav-left">
+            <div class="cav-head">
+                <h2 class="cav-title reveal" id="cav-title">{t("adv.title")}</h2>
+                <p class="cav-sub reveal">{t("adv.sub")}</p>
             </div>
 
-            <div class="cn-tabs" role="tablist">
-                
-                <!-- Tab 1: IA -->
-                <button class="cn-tab active" data-target="cn-pane-1" role="tab" aria-selected="true">
-                    <div class="cn-tab-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.15" />
-                            <rect x="6" y="6" width="12" height="12" rx="2" />
-                            <path d="M6 9H4M6 15H4M18 9h2M18 15h2M9 6V4M15 6V4M9 18v2M15 18v2" stroke-opacity="0.6"/>
-                        </svg>
-                    </div>
-                    <div class="cn-tab-texts">
-                        <h3>{t("adv.c1.tag")}</h3>
-                        <div class="cn-tab-desc">{t("adv.c1.p")}</div>
-                    </div>
-                </button>
-                <div class="cn-tab-sep"></div>
-
-                <!-- Tab 2: Cobranza -->
-                <button class="cn-tab" data-target="cn-pane-2" role="tab" aria-selected="false">
-                    <div class="cn-tab-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 21l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14.5L19 21z" fill="currentColor" fill-opacity="0.12" />
-                            <path d="M19 21l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14.5L19 21z" />
-                            <path d="M9 8h6" stroke-opacity="0.5" />
-                            <path d="M9 12h6" stroke-opacity="0.5" />
-                            <path d="M9 16h3" stroke-opacity="0.5" />
-                        </svg>
-                    </div>
-                    <div class="cn-tab-texts">
-                        <h3>{t("adv.c2.tag")}</h3>
-                        <div class="cn-tab-desc">{t("adv.c2.p")}</div>
-                    </div>
-                </button>
-                <div class="cn-tab-sep"></div>
-
-                <!-- Tab 3: CFO -->
-                <button class="cn-tab" data-target="cn-pane-3" role="tab" aria-selected="false">
-                    <div class="cn-tab-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 20h16" stroke-opacity="0.4"/>
-                            <rect x="5" y="13" width="4" height="7" rx="1" fill="currentColor" fill-opacity="0.15" />
-                            <rect x="10" y="7" width="4" height="13" rx="1" fill="currentColor" fill-opacity="0.3" />
-                            <rect x="15" y="11" width="4" height="9" rx="1" fill="currentColor" fill-opacity="0.15" />
-                            <rect x="5" y="13" width="4" height="7" rx="1" />
-                            <rect x="10" y="7" width="4" height="13" rx="1" />
-                            <rect x="15" y="11" width="4" height="9" rx="1" />
-                        </svg>
-                    </div>
-                    <div class="cn-tab-texts">
-                        <h3>{t("adv.c3.tag")}</h3>
-                        <div class="cn-tab-desc">{t("adv.c3.p")}</div>
-                    </div>
-                </button>
-                <div class="cn-tab-sep"></div>
-
-                <!-- Tab 4: Multi-divisa -->
-                <button class="cn-tab" data-target="cn-pane-4" role="tab" aria-selected="false">
-                    <div class="cn-tab-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12" />
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke-opacity="0.4"/>
-                            <path d="M2 12h20" stroke-opacity="0.4"/>
-                        </svg>
-                    </div>
-                    <div class="cn-tab-texts">
-                        <h3>{t("adv.c4.tag")}</h3>
-                        <div class="cn-tab-desc">{t("adv.c4.p")}</div>
-                    </div>
-                </button>
-
+            <div class="cav-tabs reveal" role="tablist" aria-orientation="vertical" aria-labelledby="cav-title">
+                {STEPS.map((s, i) => (
+                    <button
+                        type="button"
+                        class:list={['cav-tab', { 'is-active': i === 0 }]}
+                        role="tab"
+                        id={`cav-tab-${i + 1}`}
+                        aria-controls={`cav-pane-${i + 1}`}
+                        aria-selected={i === 0 ? 'true' : 'false'}
+                        tabindex={i === 0 ? 0 : -1}
+                    >
+                        <span class="cav-tab-ico" set:html={ICONS[i]} />
+                        <span class="cav-tab-tx">
+                            <span class="cav-tab-h">{s.h}</span>
+                            <span class="cav-tab-p"><span>{s.p}</span></span>
+                        </span>
+                        <span class="cav-tab-bar" aria-hidden="true"><i></i></span>
+                    </button>
+                ))}
             </div>
         </div>
 
-        <!-- Lado Derecho: Gran Canvas -->
-        <div class="cn-right">
-            
-            <!-- Pane 1: IA -->
-            <div class="cn-pane active" id="cn-pane-1">
-                <div class="cn-pane-bg bg-ia"></div>
-                <div class="cn-pane-content full-canvas">
-                    
-                    <div class="ia-full-ui">
-                        <div class="ia-search anim-fade-down" style="--delay: 0.2s">
-                            <div class="ia-icon-sparkle">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg>
-                            </div>
-                            <div class="type-wrap">
-                                <span class="type-text"></span><span class="type-cursor"></span>
-                            </div>
-                            <div class="ia-submit">
-                                ↵ Enter
-                            </div>
-                        </div>
-                        
-                        <div class="ia-quote-card anim-reveal-up" style="--delay: 2.8s">
-                            <div class="qc-header">
-                                <div class="qc-badge">
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg>
-                                    Borrador de IA
-                                </div>
-                                <div class="qc-title">Cotización #4092</div>
-                            </div>
-                            <div class="qc-body">
-                                <div class="qc-row"><span>Varilla 3/8" (2 tons)</span> <strong class="editorial">$32,000.00</strong></div>
-                                <div class="qc-row"><span>Cemento Gris (100 sacos)</span> <strong class="editorial">$28,500.00</strong></div>
-                                <div class="qc-row"><span>Logística y Envío</span> <strong class="editorial">$1,950.00</strong></div>
-                            </div>
-                            <div class="qc-footer">
-                                <div class="qc-total-lbl">Total estimado</div>
-                                <div class="qc-total-val editorial">$62,450.00</div>
-                            </div>
-                            <div class="qc-actions">
-                                <div class="qc-btn outline">Descartar</div>
-                                <div class="qc-btn primary">Aprobar y Enviar</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="cn-float-box anim-float-in" style="--delay: 3.8s;">
-                        <div class="cn-avatar bg-slate text-white">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </div>
-                        <div class="cn-float-content">
-                            <div class="cn-float-name">Agente Copilot</div>
-                            <div class="cn-float-msg">Cotización estructurada basándose en tu inventario actual.</div>
-                            <div class="cn-float-meta">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="spin-icon text-blue"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                                <span class="text-blue">Precios actualizados</span>
-                            </div>
-                        </div>
-                    </div>
-
+        <!-- ── Derecha: panel con un pane por tab (en móvil, lista apilada) ── -->
+        <div class="cav-panel reveal">
+            <!-- 1 · Armar con IA: bloque navy real + filas del editor -->
+            <div class="cav-pane is-active" id="cav-pane-1" role="tabpanel" aria-labelledby="cav-tab-1" data-cav="ia">
+                <div class="cav-pane-head">
+                    <span class="cav-pane-ico" set:html={ICONS[0]} />
+                    <div><h3>{STEPS[0].h}</h3><p>{STEPS[0].p}</p></div>
                 </div>
-            </div>
-
-            <!-- Pane 2: Cobranza -->
-            <div class="cn-pane" id="cn-pane-2">
-                <div class="cn-pane-bg bg-cob"></div>
-                <div class="cn-pane-content full-canvas">
-                    
-                    <div class="chat-full-ui">
-                        <div class="chat-header anim-fade-down" style="--delay: 0.1s">
-                            <div class="ch-avatar">CV</div>
-                            <div class="ch-info">
-                                <div class="ch-name">Constructora del Valle</div>
-                                <div class="ch-status"><span class="ch-dot"></span> Seguimiento IA Activo</div>
-                            </div>
-                        </div>
-
-                        <div class="chat-b ai anim-bubble-ai" style="--delay: 0.6s">
-                            Hola, la factura <strong>#F-3092</strong> por <strong class="editorial">$145,000</strong> MXN venció ayer. ¿Te apoyo estructurando un plan de pagos?
-                        </div>
-                        <div class="chat-typing-wrapper anim-typing-wrap" style="--delay: 1.8s">
-                            <div class="chat-typing">
-                                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-                            </div>
-                        </div>
-                        <div class="chat-b client anim-bubble-client" style="--delay: 3.4s">
-                            ¿Me puedes dar 3 pagos semanales?
-                        </div>
-                        <div class="chat-b ai anim-bubble-ai" style="--delay: 4.4s">
-                            ¡Por supuesto! Plan activado. Tu primer pago por <strong class="editorial">$48,333</strong> MXN queda para este viernes.
-                            
-                            <div class="chat-pay-widget">
-                                <div class="cp-left">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                                </div>
-                                <div class="cp-mid">
-                                    <div class="cp-title">Pagar Parcialidad 1/3</div>
-                                    <div class="cp-desc">Tarjeta o SPEI disponible</div>
-                                </div>
-                                <div class="cp-right">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="cn-float-box anim-float-in" style="--delay: 5.6s;">
-                        <div class="cn-avatar bg-slate text-white">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                        </div>
-                        <div class="cn-float-content">
-                            <div class="cn-float-name">Agente Cobranza</div>
-                            <div class="cn-float-msg">Acuerdo cerrado y link de pago generado automáticamente.</div>
-                            <div class="cn-float-meta success">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span>Riesgo de cartera mitigado</span>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Pane 3: CFO Dashboard -->
-            <div class="cn-pane" id="cn-pane-3">
-                <div class="cn-pane-bg bg-cfo"></div>
-                <div class="cfo-grid-full">
-                    <div class="g-line"></div><div class="g-line"></div><div class="g-line"></div><div class="g-line"></div>
-                </div>
-                <div class="cn-pane-content full-canvas">
-                    
-                    <div class="cfo-full-ui">
-                        <!-- Dashboard Header -->
-                        <div class="cfo-header anim-fade-down" style="--delay: 0.1s">
-                            <div class="cfo-metric">
-                                <span class="cfo-m-lbl">Liquidez Neta</span>
-                                <span class="cfo-m-val editorial">$1,254,000</span>
-                                <span class="cfo-m-trend positive">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                                    12% vs mes ant.
-                                </span>
-                            </div>
-                            <div class="cfo-metric">
-                                <span class="cfo-m-lbl">Runway Estimado</span>
-                                <span class="cfo-m-val editorial">14 Meses</span>
-                                <span class="cfo-m-trend neutral">Estable</span>
-                            </div>
-                        </div>
-
-                        <!-- Chart Area -->
-                        <div class="cfo-chart-area">
-                            <div class="cfo-target-line anim-draw-line-h" style="--delay: 1.0s">
-                                <span class="anim-fade-in" style="--delay: 1.6s">Meta de Reserva Operativa</span>
-                            </div>
-                            
-                            <div class="cfo-bars">
-                                <!-- Col 1 -->
-                                <div class="bar-col">
-                                    <div class="c-bars-group">
-                                        <div class="c-bar in anim-rise" style="--h: 44%; --delay: 0.3s;"></div>
-                                        <div class="c-bar out anim-rise" style="--h: 26%; --delay: 0.4s;"></div>
+                <div class="cav-vis cav-vis-light">
+                    <div class="cav-stage" aria-hidden="true">
+                        <div class="cav-frame">
+                            <div class="cav-ed">
+                                <div class="cav-ai">
+                                    <b class="cav-ai-t">{en ? 'Build the quote with AI' : 'Arma la cotización con IA'}</b>
+                                    <span class="cav-ai-s">{en
+                                        ? "Paste the client's order or attach a photo/PDF of their purchase order."
+                                        : 'Pega el pedido del cliente o adjunta la foto/PDF de su orden de compra.'}</span>
+                                    <div class="cav-ai-ta">
+                                        <span class="cav-ai-txt" data-type>{PEDIDO}</span>
+                                        <span class="cav-ai-clip">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                        </span>
                                     </div>
-                                    <span class="b-lbl">Ago</span>
-                                </div>
-                                <!-- Col 2 -->
-                                <div class="bar-col">
-                                    <div class="c-bars-group">
-                                        <div class="c-bar in anim-rise" style="--h: 52%; --delay: 0.4s;"></div>
-                                        <div class="c-bar out anim-rise" style="--h: 32%; --delay: 0.5s;"></div>
+                                    <div class="cav-ai-chip">
+                                        <span class="cav-ai-chip-in">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.14"/><path d="M14 2v6h6"/></svg>
+                                            <span>orden-compra-4471.jpg</span>
+                                            <svg class="cav-ai-chip-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        </span>
                                     </div>
-                                    <span class="b-lbl">Sep</span>
-                                </div>
-                                <!-- Col 3 -->
-                                <div class="bar-col">
-                                    <!-- Hover Tooltip interactivo -->
-                                    <div class="cfo-tooltip anim-float-in" style="--delay: 1.8s">
-                                        <div class="tt-title">Octubre (Actual)</div>
-                                        <div class="tt-row"><span class="dot in"></span> Ingresos: <strong class="editorial">$840k</strong></div>
-                                        <div class="tt-row"><span class="dot out"></span> Egresos: <strong class="editorial">$320k</strong></div>
-                                    </div>
-                                    
-                                    <div class="c-bars-group">
-                                        <div class="c-bar in anim-rise" style="--h: 68%; --delay: 0.5s;"></div>
-                                        <div class="c-bar out anim-rise" style="--h: 30%; --delay: 0.6s;"></div>
-                                    </div>
-                                    <span class="b-lbl">Oct</span>
-                                </div>
-                                <!-- Col 4 Proyección -->
-                                <div class="bar-col proj">
-                                    <div class="c-bars-group">
-                                        <div class="c-bar in proj anim-rise" style="--h: 64%; --delay: 0.6s;"></div>
-                                        <div class="c-bar out proj anim-rise" style="--h: 42%; --delay: 0.7s;"></div>
-                                    </div>
-                                    <span class="b-lbl">Nov (Proj)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="cn-float-box anim-float-in" style="--delay: 2.8s;">
-                        <div class="cn-avatar bg-blue text-white">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                        </div>
-                        <div class="cn-float-content">
-                            <div class="cn-float-name">CFO Insight</div>
-                            <div class="cn-float-msg">Pronóstico de liquidez excelente, cubriendo la meta operativa con superávit.</div>
-                            <div class="cn-float-meta">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="text-blue"><polyline points="20 6 9 17 4 12"/></svg>
-                                <span class="text-blue">Predicción de IA Financiera</span>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Pane 4: Divisa (FX Trade Ticket) -->
-            <div class="cn-pane" id="cn-pane-4">
-                <div class="cn-pane-bg bg-div"></div>
-                <div class="cn-pane-content full-canvas">
-                    
-                    <div class="fx-full-ui">
-                        <div class="fx-hedge-ticket anim-reveal-up" style="--delay: 0.2s">
-                            <div class="fx-ticket-header">
-                                <div class="fx-pair">
-                                    <img src="https://flagcdn.com/w40/us.png" alt="US" class="fx-flag" />
-                                    <img src="https://flagcdn.com/w40/mx.png" alt="MX" class="fx-flag" style="margin-left: -8px; z-index: 1;" />
-                                    <span>USD/MXN</span>
-                                </div>
-                                <span class="fx-live-badge"><span class="fx-pulse"></span> Mercado Abierto</span>
-                            </div>
-                            
-                            <div class="fx-ticket-body">
-                                <div class="fx-input-row">
-                                    <span class="fx-label">A pagar (Factura Proveedor)</span>
-                                    <div class="fx-amt-box">
-                                        <span class="fx-curr">USD</span>
-                                        <span class="fx-amt editorial">$12,500.00</span>
+                                    <div class="cav-ai-act">
+                                        <span class="cav-ai-btn"><span class="cav-ai-btn-l" data-busy={en ? 'Reading document…' : 'Leyendo documento…'}>{en ? 'Build quote with AI' : 'Armar cotización con IA'}</span></span>
+                                        <span class="cav-ai-status">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.16" stroke="none"/><path d="m8 12.5 2.6 2.6L16 9.6"/></svg>
+                                            {en ? '3 lines built. Check quantities and prices.' : '3 líneas armadas. Revisa cantidades y precios.'}
+                                        </span>
                                     </div>
                                 </div>
-                                
-                                <div class="fx-rate-row">
-                                    <div class="fx-lock-icon anim-snap-lock" style="--delay: 1.2s">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="11" width="16" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                <div class="cav-ln">
+                                    <div class="cav-ln-head">
+                                        <span class="cav-ln-num">2</span>
+                                        <b>{en ? 'What are you quoting them?' : '¿Qué le vas a cotizar?'}</b>
                                     </div>
-                                    <div class="fx-rate-info">
-                                        <span class="fx-r-lbl">Tasa Asegurada (Banxico FIX)</span>
-                                        <div class="fx-r-val-wrap">
-                                            <span class="fx-r-val editorial">18.4225</span>
-                                            <span class="fx-r-trend positive">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
-                                                0.05%
+                                    <div class="cav-ln-cols">
+                                        <span>{en ? 'Product' : 'Producto'}</span>
+                                        <span>{en ? 'Qty.' : 'Cant.'}</span>
+                                        <span class="r">{en ? 'Amount' : 'Importe'}</span>
+                                        <span class="c">{en ? 'Margin' : 'Margen'}</span>
+                                    </div>
+                                    {LINEAS.map((l) => (
+                                        <div class="cav-ln-row">
+                                            <span class="cav-ln-name">
+                                                <span class="cav-ln-n">{l.nombre}</span>
+                                                <small>{l.unidad}{l.vol > 0 && <> · <b>{en ? `bulk pricing (${l.vol}+)` : `precio x volumen (${l.vol}+)`}</b></>}</small>
                                             </span>
+                                            <span class="cav-ln-qty">{l.cant}</span>
+                                            <span class="cav-ln-amt editorial">{CUR}{n2(l.importe)}</span>
+                                            <span class="cav-ln-mg">{l.margen}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2 · Agente de cobranza: KPIs + borrador en la bandeja -->
+            <div class="cav-pane" id="cav-pane-2" role="tabpanel" aria-labelledby="cav-tab-2" data-cav="agente">
+                <div class="cav-pane-head">
+                    <span class="cav-pane-ico" set:html={ICONS[1]} />
+                    <div><h3>{STEPS[1].h}</h3><p>{STEPS[1].p}</p></div>
+                </div>
+                <div class="cav-vis cav-vis-dark" style={`--cav-base:${PAL_AGENTE.base}`}>
+                    <div class="cav-shader"><CordDynamicBg client:only="react" colors={PAL_AGENTE} grain={false} /></div>
+                    <div class="cav-stage" aria-hidden="true">
+                        <div class="cav-frame">
+                            <div class="cav-ag">
+                                <div class="cav-ag-top">
+                                    <b>{en ? 'Collections agent' : 'Agente de cobranza'}</b>
+                                    <span class="cav-ag-state"><i></i>{en ? 'Needs approval' : 'Requiere aprobación'}</span>
+                                </div>
+                                <div class="cav-ag-kpis">
+                                    <div>
+                                        <span class="cav-kl">{en ? 'Recovered by the agent' : 'Recuperado por el agente'}</span>
+                                        <strong class="editorial is-ok">{CUR}186,300</strong>
+                                    </div>
+                                    <div>
+                                        <span class="cav-kl">{en ? 'Awaiting your approval' : 'Esperan tu aprobación'}</span>
+                                        <strong class="editorial is-warn" data-n>4</strong>
+                                    </div>
+                                    <div>
+                                        <span class="cav-kl">{en ? 'Active payment plans' : 'Planes de pago activos'}</span>
+                                        <strong class="editorial">3</strong>
+                                    </div>
+                                </div>
+                                <div class="cav-ag-sec">
+                                    <b>{en ? 'Approval inbox' : 'Bandeja de aprobación'}</b>
+                                    <span>{en
+                                        ? 'Nothing goes out until you approve it. You can edit the email before sending.'
+                                        : 'Nada sale hasta que lo apruebes. Puedes editar el correo antes de enviarlo.'}</span>
+                                </div>
+                            </div>
+                            <div class="cav-dr">
+                                <div class="cav-dr-head">
+                                    <span class="cav-dr-av"><span>C</span></span>
+                                    <span class="cav-dr-who">
+                                        <strong>Constructora Apex</strong>
+                                        <small><code>COT-0139</code> · {en ? '18 days overdue' : 'vencida hace 18 días'}</small>
+                                    </span>
+                                    <span class="cav-dr-amt editorial">{CUR}{n0(SALDO)}</span>
+                                </div>
+                                <div class="cav-dr-plan">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+                                    <span>{en ? `Proposes ${CUOTAS} instalments of ${CUR}${n0(CUOTA)}` : `Propone ${CUOTAS} cuotas de ${CUR}${n0(CUOTA)}`}</span>
+                                </div>
+                                <div class="cav-dr-text"><p>{CORREO}</p></div>
+                                <div class="cav-dr-acts">
+                                    <span class="is-primary">{en ? 'Approve and send' : 'Aprobar y enviar'}</span>
+                                    <span>{en ? 'Regenerate' : 'Regenerar'}</span>
+                                    <span class="is-ghost">{en ? 'Discard' : 'Descartar'}</span>
+                                    <span class="is-ghost">{en ? "Don't email them" : 'No escribirle'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3 · Flujo a 90 días (FlujoReport) -->
+            <div class="cav-pane" id="cav-pane-3" role="tabpanel" aria-labelledby="cav-tab-3" data-cav="flujo">
+                <div class="cav-pane-head">
+                    <span class="cav-pane-ico" set:html={ICONS[2]} />
+                    <div><h3>{STEPS[2].h}</h3><p>{STEPS[2].p}</p></div>
+                </div>
+                <div class="cav-vis cav-vis-light">
+                    <div class="cav-stage" aria-hidden="true">
+                        <div class="cav-frame">
+                            <div class="cav-fl">
+                                <div class="cav-fl-kpi">
+                                    <div class="cav-fl-main">
+                                        <span class="cav-kl">{en ? 'Next 90 days' : 'Próximos 90 días'}</span>
+                                        <strong class="editorial" data-count={TOTAL_90} data-prefix={CUR}>{CUR}{n0(TOTAL_90)}</strong>
+                                        <small>{en ? 'receivables + pipeline + retainers' : 'cartera + pipeline + igualas'}</small>
+                                    </div>
+                                    <div class="cav-fl-conc">
+                                        <span>{en ? 'Concentration risk · 30 days' : 'Riesgo de concentración · 30 días'}</span>
+                                        <strong class="editorial">34%</strong>
+                                        <small>Constructora Apex</small>
+                                    </div>
+                                </div>
+                                <div class="cav-fl-chart">
+                                    <div class="cav-fl-sh">
+                                        <b>{en ? 'Weekly flow · 90 days' : 'Flujo semanal · 90 días'}</b>
+                                        <span class="cav-fl-leg">
+                                            <span class="is-cartera">{en ? 'Receivables' : 'Cartera'}</span>
+                                            <span class="is-pipeline">Pipeline</span>
+                                            <span class="is-mrr">MRR</span>
+                                        </span>
+                                    </div>
+                                    <p class="cav-fl-p">{en
+                                        ? 'Three separate sources to distinguish certainty from probability.'
+                                        : 'Tres fuentes separadas para no confundir certeza con probabilidad.'}</p>
+                                    <div class="cav-fl-weeks">
+                                        {SEMANAS.map((s) => (
+                                            <div class="cav-fl-w">
+                                                <span class="cav-fl-wl">{s.label}</span>
+                                                <span class="cav-fl-track">
+                                                    <i class="is-cartera" style={`width:${pct(s.c)}`} data-w={pct(s.c)}></i>
+                                                    <i class="is-pipeline" style={`width:${pct(s.p)}`} data-w={pct(s.p)}></i>
+                                                    <i class="is-mrr" style={`width:${pct(s.r)}`} data-w={pct(s.r)}></i>
+                                                </span>
+                                                <strong class="editorial">{CUR}{n0(s.total)}</strong>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 · Multi-divisa: "Revisa y envía" con la cobertura FX -->
+            <div class="cav-pane" id="cav-pane-4" role="tabpanel" aria-labelledby="cav-tab-4" data-cav="divisa" data-spot={SPOT} data-amount={TOTAL_USD}>
+                <div class="cav-pane-head">
+                    <span class="cav-pane-ico" set:html={ICONS[3]} />
+                    <div><h3>{STEPS[3].h}</h3><p>{STEPS[3].p}</p></div>
+                </div>
+                <div class="cav-vis cav-vis-dark" style={`--cav-base:${PAL_DIVISA.base}`}>
+                    <div class="cav-shader"><CordDynamicBg client:only="react" colors={PAL_DIVISA} grain={false} /></div>
+                    <div class="cav-stage" aria-hidden="true">
+                        <div class="cav-frame">
+                            <div class="cav-fx">
+                                <b class="cav-fx-h">{en ? 'Review and send' : 'Revisa y envía'}</b>
+                                <div class="cav-fx-total">
+                                    <span>Total</span>
+                                    <span class="editorial">{en ? `$${n2(TOTAL_USD)}` : `USD ${n2(TOTAL_USD)}`}</span>
+                                </div>
+                                <div class="cav-fx-field">
+                                    <span class="cav-fx-lab">{en ? 'What currency are you quoting in?' : '¿En qué moneda le cotizas?'}</span>
+                                    <span class="cav-fx-sel">
+                                        <span class="cav-fx-flag"><img src="/flags/us.svg" alt="" width="20" height="20" loading="lazy" decoding="async" /></span>
+                                        <span class="cav-fx-sel-l">{en ? 'USD — US Dollar' : 'USD — dólar estadounidense'}</span>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                    </span>
+                                </div>
+                                <div class="cav-fx-cover">
+                                    <p class="cav-fx-exp">{en
+                                        ? <>You quote and charge in <b>USD</b>, but your books are in Mexican Peso. We lock today's exchange rate: the invoice declares it and your margin stays protected.</>
+                                        : <>Capturas y cobras en <b>USD</b>, pero tu contabilidad va en peso mexicano. Congelamos el tipo de cambio de hoy: la factura lo declara y tu margen queda protegido.</>}</p>
+                                    <div class="cav-fx-stepper">
+                                        <div class="cav-fx-step">
+                                            <span class="cav-fx-sl">{en ? "Today's exchange rate" : 'Tipo de cambio hoy'}</span>
+                                            <span class="cav-fx-sv editorial">${n2(SPOT)}</span>
+                                        </div>
+                                        <span class="cav-fx-arrow">&rarr;</span>
+                                        <div class="cav-fx-step is-on">
+                                            <span class="cav-fx-sl">{en ? 'Your locked-in rate' : 'Tu tasa protegida'} <span data-buf-lbl>+2%</span></span>
+                                            <span class="cav-fx-sv editorial" data-applied>${n2(APPLIED)}</span>
                                         </div>
                                     </div>
-                                    <div class="fx-rate-chart">
-                                        <svg viewBox="0 0 100 30" preserveAspectRatio="none">
-                                            <path d="M0,25 C20,25 30,15 50,20 C70,25 80,5 100,10" fill="none" stroke="var(--c-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anim-draw-chart" style="--delay: 0.6s"/>
-                                        </svg>
+                                    <span class="cav-fx-lab">{en ? 'How cautious do you want to be?' : '¿Qué tan cauto quieres ser?'}</span>
+                                    <div class="cav-fx-chips">
+                                        {BUFS.map((b) => (
+                                            <span class:list={['cav-fx-chip', { 'is-on': b.buf === 2 }]} data-buf={b.buf}><b>{b.label}</b><small>+{b.buf}%</small></span>
+                                        ))}
+                                    </div>
+                                    <p class="cav-fx-sees">{en ? 'Your client pays' : 'Tu cliente paga'} <b>${n2(TOTAL_USD)}</b> · {en ? 'in your books ≈' : 'en tus libros ≈'} <b><span data-books>${n2(TOTAL_USD * APPLIED)}</span> MXN</b></p>
+                                    <div class="cav-fx-lock">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        {en ? 'Rate locked for 30 days' : 'Tasa congelada 30 días'}
                                     </div>
                                 </div>
-
-                                <div class="fx-input-row highlight">
-                                    <span class="fx-label">Costo Protegido</span>
-                                    <div class="fx-amt-box highlight">
-                                        <span class="fx-curr">MXN</span>
-                                        <span class="fx-amt editorial">$230,281.25</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="fx-ticket-footer">
-                                <button class="fx-btn">Asegurar Tasa por 30 días</button>
+                                <span class="cav-fx-send">
+                                    {en ? 'Create and send' : 'Crear y enviar'}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </span>
                             </div>
                         </div>
                     </div>
-
-                    <div class="cn-float-box anim-float-in" style="--delay: 2.4s;">
-                        <div class="cn-avatar bg-slate text-white">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                        </div>
-                        <div class="cn-float-content">
-                            <div class="cn-float-name">Protección de Riesgo</div>
-                            <div class="cn-float-msg">Tipo de cambio bloqueado. No pagarás ni un peso más aunque el dólar suba.</div>
-                            <div class="cn-float-meta">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-blue"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                <span class="text-blue">Cobertura activada</span>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
-
         </div>
     </div>
 </section>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const tabs = document.querySelectorAll('.cn-tab');
-        const panes = document.querySelectorAll('.cn-pane');
-        const seps = document.querySelectorAll('.cn-tab-sep');
-        let autoPlayInterval;
-        let currentIndex = 0;
-        let isUserInteracted = false;
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
 
-        function updateSeparators(activeIndex) {
-            seps.forEach(s => s.style.opacity = '1');
-            if (activeIndex > 0 && seps[activeIndex - 1]) seps[activeIndex - 1].style.opacity = '0';
-            if (activeIndex < seps.length && seps[activeIndex]) seps[activeIndex].style.opacity = '0';
-        }
+    // Cada pane tiene una micro-historia con tres verbos:
+    //   run()    — la reinicia desde su estado inicial y la reproduce;
+    //   reset()  — deja el estado inicial (antes de que el pane sea visible);
+    //   settle() — la corta y deja el estado FINAL, que es el HTML de servidor.
+    // Escritorio: corre al abrir su tab (o al entrar en viewport el pane
+    // inicial). Móvil: cada pane apilado corre al entrar en viewport.
+    // Con reduced-motion no se anima nada, pero las tabs siguen funcionando.
+    type Story = { run: () => void; reset: () => void; settle: () => void };
 
-        function activateTab(index) {
-            tabs.forEach(t => {
-                t.classList.remove('active');
-                t.setAttribute('aria-selected', 'false');
+    const root = document.getElementById('avanzado');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const f2 = (n: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    const f0 = (n: number) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n);
+
+    const story = (reset: () => void, build: () => gsap.core.Timeline, final: () => void): Story => {
+        let tl: gsap.core.Timeline | null = null;
+        return {
+            reset: () => { tl?.kill(); tl = null; reset(); },
+            run: () => { tl?.kill(); reset(); tl = build(); },
+            settle: () => { tl?.kill(); tl = null; final(); },
+        };
+    };
+
+    // 1 · se escribe el pedido, se adjunta la foto, "Leyendo documento…" y
+    //     aparecen las partidas (el chip se limpia al terminar, como en la app).
+    function storyIa(p: HTMLElement): Story | null {
+        const txt = p.querySelector<HTMLElement>('[data-type]');
+        const chip = p.querySelector<HTMLElement>('.cav-ai-chip');
+        const btn = p.querySelector<HTMLElement>('.cav-ai-btn');
+        const lbl = p.querySelector<HTMLElement>('.cav-ai-btn-l');
+        const status = p.querySelector<HTMLElement>('.cav-ai-status');
+        const rows = Array.from(p.querySelectorAll<HTMLElement>('.cav-ln-row'));
+        if (!txt || !chip || !btn || !lbl || !status || !rows.length) return null;
+        const full = txt.textContent || '';
+        const idle = lbl.textContent || '';
+        const busy = lbl.dataset.busy || idle;
+        const clean = () => {
+            lbl.textContent = idle;
+            btn.classList.remove('is-busy');
+            rows.forEach((r) => r.classList.remove('is-added'));
+        };
+        return story(
+            () => {
+                clean();
+                txt.textContent = '';
+                gsap.set(chip, { height: 0, opacity: 0 });
+                gsap.set(status, { opacity: 0 });
+                gsap.set(rows, { opacity: 0, y: 6 });
+            },
+            () => {
+                const o = { n: 0 };
+                const tl = gsap.timeline({ delay: 0.35 })
+                    .to(o, { n: full.length, duration: 1.6, ease: 'none', onUpdate: () => { txt.textContent = full.slice(0, Math.round(o.n)); } })
+                    .to(chip, { height: 'auto', opacity: 1, duration: 0.4, ease: 'power2.out' }, '+=0.2')
+                    .add(() => { lbl.textContent = busy; btn.classList.add('is-busy'); }, '+=0.35')
+                    .to(chip, { height: 0, opacity: 0, duration: 0.35, ease: 'power2.in' }, '+=1.2')
+                    .add(() => { lbl.textContent = idle; btn.classList.remove('is-busy'); })
+                    .addLabel('lineas')
+                    .to(status, { opacity: 1, duration: 0.4 }, 'lineas');
+                rows.forEach((row, i) => {
+                    tl.to(row, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', onStart: () => row.classList.add('is-added') }, `lineas+=${i * 0.14}`);
+                });
+                return tl;
+            },
+            () => {
+                clean();
+                txt.textContent = full;
+                gsap.set([chip, status, ...rows], { clearProps: 'height,opacity,transform' });
+            },
+        );
+    }
+
+    // 2 · el borrador del agente llega a la bandeja y el contador sube.
+    function storyAgente(p: HTMLElement): Story | null {
+        const dr = p.querySelector<HTMLElement>('.cav-dr');
+        const plan = p.querySelector<HTMLElement>('.cav-dr-plan');
+        const cnt = p.querySelector<HTMLElement>('[data-n]');
+        if (!dr || !plan || !cnt) return null;
+        const final = cnt.textContent || '';
+        return story(
+            () => {
+                cnt.textContent = String(Math.max(0, Number(final) - 1));
+                gsap.set([cnt, plan], { clearProps: 'transform,backgroundColor' });
+                gsap.set(dr, { opacity: 0, yPercent: 9 });
+            },
+            () => gsap.timeline({ delay: 0.35 })
+                .to(dr, { opacity: 1, yPercent: 0, duration: 0.85, ease: 'power3.out' })
+                .add(() => {
+                    cnt.textContent = final;
+                    gsap.fromTo(cnt, { scale: 0.82 }, { scale: 1, duration: 0.45, ease: 'back.out(2.2)', clearProps: 'transform' });
+                }, '-=0.4')
+                .fromTo(plan, { backgroundColor: 'rgba(10,25,47,0.13)' }, { backgroundColor: 'rgba(10,25,47,0.05)', duration: 1.1 }, '-=0.15'),
+            () => {
+                cnt.textContent = final;
+                gsap.set([dr, cnt, plan], { clearProps: 'transform,opacity,backgroundColor' });
+            },
+        );
+    }
+
+    // 3 · las barras apiladas crecen semana por semana y el total cuenta.
+    function storyFlujo(p: HTMLElement): Story | null {
+        const tracks = Array.from(p.querySelectorAll<HTMLElement>('.cav-fl-track'));
+        const segs = Array.from(p.querySelectorAll<HTMLElement>('.cav-fl-track i'));
+        const total = p.querySelector<HTMLElement>('[data-count]');
+        if (!tracks.length || !total) return null;
+        const target = Number(total.dataset.count || 0);
+        const prefix = total.dataset.prefix || '$';
+        const widthOf = (_: number, el: HTMLElement) => el.dataset.w || '0%';
+        return story(
+            () => {
+                gsap.set(segs, { width: 0 });
+                total.textContent = prefix + f0(target * 0.6);
+            },
+            () => {
+                const tl = gsap.timeline();
+                tracks.forEach((tr, i) => {
+                    tl.to(tr.querySelectorAll('i'), { width: widthOf, duration: 0.9, ease: 'power3.out' }, 0.3 + i * 0.055);
+                });
+                const o = { v: target * 0.6 };
+                tl.to(o, { v: target, duration: 1.4, ease: 'power2.out', onUpdate: () => { total.textContent = prefix + f0(o.v); } }, 0.3);
+                return tl;
+            },
+            () => {
+                gsap.set(segs, { width: widthOf });
+                total.textContent = prefix + f0(target);
+            },
+        );
+    }
+
+    // 4 · el vendedor pasa de "Poco" a "Normal" y la tasa protegida se recalcula.
+    function storyDivisa(p: HTMLElement): Story | null {
+        const chips = Array.from(p.querySelectorAll<HTMLElement>('.cav-fx-chip'));
+        const bufLbl = p.querySelector<HTMLElement>('[data-buf-lbl]');
+        const applied = p.querySelector<HTMLElement>('[data-applied]');
+        const books = p.querySelector<HTMLElement>('[data-books]');
+        const stepOn = p.querySelector<HTMLElement>('.cav-fx-step.is-on');
+        const normal = chips.find((c) => c.dataset.buf === '2');
+        if (!chips.length || !bufLbl || !applied || !books || !stepOn || !normal) return null;
+        const spot = Number(p.dataset.spot || 0);
+        const amount = Number(p.dataset.amount || 0);
+        const paint = (b: number) => {
+            applied.textContent = '$' + f2(spot * (1 + b / 100));
+            books.textContent = '$' + f2(amount * spot * (1 + b / 100));
+        };
+        const select = (b: number) => {
+            chips.forEach((c) => c.classList.toggle('is-on', c.dataset.buf === String(b)));
+            bufLbl.textContent = '+' + b + '%';
+        };
+        return story(
+            () => {
+                select(1);
+                paint(1);
+                gsap.set([normal, stepOn], { clearProps: 'transform,backgroundColor' });
+            },
+            () => {
+                const o = { b: 1 };
+                return gsap.timeline({ delay: 0.9 })
+                    .to(normal, { scale: 0.93, duration: 0.12, ease: 'power1.out' })
+                    .add(() => select(2))
+                    .to(normal, { scale: 1, duration: 0.4, ease: 'back.out(2)' })
+                    .to(o, { b: 2, duration: 0.8, ease: 'power2.out', onUpdate: () => paint(o.b) }, '<')
+                    .fromTo(stepOn, { backgroundColor: 'rgba(16,185,129,0.2)' }, { backgroundColor: 'rgba(16,185,129,0.07)', duration: 1 }, '<');
+            },
+            () => {
+                select(2);
+                paint(2);
+                gsap.set([normal, stepOn], { clearProps: 'transform,backgroundColor' });
+            },
+        );
+    }
+
+    if (root) {
+        const tablist = root.querySelector<HTMLElement>('.cav-tabs');
+        const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('.cav-tab'));
+        const panes = Array.from(root.querySelectorAll<HTMLElement>('.cav-pane'));
+        const panel = root.querySelector<HTMLElement>('.cav-panel');
+        const bars = tabs.map((tab) => tab.querySelector<HTMLElement>('.cav-tab-bar i'));
+        const builders: Record<string, (p: HTMLElement) => Story | null> = {
+            ia: storyIa, agente: storyAgente, flujo: storyFlujo, divisa: storyDivisa,
+        };
+        const stories: (Story | null)[] = reduced
+            ? panes.map(() => null)
+            : panes.map((p) => builders[p.dataset.cav || '']?.(p) ?? null);
+        const settleAll = () => stories.forEach((s) => s?.settle());
+
+        const DWELL = 9;
+        const mm = gsap.matchMedia();
+
+        // ── Escritorio y tablet: tabs + panel, auto-rotación hasta que el usuario elige ──
+        mm.add('(min-width: 881px)', () => {
+            if (!tablist || !panel || tabs.length !== panes.length) return;
+            let active = Math.max(0, tabs.findIndex((tab) => tab.classList.contains('is-active')));
+            let auto = !reduced;
+            let started = false;
+            let inView = false;
+            let hovering = false;
+            let progress: gsap.core.Tween | null = null;
+
+            const setActive = (i: number) => {
+                if (i !== active) stories[active]?.settle();
+                tabs.forEach((tab, k) => {
+                    const on = k === i;
+                    tab.classList.toggle('is-active', on);
+                    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                    tab.tabIndex = on ? 0 : -1;
+                });
+                panes.forEach((p, k) => p.classList.toggle('is-active', k === i));
+                active = i;
+                stories[i]?.run();
+            };
+            const clearBars = () => bars.forEach((b) => b && gsap.set(b, { clearProps: 'transform' }));
+            const startProgress = () => {
+                progress?.kill();
+                clearBars();
+                const bar = bars[active];
+                if (!auto || !bar) return;
+                tablist.classList.add('is-auto');
+                progress = gsap.fromTo(bar, { scaleX: 0 }, {
+                    scaleX: 1, duration: DWELL, ease: 'none',
+                    onComplete: () => { if (auto) { setActive((active + 1) % tabs.length); startProgress(); } },
+                });
+                if (!inView || hovering) progress.pause();
+            };
+            const stopAuto = () => {
+                auto = false;
+                progress?.kill();
+                progress = null;
+                clearBars();
+                tablist.classList.remove('is-auto');
+            };
+            const choose = (i: number) => {
+                started = true;
+                stopAuto();
+                if (i !== active) setActive(i);
+            };
+
+            const onClick = (e: Event) => {
+                const i = tabs.indexOf(e.currentTarget as HTMLButtonElement);
+                if (i >= 0) choose(i);
+            };
+            const onKey = (e: KeyboardEvent) => {
+                const keys: Record<string, number> = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
+                let next = -1;
+                if (e.key in keys) next = (active + keys[e.key] + tabs.length) % tabs.length;
+                else if (e.key === 'Home') next = 0;
+                else if (e.key === 'End') next = tabs.length - 1;
+                if (next < 0) return;
+                e.preventDefault();
+                choose(next);
+                tabs[next].focus();
+            };
+            const onEnter = () => { hovering = true; progress?.pause(); };
+            const onLeave = () => { hovering = false; if (inView) progress?.play(); };
+
+            tabs.forEach((tab) => tab.addEventListener('click', onClick));
+            tablist.addEventListener('keydown', onKey);
+            [tablist, panel].forEach((el) => { el.addEventListener('mouseenter', onEnter); el.addEventListener('mouseleave', onLeave); });
+
+            // El pane inicial arranca en su estado inicial y corre al entrar en viewport.
+            stories.forEach((s, k) => { if (k !== active) s?.settle(); });
+            stories[active]?.reset();
+            ScrollTrigger.create({
+                trigger: panel, start: 'top 75%', end: 'bottom 20%',
+                onToggle: (self) => {
+                    inView = self.isActive;
+                    if (inView && !started) {
+                        started = true;
+                        stories[active]?.run();
+                        startProgress();
+                    } else if (progress) {
+                        if (inView && !hovering) progress.play(); else progress.pause();
+                    }
+                },
             });
-            
-            panes.forEach(p => p.classList.remove('active'));
-            
-            setTimeout(() => {
-                tabs[index].classList.add('active');
-                tabs[index].setAttribute('aria-selected', 'true');
-                
-                const targetId = tabs[index].getAttribute('data-target');
-                document.getElementById(targetId)?.classList.add('active');
-                
-                updateSeparators(index);
-            }, 30);
-        }
 
-        tabs.forEach((tab, index) => {
-            tab.addEventListener('click', () => {
-                isUserInteracted = true;
-                clearInterval(autoPlayInterval);
-                currentIndex = index;
-                activateTab(index);
-            });
+            return () => {
+                tabs.forEach((tab) => tab.removeEventListener('click', onClick));
+                tablist.removeEventListener('keydown', onKey);
+                [tablist, panel].forEach((el) => { el.removeEventListener('mouseenter', onEnter); el.removeEventListener('mouseleave', onLeave); });
+                progress?.kill();
+                clearBars();
+                tablist.classList.remove('is-auto');
+                settleAll();
+            };
         });
 
-        autoPlayInterval = setInterval(() => {
-            if(!isUserInteracted) {
-                currentIndex = (currentIndex + 1) % tabs.length;
-                activateTab(currentIndex);
-            }
-        }, 9000); 
-
-        updateSeparators(0);
-    });
+        // ── Móvil: sin tabs; cada pane apilado corre su historia al entrar en viewport ──
+        mm.add('(max-width: 880px)', () => {
+            panes.forEach((p, i) => {
+                p.removeAttribute('role');
+                p.removeAttribute('aria-labelledby');
+                const s = stories[i];
+                const vis = p.querySelector<HTMLElement>('.cav-vis');
+                if (!s || !vis) return;
+                s.reset();
+                ScrollTrigger.create({ trigger: vis, start: 'top 82%', once: true, onEnter: () => s.run() });
+            });
+            return () => {
+                settleAll();
+                panes.forEach((p, i) => {
+                    p.setAttribute('role', 'tabpanel');
+                    p.setAttribute('aria-labelledby', `cav-tab-${i + 1}`);
+                });
+            };
+        });
+    }
 </script>
 
 <style>
-    /* ── BASE & VARIABLES CORD ── */
-    :root {
-        --c-blue: var(--color-blue-deep, #0a192f);
-        --c-slate: #0f172a;
-        --c-navy-shadow: rgba(10,25,47,0.24);
-    }
-    
-    .cord-notion-section {
-        padding: 4.5rem 5% 5rem; width: 100%;
+    /* Canvas = el mismo `--color-bg-soft` de todo el index; el carácter vive
+       dentro del panel. La sección encuadra un viewport: el bloque (cabecera +
+       tabs + panel) se centra y su alto se acota a la pantalla, descontando la
+       navbar flotante de arriba. */
+    .cav {
+        --cav-h: min(640px, calc(100svh - 170px));
+        min-height: 100svh;
+        display: flex; align-items: center;
+        padding: clamp(5rem, 11svh, 6.5rem) 5% clamp(3rem, 7svh, 4.5rem);
         background: var(--color-bg-soft);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        box-sizing: border-box;
     }
-    @media (max-width: 900px) {
-        .cord-notion-section { padding: 3rem 5% 3.5rem; }
+    .cav-wrap {
+        width: 100%; max-width: 1180px; margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
+        gap: 3.25rem;
+        align-items: stretch;
     }
-    .cn-container { display: flex; gap: 40px; align-items: stretch; max-width: 1200px; margin: 0 auto; }
 
-    /* ── LADO IZQUIERDO ── */
-    .cn-left { flex: 0 0 380px; display: flex; flex-direction: column; }
+    /* ── Izquierda: cabecera arriba, tabs al pie (mismo alto que el panel) ── */
+    .cav-left { display: flex; flex-direction: column; justify-content: space-between; gap: 1.6rem; min-width: 0; }
+    .cav-title {
+        font-size: clamp(1.9rem, 2.5vw, 2.45rem);
+        font-weight: 700; line-height: 1.1; letter-spacing: -0.035em;
+        color: #0a192f; margin: 0 0 0.85rem;
+        text-wrap: balance;
+    }
+    .cav-sub {
+        font-size: 0.95rem; line-height: 1.55;
+        color: var(--color-text-muted); margin: 0;
+        max-width: 44ch;
+    }
 
-    .cn-header { margin-bottom: 2rem; }
-    .cn-title { font-size: clamp(1.9rem, 3.2vw, 3.2rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.035em; color: #0a192f; margin: 0 0 0.8rem 0; text-wrap: balance; }
-    .cn-lead { font-size: 14.5px; line-height: 1.6; color: #64748b; margin: 0; max-width: 360px; }
-
-    /* Tabs — Estilo Apple Typography-driven (Sin encajonar) */
-    .cn-tabs { display: flex; flex-direction: column; gap: 2px; margin-left: -14px; }
-    .cn-tab {
-        display: flex; align-items: flex-start; padding: 16px 14px;
-        border: none; background: transparent;
-        cursor: pointer; text-align: left; border-radius: 18px;
-        transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
+    .cav-tabs { display: flex; flex-direction: column; gap: 4px; margin: 0 -12px; }
+    .cav-tab {
         position: relative;
-        outline: none;
+        display: flex; align-items: flex-start; gap: 12px;
+        width: 100%; padding: 9px 12px;
+        background: transparent; border: 0; border-radius: 16px;
+        font-family: inherit; color: inherit; text-align: left; cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 0.35s ease, box-shadow 0.35s ease;
     }
-    .cn-tab:focus-visible { outline: none; }
-    .cn-tab:not(.active):hover { opacity: 0.7; }
-    .cn-tab.active {
-        background: transparent;
-        outline: none;
-    }
-    /* Separador sutil o ausente para que respire más */
-    .cn-tab-sep { display: none; }
-
-    .cn-tab-icon {
-        width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0; margin-right: 16px; background: rgba(10,25,47,0.03); color: #94a3b8;
-        transition: all 0.5s cubic-bezier(0.16,1,0.3,1);
-    }
-    .cn-tab-icon svg { width: 20px; height: 20px; }
-    .cn-tab.active .cn-tab-icon { 
-        background: var(--c-slate); color: #fff; 
-        box-shadow: 0 8px 18px -4px rgba(10,25,47,0.35); 
-        transform: scale(1.05);
-    }
-
-    .cn-tab-texts { display: flex; flex-direction: column; justify-content: center; min-height: 38px; }
-    .cn-tab h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: var(--c-slate); margin: 0; line-height: 38px; transition: all 0.4s cubic-bezier(0.16,1,0.3,1); }
-    .cn-tab:not(.active) h3 { color: #94a3b8; font-weight: 500; }
-    .cn-tab.active h3 { line-height: 1.4; margin-bottom: 6px; color: #050505; }
-    
-    .cn-tab-desc { font-size: 14px; color: #64748b; line-height: 1.5; max-height: 0; opacity: 0; overflow: hidden; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); filter: blur(4px); transform: translateY(-4px); }
-    .cn-tab.active .cn-tab-desc { max-height: 150px; opacity: 1; margin-top: 0; filter: blur(0px); transform: translateY(0); }
-
-
-    /* ── LADO DERECHO (El Lienzo Completo) ── */
-    .cn-right {
-        flex: 1; border-radius: 28px; min-height: 520px;
-        position: relative; overflow: hidden;
-        background: linear-gradient(160deg, #fbfcfd 0%, #f3f4f7 100%);
-        border: 1px solid rgba(10,25,47,0.06);
+    .cav-tab:focus { outline: none; }
+    .cav-tab:focus-visible { outline: 2px solid rgba(10,25,47,0.35); outline-offset: 2px; }
+    /* Activa: superficie blanca, hairline y sombra difusa (sin bordes duros). */
+    .cav-tab.is-active {
+        padding: 12px 12px 14px;
+        background: #fff;
         box-shadow:
-            0 1px 3px rgba(10,25,47,0.04),
-            0 30px 60px -24px rgba(10,25,47,0.16),
-            inset 0 1px 0 rgba(255,255,255,0.75);
+            inset 0 0 0 1px rgba(10,25,47,0.06),
+            0 1px 2px rgba(10,25,47,0.04),
+            0 14px 32px -20px rgba(10,25,47,0.28);
     }
-    .cn-pane { position: absolute; inset: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.5s ease, visibility 0.5s; }
-    .cn-pane.active { opacity: 1; visibility: visible; pointer-events: auto; }
-
-    .cn-pane-bg { position: absolute; inset: 0; z-index: 0; opacity: 0.9; }
-    .bg-ia { background: radial-gradient(ellipse 70% 60% at 50% 38%, rgba(37, 99, 235, 0.06) 0%, transparent 68%); }
-    .bg-cob { background: radial-gradient(ellipse 70% 60% at 50% 38%, rgba(15, 23, 42, 0.05) 0%, transparent 68%); }
-    .bg-cfo { background: radial-gradient(ellipse 70% 60% at 50% 42%, rgba(37, 99, 235, 0.05) 0%, transparent 68%); }
-    .bg-div { background: radial-gradient(ellipse 70% 60% at 50% 42%, rgba(71, 85, 105, 0.055) 0%, transparent 68%); }
-
-    .full-canvas {
-        position: relative; z-index: 1;
-        width: 100%; height: 100%;
-        padding: 40px 30px;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
+    .cav-tab-ico {
+        flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px;
+        display: grid; place-items: center;
+        background: rgba(10,25,47,0.05); color: #8a94a3;
+        transition: background 0.35s ease, color 0.35s ease;
     }
-    
-    /* ── CAJA FLOTANTE ── */
-    .cn-float-box {
-        position: absolute; bottom: 30px; right: 30px;
-        background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
-        border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 18px;
-        box-shadow: 0 2px 6px rgba(10,25,47,0.04), 0 24px 48px -14px rgba(10,25,47,0.16), inset 0 1px 0 rgba(255,255,255,0.6);
-        padding: 18px; display: flex; align-items: flex-start; gap: 14px;
-        z-index: 20; width: 340px;
-        transform: scale(0.9) translateY(20px); opacity: 0;
+    .cav-tab-ico :global(svg) { width: 17px; height: 17px; }
+    .cav-tab.is-active .cav-tab-ico { background: #0a192f; color: #fff; }
+    .cav-tab-tx { display: flex; flex-direction: column; min-width: 0; flex: 1; padding-top: 5px; }
+    .cav-tab-h {
+        font-size: 0.98rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.4;
+        color: #8a94a3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        transition: color 0.3s ease;
     }
-    .cn-pane.active .anim-float-in { animation: springFloat 0.8s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    @keyframes springFloat { 0% { transform: scale(0.9) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+    .cav-tab:hover .cav-tab-h { color: #4a5567; }
+    .cav-tab.is-active .cav-tab-h { color: #0a192f; white-space: normal; }
+    .cav-tab-p {
+        display: grid; grid-template-rows: 0fr; opacity: 0;
+        transition: grid-template-rows 0.45s var(--ease-spring), opacity 0.35s ease;
+    }
+    .cav-tab-p > span {
+        overflow: hidden; min-height: 0;
+        font-size: 0.875rem; line-height: 1.5; color: var(--color-text-muted);
+    }
+    .cav-tab-p > span::before { content: ''; display: block; height: 0.3rem; }
+    .cav-tab.is-active .cav-tab-p { grid-template-rows: 1fr; opacity: 1; }
+    /* Progreso de la auto-rotación: una línea tenue dentro de la tab activa.
+       Sin auto-rotación (el usuario ya eligió) no se dibuja. */
+    .cav-tab-bar {
+        position: absolute; left: 56px; right: 16px; bottom: 7px; height: 2px;
+        border-radius: 2px; overflow: hidden; opacity: 0;
+        background: rgba(10,25,47,0.06);
+        transition: opacity 0.3s ease;
+    }
+    .cav-tab-bar i { display: block; height: 100%; background: rgba(10,25,47,0.38); transform: scaleX(0); transform-origin: left center; }
+    .cav-tabs.is-auto .cav-tab.is-active .cav-tab-bar { opacity: 1; }
 
-    .cn-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .cn-avatar svg { width: 18px; height: 18px; }
-    .cn-float-content { display: flex; flex-direction: column; gap: 4px; }
-    .cn-float-name { font-size: 15px; font-weight: 700; color: var(--c-slate); }
-    .cn-float-msg { font-size: 14px; color: #475569; line-height: 1.45; }
-    .cn-float-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; font-weight: 600; }
-    .cn-float-meta svg { width: 14px; height: 14px; }
+    /* ── Derecha: panel del mismo alto que la columna, acotado al viewport ── */
+    .cav-panel {
+        position: relative;
+        min-height: max(470px, var(--cav-h));
+        border-radius: 28px;
+        overflow: hidden;
+        isolation: isolate;
+        background: #eceef2;
+        box-shadow:
+            0 1px 2px rgba(10,25,47,0.05),
+            0 30px 60px -32px rgba(10,25,47,0.34);
+    }
+    .cav-pane {
+        position: absolute; inset: 0;
+        opacity: 0; visibility: hidden;
+        transition: opacity 0.45s ease, visibility 0s linear 0.45s;
+    }
+    .cav-pane.is-active { opacity: 1; visibility: visible; transition: opacity 0.45s ease, visibility 0s linear 0s; }
+    .cav-pane-head { display: none; }
 
-    /* Utils */
-    .bg-slate { background: var(--c-slate) !important; } .text-white { color: #fff !important; }
-    .bg-blue { background: var(--c-blue) !important; } .text-blue { color: var(--c-blue) !important; }
-    .success { color: #10b981 !important; }
+    .cav-vis {
+        position: absolute; inset: 0;
+        overflow: hidden; isolation: isolate;
+        container-type: size;
+        background: var(--cav-base, #eceef2);
+    }
+    .cav-vis-light {
+        background:
+            radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 62%),
+            linear-gradient(180deg, #eceef2 0%, #f1f2f5 100%);
+    }
+    .cav-shader { position: absolute; inset: 0; z-index: 0; }
 
+    /* La pieza de UI vive en un marco de 28em × 35em (la composición aprobada)
+       centrado en el panel. 1em = lo que quepa: alto en el panel apaisado,
+       ancho en la tarjeta 4:5 de móvil. */
+    .cav-stage {
+        position: absolute; inset: 0; z-index: 2;
+        font-size: 16px;
+        font-size: min(100cqh / 34, 100cqw / 28);
+        font-family: var(--font-sans);
+        color: #0f1729;
+        line-height: 1.3;
+        pointer-events: none;
+        user-select: none;
+    }
+    .cav-stage b, .cav-stage strong { font-weight: 600; }
+    .cav-frame { position: absolute; top: -2.3em; left: 50%; width: 28em; height: 35em; margin-left: -14em; }
 
-    /* ── PANE 1: IA FULL APP MOCKUP ── */
-    .ia-full-ui { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 20px; margin-bottom: 60px; }
-    .ia-search { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: #ffffff; border-radius: 16px; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 16px 40px -12px rgba(10,25,47,0.14), 0 0 0 1px rgba(10,25,47,0.06); opacity: 0; transform: translateY(-10px); }
-    .ia-icon-sparkle { color: var(--c-blue); display: flex; align-items: center; }
-    .ia-icon-sparkle svg { width: 22px; height: 22px; }
-    .type-wrap { flex: 1; display: flex; align-items: center; overflow: hidden; }
-    .type-cursor { width: 2px; height: 18px; background: var(--c-blue); animation: blink 0.8s infinite; }
-    .cn-pane.active .type-text::before { content: '"Cotízame 2 tons de varilla y 100 sacos de cemento para obra"'; display: inline-block; white-space: nowrap; overflow: hidden; animation: typeWords 2s 0.4s steps(60, end) forwards; width: 0; color: #1e293b; font-size: 14.5px; font-weight: 500; }
-    .ia-submit { background: #f1f5f9; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; color: #64748b; }
-    .ia-quote-card { background: #ffffff; border-radius: 16px; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -18px rgba(10,25,47,0.18), 0 0 0 1px rgba(10,25,47,0.05); overflow: hidden; opacity: 0; transform: translateY(15px); display: flex; flex-direction: column; }
-    .qc-header { padding: 18px 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fafbfc; }
-    .qc-badge { background: rgba(10,25,47,0.06); color: var(--c-slate); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 6px; }
-    .qc-title { font-size: 15px; font-weight: 700; color: var(--c-slate); }
-    .qc-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
-    .qc-row { display: flex; justify-content: space-between; font-size: 15px; color: #475569; }
-    .qc-row strong { color: var(--c-slate); font-weight: 600; }
-    .qc-footer { padding: 18px 24px; border-top: 1px dashed #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #fafbfc; }
-    .qc-total-lbl { font-size: 15px; font-weight: 600; color: #64748b; }
-    .qc-total-val { font-size: 22px; font-weight: 700; color: var(--c-slate); letter-spacing: -0.03em; }
-    .qc-actions { padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; }
-    .qc-btn { padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
-    .qc-btn.outline { background: #fff; border: 1px solid #e2e8f0; color: #475569; }
-    .qc-btn.primary { background: var(--c-slate); color: #fff; border: none; box-shadow: 0 4px 14px -2px rgba(10,25,47,0.3); }
+    /* Etiqueta de KPI (`.kpi-label` de AppLayout) */
+    .cav-kl {
+        display: block;
+        font-size: 0.45em; font-weight: 800; letter-spacing: 0.12em; line-height: 1.35;
+        text-transform: uppercase; color: rgba(91,100,114,0.82);
+    }
 
-    /* ── PANE 2: Cobranza Chat Avanzado ── */
-    .chat-full-ui { width: 100%; max-width: 480px; display: flex; flex-direction: column; margin-bottom: 80px; }
-    .chat-header { display: flex; align-items: center; gap: 12px; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid rgba(0,0,0,0.06); opacity: 0; transform: translateY(-10px); }
-    .ch-avatar { width: 44px; height: 44px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #475569; font-size: 16px; }
-    .ch-name { font-size: 16px; font-weight: 700; color: var(--c-slate); margin-bottom: 2px; }
-    .ch-status { font-size: 12px; font-weight: 600; color: #10b981; display: flex; align-items: center; gap: 6px; }
-    .ch-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: pulseStatus 2s infinite; }
-    .chat-b { padding: 16px 20px; border-radius: 18px; font-size: 15px; box-shadow: 0 2px 4px rgba(10,25,47,0.03), 0 14px 32px -12px rgba(10,25,47,0.12); max-width: 88%; opacity: 0; line-height: 1.5; margin-bottom: 16px; }
-    .chat-b.ai { background: #fff; color: #334155; border-bottom-left-radius: 4px; align-self: flex-start; transform-origin: bottom left; }
-    .chat-b.ai strong { color: var(--c-slate); }
-    .chat-b.client { background: var(--c-blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; transform-origin: bottom right; }
-    .chat-pay-widget { margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.2s; }
-    .chat-pay-widget:hover { border-color: rgba(10,25,47,0.2); background: #fff; box-shadow: 0 6px 18px -6px rgba(10,25,47,0.14); }
-    .cp-left { width: 36px; height: 36px; background: rgba(10,25,47,0.06); color: var(--c-slate); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-    .cp-left svg { width: 18px; height: 18px; }
-    .cp-mid { flex: 1; margin: 0 12px; }
-    .cp-title { font-size: 14px; font-weight: 700; color: var(--c-slate); }
-    .cp-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
-    .cp-right { color: #94a3b8; }
-    .cp-right svg { width: 18px; height: 18px; }
-    .chat-typing-wrapper { display: flex; justify-content: flex-end; max-height: 0; opacity: 0; overflow: hidden; align-self: flex-end; }
-    .chat-typing { background: var(--c-blue); padding: 16px 20px; border-radius: 18px; border-bottom-right-radius: 4px; box-shadow: 0 8px 25px rgba(0,0,0,0.04); display: inline-flex; gap: 4px; align-items: center; }
-    .chat-typing .dot { width: 6px; height: 6px; background: rgba(255,255,255,0.7); border-radius: 50%; animation: typeDot 1.4s infinite ease-in-out both; }
-    .chat-typing .dot:nth-child(1) { animation-delay: -0.32s; } .chat-typing .dot:nth-child(2) { animation-delay: -0.16s; }
+    /* ═══════════ 1 · Editor: "Arma la cotización con IA" + filas ═══════════ */
+    .cav-ed {
+        position: absolute; left: 1.4em; right: 1.4em; top: 5.3em; bottom: -3em;
+        display: flex; flex-direction: column;
+    }
+    .cav-ai {
+        position: relative; z-index: 2;
+        padding: 1.2em 1.25em 1.1em;
+        border-radius: 1.35em;
+        background: #0a192f; color: #fff;
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.06),
+            0 0.15em 0.4em rgba(10,25,47,0.16),
+            0 1.8em 3.4em -1.3em rgba(10,25,47,0.62);
+    }
+    .cav-ai-t { display: block; font-size: 0.9em; font-weight: 650; letter-spacing: -0.01em; line-height: 1.25; }
+    .cav-ai-s { display: block; margin: 0.3em 0 0.85em; font-size: 0.6em; line-height: 1.4; color: rgba(255,255,255,0.66); }
+    .cav-ai-ta {
+        position: relative;
+        min-height: 4.4em;
+        padding: 0.7em 2.5em 0.75em 0.8em;
+        border-radius: 0.8em;
+        background: rgba(255,255,255,0.06);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14);
+    }
+    .cav-ai-txt { display: block; font-size: 0.64em; line-height: 1.5; white-space: pre-wrap; color: #fff; }
+    .cav-ai-clip {
+        position: absolute; top: 0.45em; right: 0.45em;
+        width: 1.8em; height: 1.8em; border-radius: 0.5em;
+        display: grid; place-items: center; color: rgba(255,255,255,0.5);
+    }
+    .cav-ai-clip svg { width: 1em; height: 1em; }
+    .cav-ai-chip { height: 0; opacity: 0; overflow: hidden; }
+    .cav-ai-chip-in {
+        display: flex; align-items: center; gap: 0.5em;
+        margin-top: 0.55em; padding: 0.42em 0.6em; border-radius: 0.55em;
+        background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.85);
+    }
+    .cav-ai-chip-in svg { width: 0.9em; height: 0.9em; flex-shrink: 0; opacity: 0.7; }
+    .cav-ai-chip-in span { flex: 1; min-width: 0; font-size: 0.6em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cav-ai-chip-in .cav-ai-chip-x { width: 0.7em; height: 0.7em; opacity: 0.55; }
+    .cav-ai-act { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6em 0.9em; margin-top: 0.75em; }
+    .cav-ai-btn {
+        display: inline-flex; padding: 0.62em 1.15em; border-radius: 0.6em;
+        background: #fff; color: #0a192f;
+        transition: opacity 0.2s ease;
+    }
+    .cav-ai-btn.is-busy { opacity: 0.6; }
+    .cav-ai-btn-l { font-size: 0.64em; font-weight: 600; white-space: nowrap; }
+    .cav-ai-status { display: inline-flex; align-items: center; gap: 0.45em; font-size: 0.6em; color: rgba(255,255,255,0.72); }
+    .cav-ai-status svg { width: 1.3em; height: 1.3em; flex-shrink: 0; color: #34d399; }
 
-    /* ── PANE 3: CFO Dashboard Pro ── */
-    .cfo-grid-full { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 70px; z-index: 0; }
-    .g-line { height: 1px; background: rgba(148, 163, 184, 0.2); width: 100%; margin-bottom: 50px; }
-    .cfo-full-ui { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 30px; margin-bottom: 50px; }
-    .cfo-header { display: flex; gap: 40px; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 20px; opacity: 0; transform: translateY(-10px); }
-    .cfo-metric { display: flex; flex-direction: column; gap: 4px; }
-    .cfo-m-lbl { font-size: 13px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-    .cfo-m-val { font-size: 28px; font-weight: 800; color: var(--c-slate); }
-    .cfo-m-trend { font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-    .cfo-m-trend svg { width: 13px; height: 13px; }
-    .cfo-m-trend.positive { color: #059669; }
-    .cfo-m-trend.neutral { color: #94a3b8; }
-    .cfo-chart-area { position: relative; height: 190px; margin-top: 48px; display: flex; align-items: flex-end; width: 100%; }
-    .cfo-target-line { position: absolute; top: 40%; left: 0; right: 0; height: 1px; border-top: 2px dashed rgba(10,25,47,0.22); z-index: 0; width: 0; }
-    .cfo-target-line span { position: absolute; right: 0; top: -22px; font-size: 11px; font-weight: 700; color: var(--c-slate); background: rgba(10,25,47,0.06); padding: 4px 8px; border-radius: 6px; opacity: 0; }
-    .cfo-bars { display: flex; align-items: flex-end; justify-content: space-around; width: 100%; height: 100%; position: relative; z-index: 1; }
-    .bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 12px; position: relative; }
-    .c-bars-group { display: flex; align-items: flex-end; gap: 4px; height: 100%; }
-    .c-bar { width: 24px; border-radius: 6px 6px 0 0; transform-origin: bottom; opacity: 0; }
-    .c-bar.in { background: var(--c-slate); box-shadow: 0 10px 22px -6px rgba(10,25,47,0.28); }
-    .c-bar.out { background: #cbd5e1; }
-    .c-bar.proj { background: #e2e8f0; border: 1px dashed #94a3b8; box-shadow: none; border-bottom: none; }
-    .b-lbl { font-size: 13px; font-weight: 600; color: #64748b; }
-    .cfo-tooltip { position: absolute; bottom: 100%; left: 50%; margin-bottom: 14px; margin-left: -58px; width: 150px; background: #fff; border-radius: 12px; padding: 12px 16px; box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 18px 40px -12px rgba(10,25,47,0.22), 0 0 0 1px rgba(10,25,47,0.05); opacity: 0; z-index: 10; transform: translateY(10px) scale(0.95); }
-    .cfo-tooltip::after { content: ''; position: absolute; bottom: -6px; left: 50%; margin-left: -6px; width: 12px; height: 12px; background: #fff; transform: rotate(45deg); border-bottom: 1px solid rgba(0,0,0,0.05); border-right: 1px solid rgba(0,0,0,0.05); }
-    .tt-title { font-size: 12px; font-weight: 700; color: var(--c-slate); margin-bottom: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; }
-    .tt-row { display: flex; align-items: center; font-size: 12px; color: #475569; margin-bottom: 6px; }
-    .tt-row strong { margin-left: auto; color: var(--c-slate); }
-    .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
-    .dot.in { background: var(--c-slate); }
-    .dot.out { background: #cbd5e1; }
+    .cav-ln {
+        position: relative; z-index: 1; flex: 1;
+        margin-top: -1.3em; padding: 2.3em 1.25em 1em;
+        background: #fff; border-radius: 1.4em;
+        box-shadow:
+            0 0.1em 0.2em rgba(10,25,47,0.04),
+            0 2em 4.4em -2.2em rgba(10,25,47,0.28);
+    }
+    .cav-ln-head { display: flex; align-items: center; gap: 0.55em; margin-bottom: 0.9em; }
+    .cav-ln-num {
+        flex-shrink: 0; width: 2.4em; height: 2.4em; border-radius: 0.7em;
+        display: grid; place-items: center;
+        background: #0a192f; color: #fff; font-size: 0.62em; font-weight: 700;
+    }
+    .cav-ln-head b { font-size: 0.76em; letter-spacing: -0.01em; }
+    .cav-ln-cols, .cav-ln-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 3.1em 5.5em 2.7em;
+        gap: 0.6em; align-items: center;
+    }
+    .cav-ln-cols { padding-bottom: 0.5em; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .cav-ln-cols span { font-size: 0.52em; font-weight: 500; color: #6b7686; }
+    .cav-ln-cols .r { text-align: right; }
+    .cav-ln-cols .c { text-align: center; }
+    .cav-ln-row { padding: 0.72em 0; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .cav-ln-row:last-child { border-bottom: 0; }
+    .cav-ln-row.is-added { animation: cav-added 0.9s cubic-bezier(0.25,1,0.5,1); }
+    @keyframes cav-added {
+        0% { background: rgba(16,185,129,0.14); }
+        100% { background: transparent; }
+    }
+    .cav-ln-name { display: flex; flex-direction: column; gap: 0.2em; min-width: 0; }
+    .cav-ln-n { font-size: 0.66em; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cav-ln-name small { font-size: 0.52em; font-weight: 500; line-height: 1.35; color: #6b7686; }
+    .cav-ln-name small b { color: #059669; font-weight: 600; }
+    .cav-ln-qty {
+        font-size: 0.64em; font-weight: 500; font-variant-numeric: tabular-nums;
+        background: #f5f5f7; border-radius: 0.75em; padding: 0.55em 0.7em;
+    }
+    .cav-ln-amt { font-size: 0.68em; text-align: right; white-space: nowrap; }
+    .cav-ln-mg {
+        justify-self: center;
+        font-size: 0.54em; font-weight: 600; color: #059669;
+        background: rgba(16,185,129,0.1); border-radius: 0.45em; padding: 0.2em 0.5em;
+    }
 
-    /* ── PANE 4: Divisas (Trade Ticket) ── */
-    .fx-full-ui { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 0px; margin-bottom: 40px; }
-    .fx-hedge-ticket { background: #fff; border-radius: 16px; box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 30px 60px -18px rgba(10,25,47,0.22), 0 0 0 1px rgba(10,25,47,0.05); overflow: hidden; opacity: 0; transform: translateY(15px); display: flex; flex-direction: column; }
+    /* ═══════════ 2 · Agente de cobranza ═══════════ */
+    .cav-ag {
+        position: absolute; left: 1.4em; right: 1.4em; top: 5.3em; bottom: -3em;
+        background: #fff; border-radius: 1.5em;
+        padding: 1.25em 1.35em;
+        box-shadow:
+            0 0.1em 0.3em rgba(3,10,30,0.14),
+            0 1.8em 3.8em -1.2em rgba(2,8,26,0.55);
+    }
+    .cav-ag-top { display: flex; align-items: center; justify-content: space-between; gap: 0.6em; }
+    .cav-ag-top b { font-size: 0.94em; letter-spacing: -0.02em; white-space: nowrap; }
+    .cav-ag-state {
+        display: inline-flex; align-items: center; gap: 0.5em;
+        font-size: 0.52em; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap;
+        padding: 0.45em 0.95em; border-radius: 999px;
+        background: rgba(245,158,11,0.12); color: #b45309;
+    }
+    .cav-ag-state i { width: 0.55em; height: 0.55em; border-radius: 50%; background: currentColor; }
+    .cav-ag-kpis {
+        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 1em;
+        border-top: 1px solid rgba(10,25,47,0.08);
+        border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    .cav-ag-kpis > div { display: flex; flex-direction: column; gap: 0.45em; padding: 0.85em 0.7em 0.9em; min-width: 0; }
+    .cav-ag-kpis > div:first-child { padding-left: 0; }
+    .cav-ag-kpis > div + div { border-left: 1px solid rgba(10,25,47,0.08); }
+    .cav-ag-kpis .cav-kl { min-height: 2.7em; }
+    .cav-ag-kpis strong {
+        display: block; transform-origin: left center;
+        font-size: 1.32em; line-height: 1; letter-spacing: -0.03em; color: #0a192f; white-space: nowrap;
+    }
+    .cav-ag-kpis strong.is-ok { color: #10b981; }
+    .cav-ag-kpis strong.is-warn { color: #f59e0b; }
+    .cav-ag-sec { display: flex; flex-direction: column; gap: 0.3em; margin-top: 0.95em; }
+    .cav-ag-sec b { font-size: 0.8em; letter-spacing: -0.01em; }
+    .cav-ag-sec span { font-size: 0.56em; line-height: 1.45; color: #5b6472; }
 
-    .fx-ticket-header { padding: 20px 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fafbfc; }
-    .fx-pair { display: flex; align-items: center; font-size: 18px; font-weight: 800; color: var(--c-slate); letter-spacing: -0.5px; }
-    .fx-flag { width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 2px solid #fff; }
-    .fx-pair span { margin-left: 10px; }
-    
-    .fx-live-badge { display: flex; align-items: center; gap: 6px; background: #dcfce7; color: #166534; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; }
-    .fx-pulse { width: 6px; height: 6px; background: #166534; border-radius: 50%; animation: pulseStatus 2s infinite; }
+    /* El borrador de la bandeja, encimado sobre la página (profundidad por capa) */
+    .cav-dr {
+        position: absolute; z-index: 3; left: 0.85em; right: 0.85em; top: 17.6em;
+        background: #fff; border-radius: 1.35em;
+        padding: 1.05em 1.15em 1.1em;
+        box-shadow:
+            inset 0 0 0 1px rgba(10,25,47,0.07),
+            0 0.25em 0.6em rgba(3,10,30,0.14),
+            0 2em 4em -1.2em rgba(2,8,26,0.62);
+    }
+    .cav-dr-head { display: flex; align-items: center; gap: 0.65em; margin-bottom: 0.72em; }
+    .cav-dr-av {
+        flex-shrink: 0; width: 2.1em; height: 2.1em; border-radius: 0.65em;
+        display: grid; place-items: center; background: #f5f5f7; color: #5b6472;
+    }
+    .cav-dr-av span { font-size: 0.72em; font-weight: 700; }
+    .cav-dr-who { display: flex; flex-direction: column; gap: 0.12em; flex: 1; min-width: 0; }
+    .cav-dr-who strong { font-size: 0.8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cav-dr-who small { font-size: 0.6em; color: #5b6472; white-space: nowrap; }
+    .cav-dr-who code { font-family: ui-monospace, Menlo, monospace; font-size: 0.95em; }
+    .cav-dr-amt { font-size: 0.9em; white-space: nowrap; }
+    .cav-dr-plan {
+        display: flex; align-items: center; gap: 0.55em;
+        padding: 0.62em 0.8em; margin-bottom: 0.72em;
+        border-radius: 0.8em; background: rgba(10,25,47,0.05);
+    }
+    .cav-dr-plan svg { width: 1.15em; height: 1.15em; flex-shrink: 0; color: #0a192f; }
+    .cav-dr-plan span { font-size: 0.66em; }
+    .cav-dr-text { padding: 0.75em 0.85em; border-radius: 0.8em; background: #f5f5f7; }
+    .cav-dr-text p { margin: 0; font-size: 0.6em; line-height: 1.62; white-space: pre-wrap; color: #0f1729; }
+    .cav-dr-acts { display: flex; flex-wrap: wrap; gap: 0.35em; margin-top: 0.75em; }
+    .cav-dr-acts span {
+        font-size: 0.56em; font-weight: 600; white-space: nowrap;
+        padding: 0.75em 1.3em; border-radius: 999px;
+        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.12); color: #0f1729;
+    }
+    .cav-dr-acts .is-primary { background: #0a192f; color: #fff; box-shadow: none; }
+    .cav-dr-acts .is-ghost { box-shadow: none; color: #5b6472; padding-inline: 0.8em; }
 
-    .fx-ticket-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
-    .fx-input-row { display: flex; flex-direction: column; gap: 8px; }
-    .fx-label { font-size: 13px; font-weight: 600; color: #64748b; }
-    .fx-amt-box { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 20px; font-weight: 700; color: var(--c-slate); }
-    .fx-curr { color: #94a3b8; font-size: 16px; }
-    
-    .fx-rate-row { display: flex; align-items: center; gap: 14px; padding: 16px; background: rgba(10,25,47,0.04); border-radius: 12px; position: relative; }
-    .fx-lock-icon { width: 36px; height: 36px; background: var(--c-slate); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(2) rotate(45deg); box-shadow: 0 6px 16px -4px rgba(10,25,47,0.35); z-index: 2; }
-    .fx-lock-icon svg { width: 18px; height: 18px; }
-    .fx-rate-info { display: flex; flex-direction: column; gap: 4px; z-index: 2; }
-    .fx-r-lbl { font-size: 12px; font-weight: 600; color: #64748b; }
-    .fx-r-val-wrap { display: flex; align-items: baseline; gap: 8px; }
-    .fx-r-val { font-size: 18px; font-weight: 800; color: var(--c-slate); }
-    .fx-r-trend { font-size: 12px; font-weight: 700; color: #059669; display: inline-flex; align-items: center; gap: 3px; }
-    .fx-r-trend svg { width: 12px; height: 12px; }
-    
-    .fx-rate-chart { position: absolute; right: 16px; top: 12px; bottom: 12px; width: 80px; opacity: 0.6; z-index: 1; }
-    .fx-rate-chart svg { width: 100%; height: 100%; overflow: visible; }
-    
-    .fx-input-row.highlight .fx-amt-box { background: #fff; border: 2px solid var(--c-slate); box-shadow: 0 4px 14px -4px rgba(10,25,47,0.16); }
-    .fx-input-row.highlight .fx-label { color: var(--c-slate); }
+    /* ═══════════ 3 · Flujo a 90 días ═══════════ */
+    .cav-fl {
+        position: absolute; left: 1.4em; right: 1.4em; top: 5.3em; bottom: -3em;
+        background: #fff; border-radius: 1.7em; overflow: hidden;
+        box-shadow:
+            0 0.1em 0.2em rgba(10,25,47,0.04),
+            0 2em 4.4em -2.2em rgba(10,25,47,0.3),
+            inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .cav-fl-kpi {
+        display: grid; grid-template-columns: minmax(0, 1fr) 9.9em;
+        border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    .cav-fl-main { display: flex; flex-direction: column; gap: 0.35em; padding: 1.3em 0.8em 1.1em 1.35em; min-width: 0; }
+    .cav-fl-main .cav-kl { font-size: 0.56em; }
+    .cav-fl-main strong { font-size: 2.1em; line-height: 1; letter-spacing: -0.05em; color: #0a192f; margin: 0.1em 0 0.04em; white-space: nowrap; }
+    .cav-fl-main small { font-size: 0.62em; color: #5b6472; }
+    .cav-fl-conc {
+        display: flex; flex-direction: column; justify-content: center; gap: 0.45em;
+        padding: 1em 1.2em 1em 0.95em; border-left: 1px solid rgba(10,25,47,0.08);
+    }
+    .cav-fl-conc span { font-size: 0.56em; font-weight: 600; line-height: 1.35; }
+    .cav-fl-conc strong { font-size: 1.4em; line-height: 1; letter-spacing: -0.03em; color: #0a192f; }
+    .cav-fl-conc small { font-size: 0.52em; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cav-fl-chart { padding: 1.05em 1.35em; }
+    .cav-fl-sh { display: flex; align-items: center; justify-content: space-between; gap: 0.6em; }
+    .cav-fl-sh b { font-size: 0.8em; letter-spacing: -0.01em; white-space: nowrap; }
+    .cav-fl-leg { display: flex; gap: 0.7em; }
+    .cav-fl-leg span { display: inline-flex; align-items: center; gap: 0.45em; font-size: 0.5em; color: #5b6472; white-space: nowrap; }
+    .cav-fl-leg span::before { content: ''; width: 0.8em; height: 0.8em; border-radius: 50%; background: var(--dot); }
+    .cav-fl-p { margin: 0.35em 0 0.9em; font-size: 0.56em; line-height: 1.45; color: #5b6472; }
+    .cav-fl-weeks { display: flex; flex-direction: column; gap: 0.7em; }
+    .cav-fl-w { display: grid; grid-template-columns: 6.3em minmax(0, 1fr) 4.4em; gap: 0.6em; align-items: center; }
+    .cav-fl-wl { font-size: 0.54em; color: #5b6472; white-space: nowrap; }
+    .cav-fl-track { display: flex; height: 0.64em; overflow: hidden; border-radius: 999px; background: rgba(10,25,47,0.05); }
+    .cav-fl-track i { display: block; flex-shrink: 0; height: 100%; }
+    .cav-fl-w strong { font-size: 0.6em; text-align: right; white-space: nowrap; }
+    /* Colores reales de report-widgets.css (flow-week-track) */
+    .is-cartera { --dot: #0f766e; }
+    .is-pipeline { --dot: #2563eb; }
+    .is-mrr { --dot: #8b5cf6; }
+    .cav-fl-track .is-cartera { background: #0f766e; }
+    .cav-fl-track .is-pipeline { background: #2563eb; }
+    .cav-fl-track .is-mrr { background: #8b5cf6; }
 
-    .fx-ticket-footer { padding: 20px 24px; border-top: 1px solid #f1f5f9; background: #fafbfc; }
-    .fx-btn { width: 100%; padding: 14px; background: var(--c-slate); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 20px -6px rgba(10,25,47,0.32); transition: transform 0.2s, box-shadow 0.2s; }
-    .fx-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 26px -6px rgba(10,25,47,0.38); }
+    /* ═══════════ 4 · "Revisa y envía" + cobertura FX ═══════════ */
+    .cav-fx {
+        position: absolute; left: 1.4em; right: 1.4em; top: 5.3em; bottom: -3em;
+        background: #fff; border-radius: 1.5em;
+        padding: 1.3em 1.35em;
+        display: flex; flex-direction: column; gap: 0.62em;
+        box-shadow:
+            0 0.1em 0.3em rgba(3,10,30,0.14),
+            0 1.8em 3.8em -1.2em rgba(2,8,26,0.55);
+    }
+    .cav-fx-h { font-size: 0.88em; font-weight: 700; letter-spacing: -0.02em; }
+    .cav-fx-total {
+        display: flex; align-items: baseline; justify-content: space-between;
+        padding-bottom: 0.6em; border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    .cav-fx-total span:first-child { font-size: 0.7em; font-weight: 700; }
+    .cav-fx-total .editorial { font-size: 1.3em; letter-spacing: -0.03em; color: #050505; }
+    .cav-fx-field { display: flex; flex-direction: column; gap: 0.4em; }
+    .cav-fx-lab { font-size: 0.58em; font-weight: 500; color: #5b6472; }
+    .cav-fx-sel {
+        display: flex; align-items: center; gap: 0.6em;
+        padding: 0.62em 0.8em; border-radius: 0.7em; background: #f5f5f7;
+    }
+    .cav-fx-flag { flex-shrink: 0; width: 1.15em; height: 1.15em; border-radius: 50%; overflow: hidden; display: flex; box-shadow: 0 0 0 1px rgba(10,25,47,0.08); }
+    .cav-fx-flag img { width: 100%; height: 100%; display: block; object-fit: cover; }
+    .cav-fx-sel-l { flex: 1; min-width: 0; font-size: 0.66em; font-weight: 500; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cav-fx-sel svg { width: 0.9em; height: 0.9em; flex-shrink: 0; color: #8a94a3; }
+    .cav-fx-cover {
+        display: flex; flex-direction: column; gap: 0.6em;
+        padding: 0.8em; border-radius: 0.85em;
+        background: #f5f5f7; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.07);
+    }
+    .cav-fx-exp { margin: 0; font-size: 0.56em; line-height: 1.5; color: #5b6472; }
+    .cav-fx-exp b { color: #0f1729; }
+    .cav-fx-stepper { display: flex; align-items: stretch; gap: 0.4em; }
+    .cav-fx-step {
+        flex: 1; min-width: 0;
+        display: flex; flex-direction: column; gap: 0.15em;
+        padding: 0.5em 0.65em; border-radius: 0.65em;
+        background: #fff; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08);
+    }
+    .cav-fx-step.is-on { background: rgba(16,185,129,0.07); box-shadow: inset 0 0 0 1px rgba(16,185,129,0.5); }
+    .cav-fx-sl { font-size: 0.48em; font-weight: 600; line-height: 1.25; color: #5b6472; white-space: nowrap; }
+    .cav-fx-step.is-on .cav-fx-sl { color: #059669; }
+    .cav-fx-sv { font-size: 0.98em; color: #0f1729; }
+    .cav-fx-arrow { align-self: center; font-size: 0.7em; color: #5b6472; }
+    .cav-fx-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35em; margin-top: -0.2em; }
+    .cav-fx-chip {
+        display: flex; flex-direction: column; align-items: center; gap: 0.05em;
+        padding: 0.42em 0.3em; border-radius: 0.6em;
+        background: #fff; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.08);
+        transition: background 0.25s ease, box-shadow 0.25s ease;
+    }
+    .cav-fx-chip b { font-size: 0.6em; color: #0f1729; transition: color 0.25s ease; }
+    .cav-fx-chip small { font-size: 0.52em; color: #5b6472; transition: color 0.25s ease; }
+    .cav-fx-chip.is-on { background: #0a192f; box-shadow: inset 0 0 0 1px #0a192f; }
+    .cav-fx-chip.is-on b, .cav-fx-chip.is-on small { color: #fff; }
+    .cav-fx-sees { margin: 0; font-size: 0.62em; line-height: 1.45; color: #0f1729; }
+    .cav-fx-sees b { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .cav-fx-lock { display: flex; align-items: center; gap: 0.45em; font-size: 0.54em; color: #5b6472; }
+    .cav-fx-lock svg { width: 1.2em; height: 1.2em; flex-shrink: 0; }
+    .cav-fx-send {
+        display: flex; align-items: center; justify-content: center; gap: 0.5em;
+        margin-top: 0.15em; padding: 0.85em 1em; border-radius: 999px;
+        background: #0a192f; color: #fff;
+        font-size: 0.7em; font-weight: 600; white-space: nowrap;
+        box-shadow: 0 0.5em 1.4em -0.5em rgba(10,25,47,0.45);
+    }
+    .cav-fx-send svg { width: 1.15em; height: 1.15em; }
 
-    /* Animaciones Generales */
-    .cn-pane.active .anim-slide-down { animation: slideD 0.5s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    .cn-pane.active .anim-slide-up { animation: slideU 0.5s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    .cn-pane.active .anim-snap-lock { animation: snapL 0.6s var(--delay) cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-    .cn-pane.active .c-bar { animation: barRise 0.8s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    .cn-pane.active .anim-fade-down { animation: fadeDown 0.6s var(--delay) ease-out forwards; }
-    .cn-pane.active .anim-fade-in { animation: fadeIn 0.4s var(--delay) ease-out forwards; }
-    .cn-pane.active .anim-reveal-up { animation: revealUp 0.6s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    .cn-pane.active .anim-bubble-ai, .cn-pane.active .anim-bubble-client { animation: springBubble 0.6s var(--delay) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    .cn-pane.active .anim-typing-wrap { animation: typingWrap 1.6s var(--delay) forwards; }
-    .cn-pane.active .anim-draw-line-h { animation: drawLH 0.8s var(--delay) ease-out forwards; }
-    .cn-pane.active .anim-draw-chart { animation: drawChart 1s var(--delay) ease-out forwards; stroke-dasharray: 200; stroke-dashoffset: 200; }
-
-    @keyframes drawChart { to { stroke-dashoffset: 0; } }
-    @keyframes fadeIn { to { opacity: 1; } }
-    @keyframes drawLH { 0% { width: 0; opacity: 0; } 100% { width: 100%; opacity: 1; } }
-    @keyframes pulseStatus { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-    @keyframes typeWords { to { width: 100%; } }
-    @keyframes fadeDown { to { opacity: 1; transform: translateY(0); } }
-    @keyframes revealUp { to { opacity: 1; transform: translateY(0); } }
-    @keyframes slideD { 0% { transform: translateY(-30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-    @keyframes slideU { 0% { transform: translateY(30px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-    @keyframes snapL { 0% { transform: scale(2) rotate(45deg); opacity: 0; } 60% { transform: scale(0.9) rotate(-10deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
-    @keyframes barRise { 0% { height: 0; opacity: 0; } 100% { height: var(--h); opacity: 1; } }
-    @keyframes typeDot { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-    @keyframes springBubble { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    @keyframes typingWrap { 0% { max-height: 0; opacity: 0; margin-bottom: 0; } 10% { max-height: 60px; opacity: 1; margin-bottom: 16px; } 90% { max-height: 60px; opacity: 1; margin-bottom: 16px; } 100% { max-height: 0; opacity: 0; margin-bottom: 0; } }
-    @keyframes spinGlow { 0% { transform: rotate(0deg); filter: brightness(1); } 50% { transform: rotate(180deg) scale(1.2); filter: brightness(1.2); } 100% { transform: rotate(360deg); filter: brightness(1); } }
-    .cn-pane.active .spin-icon { animation: spinGlow 2s infinite linear; }
-
-
-    /* ── Reduced motion: mostrar el estado FINAL, sin animaciones ── */
     @media (prefers-reduced-motion: reduce) {
-        .cn-pane, .cn-pane * {
-            animation: none !important;
-            transition: none !important;
-        }
-        .cn-pane.active .ia-search,
-        .cn-pane.active .ia-quote-card,
-        .cn-pane.active .cn-float-box,
-        .cn-pane.active .chat-header,
-        .cn-pane.active .chat-b,
-        .cn-pane.active .cfo-header,
-        .cn-pane.active .cfo-tooltip,
-        .cn-pane.active .fx-hedge-ticket,
-        .cn-pane.active .fx-lock-icon {
-            opacity: 1 !important;
-            transform: none !important;
-        }
-        .cn-pane.active .c-bar { opacity: 1 !important; height: var(--h) !important; }
-        .cn-pane.active .cfo-target-line { width: 100% !important; opacity: 1 !important; }
-        .cn-pane.active .cfo-target-line span { opacity: 1 !important; }
-        .cn-pane.active .anim-draw-chart { stroke-dashoffset: 0 !important; }
-        .cn-pane.active .type-text::before { animation: none !important; width: 100% !important; }
-        .chat-typing-wrapper, .type-cursor { display: none !important; }
+        .cav-ln-row.is-added { animation: none; }
+        .cav-pane, .cav-tab-p, .cav-tab-ico { transition: none; }
     }
 
-
-    /* ── Responsive Seguro ── */
-    @media (max-width: 1024px) {
-        .cn-container { flex-direction: column; gap: 40px; }
-        .cn-left { flex: none; width: 100%; }
-        .cn-right { min-height: 600px; width: 100%; }
+    /* ── Tablet ── */
+    @media (max-width: 1100px) {
+        .cav-wrap { grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 2.4rem; }
     }
-    /* ══════════════════════════════════════════════════════════════════
-       MÓVIL — los paneles dejan de ser un lienzo con piezas superpuestas.
-       En 390px la caja flotante tapaba los botones, el ticker tapaba su
-       propia etiqueta y el tooltip caía encima del runway. Aquí cada panel
-       se apila en una columna: mismo contenido, sin colisiones.
-    ══════════════════════════════════════════════════════════════════ */
-    @media (max-width: 768px) {
-        .cord-notion-section { padding: 4rem 5% 6rem; }
-        /* El panel activo define la altura (los inactivos siguen absolutos y
-           ocultos), así el lienzo se ajusta a su contenido en vez de dejar
-           600px fijos con las piezas peleando por el espacio. */
-        .cn-right { min-height: 0; }
-        .cn-pane.active { position: relative; }
-        .full-canvas { height: auto; padding: 24px 16px 26px; justify-content: flex-start; gap: 18px; }
 
-        /* La caja flotante entra al flujo: debajo de la pieza, no encima. */
-        .cn-float-box {
-            position: static;
-            width: 100%; max-width: 500px;
-            right: auto; left: auto; bottom: auto;
-            padding: 15px 16px; gap: 12px;
-            background: rgba(255,255,255,0.92);
+    /* ── Móvil (< 880px, regla 16): sin tabs; cada feature apilada con su mockup ── */
+    @media (max-width: 880px) {
+        .cav { min-height: 0; display: block; padding: 5rem 5% 4.5rem; }
+        .cav-wrap { grid-template-columns: minmax(0, 1fr); gap: 2.6rem; }
+        .cav-title { font-size: clamp(2rem, 8.4vw, 2.5rem); }
+        .cav-tabs { display: none; }
+        .cav-panel {
+            min-height: 0; container-type: normal; border-radius: 0; overflow: visible;
+            background: none; box-shadow: none;
+            display: flex; flex-direction: column; gap: 3.2rem;
         }
-        .cn-avatar { width: 34px; height: 34px; }
-        .cn-float-name { font-size: 14px; }
-        .cn-float-msg { font-size: 13.5px; }
-        .cn-float-meta { font-size: 12.5px; }
-
-        .cfo-full-ui, .chat-full-ui, .ia-full-ui, .fx-full-ui { margin-top: 0; margin-bottom: 0; }
-
-        /* ── Pane 1: IA ── */
-        .ia-full-ui { gap: 16px; }
-        .ia-search { padding: 13px 14px; gap: 10px; border-radius: 14px; }
-        .ia-icon-sparkle svg { width: 19px; height: 19px; }
-        .type-wrap { min-width: 0; }
-        .cn-pane.active .type-text::before { content: '"Cotízame 2 tons de varilla"'; font-size: 13.5px; }
-        .ia-submit { flex-shrink: 0; font-size: 11px; padding: 5px 8px; }
-        .qc-header { padding: 14px 16px; gap: 10px; }
-        .qc-badge { flex-shrink: 0; white-space: nowrap; font-size: 11px; padding: 5px 10px; }
-        .qc-title { font-size: 13.5px; white-space: nowrap; }
-        .qc-body { padding: 16px; gap: 12px; }
-        .qc-row { gap: 14px; font-size: 13.5px; }
-        .qc-row span:first-child { min-width: 0; }
-        .qc-row strong { flex-shrink: 0; }
-        .qc-footer { padding: 14px 16px; gap: 12px; }
-        .qc-total-lbl { font-size: 13.5px; }
-        .qc-total-val { font-size: 19px; white-space: nowrap; }
-        .qc-actions { padding: 14px 16px; gap: 10px; }
-        .qc-btn { flex: 1; text-align: center; white-space: nowrap; font-size: 13px; padding: 11px 12px; }
-
-        /* ── Pane 2: Cobranza ── */
-        .chat-b { max-width: 100%; font-size: 14px; padding: 14px 16px; }
-
-        /* ── Pane 3: CFO ── */
-        .cfo-full-ui { gap: 20px; }
-        .cfo-header { flex-direction: row; flex-wrap: wrap; gap: 20px 28px; padding-bottom: 16px; }
-        .cfo-m-lbl { font-size: 11.5px; }
-        .cfo-m-val { font-size: 23px; }
-        /* El tooltip cuelga desde el borde superior del área de barras: sin
-           ese aire caía encima del runway. */
-        .cfo-chart-area { height: 168px; margin-top: 104px; }
-        .c-bar { width: 16px; }
-        .c-bars-group { gap: 3px; }
-        .b-lbl { font-size: 11.5px; }
-        /* La etiqueta de la meta se sale del área de barras hacia arriba */
-        .cfo-target-line span { top: -20px; right: auto; left: 0; font-size: 10px; padding: 3px 7px; }
-        /* El tooltip se ancla al borde de su columna, no al centro del panel */
-        .cfo-tooltip { width: 138px; margin-left: -69px; padding: 10px 12px; margin-bottom: 10px; }
-        .cfo-grid-full { padding-bottom: 40px; }
-        .g-line { margin-bottom: 34px; }
-
-        /* ── Pane 4: Divisas ── */
-        .fx-ticket-header { padding: 15px 16px; gap: 10px; }
-        .fx-pair { font-size: 16px; }
-        .fx-flag { width: 21px; height: 21px; }
-        .fx-live-badge { flex-shrink: 0; white-space: nowrap; font-size: 11px; padding: 5px 10px; }
-        .fx-ticket-body { padding: 16px; gap: 16px; }
-        .fx-amt-box { padding: 12px 14px; font-size: 18px; }
-        .fx-curr { font-size: 14px; }
-        .fx-rate-row { gap: 12px; padding: 14px; }
-        .fx-lock-icon { width: 32px; height: 32px; }
-        .fx-r-val { font-size: 16px; }
-        /* La sparkline se iba encima de la etiqueta y del delta */
-        .fx-rate-chart { display: none; }
-        .fx-ticket-footer { padding: 15px 16px; }
-        .fx-btn { padding: 13px; font-size: 14px; }
+        .cav-pane { position: relative; inset: auto; opacity: 1; visibility: visible; transition: none; }
+        .cav-pane-head { display: flex; align-items: flex-start; gap: 14px; margin: 0 0 1.2rem; }
+        .cav-pane-ico {
+            flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;
+            display: grid; place-items: center;
+            background: #0a192f; color: #fff;
+            box-shadow: 0 8px 18px -6px rgba(10,25,47,0.42);
+        }
+        .cav-pane-ico :global(svg) { width: 19px; height: 19px; }
+        .cav-pane-head h3 { margin: 0.35rem 0 0; font-size: 1.08rem; font-weight: 650; line-height: 1.3; letter-spacing: -0.02em; color: #0a192f; }
+        .cav-pane-head p { margin: 0.4rem 0 0; font-size: 0.92rem; line-height: 1.55; color: var(--color-text-muted); }
+        .cav-vis {
+            position: relative; inset: auto;
+            aspect-ratio: 4 / 5; border-radius: 26px;
+            box-shadow:
+                0 1px 2px rgba(10,25,47,0.05),
+                0 22px 44px -28px rgba(10,25,47,0.32);
+        }
+        .cav-vis-light { box-shadow: inset 0 0 0 1px rgba(10,25,47,0.045), 0 1px 2px rgba(10,25,47,0.03); }
     }
 </style>

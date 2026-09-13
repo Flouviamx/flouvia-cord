@@ -47,3 +47,5 @@ identifican y no permiten un cobro real. La disponibilidad del botón de pago de
 del estado del documento, su saldo y la cuenta de cobros del vendedor.
 
 > La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.
+
+Una proforma en México o España tiene PDF descargable, pero no XML fiscal. Gratis incluye cinco documentos comerciales al mes. Descargar un documento ya emitido no consume otra unidad, incluso después de cambiar de plan.

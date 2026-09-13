@@ -56,7 +56,7 @@ export const PLANES: Plan[] = [
         nombre: 'Gratis',
         tagline: 'Para tus primeros clientes. Cada mes.',
         precio: { MXN: 0, USD: 0, EUR: EUR_MONTHLY.free },
-        ctaLabel: 'Cotizar gratis',
+        ctaLabel: 'Empezar gratis',
         ctaHref: '/registro',
         feats: [
             '5 envíos al mes, renovables',
@@ -326,7 +326,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Cuándo me conviene pagar por Cord?',
-        a: 'Elige Starter si necesitas más envíos o quitar “Powered by Cord”. Profesional añade cotizaciones ilimitadas, 5 usuarios incluidos, seguimiento en vivo, cobranza y flujo de caja a 90 días. Scale suma aprobaciones, cobranza con IA y correo desde tu dominio. Puedes quedarte en Gratis mientras sus límites cubran tu operación.',
+        a: 'Elige Starter si necesitas más documentos, emisión fiscal integrada donde esté habilitada, más envíos o quitar “Powered by Cord”. Profesional añade cotizaciones ilimitadas, 5 usuarios incluidos, seguimiento en vivo, cobranza y flujo de caja a 90 días. Scale suma aprobaciones, cobranza con IA y correo desde tu dominio. Puedes quedarte en Gratis mientras sus límites cubran tu operación.',
     },
     {
         q: '¿Puedo quitar la marca de Cord y usar mi dominio?',

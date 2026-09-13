@@ -1,0 +1,700 @@
+---
+import { getLangFromUrl, publicPath, useTranslations } from '../../i18n/utils';
+import CordDynamicBg from '../CordDynamicBg.jsx';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => publicPath(p, lang);
+const en = lang === 'en';
+
+// Cord Payments — el PROCESO en cuatro pasos numerados, no un segundo bento
+// (Invoicing ya es bento). Cada tarjeta es un visual 4:5 con una pieza de la
+// app encima, calcada de la pantalla real:
+//   1 · ConnectCustomOnboarding.tsx, paso "Verificación" (captura con teléfono)
+//   2 · /q/[token]/pay.astro + PaymentIsland.tsx (selector Tarjeta/SPEI)
+//   3 · campana de notificaciones (AppLayout) + "Cobros recientes" de /app/cobros
+//   4 · zona "Tu dinero hoy" de /app/cobros (saldo, próximo depósito, estado)
+// Los mockups se dimensionan en `em` sobre una base de 100cqw/28: la tarjeta
+// escala como una imagen y la composición es idéntica en 4 columnas, 2×2 y
+// carrusel móvil. Formatos de monto y fecha = los reales de cada pantalla
+// (la tabla y el saldo usan money() sin decimales; el link de pago, con ellos).
+
+// Shader oficial dentro de las tarjetas 1 y 3 (familia de Steps, no clones).
+const PAL_ALTA = { base: '#091A36', color1: '#15397A', color2: '#2B5FD9', color3: '#5AB8F0' };
+const PAL_CONCILIA = { base: '#071A2E', color1: '#0C5A56', color2: '#1D6FBF', color3: '#34D399' };
+
+// QR real (versión 2) de https://cordhq.app — escanearlo no lleva a un token muerto.
+const QR_PATH = 'M0 0.5h7m1 0h2m4 0h1m1 0h1m1 0h7M0 1.5h1m5 0h1m7 0h1m3 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h1m2 0h3m2 0h1m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h2m1 0h1m3 0h2m1 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h4m1 0h4m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m2 0h1m2 0h1m1 0h1m3 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 7.5h1m1 0h1m1 0h2M0 8.5h4m2 0h1m1 0h1m4 0h2m1 0h2m2 0h3m1 0h1M2 9.5h4m1 0h1m1 0h1m6 0h1m2 0h1m3 0h1M2 10.5h2m1 0h3m6 0h1m3 0h2M1 11.5h1m1 0h1m7 0h5m1 0h3m1 0h2M0 12.5h1m2 0h1m1 0h2m2 0h1m1 0h1m5 0h2m1 0h1m1 0h3M2 13.5h2m1 0h1m1 0h1m2 0h2m1 0h1m1 0h1m2 0h3m3 0h1M1 14.5h1m2 0h1m1 0h2m2 0h1m1 0h1m1 0h1m5 0h1m1 0h2M0 15.5h1m1 0h2m1 0h1m1 0h1m1 0h1m2 0h2m1 0h1m3 0h2m3 0h1M5 16.5h5m1 0h1m4 0h9M8 17.5h1m1 0h1m1 0h2m1 0h2m3 0h1m1 0h1m1 0h1M0 18.5h7m3 0h3m3 0h1m1 0h1m1 0h1m1 0h3M0 19.5h1m5 0h1m2 0h2m1 0h1m2 0h2m3 0h1m2 0h2M0 20.5h1m1 0h3m1 0h1m3 0h4m2 0h6M0 21.5h1m1 0h3m1 0h1m1 0h2m2 0h4m1 0h2m1 0h5M0 22.5h1m1 0h3m1 0h1m1 0h1m1 0h4m2 0h3m1 0h1m1 0h2M0 23.5h1m5 0h1m1 0h1m1 0h1m6 0h1m2 0h1m1 0h1M0 24.5h7m1 0h2m2 0h1m1 0h1m3 0h7';
+
+// es-MX: '$196,469.20' · en-US: 'MX$196,469.20' (Intl con currency MXN, igual que pay.astro).
+const CUR = en ? 'MX$' : '$';
+
+const COBROS = [
+    { folio: 'COT-0148', cliente: 'Distribuidora El Zarco', metodo: 'tarjeta', fecha: en ? 'Sep 12, 2026' : '12 sept 2026', monto: '196,469', nuevo: true },
+    { folio: 'COT-0146', cliente: 'Constructora Apex', metodo: 'spei', fecha: en ? 'Sep 11, 2026' : '11 sept 2026', monto: '84,120' },
+    { folio: 'COT-0143', cliente: 'Grupo Ferretero del Bajío', metodo: 'tarjeta', fecha: en ? 'Sep 9, 2026' : '9 sept 2026', monto: '38,560' },
+    { folio: 'COT-0141', cliente: 'Aceros del Norte', metodo: 'spei', fecha: en ? 'Sep 6, 2026' : '6 sept 2026', monto: '121,900' },
+];
+// Colores y etiquetas de método: METODO_COLOR y cbr.metodo_* de /app/cobros.
+const METODO = {
+    tarjeta: { color: '#6366f1', label: en ? 'Credit/debit card' : 'Tarjeta de crédito/débito' },
+    spei: { color: '#10b981', label: en ? 'SPEI transfer' : 'Transferencia SPEI' },
+} as const;
+---
+
+<section class="cps" id="cord-payments">
+    <div class="cps-inner">
+        <div class="cps-head">
+            <p class="cps-eyebrow reveal">{t("pay.eyebrow")}</p>
+            <div class="cps-head-row">
+                <h2 class="cps-title reveal">{t("pay.title")}</h2>
+                <div class="cps-head-aside">
+                    <p class="cps-sub reveal">{t("pay.sub")}</p>
+                    <a href={l("/producto/pagos")} class="cps-cta reveal">
+                        {t("pay.cta")}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <ol class="cps-grid">
+            <!-- ─────────── 1 · Alta: paso "Verificación" del asistente real ─────────── -->
+            <li class="cps-step reveal">
+                <div class="cps-vis cps-vis-dark" style={`--cps-base:${PAL_ALTA.base}`} data-cps="alta">
+                    <div class="cps-shader"><CordDynamicBg client:only="react" colors={PAL_ALTA} grain={false} /></div>
+                    <span class="cps-num editorial" aria-hidden="true">1</span>
+                    <div class="cps-stage" aria-hidden="true">
+                        <div class="cps-co">
+                            <div class="cps-co-head">
+                                <b>{en ? 'Verification' : 'Verificación'}</b>
+                                <span>{en ? 'Step 6 of 8' : 'Paso 6 de 8'}</span>
+                            </div>
+                            <div class="cps-co-prog"><i></i></div>
+                            <p class="cps-co-sub">{en
+                                ? 'We need a clear photo of a valid government ID. If needed, we may ask for proof of address afterwards.'
+                                : 'Necesitamos una foto clara de una identificación oficial vigente. Si hace falta, después te pediremos un comprobante de domicilio.'}</p>
+                            <div class="cps-co-tabs">
+                                <span class="cps-co-tab is-on">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5" fill="currentColor" fill-opacity="0.12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                                    {en ? 'With your phone' : 'Con tu teléfono'}
+                                    <em class="cps-co-tag">{en ? 'Recommended' : 'Recomendado'}</em>
+                                </span>
+                                <span class="cps-co-tab">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5" fill="currentColor" fill-opacity="0.12"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                                    {en ? 'Upload file' : 'Subir archivo'}
+                                </span>
+                            </div>
+                            <div class="cps-co-cap">
+                                <div class="cps-co-qr">
+                                    <svg viewBox="0 0 25 25" shape-rendering="crispEdges"><path stroke="#0a192f" d={QR_PATH}/></svg>
+                                </div>
+                                <div class="cps-co-link">
+                                    <span>https://cordhq.app/verificar-identidad/x7Kq2mVb9TzR4nWc8pLd</span>
+                                    <b>{en ? 'Copy' : 'Copiar'}</b>
+                                </div>
+                                <ul class="cps-co-steps">
+                                    <li class="done"><i></i>{en ? 'Front' : 'Frente'}</li>
+                                    <li class="done"><i></i>{en ? 'Back' : 'Reverso'}</li>
+                                    <li><i></i>{en ? 'Proof of address' : 'Comprobante'}</li>
+                                </ul>
+                                <span class="cps-co-wait"><i class="cps-spin"></i>{en ? 'Waiting for you to finish on your phone…' : 'Esperando a que termines desde tu teléfono…'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="cps-h">{t("pay.step.1.h")}</h3>
+                <p class="cps-p">{t("pay.step.1.p")}</p>
+            </li>
+
+            <!-- ─────────── 2 · El link de pago real, en el teléfono del cliente ─────────── -->
+            <li class="cps-step reveal">
+                <div class="cps-vis cps-vis-light" data-cps="link">
+                    <span class="cps-num editorial" aria-hidden="true">2</span>
+                    <div class="cps-stage" aria-hidden="true">
+                        <div class="cps-phone">
+                            <div class="cps-phone-island"></div>
+                            <div class="cps-phone-screen">
+                                <span class="cps-pp-back">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                                    {en ? 'Back to the quote' : 'Volver a la cotización'}
+                                </span>
+                                <div class="cps-pp-card">
+                                    <div class="cps-pp-brand">
+                                        <span class="cps-pp-avatar"><span>M</span></span>
+                                        <span class="cps-pp-brand-tx">
+                                            <span class="cps-pp-org">Materiales del Valle</span>
+                                            <span class="cps-pp-folio">{en ? 'Quote' : 'Cotización'} COT-0148</span>
+                                        </span>
+                                    </div>
+                                    <div class="cps-pp-amt">
+                                        <span class="cps-pp-amt-l">{en ? 'Total due' : 'Total a pagar'}</span>
+                                        <span class="cps-pp-amt-v editorial">{CUR}196,469.20 <small>MXN</small></span>
+                                        <span class="cps-pp-amt-m">{en ? 'Card · SPEI transfer' : 'Tarjeta · Transferencia SPEI'}</span>
+                                    </div>
+                                    <span class="cps-pp-leg">{en ? 'Payment method' : 'Método de pago'}</span>
+                                    <div class="cps-pp-meth">
+                                        <span class="is-on">{en ? 'Card' : 'Tarjeta'}</span>
+                                        <span>SPEI</span>
+                                    </div>
+                                    <div class="cps-pp-f">
+                                        <span class="cps-pp-lab">{en ? 'Card number' : 'Número de tarjeta'}</span>
+                                        <span class="cps-pp-in">
+                                            <span>4152 3139 0482 7716</span>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" fill="currentColor" fill-opacity="0.12"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                                        </span>
+                                    </div>
+                                    <div class="cps-pp-row">
+                                        <div class="cps-pp-f">
+                                            <span class="cps-pp-lab">{en ? 'Expiration date' : 'Fecha de vencimiento'}</span>
+                                            <span class="cps-pp-in"><span>09 / 28</span></span>
+                                        </div>
+                                        <div class="cps-pp-f">
+                                            <span class="cps-pp-lab">{en ? 'Security code' : 'Código de seguridad'}</span>
+                                            <span class="cps-pp-in"><span>731</span></span>
+                                        </div>
+                                    </div>
+                                    <span class="cps-pp-pay">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        {en ? 'Pay' : 'Pagar'} {CUR}196,469.20
+                                    </span>
+                                </div>
+                                <p class="cps-pp-foot">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <span>{en
+                                        ? 'Encrypted and processed by Cord Payments. Materiales del Valle never sees your card details.'
+                                        : 'Pago cifrado y procesado por Cord Payments. Materiales del Valle nunca ve los datos de tu tarjeta.'}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="cps-h">{t("pay.step.2.h")}</h3>
+                <p class="cps-p">{t("pay.step.2.p")}</p>
+            </li>
+
+            <!-- ─────────── 3 · Notificación real + "Cobros recientes" de /app/cobros ─────────── -->
+            <li class="cps-step reveal">
+                <div class="cps-vis cps-vis-dark" style={`--cps-base:${PAL_CONCILIA.base}`} data-cps="concilia">
+                    <div class="cps-shader"><CordDynamicBg client:only="react" colors={PAL_CONCILIA} grain={false} /></div>
+                    <span class="cps-num editorial" aria-hidden="true">3</span>
+                    <div class="cps-stage" aria-hidden="true">
+                        <div class="cps-cb">
+                            <div class="cps-cb-head">{en ? 'Recent payments' : 'Cobros recientes'}</div>
+                            {COBROS.map((r) => (
+                                <div class={`cps-cb-row${r.nuevo ? ' is-new' : ''}`}>
+                                    <span class="cps-cb-f">{r.folio}</span>
+                                    <span class="cps-cb-a editorial">{CUR}{r.monto}</span>
+                                    <span class="cps-cb-c">{r.cliente}</span>
+                                    <span class="cps-cb-m"><i style={`background:${METODO[r.metodo as keyof typeof METODO].color}`}></i>{METODO[r.metodo as keyof typeof METODO].label}</span>
+                                    <span class="cps-cb-d">{r.fecha}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <div class="cps-nt">
+                            <span class="cps-nt-ico">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" fill="currentColor" fill-opacity="0.14"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                            </span>
+                            <span class="cps-nt-body">
+                                <span class="cps-nt-t">{en ? 'Payment received' : 'Pago recibido'}</span>
+                                <span class="cps-nt-s">COT-0148 · Distribuidora El Zarco</span>
+                                <span class="cps-nt-w">{en ? '1 min. ago' : 'hace 1 min'}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="cps-h">{t("pay.step.3.h")}</h3>
+                <p class="cps-p">{t("pay.step.3.p")}</p>
+            </li>
+
+            <!-- ─────────── 4 · "Tu dinero hoy": saldo, próximo depósito y estado ─────────── -->
+            <li class="cps-step reveal">
+                <div class="cps-vis cps-vis-light" data-cps="depositos">
+                    <span class="cps-num editorial" aria-hidden="true">4</span>
+                    <div class="cps-stage" aria-hidden="true">
+                        <div class="cps-bz">
+                            <div class="cps-bz-cell cps-bz-saldo">
+                                <span class="cps-bz-lab">{en ? 'Available balance' : 'Saldo disponible'}<span class="cps-bz-tag">{en ? 'live' : 'en vivo'}</span></span>
+                                <strong class="cps-bz-val editorial" data-count="64820" data-prefix={CUR}>{CUR}64,820</strong>
+                                <span class="cps-bz-sub">{CUR}188,261 {en ? 'on the way' : 'en camino'}</span>
+                            </div>
+                            <div class="cps-bz-cell">
+                                <div class="cps-bz-sh">
+                                    <div>
+                                        <span class="cps-bz-st">{en ? 'Next payout' : 'Próximo depósito'}<span class="cps-bz-tag">{en ? 'live' : 'en vivo'}</span></span>
+                                        <span class="cps-bz-sp">{en ? 'Cord Payments transfers to your bank account.' : 'Transferencias de Cord Payments a tu cuenta bancaria.'}</span>
+                                    </div>
+                                </div>
+                                <div class="cps-bz-li">
+                                    <i style="background:#3b82f6"></i>
+                                    <span><strong>{en ? 'In transit' : 'En camino'}</strong><small>{en ? 'Arrival: Sep 15' : 'Llegada: 15 sept'}</small></span>
+                                    <b class="editorial">{CUR}71,940</b>
+                                </div>
+                            </div>
+                            <div class="cps-bz-cell">
+                                <div class="cps-bz-sh">
+                                    <div>
+                                        <span class="cps-bz-st">{en ? 'Account status' : 'Estado de la cuenta'}</span>
+                                        <span class="cps-bz-sp">{en ? 'What is still needed to keep charging and depositing.' : 'Lo que falta para seguir cobrando y recibiendo depósitos.'}</span>
+                                    </div>
+                                    <span class="cps-bz-man">{en ? 'Manage' : 'Administrar'} →</span>
+                                </div>
+                                <div class="cps-bz-chips">
+                                    <span class="cps-bz-chip"><i></i><strong>{en ? 'Payments' : 'Cobros'}</strong><small>{en ? 'Active' : 'Activos'}</small></span>
+                                    <span class="cps-bz-chip"><i></i><strong>{en ? 'Payouts' : 'Depósitos'}</strong><small>{en ? 'Active' : 'Activos'}</small></span>
+                                    <span class="cps-bz-chip"><i></i><strong>{en ? 'Verification' : 'Verificación'}</strong><small>{en ? 'Complete' : 'Completa'}</small></span>
+                                </div>
+                                <span class="cps-bz-line">{en ? 'Payouts to BBVA ••••4821' : 'Depósitos a BBVA ••••4821'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="cps-h">{t("pay.step.4.h")}</h3>
+                <p class="cps-p">{t("pay.step.4.p")}</p>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<script>
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Micro-historias sutiles, una por tarjeta y una sola vez. El HTML ya es el
+    // estado final: sin JS o con reduced-motion todo se ve completo.
+    const root = document.getElementById('cord-payments');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (root && !reduced) {
+        const once = (el: Element, onEnter: () => void) =>
+            ScrollTrigger.create({ trigger: el, start: 'top 78%', once: true, onEnter });
+
+        // 1 · la barra avanza del paso 5 al 6 y el teléfono va entregando las fotos.
+        const alta = root.querySelector('[data-cps="alta"]');
+        const fill = alta?.querySelector<HTMLElement>('.cps-co-prog i');
+        const done = alta ? Array.from(alta.querySelectorAll<HTMLElement>('.cps-co-steps li.done')) : [];
+        if (alta && fill) {
+            gsap.set(fill, { width: '62.5%' });
+            done.forEach((li) => li.classList.remove('done'));
+            once(alta, () => {
+                gsap.to(fill, { width: '75%', duration: 1.1, ease: 'power3.out', delay: 0.35 });
+                done.forEach((li, i) => gsap.delayedCall(1.1 + i * 0.75, () => li.classList.add('done')));
+            });
+        }
+
+        // 3 · entra la notificación y la fila nueva se ilumina.
+        const concilia = root.querySelector('[data-cps="concilia"]');
+        const nt = concilia?.querySelector<HTMLElement>('.cps-nt');
+        const row = concilia?.querySelector<HTMLElement>('.cps-cb-row.is-new');
+        if (concilia && nt && row) {
+            gsap.set(nt, { opacity: 0, y: -14, scale: 0.97 });
+            gsap.set(row, { backgroundColor: 'rgba(16,185,129,0)' });
+            once(concilia, () => {
+                gsap.timeline({ delay: 0.3 })
+                    .to(nt, { opacity: 1, y: 0, scale: 1, duration: 0.75, ease: 'power3.out', clearProps: 'transform,opacity' })
+                    .to(row, { backgroundColor: 'rgba(16,185,129,0.16)', duration: 0.35 }, 0.45)
+                    .to(row, { backgroundColor: 'rgba(16,185,129,0.07)', duration: 0.8, clearProps: 'backgroundColor' });
+            });
+        }
+
+        // 4 · el saldo disponible cuenta hacia su valor.
+        const dep = root.querySelector('[data-cps="depositos"]');
+        const val = dep?.querySelector<HTMLElement>('[data-count]');
+        if (dep && val) {
+            const target = Number(val.dataset.count || 0);
+            const prefix = val.dataset.prefix || '$';
+            const fmt = (n: number) => prefix + new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(n);
+            once(dep, () => {
+                const o = { v: target * 0.55 };
+                gsap.to(o, { v: target, duration: 1.4, ease: 'power2.out', delay: 0.3, onUpdate: () => { val.textContent = fmt(o.v); } });
+            });
+        }
+    }
+</script>
+
+<style>
+    /* El canvas de la sección es el MISMO de todo el index (`--color-bg-soft`):
+       el carácter vive dentro de cada tarjeta, nunca en una banda de color. */
+    .cps {
+        padding: 8rem 5% 7.5rem;
+        background: var(--color-bg-soft);
+    }
+    .cps-inner { max-width: 1180px; margin: 0 auto; }
+
+    /* ── Cabecera: eyebrow arriba, título izquierda, texto + CTA derecha ── */
+    .cps-head { margin: 0 0 3.5rem; }
+    .cps-eyebrow {
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
+        text-transform: uppercase; color: var(--color-blue-deep); opacity: 0.6;
+        margin: 0 0 1.2rem;
+    }
+    .cps-head-row {
+        display: grid;
+        grid-template-columns: 1.25fr 1fr;
+        gap: 3.5rem;
+        align-items: start;
+    }
+    .cps-title {
+        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
+        font-weight: 700; line-height: 1.1; letter-spacing: -0.035em;
+        color: #0a192f; margin: 0;
+    }
+    .cps-head-aside { display: flex; flex-direction: column; gap: 1.4rem; align-items: flex-start; padding-top: 0.4rem; }
+    .cps-sub {
+        font-size: 1.02rem; line-height: 1.65;
+        color: var(--color-text-muted); margin: 0;
+    }
+    .cps-cta {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 0.96rem; font-weight: 600; color: var(--color-blue-deep);
+        text-decoration: none;
+    }
+    .cps-cta svg { width: 16px; height: 16px; transition: transform 0.35s var(--ease-spring); }
+    .cps-cta:hover svg { transform: translateX(4px); }
+
+    /* ── Fila de 4 pasos ── */
+    .cps-grid {
+        list-style: none; margin: 0; padding: 0;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1.25rem;
+    }
+    .cps-step { display: flex; flex-direction: column; min-width: 0; }
+
+    .cps-vis {
+        position: relative;
+        aspect-ratio: 4 / 5;
+        border-radius: 26px;
+        overflow: hidden;
+        isolation: isolate;
+        container-type: inline-size;
+        background: var(--cps-base, #eceef2);
+        box-shadow:
+            0 1px 2px rgba(10,25,47,0.05),
+            0 22px 44px -28px rgba(10,25,47,0.32);
+    }
+    .cps-vis-light {
+        background:
+            radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 62%),
+            linear-gradient(180deg, #eceef2 0%, #f1f2f5 100%);
+        box-shadow:
+            inset 0 0 0 1px rgba(10,25,47,0.045),
+            0 1px 2px rgba(10,25,47,0.03);
+    }
+    .cps-shader { position: absolute; inset: 0; z-index: 0; }
+
+    .cps-num {
+        position: absolute; z-index: 4; top: 14px; left: 14px;
+        width: 28px; height: 28px; border-radius: 9px;
+        display: grid; place-items: center;
+        font-size: 0.8rem; line-height: 1;
+    }
+    .cps-vis-dark .cps-num {
+        color: #fff;
+        background: rgba(255,255,255,0.14);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.24);
+    }
+    .cps-vis-light .cps-num {
+        color: #0a192f;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.08), inset 0 0 0 1px rgba(10,25,47,0.06);
+    }
+
+    /* La pieza de UI: 28em de ancho = la tarjeta. Todo adentro va en em. */
+    .cps-stage {
+        position: absolute; inset: 0; z-index: 2;
+        font-size: 10px;
+        font-size: calc(100cqw / 28);
+        font-family: var(--font-sans);
+        color: #0f1729;
+        line-height: 1.3;
+        pointer-events: none;
+        user-select: none;
+    }
+    .cps-stage b, .cps-stage strong { font-weight: 600; }
+
+    .cps-h {
+        margin: 1.35rem 0 0;
+        font-size: 1.08rem; font-weight: 650; line-height: 1.3; letter-spacing: -0.02em;
+        color: #0a192f;
+    }
+    .cps-p {
+        margin: 0.45rem 0 0;
+        font-size: 0.9rem; line-height: 1.55;
+        color: var(--color-text-muted);
+    }
+
+    /* ═══════════ 1 · Asistente de alta — paso Verificación ═══════════ */
+    .cps-co {
+        position: absolute; left: 1.4em; right: 1.4em; top: 5.3em; bottom: -3em;
+        background: #fff; border-radius: 1.5em;
+        padding: 1.45em 1.4em;
+        display: flex; flex-direction: column;
+        box-shadow:
+            0 0.1em 0.3em rgba(3,10,30,0.14),
+            0 1.8em 3.8em -1.2em rgba(2,8,26,0.55);
+    }
+    .cps-co-head { display: flex; flex-direction: column; gap: 0.2em; }
+    .cps-co-head b { font-size: 1.25em; letter-spacing: -0.02em; line-height: 1.2; }
+    .cps-co-head span { font-size: 0.74em; font-weight: 500; color: #5b6472; }
+    .cps-co-prog { height: 0.26em; border-radius: 999px; background: rgba(10,25,47,0.07); overflow: hidden; margin: 0.9em 0 1.15em; flex-shrink: 0; }
+    .cps-co-prog i { display: block; width: 75%; height: 100%; border-radius: inherit; background: #0a192f; }
+    .cps-co-sub { margin: 0 0 1em; font-size: 0.68em; line-height: 1.5; color: #5b6472; }
+    .cps-co-tabs { display: flex; gap: 0.3em; padding: 0.3em; background: #f3f4f6; border-radius: 999px; }
+    .cps-co-tab {
+        flex: 1 1 auto;
+        display: inline-flex; align-items: center; justify-content: center; gap: 0.4em;
+        padding: 0.6em 0.5em; border-radius: 999px;
+        font-size: 0.72em; font-weight: 600; color: #5b6472; white-space: nowrap;
+    }
+    .cps-co-tab svg { width: 1.2em; height: 1.2em; flex-shrink: 0; }
+    .cps-co-tab.is-on { background: #fff; color: #0f1729; box-shadow: 0 1px 3px rgba(10,25,47,0.12); }
+    .cps-co-tag {
+        font-style: normal; font-size: 0.74em; font-weight: 800; letter-spacing: 0.03em;
+        text-transform: uppercase; color: #10b981; background: rgba(16,185,129,0.12);
+        border-radius: 999px; padding: 0.2em 0.6em;
+    }
+    .cps-co-cap { display: flex; flex-direction: column; align-items: center; gap: 0.95em; padding-top: 1.15em; }
+    .cps-co-qr {
+        width: 8.2em; height: 8.2em; padding: 0.6em; background: #fff; border-radius: 1em;
+        box-shadow: 0 1px 3px rgba(10,25,47,0.08), 0 0.9em 2em -0.7em rgba(10,25,47,0.2);
+    }
+    .cps-co-qr svg { display: block; width: 100%; height: 100%; }
+    .cps-co-link { display: flex; gap: 0.45em; width: 100%; }
+    .cps-co-link span, .cps-co-link b {
+        font-size: 0.66em; background: #f3f4f6; border-radius: 0.95em; padding: 0.75em 0.9em;
+    }
+    .cps-co-link span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #5b6472; }
+    .cps-co-link b { color: #0a192f; white-space: nowrap; }
+    .cps-co-steps { list-style: none; margin: 0; padding: 0; display: flex; gap: 1.1em; }
+    .cps-co-steps li { display: flex; align-items: center; gap: 0.45em; font-size: 0.72em; font-weight: 600; color: #5b6472; transition: color 0.25s ease; }
+    .cps-co-steps i { width: 0.62em; height: 0.62em; border-radius: 50%; background: rgba(10,25,47,0.14); transition: background 0.25s ease; }
+    .cps-co-steps li.done { color: #10b981; }
+    .cps-co-steps li.done i { background: #10b981; }
+    .cps-co-wait { display: inline-flex; align-items: center; gap: 0.6em; font-size: 0.66em; color: #5b6472; }
+    .cps-spin {
+        width: 1.15em; height: 1.15em; border-radius: 50%; flex-shrink: 0;
+        border: 0.17em solid rgba(10,25,47,0.18); border-top-color: #0a192f;
+        animation: cps-spin 0.8s linear infinite;
+    }
+    @keyframes cps-spin { to { transform: rotate(360deg); } }
+
+    /* ═══════════ 2 · Link de pago en el teléfono (marco de ClientView) ═══════════ */
+    .cps-phone {
+        position: absolute; top: 1.9em; left: calc(50% - 9.6em); width: 19.2em;
+        background: #0a192f; border-radius: 3em; padding: 0.62em;
+        box-shadow:
+            0 0.2em 0.5em rgba(10,25,47,0.2),
+            0 2.2em 3.8em -1.4em rgba(10,25,47,0.45),
+            inset 0 0 0 0.14em rgba(255,255,255,0.07);
+    }
+    .cps-phone-island {
+        position: absolute; top: 1.25em; left: 50%; margin-left: -2.7em;
+        width: 5.4em; height: 1.35em; border-radius: 999px; background: #0a192f; z-index: 3;
+    }
+    .cps-phone-screen {
+        position: relative; overflow: hidden;
+        background: #f5f5f7; border-radius: 2.4em;
+        padding: 2.85em 0.7em 2em;
+        display: flex; flex-direction: column;
+    }
+    .cps-pp-back { display: inline-flex; align-items: center; gap: 0.45em; margin: 0 0 0.95em 0.55em; font-size: 0.6em; font-weight: 500; color: #6b7686; }
+    .cps-pp-back svg { width: 1.15em; height: 1.15em; }
+    .cps-pp-card {
+        background: #fff; border-radius: 1.55em; padding: 1.2em 1.05em 1.1em;
+        border: 1px solid rgba(10,25,47,0.05);
+        box-shadow: 0 0.1em 0.25em rgba(10,25,47,0.04), 0 1.6em 3.2em -0.9em rgba(10,25,47,0.13);
+        display: flex; flex-direction: column;
+    }
+    .cps-pp-brand { display: flex; align-items: center; gap: 0.72em; margin-bottom: 0.8em; }
+    .cps-pp-avatar { width: 2.2em; height: 2.2em; border-radius: 0.64em; flex-shrink: 0; display: grid; place-items: center; background: #0a192f; color: #fff; }
+    .cps-pp-avatar span { font-size: 0.92em; font-weight: 700; }
+    .cps-pp-brand-tx { display: flex; flex-direction: column; gap: 0.05em; min-width: 0; }
+    .cps-pp-org { font-size: 0.8em; font-weight: 600; color: #050505; letter-spacing: -0.01em; white-space: nowrap; }
+    .cps-pp-folio { font-size: 0.64em; color: #6b7686; }
+    .cps-pp-amt {
+        display: flex; flex-direction: column; gap: 0.2em;
+        padding: 0.75em 0.85em; margin-bottom: 0.78em;
+        background: #f5f5f7; border-radius: 0.95em;
+    }
+    .cps-pp-amt-l { font-size: 0.5em; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8a93a2; }
+    .cps-pp-amt-v { font-size: 1.42em; line-height: 1.15; color: #050505; white-space: nowrap; }
+    .cps-pp-amt-v small { font-size: 0.45em; font-weight: 600; color: #8a93a2; letter-spacing: 0; }
+    .cps-pp-amt-m { font-size: 0.56em; color: #8a93a2; }
+    .cps-pp-leg { font-size: 0.6em; font-weight: 600; color: #4a5567; margin-bottom: 0.7em; }
+    .cps-pp-meth {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 0.4em;
+        padding: 0.25em; margin-bottom: 0.8em;
+        background: #f5f5f7; border-radius: 0.85em;
+    }
+    .cps-pp-meth span {
+        text-align: center; font-size: 0.68em; font-weight: 500; color: #050505;
+        padding: 0.7em 0.5em; border-radius: 0.95em; border: 1px solid transparent;
+    }
+    .cps-pp-meth span.is-on { background: #fff; border-color: #0a192f; font-weight: 650; box-shadow: 0 0.15em 0.6em rgba(10,25,47,0.08); }
+    .cps-pp-f { display: flex; flex-direction: column; gap: 0.32em; margin-bottom: 0.6em; min-width: 0; }
+    .cps-pp-lab { font-size: 0.56em; font-weight: 500; color: #4a5567; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cps-pp-in {
+        display: flex; align-items: center; justify-content: space-between; gap: 0.5em;
+        background: #f5f5f7; border-radius: 0.8em; padding: 0.72em 0.85em;
+        font-size: 0.68em; color: #050505; font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    .cps-pp-in svg { width: 1.3em; height: 1.3em; color: #8a93a2; flex-shrink: 0; }
+    .cps-pp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55em; }
+    .cps-pp-pay {
+        display: flex; align-items: center; justify-content: center; gap: 0.55em;
+        margin-top: 0.25em; padding: 0.92em 1em; border-radius: 999px;
+        background: #0a192f; color: #fff;
+        font-size: 0.74em; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap;
+        box-shadow: 0 0.9em 1.9em -0.8em rgba(10,25,47,0.5);
+    }
+    .cps-pp-pay svg { width: 1.2em; height: 1.2em; }
+    .cps-pp-foot {
+        display: flex; align-items: flex-start; justify-content: center; gap: 0.5em;
+        margin: 1.05em 1em 0; font-size: 0.54em; line-height: 1.45; color: #9aa2af; text-align: center;
+    }
+    .cps-pp-foot svg { width: 1.1em; height: 1.1em; flex-shrink: 0; opacity: 0.7; margin-top: 0.15em; }
+
+    /* ═══════════ 3 · Notificación + Cobros recientes ═══════════ */
+    .cps-cb {
+        position: absolute; left: 1.4em; right: 1.4em; top: 9.3em; bottom: -3em;
+        background: #fff; border-radius: 1.5em;
+        padding: 2.6em 1.45em 1em;
+        box-shadow:
+            0 0.1em 0.3em rgba(3,10,30,0.14),
+            0 1.8em 3.8em -1.2em rgba(2,8,26,0.55);
+    }
+    .cps-cb-head {
+        font-size: 0.9em; font-weight: 600; letter-spacing: -0.01em;
+        padding-bottom: 0.75em; margin-bottom: 0.2em;
+        border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    /* Layout real de la tabla bajo 800px (grid-template-areas de /app/cobros). */
+    .cps-cb-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: "folio amount" "client client" "method date";
+        gap: 0.32em 0.6em; align-items: center;
+        padding: 0.78em 0;
+        border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    .cps-cb-row.is-new {
+        margin: 0.35em -0.7em 0; padding: 0.78em 0.7em;
+        border-radius: 0.8em; border-bottom-color: transparent;
+        background: rgba(16,185,129,0.07);
+    }
+    .cps-cb-f { grid-area: folio; font-size: 0.78em; font-weight: 600; }
+    .cps-cb-a { grid-area: amount; font-size: 0.84em; text-align: right; }
+    .cps-cb-c { grid-area: client; font-size: 0.76em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cps-cb-m { grid-area: method; display: inline-flex; align-items: center; gap: 0.6em; font-size: 0.68em; color: #5b6472; white-space: nowrap; }
+    .cps-cb-m i { width: 0.78em; height: 0.78em; border-radius: 50%; flex-shrink: 0; }
+    .cps-cb-d { grid-area: date; font-size: 0.68em; color: #5b6472; text-align: right; white-space: nowrap; }
+
+    .cps-nt {
+        position: absolute; left: 2.3em; right: 2.3em; top: 5.2em; z-index: 3;
+        display: flex; align-items: flex-start; gap: 0.8em;
+        padding: 0.85em 0.95em; border-radius: 1.15em;
+        background: rgba(255,255,255,0.84);
+        -webkit-backdrop-filter: blur(18px) saturate(1.5);
+        backdrop-filter: blur(18px) saturate(1.5);
+        box-shadow:
+            inset 0 0 0 1px rgba(255,255,255,0.6),
+            0 0.2em 0.5em rgba(3,10,30,0.12),
+            0 1.4em 3em -1em rgba(2,8,26,0.5);
+    }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        .cps-nt { background: rgba(255,255,255,0.96); }
+    }
+    .cps-nt-ico { width: 2.5em; height: 2.5em; border-radius: 0.7em; flex-shrink: 0; display: grid; place-items: center; background: rgba(16,185,129,0.14); color: #059669; }
+    .cps-nt-ico svg { width: 1.3em; height: 1.3em; }
+    .cps-nt-body { display: flex; flex-direction: column; gap: 0.12em; min-width: 0; flex: 1; }
+    .cps-nt-t { font-size: 0.84em; font-weight: 600; }
+    .cps-nt-s { font-size: 0.72em; color: #4b5563; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cps-nt-w { font-size: 0.64em; color: #7c8594; }
+
+    /* ═══════════ 4 · Tu dinero hoy ═══════════ */
+    .cps-bz {
+        position: absolute; left: 1.4em; right: 1.4em; top: 5.3em; bottom: -3em;
+        background: #fff; border-radius: 1.7em; overflow: hidden;
+        box-shadow:
+            0 0.1em 0.2em rgba(10,25,47,0.04),
+            0 2em 4.4em -2.2em rgba(10,25,47,0.3),
+            inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+    .cps-bz-cell { padding: 1.15em 1.35em; }
+    .cps-bz-cell + .cps-bz-cell { border-top: 1px solid rgba(10,25,47,0.08); }
+    .cps-bz-saldo { display: flex; flex-direction: column; gap: 0.35em; padding-top: 1.3em; }
+    .cps-bz-lab {
+        display: flex; align-items: center;
+        font-size: 0.58em; font-weight: 800; letter-spacing: 0.12em;
+        text-transform: uppercase; color: rgba(91,100,114,0.8);
+    }
+    .cps-bz-tag {
+        display: inline-flex; margin-left: 0.7em; padding: 0.2em 0.7em; border-radius: 999px;
+        background: #f3f4f6; color: #5b6472;
+        font-size: 0.95em; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .cps-bz-val { font-size: 2.55em; line-height: 1; letter-spacing: -0.055em; color: #0a192f; margin: 0.08em 0 0.04em; }
+    .cps-bz-sub { font-size: 0.7em; color: #5b6472; }
+    .cps-bz-sh {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8em;
+        padding-bottom: 0.6em; border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    .cps-bz-sh > div { display: flex; flex-direction: column; gap: 0.3em; min-width: 0; }
+    .cps-bz-st { display: flex; align-items: center; font-size: 0.88em; font-weight: 600; letter-spacing: -0.01em; }
+    .cps-bz-st .cps-bz-tag { font-size: 0.6em; }
+    .cps-bz-sp { font-size: 0.64em; line-height: 1.45; color: #5b6472; }
+    .cps-bz-man { font-size: 0.66em; font-weight: 650; color: #0a192f; white-space: nowrap; padding-top: 0.2em; }
+    .cps-bz-li { display: flex; align-items: center; gap: 0.8em; padding: 0.8em 0 0.05em; }
+    .cps-bz-li i { width: 0.75em; height: 0.75em; border-radius: 50%; flex-shrink: 0; }
+    .cps-bz-li span { display: flex; flex-direction: column; gap: 0.15em; flex: 1; min-width: 0; }
+    .cps-bz-li strong { font-size: 0.76em; }
+    .cps-bz-li small { font-size: 0.64em; color: #5b6472; }
+    .cps-bz-li b { font-size: 0.84em; }
+    .cps-bz-chips { display: grid; grid-template-columns: 1fr; gap: 0.38em; margin: 0.8em 0 0.75em; }
+    .cps-bz-chip {
+        display: flex; align-items: center; gap: 0.6em;
+        padding: 0.5em 0.85em; border-radius: 999px; background: #f3f4f6;
+        font-size: 0.68em; line-height: 1.2;
+    }
+    .cps-bz-chip i { width: 0.75em; height: 0.75em; border-radius: 50%; background: #10b981; flex-shrink: 0; }
+    .cps-bz-chip small { font-size: 1em; color: #5b6472; }
+    .cps-bz-line { display: block; font-size: 0.66em; color: #5b6472; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .cps-spin { animation: none; }
+    }
+
+    /* ── Tablet: 2 × 2 ── */
+    @media (max-width: 1024px) {
+        .cps-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.4rem 1.4rem; }
+        .cps-vis { border-radius: 30px; }
+    }
+
+    /* ── Móvil: carrusel con scroll-snap (patrón exacto de .steps-grid) ── */
+    @media (max-width: 860px) {
+        .cps { padding: 5rem 0 4.5rem; }
+        .cps-head { margin-bottom: 2.2rem; padding: 0 5%; }
+        .cps-head-row { grid-template-columns: 1fr; gap: 1.4rem; }
+        .cps-head-aside { padding-top: 0; }
+        .cps-grid {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-padding-left: 5%;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            padding: 1rem 5% 1.5rem;
+            gap: 1.2rem;
+        }
+        .cps-grid::-webkit-scrollbar { display: none; }
+        .cps-step {
+            flex: 0 0 88vw;
+            max-width: none;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+        }
+        .cps-vis { border-radius: 26px; }
+    }
+</style>

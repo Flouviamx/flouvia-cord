@@ -1,14 +1,51 @@
 ---
-import { getLangFromUrl, publicPath, useTranslations } from '../../i18n/utils';
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+import { t as tApp } from '../../i18n/app';
+import CordDynamicBg from '../CordDynamicBg.jsx';
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
-const l = (p: string) => publicPath(p, lang);
-// El diferenciador — cómo ve tu cliente la cotización (mockup del link público /q/).
-// Calca fiel del /q actual: fondo suave, card blanca con marca del vendedor,
-// total hero, líneas, strip de confianza, botón pill y compose de chat abierto.
-// El teléfono auto-reproduce un demo: el monto cuenta hacia arriba, un cursor
-// aparece, aprueba la cotización y se dibuja un checkmark de éxito. (Orquestado
-// desde index.astro con GSAP; reduced-motion → estado estático.)
+const en = lang === 'en';
+
+// La experiencia del cliente — el teléfono es una GRABACIÓN DE PANTALLA del link
+// público real (/q/[token] → QuoteCard.astro) en Safari de iPhone, con su layout
+// móvil (<600px) calcado: marca, folio, meta en 2 columnas, total protagonista,
+// partidas con etiquetas CANT./P. UNIT./IMPORTE, barra sticky, y el flujo real de
+// aprobación en 3 pasos: revisar → Firma digital → Cotización aprobada (crédito
+// Net 30 + sello de auditoría). Los labels salen de las MISMAS claves `q.*` que
+// usa la app (i18n/app.ts), así el mockup no deriva del producto.
+//
+// El HTML por defecto es el estado FINAL (aprobada). La historia la orquesta
+// index.astro (bloque "DEMO DEL TELÉFONO"); con reduced-motion queda estático.
+
+const Q = (k: string) => tApp(lang, k as any);
+const tf = (k: string, vars: Record<string, string>) => {
+    let s = Q(k);
+    for (const v in vars) s = s.split(`{${v}}`).join(vars[v]);
+    return s;
+};
+
+// Banda diagonal: shader oficial, paleta propia (ultramar → azul eléctrico →
+// violeta → cian). No clona Steps, Payments, Invoicing ni AdvancedFeatures.
+const PAL_CV = { base: '#3552E8', color1: '#101C66', color2: '#A277F8', color3: '#6BE3F8' };
+
+const ORG = 'Materiales del Valle';
+// money() con MXN: es-MX '$196,469.20' · en-US 'MX$196,469.20'.
+const CUR = en ? 'MX$' : '$';
+const TOTAL = `${CUR}196,469.20`;
+const UNIT = en ? 'pcs' : 'pza';
+const ITEMS = [
+    { d: en ? 'Grey cement 50kg' : 'Cemento gris 50kg', q: '120', p: '182.00', imp: '21,840.00' },
+    { d: en ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m', q: '340', p: '168.50', imp: '57,290.00' },
+    { d: en ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40', q: '2,400', p: '14.20', imp: '34,080.00' },
+    { d: en ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6', q: '180', p: '312.00', imp: '56,160.00' },
+];
+const VIGENCIA = en ? 'Sep 17, 2026' : '17 sept 2026';
+const VENCE = en ? 'Oct 12, 2026' : '12 oct 2026';
+const FIRMADO = en ? 'September 12, 2026 at 11:24 AM' : '12 de septiembre de 2026 a las 11:24 a.m.';
+const SIGNER = 'Raúl Mendoza';
+// sha256 hex, mismo formato que devuelve /api/q/[token] al firmar.
+const HASH = '4499a2a7140800335c3b00159512dcc17c8272481b5fea68ed7bbbe906228344';
+const WA_ICON = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://whatsapp.com&size=128';
 ---
 
 <section class="cv">
@@ -20,221 +57,729 @@ const l = (p: string) => publicPath(p, lang);
                 {t("cv.p")}
             </p>
             <ul class="cv-list">
-                <li class="reveal"><span class="cv-check">✓</span> {t("cv.l1")}</li>
-                <li class="reveal"><span class="cv-check">✓</span> {t("cv.l2")}</li>
-                <li class="reveal"><span class="cv-check">✓</span> {t("cv.l3")}</li>
-                <li class="reveal"><span class="cv-check">✓</span> {t("cv.l4")}</li>
+                {[t("cv.l1"), t("cv.l2"), t("cv.l3"), t("cv.l4")].map((li) => (
+                    <li class="reveal">
+                        <svg class="cv-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.14"/><polyline points="7.5 12.5 10.5 15.5 16.5 9"/></svg>
+                        {li}
+                    </li>
+                ))}
             </ul>
         </div>
 
-        <div class="cv-visual reveal-mockup">
-            <div class="phone" id="cvPhone">
-                <div class="phone-island"></div>
-                <div class="phone-screen">
-                    <div class="ps-card">
-                        <div class="ps-brand">
-                            <div class="ps-logo">MV</div>
-                            <div class="ps-brand-text">
-                                <div class="ps-company">Materiales del Valle</div>
-                                <div class="ps-rfc">RFC MVA-910618-QK3 · COT-0148</div>
+        <div class="cv-visual">
+            <!-- Banda diagonal con el shader oficial (un solo Canvas, montado en viewport) -->
+            <div class="cv-band" aria-hidden="true">
+                <div class="cv-band-shape">
+                    <CordDynamicBg client:only="react" colors={PAL_CV} grain={false} />
+                </div>
+            </div>
+
+            <div class="cv-stage reveal-mockup">
+                <div class="cvp" id="cvPhone" role="img" aria-label={en ? 'Client approving quote COT-0148 from their phone' : 'Cliente aprobando la cotización COT-0148 desde su celular'}>
+                    <span class="cvp-btn cvp-btn-act"></span>
+                    <span class="cvp-btn cvp-btn-up"></span>
+                    <span class="cvp-btn cvp-btn-down"></span>
+                    <span class="cvp-btn cvp-btn-pwr"></span>
+                    <div class="cvp-glass">
+                        <div class="cvp-screen" id="cvScreen" aria-hidden="true">
+
+                            <!-- Página pública /q/[token] (qp-main + QuoteCard) -->
+                            <div class="cvq-page" id="cvPage">
+                                <div class="cvq-card">
+                                    <header class="cvq-header">
+                                        <div class="cvq-brand">
+                                            <span class="cvq-logo">MV</span>
+                                            <span class="cvq-brand-tx">
+                                                <span class="cvq-company">{ORG}</span>
+                                                <span class="cvq-rfc">RFC MVA910618QK3</span>
+                                            </span>
+                                        </div>
+                                        <div class="cvq-folio">
+                                            <span class="cvq-folio-eb">{Q('q.folio_eyebrow')}</span>
+                                            <span class="cvq-folio-num">COT-0148</span>
+                                        </div>
+                                    </header>
+
+                                    <div class="cvq-rule"></div>
+
+                                    <div class="cvq-meta">
+                                        <div class="cvq-meta-col">
+                                            <span class="cvq-meta-l">{Q('q.meta_para')}</span>
+                                            <span class="cvq-meta-v">Distribuidora El Zarco</span>
+                                        </div>
+                                        <div class="cvq-meta-col">
+                                            <span class="cvq-meta-l">{Q('q.meta_vigencia')}</span>
+                                            <span class="cvq-meta-v">{VIGENCIA}</span>
+                                            <span class="cvq-vig">{tf('q.vig_en_dias', { n: '5', s: 's' })}</span>
+                                        </div>
+                                        <div class="cvq-meta-col">
+                                            <span class="cvq-meta-l">{Q('q.meta_terminos')}</span>
+                                            <span class="cvq-meta-v">Net 30</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="cvq-hero">
+                                        <span class="cvq-hero-eb">{Q('q.total_eyebrow')}</span>
+                                        <span class="editorial cvq-hero-amt" id="cvAmount" data-prefix={CUR}>{TOTAL}</span>
+                                        <span class="cvq-hero-note">MXN · {Q('q.total_note')}</span>
+                                    </div>
+
+                                    <div class="cvq-items">
+                                        {ITEMS.map((it) => (
+                                            <div class="cvq-line">
+                                                <span class="cvq-name">
+                                                    <span class="cvq-pick"></span>
+                                                    <span class="cvq-name-tx">{it.d}</span>
+                                                    <span class="cvq-chat">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.14"/></svg>
+                                                    </span>
+                                                </span>
+                                                <span class="cvq-qty" data-label={Q('q.th_cant')}><span>{it.q} {UNIT}</span></span>
+                                                <span class="cvq-price editorial" data-label={Q('q.th_unit')}><span>{CUR}{it.p}</span></span>
+                                                <span class="cvq-total editorial" data-label={Q('q.th_importe')}><span>{CUR}{it.imp}</span></span>
+                                            </div>
+                                        ))}
+                                        <div class="cvq-sums">
+                                            <div class="cvq-sum"><span>{Q('q.subtotal')}</span><span class="editorial">{CUR}169,370.00</span></div>
+                                            <div class="cvq-sum"><span>IVA 16%</span><span class="editorial">{CUR}27,099.20</span></div>
+                                            <div class="cvq-sum cvq-grand"><span>{Q('q.total')}</span><span class="editorial">{TOTAL}</span></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="cvq-trust">
+                                        <span class="cvq-live"><i></i>{Q('q.conectado_vivo')}</span>
+                                        <span class="cvq-secure">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                            {Q('q.cifrado_firma')}{Q('q.cfdi_suffix')}
+                                        </span>
+                                    </div>
+
+                                    <!-- Área de acción: los tres pasos reales de QuoteCard -->
+                                    <div class="cvq-actions" id="cvActions">
+                                        <div class="cvq-step cvq-off" id="cvStepReview">
+                                            <span class="cvq-cta" id="cvApprove">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                {Q('q.aprobar_cotizacion')}
+                                            </span>
+                                            <div class="cvq-sec-row">
+                                                <span class="cvq-ghost">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                    {Q('q.descargar_pdf')}
+                                                </span>
+                                                <span class="cvq-ghost cvq-reject">{Q('q.rechazar')}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="cvq-step cvq-off" id="cvStepSign">
+                                            <div class="cvq-step-h">
+                                                <span class="cvq-back">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                                                </span>
+                                                <span class="cvq-step-t">{Q('q.firma_digital')}</span>
+                                            </div>
+                                            <div class="cvq-pill">
+                                                {Q('q.aprobando')} <strong>COT-0148</strong> {Q('q.por')} <strong class="cvq-pill-amt">{TOTAL} MXN</strong>
+                                            </div>
+                                            <div class="cvq-field">
+                                                <span class="cvq-label">{Q('q.nombre_firmante')}</span>
+                                                <span class="cvq-input" id="cvSignField">
+                                                    <span class="cvq-in-val" id="cvSignName" data-ph={Q('q.nombre_firmante_placeholder')} data-name={SIGNER}>{SIGNER}</span><i class="cvq-caret"></i>
+                                                </span>
+                                            </div>
+                                            <div class="cvq-field">
+                                                <span class="cvq-label">{Q('q.correo_opcional')}</span>
+                                                <span class="cvq-input"><span class="cvq-in-val" data-ph={Q('q.correo_placeholder')}></span></span>
+                                            </div>
+                                            <div class="cvq-check-row">
+                                                <span class="cvq-box is-on" id="cvTerms"></span>
+                                                <span class="cvq-check-tx">{Q('q.acepto_terminos')}</span>
+                                            </div>
+                                            <span class="cvq-cta" id="cvConfirm">
+                                                <span id="cvConfirmLabel" data-label={Q('q.confirmar_firmar')} data-busy={en ? 'Signing…' : 'Firmando…'}>{Q('q.confirmar_firmar')}</span>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                            </span>
+                                            <div class="cvq-legal">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.14"/></svg>
+                                                <span>{Q('q.legal_firma')}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="cvq-step" id="cvStepApproved">
+                                            <div class="cvq-ok">
+                                                <svg class="cvq-ring" viewBox="0 0 52 52">
+                                                    <circle id="cvCheckCircle" cx="26" cy="26" r="23" fill="none" stroke="#0a192f" stroke-width="2"/>
+                                                    <polyline id="cvCheck" points="14,27 22,35 38,18" fill="none" stroke="#0a192f" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                                <span class="cvq-ok-t">{Q('q.cotizacion_aprobada')}</span>
+                                                <span class="cvq-ok-s">{tf('q.recibio_confirmacion', { org: ORG })}</span>
+                                                <div class="cvq-ok-acts">
+                                                    <div class="cvq-credit">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.12"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
+                                                        <span class="cvq-credit-tx">
+                                                            <strong>{tf('q.pedido_confirmado_credito', { terminos: 'Net 30' })}</strong>
+                                                            <span>{tf('q.pago_vence', { total: `${TOTAL} MXN`, fecha: VENCE })}{Q('q.pago_vence_online')}</span>
+                                                        </span>
+                                                    </div>
+                                                    <span class="cvq-ghost cvq-receipt">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                        {Q('q.descargar_comprobante')}
+                                                    </span>
+                                                </div>
+                                                <div class="cvq-stamp">
+                                                    <div class="cvq-stamp-h">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                                                        <span>{Q('q.documento_verificado')}{Q('q.cfdi_suffix')}</span>
+                                                    </div>
+                                                    <div class="cvq-stamp-r"><strong>{Q('q.firmante')}</strong> {SIGNER}</div>
+                                                    <div class="cvq-stamp-r"><strong>{Q('q.fecha')}</strong> {FIRMADO}</div>
+                                                    <div class="cvq-stamp-r"><strong>{Q('q.sello')}</strong> <span class="cvq-hash">{HASH}</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="cvq-contact">
+                                        <span class="cvq-contact-l">{tf('q.dudas_contacta', { org: ORG })}</span>
+                                        <div class="cvq-contact-links">
+                                            <span class="cvq-contact-a"><img src={WA_ICON} alt="" width="32" height="32" loading="lazy" />{Q('q.whatsapp')}</span>
+                                            <span class="cvq-contact-a">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="m22 7-10 6L2 7"/></svg>
+                                                {Q('q.correo')}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="cvq-badge">
+                                        <span class="cvq-badge-trust">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                                            {Q('q.firma_validez_legal')}{Q('q.cfdi_suffix')}
+                                        </span>
+                                        <span class="cvq-badge-cta">{Q('q.verificado_por')} <img src="/imgs/logo-cord-navy.png" alt="Cord" /> {Q('q.crea_las_tuyas')}</span>
+                                    </div>
+                                </div>
+                                <p class="cvq-aviso">{Q('q.aviso_actividad')}</p>
                             </div>
-                        </div>
 
-                        <div class="ps-meta">
-                            <div class="ps-meta-col">
-                                <span class="ps-meta-label">{t("cv.mk.para")}</span>
-                                <span class="ps-meta-val">Distribuidora El Zarco</span>
+                            <!-- Barra de acción flotante real (.q-sticky): visible mientras el CTA no está en pantalla -->
+                            <div class="cvq-sticky cvq-sticky-off" id="cvSticky">
+                                <div class="cvq-sticky-in">
+                                    <span class="cvq-sticky-info">
+                                        <span class="cvq-sticky-l">{Q('q.total_a_pagar').toUpperCase()}</span>
+                                        <span class="editorial cvq-sticky-v" id="cvStickyTotal">{TOTAL}</span>
+                                    </span>
+                                    <span class="cvq-sticky-cta">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                        {Q('q.aprobar')}
+                                    </span>
+                                </div>
                             </div>
-                            <span class="ps-vig">{t("cv.mk.vig")}</span>
+
+                            <!-- Chrome de iOS: barra de estado + Safari compacto + indicador de inicio -->
+                            <div class="cvp-status">
+                                <span class="cvp-time">9:41</span>
+                                <span class="cvp-sys">
+                                    <svg class="cvp-sig" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+                                    <svg class="cvp-wifi" viewBox="0 0 16 12"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.4 10.4 0 0 0 8 .4 10.4 10.4 0 0 0 .8 3.3L2 4.6a8.6 8.6 0 0 1 6-2.4Z"/><path d="M8 5.8c1.3 0 2.5.5 3.4 1.3l1.2-1.3A6.9 6.9 0 0 0 8 4a6.9 6.9 0 0 0-4.6 1.8l1.2 1.3A5 5 0 0 1 8 5.8Z"/><path d="M8 9.3c.5 0 .9.2 1.2.5L8 11.6 6.8 9.8c.3-.3.7-.5 1.2-.5Z"/></svg>
+                                    <span class="cvp-bat"><i></i></span>
+                                </span>
+                            </div>
+                            <div class="cvp-island"></div>
+                            <div class="cvp-safari">
+                                <span class="cvp-sf-btn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                                </span>
+                                <span class="cvp-sf-url">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor" fill-opacity="0.16"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+                                    cordhq.app
+                                </span>
+                                <span class="cvp-sf-btn">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18.5" cy="12" r="1.7"/></svg>
+                                </span>
+                            </div>
+                            <div class="cvp-home"></div>
+
+                            <!-- Indicador de toque (grabación de pantalla) -->
+                            <span class="cvp-tap" id="cvCursor"><i class="cvp-tap-ring" id="cvTapRing"></i></span>
                         </div>
-
-                        <div class="ps-amount">
-                            <span class="ps-amount-label">TOTAL</span>
-                            <span class="editorial ps-amount-val" id="cvAmount">$196,469.20</span>
-                            <span class="ps-amount-cur">{t("cv.mk.cur")}</span>
-                        </div>
-
-                        <div class="ps-items">
-                            <div class="ps-item"><span class="ps-item-name">{lang === 'en' ? 'Grey cement 50kg' : 'Cemento gris 50kg'}<span class="ps-item-qty">×120 · $182.00</span></span><span class="editorial">$21,840</span></div>
-                            <div class="ps-item"><span class="ps-item-name">{lang === 'en' ? 'Rebar 3/8"' : 'Varilla 3/8"'}<span class="ps-item-qty">×340 · $168.50</span></span><span class="editorial">$57,290</span></div>
-                            <div class="ps-item"><span class="ps-item-name">{lang === 'en' ? 'Hollow block' : 'Block hueco'}<span class="ps-item-qty">×2,400 · $14.20</span></span><span class="editorial">$34,080</span></div>
-                            <div class="ps-item ps-more">{t("cv.mk.more")}</div>
-                        </div>
-
-                        <div class="ps-trust">
-                            <span class="ps-live-dot"></span>
-                            <span>{t("cv.mk.live")}</span>
-                        </div>
-
-                        <div class="ps-actions">
-                            <button class="ps-approve" id="cvApprove">
-                                <span>{t("cv.mk.app")}</span>
-                                <span class="ps-ring" aria-hidden="true"></span>
-                            </button>
-                            <button class="ps-secondary">{t("cv.mk.pdf")}</button>
-                        </div>
-                    </div>
-
-                    <div class="ps-footer">{t("cv.mk.foot1")}<b>cord</b></div>
-
-                    <!-- Cursor del demo (animado) -->
-                    <svg class="ps-cursor" id="cvCursor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M5 2.5l14.5 7.8-6.2 1.6-2 6.1z" fill="#0a192f" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/>
-                    </svg>
-
-                    <!-- Overlay de éxito (animado) -->
-                    <div class="ps-success" id="cvSuccess" aria-hidden="true">
-                        <div class="ps-success-circle">
-                            <svg class="ps-check" viewBox="0 0 24 24"><path id="cvCheck" d="M4 12.5l5 5L20 6.5"/></svg>
-                        </div>
-                        <div class="ps-success-text">{t("cv.mk.ok")}</div>
-                        <div class="ps-success-sub">{t("cv.mk.oksub")}</div>
                     </div>
                 </div>
             </div>
-            <div class="cv-glow" aria-hidden="true"></div>
         </div>
     </div>
 </section>
 
 <style>
+    /* El canvas de la sección es el MISMO de todo el index (`--color-bg-soft`).
+       La banda es un elemento decorativo encima que nunca toca los bordes
+       superior/inferior (sin costura con Invoicing ni con Pricing). */
     .cv {
-        padding: 7rem 5%;
+        position: relative;
+        padding: 7.5rem 5% 8rem;
         background: var(--color-bg-soft);
-        overflow-x: clip;
-    }
-    @media (max-width: 900px) {
-        .cv { padding: 4rem 5%; }
+        overflow: clip;
     }
     .cv-inner {
+        position: relative;
         max-width: 1120px;
         margin: 0 auto;
         display: grid;
-        grid-template-columns: 1fr 0.85fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 0.86fr);
         gap: 5rem;
         align-items: center;
     }
 
+    .cv-text { position: relative; z-index: 2; }
     .cv-eyebrow { font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: #888; margin: 0 0 1.2rem; }
     .cv-title { font-size: clamp(2.1rem, 3.4vw, 3.6rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.035em; color: #0a192f; margin: 0 0 1.4rem; }
     .cv-p { font-size: 1.08rem; line-height: 1.65; color: var(--color-text-muted); margin: 0 0 2rem; max-width: 460px; }
     .cv-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem; }
     .cv-list li { display: flex; align-items: center; gap: 12px; font-size: 1rem; color: var(--color-text); font-weight: 500; }
-    .cv-check { width: 24px; height: 24px; flex-shrink: 0; background: rgba(16,185,129,0.12); color: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; }
+    .cv-check { width: 24px; height: 24px; flex-shrink: 0; color: #059669; }
 
-    /* ── Phone mockup (calca del /q "Quiet Luxury") ── */
-    .cv-visual { position: relative; display: flex; justify-content: center; perspective: 1300px; }
-    .cv-glow { position: absolute; inset: 10% 0; background: radial-gradient(ellipse at center, rgba(10,25,47,0.12) 0%, transparent 70%); z-index: 0; filter: blur(20px); }
-    .phone {
-        position: relative; z-index: 1; width: 332px;
-        background: #0a192f; border-radius: 48px; padding: 10px;
-        box-shadow:
-            0 2px 6px rgba(10,25,47,0.2),
-            0 20px 40px 0 rgba(10,25,47,0.3),
-            inset 0 0 0 2px rgba(255,255,255,0.07);
-        transform-style: preserve-3d;
-        will-change: transform;
-    }
-    .phone-island { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 86px; height: 22px; background: #0a192f; border-radius: 100px; z-index: 3; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04); }
-    .phone-screen {
+    /* ── Columna visual ── */
+    .cv-visual {
         position: relative;
-        background: #ededf0; border-radius: 37px; padding: 3.3rem 0.9rem 1.1rem;
-        display: flex; flex-direction: column; gap: 0.85rem;
-        overflow: hidden;
+        display: flex; justify-content: center;
+        container-type: inline-size;
     }
 
-    /* La card blanca (el corazón del /q) — más aire, estilo Apple */
-    .ps-card {
-        background: #fff; border-radius: 26px; padding: 1.4rem 1.25rem 1.3rem;
-        display: flex; flex-direction: column; gap: 1.15rem;
-        border: 1px solid rgba(10,25,47,0.04);
-        box-shadow: 0 2px 6px rgba(10,25,47,0.05), 0 12px 24px 0 rgba(10,25,47,0.08);
+    /* ── Banda diagonal ──
+       Anclada al centro del teléfono: arranca en el hueco entre columnas (con
+       la máscara en 0 antes de llegar al texto), cruza por detrás de la mitad
+       inferior del teléfono y sale por el borde derecho de la pantalla. */
+    .cv-band {
+        --band-h: 21rem;
+        --band-dy: 9.5rem;
+        position: absolute; z-index: 0;
+        top: calc(50% + var(--band-dy) - var(--band-h) / 2);
+        left: calc(50% - 27rem);
+        /* hasta el borde derecho del viewport: el padding de la sección es 5%
+           y el contenido se centra en 1120px. */
+        right: calc(-1 * max(5vw, 50vw - 560px) - 2rem);
+        height: var(--band-h);
+        transform: skewY(-9deg);
+        transform-origin: 27rem 50%;
+        background: #3552E8;
+        pointer-events: none;
+        -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 5rem, rgba(0,0,0,0.1) 8rem, rgba(0,0,0,0.42) 11rem, rgba(0,0,0,0.82) 14rem, #000 17rem);
+        mask-image: linear-gradient(90deg, transparent 0, transparent 5rem, rgba(0,0,0,0.1) 8rem, rgba(0,0,0,0.42) 11rem, rgba(0,0,0,0.82) 14rem, #000 17rem);
     }
+    .cv-band-shape { position: absolute; inset: 0; overflow: hidden; }
 
-    .ps-brand { display: flex; align-items: center; gap: 11px; }
-    .ps-logo { width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; background: var(--color-blue-deep); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.82rem; letter-spacing: -0.5px; }
-    .ps-brand-text { min-width: 0; flex: 1; }
-    .ps-company { font-size: 0.9rem; font-weight: 700; color: #0a192f; letter-spacing: -0.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ps-rfc { font-size: 0.62rem; color: #9aa3b2; margin-top: 2px; }
-    .ps-folio-chip {
-        flex-shrink: 0; font-size: 0.62rem; font-weight: 700; color: #5b6472;
-        background: #f2f3f6; border: 1px solid rgba(10,25,47,0.05);
-        padding: 4px 9px; border-radius: 99px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
-    }
+    .cv-stage { position: relative; z-index: 1; }
 
-    .ps-meta {
-        display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    }
-    .ps-meta-col { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .ps-meta-label { font-size: 0.52rem; font-weight: 800; letter-spacing: 1.4px; color: #a3adbd; }
-    .ps-meta-val { font-size: 0.78rem; font-weight: 600; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ps-vig {
-        flex-shrink: 0; font-size: 0.6rem; font-weight: 700; color: #b45309;
-        background: rgba(245,158,11,0.12); padding: 5px 10px; border-radius: 99px;
-    }
-
-    /* TOTAL — el héroe de la tarjeta */
-    .ps-amount { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 1.35rem 0.5rem; border-radius: 20px; background: #f5f5f7; text-align: center; }
-    .ps-amount-label { font-size: 0.56rem; font-weight: 800; letter-spacing: 2.4px; color: #aab; }
-    .ps-amount-val { font-size: 2.35rem; color: #0a192f; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
-    .ps-amount-cur { font-size: 0.64rem; color: #889; font-weight: 500; margin-top: 1px; }
-
-    .ps-items { display: flex; flex-direction: column; }
-    .ps-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.78rem; color: #445; padding: 0.62rem 0; border-bottom: 1px solid rgba(10,25,47,0.05); }
-    .ps-item:first-child { padding-top: 0; }
-    .ps-item:last-child { border-bottom: none; }
-    .ps-item .editorial { color: #0a192f; font-weight: 600; }
-    .ps-item-name { display: flex; flex-direction: column; gap: 2px; font-weight: 600; color: #0a192f; min-width: 0; }
-    .ps-item-qty { font-size: 0.62rem; font-weight: 500; color: #9aa3b2; }
-    .ps-more { color: #99a; font-size: 0.7rem; padding-top: 0.5rem; }
-
-    .ps-trust {
-        display: flex; align-items: center; justify-content: center; gap: 6px;
-        font-size: 0.62rem; font-weight: 600; color: #7b8494;
-    }
-    .ps-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: ps-pulse 2s infinite; }
-    @keyframes ps-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.35); }
-        50% { box-shadow: 0 0 0 4px rgba(16,185,129,0); }
-    }
-
-    .ps-actions { display: flex; flex-direction: column; gap: 0.6rem; }
-    .ps-approve {
-        position: relative; overflow: hidden;
-        background: var(--color-blue-deep); color: #fff; border: none; cursor: pointer;
-        font-size: 0.92rem; font-weight: 600; padding: 15px; border-radius: 999px;
-        font-family: var(--font-sans); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 14px 30px -12px rgba(10,25,47,0.55);
-        will-change: transform; letter-spacing: -0.01em;
-    }
-    .ps-ring { position: absolute; inset: 0; border-radius: 999px; box-shadow: 0 0 0 2px rgba(16,185,129,0.7) inset, 0 0 22px 2px rgba(16,185,129,0.35); opacity: 0; pointer-events: none; }
-    .ps-secondary { background: none; border: none; color: #7b8494; cursor: pointer; font-size: 0.82rem; font-weight: 600; padding: 2px; border-radius: 999px; font-family: var(--font-sans); }
-
-    .ps-footer { font-size: 0.64rem; color: #a3a9b4; text-align: center; padding: 0.1rem 0 0.2rem; }
-    .ps-footer b { color: #667; }
-
-    /* Cursor del demo */
-    .ps-cursor {
-        position: absolute; top: 0; left: 0; width: 24px; height: 24px;
-        z-index: 8; pointer-events: none; opacity: 0;
-        filter: drop-shadow(0 4px 5px rgba(10,25,47,0.3));
+    /* ═════════════ iPhone ═════════════
+       --cv-u escala TODO el teléfono (em). La pantalla usa su propia base:
+       1em = 1rem real del /q a 390px de viewport, así el CSS se calca 1:1. */
+    .cvp {
+        --cv-u: min(14.6px, calc(100cqw / 22.6));
+        position: relative;
+        font-size: var(--cv-u);
+        width: 21.5em; height: 44em;
+        border-radius: 3.55em;
+        background: linear-gradient(150deg, #454c5a 0%, #1a1f29 18%, #0d1017 50%, #1a1f29 82%, #3b4250 100%);
+        box-shadow:
+            0 0.1em 0.25em rgba(10,25,47,0.22),
+            0 1.6em 3em -1em rgba(10,25,47,0.4),
+            0 4.5em 7em -2.5em rgba(10,25,47,0.38);
         will-change: transform;
     }
-
-    /* Overlay de éxito */
-    .ps-success {
-        position: absolute; inset: 0; border-radius: 37px;
-        background: #ededf0;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.7rem;
-        z-index: 7; opacity: 0; pointer-events: none;
+    .cvp::before {
+        content: ''; position: absolute; inset: 0.16em; border-radius: 3.4em;
+        background: #05070b;
+        box-shadow: inset 0 0 0 0.05em rgba(255,255,255,0.06);
     }
-    .ps-success-circle { width: 86px; height: 86px; border-radius: 50%; background: rgba(16,185,129,0.12); display: flex; align-items: center; justify-content: center; }
-    .ps-check { width: 46px; height: 46px; }
-    .ps-check path { fill: none; stroke: #059669; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-    .ps-success-text { font-weight: 700; color: #0a192f; font-size: 1.12rem; }
-    .ps-success-sub { font-size: 0.78rem; color: #667; margin-top: -0.3rem; }
+    .cvp-btn { position: absolute; width: 0.2em; border-radius: 0.2em; background: linear-gradient(90deg, #2a303b, #151920); }
+    .cvp-btn-act { left: -0.14em; top: 7.6em; height: 2.1em; }
+    .cvp-btn-up { left: -0.14em; top: 11.4em; height: 3.5em; }
+    .cvp-btn-down { left: -0.14em; top: 15.6em; height: 3.5em; }
+    .cvp-btn-pwr { right: -0.14em; top: 12.2em; height: 5.6em; }
+    .cvp-glass {
+        position: absolute; inset: 0.62em;
+        border-radius: 2.95em;
+        overflow: hidden;
+        background: #f3f2ef;
+        isolation: isolate;
+    }
+    .cvp-screen {
+        position: absolute; inset: 0;
+        font-size: 0.8315em; /* ancho de pantalla = 24.375em = 390px reales */
+        font-family: var(--font-sans);
+        color: #111;
+        line-height: 1.3;
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+    }
+    .cvp-screen strong { font-weight: 600; }
 
+    /* Barra de estado */
+    .cvp-status {
+        position: absolute; z-index: 6; top: 0; left: 0; right: 0; height: 3.55em;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.3em 1.95em 0 2.35em;
+        background: linear-gradient(180deg, #f3f2ef 78%, rgba(243,242,239,0));
+    }
+    .cvp-time { font-size: 1.02em; font-weight: 600; letter-spacing: -0.01em; color: #0a0a0a; font-variant-numeric: tabular-nums; }
+    .cvp-sys { display: inline-flex; align-items: center; gap: 0.36em; color: #0a0a0a; }
+    .cvp-sig { width: 1.1em; height: 0.74em; fill: currentColor; }
+    .cvp-wifi { width: 1em; height: 0.76em; fill: currentColor; }
+    .cvp-bat {
+        position: relative; width: 1.6em; height: 0.78em; border-radius: 0.24em;
+        border: 1px solid rgba(10,10,10,0.38); padding: 0.1em;
+        display: inline-flex;
+    }
+    .cvp-bat::after { content: ''; position: absolute; right: -0.18em; top: 50%; width: 0.1em; height: 0.3em; margin-top: -0.15em; border-radius: 0 0.1em 0.1em 0; background: rgba(10,10,10,0.4); }
+    .cvp-bat i { display: block; width: 82%; height: 100%; border-radius: 0.12em; background: #0a0a0a; }
+    .cvp-island {
+        position: absolute; z-index: 7; top: 0.62em; left: 50%;
+        width: 7.5em; height: 2.2em; margin-left: -3.75em;
+        border-radius: 999px; background: #050608;
+    }
+
+    /* Safari compacto (iOS 26) */
+    .cvp-safari {
+        position: absolute; z-index: 6; left: 0.85em; right: 0.85em; bottom: 1.75em;
+        display: flex; align-items: center; gap: 0.55em;
+    }
+    .cvp-sf-btn, .cvp-sf-url {
+        height: 2.85em; border-radius: 999px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.74);
+        -webkit-backdrop-filter: blur(20px) saturate(1.8);
+        backdrop-filter: blur(20px) saturate(1.8);
+        box-shadow:
+            inset 0 0 0 1px rgba(255,255,255,0.7),
+            0 0.1em 0.25em rgba(10,25,47,0.08),
+            0 0.5em 1.4em -0.3em rgba(10,25,47,0.16);
+        color: #111;
+    }
+    .cvp-sf-btn { width: 2.85em; flex-shrink: 0; }
+    .cvp-sf-btn svg { width: 1.2em; height: 1.2em; }
+    .cvp-sf-url { flex: 1; gap: 0.35em; font-size: 1em; font-weight: 500; letter-spacing: -0.01em; }
+    .cvp-sf-url svg { width: 0.85em; height: 0.85em; color: #6b7280; }
+    .cvp-home {
+        position: absolute; z-index: 6; left: 50%; bottom: 0.5em;
+        width: 8.6em; height: 0.3em; margin-left: -4.3em;
+        border-radius: 999px; background: #111;
+    }
+
+    /* Indicador de toque */
+    .cvp-tap {
+        position: absolute; z-index: 9; top: 0; left: 0;
+        width: 2.7em; height: 2.7em; margin: -1.35em 0 0 -1.35em;
+        border-radius: 50%;
+        background: rgba(10,25,47,0.2);
+        box-shadow: inset 0 0 0 0.14em rgba(255,255,255,0.9), 0 0.35em 0.9em rgba(10,25,47,0.28);
+        opacity: 0; pointer-events: none;
+        will-change: transform, opacity;
+    }
+    .cvp-tap-ring {
+        position: absolute; inset: 0; border-radius: 50%;
+        box-shadow: 0 0 0 0.12em rgba(10,25,47,0.35);
+        opacity: 0;
+    }
+
+    /* ═════════════ /q/[token] — layout móvil real ═════════════ */
+    .cvq-page {
+        position: absolute; top: 0; left: 0; right: 0;
+        padding: 3.7em 0.75em 7.2em;
+        background: #f3f2ef;
+        will-change: transform;
+    }
+    .cvq-card {
+        background: #fff;
+        border-radius: 1.375em;
+        padding: 1.5em 1em;
+        display: flex; flex-direction: column; gap: 1.4em;
+        box-shadow:
+            0 0 0 1px rgba(10,25,47,0.06),
+            0 0.25em 0.375em rgba(10,25,47,0.03),
+            0 1.25em 3.75em -1.25em rgba(10,25,47,0.12);
+    }
+
+    .cvq-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1em; }
+    .cvq-brand { display: flex; align-items: center; gap: 0.8125em; min-width: 0; }
+    .cvq-logo {
+        width: 2.875em; height: 2.875em; border-radius: 0.8125em; flex-shrink: 0;
+        display: grid; place-items: center;
+        background: #0a192f; color: #fff; font-size: 1em; font-weight: 800;
+    }
+    .cvq-brand-tx { display: flex; flex-direction: column; gap: 0.125em; min-width: 0; }
+    .cvq-company { font-size: 1em; font-weight: 700; letter-spacing: -0.019em; color: #111; white-space: nowrap; }
+    .cvq-rfc { font-size: 0.68em; font-weight: 500; color: #9ca3af; }
+    .cvq-folio {
+        width: 100%; display: flex; align-items: baseline; justify-content: space-between;
+        padding-top: 0.75em; border-top: 1px solid rgba(10,25,47,0.06);
+    }
+    .cvq-folio-eb { font-size: 0.5em; font-weight: 800; letter-spacing: 0.25em; color: #d1d5db; }
+    .cvq-folio-num { font-size: 0.92em; font-weight: 800; letter-spacing: -0.02em; color: #111; }
+
+    .cvq-rule { height: 1px; margin: -0.5em 0; background: linear-gradient(to right, transparent, rgba(10,25,47,0.07) 15%, rgba(10,25,47,0.07) 85%, transparent); }
+
+    .cvq-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1em; }
+    .cvq-meta-col { display: flex; flex-direction: column; gap: 0.25em; min-width: 0; }
+    .cvq-meta-l { font-size: 0.49em; font-weight: 800; letter-spacing: 0.255em; color: #c9ced6; }
+    .cvq-meta-v { font-size: 0.875em; font-weight: 600; color: #111; }
+    .cvq-vig {
+        align-self: flex-start; margin-top: 0.42em;
+        font-size: 0.6em; font-weight: 700; color: #b45309;
+        background: rgba(245,158,11,0.13); padding: 0.21em 0.83em; border-radius: 100px;
+    }
+
+    .cvq-hero {
+        display: flex; flex-direction: column; align-items: center; gap: 0.375em; text-align: center;
+        background: #fafafa; border: 1px solid rgba(10,25,47,0.055);
+        border-radius: 1.25em; padding: 1.6em 0.75em;
+    }
+    .cvq-hero-eb { font-size: 0.5em; font-weight: 800; letter-spacing: 0.3125em; color: #c9ced6; }
+    .cvq-hero-amt { font-size: 2.4em; line-height: 1; letter-spacing: -0.04em; color: #0a192f; font-variant-numeric: tabular-nums; }
+    .cvq-hero-note { font-size: 0.7em; font-weight: 500; color: #9ca3af; }
+
+    .cvq-items { display: flex; flex-direction: column; }
+    .cvq-line {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-areas: "name name name" "qty price total";
+        gap: 0.7em 0.5em; align-items: end;
+        padding: 0.9em 0;
+        border-bottom: 1px solid rgba(10,25,47,0.045);
+    }
+    .cvq-name { grid-area: name; display: flex; align-items: center; gap: 0.5em; font-size: 0.875em; font-weight: 600; color: #111; min-width: 0; }
+    .cvq-name-tx { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cvq-pick {
+        position: relative; flex-shrink: 0;
+        width: 1.29em; height: 1.29em; border-radius: 0.36em;
+        background: #0a192f;
+    }
+    .cvq-pick::after {
+        content: ''; position: absolute; left: 50%; top: 45%;
+        width: 0.34em; height: 0.62em; margin: -0.36em 0 0 -0.17em;
+        border: solid #fff; border-width: 0 0.13em 0.13em 0; transform: rotate(45deg);
+    }
+    .cvq-chat {
+        flex-shrink: 0; display: inline-flex; align-items: center;
+        padding: 0.2em 0.42em; border-radius: 0.42em;
+        background: rgba(10,25,47,0.04); color: #6b7280;
+    }
+    .cvq-chat svg { width: 0.86em; height: 0.86em; }
+    .cvq-qty, .cvq-price, .cvq-total { display: flex; flex-direction: column; gap: 0.19em; min-width: 0; white-space: nowrap; }
+    .cvq-qty::before, .cvq-price::before, .cvq-total::before {
+        content: attr(data-label);
+        font-family: var(--font-sans); font-size: 0.5em; font-weight: 800; line-height: 1;
+        letter-spacing: 0.08em; text-transform: uppercase; color: #c0c5cd;
+    }
+    .cvq-qty { grid-area: qty; text-align: left; }
+    .cvq-qty span { font-size: 0.78em; color: #9ca3af; }
+    .cvq-price { grid-area: price; text-align: center; }
+    .cvq-price span { font-size: 0.83em; color: #9ca3af; }
+    .cvq-total { grid-area: total; text-align: right; }
+    .cvq-total span { font-size: 0.875em; color: #111; }
+
+    .cvq-sums { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5em; padding-top: 1.1em; }
+    .cvq-sum { display: flex; justify-content: space-between; align-items: baseline; gap: 3em; min-width: 12.5em; }
+    .cvq-sum span:first-child { font-size: 0.82em; color: #9ca3af; }
+    .cvq-sum .editorial { font-size: 0.87em; color: #6b7280; }
+    .cvq-grand { border-top: 1px solid rgba(10,25,47,0.07); padding-top: 0.6em; margin-top: 0.2em; }
+    .cvq-grand span:first-child { color: #111; font-weight: 700; }
+    .cvq-grand .editorial { font-size: 1.2em; color: #111; }
+
+    .cvq-trust { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.55em 1em; }
+    .cvq-live { display: inline-flex; align-items: center; gap: 0.68em; font-size: 0.74em; font-weight: 600; color: #6b7280; }
+    .cvq-live i { width: 0.68em; height: 0.68em; border-radius: 50%; background: #10b981; flex-shrink: 0; animation: cvqPulse 1.9s infinite; }
+    @keyframes cvqPulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 0.5em rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .cvq-secure { display: inline-flex; align-items: center; gap: 0.53em; font-size: 0.7em; font-weight: 500; color: #9ca3af; }
+    .cvq-secure svg { width: 1.16em; height: 1.16em; flex-shrink: 0; }
+
+    /* Área de acción */
+    .cvq-actions { display: flex; flex-direction: column; }
+    .cvq-step { display: flex; flex-direction: column; gap: 0.9em; }
+    .cvq-off { display: none !important; }
+
+    .cvq-cta {
+        display: flex; align-items: center; justify-content: center; gap: 0.5em;
+        font-size: 0.97em; font-weight: 600; color: #fff;
+        background: #0a192f; border-radius: 0.9em;
+        padding: 1.03em 1.42em;
+        box-shadow: 0 0.64em 1.8em -0.64em rgba(10,25,47,0.42);
+        transition: opacity 0.2s, box-shadow 0.2s;
+        will-change: transform;
+    }
+    .cvq-cta svg { width: 1.16em; height: 1.16em; flex-shrink: 0; }
+    .cvq-cta.is-disabled { opacity: 0.45; box-shadow: none; }
+    .cvq-sec-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.7em; }
+    .cvq-ghost {
+        display: flex; align-items: center; justify-content: center; gap: 0.44em;
+        min-height: 3.2em; padding: 0 1.17em;
+        font-size: 0.855em; font-weight: 600; color: #6b7280;
+        border: 1px solid rgba(10,25,47,0.1); border-radius: 0.88em;
+        white-space: nowrap;
+    }
+    .cvq-ghost svg { width: 1.02em; height: 1.02em; flex-shrink: 0; }
+    .cvq-reject { padding: 0 1.3em; border-color: transparent; color: #9ca3af; }
+
+    /* Paso: firma digital */
+    .cvq-step-h { display: flex; align-items: center; gap: 0.625em; margin-bottom: 0.2em; }
+    .cvq-back {
+        width: 2.75em; height: 2.75em; border-radius: 50%; flex-shrink: 0;
+        display: grid; place-items: center;
+        border: 1px solid rgba(10,25,47,0.1); color: #9ca3af;
+    }
+    .cvq-back svg { width: 1em; height: 1em; }
+    .cvq-step-t { font-size: 0.92em; font-weight: 700; color: #111; }
+    .cvq-pill {
+        background: #fafafa; border: 1px solid rgba(10,25,47,0.055);
+        border-radius: 0.75em; padding: 0.85em 1em;
+        font-size: 0.84em; line-height: 1.5; color: #6b7280;
+    }
+    .cvq-pill strong { color: #111; font-weight: 700; }
+    .cvq-pill .cvq-pill-amt { color: #0a192f; }
+    .cvq-field { display: flex; flex-direction: column; gap: 0.3125em; }
+    .cvq-label { font-size: 0.72em; font-weight: 600; color: #6b7280; }
+    .cvq-input {
+        display: flex; align-items: center;
+        min-height: 2.875em; padding: 0 0.8125em;
+        background: #fff; border: 1.5px solid rgba(10,25,47,0.12); border-radius: 0.6875em;
+        font-size: 1em; color: #111;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .cvq-input.is-focus { border-color: rgba(10,25,47,0.35); box-shadow: 0 0 0 0.19em rgba(10,25,47,0.05); }
+    .cvq-in-val { white-space: nowrap; }
+    .cvq-in-val:empty::before { content: attr(data-ph); color: #a3a9b3; }
+    .cvq-caret { display: none; width: 1.5px; height: 1.15em; margin-left: 1px; background: #0a192f; }
+    .cvq-input.is-focus .cvq-caret { display: inline-block; animation: cvqBlink 1s steps(1) infinite; }
+    .cvq-input.is-focus .cvq-in-val:empty::before { margin-right: -1px; }
+    @keyframes cvqBlink { 50% { opacity: 0; } }
+    .cvq-check-row { display: flex; align-items: flex-start; gap: 0.625em; min-height: 2.75em; }
+    .cvq-box {
+        position: relative; flex-shrink: 0; margin-top: 0.06em;
+        width: 1.25em; height: 1.25em; border-radius: 0.25em;
+        background: #fff; border: 1px solid #8f96a3;
+        transition: background 0.15s, border-color 0.15s;
+    }
+    .cvq-box.is-on { background: #0a192f; border-color: #0a192f; }
+    .cvq-box.is-on::after {
+        content: ''; position: absolute; left: 50%; top: 44%;
+        width: 0.3em; height: 0.6em; margin: -0.34em 0 0 -0.15em;
+        border: solid #fff; border-width: 0 0.12em 0.12em 0; transform: rotate(45deg);
+    }
+    .cvq-check-tx { font-size: 0.81em; line-height: 1.5; color: #6b7280; }
+    .cvq-legal {
+        display: flex; align-items: flex-start; gap: 0.7em;
+        background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15);
+        border-radius: 0.75em; padding: 0.75em 0.875em;
+        color: #059669;
+    }
+    .cvq-legal svg { width: 0.875em; height: 0.875em; flex-shrink: 0; margin-top: 0.12em; }
+    .cvq-legal span { font-size: 0.72em; line-height: 1.5; font-weight: 500; }
+
+    /* Estado: aprobada */
+    .cvq-ok { display: flex; flex-direction: column; align-items: center; gap: 0.6em; padding: 0.3em 0; text-align: center; }
+    .cvq-ring { width: 4.25em; height: 4.25em; margin-bottom: 0.4em; }
+    .cvq-ok-t { font-size: 1.12em; font-weight: 700; color: #111; }
+    .cvq-ok-s { font-size: 0.84em; line-height: 1.55; color: #9ca3af; }
+    .cvq-ok-acts { display: flex; flex-direction: column; gap: 0.55em; width: 100%; margin-top: 0.5em; }
+    .cvq-credit { display: flex; align-items: flex-start; gap: 0.75em; padding: 1em; background: #f5f5f7; border-radius: 1em; text-align: left; }
+    .cvq-credit svg { width: 1.125em; height: 1.125em; flex-shrink: 0; color: #0a192f; margin-top: 0.12em; }
+    .cvq-credit-tx { display: flex; flex-direction: column; gap: 0.19em; }
+    .cvq-credit-tx strong { font-size: 0.88em; font-weight: 600; letter-spacing: -0.01em; color: #0a192f; }
+    .cvq-credit-tx span { font-size: 0.8em; line-height: 1.55; color: #6b7686; }
+    .cvq-receipt { margin-top: 0.5em; }
+    .cvq-stamp {
+        width: 100%; margin-top: 0.5em; padding: 0.75em 0.875em; text-align: left;
+        background: #f9fafb; border: 1px dashed rgba(10,25,47,0.15); border-radius: 0.75em;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        color: #6b7280; word-break: break-all;
+    }
+    .cvq-stamp-h {
+        display: flex; align-items: center; gap: 0.375em;
+        margin-bottom: 0.5em; padding-bottom: 0.5em;
+        border-bottom: 1px dashed rgba(5,150,105,0.2);
+        font-family: var(--font-sans); font-size: 0.72em; font-weight: 600; color: #059669;
+    }
+    .cvq-stamp-h svg { width: 1.13em; height: 1.13em; flex-shrink: 0; }
+    .cvq-stamp-r { display: flex; flex-direction: column; gap: 0.125em; margin-bottom: 0.25em; font-size: 0.65em; line-height: 1.6; }
+    .cvq-stamp-r strong { color: #374151; font-weight: 600; }
+    .cvq-hash { color: #059669; font-weight: 600; }
+
+    /* Contacto + sello de Cord */
+    .cvq-contact { display: flex; flex-wrap: wrap; gap: 0.75em; padding-top: 1.5em; border-top: 1px solid rgba(10,25,47,0.06); }
+    .cvq-contact-l { font-size: 0.78em; font-weight: 500; color: #6b7280; }
+    .cvq-contact-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5em; width: 100%; }
+    .cvq-contact-a {
+        display: inline-flex; align-items: center; justify-content: center; gap: 0.48em;
+        min-height: 3.5em;
+        font-size: 0.78em; font-weight: 600; color: #374151;
+        background: #fafafa; border: 1px solid rgba(10,25,47,0.08); border-radius: 0.8em;
+    }
+    .cvq-contact-a svg, .cvq-contact-a img { width: 1.15em; height: 1.15em; border-radius: 0.2em; }
+    .cvq-badge { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.6em 1em; padding-top: 1.1em; margin-top: 0.25em; border-top: 1px solid rgba(10,25,47,0.06); }
+    .cvq-badge-trust { display: inline-flex; align-items: center; gap: 0.5em; font-size: 0.72em; font-weight: 500; color: #059669; }
+    .cvq-badge-trust svg { width: 1.13em; height: 1.13em; flex-shrink: 0; }
+    .cvq-badge-cta { display: inline-flex; align-items: center; gap: 0.4em; font-size: 0.76em; font-weight: 500; color: rgba(10,25,47,0.35); white-space: nowrap; }
+    .cvq-badge-cta img { height: 0.9em; width: auto; opacity: 0.45; }
+    .cvq-aviso { margin: 0.9em 0.4em 0; font-size: 0.72em; line-height: 1.5; color: #8a8a8e; text-align: center; text-wrap: balance; }
+
+    /* Barra sticky real (glass) — por encima del Safari compacto */
+    .cvq-sticky {
+        position: absolute; z-index: 5; left: 0; right: 0; bottom: 5em;
+        padding: 0 0.75em;
+        will-change: transform, opacity;
+    }
+    .cvq-sticky-off { opacity: 0; visibility: hidden; }
+    .cvq-sticky-in {
+        display: flex; align-items: center; justify-content: space-between; gap: 0.65em;
+        padding: 0.55em 0.55em 0.55em 0.9em;
+        border-radius: 1.125em;
+        background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.9));
+        -webkit-backdrop-filter: blur(36px) saturate(1.8);
+        backdrop-filter: blur(36px) saturate(1.8);
+        border: 1px solid rgba(255,255,255,0.7);
+        box-shadow:
+            inset 0 1px 1px rgba(255,255,255,0.9),
+            0 1.1em 3.1em -0.75em rgba(10,25,47,0.32);
+    }
+    .cvq-sticky-info { display: flex; flex-direction: column; gap: 0.12em; }
+    .cvq-sticky-l { font-size: 0.55em; font-weight: 800; letter-spacing: 0.17em; color: #9ca3af; }
+    .cvq-sticky-v { font-size: 1.05em; line-height: 1; color: #0a192f; font-variant-numeric: tabular-nums; }
+    .cvq-sticky-cta {
+        display: inline-flex; align-items: center; gap: 0.57em;
+        min-height: 3.29em; padding: 0 1.14em;
+        font-size: 0.88em; font-weight: 650; color: #fff; white-space: nowrap;
+        background: #0a192f; border-radius: 0.93em;
+        box-shadow: 0 0.7em 1.85em -0.7em rgba(10,25,47,0.5);
+    }
+    .cvq-sticky-cta svg { width: 1.14em; height: 1.14em; }
+
+    /* Respaldo sin blur (regla 31): superficies sólidas */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        .cvp-sf-btn, .cvp-sf-url { background: rgba(255,255,255,0.96); }
+        .cvq-sticky-in { background: rgba(255,255,255,0.97); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .cvq-live i, .cvq-input.is-focus .cvq-caret { animation: none; }
+    }
+
+    /* ── Tablet ── */
+    @media (max-width: 1100px) {
+        .cv-inner { gap: 3.5rem; }
+        .cv-band { --band-dy: 10.5rem; left: calc(50% - 22rem); transform-origin: 22rem 50%; }
+    }
+
+    /* ── Móvil: el teléfono va debajo del texto, la banda cruza a todo el ancho ── */
     @media (max-width: 860px) {
-        .cv-inner { grid-template-columns: 1fr; gap: 3.5rem; }
+        .cv { padding: 4.5rem 5% 5rem; }
+        .cv-inner { grid-template-columns: minmax(0, 1fr); gap: 3.5rem; }
         .cv-p { max-width: 100%; }
+        .cvp { --cv-u: min(15.5px, calc(100cqw / 23.5)); }
+        .cv-band {
+            --band-h: 15rem;
+            --band-dy: 8.5rem;
+            left: -8vw; right: -8vw;
+            transform: skewY(-13deg);
+            transform-origin: 50% 50%;
+            -webkit-mask-image: none;
+            mask-image: none;
+        }
     }
 </style>

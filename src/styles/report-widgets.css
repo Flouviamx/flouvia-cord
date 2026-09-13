@@ -66,10 +66,13 @@
 
 /* ── Barras compuestas del informe de flujo ──────────────────────────────── */
 .flow-legend { display: flex; gap: .8rem; color: var(--color-text-muted); font-size: .65rem; }
-.flow-legend span::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: currentColor; }
-.flow-legend .is-cartera, .flow-week-track .is-cartera { color: #0f766e; background: #0f766e; }
-.flow-legend .is-pipeline, .flow-week-track .is-pipeline { color: #2563eb; background: #2563eb; }
-.flow-legend .is-mrr, .flow-week-track .is-mrr { color: #8b5cf6; background: #8b5cf6; }
+.flow-legend span::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: var(--flow-c, currentColor); }
+.flow-legend .is-cartera { --flow-c: #0f766e; }
+.flow-legend .is-pipeline { --flow-c: #2563eb; }
+.flow-legend .is-mrr { --flow-c: #8b5cf6; }
+.flow-week-track .is-cartera { background: #0f766e; }
+.flow-week-track .is-pipeline { background: #2563eb; }
+.flow-week-track .is-mrr { background: #8b5cf6; }
 .flow-weeks { display: flex; flex-direction: column; gap: .72rem; }
 .flow-week { display: grid; grid-template-columns: 130px minmax(100px, 1fr) 110px; gap: .8rem; align-items: center; }
 .flow-week-label { color: var(--color-text-muted); font-size: .7rem; }

@@ -277,7 +277,6 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     // país (CFDI MX, invoice US, …) vía FiscalFactory y registra el documento
     // en documentos_fiscales incluso cuando falla (status 'error').
     let fiscal: Awaited<ReturnType<typeof emitFiscalDocument>> | undefined;
-    let fiscalCountry = 'MX';
     if (action.to === 'invoiced') {
         const [orgFiscalRows] = await withOrgTx(orgId, sql`
             select upper(coalesce(country_code, 'MX')) as country_code
@@ -285,7 +284,6 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         const orgFiscal = orgFiscalRows[0];
         if (!orgFiscal) return json({ error: 'Organización no encontrada' }, 404);
         const isMexico = String(orgFiscal.country_code) === 'MX';
-        fiscalCountry = String(orgFiscal.country_code);
         const subscriptionDenied = await requireEntitlement(
             orgId,
             'international_invoicing',
@@ -370,14 +368,14 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     invalidateMoneyCaches(orgId);
 
     const eventDetail = action.evento === 'invoiced'
-        ? (fiscalCountry === 'MX' ? 'CFDI emitido' : `Factura ${fiscal?.invoiceNumber || ''} emitida`.trim())
+        ? (fiscal?.documentType === 'proforma' ? `Proforma ${fiscal.invoiceNumber || ''} emitida` : fiscal?.billable ? 'CFDI emitido' : `Factura ${fiscal?.invoiceNumber || ''} emitida`.trim())
         : action.detalle;
     await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
               values (${orgId}, ${id}, ${action.evento}, ${eventDetail})`);
     await logAudit(orgId, { accion: `cotizacion.${body.action}`, entidad: 'cotizacion', entidad_id: id, detalle: `${actual} → ${action.to}`, ip: reqIp(request) });
 
     // Notifica el evento a las webhooks suscritas de la org (best-effort).
-    const whev = action.evento === 'invoiced' && fiscalCountry !== 'MX'
+    const whev = action.evento === 'invoiced' && !fiscal?.billable
         ? 'invoice.issued'
         : WH_MAP[action.evento];
     if (whev) after(dispatchQuoteEvent(orgId, id, whev));

@@ -39,10 +39,16 @@ const l = (p: string) => publicPath(p, lang);
                 <div class="btn-shimmer"></div>
             </a>
         </div>
-        <p class="hero-free-note">{t('hero.free.note')}</p>
     </div>
 
-    <!-- ── MOCKUP (demo interactivo · calca de la app real) ── -->
+    <!-- ── MOCKUP (demo interactivo · calca de la app real) ──
+         Calca 1:1 del detalle de cotización de /app en modo claro, a ~0.8 de escala:
+         sidebar = src/components/app/Sidebar.astro (org switcher arriba, grupo plano +
+         "Mi dinero" + "Inteligencia", logo y toggle al pie); topbar y page-head =
+         AppLayout.astro (buscador ⌘K, Crear, iconos; migas + título + status pill);
+         cuerpo = src/pages/app/cotizaciones/[id].astro (stepper de 5 pasos, d-head con
+         total, tabla con unidad y precio de lista tachado, totales, Acciones + Actividad).
+         El lienzo es #f5f5f7 como la app: el detalle no vive en una card. -->
     <div class="mk-space">
         <div class="mk-scaler">
             <div class="mockup-wrap reveal-mockup" id="heroDemo">
@@ -56,136 +62,223 @@ const l = (p: string) => publicPath(p, lang);
         </div>
 
         <div class="mockup-glow" aria-hidden="true"></div>
-        <div class="mockup">
-            <!-- Chrome móvil: la app real esconde el sidebar tras un drawer bajo 880px
-                 (src/styles/mobile-app.css). El mockup calca ESO en móvil, no el
-                 escritorio encogido. -->
-            <div class="mk-mobilebar" aria-hidden="true">
-                <span class="mk-mb-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></svg></span>
-                <img src="/imgs/logo-cord-navy.png" alt="" class="mk-mb-logo" />
-                <span class="mk-mb-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg></span>
-                <span class="mk-mb-avatar">MV</span>
-            </div>
+        <div class="mockup" aria-hidden="true">
             <div class="mk-body">
+                <!-- ── SIDEBAR (pill blanca flotante, igual que la app) ── -->
                 <aside class="mk-side">
-                    <div class="mk-brand"><img src="/imgs/logo-cord-navy.png" alt="Cord" /></div>
-
-                    <div class="mk-search">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
-                        <span>{t("mk.search")}</span>
-                        <kbd>⌘K</kbd>
+                    <div class="mk-acct">
+                        <span class="mk-org-av">M</span>
+                        <span class="mk-org-txt">
+                            <span class="mk-org-eyebrow">{t("mk.org.eyebrow")}</span>
+                            <span class="mk-org-name">Materiales del Valle</span>
+                        </span>
+                        <svg class="mk-org-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
 
                     <nav class="mk-nav">
-                        <span class="mk-grp-label">{t("mk.grp.1")}</span>
-                        <span class="mk-navitem">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5" fill="currentColor" fill-opacity="0.1"/></svg>
-                            {t("mk.nav.1")}
-                        </span>
-                        <span class="mk-navitem active">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.1"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
-                            {t("mk.nav.2")}
-                            <span class="mk-nav-badge">3</span>
-                        </span>
+                        <div class="mk-grp">
+                            <span class="mk-navitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                                <span class="mk-nav-l">{t("mk.nav.1")}</span>
+                            </span>
+                            <span class="mk-navitem active">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8" stroke-opacity="0.5"/><line x1="16" y1="13" x2="8" y2="13" stroke-opacity="0.5"/><line x1="16" y1="17" x2="8" y2="17" stroke-opacity="0.5"/><polyline points="10 9 9 9 8 9" stroke-opacity="0.5"/></svg>
+                                <span class="mk-nav-l">{t("mk.nav.2")}</span>
+                                <span class="mk-nav-badge">3</span>
+                            </span>
+                            <span class="mk-navitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5"/></svg>
+                                <span class="mk-nav-l">{t("mk.nav.3")}</span>
+                            </span>
+                            <span class="mk-navitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m7.5 4.27 9 5.15" stroke-opacity="0.5"/><path d="m3.3 7 8.7 5 8.7-5" stroke-opacity="0.5"/><path d="M12 22V12" stroke-opacity="0.5"/></svg>
+                                <span class="mk-nav-l">{t("mk.nav.4")}</span>
+                            </span>
+                        </div>
 
-                        <span class="mk-grp-label">{t("mk.grp.2")}</span>
-                        <span class="mk-navitem">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2" fill="currentColor" fill-opacity="0.12"/><path d="M3.5 20c0-3 2.5-4.8 5.5-4.8S14.5 17 14.5 20"/><circle cx="16.5" cy="9" r="2.4"/><path d="M16 15.4c2.6.2 4.5 1.8 4.5 4.1"/></svg>
-                            {t("mk.nav.3")}
-                        </span>
-                        <span class="mk-navitem">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" fill="currentColor" fill-opacity="0.1"/><path d="M4 7.5l8 4.5 8-4.5"/><line x1="12" y1="12" x2="12" y2="21"/></svg>
-                            {t("mk.nav.4")}
-                        </span>
+                        <div class="mk-grp">
+                            <span class="mk-grp-label">{t("mk.grp.1")}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                            <span class="mk-navitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7" stroke-opacity="0.5"/><path d="M9 13h6" stroke-opacity="0.55"/><path d="M9 17h4" stroke-opacity="0.55"/></svg>
+                                <span class="mk-nav-l">{t("mk.nav.5")}</span>
+                            </span>
+                            <span class="mk-navitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" stroke="none"/><path d="M12 2v20" stroke-opacity="0.5"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                <span class="mk-nav-l">{t("mk.nav.6")}</span>
+                            </span>
+                            <span class="mk-navitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10" stroke-opacity="0.5"/></svg>
+                                <span class="mk-nav-l">{t("mk.nav.7")}</span>
+                                <span class="mk-nav-badge danger">2</span>
+                            </span>
+                            <span class="mk-navitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M6 9H4M6 15H4M18 9h2M18 15h2M9 6V4M15 6V4M9 18v2M15 18v2" stroke-opacity="0.6"/></svg>
+                                <span class="mk-nav-l">{t("mk.nav.8")}</span>
+                            </span>
+                        </div>
 
-                        <span class="mk-grp-label">{t("mk.grp.3")}</span>
-                        <span class="mk-navitem">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5" fill="currentColor" fill-opacity="0.1"/><line x1="2.5" y1="10.5" x2="21.5" y2="10.5"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
-                            {t("mk.nav.6")}
-                        </span>
-
-                        <span class="mk-grp-label">{t("mk.grp.4")}</span>
-                        <span class="mk-navitem">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5v-17"/><path d="M3.5 20.5h17"/><path d="M7 15l3.5-3.5 3 3L19 9" /><path d="M19 9h-3.4M19 9v3.4"/></svg>
-                            {t("mk.nav.7")}
-                        </span>
+                        <div class="mk-grp">
+                            <span class="mk-grp-label">{t("mk.grp.2")}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                            <span class="mk-navitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 16l3-3 2.5 2.5L17 10"/><path d="M15 10h2v2" stroke-opacity="0.55"/><path d="M7 7h5" stroke-opacity="0.45"/></svg>
+                                <span class="mk-nav-l">{t("mk.nav.9")}</span>
+                            </span>
+                            <span class="mk-navitem">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="14" width="5" height="7" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="9.5" y="9" width="5" height="12" rx="1" fill="currentColor" fill-opacity="0.3" stroke="none"/><rect x="16" y="12" width="5" height="9" rx="1" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="3" y="14" width="5" height="7" rx="1"/><rect x="9.5" y="9" width="5" height="12" rx="1"/><rect x="16" y="12" width="5" height="9" rx="1"/><circle cx="12" cy="5" r="1.6" fill="currentColor" fill-opacity="0.3"/></svg>
+                                <span class="mk-nav-l">{t("mk.nav.10")}</span>
+                            </span>
+                        </div>
                     </nav>
 
-                    <div class="mk-user">
-                        <span class="mk-user-avatar">MV</span>
-                        <span class="mk-user-name">Materiales del Valle</span>
+                    <div class="mk-sb-foot">
+                        <img src="/imgs/logo-cord-navy.png" alt="" class="mk-sb-logo" />
+                        <span class="mk-sb-toggle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2.5"/><rect x="3.5" y="8" width="5.5" height="8" rx="1.5" fill="currentColor" stroke="none"/></svg>
+                        </span>
                     </div>
                 </aside>
 
-                <main class="mk-main">
-                    <div class="mk-crumbs"><span>{t("mk.nav.2")}</span><span class="mk-crumb-sep">/</span><b>COT-0148</b></div>
-
-                    <div class="mk-head">
-                        <div>
-                            <div class="mk-folio">COT-0148</div>
-                            <div class="mk-client">Distribuidora El Zarco · Net 30</div>
-                        </div>
-                        <div class="mk-head-right">
-                            <span class="mk-action" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg></span>
-                            <span class="mk-action" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7L12.5 18.5"/></svg></span>
-                            <span class="mk-badge mk-badge-ok" id="mkStatus">{t("mk.status")}</span>
-                        </div>
+                <div class="mk-app">
+                    <!-- ── TOPBAR (pill blanca, AppLayout) ── -->
+                    <div class="mk-topbar">
+                        <span class="mk-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span>
+                        <span class="mk-search">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <span class="mk-search-l">{t("mk.search")}</span>
+                            <kbd>⌘K</kbd>
+                        </span>
+                        <span class="mk-tb-right">
+                            <span class="mk-create">
+                                <svg class="mk-create-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span class="mk-create-l">{t("mk.create")}</span>
+                                <svg class="mk-create-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                            </span>
+                            <span class="mk-tb-ico">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.12"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                <i class="mk-notif-dot"></i>
+                            </span>
+                            <span class="mk-tb-ico mk-tb-desk">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z" fill="currentColor" fill-opacity="0.12"/><path d="M9.1 9a2.9 2.9 0 0 1 5.6 1c0 2-2.9 2.9-2.9 2.9"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
+                            </span>
+                            <span class="mk-tb-ico mk-tb-desk">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor" fill-opacity="0.12"/></svg>
+                            </span>
+                            <span class="mk-tb-ico mk-tb-desk">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.15"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            </span>
+                        </span>
                     </div>
 
-                    <div class="mk-stepper" aria-hidden="true">
-                        <span class="mk-stp" data-story="created"><span class="mk-stp-dot"></span>{t("mk.stp.1")}</span>
-                        <span class="mk-stp-line"></span>
-                        <span class="mk-stp" data-story="sent"><span class="mk-stp-dot"></span>{t("mk.stp.2")}</span>
-                        <span class="mk-stp-line"></span>
-                        <span class="mk-stp" data-story="viewed"><span class="mk-stp-dot"></span>{t("mk.stp.3")}</span>
-                        <span class="mk-stp-line"></span>
-                        <span class="mk-stp" data-story="approved"><span class="mk-stp-dot"></span>{t("mk.stp.4")}</span>
+                    <!-- ── PAGE HEAD (migas + título + status pill en ph-actions) ── -->
+                    <div class="mk-ph">
+                        <div class="mk-ph-titles">
+                            <div class="mk-crumbs"><span>{t("mk.nav.2")}</span><b>COT-0148</b></div>
+                            <div class="mk-ph-row">
+                                <span class="mk-ph-title">COT-0148</span>
+                                <span class="mk-pin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.68V6a3 3 0 1 0-6 0v4.68a2 2 0 0 1-1.11 1.86l-1.78.89A2 2 0 0 0 5 15.24Z" fill="currentColor" fill-opacity="0.12"/></svg></span>
+                            </div>
+                        </div>
+                        <span class="mk-badge mk-badge-invoiced" id="mkStatus" data-s0={t("mk.stp.1")} data-s1={t("mk.stp.2")} data-s2={t("mk.stp.3")} data-s3={t("mk.stp.4")} data-s4={t("mk.stp.5")}>{t("mk.stp.5")}</span>
                     </div>
 
-                    <div class="mk-table">
-                        <div class="mk-row mk-row-head"><span>{t("mk.row.head.1")}</span><span>{t("mk.row.head.2")}</span><span>{t("mk.row.head.3")}</span><span>{t("mk.row.head.4")}</span></div>
-                        <div class="mk-row">
-                            <span class="mk-prod">{t("mk.prod.1")}<span class="mk-sub">SKU CEM-050</span></span>
-                            <span>120</span><span class="editorial mk-num">$182.00</span><span class="editorial mk-num">$21,840.00</span>
+                    <main class="mk-main">
+                        <!-- Stepper de 5 pasos (q-stepper): hecho = check verde, actual = navy -->
+                        <div class="mk-stepper">
+                            <div class="mk-stp" data-story="created"><span class="mk-stp-dot"><span class="mk-stp-n">1</span><svg class="mk-stp-ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="mk-stp-label">{t("mk.stp.1")}</span></div>
+                            <div class="mk-stp" data-story="sent"><span class="mk-stp-dot"><span class="mk-stp-n">2</span><svg class="mk-stp-ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="mk-stp-label">{t("mk.stp.2")}</span></div>
+                            <div class="mk-stp" data-story="viewed"><span class="mk-stp-dot"><span class="mk-stp-n">3</span><svg class="mk-stp-ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="mk-stp-label">{t("mk.stp.3")}</span></div>
+                            <div class="mk-stp" data-story="approved"><span class="mk-stp-dot"><span class="mk-stp-n">4</span><svg class="mk-stp-ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="mk-stp-label">{t("mk.stp.4")}</span></div>
+                            <div class="mk-stp is-current" data-story="invoiced"><span class="mk-stp-dot"><span class="mk-stp-n">5</span><svg class="mk-stp-ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="mk-stp-label">{t("mk.stp.5")}</span></div>
                         </div>
-                        <div class="mk-row">
-                            <span class="mk-prod">{t("mk.prod.2")}<span class="mk-sub mk-vol">{t("mk.vol")}</span></span>
-                            <span>340</span><span class="editorial mk-num">$168.50</span><span class="editorial mk-num">$57,290.00</span>
-                        </div>
-                        <div class="mk-row">
-                            <span class="mk-prod">{t("mk.prod.3")}<span class="mk-sub">SKU BLK-1520</span></span>
-                            <span>2,400</span><span class="editorial mk-num">$14.20</span><span class="editorial mk-num">$34,080.00</span>
-                        </div>
-                        <div class="mk-row mk-row-muted">
-                            <span class="mk-prod">{t("mk.prod.4")}<span class="mk-sub">SKU MLL-066</span></span>
-                            <span>180</span><span class="editorial mk-num">$312.00</span><span class="editorial mk-num">$56,160.00</span>
-                        </div>
-                    </div>
 
-                    <div class="mk-total">
-                        <div class="mk-total-line"><span>{t("mk.tot.1")}</span><span class="editorial">$169,370.00</span></div>
-                        <div class="mk-total-line"><span>{t("mk.tot.2")}</span><span class="editorial">$27,099.20</span></div>
-                        <div class="mk-total-line mk-total-grand"><span>{t("mk.tot.3")}</span><span class="editorial mk-grand" data-countup="196469.20" data-decimals="2">$196,469.20</span></div>
-                    </div>
-                </main>
+                        <div class="mk-grid">
+                            <div class="mk-dmain">
+                                <div class="mk-dhead">
+                                    <div class="mk-dh-client">
+                                        <span class="mk-dh-av">EZ</span>
+                                        <div class="mk-dh-id">
+                                            <div class="mk-dh-name">Distribuidora El Zarco</div>
+                                            <div class="mk-dh-meta">{t("mk.meta")}</div>
+                                        </div>
+                                    </div>
+                                    <div class="mk-dh-total">
+                                        <span class="mk-dh-total-l">{t("mk.tot.3")}</span>
+                                        <span class="editorial mk-dh-total-v" data-countup="196469.20" data-decimals="2">$196,469.20</span>
+                                    </div>
+                                </div>
 
-                <aside class="mk-timeline">
-                    <div class="mk-tl-title">{t("mk.tl.title")}</div>
-                    <div class="mk-tl-item" data-story="approved"><span class="mk-tl-dot dot-green"></span><div><div class="mk-tl-text"><b>{t("mk.tl.1.t")}</b></div><div class="mk-tl-time">{t("mk.tl.1.d")}</div></div></div>
-                    <div class="mk-tl-item" data-story="viewed"><span class="mk-tl-dot dot-amber"></span><div><div class="mk-tl-text"><b>{t("mk.tl.2.t")}</b></div><div class="mk-tl-time">{t("mk.tl.2.d")}</div></div></div>
-                    <div class="mk-tl-item" data-story="sent"><span class="mk-tl-dot dot-blue"></span><div><div class="mk-tl-text">{t("mk.tl.3.t")}</div><div class="mk-tl-time">{t("mk.tl.3.d")}</div></div></div>
-                    <div class="mk-tl-item" data-story="created"><span class="mk-tl-dot dot-grey"></span><div><div class="mk-tl-text">{t("mk.tl.4.t")}</div><div class="mk-tl-time">{t("mk.tl.4.d")}</div></div></div>
-                </aside>
+                                <div class="mk-sec">{t("mk.sec.detail")}</div>
+                                <div class="mk-table">
+                                    <div class="mk-row mk-row-head"><span>{t("mk.row.head.1")}</span><span>{t("mk.row.head.2")}</span><span>{t("mk.row.head.3")}</span><span class="mk-r">{t("mk.row.head.4")}</span></div>
+                                    <div class="mk-row">
+                                        <span class="mk-prod">{t("mk.prod.1")}<small>{t("mk.unit.1")}</small></span>
+                                        <span class="mk-qty">120</span>
+                                        <span class="mk-price"><s>$198.00</s><span class="editorial">$182.00</span></span>
+                                        <span class="editorial mk-amt">$21,840.00</span>
+                                    </div>
+                                    <div class="mk-row">
+                                        <span class="mk-prod">{t("mk.prod.2")}<small>{t("mk.unit.2")}</small></span>
+                                        <span class="mk-qty">340</span>
+                                        <span class="mk-price"><s>$189.00</s><span class="editorial">$168.50</span></span>
+                                        <span class="editorial mk-amt">$57,290.00</span>
+                                    </div>
+                                    <div class="mk-row">
+                                        <span class="mk-prod">{t("mk.prod.3")}<small>{t("mk.unit.2")}</small></span>
+                                        <span class="mk-qty">2,400</span>
+                                        <span class="mk-price"><s>$16.50</s><span class="editorial">$14.20</span></span>
+                                        <span class="editorial mk-amt">$34,080.00</span>
+                                    </div>
+                                    <div class="mk-row">
+                                        <span class="mk-prod">{t("mk.prod.4")}<small>{t("mk.unit.3")}</small></span>
+                                        <span class="mk-qty">180</span>
+                                        <span class="mk-price"><s>$332.00</s><span class="editorial">$312.00</span></span>
+                                        <span class="editorial mk-amt">$56,160.00</span>
+                                    </div>
+                                </div>
+
+                                <div class="mk-total">
+                                    <div class="mk-total-line"><span>{t("mk.tot.1")}</span><span class="editorial">$169,370.00</span></div>
+                                    <div class="mk-total-line"><span>{t("mk.tot.2")}</span><span class="editorial">$27,099.20</span></div>
+                                    <div class="mk-total-line mk-total-grand"><span>{t("mk.tot.3")}</span><span class="editorial" data-countup="196469.20" data-decimals="2">$196,469.20</span></div>
+                                </div>
+                            </div>
+
+                            <aside class="mk-dside">
+                                <div class="mk-actions">
+                                    <div class="mk-sec">{t("mk.sec.actions")}</div>
+                                    <div class="mk-actgrid">
+                                        <span class="mk-act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" fill="currentColor" fill-opacity="0.12"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span>{t("mk.act.1")}</span></span>
+                                        <span class="mk-act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" fill="currentColor" fill-opacity="0.12"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>{t("mk.act.2")}</span></span>
+                                        <span class="mk-act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="currentColor" fill-opacity="0.12"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>PDF</span></span>
+                                        <span class="mk-act mk-act-wa"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg><span>WhatsApp</span></span>
+                                    </div>
+                                    <span class="mk-dup">{t("mk.act.dup")}</span>
+                                </div>
+
+                                <div class="mk-activity">
+                                    <div class="mk-sec">{t("mk.tl.title")}</div>
+                                    <div class="mk-tl">
+                                        <div class="mk-tl-item" data-story="invoiced"><span class="mk-tl-dot dot-grey"></span><div class="mk-tl-body"><span class="mk-tl-text">{t("mk.tl.5.t")}</span><span class="mk-tl-time">{t("mk.tl.5.d")}</span></div></div>
+                                        <div class="mk-tl-item" data-story="approved"><span class="mk-tl-dot dot-green"></span><div class="mk-tl-body"><span class="mk-tl-text">{t("mk.tl.1.t")}</span><span class="mk-tl-time">{t("mk.tl.1.d")}</span></div></div>
+                                        <div class="mk-tl-item" data-story="viewed"><span class="mk-tl-dot dot-violet"></span><div class="mk-tl-body"><span class="mk-tl-text">{t("mk.tl.2.t")}</span><span class="mk-tl-time">{t("mk.tl.2.d")}</span></div></div>
+                                        <div class="mk-tl-item" data-story="sent"><span class="mk-tl-dot dot-blue"></span><div class="mk-tl-body"><span class="mk-tl-text">{t("mk.tl.3.t")}</span><span class="mk-tl-time">{t("mk.tl.3.d")}</span></div></div>
+                                        <div class="mk-tl-item" data-story="created"><span class="mk-tl-dot dot-grey"></span><div class="mk-tl-body"><span class="mk-tl-text">{t("mk.tl.4.t")}</span><span class="mk-tl-time">{t("mk.tl.4.d")}</span></div></div>
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+                    </main>
+                </div>
             </div>
         </div>
 
-        <div class="mk-toast" id="mkToast">
+        <div class="mk-toast" id="mkToast" aria-hidden="true">
             <span class="mk-toast-dot"></span>
             <span><b>{t("mk.toast.b")}</b> {t("mk.toast.t")}</span>
         </div>
 
-        <div class="mk-chip" id="mkChip">
-            <span class="mk-chip-check">✓</span>
+        <div class="mk-chip" id="mkChip" aria-hidden="true">
+            <span class="mk-chip-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
             <span>{t("mk.chip")}</span>
         </div>
             </div>
@@ -401,15 +494,17 @@ const l = (p: string) => publicPath(p, lang);
         display: flex;
         justify-content: center;
     }
+    /* 1160px (antes 1080, +7.4%): del ancho de .hero-inner (1180) para que el
+       mockup quede alineado con el título y la descripción. */
     .mk-scaler {
         position: relative;
-        width: 1080px;
+        width: 1160px;
         flex-shrink: 0;
-    }
-    @media (max-width: 900px) {
-        .mk-scaler {
-            width: 900px;
-        }
+        /* flex-start: si se estira a la altura fija que el JS le pone a .mk-space,
+           offsetHeight devuelve esa altura ya escalada y cada llamada la vuelve a
+           encoger (625 → 530 → 450 → 382) hasta que la sección siguiente se enciman. */
+        align-self: flex-start;
+        transform-origin: top center;
     }
     .mockup-wrap { position: relative; z-index: 2; width: 100%; margin: 0 auto; }
 
@@ -457,134 +552,304 @@ const l = (p: string) => publicPath(p, lang);
         filter: blur(44px); z-index: 0;
     }
 
-    /* ── LA VENTANA (calca light de la app, estilo Stripe) ── */
+    /* ══════════════════════════════════════════════════════════════════
+       LA VENTANA — calca del shell de /app en modo claro.
+       Tokens de AppLayout.astro: lienzo #f5f5f7, texto #0f1729, muted #5b6472,
+       hairline rgba(10,25,47,0.08), etiqueta #99a2af, fuente del sistema (la app
+       NO usa Inter). Medidas = las de la app × ~0.8.
+    ══════════════════════════════════════════════════════════════════ */
     .mockup {
         position: relative; z-index: 1;
-        border-radius: 18px; overflow: hidden; background: #ffffff;
+        border-radius: 18px; overflow: hidden; background: #f5f5f7;
         border: 1px solid rgba(10,25,47,0.08);
         box-shadow:
             0 2px 4px rgba(10,25,47,0.05),
             0 30px 60px 0 rgba(10,25,47,0.18),
             0 15px 30px 0 rgba(10,25,47,0.10),
             inset 0 1px 0 rgba(255,255,255,0.7);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        color: #0f1729;
+        text-align: left;
+        -webkit-font-smoothing: antialiased;
+    }
+    .mockup .editorial { font-family: inherit; }
+
+    .mk-body {
+        display: grid; grid-template-columns: 196px minmax(0, 1fr); column-gap: 13px;
+        padding: 12px 12px 12px;
     }
 
-    .mk-body { display: grid; grid-template-columns: 192px 1fr 212px; background: #ffffff; min-height: 460px; text-align: left; }
-
-    /* ── SIDEBAR (blanca como la app real en modo claro) ── */
-    .mk-side { background: #fbfcfd; border-right: 1px solid rgba(10,25,47,0.06); padding: 1.15rem 0.85rem 1rem; display: flex; flex-direction: column; gap: 0.9rem; }
-    .mk-brand { padding-left: 0.35rem; }
-    .mk-brand img { height: 15px; width: auto; display: block; }
-
-    .mk-search {
-        display: flex; align-items: center; gap: 7px;
-        background: #f1f3f7; border-radius: 9px; padding: 7px 9px;
-        font-size: 0.68rem; color: #8a93a3; font-weight: 500;
-    }
-    .mk-search svg { width: 11px; height: 11px; flex-shrink: 0; opacity: 0.8; }
-    .mk-search kbd {
-        margin-left: auto; font-family: inherit; font-size: 0.56rem; font-weight: 600; color: #9aa3b2;
-        background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 5px; padding: 1px 4px;
+    /* Material de las pills (sidebar + topbar): vidrio blanco de la app, aquí
+       sólido — sobre el lienzo del mockup no hay nada que desenfocar. */
+    .mk-side, .mk-topbar {
+        background: #ffffff;
+        box-shadow:
+            0 0 0 1px rgba(10,25,47,0.035),
+            0 8px 32px -8px rgba(0,0,0,0.06),
+            0 4px 12px -2px rgba(0,0,0,0.03);
     }
 
-    .mk-nav { display: flex; flex-direction: column; gap: 2px; }
-    .mk-grp-label {
-        font-size: 0.55rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase;
-        color: #a3adbd; padding: 0 0.55rem; margin: 0.65rem 0 3px;
+    /* ── SIDEBAR (Sidebar.astro) ── */
+    .mk-side {
+        border-radius: 18px;
+        padding: 12px 8px 9px;
+        display: flex; flex-direction: column;
     }
-    .mk-grp-label:first-child { margin-top: 0.1rem; }
-    .mk-navitem {
+    .mk-acct {
+        position: relative;
         display: flex; align-items: center; gap: 8px;
-        font-size: 0.75rem; color: #5b6472; padding: 6px 9px; border-radius: 8px; font-weight: 500;
+        padding: 4px 6px 10px; margin-bottom: 6px;
     }
-    .mk-navitem svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.8; }
-    .mk-navitem.active {
-        background: rgba(10,25,47,0.06); color: #0a192f; font-weight: 600;
-        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.04);
+    .mk-acct::after {
+        content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+        background: linear-gradient(to right, transparent, rgba(10,25,47,0.08) 25%, rgba(10,25,47,0.08) 75%, transparent);
     }
+    .mk-org-av {
+        width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+        background: linear-gradient(135deg, #1b3a64, #0a192f); color: #fff;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.68rem; font-weight: 700;
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.25), 0 3px 8px -3px rgba(10,25,47,0.4);
+    }
+    .mk-org-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+    .mk-org-eyebrow { font-size: 0.52rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #99a2af; white-space: nowrap; }
+    .mk-org-name { font-size: 0.72rem; font-weight: 600; line-height: 1.2; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-org-chev { width: 12px; height: 12px; color: #99a2af; flex-shrink: 0; }
+
+    .mk-nav { display: flex; flex-direction: column; gap: 10px; }
+    .mk-grp { display: flex; flex-direction: column; gap: 2px; }
+    .mk-grp-label {
+        display: flex; align-items: center; justify-content: space-between;
+        font-size: 0.7rem; font-weight: 600; color: #99a2af;
+        padding: 6px 9px 4px;
+    }
+    .mk-grp-label svg { width: 11px; height: 11px; opacity: 0.6; }
+    .mk-navitem {
+        display: flex; align-items: center; gap: 9px;
+        padding: 6px 9px; border-radius: 8px;
+        font-size: 0.76rem; font-weight: 500; color: #5b6472;
+    }
+    .mk-navitem svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.62; }
+    .mk-nav-l { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-navitem.active { color: #0a192f; font-weight: 600; background: rgba(10,25,47,0.07); }
     .mk-navitem.active svg { opacity: 1; }
     .mk-nav-badge {
-        margin-left: auto;
-        font-size: 0.55rem; font-weight: 700; color: #2563eb;
-        background: rgba(59,130,246,0.12); padding: 1px 6px; border-radius: 99px;
+        flex-shrink: 0; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 100px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.56rem; font-weight: 700; letter-spacing: -0.01em;
+        color: #5b6472; background: rgba(10,25,47,0.07);
     }
+    .mk-nav-badge.danger { color: #fff; background: #ef4444; }
 
-    .mk-user { margin-top: auto; display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-top: 1px solid rgba(10,25,47,0.05); padding-top: 0.8rem; }
-    .mk-user-avatar {
-        width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0;
+    .mk-sb-foot { margin-top: auto; padding: 10px 0 0 6px; display: flex; align-items: center; }
+    .mk-sb-logo { height: 12px; width: auto; display: block; opacity: 0.55; }
+    .mk-sb-toggle {
+        margin-left: auto; width: 24px; height: 24px; border-radius: 7px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(10,25,47,0.04); box-shadow: inset 0 0 0 0.5px rgba(10,25,47,0.08);
+        color: #5b6472;
+    }
+    .mk-sb-toggle svg { width: 14px; height: 14px; }
+
+    /* ── COLUMNA DE LA APP ── */
+    .mk-app { display: flex; flex-direction: column; min-width: 0; }
+
+    /* Topbar (AppLayout .topbar) */
+    .mk-topbar {
+        display: flex; align-items: center; gap: 10px;
+        padding: 6px 7px 6px 10px; border-radius: 18px;
+    }
+    .mk-burger { display: none; }
+    .mk-search {
+        flex: 0 1 290px; min-width: 0;
+        display: flex; align-items: center; gap: 7px;
+        font-size: 0.7rem; color: #5b6472;
+        background: #fafbfc; border: 1px solid rgba(10,25,47,0.08);
+        border-radius: 8px; padding: 5px 7px 5px 10px;
+    }
+    .mk-search svg { width: 12px; height: 12px; color: #99a2af; flex-shrink: 0; }
+    .mk-search-l { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-search kbd {
+        font-family: inherit; font-size: 0.53rem; font-weight: 700; color: #5b6472;
+        background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 5px;
+        padding: 1px 5px; box-shadow: 0 1px 0 rgba(10,25,47,0.06);
+    }
+    .mk-tb-right { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+    .mk-create {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 10px 6px 9px; border-radius: 7px;
         background: #0a192f; color: #fff;
-        display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.55rem; font-weight: 800; letter-spacing: -0.02em;
+        font-size: 0.7rem; font-weight: 600; white-space: nowrap;
+        box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5), inset 0 1px 0 rgba(255,255,255,0.12);
     }
-    .mk-user-name { font-size: 0.68rem; font-weight: 600; color: #44506a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    /* ── MAIN (detalle de cotización) ── */
-    .mk-main { padding: 1.3rem 1.6rem 1.4rem; display: flex; flex-direction: column; }
-    .mk-crumbs { display: flex; align-items: center; gap: 6px; font-size: 0.64rem; color: #9aa3b2; font-weight: 500; margin-bottom: 0.75rem; }
-    .mk-crumbs b { color: #5b6472; font-weight: 600; }
-    .mk-crumb-sep { opacity: 0.6; }
-
-    .mk-head { display: flex; justify-content: space-between; align-items: flex-start; }
-    .mk-folio { font-size: 1.18rem; font-weight: 800; color: #0a192f; letter-spacing: -0.5px; }
-    .mk-client { font-size: 0.76rem; color: #667; margin-top: 3px; }
-    .mk-head-right { display: flex; align-items: center; gap: 7px; }
-    .mk-action {
-        width: 26px; height: 26px; border-radius: 8px;
+    .mk-create-plus { width: 12px; height: 12px; flex-shrink: 0; }
+    .mk-create-caret { width: 10px; height: 10px; opacity: 0.7; flex-shrink: 0; }
+    .mk-tb-ico {
+        position: relative;
+        width: 29px; height: 29px; border-radius: 7px;
         display: inline-flex; align-items: center; justify-content: center;
-        border: 1px solid rgba(10,25,47,0.08); background: #fff; color: #5b6472;
-        box-shadow: 0 1px 2px rgba(10,25,47,0.04);
+        color: #5b6472;
     }
-    .mk-action svg { width: 12px; height: 12px; }
-    .mk-badge { font-size: 0.66rem; font-weight: 700; padding: 6px 12px; border-radius: 100px; letter-spacing: 0.3px; transition: background 0.45s var(--ease-ios), color 0.45s var(--ease-ios); }
-    .mk-badge-ok { background: rgba(16,185,129,0.12); color: #059669; }
-    .mk-badge-sent { background: rgba(59,130,246,0.12); color: #2563eb; }
-    .mk-badge-viewed { background: rgba(245,158,11,0.14); color: #b45309; }
-    .mk-badge-draft { background: rgba(10,25,47,0.07); color: #5b6472; }
+    .mk-tb-ico svg { width: 14px; height: 14px; }
+    .mk-notif-dot {
+        position: absolute; top: 5px; right: 6px; width: 7px; height: 7px; border-radius: 50%;
+        background: #ef4444; border: 1.5px solid #fff;
+    }
 
-    /* Stepper de estado (como el detalle real de la app) */
-    .mk-stepper { display: flex; align-items: center; margin: 1rem 0 1.05rem; }
-    .mk-stp { display: inline-flex; align-items: center; gap: 6px; font-size: 0.62rem; font-weight: 600; color: #0a192f; white-space: nowrap; transition: color 0.5s var(--ease-ios); }
-    .mk-stp-dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.14); transition: background 0.5s var(--ease-ios), box-shadow 0.5s var(--ease-ios); }
-    .mk-stp.is-pending { color: #a3adbd; }
-    .mk-stp.is-pending .mk-stp-dot { background: #d5dae2; box-shadow: none; }
-    .mk-stp-line { flex: 1; height: 1px; background: rgba(10,25,47,0.09); margin: 0 9px; }
+    /* Page head (AppLayout .page-head) */
+    .mk-ph {
+        display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;
+        padding: 16px 22px 0;
+    }
+    .mk-ph-titles { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .mk-crumbs { display: flex; align-items: center; gap: 5px; font-size: 0.65rem; color: #5b6472; }
+    .mk-crumbs span::after { content: '/'; margin-left: 5px; color: #c4cad3; }
+    .mk-crumbs b { color: #0f1729; font-weight: 600; }
+    .mk-ph-row { display: flex; align-items: center; gap: 6px; }
+    .mk-ph-title { font-size: 1.36rem; font-weight: 700; letter-spacing: -0.5px; line-height: 1.1; color: #0f1729; }
+    .mk-pin { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; color: #aab2bd; }
+    .mk-pin svg { width: 14px; height: 14px; }
 
-    /* Tabla hairline (como la app: nombre + SKU, montos .editorial) */
+    /* Status pill (.status-pill .tb-status) — colores de STATUS_META */
+    .mk-badge {
+        display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+        font-size: 0.64rem; font-weight: 700; letter-spacing: 0.2px;
+        padding: 4px 10px; border-radius: 100px; white-space: nowrap;
+        margin-bottom: 4px;
+        transition: background 0.45s var(--ease-ios), color 0.45s var(--ease-ios);
+    }
+    .mk-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .mk-badge-draft    { color: #64748b; background: rgba(100,116,139,0.1); }
+    .mk-badge-sent     { color: #2563eb; background: rgba(37,99,235,0.09); }
+    .mk-badge-viewed   { color: #7c3aed; background: rgba(124,58,237,0.09); }
+    .mk-badge-approved { color: #059669; background: rgba(16,185,129,0.1); }
+    .mk-badge-invoiced { color: #0a192f; background: rgba(10,25,47,0.08); }
+
+    /* Contenido (app-content) */
+    .mk-main { padding: 14px 22px 12px; display: flex; flex-direction: column; min-width: 0; }
+
+    /* Stepper (q-stepper): hecho = check verde · actual = navy · pendiente = gris */
+    .mk-stepper { display: flex; align-items: center; margin: 0 0 18px; }
+    .mk-stp { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+    .mk-stp:not(:last-child)::after {
+        content: ''; flex: 1; height: 2px; margin: 0 8px; border-radius: 2px;
+        background: #10b981;
+        transition: background 0.4s var(--ease-spring);
+    }
+    .mk-stp.is-current::after, .mk-stp.is-pending::after { background: rgba(10,25,47,0.08); }
+    .mk-stp-dot {
+        position: relative;
+        width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.6rem; font-weight: 800;
+        background: #10b981; color: #fff; border: 1.5px solid #10b981;
+        transition: background 0.3s var(--ease-spring), color 0.3s var(--ease-spring), border-color 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring);
+    }
+    .mk-stp-n { display: none; line-height: 1; }
+    .mk-stp-ck { width: 10px; height: 10px; display: block; }
+    .mk-stp.is-current .mk-stp-dot { background: #0a192f; border-color: #0a192f; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+    .mk-stp.is-pending .mk-stp-dot { background: #fafbfc; color: #5b6472; border-color: rgba(10,25,47,0.08); box-shadow: none; }
+    .mk-stp.is-current .mk-stp-n, .mk-stp.is-pending .mk-stp-n { display: block; }
+    .mk-stp.is-current .mk-stp-ck, .mk-stp.is-pending .mk-stp-ck { display: none; }
+    .mk-stp-label { font-size: 0.64rem; font-weight: 600; color: #0f1729; white-space: nowrap; transition: color 0.3s var(--ease-ios); }
+    .mk-stp.is-pending .mk-stp-label { color: #5b6472; }
+
+    /* detail-grid: 1fr + columna de 300px de la app */
+    .mk-grid { display: grid; grid-template-columns: minmax(0, 1fr) 248px; gap: 26px; align-items: start; }
+    .mk-dmain { display: flex; flex-direction: column; min-width: 0; }
+
+    /* section-head (hairline) */
+    .mk-sec {
+        margin-bottom: 9px; padding-bottom: 6px;
+        border-bottom: 1px solid rgba(10,25,47,0.08);
+        font-size: 0.82rem; font-weight: 600; letter-spacing: -0.01em; color: #0f1729;
+    }
+
+    /* d-head: cliente + TOTAL */
+    .mk-dhead {
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        padding-bottom: 13px; margin-bottom: 14px;
+        border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    .mk-dh-client { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .mk-dh-av {
+        width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+        background: #0a192f; color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.72rem; font-weight: 800;
+    }
+    .mk-dh-id { min-width: 0; }
+    .mk-dh-name { font-size: 0.98rem; font-weight: 700; letter-spacing: -0.3px; color: #0f1729; }
+    .mk-dh-meta { font-size: 0.66rem; color: #5b6472; margin-top: 2px; }
+    .mk-dh-total { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+    .mk-dh-total-l { font-size: 0.5rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #99a2af; }
+    .mk-dh-total-v { font-size: 1.72rem; color: #0a192f; line-height: 1.1; }
+
+    /* Partidas (di-head / di-row) */
     .mk-table { display: flex; flex-direction: column; }
-    .mk-row { display: grid; grid-template-columns: 1fr 50px 80px 92px; gap: 0.5rem; align-items: center; padding: 0.62rem 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.8rem; color: #334; }
-    .mk-row > span:not(.mk-prod) { text-align: right; }
-    .mk-row-head { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #99a; border-bottom: 1px solid rgba(10,25,47,0.1); padding: 0.45rem 0; }
-    .mk-row-head > span:first-child { text-align: left; }
-    .mk-prod { font-weight: 600; color: #0a192f; display: flex; flex-direction: column; gap: 1px; }
-    .mk-sub { font-size: 0.62rem; font-weight: 500; color: #98a1b0; }
-    .mk-vol { color: #059669; font-weight: 600; }
-    .mk-num { color: #0a192f; }
-    .mk-row-muted { opacity: 0.85; }
+    .mk-row {
+        display: grid; grid-template-columns: 1.8fr 64px 120px 1fr;
+        gap: 13px; align-items: center; padding: 7px 5px;
+        border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    .mk-row-head {
+        padding-top: 0; padding-bottom: 5px;
+        font-size: 0.55rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+        color: #5b6472;
+    }
+    .mk-r { text-align: right; }
+    .mk-prod { font-size: 0.74rem; font-weight: 600; color: #0f1729; display: flex; flex-direction: column; }
+    .mk-prod small { font-size: 0.58rem; color: #99a2af; font-weight: 500; }
+    .mk-qty { font-size: 0.72rem; color: #5b6472; }
+    .mk-price { display: flex; flex-direction: column; }
+    .mk-price s { font-size: 0.58rem; color: #b6bcc6; }
+    .mk-price .editorial { font-size: 0.79rem; color: #0a192f; }
+    .mk-amt { font-size: 0.84rem; color: #0a192f; text-align: right; }
 
-    .mk-total { margin-top: auto; padding-top: 1rem; display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-end; }
-    .mk-total-line { display: flex; justify-content: space-between; gap: 2.5rem; min-width: 240px; font-size: 0.8rem; color: #667; }
-    .mk-total-line .editorial { color: #0a192f; font-size: 0.92rem; }
-    .mk-total-grand { border-top: 1px solid rgba(10,25,47,0.1); padding-top: 0.55rem; margin-top: 0.2rem; }
-    .mk-total-grand span:first-child { font-weight: 700; color: #0a192f; font-size: 0.9rem; }
-    .mk-grand { font-size: 1.45rem !important; color: #0a192f !important; }
+    /* di-totals */
+    .mk-total { padding: 11px 5px 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+    .mk-total-line { display: flex; justify-content: space-between; gap: 38px; min-width: 200px; font-size: 0.7rem; color: #5b6472; }
+    .mk-total-line .editorial { color: #0a192f; font-size: 0.8rem; }
+    .mk-total-grand { border-top: 1px solid rgba(10,25,47,0.08); padding-top: 7px; font-weight: 700; color: #0f1729; }
+    .mk-total-grand .editorial { font-size: 1.1rem; }
 
-    /* ── PANEL DE ACTIVIDAD ── */
-    .mk-timeline { background: #fbfcfd; border-left: 1px solid rgba(10,25,47,0.06); padding: 1.35rem 1.1rem; display: flex; flex-direction: column; gap: 1.05rem; }
-    .mk-tl-title { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #99a; }
-    .mk-tl-item { display: flex; gap: 10px; align-items: flex-start; transition: opacity 0.5s var(--ease-ios); }
+    /* d-side: Acciones + Actividad */
+    .mk-dside { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+    .mk-actgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .mk-act {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+        background: #fff; color: #5b6472;
+        border: 1px solid rgba(10,25,47,0.08); border-radius: 9px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.42), 0 1px 2px rgba(10,25,47,0.04);
+        padding: 7px 2px 6px;
+    }
+    .mk-act svg { width: 15px; height: 15px; }
+    .mk-act span { font-size: 0.54rem; font-weight: 600; line-height: 1; white-space: nowrap; }
+    .mk-act-wa { color: #0b7a4b; }
+    .mk-dup {
+        display: block; margin-top: 6px; text-align: center;
+        font-size: 0.7rem; font-weight: 600; color: #0f1729;
+        background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); border-radius: 8px;
+        padding: 7px;
+    }
+
+    .mk-tl { display: flex; flex-direction: column; gap: 11px; position: relative; }
+    .mk-tl::before { content: ''; position: absolute; left: 3px; top: 7px; bottom: 7px; width: 1px; background: rgba(10,25,47,0.08); }
+    .mk-tl-item { display: flex; gap: 10px; position: relative; transition: opacity 0.5s var(--ease-ios); }
     .mk-tl-item.is-pending { opacity: 0.3; }
-    .mk-tl-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
-    .dot-green { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
-    .dot-amber { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.14); }
+    .mk-tl-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; box-shadow: 0 0 0 3px #f5f5f7; z-index: 1; }
+    /* dotColor() del detalle real */
+    .dot-green { background: #10b981; }
+    .dot-violet { background: #7c3aed; }
     .dot-blue { background: #3b82f6; }
     .dot-grey { background: #cbd5e1; }
-    .mk-tl-text { font-size: 0.76rem; color: #334; line-height: 1.3; }
-    .mk-tl-text b { color: #0a192f; }
-    .mk-tl-time { font-size: 0.66rem; color: #99a; margin-top: 2px; }
+    .mk-tl-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .mk-tl-text { font-size: 0.68rem; font-weight: 500; color: #0f1729; line-height: 1.3; }
+    .mk-tl-time { font-size: 0.58rem; color: #5b6472; }
 
-    /* ── FLOTANTES (toast de vista + chip CFDI) ── */
+    /* ── FLOTANTES (toast de vista + chip de facturación) ── */
     .mk-toast {
-        position: absolute; bottom: 9%; right: -1.5%; z-index: 2;
+        position: absolute; bottom: -2.5%; right: -1.8%; z-index: 2;
         display: flex; align-items: center; gap: 10px;
         background: #fff; padding: 12px 18px; border-radius: 14px;
         box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 20px 50px -14px rgba(10,25,47,0.3);
@@ -595,10 +860,13 @@ const l = (p: string) => publicPath(p, lang);
     .mk-toast b { color: #0a192f; }
     .mk-toast-dot { width: 9px; height: 9px; background: #10b981; border-radius: 50%; animation: pulse-dot 2s infinite; }
     @keyframes toast-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    /* Mismo pulso que el badge "viendo ahora" del detalle real (.lv-dot). No
+       existía: la animación apuntaba a un keyframe inexistente. */
+    @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
 
-    /* Chip flotante CFDI (aparece en el paso "Facturas" de la historia) */
+    /* Chip flotante (aparece en el paso "Facturas" de la historia) */
     .mk-chip {
-        position: absolute; top: 14%; left: -2%; z-index: 2;
+        position: absolute; bottom: 11%; left: -2%; z-index: 2;
         display: flex; align-items: center; gap: 9px;
         background: #fff; padding: 10px 16px; border-radius: 12px;
         box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 18px 44px -14px rgba(10,25,47,0.28);
@@ -609,15 +877,19 @@ const l = (p: string) => publicPath(p, lang);
         width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
         background: rgba(16,185,129,0.14); color: #059669;
         display: flex; align-items: center; justify-content: center;
-        font-size: 0.65rem; font-weight: 800;
     }
+    .mk-chip-check svg { width: 10px; height: 10px; }
 
-    /* Trust: señales reales (CFDI/seguridad/país/respaldo), no un solo crédito de ingeniería */
-
+    /* Tablet (761–900px): el mockup se escala por JS; aquí solo se compacta la
+       composición para que al escalar la tipografía no quede diminuta. */
     @media (max-width: 900px) {
-        .mk-scaler {
-            transform-origin: top center;
-        }
+        .mk-scaler { width: 960px; }
+        .mk-body { grid-template-columns: 192px minmax(0, 1fr); }
+        .mk-grid { grid-template-columns: minmax(0, 1fr) 228px; gap: 18px; }
+        .mk-tb-desk { display: none; }
+        .mk-dh-total-v { font-size: 1.3rem; }
+        .mk-dh-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mk-row { grid-template-columns: 1.6fr 48px 92px 1fr; gap: 10px; }
         .hero { padding-top: 5.5rem; }
         .hero-top, .hero-actions { grid-template-columns: 1fr; gap: 1.3rem; }
         .hero-desc { max-width: none; padding-top: 0; }
@@ -625,13 +897,13 @@ const l = (p: string) => publicPath(p, lang);
 
     /* ══════════════════════════════════════════════════════════════════
        MÓVIL (<=760px) — el mockup NO se encoge: se re-compone.
-       Escalar 900px a 390 dejaba la tipografía en 3–6px, ilegible. Aquí el
-       mockup calca la app REAL en móvil: sidebar detrás de un drawer
-       (topbar con burger), una sola columna y actividad apilada debajo.
+       Escalar el escritorio a 390 dejaba la tipografía en 3–6px, ilegible. Aquí
+       el mockup calca la app REAL en móvil (AppLayout <=880px + [id].astro
+       <=680px): sidebar detrás del drawer, topbar con burger + lupa + crear +
+       campana, status pill en su propio renglón, partidas en dos renglones
+       (nombre | importe · cantidad | precio) y actividad debajo.
        El escalador de JS se apaga bajo este breakpoint.
     ══════════════════════════════════════════════════════════════════ */
-    .mk-mobilebar { display: none; }
-
     @media (max-width: 760px) {
         .mk-space { height: auto !important; }
         .mk-scaler { width: 100%; transform: none !important; }
@@ -640,73 +912,83 @@ const l = (p: string) => publicPath(p, lang);
         .mockup { border-radius: 16px; }
         .mockup-glow { inset: -4% -6% 6%; }
 
-        /* Topbar móvil (calca del shell real) */
-        .mk-mobilebar {
-            display: flex; align-items: center; gap: 10px;
-            padding: 10px 12px;
-            background: #fbfcfd;
-            border-bottom: 1px solid rgba(10,25,47,0.06);
-        }
-        .mk-mb-ico {
-            width: 28px; height: 28px; flex-shrink: 0;
-            display: inline-flex; align-items: center; justify-content: center;
-            border-radius: 8px; color: #5b6472;
-        }
-        .mk-mb-ico svg { width: 16px; height: 16px; }
-        .mk-mb-ico:last-of-type { margin-left: auto; }
-        .mk-mb-logo { height: 15px; width: auto; display: block; }
-        .mk-mb-avatar {
-            width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
-            background: #0a192f; color: #fff;
-            display: inline-flex; align-items: center; justify-content: center;
-            font-size: 0.62rem; font-weight: 800; letter-spacing: -0.02em;
-        }
-
-        /* Una sola columna: fuera sidebar y breadcrumbs */
-        .mk-body { grid-template-columns: 1fr; min-height: 0; }
+        .mk-body { grid-template-columns: 1fr; padding: 8px; }
         .mk-side { display: none; }
-        .mk-crumbs { display: none; }
 
-        .mk-main { padding: 1rem 1rem 1.15rem; }
-        .mk-folio { font-size: 1.15rem; }
-        .mk-client { font-size: 0.78rem; }
-        .mk-action { display: none; }
-        .mk-badge { font-size: 0.68rem; padding: 5px 11px; }
+        /* Topbar móvil */
+        .mk-topbar { gap: 4px; padding: 5px 6px; border-radius: 14px; }
+        .mk-burger, .mk-tb-ico { width: 34px; height: 34px; }
+        .mk-burger { display: inline-flex; align-items: center; justify-content: center; color: #0f1729; border-radius: 9px; }
+        .mk-burger svg { width: 18px; height: 18px; }
+        .mk-search { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; gap: 0; justify-content: center; border: none; background: transparent; }
+        .mk-search svg { width: 17px; height: 17px; }
+        .mk-search-l, .mk-search kbd { display: none; }
+        .mk-tb-desk { display: none; }
+        .mk-tb-ico svg { width: 17px; height: 17px; }
+        .mk-notif-dot { top: 7px; right: 8px; }
+        .mk-create { width: 34px; height: 34px; padding: 0; border-radius: 50%; justify-content: center; }
+        .mk-create-plus { width: 15px; height: 15px; }
+        .mk-create-l, .mk-create-caret { display: none; }
 
-        /* Stepper: se desliza en horizontal sin barra visible */
-        .mk-stepper {
-            margin: 0.9rem 0 0.75rem;
-            overflow-x: auto;
-            scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
+        .mk-ph { padding: 14px 8px 0; gap: 8px; }
+        .mk-crumbs { font-size: 0.72rem; }
+        .mk-ph-title { font-size: 1.35rem; }
+        .mk-pin { display: none; }
+        .mk-badge { font-size: 0.7rem; padding: 4px 10px; margin-bottom: 3px; }
+        .mk-badge::before { width: 6px; height: 6px; }
+
+        .mk-main { padding: 14px 8px 8px; }
+
+        /* Stepper: cinco puntos y el nombre del paso actual — cabe sin scroll */
+        .mk-stepper { margin-bottom: 14px; }
+        /* min-width:auto — sin él los pasos se encogían bajo su contenido y la
+           etiqueta del paso actual se encimaba con el siguiente punto */
+        .mk-stp { gap: 6px; min-width: auto; }
+        .mk-stp.is-current { flex: 0.2 0 auto; }
+        .mk-stp:last-child { flex: 0 0 auto; }
+        .mk-stp:not(:last-child)::after { margin: 0 6px; min-width: 8px; }
+        .mk-stp-dot { width: 22px; height: 22px; font-size: 0.66rem; }
+        .mk-stp-ck { width: 11px; height: 11px; }
+        .mk-stp:not(.is-current) .mk-stp-label { display: none; }
+        .mk-stp-label { font-size: 0.74rem; }
+
+        .mk-grid { grid-template-columns: 1fr; gap: 16px; }
+
+        .mk-dhead { flex-wrap: wrap; align-items: flex-start; gap: 8px; margin-bottom: 10px; padding-bottom: 12px; }
+        .mk-dh-av { width: 38px; height: 38px; font-size: 0.76rem; }
+        .mk-dh-name { font-size: 0.95rem; }
+        .mk-dh-meta { font-size: 0.62rem; white-space: nowrap; }
+        .mk-dh-total { width: 100%; align-items: flex-start; }
+        .mk-dh-total-l { font-size: 0.56rem; }
+        .mk-dh-total-v { font-size: 1.55rem; }
+
+        .mk-sec { font-size: 0.86rem; margin-bottom: 2px; padding-bottom: 7px; }
+        .mk-row-head { display: none; }
+        .mk-row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas: "name amount" "qty price";
+            gap: 3px 12px; padding: 9px 0;
         }
-        .mk-stepper::-webkit-scrollbar { display: none; }
-        .mk-stp { font-size: 0.68rem; }
-        .mk-stp-line { min-width: 14px; margin: 0 7px; }
+        .mk-prod { grid-area: name; font-size: 0.86rem; }
+        .mk-prod small { font-size: 0.7rem; }
+        .mk-amt { grid-area: amount; align-self: start; font-size: 0.92rem; }
+        .mk-qty { grid-area: qty; align-self: end; font-size: 0.8rem; }
+        .mk-price { grid-area: price; flex-direction: row; align-items: baseline; gap: 6px; justify-self: end; }
+        .mk-price s { font-size: 0.7rem; }
+        .mk-price .editorial { font-size: 0.84rem; }
 
-        /* Tabla: 3 columnas. El precio unitario se va — la cantidad y el
-           importe son lo que sostiene el copy. */
-        .mk-row { grid-template-columns: 1fr 48px 92px; gap: 0.6rem; padding: 0.7rem 0; font-size: 0.85rem; }
-        .mk-row > span:nth-child(3) { display: none; }
-        .mk-row-head { font-size: 0.62rem; }
-        .mk-sub { font-size: 0.68rem; }
+        .mk-total { padding: 10px 0 0; align-items: stretch; gap: 5px; }
+        .mk-total-line { min-width: 0; gap: 1rem; font-size: 0.82rem; }
+        .mk-total-line .editorial { font-size: 0.9rem; }
+        .mk-total-grand .editorial { font-size: 1.2rem; }
 
-        .mk-total { padding-top: 1rem; align-items: stretch; }
-        .mk-total-line { min-width: 0; gap: 1rem; font-size: 0.85rem; }
-        .mk-total-line .editorial { font-size: 0.95rem; }
-        .mk-total-grand span:first-child { font-size: 0.95rem; }
-        .mk-grand { font-size: 1.4rem !important; }
-
-        /* Actividad: deja de ser columna lateral y se apila debajo */
-        .mk-timeline {
-            border-left: none;
-            border-top: 1px solid rgba(10,25,47,0.06);
-            padding: 1.1rem 1rem 1.2rem;
-            gap: 0.9rem;
-        }
-        .mk-tl-title { font-size: 0.62rem; }
-        .mk-tl-text { font-size: 0.82rem; }
-        .mk-tl-time { font-size: 0.7rem; }
+        /* La columna de acciones se queda fuera del recorte móvil */
+        .mk-actions { display: none; }
+        .mk-tl { gap: 9px; }
+        .mk-tl-dot { width: 8px; height: 8px; margin-top: 5px; }
+        .mk-tl::before { left: 3.5px; }
+        .mk-tl-text { font-size: 0.76rem; }
+        .mk-tl-time { font-size: 0.64rem; }
 
         /* Flotantes: uno solo, y dentro de la pantalla */
         .mk-chip { display: none; }
@@ -739,38 +1021,32 @@ const l = (p: string) => publicPath(p, lang);
 </style>
 
 <script>
+    // Escalador ÚNICO del mockup del hero (antes había un segundo en index.astro
+    // que competía por el mismo `transform` con un umbral fijo de 1080px).
     document.addEventListener('DOMContentLoaded', () => {
-        const scaler = document.querySelector('.mk-scaler') as HTMLElement;
-        const space = document.querySelector('.mk-space') as HTMLElement;
+        const scaler = document.querySelector('.hero .mk-scaler') as HTMLElement;
+        const space = document.querySelector('.hero .mk-space') as HTMLElement;
         if (!scaler || !space) return;
 
         // Bajo 760px el mockup tiene layout propio (ver el bloque @media del
         // <style>): re-compone en vez de encogerse, así que NO se escala.
         const MOBILE_MAX = 760;
+        const GUTTER = 40;
 
         function scaleMockup() {
-            if (window.innerWidth > 1080 || window.innerWidth <= MOBILE_MAX) {
+            // offsetWidth/offsetHeight ignoran el transform: miden el tamaño natural.
+            const base = scaler.offsetWidth;
+            const avail = window.innerWidth - GUTTER;
+            if (window.innerWidth <= MOBILE_MAX || !base || avail >= base) {
                 scaler.style.transform = 'none';
                 space.style.height = 'auto';
                 return;
             }
-            
-            // Available width (viewport width minus some padding)
-            const padding = window.innerWidth < 768 ? 20 : 40;
-            const availableWidth = window.innerWidth - padding;
-            // El ancho REAL del scaler, no un 1080 fijo: bajo 900px el CSS lo
-            // baja a 900 y con la constante el mockup quedaba escalado de más
-            // (72% en una tablet) y descuadrado respecto al texto.
-            const originalWidth = scaler.offsetWidth || 1080;
-            
-            const scale = availableWidth / originalWidth;
+            const scale = avail / base;
             scaler.style.transform = `scale(${scale})`;
-            
-            // Adjust container height to match scaled mockup height
-            const rawHeight = scaler.offsetHeight;
-            space.style.height = `${rawHeight * scale}px`;
+            space.style.height = `${scaler.offsetHeight * scale}px`;
         }
-        
+
         window.addEventListener('resize', scaleMockup);
         scaleMockup();
         setTimeout(scaleMockup, 200);

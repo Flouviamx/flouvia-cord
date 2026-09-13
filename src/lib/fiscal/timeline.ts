@@ -11,6 +11,7 @@
 
 import { sql, withOrgTx } from '../db';
 import { trackServer } from '../posthog-server';
+import { after } from '../after';
 import type { EventName } from '../analytics-events';
 
 export type InvoiceEventType =
@@ -51,11 +52,17 @@ export async function logInvoiceEvent(
     } catch { /* el timeline es informativo: nunca bloquea la operación */ }
 
     if (!ANALYTICS_EVENT[tipo]) return;
+    // Network delivery is optional work, not part of committing an invoice or
+    // payment. waitUntil keeps it alive without blocking the business response.
+    after(emitInvoiceAnalytics(orgId, documentoId, tipo, detalle));
+}
+
+async function emitInvoiceAnalytics(orgId: string, documentoId: string, tipo: InvoiceEventType, detalle: string): Promise<void> {
     try {
         const [[d]] = await withOrgTx(orgId, sql`
             select df.total, df.currency, df.country_code, df.document_type,
                    df.credit_note_of, df.cotizacion_id, df.amount_paid,
-                   df.issued_at,
+                   df.issued_at, df.status, df.fiscal_id, df.provider, df.provider_data,
                    (o.sandbox_of is not null) as is_sandbox, o.is_demo
               from documentos_fiscales df join orgs o on o.id = df.org_id
              where df.id = ${documentoId} and df.org_id = ${orgId}`);
@@ -83,7 +90,7 @@ export async function logInvoiceEvent(
         } else if (tipo === 'issued') {
             await trackServer('invoice_finalized', orgId, {
                 event_id: `${documentoId}:issued`, invoice_id: documentoId, total, currency,
-                has_fiscal_stamp: d.country_code === 'MX' || d.country_code === 'ES',
+                has_fiscal_stamp: hasFiscalStamp(d),
                 document_type: (d.document_type as string) ?? undefined,
             }, isSandbox, isDemo);
         } else if (tipo === 'sent') {
@@ -110,6 +117,22 @@ export async function logInvoiceEvent(
             }, isSandbox, isDemo);
         }
     } catch { /* la analítica es best-effort: nunca bloquea la operación */ }
+}
+
+/** Evidence of a stamp/Verifactu record, NOT a claim of AEAT acceptance. */
+export function hasFiscalStamp(document: Record<string, any>): boolean {
+    const data = document.provider_data;
+    if (document.status !== 'issued' || !data || typeof data !== 'object'
+        || data.simulado === true || data.livemode === false
+        || data.regulatory_status === 'commercial_only') return false;
+    if (document.country_code === 'MX') {
+        return document.provider === 'facturapi'
+            && /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(document.fiscal_id || '');
+    }
+    return document.country_code === 'ES' && document.provider === 'verifactu'
+        && data.regulatory_status === 'verifactu'
+        && typeof data.verifactu?.huella === 'string'
+        && /^[0-9a-f]{64}$/i.test(data.verifactu.huella);
 }
 
 export interface InvoiceTimelineEntry {

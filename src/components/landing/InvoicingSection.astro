@@ -1,0 +1,661 @@
+---
+import { getLangFromUrl, publicPath, useTranslations } from '../../i18n/utils';
+import CordDynamicBg from '../CordDynamicBg.jsx';
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const l = (p: string) => publicPath(p, lang);
+const en = lang === 'en';
+
+// Cord Invoicing — mismo sistema que PaymentsSection (4 pasos numerados, visual
+// 4:5, mockup calcado, escala em/cqw), con el shader en las tarjetas 2 y 4
+// para que las dos secciones no se lean como la misma repetida.
+//   1 · editor /app/facturas/nueva (conceptos + "Revisa y emite")
+//   2 · detalle /app/facturas/[id] emitida (entrega, accesos, Actividad)
+//   3 · página hospedada /i/[token] con el abono parcial abierto
+//   4 · /app/facturas/recurrentes + escalera de recordatorios en Actividad
+// Una sola factura cruza las tarjetas 1–3: A-001048 de Materiales del Valle a
+// Distribuidora El Zarco, $196,469.20 MXN (4 conceptos, IVA 16%).
+
+// Paletas nuevas: ni Payments (navy/azul, teal-verde), ni Steps, ni
+// AdvancedFeatures (violeta, esmeralda).
+const PAL_EMITE = { base: '#07202E', color1: '#0D5A6E', color2: '#20A3BA', color3: '#9BE6EE' };
+const PAL_REPITE = { base: '#101A30', color1: '#2B4470', color2: '#5B7FB8', color3: '#CAD8EC' };
+
+// es-MX: '$196,469.20' · en-US: 'MX$196,469.20' (Intl con currency MXN).
+const CUR = en ? 'MX$' : '$';
+
+const LINEAS = [
+    { d: en ? 'Grey cement 50kg' : 'Cemento gris 50kg', q: '120', p: '182', imp: '21,840.00' },
+    { d: en ? 'Rebar 3/8"' : 'Varilla corrugada 3/8"', q: '340', p: '168.5', imp: '57,290.00' },
+    { d: en ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40', q: '2400', p: '14.2', imp: '34,080.00' },
+    { d: en ? 'River sand m³' : 'Arena de río m³', q: '180', p: '312', imp: '56,160.00' },
+];
+
+// Timeline real: más reciente arriba (getInvoiceTimeline ordena desc).
+const ACTIVIDAD = [
+    { tipo: 'viewed', h: en ? 'The client opened it' : 'El cliente la abrió', d: en ? 'The client opened the invoice' : 'El cliente abrió la factura', w: en ? 'Sep 12, 11:08' : '12 sept, 11:08' },
+    { tipo: 'sent', h: en ? 'Sent to the client' : 'Enviada al cliente', d: en ? 'Sent to raul@elzarco.mx' : 'Enviada a raul@elzarco.mx', w: en ? 'Sep 12, 10:43' : '12 sept, 10:43' },
+    { tipo: 'issued', h: en ? 'Issued' : 'Emitida', d: en ? 'Invoice A-001048 issued' : 'Factura A-001048 emitida', w: en ? 'Sep 12, 10:42' : '12 sept, 10:42' },
+    { tipo: 'created', h: en ? 'Draft created' : 'Borrador creado', d: '', w: en ? 'Sep 11, 17:20' : '11 sept, 17:20' },
+];
+
+const RECURRENTES = [
+    { c: 'Constructora Apex', n: en ? 'Monthly scaffolding rental' : 'Renta mensual de andamios', cad: en ? 'Monthly' : 'Mensual', dia: 1, next: en ? 'Oct 1, 2026' : '1 oct 2026', em: 9 },
+    { c: 'Distribuidora El Zarco', n: en ? 'Quarterly block supply' : 'Suministro trimestral de block', cad: en ? 'Quarterly' : 'Trimestral', dia: 15, next: en ? 'Dec 15, 2026' : '15 dic 2026', em: 3 },
+    { c: 'Aceros del Norte', n: en ? 'Yearly storage' : 'Almacenaje anual', cad: en ? 'Yearly' : 'Anual', dia: 5, next: en ? 'Jan 5, 2027' : '5 ene 2027', em: 2 },
+];
+
+// Escalera de cobranza real: etapas {-7,-1,3,7,14,30} con el texto del cron.
+const RECORDATORIOS = [
+    { tipo: 'reminder', h: en ? 'Reminder sent' : 'Recordatorio enviado', d: en ? 'Collection reminder (3 days overdue)' : 'Recordatorio de cobro (3 días vencida)', w: en ? 'today, 09:00' : 'hoy, 09:00' },
+    { tipo: 'reminder', h: en ? 'Reminder sent' : 'Recordatorio enviado', d: en ? 'Due-date notice (7 days before)' : 'Aviso de vencimiento (7 días antes)', w: en ? 'Sep 2, 09:00' : '2 sept, 09:00' },
+    { tipo: 'issued', h: en ? 'Issued' : 'Emitida', d: en ? 'Issued by recurrence' : 'Emitida por recurrencia', w: en ? 'Sep 1, 06:00' : '1 sept, 06:00' },
+];
+---
+
+<section class="cis" id="cord-invoicing">
+    <div class="cis-inner">
+        <div class="cis-head">
+            <p class="cis-eyebrow reveal">{t("inv.eyebrow")}</p>
+            <div class="cis-head-row">
+                <h2 class="cis-title reveal">{t("inv.title")}</h2>
+                <div class="cis-head-aside">
+                    <p class="cis-sub reveal">{t("inv.sub")}</p>
+                    <a href={l("/producto/facturacion")} class="cis-cta reveal">
+                        {t("inv.cta")}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <ol class="cis-grid">
+            <!-- ─────────── 1 · Editor: conceptos + "Revisa y emite" ─────────── -->
+            <li class="cis-step reveal">
+                <div class="cis-vis cis-vis-light" data-cis="arma">
+                    <span class="cis-num editorial" aria-hidden="true">1</span>
+                    <div class="cis-stage" aria-hidden="true">
+                        <div class="cis-ed">
+                            <div class="cis-ed-step">
+                                <span class="cis-ed-num">2</span>
+                                <span class="cis-ed-step-tx">
+                                    <b>{en ? 'What are you charging for?' : '¿Qué le estás cobrando?'}</b>
+                                    <span>{en ? 'Search your catalog and press Enter, or add a free line. Each concept carries its own tax rate.' : 'Busca en tu catálogo y pulsa Enter, o agrega una línea libre. Cada concepto lleva su propia tasa.'}</span>
+                                </span>
+                            </div>
+                            <div class="cis-ed-lh">
+                                <span>{en ? 'Concept' : 'Concepto'}</span>
+                                <span>{en ? 'Qty' : 'Cant.'}</span>
+                                <span>{en ? 'Price' : 'Precio'}</span>
+                                <span class="r">{en ? 'Amount' : 'Importe'}</span>
+                            </div>
+                            {LINEAS.map((x) => (
+                                <div class="cis-ed-row">
+                                    <span class="cis-ed-name">{x.d}</span>
+                                    <span class="cis-ed-in">{x.q}</span>
+                                    <span class="cis-ed-in">{x.p}</span>
+                                    <span class="cis-ed-imp editorial">{CUR}{x.imp}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <div class="cis-sum">
+                            <b class="cis-sum-h">{en ? 'Review and issue' : 'Revisa y emite'}</b>
+                            <span class="cis-sum-count">{en ? '4 concepts · 3040 units' : '4 conceptos · 3040 piezas'}</span>
+                            <div class="cis-sum-line"><span>Subtotal</span><span class="editorial">{CUR}169,370.00</span></div>
+                            <div class="cis-sum-line cis-sum-tax"><span>IVA 16%</span><span class="editorial">{CUR}27,099.20</span></div>
+                            <div class="cis-sum-div"></div>
+                            <div class="cis-sum-line cis-sum-total"><span>Total</span><span class="editorial" data-count="196469.20" data-prefix={CUR}>{CUR}196,469.20</span></div>
+                            <div class="cis-sum-del">
+                                <span>{en ? 'Delivery' : 'Entrega'}</span>
+                                <strong>raul@elzarco.mx</strong>
+                                <small>{en ? 'Email includes the PDF and payment link.' : 'El correo incluye el PDF y la liga de pago.'}</small>
+                            </div>
+                            <span class="cis-sum-send">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z" fill="currentColor" fill-opacity="0.14"/></svg>
+                                {en ? 'Issue and send' : 'Emitir y enviar'}
+                            </span>
+                            <span class="cis-sum-note">{en
+                                ? 'The number is assigned when you issue. Later corrections require a void or credit note.'
+                                : 'El folio se asigna al emitir. Después, las correcciones requieren anulación o nota de crédito.'}</span>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="cis-h">{t("inv.step.1.h")}</h3>
+                <p class="cis-p">{t("inv.step.1.p")}</p>
+            </li>
+
+            <!-- ─────────── 2 · Detalle emitido: entrega, accesos y Actividad ─────────── -->
+            <li class="cis-step reveal">
+                <div class="cis-vis cis-vis-dark" style={`--cis-base:${PAL_EMITE.base}`} data-cis="emite">
+                    <div class="cis-shader"><CordDynamicBg client:only="react" colors={PAL_EMITE} grain={false} /></div>
+                    <span class="cis-num editorial" aria-hidden="true">2</span>
+                    <div class="cis-stage" aria-hidden="true">
+                        <div class="cis-fd">
+                            <div class="cis-fd-top">
+                                <b>A-001048</b>
+                                <span class="cis-pill cis-pill-open">{en ? 'Open' : 'Abierta'}</span>
+                            </div>
+                            <div class="cis-fd-client">
+                                <span class="cis-fd-av">DE</span>
+                                <span class="cis-fd-client-tx">
+                                    <b>Distribuidora El Zarco</b>
+                                    <span>{en ? 'Issued Sep 12, 2026' : 'Emitida 12 sept 2026'} <i>·</i> {en ? 'Due Oct 12, 2026' : 'Vence 12 oct 2026'} <i>·</i> {en ? 'Sent' : 'Enviada'}</span>
+                                </span>
+                            </div>
+                            <div class="cis-fd-del">
+                                <span class="cis-fd-del-dot"></span>
+                                <span class="cis-fd-del-tx"><b>{en ? 'Sent to client' : 'Enviada al cliente'}</b><small>raul@elzarco.mx</small></span>
+                                <span class="cis-fd-del-btn">{en ? 'Resend' : 'Reenviar'}</span>
+                            </div>
+                            <div class="cis-fd-util">
+                                <span class="cis-fd-u">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" fill="currentColor" fill-opacity="0.12"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    <span>{en ? 'Open link' : 'Abrir link'}</span>
+                                </span>
+                                <span class="cis-fd-u">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    <span>{en ? 'Copy' : 'Copiar'}</span>
+                                </span>
+                                <span class="cis-fd-u">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" fill="currentColor" fill-opacity="0.12"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    <span>{en ? 'Download PDF' : 'Descargar PDF'}</span>
+                                </span>
+                                <span class="cis-fd-u cis-fd-u-wa">
+                                    <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://whatsapp.com&size=128" alt="" width="32" height="32" loading="lazy" />
+                                    <span>WhatsApp</span>
+                                </span>
+                            </div>
+                            <div class="cis-fd-sh">{en ? 'Activity' : 'Actividad'}</div>
+                            <ol class="cis-tl">
+                                {ACTIVIDAD.map((e) => (
+                                    <li class={`is-${e.tipo}`}>
+                                        <span class="cis-tl-dot"></span>
+                                        <span class="cis-tl-body">
+                                            <b>{e.h}</b>
+                                            {e.d && <span>{e.d}</span>}
+                                            <time>{e.w}</time>
+                                        </span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="cis-h">{t("inv.step.2.h")}</h3>
+                <p class="cis-p">{t("inv.step.2.p")}</p>
+            </li>
+
+            <!-- ─────────── 3 · Página hospedada /i/[token], abono parcial abierto ─────────── -->
+            <li class="cis-step reveal">
+                <div class="cis-vis cis-vis-light" data-cis="paga">
+                    <span class="cis-num editorial" aria-hidden="true">3</span>
+                    <div class="cis-stage" aria-hidden="true">
+                        <div class="cis-phone">
+                            <div class="cis-phone-island"></div>
+                            <div class="cis-phone-screen">
+                                <div class="cis-iv">
+                                    <div class="cis-iv-row"><span>Total</span><span class="editorial">{CUR}196,469.20</span></div>
+                                    <div class="cis-iv-row"><span>{en ? 'Paid' : 'Pagado'}</span><span class="editorial">−{CUR}80,000.00</span></div>
+                                    <div class="cis-iv-row cis-iv-due"><span>{en ? 'Balance due' : 'Saldo'}</span><span class="editorial">{CUR}116,469.20</span></div>
+
+                                    <div class="cis-iv-pagos">
+                                        <span class="cis-iv-label">{en ? 'Payments received' : 'Pagos recibidos'}</span>
+                                        <div><span>{en ? 'Sep 19, 2026' : '19 sept 2026'}</span><span class="editorial">{CUR}80,000.00</span></div>
+                                    </div>
+
+                                    <div class="cis-iv-foot">
+                                        <span class="cis-iv-pay">{en ? 'Pay' : 'Pagar'} {CUR}116,469.20</span>
+                                        <div class="cis-iv-box">
+                                            <span class="cis-iv-box-l">{en ? 'How much would you like to pay?' : '¿Cuánto quieres abonar?'}</span>
+                                            <div class="cis-iv-box-row">
+                                                <span class="cis-iv-cur">MXN</span>
+                                                <span class="cis-iv-input editorial">50000<i class="cis-caret"></i></span>
+                                            </div>
+                                            <span class="cis-iv-hint">{en ? 'You can pay part of it. The rest stays as an outstanding balance on this same invoice.' : 'Puedes abonar una parte. El resto queda como saldo pendiente de esta misma factura.'}</span>
+                                            <div class="cis-iv-acts">
+                                                <span class="cis-iv-cancel">{en ? 'Cancel' : 'Cancelar'}</span>
+                                                <span class="cis-iv-ok">{en ? 'Continue' : 'Continuar'}</span>
+                                            </div>
+                                        </div>
+                                        <div class="cis-iv-dl"><span>{en ? 'Download PDF' : 'Descargar PDF'}</span><span>{en ? 'Download XML' : 'Descargar XML'}</span></div>
+                                        <span class="cis-iv-uuid">{en ? 'Tax folio' : 'Folio fiscal'} 5B1E4A7C-93D2-4F18-A6C0-2E7D9B41F3A8</span>
+                                        <span class="cis-iv-powered">Materiales del Valle · {en ? 'Sent with Cord' : 'Enviado con Cord'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="cis-h">{t("inv.step.3.h")}</h3>
+                <p class="cis-p">{t("inv.step.3.p")}</p>
+            </li>
+
+            <!-- ─────────── 4 · Recurrentes + escalera de recordatorios ─────────── -->
+            <li class="cis-step reveal">
+                <div class="cis-vis cis-vis-dark" style={`--cis-base:${PAL_REPITE.base}`} data-cis="repite">
+                    <div class="cis-shader"><CordDynamicBg client:only="react" colors={PAL_REPITE} grain={false} /></div>
+                    <span class="cis-num editorial" aria-hidden="true">4</span>
+                    <div class="cis-stage" aria-hidden="true">
+                        <div class="cis-rec">
+                            <b class="cis-rec-h">{en ? 'Recurring invoices' : 'Facturas recurrentes'}</b>
+                            {RECURRENTES.map((r) => (
+                                <div class="cis-rec-row">
+                                    <span class="cis-rec-name"><b>{r.c}</b><small>{r.n}</small></span>
+                                    <span class="cis-rec-state"><i></i>{en ? 'Active' : 'Activa'}</span>
+                                    <span class="cis-rec-cad">{r.cad}<small>{en ? `Day ${r.dia} of each period` : `Día ${r.dia} de cada periodo`}</small></span>
+                                    <span class="cis-rec-next"><span class="editorial">{r.next}</span><small>{r.em} {en ? 'issued' : 'emitidas'}</small></span>
+                                </div>
+                            ))}
+                        </div>
+                        <div class="cis-rem">
+                            <div class="cis-rem-h">{en ? 'Activity' : 'Actividad'}</div>
+                            <ol class="cis-tl cis-tl-sm">
+                                {RECORDATORIOS.map((e) => (
+                                    <li class={`is-${e.tipo}`}>
+                                        <span class="cis-tl-dot"></span>
+                                        <span class="cis-tl-body">
+                                            <b>{e.h}</b>
+                                            <span>{e.d}</span>
+                                            <time>{e.w}</time>
+                                        </span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="cis-h">{t("inv.step.4.h")}</h3>
+                <p class="cis-p">{t("inv.step.4.p")}</p>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<script>
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Una micro-historia por tarjeta, una sola vez. El HTML ya es el estado
+    // final: sin JS o con reduced-motion todo se ve completo.
+    const root = document.getElementById('cord-invoicing');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (root && !reduced) {
+        const once = (el: Element, onEnter: () => void) =>
+            ScrollTrigger.create({ trigger: el, start: 'top 78%', once: true, onEnter });
+
+        // 1 · el total se suma conforme entran los conceptos.
+        const arma = root.querySelector('[data-cis="arma"]');
+        const rows = arma ? Array.from(arma.querySelectorAll<HTMLElement>('.cis-ed-row')) : [];
+        const total = arma?.querySelector<HTMLElement>('[data-count]');
+        if (arma && rows.length && total) {
+            const target = Number(total.dataset.count || 0);
+            const prefix = total.dataset.prefix || '$';
+            const fmt = (n: number) => prefix + new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+            gsap.set(rows, { opacity: 0, y: 8 });
+            once(arma, () => {
+                gsap.to(rows, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', stagger: 0.12, delay: 0.25, clearProps: 'transform,opacity' });
+                const o = { v: target * 0.4 };
+                gsap.to(o, { v: target, duration: 1.3, ease: 'power2.out', delay: 0.35, onUpdate: () => { total.textContent = fmt(o.v); } });
+            });
+        }
+
+        // 2 · la Actividad se escribe de abajo hacia arriba, como ocurrió.
+        const emite = root.querySelector('[data-cis="emite"]');
+        const evs = emite ? Array.from(emite.querySelectorAll<HTMLElement>('.cis-tl li')).reverse() : [];
+        if (emite && evs.length) {
+            gsap.set(evs.slice(1), { opacity: 0, x: -6 });
+            once(emite, () => {
+                gsap.to(evs.slice(1), { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out', stagger: 0.55, delay: 0.4, clearProps: 'transform,opacity' });
+            });
+        }
+
+        // 4 · el panel de recordatorios sube y marca la etapa de hoy.
+        const repite = root.querySelector('[data-cis="repite"]');
+        const rem = repite?.querySelector<HTMLElement>('.cis-rem');
+        const first = repite?.querySelector<HTMLElement>('.cis-rem li:first-child');
+        if (repite && rem && first) {
+            gsap.set(rem, { opacity: 0, y: 16 });
+            gsap.set(first, { opacity: 0 });
+            once(repite, () => {
+                gsap.timeline({ delay: 0.3 })
+                    .to(rem, { opacity: 1, y: 0, duration: 0.75, ease: 'power3.out', clearProps: 'transform,opacity' })
+                    .to(first, { opacity: 1, duration: 0.5, clearProps: 'opacity' }, '+=0.35');
+            });
+        }
+    }
+</script>
+
+<style>
+    /* Mismo canvas que todo el index (`--color-bg-soft`): el carácter vive
+       dentro de cada tarjeta, nunca en una banda de color. */
+    .cis {
+        padding: 7.5rem 5% 7.5rem;
+        background: var(--color-bg-soft);
+    }
+    .cis-inner { max-width: 1180px; margin: 0 auto; }
+
+    /* ── Cabecera ── */
+    .cis-head { margin: 0 0 3.5rem; }
+    .cis-eyebrow {
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
+        text-transform: uppercase; color: var(--color-blue-deep); opacity: 0.6;
+        margin: 0 0 1.2rem;
+    }
+    .cis-head-row { display: grid; grid-template-columns: 1.25fr 1fr; gap: 3.5rem; align-items: start; }
+    .cis-title {
+        font-size: clamp(2.1rem, 3.4vw, 3.6rem);
+        font-weight: 700; line-height: 1.1; letter-spacing: -0.035em;
+        color: #0a192f; margin: 0;
+    }
+    .cis-head-aside { display: flex; flex-direction: column; gap: 1.4rem; align-items: flex-start; padding-top: 0.4rem; }
+    .cis-sub { font-size: 1.02rem; line-height: 1.65; color: var(--color-text-muted); margin: 0; }
+    .cis-cta {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 0.96rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none;
+    }
+    .cis-cta svg { width: 16px; height: 16px; transition: transform 0.35s var(--ease-spring); }
+    .cis-cta:hover svg { transform: translateX(4px); }
+
+    /* ── Fila de 4 pasos (sistema de PaymentsSection) ── */
+    .cis-grid {
+        list-style: none; margin: 0; padding: 0;
+        display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem;
+    }
+    .cis-step { display: flex; flex-direction: column; min-width: 0; }
+    .cis-vis {
+        position: relative; aspect-ratio: 4 / 5; border-radius: 26px;
+        overflow: hidden; isolation: isolate; container-type: inline-size;
+        background: var(--cis-base, #eceef2);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 22px 44px -28px rgba(10,25,47,0.32);
+    }
+    .cis-vis-light {
+        background:
+            radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 62%),
+            linear-gradient(180deg, #eceef2 0%, #f1f2f5 100%);
+        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.045), 0 1px 2px rgba(10,25,47,0.03);
+    }
+    .cis-shader { position: absolute; inset: 0; z-index: 0; }
+    .cis-num {
+        position: absolute; z-index: 4; top: 14px; left: 14px;
+        width: 28px; height: 28px; border-radius: 9px;
+        display: grid; place-items: center; font-size: 0.8rem; line-height: 1;
+    }
+    .cis-vis-dark .cis-num { color: #fff; background: rgba(255,255,255,0.14); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.24); }
+    .cis-vis-light .cis-num { color: #0a192f; background: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.08), inset 0 0 0 1px rgba(10,25,47,0.06); }
+
+    /* 28em = ancho de la tarjeta. Todo adentro va en em. */
+    .cis-stage {
+        position: absolute; inset: 0; z-index: 2;
+        font-size: 10px; font-size: calc(100cqw / 28);
+        font-family: var(--font-sans); color: #0f1729; line-height: 1.3;
+        pointer-events: none; user-select: none;
+    }
+    .cis-stage b, .cis-stage strong { font-weight: 600; }
+    .cis-h { margin: 1.35rem 0 0; font-size: 1.08rem; font-weight: 650; line-height: 1.3; letter-spacing: -0.02em; color: #0a192f; }
+    .cis-p { margin: 0.45rem 0 0; font-size: 0.9rem; line-height: 1.55; color: var(--color-text-muted); }
+
+    .cis-pill {
+        display: inline-flex; align-items: center; gap: 0.5em;
+        font-size: 0.6em; font-weight: 700; letter-spacing: 0.02em;
+        padding: 0.35em 0.85em; border-radius: 999px; white-space: nowrap;
+    }
+    .cis-pill::before { content: ''; width: 0.55em; height: 0.55em; border-radius: 50%; background: currentColor; }
+    .cis-pill-open { color: #b45309; background: rgba(245,158,11,0.12); }
+
+    /* Timeline compartido: calca de .fd-tl-* */
+    .cis-tl { position: relative; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.78em; }
+    .cis-tl::before { content: ''; position: absolute; top: 0.5em; bottom: 0.5em; left: 0.24em; width: 1px; background: rgba(10,25,47,0.1); }
+    .cis-tl li { position: relative; display: grid; grid-template-columns: 0.5em minmax(0, 1fr); gap: 0.75em; align-items: start; }
+    .cis-tl-dot { z-index: 1; width: 0.5em; height: 0.5em; margin-top: 0.3em; border-radius: 50%; background: #5b6472; opacity: 0.5; box-shadow: 0 0 0 0.22em #fff; }
+    .cis-tl li.is-viewed .cis-tl-dot { background: #0a192f; opacity: 1; }
+    .cis-tl li.is-reminder .cis-tl-dot { background: #b45309; opacity: 1; }
+    .cis-tl-body { display: flex; flex-direction: column; gap: 0.08em; min-width: 0; }
+    .cis-tl-body b { font-size: 0.72em; font-weight: 550; }
+    .cis-tl-body span { font-size: 0.62em; line-height: 1.4; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cis-tl-body time { font-size: 0.58em; color: rgba(91,100,114,0.85); }
+
+    /* ═══════════ 1 · Editor ═══════════ */
+    .cis-ed {
+        position: absolute; left: 1.4em; right: 1.4em; top: 5.3em;
+        background: #fff; border-radius: 1.4em; padding: 1.25em 1.3em 3.6em;
+        box-shadow: 0 0.1em 0.2em rgba(10,25,47,0.04), 0 1.6em 3.6em -2em rgba(10,25,47,0.26);
+    }
+    .cis-ed-step { display: flex; align-items: flex-start; gap: 0.6em; margin-bottom: 0.85em; }
+    .cis-ed-num {
+        flex-shrink: 0; width: 1.85em; height: 1.85em; border-radius: 0.55em;
+        display: grid; place-items: center; background: #0a192f; color: #fff;
+        font-size: 0.7em; font-weight: 700;
+    }
+    .cis-ed-step-tx { display: flex; flex-direction: column; gap: 0.15em; min-width: 0; }
+    .cis-ed-step-tx b { font-size: 0.8em; }
+    .cis-ed-step-tx span { font-size: 0.58em; line-height: 1.45; color: #5b6472; }
+    .cis-ed-lh, .cis-ed-row {
+        display: grid; grid-template-columns: minmax(0, 1fr) 3.3em 3.6em 5.4em;
+        gap: 0.5em; align-items: center;
+    }
+    .cis-ed-lh { padding-bottom: 0.45em; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .cis-ed-lh span { font-size: 0.56em; font-weight: 500; color: #5b6472; }
+    .cis-ed-lh .r { text-align: right; }
+    .cis-ed-row { padding: 0.5em 0; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .cis-ed-name { font-size: 0.66em; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cis-ed-in {
+        font-size: 0.64em; font-weight: 500; background: #f5f5f7; border-radius: 0.7em;
+        padding: 0.5em 0.6em; white-space: nowrap; overflow: hidden; font-variant-numeric: tabular-nums;
+    }
+    .cis-ed-imp { font-size: 0.68em; text-align: right; white-space: nowrap; }
+
+    .cis-sum {
+        position: absolute; left: 5.2em; right: 1.4em; top: 17.4em; bottom: -3em;
+        background: #fff; border-radius: 1.4em; padding: 1.05em 1.25em;
+        display: flex; flex-direction: column; gap: 0.42em;
+        border: 1px solid rgba(10,25,47,0.07);
+        box-shadow: 0 0.15em 0.35em rgba(10,25,47,0.06), 0 1.8em 3.6em -1.2em rgba(10,25,47,0.32);
+    }
+    .cis-sum-h { font-size: 0.78em; font-weight: 700; letter-spacing: -0.02em; }
+    .cis-sum-count { font-size: 0.56em; color: #5b6472; margin: -0.35em 0 0.1em; }
+    .cis-sum-line { display: flex; justify-content: space-between; gap: 0.6em; font-size: 0.64em; color: #5b6472; }
+    .cis-sum-line .editorial { color: #0f1729; }
+    .cis-sum-tax { padding-left: 0.6em; font-size: 0.6em; }
+    .cis-sum-div { height: 1px; background: rgba(10,25,47,0.08); margin: 0.1em 0; }
+    .cis-sum-total { align-items: baseline; font-weight: 700; color: #0f1729; font-size: 0.7em; }
+    .cis-sum-total .editorial { font-size: 1.75em; letter-spacing: -0.03em; }
+    .cis-sum-del {
+        display: flex; flex-direction: column; gap: 0.1em;
+        padding: 0.45em 0; border-top: 1px solid rgba(10,25,47,0.08); border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    .cis-sum-del span { font-size: 0.48em; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #5b6472; }
+    .cis-sum-del strong { font-size: 0.64em; font-weight: 650; }
+    .cis-sum-del small { font-size: 0.54em; color: #5b6472; }
+    .cis-sum-send {
+        display: flex; align-items: center; justify-content: center; gap: 0.55em;
+        margin-top: 0.1em; padding: 0.78em 1em; border-radius: 999px;
+        background: #0a192f; color: #fff; font-size: 0.68em; font-weight: 600;
+        box-shadow: 0 0.4em 1.2em -0.4em rgba(10,25,47,0.4);
+    }
+    .cis-sum-send svg { width: 1.2em; height: 1.2em; }
+    .cis-sum-note { font-size: 0.54em; line-height: 1.4; color: #5b6472; text-align: center; }
+
+    /* ═══════════ 2 · Detalle emitido ═══════════ */
+    .cis-fd {
+        position: absolute; left: 1.4em; right: 1.4em; top: 5.3em; bottom: -3em;
+        background: #fff; border-radius: 1.5em; padding: 1.3em 1.35em;
+        box-shadow: 0 0.1em 0.3em rgba(2,10,20,0.16), 0 1.8em 3.8em -1.2em rgba(1,8,16,0.6);
+    }
+    .cis-fd-top { display: flex; align-items: center; justify-content: space-between; gap: 0.6em; }
+    .cis-fd-top b { font-size: 0.92em; font-weight: 700; letter-spacing: -0.02em; }
+    .cis-fd-client {
+        display: flex; align-items: center; gap: 0.7em;
+        margin: 0.8em 0 0.85em; padding-bottom: 0.85em; border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    .cis-fd-av {
+        flex-shrink: 0; width: 2.5em; height: 2.5em; border-radius: 0.7em;
+        display: grid; place-items: center; background: #0a192f; color: #fff;
+        font-size: 0.72em; font-weight: 800;
+    }
+    .cis-fd-client-tx { display: flex; flex-direction: column; gap: 0.15em; min-width: 0; }
+    .cis-fd-client-tx b { font-size: 0.82em; font-weight: 700; letter-spacing: -0.01em; }
+    .cis-fd-client-tx span { font-size: 0.58em; color: #5b6472; white-space: nowrap; }
+    .cis-fd-client-tx i { font-style: normal; color: #c3c8d0; }
+    .cis-fd-del { display: grid; grid-template-columns: 0.5em minmax(0, 1fr) auto; gap: 0.65em; align-items: center; }
+    .cis-fd-del-dot { width: 0.45em; height: 0.45em; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 0.2em rgba(16,185,129,0.12); }
+    .cis-fd-del-tx { display: flex; flex-direction: column; min-width: 0; }
+    .cis-fd-del-tx b { font-size: 0.66em; font-weight: 700; }
+    .cis-fd-del-tx small { font-size: 0.58em; color: #5b6472; }
+    .cis-fd-del-btn { font-size: 0.6em; font-weight: 700; color: #0a192f; }
+    .cis-fd-util { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.45em; margin-top: 0.7em; }
+    .cis-fd-u {
+        display: flex; flex-direction: column; align-items: center; gap: 0.35em; min-width: 0;
+        padding: 0.6em 0.25em 0.5em; border: 1px solid rgba(10,25,47,0.08); border-radius: 0.75em;
+        color: #5b6472; box-shadow: 0 1px 2px rgba(10,25,47,0.04);
+    }
+    .cis-fd-u svg, .cis-fd-u img { width: 1.15em; height: 1.15em; border-radius: 0.2em; }
+    .cis-fd-u span { max-width: 100%; font-size: 0.5em; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cis-fd-u-wa { color: #0b7a4b; }
+    .cis-fd-sh {
+        margin: 1.05em 0 0.75em; padding-bottom: 0.5em; border-bottom: 1px solid rgba(10,25,47,0.08);
+        font-size: 0.8em; font-weight: 600; letter-spacing: -0.01em;
+    }
+
+    /* ═══════════ 3 · Página hospedada en el teléfono ═══════════ */
+    .cis-phone {
+        position: absolute; top: 2.3em; left: calc(50% - 9.6em); width: 19.2em;
+        background: #0a192f; border-radius: 3em; padding: 0.62em;
+        box-shadow: 0 0.2em 0.5em rgba(10,25,47,0.2), 0 2.2em 3.8em -1.4em rgba(10,25,47,0.45), inset 0 0 0 0.14em rgba(255,255,255,0.07);
+    }
+    .cis-phone-island {
+        position: absolute; top: 1.25em; left: 50%; margin-left: -2.7em;
+        width: 5.4em; height: 1.35em; border-radius: 999px; background: #0a192f; z-index: 3;
+    }
+    /* Pantalla desplazada: la tarjeta blanca de la factura viene de arriba
+       (por eso sin radio superior) y el fondo es el cálido de /i (#f3f2ef). */
+    .cis-phone-screen {
+        position: relative; overflow: hidden; background: #f3f2ef; border-radius: 2.4em;
+        padding: 2.9em 0.7em 2em;
+    }
+    .cis-iv {
+        background: #fff; border-radius: 0 0 1.5em 1.5em; padding: 0.4em 1.05em 1.2em;
+        border: 1px solid rgba(10,25,47,0.06); border-top: 0;
+        box-shadow: 0 1.2em 3em -1.2em rgba(10,25,47,0.14);
+    }
+    .cis-iv-row { display: flex; justify-content: space-between; padding: 0.3em 0; font-size: 0.64em; color: #6b7280; }
+    .cis-iv-row:first-child { border-top: 1px solid #eceff3; padding-top: 0.75em; color: #111827; font-weight: 500; }
+    .cis-iv-due { border-top: 1px solid #0a192f; margin-top: 0.35em; padding-top: 0.7em; color: #050505; font-size: 0.86em; font-weight: 600; }
+    .cis-iv-label { font-size: 0.46em; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #b3b8c1; }
+    .cis-iv-pagos { margin-top: 1.1em; }
+    .cis-iv-pagos div { display: flex; justify-content: space-between; padding: 0.45em 0 0; font-size: 0.62em; color: #4b5563; }
+    .cis-iv-foot { margin-top: 1.15em; padding-top: 1em; border-top: 1px solid rgba(10,25,47,0.07); display: flex; flex-direction: column; }
+    .cis-iv-pay {
+        display: block; text-align: center; padding: 0.9em 1em; border-radius: 0.85em;
+        background: #0a192f; color: #fff; font-size: 0.72em; font-weight: 650;
+        box-shadow: 0 0.9em 1.9em -1em rgba(10,25,47,0.5);
+    }
+    .cis-iv-box {
+        display: flex; flex-direction: column; margin-top: 0.7em; padding: 0.8em;
+        border: 1px solid #e5e7eb; border-radius: 0.95em; background: #f5f5f7;
+    }
+    .cis-iv-box-l { font-size: 0.62em; font-weight: 600; color: #111827; margin-bottom: 0.55em; }
+    .cis-iv-box-row { display: flex; align-items: center; gap: 0.45em; }
+    .cis-iv-cur { font-size: 0.58em; font-weight: 700; color: #6b7280; letter-spacing: 0.02em; }
+    .cis-iv-input {
+        flex: 1; min-width: 0; display: flex; align-items: center; justify-content: flex-end;
+        background: #fff; border: 1px solid rgba(10,25,47,0.15); border-radius: 0.7em;
+        padding: 0.55em 0.7em; font-size: 0.8em; color: #111827;
+    }
+    .cis-caret { display: inline-block; width: 1px; height: 1.05em; margin-left: 0.12em; background: #0a192f; animation: cis-blink 1.1s steps(1) infinite; }
+    @keyframes cis-blink { 50% { opacity: 0; } }
+    .cis-iv-hint { font-size: 0.54em; line-height: 1.5; color: #6b7280; margin: 0.6em 0 0.75em; }
+    .cis-iv-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45em; }
+    .cis-iv-acts span { text-align: center; padding: 0.7em 0.4em; border-radius: 999px; font-size: 0.62em; font-weight: 650; }
+    .cis-iv-cancel { background: #fff; color: #4a5567; }
+    .cis-iv-ok { background: #0a192f; color: #fff; }
+    .cis-iv-dl { display: flex; justify-content: center; gap: 1.2em; margin-top: 0.85em; }
+    .cis-iv-dl span { font-size: 0.58em; font-weight: 650; color: #0a192f; }
+    .cis-iv-uuid { font-size: 0.5em; color: #9ca3af; margin-top: 0.9em; word-break: break-all; line-height: 1.4; }
+    .cis-iv-powered { font-size: 0.5em; color: #9ca3af; margin-top: 0.35em; }
+
+    /* ═══════════ 4 · Recurrentes + recordatorios ═══════════ */
+    .cis-rec {
+        position: absolute; left: 1.4em; right: 1.4em; top: 5.3em;
+        background: #fff; border-radius: 1.5em; padding: 1.15em 1.35em 3.2em;
+        box-shadow: 0 0.1em 0.3em rgba(2,8,26,0.16), 0 1.8em 3.8em -1.2em rgba(2,8,26,0.55);
+    }
+    .cis-rec-h {
+        display: block; font-size: 0.86em; font-weight: 600; letter-spacing: -0.01em;
+        padding-bottom: 0.65em; border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    /* Layout real de la tabla bajo 880px: nombre/estado, cadencia/próxima. */
+    .cis-rec-row {
+        display: grid; grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: "name state" "cad next";
+        gap: 0.3em 0.8em; padding: 0.6em 0; border-bottom: 1px solid rgba(10,25,47,0.08);
+    }
+    .cis-rec-row:last-child { border-bottom: 0; }
+    .cis-rec-name { grid-area: name; display: flex; flex-direction: column; min-width: 0; }
+    .cis-rec-name b { font-size: 0.7em; }
+    .cis-rec-name small { font-size: 0.56em; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cis-rec-state {
+        grid-area: state; align-self: start; display: inline-flex; align-items: center; gap: 0.45em;
+        font-size: 0.58em; font-weight: 700; color: #059669; background: rgba(16,185,129,0.12);
+        padding: 0.3em 0.8em; border-radius: 999px;
+    }
+    .cis-rec-state i { width: 0.55em; height: 0.55em; border-radius: 50%; background: currentColor; }
+    .cis-rec-cad { grid-area: cad; display: flex; flex-direction: column; font-size: 0.62em; }
+    .cis-rec-cad small, .cis-rec-next small { font-size: 0.86em; color: #5b6472; }
+    .cis-rec-next { grid-area: next; display: flex; flex-direction: column; align-items: flex-end; font-size: 0.62em; }
+
+    .cis-rem {
+        position: absolute; left: 3.6em; right: 1.4em; top: 23.2em; bottom: -2em; z-index: 3;
+        padding: 0.95em 1.15em; border-radius: 1.2em;
+        background: rgba(255,255,255,0.93);
+        -webkit-backdrop-filter: blur(18px) saturate(1.4);
+        backdrop-filter: blur(18px) saturate(1.4);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6), 0 0.2em 0.5em rgba(2,8,26,0.12), 0 -1em 3em -1em rgba(2,8,26,0.45);
+    }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        .cis-rem { background: rgba(255,255,255,0.97); }
+    }
+    .cis-rem-h {
+        margin-bottom: 0.7em; padding-bottom: 0.45em; border-bottom: 1px solid rgba(10,25,47,0.08);
+        font-size: 0.76em; font-weight: 600; letter-spacing: -0.01em;
+    }
+    .cis-tl-sm .cis-tl-dot { box-shadow: 0 0 0 0.22em rgba(255,255,255,0.9); }
+
+    @media (prefers-reduced-motion: reduce) {
+        .cis-caret { animation: none; }
+    }
+
+    /* ── Tablet: 2 × 2 ── */
+    @media (max-width: 1024px) {
+        .cis-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.4rem 1.4rem; }
+        .cis-vis { border-radius: 30px; }
+    }
+
+    /* ── Móvil: carrusel con scroll-snap (patrón exacto de .steps-grid) ── */
+    @media (max-width: 860px) {
+        .cis { padding: 5rem 0 4.5rem; }
+        .cis-head { margin-bottom: 2.2rem; padding: 0 5%; }
+        .cis-head-row { grid-template-columns: 1fr; gap: 1.4rem; }
+        .cis-head-aside { padding-top: 0; }
+        .cis-grid {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-padding-left: 5%;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            padding: 1rem 5% 1.5rem;
+            gap: 1.2rem;
+        }
+        .cis-grid::-webkit-scrollbar { display: none; }
+        .cis-step {
+            flex: 0 0 88vw;
+            max-width: none;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+        }
+        .cis-vis { border-radius: 26px; }
+    }
+</style>

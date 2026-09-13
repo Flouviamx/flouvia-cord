@@ -22,6 +22,7 @@ export interface EmitResult {
   emitted: boolean;
   documentId?: string;
   fiscalId?: string;
+  documentType?: string;
   invoiceNumber?: string;
   publicToken?: string;
   reused?: boolean;

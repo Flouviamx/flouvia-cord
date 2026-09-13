@@ -38,6 +38,33 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe('comisiones de factura por webhook firmado', () => {
+    it('confirma el pago y avisa una vez aunque PostHog falle y se repita la entrega', async () => {
+        m.track.mockRejectedValue(new Error('analytics unavailable'));
+        m.apply.mockResolvedValueOnce({ ok: true, justPaid: true })
+            .mockResolvedValueOnce({ ok: true, justPaid: false, duplicate: true });
+        expect((await deliver()).status).toBe(200);
+        expect((await deliver()).status).toBe(200);
+        expect(m.dispatch).toHaveBeenCalledTimes(1);
+        expect(m.dispatch).toHaveBeenCalledWith('org-seller', 'doc_invoice', 'invoice.paid');
+        expect(queries.some(q => q.includes('delete from stripe_events'))).toBe(false);
+    });
+    it('no espera a un PostHog que no responde', async () => {
+        let finish!: () => void;
+        m.track.mockReturnValue(new Promise<void>(resolve => { finish = resolve; }));
+        try {
+            expect((await deliver()).status).toBe(200);
+            expect(m.dispatch).toHaveBeenCalledTimes(1);
+            expect(m.track).toHaveBeenCalledTimes(1);
+        } finally { finish?.(); }
+    });
+    it('no falla el webhook si falla únicamente la consulta de banderas de analítica', async () => {
+        const base = m.sql.getMockImplementation()!;
+        m.sql.mockImplementation((s, ...v) => s.join('').includes('as is_sandbox, is_demo')
+            ? Promise.reject(new Error('analytics flags unavailable')) : base(s, ...v));
+        expect((await deliver()).status).toBe(200);
+        expect(m.dispatch).toHaveBeenCalledTimes(1);
+        expect(m.track).not.toHaveBeenCalled();
+    });
     it('concilia la factura y su comisión en la cuenta conectada antes de confirmar', async () => {
         expect((await deliver()).status).toBe(200);
         expect(m.apply).toHaveBeenCalledWith('org-seller', 'doc_invoice', expect.objectContaining({ monto: 1000, stripePaymentIntentId: 'pi_invoice' }));

@@ -73,6 +73,18 @@ Es el mismo patrón que `../flouvia/src/components/Navbar.astro`, adaptado:
 - Diferencias vs flouvia: selector ES/EN con rutas reales (`/` y `/en`); wordmark
   de texto en vez de logos SVG. El login-icon pill SÍ existe desde jun 2026
   (André lo pidió).
+- **`/producto/pagos` (sep 2026):** Cord Payments (cobro con tarjeta dentro del
+  link, alta de cuenta con KYC multi-persona, depósitos con historial y
+  frecuencia propia) tenía capacidad real construida y auditada (reglas 32-34
+  de `estandares-ingenieria.md`) pero ninguna página de venta propia — solo un
+  bullet suelto en el bloque `link-publico`, que además decía "plan
+  Profesional" cuando el cobro con tarjeta está disponible desde Gratis. Se
+  agregó como feature en `src/lib/producto.ts`/`producto.en.ts`, con entrada
+  propia en el megamenú (grupo "Pagos y Finanzas") y en `RELATED`/`DOCS_PATH`
+  de `src/pages/producto/[slug].astro`. El copy distingue los 8 de 12 países
+  con cobro en línea activo (`supportsOnlinePayments()`) de los 4 que solo
+  cotizan/facturan/cobran manual, y no reclama nada que el proveedor haga
+  (autenticidad documental, prueba de vida) que Cord no contrate.
 
 ### Idioma público y frontera con la app
 

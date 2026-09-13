@@ -122,7 +122,7 @@ export const FEATURES_EN: Feature[] = [
                 copy: 'When your client approves, you get an instant notification and the quote changes status automatically. If online payment is enabled, they can pay right there; if they use credit, it\'s recorded under their Net 30/60 terms.',
                 bullets: [
                     'Immediate approval notification',
-                    'Online payment with Stripe (Professional plan)',
+                    'Online card payment, available on every plan',
                     'The complete history is left on the timeline',
                 ],
             },
@@ -475,6 +475,97 @@ export const FEATURES_EN: Feature[] = [
             },
         ],
         cta: { titulo: 'Sell in dollars without losing on the exchange.', sub: 'Quote in USD or EUR, invoice in pesos, and let Cord protect your margin.' },
+    },
+    {
+        slug: 'pagos',
+        nav: 'Cord Payments',
+        eyebrow: 'CORD PAYMENTS',
+        titulo: 'Card payment, right inside your own link.',
+        sub: 'Your client pays by card without leaving the quote or the invoice. You set up your payout account — documents, owners, and bank details — without Cord sending you to someone else\'s form.',
+        metaTitle: 'Cord Payments: card payments and payout account setup — Cord',
+        metaDescription: 'Charge cards directly on your quote or invoice link, with funds landing in your own account. Complete onboarding (KYC, documents, owners, and payout account) without leaving Cord. Available in 8 countries, on every plan.',
+        plan: 'Available on every plan, including Free — a per-transaction fee, not a plan gate',
+        stats: [
+            { valor: '8', countup: 8, label: 'of the 12 countries Cord supports already collect card payments straight to your account' },
+            { valor: '1', countup: 1, label: 'screen to complete onboarding: documents, owners, and payout account, without leaving Cord' },
+            { valor: '5', countup: 5, suffix: ' years', label: 'of verification evidence kept for compliance' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'PAY WHERE YOU APPROVE',
+                titulo: 'Your client pays where they\'re already approving.',
+                copy: 'The card is charged on the same screen where your client approved the quote or opened the invoice — no redirect to a third-party checkout, nothing to download. The charge processes in the currency you negotiated, and the money lands directly in your connected account, not Cord\'s.',
+                bullets: [
+                    'Card payment right on the quote or invoice link',
+                    'Funds land in your connected account, not Cord\'s',
+                    'Charged in the same currency your client approved',
+                ],
+            },
+            {
+                eyebrow: 'ONBOARDING INSIDE CORD',
+                titulo: 'You fill out KYC in Cord, not on someone else\'s form.',
+                copy: 'Unlike a checkout that sends you to a third party\'s dashboard, setting up your payout account is just another Cord screen, in your own session, with no redirects. If your business has several owners, each one is registered as a real person with their own stake — Cord doesn\'t force you to declare a single 100% owner when that isn\'t true.',
+                bullets: [
+                    'Multiple real owners or beneficiaries, not one forced 100% owner',
+                    'Upload your documents from your computer, or continue on your phone with a link',
+                    'Which document you need depends on your country, not a generic list',
+                ],
+            },
+            {
+                eyebrow: 'PAYOUTS, NO SURPRISES',
+                titulo: 'You see when you get paid — you don\'t guess.',
+                copy: 'Every payout lands in a history with its date and status, at the frequency you set in Settings. Your bank account is captured in your country\'s correct format — CLABE, IBAN, routing number, sort code — and Cord validates the digits before saving it, instead of letting the bank bounce a mistyped account weeks later.',
+                bullets: [
+                    'Payout history with date and status, not a promise it\'ll "get there eventually"',
+                    'Payout frequency configurable from Settings',
+                    'Your country\'s account format, validated before it\'s saved',
+                ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'MONEY STUCK IN LIMBO',
+                titulo: 'Every "I\'ll transfer it tomorrow" is a sale that took a week to collect.',
+                copy: 'A manual transfer depends on your client remembering. A card button on the same link they\'re already looking at depends on no one else.',
+            },
+            {
+                eyebrow: 'ONE OWNER ISN\'T ENOUGH',
+                titulo: 'A company with three partners doesn\'t fit a form that only allows one.',
+                copy: 'Cord\'s payout onboarding asks each person\'s real role and builds the full list, instead of forcing a single-owner attestation that isn\'t true.',
+            },
+            {
+                eyebrow: 'THE PAYOUT NO ONE EXPLAINED',
+                titulo: 'You stopped emailing support to ask when your money arrives.',
+                copy: 'Payout history and frequency live in your account, not in an email you have to request.',
+            },
+        ],
+        faqs: [
+            {
+                q: 'Does Cord Payments cost extra depending on my plan?',
+                a: 'Not by plan. Card payments are available starting on the Free plan: what you pay is a fee per processed transaction, not an extra monthly charge. Current rates are on the Pricing page.',
+            },
+            {
+                q: 'Which countries can I collect card payments in with Cord?',
+                a: 'Today, 8 of the 12 countries Cord supports end-to-end: Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France. In Colombia, Argentina, Chile, and Peru your account still quotes, invoices, and tracks collections, but card payments aren\'t available there yet — and Cord says so before you start onboarding, not after it fails.',
+            },
+            {
+                q: 'How do I set up my account to start collecting payments?',
+                a: 'From Settings, without leaving Cord: you verify your identity, register the company\'s owners or beneficiaries, and enter your payout account. There\'s no third-party dashboard and no separate account to create.',
+            },
+            {
+                q: 'What if my business has several partners or owners?',
+                a: 'Each partner is registered as their own person with their real ownership percentage. Cord doesn\'t force you to declare a single person as a 100% owner when the company has several partners — that was a real limitation, and it\'s already fixed.',
+            },
+            {
+                q: 'Can I take my ID photo from my phone?',
+                a: 'Yes. At the document upload step, Cord gives you a link to continue on your phone without losing what you already filled in on your computer — you take the photo with your phone\'s camera and pick up right where you left off.',
+            },
+            {
+                q: 'How do I know when I\'ll get paid?',
+                a: 'Your account keeps the full payout history, with date and status, and the frequency you set in Settings. It\'s not an email you have to request from support.',
+            },
+        ],
+        cta: { titulo: 'Collect your next sale without asking your client to wire it.', sub: 'Turn on Cord Payments from Settings and start charging cards on your own link.' },
     },
     {
         slug: 'facturacion',

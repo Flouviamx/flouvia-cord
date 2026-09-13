@@ -398,6 +398,55 @@ const { slug, index } = Astro.props;
     </div>
   )}
 
+  {/* ────────────────── CORD PAYMENTS ────────────────── */}
+  {slug === 'pagos' && index === 0 && (
+    <div class="bm-stage bm-pay-m0">
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">A-001048 · Materiales del Valle</span>
+          <span class="bm-app-badge bm-badge-green">● Aprobada</span>
+        </div>
+        <div class="bm-kv"><span>Total a pagar</span><b class="editorial">$196,469.20</b></div>
+        <div class="bm-kv"><span>Método</span><span class="bm-tg bm-tg-blue">Tarjeta •••• 4242</span></div>
+        <div class="bm-kv"><span>Destino</span><b>Cuenta conectada de Materiales del Valle</b></div>
+        <div class="bm-app-foot"><span>Se cobra en</span><b>MXN</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'pagos' && index === 1 && (
+    <div class="bm-stage bm-pay-m1">
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Alta de cuenta de cobro</span>
+          <span class="bm-app-badge bm-badge-blue">Paso 3 de 5</span>
+        </div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">RM</span><div class="bm-uid-tx"><b>Raúl Mendoza</b><span>Dueño · 60%</span></div></div><span class="bm-tg bm-tg-green">Verificado</span></div>
+        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3">LF</span><div class="bm-uid-tx"><b>Lucía Ferreira</b><span>Socia · 40%</span></div></div><span class="bm-tg bm-tg-amber">Pendiente</span></div>
+        <div class="bm-kv"><span>Identificación</span><b>Continuar en tu teléfono</b></div>
+        <div class="bm-app-foot"><span>Todo dentro de Cord</span><b>Sin redirecciones</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'pagos' && index === 2 && (
+    <div class="bm-stage bm-pay-m2">
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">Depósitos</span>
+          <span class="bm-app-badge bm-badge-green">Semanal</span>
+        </div>
+        <div class="bm-app-body">
+          <div class="bm-g bm-g3 bm-g-head"><span>Fecha</span><span>Estado</span><span class="bm-r">Monto</span></div>
+          <div class="bm-g bm-g3"><span>12 sep 2026</span><span class="bm-tg bm-tg-green">Pagado</span><b class="editorial bm-r">$84,210.00</b></div>
+          <div class="bm-g bm-g3"><span>5 sep 2026</span><span class="bm-tg bm-tg-green">Pagado</span><b class="editorial bm-r">$71,940.00</b></div>
+          <div class="bm-g bm-g3"><span>29 ago 2026</span><span class="bm-tg bm-tg-amber">En camino</span><b class="editorial bm-r">$63,500.00</b></div>
+        </div>
+        <div class="bm-app-foot"><span>Cuenta</span><b>CLABE •••• 4821</b></div>
+      </div>
+    </div>
+  )}
+
   {/* ────────────────── CORD INVOICING ────────────────── */}
   {slug === 'facturacion' && index === 0 && (
     <div class="bm-stage bm-intl-m0">

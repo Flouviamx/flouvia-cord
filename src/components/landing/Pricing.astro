@@ -8,7 +8,6 @@ import { PLANES as PLANES_ES, precioAnualMensualizado, precioAnualTotal } from '
 import { PLANES_EN } from '../../lib/precios.en';
 import { type PlatformCurrency } from '../../lib/plan-currency';
 import PlanCurrency from './PlanCurrency.astro';
-import PlanValue from './PlanValue.astro';
 import { planMoney, planCycleLabel } from '../../lib/plan-money';
 
 // El idioma elige la COPY, nunca la divisa: son preguntas distintas (regla 21).
@@ -119,7 +118,6 @@ const money0 = (n: number, cur: PlatformCurrency = STATIC_CURRENCY) => planMoney
         <p class="pr-note reveal">
             <a href={l("/precios")} class="pr-compare-link">{t("pr.note")}</a>
         </p>
-        <PlanValue />
     </div>
 </section>
 <PlanCurrency />

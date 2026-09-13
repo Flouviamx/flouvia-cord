@@ -15,6 +15,7 @@ import { planIncludes, resourceLimit } from './entitlements';
 import { cached, invalidate } from './cache';
 import { after } from './after';
 import { trackServer } from './posthog-server';
+import { emitSetupSteps } from './setup-analytics';
 import { decryptSecret } from './crypto-secret';
 import { publicDocumentUrl } from './public-links';
 import { normalizeCurrency } from './currency';
@@ -3844,23 +3845,14 @@ export async function getSetupProgress() {
         const daysSinceSignup = o?.created_at
             ? Math.max(0, Math.round((Date.now() - new Date(o.created_at as string).getTime()) / 86400000))
             : undefined;
-        after((async () => {
-            await withOrgTx(orgId, sql`update orgs set setup_steps_emitted = (
-                select coalesce(array_agg(distinct v), '{}') from unnest(
-                    setup_steps_emitted || ${newlyDone.map((t) => t.id)}::text[]
-                ) v
-            ) where id = ${orgId}`);
-            for (const t of newlyDone) {
-                await trackServer('setup_step_completed', orgId, {
-                    event_id: `${orgId}:${t.id}`,
-                    group: t.group,
-                    task_id: t.id,
-                    done_count: doneN,
-                    total: tasks.length,
-                    days_since_signup: daysSinceSignup,
-                }, !!o?.is_sandbox, !!o?.is_demo);
-            }
-        })());
+        after(emitSetupSteps(orgId, newlyDone.map((t) => ({
+            event_id: `${orgId}:${t.id}`,
+            group: t.group,
+            task_id: t.id,
+            done_count: doneN,
+            total: tasks.length,
+            days_since_signup: daysSinceSignup,
+        })), !!o?.is_sandbox, !!o?.is_demo));
     }
 
     return { groups, tasks, doneN, total: tasks.length, pct: Math.round((doneN / tasks.length) * 100), complete: doneN === tasks.length };

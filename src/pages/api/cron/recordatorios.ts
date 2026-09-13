@@ -219,8 +219,8 @@ export const GET: APIRoute = async ({ request }) => {
             });
             await withOrgTx(orgId, sql`insert into eventos (org_id, documento_id, tipo, detalle)
                       values (${orgId}, ${docId}, 'reminder', ${etapa > 0
-                          ? `Recordatorio de cobro (${etapa} días vencida)`
-                          : `Aviso de vencimiento (${Math.abs(etapa)} días antes)`})`);
+                          ? `Recordatorio de cobro (${etapa} ${etapa === 1 ? 'día' : 'días'} vencida)`
+                          : `Aviso de vencimiento (${Math.abs(etapa)} ${etapa === -1 ? 'día' : 'días'} antes)`})`);
         } else {
             // No salió: se libera la etapa para reintentar mañana en vez de
             // darla por consumida.

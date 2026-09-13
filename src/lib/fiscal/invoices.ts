@@ -490,6 +490,7 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
     return {
       emitted: true,
       documentId,
+      documentType: String(head.document_type),
       fiscalId: head.fiscal_id ? String(head.fiscal_id) : undefined,
       invoiceNumber: String(head.invoice_number || ''),
       publicToken: String(head.public_token || ''),
@@ -672,6 +673,7 @@ async function finalizeReservedInvoice(orgId: string, documentId: string): Promi
   return {
     emitted: response.success,
     documentId,
+    documentType: docType,
     fiscalId: response.fiscalId,
     invoiceNumber,
     publicToken: String(head.public_token || ''),

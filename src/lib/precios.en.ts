@@ -21,7 +21,7 @@ export const PLANES_EN: Plan[] = [
         nombre: 'Free',
         tagline: 'For your first clients. Every month.',
         precio: precioDe('free'),
-        ctaLabel: 'Quote for free',
+        ctaLabel: 'Start for free',
         ctaHref: '/registro',
         feats: [
             '5 sends per month, renewed monthly',
@@ -276,7 +276,7 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'When should I pay for Cord?',
-        a: 'Choose Starter for more sends or to remove “Powered by Cord”. Professional adds unlimited quotes, 5 included users, live tracking, collections and a 90-day cash-flow view. Scale adds approvals, AI collections and email from your domain. Stay on Free as long as its limits fit your business.',
+        a: 'Choose Starter for more documents, enabled fiscal integrations, more sends or to remove “Powered by Cord”. Professional adds unlimited quotes, 5 included users, live tracking, collections and a 90-day cash-flow view. Scale adds approvals, AI collections and email from your domain. Stay on Free as long as its limits fit your business.',
     },
     {
         q: 'Can I remove Cord branding and use my own domain?',

@@ -18,6 +18,7 @@ import { publicDocumentUrl } from '../../../lib/public-links';
 import { getCountryProfile } from '../../../lib/countries';
 import { currentLocale } from '../../../lib/context';
 import { getInvoiceTimeline } from '../../../lib/fiscal/timeline';
+import { invoiceEventDetail } from '../../../lib/fiscal/timeline-detail';
 import { fmtRelative } from '../../../lib/fmt-server';
 import { t } from '../../../i18n/app';
 
@@ -368,16 +369,19 @@ const METODOS = [
                                 ? <p class="fd-tl-empty">{t(L, 'fact.d_actividad_vacia')}</p>
                                 : (
                                     <ol class="fd-tl-list">
-                                        {TIMELINE.map((e) => (
+                                        {TIMELINE.map((e) => {
+                                            const detalle = invoiceEventDetail(e.tipo, e.detalle, L);
+                                            return (
                                             <li class={`fd-tl-item is-${e.tipo}`}>
                                                 <span class="fd-tl-dot" aria-hidden="true"></span>
                                                 <span class="fd-tl-body">
                                                     <strong>{EV_LABEL[e.tipo] ?? e.tipo}</strong>
-                                                    {e.detalle && <span class="fd-tl-det">{e.detalle}</span>}
+                                                    {detalle && <span class="fd-tl-det">{detalle}</span>}
                                                     <time class="fd-tl-when">{fmtRelative(e.cuando)}</time>
                                                 </span>
                                             </li>
-                                        ))}
+                                            );
+                                        })}
                                     </ol>
                                 )}
                         </section>

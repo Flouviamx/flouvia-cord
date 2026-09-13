@@ -124,9 +124,15 @@ const iconPaths: Record<string, string> = {
 <style>
     .report-picker { display: inline-flex; }
     .report-picker-trigger { min-height: 42px; display: inline-flex; align-items: center; gap: .65rem; border: 0; border-radius: 999px; padding: .62rem .9rem; background: var(--color-bg-soft, #f5f5f7); color: var(--color-text, #111); font: inherit; font-size: .82rem; font-weight: 650; cursor: pointer; transition: transform .18s ease, background .18s ease; }
-    .report-picker-trigger:hover { background: var(--color-bg-muted, #ececf0); transform: scale(.99); }
+    /* --color-bg-muted no existe en ningún tema (ver AppLayout.astro): el
+       :hover caía siempre a su fallback #ececf0 (gris claro fijo). En modo
+       claro pasaba casi inadvertido; en modo oscuro, con --color-text claro,
+       el texto quedaba claro-sobre-claro — la pastilla se veía en blanco y
+       vacía. --row-hover sí está definido para ambos temas. */
+    .report-picker-trigger:hover { background: var(--row-hover); transform: scale(.99); }
     .report-picker-trigger:active { transform: scale(.97); }
     .report-picker-trigger:focus-visible { outline: 2px solid rgba(10,25,47,.24); outline-offset: 2px; }
+    html[data-theme="dark"] .report-picker-trigger:focus-visible { outline-color: rgba(255,255,255,.28); }
     .report-picker-trigger svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
     .report-picker-trigger .report-picker-chevron { width: 14px; opacity: .55; }
     :global(.report-picker-panel) { position: fixed; z-index: 10050; max-height: min(560px, calc(100vh - 24px)); overflow: hidden; padding: 10px; border: 1px solid rgba(10,25,47,.08); border-radius: 24px; background: rgba(255,255,255,.98); box-shadow: 0 24px 80px rgba(10,25,47,.16), 0 3px 14px rgba(10,25,47,.08); backdrop-filter: blur(24px); }

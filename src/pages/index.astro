@@ -11,6 +11,8 @@ import Hero from '../components/landing/Hero.astro';
 import Features from '../components/landing/Features.astro';
 import AdvancedFeatures from '../components/landing/AdvancedFeatures.astro';
 import Steps from '../components/landing/Steps.astro';
+import PaymentsSection from '../components/landing/PaymentsSection.astro';
+import InvoicingSection from '../components/landing/InvoicingSection.astro';
 
 import ClientView from '../components/landing/ClientView.astro';
 import Pricing from '../components/landing/Pricing.astro';
@@ -180,6 +182,8 @@ const faqSchema = {
         <Features />
         <AdvancedFeatures />
         <Steps />
+        <PaymentsSection />
+        <InvoicingSection />
 
         <ClientView />
         <Pricing />
@@ -218,6 +222,185 @@ const faqSchema = {
             });
         };
 
+        // ───────────────────────── DEMO DEL TELÉFONO (ClientView) ─────────────────────────
+        // Grabación de pantalla del /q real en Safari de iPhone. La historia sigue el
+        // flujo de QuoteCard: el total cuenta y entran las partidas → la página hace
+        // scroll y la barra sticky se oculta al aparecer el CTA → toque en "Aprobar
+        // cotización" → paso "Firma digital" (se escribe el nombre, casilla, "Confirmar
+        // y firmar" → "Firmando…") → "Cotización aprobada" con el anillo dibujado,
+        // nota de crédito Net 30 y sello. El HTML es el estado FINAL: con
+        // reduced-motion solo se encuadra la aprobación, sin animar nada.
+        const initClientPhone = (phone: HTMLElement) => {
+            const q = <T extends Element = HTMLElement>(sel: string) => phone.querySelector<T>(sel);
+            const screen = q('#cvScreen');
+            const page = q('#cvPage');
+            const amount = q('#cvAmount');
+            const stickyTotal = q('#cvStickyTotal');
+            const sticky = q('#cvSticky');
+            const stepReview = q('#cvStepReview');
+            const stepSign = q('#cvStepSign');
+            const stepOk = q('#cvStepApproved');
+            const approve = q('#cvApprove');
+            const field = q('#cvSignField');
+            const nameEl = q('#cvSignName');
+            const terms = q('#cvTerms');
+            const confirm = q('#cvConfirm');
+            const confirmLabel = q('#cvConfirmLabel');
+            const tap = q('#cvCursor');
+            const tapRing = q('#cvTapRing');
+            const circle = q<SVGCircleElement>('#cvCheckCircle');
+            const check = q<SVGPolylineElement>('#cvCheck');
+            const lines = Array.from(phone.querySelectorAll<HTMLElement>('.cvq-line'));
+            if (!screen || !page || !amount || !sticky || !stepReview || !stepSign || !stepOk || !approve
+                || !field || !nameEl || !terms || !confirm || !confirmLabel || !tap || !tapRing || !circle || !check) return;
+
+            const steps = [stepReview, stepSign, stepOk];
+            const show = (step: HTMLElement) => steps.forEach((s) => s.classList.toggle('cvq-off', s !== step));
+            const prefix = amount.dataset.prefix || '$';
+            const fmt = (n: number) => prefix + new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+            const NAME = nameEl.dataset.name || '';
+            const LABEL = confirmLabel.dataset.label || confirmLabel.textContent || '';
+            const BUSY = confirmLabel.dataset.busy || '…';
+            const CIRCLE = 145, CHECK = 36;
+
+            // Posición de un elemento dentro de la página (offsets de layout: no los
+            // alteran el translate de la página ni la escala del reveal).
+            const offsetIn = (el: HTMLElement) => {
+                let y = 0; let n: HTMLElement | null = el;
+                while (n && n !== page) { y += n.offsetTop; n = n.offsetParent as HTMLElement | null; }
+                return y;
+            };
+            // Scroll de la página para dejar `el` a `ratio` de la altura de la pantalla.
+            const scrollFor = (el: HTMLElement, ratio: number) => {
+                const max = Math.max(0, page.offsetHeight - screen.clientHeight);
+                return -Math.min(max, Math.max(0, offsetIn(el) - screen.clientHeight * ratio));
+            };
+            // Centro de un elemento en coordenadas de la pantalla.
+            const pt = (el: HTMLElement, fx = 0.5) => {
+                const s = screen.getBoundingClientRect();
+                const r = el.getBoundingClientRect();
+                const k = s.width / (screen.offsetWidth || 1);
+                return { x: (r.left + r.width * fx - s.left) / k, y: (r.top + r.height / 2 - s.top) / k };
+            };
+
+            const frameFinal = () => gsap.set(page, { y: scrollFor(stepOk, 0.13) });
+
+            if (reduced) {
+                frameFinal();
+                window.addEventListener('resize', frameFinal, { passive: true });
+                window.addEventListener('load', frameFinal, { once: true });
+                return;
+            }
+
+            const toReview = (stickyOpacity = 1) => {
+                show(stepReview);
+                gsap.set([stepReview, stepSign, stepOk], { clearProps: 'opacity,transform' });
+                nameEl.textContent = '';
+                field.classList.remove('is-focus');
+                terms.classList.remove('is-on');
+                confirm.classList.add('is-disabled');
+                confirmLabel.textContent = LABEL;
+                gsap.set(circle, { strokeDasharray: CIRCLE, strokeDashoffset: CIRCLE });
+                gsap.set(check, { strokeDasharray: CHECK, strokeDashoffset: CHECK });
+                gsap.set(page, { y: 0 });
+                sticky.classList.remove('cvq-sticky-off');
+                gsap.set(sticky, { yPercent: 0, autoAlpha: stickyOpacity });
+                gsap.set(tap, { opacity: 0 });
+            };
+
+            // Un toque de grabación de pantalla: aparece, presiona, onda y se va.
+            const tapOn = (target: HTMLElement, fx = 0.5) => {
+                const tl = gsap.timeline();
+                tl.set(tap, { x: () => pt(target, fx).x, y: () => pt(target, fx).y + 22, scale: 1.2, opacity: 0 })
+                    .to(tap, { opacity: 1, y: () => pt(target, fx).y, scale: 1, duration: 0.4, ease: 'power2.out' })
+                    .to(tap, { scale: 0.8, duration: 0.12, ease: 'power1.in' })
+                    .to(target, { scale: 0.97, duration: 0.12, ease: 'power1.in' }, '<')
+                    .fromTo(tapRing, { scale: 0.7, opacity: 0.6 }, { scale: 2.2, opacity: 0, duration: 0.55, ease: 'power2.out', immediateRender: false }, '<0.08')
+                    .to(tap, { scale: 1, opacity: 0, duration: 0.32, ease: 'power1.out' }, '<0.1')
+                    .to(target, { scale: 1, duration: 0.3, ease: 'power2.out' }, '<');
+                return tl;
+            };
+            const enter = (step: HTMLElement) =>
+                gsap.fromTo(step, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.32, ease: 'power3.out', immediateRender: false, clearProps: 'transform' });
+
+            let current: gsap.core.Timeline | null = null;
+            let onScreen = true;
+
+            const cycle = (first: boolean) => {
+                const tl = gsap.timeline({ paused: !onScreen, onComplete: () => cycle(false) });
+                current = tl;
+
+                if (first) {
+                    tl.add(() => toReview());
+                    const o = { v: 0 };
+                    tl.to(o, {
+                        v: 196469.2, duration: 1.5, ease: 'power2.out',
+                        onUpdate: () => { const s = fmt(o.v); amount.textContent = s; if (stickyTotal) stickyTotal.textContent = s; },
+                    }, 0.05);
+                    tl.fromTo(lines, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.09, ease: 'power2.out', clearProps: 'transform' }, 0.3);
+                    tl.to({}, { duration: 0.6 });
+                } else {
+                    // Cierre suave: la pantalla vuelve arriba como una recarga del link.
+                    tl.to([page, sticky], { opacity: 0, duration: 0.4, ease: 'power1.in' })
+                        .add(() => toReview(0))
+                        .to(page, { opacity: 1, duration: 0.5, ease: 'power1.out' })
+                        .to(sticky, { autoAlpha: 1, duration: 0.5, ease: 'power1.out' }, '<')
+                        .to({}, { duration: 0.9 });
+                }
+
+                // 1 · baja a las partidas y al CTA real; la barra sticky se retira.
+                tl.to(page, { y: () => scrollFor(approve, 0.6), duration: 1.5, ease: 'power2.inOut' })
+                    .to(sticky, { yPercent: 130, autoAlpha: 0, duration: 0.45, ease: 'power2.in' }, '<0.7')
+
+                // 2 · aprobar → paso de firma digital.
+                    .add(tapOn(approve, 0.58), '+=0.25')
+                    .add(() => show(stepSign), '-=0.3')
+                    .add(enter(stepSign), '<')
+                    .to(page, { y: () => scrollFor(stepSign, 0.13), duration: 0.85, ease: 'power2.inOut' }, '<0.1')
+
+                // 3 · el cliente escribe su nombre, acepta y firma.
+                    .add(() => field.classList.add('is-focus'), '+=0.15');
+                const typed = { n: 0 };
+                tl.to(typed, {
+                    n: NAME.length, duration: NAME.length * 0.07, ease: 'none',
+                    onUpdate: () => { nameEl.textContent = NAME.slice(0, Math.round(typed.n)); },
+                }, '+=0.2')
+                    .add(tapOn(terms), '+=0.25')
+                    .add(() => { terms.classList.add('is-on'); field.classList.remove('is-focus'); confirm.classList.remove('is-disabled'); }, '-=0.62')
+                    .add(tapOn(confirm, 0.52), '+=0.15')
+                    .add(() => { confirmLabel.textContent = BUSY; confirm.classList.add('is-disabled'); }, '-=0.55')
+
+                // 4 · aprobada: anillo + check se dibujan y se encuadra el sello.
+                    .add(() => show(stepOk), '+=0.45')
+                    .add(enter(stepOk), '<')
+                    .to(page, { y: () => scrollFor(stepOk, 0.13), duration: 0.8, ease: 'power2.inOut' }, '<')
+                    .to(circle, { strokeDashoffset: 0, duration: 0.55, ease: 'power2.out' }, '<0.1')
+                    .to(check, { strokeDashoffset: 0, duration: 0.4, ease: 'power2.out' }, '<0.4')
+                    .to({}, { duration: 3.6 });
+            };
+
+            // Arranque: estado de revisión listo antes de entrar en pantalla.
+            toReview();
+            amount.textContent = fmt(0);
+            if (stickyTotal) stickyTotal.textContent = fmt(0);
+            gsap.set(lines, { opacity: 0, y: 10 });
+
+            // Flotación ambiental sutil del teléfono sobre la banda.
+            gsap.to(phone, { y: -8, duration: 4.8, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+
+            ScrollTrigger.create({
+                trigger: phone, start: 'top 72%', once: true,
+                onEnter: () => cycle(true),
+            });
+            // Fuera de pantalla la historia se pausa (y retoma donde iba).
+            ScrollTrigger.create({
+                trigger: phone, start: 'top bottom', end: 'bottom top',
+                onToggle: (self) => { onScreen = self.isActive; current?.paused(!self.isActive); },
+            });
+        };
+        const cvPhone = document.getElementById('cvPhone');
+        if (cvPhone) initClientPhone(cvPhone);
+
         if (reduced) {
             gsap.set('.reveal, .reveal-mockup', { opacity: 1, y: 0 });
             return; // números muestran su valor final del HTML; nada se anima
@@ -235,7 +418,7 @@ const faqSchema = {
         };
 
         const maskTargets = gsap.utils.toArray<HTMLElement>(
-            '.ft-title, .steps-title, .cv-title, .pr-title, .faq-title, .fc-title'
+            '.ft-title, .steps-title, .cav-title, .cps-title, .cis-title, .cv-title, .pr-title, .faq-title, .fc-title'
         );
         const maskedSet = new Set<HTMLElement>(maskTargets);
 
@@ -278,29 +461,8 @@ const faqSchema = {
             });
         }
 
-        // ── MOCKUP SCALING (Móvil) ──
-        // Escala el mockup de escritorio para que quepa perfecto sin scroll horizontal
-        const heroWrap = document.querySelector<HTMLElement>('.hero .mockup-wrap');
-        const heroSpace = document.querySelector<HTMLElement>('.hero .mk-space');
-        const heroScaler = document.querySelector<HTMLElement>('.hero .mk-scaler');
-        if (heroWrap && heroSpace && heroScaler && heroMk) {
-            const scaleHero = () => {
-                // Remove the GSAP scale temporarily to measure natural width
-                gsap.set(heroScaler, { clearProps: 'scale,transform' });
-                const baseWidth = heroScaler.offsetWidth;
-                
-                if (window.innerWidth <= baseWidth) {
-                    const scale = window.innerWidth / baseWidth;
-                    gsap.set(heroScaler, { scale: scale, transformOrigin: 'center top' });
-                    heroSpace.style.height = `${heroMk.offsetHeight * scale}px`;
-                } else {
-                    gsap.set(heroScaler, { scale: 1, transformOrigin: 'center top' });
-                    heroSpace.style.height = 'auto';
-                }
-            };
-            window.addEventListener('resize', scaleHero);
-            scaleHero();
-        }
+        // El escalado del mockup (tablet) vive SOLO en Hero.astro: aquí había un
+        // segundo escalador que peleaba por el mismo `transform` con otro umbral.
 
         // ───────── HERO DEMO INTERACTIVO: Creas → Envías → La ven → Aprueban → Facturas ─────────
         // El visitante recorre el flujo con los botones de paso; además auto-avanza
@@ -318,22 +480,31 @@ const faqSchema = {
         if (mkStatus && mkToast && mkChip && demoEl && stepEls.length) {
             const DWELL = 2.7;
             const fills = stepEls.map((s) => s.querySelector<HTMLElement>('.ds-fill')!);
+            // Clases = colores de STATUS_META de la app. La etiqueta sale de
+            // data-s0..s4 (servidas con t()) — antes era español fijo también en /en.
             const STAGES = [
-                { badge: ['mk-badge-draft', 'Borrador'],  on: ['created'],                                  toast: false, chip: false },
-                { badge: ['mk-badge-sent', 'Enviada'],    on: ['created', 'sent'],                          toast: false, chip: false },
-                { badge: ['mk-badge-viewed', 'Vista'],    on: ['created', 'sent', 'viewed'],                toast: true,  chip: false },
-                { badge: ['mk-badge-ok', 'Aprobada'],     on: ['created', 'sent', 'viewed', 'approved'],    toast: false, chip: false },
-                { badge: ['mk-badge-ok', 'Facturada'],    on: ['created', 'sent', 'viewed', 'approved'],    toast: false, chip: true },
+                { badge: 'mk-badge-draft',    on: ['created'],                                              toast: false, chip: false },
+                { badge: 'mk-badge-sent',     on: ['created', 'sent'],                                      toast: false, chip: false },
+                { badge: 'mk-badge-viewed',   on: ['created', 'sent', 'viewed'],                            toast: true,  chip: false },
+                { badge: 'mk-badge-approved', on: ['created', 'sent', 'viewed', 'approved'],                toast: false, chip: false },
+                { badge: 'mk-badge-invoiced', on: ['created', 'sent', 'viewed', 'approved', 'invoiced'],    toast: false, chip: true },
             ];
+            const LABELS = ['Borrador', 'Enviada', 'Vista', 'Aprobada', 'Facturada'];
             let active = 0, paused = false, fillTween: gsap.core.Tween | null = null;
 
             const applyStage = (i: number, animate: boolean) => {
                 const st = STAGES[i];
-                mkStatus.className = `mk-badge ${st.badge[0]}`;
-                mkStatus.textContent = `● ${st.badge[1]}`;
+                mkStatus.className = `mk-badge ${st.badge}`;
+                mkStatus.textContent = mkStatus.dataset[`s${i}`] || LABELS[i];
                 if (animate) gsap.fromTo(mkStatus, { scale: 0.84, opacity: 0.4 }, { scale: 1, opacity: 1, duration: 0.45, ease: 'power2.out' });
+                // El stepper real distingue hecho (check), actual (navy) y pendiente.
+                const current = st.on[st.on.length - 1];
                 tlItems.forEach((it) => it.classList.toggle('is-pending', !st.on.includes(it.dataset.story || '')));
-                stpItems.forEach((it) => it.classList.toggle('is-pending', !st.on.includes(it.dataset.story || '')));
+                stpItems.forEach((it) => {
+                    const story = it.dataset.story || '';
+                    it.classList.toggle('is-pending', !st.on.includes(story));
+                    it.classList.toggle('is-current', story === current);
+                });
                 const dur = animate ? 0.5 : 0;
                 gsap.to(mkToast, { opacity: st.toast ? 1 : 0, duration: dur });
                 gsap.to(mkChip, { opacity: st.chip ? 1 : 0, y: st.chip ? 0 : -10, duration: dur });
@@ -432,59 +603,6 @@ const faqSchema = {
                 onEnter: () => countUp(el, target, dec, 1.3),
             });
         });
-
-        // ───────────────────────── DEMO DEL TELÉFONO ─────────────────────────
-        const stage = document.querySelector<HTMLElement>('.cv-visual');
-        if (stage) {
-            const amount = stage.querySelector<HTMLElement>('#cvAmount');
-            const items = gsap.utils.toArray<HTMLElement>('.cv-visual .ps-item');
-            const approve = stage.querySelector<HTMLElement>('#cvApprove');
-            const ring = stage.querySelector<HTMLElement>('.ps-ring');
-            const cursor = stage.querySelector<HTMLElement>('#cvCursor');
-            const success = stage.querySelector<HTMLElement>('#cvSuccess');
-            const check = stage.querySelector<SVGPathElement>('#cvCheck');
-
-            if (amount && approve && cursor && success && check) {
-                const len = check.getTotalLength();
-                gsap.set(check, { strokeDasharray: len, strokeDashoffset: len });
-                gsap.set(items, { opacity: 0, y: 10 });
-                gsap.set(cursor, { opacity: 0 });
-
-                const center = (el: HTMLElement) => ({
-                    x: el.offsetLeft + el.offsetWidth * 0.62,
-                    y: el.offsetTop + el.offsetHeight / 2,
-                });
-
-                const playLoop = () => {
-                    const t = center(approve);
-                    const loop = gsap.timeline({ repeat: -1, repeatDelay: 3.4 });
-                    loop
-                        .set(success, { opacity: 0 })
-                        .set(check, { strokeDashoffset: len })
-                        .set(ring, { opacity: 0, scale: 0.85, transformOrigin: 'center' })
-                        .set(cursor, { opacity: 0, x: t.x + 46, y: t.y + 88 })
-                        .to(cursor, { opacity: 1, duration: 0.3 })
-                        .to(cursor, { x: t.x, y: t.y, duration: 1.0, ease: 'power3.inOut' })
-                        .to(approve, { scale: 0.95, duration: 0.12 }, '-=0.04')
-                        .to(ring, { opacity: 1, scale: 1.18, duration: 0.5, ease: 'power2.out' }, '<')
-                        .to(approve, { scale: 1, duration: 0.3, ease: 'power2.out' })
-                        .to(ring, { opacity: 0, duration: 0.35 }, '<')
-                        .to(success, { opacity: 1, duration: 0.4 }, '-=0.1')
-                        .to(check, { strokeDashoffset: 0, duration: 0.6, ease: 'power2.out' }, '<0.12')
-                        .to(cursor, { opacity: 0, duration: 0.3 }, '<')
-                        .to(success, { opacity: 0, duration: 0.5 }, '+=1.7');
-                };
-
-                ScrollTrigger.create({
-                    trigger: stage, start: 'top 72%', once: true,
-                    onEnter: () => {
-                        const intro = gsap.timeline({ onComplete: playLoop });
-                        intro.add(countUp(amount, 196469.20, 2, 1.5), 0);
-                        intro.to(items, { opacity: 1, y: 0, stagger: 0.08, duration: 0.5, ease: 'power2.out' }, 0.25);
-                    },
-                });
-            }
-        }
 
         // ───────────────────────── PARALLAX (scrub sutil) ─────────────────────────
         const parallax = (sel: string, amount: number, triggerSel: string) => {

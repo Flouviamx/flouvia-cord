@@ -1,7 +1,7 @@
 ---
 title: "Fiscal invoicing by country"
 description: "How Cord issues CFDI 4.0 in Mexico and commercial invoices in other available markets, including Verifactu's operating status in Spain."
-lastUpdated: "2026-09-08"
+lastUpdated: "2026-09-09"
 reviewedBy: "Cord Product and Fiscal Operations"
 appliesToMarkets: [MX, US, CA, BR, ES, GB, DE, FR, CO, AR, CL, PE]
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -17,19 +17,23 @@ prerequisites: ["Complete the business tax identity", "In Mexico, upload a valid
 This guide includes the September improvements. Their combined publication and integrated acceptance still need verification. See [scope and availability](/en/docs/pagos/mejoras-confiabilidad).
 </Callout>
 
-## One document, three regulatory rails
+## Documents and plans
+
+Free includes 5 commercial documents per month, separately from quote sends. Starter/Professional/Scale include 20/500/100 documents shared between commercial and fiscal issuance. Pro formas do not replace tax invoices. A paid plan does not itself activate a fiscal integration.
+
+## Document types by country
 
 Cord doesn't treat an invoice as a generic PDF with a number: the type of receipt it issues depends on your business's country. Today there are three rails:
 
-- **Mexico:** CFDI 4.0, stamped with the SAT.
-- **Spain:** a commercial invoice. The Verifactu rail creates chained records only when the account has a valid certificate and Cord's regulatory integration is enabled.
+- **Mexico:** pro forma in Free; CFDI 4.0 from Starter with fiscal configuration. Paid plans may also choose a pro forma.
+- **Spain:** pro forma in the commercial option; integrated fiscal issuance from Starter where enabled. The Verifactu rail creates chained records only when the account has a valid certificate and Cord's regulatory integration is enabled.
 - **Other supported markets:** a commercial invoice with its own numbering and taxes and withholdings configured by the business, without automatic filing with a tax authority.
 
 In all three cases, tax is calculated **per line**, not per document: you can mix a taxed item with an exempt one on the same invoice, and each one prints the rate and the name of the tax that applies in your country (VAT in the UK, GST in Canada, state-by-state sales tax in the US, IVA in Mexico and Spain, and so on, based on your account's fiscal profile).
 
 ## Mexico: Nominative CFDI 4.0
 
-For accounts in Mexico, Cord stamps invoices with SAT through a certified electronic
+For eligible accounts in Mexico on Starter or above, Cord stamps invoices with SAT through a certified electronic
 invoicing provider. You must first upload and validate the issuer's current Digital
 Seal Certificate (CSD) in Cord; after that, the day-to-day flow doesn't require a
 separate portal or reattaching the certificate to every invoice.
@@ -62,12 +66,12 @@ UUID. A cancellation request does not void the invoice until confirmed. See
 The Verifactu module is built, but its operational availability depends on two boundaries: the organization must have a valid electronic certificate, and Cord must have its software-system identity and regulatory rail enabled. Only when both conditions are met does each invoice create a **SHA-256 record chained** to the previous record for that organization.
 
 <Callout type="warning">
-While either condition is missing, Cord issues with `commercial_only` status: it does not create a Verifactu fingerprint, append a chained record, or claim to have submitted anything to the Spanish tax authority. Online submission is enabled separately; a chained record does not by itself mean the authority has received it. Always check the status shown by Cord.
+Spanish fiscal activation and integrated validation remain pending. The commercial option issues a pro forma without a VERI*FACTU record; an explicit fiscal request fails if the integration is unavailable. This is not a compliant NO VERI*FACTU implementation. Creating a chained record does not by itself confirm receipt by AEAT.
 </Callout>
 
 ## Other supported markets: commercial invoice
 
-In the United States, Canada, Brazil, Spain, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru, Cord can issue a **commercial invoice** with a sequential number, per-line taxes and withholdings configured by the business, and the captured tax details of both parties. Cord does not automatically file it with the local tax authority. Whether the business must issue, report, or supplement that document depends on its country and tax regime; confirm that obligation with a tax adviser.
+In the United States, Canada, Brazil, the United Kingdom, Germany, France, Colombia, Argentina, Chile, and Peru, Cord can issue a **commercial invoice** with a sequential number, per-line taxes and withholdings configured by the business, and the captured tax details of both parties. Cord does not automatically file it with the local tax authority. Whether the business must issue, report, or supplement that document depends on its country and tax regime; confirm that obligation with a tax adviser.
 
 ## The receipt for Cord Payments' own fee (Mexico)
 
