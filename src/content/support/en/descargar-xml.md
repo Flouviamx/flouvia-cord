@@ -48,4 +48,4 @@ account.
 
 > Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.
 
-A pro forma in Mexico or Spain has a downloadable PDF, but no fiscal XML. Free includes five commercial documents per month. Downloading a document already issued does not consume another unit, even after changing plans.
+A pro forma in Mexico or Spain has a downloadable PDF, but no fiscal XML. Free includes ten commercial invoices per month. Downloading a document already issued does not consume another unit, even after changing plans.

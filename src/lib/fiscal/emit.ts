@@ -46,9 +46,7 @@ export function metadata(value: unknown): Record<string, string> {
     .map(([key, item]) => [key, String(item)]));
 }
 
-export function documentTypeFor(country: string): string {
-  return country.toUpperCase() === 'MX' ? 'cfdi_40' : 'commercial_invoice';
-}
+export { documentTypeFor } from './document-kind';
 
 /**
  * Token de la hosted invoice page (`/i/[token]`). Alfabeto sin caracteres

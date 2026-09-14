@@ -94,7 +94,7 @@ contables en cada país.
 
 ## Documentos comerciales y fiscales
 
-Gratis incluye **5 documentos comerciales por mes natural (UTC)**, independientes de sus cinco envíos de cotizaciones. Starter/Profesional/Scale incluyen **20/500/100 documentos**, respectivamente; Developer conserva 1.000. Los documentos comerciales y fiscales comparten esa cuota. La cuota de facturas de Profesional mayor que Scale es intencional en esta configuración; Scale añade otras capacidades.
+Gratis incluye **10 facturas comerciales por mes natural (UTC)**, independientes de sus cinco envíos de cotizaciones; desde Starter son ilimitadas. Las facturas con validez fiscal empiezan en Starter: **30/200/500** al mes en Starter/Profesional/Scale; Developer conserva 1.000. Cada tipo tiene su propia cuota.
 
 La opción comercial de México y España genera **proformas** identificadas; no sustituyen facturas fiscales. La emisión fiscal integrada requiere Starter o superior, emisor configurado e integración habilitada. La activación fiscal española y su aceptación integrada siguen pendientes: pagar el plan no las activa. Los demás mercados admitidos conservan facturas comerciales, sin promesa de integración ante su autoridad fiscal local.
 

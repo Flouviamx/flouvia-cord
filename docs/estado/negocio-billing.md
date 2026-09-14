@@ -57,19 +57,19 @@ de precio — los price ID de Stripe LIVE ya tienen suscripciones activas.
 
 | Plan | Precio | Posición | Incluye (resumen) |
 |------|--------|----------|-------------------|
-| Gratis | $0 | gancho | 5 cotizaciones activas, 5 **enviadas/mes**, 50 prod/cli, 3 IA y **5 documentos comerciales/mes**, "Powered by Cord" |
-| Starter | $240 | freelance | 50 cotizaciones, 500 prod/cli, 20 IA + 20 documentos/mes, emisión fiscal integrada donde esté habilitada, tu marca, CSV |
-| **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 500 documentos/mes, **cobranza + flujo a 90 días**, seguimiento en vivo, analítica |
-| Scale | $1,390 | automatización | + 15 usuarios, 500 IA + 100 facturas/mes, aprobaciones, **cobranza autónoma con IA**, SMTP propio, SSO |
-| Developer | — | **sin autoservicio** | + usuarios/IA ilimitados, 1,000 facturas + 50,000 API/mes, excedentes al menor costo. Se contrata hablando con ventas (`/contacto/ventas`); `/api/billing/subscribe` rechaza `plan=developer` |
+| Gratis | $0 | gancho | 5 cotizaciones activas, 5 **enviadas/mes**, 50 prod/cli, 3 IA y **10 facturas comerciales/mes**, "Powered by Cord" |
+| Starter | $240 | freelance | 50 cotizaciones, 500 prod/cli, 20 IA, comerciales ilimitadas + **30 fiscales/mes** donde esté habilitada, tu marca, CSV |
+| **Profesional** | **$590** | **DESTACADO** | Ilimitadas, 5 usuarios, 50 IA + 200 fiscales/mes, recurrentes, **cobranza + flujo a 90 días**, seguimiento en vivo, analítica |
+| Scale | $1,390 | automatización | + 15 usuarios, 500 IA + 500 fiscales/mes, aprobaciones, **cobranza autónoma con IA**, SSO (SMTP próximamente) |
+| Developer | — | **sin autoservicio** | + usuarios/IA ilimitados, 1,000 fiscales + 50,000 API/mes, excedentes al menor costo. Se contrata hablando con ventas (`/contacto/ventas`); `/api/billing/subscribe` rechaza `plan=developer` |
 
 Movimientos de gate respecto a la matriz de jun 2026 (`FEATURE_MIN_PLAN` en
 `src/lib/entitlements.ts`): `collections` y `cashflow_90` bajan de Scale a Pro
 (van con `cfo_dashboard`, que ya vivía ahí); `international_invoicing` y `cfdi`
 se separan por tipo documental: comerciales en Gratis y emisión fiscal
-integrada desde Starter. La cuota es 5/20/500/100/1.000 documentos para
-Free/Starter/Pro/Scale/Developer; Pro mayor que Scale es la decisión autorizada,
-no un ordenamiento automático. `collections_ai`
+integrada desde Starter. Cuotas separadas (sep 2026): comerciales 10/mes en
+Free e ilimitadas en pago (`INCLUDED.docs`); fiscales 0/30/200/500/1.000
+(`INCLUDED.cfdi`). `collections_ai`
 (la cobranza *autónoma*) sigue siendo exclusiva de Scale.
 
 ### Qué es "en vivo" en cada plan
@@ -121,7 +121,9 @@ Cada plan de pago trae cuota mensual (IA/facturas/API/usuarios); el **excedente 
 cobra por uso** vía Stripe Billing Meters. Gratis tiene topes duros; Starter cobra
 excedente de IA/facturas/API pero conserva un asiento duro; Pro y Scale cobran los
 cuatro medidores; Developer mantiene usuarios e IA ilimitados según la matriz pública,
-pero sin camino de autoservicio para entrar a ese plan.
+pero sin camino de autoservicio para entrar a ese plan. Los asientos extra se cobran
+cada mes: `syncSeatUsageAll()` en `billing-reconcile` reporta el pico mensual de
+asientos activos sobre lo incluido, descontando lo ya reportado al unirse alguien.
 Código de plan almacenado: `free|starter|pro|scale|developer`.
 Cuotas incluidas y mapping de price_id/meter en **`src/lib/billing.ts`**.
 
@@ -272,17 +274,17 @@ resto → factura comercial. España exige modo VERI*FACTU y habilitación opera
 y sigue pendiente de aceptación integrada; no se vende NO VERI*FACTU como fallback
 comercial conforme. Un cambio de plan no convierte documentos guardados.
 
-La cuota se comparte entre comerciales y fiscales, independientemente del país,
-y es independiente de envíos de cotización. `meterInvoiceEmission` reclama cada
-documento en `provider_data.cord_issuance`; `reserveUsage(..., {deferMeter:true})`
-reserva sin mandar excedente al proveedor. `commitInvoiceUsage` excluye las otras
+Comerciales y fiscales tienen cuotas separadas, independientes de los envíos de
+cotización. `meterInvoiceEmission` decide la cuota por `isFiscalDocument()`: un
+comercial reserva `documento` (sin meter), un fiscal reserva `timbrado` con
+`reserveUsage(..., {deferMeter:true})`, sin mandar excedente al proveedor. `commitInvoiceUsage` excluye las otras
 reservas pendientes al calcular el excedente confirmado. El cron recupera reservas
 vinculadas a documentos emitidos; resultados inciertos quedan retenidos para revisión.
 Las pruebas y simulaciones liberan consumo. El acceso a documentos ya emitidos y
 sus pagos no se bloquea al agotar cuota ni por downgrade. Las nuevas emisiones
 fiscales sí requieren Starter, incluyendo nuevos egresos fiscales.
 
-No requiere migración: usa columnas y estados existentes. Precios base, monedas,
+Requiere la columna `uso_periodo.docs` (`npm run db:migrate`) antes de desplegar. Precios base, monedas,
 identificadores Stripe y tarifas de excedente se conservan. Publicación pendiente;
 no se cambiaron suscripciones ni consumo histórico. Decisión registrada una sola
 vez en `../historial/billing-cobros.md` (2026-09-09).

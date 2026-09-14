@@ -158,9 +158,10 @@ const planActual = PLANES.find((p) => p.id === planRaw);
         {[
             { k: 'envios', label: t(L, 'set.plan.envios_mes'), m: BILL.envios },
             { k: 'ia', label: t(L, 'set.plan.armados_ia'), m: BILL.ia },
+            { k: 'docs', label: t(L, 'set.plan.docs_comerciales'), m: BILL.docs },
             { k: 'cfdi', label: t(L, 'set.plan.timbres_cfdi'), m: BILL.cfdi },
             { k: 'api', label: t(L, 'set.plan.llamadas_api'), m: BILL.api },
-        ].map(({ label, m }) => (
+        ].filter(({ m }) => m.incluido !== 0).map(({ label, m }) => (
             <div class="usage">
                 <div class="usage-top">
                     <span class="usage-label">{label}</span>

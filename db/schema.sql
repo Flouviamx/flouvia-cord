@@ -534,6 +534,8 @@ create table if not exists uso_periodo (
 -- Stripe: solo Gratis tiene número (INCLUDED.envios en src/lib/billing.ts);
 -- el resto de los planes queda sin tope.
 alter table uso_periodo add column if not exists envios int not null default 0;
+-- Documentos comerciales del mes; los fiscales cuentan en `cfdi`.
+alter table uso_periodo add column if not exists docs int not null default 0;
 
 -- Telemetría interna de proveedores que pueden generar costo variable. Nunca
 -- guarda prompts, correos, payloads, tokens ni secretos: solo proveedor,

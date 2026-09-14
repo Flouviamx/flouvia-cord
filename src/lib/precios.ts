@@ -63,7 +63,7 @@ export const PLANES: Plan[] = [
             'Hasta 5 cotizaciones activas a la vez',
             '50 productos y 50 clientes',
             '3 armados con IA al mes',
-            '5 documentos comerciales al mes',
+            '10 facturas comerciales al mes',
             'Marca “Powered by Cord”',
         ],
     },
@@ -78,8 +78,8 @@ export const PLANES: Plan[] = [
         feats: [
             'Envíos ilimitados; hasta 50 activas',
             '500 productos y clientes',
-            '20 armados con IA + 20 facturas al mes',
-            'Documentos comerciales e integración fiscal habilitada',
+            'Facturas comerciales ilimitadas',
+            '30 facturas con validez fiscal + 20 armados con IA al mes',
             'Tu marca (sin “Powered by”)',
         ],
     },
@@ -96,9 +96,9 @@ export const PLANES: Plan[] = [
         feats: [
             'Cotizaciones ilimitadas',
             '5 usuarios incluidos',
-            '50 armados con IA + 500 facturas al mes',
-            'Cobranza y flujo de caja a 90 días',
-            'Seguimiento en vivo y sin marca de Cord',
+            '200 facturas fiscales + 50 armados con IA al mes',
+            'Cobranza, facturas recurrentes y flujo a 90 días',
+            'Seguimiento en vivo de tus propuestas',
         ],
     },
     {
@@ -112,9 +112,9 @@ export const PLANES: Plan[] = [
         feats: [
             'Todo lo de Profesional',
             '15 usuarios incluidos',
-            '500 armados con IA + 100 facturas al mes',
+            '500 facturas fiscales + 500 armados con IA al mes',
             'Cobranza autónoma con IA y aprobaciones',
-            'Correos desde tu dominio (SMTP) y SSO',
+            'SSO empresarial y gobernanza de agentes IA',
         ],
     },
     {
@@ -129,7 +129,7 @@ export const PLANES: Plan[] = [
         feats: [
             'Todo lo de Scale',
             'Usuarios e IA ilimitados',
-            '1,000 facturas + 50,000 API al mes',
+            '1,000 facturas fiscales + 50,000 API al mes',
             'Excedentes al menor costo',
             'Condiciones y onboarding a tu medida',
         ],
@@ -148,6 +148,9 @@ export interface CompareRow {
     hint?: string;
     overageDim?: 'usuario' | 'ia' | 'timbrado' | 'api';
 }
+export const overageRow = (overageDim: NonNullable<CompareRow['overageDim']>, label: string): CompareRow =>
+    ({ overageDim, label, free: false, starter: false, pro: false, scale: false, developer: false });
+
 export interface CompareGroup {
     titulo: string;
     rows: CompareRow[];
@@ -168,7 +171,8 @@ export const COMPARATIVA: CompareGroup[] = [
         rows: [
             { label: 'Cotizaciones enviadas', free: '5 / mes', starter: 'Ilimitadas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas' },
             { label: 'Armado de cotizaciones con IA', free: '3 / mes', starter: '20 / mes', pro: '50 / mes', scale: '500 / mes', developer: 'Ilimitado' },
-            { label: 'Facturas emitidas', free: '5 / mes', starter: '20 / mes', pro: '500 / mes', scale: '100 / mes', developer: '1,000 / mes', hint: 'Documentos comerciales en Gratis; emisión fiscal integrada desde Starter donde esté habilitada. La opción comercial en México y España es proforma.' },
+            { label: 'Facturas comerciales', free: '10 / mes', starter: 'Ilimitadas', pro: 'Ilimitadas', scale: 'Ilimitadas', developer: 'Ilimitadas', hint: 'En México y España el documento comercial es una proforma.' },
+            { label: 'Facturas con validez fiscal', free: false, starter: '30 / mes', pro: '200 / mes', scale: '500 / mes', developer: '1,000 / mes', hint: 'CFDI 4.0 en México; VERI*FACTU en España tras completar su activación. En los demás mercados Cord emite factura comercial y no timbra ante otras autoridades fiscales.' },
             { label: 'Llamadas a la API pública', free: '100 / mes', starter: '1,000 / mes', pro: '5,000 / mes', scale: '10,000 / mes', developer: '50,000 / mes' },
         ],
     },
@@ -213,7 +217,7 @@ export const COMPARATIVA: CompareGroup[] = [
         titulo: 'Fiscal y multi-divisa',
         rows: [
             { label: 'Emisión fiscal integrada', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 en México con emisor configurado. VERI*FACTU en España requiere activación y validación. Sin promesa de cumplimiento fiscal universal.' },
-            { label: 'Tu propio CSD (sello digital, México)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Tu propio CSD (sello digital, México)', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Multi-divisa con cobertura cambiaria (FX lock)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
@@ -237,6 +241,7 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Flujos de aprobación (tope descuento/monto/margen)', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Auditor silencioso de márgenes', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Interés moratorio automático', free: false, starter: false, pro: false, scale: true, developer: true },
+            { label: 'Facturas recurrentes', free: false, starter: false, pro: true, scale: true, developer: true },
         ],
     },
     {
@@ -245,7 +250,7 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Importación masiva (CSV)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Quitar marca “Powered by Cord”', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Personalizar color y logo', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Correos desde tu dominio (SMTP)', free: false, starter: false, pro: false, scale: true, developer: true },
+            { label: 'Correos desde tu dominio (SMTP)', free: false, starter: false, pro: false, scale: 'Próximamente', developer: 'Próximamente' },
             { label: 'Multi-moneda (14 divisas ofrecidas)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
@@ -287,10 +292,10 @@ export const COMPARATIVA: CompareGroup[] = [
     {
         titulo: 'Excedentes (cobro por uso)',
         rows: [
-            { overageDim: 'usuario', label: 'Usuario adicional', free: 'Tope duro', starter: 'Tope duro', pro: '$300 / u', scale: '$300 / u', developer: '$200 / u' },
-            { overageDim: 'ia', label: 'Armado con IA extra', free: 'Tope duro', starter: '$4.00 / uso', pro: '$3.50 / uso', scale: '$3.00 / uso', developer: '$2.50 / uso' },
-            { overageDim: 'timbrado', label: 'Factura adicional', free: false, starter: '$3.00 / folio', pro: '$3.00 / folio', scale: '$2.00 / folio', developer: '$1.50 / folio' },
-            { overageDim: 'api', label: 'API extra (por 100 req)', free: 'Tope duro', starter: '$0.03 USD', pro: '$0.03 USD', scale: '$0.02 USD', developer: '$0.02 USD' },
+            overageRow('usuario', 'Usuario adicional'),
+            overageRow('ia', 'Armado con IA extra'),
+            overageRow('timbrado', 'Factura fiscal adicional'),
+            overageRow('api', 'API extra (por 100 req)'),
         ],
     },
 ];
@@ -306,7 +311,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Qué pasa si me paso del consumo incluido?',
-        a: 'Gratis tiene topes duros. Desde Starter se cobran los excedentes de IA, documentos y API a las tarifas publicadas; Starter conserva un usuario. Profesional y Scale también permiten usuarios adicionales de pago. Puedes consultar tu consumo en la app.',
+        a: 'Gratis tiene topes duros. Desde Starter se cobran los excedentes de IA, facturas fiscales y API a las tarifas publicadas; las facturas comerciales no tienen tope en planes de pago. Starter conserva un usuario. En Profesional y Scale cada usuario adicional se cobra cada mes mientras siga activo. Puedes consultar tu consumo en la app.',
     },
     {
         q: '¿Puedo cambiar de plan cuando quiera?',
@@ -318,7 +323,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Cómo funciona la facturación electrónica?',
-        a: 'Gratis incluye 5 documentos comerciales al mes. Starter, Profesional y Scale incluyen 20, 500 y 100 respectivamente, compartidos entre documentos comerciales y fiscales. La emisión fiscal integrada empieza en Starter donde esté habilitada. En México una proforma no sustituye el CFDI. La emisión fiscal española requiere completar su activación y validación.',
+        a: 'Hay dos tipos de factura. La comercial (proforma en México y España) está en todos los planes: 10 al mes en Gratis e ilimitadas desde Starter. La factura con validez fiscal empieza en Starter con 30 al mes; Profesional incluye 200 y Scale 500. Hoy Cord timbra CFDI 4.0 en México, y en España VERI*FACTU requiere completar su activación. En los demás mercados Cord emite la factura comercial y no timbra ante otras autoridades. Una proforma no sustituye el CFDI.',
     },
     {
         q: '¿Qué pasa después de mis 5 envíos gratis?',
@@ -326,11 +331,11 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Cuándo me conviene pagar por Cord?',
-        a: 'Elige Starter si necesitas más documentos, emisión fiscal integrada donde esté habilitada, más envíos o quitar “Powered by Cord”. Profesional añade cotizaciones ilimitadas, 5 usuarios incluidos, seguimiento en vivo, cobranza y flujo de caja a 90 días. Scale suma aprobaciones, cobranza con IA y correo desde tu dominio. Puedes quedarte en Gratis mientras sus límites cubran tu operación.',
+        a: 'Elige Starter si necesitas facturas con validez fiscal donde Cord está habilitado, envíos sin límite o quitar “Powered by Cord”. Profesional añade cotizaciones ilimitadas, 5 usuarios incluidos, seguimiento en vivo, cobranza, facturas recurrentes y flujo de caja a 90 días. Scale suma aprobaciones, cobranza autónoma con IA y SSO. Puedes quedarte en Gratis mientras sus límites cubran tu operación.',
     },
     {
         q: '¿Puedo quitar la marca de Cord y usar mi dominio?',
-        a: 'Puedes quitar “Powered by Cord” desde Starter; Profesional y Scale también lo incluyen. Tu logo y tus colores están disponibles incluso en Gratis. Scale permite enviar correos desde tu dominio mediante SMTP. Usar un dominio propio para los enlaces de cotización es una capacidad distinta y actualmente no está disponible.',
+        a: 'Puedes quitar “Powered by Cord” desde Starter; Profesional y Scale también lo incluyen. Tu logo y tus colores están disponibles incluso en Gratis. Enviar correos desde tu dominio (SMTP) llegará próximamente a Scale. Usar un dominio propio para los enlaces de cotización es una capacidad distinta y actualmente no está disponible.',
     },
     {
         q: '¿Gratis tiene un límite por el dinero que cobro?',
@@ -338,7 +343,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿El plan Developer es para integrar Cord a mi sistema?',
-        a: 'Exacto. Developer incluye 50,000 llamadas a la API al mes, los excedentes más baratos, usuarios e IA ilimitados y el cotizador embebible — es la base para conectar Cord a tu ERP, e-commerce o portal de clientes. No tiene precio de autoservicio: se contrata hablando con ventas, para dejar la capacidad y las condiciones a la medida de tu integración.',
+        a: 'Exacto. Developer incluye 50,000 llamadas a la API y 1,000 facturas fiscales al mes, los excedentes más baratos, usuarios e IA ilimitados y el cotizador embebible — es la base para conectar Cord a tu ERP, e-commerce o portal de clientes. No tiene precio de autoservicio: se contrata hablando con ventas, para dejar la capacidad y las condiciones a la medida de tu integración.',
     },
     {
         q: '¿Necesito ser cliente de Flouvia para contratar un plan?',

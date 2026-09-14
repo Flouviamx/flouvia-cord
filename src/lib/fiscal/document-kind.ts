@@ -4,6 +4,10 @@ import { planIncludes, type PlanId } from '../entitlements';
 
 export type InvoiceMode = 'commercial' | 'fiscal';
 
+export function documentTypeFor(country: string): string {
+  return country.toUpperCase() === 'MX' ? 'cfdi_40' : 'commercial_invoice';
+}
+
 export function isFiscalDocument(type: string, country: string, provider?: string): boolean {
   if (country === 'MX' && !['proforma', 'commercial_invoice', 'commercial_credit_note'].includes(type)) return true;
   return ['cfdi_40', 'cfdi_egreso', 'verifactu_invoice', 'verifactu_credit_note'].includes(type)

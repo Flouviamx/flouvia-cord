@@ -22,7 +22,8 @@ export type MeterDim = 'api' | 'usuario' | 'ia' | 'timbrado';
 // se le cobra a nadie, solo cierra el hueco de que "cotizaciones activas" es un
 // stock reciclable (cerrar un trato libera cupo, así que un vendedor disciplinado
 // nunca tocaba el límite). Nunca se agrega a METER_PRICES/METERS/allowsOverage.
-export type UsageDim = MeterDim | 'envios';
+// 'documento' = comerciales, sin meter; los fiscales van por 'timbrado'.
+export type UsageDim = MeterDim | 'envios' | 'documento';
 const isTest = (STRIPE_KEY || '').startsWith('sk_test_') || (STRIPE_KEY || '').startsWith('rk_test_');
 
 // ── Precio base de suscripción por plan y ciclo (recurring flat) ──────────────
@@ -119,16 +120,13 @@ export async function platformCurrencyForOrg(orgId: string): Promise<PlatformCur
 
 // ── Cuotas mensuales INCLUIDAS por plan (consumo sin costo extra) ─────────────
 // null = ilimitado. Alimenta el medidor de uso y la lógica de "tope duro".
-// `envios` solo tiene número en Free (5); en el resto de los planes es null
-// (sin tope) porque las cotizaciones activas/ilimitadas de Starter+ ya son la
-// palanca de negocio — el tope de envíos es puramente el gancho de conversión
-// de Gratis.
-export const INCLUDED: Record<PlanId, { ia: number | null; cfdi: number; api: number; usuarios: number | null; envios: number | null }> = {
-    free:      { ia: 3,    cfdi: 5,    api: 100,   usuarios: 1,    envios: 5 },
-    starter:   { ia: 20,   cfdi: 20,    api: 1000,  usuarios: 1,    envios: null },
-    pro:       { ia: 50,   cfdi: 500,   api: 5000,  usuarios: 5,    envios: null },
-    scale:     { ia: 500,  cfdi: 100,  api: 10000, usuarios: 15,   envios: null },
-    developer: { ia: null, cfdi: 1000, api: 50000, usuarios: null, envios: null },
+// `cfdi` = documentos fiscales; `docs` = comerciales (solo Gratis tiene tope).
+export const INCLUDED: Record<PlanId, { ia: number | null; cfdi: number; api: number; usuarios: number | null; envios: number | null; docs: number | null }> = {
+    free:      { ia: 3,    cfdi: 0,    api: 100,   usuarios: 1,    envios: 5,    docs: 10 },
+    starter:   { ia: 20,   cfdi: 30,   api: 1000,  usuarios: 1,    envios: null, docs: null },
+    pro:       { ia: 50,   cfdi: 200,  api: 5000,  usuarios: 5,    envios: null, docs: null },
+    scale:     { ia: 500,  cfdi: 500,  api: 10000, usuarios: 15,   envios: null, docs: null },
+    developer: { ia: null, cfdi: 1000, api: 50000, usuarios: null, envios: null, docs: null },
 };
 
 // Matriz de excedentes del contrato comercial. Starter permite excedente de
@@ -136,21 +134,28 @@ export const INCLUDED: Record<PlanId, { ia: number | null; cfdi: number; api: nu
 // medidores tienen overage. 'envios' nunca tiene overage: es tope duro puro
 // de Gratis, sin meter de Stripe detrás.
 export function allowsOverage(plan: PlanId, dim: UsageDim): boolean {
-    if (dim === 'envios') return false;
+    if (dim === 'envios' || dim === 'documento') return false;
     if (plan === 'free') return false;
     if (dim === 'usuario') return plan === 'pro' || plan === 'scale' || plan === 'developer';
     return true;
 }
 
 // dim de uso → columna en uso_periodo
-export const DIM_COL: Record<UsageDim, 'ia' | 'cfdi' | 'api' | 'usuarios' | 'envios'> = {
-    ia: 'ia', timbrado: 'cfdi', api: 'api', usuario: 'usuarios', envios: 'envios',
+export const DIM_COL: Record<UsageDim, 'ia' | 'cfdi' | 'api' | 'usuarios' | 'envios' | 'docs'> = {
+    ia: 'ia', timbrado: 'cfdi', api: 'api', usuario: 'usuarios', envios: 'envios', documento: 'docs',
 };
 
 // Techo de seguridad para planes con excedente: aunque el overage se cobra, un
 // múltiplo del incluido corta el gasto runaway de una cuenta comprometida antes
 // de que genere una factura enorme de Anthropic/Facturapi.
 const OVERAGE_SAFETY_MULTIPLIER = 10;
+
+// Los asientos no llevan techo de seguridad: no tienen costo de proveedor.
+function usageHardCap(plan: PlanId, dim: UsageDim, included: number | null): number {
+    if (included === null) return 2_147_483_647;
+    if (!allowsOverage(plan, dim)) return included;
+    return dim === 'usuario' ? 2_147_483_647 : included * OVERAGE_SAFETY_MULTIPLIER;
+}
 
 /**
  * Verifica ANTES de una llamada externa costosa (IA/CFDI) si la org está dentro
@@ -176,7 +181,7 @@ export async function checkQuota(orgId: string, dim: MeterDim): Promise<{ ok: bo
             if (used >= limit) return { ok: false, reason: `Alcanzaste el límite de tu plan (${limit} este mes). Sube de plan para seguir usando esta función.` };
             return { ok: true };
         }
-        if (used >= limit * OVERAGE_SAFETY_MULTIPLIER) {
+        if (used >= usageHardCap(plan, dim, limit)) {
             return { ok: false, reason: 'Uso excepcionalmente alto este periodo. Contáctanos para desbloquear.' };
         }
         return { ok: true };
@@ -300,16 +305,33 @@ export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1, o
         const plan = context.effectivePlan;
         const col = DIM_COL[dim];
         const included = INCLUDED[plan][col];
-        const hardCap = included === null
-            ? 2_147_483_647
-            : (allowsOverage(plan, dim) ? included * OVERAGE_SAFETY_MULTIPLIER : included);
+        const hardCap = usageHardCap(plan, dim, included);
         const periodo = new Date().toISOString().slice(0, 7);
         const id = randomUUID();
         const meterEligible = !context.isSandbox && plan !== 'free' && !!context.stripeCustomerId
             && included !== null && allowsOverage(plan, dim);
         const includedForMeter = included ?? 2_147_483_647;
 
-        const queryFor = (column: 'ia' | 'cfdi' | 'api' | 'usuarios' | 'envios') => {
+        const queryFor = (column: 'ia' | 'cfdi' | 'api' | 'usuarios' | 'envios' | 'docs') => {
+            if (column === 'docs') return sql`
+                with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
+                consumed as (
+                  insert into uso_periodo (org_id, periodo, docs)
+                  select ${orgId}, ${periodo}, ${value} from locked
+                  where ${value} <= ${hardCap}
+                  on conflict (org_id, periodo) do update
+                    set docs = uso_periodo.docs + ${value}, updated_at = now()
+                    where uso_periodo.docs + ${value} <= ${hardCap}
+                  returning docs
+                ), reserved as (
+                  insert into usage_reservations
+                    (id, org_id, billing_org_id, dimension, value, meter_value, periodo, status,
+                     meter_status, stripe_customer_id, committed_at)
+                  select ${id}, ${orgId}, ${context.billingOrgId}, ${dim}, ${value},
+                         0, ${periodo}, 'committed', 'skipped', ${context.stripeCustomerId}, now()
+                  from consumed returning id
+                )
+                select exists(select 1 from consumed) as ok`;
             if (column === 'envios') return sql`
                 with locked as (select pg_advisory_xact_lock(hashtextextended(${orgId + ':' + dim}, 0))),
                 consumed as (
@@ -426,7 +448,8 @@ export async function reserveUsage(orgId: string, dim: UsageDim, rawValue = 1, o
 
         const [[result]] = await withOrgTx(orgId, queryFor(col));
         if (!result?.ok) {
-            return { ok: false, reason: `Alcanzaste el límite de tu plan para ${dim === 'timbrado' ? 'facturas' : dim}. Sube de plan para continuar.` };
+            const what = dim === 'timbrado' ? 'facturas fiscales' : dim === 'documento' ? 'documentos comerciales' : dim;
+            return { ok: false, reason: `Alcanzaste el límite de tu plan para ${what}. Sube de plan para continuar.` };
         }
         return { ok: true, id };
     } catch (error) {
@@ -452,6 +475,7 @@ export async function cancelUsage(orgId: string, reservationId: string): Promise
                 api = greatest(0, u.api - coalesce((select value from canceled where dimension = 'api'), 0)),
                 usuarios = greatest(0, u.usuarios - coalesce((select value from canceled where dimension = 'usuario'), 0)),
                 envios = greatest(0, u.envios - coalesce((select value from canceled where dimension = 'envios'), 0)),
+                docs = greatest(0, u.docs - coalesce((select value from canceled where dimension = 'documento'), 0)),
                 updated_at = now()
               where u.org_id = ${orgId} and u.periodo = (select periodo from canceled)
               returning u.org_id
@@ -568,6 +592,56 @@ export async function flushPendingUsage(limit = 100): Promise<{ sent: number; fa
         }
     }
     return { sent, failed };
+}
+
+// Cobra cada mes el pico de asientos sobre lo incluido, menos lo ya reportado. Idempotente.
+export async function syncSeatUsage(orgId: string): Promise<string | null> {
+    const context = await getEntitlementContext(orgId);
+    const plan = context.effectivePlan;
+    const included = INCLUDED[plan].usuarios;
+    if (context.isSandbox || !context.stripeCustomerId || included === null || !allowsOverage(plan, 'usuario')) return null;
+    const periodo = new Date().toISOString().slice(0, 7);
+    const id = randomUUID();
+    const [, [row]] = await withOrgTx(orgId,
+        sql`select pg_advisory_xact_lock(hashtextextended(${orgId + ':usuario'}, 0))`,
+        sql`with seats as (
+              select count(*)::int as n from org_members where org_id = ${orgId} and estado = 'activo'
+            ), peak as (
+              insert into uso_periodo (org_id, periodo, usuarios)
+              select ${orgId}, ${periodo}, seats.n from seats
+              on conflict (org_id, periodo) do update
+                set usuarios = greatest(uso_periodo.usuarios, excluded.usuarios), updated_at = now()
+              returning usuarios
+            ), billed as (
+              select coalesce(sum(meter_value), 0)::int as b from usage_reservations
+               where org_id = ${orgId} and periodo = ${periodo} and dimension = 'usuario' and status = 'committed'
+            ), delta as (
+              select greatest(0, (select usuarios from peak) - ${included} - (select b from billed))::int as d
+            )
+            insert into usage_reservations
+              (id, org_id, billing_org_id, dimension, value, meter_value, periodo, status,
+               meter_status, stripe_customer_id, committed_at)
+            select ${id}, ${orgId}, ${context.billingOrgId}, 'usuario', d, d, ${periodo}, 'committed',
+                   'pending', ${context.stripeCustomerId}, now()
+              from delta where d > 0
+            returning id`);
+    return row ? String(row.id) : null;
+}
+
+export async function syncSeatUsageAll(): Promise<number> {
+    const [orgs] = await withSystemTx(sql`
+        select id from orgs
+         where sandbox_of is null and stripe_customer_id is not null
+           and cord_effective_plan(id) in ('pro', 'scale')`);
+    let reported = 0;
+    for (const org of orgs) {
+        try {
+            if (await syncSeatUsage(String(org.id))) reported++;
+        } catch (error) {
+            log.error('no se pudo sincronizar asientos', { route: 'billing', orgId: String(org.id), err: error });
+        }
+    }
+    return reported;
 }
 
 // Compatibilidad para consumidores existentes: primero persiste el consumo y

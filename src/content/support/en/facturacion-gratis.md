@@ -1,12 +1,12 @@
 ---
 title: "Commercial invoicing on Free"
-description: "Five documents per month, how usage works and when Starter is needed."
+description: "Ten commercial invoices per month, how usage works and when Starter is needed."
 category: "Account & Team"
 ---
 
 # Commercial invoicing on Free
 
-Free includes **five commercial documents per calendar month (UTC)**, separately
+Free includes **ten commercial invoices per calendar month (UTC)**, separately
 from its five quote sends. For example, quoting and then invoicing a sale uses
 one quote send and one document. A draft does not consume an issuance.
 
@@ -15,14 +15,14 @@ It has a PDF and a public link, but it does not replace a tax invoice and does
 not produce fiscal XML. Other supported markets use commercial invoices, without
 promising local tax-authority integration.
 
-On the sixth issuance you can wait for the next month or upgrade. Existing
+On the eleventh issuance you can wait for the next month or upgrade. Existing
 documents remain available for downloads and payments; resending or downloading
 them does not use another document. Payment processing still has its own fees
 and availability requirements.
 
-Starter adds enabled fiscal integrations and **20 documents/month**. Professional
-includes **500**, Scale **100**, and Developer **1,000**. Commercial and fiscal
-documents share the allowance. Spanish fiscal activation and integrated
+From Starter, commercial invoices are **unlimited** and tax-compliant invoices are
+added where Cord supports them: **30/month** on Starter, **200** on Professional,
+**500** on Scale and **1,000** on Developer. Each type has its own allowance. Spanish fiscal activation and integrated
 validation remain pending; a paid plan does not enable an unavailable integration.
 
 Failed confirmed attempts release their reservation. If an issuance result is

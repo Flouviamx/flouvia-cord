@@ -82,8 +82,10 @@ const webhooksApi = read('src/pages/api/webhooks.ts');
 const vercel = read('vercel.json');
 
 check(billing.includes('envios: 5') && /starter:\s*\{[^}]*envios:\s*null/.test(billing), 'El tope de envíos/mes debe ser exclusivo de Gratis (5), sin número en el resto de los planes.');
-check(/free:\s*\{[^}]*cfdi:\s*5/.test(billing), 'Gratis debe incluir 5 documentos comerciales al mes.');
-check(billing.includes("if (dim === 'envios') return false;"), 'Envíos nunca debe tener excedente facturable — es tope duro puro, sin meter.');
+check(/free:\s*\{[^}]*cfdi:\s*0[^}]*docs:\s*10/.test(billing), 'Gratis incluye 10 documentos comerciales al mes y ninguna factura fiscal.');
+check(read('src/lib/fiscal/issuance-usage.ts').includes("reserveUsage(orgId, 'documento', 1)"), 'Los documentos comerciales deben consumir su propia cuota, no la fiscal.');
+check(read('src/lib/billing-reconcile.ts').includes('syncSeatUsageAll()'), 'Los asientos extra deben reportarse cada periodo, no solo al unirse un miembro.');
+check(billing.includes("if (dim === 'envios' || dim === 'documento') return false;"), 'Envíos y documentos comerciales nunca tienen excedente facturable — son tope duro puro, sin meter.');
 check(billing.includes("'payload[value]': String(row.meter_value)"), 'Stripe debe recibir solo meter_value.');
 check(!billing.includes("'payload[value]': String(row.value)"), 'Nunca se debe cobrar el consumo total incluido.');
 check(billing.includes('pg_advisory_xact_lock') && billing.includes('usage_reservations'), 'La cuota debe reservarse con lock y outbox.');

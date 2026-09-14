@@ -4,7 +4,7 @@
 // solos: pueden retrasarse, llegar fuera de orden o agotarse sus reintentos. Este
 // barrido consulta el objeto actual de Stripe y reconstruye la proyección local.
 
-import { METER_PRICES, PRICE_TO_PLAN, flushPendingUsage, stripe } from './billing';
+import { METER_PRICES, PRICE_TO_PLAN, flushPendingUsage, stripe, syncSeatUsageAll } from './billing';
 import { sql, withOrgTx, withSystemTx } from './db';
 import { sendOpsAlert } from './ops-alert';
 import { PLAN_RANK, type PaidPlan } from './entitlements';
@@ -22,6 +22,7 @@ export interface BillingReconcileResult {
     attemptsRecovered: number;
     usageSent: number;
     usageFailed: number;
+    seatsReported: number;
 }
 
 function idOf(value: any): string | null {
@@ -210,7 +211,7 @@ async function reconcileOne(org: any, result: BillingReconcileResult): Promise<v
 export async function reconcileBilling(): Promise<BillingReconcileResult> {
     const result: BillingReconcileResult = {
         checked: 0, granted: 0, revoked: 0, failed: 0, duplicateCustomers: 0,
-        attemptsRecovered: 0, usageSent: 0, usageFailed: 0,
+        attemptsRecovered: 0, usageSent: 0, usageFailed: 0, seatsReported: 0,
     };
     result.attemptsRecovered = await recoverCheckoutAttempts();
     const [orgs] = await withSystemTx(sql`
@@ -219,6 +220,7 @@ export async function reconcileBilling(): Promise<BillingReconcileResult> {
          where sandbox_of is null and stripe_subscription_id is not null
          order by id`);
     for (const org of orgs) await reconcileOne(org, result);
+    result.seatsReported = await syncSeatUsageAll();
     const usage = await flushPendingUsage(250);
     result.usageSent = usage.sent;
     result.usageFailed = usage.failed;

@@ -1507,3 +1507,34 @@ emisión ya está confirmada. Sin transformación automática de documentos hist
 sin migración, sin cambios LIVE, sin push en esta entrega. Precios y documentación
 ES/EN, ayuda y roadmap se alinearon localmente. No completa los cuatro pendientes
 operativos/integrados de la fase 1.
+
+## 2026-09-14 — Cuotas comerciales y fiscales separadas; asientos mensuales
+
+Auditoría de precios con André. Sustituye las cuotas del 2026-09-09.
+
+- **Dos cuotas en vez de una.** Una factura comercial no le cuesta nada a Cord;
+  una fiscal cuesta un timbre (Facturapi: $0.60 MXN). Compartir cuota obligaba a
+  racionar PDFs. `uso_periodo.docs` (nueva columna) cuenta comerciales con tope
+  solo en Gratis (10/mes); `cfdi` cuenta fiscales: 0/30/200/500/1.000 para
+  Gratis/Starter/Profesional/Scale/Developer. Se corrigió la inversión Pro 500 >
+  Scale 100. Referencias de mercado: Zoho Invoice gratis 500/año, Wave e Invoice
+  Ninja ilimitadas gratis, Stripe Invoicing 25/mes gratis; Alegra MX 50/100/250/500
+  fiscales por $138/199/399/599; PandaDoc y Proposify limitan a 5 envíos/mes en
+  sus planes de entrada (se conservan los 5 envíos de Gratis).
+- **Validez fiscal por país.** Solo MX (CFDI 4.0) tiene riel activo; ES espera la
+  activación de VERI*FACTU. FR y DE tienen mandatos B2B de e-factura estructurada
+  (FR sep 2026/2027, DE 2027/2028) y BR/CO/AR/CL/PE usan autorización previa: el
+  copy no promete validez fiscal fuera de los rieles integrados.
+- **Asientos extra.** El meter `usuario` suma eventos y solo se reportaba al unirse
+  un miembro, así que el excedente se cobraba una vez y no cada mes.
+  `syncSeatUsageAll()` corre en `billing-reconcile` y reporta por mes UTC el pico
+  de asientos activos sobre lo incluido menos lo ya reportado. Se quitó el techo
+  de 10× lo incluido en asientos (bloqueaba equipos de más de 50 en Pro).
+- **Copy.** SMTP pasa a "Próximamente" (sin consumidor). Developer muestra usuarios
+  e IA como ilimitados en la fila de excedentes. Tarifas MXN de excedentes explícitas
+  en vez de USD × 20. CSD y facturas recurrentes reflejan su gate real. El inglés
+  pierde tres filas de presupuestos inexistentes y la promesa de firma legalmente
+  vinculante. Dominio propio sigue sin anunciarse: está detrás de un interruptor.
+
+Requiere `npm run db:migrate` antes de desplegar (columna `docs`). Sin cambios en
+Stripe: precios base, tarifas medidas y monedas se conservan.

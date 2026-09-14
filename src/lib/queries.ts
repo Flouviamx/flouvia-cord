@@ -776,6 +776,7 @@ export async function getBillingUsage() {
         cfdi: dim(Number(row.cfdi) || 0, inc.cfdi),
         api: dim(Number(row.api) || 0, inc.api),
         envios: dim(Number(row.envios) || 0, inc.envios),
+        docs: dim(Number(row.docs) || 0, inc.docs),
     };
 }
 

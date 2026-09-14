@@ -7,7 +7,7 @@
 // tabla pública describe el contrato, nunca lo define (regla 18) — así que los
 // importes se toman de `precios.ts`, que ahora los tiene por divisa.
 import type { Plan, CompareGroup } from './precios';
-import { PLANES } from './precios';
+import { PLANES, overageRow } from './precios';
 
 const precioDe = (id: Plan['id']): Plan['precio'] => {
     const plan = PLANES.find((p) => p.id === id);
@@ -28,7 +28,7 @@ export const PLANES_EN: Plan[] = [
             'Up to 5 active quotes at a time',
             '50 products and 50 clients',
             '3 AI generations per month',
-            '5 commercial documents per month',
+            '10 commercial invoices per month',
             '"Powered by Cord" branding',
         ],
     },
@@ -43,8 +43,8 @@ export const PLANES_EN: Plan[] = [
         feats: [
             'Unlimited sends; up to 50 active quotes',
             '500 products and clients',
-            '20 AI generations + 20 invoices/mo',
-            'Commercial documents and enabled fiscal integrations',
+            'Unlimited commercial invoices',
+            '30 tax-compliant invoices + 20 AI generations/mo',
             'Your brand (no "Powered by")',
         ],
     },
@@ -61,9 +61,9 @@ export const PLANES_EN: Plan[] = [
         feats: [
             'Unlimited quotes',
             '5 users included',
-            '50 AI generations + 500 invoices/mo',
-            'Collections and 90-day cash flow forecast',
-            'Live tracking and no Cord branding',
+            '200 tax invoices + 50 AI generations/mo',
+            'Collections, recurring invoices and 90-day cash flow',
+            'Live tracking of your proposals',
         ],
     },
     {
@@ -77,9 +77,9 @@ export const PLANES_EN: Plan[] = [
         feats: [
             'Everything in Professional',
             '15 users included',
-            '500 AI generations + 100 invoices/mo',
+            '500 tax invoices + 500 AI generations/mo',
             'Autonomous AI collections and approval flows',
-            'Emails from your domain (SMTP) and SSO',
+            'Enterprise SSO and AI agent governance',
         ],
     },
     {
@@ -94,7 +94,7 @@ export const PLANES_EN: Plan[] = [
         feats: [
             'Everything in Scale',
             'Unlimited users and AI',
-            '1,000 invoices + 50,000 API reqs/mo',
+            '1,000 tax invoices + 50,000 API reqs/mo',
             'Overage at the lowest cost',
             'Custom terms and onboarding',
         ],
@@ -116,7 +116,8 @@ export const COMPARATIVA_EN: CompareGroup[] = [
         rows: [
             { label: 'Sent quotes', free: '5 / mo', starter: 'Unlimited', pro: 'Unlimited', scale: 'Unlimited', developer: 'Unlimited' },
             { label: 'AI quote generation', free: '3 / mo', starter: '20 / mo', pro: '50 / mo', scale: '500 / mo', developer: 'Unlimited' },
-            { label: 'Documents issued', free: '5 / mo', starter: '20 / mo', pro: '500 / mo', scale: '100 / mo', developer: '1,000 / mo', hint: 'Commercial documents in Free; integrated fiscal issuance from Starter where enabled. Mexico and Spain use pro formas for the commercial option.' },
+            { label: 'Commercial invoices', free: '10 / mo', starter: 'Unlimited', pro: 'Unlimited', scale: 'Unlimited', developer: 'Unlimited', hint: 'In Mexico and Spain the commercial document is a pro forma.' },
+            { label: 'Tax-compliant invoices', free: false, starter: '30 / mo', pro: '200 / mo', scale: '500 / mo', developer: '1,000 / mo', hint: 'CFDI 4.0 in Mexico; VERI*FACTU in Spain once activation is complete. In other markets Cord issues a commercial invoice and does not file with other tax authorities.' },
             { label: 'Public API calls', free: '100 / mo', starter: '1,000 / mo', pro: '5,000 / mo', scale: '10,000 / mo', developer: '50,000 / mo' },
         ],
     },
@@ -142,7 +143,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
             { label: 'Public link + downloadable PDF', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: '"Your customer viewed the quote" alert', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Presence "viewing it right now"', free: false, starter: false, pro: true, scale: true, developer: true },
-            { label: 'Legally binding digital signature (SHA-256)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Approval with technical evidence (SHA-256)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Counteroffer and chat with the customer', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Line-item negotiation (threads)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Online card payment (Stripe)', free: true, starter: true, pro: true, scale: true, developer: true },
@@ -161,7 +162,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
         titulo: 'Tax and Multi-currency',
         rows: [
             { label: 'Integrated fiscal issuance', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 in Mexico with a configured issuer. VERI*FACTU in Spain requires activation and validation. No universal tax compliance promise.' },
-            { label: 'Your own CSD (digital seal, Mexico)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Your own CSD (digital seal, Mexico)', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Multi-currency with FX hedging (rate lock)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
@@ -174,9 +175,6 @@ export const COMPARATIVA_EN: CompareGroup[] = [
             { label: 'Top customers and top products', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'CFO Dashboard (DSO, risk concentration)', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Weighted customer ranking', free: false, starter: false, pro: true, scale: true, developer: true },
-            { label: 'Budgets (budget schedules)', free: '1 schedule', starter: '3 schedules', pro: 'Unlimited', scale: 'Unlimited', developer: 'Unlimited' },
-            { label: 'Budget vs. Actuals (against your real sales and collections)', free: false, starter: false, pro: true, scale: true, developer: true },
-            { label: 'One-click full financial plan + analysis tools', free: false, starter: false, pro: true, scale: true, developer: true },
         ],
     },
     {
@@ -187,6 +185,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
             { label: 'Approval flows (discount/amount/margin limits)', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Silent margin auditor', free: false, starter: false, pro: false, scale: true, developer: true },
             { label: 'Automated late-payment interest', free: false, starter: false, pro: false, scale: true, developer: true },
+            { label: 'Recurring invoices', free: false, starter: false, pro: true, scale: true, developer: true },
         ],
     },
     {
@@ -195,8 +194,8 @@ export const COMPARATIVA_EN: CompareGroup[] = [
             { label: 'Bulk import (CSV)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Remove "Powered by Cord" branding', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Customize color and logo', free: true, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Emails from your domain (SMTP)', free: false, starter: false, pro: false, scale: true, developer: true },
-            { label: 'Multi-currency (MXN, USD, EUR)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Emails from your domain (SMTP)', free: false, starter: false, pro: false, scale: 'Coming soon', developer: 'Coming soon' },
+            { label: 'Multi-currency (14 offered currencies)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
     {
@@ -237,10 +236,10 @@ export const COMPARATIVA_EN: CompareGroup[] = [
     {
         titulo: 'Overages (pay per use)',
         rows: [
-            { overageDim: 'usuario', label: 'Additional user', free: 'Hard limit', starter: 'Hard limit', pro: '$15 / u', scale: '$15 / u', developer: '$10 / u' },
-            { overageDim: 'ia', label: 'Extra AI generation', free: 'Hard limit', starter: '$0.20 / use', pro: '$0.18 / use', scale: '$0.15 / use', developer: '$0.13 / use' },
-            { overageDim: 'timbrado', label: 'Extra invoice', free: false, starter: '$0.15 / file', pro: '$0.15 / file', scale: '$0.10 / file', developer: '$0.08 / file' },
-            { overageDim: 'api', label: 'Extra API (per 100 req)', free: 'Hard limit', starter: '$0.03 USD', pro: '$0.03 USD', scale: '$0.02 USD', developer: '$0.02 USD' },
+            overageRow('usuario', 'Additional user'),
+            overageRow('ia', 'Extra AI generation'),
+            overageRow('timbrado', 'Extra tax invoice'),
+            overageRow('api', 'Extra API (per 100 req)'),
         ],
     },
 ];
@@ -256,7 +255,7 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'What happens if I exceed the included consumption?',
-        a: 'Free has hard limits. From Starter, extra AI actions, documents and API requests are billed at the published rates; Starter retains one user. Professional and Scale also support paid additional users. You can review usage in the app.',
+        a: 'Free has hard limits. From Starter, extra AI actions, tax invoices and API requests are billed at the published rates; commercial invoices have no cap on paid plans. Starter retains one user. On Professional and Scale each additional user is billed every month while active. You can review usage in the app.',
     },
     {
         q: 'Can I change plans anytime?',
@@ -268,7 +267,7 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'How does e-invoicing work?',
-        a: 'Free includes 5 commercial documents each month. Starter, Professional and Scale include 20, 500 and 100 respectively, shared between commercial and fiscal documents. Integrated fiscal issuance starts at Starter where enabled. In Mexico, a pro forma does not replace a CFDI. Spanish fiscal issuance requires completed activation and validation.',
+        a: 'There are two kinds of invoice. Commercial invoices (pro formas in Mexico and Spain) are on every plan: 10 per month on Free and unlimited from Starter. Tax-compliant invoices start at Starter with 30 per month; Professional includes 200 and Scale 500. Today Cord issues CFDI 4.0 in Mexico, and VERI*FACTU in Spain requires completed activation. In other markets Cord issues the commercial invoice and does not file with other tax authorities. A pro forma does not replace a CFDI.',
     },
     {
         q: 'What happens after my 5 free sends?',
@@ -276,11 +275,11 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'When should I pay for Cord?',
-        a: 'Choose Starter for more documents, enabled fiscal integrations, more sends or to remove “Powered by Cord”. Professional adds unlimited quotes, 5 included users, live tracking, collections and a 90-day cash-flow view. Scale adds approvals, AI collections and email from your domain. Stay on Free as long as its limits fit your business.',
+        a: 'Choose Starter for tax-compliant invoices where Cord supports them, unlimited sends or to remove “Powered by Cord”. Professional adds unlimited quotes, 5 included users, live tracking, collections, recurring invoices and a 90-day cash-flow view. Scale adds approvals, autonomous AI collections and SSO. Stay on Free as long as its limits fit your business.',
     },
     {
         q: 'Can I remove Cord branding and use my own domain?',
-        a: 'You can remove “Powered by Cord” from Starter onwards, including Professional and Scale. Your logo and colors are available even on Free. Scale supports email from your domain through SMTP. Hosting quote links on your own domain is a separate capability and is not currently available.',
+        a: 'You can remove “Powered by Cord” from Starter onwards, including Professional and Scale. Your logo and colors are available even on Free. Sending email from your domain (SMTP) is coming soon to Scale. Hosting quote links on your own domain is a separate capability and is not currently available.',
     },
     {
         q: 'Does Free limit how much money I can collect?',
@@ -288,10 +287,10 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'Is the Developer plan for integrating Cord into my system?',
-        a: "Exactly. Developer includes 50,000 API calls per month, the cheapest overages, unlimited users and AI, and the embeddable quoter — the foundation for connecting Cord to your ERP, e-commerce, or client portal. It has no self-serve price: you sign up by talking to sales, so capacity and terms match your integration.",
+        a: "Exactly. Developer includes 50,000 API calls and 1,000 tax invoices per month, the cheapest overages, unlimited users and AI, and the embeddable quoter — the foundation for connecting Cord to your ERP, e-commerce, or client portal. It has no self-serve price: you sign up by talking to sales, so capacity and terms match your integration.",
     },
     {
         q: 'Do I need to be a Flouvia customer to sign up for a plan?',
-        a: 'No. Cord is independent software: any business, anywhere, can sign up directly at cordhq.app and choose a plan, with no prior relationship with Flouvia or any other product required.',
+        a: 'No. Cord is independent software: businesses in the 12 supported markets can sign up directly at cordhq.app and choose a plan, with no prior relationship with Flouvia or any other product required.',
     },
 ];

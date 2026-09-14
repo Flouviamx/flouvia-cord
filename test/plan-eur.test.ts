@@ -32,7 +32,11 @@ describe('EUR commercial contract', () => {
         expect(overagePriceLabel('scale', 'api', 'EUR', 'en')).toContain('0.02');
         expect(overagePriceLabel('pro', 'usuario', 'EUR', 'en')).toContain('15.00');
         expect(overagePriceLabel('starter', 'usuario', 'EUR', 'es')).toBe('Tope duro');
-        expect(overagePriceLabel('developer', 'ia', 'EUR', 'en')).toBe('Custom');
+        expect(overagePriceLabel('developer', 'timbrado', 'EUR', 'en')).toBe('Custom');
+        expect(overagePriceLabel('developer', 'ia', 'USD', 'en')).toBe('Unlimited');
+        expect(overagePriceLabel('developer', 'usuario', 'MXN', 'es')).toBe('Ilimitado');
+        expect(overagePriceLabel('free', 'timbrado', 'MXN', 'es')).toBe('Desde Starter');
+        expect(overagePriceLabel('scale', 'api', 'MXN', 'es')).toContain('0.4');
         expect(overagePriceLabel('pro', 'ia', 'MXN', 'es')).toContain('3.50');
     });
     it('carries annual selection through signup and replaces an existing cycle', () => {
