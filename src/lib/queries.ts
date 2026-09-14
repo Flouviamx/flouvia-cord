@@ -3,7 +3,7 @@
 // re-exporta sus helpers puros, STATUS_META y `money()` de `lib/fmt-server`
 // para que las páginas tengan un solo import.
 
-import { sql, getActiveOrgId, resolvePublicQuote, resolvePublicInvoice, withOrgTx, withUserTx } from './db';
+import { sql, getActiveOrgId, resolvePublicQuote, resolvePublicInvoice, withOrgTx, withUserTx, type DbRow } from './db';
 import { currentUserId, currentOrgIdOverride, currentLocale, currentTimeZone, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
 import { t as i18nT } from '../i18n/app';
 import { dispatchQuoteEvent } from './webhooks';
@@ -781,10 +781,8 @@ export async function getBillingUsage() {
 }
 
 // ── PRODUCTOS ────────────────────────────────────────────────────────────────
-export async function getProductos() {
-    const orgId = await getActiveOrgId();
-    const [rows] = await withOrgTx(orgId, sql`select * from productos where org_id = ${orgId} order by activo desc, nombre`);
-    return rows.map(p => ({
+function mapProducto(p: DbRow) {
+    return {
         id: p.id as string,
         sku: (p.sku as string) ?? '',
         nombre: p.nombre as string,
@@ -796,7 +794,21 @@ export async function getProductos() {
         createdAt: p.created_at ? new Date(p.created_at as string).toISOString() : null,
         // Matriz de precios por volumen: [{min, precio}] ordenada asc por min.
         preciosVolumen: normVolumen(p.precios_volumen),
-    }));
+    };
+}
+
+export async function getProductos() {
+    const orgId = await getActiveOrgId();
+    const [rows] = await withOrgTx(orgId, sql`select * from productos where org_id = ${orgId} order by activo desc, nombre`);
+    return rows.map(mapProducto);
+}
+
+export async function getProductosPage(page: { limit: number; offset: number }) {
+    const orgId = await getActiveOrgId();
+    const [[count], rows] = await withOrgTx(orgId,
+        sql`select count(*)::int as n from productos where org_id = ${orgId}`,
+        sql`select * from productos where org_id = ${orgId} order by activo desc, nombre, id limit ${page.limit} offset ${page.offset}`);
+    return { items: rows.map(mapProducto), total: Number(count?.n ?? 0) };
 }
 
 // Ficha + métricas de UN producto para /app/productos/[id]. Sin cachear.
@@ -1087,10 +1099,23 @@ export async function removeKitItem(orgId: string, kitId: string, itemId: string
 // ── CLIENTES ──────────────────────────────────────────────────────────────────
 export async function getClientes() {
     const orgId = await getActiveOrgId();
-    // Lateral join: cuenta y suma cotizaciones POR CLIENTE en la misma query — antes
-    // clientes.astro cargaba getCotizaciones() completo (todas las de la org, sin límite)
-    // solo para hacer un .filter() por nombre de empresa en memoria. Esto es O(n) real.
-    const [rows] = await withOrgTx(orgId, sql`
+    const [rows] = await withOrgTx(orgId, clientesQuery(orgId, 1_000_000, 0));
+    return rows.map(mapCliente);
+}
+
+export async function getClientesPage(page: { limit: number; offset: number }) {
+    const orgId = await getActiveOrgId();
+    const [[count], rows] = await withOrgTx(orgId,
+        sql`select count(*)::int as n from clientes where org_id = ${orgId}`,
+        clientesQuery(orgId, page.limit, page.offset));
+    return { items: rows.map(mapCliente), total: Number(count?.n ?? 0) };
+}
+
+// Lateral join: cuenta y suma cotizaciones POR CLIENTE en la misma query — antes
+// clientes.astro cargaba getCotizaciones() completo (todas las de la org, sin límite)
+// solo para hacer un .filter() por nombre de empresa en memoria. Esto es O(n) real.
+function clientesQuery(orgId: string, limit: number, offset: number) {
+    return sql`
         select c.*,
                coalesce(q.n, 0)       as n_cotizaciones,
                coalesce(q.cerrado, 0) as cerrado,
@@ -1104,8 +1129,12 @@ export async function getClientes() {
             where org_id = c.org_id and cliente_id = c.id
         ) q on true
         where c.org_id = ${orgId}
-        order by c.empresa`);
-    return rows.map(c => ({
+        order by c.empresa, c.id
+        limit ${limit} offset ${offset}`;
+}
+
+function mapCliente(c: DbRow) {
+    return {
         id: c.id as string,
         empresa: c.empresa as string,
         contacto: (c.contacto as string) ?? '',
@@ -1132,7 +1161,7 @@ export async function getClientes() {
         nCotizaciones: num(c.n_cotizaciones),
         cerrado: num(c.cerrado),
         ultimaActividad: c.ultima ? new Date(c.ultima as string).toISOString() : null,
-    }));
+    };
 }
 
 // Ficha + métricas de UN cliente para /app/clientes/[id]. Sin cachear: editar → volver
@@ -1352,6 +1381,21 @@ export async function getCotizaciones(opts?: { limit?: number; offset?: number }
         order by c.created_at desc
         limit ${limit} offset ${offset}`);
     return rows.map(c => rowToQuote(c, [], [], []));
+}
+
+export async function getCotizacionesPage(page: { limit: number; offset: number; status: string | null }) {
+    const orgId = await getActiveOrgId();
+    const [[count], rows] = await withOrgTx(orgId,
+        sql`select count(*)::int as n from cotizaciones c
+            where c.org_id = ${orgId} and (${page.status}::text is null or c.status = ${page.status})`,
+        sql`select c.*, cl.empresa, cl.terminos_default,
+                   coalesce(c.terminos, cl.terminos_default) as terminos
+            from cotizaciones c
+            left join clientes cl on cl.id = c.cliente_id and cl.org_id = c.org_id
+            where c.org_id = ${orgId} and (${page.status}::text is null or c.status = ${page.status})
+            order by c.created_at desc, c.id desc
+            limit ${page.limit} offset ${page.offset}`);
+    return { items: rows.map(c => rowToQuote(c, [], [], [])), total: Number(count?.n ?? 0) };
 }
 
 // Detalle con items y timeline. Cuatro queries en un solo batch.

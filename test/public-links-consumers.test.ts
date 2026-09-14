@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Contrato del helper que se integra por separado. No accede a DB ni decide
 // flags: estas pruebas verifican qué organización/documento pide el consumidor.
 const m = vi.hoisted(() => ({
-    link: vi.fn(), active: vi.fn(), tx: vi.fn(), list: vi.fn(), detail: vi.fn(),
+    link: vi.fn(), active: vi.fn(), tx: vi.fn(), list: vi.fn(), page: vi.fn(), detail: vi.fn(),
     create: vi.fn(), collections: vi.fn(),
 }));
 vi.mock('../src/lib/public-links', () => ({ publicDocumentUrl: m.link }));
@@ -13,7 +13,7 @@ vi.mock('../src/lib/db', () => ({
 }));
 vi.mock('../src/lib/apikey', () => ({ withApiAuth: (_scope: string, handler: unknown) => handler }));
 vi.mock('../src/lib/queries', () => ({
-    getCotizaciones: m.list, getCotizacion: m.detail, getCobranza: m.collections,
+    getCotizaciones: m.list, getCotizacionesPage: m.page, getCotizacion: m.detail, getCobranza: m.collections,
     getAnalytics: vi.fn(), getPlanUsage: vi.fn(), getFacturas: vi.fn(), getFacturaDetalle: vi.fn(),
 }));
 vi.mock('../src/lib/cotizaciones', () => ({ createCotizacion: m.create, QuoteError: class extends Error {} }));
@@ -49,9 +49,10 @@ beforeEach(() => {
 describe('URLs públicas en API v1', () => {
     it('resuelve enlaces del listado paginado con la organización efectiva', async () => {
         const { GET } = await import('../src/pages/api/v1/cotizaciones');
-        m.list.mockResolvedValue([quote('a'), quote('b'), quote('c')]);
+        m.page.mockResolvedValue({ items: [quote('b')], total: 3 });
         const response = await (GET as any)({ url: new URL('https://untrusted.example/api/v1/cotizaciones?limit=1&offset=1') }, auth);
         const body = await response.json();
+        expect(m.page).toHaveBeenCalledWith({ limit: 1, offset: 1, status: null });
         expect(body.meta).toEqual({ limit: 1, offset: 1, total: 3 });
         expect(body.data).toHaveLength(1);
         expect(body.data[0].link_publico).toBe('https://sandbox.example.test/q/token-b');

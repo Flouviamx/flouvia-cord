@@ -5,14 +5,14 @@
 export const prerender = false;
 
 import { withApiAuth } from '../../../lib/apikey';
-import { getClientes } from '../../../lib/queries';
+import { getClientesPage } from '../../../lib/queries';
 import { apiContext, fromOutcome, ok, pageParams, readJsonBody } from '../../../lib/apiv1';
 import { createClient } from '../../../lib/actions/clients';
 
 export const GET = withApiAuth('read', async ({ url }) => {
-    const all = await getClientes();
     const { limit, offset } = pageParams(url);
-    return ok(all.slice(offset, offset + limit), { limit, offset, total: all.length });
+    const page = await getClientesPage({ limit, offset });
+    return ok(page.items, { limit, offset, total: page.total });
 });
 
 export const POST = withApiAuth('write', async ({ request }, auth) => {

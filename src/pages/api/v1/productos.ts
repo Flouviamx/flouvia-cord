@@ -4,19 +4,18 @@
 export const prerender = false;
 
 import { withApiAuth } from '../../../lib/apikey';
-import { getProductos } from '../../../lib/queries';
+import { getProductosPage } from '../../../lib/queries';
 import { apiContext, fromOutcome, ok, pageParams, readJsonBody } from '../../../lib/apiv1';
 import { createProduct } from '../../../lib/actions/products';
 
 export const GET = withApiAuth('read', async ({ url }, auth) => {
-    const all = await getProductos();
     const { limit, offset } = pageParams(url);
-    const page = all.slice(offset, offset + limit);
+    const page = await getProductosPage({ limit, offset });
     // Una llave publicable vive en el navegador: nunca expone el costo.
     const data = auth.type === 'publishable'
-        ? page.map(({ costo, ...rest }) => rest)
-        : page;
-    return ok(data, { limit, offset, total: all.length });
+        ? page.items.map(({ costo, ...rest }) => rest)
+        : page.items;
+    return ok(data, { limit, offset, total: page.total });
 });
 
 export const POST = withApiAuth('write', async ({ request }, auth) => {

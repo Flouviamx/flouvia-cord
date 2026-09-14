@@ -6,19 +6,17 @@ export const prerender = false;
 
 import { withApiAuth } from '../../../lib/apikey';
 import { getActiveOrgId, reqIp } from '../../../lib/db';
-import { getCotizaciones } from '../../../lib/queries';
+import { getCotizacionesPage } from '../../../lib/queries';
 import { createCotizacion, QuoteError } from '../../../lib/cotizaciones';
 import { ok, fail, pageParams, quoteListItem, readJsonBody } from '../../../lib/apiv1';
 import { publicDocumentUrl } from '../../../lib/public-links';
 
 export const GET = withApiAuth('read', async ({ url }) => {
     const orgId = await getActiveOrgId();
-    const all = await getCotizaciones();
-    const status = url.searchParams.get('status');
-    const filtered = status ? all.filter((q) => q.status === status) : all;
     const { limit, offset } = pageParams(url);
-    const page = filtered.slice(offset, offset + limit);
-    return ok(await Promise.all(page.map((q) => quoteListItem(q, orgId))), { limit, offset, total: filtered.length });
+    const status = url.searchParams.get('status') || null;
+    const page = await getCotizacionesPage({ limit, offset, status });
+    return ok(await Promise.all(page.items.map((q) => quoteListItem(q, orgId))), { limit, offset, total: page.total });
 });
 
 export const POST = withApiAuth('write', async ({ request }, auth) => {
