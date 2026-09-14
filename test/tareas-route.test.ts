@@ -20,7 +20,9 @@ vi.mock('../src/lib/db', () => ({
     logAudit: vi.fn(),
 }));
 vi.mock('../src/lib/queries', () => ({ requirePermAny: m.perm }));
-vi.mock('../src/lib/context', () => ({ currentLocale: () => 'es' }));
+vi.mock('../src/lib/context', () => ({ currentLocale: () => 'es', currentUserId: () => 'user-a' }));
+vi.mock('../src/lib/webhooks', () => ({ dispatchEvent: vi.fn() }));
+vi.mock('../src/lib/after', () => ({ after: vi.fn() }));
 
 const { POST, PATCH, DELETE } = await import('../src/pages/api/tareas');
 

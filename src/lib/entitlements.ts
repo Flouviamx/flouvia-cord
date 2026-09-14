@@ -110,17 +110,17 @@ export const FEATURE_LABEL: Record<FeatureKey, string> = {
     agent_governance: 'Gobernanza de agentes de IA',
 };
 
-export type LimitedResource = 'active_quotes' | 'products' | 'clients' | 'seats';
+export type LimitedResource = 'active_quotes' | 'products' | 'clients' | 'seats' | 'active_workflows';
 
 // null = ilimitado. Estos números reflejan la matriz de /precios.
 export const RESOURCE_LIMITS: Record<PlanId, Record<LimitedResource, number | null>> = {
-    free:      { active_quotes: 5,  products: 50,  clients: 50,  seats: 1 },
-    starter:   { active_quotes: 50, products: 500, clients: 500, seats: 1 },
+    free:      { active_quotes: 5,  products: 50,  clients: 50,  seats: 1, active_workflows: 1 },
+    starter:   { active_quotes: 50, products: 500, clients: 500, seats: 1, active_workflows: 5 },
     // Pro+ admite asientos adicionales facturados; 5/15 son incluidos, no un
     // hard cap. La cuota incluida vive en billing.INCLUDED.
-    pro:       { active_quotes: null, products: null, clients: null, seats: null },
-    scale:     { active_quotes: null, products: null, clients: null, seats: null },
-    developer: { active_quotes: null, products: null, clients: null, seats: null },
+    pro:       { active_quotes: null, products: null, clients: null, seats: null, active_workflows: null },
+    scale:     { active_quotes: null, products: null, clients: null, seats: null, active_workflows: null },
+    developer: { active_quotes: null, products: null, clients: null, seats: null, active_workflows: null },
 };
 
 export function planIncludes(plan: PlanId, feature: FeatureKey): boolean {

@@ -88,7 +88,7 @@ describe('matriz de capacidades', () => {
 describe('límites de recursos (hard limits)', () => {
     it('todos los planes declaran los cuatro recursos', () => {
         for (const plan of PLAN_IDS) {
-            for (const r of ['active_quotes', 'products', 'clients', 'seats'] as const) {
+            for (const r of ['active_quotes', 'products', 'clients', 'seats', 'active_workflows'] as const) {
                 const v = resourceLimit(plan, r);
                 expect(v === null || (Number.isInteger(v) && v > 0), `${plan}.${r} = ${v}`).toBe(true);
             }
@@ -102,7 +102,7 @@ describe('límites de recursos (hard limits)', () => {
 
     it('el límite nunca baja al subir de plan', () => {
         const ordenados = [...PLAN_IDS].sort((a, b) => PLAN_RANK[a] - PLAN_RANK[b]);
-        for (const r of ['active_quotes', 'products', 'clients', 'seats'] as const) {
+        for (const r of ['active_quotes', 'products', 'clients', 'seats', 'active_workflows'] as const) {
             let previo: number | null = 0;
             for (const plan of ordenados) {
                 const actual = resourceLimit(plan, r);

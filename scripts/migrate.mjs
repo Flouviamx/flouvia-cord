@@ -50,6 +50,7 @@ const BILLING_LIMIT_TRIGGERS = [
     ['trg_limit_clientes', 'clientes', 'insert'],
     ['trg_limit_cotizaciones', 'cotizaciones', 'insert or update of status'],
     ['trg_limit_org_members', 'org_members', 'insert or update of estado'],
+    ['trg_limit_workflows', 'workflows', 'insert or update of estado'],
 ];
 
 async function dropBillingLimitTriggers() {

@@ -1,6 +1,8 @@
 import { sql, withOrgTx } from './db';
-import { currentActor } from './context';
+import { currentActor, currentWorkflowDepth } from './context';
 import { log } from './log';
+import { after } from './after';
+import { enqueueWorkflowRuns } from './workflows/queue';
 
 export const DOMAIN_EVENTS = {
     'quote.sent': { object: 'quote', public: true },
@@ -58,12 +60,18 @@ export async function recordDomainEvent(orgId: string, type: string, data: Recor
         return null;
     }
     const objectId = typeof data.id === 'string' && UUID_RE.test(data.id) ? data.id : null;
+    const who = actor ?? currentActor();
+    const depth = currentWorkflowDepth();
     try {
         const [[row]] = await withOrgTx(orgId, sql`
-            insert into domain_events (org_id, type, object, object_id, data, actor)
-            values (${orgId}, ${type}, ${DOMAIN_EVENTS[type].object}, ${objectId}, ${JSON.stringify(storedEventData(data))}::jsonb, ${actor ?? currentActor()})
+            insert into domain_events (org_id, type, object, object_id, data, actor, depth)
+            values (${orgId}, ${type}, ${DOMAIN_EVENTS[type].object}, ${objectId}, ${JSON.stringify(storedEventData(data))}::jsonb, ${who}, ${depth})
             returning id`);
-        return (row?.id as string) ?? null;
+        const id = (row?.id as string) ?? null;
+        if (id && await enqueueWorkflowRuns(orgId, { id, type, depth, actor: who })) {
+            after(import('./workflows/engine').then((m) => m.processOrgRuns(orgId)));
+        }
+        return id;
     } catch (err) {
         log.error('no se pudo registrar el evento de dominio', { route: 'domain-events', type, orgId, err });
         return null;

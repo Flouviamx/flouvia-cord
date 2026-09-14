@@ -51,6 +51,22 @@ export interface SlackPayload {
     moneda?: string;
 }
 
+export async function postSlackText(webhookUrl: string, text: string): Promise<{ ok: boolean; status: number }> {
+    if (!/^https:\/\/hooks\.slack\.com\//.test(webhookUrl)) return { ok: false, status: 0 };
+    try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 5000);
+        const res = await fetch(webhookUrl, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }), signal: ctrl.signal, redirect: 'error',
+        });
+        clearTimeout(t);
+        return { ok: res.ok, status: res.status };
+    } catch {
+        return { ok: false, status: 0 };
+    }
+}
+
 /** Construye y envía el mensaje. Devuelve ok/status sin lanzar. */
 export async function postToSlack(webhookUrl: string, evento: string, data: SlackPayload): Promise<{ ok: boolean; status: number }> {
     const meta = EVENT_MSG[evento] || { verbo: evento };

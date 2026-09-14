@@ -6,6 +6,7 @@ export interface ActionContext {
     ip?: string | null;
     actor?: string;
     source?: 'manual' | 'api' | 'mcp';
+    userId?: string | null;
 }
 
 export interface ActionOutcome {

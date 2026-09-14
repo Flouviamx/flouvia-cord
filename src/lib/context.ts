@@ -68,11 +68,17 @@ interface ReqCtx {
     // app.scope='ops'. Es un carril distinto del de cron a propósito: Ops es de
     // solo lectura sobre datos de cliente, el de sistema también escribe.
     opsScope?: boolean;
-    // Quién ejecuta fuera de una sesión: `api:<keyId>`, `mcp:<keyId>`.
+    // Quién ejecuta fuera de una sesión: `api:<keyId>`, `mcp:<keyId>`, `workflow:<id>`.
     actor?: string;
+    // Profundidad de la cadena de workflows que originó esta ejecución.
+    workflowDepth?: number;
 }
 
 export const reqContext = new AsyncLocalStorage<ReqCtx>();
+
+export function currentWorkflowDepth(): number {
+    return reqContext.getStore()?.workflowDepth ?? 0;
+}
 
 export function currentActor(): string {
     const store = reqContext.getStore();

@@ -179,6 +179,7 @@ const RESOURCE_LABEL: Record<LimitedResource, string> = {
     products: 'productos',
     clients: 'clientes',
     seats: 'usuarios',
+    active_workflows: 'workflows activos',
 };
 
 export async function requireResourceCapacity(orgId: string, resource: LimitedResource): Promise<Response | null> {
@@ -208,6 +209,8 @@ export async function assertResourceCapacity(orgId: string, resource: LimitedRes
         query = sql`select count(*)::int as n from productos where org_id = ${orgId}`;
     } else if (resource === 'clients') {
         query = sql`select count(*)::int as n from clientes where org_id = ${orgId}`;
+    } else if (resource === 'active_workflows') {
+        query = sql`select count(*)::int as n from workflows where org_id = ${orgId} and estado = 'active'`;
     } else {
         query = sql`select count(*)::int as n from org_members
                      where org_id = ${orgId} and estado in ('activo','invitado')`;
@@ -219,7 +222,7 @@ export async function assertResourceCapacity(orgId: string, resource: LimitedRes
 export function parsedResourceLimit(error: unknown): { resource: LimitedResource; limit: number } | null {
     if (error instanceof ResourceLimitReachedError) return { resource: error.resource, limit: error.limit };
     const message = error instanceof Error ? error.message : String(error || '');
-    const match = /cord_limit:(active_quotes|products|clients|seats):(\d+)/.exec(message);
+    const match = /cord_limit:(active_quotes|products|clients|seats|active_workflows):(\d+)/.exec(message);
     return match ? { resource: match[1] as LimitedResource, limit: Number(match[2]) } : null;
 }
 

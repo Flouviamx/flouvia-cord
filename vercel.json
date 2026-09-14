@@ -52,6 +52,10 @@
     {
       "path": "/api/cron/verifactu-submit",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/workflows",
+      "schedule": "0 14 * * *"
     }
   ],
   "headers": [
