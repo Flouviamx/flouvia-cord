@@ -1,3 +1,5 @@
+# GENERADO por scripts/sync-agents.mjs desde .claude/agents/db-schema-guardian.md — no editar a mano.
+# Cambia el .md y corre: npm run agents:sync
 name = "db-schema-guardian"
 description = "Especialista en cambios de schema Neon/PostgreSQL, RLS multi-tenant y queries de Cord. Úsalo PROACTIVAMENTE cuando el usuario pida agregar una columna/tabla nueva, tocar db/schema.sql, escribir una query nueva en queries.ts, o cualquier cambio que afecte el aislamiento entre orgs (multi-tenant). Dominio de alto riesgo — un error aquí puede filtrar datos entre negocios distintos."
 developer_instructions = """
@@ -16,7 +18,7 @@ SECURITY` de la tabla específica que estás tocando.
 
 ## Contexto obligatorio antes de tocar nada
 
-1. Lee `docs/app-rutas.md` completo, sección "Multi-tenant" — ahí está el patrón
+1. Lee `docs/estado/multi-tenant.md` — ahí está el patrón
    RLS exacto y la lista de tablas del sistema.
 2. Lee `db/schema.sql` — es la fuente de verdad del schema real, no confíes solo
    en lo que dice la documentación (puede haber quedado desactualizada).

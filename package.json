@@ -10,6 +10,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "typecheck": "astro sync && tsc --noEmit -p tsconfig.json",
+    "agents:sync": "node scripts/sync-agents.mjs",
+    "agents:check": "node scripts/sync-agents.mjs --check",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "astro preview",

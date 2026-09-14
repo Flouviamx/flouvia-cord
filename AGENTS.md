@@ -14,6 +14,10 @@ la documentación canónica, en [`docs/README.md`](docs/README.md).
    hechos operativos que puedan haber cambiado.
 5. Conserva cambios locales ajenos a tu tarea.
 
+Los agentes especialistas se editan solo en `.claude/agents/*.md`;
+`.codex/agents/*.toml` se genera con `npm run agents:sync` y CI lo verifica con
+`npm run agents:check`.
+
 No agregues reglas, arquitectura, features, variables ni changelog a este archivo.
 Mantén las reglas permanentes en `docs/estandares-ingenieria.md`, el estado actual
 en el documento temático y cada decisión fechada en un solo historial.

@@ -265,11 +265,7 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
 
    • Ajuste de UI: La sección 'Optimiza tus ingresos' se movió para ser la última sección justo antes del Footer en las 4 vistas, quedando después de las Integraciones.
 
-   • Interacción GSAP Magnética: Se creó el componente `MagneticNodes.jsx` usando React y GSAP. Incorpora animación *Zero Gravity* independiente por nodo y un efecto magnético interactivo en `mousemove` que regresa a su origen con `elastic.out(1, 0.3)`. Estilos translúcidos premium aplicados en CSS puro sin Tailwind.
-
-   • Red Tensorial de Canvas: Se agregó un `<canvas>` 2D detrás de los MagneticNodes que funciona con un ResizeObserver. Un loop a 60fps usando `gsap.ticker` calcula la distancia Euclidiana entre los centros de cada nodo en tiempo real (leyendo su `getBoundingClientRect` para considerar la gravedad y magnetismo simultáneamente). Dibuja conexiones dinámicas con opacidad y grosor inversamente proporcionales a la distancia usando un estilo 'Clear Mode' (platino translúcido).
-
-   • Ajuste Visual de Nodos en Agencias: En `agencias.astro`, los iconos de los nodos magnéticos fueron reemplazados por los logotipos de las agencias (Ogilvy, Accenture, IDEO, Pentagram, Flouvia) manteniendo su color original, para integrarlos visualmente en lugar de mostrar logos de herramientas.
+   • Nodos magnéticos (`MagneticNodes.jsx`, jun 2026): **retirado en sep 2026**. El componente y su red de canvas dejaron de usarse en las páginas de casos de uso y se borraron del repo; el detalle de cómo funcionaba queda en el historial de Git.
 
 ✅ **`ProductAccordion` — galería flex expandible WebGL en páginas de producto (jun 2026)** —
    `src/components/producto/ProductAccordion.jsx` + `ProductAccordion.css` (prefijo `pac-*`).

@@ -33,6 +33,8 @@ jobs:
         run: npm ci
       - name: Install Elements dependencies used by app types
         run: npm ci --prefix packages/elements
+      - name: Agent definitions in sync (Claude -> Codex)
+        run: npm run agents:check
       # Deliberately no production secrets or LIVE audit/migration scripts.
       - name: Payment regressions and security contracts
         run: npm run test:payments

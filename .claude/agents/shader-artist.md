@@ -1,6 +1,6 @@
 ---
 name: shader-artist
-description: Especialista en shaders GLSL/WebGL con React Three Fiber (R3F) para fondos animados de heroes en Cord. Úsalo PROACTIVAMENTE cuando el usuario pida un fondo animado, aurora, gradiente animado, shader, efecto WebGL, "algo tipo Vercel/Linear de fondo", o trabajo en componentes como DarkAuroraBg, QuantizedWaveBg, GreenRampShader, RampShader, CardAuroraBg, BlogCover, BlueAuroraBg, PriceAuroraBg, MagneticNodes, o cualquier archivo .jsx que use @react-three/fiber.
+description: Especialista en shaders GLSL/WebGL con React Three Fiber (R3F) para fondos animados de heroes en Cord. Úsalo PROACTIVAMENTE cuando el usuario pida un fondo animado, aurora, gradiente animado, shader, efecto WebGL, "algo tipo Vercel/Linear de fondo", o trabajo en componentes como DarkAuroraBg, QuantizedWaveBg, GreenRampShader, RampShader, CardAuroraBg, BlogCover, BlueAuroraBg, PriceAuroraBg, o cualquier archivo .jsx que use @react-three/fiber.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: opus
 ---

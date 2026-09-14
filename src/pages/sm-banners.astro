@@ -1,4 +1,12 @@
 ---
+// Herramienta interna de diseño (banners para redes). Solo vive en `npm run dev`:
+// en cualquier build de producción responde 404, así no queda publicada ni se
+// puede indexar en cordhq.app.
+export const prerender = false;
+if (import.meta.env.PROD) {
+    return new Response(null, { status: 404, headers: { 'X-Robots-Tag': 'noindex' } });
+}
+
 import CordDynamicBg from '../components/CordDynamicBg.jsx';
 import '../styles/mockups.css';
 import { flagSrc } from '../lib/flags';
