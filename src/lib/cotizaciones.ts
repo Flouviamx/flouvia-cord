@@ -99,6 +99,23 @@ export class QuoteError extends Error {
     constructor(message: string, status = 400) { super(message); this.status = status; }
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function assertClienteDeOrg(orgId: string, clienteId: string): Promise<void> {
+    if (UUID_RE.test(clienteId)) {
+        const [rows] = await withOrgTx(orgId, sql`select id from clientes where id = ${clienteId} and org_id = ${orgId}`);
+        if (rows.length) return;
+    }
+    throw new QuoteError('Cliente no encontrado', 404);
+}
+
+export async function productosDeOrg(orgId: string, ids: unknown[]): Promise<Set<string>> {
+    const candidatos = [...new Set(ids.filter((id): id is string => typeof id === 'string' && UUID_RE.test(id)))];
+    if (!candidatos.length) return new Set();
+    const [rows] = await withOrgTx(orgId, sql`select id from productos where org_id = ${orgId} and id = any(${candidatos}::uuid[])`);
+    return new Set(rows.map((r: any) => String(r.id)));
+}
+
 /**
  * Resuelve el cliente de la cotización: si viene `cliente_id`, lo usa tal
  * cual. Si no, y viene un bloque `cliente` (Cord Elements con un cliente que
@@ -111,7 +128,10 @@ export class QuoteError extends Error {
  * cliente ya dado de alta la volvería un vector de alteración del CRM.
  */
 async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Promise<string | null> {
-    if (input.cliente_id) return input.cliente_id;
+    if (input.cliente_id) {
+        await assertClienteDeOrg(orgId, String(input.cliente_id));
+        return String(input.cliente_id);
+    }
 
     const empresa = input.cliente?.empresa?.trim();
     if (!empresa) return null;
@@ -315,13 +335,14 @@ export async function createCotizacion(
         throw error;
     }
 
+    const productosPropios = await productosDeOrg(orgId, itemsConImpuesto.map((it: any) => it.producto_id));
     let orden = 0;
     for (const it of itemsConImpuesto) {
         await withOrgTx(orgId, sql`
             insert into cotizacion_items
                 (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
             values
-                (${cot.id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1},
+                (${cot.id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1},
                  ${Number(it.precio_unitario) || 0},
                  ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)},
                  ${Number(it.costo_unitario) || 0},

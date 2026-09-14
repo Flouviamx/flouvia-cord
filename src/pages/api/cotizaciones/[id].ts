@@ -13,7 +13,7 @@ import { after } from '../../../lib/after';
 import { cancelUsage, flushUsageReservation, reserveUsage } from '../../../lib/billing';
 import { requireEntitlement } from '../../../lib/org-entitlements';
 import { emitFiscalDocument } from '../../../lib/fiscal/emit';
-import { MAX_ITEMS } from '../../../lib/cotizaciones';
+import { MAX_ITEMS, QuoteError, assertClienteDeOrg, productosDeOrg } from '../../../lib/cotizaciones';
 import { materializeAnticipoCobros } from '../../../lib/cobros';
 import { sanitizeItem, calculateDocumentTotals } from '../../../../packages/elements/src/engine';
 import { taxCatalogFor, TaxCatalogUnavailableError } from '../../../lib/impuestos-db';
@@ -180,6 +180,14 @@ export const PATCH: APIRoute = async ({ params, request }) => {
         const nextVersion = body.action === 'resend' ? Number(rows[0].version || 1) + 1 : Number(rows[0].version || 1);
 
         if (body.action === 'update_draft' || (body.action === 'send' && actual === 'draft')) {
+            if (body.cliente_id) {
+                try {
+                    await assertClienteDeOrg(orgId, String(body.cliente_id));
+                } catch (error) {
+                    if (error instanceof QuoteError) return json({ error: error.message }, error.status);
+                    throw error;
+                }
+            }
             const vigDias = Number(body.vigencia_dias) || 30;
             // Iguala recurrente: fuerza términos de contado y anula el anticipo
             // (modelos de pago único excluyentes).
@@ -251,11 +259,12 @@ export const PATCH: APIRoute = async ({ params, request }) => {
                         version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`);
         }
 
+        const productosPropios = await productosDeOrg(orgId, items.map((it: any) => it.producto_id));
         await withOrgTx(orgId, sql`delete from cotizacion_items where cotizacion_id = ${id}`);
         let orden = 0;
         for (const it of items) {
             await withOrgTx(orgId, sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
-                      values (${id}, ${it.producto_id || null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++}, ${it.tax_rate})`);
+                      values (${id}, ${productosPropios.has(it.producto_id) ? it.producto_id : null},${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++}, ${it.tax_rate})`);
         }
         
         if (body.action === 'resend') {
@@ -437,7 +446,11 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
 export const DELETE: APIRoute = async ({ params }) => {
     const id = params.id ?? '';
+    const denied = await requirePerm('cotizar');
+    if (denied) return denied;
     const orgId = await getActiveOrgId();
+    const limitado = strictLimitResponse(await strictRateLimit(`cotizacion-patch:${orgId}`, 120, 60));
+    if (limitado) return limitado;
     // Capturamos el resumen ANTES de borrar — dispatchQuoteEvent (el camino
     // normal) re-consulta la fila por id, y para cuando dispararíamos el
     // webhook la fila ya no existe. dispatchQuoteEventFrom toma los datos ya
