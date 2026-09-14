@@ -504,6 +504,9 @@ APIs de cobros (ago 2026)
 /api/mcp             → MCP JSON-RPC 2.0 (transporte moderno, sin sesión):
                    initialize/ping/tools/list/tools/call. Motor compartido en
                    src/lib/mcp/rpc.ts (jul 2026 — antes vivía inline aquí).
+                   Las tools de escritura (src/lib/mcp.ts) llaman la capa de
+                   acciones con actor mcp:<llave>; su idempotencia comparte
+                   api_idempotency con /api/v1. Ninguna tool emite facturas.
 /api/mcp/sse + /api/mcp/message → transporte MCP legacy (HTTP+SSE), mismo
                    motor rpc.ts. Sesión (orgId/scope/keyId) en
                    src/lib/mcp/session-store.ts (Redis vía Upstash si está

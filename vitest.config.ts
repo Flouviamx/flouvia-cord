@@ -1,3 +1,4 @@
+import { availableParallelism } from 'node:os';
 import { defineConfig } from 'vitest/config';
 
 // Regresiones locales: funciones puras, rutas con proveedores simulados y SQL
@@ -9,7 +10,7 @@ export default defineConfig({
         environment: 'node',
         // PGlite boots PostgreSQL/WASM: bound CI concurrency to avoid memory
         // pressure and timeout failures when many database suites start together.
-        maxWorkers: process.env.CI ? 2 : undefined,
+        maxWorkers: process.env.CI ? 2 : Math.max(2, Math.floor(availableParallelism() / 2)),
         // Un test que tarda más de esto está hablando con algo que no debería.
         testTimeout: 5000,
     },

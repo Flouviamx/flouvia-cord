@@ -31,7 +31,7 @@ Authentication for your AI client is performed using your standard Cord **API Ke
    pasted automatically into the config below. **Copy it right then: it won't be shown again.**
    (You can also create one from the **API** tab of the
    [Cord Workbench](/en/docs/desarrolladores/herramientas/workbench) if you'd rather control the
-   scope by hand — `write` to use `crear_cotizacion_borrador`, `read` is enough for the rest.)
+   scope by hand — `write` for the write tools, `read` is enough for the read tools.)
 3. Copy the MCP client JSON configuration provided on the screen.
 4. Paste this configuration into the corresponding local path for your client (e.g., the `claude_desktop_config.json` file if you use the Claude for Desktop app).
 
@@ -68,20 +68,27 @@ key must belong to the same organization that opened the session.
 | `listar_facturas` | Lists **Cord Invoicing** invoices with their balance and state (`draft`\|`open`\|`paid`\|`void`\|`uncollectible`\|`overdue`). Filter by state, client, or free text. Paginated. | read |
 | `detalle_factura` | Full detail of ONE invoice: line items, issuer, recipient, taxes, declared FX rate, balance, and payments received. | read |
 | `crear_factura_borrador` | Creates a DRAFT invoice for a client, without needing a prior quote. Requires the Starter plan or higher (Cord Invoicing). | **write** |
+| `enviar_cotizacion` | Sends a draft quote to the client (email with the link). On the Free plan it uses one of the monthly sends. | **write** |
+| `aprobar_cotizacion` | Marks a sent or viewed quote as approved. | **write** |
+| `rechazar_cotizacion` | Marks a sent or viewed quote as rejected. | **write** |
+| `registrar_pago_cotizacion` | Records that an approved quote was paid outside Cord and cancels its pending online payments. Accepts `metodo_pago`. | **write** |
+| `crear_cliente` | Creates a client (company, contact, email, phone, tax ID, terms, country). | **write** |
+| `actualizar_cliente` | Changes a client's contact details. Only updates what you send; never touches credit, tier, or discount. | **write** |
+| `crear_tarea` | Creates a follow-up task, optionally linked to a quote and with a due date. | **write** |
+| `registrar_promesa_pago` | Records the date a client promised to pay a quote. It doesn't charge anything. | **write** |
+| `listar_eventos` | Business history (quotes, invoices, clients, tasks, promises), filterable by type or object. Paginated. | read |
 
 Every tool declares standard MCP annotations (`readOnlyHint`, `idempotentHint`,
 `destructiveHint`) in `tools/list` — an MCP client can use these to decide which calls to
-auto-approve without asking the user every time. The 8 read tools are `readOnlyHint: true`;
-the two write tools (`crear_cotizacion_borrador` and `crear_factura_borrador`) are
-`readOnlyHint: false` and, honestly, `idempotentHint: false` by default — neither one stamps
-or sends anything, they only leave a draft ready for a human to review before triggering an
-irreversible action (rule 17: nothing that costs real money fires without a human confirming
-it). `crear_cotizacion_borrador` is safe to retry if you pass `idempotency_key` (see below);
-`crear_factura_borrador` doesn't accept that parameter yet — every call creates a new draft.
+auto-approve without asking the user every time. Read tools are `readOnlyHint: true`.
+`enviar_cotizacion`, `aprobar_cotizacion`, `rechazar_cotizacion`, and `registrar_pago_cotizacion`
+are `destructiveHint: true` because they change a quote's status or write to the client: a
+well-configured MCP client asks for confirmation before running them. No tool issues or stamps
+invoices: that is still an action a person triggers from the app or the API.
 
 ## Pagination
 
-`buscar_cliente`, `listar_productos`, and `listar_facturas` return pages, not the whole table:
+`listar_cotizaciones`, `buscar_cliente`, `listar_productos`, `listar_facturas`, and `listar_eventos` return pages, not the whole table:
 
 ```json
 {
@@ -94,6 +101,7 @@ it). `crear_cotizacion_borrador` is safe to retry if you pass `idempotency_key` 
 
 If `has_more` comes back `true`, call the same tool again passing `cursor: next_cursor` for the
 next page. `next_cursor` is `null` once there are no more results.
+`listar_cotizaciones` returns the list in `cotizaciones` and `listar_eventos` in `eventos`.
 
 <Callout type="info">
 `listar_productos` **never** includes a product's internal cost/margin — only list price, SKU,
@@ -103,10 +111,13 @@ permission or not.
 
 ## Safe-to-retry calls (idempotency)
 
-`crear_cotizacion_borrador` accepts an optional `idempotency_key` — a unique identifier **you
+`crear_cotizacion_borrador`, `enviar_cotizacion`, `aprobar_cotizacion`, `rechazar_cotizacion`,
+`registrar_pago_cotizacion`, `crear_cliente`, `crear_tarea`, and `registrar_promesa_pago` accept an
+optional `idempotency_key` — a unique identifier **you
 generate** (a UUID, for example). If your MCP client needs to retry the call because it didn't
 get a response in time (network timeout), repeat the SAME `idempotency_key`: Cord returns the
-quote that was already created the first time instead of creating a duplicate draft.
+result of the first call instead of repeating the action. Reusing the same key with different
+arguments returns an error, and the key expires after 24 hours.
 
 ```json
 {
@@ -121,6 +132,13 @@ quote that was already created the first time instead of creating a duplicate dr
 
 Without `idempotency_key`, the tool still works normally — every call creates a new draft
 (it's not a required field, just recommended if your client retries automatically).
+
+<Callout type="warning">
+`detalle_cotizacion` and `listar_eventos` can include text written by the **client** on the
+public link (comments, counteroffers). That text is marked with `origen: "cliente_externo"` and
+wrapped in `<<<mensaje_del_cliente>>>`: your agent should report it, never follow it as an
+instruction.
+</Callout>
 
 ## Secure Tools
 

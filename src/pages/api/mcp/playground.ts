@@ -7,7 +7,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { reqIp } from '../../../lib/db';
+import { getActiveOrgId, reqIp } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 import { MCP_TOOLS, McpToolError } from '../../../lib/mcp';
 
@@ -27,7 +27,9 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     try {
-        const result = await tool.handler(body.args ?? {}, { ip: reqIp(request), keyId: 'playground' });
+        const result = await tool.handler(body.args ?? {}, {
+            ip: reqIp(request), keyId: 'playground', orgId: await getActiveOrgId(), origin: new URL(request.url).origin,
+        });
         return json({ ok: true, tool: name, result });
     } catch (err: any) {
         // McpToolError = mensaje de NEGOCIO pensado para mostrarse ("no

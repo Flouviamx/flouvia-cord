@@ -3,10 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Contrato del helper que se integra por separado. No accede a DB ni decide
 // flags: estas pruebas verifican qué organización/documento pide el consumidor.
 const m = vi.hoisted(() => ({
-    link: vi.fn(), active: vi.fn(), tx: vi.fn(), list: vi.fn(), page: vi.fn(), detail: vi.fn(),
+    link: vi.fn(), active: vi.fn(), tx: vi.fn(), list: vi.fn(), page: vi.fn(), detail: vi.fn(), idem: vi.fn(),
     create: vi.fn(), collections: vi.fn(),
 }));
 vi.mock('../src/lib/public-links', () => ({ publicDocumentUrl: m.link }));
+vi.mock('../src/lib/api-idempotency', () => ({ withIdempotency: m.idem }));
 vi.mock('../src/lib/db', () => ({
     getActiveOrgId: m.active, withOrgTx: m.tx, reqIp: () => '127.0.0.1',
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ text: strings.join('?'), values }),
@@ -40,6 +41,7 @@ beforeEach(() => {
     m.detail.mockResolvedValue(quote());
     m.create.mockResolvedValue({ id: 'quote-a', folio: 'COT-1', token: 'token-created' });
     m.tx.mockResolvedValue([[]]);
+    m.idem.mockImplementation(async (_owner: unknown, _req: unknown, execute: () => Promise<unknown>) => ({ kind: 'executed', result: await execute() }));
     m.collections.mockResolvedValue({
         resumen: {}, aging: {}, clientes: [],
         items: [{ id: 'quote-a', overdue: true, token: 'secret', publicUrl: 'https://ventas.example.test/q/secret' }],
@@ -95,30 +97,33 @@ describe('URLs públicas en API v1', () => {
 });
 
 describe('URLs públicas en MCP', () => {
+    const toolCtx = { ip: '127.0.0.1', keyId: 'key-test', orgId: 'sandbox-org', origin: 'https://cordhq.app' };
+
     it('guarda el enlace absoluto en la respuesta idempotente del borrador', async () => {
         const { findTool } = await import('../src/lib/mcp');
-        const result: any = await findTool('crear_cotizacion_borrador')!.handler(
-            { items: [], idempotency_key: 'retry-key' }, { ip: '127.0.0.1', keyId: 'key-test' });
+        const result: any = await findTool('crear_cotizacion_borrador')!.handler({ items: [], idempotency_key: 'retry-key' }, toolCtx);
         expect(result.link_publico).toBe('https://sandbox.example.test/q/token-created');
         expect(m.link).toHaveBeenCalledExactlyOnceWith('sandbox-org', 'q', 'token-created');
-        const persisted = m.tx.mock.calls.find(([, query]) => query.text.includes('insert into mcp_idempotency'));
-        expect(persisted?.[0]).toBe('sandbox-org');
-        expect(persisted?.[1].values).toContain(JSON.stringify(result));
+        const [owner, req] = m.idem.mock.calls[0];
+        expect(owner).toEqual({ orgId: 'sandbox-org', keyId: 'key-test' });
+        expect(req).toMatchObject({ key: 'retry-key', method: 'MCP', path: '/mcp/tools/crear_cotizacion_borrador' });
+        expect(req.payload).not.toContain('retry-key');
+        const stored = await m.idem.mock.results[0].value;
+        expect(JSON.parse(stored.result.body)).toEqual(result);
     });
 
     it('reproduce la respuesta guardada sin volver a crear ni cambiar su enlace', async () => {
         const stored = { id: 'quote-a', link_publico: 'https://previous.example.test/q/token', estado: 'borrador' };
-        m.tx.mockResolvedValue([[{ response: stored }]]);
+        m.idem.mockResolvedValue({ kind: 'replayed', result: { status: 200, body: JSON.stringify(stored) } });
         const { findTool } = await import('../src/lib/mcp');
-        expect(await findTool('crear_cotizacion_borrador')!.handler(
-            { idempotency_key: 'retry-key' }, { ip: '127.0.0.1', keyId: 'key-test' })).toEqual(stored);
+        expect(await findTool('crear_cotizacion_borrador')!.handler({ idempotency_key: 'retry-key' }, toolCtx)).toEqual(stored);
         expect(m.create).not.toHaveBeenCalled();
         expect(m.link).not.toHaveBeenCalled();
     });
 
     it('la cartera vencida sigue sin exponer tokens ni sus URLs', async () => {
         const { findTool } = await import('../src/lib/mcp');
-        const result: any = await findTool('cartera_vencida')!.handler({}, { ip: '127.0.0.1', keyId: 'key-test' });
+        const result: any = await findTool('cartera_vencida')!.handler({}, toolCtx);
         expect(result.vencidas).toEqual([{ id: 'quote-a', overdue: true }]);
     });
 });

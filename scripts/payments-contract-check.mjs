@@ -186,7 +186,7 @@ for (const ruta of existsSync(ACTIONS_DIR) ? archivos(ACTIONS_DIR) : []) {
     const rel = relative(ROOT, ruta);
     const crudo = readFileSync(ruta, 'utf8');
     if (!CREA_DINERO.some((re) => re.test(crudo))) continue;
-    accionesDinero.push(new RegExp(`lib/actions/${basename(ruta).replace(/\.m?ts$/, '')}['"]`));
+    accionesDinero.push(new RegExp(`actions/${basename(ruta).replace(/\.m?ts$/, '')}['"]`));
     const codigo = enmascarar(crudo);
     const faltan = [];
     if (HACE_QUERY.test(codigo) && !CARRILES.test(codigo)) faltan.push('carril de tenencia');
@@ -214,6 +214,21 @@ for (const ruta of archivos(API_DIR)) {
     if (CREA_OBJETO.some((re) => re.test(crudo)) && !IDEMPOTENCIA.test(crudo)) {
         faltan.push('Idempotency-Key');
     }
+    if (FUGA_MENSAJE.test(codigo)) faltan.push('fuga del mensaje del proveedor (regla 14)');
+    if (faltan.length) violaciones.push({ rel, faltan });
+}
+
+// Otros consumidores de una acción de dinero fuera de las rutas (MCP, flujos).
+for (const ruta of archivos(join(ROOT, 'src/lib'))) {
+    if (ruta.startsWith(ACTIONS_DIR)) continue;
+    const rel = relative(ROOT, ruta);
+    const crudo = readFileSync(ruta, 'utf8');
+    if (!accionesDinero.some((re) => re.test(crudo))) continue;
+    marcados.push(rel);
+    const codigo = enmascarar(crudo);
+    const faltan = [];
+    if (HACE_QUERY.test(codigo) && !CARRILES.test(codigo)) faltan.push('carril de tenencia');
+    if (!RATE_LIMIT.test(codigo)) faltan.push('rate limit');
     if (FUGA_MENSAJE.test(codigo)) faltan.push('fuga del mensaje del proveedor (regla 14)');
     if (faltan.length) violaciones.push({ rel, faltan });
 }

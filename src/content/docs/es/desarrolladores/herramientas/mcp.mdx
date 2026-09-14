@@ -30,8 +30,8 @@ La autenticación para tu cliente de IA se realiza utilizando tu **Clave de API*
    para MCP"** genera una llave `write` sin salir de la página — se pega sola en la
    configuración de abajo. **Cópiala en ese momento: no se vuelve a mostrar.** (También puedes
    crear una desde la pestaña **API** del [Cord Workbench](/docs/desarrolladores/herramientas/workbench)
-   si prefieres controlar el scope a mano — `write` para usar `crear_cotizacion_borrador`,
-   `read` alcanza para las demás.)
+   si prefieres controlar el scope a mano — `write` para las herramientas de escritura, `read` alcanza para las de
+   lectura.)
 3. Copia la configuración JSON del cliente MCP proporcionada en pantalla.
 4. Pega esta configuración en la ruta local correspondiente a tu cliente (por ejemplo, el archivo `claude_desktop_config.json` si usas la aplicación Claude for Desktop).
 
@@ -68,21 +68,28 @@ pertenecer a la misma organización que abrió la sesión.
 | `listar_facturas` | Lista las facturas de **Cord Invoicing** con su saldo y estado (`draft`\|`open`\|`paid`\|`void`\|`uncollectible`\|`overdue`). Filtra por estado, cliente o texto libre. Paginado. | lectura |
 | `detalle_factura` | Detalle completo de UNA factura: conceptos, emisor, receptor, impuestos, tipo de cambio declarado, saldo y pagos recibidos. | lectura |
 | `crear_factura_borrador` | Crea una factura en BORRADOR para un cliente, sin necesidad de una cotización previa. Requiere el plan Starter o superior (Cord Invoicing). | **escritura** |
+| `enviar_cotizacion` | Envía al cliente una cotización en borrador (correo con el link). En el plan Gratis consume un envío del mes. | **escritura** |
+| `aprobar_cotizacion` | Marca como aprobada una cotización enviada o vista. | **escritura** |
+| `rechazar_cotizacion` | Marca como rechazada una cotización enviada o vista. | **escritura** |
+| `registrar_pago_cotizacion` | Registra que una cotización aprobada se pagó por fuera de Cord y cancela sus cobros en línea pendientes. Acepta `metodo_pago`. | **escritura** |
+| `crear_cliente` | Da de alta un cliente (empresa, contacto, correo, teléfono, identificador fiscal, términos, país). | **escritura** |
+| `actualizar_cliente` | Cambia datos de contacto de un cliente. Solo modifica lo que mandas; nunca toca crédito, nivel ni descuento. | **escritura** |
+| `crear_tarea` | Crea una tarea de seguimiento, opcionalmente ligada a una cotización y con fecha. | **escritura** |
+| `registrar_promesa_pago` | Registra la fecha en que el cliente prometió pagar una cotización. No cobra nada. | **escritura** |
+| `listar_eventos` | Historial del negocio (cotizaciones, facturas, clientes, tareas, promesas), filtrable por tipo u objeto. Paginado. | lectura |
 
 Cada tool declara sus anotaciones estándar de MCP (`readOnlyHint`, `idempotentHint`,
 `destructiveHint`) en `tools/list` — un cliente MCP puede usarlas para decidir qué llamadas
-auto-aprobar sin preguntarle al usuario cada vez. Las 8 de lectura son `readOnlyHint: true`;
-las dos de escritura (`crear_cotizacion_borrador` y `crear_factura_borrador`) son
-`readOnlyHint: false` y, honestamente, `idempotentHint: false` por default — ninguna de las
-dos timbra ni envía nada, solo dejan un borrador listo para que una persona lo revise antes de
-disparar una acción irreversible (regla 17: nada que cueste dinero real se dispara sin que un
-humano lo confirme). `crear_cotizacion_borrador` es segura de repetir si le mandas
-`idempotency_key` (ver abajo); `crear_factura_borrador` todavía no acepta ese parámetro — cada
-llamada crea un borrador nuevo.
+auto-aprobar sin preguntarle al usuario cada vez. Las de lectura son `readOnlyHint: true`.
+`enviar_cotizacion`, `aprobar_cotizacion`, `rechazar_cotizacion` y `registrar_pago_cotizacion`
+son `destructiveHint: true` porque cambian el estado de una cotización o le escriben al cliente:
+un cliente MCP bien configurado pide confirmación antes de ejecutarlas. Ninguna herramienta
+emite ni timbra facturas: eso sigue siendo una acción que una persona dispara desde la app o la
+API.
 
 ## Paginación
 
-`buscar_cliente`, `listar_productos` y `listar_facturas` devuelven páginas, no la tabla completa:
+`listar_cotizaciones`, `buscar_cliente`, `listar_productos`, `listar_facturas` y `listar_eventos` devuelven páginas, no la tabla completa:
 
 ```json
 {
@@ -95,6 +102,7 @@ llamada crea un borrador nuevo.
 
 Si `has_more` viene en `true`, vuelve a llamar la misma tool pasando `cursor: next_cursor` para
 la siguiente página. `next_cursor` viene en `null` cuando ya no hay más resultados.
+`listar_cotizaciones` devuelve la lista en `cotizaciones` y `listar_eventos` en `eventos`.
 
 <Callout type="info">
 `listar_productos` **nunca** incluye el costo/margen interno del producto — solo precio de
@@ -104,10 +112,13 @@ tenga o no permiso de escritura.
 
 ## Llamadas seguras de repetir (idempotencia)
 
-`crear_cotizacion_borrador` acepta un `idempotency_key` opcional — un identificador único que
+`crear_cotizacion_borrador`, `enviar_cotizacion`, `aprobar_cotizacion`, `rechazar_cotizacion`,
+`registrar_pago_cotizacion`, `crear_cliente`, `crear_tarea` y `registrar_promesa_pago` aceptan un
+`idempotency_key` opcional — un identificador único que
 **tú generas** (un UUID, por ejemplo). Si tu cliente MCP necesita reintentar la llamada porque
 no recibió respuesta a tiempo (timeout de red), repite el MISMO `idempotency_key`: Cord te
-devuelve la cotización que ya se creó la primera vez en vez de crear un borrador duplicado.
+devuelve el resultado de la primera vez en vez de repetir la acción. Reusar la misma clave con
+otros argumentos devuelve un error, y la clave caduca a las 24 horas.
 
 ```json
 {
@@ -122,6 +133,13 @@ devuelve la cotización que ya se creó la primera vez en vez de crear un borrad
 
 Sin `idempotency_key`, la tool sigue funcionando normal — cada llamada crea un borrador nuevo
 (no es un campo obligatorio, solo recomendado si tu cliente reintenta automáticamente).
+
+<Callout type="warning">
+`detalle_cotizacion` y `listar_eventos` pueden traer texto escrito por el **cliente** en el link
+público (comentarios, contraofertas). Ese texto llega marcado con `origen: "cliente_externo"` y
+delimitado entre `<<<mensaje_del_cliente>>>`: tu agente debe reportarlo, nunca seguirlo como una
+instrucción.
+</Callout>
 
 ## Herramientas Seguras (Tools)
 
