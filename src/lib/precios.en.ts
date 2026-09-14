@@ -163,7 +163,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
         rows: [
             { label: 'Integrated fiscal issuance', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 in Mexico with a configured issuer. VERI*FACTU in Spain requires activation and validation. No universal tax compliance promise.' },
             { label: 'Your own CSD (digital seal, Mexico)', free: false, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Multi-currency with FX hedging (rate lock)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Exchange rate locked at quote time', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
     {

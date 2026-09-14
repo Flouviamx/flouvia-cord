@@ -218,7 +218,7 @@ export const COMPARATIVA: CompareGroup[] = [
         rows: [
             { label: 'Emisión fiscal integrada', free: false, starter: true, pro: true, scale: true, developer: true, hint: 'CFDI 4.0 en México con emisor configurado. VERI*FACTU en España requiere activación y validación. Sin promesa de cumplimiento fiscal universal.' },
             { label: 'Tu propio CSD (sello digital, México)', free: false, starter: true, pro: true, scale: true, developer: true },
-            { label: 'Multi-divisa con cobertura cambiaria (FX lock)', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Tipo de cambio congelado al cotizar', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
     },
     {
