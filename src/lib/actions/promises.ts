@@ -1,8 +1,12 @@
 import { sql, withOrgTx } from '../db';
 import { invalidateMoneyCaches } from '../queries';
+import { after } from '../after';
+import { dispatchEvent } from '../webhooks';
+import { promiseEventData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, auditAction, done, isUuid } from './outcome';
 
 const ESTADOS = new Set(['pendiente', 'cumplida', 'incumplida']);
+const EVENTO_POR_ESTADO = { cumplida: 'promise.kept', incumplida: 'promise.broken' } as const;
 const NO_ENCONTRADA = done(404, { error: 'Promesa no encontrada', code: 'not_found' });
 
 export async function createPromise(ctx: ActionContext, input: Record<string, any>): Promise<ActionOutcome> {
@@ -21,18 +25,25 @@ export async function createPromise(ctx: ActionContext, input: Record<string, an
     const [[row]] = await withOrgTx(ctx.orgId, sql`
         insert into promesas_pago (org_id, cotizacion_id, fecha_promesa, monto, nota)
         values (${ctx.orgId}, ${cotizacionId}, ${fecha}, ${monto}, ${nota})
-        returning id`);
+        returning *`);
     await auditAction(ctx, 'promesa.creada', 'cotizacion', cotizacionId, `Promesa de pago para ${fecha}`);
     invalidateMoneyCaches(ctx.orgId);
+    after(dispatchEvent(ctx.orgId, 'promise.created', promiseEventData(row), ctx.actor));
     return done(200, { id: row.id });
 }
 
 export async function setPromiseState(ctx: ActionContext, id: string, estado: string): Promise<ActionOutcome> {
     if (!ESTADOS.has(estado)) return done(400, { error: 'Estado inválido', code: 'invalid_request' });
     if (!isUuid(id)) return NO_ENCONTRADA;
-    const [rows] = await withOrgTx(ctx.orgId, sql`update promesas_pago set estado = ${estado} where id = ${id} and org_id = ${ctx.orgId} returning id`);
-    if (!rows.length) return NO_ENCONTRADA;
+    const [changed, exists] = await withOrgTx(ctx.orgId,
+        sql`update promesas_pago set estado = ${estado}
+             where id = ${id} and org_id = ${ctx.orgId} and estado is distinct from ${estado}
+            returning *`,
+        sql`select id from promesas_pago where id = ${id} and org_id = ${ctx.orgId}`);
+    if (!exists.length) return NO_ENCONTRADA;
     invalidateMoneyCaches(ctx.orgId);
+    const evento = EVENTO_POR_ESTADO[estado as keyof typeof EVENTO_POR_ESTADO];
+    if (evento && changed.length) after(dispatchEvent(ctx.orgId, evento, promiseEventData(changed[0]), ctx.actor));
     return done(200, { ok: true });
 }
 

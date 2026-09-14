@@ -51,6 +51,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         if (!rows.length) return done(404, { error: 'Cotización no encontrada' });
         await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
                   values (${orgId}, ${id}, 'reply', ${mensaje})`);
+        after(dispatchQuoteEvent(orgId, id, 'quote.comment_added', { autor: 'vendedor', mensaje }));
         return done(200, { ok: true });
     }
 
@@ -64,6 +65,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         if (!itemRows[0]) return done(404, { error: 'Línea no encontrada' });
         await withOrgTx(orgId, sql`insert into cotizacion_comentarios (org_id, cotizacion_id, item_id, autor_tipo, autor_nombre, contenido)
                   values (${orgId}, ${id}, ${itemId}, 'usuario', 'Vendedor', ${mensaje})`);
+        after(dispatchQuoteEvent(orgId, id, 'quote.comment_added', { autor: 'vendedor', item_id: itemId, mensaje }));
         return done(200, { ok: true });
     }
 
@@ -90,6 +92,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                 returning cotizacion_id`);
             if (!decided.length) return done(409, { error: 'No hay una solicitud de aprobación pendiente' });
             await audit('cotizacion.aprobacion_aprobada', rows[0].folio as string);
+            after(dispatchQuoteEvent(orgId, id, 'quote.approval_decided', { decision: 'approved' }));
             after(dispatchQuoteEvent(orgId, id, 'quote.sent'));
             after(trackServer('quote_sent', orgId, {
                 event_id: `${id}:initial`,
@@ -112,6 +115,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             returning cotizacion_id`);
         if (!rejected.length) return done(409, { error: 'No hay una solicitud de aprobación pendiente' });
         await audit('cotizacion.aprobacion_rechazada', rows[0].folio as string);
+        after(dispatchQuoteEvent(orgId, id, 'quote.approval_decided', { decision: 'rejected' }));
         return done(200, { ok: true, status: 'draft' });
     }
 
@@ -388,8 +392,8 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
 export async function deleteQuoteDraft(ctx: ActionContext, id: string): Promise<ActionOutcome> {
     const { orgId } = ctx;
     const [beforeRows] = await withOrgTx(orgId, sql`
-        select c.id, c.folio, c.status, c.total, c.public_token, cl.empresa
-        from cotizaciones c left join clientes cl on cl.id = c.cliente_id
+        select c.id, c.folio, c.status, c.total, c.public_token, c.base_currency, c.cliente_id, cl.empresa
+        from cotizaciones c left join clientes cl on cl.id = c.cliente_id and cl.org_id = c.org_id
         where c.id = ${id} and c.org_id = ${orgId} and c.status = 'draft'`);
     const before = beforeRows[0];
     const [rows] = await withOrgTx(orgId, sql`

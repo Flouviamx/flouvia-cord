@@ -1,6 +1,9 @@
 import { sql, withOrgTx } from '../db';
 import { normVolumen } from '../queries';
 import { requireResourceCapacity, resourceLimitError } from '../org-entitlements';
+import { after } from '../after';
+import { dispatchEvent } from '../webhooks';
+import { productEventData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse, isUuid } from './outcome';
 
 export function cleanProductInput(input: Record<string, any>) {
@@ -29,13 +32,14 @@ export async function createProduct(ctx: ActionContext, input: Record<string, an
         [[row]] = await withOrgTx(ctx.orgId, sql`
             insert into productos (org_id, sku, nombre, unidad, descripcion, precio_lista, costo, activo, precios_volumen)
             values (${ctx.orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.descripcion}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)})
-            returning id`);
+            returning *`);
     } catch (error) {
         const limit = resourceLimitError(error);
         if (limit) return fromResponse(limit);
         return done(500, { error: 'No se pudo crear el producto.', code: 'server_error' });
     }
     await auditAction(ctx, 'producto.creado', 'producto', row.id as string, ctx.source === 'api' ? `${p.nombre} (vía API)` : p.nombre);
+    after(dispatchEvent(ctx.orgId, 'product.created', productEventData(row), ctx.actor));
     return done(200, { id: row.id });
 }
 
@@ -49,8 +53,9 @@ export async function updateProduct(ctx: ActionContext, id: string, input: Recor
             precio_lista = ${p.precio}, costo = ${p.costo}, activo = ${p.activo},
             precios_volumen = ${JSON.stringify(p.preciosVolumen)}
         where id = ${id} and org_id = ${ctx.orgId}
-        returning id`);
+        returning *`);
     if (!rows.length) return NO_ENCONTRADO;
+    after(dispatchEvent(ctx.orgId, 'product.updated', productEventData(rows[0]), ctx.actor));
     return done(200, { ok: true });
 }
 
@@ -59,5 +64,6 @@ export async function deleteProduct(ctx: ActionContext, id: string): Promise<Act
     const [rows] = await withOrgTx(ctx.orgId, sql`delete from productos where id = ${id} and org_id = ${ctx.orgId} returning id, nombre`);
     if (!rows.length) return NO_ENCONTRADO;
     await auditAction(ctx, 'producto.eliminado', 'producto', id, rows[0].nombre as string);
+    after(dispatchEvent(ctx.orgId, 'product.deleted', { id, object: 'product', nombre: rows[0].nombre }, ctx.actor));
     return done(200, { ok: true });
 }

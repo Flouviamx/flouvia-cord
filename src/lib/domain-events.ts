@@ -22,6 +22,21 @@ export const DOMAIN_EVENTS = {
     'invoice.voided': { object: 'invoice', public: true },
     'invoice.marked_uncollectible': { object: 'invoice', public: true },
     'invoice.overdue': { object: 'invoice', public: true },
+    'quote.created': { object: 'quote', public: true },
+    'quote.approval_requested': { object: 'quote', public: true },
+    'quote.approval_decided': { object: 'quote', public: true },
+    'quote.comment_added': { object: 'quote', public: true },
+    'client.created': { object: 'client', public: true },
+    'client.updated': { object: 'client', public: true },
+    'client.deleted': { object: 'client', public: true },
+    'product.created': { object: 'product', public: true },
+    'product.updated': { object: 'product', public: true },
+    'product.deleted': { object: 'product', public: true },
+    'task.created': { object: 'task', public: true },
+    'task.completed': { object: 'task', public: true },
+    'promise.created': { object: 'promise', public: true },
+    'promise.kept': { object: 'promise', public: true },
+    'promise.broken': { object: 'promise', public: true },
 } as const;
 
 export type DomainEventType = keyof typeof DOMAIN_EVENTS;
@@ -37,7 +52,7 @@ export function storedEventData(data: Record<string, unknown>): Record<string, u
     return Object.fromEntries(Object.entries(data).filter(([key]) => !SIN_CREDENCIALES.has(key)));
 }
 
-export async function recordDomainEvent(orgId: string, type: string, data: Record<string, unknown>): Promise<string | null> {
+export async function recordDomainEvent(orgId: string, type: string, data: Record<string, unknown>, actor?: string): Promise<string | null> {
     if (!isDomainEventType(type)) {
         log.error('evento de dominio fuera del catálogo', { route: 'domain-events', type, orgId });
         return null;
@@ -46,7 +61,7 @@ export async function recordDomainEvent(orgId: string, type: string, data: Recor
     try {
         const [[row]] = await withOrgTx(orgId, sql`
             insert into domain_events (org_id, type, object, object_id, data, actor)
-            values (${orgId}, ${type}, ${DOMAIN_EVENTS[type].object}, ${objectId}, ${JSON.stringify(storedEventData(data))}::jsonb, ${currentActor()})
+            values (${orgId}, ${type}, ${DOMAIN_EVENTS[type].object}, ${objectId}, ${JSON.stringify(storedEventData(data))}::jsonb, ${actor ?? currentActor()})
             returning id`);
         return (row?.id as string) ?? null;
     } catch (err) {

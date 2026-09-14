@@ -6,7 +6,8 @@
 
 import { sql, logAudit, withOrgTx } from './db';
 import { notifyQuoteSent } from './email';
-import { dispatchQuoteEvent } from './webhooks';
+import { dispatchEvent, dispatchQuoteEvent } from './webhooks';
+import { clientEventData } from './event-payloads';
 import { FXService, FXUnavailableError } from './fx/FXService';
 import { currentUserId } from './context';
 import { assertResourceCapacity, checkEntitlement, parsedResourceLimit, ResourceLimitReachedError } from './org-entitlements';
@@ -154,7 +155,8 @@ async function resolveOrCreateCliente(orgId: string, input: NewQuoteInput): Prom
         const [createdRows] = await withOrgTx(orgId, sql`
             insert into clientes (org_id, empresa, email, contacto, telefono, rfc, origen)
             values (${orgId}, ${empresa}, ${email}, ${input.cliente?.contacto || null}, ${input.cliente?.telefono || null}, ${input.cliente?.rfc || null}, 'embed')
-            returning id`);
+            returning *`);
+        after(dispatchEvent(orgId, 'client.created', clientEventData(createdRows[0])));
         return createdRows[0].id as string;
     } catch (error) {
         const limit = parsedResourceLimit(error);
@@ -370,6 +372,8 @@ export async function createCotizacion(
         entidad: 'cotizacion', entidad_id: cot.id as string,
         detalle: folio + (needsApproval ? ' — ' + aprobMotivo : ''), ip: opts.ip, actor: opts.actor,
     });
+    await dispatchQuoteEvent(orgId, cot.id as string, 'quote.created', undefined, opts.actor);
+    if (needsApproval) after(dispatchQuoteEvent(orgId, cot.id as string, 'quote.approval_requested', { motivo: aprobMotivo }, opts.actor));
 
     let email: { sent: boolean; skipped?: string } | undefined;
     if (input.send && !needsApproval) {

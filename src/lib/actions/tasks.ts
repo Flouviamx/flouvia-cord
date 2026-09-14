@@ -1,6 +1,9 @@
 import { sql, withOrgTx } from '../db';
 import { currentLocale } from '../context';
 import { t } from '../../i18n/app';
+import { after } from '../after';
+import { dispatchEvent } from '../webhooks';
+import { taskEventData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, done, isUuid } from './outcome';
 
 export const TASK_PERMISSIONS = ['cotizar', 'cobranza', 'clientes'] as const;
@@ -22,14 +25,20 @@ export async function createTask(ctx: ActionContext, input: Record<string, any>)
     const [[row]] = await withOrgTx(ctx.orgId, sql`
         insert into tareas (org_id, cotizacion_id, titulo, due_date)
         values (${ctx.orgId}, ${cotizacionId}, ${titulo.slice(0, 200)}, ${due})
-        returning id`);
+        returning *`);
+    after(dispatchEvent(ctx.orgId, 'task.created', taskEventData(row), ctx.actor));
     return done(200, { id: row.id });
 }
 
 export async function setTaskDone(ctx: ActionContext, id: string, isDone: boolean): Promise<ActionOutcome> {
     if (!isUuid(id)) return noEncontrada();
-    const [rows] = await withOrgTx(ctx.orgId, sql`update tareas set done = ${isDone} where id = ${id} and org_id = ${ctx.orgId} returning id`);
-    if (!rows.length) return noEncontrada();
+    const [changed, exists] = await withOrgTx(ctx.orgId,
+        sql`update tareas set done = ${isDone}
+             where id = ${id} and org_id = ${ctx.orgId} and done is distinct from ${isDone}
+            returning *`,
+        sql`select id from tareas where id = ${id} and org_id = ${ctx.orgId}`);
+    if (!exists.length) return noEncontrada();
+    if (isDone && changed.length) after(dispatchEvent(ctx.orgId, 'task.completed', taskEventData(changed[0]), ctx.actor));
     return done(200, { ok: true });
 }
 

@@ -14,6 +14,7 @@ import { after } from './after';
 import { publicDocumentUrl } from './public-links';
 import { enqueueForSubscribers, flushNow, newEventId } from './webhook-delivery';
 import { recordDomainEvent } from './domain-events';
+import { webhookLimit } from './entitlements';
 
 // Catálogo de eventos públicos (lo consume la UI y la validación de la API).
 export const WEBHOOK_EVENTS = [
@@ -39,6 +40,21 @@ export const WEBHOOK_EVENTS = [
     { id: 'invoice.voided', label: 'Factura anulada' },
     { id: 'invoice.marked_uncollectible', label: 'Factura marcada incobrable' },
     { id: 'invoice.overdue', label: 'Factura vencida' },
+    { id: 'quote.created', label: 'Cotización creada' },
+    { id: 'quote.approval_requested', label: 'Aprobación interna solicitada' },
+    { id: 'quote.approval_decided', label: 'Aprobación interna decidida' },
+    { id: 'quote.comment_added', label: 'Mensaje en la cotización' },
+    { id: 'client.created', label: 'Cliente creado' },
+    { id: 'client.updated', label: 'Cliente actualizado' },
+    { id: 'client.deleted', label: 'Cliente eliminado' },
+    { id: 'product.created', label: 'Producto creado' },
+    { id: 'product.updated', label: 'Producto actualizado' },
+    { id: 'product.deleted', label: 'Producto eliminado' },
+    { id: 'task.created', label: 'Tarea creada' },
+    { id: 'task.completed', label: 'Tarea completada' },
+    { id: 'promise.created', label: 'Promesa de pago registrada' },
+    { id: 'promise.kept', label: 'Promesa de pago cumplida' },
+    { id: 'promise.broken', label: 'Promesa de pago incumplida' },
 ] as const;
 
 export type WebhookEvent = typeof WEBHOOK_EVENTS[number]['id'];
@@ -55,6 +71,7 @@ export { sendTestEvent, redeliver, reenableAndRetryRecent, rotateSecret } from '
 interface QuoteSummary {
     id: string; folio: string; status: string; total: unknown;
     public_token: string; empresa: string | null;
+    base_currency?: string | null; cliente_id?: string | null;
 }
 
 /**
@@ -65,16 +82,23 @@ interface QuoteSummary {
  * sweep (/api/cron/webhooks) la recoge. Silencioso: cualquier error (incluida
  * tabla no migrada) se traga — nunca debe romper la operación que lo originó.
  */
-export async function dispatchQuoteEvent(orgId: string, cotizacionId: string, evento: WebhookEvent): Promise<void> {
+export async function dispatchQuoteEvent(orgId: string, cotizacionId: string, evento: WebhookEvent, extra?: Record<string, unknown>, actor?: string): Promise<void> {
     try {
-        // El resumen de la cotización lo comparten webhooks y Slack: lo cargamos una vez.
         const [qRows] = await withOrgTx(orgId, sql`
-            select c.id, c.folio, c.status, c.total, c.public_token, cl.empresa
-            from cotizaciones c left join clientes cl on cl.id = c.cliente_id
+            select c.id, c.folio, c.status, c.total, c.public_token, c.base_currency, c.cliente_id, cl.empresa
+            from cotizaciones c left join clientes cl on cl.id = c.cliente_id and cl.org_id = c.org_id
             where c.id = ${cotizacionId} and c.org_id = ${orgId}`);
         const q = qRows[0];
         if (!q) return;
-        await dispatchToSubscribers(orgId, evento, q as QuoteSummary);
+        await dispatchToSubscribers(orgId, evento, q as QuoteSummary, extra, actor);
+    } catch {
+        /* nunca romper la operación principal por un webhook */
+    }
+}
+
+export async function dispatchEvent(orgId: string, evento: WebhookEvent, data: Record<string, unknown>, actor?: string): Promise<void> {
+    try {
+        await emitToSubscribers(orgId, evento, data, actor);
     } catch {
         /* nunca romper la operación principal por un webhook */
     }
@@ -103,17 +127,7 @@ export async function dispatchQuoteEventFrom(orgId: string, evento: WebhookEvent
 export async function dispatchPaymentPartial(orgId: string, cotizacionId: string, extra: {
     tipo: string; monto: number; numero_cuota: number; saldo_pendiente: number; payment_method: string | null;
 }): Promise<void> {
-    try {
-        const [qRows] = await withOrgTx(orgId, sql`
-            select c.id, c.folio, c.status, c.total, c.public_token, cl.empresa
-            from cotizaciones c left join clientes cl on cl.id = c.cliente_id
-            where c.id = ${cotizacionId} and c.org_id = ${orgId}`);
-        const q = qRows[0];
-        if (!q) return;
-        await dispatchToSubscribers(orgId, 'payment.partial', q as QuoteSummary, extra);
-    } catch {
-        /* nunca romper la operación principal por un webhook */
-    }
+    return dispatchQuoteEvent(orgId, cotizacionId, 'payment.partial', extra);
 }
 
 // Arma el payload, resuelve suscriptores, dispara Slack en paralelo, encola
@@ -121,16 +135,18 @@ export async function dispatchPaymentPartial(orgId: string, cotizacionId: string
 // pasa) se mezcla dentro de `data` junto al resumen de la cotización — así
 // eventos como payment.partial pueden llevar campos propios sin que
 // dispatchQuoteEvent tenga que conocerlos.
-async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSummary, extra?: Record<string, unknown>): Promise<void> {
+async function dispatchToSubscribers(orgId: string, evento: string, q: QuoteSummary, extra?: Record<string, unknown>, actor?: string): Promise<void> {
     return emitToSubscribers(orgId, evento, {
         id: q.id,
         folio: q.folio,
         status: q.status,
+        moneda: q.base_currency ?? null,
         total: Number(q.total ?? 0),
         cliente: q.empresa ?? null,
+        cliente_id: q.cliente_id ?? null,
         link_publico: await publicDocumentUrl(orgId, 'q', q.public_token),
         ...extra,
-    });
+    }, actor);
 }
 
 /**
@@ -176,29 +192,24 @@ export async function dispatchInvoiceEvent(orgId: string, documentoId: string, e
     }
 }
 
-async function emitToSubscribers(orgId: string, evento: string, data: Record<string, unknown>): Promise<void> {
-    await recordDomainEvent(orgId, evento, data);
+async function emitToSubscribers(orgId: string, evento: string, data: Record<string, unknown>, actor?: string): Promise<void> {
+    await recordDomainEvent(orgId, evento, data, actor);
     let hooks: any[] = [];
     try {
         // En downgrade conservamos la configuración, pero solo los endpoints
         // más antiguos cubiertos por el plan efectivo reciben eventos. El
         // ranking en el momento de uso impide que endpoints excedentes sigan
         // operando por haber sido creados antes del cambio de plan.
+        const [[planRow]] = await withOrgTx(orgId, sql`select cord_effective_plan(${orgId}::uuid) as plan`);
+        const allowance = webhookLimit(String(planRow?.plan || 'free'));
         [hooks] = await withOrgTx(orgId, sql`
             with ranked as (
                 select id, eventos,
-                       row_number() over (order by created_at asc, id asc)::int as position,
-                       case cord_effective_plan(org_id)
-                           when 'starter' then 3
-                           when 'pro' then 10
-                           when 'scale' then 25
-                           when 'developer' then 100
-                           else 1
-                       end as allowance
+                       row_number() over (order by created_at asc, id asc)::int as position
                   from webhooks
                  where org_id = ${orgId} and activo = true
             )
-            select id, eventos from ranked where position <= allowance`);
+            select id, eventos from ranked where position <= ${allowance}`);
     } catch { return; } // tabla aún no migrada → no-op
     const subs = hooks.filter((h) => {
         const evs = Array.isArray(h.eventos) ? h.eventos : [];

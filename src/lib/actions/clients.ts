@@ -1,6 +1,9 @@
 import { sql, withOrgTx } from '../db';
 import { requireResourceCapacity, resourceLimitError } from '../org-entitlements';
 import { isCountryCode } from '../countries';
+import { after } from '../after';
+import { dispatchEvent } from '../webhooks';
+import { clientEventData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse, isUuid } from './outcome';
 
 const TERMINOS = ['contado', 'net30', 'net60'];
@@ -51,13 +54,14 @@ export async function createClient(ctx: ActionContext, input: Record<string, any
                 ${c.nivel}, ${c.descuento}, ${c.regimen_fiscal}, ${c.uso_cfdi}, ${c.cp_fiscal},
                 ${c.country_code}, ${c.direccion_line1}, ${c.direccion_line2}, ${c.ciudad}, ${c.region}
             )
-            returning id`);
+            returning *`);
     } catch (error) {
         const limit = resourceLimitError(error);
         if (limit) return fromResponse(limit);
         return done(500, { error: 'No se pudo crear el cliente.', code: 'server_error' });
     }
     await auditAction(ctx, 'cliente.creado', 'cliente', row.id as string, ctx.source === 'api' ? `${c.empresa} (vía API)` : c.empresa);
+    after(dispatchEvent(ctx.orgId, 'client.created', clientEventData(row), ctx.actor));
     return done(200, { id: row.id });
 }
 
@@ -75,8 +79,9 @@ export async function updateClient(ctx: ActionContext, id: string, input: Record
             country_code = ${c.country_code}, direccion_line1 = ${c.direccion_line1},
             direccion_line2 = ${c.direccion_line2}, ciudad = ${c.ciudad}, region = ${c.region}
         where id = ${id} and org_id = ${ctx.orgId}
-        returning id`);
+        returning *`);
     if (!rows.length) return NO_ENCONTRADO;
+    after(dispatchEvent(ctx.orgId, 'client.updated', clientEventData(rows[0]), ctx.actor));
     return done(200, { ok: true });
 }
 
@@ -85,5 +90,6 @@ export async function deleteClient(ctx: ActionContext, id: string): Promise<Acti
     const [rows] = await withOrgTx(ctx.orgId, sql`delete from clientes where id = ${id} and org_id = ${ctx.orgId} returning id, empresa`);
     if (!rows.length) return NO_ENCONTRADO;
     await auditAction(ctx, 'cliente.eliminado', 'cliente', id, rows[0].empresa as string);
+    after(dispatchEvent(ctx.orgId, 'client.deleted', { id, object: 'client', empresa: rows[0].empresa }, ctx.actor));
     return done(200, { ok: true });
 }

@@ -216,7 +216,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         // payment-intent.ts las crea al primer intento de pago.
         try { await materializeAnticipoCobros(c.id as string, c.org_id as string); } catch { /* fallback en payment-intent */ }
         // Fondo: el webhook/Slack jamás debe hacer esperar al cliente que aprueba.
-        after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved'));
+        after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.approved', undefined, 'client'));
         after(notifyQuoteEvent(c.org_id as string, c.id as string, 'quote_approved'));
         const [metricRows] = await withOrgTx(orgId, sql`
             select total, base_currency from cotizaciones
@@ -242,7 +242,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         const comentario = String(body.comentario ?? '').trim().slice(0, 500);
         await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
             values (${orgId}, ${c.id}, 'rejected', ${comentario ? `El cliente rechazó: "${comentario}"` : 'El cliente rechazó la cotización desde el link'})`);
-        after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.rejected'));
+        after(dispatchQuoteEvent(c.org_id as string, c.id as string, 'quote.rejected', undefined, 'client'));
         after(notifyQuoteEvent(c.org_id as string, c.id as string, 'quote_rejected'));
         const [rejMetric] = await withOrgTx(orgId, sql`
             select total, base_currency from cotizaciones where id = ${c.id} and org_id = ${orgId}`);
@@ -268,6 +268,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
         if (c.status === 'draft') return json({ error: 'Cotización no disponible' }, 409);
         await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
             values (${orgId}, ${c.id}, 'comment', ${mensaje})`);
+        after(dispatchQuoteEvent(orgId, c.id as string, 'quote.comment_added', { autor: 'cliente', mensaje }, 'client'));
         return json({ ok: true });
     }
 
@@ -284,6 +285,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
             : mensaje;
         await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle)
             values (${orgId}, ${c.id}, 'counter', ${detalle})`);
+        after(dispatchQuoteEvent(orgId, c.id as string, 'quote.comment_added', { autor: 'cliente', tipo: 'contraoferta', mensaje, propuesta }, 'client'));
         return json({ ok: true });
     }
 
@@ -301,6 +303,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
 
         await withOrgTx(orgId, sql`insert into cotizacion_comentarios (org_id, cotizacion_id, item_id, autor_tipo, autor_nombre, contenido)
             values (${orgId}, ${c.id}, ${itemId}, 'cliente', 'Cliente', ${mensaje})`);
+        after(dispatchQuoteEvent(orgId, c.id as string, 'quote.comment_added', { autor: 'cliente', item_id: itemId, mensaje }, 'client'));
         return json({ ok: true });
     }
 

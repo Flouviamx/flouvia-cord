@@ -1,7 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 
-const m = vi.hoisted(() => ({ db: null as any, audit: vi.fn() }));
+const m = vi.hoisted(() => ({ db: null as any, audit: vi.fn(), event: vi.fn() }));
+
+vi.mock('../src/lib/after', () => ({ after: (p: unknown) => p }));
+vi.mock('../src/lib/webhooks', () => ({ dispatchEvent: m.event }));
 
 vi.mock('../src/lib/db', () => ({
     sql: (s: TemplateStringsArray, ...values: any[]) => ({ text: s.reduce((text, part, i) => text + (i ? `$${i}` : '') + part, ''), values }),
@@ -66,6 +69,18 @@ describe('una org no alcanza los registros de otra', () => {
         expect(m.audit).not.toHaveBeenCalled();
     });
 
+    it('un intento sobre registros ajenos no emite ningún evento', async () => {
+        await clients.updateClient(ctxA, CLIENTE_B, { empresa: 'Robado' });
+        await clients.deleteClient(ctxA, CLIENTE_B);
+        await products.updateProduct(ctxA, PRODUCTO_B, { nombre: 'Robado' });
+        await products.deleteProduct(ctxA, PRODUCTO_B);
+        await tasks.setTaskDone(ctxA, TAREA_B, true);
+        await tasks.createTask(ctxA, { titulo: 'x', cotizacion_id: COT_B });
+        await promises.setPromiseState(ctxA, PROMESA_B, 'incumplida');
+        await promises.createPromise(ctxA, { cotizacion_id: COT_B, fecha_promesa: '2026-10-02' });
+        expect(m.event).not.toHaveBeenCalled();
+    });
+
     it('productos: editar y borrar responden 404 sin tocar la fila', async () => {
         expect((await products.updateProduct(ctxA, PRODUCTO_B, { nombre: 'Robado', precio: 0 })).status).toBe(404);
         expect((await products.deleteProduct(ctxA, PRODUCTO_B)).status).toBe(404);
@@ -85,6 +100,50 @@ describe('una org no alcanza los registros de otra', () => {
         expect((await promises.deletePromise(ctxA, PROMESA_B)).status).toBe(404);
         expect((await promises.createPromise(ctxA, { cotizacion_id: COT_B, fecha_promesa: '2026-10-02' })).status).toBe(404);
         expect((await m.db.query('select estado from promesas_pago')).rows).toEqual([{ estado: 'pendiente' }]);
+    });
+});
+
+describe('eventos del camino normal', () => {
+    it('cliente: creado, actualizado y eliminado con el actor del contexto', async () => {
+        const ctx = { ...ctxA, actor: 'api:key-1', source: 'api' as const };
+        const r = await clients.createClient(ctx, { empresa: 'Nuevo', email: 'a@b.test' });
+        await clients.updateClient(ctx, r.body.id as string, { empresa: 'Nuevo SA' });
+        await clients.deleteClient(ctx, r.body.id as string);
+        expect(m.event.mock.calls.map((c) => [c[1], c[3]])).toEqual([
+            ['client.created', 'api:key-1'], ['client.updated', 'api:key-1'], ['client.deleted', 'api:key-1'],
+        ]);
+        expect(m.event.mock.calls[0][2]).toMatchObject({ id: r.body.id, object: 'client', empresa: 'Nuevo', email: 'a@b.test' });
+        expect(m.event.mock.calls[1][2]).toMatchObject({ empresa: 'Nuevo SA' });
+    });
+
+    it('producto: el evento nunca incluye el costo', async () => {
+        const r = await products.createProduct(ctxA, { nombre: 'Servicio', precio: 100, costo: 60 });
+        await products.updateProduct(ctxA, r.body.id as string, { nombre: 'Servicio', precio: 120, costo: 70 });
+        for (const call of m.event.mock.calls) {
+            expect(call[2]).not.toHaveProperty('costo');
+            expect(Object.values(call[2])).not.toContain(60);
+            expect(Object.values(call[2])).not.toContain(70);
+        }
+        expect(m.event.mock.calls.map((c) => c[1])).toEqual(['product.created', 'product.updated']);
+    });
+
+    it('tarea: completar dos veces emite task.completed una sola vez', async () => {
+        const r = await tasks.createTask(ctxA, { titulo: 'Llamar' });
+        await tasks.setTaskDone(ctxA, r.body.id as string, true);
+        await tasks.setTaskDone(ctxA, r.body.id as string, true);
+        expect(m.event.mock.calls.map((c) => c[1])).toEqual(['task.created', 'task.completed']);
+    });
+
+    it('promesa: cumplida e incumplida emiten su evento, pendiente no', async () => {
+        await m.db.exec(`insert into cotizaciones(id, org_id) values ('00000000-0000-4000-8000-0000000000e9', '${A}')`);
+        const r = await promises.createPromise(ctxA, { cotizacion_id: '00000000-0000-4000-8000-0000000000e9', fecha_promesa: '2026-10-02', monto: 500 });
+        const id = r.body.id as string;
+        await promises.setPromiseState(ctxA, id, 'cumplida');
+        await promises.setPromiseState(ctxA, id, 'cumplida');
+        await promises.setPromiseState(ctxA, id, 'pendiente');
+        await promises.setPromiseState(ctxA, id, 'incumplida');
+        expect(m.event.mock.calls.map((c) => c[1])).toEqual(['promise.created', 'promise.kept', 'promise.broken']);
+        expect(m.event.mock.calls[0][2]).toMatchObject({ object: 'promise', fecha_promesa: '2026-10-02', monto: 500 });
     });
 });
 

@@ -314,10 +314,16 @@ describe('solicitud de aprobación interna', () => {
         expect(m.dispatch).toHaveBeenCalledWith('org-a', 'cot-1', 'quote.sent');
     });
 
-    it('rechazar la solicitud la deja en borrador sin evento público', async () => {
+    it('rechazar la solicitud la deja en borrador y solo emite la decisión', async () => {
         pending('pendiente');
         expect(await (await patch({ action: 'reject_request' })).json()).toMatchObject({ ok: true, status: 'draft' });
-        expect(m.dispatch).not.toHaveBeenCalled();
+        expect(m.dispatch.mock.calls).toEqual([['org-a', 'cot-1', 'quote.approval_decided', { decision: 'rejected' }]]);
+    });
+
+    it('aprobar la solicitud emite la decisión y luego el envío', async () => {
+        pending('pendiente');
+        await patch({ action: 'approve_request' });
+        expect(m.dispatch.mock.calls.map((c) => c[2])).toEqual(['quote.approval_decided', 'quote.sent']);
     });
 });
 

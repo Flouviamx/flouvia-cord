@@ -129,7 +129,7 @@ check(schema.includes("cord_effective_plan(o.id) in ('scale', 'developer')")
 check(quoteApi.includes("'international_invoicing'") && read('src/lib/fiscal/invoices.ts').includes("planIncludes(await getEffectivePlan(orgId), 'cfdi')"), 'El acceso comercial es Free; la emisión fiscal valida el plan efectivo en el dominio.');
 check(apiKeyAuth.includes('active_rank') && apiKeyAuth.includes('subscription_key_limit'), 'Las API keys excedentes deben apagarse tras downgrade.');
 check(apiKeys.includes("pg_advisory_xact_lock(hashtextextended(${'api_keys:' + orgId}"), 'La creación concurrente de API keys debe serializarse.');
-check(outgoingWebhooks.includes('position <= allowance'), 'Los webhooks excedentes deben apagarse tras downgrade.');
+check(outgoingWebhooks.includes('position <= ${allowance}') && outgoingWebhooks.includes('webhookLimit(String(planRow'), 'Los webhooks excedentes deben apagarse tras downgrade.');
 check(webhooksApi.includes("pg_advisory_xact_lock(hashtextextended(${'webhooks:' + orgId}"), 'La creación concurrente de webhooks debe serializarse.');
 check(vercel.includes('/api/cron/billing-reconcile'), 'Falta programar la reconciliación de Billing.');
 
