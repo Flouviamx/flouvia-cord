@@ -47,6 +47,16 @@ function bearerToken(request: Request): string | null {
     return m ? m[1].trim() : null;
 }
 
+const PUBLISHABLE_ALLOWLIST = new Set([
+    'GET /api/v1/productos',
+    'POST /api/v1/cotizaciones',
+]);
+
+export function publishableKeyAllows(method: string, pathname: string): boolean {
+    const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+    return PUBLISHABLE_ALLOWLIST.has(`${method.toUpperCase()} ${path}`);
+}
+
 /**
  * Autentica una request por API key. Devuelve ApiAuth si es válida, o un
  * Response de error (401/403) listo para retornar desde la ruta.
@@ -106,18 +116,7 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
     const type: ApiKeyType = row.type === 'publishable' ? 'publishable' : 'secret';
 
     if (type === 'publishable') {
-        const url = new URL(request.url);
-        const path = url.pathname;
-        const method = request.method.toUpperCase();
-
-        // Seguridad estricta Frontend Publishable Keys:
-        // Solo lectura de productos y creación de cotizaciones.
-        // NUNCA acceder a CRM (clientes) o listar todas las cotizaciones.
-        const isAllowedPath = 
-            (method === 'POST' && path.includes('/cotizaciones')) ||
-            (method === 'GET' && path.includes('/productos'));
-
-        if (!isAllowedPath) {
+        if (!publishableKeyAllows(request.method, new URL(request.url).pathname)) {
             return jsonError('Publishable Key no tiene permisos para esta acción. Usa una Secret Key desde tu backend.', 'insufficient_scope', 403);
         }
 
