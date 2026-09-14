@@ -5,7 +5,7 @@
 // plan.astro, checkout.astro, PlanPaywallModal, Pricing y precios.astro. Cada uno
 // pintaba un peso mexicano disfrazado de dólar y ninguno decía qué divisa era.
 //
-// NO se reutiliza `money()` de `mock.ts` ni `documentCurrency()` de
+// NO se reutiliza `money()` de `fmt-server.ts` ni `documentCurrency()` de
 // `money-client.ts`: esos leen la divisa del NEGOCIO (`orgs.moneda`,
 // `<body data-currency>`). Un negocio español vería "590 €" sobre lo que son
 // 590 pesos. Son dos ejes distintos de la regla 21 y no se mezclan.

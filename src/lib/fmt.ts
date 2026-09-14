@@ -1,7 +1,7 @@
 // ⚠️ Este módulo lo importan también los <script> del navegador (chart-mount,
 // dashboard, informes, cobros). NO puede importar lib/context (AsyncLocalStorage
 // es de Node y rompería el bundle del cliente): la divisa se lee del DOM, que es
-// donde AppLayout la publica. El equivalente de servidor vive en lib/mock.ts.
+// donde AppLayout la publica. El equivalente de servidor vive en lib/fmt-server.ts.
 
 /** Divisa activa del documento (`<body data-currency>`); MXN si no hay DOM. */
 function ambientCurrency(): string {

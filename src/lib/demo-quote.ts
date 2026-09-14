@@ -21,9 +21,8 @@
 // interacciones se resuelven en el navegador — ver el modo demo de QuoteCard.
 
 import { currentLocale, setRequestCurrency, setRequestTimeZone } from './context';
-import { fmtDate, fmtRelative } from './fmt-server';
-import { money } from './mock';
-import type { MockQuote } from './mock';
+import { fmtDate, fmtRelative, money } from './fmt-server';
+import type { Quote } from './quote';
 import { PLANES, MESES_POR_ANIO, precioAnualTotal } from './precios';
 import { calculateDocumentTotals } from '../../packages/elements/src/engine';
 
@@ -73,7 +72,7 @@ export function getDemoQuote(now: Date = new Date()) {
     const EQUIPO = en ? 'Cord team' : 'Equipo de Cord';
     const CLIENTE = 'Distribuidora El Zarco';
 
-    const items: MockQuote['items'] = [
+    const items: Quote['items'] = [
         {
             id: '7f3c2a10-4b8e-4d21-9a6f-1c0e5b2d8a01',
             producto_id: null,
@@ -156,7 +155,7 @@ export function getDemoQuote(now: Date = new Date()) {
         status: 'viewed' as const,
         // El DTO real devuelve la etiqueta en español aun con la interfaz en
         // inglés; la demo la localiza para quien la lee.
-        terminos: (en ? 'Due on receipt' : 'Contado') as MockQuote['terminos'],
+        terminos: (en ? 'Due on receipt' : 'Contado') as Quote['terminos'],
         vigencia: fmtDate(vigencia),
         vigenciaDias: Math.max(1, Math.ceil((vigencia.getTime() - now.getTime()) / 86_400_000)),
         creada: fmtDate(creada),
@@ -172,7 +171,7 @@ export function getDemoQuote(now: Date = new Date()) {
         version: 1,
         iva_incluido: true,
         taxRateFallback: TAX_RATE,
-        retenciones: [] as NonNullable<MockQuote['retenciones']>,
+        retenciones: [] as NonNullable<Quote['retenciones']>,
         anticipoPct: null,
         esRecurrente: false,
         items,

@@ -595,11 +595,13 @@ columna `orgs.embed_domains` (allowlist CSP para Elements). **Jul 2026 (salud + 
 ganó `message_id`/`event_id` (liga al outbox); tabla nueva `webhook_events` (ver arriba). ⚠️
 Correr `npm run db:migrate` tras pull.
 
-**Mock data:** `src/lib/mock.ts` exporta `ORG`, `PRODUCTOS`, `CLIENTES`,
-`COTIZACIONES` (con items + eventos), `STATUS_META` (label/color/bg por estado),
-helpers de dinero (`money`, `quoteTotal`…) y `findQuote`/`findQuoteByToken`.
-La org demo es "Materiales del Valle" (construcción) — coherente con el mockup
-del hero (COT-0148 → El Zarco). Al conectar Neon: reemplazar imports por queries.
+**Modelo de cotización:** `src/lib/quote.ts` declara el modelo de lectura
+(`Quote`, `QuoteItem`, `QuoteEvent`, `QuoteStatus`), `STATUS_META` y los totales
+(`quoteSubtotal`/`quoteIva`/`quoteTotal`/`quoteTaxBreakdown`/`quoteRetenciones`)
+sobre el motor compartido; `money()` vive en `src/lib/fmt-server.ts`. Las páginas
+los importan desde `lib/queries`, que los re-exporta. Los datos mock en memoria
+(`mock.ts`) se retiraron en sep 2026; la única cotización sin base es la demo
+pública (`src/lib/demo-quote.ts`).
 
 **AppLayout (`src/layouts/AppLayout.astro`):** sidebar de vidrio sticky **temada con `--sb-*`**
 (blanca en claro / navy en oscuro; logo navy↔blanco según tema, nav con íconos, org-switcher

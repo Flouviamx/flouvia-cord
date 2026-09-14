@@ -37,6 +37,13 @@ reintentos con backoff exponencial. 100% aditivo, sin breaking changes.
   además `tipo`/`monto`/`numero_cuota`/`saldo_pendiente`/`payment_method`
   (`CordWebhookPaymentPartialData`, nueva interfaz exportada) — revisa `event.event` antes de
   leer `event.data` para que TypeScript te dé el tipo correcto.
+- **Motor de totales con impuesto por línea**, exportado desde la raíz del paquete:
+  `calculateInvoiceTotals(items, { ivaIncluido })` (cada línea con su propia tasa y
+  desglose `porTasa`) y `calculateDocumentTotals(items, { ivaIncluido, retenciones })`
+  (lo mismo más retenciones: `total = subtotal + impuestos − retenciones`). Es el mismo
+  motor con el que Cord calcula sus cotizaciones y facturas, así que un total que
+  reproduces en tu servidor cuadra con el del link. `calculateTotals` (tasa única) se
+  conserva sin cambios.
 
 ### Notes
 

@@ -1,4 +1,4 @@
-import type { QuoteStatus } from './mock';
+import type { QuoteStatus } from './quote';
 
 /**
  * Canon de estados para métricas comerciales.

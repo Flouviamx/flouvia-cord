@@ -12,7 +12,8 @@
 //     cotizaciones fechadas un día antes de haberlas creado, y "hoy"/"ayer" se
 //     calculaban contra un día que no era el suyo.
 
-import { currentLocale, currentFormatLocale, currentTimeZone } from './context';
+import { currentCurrency, currentLocale, currentFormatLocale, currentTimeZone } from './context';
+import { currencyDecimals } from './currency';
 
 /**
  * Locale BCP-47 del request para Intl — el de FORMATO (`getCountryProfile`
@@ -91,4 +92,32 @@ export function fmtRelative(d: string | Date): string {
 /** Número simple con el locale del request (sin divisa: eso es money()). */
 export function fmtNumber(n: number, maximumFractionDigits = 0): string {
     return new Intl.NumberFormat(intlLocale(), { maximumFractionDigits }).format(n);
+}
+
+/**
+ * Importe con la divisa del request (regla 21). Lo re-exporta `lib/queries` y lo
+ * usa casi toda la app y el link público.
+ *
+ * La divisa sale del contexto: la del negocio en /app, la de la cotización en
+ * /q/[token]. Antes era un `'$'` literal con locale es-MX fijo, así que un
+ * negocio en España mostraba "$1.000,00" donde debía decir "1.000,00 €" y uno
+ * en Japón inventaba dos decimales que el yen no tiene.
+ *
+ * Separadores: sigue el idioma de la interfaz (es-MX / en-US), no el locale de
+ * formato del país que usan las fechas. Es el comportamiento que hoy ven los
+ * clientes; pasarlo a `intlLocale()` es un cambio visible y se decide aparte.
+ *
+ * `dec` existe para los pocos call-sites que piden enteros (dec = 0); por
+ * defecto manda la divisa: JPY/CLP/COP nunca llevan decimales.
+ */
+export function money(n: number, dec?: number): string {
+    const currency = currentCurrency();
+    const decimals = dec ?? currencyDecimals(currency);
+    const locale = currentLocale() === 'en' ? 'en-US' : 'es-MX';
+    const digits = { minimumFractionDigits: decimals, maximumFractionDigits: decimals };
+    try {
+        return new Intl.NumberFormat(locale, { style: 'currency', currency, ...digits }).format(n);
+    } catch {
+        return new Intl.NumberFormat(locale, digits).format(n);
+    }
 }

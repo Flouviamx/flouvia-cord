@@ -51,6 +51,7 @@ manual, changelog ni depósito de decisiones. La documentación canónica vive e
 | Cord Ops, seguridad o escala | [`docs/estado/cord-ops.md`](docs/estado/cord-ops.md) + [`docs/historial/infra-hitos.md`](docs/historial/infra-hitos.md) |
 | Analytics o Growth | [`docs/estado/analytics.md`](docs/estado/analytics.md) + historial de app/infra relevante |
 | Emitir, renombrar o cambiar cualquier evento de PostHog | Regla 35 de [`docs/estandares-ingenieria.md`](docs/estandares-ingenieria.md) + catálogo en `src/lib/analytics-events.ts` (fuente única) + helpers en `src/lib/posthog-server.ts` y `src/components/CordAnalytics.astro`; el contrato lo verifica `npm run security:analytics` |
+| Textos traducidos de la app o la landing | `src/i18n/app.ts` (app, `/q`, correos) o `src/i18n/ui.ts` (landing); cada clave va en `es` y `en` y debe tener consumidor. Si armas claves con variables, usa una plantilla con prefijo fijo (`set.eq.perm.${k}.label`); el contrato lo verifica `npm run security:i18n` |
 | Legal, privacidad, aceptación contractual o internacionalización | [`docs/estado/legal.md`](docs/estado/legal.md) + el documento del flujo afectado (`docs/estado/app-rutas.md` o `docs/estado/cobros-facturacion.md`) |
 | Historia del producto | [`docs/historial/README.md`](docs/historial/README.md) |
 

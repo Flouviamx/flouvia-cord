@@ -3,6 +3,8 @@
     "CordAPI",
     "CordCotizadorElement",
     "CordError",
+    "calculateDocumentTotals",
+    "calculateInvoiceTotals",
     "calculateTotals",
     "configureCord",
     "defineCordElements",

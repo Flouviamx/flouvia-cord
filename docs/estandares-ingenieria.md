@@ -191,8 +191,8 @@ Tres decisiones distintas, tres fuentes, y no se mezclan:
 
 Contratos ejecutables:
 
-- Formato de servidor: `money()`/`moneyFull()` (`lib/mock.ts`, re-exportado por
-  `lib/queries.ts`) leen la divisa del request. La fija el middleware desde
+- Formato de servidor: `money()` (`lib/fmt-server.ts`, re-exportado por
+  `lib/queries.ts`) lee la divisa del request. La fija el middleware desde
   `orgs.moneda` (`getAppGates`) y la sobrescribe el link público con la de la
   cotización (`getCotizacionByToken`).
 - Formato de cliente: `lib/money-client.ts`, leyendo `<body data-currency>` que

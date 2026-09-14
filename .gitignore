@@ -32,4 +32,5 @@ pnpm-debug.log*
 .github/workflows/*
 !.github/workflows/cord-reliability.yml
 !.github/workflows/status-probe.yml
+!.github/workflows/elements.yml
 .env*

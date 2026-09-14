@@ -5,7 +5,7 @@ import {
     DEMO_USUARIO_ADICIONAL_MXN,
     getDemoQuote,
 } from '../src/lib/demo-quote';
-import { quoteSubtotal, quoteTaxBreakdown, quoteTotal } from '../src/lib/mock';
+import { quoteSubtotal, quoteTaxBreakdown, quoteTotal } from '../src/lib/quote';
 import { PLANES, precioAnualTotal } from '../src/lib/precios';
 import { overagePriceLabel } from '../src/lib/plan-overage-pricing';
 import { reqContext } from '../src/lib/context';

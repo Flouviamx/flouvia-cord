@@ -4,7 +4,7 @@
 // ni columnas crudas de DB). Las rutas reusan las queries de queries.ts y pasan
 // el resultado por estos serializadores.
 
-import type { MockQuote } from './queries';
+import type { Quote } from './queries';
 import { publicDocumentUrl } from './public-links';
 
 export function ok(data: unknown, meta?: Record<string, unknown>): Response {
@@ -63,7 +63,7 @@ export function pageParams(url: URL): { limit: number; offset: number } {
 }
 
 // ── Serializadores ───────────────────────────────────────────────────────────
-export async function quoteListItem(q: MockQuote, orgId: string) {
+export async function quoteListItem(q: Quote, orgId: string) {
     return {
         id: q.id,
         folio: q.folio,
@@ -77,7 +77,7 @@ export async function quoteListItem(q: MockQuote, orgId: string) {
     };
 }
 
-export async function quoteDetail(q: MockQuote, orgId: string) {
+export async function quoteDetail(q: Quote, orgId: string) {
     return {
         ...await quoteListItem(q, orgId),
         notas: q.notas ?? null,

@@ -1,7 +1,7 @@
 // src/lib/queries.ts
-// Capa de datos REAL sobre Neon. Devuelve exactamente los mismos shapes que
-// src/lib/mock.ts para que las páginas sólo cambien el import + un `await`.
-// Re-exporta los helpers puros y STATUS_META del mock (no se duplican).
+// Capa de datos sobre Neon. Devuelve el modelo de lectura de `lib/quote` y
+// re-exporta sus helpers puros, STATUS_META y `money()` de `lib/fmt-server`
+// para que las páginas tengan un solo import.
 
 import { sql, getActiveOrgId, resolvePublicQuote, resolvePublicInvoice, withOrgTx, withUserTx } from './db';
 import { currentUserId, currentOrgIdOverride, currentLocale, currentTimeZone, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
@@ -20,7 +20,7 @@ import { decryptSecret } from './crypto-secret';
 import { publicDocumentUrl } from './public-links';
 import { normalizeCurrency } from './currency';
 import { getCountryProfile, taxKindLabel } from './countries';
-import { fmtDate, fmtRelative, intlLocale } from './fmt-server';
+import { fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
 import { calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { dueDateFor, venceDia } from './cobros';
 import type { PublicViewer } from './public-viewer';
@@ -28,20 +28,20 @@ import {
     STATUS_ABIERTA, STATUS_GANADA, STATUS_PERDIDA, STATUS_SALIO,
 } from './metrics';
 import {
-    STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones,
-    type QuoteStatus, type MockItem, type MockEvent, type MockQuote,
-} from './mock';
+    STATUS_META, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones,
+    type QuoteStatus, type QuoteItem, type QuoteEvent, type Quote,
+} from './quote';
 
-export { STATUS_META, IVA, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones };
-export type { QuoteStatus, MockItem, MockEvent, MockQuote };
+export { STATUS_META, money, lineTotal, quoteSubtotal, quoteIva, quoteTotal, quoteTaxBreakdown, quoteRetenciones };
+export type { QuoteStatus, QuoteItem, QuoteEvent, Quote };
 
-// ── Formatters (Postgres → display, igual que el mock hardcodeaba) ──────────
+// ── Formatters (Postgres → display) ─────────────────────────────────────────
 const num = (v: unknown) => Number(v ?? 0);
 
 const initials = (nombre: string) =>
     nombre.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '—';
 
-const TERM_LABEL: Record<string, MockQuote['terminos']> = {
+const TERM_LABEL: Record<string, Quote['terminos']> = {
     contado: 'Contado', net30: 'Net 30', net60: 'Net 60',
 };
 const termLabel = (t: string | null) => TERM_LABEL[t ?? 'contado'] ?? 'Contado';
@@ -1271,7 +1271,7 @@ export async function getCliente(id: string) {
 }
 
 // ── COTIZACIONES ──────────────────────────────────────────────────────────────
-function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [], conversacion: any[] = []): MockQuote {
+function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [], conversacion: any[] = []): Quote {
     return {
         id: c.id,
         folio: c.folio,
@@ -1297,12 +1297,12 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
         version: num(c.version) || 1,
         iva_incluido: Boolean(c.iva_incluido),
         // Tasa de la org para las líneas anteriores al impuesto por línea. Sin
-        // esto los totales caerían a una constante del 16% (ver mock.ts).
+        // esto las líneas antiguas no tendrían tasa demostrable (ver lib/quote.ts).
         taxRateFallback: c.org_iva_pct != null ? num(c.org_iva_pct) / 100 : undefined,
         retenciones: Array.isArray(c.retenciones_snapshot) ? c.retenciones_snapshot : [],
         anticipoPct: c.anticipo_pct != null ? num(c.anticipo_pct) : null,
         esRecurrente: Boolean(c.es_recurrente),
-        items: items.map((it): MockItem => ({
+        items: items.map((it): QuoteItem => ({
             id: it.id,
             producto_id: it.producto_id,
             descripcion: it.descripcion,
@@ -1314,7 +1314,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
             aprobado: it.aprobado !== false,   // default true (sin columna o no decidido = incluida)
             comentarios: it.comentarios ?? [],
         })),
-        eventos: eventos.map((e): MockEvent => ({
+        eventos: eventos.map((e): QuoteEvent => ({
             tipo: e.tipo,
             detalle: e.detalle ?? '',
             cuando: fmtRelative(e.created_at),
@@ -1338,7 +1338,7 @@ function rowToQuote(c: any, items: any[], eventos: any[], versiones: any[] = [],
 // aplica un techo de seguridad alto (100k) para acotar el peor caso sin cambiar
 // el comportamiento actual (ninguna org real llega a esa cifra). La vista de lista
 // puede pasar { limit, offset } para paginar de verdad.
-export async function getCotizaciones(opts?: { limit?: number; offset?: number }): Promise<MockQuote[]> {
+export async function getCotizaciones(opts?: { limit?: number; offset?: number }): Promise<Quote[]> {
     const orgId = await getActiveOrgId();
     const limit = Math.min(Math.max(opts?.limit ?? 100000, 1), 100000);
     const offset = Math.max(opts?.offset ?? 0, 0);
@@ -1354,7 +1354,7 @@ export async function getCotizaciones(opts?: { limit?: number; offset?: number }
 }
 
 // Detalle con items y timeline. Cuatro queries en un solo batch.
-export async function getCotizacion(id: string): Promise<MockQuote | null> {
+export async function getCotizacion(id: string): Promise<Quote | null> {
     const orgId = await getActiveOrgId();
     const [rows, items, eventos, versiones, conv, comentarios] = await withOrgTx(orgId,
         sql`select c.*, cl.empresa, coalesce(c.terminos, cl.terminos_default) as terminos,

@@ -116,17 +116,17 @@ for (const code of ['US', 'BR']) {
 }
 
 // ── 8. La constante muerta no vuelve a las superficies de dinero ────────────
-// `IVA = 0.16` sigue exportada por compatibilidad, pero ninguna superficie que
-// el cliente lee puede volver a calcular con ella.
+// Los totales que lee el cliente salen del motor compartido y de la tasa de la
+// línea (o de la org); `lib/quote.ts` no puede volver a tener una tasa fija.
 {
-    const mock = readFileSync(new URL('../src/lib/mock.ts', import.meta.url), 'utf8');
+    const quote = readFileSync(new URL('../src/lib/quote.ts', import.meta.url), 'utf8');
     for (const fn of ['quoteSubtotal', 'quoteIva', 'quoteTotal']) {
-        const linea = mock.split('\n').find((l) => l.includes(`export const ${fn} =`));
-        assert.ok(linea, `no se encontró ${fn} en mock.ts`);
-        assert.ok(!/\bIVA\b/.test(linea), `${fn} volvió a calcular con la constante IVA`);
+        assert.ok(quote.includes(`export const ${fn} =`), `no se encontró ${fn} en lib/quote.ts`);
     }
-    assert.ok(mock.includes('calculateDocumentTotals'),
-        'mock.ts debe calcular los totales con el motor compartido');
+    assert.ok(!/\bconst\s+IVA\b|\b0\.16\b/.test(quote),
+        'lib/quote.ts volvió a declarar una tasa fija de impuesto');
+    assert.ok(quote.includes('calculateDocumentTotals'),
+        'lib/quote.ts debe calcular los totales con el motor compartido');
 }
 // El editor de cotizaciones no puede volver a leer una tasa plana del DOM.
 {

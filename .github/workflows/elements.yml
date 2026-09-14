@@ -1,0 +1,56 @@
+name: Elements package
+
+# Candado del paquete público @flouviahq/elements: tipos, build, exports
+# congelados en api-report.json y resolución correcta en ESM/CJS. Solo corre
+# cuando cambia el paquete o este archivo; la app la cubre cord-reliability.
+
+on:
+  pull_request:
+    paths:
+      - "packages/elements/**"
+      - ".github/workflows/elements.yml"
+  push:
+    branches: [main]
+    paths:
+      - "packages/elements/**"
+      - ".github/workflows/elements.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: elements-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: packages/elements
+
+jobs:
+  verify:
+    name: Types, build and public API
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: packages/elements/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Public exports match api-report.json
+        run: npm run check-exports
+      # Ambas herramientas están fijadas en devDependencies; npx usa esa versión.
+      - name: Are the Types Wrong?
+        run: npx --no-install attw --pack .
+      - name: publint
+        run: npx --no-install publint
