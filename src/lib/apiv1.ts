@@ -6,11 +6,23 @@
 
 import type { Quote } from './queries';
 import { publicDocumentUrl } from './public-links';
+import { reqIp } from './db';
+import type { ApiAuth } from './apikey';
+import type { ActionContext, ActionOutcome } from './actions/outcome';
 
 export function ok(data: unknown, meta?: Record<string, unknown>): Response {
     return new Response(JSON.stringify(meta ? { data, meta } : { data }), {
         status: 200, headers: { 'Content-Type': 'application/json' },
     });
+}
+
+export function fromOutcome(outcome: ActionOutcome): Response {
+    if (outcome.status === 200) return ok(outcome.body);
+    return new Response(JSON.stringify(outcome.body), { status: outcome.status, headers: { 'Content-Type': 'application/json' } });
+}
+
+export function apiContext(request: Request, auth: ApiAuth): ActionContext {
+    return { orgId: auth.orgId, ip: reqIp(request), origin: new URL(request.url).origin, actor: `api:${auth.keyId}`, source: 'api' };
 }
 
 export function fail(error: string, code: string, status = 400): Response {

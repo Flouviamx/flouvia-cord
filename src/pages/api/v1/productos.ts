@@ -4,17 +4,15 @@
 export const prerender = false;
 
 import { withApiAuth } from '../../../lib/apikey';
-import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../../lib/db';
 import { getProductos } from '../../../lib/queries';
-import { ok, fail, pageParams, readJsonBody } from '../../../lib/apiv1';
-import { requireResourceCapacity, resourceLimitError } from '../../../lib/org-entitlements';
+import { apiContext, fromOutcome, ok, pageParams, readJsonBody } from '../../../lib/apiv1';
+import { createProduct } from '../../../lib/actions/products';
 
 export const GET = withApiAuth('read', async ({ url }, auth) => {
     const all = await getProductos();
     const { limit, offset } = pageParams(url);
     const page = all.slice(offset, offset + limit);
-    // Las llaves publicables (pk_) se exponen en el navegador: NUNCA reveles el
-    // costo (margen) del catálogo. Solo las secretas (backend) ven el costo.
+    // Una llave publicable vive en el navegador: nunca expone el costo.
     const data = auth.type === 'publishable'
         ? page.map(({ costo, ...rest }) => rest)
         : page;
@@ -24,31 +22,5 @@ export const GET = withApiAuth('read', async ({ url }, auth) => {
 export const POST = withApiAuth('write', async ({ request }, auth) => {
     const body = await readJsonBody(request);
     if (body instanceof Response) return body;
-
-    const nombre = String(body.nombre ?? '').trim();
-    if (!nombre) return fail('El nombre del producto es obligatorio', 'invalid_request', 400);
-
-    const p = {
-        sku: String(body.sku ?? '').trim().toUpperCase() || null,
-        nombre,
-        unidad: String(body.unidad ?? '').trim() || 'pieza',
-        precio: Math.max(0, Number(body.precio) || 0),
-        activo: body.activo === undefined ? true : Boolean(body.activo),
-    };
-
-    const orgId = await getActiveOrgId();
-    const capacityDenied = await requireResourceCapacity(orgId, 'products');
-    if (capacityDenied) return capacityDenied;
-    let row: any;
-    try {
-        const [rows] = await withOrgTx(orgId, sql`
-            insert into productos (org_id, sku, nombre, unidad, precio_lista, activo)
-            values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.precio}, ${p.activo})
-            returning id`);
-        row = rows[0];
-    } catch (error) {
-        return resourceLimitError(error) ?? fail('No se pudo crear el producto.', 'server_error', 500);
-    }
-    await logAudit(orgId, { accion: 'producto.creado', entidad: 'producto', entidad_id: row.id as string, detalle: `${p.nombre} (vía API)`, ip: reqIp(request), actor: `api:${auth.keyId}` });
-    return ok({ id: row.id });
+    return fromOutcome(await createProduct(apiContext(request, auth), body));
 });

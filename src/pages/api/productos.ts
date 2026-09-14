@@ -5,45 +5,15 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
-import { requirePerm, normVolumen } from '../../lib/queries';
-import { requireResourceCapacity, resourceLimitError } from '../../lib/org-entitlements';
-
-function clean(body: any) {
-    return {
-        sku: String(body.sku ?? '').trim().toUpperCase() || null,
-        nombre: String(body.nombre ?? '').trim(),
-        unidad: String(body.unidad ?? '').trim() || 'pieza',
-        descripcion: String(body.descripcion ?? '').trim() || null,
-        precio: Math.max(0, Number(body.precio) || 0),
-        costo: Math.max(0, Number(body.costo) || 0),
-        activo: body.activo === undefined ? true : Boolean(body.activo),
-        // Matriz de precios por volumen — saneada y ordenada por min asc.
-        preciosVolumen: normVolumen(body.precios_volumen),
-    };
-}
+import { requirePerm } from '../../lib/queries';
+import { createProduct, deleteProduct, updateProduct } from '../../lib/actions/products';
+import { outcomeResponse, sessionContext } from '../../lib/actions/http';
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('productos'); if (denied) return denied;
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
-    const p = clean(body);
-    if (!p.nombre) return json({ error: 'El nombre del producto es obligatorio' }, 400);
-
-    const orgId = await getActiveOrgId();
-    const capacityDenied = await requireResourceCapacity(orgId, 'products');
-    if (capacityDenied) return capacityDenied;
-    let row: any;
-    try {
-        [[row]] = await withOrgTx(orgId, sql`
-            insert into productos (org_id, sku, nombre, unidad, descripcion, precio_lista, costo, activo, precios_volumen)
-            values (${orgId}, ${p.sku}, ${p.nombre}, ${p.unidad}, ${p.descripcion}, ${p.precio}, ${p.costo}, ${p.activo}, ${JSON.stringify(p.preciosVolumen)})
-            returning id`);
-    } catch (error) {
-        return resourceLimitError(error) ?? json({ error: 'No se pudo crear el producto.' }, 500);
-    }
-    await logAudit(orgId, { accion: 'producto.creado', entidad: 'producto', entidad_id: row.id as string, detalle: p.nombre, ip: reqIp(request) });
-    return json({ id: row.id });
+    return outcomeResponse(await createProduct(await sessionContext(request), body));
 };
 
 export const PATCH: APIRoute = async ({ request }) => {
@@ -51,19 +21,7 @@ export const PATCH: APIRoute = async ({ request }) => {
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     if (!body.id) return json({ error: 'Falta id' }, 400);
-    const p = clean(body);
-    if (!p.nombre) return json({ error: 'El nombre del producto es obligatorio' }, 400);
-
-    const orgId = await getActiveOrgId();
-    const [rows] = await withOrgTx(orgId, sql`
-        update productos set
-            sku = ${p.sku}, nombre = ${p.nombre}, unidad = ${p.unidad}, descripcion = ${p.descripcion},
-            precio_lista = ${p.precio}, costo = ${p.costo}, activo = ${p.activo},
-            precios_volumen = ${JSON.stringify(p.preciosVolumen)}
-        where id = ${body.id} and org_id = ${orgId}
-        returning id`);
-    if (!rows.length) return json({ error: 'Producto no encontrado' }, 404);
-    return json({ ok: true });
+    return outcomeResponse(await updateProduct(await sessionContext(request), String(body.id), body));
 };
 
 export const DELETE: APIRoute = async ({ request }) => {
@@ -71,12 +29,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     if (!body.id) return json({ error: 'Falta id' }, 400);
-
-    const orgId = await getActiveOrgId();
-    const [rows] = await withOrgTx(orgId, sql`delete from productos where id = ${body.id} and org_id = ${orgId} returning id, nombre`);
-    if (!rows.length) return json({ error: 'Producto no encontrado' }, 404);
-    await logAudit(orgId, { accion: 'producto.eliminado', entidad: 'producto', entidad_id: body.id, detalle: rows[0].nombre as string, ip: reqIp(request) });
-    return json({ ok: true });
+    return outcomeResponse(await deleteProduct(await sessionContext(request), String(body.id)));
 };
 
 function json(data: unknown, status = 200) {

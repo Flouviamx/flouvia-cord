@@ -16,6 +16,8 @@ vi.mock('../src/lib/db', () => ({
         return [];
     }),
     getActiveOrgId: async () => 'org-a',
+    reqIp: () => '127.0.0.1',
+    logAudit: vi.fn(),
 }));
 vi.mock('../src/lib/queries', () => ({ requirePermAny: m.perm }));
 vi.mock('../src/lib/context', () => ({ currentLocale: () => 'es' }));

@@ -1,4 +1,4 @@
-import { sql, logAudit, withOrgTx, type DbQuery } from '../db';
+import { sql, withOrgTx, type DbQuery } from '../db';
 import { notifyQuoteSent } from '../email';
 import { invalidateMoneyCaches } from '../queries';
 import { dispatchQuoteEvent, dispatchQuoteEventFrom, type WebhookEvent } from '../webhooks';
@@ -13,19 +13,9 @@ import { taxCatalogFor, TaxCatalogUnavailableError } from '../impuestos-db';
 import { trackServer } from '../posthog-server';
 import { normalizeCurrency } from '../currency';
 import { FXService, FXUnavailableError } from '../fx/FXService';
+import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse } from './outcome';
 
-export interface ActionContext {
-    orgId: string;
-    origin: string;
-    ip?: string | null;
-    actor?: string;
-    source?: 'manual' | 'api' | 'mcp';
-}
-
-export interface ActionOutcome {
-    status: number;
-    body: Record<string, unknown>;
-}
+export type { ActionContext, ActionOutcome };
 
 export type QuotePermission = 'cotizar' | 'aprobar';
 
@@ -50,13 +40,9 @@ export function quoteActionPermission(action: string): QuotePermission {
     return APROBAR_ACTIONS.has(action) ? 'aprobar' : 'cotizar';
 }
 
-const done = (status: number, body: Record<string, unknown>): ActionOutcome => ({ status, body });
-const fromResponse = async (res: Response): Promise<ActionOutcome> => done(res.status, await res.json());
-
 export async function runQuoteAction(ctx: ActionContext, id: string, input: Record<string, any>): Promise<ActionOutcome> {
     const { orgId } = ctx;
-    const audit = (accion: string, detalle: string) =>
-        logAudit(orgId, { accion, entidad: 'cotizacion', entidad_id: id, detalle, ip: ctx.ip ?? undefined, ...(ctx.actor ? { actor: ctx.actor } : {}) });
+    const audit = (accion: string, detalle: string) => auditAction(ctx, accion, 'cotizacion', id, detalle);
 
     if (input.action === 'reply') {
         const mensaje = String(input.mensaje ?? '').trim().slice(0, 800);
