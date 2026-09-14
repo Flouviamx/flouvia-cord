@@ -17,6 +17,7 @@ import { reqContext } from './context';
 import { flushUsageReservation, reserveUsage } from './billing';
 import { rateLimit, tooMany } from './ratelimit';
 import { apiKeyLimit } from './permissions';
+import { runIdempotent } from './api-idempotency';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -192,11 +193,13 @@ export function withApiAuth(
         if (auth instanceof Response) return auth;
         const limited = await checkApiKeyRateLimit(auth);
         if (limited) return limited;
-        const meteringError = await meterApiUsage(auth);
-        if (meteringError) return meteringError;
-        // userId null → el carril de usuario queda inactivo; orgId manda la tenancy.
         const t0 = Date.now();
-        const res = await reqContext.run({ userId: null, orgId: auth.orgId, actor: `api:${auth.keyId}` }, () => handler(ctx, auth));
+        const res = await runIdempotent(auth, ctx.request, async () => {
+            const meteringError = await meterApiUsage(auth);
+            if (meteringError) return meteringError;
+            // userId null → el carril de usuario queda inactivo; orgId manda la tenancy.
+            return reqContext.run({ userId: null, orgId: auth.orgId, actor: `api:${auth.keyId}` }, () => handler(ctx, auth));
+        });
         // Bitácora del request (best-effort: nunca frena ni rompe la respuesta).
         void logApiRequest(auth, ctx.request, res.status, Date.now() - t0);
         return res;

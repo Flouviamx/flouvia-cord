@@ -4787,6 +4787,76 @@ $$;
 
 revoke all on function cord_resolve_inbound_email(text, text) from public;
 
+-- BEGIN domain-events
+create table if not exists domain_events (
+  id          uuid primary key default gen_random_uuid(),
+  org_id      uuid not null references orgs(id) on delete cascade,
+  type        text not null check (type ~ '^[a-z_]+\.[a-z_]+$'),
+  object      text not null,
+  object_id   uuid,
+  data        jsonb not null default '{}'::jsonb,
+  actor       text not null,
+  caused_by   uuid references domain_events(id) on delete set null,
+  depth       smallint not null default 0 check (depth between 0 and 10),
+  created_at  timestamptz not null default now()
+);
+create index if not exists idx_domain_events_org_created on domain_events(org_id, created_at desc, id desc);
+create index if not exists idx_domain_events_org_object on domain_events(org_id, object, object_id, created_at desc);
+
+create or replace function domain_events_append_only() returns trigger
+language plpgsql as $$
+begin
+  raise exception 'domain_events es append-only';
+end $$;
+drop trigger if exists trg_domain_events_append_only on domain_events;
+create trigger trg_domain_events_append_only before update on domain_events
+  for each row execute function domain_events_append_only();
+
+alter table domain_events enable row level security;
+alter table domain_events force row level security;
+drop policy if exists rls_domain_events on domain_events;
+create policy rls_domain_events on domain_events
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant select, insert, delete on domain_events to cord_app;
+  end if;
+end $$;
+-- END domain-events
+
+-- BEGIN api-idempotency
+create table if not exists api_idempotency (
+  id               uuid primary key default gen_random_uuid(),
+  org_id           uuid not null references orgs(id) on delete cascade,
+  key_id           uuid not null references api_keys(id) on delete cascade,
+  idempotency_key  text not null check (length(idempotency_key) between 1 and 255),
+  method           text not null,
+  path             text not null,
+  request_hash     text not null check (request_hash ~ '^[0-9a-f]{64}$'),
+  status           int,
+  response_body    text,
+  created_at       timestamptz not null default now(),
+  completed_at     timestamptz,
+  unique (key_id, idempotency_key)
+);
+create index if not exists idx_api_idempotency_created on api_idempotency(created_at);
+
+alter table api_idempotency enable row level security;
+alter table api_idempotency force row level security;
+drop policy if exists rls_api_idempotency on api_idempotency;
+create policy rls_api_idempotency on api_idempotency
+  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
+  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
+
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'cord_app') then
+    grant select, insert, update, delete on api_idempotency to cord_app;
+  end if;
+end $$;
+-- END api-idempotency
+
 -- Conciliación de facturas: pagos brutos, notas emitidas y devoluciones efectivas.
 -- amount_paid conserva los cobros históricos; un crédito fiscal no es dinero recibido.
 alter table documentos_fiscales add column if not exists amount_credited numeric not null default 0;
@@ -4862,42 +4932,3 @@ do $$ begin
     grant execute on function cord_resolve_customer_domain(text) to cord_app;
   end if;
 end $$;
-
--- BEGIN domain-events
-create table if not exists domain_events (
-  id          uuid primary key default gen_random_uuid(),
-  org_id      uuid not null references orgs(id) on delete cascade,
-  type        text not null check (type ~ '^[a-z_]+\.[a-z_]+$'),
-  object      text not null,
-  object_id   uuid,
-  data        jsonb not null default '{}'::jsonb,
-  actor       text not null,
-  caused_by   uuid references domain_events(id) on delete set null,
-  depth       smallint not null default 0 check (depth between 0 and 10),
-  created_at  timestamptz not null default now()
-);
-create index if not exists idx_domain_events_org_created on domain_events(org_id, created_at desc, id desc);
-create index if not exists idx_domain_events_org_object on domain_events(org_id, object, object_id, created_at desc);
-
-create or replace function domain_events_append_only() returns trigger
-language plpgsql as $$
-begin
-  raise exception 'domain_events es append-only';
-end $$;
-drop trigger if exists trg_domain_events_append_only on domain_events;
-create trigger trg_domain_events_append_only before update on domain_events
-  for each row execute function domain_events_append_only();
-
-alter table domain_events enable row level security;
-alter table domain_events force row level security;
-drop policy if exists rls_domain_events on domain_events;
-create policy rls_domain_events on domain_events
-  using (org_id = nullif(current_setting('app.org_id', true), '')::uuid)
-  with check (org_id = nullif(current_setting('app.org_id', true), '')::uuid);
-
-do $$ begin
-  if exists (select 1 from pg_roles where rolname = 'cord_app') then
-    grant select, insert, delete on domain_events to cord_app;
-  end if;
-end $$;
--- END domain-events
