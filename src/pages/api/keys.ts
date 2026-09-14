@@ -11,6 +11,7 @@ import { requirePerm } from '../../lib/queries';
 import { apiKeyLimit, planLabel } from '../../lib/permissions';
 import { trackServer } from '../../lib/posthog-server';
 import { getEntitlementContext } from '../../lib/org-entitlements';
+import { isUuid } from '../../lib/actions/outcome';
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
@@ -81,9 +82,12 @@ export const DELETE: APIRoute = async ({ request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     const id = String(body.id ?? '');
     if (!id) return json({ error: 'Falta el id de la llave' }, 400);
+    if (!isUuid(id)) return json({ error: 'Llave no encontrada' }, 404);
 
     const orgId = await getActiveOrgId();
-    await withOrgTx(orgId, sql`update api_keys set revoked_at = now() where id = ${id} and org_id = ${orgId} and revoked_at is null`);
+    await withOrgTx(orgId,
+        sql`update api_keys set revoked_at = now() where id = ${id} and org_id = ${orgId} and revoked_at is null`,
+        sql`update webhooks set activo = false where org_id = ${orgId} and created_by_key = ${id}`);
     await logAudit(orgId, { accion: 'apikey.revocada', entidad: 'api_key', entidad_id: id, detalle: 'Revocó una API key', ip: reqIp(request) });
     return json({ ok: true });
 };

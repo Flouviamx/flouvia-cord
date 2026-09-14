@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { PGlite } from '@electric-sql/pglite';
 import { readFileSync } from 'node:fs';
 
-const m = vi.hoisted(() => ({ db: null as any, enqueue: vi.fn(async () => []) }));
+const m = vi.hoisted(() => ({ db: null as any, enqueue: vi.fn(async (..._args: any[]) => [] as string[]) }));
 
 vi.mock('../src/lib/db', () => ({
     sql: (s: TemplateStringsArray, ...values: any[]) => ({ text: s.reduce((text, part, i) => text + (i ? `$${i}` : '') + part, ''), values }),

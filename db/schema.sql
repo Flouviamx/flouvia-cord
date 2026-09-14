@@ -4857,6 +4857,11 @@ do $$ begin
 end $$;
 -- END api-idempotency
 
+-- BEGIN webhooks-api-owner
+alter table webhooks add column if not exists created_by_key uuid references api_keys(id) on delete set null;
+create index if not exists idx_webhooks_org_key on webhooks(org_id, created_by_key) where created_by_key is not null;
+-- END webhooks-api-owner
+
 -- Conciliación de facturas: pagos brutos, notas emitidas y devoluciones efectivas.
 -- amount_paid conserva los cobros históricos; un crédito fiscal no es dinero recibido.
 alter table documentos_fiscales add column if not exists amount_credited numeric not null default 0;

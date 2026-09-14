@@ -10,15 +10,14 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { randomBytes } from 'node:crypto';
 import { sql, getActiveOrgId, logAudit, reqIp, withOrgTx } from '../../lib/db';
 import { requirePerm, getWebhookDeliveries } from '../../lib/queries';
-import { webhookLimit, planLabel } from '../../lib/permissions';
-import { WEBHOOK_EVENT_IDS, sendTestEvent, redeliver, reenableAndRetryRecent, rotateSecret } from '../../lib/webhooks';
+import { sendTestEvent, redeliver, reenableAndRetryRecent, rotateSecret } from '../../lib/webhooks';
 import { validateWebhookUrl } from '../../lib/ssrf';
 import { rateLimit, tooMany } from '../../lib/ratelimit';
-import { encryptRequiredSecret } from '../../lib/crypto-secret';
-import { getEntitlementContext, requireEntitlement } from '../../lib/org-entitlements';
+import { requireEntitlement } from '../../lib/org-entitlements';
+import { cleanWebhookEvents, createWebhookEndpoint, deleteWebhookEndpoint } from '../../lib/actions/webhooks';
+import { outcomeResponse, sessionContext } from '../../lib/actions/http';
 
 export const GET: APIRoute = async ({ url }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
@@ -30,12 +29,6 @@ export const GET: APIRoute = async ({ url }) => {
     const deliveries = await getWebhookDeliveries(webhookId);
     return json({ deliveries });
 };
-
-function cleanEventos(v: unknown): string[] {
-    if (!Array.isArray(v)) return [];
-    return [...new Set(v.map(String).filter((e) => WEBHOOK_EVENT_IDS.includes(e)))];
-}
-
 
 export const POST: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes'); if (denied) return denied;
@@ -86,44 +79,7 @@ export const POST: APIRoute = async ({ request }) => {
         return json(r);
     }
 
-    const url = String(body.url ?? '').trim();
-    const urlCheck = validateWebhookUrl(url);
-    if (!urlCheck.ok) return json({ error: urlCheck.error }, 400);
-
-    const orgId = await getActiveOrgId();
-    // Límite por plan (free también tiene, pero poquito). Contamos los existentes.
-    const plan = (await getEntitlementContext(orgId)).effectivePlan;
-    const limite = webhookLimit(plan as string);
-
-    const eventos = cleanEventos(body.eventos);
-    const secret = `whsec_${randomBytes(24).toString('hex')}`;
-    let secretEnc: string;
-    try {
-        secretEnc = encryptRequiredSecret(secret);
-    } catch {
-        return json({ error: 'El servicio de cifrado no está disponible' }, 503);
-    }
-
-    let row: any;
-    try {
-        const [, inserted] = await withOrgTx(
-            orgId,
-            sql`select pg_advisory_xact_lock(hashtextextended(${'webhooks:' + orgId}, 0))`,
-            sql`
-                insert into webhooks (org_id, url, eventos, secret, secret_enc)
-                select ${orgId}, ${url}, ${JSON.stringify(eventos)}::jsonb, null, ${secretEnc}
-                 where (select count(*) from webhooks where org_id = ${orgId}) < ${limite}
-                returning id`,
-        );
-        [row] = inserted;
-    } catch {
-        return json({ error: 'No se pudo crear. ¿Corriste la migración (npm run db:migrate)?' }, 500);
-    }
-    if (!row) {
-        return json({ error: `Tu plan ${planLabel(plan as string)} permite ${limite} webhook${limite === 1 ? '' : 's'}. Elimina uno o sube de plan para agregar más.` }, 403);
-    }
-    await logAudit(orgId, { accion: 'webhook.creado', entidad: 'webhook', entidad_id: row.id as string, detalle: url, ip: reqIp(request) });
-    return json({ id: row.id, secret });
+    return outcomeResponse(await createWebhookEndpoint(await sessionContext(request), body));
 };
 
 export const PATCH: APIRoute = async ({ request }) => {
@@ -163,7 +119,7 @@ export const PATCH: APIRoute = async ({ request }) => {
         }
     }
     if (Array.isArray(body.eventos)) {
-        await withOrgTx(orgId, sql`update webhooks set eventos = ${JSON.stringify(cleanEventos(body.eventos))}::jsonb where id = ${id} and org_id = ${orgId}`);
+        await withOrgTx(orgId, sql`update webhooks set eventos = ${JSON.stringify(cleanWebhookEvents(body.eventos))}::jsonb where id = ${id} and org_id = ${orgId}`);
         cambios.push('eventos actualizados');
     }
     if (typeof body.url === 'string') {
@@ -187,12 +143,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
     const id = String(body.id ?? '');
     if (!id) return json({ error: 'Falta id' }, 400);
-
-    const orgId = await getActiveOrgId();
-    const [rows] = await withOrgTx(orgId, sql`delete from webhooks where id = ${id} and org_id = ${orgId} returning url`);
-    if (!rows.length) return json({ error: 'Webhook no encontrado' }, 404);
-    await logAudit(orgId, { accion: 'webhook.eliminado', entidad: 'webhook', entidad_id: id, detalle: rows[0].url as string, ip: reqIp(request) });
-    return json({ ok: true });
+    return outcomeResponse(await deleteWebhookEndpoint(await sessionContext(request), id));
 };
 
 function json(data: unknown, status = 200) {

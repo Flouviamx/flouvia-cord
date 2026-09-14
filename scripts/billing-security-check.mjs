@@ -79,7 +79,7 @@ check(read('src/pages/api/cotizaciones/[id].ts').includes('runQuoteAction('), 'L
 const apiKeyAuth = read('src/lib/apikey.ts');
 const apiKeys = read('src/pages/api/keys.ts');
 const outgoingWebhooks = read('src/lib/webhooks.ts');
-const webhooksApi = read('src/pages/api/webhooks.ts');
+const webhooksApi = read('src/lib/actions/webhooks.ts');
 const vercel = read('vercel.json');
 
 check(billing.includes('envios: 5') && /starter:\s*\{[^}]*envios:\s*null/.test(billing), 'El tope de envíos/mes debe ser exclusivo de Gratis (5), sin número en el resto de los planes.');
@@ -130,7 +130,8 @@ check(quoteApi.includes("'international_invoicing'") && read('src/lib/fiscal/inv
 check(apiKeyAuth.includes('active_rank') && apiKeyAuth.includes('subscription_key_limit'), 'Las API keys excedentes deben apagarse tras downgrade.');
 check(apiKeys.includes("pg_advisory_xact_lock(hashtextextended(${'api_keys:' + orgId}"), 'La creación concurrente de API keys debe serializarse.');
 check(outgoingWebhooks.includes('position <= ${allowance}') && outgoingWebhooks.includes('webhookLimit(String(planRow'), 'Los webhooks excedentes deben apagarse tras downgrade.');
-check(webhooksApi.includes("pg_advisory_xact_lock(hashtextextended(${'webhooks:' + orgId}"), 'La creación concurrente de webhooks debe serializarse.');
+check(webhooksApi.includes("pg_advisory_xact_lock(hashtextextended(${'webhooks:' + ctx.orgId}"), 'La creación concurrente de webhooks debe serializarse.');
+check(read('src/pages/api/webhooks.ts').includes('createWebhookEndpoint(') && read('src/pages/api/v1/webhooks.ts').includes('createWebhookEndpoint('), 'App y API deben crear webhooks con la misma acción.');
 check(vercel.includes('/api/cron/billing-reconcile'), 'Falta programar la reconciliación de Billing.');
 
 function sourceFiles(dir) {

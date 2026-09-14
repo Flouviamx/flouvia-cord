@@ -31,6 +31,8 @@ describe('llave publicable (pk_): allowlist exacta de método + ruta', () => {
         ['POST', '/api/v1/facturas/cotizaciones'],
         ['POST', '/api/mcp'],
         ['GET', '/api/v1/events'],
+        ['POST', '/api/v1/webhooks'],
+        ['DELETE', '/api/v1/webhooks/abc'],
         // Variantes que no son la ruta canónica fallan cerradas.
         ['POST', '/api/v1/cotizaciones-extra'],
         ['POST', '//api/v1/cotizaciones'],
