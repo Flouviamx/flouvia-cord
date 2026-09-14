@@ -3,12 +3,12 @@ import { getLangFromUrl, publicPath } from '../../i18n/utils';
 const lang = getLangFromUrl(Astro.url);
 const en = lang === 'en';
 const steps = en ? [
-    { plan: 'Free', title: 'A fresh allowance every month.', text: 'Send 5 quotes each month and keep up to 5 active at a time. Your logo and colors are included, alongside “Powered by Cord”.' },
-    { plan: 'Starter', title: 'Make your brand the focus.', text: 'Remove “Powered by Cord”, personalize your emails and send without a monthly cap. Keep up to 50 active quotes.' },
+    { plan: 'Free', title: 'A fresh allowance every month.', text: 'Send 5 quotes and issue 10 commercial invoices each month, with up to 5 active quotes at a time. Your logo and colors are included, alongside “Powered by Cord”.' },
+    { plan: 'Starter', title: 'Make your brand the focus.', text: 'Remove “Powered by Cord”, send without a monthly cap and issue unlimited commercial invoices, plus 30 tax-compliant invoices a month where Cord supports them.' },
     { plan: 'Professional', title: 'Bring your team and your follow-up together.', text: 'Unlimited quotes, 5 included users, live client attention and a collections workspace. See what needs a follow-up and what is ready to collect.' },
 ] : [
-    { plan: 'Gratis', title: 'Un nuevo cupo cada mes.', text: 'Envía 5 cotizaciones al mes y mantén hasta 5 activas a la vez. Incluye tu logo y colores, junto al sello “Powered by Cord”.' },
-    { plan: 'Starter', title: 'Dale el protagonismo a tu marca.', text: 'Quita “Powered by Cord”, personaliza tus correos y envía sin límite mensual. Mantén hasta 50 cotizaciones activas.' },
+    { plan: 'Gratis', title: 'Un nuevo cupo cada mes.', text: 'Envía 5 cotizaciones y emite 10 facturas comerciales al mes, con hasta 5 cotizaciones activas a la vez. Incluye tu logo y colores, junto al sello “Powered by Cord”.' },
+    { plan: 'Starter', title: 'Dale el protagonismo a tu marca.', text: 'Quita “Powered by Cord”, envía sin límite mensual y emite facturas comerciales ilimitadas, más 30 facturas con validez fiscal al mes donde Cord está habilitado.' },
     { plan: 'Profesional', title: 'Reúne a tu equipo y el seguimiento.', text: 'Cotizaciones ilimitadas, 5 usuarios incluidos, atención del cliente en vivo y un módulo de cobranza. Ve qué necesita seguimiento y qué está listo para cobrar.' },
 ];
 ---
