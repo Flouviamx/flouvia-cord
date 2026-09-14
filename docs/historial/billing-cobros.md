@@ -1534,7 +1534,9 @@ Auditoría de precios con André. Sustituye las cuotas del 2026-09-09.
   e IA como ilimitados en la fila de excedentes. Tarifas MXN de excedentes explícitas
   en vez de USD × 20. CSD y facturas recurrentes reflejan su gate real. El inglés
   pierde tres filas de presupuestos inexistentes y la promesa de firma legalmente
-  vinculante. Dominio propio sigue sin anunciarse: está detrás de un interruptor.
+  vinculante. "Cobertura cambiaria" pasa a "tipo de cambio congelado al cotizar".
+- **Dominio propio.** André confirmó que está operativo: se anuncia en Profesional
+  (card, comparativa, FAQ y ayuda ES/EN).
 
-Requiere `npm run db:migrate` antes de desplegar (columna `docs`). Sin cambios en
+Columna `uso_periodo.docs` verificada en la base configurada (integer, default 0). Sin cambios en
 Stripe: precios base, tarifas medidas y monedas se conservan.

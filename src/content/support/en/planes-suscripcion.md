@@ -78,8 +78,8 @@ card and view charges and receipts.
 
 Data is preserved after a downgrade; features and resources beyond the new
 contract stop operating. Removing Cord branding requires Starter or above. Public
-surfaces restore the branding when the entitlement no longer applies. Custom link
-domains are not part of this update; activation is communicated separately.
+surfaces restore the branding when the entitlement no longer applies. From
+Professional, links can be served from your own subdomain set up in Settings › Domain.
 
 ## Subscription documents
 

@@ -98,7 +98,7 @@ export const PLANES: Plan[] = [
             '5 usuarios incluidos',
             '200 facturas fiscales + 50 armados con IA al mes',
             'Cobranza, facturas recurrentes y flujo a 90 días',
-            'Seguimiento en vivo de tus propuestas',
+            'Seguimiento en vivo y dominio propio para tus links',
         ],
     },
     {
@@ -250,6 +250,7 @@ export const COMPARATIVA: CompareGroup[] = [
             { label: 'Importación masiva (CSV)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Quitar marca “Powered by Cord”', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Personalizar color y logo', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Dominio propio para tus links (cotizaciones.tuempresa.com)', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Correos desde tu dominio (SMTP)', free: false, starter: false, pro: false, scale: 'Próximamente', developer: 'Próximamente' },
             { label: 'Multi-moneda (14 divisas ofrecidas)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
@@ -335,7 +336,7 @@ export const FAQ_PRECIOS: { q: string; a: string }[] = [
     },
     {
         q: '¿Puedo quitar la marca de Cord y usar mi dominio?',
-        a: 'Puedes quitar “Powered by Cord” desde Starter; Profesional y Scale también lo incluyen. Tu logo y tus colores están disponibles incluso en Gratis. Enviar correos desde tu dominio (SMTP) llegará próximamente a Scale. Usar un dominio propio para los enlaces de cotización es una capacidad distinta y actualmente no está disponible.',
+        a: 'Puedes quitar “Powered by Cord” desde Starter; Profesional y Scale también lo incluyen. Tu logo y tus colores están disponibles incluso en Gratis. Enviar correos desde tu dominio (SMTP) llegará próximamente a Scale. Desde Profesional puedes servir tus enlaces desde un subdominio propio, como cotizaciones.tuempresa.com, configurándolo en Ajustes › Dominio.',
     },
     {
         q: '¿Gratis tiene un límite por el dinero que cobro?',

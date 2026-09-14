@@ -2,12 +2,10 @@
 
 ## Estado de entrega
 
-Implementación local, detrás de un interruptor apagado por defecto. No desplegada
-ni verificada con DNS real. La migración aditiva ya se aplicó a la base configurada
-en el entorno local; faltan la credencial del servicio, el despliegue coordinado y
-una prueba de aceptación con un dominio controlado y una organización elegible.
-El copy comercial continúa indicando que no está disponible hasta completar esa
-prueba. No confundir código construido con servicio activo.
+Disponible en Profesional o superior (confirmado por André el 2026-09-14). La
+tabla de `/precios`, la card de Profesional, las FAQs y la ayuda lo anuncian desde
+esa fecha. `domainsEnabled()` sigue siendo el interruptor: si se apaga, la API
+responde 503 y el copy comercial debe volver a retirarse.
 
 ## Contrato
 

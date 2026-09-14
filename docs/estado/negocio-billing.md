@@ -284,7 +284,7 @@ Las pruebas y simulaciones liberan consumo. El acceso a documentos ya emitidos y
 sus pagos no se bloquea al agotar cuota ni por downgrade. Las nuevas emisiones
 fiscales sí requieren Starter, incluyendo nuevos egresos fiscales.
 
-Requiere la columna `uso_periodo.docs` (`npm run db:migrate`) antes de desplegar. Precios base, monedas,
+Usa la columna `uso_periodo.docs`, ya presente en la base configurada (verificado 2026-09-14). Precios base, monedas,
 identificadores Stripe y tarifas de excedente se conservan. Publicación pendiente;
 no se cambiaron suscripciones ni consumo histórico. Decisión registrada una sola
 vez en `../historial/billing-cobros.md` (2026-09-09).

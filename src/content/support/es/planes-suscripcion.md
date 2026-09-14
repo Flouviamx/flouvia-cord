@@ -79,8 +79,8 @@ tarjeta, cobros y comprobantes.
 Los datos se conservan después de bajar de plan; las funciones y recursos que
 excedan el nuevo contrato dejan de operar. La eliminación de la marca de Cord
 requiere Starter o superior: si deja de corresponder, vuelve a mostrarse en las
-superficies públicas. Un dominio propio para enlaces no está incluido en esta
-actualización; su activación se comunica por separado.
+superficies públicas. Desde Profesional, los enlaces pueden servirse desde un subdominio propio
+configurado en Ajustes › Dominio.
 
 ## Comprobantes de la suscripción
 

@@ -63,7 +63,7 @@ export const PLANES_EN: Plan[] = [
             '5 users included',
             '200 tax invoices + 50 AI generations/mo',
             'Collections, recurring invoices and 90-day cash flow',
-            'Live tracking of your proposals',
+            'Live tracking and your own domain for links',
         ],
     },
     {
@@ -194,6 +194,7 @@ export const COMPARATIVA_EN: CompareGroup[] = [
             { label: 'Bulk import (CSV)', free: true, starter: true, pro: true, scale: true, developer: true },
             { label: 'Remove "Powered by Cord" branding', free: false, starter: true, pro: true, scale: true, developer: true },
             { label: 'Customize color and logo', free: true, starter: true, pro: true, scale: true, developer: true },
+            { label: 'Your own domain for links (quotes.yourcompany.com)', free: false, starter: false, pro: true, scale: true, developer: true },
             { label: 'Emails from your domain (SMTP)', free: false, starter: false, pro: false, scale: 'Coming soon', developer: 'Coming soon' },
             { label: 'Multi-currency (14 offered currencies)', free: true, starter: true, pro: true, scale: true, developer: true },
         ],
@@ -279,7 +280,7 @@ export const FAQ_PRECIOS_EN: { q: string; a: string }[] = [
     },
     {
         q: 'Can I remove Cord branding and use my own domain?',
-        a: 'You can remove “Powered by Cord” from Starter onwards, including Professional and Scale. Your logo and colors are available even on Free. Sending email from your domain (SMTP) is coming soon to Scale. Hosting quote links on your own domain is a separate capability and is not currently available.',
+        a: 'You can remove “Powered by Cord” from Starter onwards, including Professional and Scale. Your logo and colors are available even on Free. Sending email from your domain (SMTP) is coming soon to Scale. From Professional you can serve your links from your own subdomain, such as quotes.yourcompany.com, set up in Settings › Domain.',
     },
     {
         q: 'Does Free limit how much money I can collect?',
