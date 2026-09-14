@@ -27,11 +27,12 @@
 // motivo escrito y la lista SOLO PUEDE ENCOGER: si un archivo listado deja de
 // violar, el script falla para obligar a quitarlo.
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { basename, join, relative } from 'node:path';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const API_DIR = join(ROOT, 'src/pages/api');
+const ACTIONS_DIR = join(ROOT, 'src/lib/actions');
 
 // ── Excepciones, con motivo. Solo pueden ENCOGER. ───────────────────────────
 const EXENTOS = new Map([
@@ -178,12 +179,28 @@ function archivos(dir) {
 const violaciones = [];
 const marcados = [];
 
+// Una acción de dominio que mueve dinero cumple el contrato en su archivo, y la
+// ruta que la importa hereda la obligación del rate limit.
+const accionesDinero = [];
+for (const ruta of existsSync(ACTIONS_DIR) ? archivos(ACTIONS_DIR) : []) {
+    const rel = relative(ROOT, ruta);
+    const crudo = readFileSync(ruta, 'utf8');
+    if (!CREA_DINERO.some((re) => re.test(crudo))) continue;
+    accionesDinero.push(new RegExp(`lib/actions/${basename(ruta).replace(/\.m?ts$/, '')}['"]`));
+    const codigo = enmascarar(crudo);
+    const faltan = [];
+    if (HACE_QUERY.test(codigo) && !CARRILES.test(codigo)) faltan.push('carril de tenencia');
+    if (CREA_OBJETO.some((re) => re.test(crudo)) && !IDEMPOTENCIA.test(crudo)) faltan.push('Idempotency-Key');
+    if (FUGA_MENSAJE.test(codigo)) faltan.push('fuga del mensaje del proveedor (regla 14)');
+    if (faltan.length) violaciones.push({ rel, faltan });
+}
+
 for (const ruta of archivos(API_DIR)) {
     const rel = relative(ROOT, ruta);
     const crudo = readFileSync(ruta, 'utf8');
     // La detección de "mueve dinero" se hace sobre el CRUDO: las rutas de la API
     // del proveedor viven dentro de strings, que el enmascarado borra.
-    if (!CREA_DINERO.some((re) => re.test(crudo))) continue;
+    if (!CREA_DINERO.some((re) => re.test(crudo)) && !accionesDinero.some((re) => re.test(crudo))) continue;
     marcados.push(rel);
     if (EXENTOS.has(rel)) continue;
 
