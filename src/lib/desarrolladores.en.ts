@@ -384,19 +384,19 @@ export function Cotizacion({ token }) {
         metaDescription: 'Cord emits signed webhooks (HMAC-SHA256) on every sales event — quote.sent, quote.approved, quote.paid — that you connect to Zapier, Make, n8n, or your backend. Available on every plan, no proprietary connectors to wait for.',
         plan: 'On every plan · webhooks capped by plan (Free 1 → Developer 100) · native Slack · free test keys for the API',
         stats: [
-            { valor: '6', countup: 6, label: 'events Cord emits: sent, viewed, approved, rejected, paid, invoiced' },
-            { valor: '1', countup: 1, label: 'HMAC-SHA256 signature per delivery (X-Cord-Signature), verifiable' },
+            { valor: '34', countup: 34, label: 'events: quotes, invoices, payments, clients, products, tasks and promises' },
+            { valor: '11', countup: 11, label: 'delivery attempts with backoff before an event is marked as failed' },
             { valor: '3', countup: 3, label: 'ways to integrate: outbound webhooks, REST API and MCP' },
         ],
         blocks: [
             {
                 eyebrow: 'OUTBOUND WEBHOOKS',
                 titulo: 'Your system reacts to every sales event.',
-                copy: 'Register a URL under Settings › Developers › Webhooks and pick the events you care about. When a quote is sent, viewed, approved, rejected, paid, or invoiced, Cord POSTs the JSON payload. Each delivery is signed with HMAC-SHA256 in the X-Cord-Signature header so you can verify it came from Cord. It\'s best-effort with one retry, and every attempt is logged so you can replay it.',
+                copy: 'Register a URL from the developer Workbench and pick the events you care about. When a quote is created, sent, approved, or paid, when an invoice is issued, or when a client, product, task, or payment promise changes, Cord POSTs the JSON payload. Each delivery is signed with HMAC-SHA256 and a timestamp so you can verify it came from Cord. If your server fails, Cord retries with backoff up to 11 times, and every attempt is logged so you can replay it.',
                 bullets: [
-                    'Header X-Cord-Signature: sha256=&lt;hmac of the raw body&gt; + X-Cord-Event',
-                    'Payload with id, folio, status, total, client and public link',
-                    'Delivery log with status, latency and a replay button in Settings',
+                    'Header X-Cord-Signature-V1: t=&lt;unix&gt;,v1=&lt;hmac&gt;, with replay protection',
+                    'Payload with id, folio, status, currency, total, client and public link',
+                    'Delivery log with status, latency and a replay button',
                 ],
             },
             {
@@ -405,20 +405,21 @@ export function Cotizacion({ token }) {
                 copy: 'Instead of locking you into a "native" connector per vendor, you point the webhook at a no-code platform (Zapier, Make, n8n) and from there reach thousands of apps —including SAP, Oracle, Salesforce, HubSpot or Notion— without us writing code for you. Want full control? Call the REST API directly. And if your team lives in Slack, that one is a native integration: alerts for every event arrive on their own.',
                 bullets: [
                     'Connect to 5,000+ apps via Zapier / Make / n8n with one webhook',
-                    'Or use the REST API: create quotes, clients and products from your code',
+                    'Zapier and Make can create and delete their own subscriptions through the API',
+                    'Or use the REST API: create quotes, clients and products, and change a quote status from your code',
                     'Native Slack: automatic notification on every quote event',
                 ],
             },
         ],
         steps: [
-            { titulo: 'Register your endpoint', copy: 'Under Settings › Developers › Webhooks. Pick the events and save the secret (shown once).' },
-            { titulo: 'Verify the signature', copy: 'Compute the HMAC-SHA256 of the raw body with your secret and compare it to X-Cord-Signature.' },
+            { titulo: 'Register your endpoint', copy: 'From the developer Workbench or through the API. Pick the events and save the secret (shown once).' },
+            { titulo: 'Verify the signature', copy: 'Compute the HMAC-SHA256 of the timestamp and raw body with your secret and compare it to X-Cord-Signature-V1.' },
             { titulo: 'Route to your system', copy: 'Process the JSON in your backend, or drop it into Zapier/Make/n8n to reach your ERP or CRM.' },
         ],
         faqs: [
             { q: 'Does Cord have a native connector for SAP, Salesforce, or Oracle?', a: 'We don\'t maintain proprietary connectors per system. Instead, Cord emits signed webhooks (HMAC-SHA256) on every sales-cycle event that you point at Zapier, Make, n8n, or your own backend to connect with SAP, Salesforce, or any other system.' },
             { q: 'How many webhook endpoints can I configure?', a: 'It depends on your plan: from 1 endpoint on the Free plan up to 100 on the Developer plan. Overages are metered by API consumption, not by number of webhooks.' },
-            { q: 'How do I verify a webhook really came from Cord?', a: 'Every delivery includes the X-Cord-Signature header with an HMAC-SHA256 of the raw body, signed with the secret Cord gave you when you created the endpoint — you validate it before processing the event.' },
+            { q: 'How do I verify a webhook really came from Cord?', a: 'Every delivery includes the X-Cord-Signature-V1 header with a timestamp and an HMAC-SHA256 of the raw body, signed with the secret Cord gave you when you created the endpoint. You validate it before processing the event; the timestamp protects you from someone replaying an old delivery.' },
         ],
         cta: { titulo: 'Connect Cord to your stack today.', sub: 'Register a webhook or generate a test key and receive your first event in minutes.' },
         trust: {
@@ -426,7 +427,7 @@ export function Cotizacion({ token }) {
             titulo: 'What happens when something fails',
             items: [
                 { icon: 'key', titulo: 'The secret is shown exactly once', copy: 'Copy it when you create it — after that, only its fingerprint remains to sign with, no way to see it in full again.' },
-                { icon: 'refresh', titulo: 'Automatic retry after 300 ms', copy: "If the first delivery fails, Cord retries once with a short backoff — it doesn't hammer your server." },
+                { icon: 'refresh', titulo: 'Retries with backoff for almost 4 days', copy: 'If your endpoint fails, Cord retries up to 11 times with growing waits. After 5 consecutive failures it deactivates the endpoint and emails you, instead of hammering a server that is down.' },
                 { icon: 'gauge', titulo: '5-second timeout per attempt', copy: "If your endpoint doesn't respond in time, Cord cuts the connection and marks it a failure — it never hangs waiting." },
             ],
         },

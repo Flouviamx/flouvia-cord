@@ -25,7 +25,7 @@ Casos de uso comunes:
 2. Abre la pestaña **Webhooks** del panel.
 3. Haz clic en **Agregar endpoint** — abre un asistente de pantalla completa.
 4. Ingresa tu URL — **debe ser `https://`**; Cord rechaza destinos `http://`, `localhost`, IPs privadas/internas y hosts `.internal`/`.local` desde la creación.
-5. Elige el subconjunto de eventos que quieres recibir (dejar todos sin marcar = recibes **todos**). Ver el [catálogo completo](#catálogo-de-eventos) abajo.
+5. Elige el subconjunto de eventos que quieres recibir (dejar todos sin marcar = recibes **todos**, incluidos los tipos de evento que Cord agregue en el futuro). Ver el [catálogo completo](#catálogo-de-eventos) abajo.
 6. Guarda una copia de tu **secret** (`whsec_…`) — se muestra en claro **una sola vez**. Después solo se ve enmascarado.
 
 <Callout type="info">
@@ -47,8 +47,10 @@ Cada entrega es un `POST` con `Content-Type: application/json` y este cuerpo:
     "id": "b3f1...",
     "folio": "COT-0148",
     "status": "paid",
+    "moneda": "MXN",
     "total": 45200.00,
     "cliente": "Distribuidora El Zarco",
+    "cliente_id": "9a1c...",
     "link_publico": "https://cordhq.app/q/6f2a...",
     "mensaje": "Solo presente en el evento de prueba ping"
   }
@@ -165,6 +167,14 @@ Esto significa que puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momen
 | `invoice.voided` | Se anula la factura. |
 | `invoice.marked_uncollectible` | Se marca la factura como incobrable. |
 | `invoice.overdue` | Pasó su fecha de vencimiento sin liquidarse (lo dispara el cron de recordatorios). |
+| `quote.created` | Se crea una cotización, desde la app, la API, el MCP o Cord Elements. |
+| `quote.approval_requested` | Una cotización nueva queda pendiente de aprobación interna (descuento, monto o margen fuera de umbral). Trae `motivo`. |
+| `quote.approval_decided` | Gerencia aprueba o rechaza esa solicitud. Trae `decision` (`approved` \| `rejected`). |
+| `quote.comment_added` | El cliente o el vendedor escribe en la conversación de la cotización. Trae `autor` (`cliente` \| `vendedor`), `mensaje` y, si es sobre una línea, `item_id`; una contraoferta trae `tipo: "contraoferta"` y `propuesta`. |
+| `client.created` / `client.updated` / `client.deleted` | Se crea, edita o elimina un cliente del directorio. |
+| `product.created` / `product.updated` / `product.deleted` | Se crea, edita o elimina un producto del catálogo. |
+| `task.created` / `task.completed` | Se crea una tarea o se marca como hecha. |
+| `promise.created` / `promise.kept` / `promise.broken` | Se registra una promesa de pago, o se marca como cumplida o incumplida. |
 | `ping` | Solo aparece al usar "Probar" desde el Workbench — nunca lo dispara un evento real. |
 
 > **Nota:** `payment.partial` trae campos extra en `data` que los demás eventos de
@@ -213,6 +223,64 @@ unión discriminada de los eventos `quote.*`/`payment.*` — para los siete even
 de Cord Invoicing, tipa el `data` manualmente contra la forma de arriba hasta que el SDK lo
 cubra.
 </Callout>
+
+### Forma de `data` en clientes, productos, tareas y promesas
+
+Cada objeto trae `object` para distinguirlo. El evento de producto **nunca** incluye el costo ni el margen.
+
+| `object` | Campos |
+|---|---|
+| `client` | `id`, `empresa`, `contacto`, `email`, `telefono`, `rfc`, `terminos`, `country_code` (en `client.deleted`: solo `id` y `empresa`) |
+| `product` | `id`, `sku`, `nombre`, `unidad`, `precio_lista`, `activo` (en `product.deleted`: solo `id` y `nombre`) |
+| `task` | `id`, `titulo`, `due_date`, `done`, `cotizacion_id` |
+| `promise` | `id`, `cotizacion_id`, `fecha_promesa`, `monto`, `estado` |
+
+## Administrar endpoints por API
+
+Plataformas como Zapier o Make crean y borran sus suscripciones solas. Para eso existen:
+
+| Método y ruta | Scope | Qué hace |
+|---|---|---|
+| `GET /api/v1/webhooks` | `read` | Lista los endpoints que creó **esta misma llave**, sin secretos. |
+| `POST /api/v1/webhooks` | `write` | Crea un endpoint. Cuerpo: `{ "url": "https://…", "eventos": ["quote.approved"] }`. Devuelve `id`, `url`, `eventos` y `secret` (en claro **una sola vez**). |
+| `DELETE /api/v1/webhooks/{id}` | `write` | Borra un endpoint creado por esta misma llave. |
+
+Aplican las mismas reglas que en el Workbench: solo `https://` hacia hosts públicos, y el límite de endpoints de tu plan (`plan_limit_reached`).
+
+<Callout type="info">
+Una llave **no ve ni puede borrar** los endpoints creados desde el Workbench ni los de otra llave. Al revocar una llave, sus endpoints se **desactivan**: si desconectas una integración, deja de recibir datos.
+</Callout>
+
+## Historial de eventos por API
+
+Si tu sistema estuvo caído más tiempo del que cubren los reintentos, o prefieres consultar en vez de recibir, `GET /api/v1/events` (scope `read`) devuelve los eventos de tu organización del más nuevo al más viejo, **haya o no endpoints suscritos**:
+
+```bash
+curl "https://cordhq.app/api/v1/events?type=quote.approved&limit=50" \
+     -H "Authorization: Bearer sk_live_tU..."
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "6b0e...",
+      "type": "quote.approved",
+      "object": "quote",
+      "object_id": "b3f1...",
+      "data": { "id": "b3f1...", "folio": "COT-0148", "status": "approved", "moneda": "MXN", "total": 45200 },
+      "actor": "client",
+      "created_at": "2026-09-14T18:32:04.123Z"
+    }
+  ],
+  "meta": { "next_cursor": "MjAyNi0wOS0x..." }
+}
+```
+
+- Filtros opcionales: `type` (un evento del catálogo) y `object_id`.
+- `next_cursor` es un token opaco: repite la petición con `?cursor=<next_cursor>`. Viene `null` cuando no hay más.
+- `actor` indica quién originó el evento: `user:<id>`, `api:<llave>`, `mcp:<llave>`, `client` (el cliente en el link público) o `system`.
+- A diferencia del webhook, `data` **no** incluye `link_publico`: el link es una credencial y no se guarda en el historial.
 
 ## Log de entregas y retención
 

@@ -491,11 +491,16 @@ APIs de cobros (ago 2026)
                    el bloque no es autorización (Regla 17). Excluye a propósito las
                    visitas del propio equipo: mezclarlas vuelve ruido el panel.
 /api/v1/me           → whoami (scope any)
-/api/v1/cotizaciones → GET list (filtros status/limit/offset) + POST crear
-/api/v1/cotizaciones/[id] → GET detalle (items + eventos)
-/api/v1/clientes     → GET list + POST crear
-/api/v1/productos    → GET list + POST crear
+/api/v1/cotizaciones → GET list (status/limit/offset, paginado en SQL) + POST crear
+/api/v1/cotizaciones/[id] → GET detalle · POST { action: send|resend|approve|reject|mark_paid }
+                   · DELETE borrador. Misma capa de acciones que la app (src/lib/actions).
+/api/v1/clientes     → GET list (paginado en SQL) + POST crear
+/api/v1/productos    → GET list (paginado en SQL) + POST crear
 /api/v1/cobranza     → GET cartera
+/api/v1/events       → GET historial de domain_events con cursor opaco (type, object_id)
+/api/v1/webhooks     → GET/POST suscripciones de ESTA llave (webhooks.created_by_key)
+/api/v1/webhooks/[id] → DELETE solo si la creó esta llave. Revocar la llave las desactiva.
+                   Toda mutación de /api/v1 acepta Idempotency-Key (api_idempotency, 24 h).
 /api/mcp             → MCP JSON-RPC 2.0 (transporte moderno, sin sesión):
                    initialize/ping/tools/list/tools/call. Motor compartido en
                    src/lib/mcp/rpc.ts (jul 2026 — antes vivía inline aquí).

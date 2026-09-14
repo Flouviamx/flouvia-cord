@@ -95,3 +95,31 @@ The `status` value is the internal state as-is (English, never translated): `dra
 ```
 
 Note: in the list, `link_publico` is a relative path (`/q/<token>`); the creation response returns it absolute. For the detail of a single quote (line items, event timeline, approval), use `GET /api/v1/cotizaciones/{id}`.
+
+## Changing a quote status
+
+With a write key (`write`) you can move a quote through its lifecycle with `POST /api/v1/cotizaciones/{id}`:
+
+```bash
+curl -X POST "https://cordhq.app/api/v1/cotizaciones/qte_2a9d8" \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: approve-COT-00104" \
+     -d '{ "action": "approve" }'
+```
+
+| `action` | From status | Result |
+|---|---|---|
+| `send` | `draft` | Sends the quote to the client (email and link). On the Free plan it uses one of the monthly sends. |
+| `resend` | `sent`, `viewed`, `expired` | Sends it to the client again. |
+| `approve` | `sent`, `viewed` | Marks it as approved. |
+| `reject` | `sent`, `viewed` | Marks it as rejected. |
+| `mark_paid` | `approved`, `invoiced` | Records the payment. Accepts an optional `payment_method` (defaults to `transferencia`). Pending online payments for that quote are canceled. |
+
+The response is `{ "data": { "ok": true, "status": "approved" } }`. If the quote is not in a status the action can apply to, or another request changed it at the same time, you get `409` with `code: "invalid_state"` and nothing is applied. Every change is recorded in the audit log with your key as the actor and fires its [webhook](/en/docs/desarrolladores/herramientas/webhooks) event.
+
+Issuing the invoice is not available on this route: invoices are created and issued with `POST /api/v1/facturas` and `POST /api/v1/facturas/{id}`.
+
+## Deleting a draft
+
+`DELETE /api/v1/cotizaciones/{id}` deletes a quote that was **never sent** (`draft`). Any other status returns `409`.

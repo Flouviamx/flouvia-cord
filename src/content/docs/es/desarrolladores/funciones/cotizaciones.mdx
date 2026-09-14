@@ -95,3 +95,31 @@ El valor de `status` es el estado interno tal cual (en inglés, no traducido): `
 ```
 
 Nota: en el listado, `link_publico` es una ruta relativa (`/q/<token>`); en la respuesta de creación viene absoluta. Para el detalle de una sola cotización (líneas, eventos, aprobación), usa `GET /api/v1/cotizaciones/{id}`.
+
+## Cambiar el estado de una cotización
+
+Con una llave de escritura (`write`) puedes mover la cotización por su ciclo de vida con `POST /api/v1/cotizaciones/{id}`:
+
+```bash
+curl -X POST "https://cordhq.app/api/v1/cotizaciones/qte_2a9d8" \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: aprobar-COT-00104" \
+     -d '{ "action": "approve" }'
+```
+
+| `action` | Desde el estado | Resultado |
+|---|---|---|
+| `send` | `draft` | Envía la cotización al cliente (correo y link). En el plan Gratis consume uno de los envíos del mes. |
+| `resend` | `sent`, `viewed`, `expired` | La reenvía al cliente. |
+| `approve` | `sent`, `viewed` | La marca como aprobada. |
+| `reject` | `sent`, `viewed` | La marca como rechazada. |
+| `mark_paid` | `approved`, `invoiced` | Registra el pago. Acepta `payment_method` opcional (por defecto `transferencia`). Los cobros en línea pendientes de esa cotización se cancelan. |
+
+La respuesta es `{ "data": { "ok": true, "status": "approved" } }`. Si la cotización no está en un estado desde el que se pueda aplicar la acción, o si otra petición la cambió al mismo tiempo, recibes `409` con `code: "invalid_state"` y no se aplica nada. Cada cambio queda en el registro de auditoría con tu llave como actor y dispara su evento de [webhook](/docs/desarrolladores/herramientas/webhooks).
+
+Emitir la factura no está disponible por esta ruta: las facturas se crean y emiten con `POST /api/v1/facturas` y `POST /api/v1/facturas/{id}`.
+
+## Eliminar un borrador
+
+`DELETE /api/v1/cotizaciones/{id}` elimina una cotización que **nunca se envió** (`draft`). Cualquier otro estado responde `409`.

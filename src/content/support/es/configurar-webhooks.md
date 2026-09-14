@@ -30,8 +30,13 @@ Cord emite eventos del ciclo de vida de la cotización y, por separado, de la fa
 - `payment.partial` — se recibió un anticipo, saldo o cuota sin cubrir el total.
 - `payment.failed` — falló un cobro recurrente.
 - `invoice.finalized`, `invoice.sent`, `invoice.paid`, `invoice.payment_failed`, `invoice.voided`, `invoice.marked_uncollectible`, `invoice.overdue` — ciclo de vida de una factura creada como recurso propio vía `/api/v1/facturas`.
+- `quote.created`, `quote.approval_requested`, `quote.approval_decided`, `quote.comment_added` — se creó una cotización, se pidió o decidió una aprobación interna, o alguien escribió en la conversación.
+- `client.created`, `client.updated`, `client.deleted`, `product.created`, `product.updated`, `product.deleted` — cambios en tu directorio de clientes y en tu catálogo.
+- `task.created`, `task.completed`, `promise.created`, `promise.kept`, `promise.broken` — tareas y promesas de pago.
 
-El cuerpo es JSON: `{ "id": "evt_...", "event": "quote.paid", "created_at": "...", "data": { "id", "folio", "status", "total", "cliente", "link_publico" } }`. El `id` del evento es estable a través de reintentos y de un reenvío manual desde el panel — úsalo para deduplicar del lado de tu servidor.
+Si no marcas ningún evento, el endpoint recibe todos, incluidos los que se agreguen después.
+
+El cuerpo es JSON: `{ "id": "evt_...", "event": "quote.paid", "created_at": "...", "data": { "id", "folio", "status", "moneda", "total", "cliente", "cliente_id", "link_publico" } }`. El `id` del evento es estable a través de reintentos y de un reenvío manual desde el panel — úsalo para deduplicar del lado de tu servidor.
 
 ### Verificación de firma
 

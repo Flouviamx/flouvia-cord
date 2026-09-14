@@ -25,7 +25,7 @@ Common use cases:
 2. Open the **Webhooks** tab of the panel.
 3. Click **Add endpoint** — opens a full-screen wizard.
 4. Enter your URL — **it must be `https://`**; Cord rejects `http://` destinations, `localhost`, private/internal IPs, and `.internal`/`.local` hosts at creation time.
-5. Pick the subset of events you want (leaving all unchecked = you receive **all** of them). See the [full catalog](#event-catalog) below.
+5. Pick the subset of events you want (leaving all unchecked = you receive **all** of them, including event types Cord adds in the future). See the [full catalog](#event-catalog) below.
 6. Save your **secret** (`whsec_…`) — it's shown in clear text **once**. After that it's masked.
 
 <Callout type="info">
@@ -47,8 +47,10 @@ Every delivery is a `POST` with `Content-Type: application/json` and this body:
     "id": "b3f1...",
     "folio": "COT-0148",
     "status": "paid",
+    "moneda": "MXN",
     "total": 45200.00,
     "cliente": "Distribuidora El Zarco",
+    "cliente_id": "9a1c...",
     "link_publico": "https://cordhq.app/q/6f2a...",
     "mensaje": "Only present on the ping test event"
   }
@@ -165,6 +167,14 @@ That means you can update your `CORD_WEBHOOK_SECRET` at any point within the win
 | `invoice.voided` | The invoice is voided. |
 | `invoice.marked_uncollectible` | The invoice is marked uncollectible. |
 | `invoice.overdue` | Its due date passed without being settled (fired by the reminders cron). |
+| `quote.created` | A quote is created, from the app, the API, MCP, or Cord Elements. |
+| `quote.approval_requested` | A new quote is waiting for internal approval (discount, amount, or margin outside the threshold). Includes `motivo`. |
+| `quote.approval_decided` | Management approves or rejects that request. Includes `decision` (`approved` \| `rejected`). |
+| `quote.comment_added` | The client or the seller writes in the quote conversation. Includes `autor` (`cliente` \| `vendedor`), `mensaje` and, for a line comment, `item_id`; a counteroffer includes `tipo: "contraoferta"` and `propuesta`. |
+| `client.created` / `client.updated` / `client.deleted` | A client is created, edited, or deleted in the directory. |
+| `product.created` / `product.updated` / `product.deleted` | A product is created, edited, or deleted in the catalog. |
+| `task.created` / `task.completed` | A task is created or marked as done. |
+| `promise.created` / `promise.kept` / `promise.broken` | A payment promise is recorded, or marked as kept or broken. |
 | `ping` | Only shows up when using "Test" from the Workbench — never fired by a real event. |
 
 > **Note:** `payment.partial` carries extra fields on `data` that other **quote** events don't
@@ -210,6 +220,64 @@ quote. If you use the Server SDK in TypeScript, `CordWebhookEvent` today only ty
 discriminated union of `quote.*`/`payment.*` events — for the seven Cord Invoicing `invoice.*`
 events, type `data` by hand against the shape above until the SDK covers it.
 </Callout>
+
+### Shape of `data` for clients, products, tasks, and promises
+
+Each object includes `object` so you can tell them apart. The product event **never** includes cost or margin.
+
+| `object` | Fields |
+|---|---|
+| `client` | `id`, `empresa`, `contacto`, `email`, `telefono`, `rfc`, `terminos`, `country_code` (on `client.deleted`: only `id` and `empresa`) |
+| `product` | `id`, `sku`, `nombre`, `unidad`, `precio_lista`, `activo` (on `product.deleted`: only `id` and `nombre`) |
+| `task` | `id`, `titulo`, `due_date`, `done`, `cotizacion_id` |
+| `promise` | `id`, `cotizacion_id`, `fecha_promesa`, `monto`, `estado` |
+
+## Managing endpoints through the API
+
+Platforms like Zapier or Make create and remove their own subscriptions. These routes exist for that:
+
+| Method and route | Scope | What it does |
+|---|---|---|
+| `GET /api/v1/webhooks` | `read` | Lists the endpoints created by **this same key**, without secrets. |
+| `POST /api/v1/webhooks` | `write` | Creates an endpoint. Body: `{ "url": "https://…", "eventos": ["quote.approved"] }`. Returns `id`, `url`, `eventos`, and `secret` (in clear text **once**). |
+| `DELETE /api/v1/webhooks/{id}` | `write` | Deletes an endpoint created by this same key. |
+
+The same rules as in the Workbench apply: only `https://` to public hosts, and your plan endpoint limit (`plan_limit_reached`).
+
+<Callout type="info">
+A key **cannot see or delete** endpoints created from the Workbench or by another key. When you revoke a key, its endpoints are **deactivated**: if you disconnect an integration, it stops receiving data.
+</Callout>
+
+## Event history through the API
+
+If your system was down longer than retries cover, or you prefer polling over receiving, `GET /api/v1/events` (scope `read`) returns your organization events from newest to oldest, **whether or not any endpoint is subscribed**:
+
+```bash
+curl "https://cordhq.app/api/v1/events?type=quote.approved&limit=50" \
+     -H "Authorization: Bearer sk_live_tU..."
+```
+
+```json
+{
+  "data": [
+    {
+      "id": "6b0e...",
+      "type": "quote.approved",
+      "object": "quote",
+      "object_id": "b3f1...",
+      "data": { "id": "b3f1...", "folio": "COT-0148", "status": "approved", "moneda": "MXN", "total": 45200 },
+      "actor": "client",
+      "created_at": "2026-09-14T18:32:04.123Z"
+    }
+  ],
+  "meta": { "next_cursor": "MjAyNi0wOS0x..." }
+}
+```
+
+- Optional filters: `type` (an event from the catalog) and `object_id`.
+- `next_cursor` is an opaque token: repeat the request with `?cursor=<next_cursor>`. It is `null` when there are no more pages.
+- `actor` tells you who caused the event: `user:<id>`, `api:<key>`, `mcp:<key>`, `client` (the client on the public link), or `system`.
+- Unlike the webhook, `data` does **not** include `link_publico`: the link is a credential and is not stored in the history.
 
 ## Delivery log and retention
 

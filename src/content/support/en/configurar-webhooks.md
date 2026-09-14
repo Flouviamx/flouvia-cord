@@ -30,8 +30,13 @@ Cord emits quote lifecycle events and, separately, events for the invoice as its
 - `payment.partial` — a deposit, balance, or installment was collected without covering the full total.
 - `payment.failed` — a recurring charge failed.
 - `invoice.finalized`, `invoice.sent`, `invoice.paid`, `invoice.payment_failed`, `invoice.voided`, `invoice.marked_uncollectible`, `invoice.overdue` — lifecycle of an invoice created as its own resource via `/api/v1/facturas`.
+- `quote.created`, `quote.approval_requested`, `quote.approval_decided`, `quote.comment_added` — a quote was created, an internal approval was requested or decided, or someone wrote in the conversation.
+- `client.created`, `client.updated`, `client.deleted`, `product.created`, `product.updated`, `product.deleted` — changes to your client directory and catalog.
+- `task.created`, `task.completed`, `promise.created`, `promise.kept`, `promise.broken` — tasks and payment promises.
 
-The body is JSON: `{ "id": "evt_...", "event": "quote.paid", "created_at": "...", "data": { "id", "folio", "status", "total", "cliente", "link_publico" } }`. The event's `id` is stable across retries and a manual redelivery from the dashboard — use it to deduplicate on your side.
+If you don't select any event, the endpoint receives all of them, including ones added later.
+
+The body is JSON: `{ "id": "evt_...", "event": "quote.paid", "created_at": "...", "data": { "id", "folio", "status", "moneda", "total", "cliente", "cliente_id", "link_publico" } }`. The event's `id` is stable across retries and a manual redelivery from the dashboard — use it to deduplicate on your side.
 
 ### Signature verification
 

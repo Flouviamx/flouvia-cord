@@ -25,7 +25,8 @@ La API de Cord siempre devuelve códigos de estado HTTP estándar. Como regla ge
 | **402 Payment Required** | La operación requiere un plan superior (`subscription_required`) o excede un límite de tu plan actual (`plan_limit_reached`, ej. número de clientes o productos). |
 | **403 Forbidden** | Tienes permisos insuficientes (ej. intentaste escribir con una clave que solo tiene permisos de lectura, o una Publishable Key intentó una operación fuera de su alcance). |
 | **404 Not Found** | El recurso (cotización, cliente, factura) no existe. |
-| **409 Conflict** | Un cambio de estado inválido para el recurso — por ejemplo, anular una factura que necesita una nota de crédito, o borrar datos de prueba (`/api/test-mode/reset`) sin estar en una organización tipo Sandbox. |
+| **409 Conflict** | Un cambio de estado inválido para el recurso (`invalid_state`) — por ejemplo, aprobar una cotización que sigue en borrador, anular una factura que necesita una nota de crédito, o borrar datos de prueba (`/api/test-mode/reset`) sin estar en una organización tipo Sandbox. También cuando otra petición con la misma `Idempotency-Key` sigue en proceso (`idempotency_in_progress`). |
+| **422 Unprocessable Entity** | Reutilizaste una `Idempotency-Key` con una petición distinta (`idempotency_key_reused`). |
 | **429 Too Many Requests** | Superaste el límite de peticiones por minuto de tu llave (`rate_limited`) o la cuota mensual de tu plan (`api_quota_exceeded`). Respeta el header `Retry-After`. |
 | **503 Service Unavailable** | Un servicio del que depende la operación no respondió — por ejemplo, no se pudo obtener un tipo de cambio (`fx_unavailable`) o el catálogo de impuestos (`tax_catalog_unavailable`). Cord nunca inventa una tasa: si no la puede demostrar, la operación falla cerrada. Reintenta más tarde. |
 
@@ -69,3 +70,28 @@ No confíes en la forma anidada `error.code` / `error.message` para parsear la r
 - `plan_limit_reached`: Alcanzaste un límite duro de tu plan (clientes, productos, llaves de API). La respuesta incluye `resource`, `limit` y `plan`.
 - `rate_limited` / `api_quota_exceeded`: Límite de peticiones por minuto o de cuota mensual de la API. Reintenta respetando `Retry-After`.
 - `fx_unavailable` / `tax_catalog_unavailable`: Un dato de terceros (tipo de cambio o catálogo de impuestos) no se pudo obtener con certeza. La operación no se completó — no asumas que sí ocurrió.
+
+- `invalid_state`: El recurso no está en un estado que permita la operación, o cambió mientras la procesábamos. No se aplicó nada.
+- `invalid_url`: La URL de un webhook no es `https://` o apunta a un host interno.
+- `invalid_idempotency_key` / `idempotency_key_reused` / `idempotency_in_progress` / `idempotency_unavailable`: Ver la sección siguiente.
+
+## Reintentos seguros con `Idempotency-Key`
+
+Si una petición que crea o cambia algo (`POST`, `PATCH`, `DELETE`) se corta por red o timeout, no sabes si Cord la aplicó. Envía el header `Idempotency-Key` con un valor único por operación (por ejemplo, un UUID que generes tú) y reintenta con **la misma clave y el mismo cuerpo**:
+
+```bash
+curl -X POST "https://cordhq.app/api/v1/clientes" \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: 5d9c2b7e-6f1a-4c3d-9e8b-2a1f0c7d6e5b" \
+     -d '{ "empresa": "ACME Corp" }'
+```
+
+- **Reintento con la misma clave y el mismo cuerpo:** Cord devuelve la respuesta original sin volver a ejecutar la operación ni contarla en tu cuota. La respuesta repetida trae el header `Idempotent-Replayed: true`.
+- **La misma clave con otro cuerpo, método o ruta:** `422 idempotency_key_reused`. Usa una clave nueva para cada operación distinta.
+- **La primera petición todavía no termina:** `409 idempotency_in_progress`. Espera y reintenta.
+- **Errores `5xx` y `429`:** no se guardan, así que puedes reintentar con la misma clave.
+- La clave es por llave de API, admite de 1 a 255 caracteres visibles (`invalid_idempotency_key` si no) y caduca a las **24 horas**.
+- Si Cord no puede reservar la clave, responde `503 idempotency_unavailable` **sin ejecutar** la operación.
+
+El header es opcional: sin él, cada petición se ejecuta como llega.

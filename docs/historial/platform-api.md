@@ -6,6 +6,26 @@
 
 ---
 
+✅ **Base para integraciones y flujos: capa de acciones, eventos de dominio y API v1 completa
+   (sep 2026, rama `feat/plataforma-integraciones`)** — primer tramo del plan de integraciones
+   con CRMs y flujos creados por el negocio.
+   • **Capa de acciones** (`src/lib/actions/`): cotizaciones, clientes, productos, tareas,
+     promesas y webhooks viven fuera de las rutas; la app, la API v1 y después MCP y flujos
+     llaman las mismas funciones. Las transiciones de cotización se condicionan al estado
+     esperado en el mismo `UPDATE` y la edición de líneas es una sola transacción.
+   • **`domain_events`**: registro append-only con RLS forzada que guarda los 34 eventos
+     públicos con su actor, haya o no webhooks. Nunca guarda links públicos ni tokens.
+   • **API v1**: acciones de cotización, paginación en SQL, `GET /v1/events`,
+     `Idempotency-Key` en toda mutación (`api_idempotency`) y webhooks administrables por
+     API, acotados a la llave que los creó.
+   • **Seguridad de paso**: allowlist exacta para llaves publicables (antes
+     `path.includes('/cotizaciones')`), y en `main` validación por organización de
+     `cliente_id`/`producto_id`, permiso en borrar cotizaciones y permiso en tareas.
+   • Migraciones pendientes antes del deploy: `2026-09-14-domain-events.sql`,
+     `2026-09-14-api-idempotency.sql`, `2026-09-14-webhooks-api-owner.sql`.
+
+---
+
 ✅ **MCP — calidad de las tools: paginación real, idempotencia, anotaciones y cifrado en
    reposo (fase 10, ÚLTIMA del plan de "MCP y webhooks a nivel artesanía", jul 2026)** — cierra
    el plan completo (7 fases de webhooks + 4 de MCP). Cuatro piezas:

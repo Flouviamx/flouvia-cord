@@ -439,19 +439,19 @@ export function Cotizacion({ token }) {
         metaDescription: 'Cord emite webhooks firmados (HMAC-SHA256) en cada evento de venta — quote.sent, quote.approved, quote.paid — que conectas a Zapier, Make, n8n o tu backend. Disponible en todos los planes, sin conectores propietarios que esperar.',
         plan: 'En todos los planes · webhooks limitados por plan (Free 1 → Developer 100) · Slack nativo · llaves de prueba gratis para la API',
         stats: [
-            { valor: '6', countup: 6, label: 'eventos que Cord emite: sent, viewed, approved, rejected, paid, invoiced' },
-            { valor: '1', countup: 1, label: 'firma HMAC-SHA256 por entrega (X-Cord-Signature), verificable' },
+            { valor: '34', countup: 34, label: 'eventos: cotizaciones, facturas, pagos, clientes, productos, tareas y promesas' },
+            { valor: '11', countup: 11, label: 'intentos de entrega con backoff antes de dar un evento por fallido' },
             { valor: '3', countup: 3, label: 'formas de integrar: webhooks salientes, API REST y MCP' },
         ],
         blocks: [
             {
                 eyebrow: 'WEBHOOKS SALIENTES',
                 titulo: 'Tu sistema reacciona a cada evento de venta.',
-                copy: 'Registras una URL en Ajustes › Developers › Webhooks y eliges qué eventos te interesan. Cuando una cotización se envía, se ve, se aprueba, se rechaza, se paga o se factura, Cord hace un POST con el payload en JSON. Cada entrega va firmada con HMAC-SHA256 en el header X-Cord-Signature para que verifiques que vino de Cord. Es best-effort con un reintento, y cada intento queda en un log que puedes reenviar.',
+                copy: 'Registras una URL desde el Workbench de desarrolladores y eliges qué eventos te interesan. Cuando una cotización se crea, se envía, se aprueba o se paga, cuando se emite una factura o cuando cambia un cliente, un producto, una tarea o una promesa de pago, Cord hace un POST con el payload en JSON. Cada entrega va firmada con HMAC-SHA256 y un timestamp para que verifiques que vino de Cord. Si tu servidor falla, Cord reintenta con backoff hasta 11 veces, y cada intento queda en un log que puedes reenviar.',
                 bullets: [
-                    'Header X-Cord-Signature: sha256=&lt;hmac del cuerpo crudo&gt; + X-Cord-Event',
-                    'Payload con id, folio, status, total, cliente y link público',
-                    'Log de entregas con estado, latencia y botón de reenvío en Ajustes',
+                    'Header X-Cord-Signature-V1: t=&lt;unix&gt;,v1=&lt;hmac&gt;, con protección contra replay',
+                    'Payload con id, folio, status, moneda, total, cliente y link público',
+                    'Log de entregas con estado, latencia y botón de reenvío',
                 ],
             },
             {
@@ -460,20 +460,21 @@ export function Cotizacion({ token }) {
                 copy: 'En vez de atarte a un conector "nativo" por cada proveedor, apuntas el webhook a una plataforma no-code (Zapier, Make, n8n) y de ahí llegas a miles de apps —incluidos SAP, Oracle, Salesforce, HubSpot o Notion— sin que escribamos código por ti. ¿Prefieres control total? Llama directo a la API REST. Y si tu equipo vive en Slack, esa sí es integración nativa: las alertas de cada evento llegan solas.',
                 bullets: [
                     'Conecta a más de 5,000 apps vía Zapier / Make / n8n con un webhook',
-                    'O usa la API REST: crea cotizaciones, clientes y productos desde tu código',
+                    'Zapier y Make pueden crear y borrar sus propias suscripciones por API',
+                    'O usa la API REST: crea cotizaciones, clientes y productos, y cambia el estado de una cotización desde tu código',
                     'Slack nativo: notificación automática en cada evento de cotización',
                 ],
             },
         ],
         steps: [
-            { titulo: 'Registra tu endpoint', copy: 'En Ajustes › Developers › Webhooks. Elige los eventos y guarda el secret (se muestra una vez).' },
-            { titulo: 'Verifica la firma', copy: 'Calcula el HMAC-SHA256 del cuerpo crudo con tu secret y compáralo con X-Cord-Signature.' },
+            { titulo: 'Registra tu endpoint', copy: 'Desde el Workbench de desarrolladores o por API. Elige los eventos y guarda el secret (se muestra una vez).' },
+            { titulo: 'Verifica la firma', copy: 'Calcula el HMAC-SHA256 del timestamp y el cuerpo crudo con tu secret y compáralo con X-Cord-Signature-V1.' },
             { titulo: 'Enruta a tu sistema', copy: 'Procesa el JSON en tu backend, o déjalo caer en Zapier/Make/n8n para llegar a tu ERP o CRM.' },
         ],
         faqs: [
             { q: '¿Cord tiene un conector nativo para SAP, Salesforce u Oracle?', a: 'No mantenemos conectores propietarios por sistema. En su lugar, Cord emite webhooks firmados (HMAC-SHA256) en cada evento del ciclo de venta que apuntas a Zapier, Make, n8n o tu propio backend para conectar con SAP, Salesforce o cualquier otro sistema.' },
             { q: '¿Cuántos endpoints de webhook puedo configurar?', a: 'Depende del plan: desde 1 endpoint en el plan Gratis hasta 100 en el plan Developer. Los excedentes se miden por consumo de API, no por número de webhooks.' },
-            { q: '¿Cómo verifico que un webhook realmente viene de Cord?', a: 'Cada entrega incluye el header X-Cord-Signature con un HMAC-SHA256 del cuerpo crudo, firmado con el secret que Cord te dio al crear el endpoint — lo validas antes de procesar el evento.' },
+            { q: '¿Cómo verifico que un webhook realmente viene de Cord?', a: 'Cada entrega incluye el header X-Cord-Signature-V1 con un timestamp y un HMAC-SHA256 del cuerpo crudo, firmado con el secret que Cord te dio al crear el endpoint. Lo validas antes de procesar el evento; el timestamp te protege de que alguien reenvíe una entrega vieja.' },
         ],
         cta: { titulo: 'Conecta Cord a tu stack hoy.', sub: 'Registra un webhook o genera una llave de prueba y recibe tu primer evento en minutos.' },
         trust: {
@@ -481,7 +482,7 @@ export function Cotizacion({ token }) {
             titulo: 'Lo que pasa cuando algo falla',
             items: [
                 { icon: 'key', titulo: 'El secret se muestra una sola vez', copy: 'Cópialo al crearlo — después solo queda su huella para firmar, nunca vuelves a verlo completo.' },
-                { icon: 'refresh', titulo: 'Reintento automático a los 300 ms', copy: 'Si la primera entrega falla, Cord reintenta una vez con un backoff corto — no bombardea tu servidor.' },
+                { icon: 'refresh', titulo: 'Reintentos con backoff durante casi 4 días', copy: 'Si tu endpoint falla, Cord reintenta hasta 11 veces con esperas crecientes. Tras 5 fallos seguidos lo desactiva y te avisa por correo, en vez de bombardear un servidor caído.' },
                 { icon: 'gauge', titulo: 'Timeout de 5 segundos por intento', copy: 'Si tu endpoint no responde a tiempo, Cord corta la conexión y lo marca como fallo — nunca se queda colgado esperando.' },
             ],
         },

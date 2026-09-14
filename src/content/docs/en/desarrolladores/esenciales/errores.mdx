@@ -25,7 +25,8 @@ The Cord API always returns standard HTTP status codes. As a general rule:
 | **402 Payment Required** | The operation requires a higher plan (`subscription_required`) or exceeds a limit on your current plan (`plan_limit_reached`, e.g. number of clients or products). |
 | **403 Forbidden** | You have insufficient permissions (e.g., trying to write with a read-only key, or a Publishable Key attempting an action outside its scope). |
 | **404 Not Found** | The resource (quote, client, invoice) does not exist. |
-| **409 Conflict** | An invalid state transition for the resource — for example, voiding an invoice that requires a credit note instead, or trying to delete test data (`/api/test-mode/reset`) without being in a Sandbox organization. |
+| **409 Conflict** | An invalid state transition for the resource (`invalid_state`) — for example, approving a quote that is still a draft, voiding an invoice that requires a credit note instead, or trying to delete test data (`/api/test-mode/reset`) without being in a Sandbox organization. Also returned while another request with the same `Idempotency-Key` is still running (`idempotency_in_progress`). |
+| **422 Unprocessable Entity** | You reused an `Idempotency-Key` with a different request (`idempotency_key_reused`). |
 | **429 Too Many Requests** | You exceeded your key's requests-per-minute limit (`rate_limited`) or your plan's monthly quota (`api_quota_exceeded`). Respect the `Retry-After` header. |
 | **503 Service Unavailable** | A dependency the operation needs didn't respond — for example, an exchange rate could not be obtained (`fx_unavailable`) or the tax catalog (`tax_catalog_unavailable`). Cord never invents a rate: if it can't prove one, the operation fails closed. Retry later. |
 
@@ -69,3 +70,28 @@ Don't rely on the nested `error.code` / `error.message` shape to parse the respo
 - `plan_limit_reached`: You hit a hard limit on your plan (clients, products, API keys). The response includes `resource`, `limit`, and `plan`.
 - `rate_limited` / `api_quota_exceeded`: Requests-per-minute or monthly API quota limit. Retry while respecting `Retry-After`.
 - `fx_unavailable` / `tax_catalog_unavailable`: A third-party data point (exchange rate or tax catalog) could not be obtained with certainty. The operation did not complete — don't assume it did.
+
+- `invalid_state`: The resource is not in a status that allows the operation, or it changed while we were processing it. Nothing was applied.
+- `invalid_url`: A webhook URL is not `https://` or points to an internal host.
+- `invalid_idempotency_key` / `idempotency_key_reused` / `idempotency_in_progress` / `idempotency_unavailable`: See the next section.
+
+## Safe retries with `Idempotency-Key`
+
+If a request that creates or changes something (`POST`, `PATCH`, `DELETE`) is cut off by the network or a timeout, you do not know whether Cord applied it. Send the `Idempotency-Key` header with a unique value per operation (for example, a UUID you generate) and retry with **the same key and the same body**:
+
+```bash
+curl -X POST "https://cordhq.app/api/v1/clientes" \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: 5d9c2b7e-6f1a-4c3d-9e8b-2a1f0c7d6e5b" \
+     -d '{ "empresa": "ACME Corp" }'
+```
+
+- **Retry with the same key and body:** Cord returns the original response without running the operation again or counting it against your quota. The repeated response includes the `Idempotent-Replayed: true` header.
+- **Same key with a different body, method, or route:** `422 idempotency_key_reused`. Use a new key for each different operation.
+- **The first request has not finished:** `409 idempotency_in_progress`. Wait and retry.
+- **`5xx` and `429` errors:** are not stored, so you can retry with the same key.
+- The key is scoped to your API key, accepts 1 to 255 visible characters (`invalid_idempotency_key` otherwise), and expires after **24 hours**.
+- If Cord cannot reserve the key, it returns `503 idempotency_unavailable` **without running** the operation.
+
+The header is optional: without it, every request runs as it arrives.
