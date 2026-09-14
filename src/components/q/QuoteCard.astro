@@ -7,6 +7,7 @@ import { getCountryProfile } from '../../lib/countries';
 import { splitAnticipo } from '../../lib/cobros';
 import { currentLocale } from '../../lib/context';
 import { t, getQuoteCardRuntimeI18n } from '../../i18n/app';
+import { publicPath } from '../../i18n/utils';
 
 const L = currentLocale();
 const RTQ = getQuoteCardRuntimeI18n(L);
@@ -121,14 +122,54 @@ const vWa = (ORG.whatsapp ?? '').trim();
 const vTel = (ORG.telefono ?? '').trim();
 const waDigits = vWa.replace(/\D/g, '');
 const hayContacto = !!(vEmail || vWa || vTel);
+
+// Demo pública (/q/demo, lib/demo-quote.ts). Mismo componente, mismo markup;
+// sus acciones se resuelven en el navegador (ver DEMO en el script). Ningún
+// token real puede valer 'demo': son 32 caracteres hex aleatorios.
+const esDemo = q.token === 'demo';
+const demoLang = L === 'en' ? 'en' : 'es';
+const demoSignup = publicPath('/registro', demoLang);
+const demoPagos = publicPath('/producto/pagos', demoLang);
+// Lo que el script necesita para simular sin servidor: las líneas tal como se
+// firman y los textos del modo demo. `<` se escapa para que ningún texto pueda
+// cerrar el <script> que lo contiene.
+const demoRuntimeJson = esDemo
+    ? JSON.stringify({
+        items: (q.items || []).map((it: any) => ({
+            id: String(it.id),
+            descripcion: it.descripcion,
+            cantidad: Number(it.cantidad),
+            unidad: it.unidad,
+            precio: Number(it.precioNegociado ?? it.precioLista),
+            taxRate: it.taxRate ?? null,
+        })),
+        respuestaChat: t(L, 'q.demo_respuesta_chat'),
+        respuestaLinea: t(L, 'q.demo_respuesta_linea'),
+        simularTarjeta: t(L, 'q.demo_pay_simular_tarjeta'),
+        simularSpei: t(L, 'q.demo_pay_simular_spei'),
+    }).replace(/</g, '\\u003c')
+    : '';
 ---
 
-<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'}>
+<div class="q-card" data-token={q.token} data-folio={folio} data-iva={ORG.ivaPct} data-iva-incluido={q.iva_incluido ? '1' : ''} data-currency={ORG.moneda || 'MXN'} data-pais={ORG.paisCode || 'MX'} data-org={ORG.nombre} data-init={yaAprobada ? 'approved' : yaRechazada ? 'rejected' : 'review'} data-demo={esDemo ? '1' : undefined}>
     <script type="application/json" id="qRetenciones" is:inline set:html={JSON.stringify((q.retenciones || []).map((r: any) => ({ nombre: r.nombre, tasa: r.tasa, tipo: r.tipo })))} />
+    {esDemo && <script type="application/json" id="qDemo" is:inline set:html={demoRuntimeJson} />}
     {ORG.esPrueba && (
         <div class="q-test-ribbon" role="status">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 12h4l-1.5 8L17 9h-4.5z"/></svg>
             {t(L, 'q.test_ribbon')}
+        </div>
+    )}
+    {esDemo && (
+        <div class="q-demo-ribbon" role="note">
+            <span class="q-demo-ribbon-text">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="currentColor" fill-opacity="0.14"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.6" r="0.4" fill="currentColor"/></svg>
+                <span>{t(L, 'q.demo_ribbon')}</span>
+            </span>
+            <a href={demoSignup} class="q-demo-ribbon-cta">
+                {t(L, 'q.demo_cta')}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
         </div>
     )}
     {banner && <div class="q-banner" style={`background:${color}`}>{banner}</div>}
@@ -140,10 +181,13 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 ? <img src={logoUrl} alt={ORG.nombre} class="q-logo-img" />
                 : <div class="q-logo-initial" style={`background:${color}`}>{ORG.inicial}</div>
             }
-            <div class="q-brand-text">
-                <span class="q-company">{ORG.nombre}</span>
-                {ORG.rfc && <span class="q-rfc">RFC {ORG.rfc}</span>}
-            </div>
+            {/* En la demo el logo de Cord ya es el wordmark: repetir "Cord" al lado se lee doble. */}
+            {!(esDemo && logoUrl) && (
+                <div class="q-brand-text">
+                    <span class="q-company">{ORG.nombre}</span>
+                    {ORG.rfc && <span class="q-rfc">RFC {ORG.rfc}</span>}
+                </div>
+            )}
         </div>
         <div class="q-folio-tag">
             <span class="q-folio-eyebrow">{t(L, 'q.folio_eyebrow')}</span>
@@ -225,6 +269,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
                         )}
                         {it.descripcion}
                         {yaAprobada && it.aprobado === false && <span class="qi-excluida-tag">{t(L, 'q.no_incluida')}</span>}
+                        {esDemo && viva && <span class="qi-excluida-tag" data-demo-excluida hidden>{t(L, 'q.no_incluida')}</span>}
                         {mostrarChat && !yaAprobada && !yaRechazada && (
                             <button class="qi-chat-btn" data-item-id={it.id} aria-label={t(L, 'q.comentar_linea')}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -233,7 +278,11 @@ const hayContacto = !!(vEmail || vWa || vTel);
                         )}
                     </span>
                     <span class="qi-center qi-qty" data-label={t(L, 'q.th_cant')}>{it.cantidad.toLocaleString(L === 'en' ? 'en-US' : 'es-MX')} {it.unidad}</span>
-                    <span class="editorial qi-right qi-price" data-label={t(L, 'q.th_unit')}>{money(it.precioNegociado ?? it.precioLista)}</span>
+                    <span class="editorial qi-right qi-price" data-label={t(L, 'q.th_unit')}>
+                        {/* Precio negociado por debajo del de lista: el cliente ve cuánto se le rebajó. */}
+                        <s class="qi-list" hidden={!(it.precioNegociado != null && Number(it.precioNegociado) < Number(it.precioLista))}>{money(it.precioLista)}</s>
+                        <span class="qi-price-val">{money(it.precioNegociado ?? it.precioLista)}</span>
+                    </span>
                     <span class="editorial qi-right qi-total" data-label={t(L, 'q.th_importe')}>{money(lineTotal(it))}</span>
                 </div>
 
@@ -279,7 +328,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
             <span class="q-trust-live" id="qLive"><span class="q-live-dot"></span> <span id="qLiveText">{t(L, 'q.conectado_vivo')}</span></span>
             <span class="q-trust-secure">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                {t(L, 'q.cifrado_firma')}{ORG.paisCode === 'MX' ? t(L, 'q.cfdi_suffix') : ''}
+                {t(L, 'q.cifrado_firma')}
             </span>
         </div>
     )}
@@ -368,7 +417,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 </div>
                 <span class="ql-done-title">{t(L, 'q.cotizacion_aprobada')}</span>
                 <span class="ql-done-sub" id="qApprovedSub">
-                    {tf('q.recibio_confirmacion', { org: ORG.nombre })}
+                    {esDemo ? t(L, 'q.demo_recibio_confirmacion') : tf('q.recibio_confirmacion', { org: ORG.nombre })}
                 </span>
                 <div class="ql-done-actions">
                     {esperaCobro && (
@@ -474,6 +523,86 @@ const hayContacto = !!(vEmail || vWa || vTel);
                             )}
                         </div>
                     )}
+                    {esDemo && puedePagar && !esRecurrente && (
+                        <div class="qd-pay" id="qDemoPay" hidden>
+                            <div class="qd-pay-head">
+                                <span class="qd-pay-eyebrow">{t(L, 'q.demo_pay_eyebrow')}</span>
+                                <span class="qd-pay-badge">{t(L, 'q.demo_pay_badge')}</span>
+                            </div>
+                            <div class="qd-pay-intro">
+                                <strong>{t(L, 'q.demo_pay_title')}</strong>
+                                <span>{t(L, 'q.demo_pay_desc')}</span>
+                            </div>
+                            <div class="qd-pay-amount">
+                                <span class="qd-pay-amount-label">{t(L, 'q.a_pagar_ahora')}</span>
+                                <span class="editorial qd-pay-amount-num" style={`color:${color}`}><span data-demo-monto>{montoAPagar}</span> <small>{ORG.moneda || 'MXN'}</small></span>
+                                <span class="qd-pay-amount-sub">{ORG.nombre} · {folio}</span>
+                            </div>
+                            <div class="qd-pay-body" id="qDemoPayBody">
+                                <div class="qd-tabs" role="tablist">
+                                    <button type="button" class="qd-tab" role="tab" aria-selected="true" data-demo-method="card">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="currentColor" fill-opacity="0.14"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+                                        {t(L, 'q.demo_pay_tarjeta')}
+                                    </button>
+                                    <button type="button" class="qd-tab" role="tab" aria-selected="false" data-demo-method="spei">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5z" fill="currentColor" fill-opacity="0.14"/><line x1="5.5" y1="11.5" x2="5.5" y2="17"/><line x1="10" y1="11.5" x2="10" y2="17"/><line x1="14" y1="11.5" x2="14" y2="17"/><line x1="18.5" y1="11.5" x2="18.5" y2="17"/><line x1="3" y1="20" x2="21" y2="20"/></svg>
+                                        {t(L, 'q.demo_pay_spei')}
+                                    </button>
+                                </div>
+                                <div class="qd-panel" data-demo-panel="card" role="tabpanel">
+                                    <div class="qd-field">
+                                        <span class="qd-flabel">{t(L, 'q.demo_pay_numero')}</span>
+                                        <span class="qd-fake" aria-hidden="true"><span class="qd-fake-ph">•••• •••• •••• ••••</span><span class="ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span></span>
+                                    </div>
+                                    <div class="qd-field-row">
+                                        <div class="qd-field">
+                                            <span class="qd-flabel">{t(L, 'q.demo_pay_vencimiento')}</span>
+                                            <span class="qd-fake" aria-hidden="true"><span class="qd-fake-ph">MM / {L === 'en' ? 'YY' : 'AA'}</span></span>
+                                        </div>
+                                        <div class="qd-field">
+                                            <span class="qd-flabel">{t(L, 'q.demo_pay_cvc')}</span>
+                                            <span class="qd-fake" aria-hidden="true"><span class="qd-fake-ph">•••</span></span>
+                                        </div>
+                                    </div>
+                                    <p class="qd-note">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5" fill="currentColor" fill-opacity="0.14"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+                                        {t(L, 'q.demo_pay_nota_tarjeta')}
+                                    </p>
+                                </div>
+                                <div class="qd-panel" data-demo-panel="spei" role="tabpanel" hidden>
+                                    <div class="qd-kv">
+                                        <div class="qd-kv-row"><span>{t(L, 'q.demo_pay_monto')}</span><strong class="editorial"><span data-demo-monto>{montoAPagar}</span> {ORG.moneda || 'MXN'}</strong></div>
+                                        <div class="qd-kv-row"><span>{t(L, 'q.demo_pay_referencia')}</span><strong>{folio}</strong></div>
+                                        <div class="qd-kv-row"><span>{t(L, 'q.demo_pay_clabe')}</span><strong class="qd-mono" aria-hidden="true">•••• •••• •••• •••• ••</strong></div>
+                                        <div class="qd-kv-row"><span>{t(L, 'q.demo_pay_conciliacion')}</span><strong>{t(L, 'q.demo_pay_conciliacion_val')}</strong></div>
+                                    </div>
+                                    <p class="qd-note">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="currentColor" fill-opacity="0.14"/><polyline points="8 12.5 11 15.5 16 9.5"/></svg>
+                                        {t(L, 'q.demo_pay_nota_spei')}
+                                    </p>
+                                </div>
+                                <button type="button" class="ql-cta" id="qDemoPaySim" style={`background:${color}`}>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    <span id="qDemoPaySimText">{t(L, 'q.demo_pay_simular_tarjeta')}</span>
+                                </button>
+                            </div>
+                            <div class="qd-pay-ok" id="qDemoPayOk" hidden role="status">
+                                <svg class="ql-check-svg" viewBox="0 0 52 52" aria-hidden="true">
+                                    <circle class="ql-check-circle" cx="26" cy="26" r="23" fill="none" stroke="#059669" stroke-width="2"/>
+                                    <polyline class="ql-check-mark" points="14,27 22,35 38,18" fill="none" stroke="#059669" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <strong>{t(L, 'q.demo_pay_ok_titulo')}</strong>
+                                <span>{t(L, 'q.demo_pay_ok_desc')}</span>
+                            </div>
+                            <div class="qd-pay-foot">
+                                <a href={demoPagos} class="qd-link">
+                                    {t(L, 'q.demo_pay_como')}
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                </a>
+                                <a href={demoSignup} class="qd-cta" style={`background:${color}`}>{t(L, 'q.demo_pay_cta')}</a>
+                            </div>
+                        </div>
+                    )}
                     <button class="ql-ghost" id="qPdfApproved" style="margin-top: 1rem;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         {t(L, 'q.descargar_comprobante')}
@@ -483,7 +612,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
                     <div class="ql-audit-stamp">
                         <div class="ql-audit-header">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
-                            <span>{t(L, 'q.documento_verificado')}{ORG.paisCode === 'MX' ? t(L, 'q.cfdi_suffix') : ''}</span>
+                            <span>{t(L, 'q.documento_verificado')}</span>
                         </div>
                         <div class="ql-audit-row"><strong>{t(L, 'q.firmante')}</strong> {q.firma.nombre} (IP: {q.firma.ip})</div>
                         <div class="ql-audit-row"><strong>{t(L, 'q.fecha')}</strong> {q.firma.cuando}</div>
@@ -507,6 +636,12 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 </div>
                 <span class="ql-done-title" style="color:#6b7280">{t(L, 'q.cotizacion_rechazada')}</span>
                 <span class="ql-done-sub">{tf('q.notificamos', { org: ORG.nombre })}</span>
+                {esDemo && (
+                    <div class="qd-restart-row">
+                        <a href="/q/demo" class="ql-ghost qd-restart">{t(L, 'q.demo_reiniciar')}</a>
+                        <a href={demoSignup} class="qd-cta" style={`background:${color}`}>{t(L, 'q.demo_cta')}</a>
+                    </div>
+                )}
             </div>
         </div>
     </div>
@@ -584,7 +719,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         <div class="q-cord-badge">
             <span class="q-cord-badge-trust">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
-                {t(L, 'q.firma_validez_legal')}{ORG.paisCode === 'MX' ? t(L, 'q.cfdi_suffix') : ''}
+                {t(L, 'q.firma_validez_legal')}
             </span>
             <a href="https://cordhq.app" class="q-cord-badge-cta" target="_blank" rel="noopener">
                 {t(L, 'q.verificado_por')} <img src="/imgs/logo-cord-navy.png" alt="Cord" /> {t(L, 'q.crea_las_tuyas')}
@@ -621,6 +756,20 @@ const hayContacto = !!(vEmail || vWa || vTel);
     const folio = card?.dataset.folio ?? '';
     const token = card?.dataset.token ?? '';
     const I18NQ = (window as any).CORD_I18N_Q || {};
+
+    // ── Modo demo (/q/demo) ──
+    // La cotización de demostración no existe en la base: /api/q/demo responde
+    // 404, así que antes de este modo cada botón de la demo fallaba. Con DEMO,
+    // las acciones se resuelven aquí mismo y nada sale al servidor: ni acciones,
+    // ni latido, ni hitos, ni stream (regla 19: la demo no genera señales).
+    // Cada desvío vive detrás de este flag; el camino real no cambia.
+    interface DemoLine { id: string; descripcion: string; cantidad: number; unidad: string; precio: number; taxRate: number | null }
+    interface DemoData { items: DemoLine[]; respuestaChat: string; respuestaLinea: string; simularTarjeta: string; simularSpei: string }
+    const DEMO = card?.dataset.demo === '1';
+    let DEMO_DATA: DemoData | null = null;
+    if (DEMO) {
+        try { DEMO_DATA = JSON.parse(document.getElementById('qDemo')?.textContent || 'null'); } catch { /* sin datos: la demo degrada a la vista */ }
+    }
 
     // Formateador ÚNICO de dinero del link público. Lee la divisa de la propia
     // cotización (data-currency), no un '$' hardcodeado: el cliente de un
@@ -686,6 +835,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
     // ── Helper fetch ──
     const api = async (action: string, extra: Record<string, unknown> = {}) => {
+        if (DEMO) return demoApi(action, extra);
         const res = await fetch(`/api/q/${token}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -701,6 +851,62 @@ const hayContacto = !!(vEmail || vWa || vTel);
         }
         return data;
     };
+
+    // Respuesta local con la MISMA forma que /api/q/[token] y las mismas
+    // validaciones de entrada. La latencia corta es a propósito: una acción
+    // que responde en 0 ms no se lee como una firma, se lee como un mockup.
+    async function demoApi(action: string, extra: Record<string, unknown>): Promise<any> {
+        await new Promise((r) => setTimeout(r, 520 + Math.round(Math.random() * 260)));
+        const fail = (msg?: string): never => { throw new Error(msg || I18NQ.errorInesperado || 'Error'); };
+        const mensaje = String(extra.mensaje ?? '').trim();
+
+        if (action === 'approve') {
+            const lineas = DEMO_DATA?.items ?? [];
+            const aceptadas = Array.isArray(extra.accepted_items) ? new Set((extra.accepted_items as unknown[]).map(String)) : null;
+            const firmadas = aceptadas ? lineas.filter((l) => aceptadas.has(l.id)) : lineas;
+            if (!firmadas.length) fail();
+            const parcial = firmadas.length < lineas.length;
+            // Sello genuino: SHA-256 del contenido firmado (folio, líneas
+            // aceptadas, firmante y fecha), igual que el servidor hashea su
+            // snapshot. No se guarda en ningún lado, pero no es texto de relleno.
+            const contenido = JSON.stringify({
+                folio,
+                status: parcial ? 'approved_partial' : 'approved',
+                signed_by: String(extra.signed_by ?? '').trim().slice(0, 200),
+                signed_at: new Date().toISOString(),
+                items: firmadas,
+            });
+            if (!globalThis.crypto?.subtle) fail();
+            const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(contenido));
+            const hash = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+            return { ok: true, status: 'approved', hash, partial: parcial };
+        }
+        if (action === 'reject') return { ok: true, status: 'rejected' };
+        if (action === 'comment') {
+            if (!mensaje) fail(I18NQ.escribeMensaje);
+            return { ok: true };
+        }
+        if (action === 'counter') {
+            if (!mensaje && !(Number(extra.propuesta) > 0)) fail(I18NQ.indicaPropuesta);
+            return { ok: true };
+        }
+        if (action === 'item_comment') {
+            if (!mensaje || !extra.item_id) fail();
+            return { ok: true };
+        }
+        return fail();
+    }
+
+    // Totales de un subconjunto de líneas con el motor único (regla 23).
+    function demoTotales(ids: string[]) {
+        const set = new Set(ids);
+        const items = (DEMO_DATA?.items ?? []).filter((l) => set.has(l.id)).map((l) => ({
+            cantidad: l.cantidad,
+            precio_unitario: l.precio,
+            tax_rate: l.taxRate ?? fallbackRate,
+        }));
+        return calculateDocumentTotals(items, { ivaIncluido, retenciones: qRetenciones });
+    }
 
     // ── Aprobación parcial: selección de líneas + total en vivo ──
     //
@@ -774,10 +980,26 @@ const hayContacto = !!(vEmail || vWa || vTel);
     }
     picks.forEach(p => p.addEventListener('change', refreshSelection));
     refreshSelection();
+    // Demo: la guía y la vista del vendedor escuchan la selección. Una
+    // cotización real no la emite: marcar casillas no es una señal que el
+    // vendedor reciba.
+    if (DEMO) {
+        picks.forEach(p => p.addEventListener('change', () => {
+            const ids = acceptedIds();
+            emit('cord:demo_selection', { accepted: ids, count: ids.length, of: picks.length, total: demoTotales(ids).total });
+        }));
+    }
 
     // ── Abrir firma ──
     approveBtn?.addEventListener('click', () => {
         if (picks.length && acceptedIds().length === 0) return;
+        // Demo: el resumen de la firma dice el total de lo que de verdad se va
+        // a firmar, no el de la cotización completa.
+        if (DEMO) {
+            const pill = document.querySelectorAll('.ql-summary-pill strong')[1] as HTMLElement | undefined;
+            if (pill) pill.textContent = `${moneyFmt(demoTotales(acceptedIds()).total)} ${QCURRENCY}`;
+            emit('cord:demo_sign_open');
+        }
         showStep('stepSign');
         (document.getElementById('qSignerName') as HTMLInputElement | null)?.focus();
     });
@@ -806,7 +1028,9 @@ const hayContacto = !!(vEmail || vWa || vTel);
             // `rev` viaja con la firma: si el vendedor tocó la propuesta entre
             // que el cliente la leyó y la firmó, el servidor responde 409 y la
             // firma no ocurre sobre un total que el cliente nunca vio.
-            const res = await api('approve', { signed_by: signedBy, email, accepted_items: acceptedIds(), rev: revActual || undefined });
+            const aceptadasAlFirmar = acceptedIds();
+            const res = await api('approve', { signed_by: signedBy, email, accepted_items: aceptadasAlFirmar, rev: revActual || undefined });
+            if (DEMO) demoCierra('approved', aceptadasAlFirmar);
             const stamp = document.getElementById('qSignedStamp');
             if (stamp && signedBy) {
                 // MISMO markup que el render del servidor (.ql-audit-stamp). Sus
@@ -814,11 +1038,10 @@ const hayContacto = !!(vEmail || vWa || vTel);
                 // en runtime y no lleva data-astro-cid (regla del proyecto).
                 const now = new Date().toLocaleString(I18NQ.localeIntl || 'es-MX', { dateStyle: 'long', timeStyle: 'short' });
                 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                const pais = card?.dataset.pais || 'MX';
                 stamp.outerHTML = `<div class="ql-audit-stamp">
                     <div class="ql-audit-header">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
-                        <span>${I18NQ.documentoVerificado || 'Documento verificado'}${pais === 'MX' ? (I18NQ.cfdiSuffix || ' · CFDI 4.0') : ''}</span>
+                        <span>${I18NQ.documentoVerificado || 'Documento verificado'}</span>
                     </div>
                     <div class="ql-audit-row"><strong>${I18NQ.firmante || 'Firmante:'}</strong> ${esc(signedBy)}</div>
                     <div class="ql-audit-row"><strong>${I18NQ.fecha || 'Fecha:'}</strong> ${esc(now)}</div>
@@ -868,6 +1091,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
         btn.textContent = I18NQ.procesando || 'Procesando…';
         try {
             await api('reject', { comentario });
+            if (DEMO) demoCierra('rejected', []);
             showStep('stepRejected');
             emit('cord:rejected', { comentario });
         } catch (err: any) {
@@ -883,6 +1107,9 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
     // ── Pago en línea ──
     document.getElementById('qPayBtn')?.addEventListener('click', async (e) => {
+        // Demo: /q/demo/pay no existe. Se muestra dentro del flujo cómo pagaría
+        // el cliente, sin pedir datos de tarjeta.
+        if (DEMO) { demoAbrePago(); return; }
         const btn = e.currentTarget as HTMLButtonElement;
         btn.disabled = true;
         btn.textContent = I18NQ.redirigiendo || 'Redirigiendo…';
@@ -899,6 +1126,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
     // ── Autorizar iguala recurrente (misma página de pago, modo suscripción) ──
     document.getElementById('qSubBtn')?.addEventListener('click', (e) => {
+        if (DEMO) { demoAbrePago(); return; }
         const btn = e.currentTarget as HTMLButtonElement;
         btn.disabled = true;
         btn.textContent = I18NQ.redirigiendo || 'Redirigiendo…';
@@ -996,8 +1224,10 @@ const hayContacto = !!(vEmail || vWa || vTel);
             appendMsg(label, action);
             if (msgEl) msgEl.value = '';
             if (propEl) propEl.value = '';
-            if (negOk) negOk.hidden = false;
+            // Demo: nadie lo va a ver, así que "lo verá al instante" sería falso.
+            if (negOk && !DEMO) negOk.hidden = false;
             emit('cord:message', { action, mensaje, propuesta });
+            if (DEMO) demoResponde();
         } catch (err: any) {
             if (negErr) negErr.textContent = (err as Error).message;
         } finally {
@@ -1016,6 +1246,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
             const thread = document.getElementById(`thread-${itemId}`);
             if (thread) {
                 thread.classList.toggle('ql-hidden');
+                if (DEMO) emit('cord:demo_thread', { item_id: itemId, open: !thread.classList.contains('ql-hidden') });
             }
         });
     });
@@ -1038,6 +1269,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
                 input.value = '';
                 emit('cord:item_comment', { item_id: itemId, mensaje });
+                if (DEMO) demoResponde(itemId);
             } catch (err: any) {
                 alert((err as Error).message);
             } finally {
@@ -1045,6 +1277,134 @@ const hayContacto = !!(vEmail || vWa || vTel);
             }
         });
     });
+
+    // ── Modo demo: cierre, pago simulado y respuesta del hilo ──
+
+    // Deja la tarjeta como la dibuja el servidor al recargar una cotización ya
+    // decidida: líneas de solo lectura, sin caja de mensaje y, en aprobación
+    // parcial, las líneas fuera marcadas y los totales de lo firmado. En la
+    // demo recargar la reinicia, así que este estado se pinta en vivo.
+    function demoCierra(estado: 'approved' | 'rejected', aceptadas: string[]) {
+        document.querySelectorAll<HTMLElement>('.qi-pick, .qi-chat-btn, .qi-reply-box, .q-compose, .q-trust')
+            .forEach((el) => { el.style.display = 'none'; });
+        document.querySelectorAll('.qi-thread').forEach((el) => el.classList.add('ql-hidden'));
+        if (estado !== 'approved') return;
+
+        const set = new Set(aceptadas);
+        document.querySelectorAll<HTMLElement>('.qi-row-wrapper[data-line-id]').forEach((fila) => {
+            const fuera = !set.has(fila.dataset.lineId ?? '');
+            // La animación de entrada (fill `both`) retiene opacity:1 y taparía
+            // el atenuado de la línea excluida.
+            fila.classList.remove('qi-deseleccionada', 'qi-reveal');
+            fila.style.animationDelay = '';
+            fila.classList.toggle('qi-excluida', fuera);
+            const tag = fila.querySelector<HTMLElement>('[data-demo-excluida]');
+            if (tag) tag.hidden = !fuera;
+        });
+
+        const tot = demoTotales(aceptadas);
+        const box = document.querySelector('.qi-subtotals');
+        const pon = (el: Element | null | undefined, n: number) => { if (el) el.textContent = moneyFmt(n); };
+        pon(box?.querySelector('[data-total="subtotal"] .editorial'), tot.subtotal);
+        pon(box?.querySelector('[data-total="grand"] .editorial'), tot.total);
+        const filasTasa = Array.from(box?.querySelectorAll('[data-total="tax"] .editorial') ?? []);
+        const tasas = tot.porTasa.filter((x) => x.impuesto > 0);
+        if (filasTasa.length === tasas.length) filasTasa.forEach((el, i) => pon(el, tasas[i].impuesto));
+
+        const hero = document.querySelector<HTMLElement>('.q-total-amount');
+        if (hero) {
+            const antes = parseFloat(hero.dataset.countup ?? '0');
+            hero.dataset.countup = String(tot.total);
+            if (Math.abs(antes - tot.total) > 0.005) countUp(hero, antes, tot.total);
+        }
+        // Importe del bloque de pago: primer nodo de texto, antes del <small>.
+        const pago = document.querySelector('.ql-pay-total');
+        if (pago?.firstChild?.nodeType === Node.TEXT_NODE) pago.firstChild.textContent = `${moneyFmt(tot.total)} `;
+        document.querySelectorAll('[data-demo-monto]').forEach((el) => { el.textContent = moneyFmt(tot.total); });
+        demoTotalFirmado = tot.total;
+
+        // Importe bruto de lo firmado y de toda la propuesta: son los dos números
+        // que el servidor escribe en el evento de firma parcial.
+        const bruto = (l: DemoLine) => l.cantidad * l.precio;
+        const lineas = DEMO_DATA?.items ?? [];
+        emit('cord:demo_approved', {
+            accepted: aceptadas,
+            count: aceptadas.length,
+            of: lineas.length,
+            total: tot.total,
+            brutoAceptado: lineas.filter((l) => set.has(l.id)).reduce((sum, l) => sum + bruto(l), 0),
+            brutoTotal: lineas.reduce((sum, l) => sum + bruto(l), 0),
+        });
+    }
+    let demoTotalFirmado = 0;
+    let demoMetodo: 'card' | 'spei' = 'card';
+
+    function demoAbrePago() {
+        const panel = document.getElementById('qDemoPay');
+        if (!panel) return;
+        const opciones = document.querySelector<HTMLElement>('.ql-pay-options');
+        if (opciones) opciones.style.display = 'none';
+        panel.hidden = false;
+        panel.classList.remove('ql-entering');
+        void panel.offsetHeight;
+        panel.classList.add('ql-entering');
+        panel.addEventListener('animationend', () => panel.classList.remove('ql-entering'), { once: true });
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        emit('cord:demo_pay_open', { total: demoTotalFirmado });
+    }
+
+    if (DEMO) {
+        const simBtn = document.getElementById('qDemoPaySim') as HTMLButtonElement | null;
+        const simText = document.getElementById('qDemoPaySimText');
+        document.querySelectorAll<HTMLButtonElement>('[data-demo-method]').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                const metodo = tab.dataset.demoMethod;
+                demoMetodo = metodo === 'spei' ? 'spei' : 'card';
+                document.querySelectorAll<HTMLButtonElement>('[data-demo-method]').forEach((t) => {
+                    t.setAttribute('aria-selected', String(t === tab));
+                });
+                document.querySelectorAll<HTMLElement>('[data-demo-panel]').forEach((p) => {
+                    p.hidden = p.dataset.demoPanel !== metodo;
+                });
+                if (simText) simText.textContent = metodo === 'spei' ? (DEMO_DATA?.simularSpei ?? '') : (DEMO_DATA?.simularTarjeta ?? '');
+            });
+        });
+        simBtn?.addEventListener('click', () => {
+            simBtn.disabled = true;
+            if (simText) simText.textContent = I18NQ.procesando || 'Procesando…';
+            setTimeout(() => {
+                const body = document.getElementById('qDemoPayBody');
+                const ok = document.getElementById('qDemoPayOk');
+                if (body) body.hidden = true;
+                if (ok) ok.hidden = false;
+                emit('cord:demo_paid', { method: demoMetodo, total: demoTotalFirmado });
+            }, 1100);
+        });
+    }
+
+    // Un hilo que solo recibe tus mensajes se lee como un monólogo (regla 20).
+    // En la demo nadie responde, y la única respuesta honesta es decirlo: una
+    // sola por canal, firmada por el negocio, que explica qué pasaría en una
+    // cotización real. La burbuja de línea se inserta sin tocar el contador del
+    // botón: appendIncomingLinea reescribe su textContent y se lleva el icono.
+    const demoRespondidos = new Set<string>();
+    function demoResponde(itemId?: string) {
+        const canal = itemId ? `linea:${itemId}` : 'chat';
+        if (!DEMO_DATA || demoRespondidos.has(canal)) return;
+        demoRespondidos.add(canal);
+        setTimeout(() => applyPresence({ vendedor: NOMBRE_VENDEDOR, enLinea: true, escribiendo: true }), 650);
+        setTimeout(() => {
+            if (itemId) {
+                const inner = document.getElementById(`thread-${itemId}`)?.querySelector('.qi-thread-inner');
+                const caja = inner?.querySelector('.qi-reply-box');
+                const div = burbuja(DEMO_DATA!.respuestaLinea, false, { small: true });
+                if (inner && caja) inner.insertBefore(div, caja); else inner?.appendChild(div);
+            } else {
+                appendIncoming(DEMO_DATA!.respuestaChat);
+            }
+            applyPresence({ vendedor: NOMBRE_VENDEDOR, enLinea: false });
+        }, 2200);
+    }
 
     // ══════════════════════════════════════════════════════════════════════
     //  DOCUMENTO VIVO
@@ -1065,7 +1425,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
         seccionDesde = Date.now();
     };
 
-    if (token && 'IntersectionObserver' in window) {
+    // La atención solo alimenta el latido; la demo no tiene latido.
+    if (token && !DEMO && 'IntersectionObserver' in window) {
         const visibles = new Map<string, number>();
         const io = new IntersectionObserver((entries) => {
             for (const en of entries) {
@@ -1084,7 +1445,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
 
     // ── Latido ──
     let escribiendo = false;
-    if (token) {
+    // Demo: sin latido ni hitos. No hay cotización que marcar como vista.
+    if (token && !DEMO) {
         // Una apertura = una pestaña. sessionStorage muere con la pestaña, que es
         // exactamente la granularidad que el vendedor entiende por "la abrió otra vez".
         let nuevaSesion = false;
@@ -1199,8 +1561,18 @@ const hayContacto = !!(vEmail || vWa || vTel);
             const totalEl = fila.querySelector('.qi-total') as HTMLElement | null;
             const qtyEl = fila.querySelector('.qi-qty') as HTMLElement | null;
 
+            // El tachado depende del precio de lista, que puede cambiar sin que
+            // cambie el importe (se quita o se pone una negociación al mismo precio).
+            const listaEl = precioEl?.querySelector<HTMLElement>('.qi-list');
+            if (listaEl && typeof it.precioLista === 'number') {
+                const conDescuento = Number(it.precio) < it.precioLista;
+                listaEl.hidden = !conDescuento;
+                if (conDescuento) listaEl.textContent = moneyFmt(it.precioLista);
+            }
+
             if (Math.abs(importeViejo - Number(it.importe)) > 0.005) {
-                if (precioEl) precioEl.textContent = moneyFmt(Number(it.precio));
+                const precioValEl = precioEl?.querySelector<HTMLElement>('.qi-price-val') ?? precioEl;
+                if (precioValEl) precioValEl.textContent = moneyFmt(Number(it.precio));
                 if (totalEl) totalEl.textContent = moneyFmt(Number(it.importe));
                 if (qtyEl) {
                     const n = Number(it.cantidad).toLocaleString(I18NQ.localeIntl || 'es-MX');
@@ -1288,7 +1660,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
     }
 
     // ── SSE ──
-    if (token && typeof EventSource !== 'undefined') {
+    // Demo: sin stream. /api/q/demo/stream no existe y reintentaría cada 4 s.
+    if (token && !DEMO && typeof EventSource !== 'undefined') {
         let es: EventSource | null = null;
         const cerrar = () => { es?.close(); es = null; };
         const connect = () => {
@@ -1526,6 +1899,8 @@ const hayContacto = !!(vEmail || vWa || vTel);
 .qi-right { text-align: right; }
 .qi-qty { color: #9ca3af; font-size: 0.78rem; }
 .qi-price { color: #9ca3af; font-size: 0.83rem; }
+.qi-list { display: block; font-size: 0.72rem; line-height: 1.2; color: #b8bdc6; text-decoration-color: rgba(0,0,0,0.3); }
+.qi-list[hidden] { display: none; }
 .qi-total { color: #111; }
 .qi-subtotals { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; padding-top: 1.1rem; }
 .qt-row { display: flex; justify-content: space-between; gap: 3rem; min-width: 200px; font-size: 0.82rem; color: #9ca3af; }
@@ -1737,7 +2112,7 @@ const hayContacto = !!(vEmail || vWa || vTel);
 .qi-row-wrapper.qi-deseleccionada .qi-name { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.3); }
 .qi-row-wrapper.qi-excluida { opacity: 0.55; }
 .qi-row-wrapper.qi-excluida .qi-name { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.25); }
-.qi-excluida-tag { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #b91c1c; background: rgba(239,68,68,0.1); padding: 2px 7px; border-radius: 100px; }
+.qi-excluida-tag { white-space: nowrap; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: #b91c1c; background: rgba(239,68,68,0.1); padding: 2px 7px; border-radius: 100px; }
 .ql-partial { font-size: 0.82rem; color: #374151; text-align: center; margin-bottom: 0.8rem; padding: 0.6rem 0.9rem; background: rgba(10,25,47,0.04); border-radius: 10px; }
 .ql-partial b { color: #111; font-weight: 700; }
 
@@ -1781,6 +2156,9 @@ const hayContacto = !!(vEmail || vWa || vTel);
     font-size: 0.8rem; font-weight: 600; color: #92400e;
     animation: qChangedIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+/* `display:flex` le gana al [hidden] del navegador: sin esta regla el aviso
+   se veía al cargar CUALQUIER cotización, aunque nada hubiera cambiado. */
+.q-changed[hidden] { display: none; }
 .q-changed-dot { width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; }
 .q-changed-text { flex: 1; min-width: 0; }
 .q-changed-btn {
@@ -1914,8 +2292,115 @@ const hayContacto = !!(vEmail || vWa || vTel);
 @keyframes qiReveal { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .qi-reveal { animation: none; } }
 
+/* ── Modo demo (/q/demo) ─────────────────────────
+   Todo este markup lo renderiza el servidor (solo en la demo), así que los
+   estilos pueden ser scoped: el script solo alterna `hidden` y clases. Cada
+   bloque con `display` propio declara su `[hidden]`, o el atributo no gana. */
+.q-demo-ribbon {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.7rem 1rem; flex-wrap: wrap;
+    margin: -0.8rem -1rem 0; padding: 0.6rem 0.6rem 0.6rem 1rem;
+    border-radius: 16px;
+    background: #f5f5f7;
+    border: 1px solid rgba(10,25,47,0.06);
+    font-size: 0.78rem; color: #3a4150; line-height: 1.45;
+}
+.q-demo-ribbon-text { display: inline-flex; align-items: flex-start; gap: 0.55rem; flex: 1 1 260px; min-width: 0; }
+.q-demo-ribbon-text svg { flex-shrink: 0; margin-top: 1px; color: #0a192f; }
+.q-demo-ribbon-cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0;
+    background: #0a192f; color: #fff; text-decoration: none;
+    font-size: 0.76rem; font-weight: 600; letter-spacing: -0.005em;
+    padding: 8px 14px; border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(10,25,47,0.12), 0 8px 18px -10px rgba(10,25,47,0.55);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), filter 0.2s;
+}
+.q-demo-ribbon-cta:hover { transform: translateY(-1px); filter: brightness(1.15); }
+.q-demo-ribbon-cta:active { transform: scale(0.97); transition-duration: 0.08s; }
+.q-demo-ribbon-cta:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+
+.qd-pay[hidden], .qd-pay-body[hidden], .qd-panel[hidden], .qd-pay-ok[hidden] { display: none !important; }
+.qd-pay {
+    display: flex; flex-direction: column; gap: 1rem;
+    padding: 1.25rem; text-align: left;
+    background: #fafafa; border: 1px solid rgba(10,25,47,0.06); border-radius: 16px;
+}
+.qd-pay-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.qd-pay-eyebrow { font-size: 0.52rem; font-weight: 800; letter-spacing: 2px; color: #9ca3af; }
+.qd-pay-badge { font-size: 0.62rem; font-weight: 700; color: #0a192f; background: rgba(10,25,47,0.06); padding: 3px 9px; border-radius: 999px; }
+.qd-pay-intro { display: flex; flex-direction: column; gap: 4px; }
+.qd-pay-intro strong { font-size: 0.95rem; font-weight: 600; color: #050505; letter-spacing: -0.01em; }
+.qd-pay-intro span { font-size: 0.8rem; color: #6b7686; line-height: 1.55; }
+.qd-pay-amount {
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 0.9rem 0;
+    border-top: 1px solid rgba(10,25,47,0.06); border-bottom: 1px solid rgba(10,25,47,0.06);
+}
+.qd-pay-amount-label { font-size: 0.52rem; font-weight: 800; letter-spacing: 2px; color: #9ca3af; }
+.qd-pay-amount-num { font-size: 1.55rem; line-height: 1.15; }
+.qd-pay-amount-num small { font-size: 0.7rem; color: #9ca3af; font-weight: 600; letter-spacing: 0; }
+.qd-pay-amount-sub { font-size: 0.72rem; color: #9ca3af; }
+.qd-pay-body { display: flex; flex-direction: column; gap: 0.9rem; }
+.qd-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: rgba(10,25,47,0.05); border-radius: 12px; }
+.qd-tab {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    min-height: 40px; padding: 8px 10px;
+    font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #6b7280;
+    background: transparent; border: 0; border-radius: 9px; cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.qd-tab:hover { color: #111; }
+.qd-tab[aria-selected="true"] { background: #fff; color: #0a192f; box-shadow: 0 1px 2px rgba(10,25,47,0.08), 0 6px 14px -8px rgba(10,25,47,0.2); }
+.qd-tab:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+.qd-panel { display: flex; flex-direction: column; gap: 0.7rem; }
+.qd-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.qd-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+.qd-flabel { font-size: 0.72rem; font-weight: 600; color: #6b7280; }
+.qd-fake {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+    min-height: 44px; padding: 10px 13px;
+    background: #fff; border: 1.5px solid rgba(10,25,47,0.12); border-radius: 11px;
+}
+.qd-fake-ph { font-size: 0.88rem; color: #b8bec8; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.qd-fake .ql-pay-cards { margin-left: 0; }
+.qd-kv { display: flex; flex-direction: column; }
+.qd-kv-row { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.62rem 0; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.8rem; }
+.qd-kv-row:first-child { padding-top: 0.2rem; }
+.qd-kv-row > span { color: #6b7280; min-width: 0; }
+.qd-kv-row strong { color: #111; font-weight: 600; text-align: right; }
+.qd-kv-row .qd-mono { white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.78rem; letter-spacing: 0.04em; color: #9ca3af; }
+.qd-note { display: flex; align-items: flex-start; gap: 7px; margin: 0; font-size: 0.72rem; color: #6b7686; line-height: 1.5; }
+.qd-note svg { flex-shrink: 0; margin-top: 2px; color: #059669; }
+.qd-pay-ok { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.45rem; padding: 0.3rem 0 0.2rem; }
+.qd-pay-ok .ql-check-svg { width: 58px; height: 58px; margin-bottom: 0.2rem; }
+.qd-pay-ok strong { font-size: 1rem; font-weight: 700; color: #111; }
+.qd-pay-ok span { font-size: 0.8rem; color: #6b7686; max-width: 38ch; line-height: 1.55; }
+.qd-pay-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; padding-top: 0.9rem; border-top: 1px solid rgba(10,25,47,0.06); }
+.qd-link { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; font-size: 0.8rem; font-weight: 600; color: #0a192f; text-decoration: none; }
+.qd-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.qd-cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 40px; padding: 9px 16px; border-radius: 999px;
+    font-size: 0.82rem; font-weight: 600; color: #fff; text-decoration: none;
+    box-shadow: 0 1px 2px rgba(10,25,47,0.12), 0 10px 22px -12px rgba(10,25,47,0.55);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), filter 0.2s;
+}
+.qd-cta:hover { transform: translateY(-1px); filter: brightness(1.15); }
+.qd-cta:active { transform: scale(0.97); transition-duration: 0.08s; }
+.qd-link:focus-visible, .qd-cta:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+.qd-restart-row { display: flex; align-items: center; justify-content: center; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.9rem; }
+.qd-restart { flex: none; text-decoration: none; }
+
 /* ── Responsive ───────────────────────────────── */
 @media (max-width: 600px) {
+    .q-demo-ribbon { margin: -0.4rem -0.2rem 0; padding: 0.75rem; border-radius: 14px; }
+    .q-demo-ribbon-cta { width: 100%; min-height: 44px; font-size: 0.8rem; }
+    .qd-pay { padding: 1rem; }
+    .qd-tab { min-height: 44px; font-size: 0.76rem; gap: 5px; padding-inline: 6px; }
+    .qd-fake .ql-pay-cards { display: none; }
+    .qd-pay-foot { flex-direction: column; align-items: stretch; }
+    .qd-link, .qd-cta { min-height: 44px; justify-content: center; }
+    .qd-restart-row { flex-direction: column; align-items: stretch; width: 100%; }
+    .qd-restart-row .qd-cta { min-height: 44px; }
     .q-card { padding: 1.5rem 1rem; gap: 1.4rem; border-radius: 22px; }
     .q-header { flex-wrap: wrap; }
     .q-brand-row { min-width: 0; }

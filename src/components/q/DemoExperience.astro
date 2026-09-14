@@ -1,0 +1,1101 @@
+---
+// DemoExperience — la capa que convierte /q/demo en un recorrido.
+//
+// Envuelve a QuoteCard (slot) y agrega tres piezas que SOLO existen en la demo:
+//   · la vista simulada del vendedor: lo que la app le muestra a tu equipo
+//     mientras el cliente usa el link (presencia, atención por sección y
+//     actividad), calcada de /app/cotizaciones/[id] y de la campana de
+//     notificaciones de AppLayout;
+//   · una guía de cinco pasos que avanza cuando el visitante HACE la acción,
+//     escuchando los eventos `cord:*` que emite QuoteCard;
+//   · un cierre con los features que se acaban de vivir.
+//
+// Nada de esto habla con el servidor (regla 19): todo sale de los eventos del
+// navegador. Las cotizaciones reales nunca renderizan este componente.
+import { t } from '../../i18n/app';
+import { publicPath } from '../../i18n/utils';
+import { currentLocale } from '../../lib/context';
+import { money, quoteTotal, STATUS_META } from '../../lib/mock';
+import { FEATURES } from '../../lib/producto';
+import { FEATURES_EN } from '../../lib/producto.en';
+
+interface Props {
+    quote: any;
+    org: any;
+}
+
+const { quote: q } = Astro.props;
+const L = currentLocale();
+const lang = L === 'en' ? 'en' : 'es';
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
+
+const signup = publicPath('/registro', lang);
+const planes = publicPath('/precios', lang);
+
+const items: any[] = Array.isArray(q.items) ? q.items : [];
+const linea2 = items[1] ?? items[0];
+// Total si el cliente quita la segunda partida: el mismo motor que el link.
+const montoSinLinea2 = money(quoteTotal({ ...q, items: items.filter((it) => it.id !== linea2?.id) }));
+
+// Estados con el color de STATUS_META y la etiqueta de la app en el idioma.
+const statusLabel = (s: string) => (s === 'rejected' ? t(L, 'q.seller_rechazada') : t(L, `cot.col.${s}` as any));
+const STATUS = Object.fromEntries(
+    (['sent', 'viewed', 'approved', 'rejected', 'paid'] as const).map((s) => [
+        s,
+        { label: statusLabel(s), color: STATUS_META[s].color, bg: STATUS_META[s].bg },
+    ]),
+);
+const inicial = STATUS[q.status] ?? STATUS.viewed;
+
+// Mismo mapeo de color que la bitácora de /app/cotizaciones/[id].
+const dotColor = (tipo: string) =>
+    tipo === 'approved' || tipo === 'paid' ? '#10b981'
+    : tipo === 'viewed' ? '#7c3aed'
+    : tipo === 'sent' ? '#3b82f6'
+    : tipo === 'rejected' ? '#ef4444'
+    : '#cbd5e1';
+
+const SEC_LABEL = {
+    resumen: t(L, 'q.atencion.sec_resumen'),
+    partidas: t(L, 'q.atencion.sec_partidas'),
+    notas: t(L, 'q.atencion.sec_notas'),
+    pago: t(L, 'q.atencion.sec_pago'),
+    conversacion: t(L, 'q.atencion.sec_conversacion'),
+};
+
+const CATALOGO = lang === 'en' ? FEATURES_EN : FEATURES;
+const ICONOS: Record<string, string> = {
+    'link-publico': '<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1" /><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" /><rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor" fill-opacity="0.12" stroke="none" />',
+    seguimiento: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" fill="currentColor" fill-opacity="0.14" /><circle cx="12" cy="12" r="3" />',
+    negociacion: '<path d="M21 14.5a2 2 0 0 1-2 2H8l-4 3.5V6a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2Z" fill="currentColor" fill-opacity="0.14" /><line x1="8" y1="9" x2="16" y2="9" /><line x1="8" y1="12.5" x2="13" y2="12.5" />',
+    pagos: '<rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="currentColor" fill-opacity="0.14" /><line x1="2.5" y1="10" x2="21.5" y2="10" /><line x1="6" y1="15" x2="10" y2="15" />',
+    facturacion: '<path d="M14 2.5H6.5a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8Z" fill="currentColor" fill-opacity="0.14" /><polyline points="14 2.5 14 8 19.5 8" /><line x1="8.5" y1="13" x2="15.5" y2="13" /><line x1="8.5" y1="16.5" x2="13" y2="16.5" />',
+};
+const FEATS = [
+    { slug: 'link-publico', desc: 'q.demo_cierre_link' },
+    { slug: 'seguimiento', desc: 'q.demo_cierre_seguimiento' },
+    { slug: 'negociacion', desc: 'q.demo_cierre_negociacion' },
+    { slug: 'pagos', desc: 'q.demo_cierre_pagos' },
+    { slug: 'facturacion', desc: 'q.demo_cierre_facturacion' },
+].map((f) => ({
+    ...f,
+    label: CATALOGO.find((x) => x.slug === f.slug)?.nav ?? f.slug,
+    href: publicPath(`/producto/${f.slug}`, lang),
+    icon: ICONOS[f.slug],
+}));
+
+const eventos: any[] = Array.isArray(q.eventos) ? q.eventos : [];
+
+// Todo lo que el script necesita, ya resuelto en el idioma del request.
+const data = {
+    intl: L === 'en' ? 'en-US' : 'es-MX',
+    tz: 'America/Mexico_City',
+    currency: (q.baseCurrency as string) || 'MXN',
+    folio: q.folio,
+    cliente: q.cliente,
+    linea2: linea2 ? String(linea2.id) : '',
+    lineas: Object.fromEntries(items.map((it) => [String(it.id), String(it.descripcion)])),
+    status: STATUS,
+    dots: { comment: dotColor('comment'), counter: dotColor('counter'), approved: dotColor('approved'), rejected: dotColor('rejected'), paid: dotColor('paid'), viewed: dotColor('viewed') },
+    secLabels: SEC_LABEL,
+    s: {
+        hoy: t(L, 'q.seller_hoy'),
+        viendo: t(L, 'id.viendo_ahora'),
+        eventos1: t(L, 'q.seller_eventos_uno'),
+        eventosN: t(L, 'q.seller_eventos'),
+        evLinea: t(L, 'q.seller_ev_linea'),
+        evPropuesta: t(L, 'q.seller_ev_propuesta'),
+        evFirma: t(L, 'q.seller_ev_firma'),
+        evFirmaParcial: t(L, 'q.seller_ev_firma_parcial'),
+        evRechazo: t(L, 'q.seller_ev_rechazo'),
+        evRechazoSin: t(L, 'q.seller_ev_rechazo_sin'),
+        evPago: t(L, 'q.seller_ev_pago'),
+        notif: {
+            viewed: t(L, 'notif.tipo.viewed'),
+            comment: t(L, 'notif.tipo.comment'),
+            counter: t(L, 'notif.tipo.counter'),
+            approved: t(L, 'notif.tipo.approved'),
+            rejected: t(L, 'notif.tipo.rejected'),
+            paid: t(L, 'notif.tipo.paid'),
+        },
+        paso: t(L, 'q.tour_paso'),
+        hecho: t(L, 'q.tour_hecho'),
+        accion: t(L, 'q.tour_accion'),
+        siguiente: t(L, 'q.tour_siguiente'),
+        cerrar: t(L, 'q.tour_cerrar'),
+        tituloFirma: t(L, 'q.demo_cierre_titulo_firma'),
+        tituloPago: t(L, 'q.demo_cierre_titulo_pago'),
+        pasos: [
+            { titulo: t(L, 'q.tour_1_titulo'), texto: t(L, 'q.tour_1_texto'), accion: false },
+            { titulo: t(L, 'q.tour_2_titulo'), texto: tf('q.tour_2_texto', { linea: String(linea2?.descripcion ?? '') }), accion: true },
+            { titulo: t(L, 'q.tour_3_titulo'), texto: tf('q.tour_3_texto', { linea: String(linea2?.descripcion ?? ''), monto: montoSinLinea2 }), accion: true },
+            { titulo: t(L, 'q.tour_4_titulo'), texto: t(L, 'q.tour_4_texto'), accion: true },
+            { titulo: t(L, 'q.tour_5_titulo'), texto: t(L, 'q.tour_5_texto'), accion: true },
+        ],
+    },
+};
+const dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
+---
+
+<div class="qx-stage" data-qx-root>
+    <script type="application/json" id="qxData" is:inline set:html={dataJson} />
+
+    <div class="qx-main">
+        <slot />
+
+        <section class="qx-close" id="qxClose" hidden aria-labelledby="qxCloseTitle">
+            <span class="qx-close-eyebrow">{t(L, 'q.demo_cierre_eyebrow')}</span>
+            <h2 class="qx-close-title" id="qxCloseTitle">{t(L, 'q.demo_cierre_titulo_firma')}</h2>
+            <p class="qx-close-sub">{t(L, 'q.demo_cierre_sub')}</p>
+            <ul class="qx-feats">
+                {FEATS.map((f) => (
+                    <li>
+                        <a class="qx-feat" href={f.href}>
+                            <span class="qx-feat-ico" aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={f.icon} />
+                            </span>
+                            <span class="qx-feat-body">
+                                <span class="qx-feat-label">{f.label}</span>
+                                <span class="qx-feat-desc">{t(L, f.desc as any)}</span>
+                            </span>
+                            <svg class="qx-feat-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18" /></svg>
+                        </a>
+                    </li>
+                ))}
+            </ul>
+            <div class="qx-close-actions">
+                <a class="qx-btn qx-btn-primary" href={signup}>
+                    {t(L, 'q.demo_cierre_cta')}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
+                </a>
+                <a class="qx-btn qx-btn-ghost" href={planes}>{t(L, 'q.demo_cierre_planes')}</a>
+            </div>
+            <a class="qx-restart" href="/q/demo">{t(L, 'q.demo_reiniciar')}</a>
+        </section>
+    </div>
+
+    <aside class="qx-seller" id="qxSeller" aria-labelledby="qxSellerTitle">
+        <div class="qx-seller-top">
+            <span class="qx-sim">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="2.5" fill="currentColor" fill-opacity="0.14" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
+                {t(L, 'q.seller_sim')}
+            </span>
+            <button type="button" class="qx-sheet-close" id="qxSheetClose" aria-label={t(L, 'q.seller_cerrar')}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+        </div>
+        <h2 class="qx-seller-title" id="qxSellerTitle">{t(L, 'q.seller_titulo')}</h2>
+
+        <div class="qx-app">
+            <div class="qx-toast" id="qxToast" aria-hidden="true"></div>
+
+            <div class="qx-app-bar">
+                <span class="qx-crumb">{t(L, 'sidebar.item.cotizaciones')} <span aria-hidden="true">/</span> <b>{q.folio}</b></span>
+                <span class="qx-status" id="qxStatus" style={`color:${inicial.color}; background:${inicial.bg}`}>{inicial.label}</span>
+            </div>
+
+            <div class="qx-head">
+                <span class="qx-avatar" aria-hidden="true">{q.clienteInicial}</span>
+                <div class="qx-head-text">
+                    <span class="qx-name">{q.cliente}</span>
+                    <span class="qx-meta">{q.terminos} · {t(L, 'id.vigente_hasta')} {q.vigencia}</span>
+                    <span class="qx-live" id="qxLive" hidden>
+                        <span class="qx-live-dot"></span>
+                        <span>{t(L, 'id.viendo_ahora')}<span class="qx-live-sec" id="qxLiveSec"></span></span>
+                    </span>
+                </div>
+            </div>
+            <div class="qx-total">
+                <span>{t(L, 'id.total')}</span>
+                <span class="editorial" id="qxTotal">{money(quoteTotal(q))}</span>
+            </div>
+
+            <section class="qx-sec">
+                <h3>{t(L, 'id.atencion.titulo')}</h3>
+                <div class="qx-at-sum">
+                    <span>{t(L, 'id.atencion.persona')}</span>
+                    <span class="qx-at-sep" aria-hidden="true">·</span>
+                    <span>{tf('id.atencion.aperturas', { n: '2' })}</span>
+                </div>
+                <div class="qx-bars" id="qxBars"></div>
+            </section>
+
+            <section class="qx-sec">
+                <h3>{t(L, 'id.actividad')}</h3>
+                <div class="qx-tl" id="qxFeed" aria-live="polite">
+                    {eventos.map((e) => (
+                        <div class="qx-tl-item">
+                            <span class="qx-tl-dot" style={`background:${dotColor(e.tipo)}`}></span>
+                            <div class="qx-tl-body">
+                                <span class="qx-tl-text">{e.detalle}</span>
+                                <span class="qx-tl-time">{e.cuando}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+        </div>
+    </aside>
+</div>
+
+<button type="button" class="qx-pill" id="qxPill" aria-controls="qxSeller" aria-expanded="false" aria-label={t(L, 'q.seller_abrir')}>
+    <span class="qx-live-dot" aria-hidden="true"></span>
+    <span class="qx-pill-text" id="qxPillText">{t(L, 'q.seller_pill')}</span>
+    <span class="qx-pill-count" id="qxPillCount">{tf('q.seller_eventos', { n: String(eventos.length) })}</span>
+</button>
+<div class="qx-backdrop" id="qxBackdrop" hidden></div>
+
+<div class="qx-ring" id="qxRing" aria-hidden="true" hidden></div>
+
+<div class="qx-tour" id="qxTour" role="dialog" aria-modal="false" aria-labelledby="qxTourTitle" aria-describedby="qxTourText" hidden>
+    <div class="qx-tour-top">
+        <span class="qx-tour-eyebrow">{t(L, 'q.tour_label')}</span>
+        <span class="qx-tour-count" id="qxTourCount" aria-hidden="true">1/5</span>
+        <button type="button" class="qx-tour-x" id="qxTourX" aria-label={t(L, 'q.tour_cerrar')}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        </button>
+    </div>
+    <div class="qx-tour-progress" aria-hidden="true">
+        {[0, 1, 2, 3, 4].map((i) => <span data-seg={i}></span>)}
+    </div>
+    <p class="qx-sr" id="qxTourLive" aria-live="polite"></p>
+    <h2 class="qx-tour-title" id="qxTourTitle"></h2>
+    <p class="qx-tour-text" id="qxTourText"></p>
+    <p class="qx-tour-hint" id="qxTourHint">
+        <span class="qx-tour-hint-dot" aria-hidden="true"></span>
+        <span id="qxTourHintText">{t(L, 'q.tour_accion')}</span>
+    </p>
+    <div class="qx-tour-foot">
+        <button type="button" class="qx-tour-skip" id="qxTourSkip">{t(L, 'q.tour_saltar')}</button>
+        <button type="button" class="qx-tour-next" id="qxTourNext">{t(L, 'q.tour_siguiente')}</button>
+    </div>
+</div>
+
+<button type="button" class="qx-reopen" id="qxReopen" hidden>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="currentColor" fill-opacity="0.14" /><polygon points="10 8.5 16 12 10 15.5" fill="currentColor" stroke="none" /></svg>
+    {t(L, 'q.tour_reabrir')}
+</button>
+
+<script>
+    interface Paso { titulo: string; texto: string; accion: boolean }
+    interface Meta { label: string; color: string; bg: string }
+    interface Data {
+        intl: string; tz: string; currency: string; folio: string; cliente: string;
+        linea2: string; lineas: Record<string, string>;
+        status: Record<string, Meta>; dots: Record<string, string>;
+        secLabels: Record<string, string>;
+        s: Record<string, any> & { pasos: Paso[]; notif: Record<string, string> };
+    }
+
+    const root = document.querySelector<HTMLElement>('[data-qx-root]');
+    let D: Data | null = null;
+    try { D = JSON.parse(document.getElementById('qxData')?.textContent || 'null'); } catch { D = null; }
+    if (root && D) iniciar(root, D);
+
+    function iniciar(root: HTMLElement, D: Data) {
+        const S = D.s;
+        const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T | null;
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const escritorio = window.matchMedia('(min-width: 1400px)');
+        const fill = (tpl: string, vars: Record<string, string | number>) =>
+            Object.keys(vars).reduce((acc, k) => acc.split(`{${k}}`).join(String(vars[k])), tpl);
+        const dinero = (n: number) => {
+            try {
+                return new Intl.NumberFormat(D.intl, { style: 'currency', currency: D.currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+            } catch { return String(n); }
+        };
+        // Formato de la bitácora de la app: "hoy, 18:40" en la zona del negocio.
+        const horaTl = () => {
+            const hhmm = new Intl.DateTimeFormat(D.intl, { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: D.tz }).format(new Date());
+            return `${S.hoy}, ${hhmm}`;
+        };
+        // Formato de la campana: Intl.RelativeTimeFormat corto, como /api/notificaciones.
+        const ahoraNotif = () => new Intl.RelativeTimeFormat(D.intl, { numeric: 'auto', style: 'short' }).format(0, 'minute');
+
+        // ══════════════════════════════════════════════════════════════
+        //  Vista del vendedor
+        // ══════════════════════════════════════════════════════════════
+        const feed = $('qxFeed');
+        const statusEl = $('qxStatus');
+        const totalEl = $('qxTotal');
+        const live = $('qxLive');
+        const liveSec = $('qxLiveSec');
+        const bars = $('qxBars');
+        const toast = $('qxToast');
+        const pill = $<HTMLButtonElement>('qxPill');
+        const pillText = $('qxPillText');
+        const pillCount = $('qxPillCount');
+        const pillBase = pillText?.textContent || '';
+
+        const pintaConteo = () => {
+            const n = feed?.children.length ?? 0;
+            if (pillCount) pillCount.textContent = n === 1 ? S.eventos1 : fill(S.eventosN, { n });
+        };
+
+        const ponStatus = (s: string) => {
+            const m = D.status[s];
+            if (!statusEl || !m) return;
+            statusEl.textContent = m.label;
+            statusEl.style.color = m.color;
+            statusEl.style.background = m.bg;
+            statusEl.classList.remove('qx-pop');
+            void statusEl.offsetWidth;
+            statusEl.classList.add('qx-pop');
+        };
+
+        const ICONOS: Record<string, string> = {
+            eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+            check: '<path d="M20 6L9 17l-5-5"/>',
+            x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+            card: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
+            chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+        };
+        // Mismo icono y tono por tipo que la campana de AppLayout.
+        const NOTIF_ICON: Record<string, string> = { viewed: 'eye', approved: 'check', rejected: 'x', paid: 'card', comment: 'chat', counter: 'chat' };
+        const TONE: Record<string, string> = { approved: 'ok', paid: 'ok', viewed: 'warn', counter: 'warn', rejected: 'danger' };
+
+        let toastTimer = 0;
+        let pillTimer = 0;
+        const notifica = (tipo: string) => {
+            const title = S.notif[tipo];
+            if (!title || !toast) return;
+            const a = document.createElement('div');
+            a.className = 'qx-notif-item';
+            const ico = document.createElement('span');
+            ico.className = `qx-notif-ico${TONE[tipo] ? ' ' + TONE[tipo] : ''}`;
+            ico.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[NOTIF_ICON[tipo]] || ICONOS.chat}</svg>`;
+            const body = document.createElement('span');
+            body.className = 'qx-notif-body';
+            const t1 = document.createElement('span'); t1.className = 'qx-notif-title'; t1.textContent = title;
+            const t2 = document.createElement('span'); t2.className = 'qx-notif-sub'; t2.textContent = `${D.folio} · ${D.cliente}`;
+            const t3 = document.createElement('span'); t3.className = 'qx-notif-when'; t3.textContent = ahoraNotif();
+            body.append(t1, t2, t3);
+            a.append(ico, body);
+            toast.replaceChildren(a);
+            toast.classList.add('is-on');
+            window.clearTimeout(toastTimer);
+            toastTimer = window.setTimeout(() => toast.classList.remove('is-on'), 5200);
+
+            // En móvil la vista vive detrás de la píldora: la píldora avisa.
+            if (pillText && pill) {
+                pillText.textContent = title;
+                pill.classList.add('is-news');
+                window.clearTimeout(pillTimer);
+                pillTimer = window.setTimeout(() => { pillText.textContent = pillBase; pill.classList.remove('is-news'); }, 3600);
+            }
+        };
+
+        const evento = (tipo: string, texto: string, conNotif = true) => {
+            if (!feed) return;
+            const item = document.createElement('div');
+            item.className = 'qx-tl-item qx-in';
+            const dot = document.createElement('span');
+            dot.className = 'qx-tl-dot';
+            dot.style.background = D.dots[tipo] || '#cbd5e1';
+            const body = document.createElement('div');
+            body.className = 'qx-tl-body';
+            const tx = document.createElement('span'); tx.className = 'qx-tl-text'; tx.textContent = texto;
+            const tm = document.createElement('span'); tm.className = 'qx-tl-time'; tm.textContent = horaTl();
+            body.append(tx, tm);
+            item.append(dot, body);
+            feed.prepend(item);
+            feed.scrollTop = 0;
+            pintaConteo();
+            if (conNotif) notifica(tipo);
+        };
+
+        // ── Presencia y atención por sección ──
+        // En la app llegan por el latido del link (cada 10 s) y el stream del
+        // detalle; aquí se leen del scroll del propio visitante.
+        const dwell: Record<string, number> = {};
+        let seccion: string | null = null;
+        const pintaPresencia = () => {
+            if (!live) return;
+            const visible = document.visibilityState === 'visible';
+            live.hidden = !visible;
+            if (liveSec) liveSec.textContent = seccion && D.secLabels[seccion] ? ` — ${D.secLabels[seccion]}` : '';
+        };
+        const fmtDwell = (s: number) => {
+            if (!s || s <= 0) return '—';
+            if (s < 60) return `${s}s`;
+            const m = Math.floor(s / 60), r = s % 60;
+            return r ? `${m}m ${r}s` : `${m}m`;
+        };
+        const pintaBarras = () => {
+            if (!bars) return;
+            const filas = Object.entries(dwell).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+            const max = filas.reduce((m, [, v]) => Math.max(m, v), 0) || 1;
+            const existentes = new Map<string, HTMLElement>();
+            bars.querySelectorAll<HTMLElement>('.qx-at-fila').forEach((f) => existentes.set(f.dataset.sec || '', f));
+            filas.forEach(([clave, seg]) => {
+                let fila = existentes.get(clave);
+                if (!fila) {
+                    fila = document.createElement('div');
+                    fila.className = 'qx-at-fila';
+                    fila.dataset.sec = clave;
+                    fila.innerHTML = '<span class="qx-at-label"></span><span class="qx-at-track"><span class="qx-at-fill"></span></span><span class="editorial qx-at-val"></span>';
+                    (fila.querySelector('.qx-at-label') as HTMLElement).textContent = D.secLabels[clave] || clave;
+                }
+                (fila.querySelector('.qx-at-fill') as HTMLElement).style.width = `${Math.round((seg / max) * 100)}%`;
+                (fila.querySelector('.qx-at-val') as HTMLElement).textContent = fmtDwell(seg);
+                bars.appendChild(fila); // re-ordena sin recrear
+            });
+        };
+
+        // La sección "activa" es la que cruza la línea de lectura (45 % de la
+        // ventana). Un umbral de IntersectionObserver no sirve aquí: una sección
+        // más alta que la ventana nunca llega a verse al 20 %.
+        const secciones = Array.from(document.querySelectorAll<HTMLElement>('.q-card [data-sec]'));
+        let lecturaPendiente = false;
+        const leeSeccion = () => {
+            lecturaPendiente = false;
+            const linea = window.innerHeight * 0.45;
+            let mejor: string | null = null;
+            let distancia = Infinity;
+            for (const el of secciones) {
+                const r = el.getBoundingClientRect();
+                if (r.height === 0) continue;
+                const d = r.top <= linea && r.bottom >= linea ? 0 : Math.min(Math.abs(r.top - linea), Math.abs(r.bottom - linea));
+                if (d < distancia) { distancia = d; mejor = el.dataset.sec || null; }
+            }
+            if (mejor && mejor !== seccion) { seccion = mejor; pintaPresencia(); }
+        };
+        const agendaLectura = () => {
+            if (lecturaPendiente) return;
+            lecturaPendiente = true;
+            window.requestAnimationFrame(leeSeccion);
+        };
+        window.addEventListener('scroll', agendaLectura, { passive: true });
+        window.addEventListener('resize', agendaLectura);
+        let tick = 0;
+        window.setInterval(() => {
+            if (document.visibilityState !== 'visible' || !seccion) return;
+            dwell[seccion] = (dwell[seccion] ?? 0) + 1;
+            if (++tick % 2 === 0) pintaBarras();
+        }, 1000);
+        window.setTimeout(() => { leeSeccion(); if (!seccion) seccion = 'resumen'; pintaPresencia(); }, 900);
+        document.addEventListener('visibilitychange', pintaPresencia);
+
+        // ── Lo que el cliente hace → lo que ve el vendedor ──
+        let aprobacion: any = null;
+        window.addEventListener('cord:item_comment', (e: Event) => {
+            const d = (e as CustomEvent).detail || {};
+            // Los comentarios por línea no van a la campana: el vendedor los ve
+            // en la propia línea del detalle, en vivo.
+            evento('comment', fill(S.evLinea, { linea: D.lineas[String(d.item_id)] || '', mensaje: `"${String(d.mensaje || '')}"` }), false);
+        });
+        window.addEventListener('cord:message', (e: Event) => {
+            const d = (e as CustomEvent).detail || {};
+            const mensaje = String(d.mensaje || '');
+            if (d.action === 'counter') {
+                const monto = Number(d.propuesta) > 0 ? fill(S.evPropuesta, { monto: dinero(Number(d.propuesta)) }) : '';
+                evento('counter', [monto, mensaje].filter(Boolean).join(' — '));
+            } else {
+                evento('comment', mensaje);
+            }
+        });
+        window.addEventListener('cord:demo_approved', (e: Event) => { aprobacion = (e as CustomEvent).detail || null; });
+        window.addEventListener('cord:approved', (e: Event) => {
+            const d = (e as CustomEvent).detail || {};
+            const nombre = String(d.signed_by || '');
+            const a = aprobacion;
+            const parcial = a && a.count < a.of;
+            ponStatus('approved');
+            if (a && totalEl) totalEl.textContent = dinero(Number(a.total));
+            evento('approved', parcial
+                ? fill(S.evFirmaParcial, { nombre, n: a.count, total: a.of, aceptado: dinero(a.brutoAceptado), todo: dinero(a.brutoTotal) })
+                : fill(S.evFirma, { nombre }));
+        });
+        window.addEventListener('cord:rejected', (e: Event) => {
+            const motivo = String((e as CustomEvent).detail?.comentario || '');
+            ponStatus('rejected');
+            evento('rejected', motivo ? fill(S.evRechazo, { motivo }) : S.evRechazoSin);
+        });
+        window.addEventListener('cord:demo_paid', () => {
+            ponStatus('paid');
+            evento('paid', S.evPago);
+        });
+
+        // ── Hoja inferior (móvil y tableta) ──
+        const seller = $('qxSeller');
+        const backdrop = $('qxBackdrop');
+        const sheetClose = $<HTMLButtonElement>('qxSheetClose');
+        let sheetAbierta = false;
+        const abreHoja = () => {
+            if (!seller || escritorio.matches) return;
+            sheetAbierta = true;
+            seller.classList.add('is-open');
+            seller.setAttribute('role', 'dialog');
+            seller.setAttribute('aria-modal', 'true');
+            if (backdrop) backdrop.hidden = false;
+            pill?.setAttribute('aria-expanded', 'true');
+            window.setTimeout(() => sheetClose?.focus(), 60);
+        };
+        const cierraHoja = (devolverFoco = true) => {
+            if (!seller || !sheetAbierta) return;
+            sheetAbierta = false;
+            seller.classList.remove('is-open');
+            seller.removeAttribute('role');
+            seller.removeAttribute('aria-modal');
+            if (backdrop) backdrop.hidden = true;
+            pill?.setAttribute('aria-expanded', 'false');
+            if (devolverFoco) pill?.focus();
+        };
+        pill?.addEventListener('click', () => (sheetAbierta ? cierraHoja() : abreHoja()));
+        sheetClose?.addEventListener('click', () => cierraHoja());
+        backdrop?.addEventListener('click', () => cierraHoja());
+        escritorio.addEventListener('change', () => cierraHoja(false));
+
+        // ══════════════════════════════════════════════════════════════
+        //  Guía
+        // ══════════════════════════════════════════════════════════════
+        const KEY = 'cord.demo.guia.cerrada';
+        const recordada = () => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } };
+        const recuerda = (cerrada: boolean) => {
+            try { if (cerrada) localStorage.setItem(KEY, '1'); else localStorage.removeItem(KEY); } catch { /* modo privado */ }
+        };
+
+        const tour = $('qxTour');
+        const ring = $('qxRing');
+        const reopen = $<HTMLButtonElement>('qxReopen');
+        const titleEl = $('qxTourTitle');
+        const textEl = $('qxTourText');
+        const hintEl = $('qxTourHint');
+        const hintText = $('qxTourHintText');
+        const countEl = $('qxTourCount');
+        const liveEl = $('qxTourLive');
+        const nextBtn = $<HTMLButtonElement>('qxTourNext');
+        const skipBtn = $<HTMLButtonElement>('qxTourSkip');
+        const xBtn = $<HTMLButtonElement>('qxTourX');
+        const segs = Array.from(tour?.querySelectorAll<HTMLElement>('[data-seg]') ?? []);
+        const TOTAL = S.pasos.length;
+
+        const visible = (el: Element | null): el is HTMLElement => {
+            if (!el) return false;
+            const r = (el as HTMLElement).getBoundingClientRect();
+            return r.width > 0 && r.height > 0;
+        };
+        const q1 = (sel: string) => document.querySelector<HTMLElement>(sel);
+        const OBJETIVOS: Array<() => HTMLElement | null> = [
+            () => q1('.q-total-hero'),
+            () => {
+                const hilo = document.getElementById(`thread-${D.linea2}`);
+                if (hilo && !hilo.classList.contains('ql-hidden')) {
+                    const caja = hilo.querySelector<HTMLElement>('.qi-reply-box');
+                    return visible(caja) ? caja : hilo;
+                }
+                return q1(`.qi-chat-btn[data-item-id="${CSS.escape(D.linea2)}"]`);
+            },
+            () => q1(`.qi-row-wrapper[data-line-id="${CSS.escape(D.linea2)}"] .qi-pick`),
+            () => {
+                const firma = document.getElementById('stepSign');
+                if (firma && !firma.classList.contains('ql-hidden')) return firma;
+                return q1('#qApproveBtn');
+            },
+            () => {
+                const pago = document.getElementById('qDemoPay');
+                if (pago && !pago.hidden) {
+                    const sim = document.getElementById('qDemoPaySim');
+                    return visible(sim) ? sim : pago;
+                }
+                const btn = q1('#qPayBtn');
+                return visible(btn) ? btn : q1('#qApproveBtn');
+            },
+        ];
+
+        let paso = 0;
+        let activa = false;
+        let terminada = false;
+        let raf = 0;
+
+        const enPantalla = (el: HTMLElement) => {
+            const r = el.getBoundingClientRect();
+            return r.top >= 64 && r.bottom <= window.innerHeight - 180;
+        };
+        const llevaA = (el: HTMLElement | null) => {
+            if (!el || enPantalla(el)) return;
+            el.scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth', block: 'center' });
+        };
+
+        const sigueObjetivo = () => {
+            if (!activa || !ring) return;
+            const el = OBJETIVOS[paso]?.();
+            if (visible(el)) {
+                const r = el.getBoundingClientRect();
+                const pad = 6;
+                ring.hidden = false;
+                ring.style.transform = `translate(${Math.round(r.left - pad)}px, ${Math.round(r.top - pad)}px)`;
+                ring.style.width = `${Math.round(r.width + pad * 2)}px`;
+                ring.style.height = `${Math.round(r.height + pad * 2)}px`;
+            } else {
+                ring.hidden = true;
+            }
+            raf = window.requestAnimationFrame(sigueObjetivo);
+        };
+
+        const pinta = () => {
+            const p = S.pasos[paso];
+            if (!p || !tour) return;
+            tour.classList.remove('is-done');
+            if (titleEl) titleEl.textContent = p.titulo;
+            if (textEl) textEl.textContent = p.texto;
+            if (countEl) countEl.textContent = `${paso + 1}/${TOTAL}`;
+            if (liveEl) liveEl.textContent = `${fill(S.paso, { n: paso + 1, total: TOTAL })}: ${p.titulo}`;
+            if (hintEl) hintEl.hidden = !p.accion;
+            if (hintText) hintText.textContent = S.accion;
+            segs.forEach((s, i) => { s.classList.toggle('is-on', i <= paso); });
+            if (ring && !reduce.matches) {
+                ring.classList.add('is-moving');
+                window.setTimeout(() => ring.classList.remove('is-moving'), 450);
+            }
+            if (nextBtn) nextBtn.textContent = paso === TOTAL - 1 ? S.cerrar : S.siguiente;
+        };
+
+        const colocaSticky = () => {
+            // La barra fija de "Aprobar" se centra en la tarjeta, no en la ventana,
+            // cuando la vista del vendedor ocupa la columna derecha.
+            const sticky = document.getElementById('qSticky');
+            const card = document.querySelector<HTMLElement>('.q-card');
+            if (!sticky || !card) return;
+            if (escritorio.matches) {
+                const r = card.getBoundingClientRect();
+                sticky.style.left = `${Math.round(r.left)}px`;
+                sticky.style.right = 'auto';
+                sticky.style.width = `${Math.round(r.width)}px`;
+                sticky.style.paddingLeft = '0';
+                sticky.style.paddingRight = '0';
+            } else {
+                sticky.style.left = sticky.style.right = sticky.style.width = '';
+                sticky.style.paddingLeft = sticky.style.paddingRight = '';
+            }
+        };
+
+        const muestra = (i: number) => {
+            if (!tour) return;
+            activa = true;
+            paso = Math.max(0, Math.min(TOTAL - 1, i));
+            tour.hidden = false;
+            if (reopen) reopen.hidden = true;
+            document.documentElement.classList.add('qx-guia');
+            pinta();
+            window.cancelAnimationFrame(raf);
+            raf = window.requestAnimationFrame(sigueObjetivo);
+            ajustaSticky();
+        };
+        const oculta = (recordar: boolean) => {
+            if (!tour) return;
+            activa = false;
+            tour.hidden = true;
+            if (ring) ring.hidden = true;
+            window.cancelAnimationFrame(raf);
+            document.documentElement.classList.remove('qx-guia');
+            if (recordar) recuerda(true);
+            if (reopen) reopen.hidden = terminada;
+            ajustaSticky();
+        };
+        // El riel de la guía desplaza la tarjeta en escritorio ancho; la barra
+        // fija se recoloca al terminar esa transición (o de inmediato sin ella).
+        function ajustaSticky() {
+            colocaSticky();
+            window.setTimeout(colocaSticky, 480);
+        }
+        const ve = (i: number, llevar = true) => {
+            if (i >= TOTAL) { terminada = true; oculta(true); return; }
+            muestra(i);
+            if (llevar) window.setTimeout(() => llevaA(OBJETIVOS[paso]?.() ?? null), 60);
+        };
+        // El visitante hizo la acción del paso `i`. Si iba adelantado (aprobó
+        // sin pasar por la pregunta), la guía lo alcanza en vez de regresarlo.
+        const hecho = (i: number) => {
+            if (!activa || paso > i) return;
+            if (paso < i) { ve(i + 1); return; }
+            tour?.classList.add('is-done');
+            if (hintEl) hintEl.hidden = false;
+            if (hintText) hintText.textContent = S.hecho;
+            window.setTimeout(() => { if (activa && paso === i) ve(i + 1); }, 850);
+        };
+
+        nextBtn?.addEventListener('click', () => ve(paso + 1));
+        skipBtn?.addEventListener('click', () => oculta(true));
+        xBtn?.addEventListener('click', () => oculta(true));
+        reopen?.addEventListener('click', () => {
+            recuerda(false);
+            const aprobada = !document.getElementById('stepApproved')?.classList.contains('ql-hidden');
+            ve(aprobada ? TOTAL - 1 : 0);
+            window.setTimeout(() => nextBtn?.focus(), 80);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (sheetAbierta) { cierraHoja(); return; }
+            if (activa && tour?.contains(document.activeElement)) { oculta(true); reopen?.focus(); }
+        });
+
+        window.addEventListener('cord:item_comment', () => hecho(1));
+        window.addEventListener('cord:demo_selection', (e: Event) => {
+            const d = (e as CustomEvent).detail || {};
+            if (Number(d.count) < Number(d.of)) hecho(2);
+        });
+        window.addEventListener('cord:approved', () => { hecho(3); muestraCierre(false); });
+        window.addEventListener('cord:demo_paid', () => {
+            hecho(4);
+            muestraCierre(true);
+        });
+        window.addEventListener('cord:rejected', () => { terminada = true; oculta(false); });
+
+        // La guía no tapa la barra fija de "Aprobar": sube cuando aparece.
+        const sticky = document.getElementById('qSticky');
+        if (sticky && tour) {
+            const lift = () => document.documentElement.classList.toggle('qx-lift', sticky.classList.contains('q-sticky-show'));
+            new MutationObserver(lift).observe(sticky, { attributes: true, attributeFilter: ['class'] });
+            lift();
+        }
+
+        // ── Cierre ──
+        const cierre = $('qxClose');
+        const cierreTitulo = $('qxCloseTitle');
+        function muestraCierre(pagado: boolean) {
+            if (!cierre) return;
+            if (cierreTitulo) cierreTitulo.textContent = pagado ? S.tituloPago : S.tituloFirma;
+            if (cierre.hidden) {
+                cierre.hidden = false;
+                cierre.classList.add('qx-in');
+            }
+            if (pagado) {
+                window.setTimeout(() => cierre.scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth', block: 'start' }), 1500);
+            }
+        }
+
+        // ── Arranque ──
+        colocaSticky();
+        window.addEventListener('resize', colocaSticky);
+        root.addEventListener('transitionend', (e) => { if (e.target === root) colocaSticky(); });
+        if ('ResizeObserver' in window) {
+            const card = document.querySelector('.q-card');
+            if (card) new ResizeObserver(colocaSticky).observe(card);
+        }
+        if (recordada()) {
+            if (reopen) reopen.hidden = false;
+        } else {
+            window.setTimeout(() => ve(0, false), 1100);
+        }
+        document.documentElement.classList.add('qx-demo');
+    }
+</script>
+
+<style>
+    /* ── Escenario: tarjeta + vista del vendedor ── */
+    .qx-stage {
+        width: 100%;
+        display: flex; flex-direction: column; align-items: center; gap: 1.6rem;
+    }
+    .qx-main { width: 100%; max-width: 680px; display: flex; flex-direction: column; align-items: center; gap: 1.6rem; }
+
+    /* ── Cierre ── */
+    .qx-close {
+        width: 100%;
+        background: #fff; border-radius: 28px;
+        padding: 2.4rem 2.6rem 2rem;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 4px 6px rgba(10,25,47,0.03), 0 20px 60px -20px rgba(10,25,47,0.12);
+        display: flex; flex-direction: column; gap: 0.9rem;
+    }
+    .qx-close[hidden] { display: none; }
+    .qx-close-eyebrow { font-size: 0.55rem; font-weight: 800; letter-spacing: 2px; color: #059669; }
+    .qx-close-title { margin: 0; font-size: 1.45rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.03em; color: #050505; text-wrap: balance; }
+    .qx-close-sub { margin: 0.2rem 0 0; font-size: 0.84rem; color: #6b7686; }
+    .qx-feats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid rgba(10,25,47,0.06); }
+    .qx-feats li { border-bottom: 1px solid rgba(10,25,47,0.06); }
+    .qx-feat {
+        display: flex; align-items: center; gap: 0.85rem;
+        min-height: 60px; padding: 0.7rem 0.2rem;
+        text-decoration: none; color: inherit;
+        transition: background 0.2s;
+        border-radius: 12px;
+    }
+    .qx-feat:hover { background: #fafafa; }
+    .qx-feat:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+    .qx-feat-ico { width: 36px; height: 36px; flex-shrink: 0; border-radius: 11px; display: grid; place-items: center; color: #0a192f; background: rgba(10,25,47,0.05); }
+    .qx-feat-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+    .qx-feat-label { font-size: 0.86rem; font-weight: 600; color: #050505; letter-spacing: -0.01em; }
+    .qx-feat-desc { font-size: 0.78rem; color: #6b7686; line-height: 1.45; }
+    .qx-feat-arrow { flex-shrink: 0; color: #a3abb8; transition: transform 0.25s cubic-bezier(0.22,1,0.36,1), color 0.2s; }
+    .qx-feat:hover .qx-feat-arrow { transform: translateX(2px); color: #0a192f; }
+    .qx-close-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.6rem; }
+    .qx-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        min-height: 48px; padding: 0 22px; border-radius: 999px;
+        font-size: 0.9rem; font-weight: 600; text-decoration: none; letter-spacing: -0.005em;
+        transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), filter 0.2s, background 0.2s;
+    }
+    .qx-btn:active { transform: scale(0.97); transition-duration: 0.08s; }
+    .qx-btn:focus-visible { outline: 2px solid #0a192f; outline-offset: 3px; }
+    .qx-btn-primary { background: #0a192f; color: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.12), 0 12px 28px -12px rgba(10,25,47,0.55); }
+    .qx-btn-primary:hover { transform: translateY(-2px); filter: brightness(1.15); }
+    .qx-btn-ghost { color: #0a192f; background: #f5f5f7; }
+    .qx-btn-ghost:hover { background: #ececef; }
+    .qx-restart { align-self: flex-start; font-size: 0.8rem; font-weight: 600; color: #6b7686; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+    .qx-restart:hover { color: #0a192f; text-decoration: underline; text-underline-offset: 3px; }
+    .qx-restart:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; border-radius: 6px; }
+
+    /* ── Vista del vendedor ── */
+    .qx-seller { display: flex; flex-direction: column; gap: 0.55rem; }
+    .qx-seller-top { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+    .qx-sim { display: inline-flex; align-items: center; gap: 6px; font-size: 0.68rem; font-weight: 600; color: #8a93a2; letter-spacing: 0.01em; }
+    .qx-sim svg { color: #8a93a2; }
+    .qx-sheet-close {
+        display: none; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
+        background: rgba(10,25,47,0.05); color: #0a192f; place-items: center;
+    }
+    .qx-sheet-close:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+    .qx-seller-title { margin: 0; font-size: 0.98rem; font-weight: 600; letter-spacing: -0.02em; color: #050505; }
+
+    .qx-app {
+        position: relative;
+        background: #fff; border-radius: 18px;
+        border: 1px solid rgba(10,25,47,0.06);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.05), 0 20px 50px -24px rgba(10,25,47,0.22);
+    }
+    .qx-app-bar {
+        display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+        padding: 0.7rem 1rem; border-bottom: 1px solid rgba(10,25,47,0.06);
+    }
+    .qx-crumb { font-size: 0.7rem; color: #8a93a2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .qx-crumb b { color: #050505; font-weight: 600; }
+    .qx-status { font-size: 0.66rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+    .qx-head { display: flex; align-items: flex-start; gap: 0.7rem; padding: 0.9rem 1rem 0.3rem; }
+    .qx-avatar {
+        width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+        display: grid; place-items: center;
+        font-size: 0.72rem; font-weight: 700; color: #0a192f; background: rgba(10,25,47,0.06);
+    }
+    .qx-head-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .qx-name { font-size: 0.86rem; font-weight: 600; color: #050505; letter-spacing: -0.01em; }
+    .qx-meta { font-size: 0.68rem; color: #8a93a2; }
+    .qx-live {
+        align-self: flex-start; margin-top: 5px;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.65rem; font-weight: 700; color: #10b981;
+        background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+        border-radius: 20px; padding: 3px 9px;
+        animation: qxFade 0.4s ease both;
+    }
+    .qx-live[hidden] { display: none; }
+    .qx-live-sec { font-weight: 500; opacity: 0.85; }
+    .qx-live-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,0.2); animation: qxPulse 1.8s infinite; }
+    .qx-total { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.4rem 1rem 0.85rem; font-size: 0.7rem; color: #8a93a2; }
+    .qx-total .editorial { font-size: 1.3rem; color: #050505; }
+    .qx-sec { padding: 0.85rem 1rem 0.95rem; border-top: 1px solid rgba(10,25,47,0.06); }
+    .qx-sec h3 { margin: 0 0 0.6rem; font-size: 0.76rem; font-weight: 600; color: #050505; letter-spacing: -0.005em; }
+    .qx-at-sum { display: flex; align-items: center; gap: 0.35rem; font-size: 0.76rem; font-weight: 600; color: #050505; }
+    .qx-at-sep { color: #cbd5e1; }
+    .qx-bars { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.6rem; }
+    .qx-bars:empty { display: none; }
+    .qx-tl { display: flex; flex-direction: column; gap: 0.8rem; position: relative; max-height: 250px; overflow-y: auto; padding-right: 2px; }
+    .qx-tl::-webkit-scrollbar { width: 3px; }
+    .qx-tl::-webkit-scrollbar-thumb { background: rgba(10,25,47,0.1); border-radius: 2px; }
+
+    .qx-toast {
+        position: absolute; left: 10px; right: 10px; top: -10px; z-index: 2;
+        pointer-events: none; opacity: 0; transform: translateY(-6px);
+        transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    }
+    .qx-toast.is-on { opacity: 1; transform: none; }
+
+    /* ── Píldora (móvil y tableta) ── */
+    .qx-pill {
+        position: fixed; z-index: 50;
+        top: max(10px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+        display: inline-flex; align-items: center; gap: 8px;
+        min-height: 44px; max-width: calc(100vw - 1.5rem);
+        padding: 0 6px 0 14px; border-radius: 999px; border: 1px solid rgba(10,25,47,0.08);
+        background: #fff; color: #050505; cursor: pointer;
+        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 14px 32px -14px rgba(10,25,47,0.35);
+        transition: box-shadow 0.3s;
+    }
+    .qx-pill:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+    .qx-pill-text { overflow: hidden; text-overflow: ellipsis; }
+    .qx-pill-count { font-size: 0.7rem; font-weight: 600; color: #0a192f; background: rgba(10,25,47,0.06); padding: 6px 10px; border-radius: 999px; }
+    .qx-pill.is-news { box-shadow: 0 0 0 3px rgba(16,185,129,0.18), 0 14px 32px -14px rgba(10,25,47,0.35); }
+    .qx-backdrop { position: fixed; inset: 0; z-index: 64; background: rgba(10,25,47,0.28); }
+    .qx-backdrop[hidden] { display: none; }
+
+    /* ── Guía ── */
+    .qx-ring {
+        position: fixed; top: 0; left: 0; z-index: 38; pointer-events: none;
+        border-radius: 16px;
+        box-shadow: 0 0 0 2px #0a192f, 0 0 0 7px rgba(10,25,47,0.1);
+        animation: qxHalo 2.2s ease-in-out infinite;
+    }
+    /* Solo se anima al saltar de un paso a otro: durante el scroll el anillo
+       sigue al objetivo cuadro a cuadro, sin arrastrarse detrás. */
+    .qx-ring.is-moving { transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), width 0.4s cubic-bezier(0.22,1,0.36,1), height 0.4s cubic-bezier(0.22,1,0.36,1); }
+    .qx-ring[hidden] { display: none; }
+    .qx-tour {
+        position: fixed; z-index: 60;
+        left: 20px; bottom: 20px; width: 300px;
+        background: #fff; border-radius: 20px;
+        border: 1px solid rgba(10,25,47,0.07);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 24px 60px -20px rgba(10,25,47,0.35);
+        padding: 0.95rem 1.05rem 0.9rem;
+        display: flex; flex-direction: column; gap: 0.5rem;
+        transition: bottom 0.35s cubic-bezier(0.22,1,0.36,1);
+        animation: qxRise 0.45s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .qx-tour[hidden] { display: none; }
+    .qx-tour-top { display: flex; align-items: center; gap: 0.5rem; }
+    .qx-tour-eyebrow { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8a93a2; flex: 1; }
+    .qx-tour-count { font-size: 0.7rem; font-weight: 600; color: #0a192f; font-variant-numeric: tabular-nums; }
+    .qx-tour-x {
+        width: 32px; height: 32px; margin: -6px -8px -6px 0; border-radius: 50%; border: 0; cursor: pointer;
+        display: grid; place-items: center; background: transparent; color: #8a93a2;
+        transition: background 0.2s, color 0.2s;
+    }
+    .qx-tour-x:hover { background: rgba(10,25,47,0.05); color: #0a192f; }
+    .qx-tour-progress { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+    .qx-tour-progress span { height: 3px; border-radius: 3px; background: rgba(10,25,47,0.08); transition: background 0.35s; }
+    .qx-tour-progress span.is-on { background: #0a192f; }
+    .qx-tour-title { margin: 0.25rem 0 0; font-size: 0.98rem; font-weight: 600; letter-spacing: -0.02em; color: #050505; line-height: 1.25; }
+    .qx-tour-text { margin: 0; font-size: 0.8rem; line-height: 1.5; color: #5b6472; }
+    .qx-tour-hint { margin: 0.1rem 0 0; display: flex; align-items: center; gap: 7px; font-size: 0.72rem; font-weight: 600; color: #0a192f; }
+    .qx-tour-hint[hidden] { display: none; }
+    .qx-tour-hint-dot { width: 7px; height: 7px; border-radius: 50%; background: #0a192f; animation: qxPulseNavy 1.8s infinite; }
+    .qx-tour.is-done .qx-tour-hint { color: #059669; }
+    .qx-tour.is-done .qx-tour-hint-dot { background: #10b981; animation: none; }
+    .qx-tour-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.35rem; }
+    .qx-tour-skip {
+        border: 0; background: none; cursor: pointer; padding: 0 4px; min-height: 36px;
+        font-family: var(--font-sans); font-size: 0.76rem; font-weight: 600; color: #8a93a2;
+    }
+    .qx-tour-skip:hover { color: #0a192f; }
+    .qx-tour-next {
+        border: 0; cursor: pointer; min-height: 36px; padding: 0 16px; border-radius: 999px;
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: #fff; background: #0a192f;
+        box-shadow: 0 8px 18px -10px rgba(10,25,47,0.55);
+        transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), filter 0.2s;
+    }
+    .qx-tour-next:hover { transform: translateY(-1px); filter: brightness(1.15); }
+    .qx-tour-next:active { transform: scale(0.97); }
+    .qx-tour-x:focus-visible, .qx-tour-skip:focus-visible, .qx-tour-next:focus-visible, .qx-reopen:focus-visible { outline: 2px solid #0a192f; outline-offset: 2px; }
+    .qx-reopen {
+        position: fixed; z-index: 55; left: 20px; bottom: 20px;
+        display: inline-flex; align-items: center; gap: 7px;
+        min-height: 44px; padding: 0 16px 0 13px; border-radius: 999px; cursor: pointer;
+        border: 1px solid rgba(10,25,47,0.08); background: #fff; color: #0a192f;
+        font-family: var(--font-sans); font-size: 0.78rem; font-weight: 600;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 14px 32px -14px rgba(10,25,47,0.35);
+        transition: bottom 0.35s cubic-bezier(0.22,1,0.36,1);
+    }
+    .qx-reopen[hidden] { display: none; }
+    .qx-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    @keyframes qxFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    @keyframes qxPulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    @keyframes qxPulseNavy { 0% { box-shadow: 0 0 0 0 rgba(10,25,47,0.35); } 70% { box-shadow: 0 0 0 6px rgba(10,25,47,0); } 100% { box-shadow: 0 0 0 0 rgba(10,25,47,0); } }
+    @keyframes qxHalo { 0%, 100% { box-shadow: 0 0 0 2px #0a192f, 0 0 0 7px rgba(10,25,47,0.1); } 50% { box-shadow: 0 0 0 2px #0a192f, 0 0 0 11px rgba(10,25,47,0.04); } }
+    @keyframes qxRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+    /* ── Escritorio ancho: la vista del vendedor es una columna fija ── */
+    @media (min-width: 1400px) {
+        .qx-stage {
+            display: grid; grid-template-columns: minmax(0, 680px) 320px; gap: 32px;
+            align-items: start; justify-content: center;
+            transition: padding-left 0.45s cubic-bezier(0.22,1,0.36,1);
+        }
+        :global(html.qx-guia) .qx-stage { padding-left: 300px; }
+        .qx-seller { position: sticky; top: 2rem; }
+        .qx-pill, .qx-backdrop { display: none !important; }
+    }
+
+    /* ── Tableta y móvil: píldora arriba + hoja inferior ── */
+    @media (max-width: 1399px) {
+        .qx-stage { padding-top: 2.6rem; }
+        .qx-seller {
+            position: fixed; z-index: 66; left: 0; right: 0; bottom: 0;
+            max-height: 84vh; max-height: 84dvh; overflow-y: auto; overscroll-behavior: contain;
+            margin: 0 auto; max-width: 560px;
+            background: #f5f5f7; border-radius: 24px 24px 0 0;
+            padding: 0.9rem 1rem max(1.2rem, env(safe-area-inset-bottom));
+            box-shadow: 0 -20px 60px -20px rgba(10,25,47,0.35);
+            transform: translateY(104%); visibility: hidden;
+            transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), visibility 0s linear 0.4s;
+        }
+        .qx-seller.is-open { transform: none; visibility: visible; transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), visibility 0s; }
+        .qx-sheet-close { display: grid; }
+        .qx-tl { max-height: none; }
+        :global(html.qx-lift) .qx-tour, :global(html.qx-lift) .qx-reopen { bottom: 104px; }
+    }
+    @media (max-width: 719px) {
+        .qx-tour {
+            left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right));
+            bottom: max(8px, env(safe-area-inset-bottom)); width: auto;
+            border-radius: 18px; padding: 0.85rem 0.95rem 0.7rem;
+        }
+        :global(html.qx-lift) .qx-tour, :global(html.qx-lift) .qx-reopen { bottom: calc(84px + env(safe-area-inset-bottom)); }
+        .qx-tour-text { font-size: 0.78rem; }
+        .qx-tour-x { width: 44px; height: 44px; margin: -10px -12px -10px 0; }
+        .qx-tour-skip, .qx-tour-next { min-height: 44px; }
+        .qx-reopen { left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); }
+        .qx-close { padding: 1.6rem 1.1rem 1.2rem; border-radius: 22px; }
+        .qx-close-title { font-size: 1.22rem; }
+        .qx-close-actions { flex-direction: column; }
+        .qx-btn { width: 100%; }
+        .qx-pill { font-size: 0.74rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .qx-ring, .qx-tour, .qx-live, .qx-live-dot, .qx-tour-hint-dot { animation: none; }
+        .qx-ring, .qx-tour, .qx-reopen, .qx-toast, .qx-seller, .qx-seller.is-open { transition: none; }
+        .qx-stage { transition: none !important; }
+    }
+    @media print {
+        .qx-seller, .qx-pill, .qx-backdrop, .qx-tour, .qx-ring, .qx-reopen, .qx-close { display: none !important; }
+    }
+</style>
+
+<style is:global>
+    /* Nodos que el script crea en vivo (bitácora, campana, barras): no llevan
+       data-astro-cid, así que su estilo no puede ser scoped (regla 11). */
+    .qx-seller .qx-tl-item { display: flex; gap: 12px; position: relative; }
+    .qx-seller .qx-tl-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; box-shadow: 0 0 0 3px #fff; }
+    .qx-seller .qx-tl-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .qx-seller .qx-tl-text { font-size: 0.76rem; font-weight: 500; color: #050505; line-height: 1.4; overflow-wrap: anywhere; }
+    .qx-seller .qx-tl-time { font-size: 0.66rem; color: #8a93a2; }
+    .qx-seller .qx-in { animation: qxEntra 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+    /* Keyframes propios: el de la bitácora termina en fondo transparente y, con
+       fill `both`, dejaba la tarjeta de cierre sin superficie blanca. */
+    .qx-close.qx-in { animation: qxEntraCard 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+    @keyframes qxEntraCard { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    .qx-seller .qx-pop { animation: qxPop 0.45s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes qxEntra { from { opacity: 0; transform: translateY(-6px); background: rgba(16,185,129,0.08); } to { opacity: 1; transform: none; background: transparent; } }
+    @keyframes qxPop { 0% { transform: scale(0.9); } 60% { transform: scale(1.06); } 100% { transform: none; } }
+
+    .qx-seller .qx-notif-item {
+        display: flex; align-items: flex-start; gap: 10px; padding: 9px 10px; border-radius: 12px;
+        background: #fff; border: 1px solid rgba(10,25,47,0.08);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 16px 36px -14px rgba(10,25,47,0.32);
+    }
+    .qx-seller .qx-notif-ico { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #f5f5f7; color: #0a192f; }
+    .qx-seller .qx-notif-ico svg { width: 15px; height: 15px; }
+    .qx-seller .qx-notif-ico.ok { background: rgba(16,185,129,0.12); color: #059669; }
+    .qx-seller .qx-notif-ico.warn { background: rgba(245,158,11,0.12); color: #b45309; }
+    .qx-seller .qx-notif-ico.danger { background: rgba(239,68,68,0.12); color: #dc2626; }
+    .qx-seller .qx-notif-body { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
+    .qx-seller .qx-notif-title { font-size: 0.8rem; font-weight: 600; color: #050505; }
+    .qx-seller .qx-notif-sub { font-size: 0.72rem; color: #8a93a2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .qx-seller .qx-notif-when { font-size: 0.66rem; color: #99a2af; }
+
+    .qx-seller .qx-at-fila { display: grid; grid-template-columns: minmax(84px, 0.9fr) 1fr auto; align-items: center; gap: 0.6rem; }
+    .qx-seller .qx-at-label { font-size: 0.72rem; color: #6b7686; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .qx-seller .qx-at-track { height: 6px; border-radius: 100px; background: rgba(10,25,47,0.07); overflow: hidden; }
+    .qx-seller .qx-at-fill { display: block; height: 100%; border-radius: 100px; background: #0a192f; transition: width 0.5s cubic-bezier(0.22,1,0.36,1); }
+    .qx-seller .qx-at-val { font-size: 0.7rem; color: #050505; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .qx-seller .qx-in, .qx-close.qx-in, .qx-seller .qx-pop { animation: none; }
+        .qx-seller .qx-at-fill { transition: none; }
+    }
+</style>

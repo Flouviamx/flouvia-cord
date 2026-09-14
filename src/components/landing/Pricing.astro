@@ -78,7 +78,7 @@ const money0 = (n: number, cur: PlatformCurrency = STATIC_CURRENCY) => planMoney
                                     <span class="toggle-label" data-annual-total
                                         data-mxn={planMoney(precioAnualTotal(p.precio.MXN), 'MXN', lang)}
                                         data-usd={planMoney(precioAnualTotal(p.precio.USD), 'USD', lang)}
-                                        data-eur={p.precio.EUR === undefined ? undefined : planMoney(precioAnualTotal(p.precio.EUR), 'EUR', lang)}>{isEn ? 'Billed yearly' : 'Cobro anual'} · {planMoney(precioAnualTotal(p.precio[STATIC_CURRENCY]), STATIC_CURRENCY, lang)}</span>
+                                        data-eur={p.precio.EUR === undefined ? undefined : planMoney(precioAnualTotal(p.precio.EUR), 'EUR', lang)}>{isEn ? 'Billed yearly' : 'Cobro anual'}</span>
                                 </div>
                             )}
 

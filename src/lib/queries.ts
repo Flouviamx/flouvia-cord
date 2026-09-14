@@ -1988,6 +1988,8 @@ export interface LiveSnapshot {
         cantidad: number;
         unidad: string;
         precio: number;
+        /** Precio de lista de la línea: el link público tacha el de lista cuando se negoció por debajo. */
+        precioLista: number;
         importe: number;
     }>;
     cobros: Array<{ id: string; tipo: string; monto: number; status: string; vence: string }>;
@@ -2060,6 +2062,7 @@ export async function getLiveSnapshot(orgId: string, cotizacionId: string): Prom
                 cantidad: num(it.cantidad),
                 unidad: (it.unidad as string) ?? 'pieza',
                 precio,
+                precioLista: num(it.precio_unitario),
                 importe: num(it.cantidad) * precio,
             };
         }),

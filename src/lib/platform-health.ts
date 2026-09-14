@@ -1,6 +1,7 @@
 import { sql, withSystemTx } from './db';
 import { stripe } from './billing';
 import { log } from './log';
+import { DEMO_QUOTE_FOLIO } from './demo-quote';
 
 export const HEALTH_SERVICES = ['database', 'stripe', 'public_link'] as const;
 export type HealthService = (typeof HEALTH_SERVICES)[number];
@@ -151,7 +152,7 @@ export function defaultHealthProbeDependencies(): HealthProbeDependencies {
                 throw new Error('public_link_unexpected_response');
             }
             const html = await response.text();
-            if (!html.includes('class="qp-main"') || !html.includes('COT-0004')) {
+            if (!html.includes('class="qp-main"') || !html.includes(DEMO_QUOTE_FOLIO)) {
                 throw new Error('public_link_render_incomplete');
             }
         },

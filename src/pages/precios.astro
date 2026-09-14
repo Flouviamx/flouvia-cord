@@ -169,7 +169,7 @@ const faqSchema = {
                                         <span class="toggle-label" data-annual-total
                                         data-mxn={planMoney(precioAnualTotal(p.precio.MXN), 'MXN', lang)}
                                         data-usd={planMoney(precioAnualTotal(p.precio.USD), 'USD', lang)}
-                                        data-eur={p.precio.EUR === undefined ? undefined : planMoney(precioAnualTotal(p.precio.EUR), 'EUR', lang)}>{isEn ? 'Billed yearly' : 'Cobro anual'} · {planMoney(precioAnualTotal(p.precio[STATIC_CURRENCY]), STATIC_CURRENCY, lang)}</span>
+                                        data-eur={p.precio.EUR === undefined ? undefined : planMoney(precioAnualTotal(p.precio.EUR), 'EUR', lang)}>{isEn ? 'Billed yearly' : 'Cobro anual'}</span>
                                     </div>
                                 )}
 
@@ -229,29 +229,58 @@ const faqSchema = {
                         <div class="pr-roi-step">
                             <div class="pr-roi-step-num">1</div>
                             <label>
-                                <span>{isEn ? 'Quotes you send per month' : 'Cotizaciones que mandas al mes'}</span>
-                                <input type="number" id="roi-qty" min="1" max="500" value="20" />
-                                <div class="pr-roi-range-wrap">
-                                    <input type="range" id="roi-qty-range" min="1" max="200" value="20" class="pr-roi-range" />
-                                    <div class="pr-roi-range-labels">
-                                        <span>1</span><span>200</span>
+                                <span class="pr-roi-field-label">{isEn ? 'Quotes you send per month' : 'Cotizaciones que mandas al mes'}</span>
+                                <div class="el-slider" id="el-slider-qty">
+                                    <input
+                                        type="range"
+                                        id="roi-qty-range"
+                                        min="0"
+                                        max="1000"
+                                        step="1"
+                                        value="309"
+                                        class="el-slider-input"
+                                        aria-label={isEn ? 'Quotes you send per month' : 'Cotizaciones que mandas al mes'}
+                                    />
+                                    <div class="el-slider-track">
+                                        <div class="el-slider-fill"></div>
+                                        <div class="el-slider-knob"></div>
+                                        <div class="el-slider-value editorial" id="roi-qty-val">20</div>
                                     </div>
                                 </div>
+                                <div class="pr-roi-range-labels">
+                                    <span>1</span><span>200</span>
+                                </div>
+                                <input type="hidden" id="roi-qty" value="20" />
                             </label>
                         </div>
                         <div class="pr-roi-step">
                             <div class="pr-roi-step-num">2</div>
                             <label>
-                                <span>{isEn ? 'Average ticket (USD)' : 'Ticket promedio (MXN)'}</span>
-                                <input type="number" id="roi-ticket" min="0" step={isEn ? '50' : '500'} value={isEn ? '1800' : '35000'} />
-                                <div class="pr-roi-range-wrap">
-                                    <input type="range" id="roi-ticket-range" min="0" max={isEn ? '20000' : '500000'} step={isEn ? '100' : '1000'} value={isEn ? '1800' : '35000'} class="pr-roi-range" />
-                                    <div class="pr-roi-range-labels">
-                                        <span>$0</span><span>{isEn ? '$20k' : '$500k'}</span>
+                                <span class="pr-roi-field-label">{isEn ? 'Average ticket (USD)' : 'Ticket promedio (MXN)'}</span>
+                                <div class="el-slider" id="el-slider-ticket">
+                                    <input
+                                        type="range"
+                                        id="roi-ticket-range"
+                                        min="0"
+                                        max="1000"
+                                        step="1"
+                                        value={isEn ? '367' : '330'}
+                                        class="el-slider-input"
+                                        aria-label={isEn ? 'Average ticket (USD)' : 'Ticket promedio (MXN)'}
+                                    />
+                                    <div class="el-slider-track">
+                                        <div class="el-slider-fill"></div>
+                                        <div class="el-slider-knob"></div>
+                                        <div class="el-slider-value editorial" id="roi-ticket-val">{isEn ? '$1,800' : '$35,000'}</div>
                                     </div>
                                 </div>
+                                <div class="pr-roi-range-labels">
+                                    <span>$0</span><span>{isEn ? '$20k' : '$500k'}</span>
+                                </div>
+                                <input type="hidden" id="roi-ticket" value={isEn ? '1800' : '35000'} />
                             </label>
                         </div>
+
                     </div>
                 </div>
                 <div class="pr-roi-card reveal-mockup">
@@ -279,7 +308,6 @@ const faqSchema = {
             </div>
         </section>
 
-        <div class="pr-value-wrap"><PlanValue /></div>
 
         <!-- ── COMPARADOR ── -->
         <section class="pr-compare">
@@ -676,19 +704,11 @@ const faqSchema = {
         .pr-roi-inner { grid-template-columns: 1fr 0.95fr; gap: 4rem; }
     }
     .pr-roi-sub { font-size: clamp(1rem, 4vw, 1.02rem); line-height: 1.65; color: var(--color-text-muted); margin: 0 0 2rem; }
-    .pr-roi-fields { display: flex; flex-direction: column; gap: 1.1rem; width: 100%; }
-    @media (min-width: 860px) { .pr-roi-fields { max-width: 380px; } }
-    .pr-roi-fields label { display: flex; flex-direction: column; gap: 0.5rem; }
+    .pr-roi-fields { display: flex; flex-direction: column; gap: 1.7rem; width: 100%; }
+    @media (min-width: 860px) { .pr-roi-fields { max-width: 440px; } }
+    .pr-roi-fields label { display: flex; flex-direction: column; gap: 0.55rem; }
     .pr-roi-fields span { font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); }
-    .pr-roi-fields input {
-        font-family: inherit; font-size: 1.1rem; font-weight: 600;
-        color: var(--color-text); background: var(--color-bg);
-        border: 1px solid var(--color-border); border-radius: 12px;
-        padding: 12px 14px; width: 100%;
-        font-variant-numeric: tabular-nums;
-        transition: border-color 0.3s, box-shadow 0.3s;
-    }
-    .pr-roi-fields input:focus { outline: none; border-color: var(--color-blue-deep); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+    .pr-roi-field-label { letter-spacing: -0.005em; }
 
     .pr-roi-card {
         position: relative;
@@ -770,40 +790,106 @@ const faqSchema = {
         gap: 0.5rem;
     }
 
-    /* Range slider */
-    .pr-roi-range-wrap { display: flex; flex-direction: column; gap: 4px; }
-    .pr-roi-range-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--color-text-muted); padding: 0 2px; }
-    .pr-roi-range {
-        -webkit-appearance: none;
-        width: 100%;
-        height: 4px;
+    .pr-roi-fields input[type="hidden"] { display: none; }
+
+    /* ── Slider · referencia ElevenLabs, con los tokens de Cord ──
+       Track pill gris (#f5f5f7), relleno negro con AMBOS extremos redondeados
+       —nunca el "pac-man" de un relleno de canto recto sobre una pista alta—,
+       divisor blanco clavado en el borde del relleno y el valor pegado a ese
+       divisor: fuera del relleno mientras quepa, dentro (en blanco) cuando no.
+       Las posiciones finas las calcula updateSliderVisual() en px. */
+    .el-slider {
+        --el-h: 46px;
+        position: relative; width: 100%; height: var(--el-h);
+    }
+    .el-slider-input {
+        -webkit-appearance: none; appearance: none;
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        margin: 0; padding: 0; opacity: 0; cursor: grab; z-index: 3;
+        touch-action: pan-y;
+    }
+    .el-slider-input:active { cursor: grabbing; }
+
+    .el-slider-track {
+        position: absolute; inset: 0;
         border-radius: 100px;
-        background: var(--color-border);
-        outline: none;
-        cursor: pointer;
-        accent-color: var(--color-blue-deep);
+        overflow: hidden;
+        pointer-events: none;
+        background: #f5f5f7;
+        box-shadow:
+            inset 0 0 0 1px rgba(10,25,47,0.045),
+            inset 0 1px 2px rgba(10,25,47,0.045);
+        transition: box-shadow 0.22s ease;
     }
-    .pr-roi-range::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: var(--color-blue-deep);
-        box-shadow: 0 1px 4px rgba(10,25,47,0.35);
-        cursor: pointer;
-        transition: transform 0.15s;
-    }
-    .pr-roi-range::-webkit-slider-thumb:hover { transform: scale(1.15); }
-    .pr-roi-range::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: var(--color-blue-deep);
-        border: none;
-        cursor: pointer;
+    /* Foco de teclado visible (regla 5) — el input real es transparente, así
+       que el contorno navy se dibuja en el track hermano, con el mismo
+       vocabulario que el resto de la página (`.pr-cur-btn:focus-visible`). */
+    .el-slider-input:focus-visible ~ .el-slider-track {
+        outline: 2px solid rgba(10,25,47,0.45);
+        outline-offset: 3px;
     }
 
-    /* ════════ COMPARADOR ════════ */
+    .el-slider-fill {
+        position: absolute; top: 0; left: 0; bottom: 0;
+        width: var(--el-h);
+        border-radius: 100px;
+        background: var(--color-text);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.18);
+    }
+
+    /* Divisor en el borde del relleno — vive SIEMPRE dentro del negro
+       (el relleno nunca es más angosto que su propia altura). */
+    .el-slider-knob {
+        position: absolute; top: 50%;
+        width: 3px; height: 15px;
+        margin-top: -7.5px;
+        left: 0;
+        border-radius: 100px;
+        background: rgba(255,255,255,0.62);
+        transition: opacity 0.15s ease;
+        z-index: 2;
+    }
+
+    .el-slider-value {
+        position: absolute; top: 0; left: 0;
+        display: flex; align-items: center; height: 100%;
+        padding: 0;
+        font-size: 0.95rem; font-weight: 700;
+        letter-spacing: -0.025em;
+        white-space: nowrap;
+        pointer-events: none;
+        color: var(--color-text);
+        z-index: 1;
+        transition: color 0.14s ease;
+    }
+    .el-slider-value.is-inside { color: #fff; }
+
+    @media (hover: hover) {
+        .el-slider:hover .el-slider-track {
+            box-shadow:
+                inset 0 0 0 1px rgba(10,25,47,0.045),
+                inset 0 1px 2px rgba(10,25,47,0.045),
+                0 0 0 5px rgba(10,25,47,0.045);
+        }
+    }
+
+    .pr-roi-range-labels {
+        display: flex; justify-content: space-between;
+        padding: 8px 6px 0;
+    }
+    /* Especificidad: `.pr-roi-fields span` (0.8rem/600) ganaba y dejaba los
+       topes del rango tan pesados como la etiqueta del campo. */
+    .pr-roi-fields .pr-roi-range-labels span {
+        font-size: 0.72rem;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+        color: var(--color-text-muted);
+        opacity: 0.72;
+    }
+
+
+
+
     .pr-compare { max-width: 1080px; margin: 0 auto; padding: 3rem 5%; }
     @media (min-width: 860px) { .pr-compare { padding: 4rem 5%; } }
     .pr-compare-head { text-align: center; margin-bottom: 2rem; }
@@ -931,43 +1017,180 @@ const faqSchema = {
         const ticket     = document.getElementById('roi-ticket') as HTMLInputElement | null;
         const qtyRange   = document.getElementById('roi-qty-range') as HTMLInputElement | null;
         const tickRange  = document.getElementById('roi-ticket-range') as HTMLInputElement | null;
+        const qtyVal     = document.getElementById('roi-qty-val');
+        const ticketVal  = document.getElementById('roi-ticket-val');
         const pipeline   = document.getElementById('roi-pipeline');
         const pct        = document.getElementById('roi-pct');
         const foot       = document.getElementById('roi-foot');
         const PRO        = isEn ? 30 : 590;
 
+        // ── Escala perceptual ──────────────────────────────────────────────
+        // El input viaja 0–1000 (posición) y de ahí se DERIVA el valor con un
+        // exponente. Con escala lineal el 90% de la pista quedaba en importes
+        // que nadie elige (un ticket de $400k) y los defaults caían al 7–9%,
+        // donde el relleno es un punto negro. Los topes visibles del rango
+        // (1/200, $0/$500k) siguen siendo los reales: la escala cambia dónde
+        // caen, no cuánto vale cada extremo.
+        const IDX_MAX = 1000;
+
+        type Escala = {
+            min: number;
+            max: number;
+            exp: number;
+            snap: (v: number) => number;
+            paso: (v: number) => number;
+            fmt: (v: number) => string;
+        };
+
+        const round = (v: number, s: number) => Math.round(v / s) * s;
+
+        const escalaQty: Escala = {
+            min: 1, max: 200, exp: 2,
+            snap: (v) => Math.round(v),
+            paso: () => 1,
+            fmt: (v) => String(Math.round(v)),
+        };
+
+        const escalaTicket: Escala = isEn
+            ? {
+                min: 0, max: 20000, exp: 2.4,
+                snap: (v) => (v < 2000 ? round(v, 50) : v < 10000 ? round(v, 100) : round(v, 500)),
+                paso: (v) => (v < 2000 ? 50 : v < 10000 ? 100 : 500),
+                fmt: (v) => '$' + new Intl.NumberFormat('en-US').format(Math.round(v)),
+            }
+            : {
+                min: 0, max: 500000, exp: 2.4,
+                snap: (v) => (v < 10000 ? round(v, 500) : v < 100000 ? round(v, 1000) : round(v, 5000)),
+                paso: (v) => (v < 10000 ? 500 : v < 100000 ? 1000 : 5000),
+                fmt: (v) => '$' + new Intl.NumberFormat('es-MX').format(Math.round(v)),
+            };
+
+        const valorDe = (e: Escala, idx: number) => {
+            const p = Math.min(1, Math.max(0, idx / IDX_MAX));
+            return Math.min(e.max, Math.max(e.min, e.snap(e.min + Math.pow(p, e.exp) * (e.max - e.min))));
+        };
+        const indiceDe = (e: Escala, v: number) => {
+            const bruto = (Math.min(e.max, Math.max(e.min, v)) - e.min) / (e.max - e.min);
+            return Math.round(Math.pow(bruto, 1 / e.exp) * IDX_MAX);
+        };
+
+        function updateSliderVisual(range: HTMLInputElement, valueEl: HTMLElement) {
+            const track = range.parentElement?.querySelector('.el-slider-track') as HTMLElement | null;
+            const fillEl = track?.querySelector('.el-slider-fill') as HTMLElement | null;
+            const knobEl = track?.querySelector('.el-slider-knob') as HTMLElement | null;
+            if (!track || !fillEl || !knobEl) return;
+
+            const trackW = track.offsetWidth;
+            const trackH = track.offsetHeight;
+            if (!trackW) return;
+
+            // El relleno recorre de "una tapa" al ancho completo, igual que el
+            // pulgar de un slider nativo: nunca es más angosto que su altura,
+            // así que siempre es una cápsula legible y jamás un canto recto.
+            const p = Math.min(1, Math.max(0, parseFloat(range.value) / IDX_MAX));
+            const fillW = trackH + p * (trackW - trackH);
+            fillEl.style.width = fillW + 'px';
+            knobEl.style.left = (fillW - 16) + 'px';
+            // Al tope no hay borde que dividir: el divisor se apaga en vez de
+            // quedarse como una marca suelta pegada a la tapa derecha.
+            knobEl.style.opacity = String(Math.min(1, Math.max(0, (trackW - fillW) / 16)));
+
+            const labelW = valueEl.offsetWidth;
+            const GAP_FUERA = 13;   // aire entre el borde del relleno y el número
+            const GAP_DENTRO = 27;  // aire entre el número y el divisor, ya dentro
+            const RESERVA = 21;     // el número nunca se pega a la tapa derecha
+
+            if (trackW - fillW >= labelW + GAP_FUERA + RESERVA) {
+                valueEl.style.left = (fillW + GAP_FUERA) + 'px';
+                valueEl.classList.remove('is-inside');
+            } else {
+                valueEl.style.left = Math.max(18, fillW - GAP_DENTRO - labelW) + 'px';
+                valueEl.classList.add('is-inside');
+            }
+        }
+
+
+        const nfMoney = new Intl.NumberFormat(isEn ? 'en-US' : 'es-MX');
+
         const calc = () => {
-            const q = Math.max(0, parseFloat(qty?.value || '0') || 0);
-            const t = Math.max(0, parseFloat(ticket?.value || '0') || 0);
+            const q = qtyRange ? valorDe(escalaQty, parseFloat(qtyRange.value)) : 0;
+            const t = tickRange ? valorDe(escalaTicket, parseFloat(tickRange.value)) : 0;
+            if (qty) qty.value = String(q);
+            if (ticket) ticket.value = String(t);
+
             const total = q * t;
-            if (pipeline) pipeline.textContent = '$' + new Intl.NumberFormat('es-MX').format(Math.round(total));
+            if (pipeline) pipeline.textContent = '$' + nfMoney.format(Math.round(total));
             const p = total > 0 ? (PRO / total) * 100 : 0;
-            if (pct) pct.textContent = total > 0 ? p.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%' : '—';
+            if (pct) {
+                // Un "0.00%" no es una cuenta, es un redondeo que se comió el dato.
+                pct.textContent = total <= 0
+                    ? '—'
+                    : p < 0.01
+                        ? '<0.01%'
+                        : p.toLocaleString(isEn ? 'en-US' : 'es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+            }
             if (foot) {
                 const veces = t > 0 ? Math.max(1, Math.round(t / PRO)) : 0;
                 foot.textContent = t > 0
                     ? (isEn ? `A single extra quote per month pays for the plan ~${veces} times.` : `Una sola cotización extra al mes paga el plan ~${veces} veces.`)
                     : (isEn ? 'Enter your average ticket to see the math.' : 'Ingresa tu ticket promedio para ver la cuenta.');
             }
+
+            if (qtyVal && qtyRange) {
+                qtyVal.textContent = escalaQty.fmt(q);
+                qtyRange.setAttribute('aria-valuetext', escalaQty.fmt(q));
+                updateSliderVisual(qtyRange, qtyVal);
+            }
+            if (ticketVal && tickRange) {
+                ticketVal.textContent = escalaTicket.fmt(t);
+                tickRange.setAttribute('aria-valuetext', escalaTicket.fmt(t));
+                updateSliderVisual(tickRange, ticketVal);
+            }
         };
 
-        // Sync sliders → number inputs
-        qtyRange?.addEventListener('input', () => {
-            if (qty) { qty.value = qtyRange.value; calc(); }
-        });
-        tickRange?.addEventListener('input', () => {
-            if (ticket) { ticket.value = tickRange.value; calc(); }
-        });
-        // Sync number inputs → sliders
-        qty?.addEventListener('input', () => {
-            if (qtyRange) qtyRange.value = qty.value;
-            calc();
-        });
-        ticket?.addEventListener('input', () => {
-            if (tickRange) tickRange.value = ticket.value;
-            calc();
-        });
+        // Teclado: las flechas mueven el VALOR en su incremento natural
+        // (1 cotización, $1,000 de ticket). Sobre el índice crudo una flecha
+        // no cambiaba nada en la parte baja de la escala.
+        function teclado(range: HTMLInputElement, e: Escala) {
+            range.addEventListener('keydown', (ev) => {
+                const k = ev.key;
+                const dir = k === 'ArrowRight' || k === 'ArrowUp' ? 1 : k === 'ArrowLeft' || k === 'ArrowDown' ? -1 : 0;
+                const salto = k === 'PageUp' ? 1 : k === 'PageDown' ? -1 : 0;
+                if (!dir && !salto && k !== 'Home' && k !== 'End') return;
+                ev.preventDefault();
+                const actual = valorDe(e, parseFloat(range.value));
+                let siguiente = actual;
+                if (k === 'Home') siguiente = e.min;
+                else if (k === 'End') siguiente = e.max;
+                else if (salto) siguiente = actual + salto * e.paso(actual) * 10;
+                else siguiente = actual + dir * e.paso(actual);
+                siguiente = Math.min(e.max, Math.max(e.min, siguiente));
+                range.value = String(indiceDe(e, siguiente));
+                // Con snap grueso el índice puede caer en el mismo valor; se
+                // empuja hasta que el valor realmente se mueva.
+                let guardia = 0;
+                while (valorDe(e, parseFloat(range.value)) === actual && guardia < 60 && (dir || salto)) {
+                    range.value = String(Math.min(IDX_MAX, Math.max(0, parseFloat(range.value) + (dir || salto))));
+                    guardia++;
+                }
+                calc();
+            });
+        }
+
+        if (qtyRange) teclado(qtyRange, escalaQty);
+        if (tickRange) teclado(tickRange, escalaTicket);
+
+        qtyRange?.addEventListener('input', calc);
+        tickRange?.addEventListener('input', calc);
         calc();
+        // El ancho del track decide dónde cae el número: recalcular al redimensionar.
+        let rafResize = 0;
+        window.addEventListener('resize', () => {
+            cancelAnimationFrame(rafResize);
+            rafResize = requestAnimationFrame(calc);
+        });
+        if (document.fonts?.ready) document.fonts.ready.then(() => calc());
+
 
         // ── Aurora viajera en tarjetas de plan ──
         const cards = [...document.querySelectorAll<HTMLElement>('.plan')];
