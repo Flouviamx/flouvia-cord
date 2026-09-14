@@ -40,7 +40,12 @@ vi.mock('../src/lib/after', () => ({ after: vi.fn() }));
 vi.mock('../src/lib/billing', () => ({ reserveUsage: m.reserve, cancelUsage: vi.fn(), flushUsageReservation: vi.fn() }));
 vi.mock('../src/lib/org-entitlements', () => ({ requireEntitlement: m.entitlement }));
 vi.mock('../src/lib/fiscal/emit', () => ({ emitFiscalDocument: m.emit }));
-vi.mock('../src/lib/cotizaciones', () => ({ MAX_ITEMS: 200 }));
+vi.mock('../src/lib/cotizaciones', () => ({
+    MAX_ITEMS: 200,
+    QuoteError: class extends Error { status = 400; },
+    assertClienteDeOrg: async () => {},
+    productosDeOrg: async () => new Set<string>(),
+}));
 vi.mock('../src/lib/cobros', () => ({ materializeAnticipoCobros: m.anticipo }));
 vi.mock('../src/lib/impuestos-db', () => ({
     taxCatalogFor: async () => ({ resolve: () => 0.16, defaultRate: 0.16, retenciones: [] }),
