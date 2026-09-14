@@ -68,9 +68,19 @@ interface ReqCtx {
     // app.scope='ops'. Es un carril distinto del de cron a propósito: Ops es de
     // solo lectura sobre datos de cliente, el de sistema también escribe.
     opsScope?: boolean;
+    // Quién ejecuta fuera de una sesión: `api:<keyId>`, `mcp:<keyId>`.
+    actor?: string;
 }
 
 export const reqContext = new AsyncLocalStorage<ReqCtx>();
+
+export function currentActor(): string {
+    const store = reqContext.getStore();
+    if (store?.actor) return store.actor;
+    if (store?.userId) return `user:${store.userId}`;
+    if (store?.cronScope) return 'system:cron';
+    return 'system';
+}
 
 /** userId de la sesión actual, o null si no hay sesión. */
 export function currentUserId(): string | null {

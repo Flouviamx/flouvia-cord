@@ -13,6 +13,7 @@ import { sql, withOrgTx } from './db';
 import { after } from './after';
 import { publicDocumentUrl } from './public-links';
 import { enqueueForSubscribers, flushNow, newEventId } from './webhook-delivery';
+import { recordDomainEvent } from './domain-events';
 
 // Catálogo de eventos públicos (lo consume la UI y la validación de la API).
 export const WEBHOOK_EVENTS = [
@@ -176,6 +177,7 @@ export async function dispatchInvoiceEvent(orgId: string, documentoId: string, e
 }
 
 async function emitToSubscribers(orgId: string, evento: string, data: Record<string, unknown>): Promise<void> {
+    await recordDomainEvent(orgId, evento, data);
     let hooks: any[] = [];
     try {
         // En downgrade conservamos la configuración, pero solo los endpoints

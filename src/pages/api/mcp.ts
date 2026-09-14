@@ -88,7 +88,7 @@ export const POST: APIRoute = async ({ request }) => {
         return new Response(meteringError.body, { status: meteringError.status, headers: { ...Object.fromEntries(meteringError.headers), ...CORS_HEADERS } });
     }
 
-    return reqContext.run({ userId: null, orgId: auth.orgId }, async () => {
+    return reqContext.run({ userId: null, orgId: auth.orgId, actor: `mcp:${auth.keyId}` }, async () => {
         let res: Response;
         try {
             const result = await handle(msg, auth, request);

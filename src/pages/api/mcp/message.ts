@@ -83,7 +83,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     const meteringError = await meterApiUsage(auth);
     if (meteringError) return meteringError;
 
-    return reqContext.run({ userId: null, orgId: session.orgId }, async () => {
+    return reqContext.run({ userId: null, orgId: session.orgId, actor: `mcp:${session.keyId}` }, async () => {
         try {
             const result = await handle(msg, {
                 scope: session.scope,

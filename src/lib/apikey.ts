@@ -196,7 +196,7 @@ export function withApiAuth(
         if (meteringError) return meteringError;
         // userId null → el carril de usuario queda inactivo; orgId manda la tenancy.
         const t0 = Date.now();
-        const res = await reqContext.run({ userId: null, orgId: auth.orgId }, () => handler(ctx, auth));
+        const res = await reqContext.run({ userId: null, orgId: auth.orgId, actor: `api:${auth.keyId}` }, () => handler(ctx, auth));
         // Bitácora del request (best-effort: nunca frena ni rompe la respuesta).
         void logApiRequest(auth, ctx.request, res.status, Date.now() - t0);
         return res;
