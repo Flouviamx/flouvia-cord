@@ -21,6 +21,9 @@ interface Props {
     analyticsOrgId?: string;
     analyticsIsSandbox?: boolean;
     analyticsIsDemo?: boolean;
+    // Idioma real del contenido cuando no sale de la URL: el link público usa
+    // el idioma del negocio (o el elegido en la demo) sin prefijo /en.
+    htmlLang?: 'es' | 'en';
 }
 
 import { getLangFromUrl, altLangUrls } from '../i18n/utils';
@@ -40,6 +43,7 @@ const {
     analyticsOrgId = '',
     analyticsIsSandbox = false,
     analyticsIsDemo = false,
+    htmlLang,
 } = Astro.props;
 
 const SITE      = canonicalOrigin ? new URL(canonicalOrigin) : (Astro.site ?? new URL('https://cordhq.app'));
@@ -54,7 +58,7 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
 ---
 
 <!doctype html>
-<html lang={lang}>
+<html lang={htmlLang ?? lang}>
     <head>
         <meta charset="UTF-8" />
 
@@ -133,7 +137,7 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
             analytics: en la pantalla de verificación de identidad el pathname
             lleva un token portador vivo. */}
         <SpeedInsights disabled={analyticsDisabled} />
-        <CookieConsent lang={lang} />
+        <CookieConsent lang={htmlLang ?? lang} />
     </body>
 </html>
 
