@@ -3,8 +3,21 @@ import { stripe } from './billing';
 import { log } from './log';
 import { DEMO_QUOTE_FOLIO } from './demo-quote';
 
-export const HEALTH_SERVICES = ['database', 'stripe', 'public_link'] as const;
+export const HEALTH_SERVICES = [
+    'app', 'api', 'public_link', 'database',
+    'stripe', 'payments_webhook', 'fiscal', 'email', 'ai',
+] as const;
 export type HealthService = (typeof HEALTH_SERVICES)[number];
+
+// Las sondas que no dependen de una credencial opcional. Si alguna falta en una
+// muestra, esa muestra está incompleta y el estado global no se afirma.
+// Fiscal, correo e IA se omiten en un entorno sin su llave (preview, local):
+// registrar ahí un "fallo" sería mentir sobre producción.
+export const CORE_HEALTH_SERVICES: readonly HealthService[] = ['app', 'api', 'public_link', 'database', 'stripe', 'payments_webhook'];
+
+// Mismo umbral que /api/cron/stripe-webhook-health: con cobros pendientes y
+// ningún webhook firmado en este tiempo, la confirmación de pagos está detenida.
+const PAYMENTS_WEBHOOK_MAX_QUIET_MS = 26 * 60 * 60 * 1000;
 
 export const HEALTH_WINDOW_DAYS = 90;
 // Vercel Hobby ejecuta crons como máximo una vez al día y puede retrasarlos
@@ -65,12 +78,10 @@ export interface PublicStatusSnapshot {
     windowEnd: string | null;
 }
 
-export interface HealthProbeDependencies {
-    database: () => Promise<void>;
-    stripe: () => Promise<void>;
-    publicLink: () => Promise<void>;
-    now?: () => Date;
-}
+type Probe = () => Promise<void>;
+
+/** `null` = sonda no configurada en este entorno: se omite, no se registra como fallo. */
+export type HealthProbeDependencies = { [K in HealthService]: Probe | null } & { now?: () => Date };
 
 function errorCode(error: unknown): string {
     if (error instanceof Error && error.name === 'TimeoutError') return 'timeout';
@@ -129,24 +140,40 @@ function siteOrigin(): string {
     return url.origin;
 }
 
+function env(name: string): string {
+    return String(import.meta.env[name] || process.env[name] || '').trim();
+}
+
+async function fetchProbe(url: string | URL, init: RequestInit = {}): Promise<Response> {
+    return fetch(url, {
+        cache: 'no-store',
+        redirect: 'manual',
+        ...init,
+        headers: { 'User-Agent': 'Cord-Health/1.0', ...(init.headers || {}) },
+        signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
+}
+
 export function defaultHealthProbeDependencies(): HealthProbeDependencies {
+    const facturapiKey = env('FACTURAPI_USER_KEY') || env('FACTURAPI_SECRET_KEY');
+    const resendKey = env('RESEND_API_KEY');
+    const anthropicKey = env('ANTHROPIC_API_KEY') || env('CLAUDE_API_KEY');
     return {
-        database: async () => {
-            const [rows] = await withSystemTx(sql`select 1 as ok`);
-            if (Number(rows[0]?.ok) !== 1) throw new Error('database_unexpected_response');
+        // La app: el login se renderiza completo por SSR.
+        app: async () => {
+            const response = await fetchProbe(new URL('/sign-in', siteOrigin()));
+            const html = response.ok ? await response.text() : '';
+            if (!response.ok || !html.includes('</html>')) throw new Error('app_unexpected_response');
         },
-        stripe: async () => {
-            const balance = await stripe('/v1/balance', undefined, 'GET');
-            if (!balance || balance.object !== 'balance') throw new Error('stripe_unexpected_response');
+        // API pública: sin llave debe contestar el 401 tipado de la propia API,
+        // no un 404/500 ni una página HTML.
+        api: async () => {
+            const response = await fetchProbe(new URL('/api/v1/me', siteOrigin()));
+            const body = await response.json().catch(() => null);
+            if (response.status !== 401 || body?.code !== 'missing_key') throw new Error('api_unexpected_response');
         },
-        publicLink: async () => {
-            const response = await fetch(new URL('/q/demo', siteOrigin()), {
-                method: 'GET',
-                cache: 'no-store',
-                redirect: 'error',
-                headers: { 'User-Agent': 'Cord-Health/1.0' },
-                signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
-            });
+        public_link: async () => {
+            const response = await fetchProbe(new URL('/q/demo', siteOrigin()), { redirect: 'error' });
             const contentType = response.headers.get('content-type') || '';
             if (!response.ok || !contentType.includes('text/html')) {
                 throw new Error('public_link_unexpected_response');
@@ -156,6 +183,56 @@ export function defaultHealthProbeDependencies(): HealthProbeDependencies {
                 throw new Error('public_link_render_incomplete');
             }
         },
+        database: async () => {
+            const [rows] = await withSystemTx(sql`select 1 as ok`);
+            if (Number(rows[0]?.ok) !== 1) throw new Error('database_unexpected_response');
+        },
+        stripe: async () => {
+            const balance = await stripe('/v1/balance', undefined, 'GET');
+            if (!balance || balance.object !== 'balance') throw new Error('stripe_unexpected_response');
+        },
+        // Confirmación de pagos: solo falla si hay cobros esperando confirmación
+        // y los webhooks firmados de Stripe llevan demasiado tiempo sin llegar.
+        // Sin cobros pendientes, el silencio no es una caída.
+        payments_webhook: async () => {
+            const [rows] = await withSystemTx(sql`
+                select h.last_success_at, cord_pending_payment_count() as pending_count
+                from (values (1)) as seed(n)
+                left join platform_health h on h.key = 'stripe_webhook'
+                limit 1`);
+            const pending = Number(rows[0]?.pending_count || 0);
+            const lastSuccess = rows[0]?.last_success_at ? new Date(String(rows[0].last_success_at)).getTime() : null;
+            if (pending > 0 && (!lastSuccess || Date.now() - lastSuccess > PAYMENTS_WEBHOOK_MAX_QUIET_MS)) {
+                throw new Error('payments_webhook_quiet');
+            }
+        },
+        // Timbrado fiscal: lectura autenticada de la cuenta del PAC.
+        fiscal: facturapiKey ? async () => {
+            const base = (env('FACTURAPI_URL') || 'https://www.facturapi.io/v2').replace(/\/$/, '');
+            const response = await fetchProbe(`${base}/organizations?limit=1`, {
+                headers: { Authorization: 'Basic ' + Buffer.from(`${facturapiKey}:`).toString('base64') },
+            });
+            if (!response.ok) throw new Error('fiscal_unexpected_response');
+        } : null,
+        // Correo transaccional: una llave de solo envío contesta 401
+        // `restricted_api_key` a una lectura. Esa respuesta prueba que la API
+        // está arriba y reconoce la llave, sin mandar un correo.
+        email: resendKey ? async () => {
+            const response = await fetchProbe('https://api.resend.com/domains', {
+                headers: { Authorization: `Bearer ${resendKey}` },
+            });
+            if (response.ok) return;
+            const body = await response.json().catch(() => null);
+            if (response.status === 401 && body?.name === 'restricted_api_key') return;
+            throw new Error('email_unexpected_response');
+        } : null,
+        // IA: listar modelos no consume tokens.
+        ai: anthropicKey ? async () => {
+            const response = await fetchProbe('https://api.anthropic.com/v1/models?limit=1', {
+                headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01' },
+            });
+            if (!response.ok) throw new Error('ai_unexpected_response');
+        } : null,
     };
 }
 
@@ -163,15 +240,17 @@ export async function probePlatformHealth(
     dependencies: HealthProbeDependencies = defaultHealthProbeDependencies(),
 ): Promise<InternalProbeResult[]> {
     const checkedAt = (dependencies.now?.() ?? new Date()).toISOString();
-    return Promise.all([
-        measure('database', dependencies.database, checkedAt),
-        measure('stripe', dependencies.stripe, checkedAt),
-        measure('public_link', dependencies.publicLink, checkedAt),
-    ]);
+    return Promise.all(
+        HEALTH_SERVICES.flatMap((service) => {
+            const probe = dependencies[service];
+            return probe ? [measure(service, probe, checkedAt)] : [];
+        }),
+    );
 }
 
 export async function persistHealthResults(results: InternalProbeResult[]): Promise<void> {
-    if (results.length !== HEALTH_SERVICES.length) {
+    const present = new Set(results.map((result) => result.service));
+    if (!results.length || CORE_HEALTH_SERVICES.some((service) => !present.has(service))) {
         throw new Error('health probe incompleta; no se persiste una muestra parcial');
     }
     await withSystemTx(...results.map((result) => sql`
@@ -198,10 +277,11 @@ export function logFailedHealthResults(results: InternalProbeResult[]): void {
 }
 
 export function derivePlatformState(
-    services: Pick<HealthServiceSnapshot, 'ok' | 'stale'>[],
-    expectedServices = HEALTH_SERVICES.length,
+    services: Pick<HealthServiceSnapshot, 'service' | 'ok' | 'stale'>[],
 ): PublicStatusSnapshot['state'] {
-    if (services.length !== expectedServices || services.some((service) => service.stale)) return 'unknown';
+    const present = new Set(services.map((service) => service.service));
+    if (CORE_HEALTH_SERVICES.some((service) => !present.has(service))) return 'unknown';
+    if (services.some((service) => service.stale)) return 'unknown';
     const failing = services.filter((service) => !service.ok).length;
     if (failing === 0) return 'operational';
     if (failing === services.length) return 'outage';

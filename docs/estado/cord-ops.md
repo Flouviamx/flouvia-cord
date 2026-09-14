@@ -41,8 +41,19 @@ suspender, restaurar o eliminar usuarios no protegidos; revocar sesiones o API
 keys; desactivar webhooks; cerrar sesiones de equipos; y eliminar organizaciones
 no protegidas.
 
-`/ops/status` muestra las tres sondas de disponibilidad y permite redactar en
-español e inglés un incidente público real. Crear, editar o cambiar su estado
+`/ops/status` muestra las sondas de disponibilidad y permite redactar en
+español e inglés un incidente público real.
+
+Disponibilidad (sep 2026): `src/lib/platform-health.ts` mide nueve componentes
+reales —app (render de `/sign-in`), API pública (401 tipado de `/api/v1/me`),
+link público (`/q/demo`), núcleo de datos, Stripe, confirmación de pagos
+(webhooks firmados con cobros pendientes, umbral de 26 h), timbrado fiscal,
+correo e IA— y los guarda en `health_checks`. Fiscal, correo e IA se omiten si
+el entorno no tiene su llave: nunca se registra un fallo inventado. El muestreo
+es horario vía `.github/workflows/status-probe.yml` (requiere el secret
+`CRON_SECRET` en GitHub, mismo valor que en Vercel); el cron diario de
+`vercel.json` queda de respaldo. `/desarrolladores/status` pinta 90 días por
+componente: un día sin muestras es gris, nunca verde. Crear, editar o cambiar su estado
 exige rol `admin`, no permite borrarlo desde la interfaz y escribe
 `ops_audit_log` en la misma transacción.
 

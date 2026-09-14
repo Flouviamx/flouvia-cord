@@ -7,13 +7,19 @@ import { getLangFromUrl } from '../../i18n/utils';
 import {
     getPublicStatusSnapshot,
     HEALTH_SERVICES,
+    HEALTH_WINDOW_DAYS,
     type HealthService,
+    type HealthServiceSnapshot,
     type PublicStatusSnapshot,
+    type StatusIncident,
 } from '../../lib/platform-health';
 
 const isEn = getLangFromUrl(Astro.url) === 'en';
+const t = (es: string, en: string) => (isEn ? en : es);
+const locale = isEn ? 'en-US' : 'es-MX';
 const SITE = 'https://cordhq.app';
 const base = isEn ? `${SITE}/en` : SITE;
+
 let loadFailed = false;
 let snapshot: PublicStatusSnapshot;
 try {
@@ -23,40 +29,206 @@ try {
     snapshot = { state: 'unknown', services: [], history: [], incidents: [], windowStart: null, windowEnd: null };
 }
 
-const serviceCopy: Record<HealthService, { es: string; en: string; descEs: string; descEn: string }> = {
-    database: {
-        es: 'Núcleo de datos', en: 'Data core',
-        descEs: 'Consulta sintética a Neon.', descEn: 'Synthetic query to Neon.',
+const now = new Date();
+const MOBILE_DAYS = 30;
+
+// ── Copy de producto: qué es cada componente y qué mide exactamente su sonda ──
+const serviceCopy: Record<HealthService, { name: [string, string]; measure: [string, string] }> = {
+    app: {
+        name: ['App', 'App'],
+        measure: [
+            'Se solicita la pantalla de inicio de sesión de Cord y se verifica que el documento se renderice completo desde el servidor.',
+            'The Cord sign-in screen is requested and the document must render completely from the server.',
+        ],
     },
-    stripe: {
-        es: 'Conectividad con Stripe', en: 'Stripe connectivity',
-        descEs: 'Lectura autenticada de la API de plataforma.', descEn: 'Authenticated read from the platform API.',
+    api: {
+        name: ['API pública', 'Public API'],
+        measure: [
+            'Una petición sin llave a /api/v1 debe responder el 401 tipado de la propia API (missing_key), no un 404, un 500 ni una página HTML.',
+            'A keyless request to /api/v1 must return the API’s own typed 401 (missing_key), not a 404, a 500 or an HTML page.',
+        ],
+    },
+    database: {
+        name: ['Núcleo de datos', 'Data core'],
+        measure: [
+            'Consulta sintética de solo lectura contra la base de datos PostgreSQL (Neon) que sostiene a todas las organizaciones.',
+            'Read-only synthetic query against the PostgreSQL database (Neon) that serves every organization.',
+        ],
     },
     public_link: {
-        es: 'Link público', en: 'Public link',
-        descEs: 'Render completo de una cotización de demostración.', descEn: 'Full render of a demonstration quote.',
+        name: ['Link público de cotizaciones', 'Public quote link'],
+        measure: [
+            'Render completo de la cotización de demostración: la página debe incluir el documento y su folio, tal como la recibe un cliente.',
+            'Full render of the demonstration quote: the page must include the document and its number, exactly as a client receives it.',
+        ],
+    },
+    stripe: {
+        name: ['Conexión con el procesador de pagos', 'Payment processor connection'],
+        measure: [
+            'Lectura autenticada del saldo de la plataforma en la API de Stripe.',
+            'Authenticated read of the platform balance from the Stripe API.',
+        ],
+    },
+    payments_webhook: {
+        name: ['Confirmación de pagos', 'Payment confirmation'],
+        measure: [
+            'Solo falla si hay cobros esperando confirmación y los webhooks firmados de Stripe llevan más de 26 h sin llegar. Sin cobros pendientes, el silencio no cuenta como caída.',
+            'Fails only when payments are awaiting confirmation and signed Stripe webhooks have not arrived for more than 26 h. With nothing pending, silence is not an outage.',
+        ],
+    },
+    fiscal: {
+        name: ['Timbrado fiscal CFDI', 'CFDI tax stamping'],
+        measure: [
+            'Lectura autenticada de la cuenta del proveedor de timbrado (Facturapi). Capacidad exclusiva de México.',
+            'Authenticated read of the stamping provider account (Facturapi). Mexico-only capability.',
+        ],
+    },
+    email: {
+        name: ['Correo transaccional', 'Transactional email'],
+        measure: [
+            'Comprobación de la API de Resend con la llave de envío, sin mandar ningún correo.',
+            'Check against the Resend API with the sending key, without sending any email.',
+        ],
+    },
+    ai: {
+        name: ['IA de Cord', 'Cord AI'],
+        measure: [
+            'Listado de modelos en la API de Anthropic. No consume tokens.',
+            'Model listing on the Anthropic API. Consumes no tokens.',
+        ],
     },
 };
-const stateCopy = {
-    operational: { es: 'Última comprobación sin fallos', en: 'Latest check passed' },
-    degraded: { es: 'La última comprobación detectó degradación', en: 'Latest check detected degradation' },
-    outage: { es: 'La última comprobación detectó una interrupción', en: 'Latest check detected an outage' },
-    unknown: { es: 'Monitoreo en preparación', en: 'Monitoring in preparation' },
-};
-const incidentState = {
-    investigating: { es: 'Investigando', en: 'Investigating' },
-    identified: { es: 'Identificado', en: 'Identified' },
-    monitoring: { es: 'Monitoreando', en: 'Monitoring' },
-    resolved: { es: 'Resuelto', en: 'Resolved' },
-};
-const dateTime = (value: string) => new Intl.DateTimeFormat(isEn ? 'en-US' : 'es-MX', {
+const OPTIONAL_PROBES = new Set<HealthService>(['fiscal', 'email', 'ai']);
+
+const groups: { id: string; label: [string, string]; services: HealthService[] }[] = [
+    { id: 'platform', label: ['Plataforma', 'Platform'], services: ['app', 'api', 'database'] },
+    { id: 'client', label: ['Experiencia del cliente', 'Client experience'], services: ['public_link'] },
+    { id: 'money', label: ['Dinero', 'Money'], services: ['stripe', 'payments_webhook'] },
+    { id: 'integrations', label: ['Servicios integrados', 'Integrated services'], services: ['fiscal', 'email', 'ai'] },
+];
+// Si algún día se agrega una sonda al backend sin grupo, no desaparece de la página.
+const grouped = new Set(groups.flatMap((g) => g.services));
+const orphans = HEALTH_SERVICES.filter((s) => !grouped.has(s));
+if (orphans.length) groups.push({ id: 'other', label: ['Otros', 'Other'], services: orphans });
+
+// ── Formato ──
+const fmtDay = (day: string, withYear = false) => new Intl.DateTimeFormat(locale, {
+    month: 'short', day: 'numeric', ...(withYear ? { year: 'numeric' } : {}), timeZone: 'UTC',
+}).format(new Date(`${day}T00:00:00Z`));
+const fmtDateTime = (value: string) => new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC',
 }).format(new Date(value));
-const dayLabel = (value: string) => new Intl.DateTimeFormat(isEn ? 'en-US' : 'es-MX', {
-    month: 'short', day: 'numeric', timeZone: 'UTC',
-}).format(new Date(`${value}T00:00:00Z`));
-const pct = (value: number) => value === 100 ? '100%' : `${value.toFixed(2)}%`;
-const emptyBars = Array.from({ length: 30 });
+const fmtPct = (value: number) => `${new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}${isEn ? '%' : ' %'}`;
+const fmtInt = (value: number) => new Intl.NumberFormat(locale).format(value);
+const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' });
+const relative = (value: string) => {
+    const diffMin = Math.round((new Date(value).getTime() - now.getTime()) / 60_000);
+    if (Math.abs(diffMin) < 1) return t('hace un momento', 'just now');
+    if (Math.abs(diffMin) < 60) return rtf.format(diffMin, 'minute');
+    const diffH = Math.round(diffMin / 60);
+    if (Math.abs(diffH) < 48) return rtf.format(diffH, 'hour');
+    return rtf.format(Math.round(diffH / 24), 'day');
+};
+const fmtDuration = (fromIso: string, toIso: string) => {
+    const mins = Math.max(1, Math.round((new Date(toIso).getTime() - new Date(fromIso).getTime()) / 60_000));
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h < 48) return m ? `${h} h ${m} min` : `${h} h`;
+    return `${Math.round(h / 24)} ${t('días', 'days')}`;
+};
+
+// ── Ventana de 90 días en UTC, contando desde hoy hacia atrás ──
+const utcDay = (offset: number) => {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - offset));
+    return d.toISOString().slice(0, 10);
+};
+const windowDays = Array.from({ length: HEALTH_WINDOW_DAYS }, (_, i) => utcDay(HEALTH_WINDOW_DAYS - 1 - i));
+const windowStartDay = windowDays[0]!;
+const mobileStartDay = windowDays[HEALTH_WINDOW_DAYS - MOBILE_DAYS]!;
+
+type DayTone = 'ok' | 'warn' | 'danger' | 'none';
+const dayTone = (checks: number, pct: number): DayTone => {
+    if (checks <= 0) return 'none';
+    if (pct >= 100) return 'ok';
+    if (pct >= 95) return 'warn';
+    return 'danger';
+};
+
+type CurrentState = 'ok' | 'failed' | 'nosignal';
+const stateLabel: Record<CurrentState, [string, string]> = {
+    ok: ['Operativo', 'Operational'],
+    failed: ['Con fallas', 'Failing'],
+    nosignal: ['Sin señal reciente', 'No recent signal'],
+};
+
+const rows = new Map(HEALTH_SERVICES.map((id) => {
+    const service: HealthServiceSnapshot | undefined = snapshot.services.find((s) => s.service === id);
+    const byDay = new Map(snapshot.history.filter((h) => h.service === id).map((h) => [h.day, h]));
+    const days = windowDays.map((day) => {
+        const h = byDay.get(day);
+        const checks = h?.checks ?? 0;
+        const ok = h?.successfulChecks ?? 0;
+        const pct = h?.successPct ?? 0;
+        return { day, checks, ok, pct, tone: dayTone(checks, pct) };
+    });
+    const sampled = days.filter((d) => d.checks > 0);
+    const firstDay = sampled[0]?.day ?? null;
+    const current: CurrentState = !service || service.stale || service.checks === 0 ? 'nosignal' : service.ok ? 'ok' : 'failed';
+    const hasData = !!service && service.checks > 0;
+    const warnDays = days.filter((d) => d.tone === 'warn').length;
+    const dangerDays = days.filter((d) => d.tone === 'danger').length;
+    const emptyDays = days.length - sampled.length;
+    const name = t(...serviceCopy[id].name);
+    const aria = hasData
+        ? t(
+            `${name}: ${fmtPct(service!.successPct)} de muestras correctas en la ventana. ${sampled.length} días medidos, ${warnDays + dangerDays} con fallas, ${emptyDays} sin muestra.`,
+            `${name}: ${fmtPct(service!.successPct)} of samples passed in the window. ${sampled.length} days measured, ${warnDays + dangerDays} with failures, ${emptyDays} without samples.`,
+        )
+        : t(`${name}: sin muestras en los últimos ${HEALTH_WINDOW_DAYS} días.`, `${name}: no samples in the last ${HEALTH_WINDOW_DAYS} days.`);
+    return [id, { id, service, days, firstDay, current, hasData, aria, name }];
+}));
+
+const counts = { ok: 0, failed: 0, nosignal: 0 };
+for (const r of rows.values()) counts[r.current] += 1;
+
+const latestCheck = snapshot.services.reduce<string | null>((acc, s) => (!acc || s.checkedAt > acc ? s.checkedAt : acc), null);
+
+const bannerCopy: Record<PublicStatusSnapshot['state'], { title: [string, string]; body: [string, string] }> = {
+    operational: {
+        title: ['Todos los sistemas medidos operan con normalidad', 'All measured systems are operational'],
+        body: ['La última ronda de sondas pasó en todos los componentes con señal.', 'The latest probe round passed on every component with signal.'],
+    },
+    degraded: {
+        title: ['Algunos sistemas presentan fallas', 'Some systems are failing'],
+        body: ['La última ronda detectó fallas en parte de los componentes. El resto opera con normalidad.', 'The latest round detected failures on some components. The rest are operating normally.'],
+    },
+    outage: {
+        title: ['Interrupción en los sistemas medidos', 'Outage across measured systems'],
+        body: ['La última ronda de sondas falló en todos los componentes medidos.', 'The latest probe round failed on every measured component.'],
+    },
+    unknown: {
+        title: ['Sin señal suficiente para afirmar el estado', 'Not enough signal to confirm status'],
+        body: loadFailed
+            ? ['El almacén de mediciones no respondió. No se afirma disponibilidad.', 'The measurement store did not respond. No availability is claimed.']
+            : ['Faltan muestras recientes de algún componente esencial, así que no se afirma que todo opere con normalidad.', 'Recent samples are missing for an essential component, so no all-clear is claimed.'],
+    },
+};
+
+const incidentStatus: Record<StatusIncident['status'], [string, string]> = {
+    investigating: ['Investigando', 'Investigating'],
+    identified: ['Identificado', 'Identified'],
+    monitoring: ['Monitoreando', 'Monitoring'],
+    resolved: ['Resuelto', 'Resolved'],
+};
+const severityLabel: Record<StatusIncident['severity'], [string, string]> = {
+    minor: ['Impacto menor', 'Minor impact'],
+    major: ['Impacto mayor', 'Major impact'],
+    critical: ['Impacto crítico', 'Critical impact'],
+};
+const openIncidents = snapshot.incidents.filter((i) => i.status !== 'resolved');
+const pastIncidents = snapshot.incidents.filter((i) => i.status === 'resolved');
+
 const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -76,278 +248,655 @@ const breadcrumbSchema = {
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
     <Nav />
     <main class:list={['status-page', `is-${snapshot.state}`]}>
-        <header class="st-hero">
-            <div class="st-hero-inner reveal">
-                <div class="st-badge">
-                    <span class="st-dot" aria-hidden="true"></span>
-                    {isEn ? stateCopy[snapshot.state].en : stateCopy[snapshot.state].es}
+        <header class="pp-hero st-hero">
+            <div class="st-hero-inner">
+                <p class="st-eyebrow reveal">{t('Estado del sistema', 'System status')}</p>
+                <h1 class="st-title masked-title">{t('El estado de Cord, medido de verdad.', 'Cord’s status, actually measured.')}</h1>
+                <p class="st-lead reveal">{t(
+                    'Sondas sintéticas comprueban la app, la API, el link público, los pagos y los servicios integrados. Lo que todavía no se ha medido se muestra como tal.',
+                    'Synthetic probes check the app, the API, the public link, payments and integrated services. Anything not yet measured is shown as such.',
+                )}</p>
+            </div>
+
+            <div class="st-banner reveal" role="status">
+                <div class="st-banner-main">
+                    <span class="st-pulse" aria-hidden="true"><i></i></span>
+                    <div class="st-banner-copy">
+                        <h2>{t(...bannerCopy[snapshot.state].title)}</h2>
+                        <p>
+                            {t(...bannerCopy[snapshot.state].body)}
+                            {' '}
+                            {latestCheck ? (
+                                <span class="st-banner-when">
+                                    {t('Última comprobación', 'Last checked')}{' '}
+                                    <time datetime={latestCheck} data-relative={latestCheck} title={`${fmtDateTime(latestCheck)} UTC`}>{relative(latestCheck)}</time>.
+                                </span>
+                            ) : (
+                                <span class="st-banner-when">{t('Aún no hay comprobaciones registradas.', 'No checks recorded yet.')}</span>
+                            )}
+                        </p>
+                        {openIncidents.length > 0 && (
+                            <a class="st-banner-link" href="#incidentes">
+                                {openIncidents.length === 1
+                                    ? t('Hay 1 incidente en curso', '1 incident in progress')
+                                    : t(`Hay ${openIncidents.length} incidentes en curso`, `${openIncidents.length} incidents in progress`)}
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                            </a>
+                        )}
+                    </div>
                 </div>
-                <h1 class="st-title masked-title">{isEn ? 'System status' : 'Estado del sistema'}</h1>
-                <p class="st-sub">{isEn
-                    ? 'Verified checks and measured history for Cord system performance.'
-                    : 'Comprobaciones verificadas e historial medido del rendimiento del sistema.'}</p>
-                <a class="st-support-btn" href={isEn ? '/en/soporte' : '/soporte'}>
-                    {isEn ? 'Contact support' : 'Contactar soporte'}
-                </a>
+                <dl class="st-banner-counts">
+                    <div class:list={[{ 'is-zero': counts.ok === 0 }]}><dt><i class="ok" aria-hidden="true"></i>{t('Operativos', 'Operational')}</dt><dd class="editorial">{counts.ok}</dd></div>
+                    <div class:list={[{ 'is-zero': counts.failed === 0 }]}><dt><i class="danger" aria-hidden="true"></i>{t('Con fallas', 'Failing')}</dt><dd class="editorial">{counts.failed}</dd></div>
+                    <div class:list={[{ 'is-zero': counts.nosignal === 0 }]}><dt><i class="none" aria-hidden="true"></i>{t('Sin señal', 'No signal')}</dt><dd class="editorial">{counts.nosignal}</dd></div>
+                </dl>
             </div>
         </header>
 
-        <section class="st-container" aria-label={isEn ? 'Measured service status' : 'Estado de los servicios medidos'}>
-            <div class="st-sticky-nav reveal">
-                <div class="st-filters-glass" id="status-filters" role="tablist" aria-label={isEn ? 'Services' : 'Servicios'}>
-                    {HEALTH_SERVICES.map((id, index) => (
-                        <button
-                            class:list={['filter-btn', { active: index === 0 }]}
-                            id={`tab-${id}`}
-                            type="button"
-                            role="tab"
-                            aria-controls={`panel-${id}`}
-                            aria-selected={index === 0 ? 'true' : 'false'}
-                            tabindex={index === 0 ? 0 : -1}
-                            data-target={id}
-                        >
-                            {isEn ? serviceCopy[id].en : serviceCopy[id].es}
-                        </button>
-                    ))}
-                </div>
+        <section class="st-container" aria-labelledby="components-title">
+            <div class="st-section-head reveal">
+                <h2 id="components-title">{t('Componentes', 'Components')}</h2>
+                <span>{t(`Últimos ${HEALTH_WINDOW_DAYS} días · UTC`, `Last ${HEALTH_WINDOW_DAYS} days · UTC`)}</span>
             </div>
 
-            <div class="st-chart-wrapper reveal" id="chart-wrapper">
-                {HEALTH_SERVICES.map((id, index) => {
-                    const service = snapshot.services.find((item) => item.service === id);
-                    const history = snapshot.history.filter((day) => day.service === id);
-                    const firstDay = history.at(0)?.day;
-                    const currentState = !service || service.stale ? 'unknown' : service.ok ? 'ok' : 'failed';
-                    const stateLabel = currentState === 'ok' ? (isEn ? 'Latest sample passed' : 'Última muestra correcta')
-                        : currentState === 'failed' ? (isEn ? 'Latest sample failed' : 'Última muestra fallida')
-                        : (isEn ? 'Awaiting recent samples' : 'Esperando muestras recientes');
+            <div class="st-card reveal">
+                {groups.map((group) => {
+                    const groupRows = group.services.map((id) => rows.get(id)!);
+                    const okCount = groupRows.filter((r) => r.current === 'ok').length;
                     return (
-                        <article
-                            class:list={['st-service-panel', { active: index === 0 }]}
-                            id={`panel-${id}`}
-                            role="tabpanel"
-                            aria-labelledby={`tab-${id}`}
-                            hidden={index !== 0}
-                        >
-                            <div class="st-panel-header">
-                                <div class="st-panel-copy">
-                                    <div class:list={['st-service-state', `state-${currentState}`]}>
-                                        <span aria-hidden="true"></span>{stateLabel}
-                                    </div>
-                                    <h2 class="st-panel-title">{isEn ? serviceCopy[id].en : serviceCopy[id].es}</h2>
-                                    <p class="st-panel-meta">{service
-                                        ? `${isEn ? serviceCopy[id].descEn : serviceCopy[id].descEs} ${isEn ? 'Last sample' : 'Última muestra'}: ${dateTime(service.checkedAt)} UTC.`
-                                        : loadFailed
-                                            ? (isEn ? 'The measurement store is unavailable. No availability claim is shown.' : 'El almacén de mediciones no está disponible. No se afirma disponibilidad.')
-                                            : (isEn ? 'Awaiting the first verified samples.' : 'Esperando las primeras muestras verificadas.')}</p>
-                                </div>
-                                <div class="st-panel-stats" aria-label={isEn ? 'Service metrics' : 'Métricas del servicio'}>
-                                    <div class="st-stat">
-                                        <span class="st-stat-label">{isEn ? 'Measured success' : 'Éxito medido'}</span>
-                                        <strong class="st-stat-val editorial">{service ? pct(service.successPct) : '-'}</strong>
-                                    </div>
-                                    <div class="st-stat">
-                                        <span class="st-stat-label">{isEn ? 'Latest latency' : 'Latencia reciente'}</span>
-                                        <strong class="st-stat-val editorial">{service ? `${service.latencyMs} ms` : '-'}</strong>
-                                    </div>
-                                </div>
+                        <section class="st-group" aria-labelledby={`group-${group.id}`}>
+                            <div class="st-group-head">
+                                <h3 id={`group-${group.id}`}>{t(...group.label)}</h3>
+                                <span class="editorial">{t(`${okCount} de ${groupRows.length} ${groupRows.length === 1 ? 'operativo' : 'operativos'}`, `${okCount} of ${groupRows.length} operational`)}</span>
                             </div>
+                            {groupRows.map((row) => {
+                                const s = row.service;
+                                const measuredSince = row.firstDay && row.firstDay > windowStartDay;
+                                const measuredSinceMobile = row.firstDay && row.firstDay > mobileStartDay;
+                                const sinceLabel = row.firstDay ? t(`Medido desde ${fmtDay(row.firstDay)}`, `Measured since ${fmtDay(row.firstDay)}`) : '';
+                                return (
+                                    <article class:list={['st-row', `is-${row.current}`]} data-row>
+                                        <button
+                                            class="st-row-head"
+                                            type="button"
+                                            aria-expanded="false"
+                                            aria-controls={`detail-${row.id}`}
+                                        >
+                                            <span class="st-row-name">
+                                                {row.name}
+                                                <svg class="st-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                                            </span>
+                                            <span class="st-row-state">
+                                                <i aria-hidden="true"></i>{t(...stateLabel[row.current])}
+                                            </span>
+                                        </button>
 
-                            <div class="st-bars-container">
-                                {history.length > 0 ? (
-                                    <div class="st-bars" role="img" aria-label={isEn ? 'Daily successful check history' : 'Historial diario de comprobaciones correctas'}>
-                                        {history.map((day) => (
-                                            <span
-                                                class:list={['st-bar', day.successPct === 100 ? 'ok' : day.successPct >= 99 ? 'warn' : 'danger']}
-                                                data-tooltip={`${dayLabel(day.day)} - ${pct(day.successPct)} - ${day.checks} ${isEn ? 'checks' : 'comprobaciones'}`}
-                                            ><span class="sr-only">{dayLabel(day.day)}: {pct(day.successPct)}</span></span>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div class="st-bars st-bars-empty" aria-hidden="true">
-                                        {emptyBars.map(() => <span class="st-bar unknown"></span>)}
-                                    </div>
-                                )}
-                                <div class="st-bars-legend">
-                                    <span>{firstDay ? dayLabel(firstDay) : (isEn ? 'Measurement start' : 'Inicio de medición')}</span>
-                                    <span class="st-legend-line" aria-hidden="true"></span>
-                                    <span>{isEn ? 'Today' : 'Hoy'}</span>
-                                </div>
-                            </div>
-                        </article>
+                                        <div
+                                            class="st-bars"
+                                            role="img"
+                                            tabindex="0"
+                                            aria-label={row.aria}
+                                            data-bars
+                                        >
+                                            {row.days.map((d, i) => (
+                                                <span
+                                                    class:list={['st-bar', d.tone, { 'is-older': i < HEALTH_WINDOW_DAYS - MOBILE_DAYS }]}
+                                                    data-d={fmtDay(d.day, true)}
+                                                    data-t={d.tone}
+                                                    data-p={d.checks ? fmtPct(d.pct) : ''}
+                                                    data-n={d.checks ? String(d.checks) : ''}
+                                                    data-k={d.checks ? String(d.ok) : ''}
+                                                ></span>
+                                            ))}
+                                        </div>
+
+                                        <div class="st-axis" aria-hidden="true">
+                                            <span class="st-axis-lg">{measuredSince ? sinceLabel : t(`${HEALTH_WINDOW_DAYS} días atrás`, `${HEALTH_WINDOW_DAYS} days ago`)}</span>
+                                            <span class="st-axis-sm">{measuredSinceMobile ? sinceLabel : t(`${MOBILE_DAYS} días atrás`, `${MOBILE_DAYS} days ago`)}</span>
+                                            <i></i>
+                                            <span class="st-axis-uptime">
+                                                {row.hasData
+                                                    ? <><b class="editorial">{fmtPct(s!.successPct)}</b> {t('disponibilidad', 'uptime')}</>
+                                                    : <><b class="editorial">—</b> {t('Sin datos todavía', 'No data yet')}</>}
+                                            </span>
+                                            <i></i>
+                                            <span>{t('Hoy', 'Today')}</span>
+                                        </div>
+
+                                        <div class="st-detail" id={`detail-${row.id}`} hidden>
+                                            <div class="st-detail-inner">
+                                                <div class="st-detail-what">
+                                                    <span class="st-k">{t('Qué se mide', 'What is measured')}</span>
+                                                    <p>{t(...serviceCopy[row.id].measure)}</p>
+                                                    {!row.hasData && OPTIONAL_PROBES.has(row.id) && (
+                                                        <p class="st-detail-note">{t(
+                                                            'Esta sonda solo corre donde la credencial del servicio está configurada. Mientras no haya muestras, no se afirma su estado.',
+                                                            'This probe only runs where the service credential is configured. Until samples exist, no status is claimed.',
+                                                        )}</p>
+                                                    )}
+                                                </div>
+                                                <dl class="st-detail-kv">
+                                                    <div>
+                                                        <dt>{t('Última muestra', 'Latest sample')}</dt>
+                                                        <dd>{s ? <><span class="editorial">{relative(s.checkedAt)}</span><small>{fmtDateTime(s.checkedAt)} UTC</small></> : '—'}</dd>
+                                                    </div>
+                                                    <div>
+                                                        <dt>{t('Latencia', 'Latency')}</dt>
+                                                        <dd>{s ? <span class="editorial">{fmtInt(s.latencyMs)} ms</span> : '—'}</dd>
+                                                    </div>
+                                                    <div>
+                                                        <dt>{t('Muestras correctas', 'Passed samples')}</dt>
+                                                        <dd>{s && s.checks > 0 ? <span class="editorial">{fmtInt(s.successfulChecks)} / {fmtInt(s.checks)}</span> : '—'}</dd>
+                                                    </div>
+                                                </dl>
+                                            </div>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </section>
                     );
                 })}
             </div>
 
-            <p class="st-method-note">{isEn
-                ? 'Percentages represent successful synthetic samples, not a contractual SLA or every user, route, region, or dependency. Missing or stale samples remain unknown.'
-                : 'Los porcentajes representan muestras sintéticas correctas, no un SLA contractual ni a cada usuario, ruta, región o dependencia. Las muestras ausentes u obsoletas permanecen como desconocidas.'}</p>
-
-            <div class="st-global-legend reveal" aria-label={isEn ? 'Chart legend' : 'Leyenda de la gráfica'}>
-                <span><i class="ok" aria-hidden="true"></i>{isEn ? 'All checks passed' : 'Todas correctas'}</span>
-                <span><i class="warn" aria-hidden="true"></i>{isEn ? 'Some checks failed' : 'Alguna falló'}</span>
-                <span><i class="danger" aria-hidden="true"></i>{isEn ? 'Significant failure' : 'Fallo significativo'}</span>
-                <span><i class="unknown" aria-hidden="true"></i>{isEn ? 'No sample' : 'Sin muestra'}</span>
+            <div class="st-foot reveal">
+                <div class="st-legend" aria-label={t('Leyenda', 'Legend')}>
+                    <span><i class="ok" aria-hidden="true"></i>{t('Todas correctas', 'All passed')}</span>
+                    <span><i class="warn" aria-hidden="true"></i>{t('Alguna falló (≥ 95 %)', 'Some failed (≥ 95%)')}</span>
+                    <span><i class="danger" aria-hidden="true"></i>{t('Menos de 95 %', 'Below 95%')}</span>
+                    <span><i class="none" aria-hidden="true"></i>{t('Sin muestra', 'No sample')}</span>
+                </div>
+                <p class="st-method-note">{t(
+                    'Los porcentajes representan muestras sintéticas correctas, no un SLA contractual ni a cada usuario, ruta, región o dependencia. Las muestras ausentes u obsoletas permanecen como desconocidas.',
+                    'Percentages represent successful synthetic samples, not a contractual SLA or every user, route, region, or dependency. Missing or stale samples remain unknown.',
+                )}</p>
             </div>
 
-            <div class="st-incidents reveal" aria-labelledby="incidents-title">
-                <h2 id="incidents-title">{isEn ? 'Past incidents' : 'Incidentes pasados'}</h2>
-                {snapshot.incidents.length > 0 ? (
-                    <div class="st-timeline">
-                        {snapshot.incidents.map((incident) => (
-                            <article class="st-incident">
-                                <time class="st-incident-date" datetime={incident.startedAt}>{dateTime(incident.startedAt)} UTC</time>
-                                <div class="st-incident-card">
-                                    <div class="st-incident-heading">
-                                        <h3>{isEn ? incident.titleEn : incident.titleEs}</h3>
-                                        <span class:list={['st-incident-state', `severity-${incident.severity}`]}>{isEn ? incidentState[incident.status].en : incidentState[incident.status].es}</span>
+            <section class="st-incidents" id="incidentes" aria-labelledby="incidents-title">
+                <div class="st-section-head reveal">
+                    <h2 id="incidents-title">{t('Historial de incidentes', 'Incident history')}</h2>
+                    <a href={isEn ? '/en/soporte' : '/soporte'}>{t('Contactar soporte', 'Contact support')}</a>
+                </div>
+
+                {openIncidents.map((incident) => (
+                    <article class:list={['st-open', `sev-${incident.severity}`, 'reveal']}>
+                        <div class="st-open-top">
+                            <span class="st-open-status"><span class="st-pulse sm" aria-hidden="true"><i></i></span>{t('En curso', 'In progress')} · {t(...incidentStatus[incident.status])}</span>
+                            <span class="st-sev">{t(...severityLabel[incident.severity])}</span>
+                        </div>
+                        <h3>{t(incident.titleEs, incident.titleEn)}</h3>
+                        <p>{t(incident.summaryEs, incident.summaryEn)}</p>
+                        <div class="st-meta">
+                            <span>{t('Inició', 'Started')} <time datetime={incident.startedAt}>{fmtDateTime(incident.startedAt)} UTC</time></span>
+                            <span>{t('Actualizado', 'Updated')} <time datetime={incident.updatedAt} data-relative={incident.updatedAt}>{relative(incident.updatedAt)}</time></span>
+                        </div>
+                    </article>
+                ))}
+
+                {pastIncidents.length > 0 ? (
+                    <div class="st-past reveal">
+                        {pastIncidents.map((incident) => (
+                            <article class="st-past-row">
+                                <time class="st-past-date" datetime={incident.startedAt}>
+                                    <b class="editorial">{new Intl.DateTimeFormat(locale, { day: 'numeric', timeZone: 'UTC' }).format(new Date(incident.startedAt))}</b>
+                                    <span>{new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(new Date(incident.startedAt))}</span>
+                                </time>
+                                <div class="st-past-body">
+                                    <div class="st-past-title">
+                                        <h3>{t(incident.titleEs, incident.titleEn)}</h3>
+                                        <span class="st-resolved">{t('Resuelto', 'Resolved')}</span>
                                     </div>
-                                    <p>{isEn ? incident.summaryEn : incident.summaryEs}</p>
-                                    <small>{isEn ? 'Last updated' : 'Última actualización'}: {dateTime(incident.updatedAt)} UTC</small>
+                                    <p>{t(incident.summaryEs, incident.summaryEn)}</p>
+                                    <div class="st-meta">
+                                        <span>{fmtDateTime(incident.startedAt)} UTC</span>
+                                        {incident.resolvedAt && <span>{t('Duración', 'Duration')} <b class="editorial">{fmtDuration(incident.startedAt, incident.resolvedAt)}</b></span>}
+                                        <span>{t(...severityLabel[incident.severity])}</span>
+                                    </div>
                                 </div>
                             </article>
                         ))}
                     </div>
-                ) : (
-                    <div class="st-empty-card">
-                        <strong>{isEn ? 'No published incidents' : 'Sin incidentes publicados'}</strong>
-                        <p>{isEn ? 'No operator incident has been published for the measured window.' : 'No se ha publicado ningún incidente de Operaciones para la ventana medida.'}</p>
+                ) : openIncidents.length === 0 && (
+                    <div class="st-empty reveal">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3 5 6v5.2c0 4.3 2.9 8.2 7 9.8 4.1-1.6 7-5.5 7-9.8V6l-7-3Z" fill="currentColor" fill-opacity="0.14"/>
+                            <path d="m9 12 2.2 2.2L15.5 10"/>
+                        </svg>
+                        <div>
+                            <strong>{t('Sin incidentes publicados', 'No published incidents')}</strong>
+                            <p>{t(
+                                `No se ha publicado ningún incidente en los últimos ${HEALTH_WINDOW_DAYS} días. Cuando Operaciones publique uno, aparecerá aquí con su evolución.`,
+                                `No incident has been published in the last ${HEALTH_WINDOW_DAYS} days. When Operations publishes one, it will appear here with its updates.`,
+                            )}</p>
+                        </div>
                     </div>
                 )}
-            </div>
+            </section>
         </section>
+
+        <div class="st-tip" id="st-tip" role="tooltip" aria-live="polite" hidden>
+            <span class="st-tip-date"></span>
+            <span class="st-tip-line"><i></i><span class="st-tip-text"></span></span>
+        </div>
     </main>
     <Footer />
     <PageAnims />
 </Layout>
 
+<script is:inline define:vars={{ i18n: {
+    none: isEn ? 'No sample' : 'Sin muestra',
+    passed: isEn ? 'passed' : 'correctas',
+    samples: isEn ? 'samples' : 'muestras',
+    sample: isEn ? 'sample' : 'muestra',
+    locale,
+    justNow: isEn ? 'just now' : 'hace un momento',
+} }}>
+    window.__stI18n = i18n;
+</script>
+
 <script>
-    const filters = Array.from(document.querySelectorAll<HTMLButtonElement>('#status-filters .filter-btn'));
-    const panels = Array.from(document.querySelectorAll<HTMLElement>('.st-service-panel'));
+    type I18n = { none: string; passed: string; samples: string; sample: string; locale: string; justNow: string };
+    const i18n = (window as unknown as { __stI18n: I18n }).__stI18n;
 
-    const selectService = (button: HTMLButtonElement) => {
-        const targetId = button.dataset.target;
-        filters.forEach((filter) => {
-            const active = filter === button;
-            filter.classList.toggle('active', active);
-            filter.setAttribute('aria-selected', String(active));
-            filter.tabIndex = active ? 0 : -1;
-        });
-        panels.forEach((panel) => {
-            const active = panel.id === `panel-${targetId}`;
-            panel.classList.toggle('active', active);
-            panel.hidden = !active;
-        });
-    };
-
-    filters.forEach((button, index) => {
-        button.addEventListener('click', () => selectService(button));
-        button.addEventListener('keydown', (event) => {
-            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-            event.preventDefault();
-            const direction = event.key === 'ArrowRight' ? 1 : -1;
-            const next = filters[(index + direction + filters.length) % filters.length];
-            if (!next) return;
-            selectService(next);
-            next.focus();
+    // ── Filas expandibles ──
+    document.querySelectorAll<HTMLButtonElement>('.st-row-head').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const row = btn.closest<HTMLElement>('[data-row]');
+            const detail = document.getElementById(btn.getAttribute('aria-controls') || '');
+            if (!row || !detail) return;
+            const open = btn.getAttribute('aria-expanded') !== 'true';
+            btn.setAttribute('aria-expanded', String(open));
+            row.classList.toggle('is-open', open);
+            detail.hidden = !open;
         });
     });
+
+    // ── Tooltip de barras: cursor, toque y teclado ──
+    const tip = document.getElementById('st-tip');
+    const tipDate = tip?.querySelector<HTMLElement>('.st-tip-date');
+    const tipText = tip?.querySelector<HTMLElement>('.st-tip-text');
+    const tipDot = tip?.querySelector<HTMLElement>('.st-tip-line i');
+    let activeBars: HTMLElement | null = null;
+    let activeBar: HTMLElement | null = null;
+    let pinned = false;
+
+    const visibleBars = (bars: HTMLElement) =>
+        Array.from(bars.querySelectorAll<HTMLElement>('.st-bar')).filter((b) => b.offsetWidth > 0);
+
+    const hide = () => {
+        if (!tip) return;
+        tip.hidden = true;
+        activeBar?.classList.remove('is-on');
+        activeBars?.classList.remove('is-active');
+        activeBar = null;
+        activeBars = null;
+        pinned = false;
+    };
+
+    const show = (bars: HTMLElement, bar: HTMLElement) => {
+        if (!tip || !tipDate || !tipText || !tipDot) return;
+        if (activeBars && activeBars !== bars) activeBars.classList.remove('is-active');
+        activeBar?.classList.remove('is-on');
+        activeBars = bars;
+        activeBar = bar;
+        bars.classList.add('is-active');
+        bar.classList.add('is-on');
+        const { d = '', t = 'none', p = '', n = '', k = '' } = bar.dataset;
+        tipDate.textContent = `${d} · UTC`;
+        tipDot.className = t;
+        if (t === 'none') {
+            tipText.textContent = i18n.none;
+        } else {
+            const count = Number(n);
+            const nf = new Intl.NumberFormat(i18n.locale);
+            tipText.textContent = t === 'ok'
+                ? `${p} · ${nf.format(count)} ${count === 1 ? i18n.sample : i18n.samples}`
+                : `${p} · ${nf.format(Number(k))}/${nf.format(count)} ${i18n.passed}`;
+        }
+        tip.hidden = false;
+        const r = bar.getBoundingClientRect();
+        const tw = tip.offsetWidth;
+        const th = tip.offsetHeight;
+        const margin = 12;
+        let left = r.left + r.width / 2 - tw / 2;
+        left = Math.max(margin, Math.min(left, document.documentElement.clientWidth - tw - margin));
+        tip.style.left = `${left + window.scrollX}px`;
+        tip.style.top = `${r.top + window.scrollY - th - 10}px`;
+    };
+
+    const nearest = (bars: HTMLElement, clientX: number) => {
+        let best: HTMLElement | null = null;
+        let bestDist = Infinity;
+        for (const b of visibleBars(bars)) {
+            const r = b.getBoundingClientRect();
+            const dist = Math.abs(r.left + r.width / 2 - clientX);
+            if (dist < bestDist) { bestDist = dist; best = b; }
+        }
+        return best;
+    };
+
+    document.querySelectorAll<HTMLElement>('[data-bars]').forEach((bars) => {
+        bars.addEventListener('pointermove', (e) => {
+            if (e.pointerType !== 'mouse' || pinned) return;
+            const bar = nearest(bars, e.clientX);
+            if (bar && bar !== activeBar) show(bars, bar);
+        });
+        bars.addEventListener('pointerleave', (e) => {
+            if (e.pointerType === 'mouse' && !pinned) hide();
+        });
+        bars.addEventListener('pointerdown', (e) => {
+            const bar = nearest(bars, e.clientX);
+            if (!bar) return;
+            if (e.pointerType !== 'mouse') {
+                pinned = true;
+                show(bars, bar);
+            } else if (pinned && bar === activeBar) {
+                hide();
+            } else {
+                pinned = true;
+                show(bars, bar);
+            }
+        });
+        bars.addEventListener('focus', () => {
+            const all = visibleBars(bars);
+            const last = all[all.length - 1];
+            if (last && activeBars !== bars) show(bars, last);
+        });
+        bars.addEventListener('blur', () => { if (activeBars === bars) hide(); });
+        bars.addEventListener('keydown', (e) => {
+            const all = visibleBars(bars);
+            if (!all.length) return;
+            const idx = activeBar && activeBars === bars ? all.indexOf(activeBar) : all.length - 1;
+            let next = idx;
+            if (e.key === 'ArrowLeft') next = Math.max(0, idx - 1);
+            else if (e.key === 'ArrowRight') next = Math.min(all.length - 1, idx + 1);
+            else if (e.key === 'Home') next = 0;
+            else if (e.key === 'End') next = all.length - 1;
+            else if (e.key === 'Escape') { hide(); return; }
+            else return;
+            e.preventDefault();
+            show(bars, all[next]!);
+        });
+    });
+
+    document.addEventListener('pointerdown', (e) => {
+        if (pinned && !(e.target as HTMLElement).closest('[data-bars]')) hide();
+    });
+    window.addEventListener('resize', () => { if (activeBars) hide(); });
+
+    // ── "Hace X min" vivo: la página no se cachea, pero puede quedarse abierta ──
+    const rtf = new Intl.RelativeTimeFormat(i18n.locale, { numeric: 'auto', style: 'short' });
+    const refresh = () => {
+        document.querySelectorAll<HTMLTimeElement>('time[data-relative]').forEach((el) => {
+            const ts = new Date(el.dataset.relative || '').getTime();
+            if (!Number.isFinite(ts)) return;
+            const mins = Math.round((ts - Date.now()) / 60_000);
+            if (Math.abs(mins) < 1) el.textContent = i18n.justNow;
+            else if (Math.abs(mins) < 60) el.textContent = rtf.format(mins, 'minute');
+            else if (Math.abs(mins) < 2880) el.textContent = rtf.format(Math.round(mins / 60), 'hour');
+            else el.textContent = rtf.format(Math.round(mins / 1440), 'day');
+        });
+    };
+    setInterval(refresh, 60_000);
 </script>
 
 <style>
-    .status-page { min-height:100dvh; padding:80px 0 8rem; color:#0a192f; background:#fdfdfd; }
-    .st-hero { display:flex; justify-content:center; padding:clamp(4.5rem,8vw,7rem) 5% clamp(3rem,6vw,4.75rem); background:linear-gradient(180deg,var(--color-bg,#f8f9fb) 0%,#fdfdfd 100%); }
-    .st-hero-inner { width:100%; max-width:800px; margin:0 auto; text-align:center; }
-    .st-badge { display:inline-flex; align-items:center; gap:8px; margin:0 auto 1.5rem; padding:8px 16px; border-radius:999px; background:#f1f3f5; color:#626c78; box-shadow:inset 0 0 0 .5px rgba(10,25,47,.1); font-size:.78rem; font-weight:680; }
-    .st-dot,.st-service-state span { flex:none; width:8px; height:8px; border-radius:50%; background:#9aa3ad; }
-    .is-operational .st-badge { color:#176846; background:#e9f5ef; }
-    .is-operational .st-badge .st-dot { background:#248a61; }
-    .is-degraded .st-badge { color:#8a5c17; background:#f7f0e4; }
-    .is-degraded .st-badge .st-dot { background:#b7791f; }
-    .is-outage .st-badge { color:#9d3434; background:#faecec; }
-    .is-outage .st-badge .st-dot { background:#c44747; }
-    .st-title { max-width:800px; margin:0 auto; font-size:clamp(3rem,7vw,5.8rem); line-height:.98; letter-spacing:-.065em; font-weight:560; }
-    .st-sub { max-width:620px; margin:1.5rem auto 0; color:#687381; font-size:clamp(1rem,2vw,1.15rem); line-height:1.7; }
-    .st-support-btn { display:inline-flex; justify-content:center; margin-top:1.8rem; padding:11px 20px; border-radius:999px; background:#0a192f; color:#f8fafc; box-shadow:0 8px 22px rgba(10,25,47,.14); text-decoration:none; font-size:.86rem; font-weight:680; transition:transform .25s cubic-bezier(.16,1,.3,1),box-shadow .25s cubic-bezier(.16,1,.3,1); }
-    .st-support-btn:hover { transform:translateY(-2px); box-shadow:0 12px 28px rgba(10,25,47,.2); }
-    .st-support-btn:focus-visible,.filter-btn:focus-visible { outline:3px solid rgba(10,37,218,.28); outline-offset:3px; }
-    .st-container { width:min(900px,calc(100% - 40px)); margin:0 auto; }
-    .st-sticky-nav { display:flex; justify-content:center; margin:0 0 3.5rem; }
-    .st-filters-glass { display:inline-flex; max-width:100%; gap:.35rem; padding:6px; overflow-x:auto; border-radius:999px; background:rgba(250,251,252,.78); backdrop-filter:blur(22px) saturate(145%); -webkit-backdrop-filter:blur(22px) saturate(145%); box-shadow:inset 0 0 0 .5px rgba(10,25,47,.11),0 12px 35px rgba(10,25,47,.075); scrollbar-width:none; }
-    .st-filters-glass::-webkit-scrollbar { display:none; }
-    .filter-btn { flex:none; border:0; border-radius:999px; padding:9px 18px; background:transparent; color:#5f6874; cursor:pointer; font:inherit; font-size:.82rem; font-weight:650; white-space:nowrap; transition:color .22s ease,background-color .22s ease,transform .22s ease; }
-    .filter-btn:hover { color:#0a192f; background:rgba(10,25,47,.045); }
-    .filter-btn.active { background:#111b2b; color:#f8fafc; box-shadow:0 5px 14px rgba(10,25,47,.16); }
-    .st-chart-wrapper { min-height:270px; }
-    .st-service-panel { display:none; }
-    .st-service-panel.active { display:block; }
-    .st-panel-header { display:flex; align-items:flex-end; justify-content:space-between; gap:2rem; padding-bottom:1.25rem; border-bottom:1px solid rgba(10,25,47,.085); }
-    .st-panel-copy { max-width:560px; }
-    .st-service-state { display:flex; align-items:center; gap:7px; margin-bottom:.65rem; color:#687381; font-size:.7rem; font-weight:680; }
-    .st-service-state.state-ok { color:#176846; }
-    .st-service-state.state-ok span { background:#248a61; }
-    .st-service-state.state-failed { color:#9d3434; }
-    .st-service-state.state-failed span { background:#c44747; }
-    .st-panel-title { margin:0; font-size:clamp(1.5rem,3vw,2rem); letter-spacing:-.04em; font-weight:650; }
-    .st-panel-meta { max-width:560px; margin:.55rem 0 0; color:#747e8a; font-size:.8rem; line-height:1.55; }
-    .st-panel-stats { display:flex; flex:none; gap:2.25rem; }
-    .st-stat { display:flex; flex-direction:column; align-items:flex-end; }
-    .st-stat-label { margin-bottom:.25rem; color:#8b949f; font-size:.63rem; font-weight:720; letter-spacing:.07em; text-transform:uppercase; }
-    .st-stat-val { color:#0a192f; font-size:1.42rem; font-weight:540; }
-    .st-bars-container { display:flex; flex-direction:column; gap:8px; margin-top:2rem; }
-    .st-bars { display:flex; align-items:stretch; width:100%; height:38px; gap:3px; }
-    .st-bar { position:relative; flex:1 1 6px; min-width:3px; border-radius:3px; background:#248a61; transition:opacity .2s ease,transform .2s ease; }
-    .st-bar.warn { background:#c28b36; }
-    .st-bar.danger { background:#c44747; }
-    .st-bar.unknown { background:#e4e7eb; }
-    .st-bars:not(.st-bars-empty) .st-bar { cursor:help; }
-    .st-bars:not(.st-bars-empty) .st-bar:hover { opacity:.78; transform:scaleY(1.1); }
-    .st-bar::after { content:attr(data-tooltip); position:absolute; bottom:calc(100% + 9px); left:50%; z-index:2; padding:7px 10px; border-radius:7px; background:#111b2b; color:#f8fafc; box-shadow:0 10px 25px rgba(10,25,47,.2); font-size:.68rem; font-weight:580; white-space:nowrap; opacity:0; pointer-events:none; transform:translateX(-50%) translateY(4px); transition:opacity .18s ease,transform .18s ease; }
-    .st-bar:hover::after { opacity:1; transform:translateX(-50%) translateY(0); }
-    .st-bar:first-child::after { left:0; transform:translateY(4px); }
-    .st-bar:first-child:hover::after { transform:translateY(0); }
-    .st-bar:last-child::after { right:0; left:auto; transform:translateY(4px); }
-    .st-bar:last-child:hover::after { transform:translateY(0); }
-    .st-bar:not([data-tooltip])::after { display:none; }
-    .st-bars-legend { display:flex; align-items:center; gap:1rem; color:#929aa4; font-size:.7rem; font-weight:560; }
-    .st-legend-line { flex:1; height:1px; background:rgba(10,25,47,.075); }
-    .st-method-note { max-width:780px; margin:1.35rem 0 0; color:#818a95; font-size:.69rem; line-height:1.6; }
-    .st-global-legend { display:flex; justify-content:center; flex-wrap:wrap; gap:1rem 2rem; margin:2.2rem 0 clamp(4rem,8vw,6.5rem); color:#687381; font-size:.76rem; font-weight:620; }
-    .st-global-legend span { display:flex; align-items:center; gap:7px; }
-    .st-global-legend i { width:9px; height:9px; border-radius:50%; background:#248a61; }
-    .st-global-legend i.warn { background:#c28b36; }
-    .st-global-legend i.danger { background:#c44747; }
-    .st-global-legend i.unknown { background:#d9dde2; }
-    .st-incidents > h2 { margin:0 0 1.5rem; color:#0a192f; font-size:clamp(1.45rem,3vw,1.85rem); letter-spacing:-.04em; font-weight:650; }
-    .st-timeline { display:flex; flex-direction:column; gap:2rem; }
-    .st-incident { display:flex; flex-direction:column; gap:.7rem; }
-    .st-incident-date { padding-bottom:.55rem; border-bottom:1px solid rgba(10,25,47,.075); color:#4f5a68; font-size:.82rem; font-weight:650; }
-    .st-incident-card,.st-empty-card { padding:1.5rem 1.75rem; border-radius:16px; background:#fbfbfa; box-shadow:inset 0 0 0 .5px rgba(10,25,47,.11),0 20px 45px -30px rgba(10,25,47,.2); }
-    .st-incident-heading { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
-    .st-incident-heading h3 { margin:0; color:#0a192f; font-size:1rem; letter-spacing:-.015em; }
-    .st-incident-state { flex:none; padding:5px 9px; border-radius:999px; background:#eef1f4; color:#626c78; font-size:.64rem; font-weight:700; }
-    .st-incident-state.severity-major { color:#8a5c17; background:#f7f0e4; }
-    .st-incident-state.severity-critical { color:#9d3434; background:#faecec; }
-    .st-incident-card p,.st-empty-card p { margin:.8rem 0 0; color:#5f6b7a; font-size:.82rem; line-height:1.65; }
-    .st-incident-card small { display:block; margin-top:1rem; color:#8a939e; font-size:.66rem; }
-    .st-empty-card strong { color:#344153; font-size:.9rem; }
-    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-    @media (prefers-reduced-motion:no-preference) {
-        .is-operational .st-dot { animation:st-pulse 2.2s infinite; }
-        .st-service-panel.active { animation:st-panel-in .32s cubic-bezier(.16,1,.3,1); }
+    .status-page {
+        --st-ok: #23a06f;
+        --st-warn: #df9d2e;
+        --st-danger: #d65050;
+        --st-none: #e7e9ed;
+        --st-line: rgba(10, 25, 47, 0.07);
+        --st-ink: #0a192f;
+        --st-muted: #6b7584;
+        min-height: 100dvh;
+        padding: 80px 0 8rem;
+        color: var(--st-ink);
+        background: var(--color-bg-soft);
     }
-    @keyframes st-pulse { 0% { box-shadow:0 0 0 0 rgba(36,138,97,.35); } 70%,100% { box-shadow:0 0 0 7px rgba(36,138,97,0); } }
-    @keyframes st-panel-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-    @media (max-width:700px) {
-        .status-page { padding-bottom:5rem; }
-        .st-hero { padding-top:4rem; }
-        .st-container { width:min(100% - 28px,900px); }
-        .st-sticky-nav { justify-content:flex-start; margin-bottom:2.75rem; }
-        .st-panel-header { align-items:flex-start; flex-direction:column; gap:1.5rem; }
-        .st-panel-stats { width:100%; justify-content:space-between; gap:1rem; }
-        .st-stat { align-items:flex-start; }
-        .st-bars { gap:2px; }
-        .st-global-legend { justify-content:flex-start; }
-        .st-incident-heading { align-items:flex-start; flex-direction:column; }
+
+    /* ── Hero ── */
+    .st-hero { position: relative; padding: clamp(4rem, 8vw, 6.5rem) 20px 0; }
+    .st-hero::before {
+        content: ''; position: absolute; inset: 0 0 auto; height: 520px; pointer-events: none;
+        background:
+            radial-gradient(ellipse 46% 60% at 30% 10%, rgba(10, 25, 47, 0.045) 0%, transparent 62%),
+            radial-gradient(ellipse 40% 50% at 74% 4%, rgba(10, 25, 47, 0.035) 0%, transparent 62%);
+    }
+    .st-hero-inner { position: relative; max-width: 760px; margin: 0 auto; text-align: center; }
+    .st-eyebrow { margin: 0 0 1.2rem; color: #888; font-size: 0.65rem; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; }
+    .status-page .st-title { margin: 0 auto 1.25rem !important; }
+    .st-lead { max-width: 580px; margin: 0 auto; color: var(--color-text-muted); font-size: clamp(1rem, 2vw, 1.08rem); line-height: 1.65; text-wrap: pretty; }
+
+    /* ── Banner global ── */
+    .st-banner {
+        position: relative;
+        display: flex; align-items: center; justify-content: space-between; gap: 2rem;
+        width: min(880px, 100%); margin: clamp(2.5rem, 5vw, 3.5rem) auto 0;
+        padding: 26px 30px;
+        border-radius: 24px;
+        background: #fff;
+        box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 1px 2px rgba(10, 25, 47, 0.04), 0 22px 60px -30px rgba(10, 25, 47, 0.22);
+    }
+    .st-banner-main { display: flex; flex: 1; align-items: flex-start; gap: 18px; min-width: 0; }
+    .st-banner-copy { max-width: 540px; }
+    .st-banner-copy h2 { margin: 0; color: #050505; font-size: clamp(1.08rem, 2vw, 1.28rem); font-weight: 650; letter-spacing: -0.025em; line-height: 1.25; }
+    .st-banner-copy p { margin: 0.4rem 0 0; color: var(--st-muted); font-size: 0.86rem; line-height: 1.55; }
+    .st-banner-when { color: #3f4a59; font-weight: 550; white-space: nowrap; }
+    .st-banner-link {
+        display: inline-flex; align-items: center; gap: 6px; margin-top: 0.8rem;
+        color: #a45f0a; font-size: 0.8rem; font-weight: 650; text-decoration: none;
+    }
+    .st-banner-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    .st-pulse { position: relative; flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin-top: -3px; border-radius: 50%; background: rgba(154, 163, 173, 0.14); }
+    .st-pulse i { position: relative; width: 10px; height: 10px; border-radius: 50%; background: #9aa3ad; }
+    .st-pulse i::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: inherit; opacity: 0; }
+    .is-operational .st-banner .st-pulse { background: rgba(22, 163, 113, 0.11); }
+    .is-operational .st-banner .st-pulse i { background: var(--st-ok); }
+    .is-degraded .st-banner .st-pulse { background: rgba(227, 160, 43, 0.14); }
+    .is-degraded .st-banner .st-pulse i { background: var(--st-warn); }
+    .is-outage .st-banner .st-pulse { background: rgba(220, 76, 76, 0.12); }
+    .is-outage .st-banner .st-pulse i { background: var(--st-danger); }
+    .st-pulse.sm { width: 16px; height: 16px; margin: 0; background: transparent; }
+    .st-pulse.sm i { width: 7px; height: 7px; }
+
+    .st-banner-counts { display: flex; flex: none; gap: 0; margin: 0; }
+    .st-banner-counts > div { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding: 2px 0 2px 22px; margin-left: 22px; border-left: 1px solid var(--st-line); }
+    .st-banner-counts > div:first-child { margin-left: 0; border-left: 0; }
+    .st-banner-counts dt { display: flex; align-items: center; gap: 6px; color: #8a929d; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+    .st-banner-counts dd { margin: 0; color: var(--st-ink); font-size: 1.5rem; line-height: 1; }
+    .st-banner-counts .is-zero dd { color: #b8bec7; }
+    .st-banner-counts .is-zero i { opacity: 0.45; }
+    .st-legend i, .st-banner-counts i { width: 8px; height: 8px; border-radius: 2px; background: var(--st-ok); }
+    :is(.st-legend, .st-banner-counts) i.warn { background: var(--st-warn); }
+    :is(.st-legend, .st-banner-counts) i.danger { background: var(--st-danger); }
+    :is(.st-legend, .st-banner-counts) i.none { background: #d6dae0; }
+
+    /* ── Sección ── */
+    .st-container { width: min(880px, calc(100% - 40px)); margin: clamp(4rem, 8vw, 5.5rem) auto 0; }
+    .st-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 0 4px 1rem; }
+    .st-section-head h2 { margin: 0; color: #050505; font-size: 1.3rem; font-weight: 650; letter-spacing: -0.03em; }
+    .st-section-head > span { color: #8a929d; font-size: 0.74rem; font-weight: 550; }
+    .st-section-head a { color: var(--st-ink); font-size: 0.8rem; font-weight: 600; text-decoration: none; }
+    .st-section-head a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    .st-card {
+        overflow: hidden;
+        border-radius: 28px;
+        background: #fff;
+        box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 1px 2px rgba(10, 25, 47, 0.04), 0 30px 70px -36px rgba(10, 25, 47, 0.2);
+    }
+    .st-group + .st-group { border-top: 1px solid var(--st-line); }
+    .st-group-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 18px 30px 6px; }
+    .st-group-head h3 { margin: 0; color: #8a929d; font-size: 0.64rem; font-weight: 750; letter-spacing: 0.14em; text-transform: uppercase; }
+    .st-group-head span { color: #a2a9b3; font-size: 0.7rem; font-weight: 550; letter-spacing: -0.01em; }
+
+    .st-row { padding: 14px 30px 20px; }
+    .st-row + .st-row { border-top: 1px solid rgba(10, 25, 47, 0.05); }
+    .st-row-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        width: calc(100% + 16px); margin: 0 -8px 10px; padding: 6px 8px;
+        border: 0; border-radius: 10px; background: transparent; color: inherit;
+        font: inherit; text-align: left; cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .st-row-head:hover { background: #f5f5f7; }
+    .st-row-name { display: block; min-width: 0; color: #0d1726; font-size: 0.95rem; font-weight: 600; letter-spacing: -0.015em; }
+    .st-chev { display: inline-block; margin-left: 4px; vertical-align: -2px; color: #aab1ba; transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease; }
+    .st-row-head:hover .st-chev { color: #5d6674; }
+    .st-row.is-open .st-chev { transform: rotate(90deg); color: #5d6674; }
+    .st-row-state { display: inline-flex; flex: none; align-items: center; gap: 7px; color: #7b8491; font-size: 0.8rem; font-weight: 600; }
+    .st-row-state i { width: 7px; height: 7px; border-radius: 50%; background: #c3c8cf; }
+    .st-row.is-ok .st-row-state { color: #12865d; }
+    .st-row.is-ok .st-row-state i { background: var(--st-ok); }
+    .st-row.is-failed .st-row-state { color: #bf3b3b; }
+    .st-row.is-failed .st-row-state i { background: var(--st-danger); }
+
+    .st-bars {
+        display: flex; align-items: stretch; gap: 3px; height: 34px;
+        border-radius: 6px; outline: none; touch-action: pan-y; cursor: default;
+    }
+    .st-bars:focus-visible { box-shadow: 0 0 0 3px #fff, 0 0 0 5px rgba(10, 25, 47, 0.35); }
+    .st-bar { flex: 1 1 0; min-width: 2px; border-radius: 2px; background: var(--st-ok); transition: opacity 0.16s ease, transform 0.16s ease; transform-origin: bottom; }
+    .st-bar.warn { background: var(--st-warn); }
+    .st-bar.danger { background: var(--st-danger); }
+    .st-bar.none { background: var(--st-none); }
+    .st-bars.is-active .st-bar { opacity: 0.5; }
+    .st-bars.is-active .st-bar.is-on { opacity: 1; transform: scaleY(1.08); }
+    .st-bars.is-active .st-bar.none.is-on { background: #cdd2d9; }
+
+    .st-axis { display: flex; align-items: center; gap: 12px; margin-top: 9px; color: #9aa1ab; font-size: 0.7rem; font-weight: 520; white-space: nowrap; }
+    .st-axis > i { flex: 1; height: 1px; background: rgba(10, 25, 47, 0.08); }
+    .st-axis-sm { display: none; }
+    .st-axis-uptime { color: #6b7584; }
+    .st-axis-uptime b { color: #1c2736; font-size: 0.74rem; }
+
+    .st-detail-inner {
+        display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 2rem;
+        margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(10, 25, 47, 0.1);
+    }
+    .st-row:not(.is-open) .st-detail { display: none; }
+    .st-k, .st-detail-kv dt { display: block; margin-bottom: 5px; color: #9aa1ab; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .st-detail-what p { margin: 0; color: #4a5566; font-size: 0.82rem; line-height: 1.6; }
+    .st-detail-what .st-detail-note { margin-top: 0.6rem; color: #8a929d; font-size: 0.76rem; }
+    .st-detail-kv { display: flex; flex-direction: column; margin: 0; }
+    .st-detail-kv > div { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid rgba(10, 25, 47, 0.05); }
+    .st-detail-kv > div:first-child { padding-top: 0; }
+    .st-detail-kv > div:last-child { border-bottom: 0; }
+    .st-detail-kv dt { margin: 0; }
+    .st-detail-kv dd { display: flex; flex-direction: column; align-items: flex-end; margin: 0; color: #1c2736; font-size: 0.84rem; text-align: right; }
+    .st-detail-kv small { margin-top: 2px; color: #9aa1ab; font-size: 0.68rem; }
+    @media (prefers-reduced-motion: no-preference) {
+        .st-row.is-open .st-detail-inner { animation: st-detail-in 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
+    }
+
+    /* ── Leyenda y nota ── */
+    .st-foot { display: flex; flex-direction: column; gap: 0.9rem; margin: 1.2rem 6px 0; }
+    .st-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; color: #6b7584; font-size: 0.72rem; font-weight: 560; }
+    .st-legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .st-method-note { max-width: 720px; margin: 0; color: #8a929d; font-size: 0.7rem; line-height: 1.6; }
+
+    /* ── Incidentes ── */
+    .st-incidents { margin-top: clamp(4rem, 8vw, 5.5rem); scroll-margin-top: 110px; }
+    .st-open {
+        margin-bottom: 14px; padding: 24px 28px;
+        border-radius: 24px; background: #fff;
+        box-shadow: 0 0 0 1px rgba(227, 160, 43, 0.28), 0 1px 2px rgba(10, 25, 47, 0.04), 0 24px 60px -32px rgba(164, 95, 10, 0.28);
+    }
+    .st-open.sev-critical { box-shadow: 0 0 0 1px rgba(220, 76, 76, 0.28), 0 1px 2px rgba(10, 25, 47, 0.04), 0 24px 60px -32px rgba(190, 50, 50, 0.3); }
+    .st-open-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.7rem; }
+    .st-open-status { display: inline-flex; align-items: center; gap: 6px; color: #a45f0a; font-size: 0.74rem; font-weight: 650; }
+    .st-open .st-pulse i { background: var(--st-warn); }
+    .st-open.sev-critical .st-open-status { color: #b83838; }
+    .st-open.sev-critical .st-pulse i { background: var(--st-danger); }
+    .st-sev { color: #8a929d; font-size: 0.7rem; font-weight: 600; }
+    .st-open h3 { margin: 0; color: #050505; font-size: 1.08rem; font-weight: 650; letter-spacing: -0.02em; }
+    .st-open > p { margin: 0.5rem 0 0; color: #4a5566; font-size: 0.86rem; line-height: 1.6; }
+    .st-meta { display: flex; flex-wrap: wrap; gap: 0.3rem 0; margin-top: 0.85rem; color: #9aa1ab; font-size: 0.7rem; }
+    .st-meta > span + span::before { content: '·'; margin: 0 0.55rem; color: #c3c8cf; }
+    .st-meta b { color: #4a5566; font-weight: 600; }
+
+    .st-past {
+        border-radius: 24px; background: #fff;
+        box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 1px 2px rgba(10, 25, 47, 0.04), 0 24px 60px -34px rgba(10, 25, 47, 0.18);
+    }
+    .st-past-row { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 1.25rem; padding: 22px 28px; }
+    .st-past-row + .st-past-row { border-top: 1px solid var(--st-line); }
+    .st-past-date { display: flex; flex-direction: column; align-items: center; padding-top: 2px; }
+    .st-past-date b { color: var(--st-ink); font-size: 1.4rem; line-height: 1; }
+    .st-past-date span { margin-top: 3px; color: #9aa1ab; font-size: 0.64rem; font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; }
+    .st-past-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .st-past-title h3 { margin: 0; color: #0d1726; font-size: 0.96rem; font-weight: 620; letter-spacing: -0.015em; line-height: 1.35; }
+    .st-resolved { flex: none; padding: 3px 9px; border-radius: 999px; background: rgba(22, 163, 113, 0.09); color: #12865d; font-size: 0.66rem; font-weight: 650; }
+    .st-past-body > p { margin: 0.4rem 0 0; color: #5b6676; font-size: 0.83rem; line-height: 1.6; }
+
+    .st-empty {
+        display: flex; align-items: flex-start; gap: 16px; padding: 26px 28px;
+        border-radius: 24px; background: #fff; color: #12865d;
+        box-shadow: 0 0 0 1px rgba(10, 25, 47, 0.06), 0 1px 2px rgba(10, 25, 47, 0.04), 0 24px 60px -34px rgba(10, 25, 47, 0.18);
+    }
+    .st-empty svg { flex: none; margin-top: 1px; }
+    .st-empty strong { color: #0d1726; font-size: 0.95rem; font-weight: 620; letter-spacing: -0.015em; }
+    .st-empty p { margin: 0.3rem 0 0; color: #6b7584; font-size: 0.83rem; line-height: 1.6; }
+
+    /* ── Tooltip ── */
+    .st-tip {
+        position: absolute; z-index: 50; top: 0; left: 0;
+        display: flex; flex-direction: column; gap: 3px;
+        padding: 9px 12px; border-radius: 10px;
+        background: #0d1726; color: #f5f7fa;
+        box-shadow: 0 1px 2px rgba(10, 25, 47, 0.2), 0 14px 34px -10px rgba(10, 25, 47, 0.45);
+        pointer-events: none; white-space: nowrap;
+    }
+    .st-tip[hidden] { display: none; }
+    .st-tip-date { color: #9aa6b6; font-size: 0.66rem; font-weight: 600; }
+    .st-tip-line { display: inline-flex; align-items: center; gap: 7px; font-size: 0.76rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .st-tip-line i { width: 7px; height: 7px; border-radius: 2px; background: #6b7584; }
+    .st-tip-line i.ok { background: var(--st-ok); }
+    .st-tip-line i.warn { background: var(--st-warn); }
+    .st-tip-line i.danger { background: var(--st-danger); }
+
+    /* ── Movimiento ── */
+    @media (prefers-reduced-motion: no-preference) {
+        .is-operational .st-banner .st-pulse i::after,
+        .st-open .st-pulse i::after { animation: st-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .st-bar, .st-chev, .st-row-head { transition: none; }
+    }
+    @keyframes st-ping { 0% { opacity: 0.55; transform: scale(1); } 80%, 100% { opacity: 0; transform: scale(2.8); } }
+    @keyframes st-detail-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+    .st-row-head:focus-visible, .st-section-head a:focus-visible, .st-banner-link:focus-visible {
+        outline: 2px solid rgba(10, 25, 47, 0.45); outline-offset: 2px;
+    }
+
+    /* ── Móvil: 30 días tocables ── */
+    @media (max-width: 700px) {
+        .status-page { padding-bottom: 5rem; }
+        .st-hero { padding-top: 3.25rem; }
+        .st-banner { flex-direction: column; align-items: stretch; gap: 1.25rem; padding: 22px 20px; border-radius: 22px; }
+        .st-banner-main { gap: 14px; }
+        .st-banner-when { white-space: normal; }
+        .st-banner-counts { padding-top: 1.1rem; border-top: 1px solid var(--st-line); }
+        .st-banner-counts > div { flex: 1; align-items: flex-start; padding-left: 14px; margin-left: 14px; }
+        .st-container { width: calc(100% - 28px); }
+        .st-card { border-radius: 22px; }
+        .st-group-head { padding: 16px 18px 4px; }
+        .st-row { padding: 12px 18px 18px; }
+        .st-row-name { font-size: 0.9rem; }
+        .st-row-state { font-size: 0.74rem; }
+        .st-bars { gap: 3px; height: 38px; }
+        .st-bar { border-radius: 2px; }
+        .st-bar.is-older { display: none; }
+        .st-axis { gap: 8px; font-size: 0.66rem; }
+        .st-axis-lg { display: none; }
+        .st-axis-sm { display: inline; }
+        .st-detail-inner { grid-template-columns: 1fr; gap: 1rem; }
+        .st-past-row { grid-template-columns: 40px minmax(0, 1fr); gap: 0.9rem; padding: 20px 18px; }
+        .st-past-title { flex-direction: column; gap: 0.4rem; }
+        .st-open { padding: 20px 18px; }
+        .st-empty { padding: 22px 18px; }
     }
 </style>

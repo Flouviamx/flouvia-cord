@@ -31,4 +31,5 @@ pnpm-debug.log*
 .vercel
 .github/workflows/*
 !.github/workflows/cord-reliability.yml
+!.github/workflows/status-probe.yml
 .env*

@@ -1,0 +1,43 @@
+name: Status probe
+
+# Muestreo horario de /api/health para la página pública de estado. Vercel Hobby
+# solo permite crons diarios; con una muestra al día cada barra de 90 días es
+# binaria. El cron diario de vercel.json se queda como respaldo.
+# Requiere el secret del repositorio CRON_SECRET (el mismo valor que en Vercel).
+
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: status-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Llamar /api/health
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::Falta el secret CRON_SECRET en el repositorio"
+            exit 1
+          fi
+          # 503 = alguna sonda falló: la muestra se guardó igual y es un dato real,
+          # no un error del workflow. Solo fallamos si no hubo respuesta o si la
+          # autenticación no pasó.
+          status=$(curl -sS -o response.json -w '%{http_code}' --max-time 60 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://cordhq.app/api/health)
+          echo "HTTP $status"
+          if [ "$status" != "200" ] && [ "$status" != "503" ]; then
+            echo "::error::/api/health respondió $status"
+            exit 1
+          fi
+          node -e 'const r=require("./response.json"); console.log("persisted:", r.persisted, "| services:", (r.services||[]).map(s=>`${s.service}=${s.ok?"ok":"fail"}`).join(" "))'

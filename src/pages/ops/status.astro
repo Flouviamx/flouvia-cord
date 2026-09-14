@@ -16,10 +16,16 @@ try {
     snapshot = { state: 'unknown' as const, services: [], history: [], incidents: [], windowStart: null, windowEnd: null };
 }
 
-const serviceName = {
+const serviceName: Record<(typeof HEALTH_SERVICES)[number], string> = {
+    app: 'App · render de /sign-in',
+    api: 'API pública · /api/v1 (401 sin llave)',
+    public_link: 'Link público /q/demo',
     database: 'Neon / núcleo de datos',
     stripe: 'Stripe API',
-    public_link: 'Link público /q/demo',
+    payments_webhook: 'Webhooks de pago (con cobros pendientes)',
+    fiscal: 'Facturapi · cuenta',
+    email: 'Resend · API',
+    ai: 'Anthropic · modelos',
 };
 const stateLabel = {
     operational: 'Operativa',
@@ -49,7 +55,7 @@ const incidentState = {
     {unavailable && <div class="ops-card ops-card-pad ops-status-warning">La migración de disponibilidad no está aplicada o Neon no respondió. La página pública mostrará “sin datos verificables”.</div>}
 
     <section class="ops-section">
-      <header class="ops-section-header"><div><h2>Sondas recientes</h2><p>El cron autenticado ejecuta Neon, Stripe y el render de un link público una vez al día en Vercel Hobby.</p></div></header>
+      <header class="ops-section-header"><div><h2>Sondas recientes</h2><p>El workflow <code>status-probe</code> de GitHub llama <code>/api/health</code> cada hora (el cron diario de Vercel queda de respaldo). Fiscal, correo e IA se omiten en entornos sin su llave.</p></div></header>
       <div class="ops-card ops-table-wrap"><table class="ops-table"><thead><tr><th>Servicio</th><th>Estado</th><th>Latencia</th><th>Muestras correctas</th><th>Última muestra</th></tr></thead><tbody>
         {HEALTH_SERVICES.map((id) => {
           const service = snapshot.services.find((item) => item.service === id);

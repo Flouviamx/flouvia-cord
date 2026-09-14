@@ -591,19 +591,6 @@ create table if not exists build_positions (
   created_at               timestamptz not null default now(),
   updated_at               timestamptz not null default now()
 );
-insert into build_positions (position_id, tier, amount_cents) values
-  ('01', 'Presenting Partner', 5000000),
-  ('02', 'Flow Partner', 2000000),
-  ('03', 'Flow Partner', 2000000),
-  ('04', 'Flow Partner', 2000000),
-  ('05', 'Flow Partner', 750000),
-  ('06', 'Founding Partner', 750000),
-  ('07', 'Founding Partner', 750000),
-  ('08', 'Founding Partner', 750000),
-  ('09', 'Founding Partner', 750000),
-  ('10', 'Founding Partner', 750000)
-on conflict (position_id) do update
-set tier = excluded.tier, amount_cents = excluded.amount_cents, updated_at = now();
 create index if not exists idx_build_positions_status on build_positions(status, hold_expires_at);
 
 -- The Cord Build / Flow — subasta pública verificable. `build_positions`
@@ -636,6 +623,24 @@ alter table build_positions add column if not exists current_brand_name text;
 alter table build_positions add column if not exists current_logo_url text;
 alter table build_positions add column if not exists current_website_url text;
 alter table build_positions add column if not exists bid_count int not null default 0;
+-- Siembra de posiciones. Va DESPUÉS de agregar las columnas de subasta y trae
+-- sus valores iniciales: una vez que starting/min/deposit son NOT NULL, Postgres
+-- valida la fila propuesta antes de resolver `on conflict`, y la siembra sin
+-- esas columnas rompía cualquier re-ejecución de db:migrate en producción.
+-- `do update` solo toca tier y monto: nunca pisa una subasta en curso.
+insert into build_positions (position_id, tier, amount_cents, starting_offer_cents, min_increment_cents, bid_deposit_cents) values
+  ('01', 'Presenting Partner', 5000000, 5000000, 250000, 500000),
+  ('02', 'Flow Partner', 2000000, 2000000, 100000, 200000),
+  ('03', 'Flow Partner', 2000000, 2000000, 100000, 200000),
+  ('04', 'Flow Partner', 2000000, 2000000, 100000, 200000),
+  ('05', 'Flow Partner', 750000, 750000, 50000, 100000),
+  ('06', 'Founding Partner', 750000, 750000, 50000, 100000),
+  ('07', 'Founding Partner', 750000, 750000, 50000, 100000),
+  ('08', 'Founding Partner', 750000, 750000, 50000, 100000),
+  ('09', 'Founding Partner', 750000, 750000, 50000, 100000),
+  ('10', 'Founding Partner', 750000, 750000, 50000, 100000)
+on conflict (position_id) do update
+set tier = excluded.tier, amount_cents = excluded.amount_cents, updated_at = now();
 update build_positions
    set starting_offer_cents = coalesce(starting_offer_cents, amount_cents),
        min_increment_cents = coalesce(min_increment_cents,
@@ -906,7 +911,7 @@ create table if not exists platform_health (
 -- el carril de sistema; la página pública solo agrega estas filas.
 create table if not exists health_checks (
   id          bigint generated always as identity primary key,
-  service     text        not null check (service in ('database', 'stripe', 'public_link')),
+  service     text        not null check (service in ('database', 'stripe', 'public_link', 'api', 'app', 'fiscal', 'email', 'ai', 'payments_webhook')),
   ok          boolean     not null,
   latency_ms  int         not null check (latency_ms >= 0 and latency_ms <= 60000),
   checked_at  timestamptz not null default now()
@@ -915,6 +920,12 @@ create index if not exists idx_health_checks_service_checked
   on health_checks(service, checked_at desc);
 create index if not exists idx_health_checks_checked
   on health_checks(checked_at desc);
+-- La tabla ya existe en producción con la lista corta de servicios: el check
+-- inline de arriba solo aplica a instalaciones nuevas. Estas dos líneas lo
+-- amplían en caliente (sondas de API, app, fiscal, correo, IA y pagos).
+alter table health_checks drop constraint if exists health_checks_service_check;
+alter table health_checks add constraint health_checks_service_check
+  check (service in ('database', 'stripe', 'public_link', 'api', 'app', 'fiscal', 'email', 'ai', 'payments_webhook'));
 
 -- Incidentes públicos redactados manualmente desde Cord Ops. No se siembran
 -- incidentes: una fila existe solo cuando un operador documenta un hecho real.
