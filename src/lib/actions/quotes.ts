@@ -1,9 +1,9 @@
-import { sql, logAudit, withOrgTx } from '../db';
+import { sql, logAudit, withOrgTx, type DbQuery } from '../db';
 import { notifyQuoteSent } from '../email';
 import { invalidateMoneyCaches } from '../queries';
 import { dispatchQuoteEvent, dispatchQuoteEventFrom, type WebhookEvent } from '../webhooks';
 import { after } from '../after';
-import { reserveUsage } from '../billing';
+import { cancelUsage, reserveUsage } from '../billing';
 import { requireEntitlement } from '../org-entitlements';
 import { emitFiscalDocument } from '../fiscal/emit';
 import { MAX_ITEMS, QuoteError, assertClienteDeOrg, productosDeOrg } from '../cotizaciones';
@@ -93,8 +93,16 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         if (rows[0].aprob_estado !== 'pendiente') return done(409, { error: 'No hay una solicitud de aprobación pendiente' });
         const now = new Date().toISOString();
         if (input.action === 'approve_request') {
-            await withOrgTx(orgId, sql`update cotizaciones set aprob_estado = 'aprobada', status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`);
-            await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'sent', 'Aprobada por gerencia y enviada al cliente')`);
+            const [decided] = await withOrgTx(orgId, sql`
+                with upd as (
+                    update cotizaciones set aprob_estado = 'aprobada', status = 'sent', sent_at = coalesce(sent_at, ${now})
+                     where id = ${id} and org_id = ${orgId} and aprob_estado = 'pendiente'
+                    returning id
+                )
+                insert into eventos (org_id, cotizacion_id, tipo, detalle)
+                select ${orgId}, id, 'sent', 'Aprobada por gerencia y enviada al cliente' from upd
+                returning cotizacion_id`);
+            if (!decided.length) return done(409, { error: 'No hay una solicitud de aprobación pendiente' });
             await audit('cotizacion.aprobacion_aprobada', rows[0].folio as string);
             after(dispatchQuoteEvent(orgId, id, 'quote.sent'));
             after(trackServer('quote_sent', orgId, {
@@ -107,8 +115,16 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
             }, !!rows[0].is_sandbox, !!rows[0].is_demo));
             return done(200, { ok: true, status: 'sent' });
         }
-        await withOrgTx(orgId, sql`update cotizaciones set aprob_estado = 'rechazada' where id = ${id}`);
-        await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'rejected', 'Solicitud de aprobación rechazada por gerencia')`);
+        const [rejected] = await withOrgTx(orgId, sql`
+            with upd as (
+                update cotizaciones set aprob_estado = 'rechazada'
+                 where id = ${id} and org_id = ${orgId} and aprob_estado = 'pendiente'
+                returning id
+            )
+            insert into eventos (org_id, cotizacion_id, tipo, detalle)
+            select ${orgId}, id, 'rejected', 'Solicitud de aprobación rechazada por gerencia' from upd
+            returning cotizacion_id`);
+        if (!rejected.length) return done(409, { error: 'No hay una solicitud de aprobación pendiente' });
         await audit('cotizacion.aprobacion_rechazada', rows[0].folio as string);
         return done(200, { ok: true, status: 'draft' });
     }
@@ -152,6 +168,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         const retencionesSnapshot = JSON.stringify(totals.retenciones);
 
         const nextVersion = input.action === 'resend' ? Number(rows[0].version || 1) + 1 : Number(rows[0].version || 1);
+        const writes: DbQuery[] = [];
 
         if (input.action === 'update_draft' || (input.action === 'send' && actual === 'draft')) {
             if (input.cliente_id) {
@@ -198,7 +215,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                 }
             }
 
-            await withOrgTx(orgId, sql`update cotizaciones set
+            writes.push(sql`update cotizaciones set
                         cliente_id = ${input.cliente_id || null},
                         terminos = ${terminos},
                         vigencia = (current_date + (${vigDias} * interval '1 day'))::date,
@@ -217,26 +234,26 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
                         anticipo_pct = ${anticipoPct}, es_recurrente = ${esRecurrente}
                       where id = ${id}`);
         } else {
-            await withOrgTx(orgId, sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
+            writes.push(sql`update cotizaciones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total},
                         retencion_total = ${retencionTotal}, retenciones_snapshot = ${retencionesSnapshot}::jsonb,
                         version = ${nextVersion}, iva_incluido = ${iva_incluido} where id = ${id}`);
         }
 
         const productosPropios = await productosDeOrg(orgId, items.map((it: any) => it.producto_id));
-        await withOrgTx(orgId, sql`delete from cotizacion_items where cotizacion_id = ${id}`);
-        let orden = 0;
-        for (const it of items) {
-            await withOrgTx(orgId, sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
-                      values (${id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden++}, ${it.tax_rate})`);
-        }
+        writes.push(sql`delete from cotizacion_items where cotizacion_id = ${id}`);
+        items.forEach((it: any, orden: number) => {
+            writes.push(sql`insert into cotizacion_items (cotizacion_id, producto_id, descripcion, cantidad, precio_unitario, precio_negociado, costo_unitario, orden, tax_rate)
+                      values (${id}, ${it.producto_id && productosPropios.has(it.producto_id) ? it.producto_id : null}, ${it.descripcion}, ${Number(it.cantidad) || 1}, ${Number(it.precio_unitario) || 0}, ${it.precio_negociado === null || it.precio_negociado === undefined ? null : Number(it.precio_negociado)}, ${Number(it.costo_unitario) || 0}, ${orden}, ${it.tax_rate})`);
+        });
 
         if (input.action === 'resend') {
-            await withOrgTx(orgId, sql`insert into cotizacion_versiones (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
+            writes.push(sql`insert into cotizacion_versiones (cotizacion_id, org_id, version, subtotal, iva, total, items, notas, iva_incluido)
                       values (${id}, ${orgId}, ${nextVersion}, ${realSubtotal}, ${iva}, ${total}, ${JSON.stringify(items)}, null, ${iva_incluido})`);
-            await withOrgTx(orgId, sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'comment', ${'Versión ' + nextVersion + ' creada'})`);
+            writes.push(sql`insert into eventos (org_id, cotizacion_id, tipo, detalle) values (${orgId}, ${id}, 'comment', ${'Versión ' + nextVersion + ' creada'})`);
         } else {
-            await withOrgTx(orgId, sql`update cotizacion_versiones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, items = ${JSON.stringify(items)}, iva_incluido = ${iva_incluido} where cotizacion_id = ${id} and version = ${nextVersion}`);
+            writes.push(sql`update cotizacion_versiones set subtotal = ${realSubtotal}, iva = ${iva}, total = ${total}, items = ${JSON.stringify(items)}, iva_incluido = ${iva_incluido} where cotizacion_id = ${id} and version = ${nextVersion}`);
         }
+        await withOrgTx(orgId, ...writes);
     }
 
     const now = new Date().toISOString();
@@ -271,21 +288,31 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         }
     }
 
+    const lostRace = () => done(409, { error: 'La cotización cambió mientras se procesaba. Recarga e intenta de nuevo.' });
+
     if (action.to === 'sent') {
+        let reservationId: string | undefined;
         if (input.action === 'send') {
             const envioUsage = await reserveUsage(orgId, 'envios', 1);
             if (!envioUsage.ok) {
                 const unavailable = /verificar|registrar/i.test(envioUsage.reason || '');
                 return done(unavailable ? 503 : 402, { error: envioUsage.reason, code: unavailable ? 'usage_verification_unavailable' : 'plan_limit_reached' });
             }
+            reservationId = envioUsage.id;
         }
-        await withOrgTx(orgId, sql`update cotizaciones set status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id}`);
+        const [moved] = await withOrgTx(orgId, sql`update cotizaciones set status = 'sent', sent_at = coalesce(sent_at, ${now}) where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
+        if (!moved.length) {
+            if (reservationId) await cancelUsage(orgId, reservationId);
+            return lostRace();
+        }
     } else if (action.to === 'approved') {
-        await withOrgTx(orgId, sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id}`);
+        const [moved] = await withOrgTx(orgId, sql`update cotizaciones set status = 'approved', approved_at = ${now} where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
+        if (!moved.length) return lostRace();
         try { await materializeAnticipoCobros(id, orgId); } catch { /* fallback en payment-intent */ }
     } else if (action.to === 'paid') {
         const method = input.payment_method || 'transferencia';
-        await withOrgTx(orgId, sql`update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}), payment_method = coalesce(payment_method, ${method}) where id = ${id}`);
+        const [moved] = await withOrgTx(orgId, sql`update cotizaciones set status = 'paid', paid_at = coalesce(paid_at, ${now}), payment_method = coalesce(payment_method, ${method}) where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
+        if (!moved.length) return lostRace();
         const stripeKey = import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
         const [pendientesPI] = await withOrgTx(orgId, sql`
             select co.stripe_payment_intent_id, o.stripe_account_id
@@ -310,7 +337,8 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         }
         await withOrgTx(orgId, sql`update cotizacion_cobros set status = 'cancelado' where cotizacion_id = ${id} and status = 'pendiente'`);
     } else {
-        await withOrgTx(orgId, sql`update cotizaciones set status = ${action.to} where id = ${id}`);
+        const [moved] = await withOrgTx(orgId, sql`update cotizaciones set status = ${action.to} where id = ${id} and org_id = ${orgId} and status = any(${action.from}::text[]) returning id`);
+        if (!moved.length) return lostRace();
     }
 
     invalidateMoneyCaches(orgId);

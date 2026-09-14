@@ -4,6 +4,7 @@ type Q = { text: string; values: unknown[] };
 
 const m = vi.hoisted(() => ({
     queries: [] as { text: string; values: unknown[] }[],
+    batches: [] as string[][],
     rows: new Map<RegExp, unknown[]>(),
     perm: vi.fn(),
     limit: vi.fn(),
@@ -11,6 +12,7 @@ const m = vi.hoisted(() => ({
     dispatch: vi.fn(),
     dispatchFrom: vi.fn(),
     reserve: vi.fn(),
+    cancel: vi.fn(),
     entitlement: vi.fn(),
     emit: vi.fn(),
     anticipo: vi.fn(),
@@ -21,11 +23,11 @@ const m = vi.hoisted(() => ({
 
 vi.mock('../src/lib/db', () => ({
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ text: strings.join('?'), values }),
-    withOrgTx: async (_org: string, q: Q) => {
+    withOrgTx: async (_org: string, ...qs: Q[]) => (m.batches.push(qs.map((q) => q.text.trim())), qs).map((q) => {
         m.queries.push(q);
-        for (const [re, rows] of m.rows) if (re.test(q.text)) return [rows];
-        return [[]];
-    },
+        for (const [re, rows] of m.rows) if (re.test(q.text)) return rows;
+        return [];
+    }),
     getActiveOrgId: async () => 'org-a',
     logAudit: m.audit,
     reqIp: () => '127.0.0.1',
@@ -37,7 +39,7 @@ vi.mock('../src/lib/ratelimit', () => ({
 }));
 vi.mock('../src/lib/webhooks', () => ({ dispatchQuoteEvent: m.dispatch, dispatchQuoteEventFrom: m.dispatchFrom }));
 vi.mock('../src/lib/after', () => ({ after: vi.fn() }));
-vi.mock('../src/lib/billing', () => ({ reserveUsage: m.reserve, cancelUsage: vi.fn(), flushUsageReservation: vi.fn() }));
+vi.mock('../src/lib/billing', () => ({ reserveUsage: m.reserve, cancelUsage: m.cancel, flushUsageReservation: vi.fn() }));
 vi.mock('../src/lib/org-entitlements', () => ({ requireEntitlement: m.entitlement }));
 vi.mock('../src/lib/fiscal/emit', () => ({ emitFiscalDocument: m.emit }));
 vi.mock('../src/lib/cotizaciones', () => ({
@@ -69,10 +71,12 @@ const del = () => DELETE({ params: { id: 'cot-1' } } as any) as Promise<Response
 const withStatus = (status: string) => m.rows.set(/select id, status, version/, [{ id: 'cot-1', status, version: 1, base_currency: 'MXN', fiscal_currency: 'MXN', fx_rate: 1 }]);
 const ran = (re: RegExp) => m.queries.some((q) => re.test(q.text));
 const statusUpdate = /update cotizaciones set status/;
+const approvalUpdate = /with upd as/;
 
 beforeEach(() => {
     vi.clearAllMocks();
     m.queries.length = 0;
+    m.batches.length = 0;
     m.rows.clear();
     m.perm.mockResolvedValue(null);
     m.limit.mockResolvedValue({ ok: true });
@@ -80,6 +84,66 @@ beforeEach(() => {
     m.reserve.mockResolvedValue({ ok: true });
     m.notifySent.mockResolvedValue({ sent: false });
     m.rows.set(/select c.total, c.base_currency, c.version/, [{ total: 100, base_currency: 'MXN', version: 1, is_sandbox: false, is_demo: false }]);
+    m.rows.set(statusUpdate, [{ id: 'cot-1' }]);
+    m.rows.set(approvalUpdate, [{ cotizacion_id: 'cot-1' }]);
+});
+
+describe('carreras', () => {
+    it.each(['approve', 'reject'])('%s condiciona el cambio al estado esperado', async (action) => {
+        withStatus('sent');
+        await patch({ action });
+        const upd = m.queries.find((q) => statusUpdate.test(q.text));
+        expect(upd?.text).toMatch(/and org_id = \? and status = any\(\?::text\[\]\) returning id/);
+        expect(upd?.values).toEqual(expect.arrayContaining(['cot-1', 'org-a', ['sent', 'viewed']]));
+    });
+
+    it('si otra petición ya movió la cotización responde 409 sin eventos ni correo', async () => {
+        withStatus('viewed');
+        m.rows.set(statusUpdate, []);
+        const res = await patch({ action: 'approve' });
+        expect(res.status).toBe(409);
+        expect(m.anticipo).not.toHaveBeenCalled();
+        expect(ran(/insert into eventos/)).toBe(false);
+        expect(m.dispatch).not.toHaveBeenCalled();
+        expect(m.audit).not.toHaveBeenCalled();
+    });
+
+    it('un envío que pierde la carrera libera el cupo reservado', async () => {
+        withStatus('draft');
+        m.reserve.mockResolvedValue({ ok: true, id: 'res-1' });
+        m.rows.set(statusUpdate, []);
+        expect((await patch({ action: 'send' })).status).toBe(409);
+        expect(m.cancel).toHaveBeenCalledWith('org-a', 'res-1');
+        expect(m.notifySent).not.toHaveBeenCalled();
+    });
+
+    it('marcar pagada dos veces no cancela cobros en la segunda', async () => {
+        withStatus('approved');
+        m.rows.set(statusUpdate, []);
+        expect((await patch({ action: 'paid' })).status).toBe(409);
+        expect(ran(/update cotizacion_cobros/)).toBe(false);
+    });
+
+    it('una solicitud de aprobación ya decidida responde 409', async () => {
+        m.rows.set(/select c.id, c.folio, c.aprob_estado/, [{ id: 'cot-1', folio: 'COT-1', aprob_estado: 'pendiente', total: 100, base_currency: 'MXN' }]);
+        m.rows.set(approvalUpdate, []);
+        expect((await patch({ action: 'approve_request' })).status).toBe(409);
+        expect(m.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('editar líneas escribe encabezado, líneas y versión en una sola transacción', async () => {
+        withStatus('draft');
+        const res = await patch({ action: 'update_draft', items: [{ descripcion: 'a', cantidad: 1, precio_unitario: 1 }, { descripcion: 'b', cantidad: 1, precio_unitario: 1 }] });
+        expect(res.status).toBe(200);
+        const batch = m.batches.find((b) => b.length > 1) ?? [];
+        expect(batch).toEqual([
+            expect.stringMatching(/^update cotizaciones set\s+cliente_id/),
+            expect.stringMatching(/^delete from cotizacion_items/),
+            expect.stringMatching(/^insert into cotizacion_items/),
+            expect.stringMatching(/^insert into cotizacion_items/),
+            expect.stringMatching(/^update cotizacion_versiones/),
+        ]);
+    });
 });
 
 describe('guardas previas', () => {

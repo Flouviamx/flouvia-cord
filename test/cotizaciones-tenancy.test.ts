@@ -11,11 +11,11 @@ const m = vi.hoisted(() => ({
 
 vi.mock('../src/lib/db', () => ({
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ text: strings.join('?'), values }),
-    withOrgTx: async (_org: string, q: Q) => {
+    withOrgTx: async (_org: string, ...qs: Q[]) => qs.map((q) => {
         m.queries.push(q);
-        for (const [re, rows] of m.rows) if (re.test(q.text)) return [rows];
-        return [[]];
-    },
+        for (const [re, rows] of m.rows) if (re.test(q.text)) return rows;
+        return [];
+    }),
     getActiveOrgId: async () => 'org-a',
     logAudit: vi.fn(),
     reqIp: () => '127.0.0.1',
@@ -98,6 +98,7 @@ describe('PATCH /api/cotizaciones/[id]', () => {
 
     beforeEach(() => {
         m.rows.set(/select id, status, version/, [{ id: 'cot-1', status: 'draft', version: 1, base_currency: 'MXN', fiscal_currency: 'MXN', fx_rate: 1 }]);
+        m.rows.set(/update cotizaciones set status/, [{ id: 'cot-1' }]);
     });
 
     it('un borrador no puede apuntar al cliente de otra org', async () => {
