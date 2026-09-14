@@ -16,9 +16,15 @@ export function ok(data: unknown, meta?: Record<string, unknown>): Response {
     });
 }
 
+const DEFAULT_CODES: Record<number, string> = {
+    400: 'invalid_request', 402: 'payment_required', 404: 'not_found', 409: 'invalid_state',
+    429: 'rate_limited', 500: 'server_error', 502: 'provider_error', 503: 'unavailable',
+};
+
 export function fromOutcome(outcome: ActionOutcome): Response {
     if (outcome.status === 200) return ok(outcome.body);
-    return new Response(JSON.stringify(outcome.body), { status: outcome.status, headers: { 'Content-Type': 'application/json' } });
+    const body = { ...outcome.body, code: outcome.body.code ?? DEFAULT_CODES[outcome.status] ?? 'error' };
+    return new Response(JSON.stringify(body), { status: outcome.status, headers: { 'Content-Type': 'application/json' } });
 }
 
 export function apiContext(request: Request, auth: ApiAuth): ActionContext {
