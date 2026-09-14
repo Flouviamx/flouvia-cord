@@ -3108,7 +3108,7 @@ export async function getTareas() {
     const orgId = await getActiveOrgId();
     const [rows] = await withOrgTx(orgId, sql`
         select t.id, t.titulo, t.due_date, t.cotizacion_id, c.folio
-        from tareas t left join cotizaciones c on c.id = t.cotizacion_id
+        from tareas t left join cotizaciones c on c.id = t.cotizacion_id and c.org_id = t.org_id
         where t.org_id = ${orgId} and t.done = false
         order by t.due_date asc nulls last, t.created_at asc
         limit 12`);

@@ -22,6 +22,7 @@ export const appStrings = {
     es: {
         "err.tarea.vacia": "Escribe la tarea",
         "err.tarea.no_encontrada": "Tarea no encontrada",
+        "err.tarea.fecha": "La fecha no es válida",
         // Modal de reautenticación (step-up) del AppLayout.
         "layout.stepup.titulo": "Confirma tu identidad",
         "layout.stepup.desc": "Por seguridad, vuelve a escribir tu contraseña. Si tu cuenta no usa contraseña, escribe el código de tu app de autenticación.",
@@ -2870,6 +2871,7 @@ export const appStrings = {
     en: {
         "err.tarea.vacia": "Type the task",
         "err.tarea.no_encontrada": "Task not found",
+        "err.tarea.fecha": "The date is not valid",
         "layout.stepup.titulo": "Confirm your identity",
         "layout.stepup.desc": "For security, type your password again. If your account has no password, enter the code from your authenticator app.",
         "layout.stepup.campo": "Password or code",
