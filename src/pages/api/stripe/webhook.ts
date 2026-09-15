@@ -13,7 +13,7 @@ import type { APIRoute } from 'astro';
 import { randomUUID } from 'node:crypto';
 import { sql, logAudit, withOrgTx } from '../../../lib/db';
 import { cerrarVeredictoKyc } from '../../../lib/kyc-evidencia';
-import { dispatchQuoteEvent, dispatchPaymentPartial, dispatchInvoiceEvent } from '../../../lib/webhooks';
+import { dispatchQuoteEvent, dispatchPaymentPartial, dispatchInvoiceEvent, dispatchEvent, type WebhookEvent } from '../../../lib/webhooks';
 import { notifyQuoteEvent } from '../../../lib/notify';
 import { METER_PRICES, PRICE_TO_PLAN, retrieveAccount, stripe } from '../../../lib/billing';
 import { trackPaymentReceived, trackServer } from '../../../lib/posthog-server';
@@ -299,6 +299,41 @@ async function orgForConnectedAccount(account: string | undefined): Promise<stri
     return (row?.id as string | undefined) ?? null;
 }
 
+async function quoteRefForCobro(orgId: string, cobroId: string | null): Promise<Record<string, unknown>> {
+    if (!cobroId) return { cotizacion_id: null, folio: null, cliente: null };
+    const [[row]] = await withOrgTx(orgId, sql`
+        select c.id, c.folio, cl.empresa
+          from cotizacion_cobros cc
+          join cotizaciones c on c.id = cc.cotizacion_id and c.org_id = cc.org_id
+          left join clientes cl on cl.id = c.cliente_id and cl.org_id = c.org_id
+         where cc.id = ${cobroId} and cc.org_id = ${orgId}`);
+    return { cotizacion_id: row?.id ?? null, folio: row?.folio ?? null, cliente: row?.empresa ?? null };
+}
+
+async function emitMoneyEventOnce(orgId: string, type: WebhookEvent, referencia: string, build: () => Promise<Record<string, unknown>>): Promise<void> {
+    try {
+        const [[dup]] = await withOrgTx(orgId, sql`
+            select id from domain_events
+             where org_id = ${orgId} and type = ${type} and data->>'referencia' = ${referencia}
+               and created_at > now() - interval '180 days'
+             limit 1`);
+        if (dup) return;
+        await dispatchEvent(orgId, type, { ...(await build()), referencia });
+    } catch (err) {
+        log.error('no se pudo emitir el evento de cobros', { route: 'stripe-webhook', type, orgId, err });
+    }
+}
+
+function requisitosPendientes(value: unknown): number {
+    let req: unknown = value;
+    if (typeof req === 'string') {
+        try { req = JSON.parse(req); } catch { return 0; }
+    }
+    const r = (req && typeof req === 'object' ? req : {}) as Record<string, unknown>;
+    const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+    return new Set([...list(r.currently_due), ...list(r.past_due)]).size;
+}
+
 /** Banderas sandbox/demo de una org — para no meter datos ficticios en dashboards. */
 async function orgAnalyticsFlags(orgId: string): Promise<{ isSandbox: boolean; isDemo: boolean }> {
     const [[row]] = await withOrgTx(orgId, sql`
@@ -459,7 +494,7 @@ async function recordPayoutStatus(payout: any, account: string | undefined, even
         : null;
     const destino = payout?.destination && typeof payout.destination === 'object' ? payout.destination : null;
 
-    await withOrgTx(orgId, sql`
+    const [[payoutRow]] = await withOrgTx(orgId, sql`
         insert into payouts (
             org_id, stripe_account_id, stripe_payout_id, amount_cents, currency, status,
             arrival_date, metodo, tipo_destino, destino_last4, failure_code, failure_message
@@ -485,6 +520,7 @@ async function recordPayoutStatus(payout: any, account: string | undefined, even
                 else excluded.status
             end,
             updated_at = now()
+        returning id
     `);
 
     // La auditoría se conserva sólo para los dos estados que le importan al
@@ -498,6 +534,15 @@ async function recordPayoutStatus(payout: any, account: string | undefined, even
             entidad_id: String(payout.id),
             detalle: `${amount.toFixed(2)} ${currency}${failed ? `; ${String(payout?.failure_code || 'sin código')}` : ''}`,
         });
+        await emitMoneyEventOnce(orgId, failed ? 'payout.failed' : 'payout.paid', String(payout.id), async () => ({
+            id: payoutRow?.id ?? null,
+            object: 'payout',
+            monto: amount,
+            moneda: currency,
+            llegada: arrivalDate,
+            metodo: payout?.method ?? null,
+            ...(failed ? { motivo_falla: payout?.failure_message ?? null } : {}),
+        }));
         if (!failed) {
             const flags = await orgAnalyticsFlags(orgId);
             await trackServer('payout_paid', orgId, {
@@ -567,7 +612,19 @@ async function recordRefundEvent(refundOrCharge: any, account: string | undefine
          where org_id = ${orgId}
            and (stripe_charge_id = ${chargeId} or stripe_payment_intent_id = ${paymentIntentId})
          limit 1`);
-    if (!cobro) return;
+    const refundType: WebhookEvent | null = status === 'succeeded' ? 'refund.succeeded' : status === 'failed' ? 'refund.failed' : null;
+    const refundData = async (cobroId: string | null) => ({
+        object: 'refund',
+        monto: fromMinorUnits(amount, currency),
+        moneda: currency,
+        motivo: refundOrCharge?.reason ?? null,
+        ...(status === 'failed' ? { motivo_falla: refundOrCharge?.failure_reason ?? null } : {}),
+        ...(await quoteRefForCobro(orgId, cobroId)),
+    });
+    if (!cobro) {
+        if (refundType) await emitMoneyEventOnce(orgId, refundType, refundId, () => refundData(null));
+        return;
+    }
 
     await withOrgTx(orgId,
         sql`insert into cobro_reembolsos
@@ -588,6 +645,7 @@ async function recordRefundEvent(refundOrCharge: any, account: string | undefine
         entidad: 'refund', entidad_id: refundId,
         detalle: `${fromMinorUnits(amount, currency)} ${currency}; ${status}`,
     });
+    if (refundType) await emitMoneyEventOnce(orgId, refundType, refundId, () => refundData(cobro.id as string));
 }
 
 async function recordDisputeEvent(dispute: any, account: string | undefined, eventType: string): Promise<void> {
@@ -606,7 +664,7 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
         ? new Date(Number(dispute.evidence_details.due_by) * 1000).toISOString()
         : null;
     const status = String(dispute?.status || eventType.replace('charge.dispute.', ''));
-    await withOrgTx(orgId,
+    const [disputaRows] = await withOrgTx(orgId,
         sql`insert into cobro_disputas
               (org_id, cobro_id, stripe_dispute_id, stripe_charge_id, amount_cents, currency,
                reason, status, evidence_due_at, updated_at)
@@ -615,7 +673,8 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
             on conflict (stripe_dispute_id) do update set
               cobro_id = coalesce(cobro_disputas.cobro_id, excluded.cobro_id),
               status = excluded.status, reason = excluded.reason,
-              evidence_due_at = excluded.evidence_due_at, updated_at = now()`,
+              evidence_due_at = excluded.evidence_due_at, updated_at = now()
+            returning id`,
         ...(eventType === 'charge.dispute.created'
             ? [sql`insert into tareas (org_id, titulo, due_date)
                     values (${orgId}, ${`Responder contracargo ${fromMinorUnits(amount, currency)} ${currency}`},
@@ -628,6 +687,18 @@ async function recordDisputeEvent(dispute: any, account: string | undefined, eve
         entidad_id: disputeId,
         detalle: `${fromMinorUnits(amount, currency)} ${currency}; ${status}`,
     });
+    if (eventType === 'charge.dispute.created' || eventType === 'charge.dispute.closed') {
+        await emitMoneyEventOnce(orgId, eventType === 'charge.dispute.created' ? 'dispute.created' : 'dispute.closed', disputeId, async () => ({
+            id: disputaRows?.[0]?.id ?? null,
+            object: 'dispute',
+            monto: fromMinorUnits(amount, currency),
+            moneda: currency,
+            motivo: dispute?.reason ?? null,
+            estado: status,
+            fecha_limite: dueAt ? dueAt.slice(0, 10) : null,
+            ...(await quoteRefForCobro(orgId, (cobro?.id as string | undefined) ?? null)),
+        }));
+    }
     if (eventType === 'charge.dispute.created') {
         const amountText = `${fromMinorUnits(amount, currency)} ${currency}`;
         const dispFlags = await orgAnalyticsFlags(orgId);
@@ -1385,7 +1456,8 @@ async function updateAccountStatus(account: any) {
     // Estado ANTES del update — para detectar el flip false→true (primera vez
     // que la org puede cobrar de verdad), no cada re-confirmación del webhook.
     const [before, updated] = await withOrgTx(orgId,
-        sql`select id, created_at, stripe_charges_enabled, (sandbox_of is not null) as is_sandbox, is_demo
+        sql`select id, created_at, stripe_charges_enabled, stripe_payouts_enabled, stripe_disabled_reason, stripe_requirements,
+                   (sandbox_of is not null) as is_sandbox, is_demo
             from orgs where id = ${orgId} limit 1`,
         sql`update orgs set
             stripe_charges_enabled = ${chargesEnabled},
@@ -1395,6 +1467,13 @@ async function updateAccountStatus(account: any) {
             stripe_requirements = ${requirements}
             where id = ${orgId} returning id`);
     if (!updated.length) throw new Error(`Cuenta de cobros no actualizada para organización ${orgId}`);
+
+    if (before.length) {
+        const prev = before[0];
+        const antes = { puede_cobrar: !!prev.stripe_charges_enabled, puede_depositar: !!prev.stripe_payouts_enabled, motivo_bloqueo: prev.stripe_disabled_reason ?? null, pendientes: requisitosPendientes(prev.stripe_requirements) };
+        const ahora = { puede_cobrar: chargesEnabled, puede_depositar: payoutsEnabled, motivo_bloqueo: disabledReason, pendientes: requisitosPendientes(requirements) };
+        if (JSON.stringify(antes) !== JSON.stringify(ahora)) await dispatchEvent(orgId, 'account.updated', { object: 'account', ...ahora });
+    }
 
     if (before.length && chargesEnabled && !before[0].stripe_charges_enabled) {
         const orgId = before[0].id as string;

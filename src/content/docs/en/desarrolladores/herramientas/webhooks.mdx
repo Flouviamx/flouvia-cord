@@ -175,7 +175,13 @@ That means you can update your `CORD_WEBHOOK_SECRET` at any point within the win
 | `product.created` / `product.updated` / `product.deleted` | A product is created, edited, or deleted in the catalog. |
 | `task.created` / `task.completed` | A task is created or marked as done. |
 | `promise.created` / `promise.kept` / `promise.broken` | A payment promise is recorded, or marked as kept or broken. |
+| `dispute.created` / `dispute.closed` | A client opens a dispute on a Cord Payments charge, or it closes with its outcome in `estado` (`won` \| `lost` \| `warning_closed`). Includes `monto`, `moneda`, `motivo`, and `fecha_limite` to respond. |
+| `refund.succeeded` / `refund.failed` | A refund succeeds or fails. Includes `monto`, `moneda`, `motivo`, and `motivo_falla` when it fails. |
+| `payout.paid` / `payout.failed` | A payout to your bank account is paid or fails. Includes `monto`, `moneda`, `llegada`, and `motivo_falla` when it fails. |
+| `account.updated` | What your payments account can do changes: `puede_cobrar`, `puede_depositar`, `pendientes` (items to verify), and `motivo_bloqueo`. Only sent when one of them changes. |
 | `ping` | Only shows up when using "Test" from the Workbench — never fired by a real event. |
+
+> Dispute, refund, and payout events include `referencia`, the transaction identifier at the payment processor, and are sent once per transaction and outcome. When the charge comes from a quote, they also include `cotizacion_id`, `folio`, and `cliente`.
 
 > **Note:** `payment.partial` carries extra fields on `data` that other **quote** events don't
 > have: `tipo` (`anticipo`\|`saldo`\|`cuota`), `monto`, `numero_cuota`, `saldo_pendiente`, and

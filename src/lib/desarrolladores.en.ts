@@ -384,7 +384,7 @@ export function Cotizacion({ token }) {
         metaDescription: 'Cord emits signed webhooks (HMAC-SHA256) on every sales event — quote.sent, quote.approved, quote.paid — that you connect to Zapier, Make, n8n, or your backend. Available on every plan, with direct HubSpot and Slack.',
         plan: 'On every plan · 16 endpoints from the Free plan (up to 100 on Developer) · direct HubSpot and Slack · free test keys for the API',
         stats: [
-            { valor: '34', countup: 34, label: 'events: quotes, invoices, payments, clients, products, tasks and promises' },
+            { valor: '41', countup: 41, label: 'events: quotes, invoices, payments, disputes, payouts, clients, products, tasks and promises' },
             { valor: '11', countup: 11, label: 'delivery attempts with backoff before an event is marked as failed' },
             { valor: '3', countup: 3, label: 'ways to integrate: outbound webhooks, REST API and MCP' },
         ],

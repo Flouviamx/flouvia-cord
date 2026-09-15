@@ -33,6 +33,7 @@ Cord emite eventos del ciclo de vida de la cotización y, por separado, de la fa
 - `quote.created`, `quote.approval_requested`, `quote.approval_decided`, `quote.comment_added` — se creó una cotización, se pidió o decidió una aprobación interna, o alguien escribió en la conversación.
 - `client.created`, `client.updated`, `client.deleted`, `product.created`, `product.updated`, `product.deleted` — cambios en tu directorio de clientes y en tu catálogo.
 - `task.created`, `task.completed`, `promise.created`, `promise.kept`, `promise.broken` — tareas y promesas de pago.
+- `dispute.created`, `dispute.closed`, `refund.succeeded`, `refund.failed`, `payout.paid`, `payout.failed`, `account.updated` — contracargos, reembolsos, depósitos y cambios en tu cuenta de cobros.
 
 Si no marcas ningún evento, el endpoint recibe todos, incluidos los que se agreguen después.
 

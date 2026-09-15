@@ -175,7 +175,13 @@ Esto significa que puedes actualizar tu `CORD_WEBHOOK_SECRET` en cualquier momen
 | `product.created` / `product.updated` / `product.deleted` | Se crea, edita o elimina un producto del catálogo. |
 | `task.created` / `task.completed` | Se crea una tarea o se marca como hecha. |
 | `promise.created` / `promise.kept` / `promise.broken` | Se registra una promesa de pago, o se marca como cumplida o incumplida. |
+| `dispute.created` / `dispute.closed` | Un cliente abre un contracargo sobre un cobro de Cord Payments, o se cierra con su resultado en `estado` (`won` \| `lost` \| `warning_closed`). Trae `monto`, `moneda`, `motivo` y `fecha_limite` para responder. |
+| `refund.succeeded` / `refund.failed` | Un reembolso se completa o falla. Trae `monto`, `moneda`, `motivo` y, si falla, `motivo_falla`. |
+| `payout.paid` / `payout.failed` | Un depósito a tu cuenta bancaria se paga o falla. Trae `monto`, `moneda`, `llegada` y, si falla, `motivo_falla`. |
+| `account.updated` | Cambia lo que tu cuenta de cobros puede hacer: `puede_cobrar`, `puede_depositar`, `pendientes` (datos por verificar) y `motivo_bloqueo`. Solo se emite cuando alguno cambia. |
 | `ping` | Solo aparece al usar "Probar" desde el Workbench — nunca lo dispara un evento real. |
+
+> Los eventos de contracargos, reembolsos y depósitos traen `referencia`, el identificador del movimiento en el procesador de pagos, y se emiten una sola vez por movimiento y resultado. Cuando el cobro viene de una cotización, también traen `cotizacion_id`, `folio` y `cliente`.
 
 > **Nota:** `payment.partial` trae campos extra en `data` que los demás eventos de
 > **cotización** no tienen: `tipo` (`anticipo`\|`saldo`\|`cuota`), `monto`, `numero_cuota`,

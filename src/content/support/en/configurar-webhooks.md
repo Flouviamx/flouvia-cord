@@ -33,6 +33,7 @@ Cord emits quote lifecycle events and, separately, events for the invoice as its
 - `quote.created`, `quote.approval_requested`, `quote.approval_decided`, `quote.comment_added` — a quote was created, an internal approval was requested or decided, or someone wrote in the conversation.
 - `client.created`, `client.updated`, `client.deleted`, `product.created`, `product.updated`, `product.deleted` — changes to your client directory and catalog.
 - `task.created`, `task.completed`, `promise.created`, `promise.kept`, `promise.broken` — tasks and payment promises.
+- `dispute.created`, `dispute.closed`, `refund.succeeded`, `refund.failed`, `payout.paid`, `payout.failed`, `account.updated` — disputes, refunds, payouts, and changes to your payments account.
 
 If you don't select any event, the endpoint receives all of them, including ones added later.
 

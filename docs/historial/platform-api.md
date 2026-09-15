@@ -28,6 +28,9 @@
    • **Ajustes › Integraciones** dejó de ser una pila de tarjetas: ahora es un directorio de apps
      (`src/lib/integraciones/catalogo.ts`) y cada una tiene su página `/app/ajustes/integraciones/[app]`
      con su conexión y los workflows que la usan. Estado vigente en `docs/estado/integraciones.md`.
+   • **Eventos de dinero:** `dispute.created`/`closed`, `refund.succeeded`/`failed`, `payout.paid`/`failed` y
+     `account.updated` salen del webhook de Stripe hacia workflows, webhooks, Zapier y Make. Dedupe por
+     `referencia` en `domain_events` (180 días); la tarea de un workflow se liga a la cotización del cobro.
    • **Público:** roadmap `integraciones-y-flujos` pasa a `live`, soporte suma "Automatizar con Cord
      Workflows" y "Conectar Slack", y docs.cordhq.app suma "Integraciones y automatización".
 

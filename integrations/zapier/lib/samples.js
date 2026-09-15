@@ -70,6 +70,25 @@ const PROMISE = {
     estado: 'pendiente',
 };
 
+const DISPUTE = {
+    object_id: '5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a6b7c8d',
+    object: 'dispute',
+    monto: 20000,
+    moneda: 'MXN',
+    motivo: 'fraudulent',
+    estado: 'needs_response',
+    fecha_limite: '2026-10-01',
+    cotizacion_id: '3f1c9a52-7b8e-4d21-9c0a-5e6f7a8b9c0d',
+    folio: 'COT-00104',
+    cliente: 'Stark Industries',
+};
+
+const REFUND = { object: 'refund', monto: 5000, moneda: 'MXN', motivo: 'requested_by_customer', cotizacion_id: '3f1c9a52-7b8e-4d21-9c0a-5e6f7a8b9c0d', folio: 'COT-00104', cliente: 'Stark Industries' };
+
+const PAYOUT = { object_id: '7c8d9e0f-1a2b-4c3d-9e4f-5a6b7c8d9e0f', object: 'payout', monto: 53000, moneda: 'MXN', llegada: '2026-09-18', metodo: 'standard' };
+
+const ACCOUNT = { object: 'account', puede_cobrar: true, puede_depositar: true, pendientes: 0, motivo_bloqueo: null };
+
 const BY_PREFIX = {
     'quote.': QUOTE,
     'payment.': { ...QUOTE, monto: 20000, saldo_pendiente: 38000, tipo: 'anticipo' },
@@ -80,6 +99,10 @@ const BY_PREFIX = {
     'product.': PRODUCT,
     'task.': TASK,
     'promise.': PROMISE,
+    'dispute.': DISPUTE,
+    'refund.': REFUND,
+    'payout.': PAYOUT,
+    'account.': ACCOUNT,
 };
 
 function sampleFor(eventKey) {

@@ -90,6 +90,39 @@ const PRODUCT_FIELDS: WorkflowField[] = [
     ACTOR_FIELD,
 ];
 
+const QUOTE_REF_FIELDS: WorkflowField[] = [
+    f('folio', 'Folio de la cotización', 'Quote number', 'text'),
+    f('cliente', 'Cliente', 'Client', 'text'),
+];
+
+const DISPUTE_FIELDS: WorkflowField[] = [
+    ...QUOTE_REF_FIELDS,
+    f('monto', 'Monto en disputa', 'Disputed amount', 'number'),
+    f('moneda', 'Divisa', 'Currency', 'text'),
+    f('motivo', 'Motivo', 'Reason', 'text'),
+    f('fecha_limite', 'Fecha límite para responder', 'Response deadline', 'text'),
+];
+
+const REFUND_FIELDS: WorkflowField[] = [
+    ...QUOTE_REF_FIELDS,
+    f('monto', 'Monto reembolsado', 'Refunded amount', 'number'),
+    f('moneda', 'Divisa', 'Currency', 'text'),
+    f('motivo', 'Motivo', 'Reason', 'text'),
+];
+
+const PAYOUT_FIELDS: WorkflowField[] = [
+    f('monto', 'Monto del depósito', 'Payout amount', 'number'),
+    f('moneda', 'Divisa', 'Currency', 'text'),
+    f('llegada', 'Fecha de llegada', 'Arrival date', 'text'),
+];
+
+const ACCOUNT_FIELDS: WorkflowField[] = [
+    f('puede_cobrar', 'Puede cobrar en línea', 'Can accept online payments', 'boolean'),
+    f('puede_depositar', 'Puede recibir depósitos', 'Can receive payouts', 'boolean'),
+    f('pendientes', 'Datos pendientes de verificación', 'Pending verification items', 'number'),
+    f('motivo_bloqueo', 'Motivo del bloqueo', 'Restriction reason', 'text'),
+];
+
 const trigger = (type: string, category: TriggerCategory, es: string, en: string, fields: WorkflowField[]): WorkflowTrigger =>
     ({ type, category, label: { es, en }, fields });
 
@@ -122,6 +155,16 @@ export const WORKFLOW_TRIGGERS: WorkflowTrigger[] = [
         f('tipo', 'Tipo de pago', 'Payment type', 'enum', { options: [opt('anticipo', 'Anticipo', 'Deposit'), opt('saldo', 'Saldo', 'Balance'), opt('cuota', 'Cuota', 'Installment')] }),
     ]),
     trigger('payment.failed', 'payments', 'Falla un cobro recurrente', 'A recurring charge fails', QUOTE_FIELDS),
+    trigger('dispute.created', 'payments', 'Abren un contracargo', 'A dispute is opened', DISPUTE_FIELDS),
+    trigger('dispute.closed', 'payments', 'Se cierra un contracargo', 'A dispute is closed', [
+        ...DISPUTE_FIELDS,
+        f('estado', 'Resultado', 'Outcome', 'enum', { options: [opt('won', 'Ganado', 'Won'), opt('lost', 'Perdido', 'Lost'), opt('warning_closed', 'Cerrado sin disputa', 'Closed without dispute')] }),
+    ]),
+    trigger('refund.succeeded', 'payments', 'Se completa un reembolso', 'A refund succeeds', REFUND_FIELDS),
+    trigger('refund.failed', 'payments', 'Falla un reembolso', 'A refund fails', [...REFUND_FIELDS, f('motivo_falla', 'Motivo de la falla', 'Failure reason', 'text')]),
+    trigger('payout.paid', 'payments', 'Se paga un depósito a tu banco', 'A payout is paid to your bank', PAYOUT_FIELDS),
+    trigger('payout.failed', 'payments', 'Falla un depósito', 'A payout fails', [...PAYOUT_FIELDS, f('motivo_falla', 'Motivo de la falla', 'Failure reason', 'text')]),
+    trigger('account.updated', 'payments', 'Cambia tu cuenta de cobros', 'Your payments account changes', ACCOUNT_FIELDS),
     trigger('invoice.issued', 'invoices', 'Se factura una cotización', 'A quote is invoiced', QUOTE_FIELDS),
     trigger('invoice.stamped', 'invoices', 'Se timbra el CFDI de una cotización', 'A quote CFDI is stamped', QUOTE_FIELDS),
     trigger('invoice.finalized', 'invoices', 'Se emite una factura', 'An invoice is issued', INVOICE_FIELDS),

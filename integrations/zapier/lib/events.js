@@ -35,6 +35,13 @@ const EVENTS = [
     { key: 'promise.created', label: 'Payment promise recorded', category: 'Tasks' },
     { key: 'promise.kept', label: 'Payment promise kept', category: 'Tasks' },
     { key: 'promise.broken', label: 'Payment promise broken', category: 'Tasks' },
+    { key: 'dispute.created', label: 'Dispute opened', category: 'Payments' },
+    { key: 'dispute.closed', label: 'Dispute closed', category: 'Payments' },
+    { key: 'refund.succeeded', label: 'Refund succeeded', category: 'Payments' },
+    { key: 'refund.failed', label: 'Refund failed', category: 'Payments' },
+    { key: 'payout.paid', label: 'Payout paid', category: 'Payments' },
+    { key: 'payout.failed', label: 'Payout failed', category: 'Payments' },
+    { key: 'account.updated', label: 'Payments account updated', category: 'Payments' },
 ];
 
 const EVENT_KEYS = EVENTS.map((e) => e.key);

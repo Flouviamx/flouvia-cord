@@ -40,6 +40,13 @@ export const DOMAIN_EVENTS = {
     'promise.created': { object: 'promise', public: true },
     'promise.kept': { object: 'promise', public: true },
     'promise.broken': { object: 'promise', public: true },
+    'dispute.created': { object: 'dispute', public: true },
+    'dispute.closed': { object: 'dispute', public: true },
+    'refund.succeeded': { object: 'refund', public: true },
+    'refund.failed': { object: 'refund', public: true },
+    'payout.paid': { object: 'payout', public: true },
+    'payout.failed': { object: 'payout', public: true },
+    'account.updated': { object: 'account', public: true },
 } as const;
 
 export type DomainEventType = keyof typeof DOMAIN_EVENTS;

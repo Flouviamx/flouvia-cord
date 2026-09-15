@@ -55,6 +55,13 @@ export const WEBHOOK_EVENTS = [
     { id: 'promise.created', label: 'Promesa de pago registrada' },
     { id: 'promise.kept', label: 'Promesa de pago cumplida' },
     { id: 'promise.broken', label: 'Promesa de pago incumplida' },
+    { id: 'dispute.created', label: 'Contracargo abierto' },
+    { id: 'dispute.closed', label: 'Contracargo cerrado' },
+    { id: 'refund.succeeded', label: 'Reembolso completado' },
+    { id: 'refund.failed', label: 'Reembolso fallido' },
+    { id: 'payout.paid', label: 'Depósito pagado' },
+    { id: 'payout.failed', label: 'Depósito fallido' },
+    { id: 'account.updated', label: 'Cuenta de cobros actualizada' },
 ] as const;
 
 export type WebhookEvent = typeof WEBHOOK_EVENTS[number]['id'];

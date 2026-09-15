@@ -64,7 +64,7 @@ Mientras la app de Zapier no tenga link de invitación
 
 Contrato completo en [`app-rutas.md`](app-rutas.md) y en el historial. Resumen:
 
-- Disparadores: los eventos de `domain_events`.
+- Disparadores: los eventos de `domain_events`, incluidos contracargos, reembolsos, depósitos y cambios en la cuenta de cobros. Esos cuatro los emite `src/pages/api/stripe/webhook.ts` una sola vez por `referencia` del proveedor; la cuenta de cobros solo cuando cambia lo que puede hacer.
 - Pasos: acción, condición (operadores de lista cerrada, sin `eval`) y espera en
   días.
 - Acciones: crear tarea, avisar al equipo por correo, mensaje a Slack y nota en

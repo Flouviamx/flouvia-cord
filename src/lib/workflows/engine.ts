@@ -228,7 +228,9 @@ async function runAction(step: Extract<Step, { type: 'action' }>, input: ActionI
         if (!titulo) throw new WorkflowStepError('El título de la tarea quedó vacío.', true);
         const dias = typeof p.dias === 'number' ? p.dias : null;
         const due = dias === null ? null : new Date(Date.now() + dias * 86400000).toISOString().slice(0, 10);
-        const cotizacionId = event.object === 'quote' && event.type !== 'quote.deleted' ? event.object_id : null;
+        const eventData = (event.data && typeof event.data === 'object' ? event.data : {}) as Record<string, unknown>;
+        const refId = typeof eventData.cotizacion_id === 'string' && /^[0-9a-f-]{36}$/i.test(eventData.cotizacion_id) ? eventData.cotizacion_id : null;
+        const cotizacionId = event.object === 'quote' ? (event.type !== 'quote.deleted' ? event.object_id : null) : refId;
         const outcome = await createTask(
             { orgId, origin: siteOrigin(), actor: `workflow:${input.workflowId}` },
             { titulo, due_date: due, cotizacion_id: cotizacionId },

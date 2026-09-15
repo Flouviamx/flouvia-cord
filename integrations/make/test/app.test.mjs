@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import { API_ORIGIN, BASE, CONNECTION, GROUPS, MODULES, RPCS, WEBHOOK } from '../app.mjs';
+
+const { EVENTS } = createRequire(import.meta.url)('../../zapier/lib/events.js');
 
 test('cada módulo tiene nombre único, tipo válido y secciones completas', () => {
     const names = new Set();
@@ -43,7 +46,7 @@ test('el webhook se registra y se borra en Cord y filtra por evento', () => {
     assert.equal(WEBHOOK.detach.method, 'DELETE');
     assert.match(WEBHOOK.detach.url, /\{\{webhook\.id\}\}/);
     assert.match(WEBHOOK.api.condition, /contains\(parameters\.eventos, body\.event\)/);
-    assert.equal(WEBHOOK.parameters[0].options.length, 34);
+    assert.equal(WEBHOOK.parameters[0].options.length, EVENTS.length);
 });
 
 test('las búsquedas paginan y respetan el límite', () => {
