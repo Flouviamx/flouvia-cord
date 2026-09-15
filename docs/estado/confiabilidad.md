@@ -90,10 +90,18 @@ La actualización documental no debe desplegar el worktree compartido completo.
    `last_used_at`; TTL/cookie se deslizan con throttle de 5 min. Sin migración.
    Falta aceptación integrada de login, múltiples organizaciones, retorno de
    Billing y flujos OAuth de vinculación (no se modificaron esos handlers).
-5. **Eventos, CI y operación:** `.github/workflows/cord-reliability.yml` preparado
-   para PR, push a main y ejecución manual: `npm ci` en app y Elements, pruebas/contratos (dos workers en CI), tipos,
-   build y CSS, sin secretos LIVE ni migraciones. El workflow aún no ha corrido
-   en GitHub y no se configuró como check obligatorio de rama ni puerta de Vercel.
+5. **Eventos, CI y operación:** tres workflows versionados; `.gitignore` ignora
+   `.github/workflows/*` y cada uno entra con una excepción explícita.
+   - `cord-reliability.yml` — PR, push a main y manual: `npm ci` en app y
+     Elements, `agents:check`, pruebas/contratos (`test:payments`, que incluye
+     `security:i18n`), tipos (`astro sync` antes de `tsc`), build y CSS, sin
+     secretos LIVE ni migraciones. En verde en GitHub desde sep 2026.
+   - `elements.yml` — solo si cambia `packages/elements/**`: tipos, build,
+     exports contra `api-report.json`, `attw` y `publint`. En verde desde sep 2026.
+   - `status-probe.yml` — sonda horaria de disponibilidad (ver `cord-ops.md`).
+
+   Ninguno está configurado como check obligatorio de rama ni como puerta de
+   Vercel: un push a main despliega aunque CI falle.
    Faltan entrega durable, recuperación automática, alertas accionables y evidencia
    de restauración de un respaldo en un entorno aislado.
 6. **Aceptación y publicación:** recorridos completos de pago/factura en TEST,
