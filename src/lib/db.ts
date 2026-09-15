@@ -44,7 +44,7 @@ export const sql = neon(url || 'postgresql://unset:unset@db.invalid/unset');
 
 async function demoOrgId(): Promise<string> {
     const rows = await sql`select cord_demo_org_id() as id`;
-    if (!rows.length) throw new Error('[db] org demo no encontrada — ¿corriste la migración (npm run db:migrate)?');
+    if (!rows.length || !rows[0].id) throw new Error('[db] org demo no encontrada — ¿corriste la migración (npm run db:migrate)?');
     return rows[0].id as string;
 }
 

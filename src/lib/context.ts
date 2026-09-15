@@ -74,7 +74,9 @@ interface ReqCtx {
     workflowDepth?: number;
 }
 
-export const reqContext = new AsyncLocalStorage<ReqCtx>();
+const contextHost = globalThis as typeof globalThis & { __cordReqContext?: AsyncLocalStorage<ReqCtx> };
+// Una sola instancia aunque el servidor de desarrollo recargue este módulo.
+export const reqContext = contextHost.__cordReqContext ??= new AsyncLocalStorage<ReqCtx>();
 
 export function currentWorkflowDepth(): number {
     return reqContext.getStore()?.workflowDepth ?? 0;
