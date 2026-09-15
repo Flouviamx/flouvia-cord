@@ -24,6 +24,6 @@ export function hubspotCredentials(): HubSpotCredentials | null {
 }
 
 export function hubspotRedirectUri(requestOrigin: string): string {
-    const site = String(import.meta.env.SITE ?? '').trim().replace(/\/+$/, '');
+    const site = import.meta.env.DEV ? '' : String(import.meta.env.SITE ?? '').trim().replace(/\/+$/, '');
     return `${site || requestOrigin}/api/integraciones/hubspot/callback`;
 }
