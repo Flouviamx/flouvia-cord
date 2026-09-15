@@ -11,6 +11,7 @@
     // Código de MUESTRA para la documentación: importa next/navigation y
     // un CRM ficticio a propósito. No se compila ni se publica.
     "packages/elements/examples",
+    "integrations",
     "node_modules"
   ],
   "compilerOptions": {

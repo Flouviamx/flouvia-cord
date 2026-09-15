@@ -1,0 +1,16 @@
+{
+  "name": "cord-zapier",
+  "version": "1.0.0",
+  "description": "App de Cord para Zapier",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "zapier-platform-core": "19.1.0"
+  }
+}
