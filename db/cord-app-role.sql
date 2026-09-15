@@ -41,6 +41,7 @@ grant execute on function cord_resolve_sso_domain(text) to cord_app;
 grant execute on function cord_sso_record_error(uuid, text) to cord_app;
 grant execute on function cord_sso_requirement_for(uuid) to cord_app;
 grant execute on function cord_resolve_inbound_email(text, text) to cord_app;
+grant execute on function cord_resolve_integracion(text, text) to cord_app;
 
 -- Revert operativo (ejecutar solo si la ventana falla): cambiar DATABASE_URL
 -- al rol dueño anterior. No se elimina cord_app ni se desactiva RLS.

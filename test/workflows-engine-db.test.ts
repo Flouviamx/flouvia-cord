@@ -24,6 +24,7 @@ vi.mock('../src/lib/after', () => ({ after: (p: Promise<unknown>) => { m.pending
 vi.mock('../src/lib/email', () => ({ siteOrigin: () => 'https://cordhq.app', sendEmail: m.email }));
 vi.mock('../src/lib/slack', () => ({ postSlackText: m.slack }));
 vi.mock('../src/lib/ratelimit', () => ({ strictRateLimit: async () => ({ ok: true }) }));
+vi.mock('../src/lib/integraciones/queue', () => ({ integrationQueueStatement: () => null }));
 vi.mock('../src/lib/actions/tasks', () => ({
     createTask: async (ctx: any, input: any) => {
         const { rows } = await m.db.query(

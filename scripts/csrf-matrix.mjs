@@ -9,6 +9,7 @@ const exempt = [
     ['/api/mcp/message', 'POST'],
     ['/api/cron/webhook-heartbeat', 'POST'],
     ['/api/resend/marketing-webhook', 'POST'],
+    ['/api/integraciones/hubspot/webhook', 'POST'],
     [`/api/auth/saml/${uuid}/acs`, 'POST'],
 ];
 for (const [path, method] of exempt) {
@@ -23,6 +24,7 @@ const guarded = [
     ['/api/contacto/ventas', 'POST'],
     ['/api/blog/subscribe', 'POST'],
     ['/api/ops/operators', 'POST'],
+    ['/api/integraciones/hubspot', 'POST'],
 ];
 for (const [path, method] of guarded) {
     assert.equal(isCsrfExemptWrite(path, method), false, `${method} ${path} debe exigir Origin`);

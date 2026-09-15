@@ -3,6 +3,7 @@ import { currentActor, currentWorkflowDepth } from './context';
 import { log } from './log';
 import { after } from './after';
 import { enqueueWorkflowRuns } from './workflows/queue';
+import { integrationQueueStatement } from './integraciones/queue';
 
 export const DOMAIN_EVENTS = {
     'quote.sent': { object: 'quote', public: true },
@@ -54,6 +55,17 @@ export function storedEventData(data: Record<string, unknown>): Record<string, u
     return Object.fromEntries(Object.entries(data).filter(([key]) => !SIN_CREDENCIALES.has(key)));
 }
 
+async function queueIntegrations(orgId: string, type: string, data: Record<string, unknown>, actor: string) {
+    const statement = integrationQueueStatement(orgId, type, data, actor);
+    if (!statement) return;
+    try {
+        const [rows] = await withOrgTx(orgId, statement);
+        if (rows.some((r) => r.id)) after(import('./integraciones/sync').then((m) => m.processOrgSync(orgId)));
+    } catch (err) {
+        log.error('no se pudo encolar la sincronización de integraciones', { route: 'domain-events', type, orgId, err });
+    }
+}
+
 export async function recordDomainEvent(orgId: string, type: string, data: Record<string, unknown>, actor?: string): Promise<string | null> {
     if (!isDomainEventType(type)) {
         log.error('evento de dominio fuera del catálogo', { route: 'domain-events', type, orgId });
@@ -71,6 +83,7 @@ export async function recordDomainEvent(orgId: string, type: string, data: Recor
         if (id && await enqueueWorkflowRuns(orgId, { id, type, depth, actor: who })) {
             after(import('./workflows/engine').then((m) => m.processOrgRuns(orgId)));
         }
+        if (id) await queueIntegrations(orgId, type, data, who);
         return id;
     } catch (err) {
         log.error('no se pudo registrar el evento de dominio', { route: 'domain-events', type, orgId, err });

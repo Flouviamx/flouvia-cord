@@ -367,6 +367,12 @@ export async function resolvePublicQuote(token: string): Promise<{ id: string; o
     return row ? { id: row.id as string, orgId: row.org_id as string } : null;
 }
 
+/** Cuenta externa de una integración → org; lo demás vuelve a withOrgTx. */
+export async function resolveIntegracion(proveedor: string, cuenta: string): Promise<{ orgId: string; conexionId: string } | null> {
+    const [row] = await sql`select org_id, conexion_id from cord_resolve_integracion(${proveedor}, ${cuenta})`;
+    return row ? { orgId: row.org_id as string, conexionId: row.conexion_id as string } : null;
+}
+
 /** Exact-host bootstrap; all subsequent domain reads use withOrgTx. */
 export async function resolveCustomerDomain(hostname: string): Promise<string | null> {
     const [row] = await sql`select org_id from cord_resolve_customer_domain(${hostname})`;
