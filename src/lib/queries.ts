@@ -243,6 +243,7 @@ export async function getWebhooks() {
     return rows.map((w) => ({
         id: w.id as string,
         url: w.url as string,
+        integracion: !!w.created_by_key,
         eventos: (Array.isArray(w.eventos) ? w.eventos : []) as string[],
         secretMasked: `${String(decryptSecret(w.secret_enc as string | null) || w.secret || 'whsec_').slice(0, 10)}${'•'.repeat(14)}`,
         activo: !!w.activo,

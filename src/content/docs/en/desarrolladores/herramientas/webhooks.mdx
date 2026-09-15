@@ -29,9 +29,9 @@ Common use cases:
 6. Save your **secret** (`whsec_…`) — it's shown in clear text **once**. After that it's masked.
 
 <Callout type="info">
-Each plan has an endpoint limit (Free: 1 · Starter: 3 · Professional: 10 · Scale: 25 ·
-Developer: 100). Webhooks are NOT gated behind a paid plan — every plan, including free,
-can use them.
+Your team can configure 16 endpoints on Free, Starter, and Professional, 32 on Scale, and 100 on
+Developer. Subscriptions created by integrations through the API have a separate allowance of 100
+per organization on every plan. Webhooks are NOT gated behind a paid plan.
 </Callout>
 
 ## The payload
@@ -242,7 +242,7 @@ Platforms like Zapier or Make create and remove their own subscriptions. These r
 | `POST /api/v1/webhooks` | `write` | Creates an endpoint. Body: `{ "url": "https://…", "eventos": ["quote.approved"] }`. Returns `id`, `url`, `eventos`, and `secret` (in clear text **once**). |
 | `DELETE /api/v1/webhooks/{id}` | `write` | Deletes an endpoint created by this same key. |
 
-The same rules as in the Workbench apply: only `https://` to public hosts, and your plan endpoint limit (`plan_limit_reached`).
+The same URL rules as in the Workbench apply: only `https://` to public hosts. These subscriptions don't count against your team's endpoints: they have their own allowance of 100 per organization (`integration_limit_reached`).
 
 <Callout type="info">
 A key **cannot see or delete** endpoints created from the Workbench or by another key. When you revoke a key, its endpoints are **deactivated**: if you disconnect an integration, it stops receiving data.

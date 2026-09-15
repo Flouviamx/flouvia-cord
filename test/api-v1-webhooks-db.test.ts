@@ -79,13 +79,26 @@ describe('createWebhookEndpoint', () => {
             expect(await count()).toBe(0);
         });
 
-    it('respeta el tope del plan', async () => {
+    it('los endpoints del equipo respetan el tope del plan sin contar los de integraciones', async () => {
         m.plan = 'free';
-        expect((await createWebhookEndpoint(ctxA, { url: 'https://example.com/1' }, KEY_1)).status).toBe(200);
-        const r = await createWebhookEndpoint(ctxA, { url: 'https://example.com/2' }, KEY_1);
+        await m.db.exec(`insert into webhooks (org_id, url, created_by_key) select '${A}', 'https://zap.example/' || g, '${KEY_1}' from generate_series(1, 30) g`);
+        await m.db.exec(`insert into webhooks (org_id, url) select '${A}', 'https://equipo.example/' || g from generate_series(1, 15) g`);
+        expect((await createWebhookEndpoint(ctxA, { url: 'https://example.com/16' })).status).toBe(200);
+        const r = await createWebhookEndpoint(ctxA, { url: 'https://example.com/17' });
         expect(r.status).toBe(403);
         expect(r.body.code).toBe('plan_limit_reached');
-        expect(await count()).toBe(1);
+        expect(await count('created_by_key is null')).toBe(16);
+    });
+
+    it('las integraciones tienen su propio cupo, igual en todos los planes', async () => {
+        m.plan = 'free';
+        await m.db.exec(`insert into webhooks (org_id, url) select '${A}', 'https://equipo.example/' || g from generate_series(1, 16) g`);
+        await m.db.exec(`insert into webhooks (org_id, url, created_by_key) select '${A}', 'https://zap.example/' || g, '${KEY_1}' from generate_series(1, 99) g`);
+        expect((await createWebhookEndpoint(ctxA, { url: 'https://example.com/100' }, KEY_2)).status).toBe(200);
+        const r = await createWebhookEndpoint(ctxA, { url: 'https://example.com/101' }, KEY_1);
+        expect(r.status).toBe(403);
+        expect(r.body.code).toBe('integration_limit_reached');
+        expect(await count('created_by_key is not null')).toBe(100);
     });
 
     it('rechaza eventos que no son lista', async () => {

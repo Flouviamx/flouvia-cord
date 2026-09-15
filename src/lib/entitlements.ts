@@ -143,13 +143,18 @@ export function apiKeyLimit(plan: string): number {
     return API_KEY_LIMITS[plan] ?? API_KEY_LIMITS.free;
 }
 
-// Máximo de endpoints de webhook por plan. Mismo criterio que API_KEY_LIMITS.
+// Endpoints de webhook que configura el equipo. Tope de seguridad generoso en
+// todos los planes (Stripe usa 16 por cuenta), no una palanca de precio.
 export const WEBHOOK_LIMITS: Record<string, number> = {
-    free: 1, starter: 3, pro: 10, scale: 25, developer: 100, business: 10, negocio: 10,
+    free: 16, starter: 16, pro: 16, scale: 32, developer: 100, business: 16, negocio: 16,
 };
 export function webhookLimit(plan: string): number {
     return WEBHOOK_LIMITS[plan] ?? WEBHOOK_LIMITS.free;
 }
+
+// Suscripciones que crean las integraciones por API (Zapier, Make): cupo propio
+// e igual en todos los planes, para que cada Zap no consuma un endpoint del equipo.
+export const INTEGRATION_WEBHOOK_LIMIT = 100;
 
 export function minimumPlan(feature: FeatureKey): PlanId {
     return FEATURE_MIN_PLAN[feature];

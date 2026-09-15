@@ -29,9 +29,9 @@ Casos de uso comunes:
 6. Guarda una copia de tu **secret** (`whsec_…`) — se muestra en claro **una sola vez**. Después solo se ve enmascarado.
 
 <Callout type="info">
-Cada plan tiene un límite de endpoints (Gratis: 1 · Starter: 3 · Profesional: 10 · Scale: 25 ·
-Developer: 100). Los webhooks NO están gateados a un plan de pago — todos los planes, incluido
-el gratuito, pueden usarlos.
+Tu equipo puede configurar 16 endpoints en Gratis, Starter y Profesional, 32 en Scale y 100 en
+Developer. Las suscripciones que crean las integraciones por API tienen un cupo aparte de 100 por
+organización en todos los planes. Los webhooks NO están gateados a un plan de pago.
 </Callout>
 
 ## El payload
@@ -245,7 +245,7 @@ Plataformas como Zapier o Make crean y borran sus suscripciones solas. Para eso 
 | `POST /api/v1/webhooks` | `write` | Crea un endpoint. Cuerpo: `{ "url": "https://…", "eventos": ["quote.approved"] }`. Devuelve `id`, `url`, `eventos` y `secret` (en claro **una sola vez**). |
 | `DELETE /api/v1/webhooks/{id}` | `write` | Borra un endpoint creado por esta misma llave. |
 
-Aplican las mismas reglas que en el Workbench: solo `https://` hacia hosts públicos, y el límite de endpoints de tu plan (`plan_limit_reached`).
+Aplican las mismas reglas de URL que en el Workbench: solo `https://` hacia hosts públicos. Estas suscripciones no cuentan contra los endpoints de tu equipo: tienen su propio cupo de 100 por organización (`integration_limit_reached`).
 
 <Callout type="info">
 Una llave **no ve ni puede borrar** los endpoints creados desde el Workbench ni los de otra llave. Al revocar una llave, sus endpoints se **desactivan**: si desconectas una integración, deja de recibir datos.

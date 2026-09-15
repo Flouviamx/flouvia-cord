@@ -87,16 +87,17 @@ describe('entrega a webhooks', () => {
 
     beforeAll(async () => {
         await m.db.exec(`
-            create table webhooks(id uuid primary key default gen_random_uuid(), org_id uuid, eventos jsonb default '[]', activo boolean default true, created_at timestamptz default now());
+            create table webhooks(id uuid primary key default gen_random_uuid(), org_id uuid, eventos jsonb default '[]', activo boolean default true, created_by_key text, created_at timestamptz default now());
             create table clientes(id uuid primary key, org_id uuid, empresa text);
             create table cotizaciones(id uuid primary key, org_id uuid, folio text, status text, total numeric, public_token text, base_currency text, cliente_id uuid);
-            insert into webhooks(org_id, created_at) select '${A}', now() - (g || ' minutes')::interval from generate_series(1, 12) g;
+            insert into webhooks(org_id, created_at) select '${A}', now() - (g || ' minutes')::interval from generate_series(1, 40) g;
+            insert into webhooks(org_id, created_by_key, created_at) select '${A}', 'key-zapier', now() - (g || ' minutes')::interval from generate_series(1, 5) g;
             insert into clientes values ('00000000-0000-4000-8000-0000000000c1', '${A}', 'Cliente A');
             insert into cotizaciones values ('${QUOTE}', '${A}', 'COT-1', 'sent', 250, 'secreto', 'USD', '00000000-0000-4000-8000-0000000000c1');`);
     });
     beforeEach(() => m.enqueue.mockClear());
 
-    it.each([['free', 1], ['pro', 10], ['business', 10], ['developer', 12]])('plan %s entrega a %i endpoints', async (plan, esperados) => {
+    it.each([['free', 16 + 5], ['pro', 16 + 5], ['business', 16 + 5], ['scale', 32 + 5], ['developer', 40 + 5]])('plan %s entrega a %i endpoints (del equipo según plan + integraciones)', async (plan, esperados) => {
         await setPlan(plan);
         await dispatchQuoteEventFrom(A, 'quote.deleted', { id: QUOTE, folio: 'COT-1', status: 'draft', total: 0, public_token: 't', empresa: null });
         expect(m.enqueue).toHaveBeenCalledTimes(1);

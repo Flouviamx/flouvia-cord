@@ -9,7 +9,7 @@ App de Zapier construida sobre la API pública v1 de Cord. No tiene servidor pro
 - **Acciones**: Create Client, Update Client, Create Quote, Send Quote, Mark Quote as Paid y Create Task.
 - **Búsquedas**: Find Client (correo exacto o nombre), Find Quote (folio) y Find or Create Client.
 
-Cada Zap con disparador instantáneo ocupa un webhook del plan de la organización.
+Las suscripciones que crea Zapier tienen un cupo propio de 100 por organización y no ocupan los endpoints del equipo.
 
 ## Desarrollo
 

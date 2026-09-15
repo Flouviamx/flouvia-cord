@@ -126,6 +126,7 @@ export async function syncClientOut(ref: crm.Ref, clientId: string): Promise<{ c
     }
     if (!contactId) contactId = await crm.createObject(ref, 'contacts', props);
     if (!(await upsertVinculo(ref, 'client_contact', clientId, 'contact', contactId, hk))) {
+        await setConexionError(ref.orgId, ref.conexionId, `Dos clientes de Cord usan el correo ${kp.email || 'del mismo contacto'}; en HubSpot solo se ligó el primero. Corrige el correo duplicado en Cord.`);
         return { companyId, contactId: null };
     }
     await crm.associate(ref, 'contacts', contactId, 'companies', companyId);

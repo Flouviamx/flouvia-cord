@@ -63,7 +63,7 @@ let OV: any = null;
 let EVENTOS: any[] = [];
 let LOGS: any[] = [];
 let LIMITE_KEYS = 0, ACTIVAS = 0, AT_LIMIT_KEYS = false;
-let LIMITE_WH = 0, AT_LIMIT_WH = false;
+let LIMITE_WH = 0, AT_LIMIT_WH = false, WH_EQUIPO = 0;
 
 if (hasAccess) {
     if (tab === 'api') {
@@ -74,7 +74,8 @@ if (hasAccess) {
     } else if (tab === 'webhooks') {
         [ORG, WEBHOOKS] = await Promise.all([getOrg(), getWebhooks()]);
         LIMITE_WH = webhookLimit(ORG.plan_raw);
-        AT_LIMIT_WH = WEBHOOKS.length >= LIMITE_WH;
+        WH_EQUIPO = WEBHOOKS.filter((w) => !w.integracion).length;
+        AT_LIMIT_WH = WH_EQUIPO >= LIMITE_WH;
     } else if (tab === 'registros') {
         LOGS = await getApiLogs({ metodo: METODO, clase: CLASE, q: BUSCA, range: RANGE });
     } else if (tab === 'eventos') {
@@ -605,7 +606,7 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
                     <p class="dev-card-sub" set:html={t(L, 'set.wh.endpoints_sub')} />
                 </div>
                 <div class="dev-head-actions">
-                    <span class="dev-limit">{tf('set.wh.plan', { plan: planLabel(ORG.plan_raw) })} <b>{WEBHOOKS.length}/{LIMITE_WH}</b></span>
+                    <span class="dev-limit">{tf('set.wh.plan', { plan: planLabel(ORG.plan_raw) })} <b>{WH_EQUIPO}/{LIMITE_WH}</b></span>
                     <button type="button" class="api-btn-solid" data-wb-act="wh-new" disabled={AT_LIMIT_WH} title={AT_LIMIT_WH ? tf('set.wh.limite_hint', { n: String(LIMITE_WH) }) : ''}>{t(L, 'set.wh.agregar_endpoint')}</button>
                 </div>
             </div>

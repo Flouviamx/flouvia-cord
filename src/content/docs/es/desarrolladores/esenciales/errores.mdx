@@ -68,6 +68,7 @@ No confíes en la forma anidada `error.code` / `error.message` para parsear la r
 - `not_found`: El recurso solicitado no existe en tu organización.
 - `subscription_required`: La capacidad requiere un plan superior. La respuesta incluye `plan` (el actual) y `plan_required`.
 - `plan_limit_reached`: Alcanzaste un límite duro de tu plan (clientes, productos, llaves de API). La respuesta incluye `resource`, `limit` y `plan`.
+- `integration_limit_reached` (403): tus integraciones ya crearon las 100 suscripciones de webhook permitidas por organización. Borra las que ya no uses.
 - `rate_limited` / `api_quota_exceeded`: Límite de peticiones por minuto o de cuota mensual de la API. Reintenta respetando `Retry-After`.
 - `fx_unavailable` / `tax_catalog_unavailable`: Un dato de terceros (tipo de cambio o catálogo de impuestos) no se pudo obtener con certeza. La operación no se completó — no asumas que sí ocurrió.
 

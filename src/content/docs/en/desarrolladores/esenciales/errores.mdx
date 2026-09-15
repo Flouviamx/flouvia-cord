@@ -68,6 +68,7 @@ Don't rely on the nested `error.code` / `error.message` shape to parse the respo
 - `not_found`: The requested resource doesn't exist in your organization.
 - `subscription_required`: The capability requires a higher plan. The response includes `plan` (your current one) and `plan_required`.
 - `plan_limit_reached`: You hit a hard limit on your plan (clients, products, API keys). The response includes `resource`, `limit`, and `plan`.
+- `integration_limit_reached` (403): your integrations already created the 100 webhook subscriptions allowed per organization. Delete the ones you no longer use.
 - `rate_limited` / `api_quota_exceeded`: Requests-per-minute or monthly API quota limit. Retry while respecting `Retry-After`.
 - `fx_unavailable` / `tax_catalog_unavailable`: A third-party data point (exchange rate or tax catalog) could not be obtained with certainty. The operation did not complete — don't assume it did.
 

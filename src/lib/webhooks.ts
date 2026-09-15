@@ -14,7 +14,7 @@ import { after } from './after';
 import { publicDocumentUrl } from './public-links';
 import { enqueueForSubscribers, flushNow, newEventId } from './webhook-delivery';
 import { recordDomainEvent } from './domain-events';
-import { webhookLimit } from './entitlements';
+import { INTEGRATION_WEBHOOK_LIMIT, webhookLimit } from './entitlements';
 
 // Catálogo de eventos públicos (lo consume la UI y la validación de la API).
 export const WEBHOOK_EVENTS = [
@@ -204,12 +204,14 @@ async function emitToSubscribers(orgId: string, evento: string, data: Record<str
         const allowance = webhookLimit(String(planRow?.plan || 'free'));
         [hooks] = await withOrgTx(orgId, sql`
             with ranked as (
-                select id, eventos,
-                       row_number() over (order by created_at asc, id asc)::int as position
+                select id, eventos, created_by_key is not null as integracion,
+                       row_number() over (partition by created_by_key is not null order by created_at asc, id asc)::int as position
                   from webhooks
                  where org_id = ${orgId} and activo = true
             )
-            select id, eventos from ranked where position <= ${allowance}`);
+            select id, eventos from ranked
+             where (not integracion and position <= ${allowance})
+                or (integracion and position <= ${INTEGRATION_WEBHOOK_LIMIT})`);
     } catch { return; } // tabla aún no migrada → no-op
     const subs = hooks.filter((h) => {
         const evs = Array.isArray(h.eventos) ? h.eventos : [];

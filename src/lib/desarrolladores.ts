@@ -437,7 +437,7 @@ export function Cotizacion({ token }) {
         sub: 'HubSpot y Slack se conectan directo desde Ajustes. Para el resto (SAP, Oracle, Salesforce…) Cord emite webhooks firmados en cada evento de tu ciclo de venta — los apuntas a Zapier, Make, n8n o tu propio backend y reaccionas en tiempo real. Lo que ves en la app, también por API REST.',
         metaTitle: 'Webhooks e integraciones (Zapier, Make, n8n) — Cord',
         metaDescription: 'Cord emite webhooks firmados (HMAC-SHA256) en cada evento de venta — quote.sent, quote.approved, quote.paid — que conectas a Zapier, Make, n8n o tu backend. Disponible en todos los planes, con HubSpot y Slack directos.',
-        plan: 'En todos los planes · webhooks limitados por plan (Free 1 → Developer 100) · HubSpot y Slack directos · llaves de prueba gratis para la API',
+        plan: 'En todos los planes · 16 endpoints desde el plan Gratis (hasta 100 en Developer) · HubSpot y Slack directos · llaves de prueba gratis para la API',
         stats: [
             { valor: '34', countup: 34, label: 'eventos: cotizaciones, facturas, pagos, clientes, productos, tareas y promesas' },
             { valor: '11', countup: 11, label: 'intentos de entrega con backoff antes de dar un evento por fallido' },
@@ -473,7 +473,7 @@ export function Cotizacion({ token }) {
         ],
         faqs: [
             { q: '¿Cord tiene un conector nativo para SAP, Salesforce u Oracle?', a: 'No para esos sistemas: la conexión directa existe para HubSpot y Slack. Para SAP, Salesforce u Oracle, Cord emite webhooks firmados (HMAC-SHA256) en cada evento del ciclo de venta que apuntas a Zapier, Make, n8n o tu propio backend para conectar con SAP, Salesforce o cualquier otro sistema.' },
-            { q: '¿Cuántos endpoints de webhook puedo configurar?', a: 'Depende del plan: desde 1 endpoint en el plan Gratis hasta 100 en el plan Developer. Los excedentes se miden por consumo de API, no por número de webhooks.' },
+            { q: '¿Cuántos endpoints de webhook puedo configurar?', a: 'Tu equipo puede configurar 16 endpoints en Gratis, Starter y Pro, 32 en Scale y 100 en Developer. Las suscripciones que crean Zapier, Make u otras integraciones por API tienen un cupo aparte de 100 por organización en todos los planes, así que cada Zap no consume un endpoint de tu equipo.' },
             { q: '¿Cómo verifico que un webhook realmente viene de Cord?', a: 'Cada entrega incluye el header X-Cord-Signature-V1 con un timestamp y un HMAC-SHA256 del cuerpo crudo, firmado con el secret que Cord te dio al crear el endpoint. Lo validas antes de procesar el evento; el timestamp te protege de que alguien reenvíe una entrega vieja.' },
         ],
         cta: { titulo: 'Conecta Cord a tu stack hoy.', sub: 'Registra un webhook o genera una llave de prueba y recibe tu primer evento en minutos.' },

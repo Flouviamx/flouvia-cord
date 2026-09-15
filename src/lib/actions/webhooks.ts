@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { sql, withOrgTx } from '../db';
 import { webhookLimit, planLabel } from '../permissions';
+import { INTEGRATION_WEBHOOK_LIMIT } from '../entitlements';
 import { WEBHOOK_EVENT_IDS } from '../webhooks';
 import { validateWebhookUrl } from '../ssrf';
 import { encryptRequiredSecret } from '../crypto-secret';
@@ -25,7 +26,8 @@ export async function createWebhookEndpoint(
     }
 
     const plan = (await getEntitlementContext(ctx.orgId)).effectivePlan;
-    const limite = webhookLimit(plan as string);
+    const deIntegracion = createdByKey !== null;
+    const limite = deIntegracion ? INTEGRATION_WEBHOOK_LIMIT : webhookLimit(plan as string);
     const eventos = cleanWebhookEvents(input.eventos);
     const secret = `whsec_${randomBytes(24).toString('hex')}`;
     let secretEnc: string;
@@ -43,12 +45,19 @@ export async function createWebhookEndpoint(
             sql`
                 insert into webhooks (org_id, url, eventos, secret, secret_enc, created_by_key)
                 select ${ctx.orgId}, ${url}, ${JSON.stringify(eventos)}::jsonb, null, ${secretEnc}, ${createdByKey}
-                 where (select count(*) from webhooks where org_id = ${ctx.orgId}) < ${limite}
+                 where (select count(*) from webhooks
+                         where org_id = ${ctx.orgId} and (created_by_key is not null) = ${deIntegracion}) < ${limite}
                 returning id`,
         );
         [row] = inserted;
     } catch {
         return done(500, { error: 'No se pudo crear el webhook.', code: 'server_error' });
+    }
+    if (!row && deIntegracion) {
+        return done(403, {
+            error: `Tus integraciones ya crearon ${limite} suscripciones, el máximo por organización. Apaga los Zaps o escenarios que ya no uses para liberar espacio.`,
+            code: 'integration_limit_reached',
+        });
     }
     if (!row) {
         return done(403, {

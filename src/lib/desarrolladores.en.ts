@@ -382,7 +382,7 @@ export function Cotizacion({ token }) {
         sub: 'HubSpot and Slack connect directly from Settings. For everything else (SAP, Oracle, Salesforce…) Cord emits signed webhooks on every event of your sales cycle — point them at Zapier, Make, n8n, or your own backend and react in real time. Everything you see in the app is also available via REST API.',
         metaTitle: 'Webhooks & integrations (Zapier, Make, n8n) — Cord',
         metaDescription: 'Cord emits signed webhooks (HMAC-SHA256) on every sales event — quote.sent, quote.approved, quote.paid — that you connect to Zapier, Make, n8n, or your backend. Available on every plan, with direct HubSpot and Slack.',
-        plan: 'On every plan · webhooks capped by plan (Free 1 → Developer 100) · direct HubSpot and Slack · free test keys for the API',
+        plan: 'On every plan · 16 endpoints from the Free plan (up to 100 on Developer) · direct HubSpot and Slack · free test keys for the API',
         stats: [
             { valor: '34', countup: 34, label: 'events: quotes, invoices, payments, clients, products, tasks and promises' },
             { valor: '11', countup: 11, label: 'delivery attempts with backoff before an event is marked as failed' },
@@ -418,7 +418,7 @@ export function Cotizacion({ token }) {
         ],
         faqs: [
             { q: 'Does Cord have a native connector for SAP, Salesforce, or Oracle?', a: 'Not for those systems: direct connections exist for HubSpot and Slack. For SAP, Salesforce, or Oracle, Cord emits signed webhooks (HMAC-SHA256) on every sales-cycle event that you point at Zapier, Make, n8n, or your own backend to connect with SAP, Salesforce, or any other system.' },
-            { q: 'How many webhook endpoints can I configure?', a: 'It depends on your plan: from 1 endpoint on the Free plan up to 100 on the Developer plan. Overages are metered by API consumption, not by number of webhooks.' },
+            { q: 'How many webhook endpoints can I configure?', a: 'Your team can configure 16 endpoints on Free, Starter, and Pro, 32 on Scale, and 100 on Developer. Subscriptions created by Zapier, Make, or other integrations through the API have a separate allowance of 100 per organization on every plan, so each Zap doesn\'t use up one of your team\'s endpoints.' },
             { q: 'How do I verify a webhook really came from Cord?', a: 'Every delivery includes the X-Cord-Signature-V1 header with a timestamp and an HMAC-SHA256 of the raw body, signed with the secret Cord gave you when you created the endpoint. You validate it before processing the event; the timestamp protects you from someone replaying an old delivery.' },
         ],
         cta: { titulo: 'Connect Cord to your stack today.', sub: 'Register a webhook or generate a test key and receive your first event in minutes.' },
