@@ -22,6 +22,23 @@ describe('catálogo', () => {
     });
 });
 
+describe('plantillas', () => {
+    it('cada plantilla, en los dos idiomas, se puede publicar tal cual y trae nombre y descripción', async () => {
+        const { WORKFLOW_TEMPLATES } = await import('../src/lib/workflows/templates');
+        const keys = new Set<string>();
+        for (const tpl of WORKFLOW_TEMPLATES) {
+            expect(keys.has(tpl.key)).toBe(false);
+            keys.add(tpl.key);
+            for (const lang of ['es', 'en'] as const) {
+                expect(tpl.nombre[lang] && tpl.descripcion[lang]).toBeTruthy();
+                const def = sanitizeDefinition(tpl.definicion(lang));
+                expect(JSON.stringify(def)).toBe(JSON.stringify(tpl.definicion(lang)));
+                expect(validateForPublish(def, lang)).toEqual([]);
+            }
+        }
+    });
+});
+
 describe('sanitizeDefinition', () => {
     it('descarta disparadores, acciones, parámetros e ids desconocidos o repetidos', () => {
         const def = sanitizeDefinition({

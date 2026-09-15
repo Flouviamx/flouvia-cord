@@ -41,6 +41,9 @@ const STR = {
         ok: t(L, 'wf.paso.ok'), error: t(L, 'wf.paso.error'), si: t(L, 'wf.paso.si'), no: t(L, 'wf.paso.no'), esperando: t(L, 'wf.paso.esperando'),
     },
     estado: { draft: t(L, 'wf.estado.draft'), active: t(L, 'wf.estado.active'), paused: t(L, 'wf.estado.paused') },
+    ejemplosTitulo: t(L, 'wf.ejemplos_titulo'), personalizar: t(L, 'wf.personalizar'), ayudaEmpezar: t(L, 'wf.ayuda_empezar'),
+    verEjemplos: t(L, 'wf.ver_ejemplos'), ocultarAyuda: t(L, 'wf.ocultar_ayuda'), reemplazarTitulo: t(L, 'wf.reemplazar_titulo'),
+    reemplazarDesc: t(L, 'wf.reemplazar_desc'), reemplazar: t(L, 'wf.reemplazar'), enRamaSi: t(L, 'wf.en_rama_si'),
 };
 
 const DATA = {
@@ -92,6 +95,13 @@ const DATA = {
         <div class="wfe-canvas" data-canvas>
             <div class="wfe-flow" data-flow></div>
         </div>
+        <div class="wfe-help" data-help hidden>
+            <button type="button" class="wfe-help-x" data-help-hide aria-label={STR.ocultarAyuda}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <span>{STR.ayudaEmpezar}</span>
+            <button type="button" class="wfe-help-link" data-help-open>{STR.verEjemplos}</button>
+        </div>
         <div class="wfe-zoom" aria-label="zoom">
             <button type="button" data-zoom="in" aria-label={STR.acercar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
             <button type="button" data-zoom="out" aria-label={STR.alejar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
@@ -108,6 +118,7 @@ const DATA = {
     <div class="wfe-scrim" data-scrim hidden></div>
     <div class="wfe-addmenu" data-addmenu role="menu" hidden></div>
     <div class="wfe-picker" data-picker hidden role="dialog" aria-modal="true" aria-label={STR.buscarDisparador}></div>
+    <div class="wfe-picker" data-examples hidden role="dialog" aria-modal="true" aria-label={STR.ejemplosTitulo}></div>
 </div>
 
 <style is:global>
@@ -358,6 +369,50 @@ const DATA = {
     html[data-theme="dark"] .wfe-pill[data-s="failed"] { color: #f87171; background: rgba(239,68,68,0.18); }
     html[data-theme="dark"] .wfe-pill[data-s="waiting"], html[data-theme="dark"] .wfe-pill[data-s="queued"], html[data-theme="dark"] .wfe-pill[data-s="running"] { color: #93c5fd; background: rgba(59,130,246,0.18); }
 
+    .wfe-logo { width: 20px; height: 20px; border-radius: 5px; object-fit: contain; }
+    .wfe-requires { display: inline-block; margin-top: 4px; font-style: normal; font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted); }
+
+    .wfe-help {
+        position: absolute; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px;
+        border-radius: 12px; background: var(--surface); box-shadow: 0 0 0 1px var(--color-border), var(--wf-shadow); font-size: 0.82rem; color: var(--color-text-muted);
+    }
+    .wfe-help-x { width: 28px; height: 28px; display: grid; place-items: center; border: none; background: none; color: var(--color-text-muted); border-radius: 8px; cursor: pointer; }
+    .wfe-help-x:hover { background: var(--color-bg-soft); color: var(--color-text); }
+    .wfe-help-x svg { width: 14px; height: 14px; }
+    .wfe-help-link { border: none; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--wf-accent); cursor: pointer; }
+    .wfe-help-link:hover { text-decoration: underline; }
+
+    .wfe-ex-card { position: relative;
+        width: min(1000px, 100%); max-height: 86vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); overflow: hidden;
+        border-radius: 22px; background: var(--editor-panel, #fff); box-shadow: var(--editor-panel-shadow, 0 16px 40px -8px rgba(10,25,47,0.2)); animation: wfePop 0.28s var(--ease-spring);
+    }
+    .wfe-ex-left { display: flex; flex-direction: column; gap: 14px; padding: 28px; overflow-y: auto; }
+    .wfe-ex-left h2 { margin: 0; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em; color: var(--color-text); line-height: 1.2; }
+    .wfe-ex-list { display: flex; flex-direction: column; gap: 8px; }
+    .wfe-ex-item {
+        text-align: left; border: 1px solid transparent; background: var(--color-bg-soft); border-radius: 14px; padding: 14px 16px; cursor: pointer;
+        display: flex; flex-direction: column; gap: 4px; color: var(--color-text); transition: border-color 0.2s, background 0.2s;
+    }
+    .wfe-ex-item strong { font-size: 0.9rem; font-weight: 600; }
+    .wfe-ex-item span { font-size: 0.8rem; line-height: 1.45; color: var(--color-text-muted); }
+    .wfe-ex-item:hover { border-color: var(--color-border); }
+    .wfe-ex-item[aria-pressed="true"] { background: var(--surface); border-color: var(--wf-accent); box-shadow: 0 0 0 3px rgba(10,25,47,0.06); }
+    .wfe-ex-cta { margin-top: auto; justify-content: center; display: flex; min-height: 44px; align-items: center; }
+    .wfe-ex-right {
+        position: relative; padding: 48px 28px 28px; overflow-y: auto; border-left: 1px solid var(--color-border);
+        background-color: var(--color-bg-soft); background-image: radial-gradient(var(--wf-dot) 1px, transparent 1px); background-size: 18px 18px;
+    }
+    .wfe-ex-close { position: absolute; top: 14px; right: 14px; }
+    .wfe-ex-flow { display: flex; flex-direction: column; align-items: stretch; max-width: 380px; margin: 0 auto; }
+    .wfe-ex-node { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; background: var(--wf-card); box-shadow: 0 0 0 1px var(--color-border), var(--wf-shadow); }
+    .wfe-ex-node .wfe-node-icon { width: 36px; height: 36px; }
+    .wfe-ex-node small { display: block; font-size: 0.72rem; color: var(--color-text-muted); }
+    .wfe-ex-node b { display: block; font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
+    .wfe-ex-cond { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--color-bg-soft); font-size: 0.78rem; color: var(--color-text); line-height: 1.4; }
+    .wfe-ex-line { width: 1.5px; height: 22px; background: var(--wf-line); margin: 0 auto; }
+    .wfe-ex-branch { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); align-self: center; padding: 4px 10px; border-radius: 100px; background: var(--wf-card); box-shadow: 0 0 0 1px var(--color-border); }
+    .wfe-ex-indent { padding-left: 22px; border-left: 1.5px dashed var(--wf-line); margin-left: 18px; display: flex; flex-direction: column; }
+
     @media (prefers-reduced-motion: reduce) {
         .wfe-panel, .wfe-picker-card { animation: none; }
     }
@@ -392,6 +447,14 @@ const DATA = {
         .wfe-run-row .wfe-pill { grid-column: 2; grid-row: 1; }
         .wfe-run-detail { padding-left: 0.4rem; }
         .wfe-tab { min-height: 44px; }
+        .wfe-help { position: static; margin: 10px 0 0; }
+        .wfe-help-x { width: 44px; height: 44px; }
+        .wfe-help-link { min-height: 44px; }
+        .wfe-ex-card { grid-template-columns: 1fr; max-height: 92dvh; border-radius: 22px 22px 0 0; overflow-y: auto; }
+        .wfe-ex-left, .wfe-ex-right { overflow: visible; }
+        .wfe-ex-right { border-left: none; border-top: 1px solid var(--color-border); padding-top: 28px; }
+        .wfe-ex-close { top: 10px; right: 10px; }
+        .wfe-ex-item { min-height: 48px; }
     }
 </style>
 
@@ -401,6 +464,7 @@ const DATA = {
         findAction, findTrigger, type Lang, type WorkflowField,
     } from '../../lib/workflows/catalog';
     import { sanitizeDefinition, validateForPublish, type Condition, type Step, type WorkflowDefinition } from '../../lib/workflows/definition';
+    import { WORKFLOW_TEMPLATES } from '../../lib/workflows/templates';
 
     const root = document.querySelector<HTMLElement>('[data-wf-editor]');
     const raw = document.getElementById('wfData')?.textContent;
@@ -465,6 +529,13 @@ const DATA = {
             close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
         } as Record<string, string>;
 
+        const favicon = (domain: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=64`;
+        const BRAND_LOGO: Record<string, string> = { slack: favicon('slack.com'), hubspot: favicon('hubspot.com') };
+        function iconFor(key: string, brand?: string): Node {
+            if (brand && BRAND_LOGO[brand]) return el('img', { class: 'wfe-logo', src: BRAND_LOGO[brand], alt: '', width: '20', height: '20', loading: 'lazy' });
+            return svg(ICON[key] ?? ICON.action);
+        }
+
         type List = Step[];
         function findStep(id: string, list: List = state.def.steps): { step: Step; list: List; index: number } | null {
             for (let i = 0; i < list.length; i++) {
@@ -497,8 +568,8 @@ const DATA = {
             return copy;
         }
 
-        function conditionText(c: Condition) {
-            const f = fields().find((x) => x.key === c.field);
+        function conditionText(c: Condition, available: WorkflowField[] = fields()) {
+            const f = available.find((x) => x.key === c.field);
             if (!f) return '';
             const op = OPERATORS[f.type].find((o) => o.op === c.op);
             if (!op) return f.label[L];
@@ -507,18 +578,18 @@ const DATA = {
             if (f.type === 'number' && value !== '' && Number.isFinite(Number(value))) value = Number(value).toLocaleString(L === 'en' ? 'en-US' : 'es-MX');
             return [f.label[L], op.label[L], op.needsValue ? value : ''].filter(Boolean).join(' ');
         }
-        function stepSummary(step: Step): { eyebrow: string; title: string; sub: string; icon: string } {
+        function stepSummary(step: Step, available: WorkflowField[] = fields()): { eyebrow: string; title: string; sub: string; icon: () => Node } {
             if (step.type === 'wait') {
-                return { eyebrow: S.espera, title: step.days === 1 ? S.esperarDia : fill(S.esperarDias, { n: step.days }), sub: '', icon: ICON.wait };
+                return { eyebrow: S.espera, title: step.days === 1 ? S.esperarDia : fill(S.esperarDias, { n: step.days }), sub: '', icon: () => svg(ICON.wait) };
             }
             if (step.type === 'condition') {
-                const first = step.conditions[0] ? conditionText(step.conditions[0]) : '';
+                const first = step.conditions[0] ? conditionText(step.conditions[0], available) : '';
                 const more = step.conditions.length > 1 ? ` ${fill(S.yMas, { n: step.conditions.length - 1 })}` : '';
-                return { eyebrow: S.condicion, title: first ? `${first}${more}` : S.defineCondicion, sub: '', icon: ICON.condition };
+                return { eyebrow: S.condicion, title: first ? `${first}${more}` : S.defineCondicion, sub: '', icon: () => svg(ICON.condition) };
             }
             const def = findAction(step.action);
             const sub = def ? String(step.params.titulo ?? step.params.asunto ?? step.params.mensaje ?? '') : '';
-            return { eyebrow: S.accion, title: def ? def.label[L] : S.eligeAccion, sub, icon: def ? ICON[def.key] : ICON.action };
+            return { eyebrow: S.accion, title: def ? def.label[L] : S.eligeAccion, sub, icon: () => (def ? iconFor(def.key, def.brand) : svg(ICON.action)) };
         }
 
         function issues() { return validateForPublish(sanitizeDefinition(state.def), L); }
@@ -599,7 +670,7 @@ const DATA = {
                 class: 'wfe-node', role: 'button', tabindex: '0', 'data-step': step.id,
                 'data-selected': String(selected), 'data-issue': String(Boolean(issue)),
             }, [
-                el('span', { class: 'wfe-node-icon' }, [svg(info.icon)]),
+                el('span', { class: 'wfe-node-icon' }, [info.icon()]),
                 el('span', { class: 'wfe-node-text' }, [
                     el('span', { class: 'wfe-node-eyebrow', text: info.eyebrow }),
                     el('span', { class: 'wfe-node-title', text: info.title }),
@@ -784,8 +855,12 @@ const DATA = {
                     const choice = el('div', { class: 'wfe-choice' });
                     for (const a of WORKFLOW_ACTIONS) {
                         const b = el('button', { type: 'button' }, [
-                            el('span', { class: 'wfe-node-icon' }, [svg(ICON[a.key])]),
-                            el('span', { class: 'wfe-choice-text' }, [el('strong', { text: a.label[L] }), el('small', { text: a.description[L] })]),
+                            el('span', { class: 'wfe-node-icon' }, [iconFor(a.key, a.brand)]),
+                            el('span', { class: 'wfe-choice-text' }, [
+                                el('strong', { text: a.label[L] }),
+                                el('small', { text: a.description[L] }),
+                                a.requires ? el('em', { class: 'wfe-requires', text: a.requires[L] }) : null,
+                            ]),
                         ]);
                         b.addEventListener('click', () => { step.action = a.key; step.params = {}; changed(); renderPanel(); });
                         choice.append(b);
@@ -798,7 +873,7 @@ const DATA = {
                 change.addEventListener('click', () => { step.action = ''; step.params = {}; changed(); renderPanel(); });
                 const body: Node[] = [
                     el('div', { class: 'wfe-summary-card' }, [
-                        el('span', { class: 'wfe-node-icon' }, [svg(ICON[def.key])]),
+                        el('span', { class: 'wfe-node-icon' }, [iconFor(def.key, def.brand)]),
                         el('span', { class: 'wfe-node-text' }, [el('span', { class: 'wfe-node-title', text: def.label[L] }), el('span', { class: 'wfe-node-sub', text: def.description[L] })]),
                         change,
                     ]),
@@ -948,6 +1023,101 @@ const DATA = {
         function closePicker() { picker.hidden = true; picker.replaceChildren(); }
         picker.addEventListener('click', (e) => { if (e.target === picker) closePicker(); });
 
+        const examples = $('[data-examples]');
+        const help = $('[data-help]');
+        let helpDismissed = false;
+        const isBlank = () => !state.def.trigger && !state.def.steps.length;
+
+        function previewNodes(def: WorkflowDefinition): Node {
+            const trig = findTrigger(def.trigger);
+            const available = trig?.fields ?? [];
+            const node = (icon: Node, eyebrow: string, title: string, extra?: Node | null) => el('div', { class: 'wfe-ex-node' }, [
+                el('span', { class: 'wfe-node-icon' }, [icon]),
+                el('span', { class: 'wfe-node-text' }, [el('small', { text: eyebrow }), el('b', { text: title }), extra ?? null]),
+            ]);
+            const line = () => el('div', { class: 'wfe-ex-line' });
+            const renderSteps = (steps: Step[], parent: HTMLElement) => {
+                for (const s of steps) {
+                    parent.append(line());
+                    if (s.type === 'condition') {
+                        const text = s.conditions.map((c) => conditionText(c, available)).filter(Boolean).join(s.match === 'any' ? ' · ' : ' + ');
+                        parent.append(node(svg(ICON.condition), S.condicion, text || S.defineCondicion));
+                        if (s.then.length) {
+                            parent.append(line(), el('span', { class: 'wfe-ex-branch', text: S.enRamaSi }));
+                            const indent = el('div', { class: 'wfe-ex-indent' });
+                            renderSteps(s.then, indent);
+                            parent.append(indent);
+                        }
+                    } else {
+                        const info = stepSummary(s, available);
+                        parent.append(node(info.icon(), s.type === 'action' ? S.hazEsto : info.eyebrow, info.title));
+                    }
+                }
+            };
+            const flowEl = el('div', { class: 'wfe-ex-flow' });
+            flowEl.append(node(svg(trig ? ICON[trig.category] : ICON.trigger), S.cuando, trig ? trig.label[L] : S.agregarDisparador));
+            renderSteps(def.steps, flowEl);
+            return flowEl;
+        }
+
+        function openExamples() {
+            closeMenus();
+            let selectedKey = WORKFLOW_TEMPLATES[0].key;
+            const list = el('div', { class: 'wfe-ex-list', role: 'listbox' });
+            const preview = el('div', { class: 'wfe-ex-right' });
+            const draw = () => {
+                const tpl = WORKFLOW_TEMPLATES.find((x) => x.key === selectedKey)!;
+                list.replaceChildren(...WORKFLOW_TEMPLATES.map((x) => {
+                    const b = el('button', { type: 'button', class: 'wfe-ex-item', 'aria-pressed': String(x.key === selectedKey) }, [
+                        el('strong', { text: x.nombre[L] }), el('span', { text: x.descripcion[L] }),
+                    ]);
+                    b.addEventListener('click', () => { selectedKey = x.key; draw(); });
+                    return b;
+                }));
+                preview.replaceChildren(previewNodes(sanitizeDefinition(tpl.definicion(L))));
+            };
+            const close = el('button', { type: 'button', class: 'wfe-icon-btn wfe-ex-close', 'aria-label': S.cerrar }, [svg(ICON.close)]);
+            close.addEventListener('click', closeExamples);
+            const cta = el('button', { type: 'button', class: 'wfe-btn wfe-btn-primary wfe-ex-cta', text: S.personalizar });
+            cta.addEventListener('click', () => applyTemplate(selectedKey));
+            examples.replaceChildren(el('div', { class: 'wfe-ex-card' }, [
+                el('div', { class: 'wfe-ex-left' }, [el('h2', { text: S.ejemplosTitulo }), list, cta]),
+                preview,
+                close,
+            ]));
+            draw();
+            examples.hidden = false;
+            (list.querySelector('button') as HTMLElement | null)?.focus();
+        }
+        function closeExamples() { examples.hidden = true; examples.replaceChildren(); updateHelp(); }
+        examples.addEventListener('click', (e) => { if (e.target === examples) closeExamples(); });
+
+        async function applyTemplate(key: string) {
+            const tpl = WORKFLOW_TEMPLATES.find((x) => x.key === key);
+            if (!tpl) return;
+            if (!isBlank()) {
+                const confirmFn = (window as any).cordConfirm;
+                const ok = confirmFn ? await confirmFn({ title: S.reemplazarTitulo, body: S.reemplazarDesc, danger: true, confirmText: S.reemplazar }) : true;
+                if (!ok) return;
+            }
+            const sinTitulo = !state.nombre.trim() || /^(workflow sin título|untitled workflow)$/i.test(state.nombre.trim());
+            state.def = sanitizeDefinition(tpl.definicion(L));
+            if (sinTitulo) { state.nombre = tpl.nombre[L]; nameInput.value = state.nombre; }
+            state.selected = null;
+            state.showIssues = false;
+            panel.hidden = true;
+            scrim.hidden = true;
+            closeExamples();
+            changed(false);
+            centerCanvas();
+        }
+
+        function updateHelp() {
+            help.hidden = helpDismissed || !isBlank() || !examples.hidden;
+        }
+        $('[data-help-open]').addEventListener('click', openExamples);
+        $('[data-help-hide]').addEventListener('click', () => { helpDismissed = true; updateHelp(); });
+
         const nameInput = $<HTMLInputElement>('[data-name]');
         nameInput.addEventListener('input', () => { state.nombre = nameInput.value; updateChrome(); });
         function updateChrome() {
@@ -960,6 +1130,7 @@ const DATA = {
             const pauseBtn = $('[data-toggle-pause]');
             pauseBtn.textContent = state.estado === 'paused' ? S.reanudar : S.pausar;
             pauseBtn.hidden = state.estado === 'draft';
+            updateHelp();
             const count = issues().length;
             const issuesEl = $('[data-issues]');
             issuesEl.hidden = !state.showIssues || count === 0;
@@ -1179,7 +1350,8 @@ const DATA = {
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (!picker.hidden) closePicker();
+                if (!examples.hidden) closeExamples();
+                else if (!picker.hidden) closePicker();
                 else if (openMenuEl || !$('[data-addmenu]').hidden || !moreMenu.hidden) closeMenus();
                 else if (!panel.hidden) closePanel();
             }
@@ -1189,5 +1361,6 @@ const DATA = {
 
         render();
         centerCanvas();
+        if (isBlank() && !state.publicado) openExamples();
     }
 </script>

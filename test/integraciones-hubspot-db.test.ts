@@ -50,7 +50,7 @@ const ctx = (org = A, userId = USER_A) => ({ orgId: org, origin: 'https://cordhq
 
 class FakeHubSpot {
     seq = 100;
-    objects: Record<string, Map<string, Record<string, string>>> = { companies: new Map(), contacts: new Map(), deals: new Map() };
+    objects: Record<string, Map<string, Record<string, string>>> = { companies: new Map(), contacts: new Map(), deals: new Map(), notes: new Map() };
     associations: string[] = [];
     calls: string[] = [];
     tokenStatus = 200;
@@ -326,6 +326,29 @@ describe('HubSpot → Cord', () => {
         await sync.processOrgSync(A);
         expect(await q(`select * from integracion_vinculos where externo_tipo = 'company'`)).toEqual([]);
         expect(await q('select empresa from clientes')).toEqual([{ empresa: 'Stark Industries' }]);
+    });
+});
+
+describe('acción de Workflows: nota en HubSpot', () => {
+    it('va al Deal si existe, si no a la Empresa, y avisa si todavía no hay nada sincronizado', async () => {
+        const { addHubSpotNote, HubSpotActionError } = await import('../src/lib/integraciones/hubspot/actions');
+        await expect(addHubSpotNote(A, { quoteId: QUOTE, clientId: CLIENTE }, 'x')).rejects.toThrow(/Conecta HubSpot/);
+        await conectar();
+        const pendiente = await addHubSpotNote(A, { quoteId: QUOTE, clientId: CLIENTE }, 'x').catch((e) => e);
+        expect(pendiente).toBeInstanceOf(HubSpotActionError);
+        expect(pendiente.final).toBe(false);
+
+        await enqueueEvent('client.created', { id: CLIENTE });
+        await sync.processOrgSync(A);
+        expect(await addHubSpotNote(A, { quoteId: QUOTE, clientId: CLIENTE }, '<p>hola</p>')).toBe('company');
+
+        await q(`update cotizaciones set status = 'sent'`);
+        await enqueueEvent('quote.sent', { id: QUOTE });
+        await sync.processOrgSync(A);
+        hs.calls = [];
+        expect(await addHubSpotNote(A, { quoteId: QUOTE, clientId: CLIENTE }, '<p>aprobada</p>')).toBe('deal');
+        expect(hs.calls).toContain('POST /crm/v3/objects/notes');
+        expect(await addHubSpotNote(B, { quoteId: QUOTE, clientId: CLIENTE }, 'x').catch((e) => e.message)).toMatch(/Conecta HubSpot/);
     });
 });
 

@@ -177,7 +177,8 @@ export const OPERATORS: Record<FieldType, { op: Operator; label: Text; needsValu
     ],
 };
 
-export type ActionKey = 'create_task' | 'notify_team' | 'slack_message';
+export type ActionKey = 'create_task' | 'notify_team' | 'slack_message' | 'hubspot_note';
+export type ActionBrand = 'cord' | 'slack' | 'hubspot';
 
 export interface ActionParam {
     key: string;
@@ -191,14 +192,17 @@ export interface ActionParam {
 
 export interface WorkflowActionDef {
     key: ActionKey;
+    brand: ActionBrand;
     label: Text;
     description: Text;
+    requires?: Text;
     params: ActionParam[];
 }
 
 export const WORKFLOW_ACTIONS: WorkflowActionDef[] = [
     {
         key: 'create_task',
+        brand: 'cord',
         label: { es: 'Crear una tarea', en: 'Create a task' },
         description: { es: 'Agrega una tarea de seguimiento para el equipo. Si el evento es de una cotización, queda ligada a ella.', en: 'Adds a follow-up task for the team. If the event is about a quote, the task is linked to it.' },
         params: [
@@ -208,6 +212,7 @@ export const WORKFLOW_ACTIONS: WorkflowActionDef[] = [
     },
     {
         key: 'notify_team',
+        brand: 'cord',
         label: { es: 'Avisar al equipo por correo', en: 'Email the team' },
         description: { es: 'Envía un correo a personas de tu organización. Nunca le escribe al cliente.', en: 'Sends an email to people in your organization. It never writes to the client.' },
         params: [
@@ -221,10 +226,25 @@ export const WORKFLOW_ACTIONS: WorkflowActionDef[] = [
     },
     {
         key: 'slack_message',
+        brand: 'slack',
         label: { es: 'Enviar un mensaje a Slack', en: 'Send a Slack message' },
         description: { es: 'Publica en el canal de Slack que conectaste en Ajustes › Integraciones.', en: 'Posts to the Slack channel you connected in Settings › Integrations.' },
+        requires: { es: 'Requiere Slack conectado', en: 'Requires Slack connected' },
         params: [
             { key: 'mensaje', label: { es: 'Mensaje', en: 'Message' }, kind: 'template_long', required: true, max: 1000 },
+        ],
+    },
+    {
+        key: 'hubspot_note',
+        brand: 'hubspot',
+        label: { es: 'Agregar una nota en HubSpot', en: 'Add a note in HubSpot' },
+        description: {
+            es: 'Deja una nota en el Deal de la cotización o, si no hay Deal, en la Empresa del cliente.',
+            en: "Adds a note to the quote's Deal or, if there is no Deal, to the client's Company.",
+        },
+        requires: { es: 'Requiere HubSpot conectado', en: 'Requires HubSpot connected' },
+        params: [
+            { key: 'mensaje', label: { es: 'Nota', en: 'Note' }, kind: 'template_long', required: true, max: 2000 },
         ],
     },
 ];

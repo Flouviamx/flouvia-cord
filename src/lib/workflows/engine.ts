@@ -5,6 +5,9 @@ import { siteOrigin, sendEmail } from '../email';
 import { postSlackText } from '../slack';
 import { strictRateLimit } from '../ratelimit';
 import { createTask } from '../actions/tasks';
+import { addHubSpotNote, HubSpotActionError } from '../integraciones/hubspot/actions';
+import { HubSpotApiError } from '../integraciones/hubspot/client';
+import { HubSpotAuthError } from '../integraciones/hubspot/oauth';
 import { findTrigger } from './catalog';
 import {
     evaluateConditions, exitBranch, isValidPath, nextSibling, renderTemplate, sanitizeDefinition, stepAt,
@@ -274,6 +277,25 @@ async function runAction(step: Extract<Step, { type: 'action' }>, input: ActionI
         const r = await postSlackText(url, text);
         if (!r.ok) throw new WorkflowStepError('Slack no aceptó el mensaje. Revisa la conexión en Ajustes › Integraciones.');
         return 'slack';
+    }
+
+    if (step.action === 'hubspot_note') {
+        const rl = await strictRateLimit(`wf-hubspot:${orgId}`, 120, 3600);
+        if (!rl.ok) throw new WorkflowStepError('Se alcanzó el máximo de notas por hora en HubSpot.', true);
+        const body = renderTemplate(String(p.mensaje ?? ''), values, escapeHtml).replace(/\n/g, '<br>').slice(0, 5000);
+        if (!body.trim()) throw new WorkflowStepError('La nota quedó vacía.', true);
+        const data = (event.data && typeof event.data === 'object' ? event.data : {}) as Record<string, unknown>;
+        const uuid = (v: unknown) => (typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v) ? v : null);
+        const quoteId = event.object === 'quote' ? uuid(event.object_id) : uuid(data.cotizacion_id);
+        const clientId = event.object === 'client' ? uuid(event.object_id) : uuid(data.cliente_id);
+        try {
+            return await addHubSpotNote(orgId, { quoteId, clientId }, body);
+        } catch (err) {
+            if (err instanceof HubSpotActionError) throw new WorkflowStepError(err.message, err.final);
+            if (err instanceof HubSpotApiError) throw new WorkflowStepError(err.message, !err.retryable);
+            if (err instanceof HubSpotAuthError) throw new WorkflowStepError(err.message, err.revoked);
+            throw err;
+        }
     }
 
     throw new WorkflowStepError('Esta acción ya no está disponible.', true);

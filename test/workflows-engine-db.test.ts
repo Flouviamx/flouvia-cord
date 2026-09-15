@@ -7,6 +7,7 @@ const m = vi.hoisted(() => ({
     pending: [] as Promise<unknown>[],
     email: vi.fn(),
     slack: vi.fn(),
+    hsNote: vi.fn(),
     recordEvent: null as null | ((orgId: string, type: string, data: Record<string, unknown>, actor?: string) => Promise<string | null>),
 }));
 
@@ -25,6 +26,10 @@ vi.mock('../src/lib/email', () => ({ siteOrigin: () => 'https://cordhq.app', sen
 vi.mock('../src/lib/slack', () => ({ postSlackText: m.slack }));
 vi.mock('../src/lib/ratelimit', () => ({ strictRateLimit: async () => ({ ok: true }) }));
 vi.mock('../src/lib/integraciones/queue', () => ({ integrationQueueStatement: () => null }));
+vi.mock('../src/lib/integraciones/hubspot/actions', () => ({
+    addHubSpotNote: m.hsNote,
+    HubSpotActionError: class extends Error { constructor(message: string, readonly final = true) { super(message); } },
+}));
 vi.mock('../src/lib/actions/tasks', () => ({
     createTask: async (ctx: any, input: any) => {
         const { rows } = await m.db.query(
@@ -185,6 +190,37 @@ describe('ejecución', () => {
         const [run] = await q('select status, attempts from workflow_runs');
         expect(run).toMatchObject({ status: 'succeeded', attempts: 0 });
         expect(m.slack).toHaveBeenCalledTimes(2);
+    });
+
+    it('nota en HubSpot: va al Deal de la cotización del evento con el HTML escapado', async () => {
+        m.hsNote.mockResolvedValue('deal');
+        await workflow(A, 'quote.approved', [{ id: 'nota1', type: 'action', action: 'hubspot_note', params: { mensaje: 'Aprobó {{cliente}}' } }]);
+        await quoteEvent();
+        await flush();
+        const [run] = await q('select status, log from workflow_runs');
+        expect(run.status).toBe('succeeded');
+        expect(run.log.at(-1)).toMatchObject({ step: 'nota1', resultado: 'ok', detalle: 'deal' });
+        expect(m.hsNote).toHaveBeenCalledWith(A, { quoteId: QUOTE, clientId: null }, 'Aprobó ACME &#60;script&#62;');
+    });
+
+    it('nota en HubSpot: si el registro aún no se sincroniza reintenta; sin conexión no insiste', async () => {
+        const { HubSpotActionError } = await import('../src/lib/integraciones/hubspot/actions') as any;
+        m.hsNote.mockRejectedValue(new HubSpotActionError('Este registro todavía no está en HubSpot.', false));
+        await workflow(A, 'quote.approved', [{ id: 'nota2', type: 'action', action: 'hubspot_note', params: { mensaje: 'x' } }]);
+        await quoteEvent();
+        await flush();
+        expect(m.hsNote).toHaveBeenCalledTimes(2);
+        let [run] = await q('select status, attempts, error from workflow_runs');
+        expect(run).toMatchObject({ status: 'queued', attempts: 1 });
+
+        await m.db.exec('delete from workflow_runs; delete from workflows; delete from domain_events;');
+        m.hsNote.mockReset().mockRejectedValue(new HubSpotActionError('Conecta HubSpot en Ajustes › Integraciones para usar esta acción.'));
+        await workflow(A, 'quote.approved', [{ id: 'nota3', type: 'action', action: 'hubspot_note', params: { mensaje: 'x' } }]);
+        await quoteEvent();
+        await flush();
+        expect(m.hsNote).toHaveBeenCalledTimes(1);
+        [run] = await q('select error from workflow_runs');
+        expect(run.error).toContain('Conecta HubSpot');
     });
 
     it('avisa solo a miembros activos y escapa el HTML del contenido', async () => {
