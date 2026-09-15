@@ -54,7 +54,7 @@ describe('URLs públicas en API v1', () => {
         m.page.mockResolvedValue({ items: [quote('b')], total: 3 });
         const response = await (GET as any)({ url: new URL('https://untrusted.example/api/v1/cotizaciones?limit=1&offset=1') }, auth);
         const body = await response.json();
-        expect(m.page).toHaveBeenCalledWith({ limit: 1, offset: 1, status: null });
+        expect(m.page).toHaveBeenCalledWith({ limit: 1, offset: 1, status: null, folio: null });
         expect(body.meta).toEqual({ limit: 1, offset: 1, total: 3 });
         expect(body.data).toHaveLength(1);
         expect(body.data[0].link_publico).toBe('https://sandbox.example.test/q/token-b');
