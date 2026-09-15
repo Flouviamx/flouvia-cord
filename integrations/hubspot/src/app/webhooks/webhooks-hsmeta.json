@@ -1,0 +1,23 @@
+{
+  "uid": "cord_webhooks",
+  "type": "webhooks",
+  "config": {
+    "settings": {
+      "targetUrl": "https://cordhq.app/api/integraciones/hubspot/webhook",
+      "maxConcurrentRequests": 10
+    },
+    "subscriptions": {
+      "crmObjects": [],
+      "legacyCrmObjects": [
+        { "subscriptionType": "company.propertyChange", "propertyName": "name", "active": true },
+        { "subscriptionType": "company.deletion", "active": true },
+        { "subscriptionType": "contact.propertyChange", "propertyName": "email", "active": true },
+        { "subscriptionType": "contact.propertyChange", "propertyName": "firstname", "active": true },
+        { "subscriptionType": "contact.propertyChange", "propertyName": "lastname", "active": true },
+        { "subscriptionType": "contact.propertyChange", "propertyName": "phone", "active": true },
+        { "subscriptionType": "contact.deletion", "active": true }
+      ],
+      "hubEvents": []
+    }
+  }
+}

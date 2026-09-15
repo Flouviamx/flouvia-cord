@@ -1,0 +1,38 @@
+{
+  "uid": "cord_app",
+  "type": "app",
+  "config": {
+    "name": "Cord",
+    "description": "Cord keeps your clients and quotes in sync with HubSpot. Clients stay aligned with Companies and Contacts in both directions, and every quote you send from Cord creates and moves its Deal through your pipeline until it is paid.",
+    "logo": "/app/cord-logo.png",
+    "distribution": "marketplace",
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": [
+        "https://cordhq.app/api/integraciones/hubspot/callback",
+        "http://localhost:4321/api/integraciones/hubspot/callback"
+      ],
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.companies.read",
+        "crm.objects.companies.write",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "soporte@flouvia.com",
+      "documentationUrl": "https://cordhq.app/soporte/conectar-hubspot",
+      "supportUrl": "https://cordhq.app/soporte"
+    }
+  }
+}

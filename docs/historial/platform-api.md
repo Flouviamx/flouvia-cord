@@ -21,6 +21,10 @@
      firma v3, cola `integracion_sync` con reintentos y cron diario. Sin divisa no se envía el
      monto (regla 21). Requiere `HUBSPOT_CLIENT_ID`/`HUBSPOT_CLIENT_SECRET` y la migración
      `2026-09-15-integraciones.sql`.
+   • **App de HubSpot** (`integrations/hubspot/`): proyecto del CLI (plataforma 2026.03,
+     distribución marketplace) con scopes, redirects y webhooks de nombre, correo, teléfono y
+     borrado de Empresas y Contactos. Subida con `hs project upload` a la cuenta 52031310.
+     Acción de workflow "Agregar una nota en HubSpot" sobre el Deal o la Empresa vinculados.
 
 ---
 
