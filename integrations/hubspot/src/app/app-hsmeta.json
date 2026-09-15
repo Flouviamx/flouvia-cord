@@ -10,7 +10,8 @@
       "type": "oauth",
       "redirectUrls": [
         "https://cordhq.app/api/integraciones/hubspot/callback",
-        "http://localhost:4321/api/integraciones/hubspot/callback"
+        "http://localhost:4321/api/integraciones/hubspot/callback",
+        "http://localhost:4330/api/integraciones/hubspot/callback"
       ],
       "requiredScopes": [
         "oauth",
