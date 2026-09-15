@@ -279,14 +279,15 @@ const DATA = {
     .wfe-input:focus, .wfe-select:focus, .wfe-textarea:focus { outline: none; border-color: rgba(10,25,47,0.15); box-shadow: 0 0 0 3px var(--editor-focus-ring, rgba(10,25,47,0.08)); }
     .wfe-summary-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--color-border); }
     .wfe-summary-card .wfe-node-text { flex: 1; }
-    .wfe-choice { display: flex; flex-direction: column; }
+    .wfe-choice { display: flex; flex-direction: column; gap: 2px; margin: 0 -8px; }
     .wfe-choice button {
-        display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 10px; border: none; background: none; cursor: pointer;
-        border-bottom: 1px solid var(--color-border); color: var(--color-text); border-radius: 10px;
+        display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 12px; border: none; background: none;
+        cursor: pointer; color: var(--color-text); border-radius: 14px; transition: background 0.2s var(--ease-ios);
     }
-    .wfe-choice button:hover { background: var(--color-bg-soft); }
-    .wfe-choice strong { display: block; font-size: 0.88rem; font-weight: 600; }
-    .wfe-choice span { display: block; font-size: 0.76rem; line-height: 1.45; color: var(--color-text-muted); margin-top: 2px; }
+    .wfe-choice button:hover, .wfe-choice button:focus-visible { background: var(--color-bg-soft); outline: none; }
+    .wfe-choice-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .wfe-choice-text strong { font-size: 0.9rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text); }
+    .wfe-choice-text small { font-size: 0.78rem; line-height: 1.45; color: var(--color-text-muted); }
     .wfe-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .wfe-chip {
         font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); background: var(--surface); border: 1px solid var(--color-border);
@@ -567,7 +568,7 @@ const DATA = {
                     el('span', { class: 'wfe-node-title', text: S.agregarPaso }),
                 ]),
             ]);
-            add.addEventListener('click', () => openAddMenu(add, list, list.length));
+            add.addEventListener('click', (e) => { e.stopPropagation(); openAddMenu(add, list, list.length); });
             wrap.append(add);
             return wrap;
         }
@@ -784,7 +785,7 @@ const DATA = {
                     for (const a of WORKFLOW_ACTIONS) {
                         const b = el('button', { type: 'button' }, [
                             el('span', { class: 'wfe-node-icon' }, [svg(ICON[a.key])]),
-                            el('span', {}, [el('strong', { text: a.label[L] }), el('span', { text: a.description[L] })]),
+                            el('span', { class: 'wfe-choice-text' }, [el('strong', { text: a.label[L] }), el('small', { text: a.description[L] })]),
                         ]);
                         b.addEventListener('click', () => { step.action = a.key; step.params = {}; changed(); renderPanel(); });
                         choice.append(b);
