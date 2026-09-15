@@ -19,7 +19,7 @@ module.exports = {
             label: 'Secret API key',
             type: 'password',
             required: true,
-            helpText: 'Create a secret key in Cord: turn on Developer mode at the bottom of the Settings index and open the **API** tab in the Developers dock. Use a key with write permission: Zapier needs it to receive instant events and to create or update records. Keys that start with `sk_test_` work with your test environment.',
+            helpText: 'Create a secret key in Cord: turn on Developer mode at the bottom of the Settings index and open the **API** tab in the Developers dock. Use a key with write permission: Zapier needs it to receive instant events and to create or update records. Keys that start with `sk_test_` work with your test environment. [How to create an API key](https://cordhq.app/en/support/claves-api)',
         },
     ],
     test,
