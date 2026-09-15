@@ -379,10 +379,10 @@ export function Cotizacion({ token }) {
         nav: 'Integrations & webhooks',
         eyebrow: 'INTEGRATIONS · WEBHOOKS',
         titulo: 'Connect Cord to any ERP or CRM. No waiting for a connector.',
-        sub: 'We don\'t maintain proprietary connectors for every system (SAP, Oracle, Salesforce…). Instead, Cord emits signed webhooks on every event of your sales cycle — point them at Zapier, Make, n8n, or your own backend and react in real time. Everything you see in the app is also available via REST API.',
+        sub: 'HubSpot and Slack connect directly from Settings. For everything else (SAP, Oracle, Salesforce…) Cord emits signed webhooks on every event of your sales cycle — point them at Zapier, Make, n8n, or your own backend and react in real time. Everything you see in the app is also available via REST API.',
         metaTitle: 'Webhooks & integrations (Zapier, Make, n8n) — Cord',
-        metaDescription: 'Cord emits signed webhooks (HMAC-SHA256) on every sales event — quote.sent, quote.approved, quote.paid — that you connect to Zapier, Make, n8n, or your backend. Available on every plan, no proprietary connectors to wait for.',
-        plan: 'On every plan · webhooks capped by plan (Free 1 → Developer 100) · native Slack · free test keys for the API',
+        metaDescription: 'Cord emits signed webhooks (HMAC-SHA256) on every sales event — quote.sent, quote.approved, quote.paid — that you connect to Zapier, Make, n8n, or your backend. Available on every plan, with direct HubSpot and Slack.',
+        plan: 'On every plan · webhooks capped by plan (Free 1 → Developer 100) · direct HubSpot and Slack · free test keys for the API',
         stats: [
             { valor: '34', countup: 34, label: 'events: quotes, invoices, payments, clients, products, tasks and promises' },
             { valor: '11', countup: 11, label: 'delivery attempts with backoff before an event is marked as failed' },
@@ -402,7 +402,7 @@ export function Cotizacion({ token }) {
             {
                 eyebrow: 'NO PROPRIETARY CONNECTORS',
                 titulo: 'Zapier, Make, n8n, or your backend.',
-                copy: 'Instead of locking you into a "native" connector per vendor, you point the webhook at a no-code platform (Zapier, Make, n8n) and from there reach thousands of apps —including SAP, Oracle, Salesforce, HubSpot or Notion— without us writing code for you. Want full control? Call the REST API directly. And if your team lives in Slack, that one is a native integration: alerts for every event arrive on their own.',
+                copy: 'For systems without a direct connection, you point the webhook at a no-code platform (Zapier, Make, n8n) and from there reach thousands of apps —including SAP, Oracle, Salesforce, or Notion— without us writing code for you. Want full control? Call the REST API directly. HubSpot and Slack are direct: clients and quotes reach HubSpot as Companies, Contacts, and Deals, and alerts for every event arrive in Slack on their own.',
                 bullets: [
                     'Connect to 5,000+ apps via Zapier / Make / n8n with one webhook',
                     'Zapier and Make can create and delete their own subscriptions through the API',
@@ -417,7 +417,7 @@ export function Cotizacion({ token }) {
             { titulo: 'Route to your system', copy: 'Process the JSON in your backend, or drop it into Zapier/Make/n8n to reach your ERP or CRM.' },
         ],
         faqs: [
-            { q: 'Does Cord have a native connector for SAP, Salesforce, or Oracle?', a: 'We don\'t maintain proprietary connectors per system. Instead, Cord emits signed webhooks (HMAC-SHA256) on every sales-cycle event that you point at Zapier, Make, n8n, or your own backend to connect with SAP, Salesforce, or any other system.' },
+            { q: 'Does Cord have a native connector for SAP, Salesforce, or Oracle?', a: 'Not for those systems: direct connections exist for HubSpot and Slack. For SAP, Salesforce, or Oracle, Cord emits signed webhooks (HMAC-SHA256) on every sales-cycle event that you point at Zapier, Make, n8n, or your own backend to connect with SAP, Salesforce, or any other system.' },
             { q: 'How many webhook endpoints can I configure?', a: 'It depends on your plan: from 1 endpoint on the Free plan up to 100 on the Developer plan. Overages are metered by API consumption, not by number of webhooks.' },
             { q: 'How do I verify a webhook really came from Cord?', a: 'Every delivery includes the X-Cord-Signature-V1 header with a timestamp and an HMAC-SHA256 of the raw body, signed with the secret Cord gave you when you created the endpoint. You validate it before processing the event; the timestamp protects you from someone replaying an old delivery.' },
         ],

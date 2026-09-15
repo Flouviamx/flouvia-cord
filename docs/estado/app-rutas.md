@@ -522,6 +522,16 @@ APIs de cobros (ago 2026)
                    ratelimit.ts); message.ts exige Authorization: Bearer
                    ADEMÁS del sessionId y valida que la llave sea de la
                    MISMA org que abrió la sesión.
+/api/integraciones/hubspot/conectar → (sesión, permiso ajustes) crea un state de un solo uso
+                   ligado a usuario y org y redirige al OAuth de HubSpot.
+/api/integraciones/hubspot/callback → canjea el código, cifra los tokens y guarda la conexión.
+                   Una cuenta de HubSpot solo puede estar conectada a una organización.
+/api/integraciones/hubspot → GET estado (+ pipelines con ?pipelines=1); POST
+                   action desconectar | sincronizar | ajustes (pipeline y etapas).
+/api/integraciones/hubspot/webhook → pública, exenta de CSRF, firma X-HubSpot-Signature-v3
+                   con el client secret. Resuelve la org con cord_resolve_integracion y
+                   encola cambios de Empresas y Contactos ya vinculados.
+/api/cron/integraciones → diario: recoge la cola integracion_sync y borra trabajos de más de 14 días.
 /api/webhooks        → CRUD webhooks salientes + POST action:test|redeliver|rotate
                    (rotate = ventana de solape 1h/24h/72h, devuelve secret nuevo 1 vez)
 /api/cron/webhooks   → sweeper del outbox (cada minuto) — reclama trabajo vencido

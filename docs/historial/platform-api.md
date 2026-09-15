@@ -6,6 +6,24 @@
 
 ---
 
+✅ **Integraciones: Zapier, Make y HubSpot (sep 2026, rama `feat/plataforma-integraciones`)**
+   • **API v1** para integraciones: búsqueda de clientes por texto o correo, `GET/PATCH
+     /v1/clientes/{id}` (solo datos de contacto), folio exacto en cotizaciones y `POST /v1/tareas`.
+   • **Zapier** (`integrations/zapier/`): app sobre la API v1 con disparadores instantáneos que
+     crean y borran su propio webhook y verifican `X-Cord-Signature-V1`. Falta publicarla con una
+     cuenta de desarrollador de Zapier (`zapier push`).
+   • **Make**: guía de soporte con sus módulos de Webhooks y HTTP. La app oficial espera a tener
+     cuenta de desarrollador de Make.
+   • **HubSpot**: OAuth con endpoints `2026-09` y tokens cifrados; clientes ↔ Empresas y Contactos
+     (de HubSpot solo regresan nombre, contacto, correo y teléfono de clientes vinculados) y
+     cotizaciones → Deals con etapa configurable. Mover un Deal en HubSpot no toca Cord. Anti-eco
+     por huella de lo último sincronizado y por actor `integration:hubspot:<conexión>`. Webhook con
+     firma v3, cola `integracion_sync` con reintentos y cron diario. Sin divisa no se envía el
+     monto (regla 21). Requiere `HUBSPOT_CLIENT_ID`/`HUBSPOT_CLIENT_SECRET` y la migración
+     `2026-09-15-integraciones.sql`.
+
+---
+
 ✅ **Cord Workflows v1 (sep 2026, rama `feat/plataforma-integraciones`)** — el negocio arma sus
    propios flujos "cuando pase X, haz Y" sobre los 34 eventos de `domain_events`.
    • **Tablas** `workflows` (borrador + versión publicada) y `workflow_runs` (copia de la versión
