@@ -415,6 +415,16 @@ const jsonLd = {
                       <li class={Astro.url.pathname.includes(getUrl('/docs/gestion/informes')) ? 'active' : ''}><a href={getUrl('/docs/gestion/informes')}>{lang === 'es' ? 'Informes y desempeño' : 'Reports and performance'}</a></li>
                     </ul>
                   </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Automatización e integraciones' : 'Automation and integrations'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/automatizacion/workflows')) ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows')}>Cord Workflows</a></li>
+                      <li class={Astro.url.pathname.includes(getUrl('/docs/automatizacion/integraciones')) ? 'active' : ''}><a href={getUrl('/docs/automatizacion/integraciones')}>{lang === 'es' ? 'Integraciones' : 'Integrations'}</a></li>
+                    </ul>
+                  </li>
                 </ul>
               </div>
             </>
