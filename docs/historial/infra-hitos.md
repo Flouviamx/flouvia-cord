@@ -7,6 +7,31 @@
 
 ---
 
+**Higiene del repositorio y candados de CI (14 sep 2026)** — limpieza auditada
+archivo por archivo, sin cambios visibles para clientes.
+- *Basura retirada:* reportes sueltos en la raíz, `IDEAS-FEATURES.md`, componentes
+  sin importadores (`MagneticNodes`, `ErrorBoundary`, `PixelButton`,
+  `WireframeText`), las páginas internas `banner-cord` y `mockups-correos`, y 36
+  claves huérfanas de `ui.ts`. `sm-banners` se conserva como herramienta de diseño
+  y responde 404 bajo `import.meta.env.PROD`.
+- *`mock.ts` retirado:* mezclaba código de producción con datos falsos de antes de
+  Neon. El modelo de cotización y sus totales pasaron a `src/lib/quote.ts` y
+  `money()` a `src/lib/fmt-server.ts`; los tipos `Mock*` son ahora
+  `Quote`/`QuoteItem`/`QuoteEvent`. Se borró la constante exportada
+  `IVA = 0.16`: una línea sin tasa propia ni de la organización falla en vez de
+  suponer 16% (regla 23; `test/quote.test.ts` y `security:tax`).
+- *Agentes Claude/Codex:* las copias de Codex apuntaban a documentos que ya no
+  existían y les faltaba `code-correctness-reviewer`. `.claude/agents/*.md` es la
+  fuente única; `scripts/sync-agents.mjs` genera `.codex/agents/*.toml` y CI corre
+  `agents:check`.
+- *Elements:* `elements.yml` se había sacado del tracking por un token sin scope
+  `workflow` y nunca corría. Volvió con las protecciones de `cord-reliability`;
+  `api-report.json` registra `calculateInvoiceTotals`/`calculateDocumentTotals`.
+- *i18n:* 466 claves sin consumidor fuera de `app.ts` (932 líneas ES/EN) y nuevo
+  contrato `security:i18n` (regla 36).
+- *CI:* `typecheck` corre `astro sync` antes de `tsc` (en checkout limpio fallaba
+  por falta de tipos generados). `cord-reliability` y `elements` en verde en GitHub.
+
 **Dominios: continuación operativa (7 sep 2026)** — migración acotada aplicada
 a la base configurada, restauración de dependencias/schema ausentes y preservación
 de hosts existentes `build`/`pay`. Revalidación con cooldown tras fallos transitorios,

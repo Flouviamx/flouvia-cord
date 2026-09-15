@@ -935,3 +935,28 @@ del 14 ago **descartaba** todo evento de las orgs del equipo, así que el produc
 entero llevaba un mes mudo en producción; y PostHog almacenaba tokens portadores
 en crudo (`/q/<token>`) y UUIDs de cliente en `$pathname`, que Vercel Analytics sí
 limpiaba.
+
+### 36. Un texto traducido sin consumidor es copy muerto que se sigue manteniendo
+
+Los diccionarios `src/i18n/app.ts` (app, `/q`, correos) y `src/i18n/ui.ts`
+(landing) no son un depósito: cada clave existe en **los dos idiomas** y tiene
+**al menos un consumidor**. Una clave solo en español hace que `t()` caiga al
+español en silencio y una cuenta en inglés lea texto en español sin que nada
+avise; una clave que nadie lee se sigue traduciendo y corrigiendo como si
+alguien la viera (regla 15 aplicada al copy).
+
+- **Rediseñar una pantalla incluye borrar su vocabulario anterior**, en `es` y
+  `en` en el mismo cambio.
+- **Una clave armada con variables usa una plantilla con prefijo fijo**
+  (`` t(L, `set.eq.perm.${k}.label` as any) ``) o una concatenación
+  (`'cfo.' + id`). Así el contrato la reconoce como viva; armarla con `join()`
+  o desde datos externos la vuelve invisible y la clave cruda termina en
+  pantalla.
+- **`npm run security:i18n` es el candado** (`scripts/i18n-check.mjs`,
+  encadenado en `test:payments`). Falla CI si una clave existe en un idioma y no
+  en el otro, está duplicada o no tiene consumidor.
+
+Caso que originó la regla (sep 2026): `app.ts` acumulaba **466** claves sin
+consumidor —el perfil de cuenta anterior, las pantallas CFO/analítica/flujo
+retiradas, los modales viejos de cliente y producto, el menú "Crear"— y `ui.ts`
+**36**. Cada rediseño había dejado su texto anterior vivo en ambos idiomas.

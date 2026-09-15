@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // Contrato de los diccionarios de i18n (`src/i18n/app.ts` y `src/i18n/ui.ts`).
+// Regla 36 de docs/estandares-ingenieria.md.
 //
 // Falla si:
 //   1. una clave existe en un idioma y no en el otro — `t()` cae al español en
