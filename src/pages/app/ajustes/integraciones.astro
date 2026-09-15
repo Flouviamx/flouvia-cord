@@ -1,150 +1,23 @@
 ---
-// Ajustes › Integraciones: solo conectores reales (HubSpot y Slack).
+// Ajustes › Integraciones: directorio de apps; cada una abre su propia página de detalle.
 import SettingsShell from '../../../components/app/SettingsShell.astro';
+import IntegrationsDirectory from '../../../components/app/IntegrationsDirectory.astro';
 import { getMyMembership, getOrg } from '../../../lib/queries';
 import { memberCan } from '../../../lib/permissions';
 import { getActiveOrgId } from '../../../lib/db';
 import { currentLocale } from '../../../lib/context';
 import { hubspotStatus } from '../../../lib/integraciones/hubspot/service';
-import HubSpotCard from '../../../components/app/HubSpotCard.astro';
 import { t } from '../../../i18n/app';
+
+const legado = Astro.url.searchParams.get('hubspot');
+if (legado && /^[a-z_]{1,20}$/.test(legado)) return Astro.redirect(`/app/ajustes/integraciones/hubspot?hubspot=${legado}`);
+
 const ORG = await getOrg();
 const L = currentLocale();
 const ME = await getMyMembership();
 const HS = memberCan(ME, 'ajustes') ? await hubspotStatus(await getActiveOrgId(), false).catch(() => null) : null;
-const hsFlash = Astro.url.searchParams.get('hubspot');
-const SLACK_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px"><path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/></svg>';
 ---
 
-<SettingsShell title="Integraciones — Ajustes" tab="integraciones" perm="ajustes"
-    intro={t(L, 'set.integ.intro')}>
-
-    <HubSpotCard lang={L} status={HS} flash={hsFlash} />
-
-    <!-- ── Slack — conector REAL (Incoming Webhook) ── -->
-    <div class="s-block">
-        <h3>Slack</h3>
-        <div class="s-body">
-            <div class="slk-head">
-                <span class="slk-logo" set:html={SLACK_SVG}></span>
-                <p class="slk-sub">{t(L, 'set.integ.slack_desc')}</p>
-                <span class="slk-status" id="slkStatus" data-on={ORG.slackWebhook ? '1' : '0'}
-                    data-i18n-conectado={t(L, 'set.integ.conectado')} data-i18n-sin-conectar={t(L, 'set.integ.sin_conectar')}>{ORG.slackWebhook ? t(L, 'set.integ.conectado') : t(L, 'set.integ.sin_conectar')}</span>
-            </div>
-            <div class="s-field">
-                <label for="slkUrl">{t(L, 'set.integ.webhook_url')}</label>
-                <input class="s-input" id="slkUrl" value={ORG.slackWebhook} placeholder="https://hooks.slack.com/services/T000/B000/xxxx" />
-                <span class="s-hint">{t(L, 'set.integ.webhook_hint_pre')} <b>{t(L, 'set.integ.webhook_hint_mid')}</b>{t(L, 'set.integ.webhook_hint_post')} <a href="/app/ajustes/notificaciones">{t(L, 'set.integ.notificaciones')}</a>.</span>
-            </div>
-            <div class="slk-actions">
-                <button class="api-btn-solid" id="slkSave">{t(L, 'set.integ.guardar')}</button>
-                <button class="api-btn-ghost" id="slkTest">{t(L, 'set.integ.enviar_prueba')}</button>
-                <span class="slk-msg" id="slkMsg"
-                    data-i18n-url-debe-ser={t(L, 'set.integ.url_debe_ser')} data-i18n-guardado={t(L, 'set.integ.guardado')}
-                    data-i18n-no-guardo={t(L, 'set.integ.no_guardo')} data-i18n-mensaje-enviado={t(L, 'set.integ.mensaje_enviado')}
-                    data-i18n-no-envio={t(L, 'set.integ.no_envio')}></span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── Más integraciones: honesto, sin nombrar conectores que no existen ── -->
-    <div class="s-block full">
-        <div class="int-soon-row">
-            <span class="int-soon-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="14" y="3" rx="1.5" fill="currentColor" fill-opacity="0.12"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5" fill="currentColor" fill-opacity="0.12"/><rect width="7" height="7" x="3" y="14" rx="1.5"/><path d="M10 7H7a2 2 0 0 0-2 2v3" stroke-opacity="0.5"/><path d="M14 17h3a2 2 0 0 0 2-2v-3" stroke-opacity="0.5"/></svg>
-            </span>
-            <span class="int-soon-body">
-                <span class="int-soon-title">{t(L, 'set.integ.mas_proximamente_titulo')}</span>
-                <span class="int-soon-desc">{t(L, 'set.integ.mas_proximamente_desc')}</span>
-            </span>
-            <a class="int-soon-cta" href="/contacto/ventas">{t(L, 'set.integ.pedir_prioridad')}</a>
-        </div>
-    </div>
+<SettingsShell title="Integraciones — Ajustes" tab="integraciones" perm="ajustes" intro={t(L, 'set.integ.intro')}>
+    <IntegrationsDirectory lang={L} hubspot={HS?.conexion?.estado ?? null} slack={Boolean(ORG.slackWebhook)} />
 </SettingsShell>
-
-<style>
-    /* Slack */
-    .slk-head { display: flex; align-items: center; gap: 12px; }
-    .slk-logo { width: 38px; height: 38px; border-radius: 10px; background: #4A154B; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
-    .slk-sub { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.45; margin: 0; flex: 1; min-width: 0; }
-    .slk-status { margin-left: auto; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; white-space: nowrap; color: var(--color-text-muted); background: rgba(0,0,0,0.05); }
-    .slk-status[data-on="1"] { color: var(--color-ok); background: rgba(16,185,129,0.12); }
-    .slk-actions { display: flex; align-items: center; gap: 0.6rem; }
-    .slk-msg { font-size: 0.78rem; font-weight: 600; }
-    .slk-msg.ok { color: var(--color-ok); }
-    .slk-msg.err { color: var(--color-danger); }
-    .api-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
-    .api-btn-solid:disabled { opacity: 0.6; cursor: wait; }
-    .api-btn-ghost { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
-
-    .api-btn-solid:focus-visible, .api-btn-ghost:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
-
-    /* Más integraciones próximamente */
-    .int-soon-row { display: flex; align-items: center; gap: 14px; }
-    .int-soon-icon { width: 42px; height: 42px; border-radius: 11px; background: var(--color-bg-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-text-muted); }
-    .int-soon-icon svg { width: 22px; height: 22px; }
-    .int-soon-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-    .int-soon-title { font-size: 0.9rem; font-weight: 650; color: var(--color-text); }
-    .int-soon-desc { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; }
-    .int-soon-cta { flex-shrink: 0; font-size: 0.82rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; white-space: nowrap; }
-    .int-soon-cta:hover { text-decoration: underline; }
-    html[data-theme="dark"] .int-soon-cta { color: #7fb0ff; }
-
-    @media (max-width: 560px) {
-        .slk-head { align-items: flex-start; flex-wrap: wrap; }
-        .slk-sub { flex-basis: calc(100% - 50px); }
-        .slk-status { margin-left: 50px; }
-        .slk-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
-        .slk-msg { grid-column: 1 / -1; }
-        .api-btn-solid, .api-btn-ghost { min-height: 46px; width: 100%; justify-content: center; }
-        .int-soon-row { flex-wrap: wrap; }
-        .int-soon-body { flex-basis: calc(100% - 56px); }
-        .int-soon-cta { width: 100%; min-height: 44px; padding-left: 56px; display: flex; align-items: center; }
-    }
-</style>
-
-<script>
-    // ── Slack: guardar URL + enviar prueba ──
-    function initSlack() {
-        const urlIn = document.getElementById('slkUrl') as HTMLInputElement | null;
-        const saveBtn = document.getElementById('slkSave') as HTMLButtonElement | null;
-        const testBtn = document.getElementById('slkTest') as HTMLButtonElement | null;
-        const msg = document.getElementById('slkMsg');
-        const status = document.getElementById('slkStatus');
-        if (!urlIn || !saveBtn || !testBtn || !msg) return;
-
-        const flash = (text: string, ok: boolean) => { msg.textContent = text; msg.className = 'slk-msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { msg.textContent = ''; msg.className = 'slk-msg'; }, 3200); };
-
-        const i18nUrlBad = msg.dataset.i18nUrlDebeSer || 'La URL debe ser de hooks.slack.com';
-        const i18nGuardado = msg.dataset.i18nGuardado || '✓ Guardado';
-        const i18nNoGuardo = msg.dataset.i18nNoGuardo || 'No se pudo guardar';
-        const i18nEnviado = msg.dataset.i18nMensajeEnviado || '✓ Mensaje enviado a Slack';
-        const i18nNoEnvio = msg.dataset.i18nNoEnvio || 'No se pudo enviar';
-        const i18nConectado = status?.dataset.i18nConectado || 'Conectado';
-        const i18nSinConectar = status?.dataset.i18nSinConectar || 'Sin conectar';
-
-        saveBtn.addEventListener('click', async () => {
-            const url = urlIn.value.trim();
-            if (url && !/^https:\/\/hooks\.slack\.com\//.test(url)) { flash(i18nUrlBad, false); return; }
-            saveBtn.disabled = true;
-            try {
-                const res = await fetch('/api/org/prefs', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slack_webhook_url: url }) });
-                if (!res.ok) throw new Error();
-                if (status) { status.textContent = url ? i18nConectado : i18nSinConectar; status.setAttribute('data-on', url ? '1' : '0'); }
-                flash(i18nGuardado, true);
-            } catch { flash(i18nNoGuardo, false); } finally { saveBtn.disabled = false; }
-        });
-
-        testBtn.addEventListener('click', async () => {
-            testBtn.disabled = true;
-            try {
-                const res = await fetch('/api/integraciones/slack-test', { method: 'POST' });
-                const d = await res.json();
-                if (!res.ok) throw new Error(d.error || 'Falló');
-                flash(i18nEnviado, true);
-            } catch (err: any) { flash(err.message || i18nNoEnvio, false); } finally { testBtn.disabled = false; }
-        });
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSlack);
-    else initSlack();
-</script>

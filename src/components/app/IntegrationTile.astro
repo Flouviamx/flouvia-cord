@@ -1,0 +1,55 @@
+---
+import { t, type AppLocale } from '../../i18n/app';
+import type { IntegrationApp, IntegrationState } from '../../lib/integraciones/catalogo';
+import IntegrationLogo from './IntegrationLogo.astro';
+import IntegrationPill from './IntegrationPill.astro';
+
+interface Props {
+    lang: AppLocale;
+    app: IntegrationApp;
+    state: IntegrationState;
+}
+
+const { lang: L, app, state } = Astro.props;
+const Tag = app.disponible ? 'a' : 'div';
+---
+
+<Tag
+    class:list={['surface-card', 'igt', { 'is-soon': !app.disponible }]}
+    href={app.disponible ? `/app/ajustes/integraciones/${app.slug}` : undefined}
+    aria-disabled={app.disponible ? undefined : 'true'}
+>
+    <span class="igt-top">
+        <IntegrationLogo app={app} />
+        <IntegrationPill lang={L} state={state} />
+    </span>
+    <span class="igt-name">{app.nombre}</span>
+    <span class="igt-cat">{t(L, `set.integ.cat.${app.categoria}`)}</span>
+    <span class="igt-desc">{t(L, `set.integ.app.${app.slug}`)}</span>
+    {app.disponible && (
+        <span class="igt-go" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </span>
+    )}
+</Tag>
+
+<style>
+    .igt {
+        position: relative; display: flex; flex-direction: column; gap: 4px; min-height: 100%;
+        padding: 1.2rem 1.25rem 1.15rem; text-decoration: none; color: var(--color-text);
+    }
+    .igt-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.7rem; }
+    .igt-name { font-size: 0.95rem; font-weight: 650; letter-spacing: -0.01em; }
+    .igt-cat { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); }
+    .igt-desc { margin-top: 0.35rem; padding-right: 1.6rem; font-size: 0.8rem; line-height: 1.5; color: var(--color-text-muted); text-wrap: pretty; }
+    .igt-go { position: absolute; right: 1.1rem; bottom: 1.05rem; display: grid; color: var(--color-text-muted); transition: transform 0.3s var(--ease-spring), color 0.2s; }
+    .igt-go svg { width: 15px; height: 15px; }
+    a.igt:hover .igt-go { transform: translateX(3px); color: var(--color-blue-deep); }
+    a.igt:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
+    .igt.is-soon { box-shadow: none; background: transparent; outline: 1px dashed var(--color-border); outline-offset: -1px; }
+    .igt.is-soon .igt-top :global(.igl) { filter: grayscale(0.35); opacity: 0.8; }
+    :global(html[data-theme="dark"]) a.igt:hover .igt-go { color: #dbe4f0; }
+    @media (prefers-reduced-motion: reduce) {
+        .igt-go, a.igt:hover .igt-go { transition: none; transform: none; }
+    }
+</style>

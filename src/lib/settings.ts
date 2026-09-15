@@ -121,7 +121,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
         descEn: 'Connect Cord with your favorite apps and platforms.',
         icon: '<rect width="7" height="7" x="14" y="3" rx="1" fill="currentColor" fill-opacity="0.18" stroke="none"/><rect width="7" height="7" x="14" y="3" rx="1"/><path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3"/>',
         tabs: [
-            { id: 'integraciones', label: 'Integraciones', labelEn: 'Integrations', href: '/app/ajustes/integraciones' },
+            { id: 'integraciones', label: 'Integraciones', labelEn: 'Integrations', href: '/app/ajustes/integraciones', keywords: 'integraciones integrations apps hubspot slack make zapier crm conectar connect' },
         ],
     },
     {

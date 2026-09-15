@@ -7,7 +7,7 @@ import { strictRateLimit } from '../../../../lib/ratelimit';
 import { sessionContext } from '../../../../lib/actions/http';
 import { startHubSpotConnect } from '../../../../lib/integraciones/hubspot/service';
 
-const back = (motivo: string) => `/app/ajustes/integraciones?hubspot=${motivo}`;
+const back = (motivo: string) => `/app/ajustes/integraciones/hubspot?hubspot=${motivo}`;
 
 export const GET: APIRoute = async ({ request, redirect }) => {
     const denied = await requirePerm('ajustes');

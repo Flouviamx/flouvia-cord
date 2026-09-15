@@ -8,12 +8,12 @@ import { finishHubSpotConnect } from '../../../../lib/integraciones/hubspot/serv
 
 export const GET: APIRoute = async ({ request, url, redirect }) => {
     const denied = await requirePerm('ajustes');
-    if (denied) return redirect('/app/ajustes/integraciones?hubspot=permiso');
+    if (denied) return redirect('/app/ajustes/integraciones/hubspot?hubspot=permiso');
     const ctx = await sessionContext(request);
     const motivo = await finishHubSpotConnect(ctx, {
         code: url.searchParams.get('code'),
         state: url.searchParams.get('state'),
         error: url.searchParams.get('error'),
     });
-    return redirect(`/app/ajustes/integraciones?hubspot=${motivo}`);
+    return redirect(`/app/ajustes/integraciones/hubspot?hubspot=${motivo}`);
 };

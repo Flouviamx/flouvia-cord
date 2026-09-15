@@ -1,0 +1,66 @@
+---
+import { t, type AppLocale } from '../../i18n/app';
+import IntegrationTile from './IntegrationTile.astro';
+import { INTEGRATION_APPS, integrationState } from '../../lib/integraciones/catalogo';
+
+interface Props {
+    lang: AppLocale;
+    hubspot: string | null;
+    slack: boolean;
+}
+
+const { lang: L, hubspot, slack } = Astro.props;
+const APPS = INTEGRATION_APPS.map((app) => ({ app, state: integrationState(app, { hubspot, slack }) }));
+const CONECTADAS = APPS.filter((a) => a.state === 'on' || a.state === 'warn');
+const RESTO = APPS.filter((a) => !CONECTADAS.includes(a));
+---
+
+{CONECTADAS.length > 0 && (
+    <section class="ig-sec" aria-labelledby="ig-conectadas">
+        <h3 class="ig-sec-title" id="ig-conectadas">{t(L, 'set.integ.dir.conectadas')}</h3>
+        <div class="ig-grid">
+            {CONECTADAS.map(({ app, state }) => <IntegrationTile lang={L} app={app} state={state} />)}
+        </div>
+    </section>
+)}
+
+<section class="ig-sec" aria-labelledby="ig-disponibles">
+    {CONECTADAS.length > 0 && <h3 class="ig-sec-title" id="ig-disponibles">{t(L, 'set.integ.dir.disponibles')}</h3>}
+    <div class="ig-grid">
+        {RESTO.map(({ app, state }) => <IntegrationTile lang={L} app={app} state={state} />)}
+    </div>
+</section>
+
+<div class="ig-more">
+    <span class="ig-more-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="14" y="3" rx="1.5" fill="currentColor" fill-opacity="0.12"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5" fill="currentColor" fill-opacity="0.12"/><rect width="7" height="7" x="3" y="14" rx="1.5"/><path d="M10 7H7a2 2 0 0 0-2 2v3" stroke-opacity="0.5"/><path d="M14 17h3a2 2 0 0 0 2-2v-3" stroke-opacity="0.5"/></svg>
+    </span>
+    <span class="ig-more-body">
+        <span class="ig-more-title">{t(L, 'set.integ.mas_proximamente_titulo')}</span>
+        <span class="ig-more-desc">{t(L, 'set.integ.mas_proximamente_desc')}</span>
+    </span>
+    <a class="ig-more-cta" href="/contacto/ventas">{t(L, 'set.integ.pedir_prioridad')}</a>
+</div>
+
+<style>
+    .ig-sec { margin-bottom: 2rem; }
+    .ig-sec-title { margin: 0 0 0.9rem; font-size: 0.82rem; font-weight: 650; color: var(--color-text-muted); }
+    .ig-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+
+    .ig-more { display: flex; align-items: center; gap: 14px; padding-top: 1.6rem; border-top: 1px solid var(--color-border); }
+    .ig-more-icon { width: 42px; height: 42px; border-radius: 11px; background: var(--color-bg-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-text-muted); }
+    .ig-more-icon svg { width: 22px; height: 22px; }
+    .ig-more-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .ig-more-title { font-size: 0.9rem; font-weight: 650; color: var(--color-text); }
+    .ig-more-desc { font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5; }
+    .ig-more-cta { flex-shrink: 0; font-size: 0.82rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; white-space: nowrap; }
+    .ig-more-cta:hover { text-decoration: underline; }
+    :global(html[data-theme="dark"]) .ig-more-cta { color: #7fb0ff; }
+
+    @media (max-width: 560px) {
+        .ig-grid { grid-template-columns: 1fr; }
+        .ig-more { flex-wrap: wrap; }
+        .ig-more-body { flex-basis: calc(100% - 56px); }
+        .ig-more-cta { width: 100%; min-height: 44px; padding-left: 56px; display: flex; align-items: center; }
+    }
+</style>

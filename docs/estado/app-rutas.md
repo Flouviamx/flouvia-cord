@@ -270,6 +270,10 @@ APIs de cobros (ago 2026)
                    • Cotizaciones: cotizaciones (folio/IVA/retenciones/defaults/legal) · pdf · aprobaciones
                    • Equipo y roles: equipo
                    • Avanzado: integraciones · auditoria
+                   Integraciones es un directorio de apps (`src/lib/integraciones/catalogo.ts`,
+                   conectadas primero); cada app vive en `/app/ajustes/integraciones/[app]`
+                   (hubspot, slack, make) con su conexión y los workflows que la usan.
+                   Zapier aparece como Próximamente y no abre detalle.
                    • Tu cuenta: **cuenta** → monta `CustomUserProfile` propio (perfil,
                      sesiones, 2FA, passkeys y cuentas conectadas — identidad del
                      usuario, distinta de los datos del negocio).
@@ -526,6 +530,7 @@ APIs de cobros (ago 2026)
                    ligado a usuario y org y redirige al OAuth de HubSpot.
 /api/integraciones/hubspot/callback → canjea el código, cifra los tokens y guarda la conexión.
                    Una cuenta de HubSpot solo puede estar conectada a una organización.
+                   Ambas regresan a /app/ajustes/integraciones/hubspot?hubspot=<resultado>.
 /api/integraciones/hubspot → GET estado (+ pipelines con ?pipelines=1); POST
                    action desconectar | sincronizar | ajustes (pipeline y etapas).
 /api/integraciones/hubspot/webhook → pública, exenta de CSRF, firma X-HubSpot-Signature-v3

@@ -1,0 +1,46 @@
+---
+import { t, type AppLocale } from '../../i18n/app';
+import type { IntegrationState } from '../../lib/integraciones/catalogo';
+
+interface Props {
+    lang: AppLocale;
+    state: IntegrationState;
+    live?: boolean;
+}
+
+const { lang: L, state, live = false } = Astro.props;
+const LABELS: Record<IntegrationState, string> = {
+    on: t(L, 'set.integ.conectado'),
+    warn: t(L, 'set.integ.hs.estado_error'),
+    off: t(L, 'set.integ.sin_conectar'),
+    info: t(L, 'set.integ.dir.con_webhooks'),
+    soon: t(L, 'set.integ.dir.proximamente'),
+};
+---
+
+<span
+    class="igp"
+    data-estado={state}
+    data-integ-status={live ? '' : undefined}
+    data-label-on={live ? LABELS.on : undefined}
+    data-label-off={live ? LABELS.off : undefined}
+>{LABELS[state]}</span>
+
+<style>
+    .igp {
+        display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; white-space: nowrap;
+        font-size: 0.7rem; font-weight: 600; padding: 4px 10px; border-radius: 100px;
+        color: var(--color-text-muted); background: rgba(10,25,47,0.06);
+    }
+    .igp::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.55; }
+    .igp[data-estado="on"] { color: #047857; background: rgba(16,185,129,0.12); }
+    .igp[data-estado="on"]::before { opacity: 1; }
+    .igp[data-estado="warn"] { color: #b45309; background: rgba(245,158,11,0.14); }
+    .igp[data-estado="warn"]::before { opacity: 1; }
+    .igp[data-estado="info"] { color: var(--color-blue-deep); }
+    .igp[data-estado="soon"]::before { display: none; }
+    :global(html[data-theme="dark"]) .igp { background: rgba(255,255,255,0.08); }
+    :global(html[data-theme="dark"]) .igp[data-estado="on"] { color: #34d399; background: rgba(16,185,129,0.18); }
+    :global(html[data-theme="dark"]) .igp[data-estado="warn"] { color: #fbbf24; background: rgba(245,158,11,0.18); }
+    :global(html[data-theme="dark"]) .igp[data-estado="info"] { color: #dbe4f0; }
+</style>

@@ -1,0 +1,24 @@
+---
+import type { IntegrationApp } from '../../lib/integraciones/catalogo';
+
+interface Props {
+    app: IntegrationApp;
+    size?: 'md' | 'lg';
+}
+
+const { app, size = 'md' } = Astro.props;
+---
+
+<span class:list={['igl', `igl-${size}`, { 'is-tile': app.tile }]} aria-hidden="true">
+    <img src={app.logo} alt="" width={size === 'lg' ? 56 : 44} height={size === 'lg' ? 56 : 44} loading="lazy" />
+</span>
+
+<style>
+    .igl { display: grid; place-items: center; flex-shrink: 0; overflow: hidden; background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border); }
+    .igl-md { width: 44px; height: 44px; border-radius: 13px; }
+    .igl-lg { width: 60px; height: 60px; border-radius: 17px; }
+    .igl img { width: 24px; height: 24px; }
+    .igl-lg img { width: 32px; height: 32px; }
+    .igl.is-tile { background: none; box-shadow: 0 1px 2px rgba(10,25,47,0.08); }
+    .igl.is-tile img { width: 100%; height: 100%; object-fit: cover; }
+</style>

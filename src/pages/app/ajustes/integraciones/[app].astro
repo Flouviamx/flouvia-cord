@@ -1,0 +1,35 @@
+---
+// /app/ajustes/integraciones/[app] — detalle de una integración: estado, conexión y workflows que la usan.
+import SettingsShell from '../../../../components/app/SettingsShell.astro';
+import IntegrationDetail from '../../../../components/app/IntegrationDetail.astro';
+import { getMyMembership, getOrg } from '../../../../lib/queries';
+import { memberCan } from '../../../../lib/permissions';
+import { getActiveOrgId } from '../../../../lib/db';
+import { currentLocale } from '../../../../lib/context';
+import { hubspotStatus } from '../../../../lib/integraciones/hubspot/service';
+import { findIntegration, integrationState } from '../../../../lib/integraciones/catalogo';
+
+export const prerender = false;
+
+const app = findIntegration(Astro.params.app);
+if (!app) return Astro.redirect('/app/ajustes/integraciones');
+
+const L = currentLocale();
+const ORG = await getOrg();
+const ME = await getMyMembership();
+const canAjustes = memberCan(ME, 'ajustes');
+const HS = canAjustes && app.slug === 'hubspot' ? await hubspotStatus(await getActiveOrgId(), false).catch(() => null) : null;
+const state = integrationState(app, { hubspot: HS?.conexion?.estado ?? null, slack: Boolean(ORG.slackWebhook) });
+---
+
+<SettingsShell title={`${app.nombre} — Integraciones`} tab="integraciones" perm="ajustes">
+    <IntegrationDetail
+        lang={L}
+        app={app}
+        state={state}
+        canAjustes={canAjustes}
+        hubspot={HS}
+        hubspotFlash={Astro.url.searchParams.get('hubspot')}
+        slackWebhook={ORG.slackWebhook ?? ''}
+    />
+</SettingsShell>

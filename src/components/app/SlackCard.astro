@@ -1,0 +1,86 @@
+---
+import { t, type AppLocale } from '../../i18n/app';
+
+interface Props {
+    lang: AppLocale;
+    webhook: string;
+}
+
+const { lang: L, webhook } = Astro.props;
+---
+
+<div class="s-block" data-slack>
+    <h3>{t(L, 'set.integ.det.conexion')}</h3>
+    <div class="s-body">
+        <div class="s-field">
+            <label for="slkUrl">{t(L, 'set.integ.webhook_url')}</label>
+            <input class="s-input" id="slkUrl" value={webhook} placeholder="https://hooks.slack.com/services/T000/B000/xxxx" />
+            <span class="s-hint">{t(L, 'set.integ.webhook_hint_pre')} <b>{t(L, 'set.integ.webhook_hint_mid')}</b>{t(L, 'set.integ.webhook_hint_post')} <a href="/app/ajustes/notificaciones">{t(L, 'set.integ.notificaciones')}</a>.</span>
+        </div>
+        <div class="slk-actions">
+            <button class="slk-btn-solid" id="slkSave">{t(L, 'set.integ.guardar')}</button>
+            <button class="slk-btn-ghost" id="slkTest">{t(L, 'set.integ.enviar_prueba')}</button>
+            <span class="slk-msg" id="slkMsg"
+                data-i18n-url-debe-ser={t(L, 'set.integ.url_debe_ser')} data-i18n-guardado={t(L, 'set.integ.guardado')}
+                data-i18n-no-guardo={t(L, 'set.integ.no_guardo')} data-i18n-mensaje-enviado={t(L, 'set.integ.mensaje_enviado')}
+                data-i18n-no-envio={t(L, 'set.integ.no_envio')}></span>
+        </div>
+    </div>
+</div>
+
+<style>
+    .slk-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .slk-msg { font-size: 0.78rem; font-weight: 600; }
+    .slk-msg:global(.ok) { color: var(--color-ok); }
+    .slk-msg:global(.err) { color: var(--color-danger); }
+    .slk-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
+    .slk-btn-solid:disabled, .slk-btn-ghost:disabled { opacity: 0.6; cursor: wait; }
+    .slk-btn-ghost { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+    .slk-btn-solid:focus-visible, .slk-btn-ghost:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+
+    @media (max-width: 560px) {
+        .slk-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+        .slk-msg { grid-column: 1 / -1; }
+        .slk-btn-solid, .slk-btn-ghost { min-height: 46px; width: 100%; }
+    }
+</style>
+
+<script>
+    function initSlack() {
+        const urlIn = document.getElementById('slkUrl') as HTMLInputElement | null;
+        const saveBtn = document.getElementById('slkSave') as HTMLButtonElement | null;
+        const testBtn = document.getElementById('slkTest') as HTMLButtonElement | null;
+        const msg = document.getElementById('slkMsg');
+        const status = document.querySelector<HTMLElement>('[data-integ-status]');
+        if (!urlIn || !saveBtn || !testBtn || !msg) return;
+
+        const flash = (text: string, ok: boolean) => { msg.textContent = text; msg.className = 'slk-msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { msg.textContent = ''; msg.className = 'slk-msg'; }, 3200); };
+
+        saveBtn.addEventListener('click', async () => {
+            const url = urlIn.value.trim();
+            if (url && !/^https:\/\/hooks\.slack\.com\//.test(url)) { flash(msg.dataset.i18nUrlDebeSer || '', false); return; }
+            saveBtn.disabled = true;
+            try {
+                const res = await fetch('/api/org/prefs', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slack_webhook_url: url }) });
+                if (!res.ok) throw new Error();
+                if (status) {
+                    status.textContent = (url ? status.dataset.labelOn : status.dataset.labelOff) || '';
+                    status.dataset.estado = url ? 'on' : 'off';
+                }
+                flash(msg.dataset.i18nGuardado || '', true);
+            } catch { flash(msg.dataset.i18nNoGuardo || '', false); } finally { saveBtn.disabled = false; }
+        });
+
+        testBtn.addEventListener('click', async () => {
+            testBtn.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/slack-test', { method: 'POST' });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || '');
+                flash(msg.dataset.i18nMensajeEnviado || '', true);
+            } catch (err: any) { flash(err.message || msg.dataset.i18nNoEnvio || '', false); } finally { testBtn.disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSlack);
+    else initSlack();
+</script>

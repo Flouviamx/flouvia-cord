@@ -1,0 +1,186 @@
+---
+import { t, type AppLocale } from '../../i18n/app';
+import IntegrationLogo from './IntegrationLogo.astro';
+import IntegrationPill from './IntegrationPill.astro';
+import HubSpotCard from './HubSpotCard.astro';
+import SlackCard from './SlackCard.astro';
+import type { hubspotStatus } from '../../lib/integraciones/hubspot/service';
+import type { IntegrationApp, IntegrationState } from '../../lib/integraciones/catalogo';
+import { WORKFLOW_TEMPLATES } from '../../lib/workflows/templates';
+import { findAction } from '../../lib/workflows/catalog';
+import type { Step } from '../../lib/workflows/definition';
+
+interface Props {
+    lang: AppLocale;
+    app: IntegrationApp;
+    state: IntegrationState;
+    canAjustes: boolean;
+    hubspot?: Awaited<ReturnType<typeof hubspotStatus>> | null;
+    hubspotFlash?: string | null;
+    slackWebhook?: string;
+}
+
+const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '' } = Astro.props;
+
+const DESC: Record<string, string> = {
+    hubspot: t(L, 'set.integ.hs.desc'),
+    slack: t(L, 'set.integ.slack_desc'),
+    make: t(L, 'set.integ.make.desc'),
+};
+
+const usesBrand = (steps: Step[]): boolean => steps.some((s) =>
+    s.type === 'action' ? findAction(s.action)?.brand === app.slug : s.type === 'condition' ? usesBrand(s.then) || usesBrand(s.else) : false);
+const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).steps));
+---
+<a href="/app/ajustes/integraciones" class="ig-back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    {t(L, 'set.integ.det.volver')}
+</a>
+
+<header class="ig-hero">
+    <IntegrationLogo app={app} size="lg" />
+    <div class="ig-hero-text">
+        <div class="ig-hero-row">
+            <h3 class="ig-hero-name">{app.nombre}</h3>
+            <IntegrationPill lang={L} state={state} live={app.slug === 'slack'} />
+        </div>
+        <span class="ig-hero-cat">{t(L, `set.integ.cat.${app.categoria}`)}</span>
+        <p class="ig-hero-desc">{DESC[app.slug]}</p>
+        <div class="ig-hero-links">
+            {app.guia && (
+                <a href={app.guia} target="_blank" rel="noopener">
+                    {t(L, 'set.integ.det.guia')}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+                </a>
+            )}
+            <a href={`https://${app.dominio}`} target="_blank" rel="noopener noreferrer">
+                {app.dominio}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+            </a>
+        </div>
+    </div>
+</header>
+
+<div class="ig-body">
+    {app.slug === 'hubspot' && <HubSpotCard lang={L} status={HS} flash={hsFlash} />}
+
+    {app.slug === 'slack' && <SlackCard lang={L} webhook={slackWebhook} />}
+
+    {app.slug === 'make' && (
+        <Fragment>
+            <div class="s-block">
+                <h3>{t(L, 'set.integ.make.recibir_titulo')}</h3>
+                <div class="s-body">
+                    <ol class="ig-steps">
+                        <li>{t(L, 'set.integ.make.recibir_1')}</li>
+                        <li>{t(L, 'set.integ.make.recibir_2')}</li>
+                        <li>{t(L, 'set.integ.make.recibir_3')}</li>
+                    </ol>
+                    <p class="ig-note">{t(L, 'set.integ.make.secreto')}</p>
+                    <div><a class="ig-btn" href="/app/wb/webhooks">{t(L, 'set.integ.make.ir_webhooks')}</a></div>
+                </div>
+            </div>
+            <div class="s-block">
+                <h3>{t(L, 'set.integ.make.crear_titulo')}</h3>
+                <div class="s-body">
+                    <ol class="ig-steps">
+                        <li>{t(L, 'set.integ.make.crear_1')}</li>
+                        <li>{t(L, 'set.integ.make.crear_2')}</li>
+                    </ol>
+                    <div><a class="ig-btn" href="/app/wb/api">{t(L, 'set.integ.make.ir_api')}</a></div>
+                </div>
+            </div>
+        </Fragment>
+    )}
+
+    {canAjustes && IDEAS.length > 0 && (
+        <div class="s-block" data-ig-ideas data-error={t(L, 'wf.error_guardar')}>
+            <h3>{t(L, 'set.integ.det.workflows_titulo')}</h3>
+            <div class="s-body">
+                <p class="ig-note">{t(L, 'set.integ.det.workflows_desc').replace('{app}', app.nombre)}</p>
+                <ul class="ig-ideas">
+                    {IDEAS.map((tpl) => (
+                        <li class="ig-idea">
+                            <span class="ig-idea-text">
+                                <strong>{tpl.nombre[L]}</strong>
+                                <span>{tpl.descripcion[L]}</span>
+                            </span>
+                            <button type="button" class="ig-btn" data-wf-create={tpl.key}>{t(L, 'wf.usar_plantilla')}</button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </div>
+    )}
+</div>
+
+
+<style>
+    .ig-back { display: inline-flex; align-items: center; gap: 5px; margin-bottom: 1.4rem; font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; }
+    .ig-back svg { width: 14px; height: 14px; }
+    .ig-back:hover { color: var(--color-blue-deep); }
+
+    .ig-hero { display: flex; align-items: flex-start; gap: 1.1rem; padding-bottom: 1.8rem; border-bottom: 1px solid var(--color-border); }
+    .ig-hero-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+    .ig-hero-row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+    .ig-hero-name { margin: 0; font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; color: var(--color-text); }
+    .ig-hero-cat { font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted); }
+    .ig-hero-desc { margin: 0.45rem 0 0; max-width: 62ch; font-size: 0.86rem; line-height: 1.55; color: var(--color-text-muted); text-wrap: pretty; }
+    .ig-hero-links { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-top: 0.7rem; }
+    .ig-hero-links a { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; }
+    .ig-hero-links a:hover { text-decoration: underline; }
+    .ig-hero-links svg { width: 13px; height: 13px; }
+
+    .ig-body :global(.s-block) { padding-top: 2rem; border-bottom: 1px solid var(--color-border); }
+    .ig-body > :global(.s-block:last-child), .ig-body > :global(.hsc:last-child) > :global(.s-block:last-child) { border-bottom: none; }
+
+    .ig-steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .ig-steps li { font-size: 0.84rem; line-height: 1.55; color: var(--color-text); }
+    .ig-note { margin: 0; font-size: 0.8rem; line-height: 1.55; color: var(--color-text-muted); }
+    .ig-btn {
+        display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+        font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none;
+        background: var(--surface); border: 1px solid var(--color-border); border-radius: 100px; padding: 8px 16px; cursor: pointer;
+        transition: background 0.2s var(--ease-ios), transform 0.3s var(--ease-spring);
+    }
+    .ig-btn:hover { background: var(--color-bg-soft); }
+    .ig-btn:active { transform: scale(0.97); }
+    .ig-btn:focus-visible, .ig-back:focus-visible, .ig-hero-links a:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .ig-btn[aria-busy="true"] { opacity: 0.6; pointer-events: none; }
+
+    .ig-ideas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .ig-idea { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.85rem 0; border-top: 1px solid var(--color-border); }
+    .ig-idea-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ig-idea-text strong { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .ig-idea-text span { font-size: 0.78rem; line-height: 1.5; color: var(--color-text-muted); }
+    :global(html[data-theme="dark"]) .ig-hero-links a, :global(html[data-theme="dark"]) .ig-btn { color: #dbe4f0; }
+
+    @media (max-width: 560px) {
+        .ig-back { min-height: 44px; margin-bottom: 0.6rem; }
+        .ig-hero { flex-direction: column; gap: 0.9rem; }
+        .ig-hero-links a { min-height: 44px; }
+        .ig-idea { flex-direction: column; align-items: stretch; }
+        .ig-btn { min-height: 46px; width: 100%; }
+    }
+</style>
+
+<script>
+    const ideas = document.querySelector<HTMLElement>('[data-ig-ideas]');
+    ideas?.querySelectorAll<HTMLButtonElement>('[data-wf-create]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            btn.setAttribute('aria-busy', 'true');
+            try {
+                const res = await fetch('/api/workflows', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plantilla: btn.dataset.wfCreate }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.id) throw new Error(data.error || ideas.dataset.error);
+                window.location.href = `/app/workflows/${data.id}`;
+            } catch (err) {
+                btn.removeAttribute('aria-busy');
+                (window as any).cordToast?.((err as Error).message || ideas.dataset.error, 'error');
+            }
+        });
+    });
+</script>
