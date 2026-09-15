@@ -5,7 +5,7 @@ import IntegrationPill from './IntegrationPill.astro';
 import HubSpotCard from './HubSpotCard.astro';
 import SlackCard from './SlackCard.astro';
 import type { hubspotStatus } from '../../lib/integraciones/hubspot/service';
-import type { IntegrationApp, IntegrationState } from '../../lib/integraciones/catalogo';
+import { ZAPIER_INVITE_URL, type IntegrationApp, type IntegrationState } from '../../lib/integraciones/catalogo';
 import { WORKFLOW_TEMPLATES } from '../../lib/workflows/templates';
 import { findAction } from '../../lib/workflows/catalog';
 import type { Step } from '../../lib/workflows/definition';
@@ -26,6 +26,7 @@ const DESC: Record<string, string> = {
     hubspot: t(L, 'set.integ.hs.desc'),
     slack: t(L, 'set.integ.slack_desc'),
     make: t(L, 'set.integ.make.desc'),
+    zapier: t(L, 'set.integ.zapier.desc'),
 };
 
 const usesBrand = (steps: Step[]): boolean => steps.some((s) =>
@@ -93,6 +94,36 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
         </Fragment>
     )}
 
+    {app.slug === 'zapier' && (
+        <Fragment>
+            <div class="s-block">
+                <h3>{t(L, 'set.integ.zapier.conectar_titulo')}</h3>
+                <div class="s-body">
+                    <ol class="ig-steps">
+                        <li>{t(L, 'set.integ.zapier.paso_1')}</li>
+                        <li>{t(L, 'set.integ.zapier.paso_2')}</li>
+                        <li>{t(L, 'set.integ.zapier.paso_3')}</li>
+                    </ol>
+                    <div class="ig-actions">
+                        {ZAPIER_INVITE_URL && <a class="ig-btn ig-btn-solid" href={ZAPIER_INVITE_URL} target="_blank" rel="noopener noreferrer">{t(L, 'set.integ.zapier.abrir')}</a>}
+                        <a class="ig-btn" href="/app/wb/api">{t(L, 'set.integ.make.ir_api')}</a>
+                    </div>
+                </div>
+            </div>
+            <div class="s-block">
+                <h3>{t(L, 'set.integ.zapier.que_titulo')}</h3>
+                <div class="s-body">
+                    <ul class="ig-steps ig-list">
+                        <li>{t(L, 'set.integ.zapier.disparadores')}</li>
+                        <li>{t(L, 'set.integ.zapier.acciones')}</li>
+                        <li>{t(L, 'set.integ.zapier.busquedas')}</li>
+                    </ul>
+                    <p class="ig-note">{t(L, 'set.integ.zapier.cupo')}</p>
+                </div>
+            </div>
+        </Fragment>
+    )}
+
     {canAjustes && IDEAS.length > 0 && (
         <div class="s-block" data-ig-ideas data-error={t(L, 'wf.error_guardar')}>
             <h3>{t(L, 'set.integ.det.workflows_titulo')}</h3>
@@ -147,6 +178,10 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
     .ig-btn:active { transform: scale(0.97); }
     .ig-btn:focus-visible, .ig-back:focus-visible, .ig-hero-links a:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
     .ig-btn[aria-busy="true"] { opacity: 0.6; pointer-events: none; }
+    .ig-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .ig-btn-solid { color: #fff; background: var(--color-blue-deep); border-color: var(--color-blue-deep); }
+    .ig-btn-solid:hover { background: var(--color-blue-deep); opacity: 0.92; }
+    .ig-list { list-style: disc; }
 
     .ig-ideas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
     .ig-idea { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.85rem 0; border-top: 1px solid var(--color-border); }
