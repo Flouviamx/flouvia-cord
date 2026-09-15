@@ -1,0 +1,85 @@
+---
+title: "Publish, pause and delete"
+description: "The life cycle of a workflow in Cord: draft, publishing, unpublished changes, pausing, resuming, duplicating and deleting."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Publish, pause and delete</h1>
+  <p class="page-subtitle">Editing a workflow never changes what is running until you decide.</p>
+</header>
+
+## The three statuses
+
+| Status | Meaning | Does it run? | Counts toward the plan limit? |
+|---|---|---|---|
+| **Draft** | Never published. | No | No |
+| **Active** | Has a published version and is on. | Yes | Yes |
+| **Paused** | Has a published version but is off. | No | No |
+
+## Draft and published version
+
+Every workflow has two copies:
+
+- The **draft**, which is what you see and edit in the editor.
+- The **published version**, which is what runs when the event happens.
+
+While you edit, the published version keeps running unchanged. If the two differ, the editor shows **Unpublished changes** and the button reads **Publish changes**.
+
+### Save the draft
+
+**Save draft** (or Cmd+S / Ctrl+S on desktop) saves the name and steps. It does not validate anything or affect what is running, so you can save work in progress. The name is required: if you leave it empty you see "Give the workflow a name."
+
+### Publish
+
+**Publish** (or **Publish changes**) does three things:
+
+1. **Checks** that the draft is complete. If something is missing, it does not publish and shows "To fix before publishing: N" with each problem highlighted on its step.
+2. **Checks your plan** if the workflow was not active. If you already reached the maximum of active workflows, you see "Your plan allows N active workflows. Pause one or upgrade to publish this one."
+3. **Copies the draft to the published version**, bumps the version number and makes the workflow **Active**.
+
+Publishing changes to a workflow that was already active does not use another slot.
+
+The name and plan limit messages currently appear in Spanish in the app.
+
+## What happens to runs in progress
+
+Each run keeps a copy of the version published **when the event happened**. If you publish changes, runs already queued or waiting finish with the previous version; new ones use the new version.
+
+That way a change never leaves a run halfway with steps that no longer exist.
+
+## Pause and resume
+
+From the editor's **More actions** menu:
+
+- **Pause** turns the workflow off. It stops creating new runs and frees its slot in the plan limit. You see "Workflow paused".
+- **Resume** turns it back on with its latest published version. If your plan has no room, you see the same limit message as when publishing. You see "Workflow resumed".
+
+Only a workflow that has been published at least once can be paused or resumed. A draft shows "Publish the workflow before pausing or resuming it."
+
+Events that happen while it is paused **are not recovered** when you resume. Waiting runs whose wait ends while it is still paused are canceled; if you resume before, they continue.
+
+## Duplicate
+
+**Duplicate** creates a new workflow named "*Name* (copy)" with a copy of the draft. The copy starts as a **Draft**, with no run history, and must be published separately. It is the quick way to have two similar workflows with different triggers.
+
+## Delete
+
+**Delete workflow** deletes the workflow and all its run history, including queued or waiting runs. **It cannot be undone.** Cord asks you to confirm first.
+
+What the workflow already did **is not deleted**: tasks it created stay in Tasks, emails were already sent, and Slack messages and HubSpot notes stay where they are.
+
+<Callout type="info">
+If you are not sure, pause instead of deleting. A paused workflow keeps its history and does not count toward your plan limit.
+</Callout>
+
+## Change log
+
+Creating, publishing, pausing, resuming, deleting, retrying or canceling a run is recorded in **Settings › Audit log**, with who did it and when.
+
+## Next
+
+- [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones)
+- [Limits](/en/docs/automatizacion/workflows/limites)

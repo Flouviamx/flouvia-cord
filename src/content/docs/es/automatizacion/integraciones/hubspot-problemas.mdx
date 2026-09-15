@@ -1,0 +1,98 @@
+---
+title: "Problemas con HubSpot"
+description: "Cómo leer el panel de la conexión con HubSpot y qué hacer con cada mensaje de error: reconectar, permisos, divisas, etapas, contactos duplicados y límites de HubSpot."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Problemas con HubSpot</h1>
+  <p class="page-subtitle">Casi todo lo que puede fallar en la sincronización tiene un mensaje claro y un arreglo de un minuto.</p>
+</header>
+
+## Dónde ver si algo falla
+
+En **Ajustes › Integraciones › HubSpot**:
+
+- **Estado:** **Conectado** o **Requiere reconectar**. Este último también aparece en la tarjeta del directorio.
+- **En cola:** envíos pendientes. Es normal ver números después de **Enviar datos existentes**; deben bajar solos.
+- **Errores (7 días):** envíos que fallaron después de todos sus reintentos.
+- **Último error:** el mensaje del error más reciente. Usa la tabla de abajo para resolverlo.
+
+## Cómo reintenta Cord
+
+- Si HubSpot **no responde** o tiene un **problema temporal**, Cord reintenta el mismo envío hasta 5 veces, con más separación cada vez.
+- Si HubSpot **pide bajar el ritmo**, Cord pausa los envíos el tiempo que HubSpot indique y continúa, sin contar esa pausa como fallo.
+- Si la conexión **perdió su autorización**, Cord detiene los envíos y los reprograma para más tarde; se reanudan cuando vuelves a conectar.
+- Los errores de datos (una divisa no activada, una etapa que ya no existe) **no se reintentan**, porque fallarían igual. Se registran como error hasta que corrijas la causa.
+
+Después de corregir la causa de un error de datos, pulsa **Enviar datos existentes** para reenviar lo que falló.
+
+## Mensajes y qué hacer
+
+### Conexión
+
+| Mensaje o estado | Causa | Qué hacer |
+|---|---|---|
+| **Requiere reconectar** | Alguien quitó la app de Cord en HubSpot, cambió permisos o la autorización expiró. | Pulsa **Volver a conectar** y autoriza de nuevo con la misma cuenta. Tus vínculos y etapas se conservan. |
+| La conexión con HubSpot no está activa. | Igual que el anterior. | **Volver a conectar**. |
+| HubSpot no dio permiso para esta operación. Vuelve a conectar la cuenta para aceptar los permisos. | La autorización no incluye algún permiso necesario, o tu usuario de HubSpot perdió acceso. | Reconecta con un usuario que pueda instalar apps y acepta todos los permisos. |
+| La integración con HubSpot todavía no está disponible. | La integración no está habilitada. | Escríbenos a contacto@cordhq.app. |
+
+### Datos
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| HubSpot no acepta la divisa de esta cotización. Actívala en la configuración de divisas de tu cuenta de HubSpot. | La cotización está en una divisa que tu cuenta de HubSpot no tiene activada. | En HubSpot, activa la divisa en la configuración de divisas de la cuenta. Luego **Enviar datos existentes**. |
+| El pipeline o la etapa configurados ya no existen en HubSpot. Revísalos en Ajustes › Integraciones. | Borraste o archivaste en HubSpot el pipeline o una etapa que Cord usa. | Elige otra etapa en [Pipeline y etapas](/docs/automatizacion/integraciones/hubspot-etapas), guarda y reenvía. |
+| Dos clientes de Cord usan el correo … en HubSpot solo se ligó el primero. Corrige el correo duplicado en Cord. | Dos clientes distintos tienen el mismo correo de contacto; en HubSpot solo puede haber un Contacto por correo. | Corrige el correo de uno de los dos clientes en Cord. |
+| HubSpot rechazó los datos enviados. | HubSpot no aceptó algún valor. | Revisa que el nombre, correo y teléfono del cliente sean válidos. Si persiste, escríbenos con el folio o el cliente. |
+| HubSpot no encontró el recurso para crear el registro. | HubSpot respondió que no encontró dónde crear el registro. | Vuelve a conectar HubSpot. Si persiste, escríbenos con el folio o el cliente. |
+| No se pudo actualizar el cliente con los datos de HubSpot. | Un cambio que llegó de HubSpot no pasó las validaciones de Cord. | Corrige el dato en HubSpot o directamente en Cord. |
+
+### Temporales
+
+| Mensaje | Qué pasa |
+|---|---|
+| HubSpot no respondió a tiempo. | Cord reintenta solo. |
+| HubSpot tuvo un problema temporal. | Cord reintenta solo en unos minutos. |
+| HubSpot pidió bajar el ritmo de peticiones. | Cord espera lo que HubSpot indique y continúa. |
+| Error interno al sincronizar con HubSpot. | Un fallo inesperado de Cord. Se reintenta; si se repite, escríbenos. |
+
+## Situaciones frecuentes
+
+### "No veo el Deal de una cotización"
+
+Revisa, en orden:
+
+1. **¿La cotización está enviada?** Los borradores no se envían.
+2. **¿Su estado tiene etapa?** Si dejaste un estado sin etapa, las cotizaciones en ese estado no se envían.
+3. **¿Está en la cola?** Mira **En cola** en el panel.
+4. **¿Hay un error?** Mira **Último error**; la divisa no activada es la causa más común.
+5. **¿Es anterior a la conexión?** Lo anterior no se envía solo: usa **Enviar datos existentes**.
+
+### "Se duplicaron Empresas en HubSpot"
+
+Cord crea una Empresa por cliente y no busca Empresas existentes por nombre. Si ya tenías esas empresas en HubSpot antes de conectar, verás dos. Puedes fusionarlas en HubSpot. Los Contactos no se duplican: Cord los busca por correo.
+
+### "Cambié un Deal de etapa en HubSpot y en Cord no cambió nada"
+
+Es lo esperado. El estado de la venta se decide en Cord con la aprobación y el pago del cliente, y los Deals no regresan a Cord. La próxima vez que la cotización cambie, Cord moverá el Deal a la etapa que corresponda.
+
+### "Corregí un teléfono en HubSpot y en Cord sigue el anterior"
+
+Revisa que ese Contacto esté **vinculado** a un cliente de Cord (es decir, que Cord lo haya creado o encontrado por correo). Los Contactos creados a mano en HubSpot y no vinculados no actualizan a nadie. Tampoco se aplican los campos vacíos: borrar un teléfono en HubSpot no lo borra en Cord.
+
+### "La nota del workflow quedó en la Empresa y no en el Deal"
+
+La cotización todavía no tenía Deal cuando corrió el workflow, normalmente porque su estado no tiene etapa o por un error de envío. Resuelve la causa; las siguientes notas irán al Deal.
+
+## Contacto
+
+Si nada de esto lo resuelve, escríbenos a **contacto@cordhq.app** con el nombre de tu organización, el folio o el cliente afectado y el texto de **Último error**.
+
+## Siguiente
+
+- [Conectar HubSpot](/docs/automatizacion/integraciones/hubspot)
+- [Qué se sincroniza](/docs/automatizacion/integraciones/hubspot-sincronizacion)

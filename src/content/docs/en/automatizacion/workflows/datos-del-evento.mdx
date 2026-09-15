@@ -1,0 +1,170 @@
+---
+title: "Event data"
+description: "How to insert event data into workflow texts with double braces, how it looks when it runs, and the full list of data available per trigger."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Event data</h1>
+  <p class="page-subtitle">Your action texts can carry the client, number, amount or balance of each sale, filled in automatically when they run.</p>
+</header>
+
+## How to write it
+
+Event data is written in double braces with its name: `{{cliente}}`, `{{folio}}`, `{{total}}`. Names are the same in every language. You can combine them with free text:
+
+> Call `{{cliente}}` about `{{folio}}`: `{{total}}` `{{moneda}}`
+
+When quote COT-128 from Northwind for 48,500 USD triggers the workflow, that title becomes:
+
+> Call Northwind about COT-128: 48,500 USD
+
+## Insert it without typing
+
+In each action panel, below the text fields, you see **Event data**. Place the cursor where you want the item and tap its name: Cord inserts the braces for you. Only the data carried by the trigger you chose is shown.
+
+It works in: the task title, the email subject and message, the Slack message and the HubSpot note.
+
+## How it looks when it runs
+
+| Data type | How it appears | Example |
+|---|---|---|
+| Text | As is. | Northwind |
+| Number | With thousands separators for your account's language, up to 2 decimals and no currency symbol. | 48,500 |
+| Option | By its name, in your account's language. | Approved, Deposit, The client |
+| Yes or no | Yes or No. | Yes |
+| Empty | Nothing appears. | |
+
+Since numbers carry no currency, pair them with `{{moneda}}` when talking about money.
+
+If an item arrives empty, it is inserted empty: "Call `{{cliente}}`" with a client without a name becomes "Call ". That is why each text should also have fixed words.
+
+Data is inserted as **text**. If a client's name or a message contains symbols like `<`, `>` or `&`, they are shown literally and do not alter the formatting of the email, Slack or HubSpot.
+
+## Current status: checked at run time
+
+Items marked "checked at run time" (**Current quote status** and **Current invoice status**) are not stored with the event: Cord reads them when the step runs. In an email sent after a 5-day wait, `{{estado_actual}}` shows that day's status, not the one from 5 days before.
+
+## If the item does not exist for the trigger
+
+When publishing, Cord checks every text. If you used data that trigger does not carry, you see:
+
+> The variable `{{saldo}}` does not exist for this event.
+
+It usually happens when changing the trigger of a workflow you already built, or when typing the name by hand with a typo. Fix it or insert it from **Event data**.
+
+## Full list
+
+### Quotes, approvals and quote payments
+
+| Item | Name | Type |
+|---|---|---|
+| Number | `{{folio}}` | Text |
+| Client | `{{cliente}}` | Text |
+| Total | `{{total}}` | Number |
+| Currency | `{{moneda}}` | Text |
+| Status at the event | `{{status}}` | Option |
+| Current quote status | `{{estado_actual}}` | Option, checked at run time |
+| Who caused it | `{{actor_tipo}}` | Option |
+
+Plus, depending on the trigger:
+
+| Trigger | Item | Name | Type |
+|---|---|---|---|
+| A message is posted on a quote | Who wrote it | `{{autor}}` | Option |
+| A message is posted on a quote | Message | `{{mensaje}}` | Text |
+| A quote requests internal approval | Reason | `{{motivo}}` | Text |
+| An internal approval is decided | Decision | `{{decision}}` | Option |
+| A partial payment arrives | Amount paid | `{{monto}}` | Number |
+| A partial payment arrives | Balance due | `{{saldo_pendiente}}` | Number |
+| A partial payment arrives | Payment type | `{{tipo}}` | Option |
+
+**A draft is deleted** carries everything in the first table except current status.
+
+### Cord Invoicing invoices
+
+Applies to issued, sent, paid, payment fails, overdue, voided and marked uncollectible.
+
+| Item | Name | Type |
+|---|---|---|
+| Number | `{{numero}}` | Text |
+| Client | `{{cliente}}` | Text |
+| Total | `{{total}}` | Number |
+| Balance due | `{{saldo}}` | Number |
+| Currency | `{{moneda}}` | Text |
+| Country | `{{pais}}` | Text |
+| Status at the event | `{{estado}}` | Option |
+| Current invoice status | `{{estado_actual}}` | Option, checked at run time |
+| Who caused it | `{{actor_tipo}}` | Option |
+
+"A quote is invoiced" and "A quote CFDI is stamped" use quote data, not these.
+
+### Disputes and refunds
+
+| Item | Name | Type | Triggers |
+|---|---|---|---|
+| Quote number | `{{folio}}` | Text | All |
+| Client | `{{cliente}}` | Text | All |
+| Disputed amount | `{{monto}}` | Number | Disputes |
+| Refunded amount | `{{monto}}` | Number | Refunds |
+| Currency | `{{moneda}}` | Text | All |
+| Reason | `{{motivo}}` | Text | All |
+| Response deadline | `{{fecha_limite}}` | Text | Disputes |
+| Outcome | `{{estado}}` | Option | A dispute is closed |
+| Failure reason | `{{motivo_falla}}` | Text | A refund fails |
+
+### Payouts
+
+| Item | Name | Type | Triggers |
+|---|---|---|---|
+| Payout amount | `{{monto}}` | Number | Both |
+| Currency | `{{moneda}}` | Text | Both |
+| Arrival date | `{{llegada}}` | Text | Both |
+| Failure reason | `{{motivo_falla}}` | Text | A payout fails |
+
+### Payments account
+
+| Item | Name | Type |
+|---|---|---|
+| Can accept online payments | `{{puede_cobrar}}` | Yes or no |
+| Can receive payouts | `{{puede_depositar}}` | Yes or no |
+| Pending verification items | `{{pendientes}}` | Number |
+| Restriction reason | `{{motivo_bloqueo}}` | Text |
+
+### Clients
+
+| Item | Name | Type |
+|---|---|---|
+| Company | `{{empresa}}` | Text |
+| Email | `{{email}}` | Text |
+| Country | `{{country_code}}` | Text |
+| Payment terms | `{{terminos}}` | Option (Upfront, Net 30, Net 60) |
+| Who caused it | `{{actor_tipo}}` | Option |
+
+**A client is deleted** only carries Company and Who caused it.
+
+### Products
+
+| Item | Name | Type |
+|---|---|---|
+| Name | `{{nombre}}` | Text |
+| List price | `{{precio_lista}}` | Number |
+| Active | `{{activo}}` | Yes or no |
+| Who caused it | `{{actor_tipo}}` | Option |
+
+**A product is deleted** only carries Name and Who caused it.
+
+### Tasks and promises
+
+| Trigger | Data |
+|---|---|
+| A task is created, A task is completed | Title `{{titulo}}`, Who caused it `{{actor_tipo}}` |
+| A payment promise is recorded | Promised amount `{{monto}}`, Promised date `{{fecha_promesa}}`, Who caused it `{{actor_tipo}}` |
+| A payment promise is kept / broken | Promised amount `{{monto}}`, Who caused it `{{actor_tipo}}` |
+
+## Next
+
+- [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar)
+- [Actions](/en/docs/automatizacion/workflows/acciones)

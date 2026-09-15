@@ -72,7 +72,7 @@ export interface CotizacionRow {
     total: number | string;
     moneda: string | null;
     cliente: string | null;
-    vigencia?: string | null;
+    cerrada?: Date | string | null;
 }
 
 export function isSyncedStatus(status: string): status is SyncedQuoteStatus {
@@ -92,7 +92,10 @@ export function dealProps(q: CotizacionRow, ajustes: HubSpotAjustes, now = new D
         pipeline: ajustes.pipeline,
         dealstage: stage,
     };
-    if (CLOSED.includes(q.status)) props.closedate = now.toISOString().slice(0, 10);
+    if (CLOSED.includes(q.status)) {
+        const cerrada = q.cerrada ? new Date(q.cerrada) : null;
+        props.closedate = (cerrada && !Number.isNaN(cerrada.getTime()) ? cerrada : now).toISOString().slice(0, 10);
+    }
     return props;
 }
 

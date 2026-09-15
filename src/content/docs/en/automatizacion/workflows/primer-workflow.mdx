@@ -1,0 +1,106 @@
+---
+title: "Create your first workflow"
+description: "A complete walkthrough of the Cord Workflows editor: create, choose the trigger, add steps, save, publish and check that it works."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Create your first workflow</h1>
+  <p class="page-subtitle">From the "New workflow" button to your first completed run, in a few minutes.</p>
+</header>
+
+## Before you start
+
+- You need the **Settings** permission in your organization.
+- Put the rule in one sentence: "when **this happens**, **do this**". For example: "when the client rejects a quote, create a task to call them tomorrow".
+- If your rule uses Slack or HubSpot, connect them first in **Settings › Integrations**. You can build the workflow without them, but those steps will fail when they run.
+
+## 1. Create the workflow
+
+<Steps>
+1. **Open Workflows** in the sidebar and click **New workflow**.
+2. **Choose how to start.** While the workflow is empty, Cord opens **Start with an example**: a gallery of ready-made ideas. Click **Customize this workflow** on the one closest to what you want, or close the gallery to start from scratch.
+3. **Name it.** Click the title in the top bar ("Untitled workflow") and type something that explains the rule, for example "Win back rejected quotes". Up to 120 characters; it cannot be empty.
+</Steps>
+
+Another way to start: in the workflow list, the **Ideas to get started** section has a **Use** button on each idea that creates the draft directly from it.
+
+You can reopen the gallery at any time from **Not sure where to start? › View examples**. If you already have steps, Cord asks **Replace what you have?** before replacing the trigger and steps of the draft.
+
+## 2. Choose the trigger
+
+<Steps>
+1. In the **When this happens** block, click **Add a trigger**.
+2. **Search or filter.** Type in **Find a trigger** (for example "reject") or use the categories: All, Quotes, Approvals, Payments, Invoices, Clients, Products, and Tasks and promises.
+3. **Select the event.** The trigger card sits at the top of the canvas. To change it later, open it and click **Change**.
+</Steps>
+
+The trigger decides which data is available in the rest of the workflow. A quote carries number, client and total; a payout carries amount, currency and arrival date. If you switch to a trigger that does not carry data you already used, Cord flags it when you publish. The full list is in [Triggers](/en/docs/automatizacion/workflows/disparadores).
+
+## 3. Add steps
+
+Below the trigger, under **Do this**, click **Add a step** and choose:
+
+- **Add action:** create a task, email the team, send a Slack message or add a note in HubSpot.
+- **Add condition:** split the flow into **If the condition is met** and **If the condition isn't met**.
+- **Add wait:** pause for 1 to 30 days.
+
+Adding a step opens the side panel to configure it (**Edit action**, **Edit condition** or **Edit wait**). Fill in the fields and click **Done**. Each card on the canvas shows a summary: the task title, "Wait 3 days", or the first condition followed by "and 2 more".
+
+Inside a condition, each branch has its own button to add steps. Steps you place there only run in that branch.
+
+### Event data in your texts
+
+Action text fields show **Event data**: tap an item to insert it at the cursor. It is inserted as `{{cliente}}` and replaced with the real value when the workflow runs. Items marked "checked at run time" are read at that moment, not when the event happened. More in [Event data](/en/docs/automatizacion/workflows/datos-del-evento).
+
+### Reorder, duplicate and delete steps
+
+Each card has a **Step options** menu with **Duplicate step**, **Move up**, **Move down** and **Delete step**. Duplicating a condition also duplicates the steps in its branches.
+
+### Moving around the canvas
+
+On desktop use **Zoom in**, **Zoom out** and **Fit to screen** for long workflows. The Escape key closes, in this order, the example gallery, the trigger picker, open menus and the side panel. On a phone the panel opens over the screen and closes with **Close** or **Done**.
+
+## 4. Save the draft
+
+Click **Save draft** (or Cmd+S / Ctrl+S on desktop). You will see "Draft saved". While something is unsaved, the browser warns you if you try to leave the page.
+
+Saving **does not activate anything**. The draft can stay incomplete as long as you want.
+
+## 5. Publish
+
+Click **Publish**. Before activating the workflow, Cord checks that it is complete. If something is missing, you see "To fix before publishing: N" and the step with the problem is highlighted. The most common messages:
+
+| Message | What is missing |
+|---|---|
+| Choose which event starts the workflow. | There is no trigger. |
+| Add at least one step. | The workflow has no steps. |
+| Choose what this step does. | An action step is empty. |
+| Fill in "Task title". | A required action field is empty. |
+| The variable `{{x}}` does not exist for this event. | You used data that trigger does not carry. |
+| Add at least one condition. | A condition has no rules. |
+| Fill in the value for "Total". | A comparison has no value. |
+
+When published you see "Workflow published" and the status becomes **Active**. If your plan does not allow more active workflows, Cord tells you and does not activate it; see [Limits](/en/docs/automatizacion/workflows/limites).
+
+## 6. Check that it works
+
+<Steps>
+1. **Cause the event** with a test case: for example, send a quote to your own email or reject a test quote from its link.
+2. **Open the Runs tab** of the workflow and click **Refresh**. A new run should appear.
+3. **Review each step.** Each one shows **Done**, **Met**, **Not met**, **Waiting** or **Error**, with its detail.
+</Steps>
+
+If a step failed, the message tells you what happened and what to do. See [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones).
+
+<Callout type="info">
+A workflow only reacts to events that happen **after** it is published. It does not run on earlier quotes, invoices or payments.
+</Callout>
+
+## Next
+
+- [Ready-made ideas](/en/docs/automatizacion/workflows/ideas)
+- [Actions](/en/docs/automatizacion/workflows/acciones)
+- [Conditions](/en/docs/automatizacion/workflows/condiciones)

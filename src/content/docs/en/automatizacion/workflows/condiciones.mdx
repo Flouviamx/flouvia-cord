@@ -1,0 +1,145 @@
+---
+title: "Conditions"
+description: "How to split a workflow into two branches based on event data: all or any, comparisons by data type, status at the event versus current status, and nested conditions."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Conditions</h1>
+  <p class="page-subtitle">A condition picks the path: if it is met, the flow continues down one branch; if not, down the other.</p>
+</header>
+
+## What it looks like
+
+On the canvas, a condition shows as a diamond with two outputs:
+
+- **If the condition is met:** the steps that run when the condition is true.
+- **If the condition isn't met:** the steps that run when it is false.
+
+Either branch can be empty. An empty branch means "do nothing in this case". When the chosen branch ends, the flow continues with the step **after** the condition, if there is one.
+
+## Set up a condition
+
+<Steps>
+1. Click **Add a step › Add condition**. **Edit condition** opens.
+2. Choose how rules combine in **Take the "met" branch when**: **all are met** or **any is met**.
+3. For each rule choose **Field**, **Comparison** and **Value**.
+4. To add rules use **Add another condition**; to remove one, **Remove**. Up to 5 rules per condition.
+5. Click **Done**.
+</Steps>
+
+### All or any
+
+| Option | Met when | Example |
+|---|---|---|
+| **all are met** | Every rule is true. | Total is at least 50,000 **and** Currency is USD. |
+| **any is met** | At least one rule is true. | Payment type is Deposit **or** Payment type is Installment. |
+
+To mix both ("A and (B or C)"), put a condition inside a branch of another one.
+
+## Comparisons by data type
+
+The editor only offers comparisons that make sense for each field.
+
+### Text
+
+Number, Client, Currency, Reason, Message, Email, Country and similar.
+
+| Comparison | Met when |
+|---|---|
+| is | The text is exactly the value. |
+| is not | The text is different from the value. |
+| contains | The value appears anywhere in the text. |
+| does not contain | The value does not appear in the text. |
+| is empty | The item has no content. |
+| is not empty | The item has content. |
+
+Text comparisons **are not case-sensitive**: "acme" is "ACME".
+
+### Number
+
+Total, Balance due, Amount paid, Disputed amount, List price, Pending verification items and similar.
+
+| Comparison | Met when |
+|---|---|
+| is at least | The number is equal to or greater than the value. |
+| is greater than | The number is greater than the value. |
+| is at most | The number is equal to or less than the value. |
+| is less than | The number is less than the value. |
+| equals | The number is exactly the value. |
+| does not equal | The number is different from the value. |
+
+Type the value as a number, without currency symbol or separators: `50000`, not `$50,000`. If the event does not carry the number, no numeric comparison is met and the flow goes down **If the condition isn't met**.
+
+The total is compared in the sale currency. A quote of 1,000 USD and another of 1,000 MXN have the same total for the condition; if you sell in several currencies, add a **Currency** rule.
+
+### Options
+
+Status at the event, Current status, Payment type, Decision, Dispute outcome, Who caused it, Who wrote it and Payment terms.
+
+| Comparison | Met when |
+|---|---|
+| is | The item has the chosen option. |
+| is not | The item has any other option. |
+
+The value is picked from a list, so there are no typos.
+
+### Yes or no
+
+Active (products), Can accept online payments and Can receive payouts.
+
+| Comparison | Met when |
+|---|---|
+| is yes | The item is true. |
+| is no | The item is false. |
+
+## Status at the event versus current status
+
+Quotes and invoices have two status items, and the difference matters:
+
+| Item | Value |
+|---|---|
+| **Status at the event** | The document's status at the moment the event happened. It never changes. |
+| **Current quote status** / **Current invoice status** | The document's status **when the condition is evaluated**. In the editor it is marked "checked at run time". |
+
+Right after the event both match. The difference appears **after a wait**: if a workflow waits 3 days after sending a quote, "Status at the event" still says **Sent**, but "Current status" says **Viewed**, **Approved** or whatever happened in those days.
+
+<Callout type="info">
+Rule of thumb: after a wait, always use the **current status**. That is what lets you ask "is it still unopened?" or "is it still unpaid?".
+</Callout>
+
+Possible quote statuses: Draft, Sent, Viewed, Approved, Rejected, Expired, Paid and Invoiced. Invoice statuses: Draft, Open, Paid, Void and Uncollectible.
+
+## Nested conditions
+
+You can put a condition inside a branch of another one, up to 4 levels deep. Example with two levels, triggered by **A quote is approved**:
+
+1. Condition: Total is at least 100,000.
+   - **If met:** condition: Currency is USD.
+     - **If met:** email the whole team.
+     - **If not met:** email the account owner.
+   - **If not met:** create a normal follow-up task.
+
+All steps, in every branch, count toward the maximum of 30 steps per workflow.
+
+## Common publishing errors
+
+| Message | What to do |
+|---|---|
+| Add at least one condition. | The condition has no rules. Add one or delete the step. |
+| A condition uses a field that does not exist for this event. | You changed the trigger and the new one does not carry that item. Choose another field. |
+| Choose how to compare "Total". | The comparison is missing. |
+| Fill in the value for "Total". | The value is missing. |
+| "Total" needs a number. | You typed text in a numeric field. Remove symbols and separators. |
+| Choose a valid value for "Payment type". | The chosen option does not exist for this field. Pick it again. |
+
+## In the history
+
+Each evaluated condition appears in the run as **Met** or **Not met**, so you know which branch it took. See [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones).
+
+## Next
+
+- [Waits](/en/docs/automatizacion/workflows/esperas)
+- [Event data](/en/docs/automatizacion/workflows/datos-del-evento)

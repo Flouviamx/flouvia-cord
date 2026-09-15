@@ -1,0 +1,88 @@
+---
+title: "Limits"
+description: "Cord Workflows limits: active workflows per plan, what happens when you downgrade, workflow size, hourly caps per action and loop protection."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Limits</h1>
+  <p class="page-subtitle">What fits in each plan, and the caps that protect your team from a workflow that fires too often.</p>
+</header>
+
+## Active workflows per plan
+
+| Plan | Active workflows |
+|---|---|
+| Free | 1 |
+| Starter | 5 |
+| Pro | Unlimited |
+| Scale | Unlimited |
+| Developer | Unlimited |
+
+- Only **Active** workflows count. Drafts and paused workflows take no slot, and you can have as many as you want.
+- **Runs are unlimited**: an active workflow runs every time its event happens.
+- The workflow list shows your usage: "N of M active workflows on your plan".
+
+If you reach the limit and want to publish or resume another one, you see "Your plan allows N active workflows. Pause one or upgrade to publish this one."
+
+## What happens if you downgrade
+
+Your workflows are not deleted or paused automatically. Cord keeps running **the oldest ones** that fit in your new plan, in the order they were created. The rest stay marked active, but their events no longer create runs, and runs that were queued or waiting are canceled when they continue, with "Your current plan does not include this active workflow."
+
+To choose which ones keep running, pause the ones you do not need. When you upgrade again, the ones left out start running again with new events.
+
+Example: you had 4 active workflows on Starter and move to Free. Only the first one you created keeps running; the other 3 stop firing until you pause the first or go back to Starter.
+
+## Workflow size
+
+| Limit | Value |
+|---|---|
+| Triggers per workflow | 1 |
+| Steps per workflow, across all branches | 30 |
+| Step levels (the main level and branches inside branches) | 4, meaning up to 3 conditions nested inside each other |
+| Rules per condition | 5 |
+| Days per wait | 1 to 30 |
+| Workflow name | 120 characters |
+
+At 30 steps, the editor no longer lets you add or duplicate steps. If you need more, split the rule into two workflows with different triggers.
+
+## Text length
+
+| Field | Maximum |
+|---|---|
+| Task title | 200 characters |
+| Due in (days) | 0 to 365 |
+| Email subject | 150 characters |
+| Email message | 2,000 characters |
+| Slack message | 1,000 characters |
+| HubSpot note | 2,000 characters |
+| Recipients with "The whole team" | The first 25 active members |
+
+## Hourly caps
+
+So a configuration mistake does not flood your team, each organization has an hourly maximum for what **all** its workflows do together:
+
+| Action | Maximum per hour |
+|---|---|
+| Create a task | 120 |
+| Email the team | 30 |
+| Send a Slack message | 120 |
+| Add a note in HubSpot | 120 |
+
+When exceeded, the step fails with a message like "Hourly task limit for workflows reached" and the run is retried later, within its 3 attempts. If you see these often, check whether a workflow fires on an event more frequent than you thought, such as **A client is updated** or **The client opens the quote**.
+
+## Loop protection
+
+A workflow can cause events: creating a task fires **A task is created**. So that never becomes an infinite loop:
+
+- **A workflow is not triggered by its own events.** If your "New tasks" workflow creates a task, that task does not trigger "New tasks" again.
+- **Chains stop at 3 levels.** Workflow A can trigger B, and B can trigger C, but what C causes no longer triggers workflows. Two workflows that trigger each other stop on their own.
+
+To know in a condition whether an event came from another workflow, use **Who caused it is Another workflow**.
+
+## Next
+
+- [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones)
+- [Integrations](/en/docs/automatizacion/integraciones)

@@ -6,6 +6,18 @@
 
 ---
 
+✅ **Guías detalladas de Workflows e Integraciones y tres correcciones (15 sep 2026)**
+   • **docs.cordhq.app**: 19 páginas por idioma bajo `src/content/docs/{es,en}/automatizacion/`
+     (11 de Workflows, 8 de Integraciones) y dos grupos propios en el menú de `DocsLayout.astro`.
+   • **Textos de workflows**: `{{estado_actual}}` salía vacío en acciones (solo se consultaba en
+     condiciones); las opciones salían como código (`approved`) y los números sin separadores.
+     Ahora el motor muestra el nombre de la opción en el idioma de la cuenta y formatea números.
+   • **Editor**: dejaba agregar o duplicar más de 30 pasos y `sanitizeDefinition` los descartaba
+     en silencio al guardar. Ahora el menú lo dice y no agrega.
+   • **HubSpot**: la Close date de un Deal cerrado era el día del envío, así que "Enviar datos
+     existentes" dejaba todo cerrado "hoy". Ahora sale del pago, la aprobación o la vigencia, y
+     queda fuera de la huella para que un reenvío no la reescriba.
+
 ✅ **Integraciones: Zapier, Make y HubSpot (sep 2026, rama `feat/plataforma-integraciones`)**
    • **API v1** para integraciones: búsqueda de clientes por texto o correo, `GET/PATCH
      /v1/clientes/{id}` (solo datos de contacto), folio exacto en cotizaciones y `POST /v1/tareas`.

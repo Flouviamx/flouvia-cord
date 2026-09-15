@@ -1,0 +1,65 @@
+---
+title: "Esperas"
+description: "Cómo pausar un workflow entre 1 y 30 días: cuándo continúa, qué pasa si lo pausas o lo editas mientras espera, y cómo combinar esperas con el estado actual."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Esperas</h1>
+  <p class="page-subtitle">Una espera deja pasar días antes del siguiente paso. Es lo que convierte una reacción inmediata en un seguimiento.</p>
+</header>
+
+## Configurar una espera
+
+<Steps>
+1. Pulsa **Agregar un paso › Agregar espera**. Se abre **Editar espera**.
+2. Escribe los **Días**: un número entero entre 1 y 30.
+3. Pulsa **Listo**. En el lienzo el paso se lee "Esperar 1 día" o "Esperar N días".
+</Steps>
+
+Puedes poner varias esperas en un mismo workflow, en el nivel principal o dentro de una rama. Por ejemplo: avisar a los 3 días y otra vez a los 7.
+
+## Cuándo continúa
+
+Los días se cuentan desde el momento en que la ejecución llega a la espera. Cord revisa las esperas **una vez al día**, así que el siguiente paso no corre a la hora exacta: corre en la primera revisión después de que se cumplen los días. En la práctica puede tardar hasta un día más de lo que marca la espera.
+
+Ejemplo: una cotización se envía el lunes por la tarde y el workflow espera 3 días. Los 3 días se cumplen el jueves por la tarde, y el siguiente paso corre en la siguiente revisión, entre el jueves por la tarde y el viernes.
+
+Mientras tanto la ejecución aparece como **En espera** en la pestaña **Ejecuciones**, con la fecha en que continúa ("Continúa …").
+
+<Callout type="info">
+Si necesitas algo al instante, no uses una espera: pon la acción directamente después del disparador. Las acciones sin espera corren en cuanto ocurre el evento.
+</Callout>
+
+## Espera más condición: el patrón de seguimiento
+
+Casi siempre una espera va seguida de una condición que pregunta si algo sigue igual. Para eso existe el **estado actual**, que se lee al evaluar la condición y no cuando ocurrió el evento.
+
+| Quieres | Disparador | Espera | Condición |
+|---|---|---|---|
+| Llamar si no abrieron la cotización | Se envía una cotización | 3 días | Estado actual de la cotización **es** Enviada |
+| Insistir si la aprobaron pero no pagaron | Se aprueba una cotización | 5 días | Estado actual de la cotización **es** Aprobada |
+| Escalar una factura vencida | Vence una factura | 7 días | Estado actual de la factura **es** Abierta |
+
+Si usaras **Estado en el evento** en lugar de estado actual, la condición siempre respondería con el estado de hace días y el seguimiento se haría aunque el cliente ya hubiera respondido. Más en [Condiciones](/docs/automatizacion/workflows/condiciones).
+
+## Qué pasa si cambias algo durante la espera
+
+| Si mientras espera… | Entonces |
+|---|---|
+| **Publicas cambios** en el workflow | La ejecución sigue con la versión con la que empezó. Los cambios aplican a las ejecuciones nuevas. |
+| **Pausas** el workflow | Si al terminar la espera el workflow sigue pausado, la ejecución se cancela con el aviso "El workflow se pausó o se eliminó antes de terminar esta ejecución." Si lo reanudas antes, la ejecución continúa normal. |
+| **Eliminas** el workflow | Se borra junto con su historial, incluidas las ejecuciones en espera. |
+| **Bajas de plan** y el workflow queda fuera del límite | Si al terminar la espera sigue fuera del límite, la ejecución se cancela con el aviso "Tu plan actual no incluye este workflow activo." |
+| **La cotización o factura cambia** | Nada se interrumpe. La condición que venga después leerá el estado nuevo si usa el estado actual. |
+
+## Cancelar una ejecución que está esperando
+
+En **Ejecuciones**, abre la ejecución en espera y pulsa **Cancelar**. Queda como **Cancelada** y no corre ningún paso más. Solo se pueden cancelar ejecuciones **En cola** o **En espera**.
+
+## Siguiente
+
+- [Datos del evento](/docs/automatizacion/workflows/datos-del-evento)
+- [Ejecuciones y errores](/docs/automatizacion/workflows/ejecuciones)

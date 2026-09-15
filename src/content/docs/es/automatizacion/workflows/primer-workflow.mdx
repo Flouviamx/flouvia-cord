@@ -1,0 +1,106 @@
+---
+title: "Crea tu primer workflow"
+description: "Recorrido completo por el editor de Cord Workflows: crear, elegir el disparador, agregar pasos, guardar, publicar y comprobar que funciona."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Crea tu primer workflow</h1>
+  <p class="page-subtitle">Del botón "Nuevo workflow" a ver tu primera ejecución completada, en unos minutos.</p>
+</header>
+
+## Antes de empezar
+
+- Necesitas el permiso de **Ajustes** en tu organización.
+- Piensa la regla en una frase: "cuando **pase esto**, **haz esto**". Por ejemplo: "cuando el cliente rechace una cotización, crea una tarea para llamarle mañana".
+- Si tu regla usa Slack o HubSpot, conéctalos primero en **Ajustes › Integraciones**. Puedes armar el workflow sin conectarlos, pero sus pasos fallarán al ejecutarse.
+
+## 1. Crea el workflow
+
+<Steps>
+1. **Abre Workflows** en el menú lateral y pulsa **Nuevo workflow**.
+2. **Elige cómo empezar.** Mientras el workflow esté vacío, Cord abre **Empieza con un ejemplo**: una galería con las ideas listas. Pulsa **Personalizar este workflow** en la que se parezca a lo que quieres, o cierra la galería para empezar desde cero.
+3. **Ponle nombre.** Toca el título en la barra superior ("Workflow sin título") y escribe algo que explique la regla, por ejemplo "Recuperar cotizaciones rechazadas". Admite hasta 120 caracteres y no puede quedar vacío.
+</Steps>
+
+Otra forma de empezar: en la lista de workflows, la sección **Ideas para empezar** tiene un botón **Usar** en cada idea, que crea el borrador directamente con esa idea.
+
+Puedes volver a abrir la galería en cualquier momento desde **¿No sabes por dónde empezar? › Ver ejemplos**. Si ya llevas pasos armados, Cord te pregunta **¿Reemplazar lo que llevas?** antes de sustituir el disparador y los pasos del borrador.
+
+## 2. Elige el disparador
+
+<Steps>
+1. En el bloque **Cuando pase esto**, pulsa **Agregar un disparador**.
+2. **Busca o filtra.** Escribe en **Busca un disparador** (por ejemplo "rechaza") o usa las categorías: Todos, Cotizaciones, Aprobaciones, Pagos, Facturas, Clientes, Productos, y Tareas y promesas.
+3. **Selecciona el evento.** La tarjeta del disparador queda arriba del lienzo. Para cambiarlo después, ábrela y pulsa **Cambiar**.
+</Steps>
+
+El disparador decide qué datos tendrás disponibles en el resto del workflow. Una cotización trae folio, cliente y total; un depósito trae monto, divisa y fecha de llegada. Si cambias el disparador por uno que no trae un dato que ya usabas, Cord te lo marcará al publicar. La lista completa está en [Disparadores](/docs/automatizacion/workflows/disparadores).
+
+## 3. Agrega pasos
+
+Debajo del disparador, en **Haz esto**, pulsa **Agregar un paso** y elige:
+
+- **Agregar acción:** crear una tarea, avisar al equipo por correo, enviar un mensaje a Slack o agregar una nota en HubSpot.
+- **Agregar condición:** dividir el flujo en **Si se cumple** y **Si no se cumple**.
+- **Agregar espera:** pausar entre 1 y 30 días.
+
+Al agregar un paso se abre el panel lateral para configurarlo (**Editar acción**, **Editar condición** o **Editar espera**). Completa los campos y pulsa **Listo**. Cada tarjeta del lienzo muestra un resumen: el título de la tarea, "Esperar 3 días", o la primera condición seguida de "y 2 más".
+
+Dentro de una condición, cada rama tiene su propio botón para agregar pasos. Los pasos que pongas ahí solo corren en esa rama.
+
+### Datos del evento en tus textos
+
+En los campos de texto de las acciones aparece **Datos del evento**: toca un dato para insertarlo donde está el cursor. Se inserta como `{{cliente}}` y se completa con el valor real cuando corre el workflow. Los datos marcados con "se consulta al ejecutar" se leen en ese momento, no cuando ocurrió el evento. Más en [Datos del evento](/docs/automatizacion/workflows/datos-del-evento).
+
+### Reordenar, duplicar y borrar pasos
+
+Cada tarjeta tiene un menú **Opciones del paso** con **Duplicar paso**, **Mover arriba**, **Mover abajo** y **Eliminar paso**. Duplicar una condición duplica también los pasos de sus ramas.
+
+### Moverte por el lienzo
+
+En escritorio usa **Acercar**, **Alejar** y **Ajustar a la pantalla** para workflows largos. La tecla Escape cierra, en este orden, la galería de ejemplos, el buscador de disparadores, los menús abiertos y el panel lateral. En el teléfono el panel se abre sobre la pantalla y se cierra con **Cerrar** o **Listo**.
+
+## 4. Guarda el borrador
+
+Pulsa **Guardar borrador** (o Cmd+S / Ctrl+S en escritorio). Verás "Borrador guardado". Mientras haya algo sin guardar, el navegador te avisa si intentas salir de la página.
+
+Guardar **no activa nada**. El borrador puede quedar incompleto todo el tiempo que quieras.
+
+## 5. Publica
+
+Pulsa **Publicar**. Antes de activar el workflow, Cord revisa que esté completo. Si falta algo, verás "Por resolver antes de publicar: N" y el paso con el problema quedará marcado. Los avisos más comunes:
+
+| Aviso | Qué falta |
+|---|---|
+| Elige qué evento inicia el workflow. | No hay disparador. |
+| Agrega al menos un paso. | El workflow no tiene pasos. |
+| Elige qué acción hace este paso. | Un paso de acción está vacío. |
+| Completa "Título de la tarea". | Un campo obligatorio de una acción está vacío. |
+| La variable `{{x}}` no existe para este evento. | Usaste un dato que ese disparador no trae. |
+| Agrega al menos una condición. | Una condición no tiene reglas. |
+| Completa el valor para "Total". | Una comparación no tiene valor. |
+
+Al publicar verás "Workflow publicado" y el estado cambia a **Activo**. Si tu plan ya no permite más workflows activos, Cord te lo dice y no lo activa; consulta [Límites](/docs/automatizacion/workflows/limites).
+
+## 6. Comprueba que funciona
+
+<Steps>
+1. **Provoca el evento** con un caso de prueba: por ejemplo, envía una cotización a un correo tuyo o rechaza una cotización de prueba desde su link.
+2. **Abre la pestaña Ejecuciones** del workflow y pulsa **Actualizar**. Debe aparecer una ejecución nueva.
+3. **Revisa cada paso.** Cada uno muestra **Hecho**, **Se cumplió**, **No se cumplió**, **Esperando** o **Error**, con su detalle.
+</Steps>
+
+Si un paso falló, el mensaje te dice qué pasó y qué hacer. Consulta [Ejecuciones y errores](/docs/automatizacion/workflows/ejecuciones).
+
+<Callout type="info">
+Un workflow solo reacciona a eventos que ocurren **después** de publicarlo. No se ejecuta sobre cotizaciones, facturas o pagos anteriores.
+</Callout>
+
+## Siguiente
+
+- [Ideas listas para usar](/docs/automatizacion/workflows/ideas)
+- [Acciones](/docs/automatizacion/workflows/acciones)
+- [Condiciones](/docs/automatizacion/workflows/condiciones)

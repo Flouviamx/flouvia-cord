@@ -81,6 +81,7 @@ describe('mapeo Cord ↔ HubSpot', () => {
         expect(dealProps({ ...q, moneda: null }, ajustes)).toBeNull();
         expect(dealProps({ ...q, status: 'draft' }, ajustes)).toBeNull();
         expect(dealProps({ ...q, status: 'sent' }, ajustes, now)).not.toHaveProperty('closedate');
+        expect(dealProps({ ...q, cerrada: '2026-03-02T18:00:00Z' }, ajustes, now)).toMatchObject({ closedate: '2026-03-02' });
     });
 
     it('un pipeline propio sin etapas elegidas no sincroniza deals', () => {

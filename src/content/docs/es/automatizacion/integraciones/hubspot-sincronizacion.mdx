@@ -1,0 +1,139 @@
+---
+title: "Qué se sincroniza con HubSpot"
+description: "Campo por campo: cómo se envían clientes y cotizaciones de Cord a HubSpot, qué regresa de HubSpot a Cord, cuándo ocurre, cómo se evitan duplicados y qué no se sincroniza."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Qué se sincroniza con HubSpot</h1>
+  <p class="page-subtitle">Qué viaja de Cord a HubSpot, qué regresa y qué se queda donde está.</p>
+</header>
+
+## De un vistazo
+
+| En Cord | En HubSpot | Dirección |
+|---|---|---|
+| Cliente (nombre de la empresa) | Empresa | Cord → HubSpot, y el nombre regresa |
+| Cliente (contacto, correo, teléfono) | Contacto asociado a la Empresa | Cord → HubSpot, y los cambios regresan |
+| Cotización enviada | Deal asociado a la Empresa y al Contacto | Solo Cord → HubSpot |
+| Estado de la cotización | Etapa del Deal | Solo Cord → HubSpot |
+
+## Clientes → Empresas y Contactos
+
+### La Empresa
+
+| Campo en Cord | Propiedad en HubSpot |
+|---|---|
+| Empresa | Company name |
+
+Cada cliente de Cord crea **su propia Empresa** en HubSpot. Cord no busca Empresas existentes por nombre: si ya tenías esa empresa capturada en HubSpot antes de conectar, puedes terminar con dos. Revisa tus Empresas después de usar **Enviar datos existentes**.
+
+### El Contacto
+
+| Campo en Cord | Propiedad en HubSpot |
+|---|---|
+| Contacto (nombre) | First name y Last name. La primera palabra va a First name y el resto a Last name. |
+| Correo | Email |
+| Teléfono | Phone number |
+
+- El Contacto solo se crea si el cliente tiene **correo o nombre de contacto**. Un cliente sin ninguno de los dos queda solo como Empresa.
+- **Sin duplicar contactos:** antes de crear un Contacto, Cord busca en HubSpot uno con el mismo correo. Si existe, lo usa y actualiza sus datos en lugar de crear otro.
+- El Contacto queda **asociado a la Empresa** del cliente.
+- Si dos clientes de Cord tienen el mismo correo, solo el primero se liga a ese Contacto. El panel muestra el aviso "Dos clientes de Cord usan el correo … en HubSpot solo se ligó el primero. Corrige el correo duplicado en Cord."
+
+### Cuándo se envían
+
+Un cliente se envía a HubSpot al **crearse** y cada vez que **se actualiza** en Cord. También se envía antes de su primera cotización, para que el Deal nazca asociado. Si el cambio no afecta ningún campo que va a HubSpot (por ejemplo, cambiaste los términos de pago), Cord no hace ninguna llamada.
+
+## Cotizaciones → Deals
+
+| Dato en Cord | Propiedad del Deal |
+|---|---|
+| Folio y cliente | Deal name, con la forma "COT-128 · Grupo Norte" |
+| Total | Amount |
+| Divisa de la venta | Currency |
+| Pipeline elegido | Pipeline |
+| Estado de la cotización | Deal stage, según tu [configuración de etapas](/docs/automatizacion/integraciones/hubspot-etapas) |
+| Fecha real del cierre | Close date, solo al llegar a Rechazada, Vencida, Pagada o Facturada ([detalle](/docs/automatizacion/integraciones/hubspot-etapas)) |
+
+- **Los borradores no se envían.** El Deal nace cuando la cotización se envía al cliente.
+- Al crearse, el Deal queda **asociado a la Empresa y al Contacto** del cliente.
+- Cada cambio de estado **mueve el Deal** a la etapa correspondiente: Enviada, Vista por el cliente, Aprobada, Rechazada, Vencida, Pagada y Facturada.
+- Si el total cambia (por ejemplo, editas y reenvías), el monto del Deal se actualiza.
+- **Un estado sin etapa no se envía.** Si dejaste un estado sin etapa, las cotizaciones en ese estado no llegan a HubSpot hasta que le asignes una.
+
+## De HubSpot a Cord
+
+Cuando alguien corrige datos en HubSpot, Cord los recibe al momento y los aplica al cliente vinculado:
+
+| Si en HubSpot cambias | En Cord cambia |
+|---|---|
+| Company name de la Empresa | Empresa |
+| First name o Last name del Contacto | Contacto |
+| Email del Contacto | Correo |
+| Phone number del Contacto | Teléfono |
+
+Reglas:
+
+- **Solo clientes ya vinculados.** Crear una Empresa o un Contacto nuevo en HubSpot **no** crea un cliente en Cord.
+- **Un campo vacío no borra nada.** Si vacías el teléfono en HubSpot, Cord conserva el que tenía.
+- **Un correo inválido se ignora.**
+- Nada más regresa: créditos, términos de pago, datos fiscales y dirección se editan solo en Cord.
+- El cambio queda en **Ajustes › Auditoría** como "Desde HubSpot" con los campos que cambiaron, y dispara el evento **Se actualiza un cliente** para tus workflows y webhooks.
+
+**Los Deals no regresan.** Mover un Deal de etapa, cambiar su monto o borrarlo en HubSpot no cambia nada en Cord. El estado de la venta lo deciden la aprobación y el pago del cliente en Cord.
+
+## Sin ecos
+
+Cuando un cambio llega de HubSpot, Cord lo aplica pero **no lo vuelve a enviar** a HubSpot. Y cuando Cord envía algo a HubSpot, reconoce el aviso que HubSpot manda de vuelta y no lo procesa como un cambio nuevo. Así ningún dato rebota entre las dos herramientas.
+
+## Borrados
+
+| Si borras… | Entonces |
+|---|---|
+| Un cliente en Cord | Cord olvida su vínculo con HubSpot. La Empresa y el Contacto **siguen en HubSpot**. |
+| Una cotización en borrador en Cord | Nada, los borradores no se envían. |
+| Una Empresa o un Contacto en HubSpot | Cord olvida el vínculo. El cliente sigue en Cord; si lo vuelves a editar en Cord, se crea de nuevo en HubSpot. |
+| Un Deal en HubSpot | Cord lo detecta en el siguiente cambio de esa cotización y crea un Deal nuevo. |
+
+Cord nunca borra nada en HubSpot.
+
+## Cuándo ocurre
+
+- **Al momento.** Cada cambio en Cord se envía en cuanto ocurre, normalmente en segundos.
+- **Con reintentos.** Si HubSpot no responde o pide bajar el ritmo, Cord reintenta automáticamente, hasta 5 veces para cada envío, con más separación cada vez.
+- **Una revisión diaria** recoge cualquier envío pendiente y limpia el historial de envíos de más de 14 días.
+
+El panel muestra cuántos envíos hay **En cola** y cuántos fallaron en **Errores (7 días)**.
+
+## Datos que ya tenías
+
+Conectar HubSpot no envía nada del pasado por sí solo. Para mandar lo que ya existía:
+
+<Steps>
+1. En **Ajustes › Integraciones › HubSpot**, busca **Datos que ya tenías**.
+2. Pulsa **Enviar datos existentes**.
+3. Verás "N registros en cola para HubSpot". El envío corre en segundo plano; puedes salir de la página.
+</Steps>
+
+Qué se envía:
+
+- Hasta **500 clientes**, los más recientes.
+- Hasta **500 cotizaciones** que no sean borrador, las más recientes.
+- Lo que ya estaba vinculado y sin cambios no se vuelve a crear ni a actualizar, así que puedes pulsar el botón más de una vez sin duplicar.
+
+## Qué no se sincroniza
+
+- Productos y catálogo.
+- Conceptos de la cotización (line items).
+- Facturas de Cord Invoicing, pagos, CFDI y documentos.
+- Tareas, promesas de pago y conversaciones del chat.
+- Notas, salvo las que crea un workflow con la acción [Agregar una nota en HubSpot](/docs/automatizacion/workflows/acciones).
+- Propietarios (owners) de HubSpot: los Deals y Empresas se crean sin propietario asignado.
+
+## Siguiente
+
+- [Pipeline y etapas](/docs/automatizacion/integraciones/hubspot-etapas)
+- [Problemas con HubSpot](/docs/automatizacion/integraciones/hubspot-problemas)

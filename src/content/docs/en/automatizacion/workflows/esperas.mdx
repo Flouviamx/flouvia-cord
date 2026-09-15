@@ -1,0 +1,65 @@
+---
+title: "Waits"
+description: "How to pause a workflow for 1 to 30 days: when it continues, what happens if you pause or edit it while waiting, and how to combine waits with the current status."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Waits</h1>
+  <p class="page-subtitle">A wait lets days pass before the next step. It is what turns an instant reaction into a follow-up.</p>
+</header>
+
+## Set up a wait
+
+<Steps>
+1. Click **Add a step › Add wait**. **Edit wait** opens.
+2. Enter the **Days**: a whole number between 1 and 30.
+3. Click **Done**. On the canvas the step reads "Wait 1 day" or "Wait N days".
+</Steps>
+
+You can add several waits to the same workflow, at the main level or inside a branch. For example: notify at 3 days and again at 7.
+
+## When it continues
+
+Days are counted from the moment the run reaches the wait. Cord checks waits **once a day**, so the next step does not run at the exact hour: it runs in the first check after the days have passed. In practice it can take up to one day longer than the wait says.
+
+Example: a quote is sent on Monday afternoon and the workflow waits 3 days. The 3 days are up on Thursday afternoon, and the next step runs in the following check, between Thursday afternoon and Friday.
+
+Meanwhile the run shows as **Waiting** in the **Runs** tab, with the date it resumes ("Resumes …").
+
+<Callout type="info">
+If you need something right away, do not use a wait: put the action directly after the trigger. Actions without a wait run as soon as the event happens.
+</Callout>
+
+## Wait plus condition: the follow-up pattern
+
+A wait is almost always followed by a condition that asks whether something is still the same. That is what the **current status** is for: it is read when the condition is evaluated, not when the event happened.
+
+| You want | Trigger | Wait | Condition |
+|---|---|---|---|
+| Call if the quote was not opened | A quote is sent | 3 days | Current quote status **is** Sent |
+| Nudge if approved but not paid | A quote is approved | 5 days | Current quote status **is** Approved |
+| Escalate an overdue invoice | An invoice becomes overdue | 7 days | Current invoice status **is** Open |
+
+If you used **Status at the event** instead of current status, the condition would always answer with the status from days ago, and the follow-up would happen even if the client had already responded. More in [Conditions](/en/docs/automatizacion/workflows/condiciones).
+
+## What happens if something changes during the wait
+
+| If while waiting you… | Then |
+|---|---|
+| **Publish changes** to the workflow | The run continues with the version it started with. Changes apply to new runs. |
+| **Pause** the workflow | If it is still paused when the wait ends, the run is canceled with "The workflow was paused or deleted before this run finished." If you resume it before, the run continues normally. |
+| **Delete** the workflow | It is deleted along with its history, including waiting runs. |
+| **Downgrade** and the workflow falls outside the limit | If it is still outside the limit when the wait ends, the run is canceled with "Your current plan does not include this active workflow." |
+| **The quote or invoice changes** | Nothing is interrupted. The following condition reads the new status if it uses the current status. |
+
+## Cancel a waiting run
+
+In **Runs**, open the waiting run and click **Cancel**. It becomes **Canceled** and no more steps run. Only **Queued** or **Waiting** runs can be canceled.
+
+## Next
+
+- [Event data](/en/docs/automatizacion/workflows/datos-del-evento)
+- [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones)

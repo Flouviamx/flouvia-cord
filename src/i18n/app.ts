@@ -1184,7 +1184,7 @@ export const appStrings = {
 
         "set.integ.intro": "Conecta Cord con las herramientas de tu equipo. Nada es obligatorio: Cord funciona completo sin conectar nada.",
         "set.integ.pedir_prioridad": "Pide que prioricemos una →",
-        "set.integ.slack_desc": "Recibe un mensaje en tu canal cada vez que una cotización se envía, se ve, se aprueba o se paga.",
+        "set.integ.slack_desc": "Recibe un mensaje en tu canal cuando el cliente abre, aprueba, rechaza o paga una cotización, cuando está por vencer o cuando un cobro se vence.",
         "set.integ.conectado": "Conectado",
         "set.integ.sin_conectar": "Sin conectar",
         "set.integ.webhook_url": "URL del Incoming Webhook",
@@ -3030,6 +3030,7 @@ export const appStrings = {
         "wf.reemplazar_desc": "El ejemplo sustituye el disparador y los pasos de este borrador.",
         "wf.reemplazar": "Reemplazar",
         "wf.en_rama_si": "Si se cumple",
+        "wf.max_pasos": "Llegaste al máximo de {n} pasos por workflow. Quita un paso o divide la regla en dos workflows.",
         "set.integ.dir.conectadas": "Conectadas",
         "set.integ.dir.disponibles": "Disponibles",
         "set.integ.dir.proximamente": "Próximamente",
@@ -4220,7 +4221,7 @@ export const appStrings = {
 
         "set.integ.intro": "Connect Cord with your team's tools. Nothing is required: Cord works fully without connecting anything.",
         "set.integ.pedir_prioridad": "Ask us to prioritize one →",
-        "set.integ.slack_desc": "Get a message in your channel every time a quote is sent, viewed, approved, or paid.",
+        "set.integ.slack_desc": "Get a message in your channel when a client opens, approves, rejects or pays a quote, when it is about to expire, or when a payment becomes overdue.",
         "set.integ.conectado": "Connected",
         "set.integ.sin_conectar": "Not connected",
         "set.integ.webhook_url": "Incoming Webhook URL",
@@ -6066,6 +6067,7 @@ export const appStrings = {
         "wf.reemplazar_desc": "The example replaces the trigger and steps of this draft.",
         "wf.reemplazar": "Replace",
         "wf.en_rama_si": "If met",
+        "wf.max_pasos": "You reached the maximum of {n} steps per workflow. Remove a step or split the rule into two workflows.",
         "set.integ.dir.conectadas": "Connected",
         "set.integ.dir.disponibles": "Available",
         "set.integ.dir.proximamente": "Coming soon",

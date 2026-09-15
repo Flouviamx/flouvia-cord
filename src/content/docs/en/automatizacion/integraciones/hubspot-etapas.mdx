@@ -1,0 +1,99 @@
+---
+title: "HubSpot pipeline and stages"
+description: "How to choose the HubSpot pipeline and the Deal stage for each Cord quote status, the default setup and what happens when you change it."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">HubSpot pipeline and stages</h1>
+  <p class="page-subtitle">You decide which stage of your pipeline each Deal lands in, based on what happens to the quote in Cord.</p>
+</header>
+
+## The seven statuses that are sent
+
+Cord moves the Deal when the quote changes to one of these statuses. For each one you choose a HubSpot stage:
+
+| Status in Cord | When it happens |
+|---|---|
+| **Sent** | The quote is sent to the client. This is when the Deal is created. |
+| **Viewed by client** | The client opens the link. |
+| **Approved** | The client approves it. |
+| **Rejected** | The client rejects it. |
+| **Expired** | The validity date passes without closing. |
+| **Paid** | Full payment is recorded. |
+| **Invoiced** | The invoice or CFDI is issued. |
+
+Drafts are not sent, so they have no stage.
+
+## Default setup
+
+If you change nothing, Cord uses your HubSpot account's **default pipeline** with these stages:
+
+| Status in Cord | HubSpot stage |
+|---|---|
+| Sent | Presentation scheduled |
+| Viewed by client | Decision maker bought-in |
+| Approved | Contract sent |
+| Rejected | Closed lost |
+| Expired | Closed lost |
+| Paid | Closed won |
+| Invoiced | Closed won |
+
+These are the stages HubSpot creates its sales pipeline with. If your account renamed or deleted them, choose yours before sending data.
+
+## Choose another pipeline or change stages
+
+<Steps>
+1. Go to **Settings › Integrations › HubSpot**. Cord loads your HubSpot pipelines ("Loading HubSpot pipelines…").
+2. In **Pipeline**, choose the pipeline for your Deals.
+3. In **HubSpot stage for each quote status**, choose a stage for each of the seven statuses.
+4. Click **Save stages**. You see "Stages saved".
+</Steps>
+
+When you switch to a pipeline that is not the default, Cord cannot guess your stages: they all show **Choose a stage** until you select them. While any is missing you see "Choose a stage for each status. Quotes in a status without a stage aren't sent to HubSpot."
+
+You can reuse a stage for several statuses. For example, Rejected and Expired in the same "lost" stage.
+
+## Close date
+
+When a quote reaches a closing status, Cord fills the Deal's **Close date** with the actual close date:
+
+| Status | Close date |
+|---|---|
+| **Paid** | The payment date. |
+| **Invoiced** | The payment date or, if no payment was recorded, the approval date. |
+| **Expired** | The quote's validity date. |
+| **Rejected** | The day Cord sends the rejection to HubSpot. |
+
+Other statuses do not touch the close date. Because it uses the actual date, sending existing data from past months does not leave every Deal closed "today".
+
+For HubSpot reports to count won and lost correctly, map Paid and Invoiced to a **won** stage and Rejected and Expired to a **lost** stage.
+
+## What happens if you change the setup later
+
+- **Existing Deals do not move when you save.** Each Deal takes the new stage the next time its quote changes.
+- **Changing pipeline** works the same way: a Deal moves to the new pipeline when its quote changes again.
+- To move everything at once, click **Send existing data** after saving: among the 500 most recent quotes, those whose Deal does not match the new setup are updated.
+
+## Errors when saving
+
+| Message | What to do |
+|---|---|
+| That pipeline does not exist in your HubSpot account. | Reload the page: the pipeline was deleted or changed in HubSpot. |
+| A stage does not belong to the chosen pipeline. | You switched pipelines and a stage from the previous one remained. Choose them again. |
+| We could not check your HubSpot pipelines. Try again. | HubSpot did not respond. Wait a moment and save again. |
+| We couldn't read your HubSpot pipelines. Reload the page to try again. | Shows when opening the page if HubSpot did not respond or the connection needs reconnecting. |
+| Connect HubSpot before configuring it. | The connection was disconnected. Connect again. |
+
+Some of these messages currently appear in Spanish in the app.
+
+## If you delete a stage in HubSpot
+
+If you delete or archive in HubSpot a stage Cord uses, sends of quotes in that status fail with a message saying the configured pipeline or stage no longer exists in HubSpot. Choose another stage, save and use **Send existing data** to resend the ones that failed.
+
+## Next
+
+- [What syncs](/en/docs/automatizacion/integraciones/hubspot-sincronizacion)
+- [HubSpot troubleshooting](/en/docs/automatizacion/integraciones/hubspot-problemas)

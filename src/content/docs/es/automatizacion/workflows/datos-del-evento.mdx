@@ -1,0 +1,170 @@
+---
+title: "Datos del evento"
+description: "Cómo insertar datos del evento en los textos de un workflow con llaves dobles, cómo se ven al ejecutarse y la lista completa de datos disponibles por disparador."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Datos del evento</h1>
+  <p class="page-subtitle">Los textos de tus acciones pueden llevar el cliente, el folio, el monto o el saldo de cada venta, y se completan solos al ejecutarse.</p>
+</header>
+
+## Cómo se escriben
+
+Un dato del evento se escribe entre llaves dobles con su nombre: `{{cliente}}`, `{{folio}}`, `{{total}}`. Puedes combinarlos con texto libre:
+
+> Llamar a `{{cliente}}` por `{{folio}}`: `{{total}}` `{{moneda}}`
+
+Cuando la cotización COT-128 de Grupo Norte por 48,500 MXN dispara el workflow, ese título queda así:
+
+> Llamar a Grupo Norte por COT-128: 48,500 MXN
+
+## Insertarlos sin escribir
+
+En el panel de cada acción, debajo de los campos de texto, aparece **Datos del evento**. Coloca el cursor donde quieres el dato y toca su nombre: Cord inserta las llaves por ti. Solo aparecen los datos que trae el disparador que elegiste.
+
+Funcionan en: el título de una tarea, el asunto y el mensaje de un correo, el mensaje de Slack y la nota de HubSpot.
+
+## Cómo se ven al ejecutarse
+
+| Tipo de dato | Cómo aparece | Ejemplo |
+|---|---|---|
+| Texto | Tal cual. | Grupo Norte |
+| Número | Con separadores de miles según el idioma de tu cuenta, hasta 2 decimales y sin símbolo de divisa. | 48,500 |
+| Opción | Con su nombre, en el idioma de tu cuenta. | Aprobada, Anticipo, El cliente |
+| Sí o no | Sí o No. | Sí |
+| Dato vacío | No aparece nada. | |
+
+Como el número no lleva divisa, acompáñalo de `{{moneda}}` cuando hables de dinero.
+
+Si un dato llega vacío, se inserta vacío: "Llamar a `{{cliente}}`" con un cliente sin nombre queda "Llamar a ". Por eso conviene que cada texto tenga también palabras fijas.
+
+Los datos se insertan como **texto**. Si el nombre de un cliente o un mensaje contiene símbolos como `<`, `>` o `&`, se muestran literalmente y no alteran el formato del correo, de Slack ni de HubSpot.
+
+## Estado actual: se consulta al ejecutar
+
+Los datos marcados con "se consulta al ejecutar" (**Estado actual de la cotización** y **Estado actual de la factura**) no se guardan con el evento: Cord los lee en el momento en que corre el paso. En un correo enviado tras una espera de 5 días, `{{estado_actual}}` dice el estado de ese día, no el de hace 5 días.
+
+## Si el dato no existe para el disparador
+
+Al publicar, Cord revisa cada texto. Si usaste un dato que ese disparador no trae, verás:
+
+> La variable `{{saldo}}` no existe para este evento.
+
+Suele pasar al cambiar el disparador de un workflow ya armado, o al escribir el nombre a mano con un error. Corrígelo o insértalo desde **Datos del evento**.
+
+## Lista completa
+
+### Cotizaciones, aprobaciones y pagos de cotización
+
+| Dato | Nombre | Tipo |
+|---|---|---|
+| Folio | `{{folio}}` | Texto |
+| Cliente | `{{cliente}}` | Texto |
+| Total | `{{total}}` | Número |
+| Divisa | `{{moneda}}` | Texto |
+| Estado en el evento | `{{status}}` | Opción |
+| Estado actual de la cotización | `{{estado_actual}}` | Opción, se consulta al ejecutar |
+| Quién lo originó | `{{actor_tipo}}` | Opción |
+
+Además, según el disparador:
+
+| Disparador | Dato | Nombre | Tipo |
+|---|---|---|---|
+| Llega un mensaje en una cotización | Quién escribió | `{{autor}}` | Opción |
+| Llega un mensaje en una cotización | Mensaje | `{{mensaje}}` | Texto |
+| Una cotización pide aprobación interna | Motivo | `{{motivo}}` | Texto |
+| Se decide una aprobación interna | Decisión | `{{decision}}` | Opción |
+| Llega un pago parcial | Monto pagado | `{{monto}}` | Número |
+| Llega un pago parcial | Saldo pendiente | `{{saldo_pendiente}}` | Número |
+| Llega un pago parcial | Tipo de pago | `{{tipo}}` | Opción |
+
+**Se elimina un borrador** trae todos los de la primera tabla menos el estado actual.
+
+### Facturas de Cord Invoicing
+
+Aplica a Se emite, Se envía, Se paga, Falla el pago, Vence, Se anula y Se marca como incobrable.
+
+| Dato | Nombre | Tipo |
+|---|---|---|
+| Número | `{{numero}}` | Texto |
+| Cliente | `{{cliente}}` | Texto |
+| Total | `{{total}}` | Número |
+| Saldo pendiente | `{{saldo}}` | Número |
+| Divisa | `{{moneda}}` | Texto |
+| País | `{{pais}}` | Texto |
+| Estado en el evento | `{{estado}}` | Opción |
+| Estado actual de la factura | `{{estado_actual}}` | Opción, se consulta al ejecutar |
+| Quién lo originó | `{{actor_tipo}}` | Opción |
+
+"Se factura una cotización" y "Se timbra el CFDI de una cotización" usan los datos de cotización, no estos.
+
+### Contracargos y reembolsos
+
+| Dato | Nombre | Tipo | Disparadores |
+|---|---|---|---|
+| Folio de la cotización | `{{folio}}` | Texto | Todos |
+| Cliente | `{{cliente}}` | Texto | Todos |
+| Monto en disputa | `{{monto}}` | Número | Contracargos |
+| Monto reembolsado | `{{monto}}` | Número | Reembolsos |
+| Divisa | `{{moneda}}` | Texto | Todos |
+| Motivo | `{{motivo}}` | Texto | Todos |
+| Fecha límite para responder | `{{fecha_limite}}` | Texto | Contracargos |
+| Resultado | `{{estado}}` | Opción | Se cierra un contracargo |
+| Motivo de la falla | `{{motivo_falla}}` | Texto | Falla un reembolso |
+
+### Depósitos
+
+| Dato | Nombre | Tipo | Disparadores |
+|---|---|---|---|
+| Monto del depósito | `{{monto}}` | Número | Los dos |
+| Divisa | `{{moneda}}` | Texto | Los dos |
+| Fecha de llegada | `{{llegada}}` | Texto | Los dos |
+| Motivo de la falla | `{{motivo_falla}}` | Texto | Falla un depósito |
+
+### Cuenta de cobros
+
+| Dato | Nombre | Tipo |
+|---|---|---|
+| Puede cobrar en línea | `{{puede_cobrar}}` | Sí o no |
+| Puede recibir depósitos | `{{puede_depositar}}` | Sí o no |
+| Datos pendientes de verificación | `{{pendientes}}` | Número |
+| Motivo del bloqueo | `{{motivo_bloqueo}}` | Texto |
+
+### Clientes
+
+| Dato | Nombre | Tipo |
+|---|---|---|
+| Empresa | `{{empresa}}` | Texto |
+| Correo | `{{email}}` | Texto |
+| País | `{{country_code}}` | Texto |
+| Términos de pago | `{{terminos}}` | Opción (Contado, 30 días, 60 días) |
+| Quién lo originó | `{{actor_tipo}}` | Opción |
+
+**Se elimina un cliente** solo trae Empresa y Quién lo originó.
+
+### Productos
+
+| Dato | Nombre | Tipo |
+|---|---|---|
+| Nombre | `{{nombre}}` | Texto |
+| Precio de lista | `{{precio_lista}}` | Número |
+| Activo | `{{activo}}` | Sí o no |
+| Quién lo originó | `{{actor_tipo}}` | Opción |
+
+**Se elimina un producto** solo trae Nombre y Quién lo originó.
+
+### Tareas y promesas
+
+| Disparador | Datos |
+|---|---|
+| Se crea una tarea, Se completa una tarea | Título `{{titulo}}`, Quién lo originó `{{actor_tipo}}` |
+| Se registra una promesa de pago | Monto prometido `{{monto}}`, Fecha prometida `{{fecha_promesa}}`, Quién lo originó `{{actor_tipo}}` |
+| Se cumple / Se incumple una promesa de pago | Monto prometido `{{monto}}`, Quién lo originó `{{actor_tipo}}` |
+
+## Siguiente
+
+- [Publicar, pausar y eliminar](/docs/automatizacion/workflows/publicar)
+- [Acciones](/docs/automatizacion/workflows/acciones)

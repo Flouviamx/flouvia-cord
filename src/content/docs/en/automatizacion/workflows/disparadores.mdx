@@ -1,0 +1,133 @@
+---
+title: "Triggers"
+description: "The 41 events that can start a workflow in Cord, grouped by category, with when they happen and the data each one carries."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Triggers</h1>
+  <p class="page-subtitle">The event that starts the workflow. Each workflow has one, and that event decides which data you can use in the rest of the steps.</p>
+</header>
+
+## How they work
+
+- **One per workflow.** To react to two different events, create two workflows. Use **Duplicate** so you do not start from scratch.
+- **One run per event.** Every time the event happens, an independent run is created. Ten quotes sent are ten runs.
+- **Forward only.** A workflow reacts to events that happen after it is published, not earlier ones.
+- **Whoever causes it.** The event counts whether it came from a team member, the client from their link, the API, an AI agent through MCP or another workflow. If the origin matters, use **Who caused it** in a condition.
+
+In the editor, click **Add a trigger** and use **Find a trigger** or the categories.
+
+## Data they carry
+
+Most triggers for the same kind of object share data. To avoid repeating it in every table, these are the groups:
+
+| Group | Data |
+|---|---|
+| **Quote data** | Number, Client, Total, Currency, Status at the event, Current quote status, Who caused it |
+| **Invoice data** | Number, Client, Total, Balance due, Currency, Country, Status at the event, Current invoice status, Who caused it |
+| **Client data** | Company, Email, Country, Payment terms, Who caused it |
+| **Product data** | Name, List price, Active, Who caused it |
+
+The exact name of each item for your texts (for example `{{saldo_pendiente}}`) is in [Event data](/en/docs/automatizacion/workflows/datos-del-evento).
+
+## Quotes
+
+| Trigger | When it happens | Data |
+|---|---|---|
+| **A quote is created** | A new quote is saved, from the app, the API or an agent. | Quote data |
+| **A quote is sent** | The quote is sent to the client and its link becomes active. | Quote data |
+| **The client opens the quote** | The client opens the public link. It does not count when someone on your team opens the link to review it. | Quote data |
+| **A quote is approved** | The quote becomes approved. | Quote data |
+| **A quote is rejected** | The quote becomes rejected. | Quote data |
+| **A quote is edited and resent** | A quote that was sent, viewed or expired is sent to the client again, usually after editing it. | Quote data |
+| **A quote expires** | The validity date passes without the quote closing. Cord checks validity once a day. | Quote data |
+| **A draft is deleted** | A draft quote is deleted. | Quote data, without current status (the quote no longer exists) |
+| **A message is posted on a quote** | Someone writes in the quote chat. | Quote data, **Who wrote it** (The client or The team) and **Message** |
+
+## Approvals
+
+| Trigger | When it happens | Data |
+|---|---|---|
+| **A quote requests internal approval** | A quote is created that, under your approval rules, needs sign-off from someone on your team before it is sent. | Quote data and **Reason** |
+| **An internal approval is decided** | The approver decides. | Quote data and **Decision** (Approved or Rejected) |
+
+## Payments
+
+| Trigger | When it happens | Data |
+|---|---|---|
+| **A quote is paid in full** | The quote is fully paid. | Quote data |
+| **A partial payment arrives** | A payment that does not cover the total: a deposit, a balance or an installment. | Quote data, **Amount paid**, **Balance due** and **Payment type** (Deposit, Balance or Installment) |
+| **A recurring charge fails** | A recurring charge on a quote could not be collected. | Quote data |
+| **A dispute is opened** | The client's bank opens a dispute on an online payment. | Quote number, Client, **Disputed amount**, Currency, **Reason** and **Response deadline** |
+| **A dispute is closed** | The dispute is resolved. | Same as the dispute plus **Outcome** (Won, Lost or Closed without dispute) |
+| **A refund succeeds** | A refund reaches the client. | Quote number, Client, **Refunded amount**, Currency and **Reason** |
+| **A refund fails** | The refund could not be completed. | Same as the refund plus **Failure reason** |
+| **A payout is paid to your bank** | Cord Payments deposits your collections in your bank account. | **Payout amount**, Currency and **Arrival date** |
+| **A payout fails** | Your bank rejects the payout. | Same as the payout plus **Failure reason** |
+| **Your payments account changes** | What your Cord Payments account can do changes: accept payments, receive payouts, or whether it is missing information. | **Can accept online payments**, **Can receive payouts**, **Pending verification items** and **Restriction reason** |
+
+Dispute, refund, payout and payments account events come from Cord Payments, so they only happen if you collect online with Cord. Each one is recorded only once even if the payment processor notifies several times.
+
+## Invoices
+
+| Trigger | When it happens | Data |
+|---|---|---|
+| **A quote is invoiced** | The quote is marked invoiced with a document that is not a CFDI, for example a commercial invoice outside Mexico or a proforma. | Quote data |
+| **A quote CFDI is stamped** | The quote is marked invoiced with a CFDI stamped with the SAT. Mexico only. | Quote data |
+| **An invoice is issued** | A Cord Invoicing invoice is issued and receives its number. | Invoice data |
+| **An invoice is sent** | The invoice is sent to the client. | Invoice data |
+| **An invoice is paid** | The invoice becomes paid. | Invoice data |
+| **An invoice payment fails** | A payment attempt on the invoice did not go through. | Invoice data |
+| **An invoice becomes overdue** | The due date passes with a balance due. Cord checks this once a day. | Invoice data |
+| **An invoice is voided** | The invoice is voided. | Invoice data |
+| **An invoice is marked uncollectible** | Someone marks the invoice as uncollectible. | Invoice data |
+
+## Clients
+
+| Trigger | When it happens | Data |
+|---|---|---|
+| **A client is created** | A new client is added. | Client data |
+| **A client is updated** | A client's data changes, including changes coming from HubSpot. | Client data |
+| **A client is deleted** | A client is deleted. | Company and Who caused it |
+
+## Products
+
+| Trigger | When it happens | Data |
+|---|---|---|
+| **A product is created** | A product is added to the catalog. | Product data |
+| **A product is updated** | A product's data changes. | Product data |
+| **A product is deleted** | A product is removed from the catalog. | Name and Who caused it |
+
+## Tasks and promises
+
+| Trigger | When it happens | Data |
+|---|---|---|
+| **A task is created** | A task is added, by hand or by another workflow. | **Title** and Who caused it |
+| **A task is completed** | A task is marked complete. | Title and Who caused it |
+| **A payment promise is recorded** | You record that a client promised to pay. | **Promised amount**, **Promised date** and Who caused it |
+| **A payment promise is kept** | The promise is marked kept. | Promised amount and Who caused it |
+| **A payment promise is broken** | The promise is marked broken. | Promised amount and Who caused it |
+
+## Who caused it
+
+Quote, approval, quote payment, invoice, client, product, task and promise triggers carry **Who caused it**, with these values:
+
+| Value | Meaning |
+|---|---|
+| The client | Your client did it from their link: open, approve, reject, pay or write. |
+| A team member | A person in your organization, from the app. |
+| The API | An integration using your API key, for example Zapier or Make. |
+| An AI agent (MCP) | An AI assistant connected through MCP. |
+| Another workflow | One of your other workflows. |
+| Cord automatically | A Cord process, such as the daily due-date check, or a change that came from HubSpot. |
+
+A typical use: on **A task is created**, add the condition "Who caused it is not Another workflow" so you do not react to tasks created by your own workflows.
+
+## Next
+
+- [Actions](/en/docs/automatizacion/workflows/acciones)
+- [Conditions](/en/docs/automatizacion/workflows/condiciones)
+- [Event data](/en/docs/automatizacion/workflows/datos-del-evento)

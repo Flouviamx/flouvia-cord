@@ -1,0 +1,133 @@
+---
+title: "Disparadores"
+description: "Los 41 eventos que pueden iniciar un workflow en Cord, agrupados por categoría, con cuándo ocurren y qué datos trae cada uno."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Disparadores</h1>
+  <p class="page-subtitle">El evento que arranca el workflow. Cada workflow tiene uno, y ese evento decide qué datos puedes usar en el resto de los pasos.</p>
+</header>
+
+## Cómo funcionan
+
+- **Uno por workflow.** Si quieres reaccionar a dos eventos distintos, crea dos workflows. Puedes usar **Duplicar** para no empezar de cero.
+- **Una ejecución por evento.** Cada vez que ocurre el evento se crea una ejecución independiente. Diez cotizaciones enviadas son diez ejecuciones.
+- **Solo hacia adelante.** Un workflow reacciona a los eventos que ocurren después de publicarlo, no a los anteriores.
+- **Da igual quién lo provoque.** El evento cuenta si lo hizo alguien del equipo, el cliente desde su link, la API, un agente de IA por MCP u otro workflow. Si te importa el origen, usa el dato **Quién lo originó** en una condición.
+
+En el editor, pulsa **Agregar un disparador** y usa **Busca un disparador** o las categorías para encontrarlo.
+
+## Datos que traen
+
+Casi todos los disparadores de un mismo tipo de objeto comparten datos. Para no repetirlos en cada tabla, estos son los grupos:
+
+| Grupo | Datos |
+|---|---|
+| **Datos de cotización** | Folio, Cliente, Total, Divisa, Estado en el evento, Estado actual de la cotización, Quién lo originó |
+| **Datos de factura** | Número, Cliente, Total, Saldo pendiente, Divisa, País, Estado en el evento, Estado actual de la factura, Quién lo originó |
+| **Datos de cliente** | Empresa, Correo, País, Términos de pago, Quién lo originó |
+| **Datos de producto** | Nombre, Precio de lista, Activo, Quién lo originó |
+
+El nombre exacto de cada dato para usarlo en textos (por ejemplo `{{saldo_pendiente}}`) está en [Datos del evento](/docs/automatizacion/workflows/datos-del-evento).
+
+## Cotizaciones
+
+| Disparador | Cuándo ocurre | Datos |
+|---|---|---|
+| **Se crea una cotización** | Se guarda una cotización nueva, desde la app, la API o un agente. | Datos de cotización |
+| **Se envía una cotización** | La cotización se envía al cliente y su link queda activo. | Datos de cotización |
+| **El cliente abre la cotización** | El cliente abre el link público. No cuenta cuando alguien de tu equipo abre el link para revisarlo. | Datos de cotización |
+| **Se aprueba una cotización** | La cotización queda aprobada. | Datos de cotización |
+| **Se rechaza una cotización** | La cotización queda rechazada. | Datos de cotización |
+| **Se modifica y reenvía una cotización** | Se reenvía al cliente una cotización que ya estaba enviada, vista o vencida, normalmente después de editarla. | Datos de cotización |
+| **Vence una cotización** | Pasa la fecha de vigencia sin que se cierre. Cord revisa las vigencias una vez al día. | Datos de cotización |
+| **Se elimina un borrador** | Se borra una cotización en borrador. | Datos de cotización, sin el estado actual (la cotización ya no existe) |
+| **Llega un mensaje en una cotización** | Alguien escribe en el chat de la cotización. | Datos de cotización, **Quién escribió** (El cliente o El equipo) y **Mensaje** |
+
+## Aprobaciones
+
+| Disparador | Cuándo ocurre | Datos |
+|---|---|---|
+| **Una cotización pide aprobación interna** | Se crea una cotización que, por tus reglas de aprobación, necesita el visto bueno de alguien de tu equipo antes de enviarse. | Datos de cotización y **Motivo** |
+| **Se decide una aprobación interna** | La persona que aprueba decide. | Datos de cotización y **Decisión** (Aprobada o Rechazada) |
+
+## Pagos
+
+| Disparador | Cuándo ocurre | Datos |
+|---|---|---|
+| **Se paga por completo una cotización** | La cotización queda pagada en su totalidad. | Datos de cotización |
+| **Llega un pago parcial** | Entra un pago que no cubre el total: un anticipo, un saldo o una cuota. | Datos de cotización, **Monto pagado**, **Saldo pendiente** y **Tipo de pago** (Anticipo, Saldo o Cuota) |
+| **Falla un cobro recurrente** | No se pudo cobrar un cargo recurrente de una cotización. | Datos de cotización |
+| **Abren un contracargo** | El banco del cliente abre una disputa sobre un pago en línea. | Folio de la cotización, Cliente, **Monto en disputa**, Divisa, **Motivo** y **Fecha límite para responder** |
+| **Se cierra un contracargo** | La disputa se resuelve. | Los mismos del contracargo y **Resultado** (Ganado, Perdido o Cerrado sin disputa) |
+| **Se completa un reembolso** | Un reembolso llega al cliente. | Folio de la cotización, Cliente, **Monto reembolsado**, Divisa y **Motivo** |
+| **Falla un reembolso** | El reembolso no se pudo completar. | Los mismos del reembolso y **Motivo de la falla** |
+| **Se paga un depósito a tu banco** | Cord Payments deposita tus cobros en tu cuenta bancaria. | **Monto del depósito**, Divisa y **Fecha de llegada** |
+| **Falla un depósito** | Tu banco rechaza el depósito. | Los mismos del depósito y **Motivo de la falla** |
+| **Cambia tu cuenta de cobros** | Cambia lo que tu cuenta de Cord Payments puede hacer: cobrar, recibir depósitos o si le faltan datos. | **Puede cobrar en línea**, **Puede recibir depósitos**, **Datos pendientes de verificación** y **Motivo del bloqueo** |
+
+Los eventos de contracargos, reembolsos, depósitos y cuenta de cobros vienen de Cord Payments, así que solo ocurren si cobras en línea con Cord. Cada uno se registra una sola vez aunque el procesador de pagos avise varias veces.
+
+## Facturas
+
+| Disparador | Cuándo ocurre | Datos |
+|---|---|---|
+| **Se factura una cotización** | La cotización se marca como facturada con un documento que no es CFDI, por ejemplo una factura comercial fuera de México o una proforma. | Datos de cotización |
+| **Se timbra el CFDI de una cotización** | La cotización se marca como facturada con un CFDI timbrado ante el SAT. Solo en México. | Datos de cotización |
+| **Se emite una factura** | Se emite una factura de Cord Invoicing y recibe su folio. | Datos de factura |
+| **Se envía una factura** | La factura se envía al cliente. | Datos de factura |
+| **Se paga una factura** | La factura queda pagada. | Datos de factura |
+| **Falla el pago de una factura** | Un intento de pago de la factura no pasó. | Datos de factura |
+| **Vence una factura** | Pasa la fecha de vencimiento con saldo pendiente. Cord lo revisa una vez al día. | Datos de factura |
+| **Se anula una factura** | La factura se anula. | Datos de factura |
+| **Se marca una factura como incobrable** | Alguien marca la factura como incobrable. | Datos de factura |
+
+## Clientes
+
+| Disparador | Cuándo ocurre | Datos |
+|---|---|---|
+| **Se crea un cliente** | Se agrega un cliente nuevo. | Datos de cliente |
+| **Se actualiza un cliente** | Cambian los datos de un cliente, incluidos los cambios que llegan desde HubSpot. | Datos de cliente |
+| **Se elimina un cliente** | Se borra un cliente. | Empresa y Quién lo originó |
+
+## Productos
+
+| Disparador | Cuándo ocurre | Datos |
+|---|---|---|
+| **Se crea un producto** | Se agrega un producto al catálogo. | Datos de producto |
+| **Se actualiza un producto** | Cambian los datos de un producto. | Datos de producto |
+| **Se elimina un producto** | Se borra un producto del catálogo. | Nombre y Quién lo originó |
+
+## Tareas y promesas
+
+| Disparador | Cuándo ocurre | Datos |
+|---|---|---|
+| **Se crea una tarea** | Se agrega una tarea, a mano o desde otro workflow. | **Título** y Quién lo originó |
+| **Se completa una tarea** | Una tarea se marca como completada. | Título y Quién lo originó |
+| **Se registra una promesa de pago** | Se registra que un cliente prometió pagar. | **Monto prometido**, **Fecha prometida** y Quién lo originó |
+| **Se cumple una promesa de pago** | La promesa se marca como cumplida. | Monto prometido y Quién lo originó |
+| **Se incumple una promesa de pago** | La promesa se marca como incumplida. | Monto prometido y Quién lo originó |
+
+## Quién lo originó
+
+Los disparadores de cotizaciones, aprobaciones, pagos de cotizaciones, facturas, clientes, productos, tareas y promesas traen **Quién lo originó**, con estos valores:
+
+| Valor | Significa |
+|---|---|
+| El cliente | Lo hizo tu cliente desde su link: abrir, aprobar, rechazar, pagar o escribir. |
+| Alguien del equipo | Una persona de tu organización desde la app. |
+| La API | Una integración con tu llave de API, por ejemplo Zapier o Make. |
+| Un agente de IA (MCP) | Un asistente de IA conectado por MCP. |
+| Otro workflow | Otro de tus workflows. |
+| Cord automáticamente | Un proceso de Cord, como la revisión diaria de vencimientos, o un cambio que llegó desde HubSpot. |
+
+Un uso típico: en **Se crea una tarea**, agregar la condición "Quién lo originó no es Otro workflow" para no reaccionar a las tareas que crean tus propios workflows.
+
+## Siguiente
+
+- [Acciones](/docs/automatizacion/workflows/acciones)
+- [Condiciones](/docs/automatizacion/workflows/condiciones)
+- [Datos del evento](/docs/automatizacion/workflows/datos-del-evento)

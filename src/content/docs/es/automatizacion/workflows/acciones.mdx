@@ -1,0 +1,127 @@
+---
+title: "Acciones"
+description: "Las cuatro acciones de Cord Workflows en detalle: crear una tarea, avisar al equipo por correo, enviar un mensaje a Slack y agregar una nota en HubSpot."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Acciones</h1>
+  <p class="page-subtitle">Lo que el workflow hace por ti. Cada acción es un paso; puedes poner varias seguidas, dentro de ramas o después de una espera.</p>
+</header>
+
+## Resumen
+
+| Acción | Qué hace | Necesita |
+|---|---|---|
+| **Crear una tarea** | Agrega una tarea de seguimiento en **Tareas**, ligada a la cotización cuando el evento tiene una. | Nada |
+| **Avisar al equipo por correo** | Envía un correo al dueño de la cuenta o a todo el equipo. | Nada |
+| **Enviar un mensaje a Slack** | Publica un mensaje en tu canal de Slack. | Slack conectado |
+| **Agregar una nota en HubSpot** | Deja una nota en el Deal de la cotización o en la Empresa del cliente. | HubSpot conectado |
+
+Para agregar una acción, pulsa **Agregar un paso › Agregar acción**, elige cuál en **Elige una acción** y completa sus campos en el panel. En todos los campos de texto puedes insertar [datos del evento](/docs/automatizacion/workflows/datos-del-evento) como `{{cliente}}`.
+
+## Crear una tarea
+
+Agrega una tarea para tu equipo en **Tareas**, igual que si la hubieras creado a mano.
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| **Título de la tarea** | Sí | Hasta 200 caracteres. Admite datos del evento. Los saltos de línea se convierten en espacios. |
+| **Vence en (días)** | No | Entre 0 y 365. **0** significa que vence hoy; **1**, mañana. Déjalo vacío para una tarea sin fecha. |
+
+**A qué queda ligada:**
+
+- Si el disparador es de una cotización (enviada, aprobada, pagada, pago parcial, facturada, etc.), la tarea queda ligada a esa cotización y la ves desde su detalle.
+- Si el disparador es un contracargo o un reembolso de una cotización, también queda ligada a esa cotización.
+- En **Se elimina un borrador** no se liga, porque la cotización ya no existe.
+- En los demás disparadores (facturas, clientes, productos, depósitos, tareas, promesas) la tarea queda suelta.
+
+**Cuándo falla:**
+
+- "El título de la tarea quedó vacío.": el título solo tenía datos del evento y todos llegaron vacíos. Agrega texto fijo, por ejemplo "Seguimiento: `{{cliente}}`".
+- "Se alcanzó el máximo de tareas por hora de los workflows.": tus workflows crearon 120 tareas en la última hora. Ver [Límites](/docs/automatizacion/workflows/limites).
+
+<Callout type="info">
+Crear una tarea también es un evento. Si tienes un workflow con el disparador **Se crea una tarea**, reaccionará a las tareas que crean tus otros workflows. Usa la condición "Quién lo originó no es Otro workflow" si no quieres que eso pase.
+</Callout>
+
+## Avisar al equipo por correo
+
+Envía un correo a personas de tu organización. **Nunca le escribe al cliente.**
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| **Para** | Sí | **El dueño de la cuenta**, o **Todo el equipo**: los miembros activos de tu organización, hasta 25. Las invitaciones pendientes no reciben el correo. |
+| **Asunto** | Sí | Hasta 150 caracteres. Admite datos del evento. Si al ejecutar queda vacío, se usa el nombre del workflow. |
+| **Mensaje** | Sí | Hasta 2,000 caracteres. Admite datos del evento y saltos de línea. |
+
+**Cómo se ve el correo:** tu mensaje, tal cual lo escribiste, y al pie una línea "Enviado por el workflow *Nombre* de Cord." con un enlace al workflow. El pie sale en el idioma de tu cuenta. Los datos del evento se insertan como texto: si el nombre de un cliente contiene símbolos o etiquetas, se muestran literalmente y no alteran el correo.
+
+Cada persona recibe su propio correo; nadie ve las direcciones de los demás.
+
+**Cuándo falla:**
+
+- "No hay a quién enviar el correo.": elegiste **El dueño de la cuenta** y la cuenta no tiene un dueño con correo, o no hay miembros activos.
+- "El correo no está disponible por ahora.": no se pudo entregar a nadie. Se reintenta automáticamente.
+- "Se alcanzó el máximo de correos por hora de los workflows.": tus workflows mandaron 30 correos en la última hora.
+
+## Enviar un mensaje a Slack
+
+Publica un mensaje en el canal que conectaste en **Ajustes › Integraciones › Slack**.
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| **Mensaje** | Sí | Hasta 1,000 caracteres. Admite datos del evento y saltos de línea. |
+
+**Cómo se ve:** el texto aparece en el canal con el nombre y el ícono que tenga el webhook en Slack. Los datos del evento se insertan como texto plano; un `<` o `&` en el nombre de un cliente no rompe el formato del mensaje.
+
+Este mensaje es independiente de los avisos de **Ajustes › Notificaciones**: un workflow publica aunque esos avisos estén apagados, y con el texto que tú escribas.
+
+**Cuándo falla:**
+
+- "Conecta Slack en Ajustes › Integraciones para usar esta acción.": no hay una URL de Slack guardada.
+- "Slack no aceptó el mensaje. Revisa la conexión en Ajustes › Integraciones.": Slack rechazó el envío, normalmente porque el webhook se borró en Slack o se quitó la app del canal. Crea un webhook nuevo y pega la URL. Mientras tanto, Cord reintenta.
+- "El mensaje quedó vacío.": el mensaje solo tenía datos del evento y llegaron vacíos.
+- "Se alcanzó el máximo de mensajes por hora de los workflows.": 120 mensajes en la última hora.
+
+Cómo conectar Slack: [Slack](/docs/automatizacion/integraciones/slack).
+
+## Agregar una nota en HubSpot
+
+Deja una nota en HubSpot para que tu equipo comercial vea lo que pasó en Cord.
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| **Nota** | Sí | Hasta 2,000 caracteres. Admite datos del evento y saltos de línea. |
+
+**Dónde queda la nota:**
+
+1. En el **Deal** de la cotización del evento, si esa cotización ya está en HubSpot.
+2. Si no hay Deal, en la **Empresa** del cliente, si el cliente ya está en HubSpot.
+3. Si ninguno de los dos está en HubSpot todavía, el paso espera y se reintenta: lo normal es que la sincronización termine en unos momentos.
+
+La nota queda con la fecha y hora en que se creó y aparece en la línea de tiempo del registro en HubSpot.
+
+**Qué disparadores tienen dónde dejar la nota:** los de cotizaciones, pagos de cotizaciones, contracargos, reembolsos y los de clientes. En disparadores sin cotización ni cliente (por ejemplo **Se paga un depósito a tu banco** o **Se crea un producto**) la nota no tiene a qué registro ligarse: el paso se reintenta y la ejecución termina como **Fallida** con el aviso "Este registro todavía no está en HubSpot". Usa esta acción solo con disparadores que tengan cotización o cliente.
+
+**Cuándo falla:**
+
+- "Conecta HubSpot en Ajustes › Integraciones para usar esta acción.": HubSpot no está conectado.
+- "HubSpot necesita reconectarse en Ajustes › Integraciones.": la conexión perdió su autorización.
+- "Este registro todavía no está en HubSpot. Se reintenta cuando termine de sincronizarse.": ver el punto 3 de arriba. Si persiste, revisa que el pipeline y las etapas estén completos; las cotizaciones en un estado sin etapa no se envían a HubSpot.
+- "El registro ya no existe en HubSpot.": el Deal o la Empresa se borró en HubSpot.
+- "Se alcanzó el máximo de notas por hora en HubSpot.": 120 notas en la última hora.
+
+Cómo conectar HubSpot: [HubSpot](/docs/automatizacion/integraciones/hubspot).
+
+## Varias acciones seguidas
+
+Las acciones de un mismo nivel corren en orden, una después de otra. Si una falla, las siguientes no corren hasta que se resuelva: la ejecución se reintenta **desde el paso que falló**, sin repetir los que ya se hicieron. Así una tarea no se crea dos veces porque falló el Slack que venía después.
+
+## Siguiente
+
+- [Condiciones](/docs/automatizacion/workflows/condiciones)
+- [Datos del evento](/docs/automatizacion/workflows/datos-del-evento)
+- [Ejecuciones y errores](/docs/automatizacion/workflows/ejecuciones)

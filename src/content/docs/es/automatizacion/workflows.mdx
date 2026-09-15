@@ -1,6 +1,6 @@
 ---
 title: "Cord Workflows"
-description: "Automatiza lo que pasa después de cada venta: cuando ocurre algo en Cord, el workflow crea tareas, avisa al equipo, publica en Slack o deja notas en HubSpot."
+description: "Qué es Cord Workflows, cómo funciona un workflow por dentro y dónde encontrar la guía de cada pieza: disparadores, acciones, condiciones, esperas, datos del evento, publicación y ejecuciones."
 lastUpdated: "2026-09-15"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -8,75 +8,72 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 
 <header class="content-header">
   <h1 class="page-title">Cord Workflows</h1>
-  <p class="page-subtitle">Reglas de "cuando pase esto, haz esto" que dan el siguiente paso por ti, sin escribir código.</p>
+  <p class="page-subtitle">Reglas de "cuando pase esto, haz esto" que dan el siguiente paso por ti después de cada venta, sin escribir código.</p>
 </header>
 
 ## Qué es un workflow
 
-Un workflow escucha un evento de tu cuenta —una cotización enviada, un anticipo recibido, una factura vencida, un contracargo— y ejecuta los pasos que definiste. Lo encuentras en **Workflows**, dentro del grupo Inteligencia del menú lateral. Para crearlos y publicarlos necesitas el permiso de **Ajustes**.
+Un workflow es una regla que vigila tu cuenta de Cord. Cuando ocurre un evento concreto —un cliente abre una cotización, llega un anticipo, vence una factura, te abren un contracargo— el workflow ejecuta, en orden, los pasos que definiste: crear una tarea, avisar al equipo por correo, publicar en Slack o dejar una nota en HubSpot.
 
-## Empieza con una idea
+La idea es que el seguimiento no dependa de que alguien se acuerde. Si hoy tu equipo revisa a mano qué cotizaciones nadie abrió, quién pagó el anticipo o qué facturas se vencieron, un workflow lo hace por ti y deja la tarea lista para la persona correcta.
 
-Al crear tu primer workflow, Cord abre una galería de ejemplos listos. Cada uno se crea como borrador para que lo revises antes de publicarlo:
+## Dónde está
 
-- **Seguimiento si el cliente no abre:** tres días después de enviar una cotización, si sigue sin abrirse, crea una tarea para llamar.
-- **Aviso de venta grande:** cuando se aprueba una cotización de 100,000 o más, avisa al dueño por correo.
-- **Slack cuando entra un pago:** publica en tu canal cada vez que una cotización queda pagada.
-- **Nota en HubSpot cuando el cliente aprueba:** deja una nota en el Deal y avisa en Slack.
-- **Promesa de pago incumplida:** crea una tarea de cobranza para hoy y avisa al equipo.
-- **Arrancar cuando llega el anticipo:** crea la tarea para empezar el trabajo y avisa el saldo pendiente.
-- **Cobranza de facturas vencidas:** crea la tarea de cobro y, si una semana después sigue abierta, avisa al dueño.
-- **Recuperar una cotización rechazada:** crea una tarea para llamar al cliente mañana.
-- **Avisar cuando una cotización pide aprobación:** correo a todo el equipo con el motivo.
-
-## Disparadores
-
-El disparador es el evento que arranca el workflow. Están agrupados por categoría:
-
-| Categoría | Ejemplos |
-|---|---|
-| Cotizaciones | Se crea, se envía, el cliente la abre, se aprueba, se rechaza, vence, llega un mensaje. |
-| Aprobaciones | Una cotización pide aprobación interna o se decide esa aprobación. |
-| Pagos | Pago completo, pago parcial (anticipo, saldo o cuota), cobro recurrente fallido, contracargo abierto o cerrado, reembolso completado o fallido, depósito pagado o fallido, cambio en tu cuenta de cobros. |
-| Facturas | Se emite, se envía, se paga, falla el pago, vence, se anula o se marca incobrable. |
-| Clientes y productos | Se crea, actualiza o elimina un cliente o un producto. |
-| Tareas y promesas | Se crea o completa una tarea; se registra, cumple o incumple una promesa de pago. |
-
-## Pasos
-
-Agrega pasos con **Agregar un paso**. Hay tres tipos:
-
-- **Acción:** crear una tarea, avisar al equipo por correo, enviar un mensaje a Slack o agregar una nota en HubSpot.
-- **Condición:** divide el flujo en dos ramas, **Si se cumple** y **Si no se cumple**, según los datos del evento. Por ejemplo, "el total es mayor o igual a 50,000" o "el tipo de pago es Anticipo". Los campos marcados como *estado actual* se leen al momento de evaluar, así que sirven después de una espera.
-- **Espera:** detiene el flujo entre 1 y 30 días y después continúa. Las esperas se revisan una vez al día.
-
-En los textos puedes insertar datos del evento con llaves dobles, como `{{cliente}}`, `{{folio}}`, `{{total}}` o `{{monto}}`. El editor solo ofrece los campos que ese disparador trae.
-
-## Publicar y pausar
-
-Un workflow tiene un **borrador** que editas libremente y una **versión publicada** que es la que corre. Pulsa **Publicar** para activar tus cambios; hasta entonces el workflow sigue con la versión anterior. Puedes pausarlo y reanudarlo desde el menú **⋯** del editor.
-
-## Ejecuciones
-
-La pestaña **Ejecuciones** registra cada vez que el workflow se disparó: cuándo, qué pasos corrieron y con qué resultado. Un paso que falla por algo pasajero se reintenta en el momento y, si sigue fallando, hasta tres intentos en total. Si no se resuelve, la ejecución queda marcada con error y el mensaje te dice qué pasó.
-
-## Límites
-
-| Plan | Workflows activos |
-|---|---|
-| Gratis | 1 |
-| Starter | 5 |
-| Pro, Scale y Developer | Sin tope |
-
-Los borradores no cuentan contra el límite. Cada workflow admite hasta 30 pasos y hasta 4 niveles de condiciones anidadas.
+Abre **Workflows** en el menú lateral de la app. La lista muestra cada workflow como una tarjeta con su nombre, el evento que lo inicia, su estado (**Borrador**, **Activo** o **Pausado**), cuántas veces se ejecutó en los últimos 30 días y cuántas de esas ejecuciones terminaron con error. Arriba ves cuántos workflows activos llevas contra el límite de tu plan.
 
 <Callout type="info">
-**Lo que un workflow nunca hace:** no le escribe al cliente, no cobra, no emite facturas ni marca pagos. Esas decisiones siguen siendo de una persona. Tampoco se dispara con sus propios eventos, así que dos workflows no pueden entrar en un ciclo.
+Cord Workflows es para administradores. Para ver, crear, editar o publicar workflows necesitas el permiso de **Ajustes**. Quien no lo tiene ve el mensaje "Cord Workflows es para administradores" y puede pedir acceso al dueño de la cuenta.
 </Callout>
 
-## Acciones que necesitan una conexión
+## Las piezas de un workflow
 
-- **Enviar un mensaje a Slack** requiere Slack conectado en Ajustes › Integraciones.
-- **Agregar una nota en HubSpot** requiere HubSpot conectado. La nota queda en el Deal de la cotización o, si no hay Deal, en la Empresa del cliente.
+Cada workflow se lee de arriba abajo en el editor, en dos bloques: **Cuando pase esto** y **Haz esto**.
 
-Si falta la conexión, la ejecución termina con un error que dice qué conectar. Consulta [Integraciones](/docs/automatizacion/integraciones).
+| Pieza | Qué hace | Guía |
+|---|---|---|
+| **Disparador** | El evento que arranca el workflow. Hay 41, agrupados en cotizaciones, aprobaciones, pagos, facturas, clientes, productos y tareas y promesas. Cada workflow tiene exactamente uno. | [Disparadores](/docs/automatizacion/workflows/disparadores) |
+| **Acción** | Algo que Cord hace por ti: crear una tarea, avisar al equipo por correo, enviar un mensaje a Slack o agregar una nota en HubSpot. | [Acciones](/docs/automatizacion/workflows/acciones) |
+| **Condición** | Divide el flujo en dos ramas, **Si se cumple** y **Si no se cumple**, según los datos del evento. | [Condiciones](/docs/automatizacion/workflows/condiciones) |
+| **Espera** | Pausa el flujo entre 1 y 30 días y después continúa con el siguiente paso. | [Esperas](/docs/automatizacion/workflows/esperas) |
+| **Datos del evento** | Valores como `{{cliente}}`, `{{folio}}` o `{{total}}` que puedes poner en tus textos y que se completan al ejecutar. | [Datos del evento](/docs/automatizacion/workflows/datos-del-evento) |
+
+## Un ejemplo completo
+
+"Seguimiento si el cliente no abre" es una de las ideas que Cord trae listas. Así se lee:
+
+1. **Cuando pase esto:** se envía una cotización.
+2. **Espera** 3 días.
+3. **Condición:** el estado actual de la cotización es **Enviada** (es decir, el cliente todavía no la abre).
+4. **Si se cumple:** crea la tarea "Llamar a `{{cliente}}` por `{{folio}}`" con vencimiento hoy.
+5. **Si no se cumple:** no hace nada; el cliente ya la abrió.
+
+Cada cotización que envíes arranca su propia ejecución de este workflow. Tres días después, cada una revisa su propia cotización y decide por separado.
+
+## Borrador, versión publicada y ejecuciones
+
+- **Borrador:** lo que editas. Puedes cambiarlo cuantas veces quieras sin afectar nada.
+- **Versión publicada:** lo que corre. Solo cambia cuando pulsas **Publicar** o **Publicar cambios**.
+- **Ejecución:** cada vez que ocurre el evento, Cord crea una ejecución con una copia de la versión publicada en ese momento. Si después publicas cambios, las ejecuciones que ya estaban en curso terminan con la versión con la que empezaron.
+
+Todo esto se explica en [Publicar, pausar y eliminar](/docs/automatizacion/workflows/publicar) y en [Ejecuciones y errores](/docs/automatizacion/workflows/ejecuciones).
+
+## Lo que un workflow nunca hace
+
+<Callout type="warning">
+Un workflow trabaja para tu equipo, no habla con tu cliente. **No le escribe al cliente, no cobra, no emite ni anula facturas, no marca pagos y no cambia el estado de una cotización.** Esas decisiones siguen siendo de una persona. Los correos de la acción "Avisar al equipo" solo llegan a miembros de tu organización.
+</Callout>
+
+Tampoco puede crear ciclos infinitos: un workflow nunca se dispara con los eventos que él mismo provoca, y una cadena de workflows que se disparan entre sí se corta después de tres niveles. Detalle en [Límites](/docs/automatizacion/workflows/limites).
+
+## Guías de Cord Workflows
+
+- [Crea tu primer workflow](/docs/automatizacion/workflows/primer-workflow): el editor, paso a paso.
+- [Ideas listas para usar](/docs/automatizacion/workflows/ideas): los 9 ejemplos que trae Cord y cómo adaptarlos.
+- [Disparadores](/docs/automatizacion/workflows/disparadores): los 41 eventos y qué datos trae cada uno.
+- [Acciones](/docs/automatizacion/workflows/acciones): tareas, correos, Slack y HubSpot.
+- [Condiciones](/docs/automatizacion/workflows/condiciones): ramas, comparaciones y estado actual.
+- [Esperas](/docs/automatizacion/workflows/esperas): cómo se cuentan los días.
+- [Datos del evento](/docs/automatizacion/workflows/datos-del-evento): variables en tus textos.
+- [Publicar, pausar y eliminar](/docs/automatizacion/workflows/publicar): el ciclo de vida de un workflow.
+- [Ejecuciones y errores](/docs/automatizacion/workflows/ejecuciones): cómo leer el historial y resolver fallas.
+- [Límites](/docs/automatizacion/workflows/limites): planes, tamaño y topes por hora.

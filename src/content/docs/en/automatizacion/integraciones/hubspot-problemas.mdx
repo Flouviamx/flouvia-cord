@@ -1,0 +1,102 @@
+---
+title: "HubSpot troubleshooting"
+description: "How to read the HubSpot connection panel and what to do with each error: reconnecting, permissions, currencies, stages, duplicate contacts and HubSpot limits."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">HubSpot troubleshooting</h1>
+  <p class="page-subtitle">Almost everything that can fail in the sync has a clear message and a one-minute fix.</p>
+</header>
+
+## Where to see if something fails
+
+In **Settings › Integrations › HubSpot**:
+
+- **Status:** **Connected** or **Needs reconnecting**. The latter also shows on the directory card.
+- **Queued:** pending sends. It is normal to see numbers after **Send existing data**; they should go down on their own.
+- **Errors (7 days):** sends that failed after all their retries.
+- **Last error:** the most recent error message. Use the tables below to fix it.
+
+<Callout type="info">
+Sync error messages currently appear in Spanish in the app. The tables below give the English meaning.
+</Callout>
+
+## How Cord retries
+
+- If HubSpot **does not respond** or has a **temporary problem**, Cord retries the same send up to 5 times, with more spacing each time.
+- If HubSpot **asks to slow down**, Cord pauses sends for as long as HubSpot says and continues, without counting that pause as a failure.
+- If the connection **lost its authorization**, Cord stops sending and reschedules for later; sends resume when you reconnect.
+- Data errors (a currency not enabled, a stage that no longer exists) **are not retried**, because they would fail the same way. They are recorded as errors until you fix the cause.
+
+After fixing the cause of a data error, click **Send existing data** to resend what failed.
+
+## Messages and what to do
+
+### Connection
+
+| Message or status | Cause | What to do |
+|---|---|---|
+| **Needs reconnecting** | Someone removed the Cord app in HubSpot, changed permissions or the authorization expired. | Click **Reconnect** and authorize again with the same account. Your links and stages are kept. |
+| The HubSpot connection is not active. | Same as above. | **Reconnect**. |
+| HubSpot did not grant permission for this operation. Reconnect the account to accept the permissions. | The authorization is missing a required permission, or your HubSpot user lost access. | Reconnect with a user who can install apps and accept all permissions. |
+| The HubSpot integration is not available yet. | The integration is not enabled. | Write to contacto@cordhq.app. |
+
+### Data
+
+| Message | Cause | What to do |
+|---|---|---|
+| HubSpot does not accept this quote's currency. Enable it in your HubSpot account's currency settings. | The quote uses a currency your HubSpot account has not enabled. | Enable the currency in HubSpot's account currency settings. Then **Send existing data**. |
+| The configured pipeline or stage no longer exists in HubSpot. Check them in Settings › Integrations. | You deleted or archived in HubSpot the pipeline or a stage Cord uses. | Choose another stage in [Pipeline and stages](/en/docs/automatizacion/integraciones/hubspot-etapas), save and resend. |
+| Two Cord clients use the email … only the first was linked in HubSpot. Fix the duplicate email in Cord. | Two different clients share the same contact email; HubSpot allows only one Contact per email. | Fix the email on one of the two clients in Cord. |
+| HubSpot rejected the data sent. | HubSpot did not accept a value. | Check that the client's name, email and phone are valid. If it persists, write to us with the quote number or client. |
+| HubSpot could not find where to create the record. | HubSpot responded that it did not find where to create the record. | Reconnect HubSpot. If it persists, write to us with the quote number or client. |
+| The client could not be updated with the HubSpot data. | A change coming from HubSpot did not pass Cord's validation. | Fix the data in HubSpot or directly in Cord. |
+
+### Temporary
+
+| Message | What happens |
+|---|---|
+| HubSpot did not respond in time. | Cord retries on its own. |
+| HubSpot had a temporary problem. | Cord retries on its own within minutes. |
+| HubSpot asked to slow down requests. | Cord waits as long as HubSpot says and continues. |
+| Internal error while syncing with HubSpot. | An unexpected Cord failure. It retries; if it repeats, write to us. |
+
+## Common situations
+
+### "I don't see the Deal for a quote"
+
+Check, in order:
+
+1. **Was the quote sent?** Drafts are not sent.
+2. **Does its status have a stage?** If you left a status without a stage, quotes in that status are not sent.
+3. **Is it queued?** Look at **Queued** in the panel.
+4. **Is there an error?** Look at **Last error**; a currency not enabled is the most common cause.
+5. **Is it older than the connection?** Earlier data is not sent on its own: use **Send existing data**.
+
+### "Companies got duplicated in HubSpot"
+
+Cord creates one Company per client and does not search for existing Companies by name. If you already had those companies in HubSpot before connecting, you see two. You can merge them in HubSpot. Contacts are not duplicated: Cord finds them by email.
+
+### "I moved a Deal in HubSpot and nothing changed in Cord"
+
+That is expected. The sale status is decided in Cord by the client's approval and payment, and Deals do not flow back to Cord. The next time the quote changes, Cord moves the Deal to the matching stage.
+
+### "I fixed a phone in HubSpot and Cord still has the old one"
+
+Check that the Contact is **linked** to a Cord client (Cord created it or found it by email). Contacts created by hand in HubSpot and not linked do not update anyone. Empty fields are not applied either: clearing a phone in HubSpot does not clear it in Cord.
+
+### "The workflow note went to the Company instead of the Deal"
+
+The quote did not have a Deal yet when the workflow ran, usually because its status has no stage or a send failed. Fix the cause; the following notes will go to the Deal.
+
+## Contact
+
+If none of this solves it, write to **contacto@cordhq.app** with your organization name, the affected quote number or client, and the text of **Last error**.
+
+## Next
+
+- [Connect HubSpot](/en/docs/automatizacion/integraciones/hubspot)
+- [What syncs](/en/docs/automatizacion/integraciones/hubspot-sincronizacion)

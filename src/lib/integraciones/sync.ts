@@ -135,7 +135,9 @@ export async function syncClientOut(ref: crm.Ref, clientId: string): Promise<{ c
 
 export async function syncQuoteOut(ref: crm.Ref, quoteId: string, ajustes: HubSpotAjustes): Promise<void> {
     const [[q]] = await withOrgTx(ref.orgId, sql`
-        select c.id, c.folio, c.status, c.total, coalesce(c.base_currency, o.moneda) as moneda, c.cliente_id, cl.empresa as cliente
+        select c.id, c.folio, c.status, c.total, coalesce(c.base_currency, o.moneda) as moneda, c.cliente_id, cl.empresa as cliente,
+               case c.status when 'paid' then c.paid_at when 'invoiced' then coalesce(c.paid_at, c.approved_at)
+                             when 'expired' then c.vigencia::timestamptz end as cerrada
           from cotizaciones c
           join orgs o on o.id = c.org_id
           left join clientes cl on cl.id = c.cliente_id and cl.org_id = c.org_id
@@ -147,9 +149,10 @@ export async function syncQuoteOut(ref: crm.Ref, quoteId: string, ajustes: HubSp
             delete from integracion_vinculos where org_id = ${ref.orgId} and conexion_id = ${ref.conexionId} and local_id = ${quoteId} and objeto = 'quote'`);
         return;
     }
-    const props = dealProps({ folio: q.folio as string, status: q.status as string, total: q.total as number, moneda: q.moneda as string, cliente: q.cliente as string }, ajustes);
+    const props = dealProps({ folio: q.folio as string, status: q.status as string, total: q.total as number, moneda: q.moneda as string, cliente: q.cliente as string, cerrada: q.cerrada as string | null }, ajustes);
     if (!props) return;
-    const h = huella(props);
+    const { closedate: _closedate, ...estables } = props;
+    const h = huella(estables);
     if (link && link.huella === h) return;
 
     const refs = q.cliente_id ? await syncClientOut(ref, q.cliente_id as string) : { companyId: null, contactId: null };

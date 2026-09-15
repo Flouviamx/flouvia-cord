@@ -84,3 +84,6 @@ Nada de esto se resuelve con código:
   de prueba para sus revisores.
 - **Make:** token de API con scopes `sdk-apps` para publicar la app, y después
   pedir la revisión.
+
+Checklist paso a paso de Make y Zapier, y apps recomendadas para después:
+[`pendientes-make-zapier.md`](pendientes-make-zapier.md).

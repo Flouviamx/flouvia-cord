@@ -138,6 +138,14 @@ describe('ejecución', () => {
         expect(t.cotizacion_id).toBe(QUOTE);
     });
 
+    it('en los textos, el estado actual se consulta al ejecutar y las opciones salen con su nombre', async () => {
+        await m.db.exec(`update cotizaciones set status = 'paid'`);
+        await workflow(A, 'quote.approved', [task('tsk1', '{{folio}}: {{estado_actual}} por {{actor_tipo}}, {{total}}')]);
+        await quoteEvent();
+        await flush();
+        expect((await q('select titulo from tareas')).map((r: any) => r.titulo)).toEqual(['COT-7: Pagada por Alguien del equipo, 150,000']);
+    });
+
     it('toma la otra rama cuando no se cumple', async () => {
         await workflow(A, 'quote.approved', [condicion([task('tsk1', 'Grande')], [task('tsk2', 'Chica')])]);
         await quoteEvent(A, { total: 50 });

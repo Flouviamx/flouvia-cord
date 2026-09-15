@@ -43,7 +43,7 @@ const STR = {
     estado: { draft: t(L, 'wf.estado.draft'), active: t(L, 'wf.estado.active'), paused: t(L, 'wf.estado.paused') },
     ejemplosTitulo: t(L, 'wf.ejemplos_titulo'), personalizar: t(L, 'wf.personalizar'), ayudaEmpezar: t(L, 'wf.ayuda_empezar'),
     verEjemplos: t(L, 'wf.ver_ejemplos'), ocultarAyuda: t(L, 'wf.ocultar_ayuda'), reemplazarTitulo: t(L, 'wf.reemplazar_titulo'),
-    reemplazarDesc: t(L, 'wf.reemplazar_desc'), reemplazar: t(L, 'wf.reemplazar'), enRamaSi: t(L, 'wf.en_rama_si'),
+    reemplazarDesc: t(L, 'wf.reemplazar_desc'), reemplazar: t(L, 'wf.reemplazar'), enRamaSi: t(L, 'wf.en_rama_si'), maxPasos: t(L, 'wf.max_pasos'),
 };
 
 const DATA = {
@@ -179,6 +179,7 @@ const DATA = {
     .wfe-menu button:hover, .wfe-addmenu button:hover, .wfe-menu button:focus-visible, .wfe-addmenu button:focus-visible { background: var(--color-bg-soft); outline: none; }
     .wfe-menu .wfe-danger { color: var(--color-danger); }
     .wfe-addmenu svg { width: 18px; height: 18px; color: var(--wf-accent); flex-shrink: 0; }
+    .wfe-addmenu-note { margin: 0; padding: 10px 12px; max-width: 240px; font-size: 0.8rem; line-height: 1.45; color: var(--color-text-muted); }
 
     .wfe-tabs { display: flex; align-items: center; gap: 1.2rem; border-bottom: 1px solid var(--color-border); }
     .wfe-tab {
@@ -464,7 +465,7 @@ const DATA = {
 
 <script>
     import {
-        OPERATORS, TRIGGER_CATEGORIES, WAIT_MAX_DAYS, WORKFLOW_ACTIONS, WORKFLOW_TRIGGERS, MAX_CONDITIONS,
+        OPERATORS, TRIGGER_CATEGORIES, WAIT_MAX_DAYS, WORKFLOW_ACTIONS, WORKFLOW_TRIGGERS, MAX_CONDITIONS, MAX_STEPS,
         findAction, findTrigger, type Lang, type WorkflowField,
     } from '../../lib/workflows/catalog';
     import { sanitizeDefinition, validateForPublish, type Condition, type Step, type WorkflowDefinition } from '../../lib/workflows/definition';
@@ -542,6 +543,8 @@ const DATA = {
             }
             return 0;
         }
+        const countSteps = (list: List = state.def.steps): number =>
+            list.reduce((n, s) => n + 1 + (s.type === 'condition' ? countSteps(s.then) + countSteps(s.else) : 0), 0);
         const trigger = () => findTrigger(state.def.trigger);
         const fields = (): WorkflowField[] => trigger()?.fields ?? [];
 
@@ -635,7 +638,7 @@ const DATA = {
                 openMenu(btn, [
                     index > 0 ? { label: S.pasoArriba, run: () => { list.splice(index - 1, 0, list.splice(index, 1)[0]); changed(); } } : null,
                     index < list.length - 1 ? { label: S.pasoAbajo, run: () => { list.splice(index + 1, 0, list.splice(index, 1)[0]); changed(); } } : null,
-                    { label: S.pasoDuplicar, run: () => { list.splice(index + 1, 0, clone(step)); changed(); } },
+                    countSteps() + countSteps([step]) <= MAX_STEPS ? { label: S.pasoDuplicar, run: () => { list.splice(index + 1, 0, clone(step)); changed(); } } : null,
                     { label: S.pasoEliminar, danger: true, run: () => {
                         list.splice(index, 1);
                         if (state.selected?.kind === 'step' && !findStep(state.selected.id)) closePanel();
@@ -716,6 +719,12 @@ const DATA = {
         function openAddMenu(anchor: HTMLElement, list: List, index: number) {
             closeMenus();
             const menu = $('[data-addmenu]');
+            if (countSteps() >= MAX_STEPS) {
+                menu.append(el('p', { class: 'wfe-addmenu-note', text: S.maxPasos.replace('{n}', String(MAX_STEPS)) }));
+                menu.hidden = false;
+                place(menu, anchor);
+                return;
+            }
             const canNest = depthOf(list) < 4;
             const options: { label: string; icon: string; make: () => Step }[] = [
                 { label: S.menuAccion, icon: ICON.action, make: () => ({ id: uid(), type: 'action', action: '', params: {} }) },

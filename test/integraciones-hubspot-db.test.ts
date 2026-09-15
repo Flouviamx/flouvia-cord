@@ -131,7 +131,7 @@ beforeAll(async () => {
             rfc text, terminos_default text, limite_credito numeric, nivel text, descuento_pct numeric, regimen_fiscal text, uso_cfdi text,
             cp_fiscal text, country_code text, direccion_line1 text, direccion_line2 text, ciudad text, region text, created_at timestamptz default now());
         create table cotizaciones(id uuid primary key default gen_random_uuid(), org_id uuid, folio text, status text, total numeric,
-            base_currency text, cliente_id uuid, created_at timestamptz default now());
+            base_currency text, cliente_id uuid, created_at timestamptz default now(), approved_at timestamptz, paid_at timestamptz, vigencia date);
         insert into orgs values ('${A}', 'MXN'), ('${B}', 'USD');
         insert into users values ('${USER_A}'), ('${USER_B}');`);
     const migration = readFileSync(new URL('../db/migrations/2026-09-15-integraciones.sql', import.meta.url), 'utf8');
@@ -245,11 +245,11 @@ describe('Cord → HubSpot', () => {
         expect(deal).toEqual({ dealname: 'COT-1 · Stark Industries', amount: '58000', deal_currency_code: 'MXN', pipeline: 'default', dealstage: 'presentationscheduled' });
         expect(hs.associations).toEqual(expect.arrayContaining([`deals:${dealId}->companies:101`, `deals:${dealId}->contacts:102`]));
 
-        await q(`update cotizaciones set status = 'paid', base_currency = 'USD'`);
+        await q(`update cotizaciones set status = 'paid', base_currency = 'USD', paid_at = '2026-03-02T18:00:00Z'`);
         await enqueueEvent('quote.paid', { id: QUOTE });
         await sync.processOrgSync(A);
         expect(hs.objects.deals.get(dealId)).toMatchObject({ dealstage: 'closedwon', deal_currency_code: 'USD' });
-        expect(hs.objects.deals.get(dealId)?.closedate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        expect(hs.objects.deals.get(dealId)?.closedate).toBe('2026-03-02');
         expect(hs.objects.deals.size).toBe(1);
     });
 

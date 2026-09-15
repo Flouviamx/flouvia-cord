@@ -1,0 +1,118 @@
+---
+title: "Ejecuciones y errores"
+description: "Cómo leer la pestaña Ejecuciones de un workflow: estados, resultado de cada paso, reintentos automáticos, reintentar y cancelar, y qué hacer con cada mensaje de error."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Ejecuciones y errores</h1>
+  <p class="page-subtitle">Cada vez que un workflow se dispara queda una ejecución con el detalle de lo que hizo, paso por paso.</p>
+</header>
+
+## Dónde verlas
+
+- En la **lista de workflows**, cada tarjeta muestra las ejecuciones de los últimos 30 días y, si las hay, cuántas terminaron con error ("N con error").
+- Dentro del editor, la pestaña **Ejecuciones** muestra las 50 más recientes, de la más nueva a la más antigua. Pulsa **Actualizar** para traer las últimas.
+
+Cada fila indica el estado, el evento que la inició y cuándo ocurrió. Tócala para ver el detalle.
+
+## Estados de una ejecución
+
+| Estado | Qué significa |
+|---|---|
+| **En cola** | Se creó y está por correr, o falló un paso y espera su siguiente intento. |
+| **Ejecutando** | Está corriendo en este momento. |
+| **En espera** | Llegó a un paso de espera. El detalle dice "Continúa" con la fecha. |
+| **Completada** | Terminó todos los pasos que le tocaban. |
+| **Fallida** | Un paso falló en sus 3 intentos. Los pasos siguientes no corrieron. |
+| **Cancelada** | Alguien la canceló, o el workflow se pausó, se quedó fuera del plan o su evento dejó de existir antes de terminar. |
+
+## Resultado de cada paso
+
+Dentro del detalle, cada paso que se evaluó aparece con su resultado:
+
+| Resultado | Significa |
+|---|---|
+| **Hecho** | La acción se completó. |
+| **Error** | La acción falló. Debajo aparece el motivo. |
+| **Se cumplió** | La condición fue verdadera y el flujo siguió por "Si se cumple". |
+| **No se cumplió** | La condición fue falsa y el flujo siguió por "Si no se cumple". |
+| **Esperando** | La ejecución llegó a una espera. |
+
+Los pasos de la rama que no se tomó no aparecen, porque no corrieron.
+
+## Reintentos automáticos
+
+Cuando una acción falla, Cord no se rinde a la primera:
+
+1. **Reintento inmediato.** Si el fallo parece pasajero (Slack o HubSpot no respondieron, el correo no salió), Cord vuelve a intentar el mismo paso segundos después, sin gastar un intento.
+2. **Nuevo intento más tarde.** Si sigue fallando, la ejecución vuelve a **En cola** y el detalle muestra "Intento 1 de 3". El siguiente intento se programa con más separación cada vez y se procesa en la siguiente revisión de Cord o cuando tu cuenta tenga actividad nueva.
+3. **Fallida.** Si el tercer intento también falla, la ejecución queda **Fallida** con el último mensaje de error.
+
+Los errores que no se arreglan solos, como "Conecta Slack…", no hacen el reintento inmediato, pero sí pasan por los 3 intentos: si conectas Slack a tiempo, el siguiente intento funciona.
+
+Cada intento continúa **desde el paso que falló**. Los pasos que ya se hicieron no se repiten: si la tarea se creó y falló el Slack que venía después, el reintento solo manda el Slack.
+
+## Reintentar a mano
+
+En una ejecución **Fallida**, pulsa **Reintentar**. Vuelve a **En cola** con los intentos en cero, continúa desde el paso que falló y corre en ese momento. Úsalo después de arreglar la causa, por ejemplo al reconectar HubSpot.
+
+Solo se pueden reintentar ejecuciones fallidas. Si lo intentas con otra verás "Solo se pueden reintentar ejecuciones fallidas."
+
+## Cancelar
+
+En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cancelada** y no corre ningún paso más. Lo que ya hizo no se deshace.
+
+## Mensajes de error y qué hacer
+
+### Tareas
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| El título de la tarea quedó vacío. | El título solo tenía datos del evento y llegaron vacíos. | Agrega texto fijo al título. |
+| Se alcanzó el máximo de tareas por hora de los workflows. | Tus workflows crearon 120 tareas en una hora. | Revisa si un workflow se dispara más de lo esperado; reintenta después. |
+
+### Correo al equipo
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| No hay a quién enviar el correo. | La cuenta no tiene dueño con correo o no hay miembros activos. | Revisa **Ajustes › Equipo y Roles** o cambia **Para**. |
+| El correo no está disponible por ahora. | No se pudo entregar a nadie. | Cord reintenta solo. Si persiste, escríbenos a contacto@cordhq.app. |
+| Se alcanzó el máximo de correos por hora de los workflows. | 30 correos en una hora. | Considera Slack para avisos frecuentes. |
+
+### Slack
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| Conecta Slack en Ajustes › Integraciones para usar esta acción. | No hay URL de Slack guardada. | [Conecta Slack](/docs/automatizacion/integraciones/slack) y pulsa **Reintentar**. |
+| Slack no aceptó el mensaje. Revisa la conexión en Ajustes › Integraciones. | El webhook se borró o la app se quitó del canal. | Crea un webhook nuevo en Slack, pega la URL y reintenta. |
+| El mensaje quedó vacío. | El mensaje solo tenía datos vacíos. | Agrega texto fijo. |
+| Se alcanzó el máximo de mensajes por hora de los workflows. | 120 mensajes en una hora. | Reintenta después. |
+
+### HubSpot
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| Conecta HubSpot en Ajustes › Integraciones para usar esta acción. | HubSpot no está conectado. | [Conecta HubSpot](/docs/automatizacion/integraciones/hubspot). |
+| HubSpot necesita reconectarse en Ajustes › Integraciones. | Se revocó el acceso de Cord. | Pulsa **Volver a conectar** y reintenta. |
+| Este registro todavía no está en HubSpot. Se reintenta cuando termine de sincronizarse. | La cotización o el cliente aún no llegan a HubSpot, o el disparador no tiene cotización ni cliente. | Espera; si queda Fallida, revisa que las etapas estén completas y que el disparador sea de cotización o cliente. |
+| El registro ya no existe en HubSpot. | El Deal o la Empresa se borró en HubSpot. | Nada que reintentar para ese registro. |
+| HubSpot no dio permiso para esta operación. Vuelve a conectar la cuenta para aceptar los permisos. | Faltan permisos en la conexión. | Reconecta HubSpot. |
+| Se alcanzó el máximo de notas por hora en HubSpot. | 120 notas en una hora. | Reintenta después. |
+
+### Generales
+
+| Mensaje | Causa | Qué hacer |
+|---|---|---|
+| El workflow se pausó o se eliminó antes de terminar esta ejecución. | Estaba pausado cuando le tocaba continuar. | Nada; si querías que corriera, reanuda antes de que termine la espera. |
+| Tu plan actual no incluye este workflow activo. | Bajaste de plan y este workflow quedó fuera del límite. | Pausa otros workflows o sube de plan. Ver [Límites](/docs/automatizacion/workflows/limites). |
+| El evento que inició esta ejecución ya no existe. | El registro del evento se eliminó. | Nada que hacer. |
+| Esta acción ya no está disponible. | La ejecución usaba una acción que Cord retiró. | Edita el workflow y publica de nuevo. |
+| Error interno al ejecutar la acción. | Un fallo inesperado de Cord. | Se reintenta solo. Si queda Fallida, pulsa **Reintentar** o escríbenos. |
+
+## Siguiente
+
+- [Límites](/docs/automatizacion/workflows/limites)
+- [Acciones](/docs/automatizacion/workflows/acciones)

@@ -1,0 +1,122 @@
+---
+title: "Runs and errors"
+description: "How to read a workflow's Runs tab: statuses, the result of each step, automatic retries, retry and cancel, and what to do with each error message."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Runs and errors</h1>
+  <p class="page-subtitle">Every time a workflow is triggered, a run records what it did, step by step.</p>
+</header>
+
+## Where to see them
+
+- In the **workflow list**, each card shows the runs from the last 30 days and, if any, how many failed ("N failed").
+- Inside the editor, the **Runs** tab shows the 50 most recent, newest first. Click **Refresh** to load the latest.
+
+Each row shows the status, the event that started it and when it happened. Tap it to see the detail.
+
+## Run statuses
+
+| Status | Meaning |
+|---|---|
+| **Queued** | Created and about to run, or a step failed and it is waiting for its next attempt. |
+| **Running** | Running right now. |
+| **Waiting** | Reached a wait step. The detail shows "Resumes" with the date. |
+| **Completed** | Finished every step it had to run. |
+| **Failed** | A step failed on all 3 attempts. The following steps did not run. |
+| **Canceled** | Someone canceled it, or the workflow was paused, fell outside the plan or its event stopped existing before it finished. |
+
+## Result of each step
+
+In the detail, every evaluated step shows its result:
+
+| Result | Meaning |
+|---|---|
+| **Done** | The action completed. |
+| **Error** | The action failed. The reason appears below. |
+| **Met** | The condition was true and the flow took the "met" branch. |
+| **Not met** | The condition was false and the flow took the "not met" branch. |
+| **Waiting** | The run reached a wait. |
+
+Steps in the branch that was not taken do not appear, because they did not run.
+
+## Automatic retries
+
+When an action fails, Cord does not give up at the first try:
+
+1. **Immediate retry.** If the failure looks temporary (Slack or HubSpot did not respond, the email did not go out), Cord retries the same step seconds later, without using an attempt.
+2. **Another attempt later.** If it still fails, the run goes back to **Queued** and the detail shows "Attempt 1 of 3". The next attempt is scheduled with more spacing each time and processed in Cord's next check or when your account has new activity.
+3. **Failed.** If the third attempt also fails, the run becomes **Failed** with the last error message.
+
+Errors that do not fix themselves, like "Connect Slack…", skip the immediate retry but still go through the 3 attempts: if you connect Slack in time, the next attempt works.
+
+Every attempt continues **from the step that failed**. Steps already done are not repeated: if the task was created and the Slack message after it failed, the retry only sends the Slack message.
+
+## Retry by hand
+
+On a **Failed** run, click **Retry**. It goes back to **Queued** with attempts reset, continues from the failed step and runs right away. Use it after fixing the cause, for example after reconnecting HubSpot.
+
+Only failed runs can be retried; otherwise you see "Only failed runs can be retried."
+
+## Cancel
+
+On a **Queued** or **Waiting** run, click **Cancel**. It becomes **Canceled** and no more steps run. What it already did is not undone.
+
+## Error messages and what to do
+
+<Callout type="info">
+Step error messages currently appear in Spanish in the app. The tables below give the English meaning.
+</Callout>
+
+### Tasks
+
+| Message | Cause | What to do |
+|---|---|---|
+| The task title ended up empty. | The title only had event data and it arrived empty. | Add fixed text to the title. |
+| Hourly task limit for workflows reached. | Your workflows created 120 tasks in one hour. | Check whether a workflow triggers more than expected; retry later. |
+
+### Team email
+
+| Message | Cause | What to do |
+|---|---|---|
+| There is nobody to send the email to. | The account has no owner with an email, or no active members. | Check **Settings › Team & roles** or change **To**. |
+| Email is not available right now. | It could not be delivered to anyone. | Cord retries on its own. If it persists, write to contacto@cordhq.app. |
+| Hourly email limit for workflows reached. | 30 emails in one hour. | Consider Slack for frequent alerts. |
+
+### Slack
+
+| Message | Cause | What to do |
+|---|---|---|
+| Connect Slack in Settings › Integrations to use this action. | No Slack URL saved. | [Connect Slack](/en/docs/automatizacion/integraciones/slack) and click **Retry**. |
+| Slack did not accept the message. Check the connection in Settings › Integrations. | The webhook was deleted or the app was removed from the channel. | Create a new webhook in Slack, paste the URL and retry. |
+| The message ended up empty. | The message only had empty data. | Add fixed text. |
+| Hourly message limit for workflows reached. | 120 messages in one hour. | Retry later. |
+
+### HubSpot
+
+| Message | Cause | What to do |
+|---|---|---|
+| Connect HubSpot in Settings › Integrations to use this action. | HubSpot is not connected. | [Connect HubSpot](/en/docs/automatizacion/integraciones/hubspot). |
+| HubSpot needs to be reconnected in Settings › Integrations. | Cord's access was revoked. | Click **Reconnect** and retry. |
+| This record is not in HubSpot yet. It will retry once it finishes syncing. | The quote or client has not reached HubSpot yet, or the trigger has no quote or client. | Wait; if it ends Failed, check that stages are complete and that the trigger is about a quote or client. |
+| The record no longer exists in HubSpot. | The Deal or Company was deleted in HubSpot. | Nothing to retry for that record. |
+| HubSpot did not grant permission for this operation. Reconnect the account to accept the permissions. | The connection is missing permissions. | Reconnect HubSpot. |
+| Hourly note limit in HubSpot reached. | 120 notes in one hour. | Retry later. |
+
+### General
+
+| Message | Cause | What to do |
+|---|---|---|
+| The workflow was paused or deleted before this run finished. | It was paused when the run had to continue. | Nothing; if you wanted it to run, resume before the wait ends. |
+| Your current plan does not include this active workflow. | You downgraded and this workflow fell outside the limit. | Pause other workflows or upgrade. See [Limits](/en/docs/automatizacion/workflows/limites). |
+| The event that started this run no longer exists. | The event record was removed. | Nothing to do. |
+| This action is no longer available. | The run used an action Cord retired. | Edit the workflow and publish again. |
+| Internal error while running the action. | An unexpected Cord failure. | It retries on its own. If it ends Failed, click **Retry** or write to us. |
+
+## Next
+
+- [Limits](/en/docs/automatizacion/workflows/limites)
+- [Actions](/en/docs/automatizacion/workflows/acciones)

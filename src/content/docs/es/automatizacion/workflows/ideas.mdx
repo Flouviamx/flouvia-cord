@@ -1,0 +1,139 @@
+---
+title: "Ideas listas para usar"
+description: "Los 9 workflows de ejemplo que trae Cord: qué evento los inicia, qué pasos hacen, qué necesitan y cómo adaptarlos a tu operación."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Ideas listas para usar</h1>
+  <p class="page-subtitle">Nueve workflows armados para los seguimientos más comunes. Cada uno se crea como borrador para que lo revises antes de publicarlo.</p>
+</header>
+
+## Cómo usar una idea
+
+Hay dos caminos:
+
+- En la lista de **Workflows**, sección **Ideas para empezar**, pulsa **Usar** en la idea.
+- Dentro del editor de un workflow vacío, en **Empieza con un ejemplo**, pulsa **Personalizar este workflow**.
+
+En los dos casos se crea un **borrador** con el nombre, el disparador y los pasos de la idea, en el idioma de tu cuenta. Nada corre hasta que pulses **Publicar**. Cambia lo que quieras antes: montos, días, textos o destinatarios.
+
+<Callout type="info">
+Las ideas que usan Slack o HubSpot se pueden crear aunque no tengas esas apps conectadas, pero esos pasos fallarán al ejecutarse hasta que las conectes en **Ajustes › Integraciones**.
+</Callout>
+
+## 1. Seguimiento si el cliente no abre
+
+Para no dejar enfriar una cotización que el cliente ni siquiera vio.
+
+- **Disparador:** Se envía una cotización.
+- **Pasos:**
+  1. Espera 3 días.
+  2. Condición: **Estado actual de la cotización** es **Enviada**.
+  3. Si se cumple: crea la tarea "Llamar a `{{cliente}}` por `{{folio}}`" con vencimiento hoy.
+- **Necesita:** nada extra.
+- **Adáptalo:** cambia la espera a 2 días si tu ciclo es corto, o agrega en la rama "Si se cumple" un aviso por correo al dueño de la cuenta.
+
+La condición usa el **estado actual**, que se consulta al terminar la espera. Si el cliente la abrió, la aprobó o la rechazó en esos tres días, el estado ya no es "Enviada" y no se crea la tarea.
+
+## 2. Aviso de venta grande
+
+Para que el dueño se entere en el momento de las ventas que más pesan.
+
+- **Disparador:** Se aprueba una cotización.
+- **Pasos:**
+  1. Condición: **Total** es mayor o igual a 100,000.
+  2. Si se cumple: avisa por correo al **dueño de la cuenta** con el asunto "`{{cliente}}` aprobó `{{folio}}`" y el mensaje "Se aprobó la cotización `{{folio}}` por `{{total}}` `{{moneda}}`."
+- **Necesita:** nada extra.
+- **Adáptalo:** ajusta el monto a lo que para ti es una venta grande. El total se compara como número, sin importar la divisa; si vendes en varias divisas, agrega otra condición "Divisa es igual a MXN" (o la tuya) con **se cumplen todas**.
+
+## 3. Slack cuando entra un pago
+
+Para celebrar y enterar al equipo de cada cobro.
+
+- **Disparador:** Se paga por completo una cotización.
+- **Pasos:**
+  1. Envía a Slack: "`{{cliente}}` pagó `{{folio}}`: `{{total}}` `{{moneda}}`".
+- **Necesita:** Slack conectado.
+- **Adáptalo:** si también quieres saber de los anticipos, crea otro workflow con el disparador **Llega un pago parcial**.
+
+## 4. Nota en HubSpot cuando el cliente aprueba
+
+Para que tu equipo comercial vea en HubSpot lo que pasó en Cord sin cambiar de herramienta.
+
+- **Disparador:** Se aprueba una cotización.
+- **Pasos:**
+  1. Agrega en HubSpot la nota "`{{cliente}}` aprobó `{{folio}}` por `{{total}}` `{{moneda}}` en Cord."
+  2. Envía a Slack: "`{{cliente}}` aprobó `{{folio}}`".
+- **Necesita:** HubSpot y Slack conectados. Si no usas Slack, elimina el segundo paso.
+- **Dónde queda la nota:** en el Deal de la cotización o, si esa cotización todavía no tiene Deal, en la Empresa del cliente.
+
+## 5. Promesa de pago incumplida
+
+Para que una promesa rota no se quede en el olvido.
+
+- **Disparador:** Se incumple una promesa de pago.
+- **Pasos:**
+  1. Crea la tarea "Dar seguimiento a promesa incumplida de `{{monto}}`" con vencimiento hoy.
+  2. Avisa por correo a **todo el equipo**: asunto "Promesa de pago incumplida", mensaje "No llegó el pago prometido de `{{monto}}`."
+- **Necesita:** nada extra.
+- **Adáptalo:** si solo quieres enterar a una persona, cambia **Para** a **El dueño de la cuenta**.
+
+## 6. Arrancar cuando llega el anticipo
+
+Para empezar el trabajo en cuanto el cliente paga su parte, sin esperar a que alguien revise el banco.
+
+- **Disparador:** Llega un pago parcial.
+- **Pasos:**
+  1. Condición: **Tipo de pago** es **Anticipo**.
+  2. Si se cumple:
+     - Crea la tarea "Arrancar el trabajo de `{{folio}}` (`{{cliente}}`)" con vencimiento en 1 día.
+     - Avisa al dueño: asunto "`{{cliente}}` pagó el anticipo de `{{folio}}`", mensaje "Llegó un anticipo de `{{monto}}` `{{moneda}}`. Saldo pendiente: `{{saldo_pendiente}}` `{{moneda}}`."
+- **Necesita:** cotizaciones con anticipo o pagos parciales.
+- **Adáptalo:** en la rama "Si no se cumple" puedes cubrir los otros tipos de pago parcial (**Saldo** o **Cuota**), por ejemplo con una tarea de conciliación.
+
+## 7. Cobranza de facturas vencidas
+
+Para que ninguna factura vencida pase una semana sin que nadie la persiga.
+
+- **Disparador:** Vence una factura.
+- **Pasos:**
+  1. Crea la tarea "Cobrar la factura `{{numero}}` de `{{cliente}}`" con vencimiento hoy.
+  2. Espera 7 días.
+  3. Condición: **Estado actual de la factura** es **Abierta**.
+  4. Si se cumple: avisa al dueño: asunto "La factura `{{numero}}` sigue sin pagarse", mensaje "`{{cliente}}` todavía debe `{{saldo}}` `{{moneda}}` una semana después del vencimiento."
+- **Necesita:** facturas de Cord Invoicing con fecha de vencimiento.
+- **Adáptalo:** el saldo del mensaje es el que había cuando venció la factura. Si prefieres que el aviso vaya a todo el equipo, cambia **Para**.
+
+## 8. Recuperar una cotización rechazada
+
+Para entender por qué se perdió una venta y tener la oportunidad de salvarla.
+
+- **Disparador:** Se rechaza una cotización.
+- **Pasos:**
+  1. Crea la tarea "Preguntar a `{{cliente}}` por qué rechazó `{{folio}}`" con vencimiento en 1 día.
+  2. Avisa al dueño: asunto "`{{cliente}}` rechazó `{{folio}}`", mensaje "La cotización `{{folio}}` por `{{total}}` `{{moneda}}` fue rechazada. Quedó una tarea de seguimiento para mañana."
+- **Necesita:** nada extra.
+- **Adáptalo:** agrega una condición por **Total** para avisar solo cuando se pierde algo importante.
+
+## 9. Avisar cuando una cotización pide aprobación
+
+Para que una cotización que espera aprobación interna no se quede detenida.
+
+- **Disparador:** Una cotización pide aprobación interna.
+- **Pasos:**
+  1. Avisa por correo a **todo el equipo**: asunto "`{{folio}}` espera aprobación", mensaje "La cotización `{{folio}}` para `{{cliente}}` (`{{total}}` `{{moneda}}`) necesita aprobación interna. Motivo: `{{motivo}}`"
+- **Necesita:** reglas de aprobación interna configuradas en tu cuenta.
+- **Adáptalo:** si prefieres el aviso en un canal, cambia la acción por **Enviar un mensaje a Slack**.
+
+## Combinar ideas
+
+Una idea es un punto de partida, no un límite. Por ejemplo, puedes unir "Aviso de venta grande" y "Nota en HubSpot" en un solo workflow: cuando se aprueba una cotización, deja la nota en HubSpot siempre y, si el total pasa de cierto monto, avisa también al dueño.
+
+## Siguiente
+
+- [Disparadores](/docs/automatizacion/workflows/disparadores)
+- [Acciones](/docs/automatizacion/workflows/acciones)
+- [Publicar, pausar y eliminar](/docs/automatizacion/workflows/publicar)

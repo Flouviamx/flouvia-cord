@@ -1,0 +1,97 @@
+---
+title: "Pipeline y etapas de HubSpot"
+description: "Cómo elegir el pipeline de HubSpot y la etapa del Deal para cada estado de una cotización de Cord, la configuración predeterminada y qué pasa al cambiarla."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Pipeline y etapas de HubSpot</h1>
+  <p class="page-subtitle">Tú decides en qué etapa de tu pipeline queda cada Deal según lo que pasa con la cotización en Cord.</p>
+</header>
+
+## Los siete estados que se envían
+
+Cord mueve el Deal cuando la cotización cambia a uno de estos estados. Para cada uno eliges una etapa de HubSpot:
+
+| Estado en Cord | Cuándo ocurre |
+|---|---|
+| **Enviada** | La cotización se envía al cliente. Es cuando nace el Deal. |
+| **Vista por el cliente** | El cliente abre el link. |
+| **Aprobada** | El cliente la aprueba. |
+| **Rechazada** | El cliente la rechaza. |
+| **Vencida** | Pasa la vigencia sin cerrarse. |
+| **Pagada** | Se registra el pago completo. |
+| **Facturada** | Se emite la factura o el CFDI. |
+
+Los borradores no se envían, así que no tienen etapa.
+
+## Configuración predeterminada
+
+Si no cambias nada, Cord usa el **pipeline predeterminado** de tu cuenta de HubSpot con estas etapas:
+
+| Estado en Cord | Etapa en HubSpot |
+|---|---|
+| Enviada | Presentation scheduled |
+| Vista por el cliente | Decision maker bought-in |
+| Aprobada | Contract sent |
+| Rechazada | Closed lost |
+| Vencida | Closed lost |
+| Pagada | Closed won |
+| Facturada | Closed won |
+
+Estas son las etapas con las que HubSpot crea su pipeline de ventas. Si tu cuenta ya las renombró o las borró, elige las tuyas antes de enviar datos.
+
+## Elegir otro pipeline o cambiar etapas
+
+<Steps>
+1. Ve a **Ajustes › Integraciones › HubSpot**. Cord carga tus pipelines de HubSpot ("Cargando pipelines de HubSpot…").
+2. En **Pipeline**, elige el pipeline donde quieres tus Deals.
+3. En **Etapa de HubSpot para cada estado de la cotización**, elige una etapa para cada uno de los siete estados.
+4. Pulsa **Guardar etapas**. Verás "Etapas guardadas".
+</Steps>
+
+Al cambiar a un pipeline que no es el predeterminado, Cord no puede adivinar tus etapas: todas quedan en **Elige una etapa** hasta que las selecciones. Mientras falte alguna verás "Elige una etapa para cada estado. Las cotizaciones en un estado sin etapa no se envían a HubSpot."
+
+Puedes repetir una etapa en varios estados. Por ejemplo, Rechazada y Vencida en la misma etapa de "perdido".
+
+## Fecha de cierre
+
+Cuando una cotización llega a un estado de cierre, Cord llena la **Close date** del Deal con la fecha real de ese cierre:
+
+| Estado | Close date |
+|---|---|
+| **Pagada** | La fecha del pago. |
+| **Facturada** | La fecha del pago o, si no se registró pago, la de aprobación. |
+| **Vencida** | La fecha de vigencia de la cotización. |
+| **Rechazada** | El día en que Cord envía el rechazo a HubSpot. |
+
+En los demás estados no toca la fecha de cierre. Como usa la fecha real, enviar datos existentes de meses anteriores no deja todos los Deals cerrados "hoy".
+
+Para que los informes de HubSpot cuenten bien lo ganado y lo perdido, asigna a Pagada y Facturada una etapa de tipo **ganado** y a Rechazada y Vencida una de tipo **perdido**.
+
+## Qué pasa si cambias la configuración después
+
+- **Los Deals existentes no se mueven al guardar.** Cada Deal toma la nueva etapa la próxima vez que su cotización cambie.
+- **Cambiar de pipeline** aplica igual: un Deal pasa al nuevo pipeline cuando su cotización vuelva a cambiar.
+- Si quieres mover todo de una vez, pulsa **Enviar datos existentes** después de guardar: de las 500 cotizaciones más recientes, las que tienen un Deal que no coincide con la nueva configuración se actualizan.
+
+## Errores al guardar
+
+| Mensaje | Qué hacer |
+|---|---|
+| Ese pipeline no existe en tu cuenta de HubSpot. | Recarga la página: el pipeline se borró o cambió en HubSpot. |
+| Alguna etapa no pertenece al pipeline elegido. | Cambiaste de pipeline y quedó una etapa del anterior. Vuelve a elegirlas. |
+| No pudimos consultar tus pipelines de HubSpot. Intenta de nuevo. | HubSpot no respondió. Espera un momento y guarda otra vez. |
+| No pudimos leer tus pipelines de HubSpot. Recarga la página para intentar de nuevo. | Aparece al abrir la página si HubSpot no respondió o la conexión necesita reconectarse. |
+| Conecta HubSpot antes de configurarlo. | La conexión se desconectó. Vuelve a conectar. |
+
+## Si borras una etapa en HubSpot
+
+Si borras o archivas en HubSpot una etapa que Cord usa, los envíos de cotizaciones en ese estado fallan con "El pipeline o la etapa configurados ya no existen en HubSpot. Revísalos en Ajustes › Integraciones." Elige otra etapa, guarda y usa **Enviar datos existentes** para reenviar las que fallaron.
+
+## Siguiente
+
+- [Qué se sincroniza](/docs/automatizacion/integraciones/hubspot-sincronizacion)
+- [Problemas con HubSpot](/docs/automatizacion/integraciones/hubspot-problemas)

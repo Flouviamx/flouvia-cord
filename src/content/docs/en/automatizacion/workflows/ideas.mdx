@@ -1,0 +1,139 @@
+---
+title: "Ready-made ideas"
+description: "The 9 example workflows Cord ships with: which event starts them, what steps they run, what they need and how to adapt them to your operation."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Ready-made ideas</h1>
+  <p class="page-subtitle">Nine workflows built for the most common follow-ups. Each one is created as a draft so you can review it before publishing.</p>
+</header>
+
+## How to use an idea
+
+There are two ways:
+
+- In the **Workflows** list, under **Ideas to get started**, click **Use** on the idea.
+- Inside the editor of an empty workflow, in **Start with an example**, click **Customize this workflow**.
+
+Both create a **draft** with the idea's name, trigger and steps, in your account's language. Nothing runs until you click **Publish**. Change whatever you want first: amounts, days, texts or recipients.
+
+<Callout type="info">
+Ideas that use Slack or HubSpot can be created even if those apps are not connected, but those steps will fail when they run until you connect them in **Settings › Integrations**.
+</Callout>
+
+## 1. Follow up if the client does not open
+
+So a quote the client has not even seen does not go cold.
+
+- **Trigger:** A quote is sent.
+- **Steps:**
+  1. Wait 3 days.
+  2. Condition: **Current quote status** is **Sent**.
+  3. If met: create the task "Call `{{cliente}}` about `{{folio}}`" due today.
+- **Needs:** nothing extra.
+- **Adapt it:** change the wait to 2 days if your cycle is short, or add an email to the account owner in the "met" branch.
+
+The condition uses the **current status**, checked when the wait ends. If the client opened, approved or rejected the quote during those three days, the status is no longer "Sent" and no task is created.
+
+## 2. Large deal alert
+
+So the owner hears about the sales that matter most right away.
+
+- **Trigger:** A quote is approved.
+- **Steps:**
+  1. Condition: **Total** is at least 100,000.
+  2. If met: email the **account owner** with the subject "`{{cliente}}` approved `{{folio}}`" and the message "Quote `{{folio}}` for `{{total}}` `{{moneda}}` was approved."
+- **Needs:** nothing extra.
+- **Adapt it:** set the amount to what a large deal means for you. The total is compared as a number regardless of currency; if you sell in several currencies, add another rule "Currency is USD" (or yours) with **all are met**.
+
+## 3. Slack when a payment arrives
+
+To celebrate and keep the team informed of every payment.
+
+- **Trigger:** A quote is paid in full.
+- **Steps:**
+  1. Send to Slack: "`{{cliente}}` paid `{{folio}}`: `{{total}}` `{{moneda}}`".
+- **Needs:** Slack connected.
+- **Adapt it:** to hear about deposits too, create another workflow with the **A partial payment arrives** trigger.
+
+## 4. HubSpot note when the client approves
+
+So your sales team sees in HubSpot what happened in Cord without switching tools.
+
+- **Trigger:** A quote is approved.
+- **Steps:**
+  1. Add the HubSpot note "`{{cliente}}` approved `{{folio}}` for `{{total}}` `{{moneda}}` in Cord."
+  2. Send to Slack: "`{{cliente}}` approved `{{folio}}`".
+- **Needs:** HubSpot and Slack connected. If you do not use Slack, delete the second step.
+- **Where the note goes:** on the quote's Deal or, if that quote has no Deal yet, on the client's Company.
+
+## 5. Broken payment promise
+
+So a broken promise is not forgotten.
+
+- **Trigger:** A payment promise is broken.
+- **Steps:**
+  1. Create the task "Follow up on a broken promise of `{{monto}}`" due today.
+  2. Email **the whole team**: subject "Payment promise broken", message "A promised payment of `{{monto}}` was not received."
+- **Needs:** nothing extra.
+- **Adapt it:** to notify only one person, change **To** to **The account owner**.
+
+## 6. Kick off when the deposit arrives
+
+To start the work as soon as the client pays their part, without waiting for someone to check the bank.
+
+- **Trigger:** A partial payment arrives.
+- **Steps:**
+  1. Condition: **Payment type** is **Deposit**.
+  2. If met:
+     - Create the task "Start the work for `{{folio}}` (`{{cliente}}`)" due in 1 day.
+     - Email the owner: subject "`{{cliente}}` paid the deposit for `{{folio}}`", message "A deposit of `{{monto}}` `{{moneda}}` arrived. Remaining balance: `{{saldo_pendiente}}` `{{moneda}}`."
+- **Needs:** quotes with a deposit or partial payments.
+- **Adapt it:** in the "not met" branch you can cover the other partial payment types (**Balance** or **Installment**), for example with a reconciliation task.
+
+## 7. Collect overdue invoices
+
+So no overdue invoice goes a week without someone chasing it.
+
+- **Trigger:** An invoice becomes overdue.
+- **Steps:**
+  1. Create the task "Collect invoice `{{numero}}` from `{{cliente}}`" due today.
+  2. Wait 7 days.
+  3. Condition: **Current invoice status** is **Open**.
+  4. If met: email the owner: subject "Invoice `{{numero}}` is still unpaid", message "`{{cliente}}` still owes `{{saldo}}` `{{moneda}}` a week after the due date."
+- **Needs:** Cord Invoicing invoices with a due date.
+- **Adapt it:** the balance in the message is the one at the moment the invoice became overdue. To notify the whole team, change **To**.
+
+## 8. Win back a rejected quote
+
+To understand why a sale was lost and get a chance to save it.
+
+- **Trigger:** A quote is rejected.
+- **Steps:**
+  1. Create the task "Ask `{{cliente}}` why they rejected `{{folio}}`" due in 1 day.
+  2. Email the owner: subject "`{{cliente}}` rejected `{{folio}}`", message "The quote `{{folio}}` for `{{total}}` `{{moneda}}` was rejected. A follow-up task was created for tomorrow."
+- **Needs:** nothing extra.
+- **Adapt it:** add a **Total** condition to notify only when something important is lost.
+
+## 9. Alert when a quote needs approval
+
+So a quote waiting for internal approval does not get stuck.
+
+- **Trigger:** A quote requests internal approval.
+- **Steps:**
+  1. Email **the whole team**: subject "`{{folio}}` is waiting for approval", message "The quote `{{folio}}` for `{{cliente}}` (`{{total}}` `{{moneda}}`) needs internal approval. Reason: `{{motivo}}`"
+- **Needs:** internal approval rules set up in your account.
+- **Adapt it:** to post in a channel instead, change the action to **Send a Slack message**.
+
+## Combining ideas
+
+An idea is a starting point, not a limit. For example, you can merge "Large deal alert" and "HubSpot note" into one workflow: when a quote is approved, always add the HubSpot note and, if the total passes a certain amount, also email the owner.
+
+## Next
+
+- [Triggers](/en/docs/automatizacion/workflows/disparadores)
+- [Actions](/en/docs/automatizacion/workflows/acciones)
+- [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar)

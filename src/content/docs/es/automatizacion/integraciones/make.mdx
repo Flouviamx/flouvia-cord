@@ -1,0 +1,121 @@
+---
+title: "Make"
+description: "Cómo conectar Cord con Make: recibir eventos de Cord en un escenario con Webhooks, crear y actualizar datos en Cord con el módulo HTTP, evitar duplicados y resolver errores."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Make</h1>
+  <p class="page-subtitle">Lleva lo que pasa en Cord a cualquier app de Make, y crea datos en Cord desde tus escenarios.</p>
+</header>
+
+## Cómo se conecta
+
+Make se conecta con Cord usando dos módulos que Make ya trae, sin instalar nada:
+
+| Dirección | Módulo de Make | Qué necesitas en Cord |
+|---|---|---|
+| **Cord → Make**: un evento de Cord arranca tu escenario | **Webhooks › Custom webhook** | Un endpoint de webhook con la URL de Make |
+| **Make → Cord**: tu escenario crea o actualiza datos en Cord | **HTTP › Make a request** | Una llave de API secreta con permiso de escritura |
+
+En **Ajustes › Integraciones › Make** tienes los dos pasos resumidos con accesos directos a **Webhooks** y a **API**. Las dos pestañas viven en el panel de Desarrolladores: si no lo ves, activa el **Modo desarrollador** con el interruptor al fondo del índice de Ajustes.
+
+## Recibir eventos de Cord
+
+<Steps>
+1. **Crea el webhook en Make.** En tu escenario agrega **Webhooks › Custom webhook**, pulsa **Add**, ponle nombre y copia la URL que te da Make.
+2. **Registra el endpoint en Cord.** Abre **Webhooks** en el panel de Desarrolladores, pega la URL de Make y guarda. Cord te muestra un secreto de firma una sola vez; Make no lo usa, pero guárdalo si piensas verificar firmas más adelante.
+3. **Elige los eventos.** Marca solo los que tu escenario necesita, por ejemplo `quote.approved` o `invoice.paid`.
+4. **Enséñale a Make la forma del evento.** En Make pulsa **Redetermine data structure** y, en Cord, pulsa **Probar** en el endpoint. Make recibe un evento de ejemplo y aprende sus campos.
+5. **Mapea y activa.** Usa los campos en los siguientes módulos (por ejemplo `data.folio`, `data.total`, `data.cliente`) y enciende el escenario.
+</Steps>
+
+### Qué llega en cada evento
+
+Cada evento es un JSON con cuatro campos:
+
+| Campo | Qué es |
+|---|---|
+| `id` | Identificador único del evento. Es el mismo si Cord reintenta la entrega. |
+| `event` | El tipo de evento, por ejemplo `quote.paid`. |
+| `created_at` | Cuándo ocurrió. |
+| `data` | Los datos del objeto: en una cotización, `id`, `folio`, `status`, `moneda`, `total`, `cliente`, `cliente_id` y el link público. |
+
+La lista completa de eventos y los campos de cada uno está en [Webhooks para desarrolladores](/docs/desarrolladores/herramientas/webhooks).
+
+### Un endpoint o varios
+
+Puedes registrar un endpoint por escenario con solo sus eventos, o uno con varios eventos y un **Router** en Make que filtre por `event`. Lo primero es más fácil de mantener; lo segundo usa menos endpoints.
+
+Los endpoints que registras a mano cuentan dentro del límite de webhooks de tu plan: 16 en Gratis, Starter y Pro; 32 en Scale; 100 en Developer.
+
+### Entregas y reintentos
+
+Cada endpoint guarda un registro de entregas con el estado, el tiempo de respuesta y la respuesta de Make. Si Make no responde, Cord reintenta la entrega. Como el `id` no cambia entre reintentos, agrega en Make un filtro o un almacén de datos para no procesar dos veces el mismo `id`.
+
+<Callout type="warning">
+**Trata la URL del webhook de Make como un secreto.** Make no verifica la firma de Cord, así que cualquiera que conozca la URL podría mandarle datos falsos a tu escenario. No la compartas y, si crees que se filtró, borra el endpoint en Cord, crea un webhook nuevo en Make y registra la URL nueva.
+</Callout>
+
+## Crear o actualizar datos en Cord
+
+<Steps>
+1. **Crea una llave.** En **API**, en el panel de Desarrolladores, crea una **llave secreta** con alcance de **escritura**. Se muestra una sola vez; guárdala en la conexión de Make, no en un texto del escenario.
+2. **Agrega HTTP › Make a request** en tu escenario.
+3. **Configúralo:**
+   - **URL:** el endpoint, por ejemplo `https://cordhq.app/api/v1/clientes`.
+   - **Method:** `POST` para crear, `PATCH` para actualizar, `GET` para buscar.
+   - **Headers:** `Authorization` con `Bearer` seguido de tu llave, y `Content-Type` con `application/json`.
+   - **Body type:** `Raw`, con **Content type** JSON y los campos del recurso.
+   - **Parse response:** activado, para usar la respuesta en los siguientes módulos.
+4. **Evita duplicados** con el header `Idempotency-Key` (ver abajo).
+</Steps>
+
+### Qué puedes hacer
+
+| Quieres | Petición |
+|---|---|
+| Buscar un cliente por correo antes de crearlo | `GET /api/v1/clientes?email=correo@cliente.com` |
+| Crear un cliente | `POST /api/v1/clientes` con al menos `empresa` |
+| Actualizar el contacto de un cliente | `PATCH /api/v1/clientes/{id}` con `contacto`, `email`, `telefono`, etc. |
+| Buscar una cotización por folio | `GET /api/v1/cotizaciones?folio=COT-00104` |
+| Crear una cotización | `POST /api/v1/cotizaciones` |
+| Enviar, aprobar, rechazar o marcar pagada una cotización | `POST /api/v1/cotizaciones/{id}` con `action`: `send`, `resend`, `approve`, `reject` o `mark_paid` |
+| Crear una tarea | `POST /api/v1/tareas` con `titulo` y, opcional, `due_date` y `cotizacion_id` |
+
+Los campos de cada endpoint: [Clientes](/docs/desarrolladores/funciones/clientes), [Cotizaciones](/docs/desarrolladores/funciones/cotizaciones) y [Tareas](/docs/desarrolladores/funciones/tareas).
+
+### Evitar duplicados
+
+Make puede reintentar un módulo. Para que un reintento no cree el mismo cliente dos veces, agrega el header `Idempotency-Key` con un valor fijo para esa operación, por ejemplo el `id` del evento que la originó o el id de la fila de tu hoja de cálculo. Si Cord ya recibió esa llave con la misma petición, devuelve el resultado original en lugar de crear otro registro.
+
+### Llaves de prueba
+
+Con una llave `sk_test_…` tu escenario trabaja sobre el entorno de prueba de tu cuenta, aislado de tus datos reales. Úsala mientras armas el escenario y cámbiala por la `sk_live_…` al terminar.
+
+## Ejemplos de escenarios
+
+- **Cotización aprobada → hoja de cálculo:** Custom webhook con `quote.approved` → Google Sheets › Add a row con folio, cliente y total.
+- **Formulario → cliente en Cord:** Typeform › Watch responses → HTTP `GET /api/v1/clientes?email=` → si no existe, HTTP `POST /api/v1/clientes`.
+- **Factura pagada → contabilidad:** Custom webhook con `invoice.paid` → tu sistema contable.
+- **Pago en otra plataforma → marcar pagada en Cord:** el disparador de tu plataforma → HTTP `GET /api/v1/cotizaciones?folio=` → HTTP `POST /api/v1/cotizaciones/{id}` con `{"action":"mark_paid"}`.
+
+## Errores comunes
+
+| Respuesta de Cord | Causa | Qué hacer |
+|---|---|---|
+| **401** | Falta la llave, está mal copiada o fue revocada. | Revisa el header `Authorization: Bearer sk_live_…`. |
+| **403** | La llave es de solo lectura. | Crea una llave con alcance de escritura. |
+| **404** | El id no existe en tu organización. | Revisa que mapeaste el `id` correcto, no el folio. |
+| **409** `invalid_state` | La acción no aplica al estado actual, por ejemplo aprobar un borrador. | Revisa el estado de la cotización antes de la acción. |
+| **422** `idempotency_key_reused` | Usaste la misma `Idempotency-Key` con otra petición. | Usa una clave distinta por operación. |
+| **429** | Superaste el límite por minuto o la cuota mensual. | Agrega una pausa entre módulos o reduce la frecuencia. |
+
+Más en [Errores de la API](/docs/desarrolladores/esenciales/errores).
+
+## Siguiente
+
+- [Zapier](/docs/automatizacion/integraciones/zapier)
+- [Guía de integraciones para desarrolladores](/docs/desarrolladores/herramientas/integraciones)

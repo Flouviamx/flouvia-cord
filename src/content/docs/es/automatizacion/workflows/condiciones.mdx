@@ -1,0 +1,145 @@
+---
+title: "Condiciones"
+description: "Cómo dividir un workflow en dos ramas según los datos del evento: todas o alguna, comparaciones por tipo de dato, estado en el evento contra estado actual y condiciones anidadas."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Condiciones</h1>
+  <p class="page-subtitle">Una condición decide el camino: si se cumple, el flujo sigue por una rama; si no, por la otra.</p>
+</header>
+
+## Cómo se ve
+
+En el lienzo, una condición aparece como un rombo con dos salidas:
+
+- **Si se cumple:** los pasos que corren cuando la condición es verdadera.
+- **Si no se cumple:** los pasos que corren cuando es falsa.
+
+Cualquiera de las dos ramas puede quedar vacía. Una rama vacía significa "no hagas nada en este caso". Cuando la rama elegida termina, el flujo continúa con el paso que esté **después** de la condición, si hay alguno.
+
+## Configurar una condición
+
+<Steps>
+1. Pulsa **Agregar un paso › Agregar condición**. Se abre **Editar condición**.
+2. Elige cómo se combinan las reglas en **Continuar por "Si se cumple" cuando**: **se cumplen todas** o **se cumple alguna**.
+3. En cada regla elige **Campo**, **Comparación** y **Valor**.
+4. Para sumar reglas usa **Agregar otra condición**; para quitar una, **Quitar**. Admite hasta 5 reglas por condición.
+5. Pulsa **Listo**.
+</Steps>
+
+### Todas o alguna
+
+| Opción | Se cumple cuando | Ejemplo |
+|---|---|---|
+| **se cumplen todas** | Todas las reglas son verdaderas. | Total mayor o igual a 50,000 **y** Divisa es igual a USD. |
+| **se cumple alguna** | Al menos una regla es verdadera. | Tipo de pago es Anticipo **o** Tipo de pago es Cuota. |
+
+Si necesitas mezclar las dos lógicas ("A y (B o C)"), pon una condición dentro de la rama de otra.
+
+## Comparaciones por tipo de dato
+
+El editor solo ofrece las comparaciones que tienen sentido para cada campo.
+
+### Texto
+
+Folio, Cliente, Divisa, Motivo, Mensaje, Correo, País y similares.
+
+| Comparación | Se cumple cuando |
+|---|---|
+| es igual a | El texto es exactamente el valor. |
+| no es igual a | El texto es distinto del valor. |
+| contiene | El valor aparece en cualquier parte del texto. |
+| no contiene | El valor no aparece en el texto. |
+| está vacío | El dato no tiene contenido. |
+| no está vacío | El dato tiene contenido. |
+
+Las comparaciones de texto **no distinguen mayúsculas de minúsculas**: "acme" es igual a "ACME".
+
+### Número
+
+Total, Saldo pendiente, Monto pagado, Monto en disputa, Precio de lista, Datos pendientes de verificación y similares.
+
+| Comparación | Se cumple cuando |
+|---|---|
+| es mayor o igual a | El número es igual o más grande que el valor. |
+| es mayor que | El número es más grande que el valor. |
+| es menor o igual a | El número es igual o más chico que el valor. |
+| es menor que | El número es más chico que el valor. |
+| es igual a | El número es exactamente el valor. |
+| no es igual a | El número es distinto del valor. |
+
+Escribe el valor como número, sin símbolo de divisa ni separadores: `50000`, no `$50,000`. Si el evento no trae el número, ninguna comparación numérica se cumple y el flujo va por **Si no se cumple**.
+
+El total se compara en la divisa de la venta. Una cotización de 1,000 USD y otra de 1,000 MXN tienen el mismo total para la condición; si vendes en varias divisas, agrega una regla por **Divisa**.
+
+### Opciones
+
+Estado en el evento, Estado actual, Tipo de pago, Decisión, Resultado del contracargo, Quién lo originó, Quién escribió y Términos de pago.
+
+| Comparación | Se cumple cuando |
+|---|---|
+| es | El dato tiene la opción elegida. |
+| no es | El dato tiene cualquier otra opción. |
+
+El valor se elige de una lista, así que no hay errores de escritura.
+
+### Sí o no
+
+Activo (productos), Puede cobrar en línea y Puede recibir depósitos.
+
+| Comparación | Se cumple cuando |
+|---|---|
+| es sí | El dato es verdadero. |
+| es no | El dato es falso. |
+
+## Estado en el evento contra estado actual
+
+Las cotizaciones y las facturas tienen dos datos de estado, y la diferencia importa:
+
+| Dato | Qué valor tiene |
+|---|---|
+| **Estado en el evento** | El estado que tenía el documento en el momento en que ocurrió el evento. No cambia nunca. |
+| **Estado actual de la cotización** / **Estado actual de la factura** | El estado que tiene el documento **en el momento de evaluar la condición**. En el editor lo reconoces porque dice "se consulta al ejecutar". |
+
+Justo después del evento los dos coinciden. La diferencia aparece **después de una espera**: si un workflow espera 3 días tras enviar una cotización, "Estado en el evento" seguirá diciendo **Enviada**, pero "Estado actual" dirá **Vista**, **Aprobada** o lo que haya pasado en esos días.
+
+<Callout type="info">
+Regla práctica: después de una espera, usa siempre el **estado actual**. Es lo que permite preguntar "¿sigue sin abrirse?" o "¿sigue sin pagarse?".
+</Callout>
+
+Valores posibles del estado de una cotización: Borrador, Enviada, Vista, Aprobada, Rechazada, Vencida, Pagada y Facturada. De una factura: Borrador, Abierta, Pagada, Anulada e Incobrable.
+
+## Condiciones anidadas
+
+Puedes poner una condición dentro de la rama de otra, hasta 4 niveles de profundidad. Ejemplo con dos niveles, disparado por **Se aprueba una cotización**:
+
+1. Condición: Total es mayor o igual a 100,000.
+   - **Si se cumple:** condición: Divisa es igual a USD.
+     - **Si se cumple:** avisar a todo el equipo.
+     - **Si no se cumple:** avisar al dueño de la cuenta.
+   - **Si no se cumple:** crear tarea de seguimiento normal.
+
+Todos los pasos, en todas las ramas, cuentan para el máximo de 30 pasos por workflow.
+
+## Errores comunes al publicar
+
+| Aviso | Qué hacer |
+|---|---|
+| Agrega al menos una condición. | La condición no tiene reglas. Agrega una o elimina el paso. |
+| Una condición usa un campo que no existe para este evento. | Cambiaste el disparador y el nuevo no trae ese dato. Elige otro campo. |
+| Elige cómo comparar "Total". | Falta la comparación. |
+| Completa el valor para "Total". | Falta el valor. |
+| "Total" necesita un número. | Escribiste texto en un campo numérico. Quita símbolos y separadores. |
+| Elige un valor válido para "Tipo de pago". | La opción elegida no existe para este campo. Vuelve a elegirla. |
+
+## En el historial
+
+Cada condición evaluada aparece en la ejecución como **Se cumplió** o **No se cumplió**, así sabes qué rama tomó. Ver [Ejecuciones y errores](/docs/automatizacion/workflows/ejecuciones).
+
+## Siguiente
+
+- [Esperas](/docs/automatizacion/workflows/esperas)
+- [Datos del evento](/docs/automatizacion/workflows/datos-del-evento)

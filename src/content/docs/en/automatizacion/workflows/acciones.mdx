@@ -1,0 +1,131 @@
+---
+title: "Actions"
+description: "The four Cord Workflows actions in detail: create a task, email the team, send a Slack message and add a note in HubSpot."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Actions</h1>
+  <p class="page-subtitle">What the workflow does for you. Each action is a step; you can chain several, put them inside branches or after a wait.</p>
+</header>
+
+## Summary
+
+| Action | What it does | Needs |
+|---|---|---|
+| **Create a task** | Adds a follow-up task in **Tasks**, linked to the quote when the event has one. | Nothing |
+| **Email the team** | Emails the account owner or the whole team. | Nothing |
+| **Send a Slack message** | Posts a message to your Slack channel. | Slack connected |
+| **Add a note in HubSpot** | Adds a note to the quote's Deal or the client's Company. | HubSpot connected |
+
+To add an action, click **Add a step › Add action**, pick one in **Choose an action** and fill in its fields in the panel. Every text field accepts [event data](/en/docs/automatizacion/workflows/datos-del-evento) like `{{cliente}}`.
+
+<Callout type="info">
+Step error messages from runs currently appear in Spanish in the app. This page gives the English meaning of each one.
+</Callout>
+
+## Create a task
+
+Adds a task for your team in **Tasks**, just as if you had created it by hand.
+
+| Field | Required | Detail |
+|---|---|---|
+| **Task title** | Yes | Up to 200 characters. Accepts event data. Line breaks become spaces. |
+| **Due in (days)** | No | 0 to 365. **0** means due today; **1**, tomorrow. Leave empty for a task without a date. |
+
+**What it is linked to:**
+
+- If the trigger is about a quote (sent, approved, paid, partial payment, invoiced, etc.), the task is linked to that quote and shows in its detail.
+- If the trigger is a dispute or refund on a quote, it is also linked to that quote.
+- On **A draft is deleted** it is not linked, because the quote no longer exists.
+- On other triggers (invoices, clients, products, payouts, tasks, promises) the task is standalone.
+
+**When it fails:**
+
+- "The task title ended up empty": the title only had event data and all of it arrived empty. Add fixed text, for example "Follow-up: `{{cliente}}`".
+- "Hourly task limit for workflows reached": your workflows created 120 tasks in the last hour. See [Limits](/en/docs/automatizacion/workflows/limites).
+
+<Callout type="info">
+Creating a task is also an event. If you have a workflow with the **A task is created** trigger, it will react to tasks created by your other workflows. Use the condition "Who caused it is not Another workflow" if you do not want that.
+</Callout>
+
+## Email the team
+
+Sends an email to people in your organization. **It never writes to the client.**
+
+| Field | Required | Detail |
+|---|---|---|
+| **To** | Yes | **The account owner**, or **The whole team**: the active members of your organization, up to 25. Pending invitations do not receive it. |
+| **Subject** | Yes | Up to 150 characters. Accepts event data. If it ends up empty when running, the workflow name is used. |
+| **Message** | Yes | Up to 2,000 characters. Accepts event data and line breaks. |
+
+**What the email looks like:** your message exactly as you wrote it, and at the bottom a line "Sent by the *Name* workflow in Cord." linking to the workflow. The footer uses your account's language. Event data is inserted as text: if a client's name contains symbols or tags, they are shown literally and do not alter the email.
+
+Each person receives their own email; nobody sees the others' addresses.
+
+**When it fails:**
+
+- "There is nobody to send the email to": you chose **The account owner** and the account has no owner with an email, or there are no active members.
+- "Email is not available right now": it could not be delivered to anyone. It is retried automatically.
+- "Hourly email limit for workflows reached": your workflows sent 30 emails in the last hour.
+
+## Send a Slack message
+
+Posts a message to the channel you connected in **Settings › Integrations › Slack**.
+
+| Field | Required | Detail |
+|---|---|---|
+| **Message** | Yes | Up to 1,000 characters. Accepts event data and line breaks. |
+
+**What it looks like:** the text appears in the channel with the name and icon of the webhook's Slack app. Event data is inserted as plain text; a `<` or `&` in a client's name does not break the message formatting.
+
+This message is independent from the **Settings › Notifications** alerts: a workflow posts even if those alerts are off, and with the text you write.
+
+**When it fails:**
+
+- "Connect Slack in Settings › Integrations to use this action": no Slack URL is saved.
+- "Slack did not accept the message. Check the connection in Settings › Integrations": Slack rejected it, usually because the webhook was deleted or the app was removed from the channel. Create a new webhook and paste the URL. Meanwhile, Cord retries.
+- "The message ended up empty": the message only had event data and it arrived empty.
+- "Hourly message limit for workflows reached": 120 messages in the last hour.
+
+How to connect Slack: [Slack](/en/docs/automatizacion/integraciones/slack).
+
+## Add a note in HubSpot
+
+Adds a note in HubSpot so your sales team sees what happened in Cord.
+
+| Field | Required | Detail |
+|---|---|---|
+| **Note** | Yes | Up to 2,000 characters. Accepts event data and line breaks. |
+
+**Where the note goes:**
+
+1. On the **Deal** of the event's quote, if that quote is already in HubSpot.
+2. If there is no Deal, on the client's **Company**, if the client is already in HubSpot.
+3. If neither is in HubSpot yet, the step waits and retries: usually the sync finishes within moments.
+
+The note is timestamped when created and appears on the record's timeline in HubSpot.
+
+**Which triggers have somewhere to put the note:** quote triggers, quote payments, disputes, refunds and client triggers. On triggers without a quote or client (for example **A payout is paid to your bank** or **A product is created**) the note has no record to attach to: the step retries and the run ends as **Failed** with "This record is not in HubSpot yet". Use this action only with triggers that have a quote or client.
+
+**When it fails:**
+
+- "Connect HubSpot in Settings › Integrations to use this action": HubSpot is not connected.
+- "HubSpot needs to be reconnected in Settings › Integrations": the connection lost its authorization.
+- "This record is not in HubSpot yet. It will retry once it finishes syncing": see point 3 above. If it persists, check that the pipeline and stages are complete; quotes in a status without a stage are not sent to HubSpot.
+- "The record no longer exists in HubSpot": the Deal or Company was deleted in HubSpot.
+- "Hourly note limit in HubSpot reached": 120 notes in the last hour.
+
+How to connect HubSpot: [HubSpot](/en/docs/automatizacion/integraciones/hubspot).
+
+## Several actions in a row
+
+Actions at the same level run in order, one after another. If one fails, the following ones do not run until it is resolved: the run is retried **from the step that failed**, without repeating the ones already done. So a task is not created twice because the Slack message after it failed.
+
+## Next
+
+- [Conditions](/en/docs/automatizacion/workflows/condiciones)
+- [Event data](/en/docs/automatizacion/workflows/datos-del-evento)
+- [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones)

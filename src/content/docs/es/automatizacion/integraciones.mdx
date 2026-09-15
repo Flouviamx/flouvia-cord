@@ -1,6 +1,6 @@
 ---
 title: "Integraciones"
-description: "Conecta Cord con HubSpot, Slack, Make y Zapier desde Ajustes › Integraciones."
+description: "Cómo funciona Ajustes › Integraciones en Cord: el directorio de apps, qué significa cada estado, qué integración conviene para cada caso y quién puede conectarlas."
 lastUpdated: "2026-09-15"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -13,41 +13,54 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 
 ## El directorio de apps
 
-Abre **Ajustes › Integraciones**. Cada app aparece como una tarjeta con su estado: **Conectado**, **Requiere reconectar**, **Sin conectar**, **Con webhooks** o **Próximamente**. Las que ya conectaste salen primero. Al abrir una app ves su conexión, su configuración y los workflows que la usan.
+Abre **Ajustes › Integraciones**. Cada app aparece como una tarjeta con su logo, su categoría y su estado. Arriba están las **Conectadas** y abajo las **Disponibles**, así la página no crece aunque se sumen apps.
 
-## HubSpot
+Toca una tarjeta para abrir la página de esa app. Ahí está todo lo de esa integración en un solo lugar: la conexión, su configuración, el enlace a la guía y, cuando aplica, **Úsalo en Workflows** con ideas de workflows que usan esa app y que puedes crear con un toque.
 
-Mantiene tus clientes y cotizaciones al día en HubSpot sin capturarlos dos veces.
+## Qué significa cada estado
 
-**Qué se sincroniza:**
-- **Clientes ↔ Empresas y Contactos**, en los dos sentidos. De HubSpot regresan a Cord el nombre, el contacto, el correo y el teléfono de los clientes que ya están vinculados.
-- **Cotizaciones → Deals.** Cada cotización enviada crea su Deal y lo mueve por la etapa que elijas para cada estado: enviada, vista, aprobada, rechazada, vencida, pagada y facturada.
-- **Mover un Deal en HubSpot no cambia nada en Cord.** Cord es la fuente del estado de la venta.
+| Estado | Significa |
+|---|---|
+| **Conectado** | La integración está activa y funcionando. |
+| **Requiere reconectar** | La conexión existe pero perdió su autorización (por ejemplo, alguien quitó la app en HubSpot). Abre la app y pulsa **Volver a conectar**. |
+| **Sin conectar** | Está disponible y todavía no la configuras. |
+| **Con webhooks** | No tiene un botón de conectar: se usa con los webhooks y la API de Cord desde la otra herramienta. Es el caso de Make. |
+| **Con llave de API** | Se conecta desde la otra herramienta pegando una llave de API de Cord. |
+| **Próximamente** | Está en camino y todavía no se puede usar. |
 
-**Conectar:**
-1. En **Ajustes › Integraciones › HubSpot**, pulsa **Conectar HubSpot**.
-2. Autoriza a Cord en tu cuenta de HubSpot. Una cuenta de HubSpot solo puede estar conectada a una organización de Cord.
-3. Elige el **pipeline** y la **etapa** de HubSpot para cada estado de la cotización, y guarda.
-4. Si ya tenías clientes y cotizaciones, usa **Enviar datos existentes** para mandarlos también (hasta 500 de cada uno). Los cambios nuevos se envían solos.
+## Las apps
 
-La página muestra la última sincronización, los envíos pendientes y los que fallaron. **Desconectar** detiene la sincronización y retira el acceso de Cord a tu cuenta; lo que ya está en HubSpot no se borra.
+| App | Categoría | Para qué sirve | Cómo se conecta | Guía |
+|---|---|---|---|---|
+| **HubSpot** | CRM | Clientes, contactos y Deals sincronizados con tus cotizaciones. | Botón **Conectar HubSpot** y autorización en HubSpot. | [Conectar](/docs/automatizacion/integraciones/hubspot), [Qué se sincroniza](/docs/automatizacion/integraciones/hubspot-sincronizacion), [Etapas](/docs/automatizacion/integraciones/hubspot-etapas), [Problemas](/docs/automatizacion/integraciones/hubspot-problemas) |
+| **Slack** | Comunicación | Un aviso en tu canal cuando una cotización avanza, y mensajes propios desde workflows. | Pegar la URL de un Incoming Webhook de Slack. | [Slack](/docs/automatizacion/integraciones/slack) |
+| **Make** | Automatización | Recibir eventos de Cord en tus escenarios y crear o actualizar datos en Cord desde Make. | Webhooks de Cord y llave de API, desde Make. | [Make](/docs/automatizacion/integraciones/make) |
+| **Zapier** | Automatización | Conectar Cord con miles de apps sin escribir código. | Próximamente. Mientras tanto, con webhooks y la API. | [Zapier](/docs/automatizacion/integraciones/zapier) |
 
-## Slack
+## Qué conviene para cada caso
 
-Publica en un canal cada vez que una cotización se envía, se abre, se aprueba o se paga. Crea un **Incoming Webhook** en Slack, pega la URL en **Ajustes › Integraciones › Slack** y usa **Enviar prueba**. Qué eventos se avisan se elige en **Ajustes › Notificaciones**. Paso a paso en la [guía de soporte](https://cordhq.app/soporte/conectar-slack).
+| Quieres | Usa |
+|---|---|
+| Que tu equipo comercial vea en HubSpot los clientes y las ventas de Cord | **HubSpot** |
+| Enterarte en un canal cuando el cliente abre, aprueba o paga | **Slack** con los avisos de Ajustes › Notificaciones |
+| Un mensaje en Slack con tu propio texto, o solo en ciertos casos | **Slack** con un [workflow](/docs/automatizacion/workflows) |
+| Crear tareas o avisar por correo cuando pasa algo en Cord | [Cord Workflows](/docs/automatizacion/workflows), sin conectar nada |
+| Llevar datos de Cord a una hoja de cálculo, un ERP o cualquier otra app | **Make** (o Zapier cuando esté disponible) |
+| Construir tu propia integración | La [guía para desarrolladores](/docs/desarrolladores/herramientas/integraciones) |
 
-## Make
+## Quién puede conectar integraciones
 
-Conecta Cord con tus escenarios usando los módulos que Make ya trae: **Webhooks** para recibir eventos de Cord y **HTTP** para crear o actualizar datos con la API. La página de Make en Ajustes te lleva a Webhooks y a la API, y la [guía de soporte](https://cordhq.app/soporte/conectar-make) explica cada módulo. Trata la URL del webhook de Make como un secreto: Make no verifica la firma de Cord.
+Conectar, configurar y desconectar integraciones requiere el permiso de **Ajustes**. Si alguien sin ese permiso intenta conectar HubSpot, verá "Necesitas permiso de Ajustes para conectar integraciones."
 
-## Zapier
+Las integraciones son de la **organización**, no de una persona: si quien conectó HubSpot deja el equipo, la conexión sigue funcionando. Cada acción de conectar, configurar, sincronizar o desconectar queda en **Ajustes › Auditoría**.
 
-La app de Cord para Zapier está en camino. Mientras tanto puedes conectar Zapier con los webhooks y la API de Cord, igual que con Make.
+## Seguridad
 
-## Workflows con integraciones
+- **Cord nunca te pide la contraseña de otra herramienta.** HubSpot se autoriza en la página de HubSpot; Slack, Make y Zapier usan URLs o llaves que tú generas y puedes revocar.
+- **Los accesos se guardan cifrados** y solo se usan para lo que describe cada integración.
+- **Desconectar corta el acceso de verdad.** En HubSpot, Cord además revoca su autorización en tu cuenta.
+- **Las URLs de webhook son secretos.** Quien tenga la URL de tu webhook de Slack o de Make puede publicar en ella; no las compartas.
 
-Las acciones de Slack y HubSpot también están disponibles en [Cord Workflows](/docs/automatizacion/workflows). Por ejemplo: cuando el cliente aprueba, deja una nota en su Deal de HubSpot y avisa en Slack.
+## Si no está tu herramienta
 
-## Para desarrolladores
-
-Si vas a construir tu propia integración, la [guía de integraciones para desarrolladores](/docs/desarrolladores/herramientas/integraciones) explica cuándo usar la API, los webhooks o el MCP.
+Con los webhooks y la API de Cord puedes conectar hoy cualquier sistema que reciba o haga llamadas HTTP, como n8n o tu propio desarrollo. Si quieres una integración directa con otra app, escríbenos a contacto@cordhq.app.

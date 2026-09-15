@@ -8,9 +8,9 @@ import { createTask } from '../actions/tasks';
 import { addHubSpotNote, HubSpotActionError } from '../integraciones/hubspot/actions';
 import { HubSpotApiError } from '../integraciones/hubspot/client';
 import { HubSpotAuthError } from '../integraciones/hubspot/oauth';
-import { findTrigger } from './catalog';
+import { findTrigger, type Lang, type WorkflowField } from './catalog';
 import {
-    evaluateConditions, exitBranch, isValidPath, nextSibling, renderTemplate, sanitizeDefinition, stepAt,
+    evaluateConditions, exitBranch, isValidPath, nextSibling, renderTemplate, sanitizeDefinition, stepAt, templateVariables,
     type Path, type Step, type WorkflowDefinition,
 } from './definition';
 
@@ -130,7 +130,10 @@ export async function executeRun(run: RunRow): Promise<void> {
             }
             let detalle: string;
             try {
-                detalle = await runActionWithRetry(step, { orgId, event, values: await buildValues(orgId, event, false), workflowId: run.workflow_id, nombre });
+                const used = new Set(Object.values(step.params).flatMap((v) => (typeof v === 'string' ? templateVariables(v) : [])));
+                const needsLive = (trigger?.fields ?? []).some((x) => x.live && used.has(x.key));
+                const values = displayValues(await buildValues(orgId, event, needsLive), trigger?.fields ?? [], await orgLocale(orgId));
+                detalle = await runActionWithRetry(step, { orgId, event, values, workflowId: run.workflow_id, nombre });
             } catch (err) {
                 const message = err instanceof WorkflowStepError ? err.message : 'Error interno al ejecutar la acción.';
                 if (!(err instanceof WorkflowStepError)) log.error('fallo inesperado en un paso de workflow', { route: 'workflows/engine', orgId, err });
@@ -193,6 +196,31 @@ async function buildValues(orgId: string, event: DbRow, live: boolean): Promise<
         }
     }
     return values;
+}
+
+async function orgLocale(orgId: string): Promise<string> {
+    const [[org]] = await withOrgTx(orgId, sql`select idioma from orgs where id = ${orgId}`);
+    return String(org?.idioma ?? 'es-MX');
+}
+
+export function displayValues(values: Record<string, unknown>, fields: WorkflowField[], locale: string): Record<string, unknown> {
+    const lang: Lang = locale.startsWith('en') ? 'en' : 'es';
+    let numbers: Intl.NumberFormat;
+    try { numbers = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }); } catch { numbers = new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'es-MX', { maximumFractionDigits: 2 }); }
+    const out: Record<string, unknown> = Object.create(null);
+    for (const [k, v] of Object.entries(values)) out[k] = v;
+    for (const field of fields) {
+        const v = out[field.key];
+        if (field.type === 'enum') {
+            const option = field.options?.find((o) => o.value === v);
+            if (option) out[field.key] = option.label[lang];
+        } else if (field.type === 'number' && v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v))) {
+            out[field.key] = numbers.format(Number(v));
+        } else if (field.type === 'boolean' && typeof v === 'boolean') {
+            out[field.key] = v ? (lang === 'en' ? 'Yes' : 'Sí') : 'No';
+        }
+    }
+    return out;
 }
 
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);

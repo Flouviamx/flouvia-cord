@@ -1,0 +1,121 @@
+---
+title: "Make"
+description: "How to connect Cord with Make: receive Cord events in a scenario with Webhooks, create and update Cord data with the HTTP module, avoid duplicates and fix errors."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Make</h1>
+  <p class="page-subtitle">Send what happens in Cord to any Make app, and create data in Cord from your scenarios.</p>
+</header>
+
+## How it connects
+
+Make connects with Cord through two modules Make already includes, with nothing to install:
+
+| Direction | Make module | What you need in Cord |
+|---|---|---|
+| **Cord → Make**: a Cord event starts your scenario | **Webhooks › Custom webhook** | A webhook endpoint with the Make URL |
+| **Make → Cord**: your scenario creates or updates Cord data | **HTTP › Make a request** | A secret API key with write access |
+
+**Settings › Integrations › Make** summarizes both steps with shortcuts to **Webhooks** and **API**. Both tabs live in the Developers panel: if you do not see it, turn on **Developer mode** with the switch at the bottom of the Settings index.
+
+## Receive Cord events
+
+<Steps>
+1. **Create the webhook in Make.** In your scenario add **Webhooks › Custom webhook**, click **Add**, name it and copy the URL Make gives you.
+2. **Register the endpoint in Cord.** Open **Webhooks** in the Developers panel, paste the Make URL and save. Cord shows a signing secret once; Make does not use it, but keep it if you plan to verify signatures later.
+3. **Choose the events.** Check only the ones your scenario needs, for example `quote.approved` or `invoice.paid`.
+4. **Teach Make the event shape.** In Make click **Redetermine data structure** and, in Cord, click **Test** on the endpoint. Make receives a sample event and learns its fields.
+5. **Map and turn on.** Use the fields in the following modules (for example `data.folio`, `data.total`, `data.cliente`) and turn on the scenario.
+</Steps>
+
+### What each event contains
+
+Each event is JSON with four fields:
+
+| Field | What it is |
+|---|---|
+| `id` | Unique event identifier. It stays the same if Cord retries the delivery. |
+| `event` | The event type, for example `quote.paid`. |
+| `created_at` | When it happened. |
+| `data` | The object data: for a quote, `id`, `folio`, `status`, `moneda`, `total`, `cliente`, `cliente_id` and the public link. |
+
+The full list of events and their fields is in [Webhooks for developers](/en/docs/desarrolladores/herramientas/webhooks).
+
+### One endpoint or several
+
+You can register one endpoint per scenario with only its events, or one with several events and a **Router** in Make filtering by `event`. The first is easier to maintain; the second uses fewer endpoints.
+
+Endpoints you register by hand count toward your plan's webhook limit: 16 on Free, Starter and Pro; 32 on Scale; 100 on Developer.
+
+### Deliveries and retries
+
+Each endpoint keeps a delivery log with the status, response time and Make's response. If Make does not respond, Cord retries the delivery. Since the `id` does not change between retries, add a filter or data store in Make so the same `id` is not processed twice.
+
+<Callout type="warning">
+**Treat the Make webhook URL as a secret.** Make does not verify Cord's signature, so anyone who knows the URL could send fake data to your scenario. Do not share it and, if you think it leaked, delete the endpoint in Cord, create a new webhook in Make and register the new URL.
+</Callout>
+
+## Create or update data in Cord
+
+<Steps>
+1. **Create a key.** In **API**, in the Developers panel, create a **secret key** with **write** scope. It is shown once; store it in the Make connection, not in a text field of the scenario.
+2. **Add HTTP › Make a request** to your scenario.
+3. **Configure it:**
+   - **URL:** the endpoint, for example `https://cordhq.app/api/v1/clientes`.
+   - **Method:** `POST` to create, `PATCH` to update, `GET` to search.
+   - **Headers:** `Authorization` with `Bearer` followed by your key, and `Content-Type` with `application/json`.
+   - **Body type:** `Raw`, **Content type** JSON, with the resource fields.
+   - **Parse response:** on, to use the response in the next modules.
+4. **Avoid duplicates** with the `Idempotency-Key` header (see below).
+</Steps>
+
+### What you can do
+
+| You want | Request |
+|---|---|
+| Find a client by email before creating it | `GET /api/v1/clientes?email=client@example.com` |
+| Create a client | `POST /api/v1/clientes` with at least `empresa` |
+| Update a client's contact details | `PATCH /api/v1/clientes/{id}` with `contacto`, `email`, `telefono`, etc. |
+| Find a quote by number | `GET /api/v1/cotizaciones?folio=COT-00104` |
+| Create a quote | `POST /api/v1/cotizaciones` |
+| Send, approve, reject or mark a quote paid | `POST /api/v1/cotizaciones/{id}` with `action`: `send`, `resend`, `approve`, `reject` or `mark_paid` |
+| Create a task | `POST /api/v1/tareas` with `titulo` and, optionally, `due_date` and `cotizacion_id` |
+
+Fields for each endpoint: [Clients](/en/docs/desarrolladores/funciones/clientes), [Quotes](/en/docs/desarrolladores/funciones/cotizaciones) and [Tasks](/en/docs/desarrolladores/funciones/tareas).
+
+### Avoid duplicates
+
+Make can retry a module. So a retry does not create the same client twice, add the `Idempotency-Key` header with a fixed value for that operation, for example the `id` of the event that caused it or the row id of your spreadsheet. If Cord already received that key with the same request, it returns the original result instead of creating another record.
+
+### Test keys
+
+With an `sk_test_…` key your scenario works against your account's test environment, isolated from your real data. Use it while building the scenario and switch to the `sk_live_…` key when done.
+
+## Example scenarios
+
+- **Quote approved → spreadsheet:** Custom webhook with `quote.approved` → Google Sheets › Add a row with number, client and total.
+- **Form → client in Cord:** Typeform › Watch responses → HTTP `GET /api/v1/clientes?email=` → if it does not exist, HTTP `POST /api/v1/clientes`.
+- **Invoice paid → accounting:** Custom webhook with `invoice.paid` → your accounting system.
+- **Payment on another platform → mark paid in Cord:** your platform's trigger → HTTP `GET /api/v1/cotizaciones?folio=` → HTTP `POST /api/v1/cotizaciones/{id}` with `{"action":"mark_paid"}`.
+
+## Common errors
+
+| Cord response | Cause | What to do |
+|---|---|---|
+| **401** | The key is missing, mistyped or revoked. | Check the `Authorization: Bearer sk_live_…` header. |
+| **403** | The key is read-only. | Create a key with write scope. |
+| **404** | The id does not exist in your organization. | Check that you mapped the right `id`, not the quote number. |
+| **409** `invalid_state` | The action does not apply to the current status, for example approving a draft. | Check the quote status before the action. |
+| **422** `idempotency_key_reused` | You used the same `Idempotency-Key` with another request. | Use a different key per operation. |
+| **429** | You exceeded the per-minute limit or the monthly quota. | Add a pause between modules or reduce frequency. |
+
+More in [API errors](/en/docs/desarrolladores/esenciales/errores).
+
+## Next
+
+- [Zapier](/en/docs/automatizacion/integraciones/zapier)
+- [Developer integrations guide](/en/docs/desarrolladores/herramientas/integraciones)

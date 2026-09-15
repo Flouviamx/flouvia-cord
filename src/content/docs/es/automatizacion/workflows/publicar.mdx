@@ -1,0 +1,83 @@
+---
+title: "Publicar, pausar y eliminar"
+description: "El ciclo de vida de un workflow en Cord: borrador, publicación, cambios sin publicar, pausa, reanudación, duplicado y eliminación."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Publicar, pausar y eliminar</h1>
+  <p class="page-subtitle">Editar un workflow nunca cambia lo que está corriendo hasta que tú lo decides.</p>
+</header>
+
+## Los tres estados
+
+| Estado | Qué significa | ¿Se ejecuta? | ¿Cuenta para el límite del plan? |
+|---|---|---|---|
+| **Borrador** | Nunca se ha publicado. | No | No |
+| **Activo** | Tiene una versión publicada y está encendido. | Sí | Sí |
+| **Pausado** | Tiene una versión publicada pero está apagado. | No | No |
+
+## Borrador y versión publicada
+
+Todo workflow tiene dos copias:
+
+- El **borrador**, que es lo que ves y editas en el editor.
+- La **versión publicada**, que es la que corre cuando ocurre el evento.
+
+Mientras editas, la versión publicada sigue corriendo sin cambios. Si hay diferencias entre las dos, el editor muestra **Cambios sin publicar** y el botón dice **Publicar cambios**.
+
+### Guardar el borrador
+
+**Guardar borrador** (o Cmd+S / Ctrl+S en escritorio) guarda el nombre y los pasos. No valida nada ni afecta lo que está corriendo, así que puedes guardar trabajo a medias. El nombre sí es obligatorio: si lo dejas vacío verás "Ponle un nombre al workflow."
+
+### Publicar
+
+**Publicar** (o **Publicar cambios**) hace tres cosas:
+
+1. **Revisa** que el borrador esté completo. Si falta algo, no publica y te muestra "Por resolver antes de publicar: N" con cada problema marcado en su paso.
+2. **Verifica tu plan** si el workflow no estaba activo. Si ya llegaste al máximo de workflows activos, verás "Tu plan permite N workflows activos. Pausa uno o sube de plan para publicar este."
+3. **Copia el borrador a la versión publicada**, sube el número de versión y deja el workflow **Activo**.
+
+Publicar cambios en un workflow que ya estaba activo no consume otro lugar del límite.
+
+## Qué pasa con las ejecuciones en curso
+
+Cada ejecución guarda una copia de la versión publicada **en el momento en que ocurrió el evento**. Si publicas cambios, las ejecuciones que ya estaban en cola o en espera terminan con la versión anterior; las nuevas usan la nueva.
+
+Así un cambio nunca deja una ejecución a medias con pasos que ya no existen.
+
+## Pausar y reanudar
+
+Desde el menú **Más acciones** del editor:
+
+- **Pausar** apaga el workflow. Deja de crear ejecuciones nuevas y libera su lugar en el límite del plan. Verás "Workflow pausado".
+- **Reanudar** lo vuelve a encender con su última versión publicada. Si tu plan ya no tiene lugar, verás el mismo aviso de límite que al publicar. Verás "Workflow reanudado".
+
+Solo se puede pausar o reanudar un workflow que ya se publicó alguna vez. Un borrador muestra "Publica el workflow antes de pausarlo o reanudarlo."
+
+Los eventos que ocurren mientras está pausado **no se recuperan** al reanudarlo. Las ejecuciones que estaban en espera y terminan su espera mientras sigue pausado se cancelan; si reanudas antes, continúan.
+
+## Duplicar
+
+**Duplicar** crea un workflow nuevo con el nombre "*Nombre* (copia)" y una copia del borrador. La copia nace como **Borrador**, sin historial de ejecuciones, y hay que publicarla aparte. Es la forma rápida de tener dos workflows parecidos con disparadores distintos.
+
+## Eliminar
+
+**Eliminar workflow** borra el workflow y todo su historial de ejecuciones, incluidas las que estaban en cola o en espera. **No se puede deshacer.** Cord te pide confirmar antes.
+
+Lo que el workflow ya hizo **no se borra**: las tareas creadas siguen en Tareas, los correos ya se enviaron y los mensajes de Slack y notas de HubSpot siguen donde quedaron.
+
+<Callout type="info">
+Si no estás seguro, pausa en lugar de eliminar. Un workflow pausado conserva su historial y no cuenta para el límite de tu plan.
+</Callout>
+
+## Registro de cambios
+
+Crear, publicar, pausar, reanudar, eliminar, reintentar o cancelar una ejecución queda registrado en **Ajustes › Auditoría**, con quién lo hizo y cuándo.
+
+## Siguiente
+
+- [Ejecuciones y errores](/docs/automatizacion/workflows/ejecuciones)
+- [Límites](/docs/automatizacion/workflows/limites)

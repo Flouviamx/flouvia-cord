@@ -1,0 +1,78 @@
+---
+title: "Zapier"
+description: "Estado de la app de Cord para Zapier, qué incluirá y cómo conectar Cord con Zapier hoy usando Webhooks by Zapier y la API de Cord."
+lastUpdated: "2026-09-15"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Zapier</h1>
+  <p class="page-subtitle">Conecta Cord con miles de apps sin escribir código.</p>
+</header>
+
+## Estado
+
+La app de Cord para Zapier está **en camino**. En **Ajustes › Integraciones** aparece como **Próximamente** y todavía no se puede instalar. Cuando esté lista, la tarjeta cambiará a **Con llave de API** y esta página tendrá el paso a paso.
+
+Mientras tanto puedes conectar Zapier con Cord hoy mismo con los módulos genéricos de Zapier, como se explica abajo.
+
+## Qué incluirá la app
+
+| Tipo | Qué podrás hacer |
+|---|---|
+| **Disparadores instantáneos** | Cotización creada, enviada, abierta, aprobada, rechazada o pagada; pago parcial; factura pagada; cliente nuevo; o cualquier evento de Cord. |
+| **Acciones** | Crear y actualizar clientes, crear y enviar cotizaciones, marcarlas pagadas y crear tareas. |
+| **Búsquedas** | Cliente por correo o nombre, y cotización por folio. |
+
+Así se conectará:
+
+1. Abrir Cord en Zapier y aceptar la invitación.
+2. Crear en Cord una llave secreta con permiso de escritura.
+3. En Zapier, crear un Zap, elegir Cord y pegar la llave cuando la pida.
+
+Cada Zap activo creará su propio webhook en Cord, con un cupo de 100 por organización **aparte** de los endpoints de tu plan, así que tus Zaps no te quitarán lugares.
+
+## Conectar hoy con Webhooks by Zapier
+
+Webhooks by Zapier es una app de Zapier disponible en sus planes de pago.
+
+### Recibir eventos de Cord
+
+<Steps>
+1. **Crea el Zap.** En Zapier, elige como disparador **Webhooks by Zapier › Catch Hook** y copia la URL que te da.
+2. **Registra el endpoint en Cord.** Activa el **Modo desarrollador** (interruptor al fondo del índice de Ajustes), abre **Webhooks** en el panel de Desarrolladores, pega la URL de Zapier y guarda.
+3. **Elige los eventos**, por ejemplo `quote.approved`.
+4. **Manda un evento de prueba.** Pulsa **Probar** en el endpoint de Cord y, en Zapier, **Test trigger**. Zapier mostrará los campos: `event`, `data__folio`, `data__total`, `data__cliente`, etc.
+5. **Agrega las acciones** del Zap y actívalo.
+</Steps>
+
+Cada evento trae `id`, `event`, `created_at` y `data`. Si registras varios eventos en un endpoint, agrega un paso **Filter by Zapier** o **Paths** por el campo `event`.
+
+<Callout type="warning">
+Zapier no verifica la firma de Cord. Trata la URL del Catch Hook como un secreto; si crees que se filtró, borra el endpoint en Cord y crea un Zap nuevo.
+</Callout>
+
+Los endpoints que registras así cuentan dentro del límite de webhooks de tu plan: 16 en Gratis, Starter y Pro; 32 en Scale; 100 en Developer.
+
+### Crear o actualizar datos en Cord
+
+<Steps>
+1. En **API**, dentro del panel de Desarrolladores, crea una **llave secreta** con alcance de **escritura**.
+2. En tu Zap agrega **Webhooks by Zapier › Custom Request**.
+3. Configura **Method** (`POST`, `PATCH` o `GET`), **URL** (por ejemplo `https://cordhq.app/api/v1/clientes`), **Data** en JSON y los **Headers** `Authorization: Bearer` + tu llave y `Content-Type: application/json`.
+4. Agrega el header `Idempotency-Key` con un valor único por operación (por ejemplo el id del registro que originó el Zap) para que un reintento no duplique datos.
+</Steps>
+
+Las peticiones disponibles son las mismas que en [Make](/docs/automatizacion/integraciones/make): buscar y crear clientes, crear cotizaciones, enviarlas, aprobarlas o marcarlas pagadas, y crear tareas. Los campos están en la [documentación para desarrolladores](/docs/desarrolladores/funciones/clientes).
+
+## Ejemplos
+
+- **Cotización pagada → Google Sheets:** Catch Hook con `quote.paid` → Google Sheets › Create Spreadsheet Row.
+- **Nuevo lead en tu formulario → cliente en Cord:** tu app de formularios → Custom Request `POST /api/v1/clientes`.
+- **Cotización aprobada → proyecto nuevo:** Catch Hook con `quote.approved` → Asana, Trello o ClickUp › Create task.
+
+## Siguiente
+
+- [Make](/docs/automatizacion/integraciones/make)
+- [Integraciones](/docs/automatizacion/integraciones)

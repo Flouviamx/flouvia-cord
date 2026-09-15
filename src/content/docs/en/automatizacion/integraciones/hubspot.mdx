@@ -1,0 +1,113 @@
+---
+title: "Connect HubSpot"
+description: "How to connect your HubSpot account with Cord: requirements, requested permissions, what happens when you connect, possible messages, switching accounts and disconnecting."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Connect HubSpot</h1>
+  <p class="page-subtitle">Your Cord clients and quotes, up to date in HubSpot, without entering them twice.</p>
+</header>
+
+## What the integration does
+
+- **Every Cord client** is created in HubSpot as a **Company** and, if it has an email or contact name, also as a **Contact** associated with that Company.
+- **Every sent quote** is created as a **Deal** with its amount and currency, associated with the client's Company and Contact.
+- **The Deal moves on its own**: Cord updates its stage when the client opens the quote, approves it, rejects it, when it expires, is paid or invoiced.
+- **Contact corrections flow back to Cord**: if you fix the Company name, or the Contact's name, email or phone in HubSpot, they change in Cord too.
+
+Field-by-field detail in [What syncs](/en/docs/automatizacion/integraciones/hubspot-sincronizacion).
+
+<Callout type="info">
+**Cord owns the sale status.** Moving a Deal to another stage in HubSpot does not change the quote in Cord: its status is decided by the client's approval and payment.
+</Callout>
+
+## Before connecting
+
+- **In Cord:** you need the **Settings** permission.
+- **In HubSpot:** you need a user who can install apps in the account. If you do not have one, ask a HubSpot Super Admin to connect.
+- **One account per organization:** a HubSpot account can only be connected to one Cord organization, and each Cord organization connects to a single HubSpot account.
+- **Currencies:** if you quote in several currencies, enable them in your HubSpot account's currency settings. A Deal in a currency HubSpot has not enabled cannot be created.
+
+## Connect step by step
+
+<Steps>
+1. **Open the app.** Go to **Settings › Integrations** and tap **HubSpot**.
+2. **Click Connect HubSpot.** Cord takes you to HubSpot.
+3. **Choose the HubSpot account**, if you have several, and **accept the permissions**. You have 10 minutes to complete this; if it takes longer, click Connect again.
+4. **Return to Cord.** You see "HubSpot is connected." and the **Connected** status, with the account name.
+5. **Review the stages.** In **HubSpot stage for each quote status**, confirm the pipeline and the stage for each status and click **Save stages**. If you use HubSpot's default pipeline, Cord already suggests a stage for each status. See [Pipeline and stages](/en/docs/automatizacion/integraciones/hubspot-etapas).
+6. **Send what you already had (optional).** In **Existing data**, click **Send existing data** to send your earlier clients and quotes. See [What syncs](/en/docs/automatizacion/integraciones/hubspot-sincronizacion).
+</Steps>
+
+From then on, every new or updated client and every quote that moves forward is sent automatically.
+
+<Callout type="warning">
+If the button does not take you to HubSpot or you come back to an error, **click Connect HubSpot again** from Cord. Do not reuse an old authorization link saved in your browser: every attempt creates a one-time link.
+</Callout>
+
+## Permissions Cord requests
+
+When authorizing, HubSpot shows the permissions Cord requests. Only what this integration needs:
+
+| Permission | What for |
+|---|---|
+| Read and write **Companies** | Create each client's Company and read name corrections. |
+| Read and write **Contacts** | Create each client's Contact, find existing ones by email and read corrections. |
+| Read and write **Deals** | Create each quote's Deal, move its stage and read your pipelines. |
+
+Cord does not read your emails, calls, tickets, lists, forms or any other HubSpot object.
+
+## Connection messages
+
+| Message | What happened | What to do |
+|---|---|---|
+| HubSpot is connected. | All good. | Review the stages. |
+| You canceled the HubSpot connection. | You closed or declined the authorization in HubSpot. | Click **Connect HubSpot** again whenever you want. |
+| The connection request expired or is not valid. Try again. | More than 10 minutes passed, an old link was used or it was opened from another session. | Click **Connect HubSpot** again from Cord. |
+| That HubSpot account is already connected to another Cord organization. | The account is in use in another organization. | Disconnect it there or choose another account. |
+| Couldn't connect HubSpot. Try again. | HubSpot did not complete the authorization. | Try again; if it persists, write to contacto@cordhq.app. |
+| You need Settings permission to connect integrations. | Your role lacks the Settings permission. | Ask the account owner to connect or grant you the permission. |
+
+## The connection panel
+
+Once connected, the HubSpot page shows:
+
+| Item | What it is |
+|---|---|
+| **HubSpot account** | The number and domain of the connected account. |
+| **Last sync** | When something was last sent or received. "Not yet" if nothing has happened. |
+| **Queued** | Pending sends. |
+| **Errors (7 days)** | Sends that failed in the last week. |
+| **Last error** | The most recent error message, if any. |
+
+What to do with each error: [HubSpot troubleshooting](/en/docs/automatizacion/integraciones/hubspot-problemas).
+
+## Switch to another HubSpot account
+
+Disconnect the current account and connect the new one. When you connect a **different** account, Cord forgets the links to the previous account and resets the stage settings, because the other account's pipelines do not exist in the new one. Then use **Send existing data** to populate the new account.
+
+If you reconnect **the same** account, Cord keeps the links and your stage settings: Companies and Deals are not duplicated. Changes you made in Cord while disconnected were not sent; use **Send existing data** to catch up.
+
+## Disconnect
+
+<Steps>
+1. In **Settings › Integrations › HubSpot**, click **Disconnect**.
+2. Confirm in **Disconnect HubSpot?**.
+3. You see "HubSpot disconnected".
+</Steps>
+
+When you disconnect:
+
+- Cord **stops syncing** and discards queued sends.
+- Cord **revokes its access** to your HubSpot account.
+- **What is already in HubSpot is not deleted**: Companies, Contacts, Deals and notes stay as they are.
+- Workflows with the **Add a note in HubSpot** action start failing with "Connect HubSpot in Settings › Integrations to use this action."
+
+## Next
+
+- [What syncs](/en/docs/automatizacion/integraciones/hubspot-sincronizacion)
+- [Pipeline and stages](/en/docs/automatizacion/integraciones/hubspot-etapas)
+- [HubSpot troubleshooting](/en/docs/automatizacion/integraciones/hubspot-problemas)

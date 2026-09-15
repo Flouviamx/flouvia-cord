@@ -1,0 +1,109 @@
+---
+title: "Slack"
+description: "How to connect a Slack channel with Cord using an Incoming Webhook, turn on event alerts, what each message contains, use Slack in workflows and fix problems."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Slack</h1>
+  <p class="page-subtitle">Your team hears in its channel when a client opens, approves or pays, without opening Cord.</p>
+</header>
+
+## How it works
+
+Cord posts to Slack through an **Incoming Webhook**: a URL Slack generates for a specific channel. Cord does not install an app in your Slack or read your messages; it can only post to that channel.
+
+There are two ways to get messages, and you can use both:
+
+| | Notification alerts | Workflow action |
+|---|---|---|
+| **What it posts** | A standard message per quote event. | The text you write, with event data. |
+| **When** | On the events you check in Settings › Notifications. | On any of the 41 triggers, with conditions and waits. |
+| **Where to set it up** | **Settings › Notifications** | **Workflows** |
+
+## 1. Create the URL in Slack
+
+<Steps>
+1. Go to **api.slack.com/apps** with your Slack account and click **Create New App › From scratch**. Name it, for example "Cord", and choose your workspace.
+2. In the app menu open **Incoming Webhooks** and turn them on.
+3. Click **Add New Webhook to Workspace**, choose the channel for the alerts and authorize.
+4. Copy the URL. It starts with `https://hooks.slack.com/services/`.
+</Steps>
+
+The name and icon you give the app in Slack are what your team sees on each message.
+
+If your workspace restricts app installs, a Slack admin will need to approve it.
+
+## 2. Paste it in Cord
+
+<Steps>
+1. Go to **Settings › Integrations** and tap **Slack**.
+2. Paste the URL in the **Incoming Webhook URL** field and click **Save**. The status changes to **Connected**.
+3. Click **Send test**. A message about a test quote "COT-PRUEBA" should appear in the channel. In Cord you see "Message sent to Slack".
+</Steps>
+
+Save before testing: the test uses the saved URL, not the one typed in the field.
+
+## 3. Turn on the alerts
+
+Connecting Slack **does not turn on any alert by itself**. Go to **Settings › Notifications** and check the Slack column for the events you want:
+
+| Event | When it alerts |
+|---|---|
+| **Your client viewed the quote** | When the client opens the public link. |
+| **Quote approved** | The client accepted the proposal. |
+| **Quote rejected** | The client rejected it. |
+| **Payment received** | The online payment was recorded. |
+| **Quote about to expire** | 3 days before the validity date. |
+| **Overdue payment** | A receivable passed its due date. |
+
+**Someone joined the team** is email only; it has no Slack option.
+
+## What each alert contains
+
+Each notification alert is a short message with:
+
+- The quote **number** and what happened (viewed, approved, rejected, paid, about to expire, overdue).
+- The **client** and the **total** with its currency.
+- A link that opens the quote in Cord.
+
+Notification alerts are about quotes: an event without a quote number is not posted to Slack. The text of these alerts is currently in Spanish; for messages in English, use the workflow action below.
+
+## Custom messages with workflows
+
+With the **Send a Slack message** action in [Cord Workflows](/en/docs/automatizacion/workflows/acciones) you write the message, with event data, and decide when it goes out. Examples:
+
+- When a deposit arrives: "`{{cliente}}` paid the deposit for `{{folio}}`: `{{monto}}` `{{moneda}}`. Balance: `{{saldo_pendiente}}`."
+- When a dispute is opened: "Dispute on `{{folio}}` for `{{monto}}` `{{moneda}}`. Respond before `{{fecha_limite}}`."
+- When a large sale is approved, only if the total passes a certain amount.
+
+This action posts to the same channel and works even if notification alerts are off.
+
+## Change channel or disconnect
+
+- **Change channel:** create another webhook in Slack for the new channel, paste the URL in Cord and save.
+- **Disconnect:** clear the URL and click **Save**. Cord stops posting and the status goes back to **Not connected**. Workflows with the Slack action will start failing with a message asking you to connect Slack.
+- **Revoke from Slack:** if you delete the webhook or the app in Slack, the URL stops working immediately, even if it is still saved in Cord.
+
+Cord can post to **one channel** at a time. For alerts in several channels, one option is [Make](/en/docs/automatizacion/integraciones/make) with Cord webhooks.
+
+## Problems
+
+| Message | Cause | What to do |
+|---|---|---|
+| The URL must be from hooks.slack.com | You pasted another URL, such as the channel or app URL. | Copy the Incoming Webhook URL, the one starting with `https://hooks.slack.com/`. |
+| No Slack webhook connected (shown in Spanish) | You clicked **Send test** without saving. | Click **Save**, then test. |
+| Slack responded with an error (shown in Spanish) | Slack rejected the message: the webhook was deleted, the app removed or the URL is incomplete. | Create a new webhook and paste the full URL. |
+| Could not send | Network error while testing. | Try again. |
+| The test arrives but alerts do not | The events do not have Slack checked. | Check **Settings › Notifications**. |
+
+<Callout type="warning">
+Treat the webhook URL like a password: anyone who has it can post to your channel. If you think it leaked, delete it in Slack and create a new one.
+</Callout>
+
+## Next
+
+- [Workflow actions](/en/docs/automatizacion/workflows/acciones)
+- [Integrations](/en/docs/automatizacion/integraciones)

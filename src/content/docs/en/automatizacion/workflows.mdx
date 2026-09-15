@@ -1,6 +1,6 @@
 ---
 title: "Cord Workflows"
-description: "Automate what happens after every sale: when something happens in Cord, the workflow creates tasks, emails your team, posts to Slack, or adds notes in HubSpot."
+description: "What Cord Workflows is, how a workflow works inside, and where to find the guide for each piece: triggers, actions, conditions, waits, event data, publishing and runs."
 lastUpdated: "2026-09-15"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -8,75 +8,72 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 
 <header class="content-header">
   <h1 class="page-title">Cord Workflows</h1>
-  <p class="page-subtitle">"When this happens, do this" rules that take the next step for you, without writing code.</p>
+  <p class="page-subtitle">"When this happens, do this" rules that take the next step for you after every sale, without writing code.</p>
 </header>
 
 ## What a workflow is
 
-A workflow listens to an event in your account — a quote sent, a deposit received, an overdue invoice, a dispute — and runs the steps you defined. You'll find it under **Workflows**, in the Intelligence group of the sidebar. Creating and publishing workflows requires the **Settings** permission.
+A workflow is a rule that watches your Cord account. When a specific event happens (a client opens a quote, a deposit arrives, an invoice becomes overdue, a dispute is opened), the workflow runs the steps you defined, in order: create a task, email your team, post to Slack or add a note in HubSpot.
 
-## Start from an idea
+The point is that follow-up does not depend on someone remembering. If your team checks by hand which quotes nobody opened, who paid the deposit or which invoices are overdue, a workflow does it for you and leaves the task ready for the right person.
 
-When you create your first workflow, Cord opens a gallery of ready-made examples. Each one is created as a draft so you can review it before publishing:
+## Where to find it
 
-- **Follow up if the client does not open:** three days after sending a quote, if it is still unopened, create a task to call.
-- **Large deal alert:** when a quote of 100,000 or more is approved, email the owner.
-- **Slack when a payment arrives:** post to your channel every time a quote is paid.
-- **HubSpot note when the client approves:** add a note to the Deal and post to Slack.
-- **Broken payment promise:** create a collections task for today and notify the team.
-- **Kick off when the deposit arrives:** create the task to start the work and report the remaining balance.
-- **Collect overdue invoices:** create a collection task and, if it is still open a week later, tell the owner.
-- **Win back a rejected quote:** create a task to call the client tomorrow.
-- **Alert when a quote needs approval:** email the whole team with the reason.
-
-## Triggers
-
-The trigger is the event that starts the workflow. They are grouped by category:
-
-| Category | Examples |
-|---|---|
-| Quotes | Created, sent, opened by the client, approved, rejected, expired, a message arrives. |
-| Approvals | A quote requests internal approval, or that approval is decided. |
-| Payments | Paid in full, partial payment (deposit, balance, or installment), failed recurring charge, dispute opened or closed, refund succeeded or failed, payout paid or failed, a change in your payments account. |
-| Invoices | Issued, sent, paid, payment failed, overdue, voided, or marked uncollectible. |
-| Clients and products | A client or product is created, updated, or deleted. |
-| Tasks and promises | A task is created or completed; a payment promise is recorded, kept, or broken. |
-
-## Steps
-
-Add steps with **Add a step**. There are three kinds:
-
-- **Action:** create a task, email your team, send a Slack message, or add a note in HubSpot.
-- **Condition:** splits the flow into two branches, **If the condition is met** and **If the condition isn't met**, based on the event data. For example, "the total is greater than or equal to 50,000" or "the payment type is Deposit". Fields marked as *current status* are read at evaluation time, so they work after a wait.
-- **Wait:** pauses the flow for 1 to 30 days, then continues. Waits are checked once a day.
-
-In any text you can insert event data with double braces, such as `{{cliente}}`, `{{folio}}`, `{{total}}`, or `{{monto}}`. The editor only offers the fields that trigger provides.
-
-## Publish and pause
-
-A workflow has a **draft** you can edit freely and a **published version** that actually runs. Click **Publish** to activate your changes; until then the workflow keeps running the previous version. You can pause and resume it from the **⋯** menu in the editor.
-
-## Runs
-
-The **Runs** tab records every time the workflow fired: when, which steps ran, and the result. A step that fails for a temporary reason is retried right away and, if it keeps failing, up to three attempts in total. If it does not recover, the run is marked with an error and the message tells you what happened.
-
-## Limits
-
-| Plan | Active workflows |
-|---|---|
-| Free | 1 |
-| Starter | 5 |
-| Pro, Scale, and Developer | Unlimited |
-
-Drafts do not count toward the limit. Each workflow supports up to 30 steps and up to 4 levels of nested conditions.
+Open **Workflows** in the app sidebar. The list shows each workflow as a card with its name, the event that starts it, its status (**Draft**, **Active** or **Paused**), how many times it ran in the last 30 days and how many of those runs failed. At the top you see how many active workflows you have against your plan limit.
 
 <Callout type="info">
-**What a workflow never does:** it never writes to your client, charges, issues invoices, or marks payments. Those stay human decisions. It also never triggers on its own events, so two workflows cannot loop.
+Cord Workflows is for admins. You need the **Settings** permission to view, create, edit or publish workflows. People without it see "Cord Workflows is for admins" and can ask the account owner for access.
 </Callout>
 
-## Actions that need a connection
+## The pieces of a workflow
 
-- **Send a Slack message** requires Slack connected in Settings › Integrations.
-- **Add a note in HubSpot** requires HubSpot connected. The note goes on the quote's Deal or, when there is no Deal, on the client's Company.
+Each workflow reads top to bottom in the editor, in two blocks: **When this happens** and **Do this**.
 
-If the connection is missing, the run ends with an error telling you what to connect. See [Integrations](/en/docs/automatizacion/integraciones).
+| Piece | What it does | Guide |
+|---|---|---|
+| **Trigger** | The event that starts the workflow. There are 41, grouped into quotes, approvals, payments, invoices, clients, products, and tasks and promises. Each workflow has exactly one. | [Triggers](/en/docs/automatizacion/workflows/disparadores) |
+| **Action** | Something Cord does for you: create a task, email the team, send a Slack message or add a note in HubSpot. | [Actions](/en/docs/automatizacion/workflows/acciones) |
+| **Condition** | Splits the flow into two branches, **If the condition is met** and **If the condition isn't met**, based on the event data. | [Conditions](/en/docs/automatizacion/workflows/condiciones) |
+| **Wait** | Pauses the flow for 1 to 30 days and then continues with the next step. | [Waits](/en/docs/automatizacion/workflows/esperas) |
+| **Event data** | Values like `{{cliente}}`, `{{folio}}` or `{{total}}` that you can put in your texts and that are filled in when the workflow runs. | [Event data](/en/docs/automatizacion/workflows/datos-del-evento) |
+
+## A complete example
+
+"Follow up if the client does not open" is one of the ideas Cord ships with. It reads like this:
+
+1. **When this happens:** a quote is sent.
+2. **Wait** 3 days.
+3. **Condition:** the current quote status is **Sent** (the client has not opened it yet).
+4. **If met:** create the task "Call `{{cliente}}` about `{{folio}}`" due today.
+5. **If not met:** do nothing; the client already opened it.
+
+Every quote you send starts its own run of this workflow. Three days later, each run checks its own quote and decides separately.
+
+## Draft, published version and runs
+
+- **Draft:** what you edit. Change it as often as you like without affecting anything.
+- **Published version:** what runs. It only changes when you click **Publish** or **Publish changes**.
+- **Run:** every time the event happens, Cord creates a run with a copy of the version published at that moment. If you publish changes later, runs already in progress finish with the version they started with.
+
+All of this is explained in [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar) and [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones).
+
+## What a workflow never does
+
+<Callout type="warning">
+A workflow works for your team; it does not talk to your client. **It never writes to the client, never charges, never issues or voids invoices, never marks payments and never changes a quote's status.** Those decisions stay with a person. Emails from the "Email the team" action only reach members of your organization.
+</Callout>
+
+It also cannot create infinite loops: a workflow is never triggered by the events it causes itself, and a chain of workflows triggering each other stops after three levels. Details in [Limits](/en/docs/automatizacion/workflows/limites).
+
+## Cord Workflows guides
+
+- [Create your first workflow](/en/docs/automatizacion/workflows/primer-workflow): the editor, step by step.
+- [Ready-made ideas](/en/docs/automatizacion/workflows/ideas): the 9 examples Cord ships with and how to adapt them.
+- [Triggers](/en/docs/automatizacion/workflows/disparadores): the 41 events and the data each one carries.
+- [Actions](/en/docs/automatizacion/workflows/acciones): tasks, emails, Slack and HubSpot.
+- [Conditions](/en/docs/automatizacion/workflows/condiciones): branches, comparisons and current status.
+- [Waits](/en/docs/automatizacion/workflows/esperas): how days are counted.
+- [Event data](/en/docs/automatizacion/workflows/datos-del-evento): variables in your texts.
+- [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar): the life cycle of a workflow.
+- [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones): how to read the history and fix failures.
+- [Limits](/en/docs/automatizacion/workflows/limites): plans, size and hourly caps.

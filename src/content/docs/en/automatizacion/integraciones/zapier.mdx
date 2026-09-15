@@ -1,0 +1,78 @@
+---
+title: "Zapier"
+description: "Status of the Cord app for Zapier, what it will include and how to connect Cord with Zapier today using Webhooks by Zapier and the Cord API."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Zapier</h1>
+  <p class="page-subtitle">Connect Cord with thousands of apps without writing code.</p>
+</header>
+
+## Status
+
+The Cord app for Zapier is **on the way**. In **Settings › Integrations** it shows as **Coming soon** and cannot be installed yet. When it is ready, the card will change to **With an API key** and this page will have the step-by-step guide.
+
+Meanwhile you can connect Zapier with Cord today using Zapier's generic modules, as explained below.
+
+## What the app will include
+
+| Type | What you will be able to do |
+|---|---|
+| **Instant triggers** | Quote created, sent, opened, approved, rejected or paid; partial payment; invoice paid; new client; or any Cord event. |
+| **Actions** | Create and update clients, create and send quotes, mark them paid and create tasks. |
+| **Searches** | Client by email or name, and quote by number. |
+
+How it will connect:
+
+1. Open Cord on Zapier and accept the invitation.
+2. Create a secret key with write access in Cord.
+3. In Zapier, create a Zap, choose Cord and paste the key when asked.
+
+Each active Zap will create its own webhook in Cord, with a limit of 100 per organization **separate** from your plan's endpoints, so your Zaps will not take slots.
+
+## Connect today with Webhooks by Zapier
+
+Webhooks by Zapier is a Zapier app available on its paid plans.
+
+### Receive Cord events
+
+<Steps>
+1. **Create the Zap.** In Zapier, choose **Webhooks by Zapier › Catch Hook** as the trigger and copy the URL it gives you.
+2. **Register the endpoint in Cord.** Turn on **Developer mode** (switch at the bottom of the Settings index), open **Webhooks** in the Developers panel, paste the Zapier URL and save.
+3. **Choose the events**, for example `quote.approved`.
+4. **Send a test event.** Click **Test** on the Cord endpoint and, in Zapier, **Test trigger**. Zapier shows the fields: `event`, `data__folio`, `data__total`, `data__cliente`, etc.
+5. **Add the Zap actions** and turn it on.
+</Steps>
+
+Each event carries `id`, `event`, `created_at` and `data`. If you register several events on one endpoint, add a **Filter by Zapier** or **Paths** step on the `event` field.
+
+<Callout type="warning">
+Zapier does not verify Cord's signature. Treat the Catch Hook URL as a secret; if you think it leaked, delete the endpoint in Cord and create a new Zap.
+</Callout>
+
+Endpoints registered this way count toward your plan's webhook limit: 16 on Free, Starter and Pro; 32 on Scale; 100 on Developer.
+
+### Create or update data in Cord
+
+<Steps>
+1. In **API**, in the Developers panel, create a **secret key** with **write** scope.
+2. In your Zap add **Webhooks by Zapier › Custom Request**.
+3. Set **Method** (`POST`, `PATCH` or `GET`), **URL** (for example `https://cordhq.app/api/v1/clientes`), JSON **Data** and the **Headers** `Authorization: Bearer` + your key and `Content-Type: application/json`.
+4. Add the `Idempotency-Key` header with a unique value per operation (for example the id of the record that started the Zap) so a retry does not duplicate data.
+</Steps>
+
+The available requests are the same as in [Make](/en/docs/automatizacion/integraciones/make): find and create clients, create quotes, send, approve or mark them paid, and create tasks. The fields are in the [developer documentation](/en/docs/desarrolladores/funciones/clientes).
+
+## Examples
+
+- **Quote paid → Google Sheets:** Catch Hook with `quote.paid` → Google Sheets › Create Spreadsheet Row.
+- **New lead in your form → client in Cord:** your form app → Custom Request `POST /api/v1/clientes`.
+- **Quote approved → new project:** Catch Hook with `quote.approved` → Asana, Trello or ClickUp › Create task.
+
+## Next
+
+- [Make](/en/docs/automatizacion/integraciones/make)
+- [Integrations](/en/docs/automatizacion/integraciones)

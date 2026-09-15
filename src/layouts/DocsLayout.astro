@@ -32,6 +32,7 @@ const {
 const { esUrl, enUrl } = altLangUrls(Astro.url);
 
 const getUrl = (path: string) => lang === 'en' ? `/en${path}` : path;
+const isPage = (path: string) => Astro.url.pathname.replace(/\/$/, '') === getUrl(path);
 
 const isOverviewPage = Astro.url.pathname.endsWith('/resumen') || Astro.url.pathname.endsWith('/resumen/') || Astro.url.pathname === '/docs' || Astro.url.pathname === '/docs/' || Astro.url.pathname === '/en/docs' || Astro.url.pathname === '/en/docs/';
 const isPaymentsSection = Astro.url.pathname.includes(getUrl('/docs/pagos'));
@@ -418,11 +419,36 @@ const jsonLd = {
                   <li class="sidebar-dropdown open">
                     <button class="sidebar-dropdown-toggle">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                      {lang === 'es' ? 'Automatización e integraciones' : 'Automation and integrations'}
+                      {lang === 'es' ? 'Cord Workflows' : 'Cord Workflows'}
                     </button>
                     <ul class="sidebar-submenu">
-                      <li class={Astro.url.pathname.includes(getUrl('/docs/automatizacion/workflows')) ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows')}>Cord Workflows</a></li>
-                      <li class={Astro.url.pathname.includes(getUrl('/docs/automatizacion/integraciones')) ? 'active' : ''}><a href={getUrl('/docs/automatizacion/integraciones')}>{lang === 'es' ? 'Integraciones' : 'Integrations'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows/primer-workflow') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows/primer-workflow')}>{lang === 'es' ? 'Crea tu primer workflow' : 'Create your first workflow'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows/ideas') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows/ideas')}>{lang === 'es' ? 'Ideas listas para usar' : 'Ready-made ideas'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows/disparadores') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows/disparadores')}>{lang === 'es' ? 'Disparadores' : 'Triggers'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows/acciones') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows/acciones')}>{lang === 'es' ? 'Acciones' : 'Actions'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows/condiciones') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows/condiciones')}>{lang === 'es' ? 'Condiciones' : 'Conditions'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows/esperas') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows/esperas')}>{lang === 'es' ? 'Esperas' : 'Waits'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows/datos-del-evento') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows/datos-del-evento')}>{lang === 'es' ? 'Datos del evento' : 'Event data'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows/publicar') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows/publicar')}>{lang === 'es' ? 'Publicar, pausar y eliminar' : 'Publish, pause and delete'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows/ejecuciones') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows/ejecuciones')}>{lang === 'es' ? 'Ejecuciones y errores' : 'Runs and errors'}</a></li>
+                      <li class={isPage('/docs/automatizacion/workflows/limites') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/workflows/limites')}>{lang === 'es' ? 'Límites' : 'Limits'}</a></li>
+                    </ul>
+                  </li>
+                  <li class="sidebar-dropdown open">
+                    <button class="sidebar-dropdown-toggle">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      {lang === 'es' ? 'Integraciones' : 'Integrations'}
+                    </button>
+                    <ul class="sidebar-submenu">
+                      <li class={isPage('/docs/automatizacion/integraciones') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/integraciones')}>{lang === 'es' ? 'Resumen' : 'Overview'}</a></li>
+                      <li class={isPage('/docs/automatizacion/integraciones/hubspot') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/integraciones/hubspot')}>{lang === 'es' ? 'Conectar HubSpot' : 'Connect HubSpot'}</a></li>
+                      <li class={isPage('/docs/automatizacion/integraciones/hubspot-sincronizacion') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/integraciones/hubspot-sincronizacion')}>{lang === 'es' ? 'Qué se sincroniza' : 'What syncs'}</a></li>
+                      <li class={isPage('/docs/automatizacion/integraciones/hubspot-etapas') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/integraciones/hubspot-etapas')}>{lang === 'es' ? 'Pipeline y etapas' : 'Pipeline and stages'}</a></li>
+                      <li class={isPage('/docs/automatizacion/integraciones/hubspot-problemas') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/integraciones/hubspot-problemas')}>{lang === 'es' ? 'Problemas con HubSpot' : 'HubSpot troubleshooting'}</a></li>
+                      <li class={isPage('/docs/automatizacion/integraciones/slack') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/integraciones/slack')}>Slack</a></li>
+                      <li class={isPage('/docs/automatizacion/integraciones/make') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/integraciones/make')}>Make</a></li>
+                      <li class={isPage('/docs/automatizacion/integraciones/zapier') ? 'active' : ''}><a href={getUrl('/docs/automatizacion/integraciones/zapier')}>Zapier</a></li>
                     </ul>
                   </li>
                 </ul>

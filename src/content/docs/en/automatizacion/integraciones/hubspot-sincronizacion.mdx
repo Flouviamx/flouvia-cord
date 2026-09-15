@@ -1,0 +1,139 @@
+---
+title: "What syncs with HubSpot"
+description: "Field by field: how Cord clients and quotes are sent to HubSpot, what comes back from HubSpot to Cord, when it happens, how duplicates are avoided and what does not sync."
+lastUpdated: "2026-09-15"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">What syncs with HubSpot</h1>
+  <p class="page-subtitle">What travels from Cord to HubSpot, what comes back and what stays where it is.</p>
+</header>
+
+## At a glance
+
+| In Cord | In HubSpot | Direction |
+|---|---|---|
+| Client (company name) | Company | Cord → HubSpot, and the name comes back |
+| Client (contact, email, phone) | Contact associated with the Company | Cord → HubSpot, and changes come back |
+| Sent quote | Deal associated with the Company and Contact | Cord → HubSpot only |
+| Quote status | Deal stage | Cord → HubSpot only |
+
+## Clients → Companies and Contacts
+
+### The Company
+
+| Field in Cord | HubSpot property |
+|---|---|
+| Company | Company name |
+
+Every Cord client creates **its own Company** in HubSpot. Cord does not look for existing Companies by name: if you already had that company in HubSpot before connecting, you may end up with two. Review your Companies after using **Send existing data**.
+
+### The Contact
+
+| Field in Cord | HubSpot property |
+|---|---|
+| Contact (name) | First name and Last name. The first word goes to First name and the rest to Last name. |
+| Email | Email |
+| Phone | Phone number |
+
+- The Contact is only created if the client has an **email or contact name**. A client with neither stays as a Company only.
+- **No duplicate contacts:** before creating a Contact, Cord looks in HubSpot for one with the same email. If it exists, Cord uses it and updates its data instead of creating another.
+- The Contact is **associated with the client's Company**.
+- If two Cord clients share the same email, only the first is linked to that Contact, and the panel shows a warning to fix the duplicate email in Cord.
+
+### When they are sent
+
+A client is sent to HubSpot when **created** and every time it is **updated** in Cord. It is also sent before its first quote, so the Deal is created already associated. If a change does not touch any field that goes to HubSpot (for example, you changed payment terms), Cord makes no call.
+
+## Quotes → Deals
+
+| Data in Cord | Deal property |
+|---|---|
+| Number and client | Deal name, like "COT-128 · Northwind" |
+| Total | Amount |
+| Sale currency | Currency |
+| Chosen pipeline | Pipeline |
+| Quote status | Deal stage, per your [stage settings](/en/docs/automatizacion/integraciones/hubspot-etapas) |
+| Actual close date | Close date, only when reaching Rejected, Expired, Paid or Invoiced ([details](/en/docs/automatizacion/integraciones/hubspot-etapas)) |
+
+- **Drafts are not sent.** The Deal is created when the quote is sent to the client.
+- On creation, the Deal is **associated with the client's Company and Contact**.
+- Every status change **moves the Deal** to the matching stage: Sent, Viewed by client, Approved, Rejected, Expired, Paid and Invoiced.
+- If the total changes (for example, you edit and resend), the Deal amount is updated.
+- **A status without a stage is not sent.** If you left a status without a stage, quotes in that status do not reach HubSpot until you assign one.
+
+## From HubSpot to Cord
+
+When someone corrects data in HubSpot, Cord receives it right away and applies it to the linked client:
+
+| If in HubSpot you change | In Cord it changes |
+|---|---|
+| Company name of the Company | Company |
+| First name or Last name of the Contact | Contact |
+| Email of the Contact | Email |
+| Phone number of the Contact | Phone |
+
+Rules:
+
+- **Linked clients only.** Creating a new Company or Contact in HubSpot does **not** create a client in Cord.
+- **An empty field does not erase anything.** If you clear the phone in HubSpot, Cord keeps the one it had.
+- **An invalid email is ignored.**
+- Nothing else comes back: credit, payment terms, tax data and address are edited only in Cord.
+- The change is recorded in **Settings › Audit log** as coming from HubSpot with the fields that changed, and fires the **A client is updated** event for your workflows and webhooks.
+
+**Deals do not come back.** Moving a Deal's stage, changing its amount or deleting it in HubSpot changes nothing in Cord. The sale status is decided by the client's approval and payment in Cord.
+
+## No echoes
+
+When a change arrives from HubSpot, Cord applies it but **does not send it back** to HubSpot. And when Cord sends something to HubSpot, it recognizes the notification HubSpot sends back and does not process it as a new change. No data bounces between the two tools.
+
+## Deletions
+
+| If you delete… | Then |
+|---|---|
+| A client in Cord | Cord forgets its HubSpot link. The Company and Contact **stay in HubSpot**. |
+| A draft quote in Cord | Nothing; drafts are not sent. |
+| A Company or Contact in HubSpot | Cord forgets the link. The client stays in Cord; if you edit it again in Cord, it is created again in HubSpot. |
+| A Deal in HubSpot | Cord detects it on the next change to that quote and creates a new Deal. |
+
+Cord never deletes anything in HubSpot.
+
+## When it happens
+
+- **Right away.** Every change in Cord is sent as soon as it happens, usually within seconds.
+- **With retries.** If HubSpot does not respond or asks to slow down, Cord retries automatically, up to 5 times per send, with more spacing each time.
+- **A daily check** picks up any pending send and clears send history older than 14 days.
+
+The panel shows how many sends are **Queued** and how many failed in **Errors (7 days)**.
+
+## Existing data
+
+Connecting HubSpot does not send anything from the past on its own. To send what already existed:
+
+<Steps>
+1. In **Settings › Integrations › HubSpot**, find **Existing data**.
+2. Click **Send existing data**.
+3. You see "N records queued for HubSpot". It runs in the background; you can leave the page.
+</Steps>
+
+What is sent:
+
+- Up to **500 clients**, the most recent.
+- Up to **500 quotes** that are not drafts, the most recent.
+- Anything already linked and unchanged is not created or updated again, so you can click the button more than once without duplicating.
+
+## What does not sync
+
+- Products and catalog.
+- Quote line items.
+- Cord Invoicing invoices, payments, CFDI and documents.
+- Tasks, payment promises and chat conversations.
+- Notes, except those created by a workflow with the [Add a note in HubSpot](/en/docs/automatizacion/workflows/acciones) action.
+- HubSpot owners: Deals and Companies are created without an assigned owner.
+
+## Next
+
+- [Pipeline and stages](/en/docs/automatizacion/integraciones/hubspot-etapas)
+- [HubSpot troubleshooting](/en/docs/automatizacion/integraciones/hubspot-problemas)
