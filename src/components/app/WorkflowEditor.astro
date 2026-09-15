@@ -386,12 +386,12 @@ const DATA = {
     .wfe-help-link:hover { text-decoration: underline; }
 
     .wfe-ex-card { position: relative;
-        width: min(1000px, 100%); max-height: 86vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); overflow: hidden;
+        width: min(1000px, 100%); height: min(680px, 86vh); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); overflow: hidden;
         border-radius: 22px; background: var(--editor-panel, #fff); box-shadow: var(--editor-panel-shadow, 0 16px 40px -8px rgba(10,25,47,0.2)); animation: wfePop 0.28s var(--ease-spring);
     }
-    .wfe-ex-left { display: flex; flex-direction: column; gap: 14px; padding: 28px; overflow-y: auto; }
+    .wfe-ex-left { display: flex; flex-direction: column; gap: 14px; padding: 28px; min-height: 0; overflow: hidden; }
     .wfe-ex-left h2 { margin: 0; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em; color: var(--color-text); line-height: 1.2; }
-    .wfe-ex-list { display: flex; flex-direction: column; gap: 8px; }
+    .wfe-ex-list { display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: -4px; padding: 4px; }
     .wfe-ex-item {
         text-align: left; border: 1px solid transparent; background: var(--color-bg-soft); border-radius: 14px; padding: 14px 16px; cursor: pointer;
         display: flex; flex-direction: column; gap: 4px; color: var(--color-text); transition: border-color 0.2s, background 0.2s;
@@ -453,8 +453,9 @@ const DATA = {
         .wfe-help { position: static; margin: 10px 0 0; }
         .wfe-help-x { width: 44px; height: 44px; }
         .wfe-help-link { min-height: 44px; }
-        .wfe-ex-card { grid-template-columns: 1fr; max-height: 92dvh; border-radius: 22px 22px 0 0; overflow-y: auto; }
-        .wfe-ex-left, .wfe-ex-right { overflow: visible; }
+        .wfe-ex-card { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; max-height: 92dvh; border-radius: 22px 22px 0 0; overflow-y: auto; }
+        .wfe-ex-left, .wfe-ex-right, .wfe-ex-list { overflow: visible; }
+        .wfe-ex-cta { position: sticky; bottom: 12px; z-index: 2; box-shadow: 0 10px 24px -8px rgba(10,25,47,0.45); }
         .wfe-ex-right { border-left: none; border-top: 1px solid var(--color-border); padding-top: 28px; }
         .wfe-ex-close { top: 10px; right: 10px; }
         .wfe-ex-item { min-height: 48px; }

@@ -117,4 +117,109 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
             ],
         }),
     },
+    {
+        key: 'anticipo_recibido',
+        nombre: { es: 'Arrancar cuando llega el anticipo', en: 'Kick off when the deposit arrives' },
+        descripcion: {
+            es: 'Cuando el cliente paga el anticipo, crea la tarea para empezar el trabajo y avisa al dueño con el saldo pendiente.',
+            en: 'When the client pays the deposit, create the task to start the work and tell the owner the remaining balance.',
+        },
+        definicion: (lang) => ({
+            trigger: 'payment.partial',
+            steps: [{
+                id: 'esanticipo', type: 'condition', match: 'all',
+                conditions: [{ field: 'tipo', op: 'eq', value: 'anticipo' }],
+                then: [
+                    {
+                        id: 'tareaarranque', type: 'action', action: 'create_task',
+                        params: { titulo: lang === 'en' ? 'Start the work for {{folio}} ({{cliente}})' : 'Arrancar el trabajo de {{folio}} ({{cliente}})', dias: 1 },
+                    },
+                    {
+                        id: 'avisoanticipo', type: 'action', action: 'notify_team',
+                        params: {
+                            destinatarios: 'owner',
+                            asunto: lang === 'en' ? '{{cliente}} paid the deposit for {{folio}}' : '{{cliente}} pagó el anticipo de {{folio}}',
+                            mensaje: lang === 'en' ? 'A deposit of {{monto}} {{moneda}} arrived. Remaining balance: {{saldo_pendiente}} {{moneda}}.' : 'Llegó un anticipo de {{monto}} {{moneda}}. Saldo pendiente: {{saldo_pendiente}} {{moneda}}.',
+                        },
+                    },
+                ],
+                else: [],
+            }],
+        }),
+    },
+    {
+        key: 'factura_vencida',
+        nombre: { es: 'Cobranza de facturas vencidas', en: 'Collect overdue invoices' },
+        descripcion: {
+            es: 'Cuando vence una factura, crea la tarea de cobro; si una semana después sigue abierta, avisa al dueño de la cuenta.',
+            en: 'When an invoice becomes overdue, create a collection task; if it is still open a week later, tell the account owner.',
+        },
+        definicion: (lang) => ({
+            trigger: 'invoice.overdue',
+            steps: [
+                {
+                    id: 'tareacobro', type: 'action', action: 'create_task',
+                    params: { titulo: lang === 'en' ? 'Collect invoice {{numero}} from {{cliente}}' : 'Cobrar la factura {{numero}} de {{cliente}}', dias: 0 },
+                },
+                { id: 'espera7', type: 'wait', days: 7 },
+                {
+                    id: 'sigueabierta', type: 'condition', match: 'all',
+                    conditions: [{ field: 'estado_actual', op: 'eq', value: 'open' }],
+                    then: [{
+                        id: 'avisovencida', type: 'action', action: 'notify_team',
+                        params: {
+                            destinatarios: 'owner',
+                            asunto: lang === 'en' ? 'Invoice {{numero}} is still unpaid' : 'La factura {{numero}} sigue sin pagarse',
+                            mensaje: lang === 'en' ? '{{cliente}} still owes {{saldo}} {{moneda}} a week after the due date.' : '{{cliente}} todavía debe {{saldo}} {{moneda}} una semana después del vencimiento.',
+                        },
+                    }],
+                    else: [],
+                },
+            ],
+        }),
+    },
+    {
+        key: 'cotizacion_rechazada',
+        nombre: { es: 'Recuperar una cotización rechazada', en: 'Win back a rejected quote' },
+        descripcion: {
+            es: 'Cuando un cliente rechaza una cotización, crea una tarea para llamarle mañana y avisa al dueño de la cuenta.',
+            en: 'When a client rejects a quote, create a task to call them tomorrow and tell the account owner.',
+        },
+        definicion: (lang) => ({
+            trigger: 'quote.rejected',
+            steps: [
+                {
+                    id: 'tarearecuperar', type: 'action', action: 'create_task',
+                    params: { titulo: lang === 'en' ? 'Ask {{cliente}} why they rejected {{folio}}' : 'Preguntar a {{cliente}} por qué rechazó {{folio}}', dias: 1 },
+                },
+                {
+                    id: 'avisorechazo', type: 'action', action: 'notify_team',
+                    params: {
+                        destinatarios: 'owner',
+                        asunto: lang === 'en' ? '{{cliente}} rejected {{folio}}' : '{{cliente}} rechazó {{folio}}',
+                        mensaje: lang === 'en' ? 'The quote {{folio}} for {{total}} {{moneda}} was rejected. A follow-up task was created for tomorrow.' : 'La cotización {{folio}} por {{total}} {{moneda}} fue rechazada. Quedó una tarea de seguimiento para mañana.',
+                    },
+                },
+            ],
+        }),
+    },
+    {
+        key: 'aprobacion_interna',
+        nombre: { es: 'Avisar cuando una cotización pide aprobación', en: 'Alert when a quote needs approval' },
+        descripcion: {
+            es: 'Cuando una cotización necesita aprobación interna, avisa por correo a todo el equipo con el motivo para que nadie la deje esperando.',
+            en: 'When a quote needs internal approval, email the whole team with the reason so nobody leaves it waiting.',
+        },
+        definicion: (lang) => ({
+            trigger: 'quote.approval_requested',
+            steps: [{
+                id: 'avisoaprobacion', type: 'action', action: 'notify_team',
+                params: {
+                    destinatarios: 'all',
+                    asunto: lang === 'en' ? '{{folio}} is waiting for approval' : '{{folio}} espera aprobación',
+                    mensaje: lang === 'en' ? 'The quote {{folio}} for {{cliente}} ({{total}} {{moneda}}) needs internal approval. Reason: {{motivo}}' : 'La cotización {{folio}} para {{cliente}} ({{total}} {{moneda}}) necesita aprobación interna. Motivo: {{motivo}}',
+                },
+            }],
+        }),
+    },
 ];
