@@ -605,28 +605,34 @@ Cord Invoicing brings together the commercial document, the fiscal issuance requ
         },
         content: {
             es: `## Que el cierre dispare el resto del trabajo
-Hoy Cord ya avisa lo que pasa (correo, Slack, webhooks) y su API pública permite construir lo que quieras encima. Lo que falta es el paso intermedio: encadenar acciones sin escribir código.
+Cord Workflows convierte lo que pasa en una venta en el siguiente paso, sin escribir código, y el directorio de integraciones conecta Cord con las herramientas donde ya trabaja tu equipo.
 
-### Qué estamos construyendo:
-- **Catálogo de integraciones:** conexiones listas con las herramientas donde ya vive tu operación, en vez de un webhook que alguien tiene que programar.
-- **Flujos con condiciones:** "si la cotización supera cierto monto, pide aprobación y avisa al canal de dirección"; "si el cliente no abre el link en 3 días, manda el recordatorio". Reglas visibles, editables y auditables.
-- **Acciones encadenadas:** que aprobar dispare la factura, el alta del cliente y la tarea de seguimiento, sin que nadie las haga a mano.
+### Qué incluye:
+- **Workflows con condiciones y esperas:** eliges un evento de Cord, pones condiciones visibles y encadenas pasos. Por ejemplo: tres días después de enviar una cotización, si sigue sin abrirse, crea una tarea para llamar al cliente.
+- **Acciones reales:** crear una tarea, avisar al equipo por correo, publicar en tu canal de Slack o dejar una nota en el Deal de HubSpot.
+- **Historial de cada ejecución:** qué se disparó, cuándo, con qué resultado y el error legible cuando algo falla. Un paso que falla se reintenta; la entrega es al menos una vez.
+- **HubSpot en los dos sentidos:** tus clientes se mantienen al día con Empresas y Contactos, y cada cotización crea y mueve su Deal por el pipeline. Mover un Deal en HubSpot no cambia nada en Cord.
+- **Slack y Make:** avisos en tu canal, y escenarios de Make que reciben los eventos de Cord y crean datos con la API.
+- **Para quien programa:** API pública v1, webhooks firmados con historial de entregas y servidor MCP.
 
-### Por qué todavía no está:
-Una automatización que falla en silencio es peor que no tenerla. Antes de abrirla queremos que cada flujo deje registro de qué se disparó, cuándo y con qué resultado, y que se pueda reintentar.`,
+### Qué sigue:
+Las apps de Cord dentro de los directorios de Zapier y Make, para conectarlas desde ahí sin configurar nada a mano.`,
             en: `## Let the close trigger the rest of the work
-Cord already tells you what happens (email, Slack, webhooks) and its public API lets you build anything on top. What's missing is the middle step: chaining actions without writing code.
+Cord Workflows turns what happens in a sale into the next step, without writing code, and the integrations directory connects Cord with the tools your team already uses.
 
-### What we're building:
-- **Integration catalog:** ready-made connections to the tools your operation already lives in, instead of a webhook someone has to program.
-- **Conditional flows:** "if the quote is above a certain amount, request approval and notify the leadership channel"; "if the client doesn't open the link in 3 days, send the reminder." Rules that are visible, editable, and auditable.
-- **Chained actions:** approval triggering the invoice, the client record, and the follow-up task, without anyone doing them by hand.
+### What's included:
+- **Workflows with conditions and waits:** pick a Cord event, set visible conditions and chain steps. For example: three days after sending a quote, if it is still unopened, create a task to call the client.
+- **Real actions:** create a task, email your team, post to your Slack channel or add a note to the HubSpot Deal.
+- **History for every run:** what fired, when, with what result, and a readable error when something fails. A failed step is retried; delivery is at least once.
+- **HubSpot both ways:** your clients stay in sync with Companies and Contacts, and every quote creates and moves its Deal through the pipeline. Moving a Deal in HubSpot changes nothing in Cord.
+- **Slack and Make:** alerts in your channel, and Make scenarios that receive Cord events and create data through the API.
+- **For developers:** public API v1, signed webhooks with delivery history, and an MCP server.
 
-### Why it isn't here yet:
-An automation that fails silently is worse than not having one. Before opening it up, we want every flow to record what fired, when, and with what result, and to be retryable.`
+### What's next:
+Cord apps inside the Zapier and Make directories, so you can connect them from there without any manual setup.`
         },
         area: 'cotizaciones',
-        status: 'next',
+        status: 'live',
         api: true
     },
     {
@@ -924,11 +930,11 @@ const roadmapEnhancements = {
     'integraciones-y-flujos': {
         family: 'platform', market: { es: 'Plataforma Cord', en: 'Cord platform' },
         workflow: {
-            es: ['Elige un evento de origen y define condiciones visibles.', 'Selecciona una o varias acciones y prueba el flujo antes de activarlo.', 'Consulta cada ejecución, su resultado y la opción de reintento cuando falle.'],
-            en: ['Choose a source event and define visible conditions.', 'Select one or more actions and test the flow before enabling it.', 'Review every execution, its result, and a retry option when it fails.']
+            es: ['Elige el evento de Cord que arranca el workflow y define condiciones visibles.', 'Encadena acciones —tarea, correo al equipo, Slack o nota en HubSpot— y publícalo cuando esté listo.', 'Revisa cada ejecución, su resultado y el error legible cuando un paso falla.'],
+            en: ['Pick the Cord event that starts the workflow and set visible conditions.', 'Chain actions — task, team email, Slack or a HubSpot note — and publish when ready.', 'Review every run, its result, and the readable error when a step fails.']
         },
-        scope: { es: 'Iniciativa futura sobre la API, webhooks, correo y Slack ya existentes. Busca permitir automatización sin escribir código.', en: 'Future initiative built on the existing API, webhooks, email, and Slack. It aims to enable automation without writing code.' },
-        boundaries: { es: 'No se lanzará sin historial de ejecución, errores accionables e idempotencia. Una automatización silenciosa no puede mover una venta o una factura sin evidencia.', en: 'It will not ship without execution history, actionable errors, and idempotency. A silent automation cannot move a sale or invoice without evidence.' },
+        scope: { es: 'Workflows sobre los eventos de Cord, directorio de integraciones con HubSpot y Slack, escenarios de Make por webhooks y API, y la plataforma para desarrolladores: API v1, webhooks firmados y MCP.', en: 'Workflows on Cord events, an integrations directory with HubSpot and Slack, Make scenarios through webhooks and API, and the developer platform: API v1, signed webhooks and MCP.' },
+        boundaries: { es: 'Un workflow no cobra, no emite facturas ni le escribe al cliente: esas acciones siguen siendo decisiones de una persona. Las esperas se cuentan en días y la entrega es al menos una vez, así que cada paso queda en el historial.', en: 'A workflow never charges, issues invoices or writes to the client: those stay human decisions. Waits are counted in days and delivery is at least once, so every step stays in the history.' },
         related: ['cord-elements', 'notificaciones', 'ciclo-de-vida-contrato']
     },
     'ciclo-de-vida-contrato': {

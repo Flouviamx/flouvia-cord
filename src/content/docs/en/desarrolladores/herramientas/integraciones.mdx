@@ -1,0 +1,47 @@
+---
+title: "Integrations and automation"
+description: "Which path to take to connect Cord with another system: no-code workflows, managed HubSpot sync, Zapier and Make, or the API with webhooks."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Integrations and automation</h1>
+  <p class="page-subtitle">Four paths to make Cord work with the rest of your systems. Pick the simplest one that solves your case.</p>
+</header>
+
+## Which one to use
+
+| Path | What for | Who sets it up |
+|---|---|---|
+| **Cord Workflows** | React inside Cord: create a task, email the team, post to Slack, or add a note in HubSpot. | Anyone on the team, from the app. |
+| **HubSpot** | Keep clients, contacts and Deals up to date without entering data twice. | Connected once in Settings. |
+| **Zapier and Make** | Connect Cord with another tool you already use, without running a server. | Whoever builds the Zap or scenario. |
+| **API v1 + webhooks** | Full control: your backend decides what to do with each event. | Your development team. |
+
+## Cord Workflows
+
+It lives in the app, not in the API. A workflow listens to a Cord event, evaluates conditions, can wait for days, and runs actions. Every run is recorded with its result.
+
+Use it when the automation starts and ends inside Cord. If you need to touch another system, use one of the paths below.
+
+## HubSpot
+
+Cord manages the sync: clients with Companies and Contacts both ways, and every quote creates and moves its Deal through the pipeline you choose. It needs no code and does not use your webhook allowance.
+
+## Zapier and Make
+
+Both platforms talk to Cord's public API:
+
+- **Events out:** a webhook subscription created with that integration's API key. They are created and deleted automatically when you turn the Zap or scenario on and off.
+- **Actions into Cord:** the `/api/v1` endpoints with the secret key.
+
+Subscriptions created through the API have their own allowance of 100 per organization, separate from the endpoints your team configures. The details are in [Webhooks](/en/docs/desarrolladores/herramientas/webhooks).
+
+If you prefer to build it by hand in Make, the [support guide](/en/support/conectar-make) walks through the Webhooks and HTTP modules.
+
+## API v1 and webhooks
+
+The full path: authenticate with a secret key, listen to the events you care about, and respond from your backend.
+
+- [Authentication](/en/docs/desarrolladores/esenciales/autenticacion)
+- [Webhooks](/en/docs/desarrolladores/herramientas/webhooks), with the event list, the `X-Cord-Signature-V1` signature, and delivery history.
+- [MCP server](/en/docs/desarrolladores/herramientas/mcp), when an AI assistant is the one consuming Cord.

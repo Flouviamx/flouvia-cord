@@ -25,6 +25,11 @@
      distribución marketplace) con scopes, redirects y webhooks de nombre, correo, teléfono y
      borrado de Empresas y Contactos. Subida con `hs project upload` a la cuenta 52031310.
      Acción de workflow "Agregar una nota en HubSpot" sobre el Deal o la Empresa vinculados.
+   • **Ajustes › Integraciones** dejó de ser una pila de tarjetas: ahora es un directorio de apps
+     (`src/lib/integraciones/catalogo.ts`) y cada una tiene su página `/app/ajustes/integraciones/[app]`
+     con su conexión y los workflows que la usan. Estado vigente en `docs/estado/integraciones.md`.
+   • **Público:** roadmap `integraciones-y-flujos` pasa a `live`, soporte suma "Automatizar con Cord
+     Workflows" y "Conectar Slack", y docs.cordhq.app suma "Integraciones y automatización".
 
 ---
 
