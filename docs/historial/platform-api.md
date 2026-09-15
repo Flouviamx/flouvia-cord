@@ -6,6 +6,25 @@
 
 ---
 
+✅ **Cord Workflows v1 (sep 2026, rama `feat/plataforma-integraciones`)** — el negocio arma sus
+   propios flujos "cuando pase X, haz Y" sobre los 34 eventos de `domain_events`.
+   • **Tablas** `workflows` (borrador + versión publicada) y `workflow_runs` (copia de la versión
+     con la que corrió, cursor y log por paso, `unique(workflow_id, event_id)`), RLS forzada y
+     llaves compuestas por organización.
+   • **Acciones v1**: crear tarea, avisar al equipo por correo (solo miembros activos o el
+     dueño) y mensaje a Slack (solo la URL de la org). Plantillas `{{campo}}` de lista cerrada y
+     escapadas por canal; condiciones con operadores cerrados, sin `eval`.
+   • **Motor**: corre al registrarse el evento; un fallo pasajero se reintenta una vez en el
+     momento y después hasta 3 intentos que recoge el cron diario (el plan de Vercel no permite
+     crons más frecuentes). Un workflow no se dispara con sus propios eventos y la profundidad
+     máxima es 3.
+   • **Plan**: workflows activos como hard limit `active_workflows` (Gratis 1, Starter 5, Pro en
+     adelante sin tope), con espejo en `cord_resource_limit`. Falta reflejarlo en `/precios`.
+   • **UI** `/app/workflows` y `/app/workflows/[id]` con editor visual tipo Stripe Workflows.
+   • Migración pendiente antes del deploy: `2026-09-14-workflows.sql`.
+
+---
+
 ✅ **Base para integraciones y flujos: capa de acciones, eventos de dominio y API v1 completa
    (sep 2026, rama `feat/plataforma-integraciones`)** — primer tramo del plan de integraciones
    con CRMs y flujos creados por el negocio.

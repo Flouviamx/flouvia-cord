@@ -17,8 +17,10 @@ export const GET: APIRoute = async ({ request }) => {
 
     const orgIds = await reqContext.run({ userId: null, cronScope: true }, async () => {
         const [rows] = await withSystemTx(sql`
-            select distinct org_id from workflow_runs
+            select org_id from workflow_runs
              where status in ('queued', 'waiting', 'running') and run_at <= now()
+             group by org_id
+             order by min(run_at)
              limit ${MAX_ORGS}`);
         return rows.map((r) => String(r.org_id));
     });

@@ -14,8 +14,13 @@ import {
 export const MAX_ATTEMPTS = 3;
 const MAX_LOG = 100;
 const RUNS_PER_BATCH = 20;
+const RETRY_DELAY_MS = 1500;
 
-export class WorkflowStepError extends Error {}
+export class WorkflowStepError extends Error {
+    constructor(message: string, readonly final = false) {
+        super(message);
+    }
+}
 
 interface RunRow {
     id: string;
@@ -48,6 +53,7 @@ export async function processOrgRuns(orgId: string, limit = RUNS_PER_BATCH): Pro
                 select id from workflow_runs
                  where org_id = ${orgId} and run_at <= now()
                    and status in ('queued', 'waiting', 'running')
+                   and (status <> 'running' or locked_until is null or locked_until <= now())
                  order by run_at
                  limit ${limit}
                  for update skip locked)
@@ -119,12 +125,9 @@ export async function executeRun(run: RunRow): Promise<void> {
                 await saveProgress(run, entries, path);
                 continue;
             }
+            let detalle: string;
             try {
-                const values = await buildValues(orgId, event, false);
-                const detalle = await runAction(step, { orgId, event, values, workflowId: run.workflow_id, nombre });
-                entries.push({ step: step.id, tipo: 'action', resultado: 'ok', detalle, at });
-                path = nextSibling(path);
-                await saveProgress(run, entries, path);
+                detalle = await runActionWithRetry(step, { orgId, event, values: await buildValues(orgId, event, false), workflowId: run.workflow_id, nombre });
             } catch (err) {
                 const message = err instanceof WorkflowStepError ? err.message : 'Error interno al ejecutar la acción.';
                 if (!(err instanceof WorkflowStepError)) log.error('fallo inesperado en un paso de workflow', { route: 'workflows/engine', orgId, err });
@@ -135,10 +138,13 @@ export async function executeRun(run: RunRow): Promise<void> {
                     update workflow_runs
                        set status = 'queued', attempts = ${attempts}, cursor = ${JSON.stringify(path)}::jsonb,
                            log = ${JSON.stringify(entries.slice(-MAX_LOG))}::jsonb, error = ${message},
-                           run_at = now() + (${attempts * 15} * interval '1 minute'), locked_until = null, updated_at = now()
+                           run_at = now() + (${attempts} * interval '1 hour'), locked_until = null, updated_at = now()
                      where id = ${run.id} and org_id = ${orgId}`);
                 return;
             }
+            entries.push({ step: step.id, tipo: 'action', resultado: 'ok', detalle, at });
+            path = nextSibling(path);
+            await saveProgress(run, entries, path).catch(() => saveProgress(run, entries, path));
         }
         return finish(run, 'failed', entries, path, 'El workflow excedió el número de pasos permitido.');
     });
@@ -198,13 +204,25 @@ interface ActionInput {
     nombre: string;
 }
 
+async function runActionWithRetry(step: Extract<Step, { type: 'action' }>, input: ActionInput): Promise<string> {
+    try {
+        return await runAction(step, input);
+    } catch (err) {
+        if (err instanceof WorkflowStepError && err.final) throw err;
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        return runAction(step, input);
+    }
+}
+
 async function runAction(step: Extract<Step, { type: 'action' }>, input: ActionInput): Promise<string> {
     const { orgId, event, values } = input;
     const p = step.params;
 
     if (step.action === 'create_task') {
+        const rl = await strictRateLimit(`wf-task:${orgId}`, 120, 3600);
+        if (!rl.ok) throw new WorkflowStepError('Se alcanzó el máximo de tareas por hora de los workflows.', true);
         const titulo = oneLine(renderTemplate(String(p.titulo ?? ''), values)).slice(0, 200);
-        if (!titulo) throw new WorkflowStepError('El título de la tarea quedó vacío.');
+        if (!titulo) throw new WorkflowStepError('El título de la tarea quedó vacío.', true);
         const dias = typeof p.dias === 'number' ? p.dias : null;
         const due = dias === null ? null : new Date(Date.now() + dias * 86400000).toISOString().slice(0, 10);
         const cotizacionId = event.object === 'quote' && event.type !== 'quote.deleted' ? event.object_id : null;
@@ -212,13 +230,13 @@ async function runAction(step: Extract<Step, { type: 'action' }>, input: ActionI
             { orgId, origin: siteOrigin(), actor: `workflow:${input.workflowId}` },
             { titulo, due_date: due, cotizacion_id: cotizacionId },
         );
-        if (outcome.status !== 200) throw new WorkflowStepError(String(outcome.body.error ?? 'No se pudo crear la tarea.'));
+        if (outcome.status !== 200) throw new WorkflowStepError(String(outcome.body.error ?? 'No se pudo crear la tarea.'), true);
         return titulo;
     }
 
     if (step.action === 'notify_team') {
         const rl = await strictRateLimit(`wf-email:${orgId}`, 30, 3600);
-        if (!rl.ok) throw new WorkflowStepError('Se alcanzó el máximo de correos por hora de los workflows.');
+        if (!rl.ok) throw new WorkflowStepError('Se alcanzó el máximo de correos por hora de los workflows.', true);
         const [rows] = p.destinatarios === 'all'
             ? await withOrgTx(orgId, sql`
                 select distinct u.email from org_members m join users u on u.id = m.user_id
@@ -227,7 +245,7 @@ async function runAction(step: Extract<Step, { type: 'action' }>, input: ActionI
             : await withOrgTx(orgId, sql`
                 select u.email from orgs o join users u on u.id = o.owner_id where o.id = ${orgId}`);
         const recipients = rows.map((r) => String(r.email)).filter(Boolean);
-        if (!recipients.length) throw new WorkflowStepError('No hay a quién enviar el correo.');
+        if (!recipients.length) throw new WorkflowStepError('No hay a quién enviar el correo.', true);
         const subject = oneLine(renderTemplate(String(p.asunto ?? ''), values)).slice(0, 150) || input.nombre;
         const body = renderTemplate(String(p.mensaje ?? ''), values, escapeHtml).replace(/\n/g, '<br>');
         const link = `${siteOrigin()}/app/workflows/${input.workflowId}`;
@@ -248,15 +266,15 @@ async function runAction(step: Extract<Step, { type: 'action' }>, input: ActionI
     if (step.action === 'slack_message') {
         const [[org]] = await withOrgTx(orgId, sql`select slack_webhook_url from orgs where id = ${orgId}`);
         const url = (org?.slack_webhook_url as string) || '';
-        if (!url) throw new WorkflowStepError('Conecta Slack en Ajustes › Integraciones para usar esta acción.');
+        if (!url) throw new WorkflowStepError('Conecta Slack en Ajustes › Integraciones para usar esta acción.', true);
         const rl = await strictRateLimit(`wf-slack:${orgId}`, 120, 3600);
-        if (!rl.ok) throw new WorkflowStepError('Se alcanzó el máximo de mensajes por hora de los workflows.');
+        if (!rl.ok) throw new WorkflowStepError('Se alcanzó el máximo de mensajes por hora de los workflows.', true);
         const text = renderTemplate(String(p.mensaje ?? ''), values, escapeSlack).slice(0, 3000);
-        if (!text.trim()) throw new WorkflowStepError('El mensaje quedó vacío.');
+        if (!text.trim()) throw new WorkflowStepError('El mensaje quedó vacío.', true);
         const r = await postSlackText(url, text);
         if (!r.ok) throw new WorkflowStepError('Slack no aceptó el mensaje. Revisa la conexión en Ajustes › Integraciones.');
         return 'slack';
     }
 
-    throw new WorkflowStepError('Esta acción ya no está disponible.');
+    throw new WorkflowStepError('Esta acción ya no está disponible.', true);
 }

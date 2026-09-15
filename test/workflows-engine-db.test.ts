@@ -175,6 +175,17 @@ describe('ejecución', () => {
         expect(run).toMatchObject({ status: 'failed', attempts: 3 });
     });
 
+    it('un fallo pasajero se reintenta en la misma ejecución sin gastar intento', async () => {
+        await m.db.exec(`update orgs set slack_webhook_url = 'https://hooks.slack.com/services/T/B/X' where id = '${A}'`);
+        m.slack.mockResolvedValueOnce({ ok: false });
+        await workflow(A, 'quote.approved', [{ id: 'slk2', type: 'action', action: 'slack_message', params: { mensaje: 'Hola' } }]);
+        await quoteEvent();
+        await flush();
+        const [run] = await q('select status, attempts from workflow_runs');
+        expect(run).toMatchObject({ status: 'succeeded', attempts: 0 });
+        expect(m.slack).toHaveBeenCalledTimes(2);
+    });
+
     it('avisa solo a miembros activos y escapa el HTML del contenido', async () => {
         await workflow(A, 'quote.approved', [{ id: 'mail1', type: 'action', action: 'notify_team', params: { destinatarios: 'all', asunto: 'Aprobada\n{{folio}}', mensaje: 'Cliente: {{cliente}}' } }]);
         await quoteEvent();

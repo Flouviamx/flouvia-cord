@@ -1,0 +1,223 @@
+---
+// /app/workflows — Cord Workflows: lista, plantillas y cupo del plan.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import AccessGate from '../../../components/app/AccessGate.astro';
+import { getMyMembership } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+import { getActiveOrgId } from '../../../lib/db';
+import { currentLocale } from '../../../lib/context';
+import { fmtRelative } from '../../../lib/fmt-server';
+import { getResourceAllowance } from '../../../lib/org-entitlements';
+import { listWorkflows, WORKFLOW_TEMPLATES } from '../../../lib/workflows/service';
+import { findTrigger, TRIGGER_CATEGORIES } from '../../../lib/workflows/catalog';
+import { t } from '../../../i18n/app';
+
+export const prerender = false;
+
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string | number>) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(String(vars[k]));
+    return s;
+};
+
+const ME = await getMyMembership();
+const canAjustes = memberCan(ME, 'ajustes');
+const orgId = await getActiveOrgId();
+const WORKFLOWS = canAjustes ? await listWorkflows(orgId) : [];
+const allowance = canAjustes ? await getResourceAllowance(orgId, 'active_workflows').catch(() => null) : null;
+const activos = WORKFLOWS.filter((w) => w.estado === 'active').length;
+
+const ESTADO = {
+    draft: t(L, 'wf.estado.draft'),
+    active: t(L, 'wf.estado.active'),
+    paused: t(L, 'wf.estado.paused'),
+} as const;
+
+const categoryLabel = (key: string) => TRIGGER_CATEGORIES.find((c) => c.key === key)?.label[L] ?? '';
+const triggerOf = (w: any) => findTrigger(w.trigger_publicado || w.trigger_borrador);
+---
+
+<AppLayout title={`${t(L, 'wf.heading')} — Cord`} page="workflows" heading={t(L, 'wf.heading')}>
+    {canAjustes && (
+        <div slot="topbar-actions" class="topbar-btns">
+            <button type="button" class="btn-new" data-wf-create>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                {t(L, 'wf.nuevo')}
+            </button>
+        </div>
+    )}
+
+    {!canAjustes ? (
+        <AccessGate title={t(L, 'wf.sin_acceso_titulo')} desc={t(L, 'wf.sin_acceso_desc')} />
+    ) : (
+        <div class="wfl" data-error={t(L, 'wf.error_guardar')}>
+            <p class="wfl-intro">{t(L, 'wf.intro')}</p>
+
+            {allowance?.limit !== null && allowance?.limit !== undefined && (
+                <p class="wfl-cupo">{tf('wf.cupo', { usados: activos, limite: allowance.limit })}</p>
+            )}
+
+            {WORKFLOWS.length > 0 && (
+                <section class="wfl-table" aria-label={t(L, 'wf.heading')}>
+                    <div class="wfl-head">
+                        <span>{t(L, 'wf.th_nombre')}</span>
+                        <span>{t(L, 'wf.th_disparador')}</span>
+                        <span class="wfl-num">{t(L, 'wf.th_ejecuciones')}</span>
+                        <span>{t(L, 'wf.th_estado')}</span>
+                    </div>
+                    {WORKFLOWS.map((w) => {
+                        const trig = triggerOf(w);
+                        const estadoKey = (w.estado as keyof typeof ESTADO) in ESTADO ? (w.estado as keyof typeof ESTADO) : 'draft';
+                        return (
+                            <a class="wfl-row" href={`/app/workflows/${w.id}`}>
+                                <span class="wfl-name">
+                                    <span class="wfl-glyph" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="6" rx="1.5" fill="currentColor" fill-opacity="0.14"/><rect x="14" y="15" width="7" height="6" rx="1.5" fill="currentColor" fill-opacity="0.14"/><path d="M6.5 9v3.5a2 2 0 0 0 2 2H14" stroke-opacity="0.6"/><path d="m12 12.5 2 2-2 2" stroke-opacity="0.6"/></svg>
+                                    </span>
+                                    <span class="wfl-name-text">
+                                        <strong>{w.nombre}</strong>
+                                        <small>{fmtRelative(w.updated_at)}</small>
+                                    </span>
+                                </span>
+                                <span class="wfl-trigger">
+                                    {trig ? (
+                                        <Fragment>
+                                            <span>{trig.label[L]}</span>
+                                            <small>{categoryLabel(trig.category)}</small>
+                                        </Fragment>
+                                    ) : <span class="wfl-muted">{t(L, 'wf.sin_disparador')}</span>}
+                                </span>
+                                <span class="wfl-num">
+                                    <span class="editorial">{Number(w.runs_30d)}</span>
+                                    {Number(w.fallidas_30d) > 0 && <small class="wfl-failed">{tf('wf.fallidas', { n: Number(w.fallidas_30d) })}</small>}
+                                </span>
+                                <span><span class="status-pill wfl-estado" data-estado={estadoKey}>{ESTADO[estadoKey]}</span></span>
+                            </a>
+                        );
+                    })}
+                </section>
+            )}
+
+            {WORKFLOWS.length === 0 && (
+                <div class="wfl-empty">
+                    <h2>{t(L, 'wf.vacio_titulo')}</h2>
+                    <p>{t(L, 'wf.vacio_desc')}</p>
+                </div>
+            )}
+
+            <section class="wfl-templates">
+                <div class="sec-head"><h2 class="sec-title">{t(L, 'wf.plantillas')}</h2></div>
+                {WORKFLOW_TEMPLATES.map((tpl) => {
+                    const trig = findTrigger(tpl.definicion(L).trigger);
+                    return (
+                        <div class="wfl-tpl">
+                            <span class="wfl-tpl-text">
+                                <strong>{tpl.nombre[L]}</strong>
+                                <span>{tpl.descripcion[L]}</span>
+                                {trig && <small>{trig.label[L]}</small>}
+                            </span>
+                            <button type="button" class="wfl-tpl-btn" data-wf-create={tpl.key}>{t(L, 'wf.usar_plantilla')}</button>
+                        </div>
+                    );
+                })}
+            </section>
+        </div>
+    )}
+</AppLayout>
+
+<style>
+    .btn-new {
+        font-family: var(--font-sans); display: inline-flex; align-items: center; gap: 6px;
+        background: var(--color-blue-deep); color: #fff; font-size: 0.82rem; font-weight: 600;
+        border: none; cursor: pointer; padding: 9px 16px; border-radius: 100px;
+        box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5); transition: transform 0.35s var(--ease-spring);
+    }
+    .btn-new svg { width: 14px; height: 14px; }
+    .btn-new:hover { transform: translateY(-1px) scale(1.02); }
+    .btn-new:active { transform: scale(0.97); }
+    .btn-new:focus-visible, .wfl-tpl-btn:focus-visible, .wfl-row:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .topbar-btns { display: flex; gap: 0.6rem; align-items: center; }
+
+    .wfl { display: flex; flex-direction: column; gap: 1.6rem; }
+    .wfl-intro { margin: 0; max-width: 620px; font-size: 0.92rem; line-height: 1.55; color: var(--color-text-muted); text-wrap: pretty; }
+    .wfl-cupo { margin: -0.9rem 0 0; font-size: 0.78rem; color: var(--color-text-muted); }
+
+    .wfl-table { display: flex; flex-direction: column; }
+    .wfl-head, .wfl-row {
+        display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.3fr) 150px 110px;
+        gap: 1rem; align-items: center; padding: 0.85rem 0.6rem;
+    }
+    .wfl-head { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); padding-top: 0; }
+    .wfl-row { text-decoration: none; color: var(--color-text); border-bottom: 1px solid var(--color-border); border-radius: 10px; transition: background 0.2s var(--ease-ios); }
+    .wfl-row:hover { background: var(--row-hover); }
+    .wfl-name { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+    .wfl-glyph { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center; color: var(--color-blue-deep); background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border); }
+    .wfl-glyph svg { width: 18px; height: 18px; }
+    .wfl-name-text, .wfl-trigger { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .wfl-name-text strong { font-size: 0.88rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wfl-name-text small, .wfl-trigger small { font-size: 0.74rem; color: var(--color-text-muted); }
+    .wfl-trigger span { font-size: 0.84rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wfl-muted { color: var(--color-text-muted); }
+    .wfl-num { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
+    .wfl-num .editorial { font-size: 0.95rem; color: var(--color-blue-deep); }
+    .wfl-failed { font-size: 0.72rem; color: var(--color-danger); font-weight: 600; }
+    .wfl-estado[data-estado="draft"] { color: #5b6472; background: rgba(91,100,114,0.1); }
+    .wfl-estado[data-estado="active"] { color: #047857; background: rgba(16,185,129,0.12); }
+    .wfl-estado[data-estado="paused"] { color: #b45309; background: rgba(245,158,11,0.14); }
+    :global(html[data-theme="dark"]) .wfl-estado[data-estado="draft"] { color: #c3cad5; background: rgba(195,202,213,0.12); }
+    :global(html[data-theme="dark"]) .wfl-estado[data-estado="active"] { color: #34d399; background: rgba(16,185,129,0.18); }
+    :global(html[data-theme="dark"]) .wfl-estado[data-estado="paused"] { color: #fbbf24; background: rgba(245,158,11,0.18); }
+
+    .wfl-empty { padding: 2.4rem 0 0.4rem; }
+    .wfl-empty h2 { margin: 0 0 0.35rem; font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; color: var(--color-text); }
+    .wfl-empty p { margin: 0; font-size: 0.88rem; color: var(--color-text-muted); }
+
+    .wfl-templates .sec-head { margin-bottom: 0.2rem; }
+    .wfl-tpl { display: flex; align-items: center; justify-content: space-between; gap: 1.2rem; padding: 1rem 0.2rem; border-bottom: 1px solid var(--color-border); }
+    .wfl-tpl-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .wfl-tpl-text strong { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
+    .wfl-tpl-text span { font-size: 0.82rem; line-height: 1.5; color: var(--color-text-muted); max-width: 640px; }
+    .wfl-tpl-text small { font-size: 0.72rem; color: var(--color-text-muted); opacity: 0.85; }
+    .wfl-tpl-btn {
+        flex-shrink: 0; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; cursor: pointer;
+        color: var(--color-blue-deep); background: var(--surface); border: 1px solid var(--color-border);
+        padding: 8px 16px; border-radius: 100px; transition: transform 0.3s var(--ease-spring), background 0.2s;
+    }
+    .wfl-tpl-btn:hover { background: var(--color-bg-soft); transform: translateY(-1px); }
+    .wfl-tpl-btn:active { transform: scale(0.97); }
+    [data-wf-create][aria-busy="true"] { opacity: 0.6; pointer-events: none; }
+
+    @media (max-width: 880px) {
+        .wfl-head { display: none; }
+        .wfl-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name estado" "trigger num"; row-gap: 0.45rem; padding: 0.95rem 0.2rem; }
+        .wfl-name { grid-area: name; }
+        .wfl-trigger { grid-area: trigger; }
+        .wfl-num { grid-area: num; }
+        .wfl-row > span:last-child { grid-area: estado; justify-self: end; }
+        .wfl-tpl { flex-direction: column; align-items: stretch; }
+        .wfl-tpl-btn { min-height: 46px; }
+        .btn-new { min-height: 44px; }
+    }
+</style>
+
+<script>
+    const errorMsg = document.querySelector<HTMLElement>('.wfl')?.dataset.error || '';
+    document.querySelectorAll<HTMLButtonElement>('[data-wf-create]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            btn.setAttribute('aria-busy', 'true');
+            try {
+                const res = await fetch('/api/workflows', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(btn.dataset.wfCreate ? { plantilla: btn.dataset.wfCreate } : {}),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.id) throw new Error(data.error || errorMsg);
+                window.location.href = `/app/workflows/${data.id}`;
+            } catch (err) {
+                btn.removeAttribute('aria-busy');
+                (window as any).cordToast?.((err as Error).message || errorMsg, 'error');
+            }
+        });
+    });
+</script>

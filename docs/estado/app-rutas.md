@@ -113,6 +113,14 @@ existe pero es ajeno ya es filtrar entre negocios.
                    cierre, monto cerrado, cobrado, ticket promedio, días a cierre) vía
                    getDesempeno() en queries.ts. Atribución por cotizaciones.creado_por
                    (`users.id`); gateado por el permiso `analitica`.
+/app/workflows   → CORD WORKFLOWS (sep 2026): lista, plantillas y cupo de workflows activos
+                   del plan. Permiso `ajustes`.
+/app/workflows/[id] → editor visual (lienzo con disparador, acciones, condiciones con dos
+                   ramas y esperas en días; panel lateral; buscador de disparadores) y
+                   pestaña Ejecuciones con log por paso, reintentar y cancelar. Componente
+                   `src/components/app/WorkflowEditor.astro`; valida en el cliente con los
+                   mismos `catalog.ts`/`definition.ts` que el servidor. API interna en
+                   `/api/workflows/*`; esperas y reintentos los recoge `/api/cron/workflows`.
 /app/cobranza    → cuentas por cobrar (jun 2026): cartera total, vencido, aging por
                    antigüedad, exposición por cliente (saldo vs límite) y tabla con
                    "marcar cobrada" + recordatorio por WhatsApp. getCobranza() en

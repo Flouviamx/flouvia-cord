@@ -1,0 +1,29 @@
+---
+// /app/workflows/[id] — editor visual de Cord Workflows y su historial de ejecuciones.
+import AppLayout from '../../../layouts/AppLayout.astro';
+import AccessGate from '../../../components/app/AccessGate.astro';
+import WorkflowEditor from '../../../components/app/WorkflowEditor.astro';
+import { getMyMembership } from '../../../lib/queries';
+import { memberCan } from '../../../lib/permissions';
+import { getActiveOrgId } from '../../../lib/db';
+import { currentLocale } from '../../../lib/context';
+import { getWorkflow } from '../../../lib/workflows/service';
+import { t } from '../../../i18n/app';
+
+export const prerender = false;
+
+const L = currentLocale();
+const ME = await getMyMembership();
+const canAjustes = memberCan(ME, 'ajustes');
+const orgId = await getActiveOrgId();
+const wf = canAjustes ? await getWorkflow(orgId, String(Astro.params.id ?? '')) : null;
+if (canAjustes && !wf) return Astro.redirect('/app/workflows');
+---
+
+<AppLayout title={`${wf?.nombre ?? t(L, 'wf.heading')} — Cord`} page="workflows" heading={t(L, 'wf.heading')}>
+    {!canAjustes || !wf ? (
+        <AccessGate title={t(L, 'wf.sin_acceso_titulo')} desc={t(L, 'wf.sin_acceso_desc')} />
+    ) : (
+        <WorkflowEditor lang={L} workflow={{ id: String(wf.id), nombre: String(wf.nombre), estado: String(wf.estado), definicion: wf.definicion, publicado: wf.publicado }} />
+    )}
+</AppLayout>

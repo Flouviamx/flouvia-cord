@@ -1,0 +1,1192 @@
+---
+import { t, type AppLocale } from '../../i18n/app';
+import { sanitizeDefinition } from '../../lib/workflows/definition';
+
+interface Props {
+    lang: AppLocale;
+    workflow: { id: string; nombre: string; estado: string; definicion: unknown; publicado: unknown };
+}
+
+const { lang: L, workflow: wf } = Astro.props;
+
+const STR = {
+    volver: t(L, 'wf.volver'), nombreAria: t(L, 'wf.nombre_aria'), guardar: t(L, 'wf.guardar'), publicar: t(L, 'wf.publicar'),
+    publicarCambios: t(L, 'wf.publicar_cambios'), mas: t(L, 'wf.mas'), pausar: t(L, 'wf.pausar'), reanudar: t(L, 'wf.reanudar'),
+    duplicar: t(L, 'wf.duplicar'), eliminar: t(L, 'wf.eliminar'), eliminarDesc: t(L, 'wf.eliminar_desc'),
+    cambiosSinPublicar: t(L, 'wf.cambios_sin_publicar'), guardado: t(L, 'wf.guardado'), publicado: t(L, 'wf.publicado'),
+    pausadoToast: t(L, 'wf.pausado_toast'), reanudadoToast: t(L, 'wf.reanudado_toast'), errorGuardar: t(L, 'wf.error_guardar'),
+    pendientes: t(L, 'wf.pendientes'), tabEditor: t(L, 'wf.tab_editor'), tabEjecuciones: t(L, 'wf.tab_ejecuciones'),
+    cuando: t(L, 'wf.cuando'), agregarDisparador: t(L, 'wf.agregar_disparador'), hazEsto: t(L, 'wf.haz_esto'),
+    agregarPaso: t(L, 'wf.agregar_paso'), menuAccion: t(L, 'wf.menu_accion'), menuCondicion: t(L, 'wf.menu_condicion'),
+    menuEspera: t(L, 'wf.menu_espera'), siCumple: t(L, 'wf.si_cumple'), siNoCumple: t(L, 'wf.si_no_cumple'),
+    accion: t(L, 'wf.accion'), condicion: t(L, 'wf.condicion'), espera: t(L, 'wf.espera'), esperarDias: t(L, 'wf.esperar_dias'),
+    esperarDia: t(L, 'wf.esperar_dia'), eligeAccion: t(L, 'wf.elige_accion'), defineCondicion: t(L, 'wf.define_condicion'),
+    yMas: t(L, 'wf.y_mas'), pasoMenu: t(L, 'wf.paso_menu'), pasoEliminar: t(L, 'wf.paso_eliminar'), pasoDuplicar: t(L, 'wf.paso_duplicar'),
+    pasoArriba: t(L, 'wf.paso_arriba'), pasoAbajo: t(L, 'wf.paso_abajo'), panelDisparador: t(L, 'wf.panel_disparador'),
+    panelAccion: t(L, 'wf.panel_accion'), panelCondicion: t(L, 'wf.panel_condicion'), panelEspera: t(L, 'wf.panel_espera'),
+    listo: t(L, 'wf.listo'), cambiar: t(L, 'wf.cambiar'), cerrar: t(L, 'wf.cerrar'), variables: t(L, 'wf.variables'),
+    variablesHint: t(L, 'wf.variables_hint'), enVivo: t(L, 'wf.en_vivo'), continuarSi: t(L, 'wf.continuar_si'),
+    todas: t(L, 'wf.todas'), alguna: t(L, 'wf.alguna'), campo: t(L, 'wf.campo'), operador: t(L, 'wf.operador'),
+    valor: t(L, 'wf.valor'), agregarOtra: t(L, 'wf.agregar_otra'), quitar: t(L, 'wf.quitar'), elige: t(L, 'wf.elige'),
+    dias: t(L, 'wf.dias'), esperaHint: t(L, 'wf.espera_hint'), buscarDisparador: t(L, 'wf.buscar_disparador'),
+    todos: t(L, 'wf.todos'), sinResultados: t(L, 'wf.sin_resultados'), acercar: t(L, 'wf.acercar'), alejar: t(L, 'wf.alejar'),
+    ajustar: t(L, 'wf.ajustar'), runsVacioTitulo: t(L, 'wf.runs_vacio_titulo'), runsVacioDesc: t(L, 'wf.runs_vacio_desc'),
+    reintentar: t(L, 'wf.reintentar'), cancelar: t(L, 'wf.cancelar'), actualizar: t(L, 'wf.actualizar'),
+    intento: t(L, 'wf.intento'), continua: t(L, 'wf.continua'),
+    run: {
+        queued: t(L, 'wf.run.queued'), running: t(L, 'wf.run.running'), waiting: t(L, 'wf.run.waiting'),
+        succeeded: t(L, 'wf.run.succeeded'), failed: t(L, 'wf.run.failed'), canceled: t(L, 'wf.run.canceled'),
+    },
+    paso: {
+        ok: t(L, 'wf.paso.ok'), error: t(L, 'wf.paso.error'), si: t(L, 'wf.paso.si'), no: t(L, 'wf.paso.no'), esperando: t(L, 'wf.paso.esperando'),
+    },
+    estado: { draft: t(L, 'wf.estado.draft'), active: t(L, 'wf.estado.active'), paused: t(L, 'wf.estado.paused') },
+};
+
+const DATA = {
+    lang: L,
+    workflow: {
+        id: wf.id,
+        nombre: wf.nombre,
+        estado: wf.estado,
+        definicion: sanitizeDefinition(wf.definicion),
+        publicado: wf.publicado ? sanitizeDefinition(wf.publicado) : null,
+    },
+    str: STR,
+};
+---
+
+<div class="wfe" data-wf-editor>
+    <script is:inline type="application/json" id="wfData" set:html={JSON.stringify(DATA).replace(/</g, '\\u003c')}></script>
+
+    <header class="wfe-bar">
+        <a class="wfe-close" href="/app/workflows" aria-label={STR.volver}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </a>
+        <input class="wfe-name" data-name value={wf?.nombre} maxlength="120" aria-label={STR.nombreAria} />
+        <span class="wfe-badge" data-badge></span>
+        <span class="wfe-dirty" data-dirty hidden>{STR.cambiosSinPublicar}</span>
+        <div class="wfe-actions">
+            <button type="button" class="wfe-btn wfe-btn-ghost" data-save>{STR.guardar}</button>
+            <button type="button" class="wfe-btn wfe-btn-primary" data-publish>{STR.publicar}</button>
+            <div class="wfe-more">
+                <button type="button" class="wfe-icon-btn" data-more aria-haspopup="menu" aria-expanded="false" aria-label={STR.mas}>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                </button>
+                <div class="wfe-menu" role="menu" data-more-menu hidden>
+                    <button type="button" role="menuitem" data-toggle-pause></button>
+                    <button type="button" role="menuitem" data-duplicate>{STR.duplicar}</button>
+                    <button type="button" role="menuitem" class="wfe-danger" data-delete>{STR.eliminar}</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="wfe-tabs" role="tablist">
+        <button type="button" role="tab" class="wfe-tab" aria-selected="true" data-tab-btn="editor">{STR.tabEditor}</button>
+        <button type="button" role="tab" class="wfe-tab" aria-selected="false" data-tab-btn="runs">{STR.tabEjecuciones}</button>
+        <button type="button" class="wfe-issues" data-issues hidden></button>
+    </div>
+
+    <section class="wfe-stage" data-tab="editor">
+        <div class="wfe-canvas" data-canvas>
+            <div class="wfe-flow" data-flow></div>
+        </div>
+        <div class="wfe-zoom" aria-label="zoom">
+            <button type="button" data-zoom="in" aria-label={STR.acercar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button type="button" data-zoom="out" aria-label={STR.alejar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+            <button type="button" data-zoom="fit" aria-label={STR.ajustar}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/></svg></button>
+        </div>
+        <aside class="wfe-panel" data-panel hidden role="dialog" aria-modal="false"></aside>
+    </section>
+
+    <section class="wfe-runs" data-tab="runs" hidden>
+        <div class="wfe-runs-bar"><button type="button" class="wfe-btn wfe-btn-ghost" data-runs-refresh>{STR.actualizar}</button></div>
+        <div data-runs-list></div>
+    </section>
+
+    <div class="wfe-scrim" data-scrim hidden></div>
+    <div class="wfe-addmenu" data-addmenu role="menu" hidden></div>
+    <div class="wfe-picker" data-picker hidden role="dialog" aria-modal="true" aria-label={STR.buscarDisparador}></div>
+</div>
+
+<style is:global>
+    .wfe {
+        --wf-dot: rgba(10, 25, 47, 0.13);
+        --wf-card: var(--surface, #fff);
+        --wf-line: rgba(10, 25, 47, 0.18);
+        --wf-accent: var(--color-blue-deep);
+        --wf-issue: #dc2626;
+        --wf-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 10px 30px -18px rgba(10,25,47,0.22);
+        position: relative; display: flex; flex-direction: column; gap: 0.9rem;
+    }
+    html[data-theme="dark"] .wfe { --wf-dot: rgba(255,255,255,0.1); --wf-line: rgba(255,255,255,0.22); --wf-accent: #9ec5ff; --wf-issue: #f87171; }
+    .wfe [hidden] { display: none !important; }
+    .wfe button { font-family: var(--font-sans); }
+    .wfe :focus-visible { outline: 2px solid var(--wf-accent); outline-offset: 2px; }
+
+    .wfe-bar { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+    .wfe-close, .wfe-icon-btn {
+        width: 38px; height: 38px; display: grid; place-items: center; flex-shrink: 0; border-radius: 11px; cursor: pointer;
+        color: var(--color-text); background: var(--surface); border: 1px solid var(--color-border); transition: background 0.2s, transform 0.25s var(--ease-spring);
+    }
+    .wfe-close svg, .wfe-icon-btn svg { width: 17px; height: 17px; }
+    .wfe-close:hover, .wfe-icon-btn:hover { background: var(--color-bg-soft); }
+    .wfe-close:active, .wfe-icon-btn:active { transform: scale(0.95); }
+    .wfe-name {
+        min-width: 6ch; max-width: min(520px, 50vw); flex: 0 1 auto; field-sizing: content; font-family: var(--font-sans); font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em;
+        color: var(--color-text); background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 4px 8px;
+    }
+    .wfe-name:hover { background: var(--color-bg-soft); }
+    .wfe-name:focus { outline: none; background: var(--editor-field, #f5f5f7); border-color: rgba(10,25,47,0.15); }
+    .wfe-badge { font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
+    .wfe-badge[data-estado="draft"] { color: #5b6472; background: rgba(91,100,114,0.1); }
+    .wfe-badge[data-estado="active"] { color: #047857; background: rgba(16,185,129,0.12); }
+    .wfe-badge[data-estado="paused"] { color: #b45309; background: rgba(245,158,11,0.14); }
+    .wfe-dirty { font-size: 0.74rem; color: var(--color-text-muted); }
+    .wfe-actions { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+    .wfe-btn {
+        font-size: 0.82rem; font-weight: 600; padding: 9px 16px; border-radius: 100px; cursor: pointer; white-space: nowrap;
+        transition: transform 0.3s var(--ease-spring), background 0.2s, opacity 0.2s;
+    }
+    .wfe-btn:active { transform: scale(0.97); }
+    .wfe-btn[aria-busy="true"] { opacity: 0.6; pointer-events: none; }
+    .wfe-btn-ghost { color: var(--color-text); background: var(--surface); border: 1px solid var(--color-border); }
+    .wfe-btn-ghost:hover { background: var(--color-bg-soft); }
+    .wfe-btn-primary { color: #fff; background: var(--color-blue-deep); border: 1px solid var(--color-blue-deep); box-shadow: 0 6px 18px -8px rgba(10,25,47,0.5); }
+    .wfe-btn-primary:hover { transform: translateY(-1px); }
+    html[data-theme="dark"] .wfe-btn-primary { background: #e8eefb; color: #0a192f; border-color: #e8eefb; }
+    .wfe-more { position: relative; }
+    .wfe-menu {
+        position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 200px; padding: 6px; border-radius: 14px;
+        background: var(--surface); border: 1px solid var(--color-border); box-shadow: var(--editor-panel-shadow, 0 16px 40px -8px rgba(10,25,47,0.18));
+    }
+    .wfe-menu button, .wfe-addmenu button {
+        display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; font-size: 0.84rem; color: var(--color-text);
+        background: none; border: none; border-radius: 9px; padding: 9px 11px; cursor: pointer;
+    }
+    .wfe-menu button:hover, .wfe-addmenu button:hover, .wfe-menu button:focus-visible, .wfe-addmenu button:focus-visible { background: var(--color-bg-soft); outline: none; }
+    .wfe-menu .wfe-danger { color: var(--color-danger); }
+    .wfe-addmenu svg { width: 18px; height: 18px; color: var(--wf-accent); flex-shrink: 0; }
+
+    .wfe-tabs { display: flex; align-items: center; gap: 1.2rem; border-bottom: 1px solid var(--color-border); }
+    .wfe-tab {
+        font-size: 0.86rem; font-weight: 600; color: var(--color-text-muted); background: none; border: none; cursor: pointer;
+        padding: 0.55rem 0 0.7rem; border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .wfe-tab[aria-selected="true"] { color: var(--color-text); border-bottom-color: var(--wf-accent); }
+    .wfe-issues { margin-left: auto; font-size: 0.76rem; font-weight: 600; color: var(--wf-issue); cursor: pointer; background: none; border: none; }
+
+    .wfe-stage { position: relative; }
+    .wfe-canvas {
+        position: relative; height: calc(100dvh - 250px); min-height: 520px; overflow: auto; border-radius: 22px;
+        background-color: var(--color-bg-soft); background-image: radial-gradient(var(--wf-dot) 1px, transparent 1px); background-size: 18px 18px;
+        box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .wfe-flow { display: flex; flex-direction: column; align-items: center; padding: 56px 48px 120px; min-width: max-content; zoom: var(--wf-zoom, 1); }
+    .wfe-zoom {
+        position: absolute; left: 16px; bottom: 16px; display: flex; flex-direction: column; border-radius: 12px; overflow: hidden;
+        background: var(--surface); box-shadow: 0 0 0 1px var(--color-border), var(--wf-shadow);
+    }
+    .wfe-zoom button { width: 38px; height: 38px; display: grid; place-items: center; background: none; border: none; color: var(--color-text-muted); cursor: pointer; }
+    .wfe-zoom button + button { border-top: 1px solid var(--color-border); }
+    .wfe-zoom button:hover { color: var(--color-text); background: var(--color-bg-soft); }
+    .wfe-zoom svg { width: 16px; height: 16px; }
+
+    .wfe-list { display: flex; flex-direction: column; align-items: center; }
+    .wfe-node {
+        position: relative; width: 340px; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
+        padding: 14px 14px 14px 16px; border-radius: 16px; background: var(--wf-card); color: var(--color-text);
+        border: 1px solid var(--color-border); box-shadow: var(--wf-shadow); transition: box-shadow 0.25s, border-color 0.25s, transform 0.3s var(--ease-spring);
+    }
+    .wfe-node:hover { transform: translateY(-1px); }
+    .wfe-node[data-selected="true"] { border-color: var(--wf-accent); box-shadow: 0 0 0 3px rgba(10,25,47,0.08), var(--wf-shadow); }
+    html[data-theme="dark"] .wfe-node[data-selected="true"] { box-shadow: 0 0 0 3px rgba(158,197,255,0.18), var(--wf-shadow); }
+    .wfe-node[data-issue="true"] { border-color: var(--wf-issue); }
+    .wfe-node.is-empty { background: transparent; box-shadow: none; border: 1.5px dashed var(--wf-line); }
+    .wfe-node.is-empty:hover { background: var(--wf-card); border-style: solid; }
+    .wfe-node-icon { width: 36px; height: 36px; flex-shrink: 0; display: grid; place-items: center; border-radius: 11px; color: var(--wf-accent); background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border); }
+    .wfe-node.is-empty .wfe-node-icon { background: var(--wf-card); }
+    .wfe-node-icon svg { width: 18px; height: 18px; }
+    .wfe-node-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+    .wfe-node-eyebrow { font-size: 0.72rem; color: var(--color-text-muted); }
+    .wfe-node-title { font-size: 0.9rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+    .wfe-node.is-empty .wfe-node-title { color: var(--wf-accent); }
+    .wfe-node-sub { font-size: 0.76rem; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wfe-node-issue { font-size: 0.72rem; color: var(--wf-issue); font-weight: 600; }
+    .wfe-node-menu { width: 30px; height: 30px; flex-shrink: 0; display: grid; place-items: center; border-radius: 8px; border: none; background: none; color: var(--color-text-muted); cursor: pointer; }
+    .wfe-node-menu:hover { background: var(--color-bg-soft); color: var(--color-text); }
+    .wfe-node-menu svg { width: 16px; height: 16px; }
+
+    .wfe-link { display: flex; flex-direction: column; align-items: center; height: 46px; justify-content: center; position: relative; }
+    .wfe-link::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 1.5px; transform: translateX(-50%); background: var(--wf-line); }
+    .wfe-plus {
+        position: relative; z-index: 1; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+        color: var(--wf-accent); background: var(--wf-card); border: 1.5px solid var(--wf-line); opacity: 0; transform: scale(0.85);
+        transition: opacity 0.2s, transform 0.25s var(--ease-spring), border-color 0.2s;
+    }
+    .wfe-plus svg { width: 13px; height: 13px; }
+    .wfe-link:hover .wfe-plus, .wfe-plus:focus-visible { opacity: 1; transform: scale(1); }
+    .wfe-plus:hover { border-color: var(--wf-accent); }
+
+    .wfe-diamond {
+        width: 58px; height: 58px; display: grid; place-items: center; cursor: pointer; border: none; background: none; padding: 0; position: relative;
+    }
+    .wfe-diamond::before {
+        content: ''; position: absolute; inset: 8px; border-radius: 12px; transform: rotate(45deg);
+        background: var(--wf-card); border: 1px solid var(--color-border); box-shadow: var(--wf-shadow); transition: border-color 0.25s;
+    }
+    .wfe-diamond[data-selected="true"]::before { border-color: var(--wf-accent); }
+    .wfe-diamond[data-issue="true"]::before { border-color: var(--wf-issue); }
+    .wfe-diamond svg { position: relative; width: 20px; height: 20px; color: var(--wf-accent); }
+    .wfe-cond { display: flex; flex-direction: column; align-items: center; }
+    .wfe-cond-summary { margin-top: 14px; }
+    .wfe-cond-summary::before { content: ''; position: absolute; left: 50%; top: -15px; width: 1.5px; height: 14px; background: var(--wf-line); }
+    .wfe-branches { display: grid; grid-template-columns: 1fr 1fr; column-gap: 36px; align-items: start; position: relative; margin-top: 18px; padding-top: 30px; }
+    .wfe-branches::before { content: ''; position: absolute; top: 0; left: calc(25% - 9px); right: calc(25% - 9px); height: 30px; border: 1.5px solid var(--wf-line); border-bottom: none; border-radius: 14px 14px 0 0; }
+    .wfe-branches::after { content: ''; position: absolute; top: -18px; left: 50%; width: 1.5px; height: 18px; background: var(--wf-line); }
+    .wfe-branch { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+    .wfe-branch-label {
+        font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); padding: 5px 12px; border-radius: 100px;
+        background: var(--wf-card); box-shadow: 0 0 0 1px var(--color-border); margin-bottom: 14px; white-space: nowrap;
+    }
+    .wfe-end { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--wf-line); background: var(--color-bg-soft); margin-top: 4px; }
+
+    .wfe-scrim { position: fixed; inset: 0; z-index: 900; background: rgba(10,25,47,0.28); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+    .wfe-panel {
+        position: absolute; top: 12px; right: 12px; bottom: 12px; z-index: 30; width: min(400px, calc(100% - 24px));
+        display: flex; flex-direction: column; background: var(--editor-panel, #fff); border-radius: 22px;
+        box-shadow: var(--editor-panel-shadow, 0 16px 40px -8px rgba(10,25,47,0.2)); animation: wfeSlide 0.32s var(--ease-spring);
+    }
+    @media (min-width: 881px) {
+        .wfe-stage:has(.wfe-panel:not([hidden])) .wfe-flow { padding-right: 440px; }
+    }
+    @keyframes wfeSlide { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+    .wfe-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 18px 20px 14px; border-bottom: 1px solid var(--color-border); }
+    .wfe-panel-head h2 { margin: 0; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: var(--color-text); }
+    .wfe-panel-body { flex: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 18px; }
+    .wfe-panel-foot { padding: 14px 20px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; }
+    .wfe-field { display: flex; flex-direction: column; gap: 6px; }
+    .wfe-field > label, .wfe-field-label { font-size: 0.8rem; font-weight: 600; color: var(--color-text); }
+    .wfe-hint { font-size: 0.74rem; line-height: 1.45; color: var(--color-text-muted); margin: 0; }
+    .wfe-input, .wfe-select, .wfe-textarea {
+        width: 100%; box-sizing: border-box; font-family: var(--font-sans); font-size: 0.88rem; color: var(--color-text);
+        background: var(--editor-field, #f5f5f7); border: 1px solid transparent; border-radius: 11px; padding: 10px 12px;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    .wfe-textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+    .wfe-input:hover, .wfe-select:hover, .wfe-textarea:hover { background: var(--editor-field-hover, #ececee); }
+    .wfe-input:focus, .wfe-select:focus, .wfe-textarea:focus { outline: none; border-color: rgba(10,25,47,0.15); box-shadow: 0 0 0 3px var(--editor-focus-ring, rgba(10,25,47,0.08)); }
+    .wfe-summary-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--color-border); }
+    .wfe-summary-card .wfe-node-text { flex: 1; }
+    .wfe-choice { display: flex; flex-direction: column; }
+    .wfe-choice button {
+        display: flex; align-items: center; gap: 12px; text-align: left; padding: 12px 10px; border: none; background: none; cursor: pointer;
+        border-bottom: 1px solid var(--color-border); color: var(--color-text); border-radius: 10px;
+    }
+    .wfe-choice button:hover { background: var(--color-bg-soft); }
+    .wfe-choice strong { display: block; font-size: 0.88rem; font-weight: 600; }
+    .wfe-choice span { display: block; font-size: 0.76rem; line-height: 1.45; color: var(--color-text-muted); margin-top: 2px; }
+    .wfe-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .wfe-chip {
+        font-size: 0.74rem; font-weight: 600; color: var(--color-text-muted); background: var(--surface); border: 1px solid var(--color-border);
+        padding: 5px 10px; border-radius: 100px; cursor: pointer; transition: all 0.2s var(--ease-ios);
+    }
+    .wfe-chip:hover { color: var(--color-text); border-color: rgba(10,25,47,0.2); }
+    .wfe-chip[aria-pressed="true"] { background: var(--color-blue-deep); border-color: var(--color-blue-deep); color: #fff; }
+    .wfe-chip small { font-weight: 500; opacity: 0.75; }
+    .wfe-segment { display: inline-flex; padding: 3px; gap: 2px; border-radius: 100px; background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border); align-self: flex-start; }
+    .wfe-segment button { font-size: 0.78rem; font-weight: 600; border: none; background: none; color: var(--color-text-muted); padding: 6px 12px; border-radius: 100px; cursor: pointer; }
+    .wfe-segment button[aria-pressed="true"] { background: var(--surface); color: var(--color-text); box-shadow: 0 1px 3px rgba(10,25,47,0.12); }
+    .wfe-cond-row { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--color-border); }
+    .wfe-cond-row-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; color: var(--color-text-muted); }
+    .wfe-link-btn { font-size: 0.8rem; font-weight: 600; color: var(--wf-accent); background: none; border: none; cursor: pointer; padding: 4px 0; align-self: flex-start; }
+    .wfe-link-btn.is-danger { color: var(--color-danger); font-size: 0.74rem; }
+
+    .wfe-picker { position: fixed; inset: 0; z-index: 920; display: grid; place-items: start center; padding: 10vh 16px 16px; background: rgba(10,25,47,0.28); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+    .wfe-picker-card {
+        width: min(640px, 100%); max-height: 76vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 22px;
+        background: var(--editor-panel, #fff); box-shadow: var(--editor-panel-shadow, 0 16px 40px -8px rgba(10,25,47,0.2)); animation: wfePop 0.28s var(--ease-spring);
+    }
+    @keyframes wfePop { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .wfe-picker-top { padding: 18px 20px 14px; border-bottom: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 12px; }
+    .wfe-search { display: flex; align-items: center; gap: 10px; }
+    .wfe-search svg { width: 18px; height: 18px; color: var(--color-text-muted); flex-shrink: 0; }
+    .wfe-search input { flex: 1; font-family: var(--font-sans); font-size: 1rem; border: none; background: none; color: var(--color-text); padding: 4px 0; }
+    .wfe-search input:focus { outline: none; }
+    .wfe-picker-list { overflow-y: auto; padding: 8px 12px 14px; }
+    .wfe-picker-item { width: 100%; display: flex; align-items: center; gap: 12px; padding: 10px; border: none; background: none; border-radius: 12px; cursor: pointer; color: var(--color-text); text-align: left; }
+    .wfe-picker-item:hover, .wfe-picker-item:focus-visible { background: var(--color-bg-soft); outline: none; }
+    .wfe-picker-item .wfe-node-icon { width: 32px; height: 32px; border-radius: 10px; }
+    .wfe-picker-item span.lbl { flex: 1; font-size: 0.88rem; }
+    .wfe-picker-item span.cat { font-size: 0.76rem; color: var(--color-text-muted); }
+    .wfe-picker-empty { padding: 18px 10px; font-size: 0.84rem; color: var(--color-text-muted); }
+
+    .wfe-addmenu { position: absolute; z-index: 60; min-width: 220px; padding: 6px; border-radius: 14px; background: var(--surface); border: 1px solid var(--color-border); box-shadow: var(--editor-panel-shadow, 0 16px 40px -8px rgba(10,25,47,0.18)); }
+
+    .wfe-runs { display: flex; flex-direction: column; gap: 0.8rem; }
+    .wfe-runs-bar { display: flex; justify-content: flex-end; }
+    .wfe-run { border-bottom: 1px solid var(--color-border); }
+    .wfe-run-row { width: 100%; display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: 0.85rem 0.4rem; background: none; border: none; cursor: pointer; color: var(--color-text); text-align: left; border-radius: 10px; }
+    .wfe-run-row:hover { background: var(--row-hover, rgba(10,25,47,0.035)); }
+    .wfe-run-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .wfe-run-main strong { font-size: 0.86rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wfe-run-main small, .wfe-run-when { font-size: 0.76rem; color: var(--color-text-muted); }
+    .wfe-run-detail { padding: 0.2rem 0.4rem 1rem 126px; display: flex; flex-direction: column; gap: 10px; }
+    .wfe-run-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .wfe-run-steps li { display: flex; gap: 10px; align-items: baseline; font-size: 0.8rem; color: var(--color-text); }
+    .wfe-run-steps li span.res { font-size: 0.72rem; font-weight: 700; min-width: 86px; }
+    .wfe-run-steps li span.res.ok, .wfe-run-steps li span.res.si { color: #047857; }
+    .wfe-run-steps li span.res.error { color: var(--color-danger); }
+    .wfe-run-steps li span.res.no, .wfe-run-steps li span.res.esperando { color: var(--color-text-muted); }
+    .wfe-run-steps li small { color: var(--color-text-muted); }
+    .wfe-run-error { font-size: 0.8rem; color: var(--color-danger); margin: 0; }
+    .wfe-run-actions { display: flex; gap: 8px; }
+    .wfe-runs-empty { padding: 3rem 0; }
+    .wfe-runs-empty h3 { margin: 0 0 0.3rem; font-size: 1rem; font-weight: 600; color: var(--color-text); }
+    .wfe-runs-empty p { margin: 0; font-size: 0.86rem; color: var(--color-text-muted); max-width: 480px; line-height: 1.5; }
+    .wfe-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
+    .wfe-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .wfe-pill[data-s="succeeded"] { color: #047857; background: rgba(16,185,129,0.12); }
+    .wfe-pill[data-s="failed"] { color: #b91c1c; background: rgba(239,68,68,0.1); }
+    .wfe-pill[data-s="waiting"], .wfe-pill[data-s="queued"], .wfe-pill[data-s="running"] { color: #1d4ed8; background: rgba(59,130,246,0.1); }
+    .wfe-pill[data-s="canceled"] { color: #5b6472; background: rgba(91,100,114,0.1); }
+    html[data-theme="dark"] .wfe-badge[data-estado="draft"], html[data-theme="dark"] .wfe-pill[data-s="canceled"] { color: #c3cad5; background: rgba(195,202,213,0.12); }
+    html[data-theme="dark"] .wfe-badge[data-estado="active"], html[data-theme="dark"] .wfe-pill[data-s="succeeded"] { color: #34d399; background: rgba(16,185,129,0.18); }
+    html[data-theme="dark"] .wfe-badge[data-estado="paused"] { color: #fbbf24; background: rgba(245,158,11,0.18); }
+    html[data-theme="dark"] .wfe-pill[data-s="failed"] { color: #f87171; background: rgba(239,68,68,0.18); }
+    html[data-theme="dark"] .wfe-pill[data-s="waiting"], html[data-theme="dark"] .wfe-pill[data-s="queued"], html[data-theme="dark"] .wfe-pill[data-s="running"] { color: #93c5fd; background: rgba(59,130,246,0.18); }
+
+    @media (prefers-reduced-motion: reduce) {
+        .wfe-panel, .wfe-picker-card { animation: none; }
+    }
+
+    @media (max-width: 880px) {
+        .wfe-bar { gap: 0.5rem; }
+        .wfe-name { flex: 1 1 200px; max-width: none; font-size: 1.15rem; }
+        .wfe-actions { margin-left: 0; width: 100%; }
+        .wfe-actions .wfe-btn { flex: 1; min-height: 46px; }
+        .wfe-icon-btn, .wfe-close { width: 44px; height: 44px; }
+        .wfe-canvas { height: auto; min-height: 60dvh; border-radius: 18px; }
+        .wfe-flow { padding: 28px 14px 60px; min-width: 0; zoom: 1; }
+        .wfe-zoom { display: none; }
+        .wfe-node { width: 100%; max-width: 420px; min-height: 64px; }
+        .wfe-plus { opacity: 1; transform: scale(1); width: 30px; height: 30px; }
+        .wfe-plus::after { content: ''; position: absolute; inset: -8px; }
+        .wfe-node-menu { width: 44px; height: 44px; }
+        .wfe-btn { min-height: 44px; }
+        .wfe-cond { width: 100%; }
+        .wfe-branches { grid-template-columns: 1fr; row-gap: 22px; width: 100%; margin-top: 8px; padding-top: 16px; }
+        .wfe-branches::before, .wfe-branches::after { display: none; }
+        .wfe-branch { width: 100%; }
+        .wfe-list { width: 100%; }
+        .wfe-panel { position: fixed; z-index: 910; top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-height: 88dvh; border-radius: 22px 22px 0 0; padding-bottom: env(safe-area-inset-bottom); animation-name: wfeSheet; }
+        @keyframes wfeSheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+        .wfe-input, .wfe-select, .wfe-textarea { font-size: 16px; min-height: 46px; }
+        .wfe-picker { padding: 0; place-items: end stretch; }
+        .wfe-picker-card { width: 100%; max-height: 90dvh; border-radius: 22px 22px 0 0; }
+        .wfe-picker-item, .wfe-choice button, .wfe-menu button, .wfe-addmenu button { min-height: 48px; }
+        .wfe-chip { min-height: 44px; }
+        .wfe-run-row { grid-template-columns: minmax(0, 1fr) auto; }
+        .wfe-run-row .wfe-pill { grid-column: 2; grid-row: 1; }
+        .wfe-run-detail { padding-left: 0.4rem; }
+        .wfe-tab { min-height: 44px; }
+    }
+</style>
+
+<script>
+    import {
+        OPERATORS, TRIGGER_CATEGORIES, WAIT_MAX_DAYS, WORKFLOW_ACTIONS, WORKFLOW_TRIGGERS, MAX_CONDITIONS,
+        findAction, findTrigger, type Lang, type WorkflowField,
+    } from '../../lib/workflows/catalog';
+    import { sanitizeDefinition, validateForPublish, type Condition, type Step, type WorkflowDefinition } from '../../lib/workflows/definition';
+
+    const root = document.querySelector<HTMLElement>('[data-wf-editor]');
+    const raw = document.getElementById('wfData')?.textContent;
+    if (root && raw) boot(root, JSON.parse(raw));
+
+    function boot(root: HTMLElement, data: any) {
+        const L: Lang = data.lang === 'en' ? 'en' : 'es';
+        const S = data.str;
+        const id: string = data.workflow.id;
+        const toast = (msg: string, type: 'ok' | 'error' | 'info' = 'ok') => (window as any).cordToast?.(msg, type);
+        const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+
+        const state = {
+            nombre: data.workflow.nombre as string,
+            estado: data.workflow.estado as 'draft' | 'active' | 'paused',
+            def: sanitizeDefinition(data.workflow.definicion) as WorkflowDefinition,
+            publicado: data.workflow.publicado ? JSON.stringify(sanitizeDefinition(data.workflow.publicado)) : null as string | null,
+            saved: '',
+            selected: null as null | { kind: 'trigger' } | { kind: 'step'; id: string },
+            showIssues: false,
+            zoom: 1,
+        };
+        state.saved = snapshot();
+
+        function snapshot() { return JSON.stringify({ n: state.nombre, d: sanitizeDefinition(state.def) }); }
+        const isDirty = () => snapshot() !== state.saved;
+        const hasUnpublished = () => state.publicado !== null && JSON.stringify(sanitizeDefinition(state.def)) !== state.publicado;
+
+        function el<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, string | boolean | undefined> = {}, children: (Node | string | null | undefined)[] = []) {
+            const node = document.createElement(tag);
+            for (const [k, v] of Object.entries(attrs)) {
+                if (v === undefined || v === false) continue;
+                if (k === 'class') node.className = String(v);
+                else if (k === 'text') node.textContent = String(v);
+                else node.setAttribute(k, v === true ? '' : String(v));
+            }
+            for (const c of children) if (c !== null && c !== undefined) node.append(c);
+            return node;
+        }
+        const svg = (markup: string) => { const s = el('span', { class: 'wfe-svg', 'aria-hidden': 'true' }); s.innerHTML = markup; return s.firstElementChild ?? s; };
+        const fill = (tpl: string, vars: Record<string, string | number>) => Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(String(v)), tpl);
+        const uid = () => Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => b.toString(16).padStart(2, '0')).join('');
+
+        const ICON = {
+            quotes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.13"/><path d="M14 2v6h6" stroke-opacity="0.6"/><path d="M8 13h8M8 17h5" stroke-opacity="0.6"/></svg>',
+            approvals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z" fill="currentColor" fill-opacity="0.13"/><path d="m9 12 2 2 4-4" stroke-opacity="0.8"/></svg>',
+            payments: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="currentColor" fill-opacity="0.13"/><path d="M2.5 10h19" stroke-opacity="0.6"/><path d="M6.5 15h3" stroke-opacity="0.6"/></svg>',
+            invoices: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15l-3-2-2 2-2-2-2 2-2-2-3 2V4a2 2 0 0 1 2-2z" fill="currentColor" fill-opacity="0.13"/><path d="M9 11h6M9 15h4" stroke-opacity="0.6"/></svg>',
+            clients: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4" fill="currentColor" fill-opacity="0.13"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" stroke-opacity="0.7"/></svg>',
+            products: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z" fill="currentColor" fill-opacity="0.13"/><path d="m3.3 7.5 8.7 5 8.7-5M12 22V12.5" stroke-opacity="0.6"/></svg>',
+            tasks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5" fill="currentColor" fill-opacity="0.13"/><path d="m8 12 2.5 2.5L16 9" stroke-opacity="0.8"/></svg>',
+            trigger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="currentColor" fill-opacity="0.13"/></svg>',
+            plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+            create_task: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5" fill="currentColor" fill-opacity="0.13"/><path d="M12 9v6M9 12h6" stroke-opacity="0.8"/></svg>',
+            notify_team: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="currentColor" fill-opacity="0.13"/><path d="m4 7 8 6 8-6" stroke-opacity="0.7"/></svg>',
+            slack_message: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z" fill="currentColor" fill-opacity="0.13"/><path d="M8 9h8M8 12h5" stroke-opacity="0.6"/></svg>',
+            action: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8z" fill="currentColor" fill-opacity="0.13"/></svg>',
+            condition: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2" fill="currentColor" fill-opacity="0.2"/><path d="M12 7.2v4.3M12 11.5 6 17M12 11.5l6 5.5" stroke-opacity="0.75"/><circle cx="6" cy="19" r="2" fill="currentColor" fill-opacity="0.2"/><circle cx="18" cy="19" r="2" fill="currentColor" fill-opacity="0.2"/></svg>',
+            wait: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.13"/><path d="M12 7v5l3 2" stroke-opacity="0.8"/></svg>',
+            dots: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
+            search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+            close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+        } as Record<string, string>;
+
+        type List = Step[];
+        function findStep(id: string, list: List = state.def.steps): { step: Step; list: List; index: number } | null {
+            for (let i = 0; i < list.length; i++) {
+                const s = list[i];
+                if (s.id === id) return { step: s, list, index: i };
+                if (s.type === 'condition') {
+                    const found = findStep(id, s.then) ?? findStep(id, s.else);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+        function depthOf(target: List, list: List = state.def.steps, depth = 1): number {
+            if (list === target) return depth;
+            for (const s of list) {
+                if (s.type === 'condition') {
+                    const d = depthOf(target, s.then, depth + 1) || depthOf(target, s.else, depth + 1);
+                    if (d) return d;
+                }
+            }
+            return 0;
+        }
+        const trigger = () => findTrigger(state.def.trigger);
+        const fields = (): WorkflowField[] => trigger()?.fields ?? [];
+
+        function clone(step: Step): Step {
+            const copy = JSON.parse(JSON.stringify(step)) as Step;
+            const reid = (s: Step) => { s.id = uid(); if (s.type === 'condition') { s.then.forEach(reid); s.else.forEach(reid); } };
+            reid(copy);
+            return copy;
+        }
+
+        function conditionText(c: Condition) {
+            const f = fields().find((x) => x.key === c.field);
+            if (!f) return '';
+            const op = OPERATORS[f.type].find((o) => o.op === c.op);
+            if (!op) return f.label[L];
+            let value = c.value === null || c.value === undefined ? '' : String(c.value);
+            if (f.type === 'enum') value = f.options?.find((o) => o.value === c.value)?.label[L] ?? value;
+            if (f.type === 'number' && value !== '' && Number.isFinite(Number(value))) value = Number(value).toLocaleString(L === 'en' ? 'en-US' : 'es-MX');
+            return [f.label[L], op.label[L], op.needsValue ? value : ''].filter(Boolean).join(' ');
+        }
+        function stepSummary(step: Step): { eyebrow: string; title: string; sub: string; icon: string } {
+            if (step.type === 'wait') {
+                return { eyebrow: S.espera, title: step.days === 1 ? S.esperarDia : fill(S.esperarDias, { n: step.days }), sub: '', icon: ICON.wait };
+            }
+            if (step.type === 'condition') {
+                const first = step.conditions[0] ? conditionText(step.conditions[0]) : '';
+                const more = step.conditions.length > 1 ? ` ${fill(S.yMas, { n: step.conditions.length - 1 })}` : '';
+                return { eyebrow: S.condicion, title: first ? `${first}${more}` : S.defineCondicion, sub: '', icon: ICON.condition };
+            }
+            const def = findAction(step.action);
+            const sub = def ? String(step.params.titulo ?? step.params.asunto ?? step.params.mensaje ?? '') : '';
+            return { eyebrow: S.accion, title: def ? def.label[L] : S.eligeAccion, sub, icon: def ? ICON[def.key] : ICON.action };
+        }
+
+        function issues() { return validateForPublish(sanitizeDefinition(state.def), L); }
+
+        const flow = $('[data-flow]');
+        function render() {
+            const current = state.showIssues ? issues() : [];
+            const issueFor = (stepId: string | null) => current.find((i) => i.stepId === stepId);
+            flow.replaceChildren();
+
+            const trig = trigger();
+            const triggerIssue = state.showIssues && !trig ? current.find((i) => i.stepId === null) : undefined;
+            const tNode = el('button', {
+                type: 'button', class: `wfe-node${trig ? '' : ' is-empty'}`, 'data-selected': String(state.selected?.kind === 'trigger'),
+                'data-issue': String(Boolean(triggerIssue)),
+            }, [
+                el('span', { class: 'wfe-node-icon' }, [svg(trig ? ICON[trig.category] : ICON.plus)]),
+                el('span', { class: 'wfe-node-text' }, [
+                    el('span', { class: 'wfe-node-eyebrow', text: S.cuando }),
+                    el('span', { class: 'wfe-node-title', text: trig ? trig.label[L] : S.agregarDisparador }),
+                    trig ? el('span', { class: 'wfe-node-sub', text: TRIGGER_CATEGORIES.find((c) => c.key === trig.category)?.label[L] }) : null,
+                ]),
+            ]);
+            tNode.addEventListener('click', () => { if (trig) select({ kind: 'trigger' }); else openPicker(); });
+            flow.append(tNode);
+            flow.append(renderList(state.def.steps, issueFor));
+            updateChrome();
+        }
+
+        function link(list: List, index: number) {
+            const plus = el('button', { type: 'button', class: 'wfe-plus', 'aria-label': S.agregarPaso }, [svg(ICON.plus)]);
+            plus.addEventListener('click', (e) => { e.stopPropagation(); openAddMenu(plus, list, index); });
+            return el('div', { class: 'wfe-link' }, [plus]);
+        }
+
+        function renderList(list: List, issueFor: (id: string | null) => { message: string } | undefined) {
+            const wrap = el('div', { class: 'wfe-list' });
+            list.forEach((step, index) => {
+                wrap.append(link(list, index));
+                wrap.append(renderStep(step, list, index, issueFor));
+            });
+            wrap.append(el('div', { class: 'wfe-link' }));
+            const add = el('button', { type: 'button', class: 'wfe-node is-empty' }, [
+                el('span', { class: 'wfe-node-icon' }, [svg(ICON.plus)]),
+                el('span', { class: 'wfe-node-text' }, [
+                    el('span', { class: 'wfe-node-eyebrow', text: S.hazEsto }),
+                    el('span', { class: 'wfe-node-title', text: S.agregarPaso }),
+                ]),
+            ]);
+            add.addEventListener('click', () => openAddMenu(add, list, list.length));
+            wrap.append(add);
+            return wrap;
+        }
+
+        function stepMenuButton(step: Step, list: List, index: number) {
+            const btn = el('button', { type: 'button', class: 'wfe-node-menu', 'aria-label': S.pasoMenu, 'aria-haspopup': 'menu' }, [svg(ICON.dots)]);
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openMenu(btn, [
+                    index > 0 ? { label: S.pasoArriba, run: () => { list.splice(index - 1, 0, list.splice(index, 1)[0]); changed(); } } : null,
+                    index < list.length - 1 ? { label: S.pasoAbajo, run: () => { list.splice(index + 1, 0, list.splice(index, 1)[0]); changed(); } } : null,
+                    { label: S.pasoDuplicar, run: () => { list.splice(index + 1, 0, clone(step)); changed(); } },
+                    { label: S.pasoEliminar, danger: true, run: () => {
+                        list.splice(index, 1);
+                        if (state.selected?.kind === 'step' && !findStep(state.selected.id)) closePanel();
+                        changed();
+                    } },
+                ]);
+            });
+            return btn;
+        }
+
+        function renderStep(step: Step, list: List, index: number, issueFor: (id: string | null) => { message: string } | undefined) {
+            const info = stepSummary(step);
+            const issue = issueFor(step.id);
+            const selected = state.selected?.kind === 'step' && state.selected.id === step.id;
+            const card = el('div', {
+                class: 'wfe-node', role: 'button', tabindex: '0', 'data-step': step.id,
+                'data-selected': String(selected), 'data-issue': String(Boolean(issue)),
+            }, [
+                el('span', { class: 'wfe-node-icon' }, [svg(info.icon)]),
+                el('span', { class: 'wfe-node-text' }, [
+                    el('span', { class: 'wfe-node-eyebrow', text: info.eyebrow }),
+                    el('span', { class: 'wfe-node-title', text: info.title }),
+                    info.sub ? el('span', { class: 'wfe-node-sub', text: info.sub }) : null,
+                    issue ? el('span', { class: 'wfe-node-issue', text: issue.message }) : null,
+                ]),
+                stepMenuButton(step, list, index),
+            ]);
+            const open = () => select({ kind: 'step', id: step.id });
+            card.addEventListener('click', open);
+            card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+            if (step.type !== 'condition') return card;
+
+            const diamond = el('button', { type: 'button', class: 'wfe-diamond', 'aria-label': S.condicion, 'data-selected': String(selected), 'data-issue': String(Boolean(issue)) }, [svg(ICON.condition)]);
+            diamond.addEventListener('click', open);
+            card.classList.add('wfe-cond-summary');
+            const branch = (label: string, items: List) => el('div', { class: 'wfe-branch' }, [
+                el('span', { class: 'wfe-branch-label', text: label }),
+                renderListInBranch(items, issueFor),
+            ]);
+            return el('div', { class: 'wfe-cond' }, [
+                diamond, card,
+                el('div', { class: 'wfe-branches' }, [branch(S.siCumple, step.then), branch(S.siNoCumple, step.else)]),
+            ]);
+        }
+
+        function renderListInBranch(list: List, issueFor: (id: string | null) => { message: string } | undefined) {
+            const inner = renderList(list, issueFor);
+            inner.firstElementChild?.remove();
+            return inner;
+        }
+
+        let openMenuEl: HTMLElement | null = null;
+        function closeMenus() {
+            openMenuEl?.remove(); openMenuEl = null;
+            const addmenu = $('[data-addmenu]'); addmenu.hidden = true; addmenu.replaceChildren();
+            const more = $('[data-more-menu]'); more.hidden = true; $('[data-more]').setAttribute('aria-expanded', 'false');
+        }
+        function place(menu: HTMLElement, anchor: HTMLElement) {
+            const r = anchor.getBoundingClientRect();
+            const host = root.getBoundingClientRect();
+            menu.style.left = `${Math.max(0, Math.min(r.left - host.left, host.width - 240))}px`;
+            menu.style.top = `${r.bottom - host.top + 6}px`;
+        }
+        function openMenu(anchor: HTMLElement, items: ({ label: string; danger?: boolean; run: () => void } | null)[]) {
+            closeMenus();
+            const menu = el('div', { class: 'wfe-addmenu', role: 'menu' });
+            for (const item of items) {
+                if (!item) continue;
+                const b = el('button', { type: 'button', role: 'menuitem', text: item.label, style: item.danger ? 'color:var(--color-danger)' : undefined });
+                b.addEventListener('click', () => { closeMenus(); item.run(); });
+                menu.append(b);
+            }
+            root.append(menu);
+            place(menu, anchor);
+            openMenuEl = menu;
+            (menu.querySelector('button') as HTMLElement | null)?.focus();
+        }
+        function openAddMenu(anchor: HTMLElement, list: List, index: number) {
+            closeMenus();
+            const menu = $('[data-addmenu]');
+            const canNest = depthOf(list) < 4;
+            const options: { label: string; icon: string; make: () => Step }[] = [
+                { label: S.menuAccion, icon: ICON.action, make: () => ({ id: uid(), type: 'action', action: '', params: {} }) },
+                ...(canNest ? [{ label: S.menuCondicion, icon: ICON.condition, make: (): Step => ({ id: uid(), type: 'condition', match: 'all', conditions: [], then: [], else: [] }) }] : []),
+                { label: S.menuEspera, icon: ICON.wait, make: () => ({ id: uid(), type: 'wait', days: 1 }) },
+            ];
+            for (const opt of options) {
+                const b = el('button', { type: 'button', role: 'menuitem' }, [svg(opt.icon), el('span', { text: opt.label })]);
+                b.addEventListener('click', () => {
+                    closeMenus();
+                    const step = opt.make();
+                    list.splice(index, 0, step);
+                    changed();
+                    select({ kind: 'step', id: step.id });
+                });
+                menu.append(b);
+            }
+            menu.hidden = false;
+            place(menu, anchor);
+            (menu.querySelector('button') as HTMLElement | null)?.focus();
+        }
+
+        const panel = $('[data-panel]');
+        const scrim = $('[data-scrim]');
+        const mobile = () => window.matchMedia('(max-width: 880px)').matches;
+        function select(sel: NonNullable<typeof state.selected>) {
+            state.selected = sel;
+            render();
+            renderPanel();
+            const target = sel.kind === 'step' ? flow.querySelector(`[data-step="${sel.id}"]`) : flow.firstElementChild;
+            if (!mobile()) target?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+        function closePanel() {
+            state.selected = null;
+            panel.hidden = true;
+            scrim.hidden = true;
+            render();
+        }
+        scrim.addEventListener('click', closePanel);
+
+        function panelShell(title: string, body: Node[], extra?: Node) {
+            const closeBtn = el('button', { type: 'button', class: 'wfe-icon-btn', 'aria-label': S.cerrar }, [svg(ICON.close)]);
+            closeBtn.addEventListener('click', closePanel);
+            const done = el('button', { type: 'button', class: 'wfe-btn wfe-btn-primary', text: S.listo });
+            done.addEventListener('click', closePanel);
+            panel.replaceChildren(
+                el('div', { class: 'wfe-panel-head' }, [el('h2', { text: title }), closeBtn]),
+                el('div', { class: 'wfe-panel-body' }, [...body, ...(extra ? [extra] : [])]),
+                el('div', { class: 'wfe-panel-foot' }, [done]),
+            );
+            panel.setAttribute('aria-label', title);
+            panel.hidden = false;
+            scrim.hidden = !mobile();
+        }
+
+        function variablesBlock(target: () => HTMLInputElement | HTMLTextAreaElement | null) {
+            const chips = el('div', { class: 'wfe-chips' });
+            for (const f of fields()) {
+                const chip = el('button', { type: 'button', class: 'wfe-chip' }, [f.label[L], f.live ? el('small', { text: ` · ${S.enVivo}` }) : null]);
+                chip.addEventListener('click', () => {
+                    const input = target();
+                    if (!input) return;
+                    const token = `{{${f.key}}}`;
+                    const start = input.selectionStart ?? input.value.length;
+                    const end = input.selectionEnd ?? input.value.length;
+                    input.value = input.value.slice(0, start) + token + input.value.slice(end);
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.focus();
+                    input.setSelectionRange(start + token.length, start + token.length);
+                });
+                chips.append(chip);
+            }
+            return el('div', { class: 'wfe-field' }, [
+                el('span', { class: 'wfe-field-label', text: S.variables }),
+                el('p', { class: 'wfe-hint', text: S.variablesHint }),
+                chips,
+            ]);
+        }
+
+        function renderPanel() {
+            const sel = state.selected;
+            if (!sel) return;
+            if (sel.kind === 'trigger') {
+                const trig = trigger();
+                if (!trig) { openPicker(); return; }
+                const change = el('button', { type: 'button', class: 'wfe-btn wfe-btn-ghost', text: S.cambiar });
+                change.addEventListener('click', openPicker);
+                const fieldsList = el('div', { class: 'wfe-chips' }, fields().map((f) => el('span', { class: 'wfe-chip', text: f.label[L] })));
+                panelShell(S.panelDisparador, [
+                    el('div', { class: 'wfe-summary-card' }, [
+                        el('span', { class: 'wfe-node-icon' }, [svg(ICON[trig.category])]),
+                        el('span', { class: 'wfe-node-text' }, [
+                            el('span', { class: 'wfe-node-title', text: trig.label[L] }),
+                            el('span', { class: 'wfe-node-sub', text: TRIGGER_CATEGORIES.find((c) => c.key === trig.category)?.label[L] }),
+                        ]),
+                        change,
+                    ]),
+                    el('div', { class: 'wfe-field' }, [el('span', { class: 'wfe-field-label', text: S.variables }), fieldsList]),
+                ]);
+                return;
+            }
+            const found = findStep(sel.id);
+            if (!found) { closePanel(); return; }
+            const step = found.step;
+
+            if (step.type === 'wait') {
+                const input = el('input', { class: 'wfe-input', type: 'number', min: '1', max: String(WAIT_MAX_DAYS), inputmode: 'numeric', value: String(step.days), id: `wait-${step.id}` }) as HTMLInputElement;
+                input.addEventListener('input', () => {
+                    const n = Math.floor(Number(input.value));
+                    if (Number.isFinite(n) && n >= 1) { step.days = Math.min(WAIT_MAX_DAYS, n); changed(false); }
+                });
+                panelShell(S.panelEspera, [
+                    el('div', { class: 'wfe-field' }, [el('label', { for: `wait-${step.id}`, text: S.dias }), input, el('p', { class: 'wfe-hint', text: S.esperaHint })]),
+                ]);
+                return;
+            }
+
+            if (step.type === 'action') {
+                const def = findAction(step.action);
+                if (!def) {
+                    const choice = el('div', { class: 'wfe-choice' });
+                    for (const a of WORKFLOW_ACTIONS) {
+                        const b = el('button', { type: 'button' }, [
+                            el('span', { class: 'wfe-node-icon' }, [svg(ICON[a.key])]),
+                            el('span', {}, [el('strong', { text: a.label[L] }), el('span', { text: a.description[L] })]),
+                        ]);
+                        b.addEventListener('click', () => { step.action = a.key; step.params = {}; changed(); renderPanel(); });
+                        choice.append(b);
+                    }
+                    panelShell(S.panelAccion, [choice]);
+                    return;
+                }
+                let lastText: HTMLInputElement | HTMLTextAreaElement | null = null;
+                const change = el('button', { type: 'button', class: 'wfe-btn wfe-btn-ghost', text: S.cambiar });
+                change.addEventListener('click', () => { step.action = ''; step.params = {}; changed(); renderPanel(); });
+                const body: Node[] = [
+                    el('div', { class: 'wfe-summary-card' }, [
+                        el('span', { class: 'wfe-node-icon' }, [svg(ICON[def.key])]),
+                        el('span', { class: 'wfe-node-text' }, [el('span', { class: 'wfe-node-title', text: def.label[L] }), el('span', { class: 'wfe-node-sub', text: def.description[L] })]),
+                        change,
+                    ]),
+                ];
+                for (const p of def.params) {
+                    const fid = `p-${step.id}-${p.key}`;
+                    let control: HTMLElement;
+                    if (p.kind === 'choice') {
+                        const choice = el('select', { class: 'wfe-select', id: fid }) as HTMLSelectElement;
+                        choice.append(el('option', { value: '', text: S.elige }));
+                        for (const o of p.options ?? []) choice.append(el('option', { value: o.value, text: o.label[L], selected: step.params[p.key] === o.value }));
+                        choice.addEventListener('change', () => { if (choice.value) step.params[p.key] = choice.value; else delete step.params[p.key]; changed(false); });
+                        control = choice;
+                    } else if (p.kind === 'days') {
+                        const input = el('input', { class: 'wfe-input', type: 'number', min: '0', max: String(p.max ?? 365), inputmode: 'numeric', id: fid, value: step.params[p.key] === undefined ? '' : String(step.params[p.key]) }) as HTMLInputElement;
+                        input.addEventListener('input', () => {
+                            if (input.value === '') delete step.params[p.key];
+                            else if (Number.isFinite(Number(input.value))) step.params[p.key] = Math.max(0, Math.min(p.max ?? 365, Math.floor(Number(input.value))));
+                            changed(false);
+                        });
+                        control = input;
+                    } else {
+                        const input = (p.kind === 'template_long'
+                            ? el('textarea', { class: 'wfe-textarea', id: fid, maxlength: String(p.max ?? 2000) })
+                            : el('input', { class: 'wfe-input', id: fid, maxlength: String(p.max ?? 200) })) as HTMLInputElement | HTMLTextAreaElement;
+                        input.value = String(step.params[p.key] ?? '');
+                        input.addEventListener('input', () => { step.params[p.key] = input.value; changed(false); });
+                        input.addEventListener('focus', () => { lastText = input; });
+                        if (!lastText) lastText = input;
+                        control = input;
+                    }
+                    body.push(el('div', { class: 'wfe-field' }, [el('label', { for: fid, text: p.label[L] }), control, p.hint ? el('p', { class: 'wfe-hint', text: p.hint[L] }) : null]));
+                }
+                if (trigger() && def.params.some((p) => p.kind === 'template' || p.kind === 'template_long')) {
+                    body.push(variablesBlock(() => lastText));
+                }
+                panelShell(S.panelAccion, body);
+                return;
+            }
+
+            const available = fields();
+            const segment = el('div', { class: 'wfe-segment', role: 'group' });
+            for (const m of ['all', 'any'] as const) {
+                const b = el('button', { type: 'button', 'aria-pressed': String(step.match === m), text: m === 'all' ? S.todas : S.alguna });
+                b.addEventListener('click', () => { step.match = m; changed(false); renderPanel(); });
+                segment.append(b);
+            }
+            const rows: Node[] = step.conditions.map((c, i) => {
+                const field = available.find((f) => f.key === c.field);
+                const fieldSel = el('select', { class: 'wfe-select', 'aria-label': S.campo }) as HTMLSelectElement;
+                fieldSel.append(el('option', { value: '', text: S.elige }));
+                for (const f of available) fieldSel.append(el('option', { value: f.key, text: f.label[L], selected: f.key === c.field }));
+                fieldSel.addEventListener('change', () => {
+                    const f = available.find((x) => x.key === fieldSel.value);
+                    c.field = fieldSel.value;
+                    c.op = f ? OPERATORS[f.type][0].op : ('eq' as any);
+                    c.value = null;
+                    changed(false); renderPanel();
+                });
+                const parts: Node[] = [fieldSel];
+                if (field) {
+                    const opSel = el('select', { class: 'wfe-select', 'aria-label': S.operador }) as HTMLSelectElement;
+                    for (const o of OPERATORS[field.type]) opSel.append(el('option', { value: o.op, text: o.label[L], selected: o.op === c.op }));
+                    opSel.addEventListener('change', () => { c.op = opSel.value as any; changed(false); renderPanel(); });
+                    parts.push(opSel);
+                    const op = OPERATORS[field.type].find((o) => o.op === c.op);
+                    if (op?.needsValue) {
+                        if (field.type === 'enum') {
+                            const valSel = el('select', { class: 'wfe-select', 'aria-label': S.valor }) as HTMLSelectElement;
+                            valSel.append(el('option', { value: '', text: S.elige }));
+                            for (const o of field.options ?? []) valSel.append(el('option', { value: o.value, text: o.label[L], selected: o.value === c.value }));
+                            valSel.addEventListener('change', () => { c.value = valSel.value || null; changed(false); });
+                            parts.push(valSel);
+                        } else {
+                            const valInput = el('input', { class: 'wfe-input', 'aria-label': S.valor, type: field.type === 'number' ? 'number' : 'text', inputmode: field.type === 'number' ? 'decimal' : undefined, value: c.value === null || c.value === undefined ? '' : String(c.value) }) as HTMLInputElement;
+                            valInput.addEventListener('input', () => {
+                                c.value = field.type === 'number' ? (valInput.value === '' ? null : Number(valInput.value)) : valInput.value;
+                                changed(false);
+                            });
+                            parts.push(valInput);
+                        }
+                    }
+                }
+                const remove = el('button', { type: 'button', class: 'wfe-link-btn is-danger', text: S.quitar });
+                remove.addEventListener('click', () => { step.conditions.splice(i, 1); changed(false); renderPanel(); });
+                return el('div', { class: 'wfe-cond-row' }, [
+                    el('div', { class: 'wfe-cond-row-head' }, [el('span', { text: `${S.condicion} ${i + 1}` }), remove]),
+                    ...parts,
+                ]);
+            });
+            const addCond = el('button', { type: 'button', class: 'wfe-link-btn', text: `+ ${S.agregarOtra}` });
+            addCond.addEventListener('click', () => {
+                const f = available[0];
+                step.conditions.push({ field: f?.key ?? '', op: f ? OPERATORS[f.type][0].op : ('eq' as any), value: null });
+                changed(false); renderPanel();
+            });
+            panelShell(S.panelCondicion, [
+                el('div', { class: 'wfe-field' }, [el('span', { class: 'wfe-field-label', text: S.continuarSi }), segment]),
+                ...rows,
+                step.conditions.length < MAX_CONDITIONS && available.length ? addCond : null,
+            ].filter(Boolean) as Node[]);
+        }
+
+        const picker = $('[data-picker]');
+        function openPicker() {
+            closeMenus();
+            let category = '';
+            const input = el('input', { type: 'search', placeholder: S.buscarDisparador, 'aria-label': S.buscarDisparador, autocomplete: 'off' }) as HTMLInputElement;
+            const chips = el('div', { class: 'wfe-chips', role: 'group' });
+            const list = el('div', { class: 'wfe-picker-list' });
+            const cats = [{ key: '', label: S.todos }, ...TRIGGER_CATEGORIES.map((c) => ({ key: c.key, label: c.label[L] }))];
+            const drawChips = () => {
+                chips.replaceChildren(...cats.map((c) => {
+                    const b = el('button', { type: 'button', class: 'wfe-chip', 'aria-pressed': String(category === c.key), text: c.label });
+                    b.addEventListener('click', () => { category = c.key; drawChips(); drawList(); });
+                    return b;
+                }));
+            };
+            const drawList = () => {
+                const q = input.value.trim().toLowerCase();
+                const items = WORKFLOW_TRIGGERS.filter((tr) => (!category || tr.category === category) && (!q || tr.label[L].toLowerCase().includes(q)));
+                list.replaceChildren(...(items.length ? items.map((tr) => {
+                    const b = el('button', { type: 'button', class: 'wfe-picker-item' }, [
+                        el('span', { class: 'wfe-node-icon' }, [svg(ICON[tr.category])]),
+                        el('span', { class: 'lbl', text: tr.label[L] }),
+                        el('span', { class: 'cat', text: TRIGGER_CATEGORIES.find((c) => c.key === tr.category)?.label[L] }),
+                    ]);
+                    b.addEventListener('click', () => {
+                        state.def.trigger = tr.type;
+                        closePicker();
+                        changed();
+                        select({ kind: 'trigger' });
+                    });
+                    return b;
+                }) : [el('p', { class: 'wfe-picker-empty', text: S.sinResultados })]));
+            };
+            input.addEventListener('input', drawList);
+            const card = el('div', { class: 'wfe-picker-card' }, [
+                el('div', { class: 'wfe-picker-top' }, [el('div', { class: 'wfe-search' }, [svg(ICON.search), input]), chips]),
+                list,
+            ]);
+            picker.replaceChildren(card);
+            picker.hidden = false;
+            drawChips(); drawList();
+            input.focus();
+        }
+        function closePicker() { picker.hidden = true; picker.replaceChildren(); }
+        picker.addEventListener('click', (e) => { if (e.target === picker) closePicker(); });
+
+        const nameInput = $<HTMLInputElement>('[data-name]');
+        nameInput.addEventListener('input', () => { state.nombre = nameInput.value; updateChrome(); });
+        function updateChrome() {
+            const badge = $('[data-badge]');
+            badge.dataset.estado = state.estado;
+            badge.textContent = S.estado[state.estado];
+            $('[data-dirty]').hidden = !hasUnpublished() || state.estado === 'draft';
+            const publishBtn = $('[data-publish]');
+            publishBtn.textContent = state.publicado ? S.publicarCambios : S.publicar;
+            const pauseBtn = $('[data-toggle-pause]');
+            pauseBtn.textContent = state.estado === 'paused' ? S.reanudar : S.pausar;
+            pauseBtn.hidden = state.estado === 'draft';
+            const count = issues().length;
+            const issuesEl = $('[data-issues]');
+            issuesEl.hidden = !state.showIssues || count === 0;
+            issuesEl.textContent = fill(S.pendientes, { n: count });
+        }
+
+        function changed(rerenderPanelToo = true) {
+            render();
+            if (rerenderPanelToo && state.selected && !panel.hidden) renderPanel();
+        }
+
+        async function save(quiet = false): Promise<boolean> {
+            const btn = $('[data-save]');
+            btn.setAttribute('aria-busy', 'true');
+            try {
+                const res = await fetch(`/api/workflows/${id}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre: state.nombre.trim(), definicion: state.def }),
+                });
+                const body = await res.json().catch(() => ({}));
+                if (!res.ok) { toast(body.error || S.errorGuardar, 'error'); return false; }
+                state.saved = snapshot();
+                if (!quiet) toast(S.guardado);
+                return true;
+            } catch {
+                toast(S.errorGuardar, 'error');
+                return false;
+            } finally {
+                btn.removeAttribute('aria-busy');
+            }
+        }
+        $('[data-save]').addEventListener('click', () => save());
+
+        function focusIssue(pending: { stepId: string | null; message: string }[]) {
+            state.showIssues = true;
+            render();
+            toast(pending[0].message, 'error');
+            if (pending[0].stepId && findStep(pending[0].stepId)) select({ kind: 'step', id: pending[0].stepId });
+            else if (!trigger()) openPicker();
+        }
+
+        $('[data-issues]').addEventListener('click', () => { const pending = issues(); if (pending.length) focusIssue(pending); });
+
+        $('[data-publish]').addEventListener('click', async () => {
+            const pending = issues();
+            if (pending.length) { focusIssue(pending); return; }
+            const btn = $('[data-publish]');
+            if (!(await save(true))) return;
+            btn.setAttribute('aria-busy', 'true');
+            try {
+                const res = await fetch(`/api/workflows/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'publish' }) });
+                const body = await res.json().catch(() => ({}));
+                if (res.status === 422 && Array.isArray(body.issues) && body.issues.length) { focusIssue(body.issues); return; }
+                if (!res.ok) { toast(body.error || S.errorGuardar, 'error'); return; }
+                state.estado = 'active';
+                state.publicado = JSON.stringify(sanitizeDefinition(state.def));
+                state.showIssues = false;
+                render();
+                toast(S.publicado);
+            } catch {
+                toast(S.errorGuardar, 'error');
+            } finally {
+                btn.removeAttribute('aria-busy');
+            }
+        });
+
+        const moreBtn = $('[data-more]');
+        const moreMenu = $('[data-more-menu]');
+        moreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const open = moreMenu.hidden;
+            closeMenus();
+            moreMenu.hidden = !open;
+            moreBtn.setAttribute('aria-expanded', String(open));
+            if (open) (moreMenu.querySelector('button:not([hidden])') as HTMLElement | null)?.focus();
+        });
+        $('[data-toggle-pause]').addEventListener('click', async () => {
+            closeMenus();
+            const action = state.estado === 'paused' ? 'resume' : 'pause';
+            const res = await fetch(`/api/workflows/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) { toast(body.error || S.errorGuardar, 'error'); return; }
+            state.estado = body.estado;
+            updateChrome();
+            toast(action === 'pause' ? S.pausadoToast : S.reanudadoToast);
+        });
+        $('[data-duplicate]').addEventListener('click', async () => {
+            closeMenus();
+            if (isDirty() && !(await save(true))) return;
+            const res = await fetch(`/api/workflows/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'duplicate' }) });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok || !body.id) { toast(body.error || S.errorGuardar, 'error'); return; }
+            window.location.href = `/app/workflows/${body.id}`;
+        });
+        $('[data-delete]').addEventListener('click', async () => {
+            closeMenus();
+            const confirmFn = (window as any).cordConfirm;
+            const ok = confirmFn ? await confirmFn({ title: S.eliminar, body: S.eliminarDesc, danger: true, confirmText: S.eliminar }) : false;
+            if (!ok) return;
+            const res = await fetch(`/api/workflows/${id}`, { method: 'DELETE' });
+            if (!res.ok) { toast(S.errorGuardar, 'error'); return; }
+            state.saved = snapshot();
+            window.location.href = '/app/workflows';
+        });
+
+        root.querySelectorAll<HTMLButtonElement>('[data-tab-btn]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tabBtn!;
+                root.querySelectorAll<HTMLButtonElement>('[data-tab-btn]').forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
+                root.querySelectorAll<HTMLElement>('[data-tab]').forEach((section) => { section.hidden = section.dataset.tab !== tab; });
+                if (tab === 'runs') loadRuns();
+                else closePanel();
+            });
+        });
+
+        const canvas = $('[data-canvas]');
+        root.querySelectorAll<HTMLButtonElement>('[data-zoom]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.zoom;
+                if (mode === 'in') state.zoom = Math.min(1.4, Math.round((state.zoom + 0.1) * 10) / 10);
+                else if (mode === 'out') state.zoom = Math.max(0.5, Math.round((state.zoom - 0.1) * 10) / 10);
+                else {
+                    flow.style.setProperty('--wf-zoom', '1');
+                    const ratio = Math.min(1, canvas.clientWidth / flow.offsetWidth, canvas.clientHeight / flow.offsetHeight);
+                    state.zoom = Math.max(0.5, Math.floor(ratio * 100) / 100);
+                }
+                flow.style.setProperty('--wf-zoom', String(state.zoom));
+                centerCanvas();
+            });
+        });
+        function centerCanvas() {
+            canvas.scrollLeft = Math.max(0, (canvas.scrollWidth - canvas.clientWidth) / 2);
+        }
+
+        const runsList = $('[data-runs-list]');
+        $('[data-runs-refresh]').addEventListener('click', loadRuns);
+        function runSummary(run: any) {
+            const d = run.event_data ?? {};
+            return [d.folio, d.numero, d.cliente, d.empresa, d.titulo, d.nombre].filter((v) => typeof v === 'string' && v).slice(0, 2).join(' · ');
+        }
+        const when = (iso: string) => new Date(iso).toLocaleString(L === 'en' ? 'en-US' : 'es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        function stepLabel(snapshotDef: WorkflowDefinition | null, stepId: string) {
+            const find = (list: Step[]): Step | null => {
+                for (const s of list) {
+                    if (s.id === stepId) return s;
+                    if (s.type === 'condition') { const f = find(s.then) ?? find(s.else); if (f) return f; }
+                }
+                return null;
+            };
+            const s = find(sanitizeDefinition(snapshotDef).steps) ?? find(state.def.steps);
+            return s ? stepSummary(s).title : stepId;
+        }
+        async function loadRuns() {
+            runsList.replaceChildren();
+            let runs: any[] = [];
+            try {
+                const res = await fetch(`/api/workflows/${id}/runs`);
+                runs = (await res.json()).runs ?? [];
+            } catch { toast(S.errorGuardar, 'error'); }
+            if (!runs.length) {
+                runsList.append(el('div', { class: 'wfe-runs-empty' }, [el('h3', { text: S.runsVacioTitulo }), el('p', { text: S.runsVacioDesc })]));
+                return;
+            }
+            for (const run of runs) {
+                const detail = el('div', { class: 'wfe-run-detail', hidden: true });
+                const row = el('button', { type: 'button', class: 'wfe-run-row', 'aria-expanded': 'false' }, [
+                    el('span', { class: 'wfe-pill', 'data-s': run.status, text: S.run[run.status] ?? run.status }),
+                    el('span', { class: 'wfe-run-main' }, [
+                        el('strong', { text: findTrigger(run.event_type)?.label[L] ?? run.event_type }),
+                        el('small', { text: runSummary(run) }),
+                    ]),
+                    el('span', { class: 'wfe-run-when', text: when(run.created_at) }),
+                ]);
+                row.addEventListener('click', () => {
+                    const open = detail.hidden;
+                    detail.hidden = !open;
+                    row.setAttribute('aria-expanded', String(open));
+                });
+                const steps = el('ol', { class: 'wfe-run-steps' }, (Array.isArray(run.log) ? run.log : []).map((entry: any) => el('li', {}, [
+                    el('span', { class: `res ${entry.resultado}`, text: S.paso[entry.resultado] ?? entry.resultado }),
+                    el('span', { text: stepLabel(run.publicado, entry.step) }),
+                    entry.detalle && entry.resultado === 'error' ? el('small', { text: entry.detalle }) : null,
+                ])));
+                detail.append(steps);
+                if (run.status === 'waiting') detail.append(el('p', { class: 'wfe-hint', text: fill(S.continua, { fecha: when(run.run_at) }) }));
+                const lastDetail = Array.isArray(run.log) ? run.log.at(-1)?.detalle : null;
+                if (run.error && run.status !== 'succeeded' && run.error !== lastDetail) detail.append(el('p', { class: 'wfe-run-error', text: run.error }));
+                if (run.attempts > 0 && run.status !== 'succeeded') detail.append(el('p', { class: 'wfe-hint', text: fill(S.intento, { n: run.attempts }) }));
+                const actions = el('div', { class: 'wfe-run-actions' });
+                const act = async (action: 'retry' | 'cancel') => {
+                    const res = await fetch(`/api/workflows/runs/${run.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) });
+                    const body = await res.json().catch(() => ({}));
+                    if (!res.ok) { toast(body.error || S.errorGuardar, 'error'); return; }
+                    loadRuns();
+                };
+                if (run.status === 'failed') {
+                    const b = el('button', { type: 'button', class: 'wfe-btn wfe-btn-ghost', text: S.reintentar });
+                    b.addEventListener('click', () => act('retry'));
+                    actions.append(b);
+                }
+                if (run.status === 'queued' || run.status === 'waiting') {
+                    const b = el('button', { type: 'button', class: 'wfe-btn wfe-btn-ghost', text: S.cancelar });
+                    b.addEventListener('click', () => act('cancel'));
+                    actions.append(b);
+                }
+                if (actions.childElementCount) detail.append(actions);
+                runsList.append(el('div', { class: 'wfe-run' }, [row, detail]));
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const target = e.target as Node;
+            if (openMenuEl && !openMenuEl.contains(target)) closeMenus();
+            const addmenu = $('[data-addmenu]');
+            if (!addmenu.hidden && !addmenu.contains(target)) closeMenus();
+            if (!moreMenu.hidden && !moreMenu.contains(target) && target !== moreBtn) closeMenus();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (!picker.hidden) closePicker();
+                else if (openMenuEl || !$('[data-addmenu]').hidden || !moreMenu.hidden) closeMenus();
+                else if (!panel.hidden) closePanel();
+            }
+            if (!mobile() && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
+        });
+        window.addEventListener('beforeunload', (e) => { if (isDirty()) e.preventDefault(); });
+
+        render();
+        centerCanvas();
+    }
+</script>
