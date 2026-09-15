@@ -82,6 +82,20 @@ scope; Cord must apply authentication, minimization, and security. For MCP,
 `[*]` authorization and no per-call confirmation prevent treating instruction
 alone as sufficient control for tools with external effects.
 
+HubSpot is a Customer-directed integration when Customer connects it through
+OAuth. Cord sends to that account its customers' company name, contact, email,
+and phone, and the number, customer, amount, currency, and stage of its sent
+quotes; and reads back name, contact, email, and phone of already linked records.
+Cord stores encrypted tokens, linked identifiers, and a sync queue. On
+disconnection, Cord attempts to revoke access, deletes the tokens, and stops
+syncing; data already sent to HubSpot is not deleted.
+
+Zapier, Make, and other platforms using the API act with a Customer key: they
+receive the events Customer chooses and run the actions the key allows. Cord
+Workflows runs automations defined by Customer: it creates tasks, emails only
+members of Customer's organization, and posts to the Slack Customer configured; it
+does not write to end customers or move money.
+
 ## 5. Data, activation, and minimization
 
 Neon and Vercel are core infrastructure. Other flows are conditional on email,

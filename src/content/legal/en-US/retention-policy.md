@@ -50,6 +50,10 @@ organization deletion does not produce the same outcome in every layer.
 | Technical KYC evidence | Five-year sweeper from `created_at`, while the organization exists |
 | Webhook deliveries | Older than 30 days or beyond the latest 500 per endpoint |
 | Resolved webhook events | 30 days; failed events, 90 days |
+| Integration OAuth connection requests | 10 minutes; removed when another connection starts in the organization |
+| HubSpot sync queue | Finished or failed jobs, 14 days; daily cron |
+| HubSpot tokens | Until disconnection; deleted on disconnection |
+| API idempotency keys | Expire after 24 hours, but are deleted only when the same key is reused |
 | Cookie preference | 6 months; language, organization, sandbox, and public visitor, up to 1 year |
 | Health samples | Public view queries at most 90 days; no equivalent purge exists in code |
 
@@ -60,7 +64,9 @@ basis and sufficiency must be validated by data type and market.
 
 Quotes, customers, products, invoices, payments, CFDI, messages, audit, incidents,
 billing, provider files, and most operational records live while the organization
-exists or until a specific action. There is no general age-based sweeper.
+exists or until a specific action. There is no general age-based sweeper. The same
+applies to the domain event log (`domain_events`), Cord Workflows runs, and links
+between Cord and HubSpot records: they do not yet have their own period.
 
 `legal_acceptances` stores a pseudonymous person identifier, organization,
 document, version, hash, full IP, user-agent, and time without a user foreign key

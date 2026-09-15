@@ -88,6 +88,13 @@ cuenta de Cord.
 DPA de Cord: **borrador bilingüe**, `publicationStatus: draft`, hash provisional,
 sin ruta pública. No está ejecutado ni se presenta como vigente.
 
+Integraciones (sep 2026): HubSpot, plataformas conectadas por API (Zapier, Make) y
+Cord Workflows quedan descritos como integraciones dirigidas por el Cliente en los
+borradores de DPA, subencargados y retención, y en la revisión pendiente del Aviso
+(`privacy-2026-08-30.1`). El registro `legal-providers.ts` y el Aviso publicado no
+cambian hasta la siguiente versión revisada. Detalle en
+[`../historial/revisiones-legales/2026-09-15-integraciones.md`](../historial/revisiones-legales/2026-09-15-integraciones.md).
+
 ## Corpus complementario — estado
 
 Además de las cuatro variantes públicas hay **22 extractos complementarios + 2

@@ -120,9 +120,15 @@ otros clientes. Alcance, frecuencia, costos y procedimiento siguen abiertos.
 
 La autorización general propuesta abarca sólo proveedores clasificados realmente
 como subencargados. Stripe, Google y Apple pueden tener obligaciones propias;
-SAT/PAC/AEAT son destinatarios legales; SAML, MCP, Slack y webhooks configurados
-por el Cliente son integraciones dirigidas. Una tabla no convierte todos esos
-roles en subencargados.
+SAT/PAC/AEAT son destinatarios legales; SAML, MCP, Slack, HubSpot, las
+plataformas que usan la API con una llave del Cliente (como Zapier o Make) y los
+webhooks configurados por el Cliente son integraciones dirigidas. Una tabla no
+convierte todos esos roles en subencargados.
+
+Para HubSpot, Cord guarda los tokens OAuth cifrados, ofrece desconectar en
+cualquier momento, intenta revocar el acceso al hacerlo y borra los tokens. Lo
+que ya se envió a la cuenta del Cliente queda bajo su control y el de ese
+proveedor.
 
 Antes de que un nuevo subencargado trate Datos del Cliente, el contrato final
 debe exigir protección equivalente y establecer aviso previo, canal, plazo y

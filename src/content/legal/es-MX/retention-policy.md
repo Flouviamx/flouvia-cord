@@ -50,6 +50,10 @@ una cuenta u organización no produce el mismo resultado en todas esas capas.
 | Evidencia técnica KYC | Sweeper a cinco años desde `created_at`, mientras exista la organización |
 | Entregas de webhooks | Más de 30 días o más de las 500 últimas por endpoint |
 | Eventos webhook resueltos | 30 días; fallidos, 90 días |
+| Solicitudes de conexión OAuth de integraciones | 10 minutos; se borran al iniciar otra conexión en la organización |
+| Cola de sincronización con HubSpot | Trabajos terminados o fallidos, 14 días; cron diario |
+| Tokens de HubSpot | Hasta desconectar; al desconectar se borran |
+| Llaves de idempotencia de la API | Vencen a las 24 horas, pero sólo se borran cuando la misma llave se reutiliza |
 | Preferencia de cookies | 6 meses; idioma, organización, sandbox y visitante público, hasta 1 año |
 | Muestras de salud | La página consulta como máximo 90 días; no existe purga equivalente en código |
 
@@ -62,7 +66,9 @@ validarse por tipo de dato y mercado.
 Cotizaciones, clientes, productos, facturas, cobros, CFDI, pagos, mensajes,
 auditoría, incidentes, billing, archivos de proveedor y la mayoría de registros
 operativos viven mientras exista la organización o hasta una acción específica.
-No hay un sweeper general por antigüedad.
+No hay un sweeper general por antigüedad. Lo mismo aplica al registro de eventos
+de dominio (`domain_events`), a las ejecuciones de Cord Workflows y a los vínculos
+entre registros de Cord y de HubSpot: todavía no tienen un plazo propio.
 
 `legal_acceptances` conserva identificador seudónimo de persona, organización,
 documento, versión, hash, IP completa, user-agent y fecha sin FK al usuario y sin

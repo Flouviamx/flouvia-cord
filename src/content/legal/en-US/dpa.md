@@ -120,8 +120,14 @@ Scope, frequency, costs, and procedure remain open.
 
 The proposed general authorization covers only providers actually classified as
 sub-processors. Stripe, Google, and Apple may have their own duties; SAT/PAC/AEAT
-are legal recipients; SAML, MCP, Slack, and webhooks configured by Customer are
+are legal recipients; SAML, MCP, Slack, HubSpot, platforms using the API with a
+Customer key (such as Zapier or Make), and webhooks configured by Customer are
 Customer-directed integrations. One table does not make every role a sub-processor.
+
+For HubSpot, Cord stores OAuth tokens encrypted, lets Customer disconnect at any
+time, attempts to revoke access when it does, and deletes the tokens. Data already
+sent to Customer's account remains under the control of Customer and that
+provider.
 
 Before a new sub-processor handles Customer Data, the final contract must impose
 equivalent protection and set advance notice, channel, period, and handling of

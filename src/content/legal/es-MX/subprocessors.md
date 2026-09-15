@@ -82,6 +82,20 @@ alcance; Cord debe aplicar autenticación, minimización y seguridad. En MCP,
 autorizar `[*]` y carecer de confirmación por llamada impide presentar la
 instrucción como control suficiente para herramientas con efectos externos.
 
+HubSpot es una integración dirigida cuando el Cliente la conecta con OAuth. Cord
+envía a esa cuenta nombre de empresa, contacto, correo y teléfono de sus clientes,
+y folio, cliente, monto, divisa y etapa de sus cotizaciones enviadas; y lee de
+vuelta nombre, contacto, correo y teléfono de los registros ya vinculados. Cord
+guarda los tokens cifrados, los identificadores vinculados y una cola de
+sincronización. Al desconectar, Cord intenta revocar el acceso, borra los tokens
+y deja de sincronizar; lo ya enviado a HubSpot no se borra.
+
+Zapier, Make y otras plataformas que usan la API actúan con una llave del
+Cliente: reciben los eventos que éste elige y ejecutan las acciones que la llave
+permite. Cord Workflows ejecuta automatizaciones definidas por el Cliente: crea
+tareas, envía correo sólo a miembros de su organización y publica en el Slack que
+el Cliente configuró; no escribe a clientes finales ni mueve dinero.
+
 ## 5. Datos, activación y minimización
 
 Neon y Vercel participan en infraestructura principal. Los demás flujos son
