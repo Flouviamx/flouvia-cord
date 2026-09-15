@@ -2,7 +2,9 @@
 import { t, type AppLocale } from '../../i18n/app';
 import { fmtRelative } from '../../lib/fmt-server';
 import { WORKFLOW_TEMPLATES } from '../../lib/workflows/service';
-import { findTrigger, TRIGGER_CATEGORIES } from '../../lib/workflows/catalog';
+import { findAction, findTrigger, TRIGGER_CATEGORIES } from '../../lib/workflows/catalog';
+import { BRAND_LOGOS, WORKFLOW_ICONS } from '../../lib/workflows/icons';
+import type { Step } from '../../lib/workflows/definition';
 
 interface Props {
     lang: AppLocale;
@@ -24,17 +26,46 @@ const ESTADO = {
 } as const;
 const categoryLabel = (key: string) => TRIGGER_CATEGORIES.find((c) => c.key === key)?.label[L] ?? '';
 const triggerOf = (w: any) => findTrigger(w.trigger_publicado || w.trigger_borrador);
+
+type ChainItem = { logo?: string; svg?: string };
+const MAX_CHAIN = 4;
+function chainOf(trigger: string, steps: Step[]): { items: ChainItem[]; extra: number } {
+    const items: ChainItem[] = [{ svg: WORKFLOW_ICONS[findTrigger(trigger)?.category ?? 'trigger'] ?? WORKFLOW_ICONS.trigger }];
+    const walk = (list: Step[]) => {
+        for (const s of list) {
+            if (s.type === 'action') {
+                const brand = findAction(s.action)?.brand;
+                items.push(brand && BRAND_LOGOS[brand] ? { logo: BRAND_LOGOS[brand] } : { svg: WORKFLOW_ICONS[s.action] ?? WORKFLOW_ICONS.action });
+            } else if (s.type === 'wait') {
+                items.push({ svg: WORKFLOW_ICONS.wait });
+            } else {
+                items.push({ svg: WORKFLOW_ICONS.condition });
+                walk(s.then);
+                walk(s.else);
+            }
+        }
+    };
+    walk(steps);
+    return { items: items.slice(0, MAX_CHAIN), extra: Math.max(0, items.length - MAX_CHAIN) };
+}
+const IDEAS = WORKFLOW_TEMPLATES.map((tpl) => {
+    const def = tpl.definicion(L);
+    return { tpl, trig: findTrigger(def.trigger), chain: chainOf(def.trigger, def.steps) };
+});
+const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+const GLYPH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="6" rx="1.5" fill="currentColor" fill-opacity="0.14"/><rect x="14" y="15" width="7" height="6" rx="1.5" fill="currentColor" fill-opacity="0.14"/><path d="M6.5 9v3.5a2 2 0 0 0 2 2H14" stroke-opacity="0.6"/><path d="m12 12.5 2 2-2 2" stroke-opacity="0.6"/></svg>';
 ---
 
 <div class="wfl" data-error={t(L, 'wf.error_guardar')}>
-    <p class="wfl-intro">{t(L, 'wf.intro')}</p>
+    <div class="wfl-top">
+        <p class="wfl-intro">{t(L, 'wf.intro')}</p>
+        {limit !== null && (
+            <span class="wfl-cupo" data-full={activos >= limit ? '1' : undefined}>{tf('wf.cupo', { usados: activos, limite: limit })}</span>
+        )}
+    </div>
 
-    {limit !== null && (
-        <p class="wfl-cupo">{tf('wf.cupo', { usados: activos, limite: limit })}</p>
-    )}
-
-    {WORKFLOWS.length > 0 && (
-        <section class="wfl-table" aria-label={t(L, 'wf.heading')}>
+    {WORKFLOWS.length > 0 ? (
+        <section class="surface-card pad-0 wfl-card" aria-label={t(L, 'wf.heading')}>
             <div class="wfl-head">
                 <span>{t(L, 'wf.th_nombre')}</span>
                 <span>{t(L, 'wf.th_disparador')}</span>
@@ -47,9 +78,7 @@ const triggerOf = (w: any) => findTrigger(w.trigger_publicado || w.trigger_borra
                 return (
                     <a class="wfl-row" href={`/app/workflows/${w.id}`}>
                         <span class="wfl-name">
-                            <span class="wfl-glyph" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="6" rx="1.5" fill="currentColor" fill-opacity="0.14"/><rect x="14" y="15" width="7" height="6" rx="1.5" fill="currentColor" fill-opacity="0.14"/><path d="M6.5 9v3.5a2 2 0 0 0 2 2H14" stroke-opacity="0.6"/><path d="m12 12.5 2 2-2 2" stroke-opacity="0.6"/></svg>
-                            </span>
+                            <span class="wfl-glyph" aria-hidden="true" set:html={trig ? (WORKFLOW_ICONS[trig.category] ?? GLYPH) : GLYPH} />
                             <span class="wfl-name-text">
                                 <strong>{w.nombre}</strong>
                                 <small>{fmtRelative(w.updated_at)}</small>
@@ -67,58 +96,77 @@ const triggerOf = (w: any) => findTrigger(w.trigger_publicado || w.trigger_borra
                             <span class="editorial">{Number(w.runs_30d)}</span>
                             {Number(w.fallidas_30d) > 0 && <small class="wfl-failed">{tf('wf.fallidas', { n: Number(w.fallidas_30d) })}</small>}
                         </span>
-                        <span><span class="status-pill wfl-estado" data-estado={estadoKey}>{ESTADO[estadoKey]}</span></span>
+                        <span class="wfl-estado-cell"><span class="status-pill wfl-estado" data-estado={estadoKey}>{ESTADO[estadoKey]}</span></span>
                     </a>
                 );
             })}
         </section>
+    ) : (
+        <section class="surface-card wfl-empty">
+            <span class="wfl-empty-glyph" aria-hidden="true" set:html={GLYPH} />
+            <div class="wfl-empty-text">
+                <h2>{t(L, 'wf.vacio_titulo')}</h2>
+                <p>{t(L, 'wf.vacio_desc')}</p>
+            </div>
+            <button type="button" class="wfl-empty-btn" data-wf-create>{t(L, 'wf.nuevo')}</button>
+        </section>
     )}
 
-    {WORKFLOWS.length === 0 && (
-        <div class="wfl-empty">
-            <h2>{t(L, 'wf.vacio_titulo')}</h2>
-            <p>{t(L, 'wf.vacio_desc')}</p>
-        </div>
-    )}
-
-    <section class="wfl-templates">
-        <div class="sec-head"><h2 class="sec-title">{t(L, 'wf.plantillas')}</h2></div>
-        {WORKFLOW_TEMPLATES.map((tpl) => {
-            const trig = findTrigger(tpl.definicion(L).trigger);
-            return (
-                <div class="wfl-tpl">
-                    <span class="wfl-tpl-text">
-                        <strong>{tpl.nombre[L]}</strong>
-                        <span>{tpl.descripcion[L]}</span>
-                        {trig && <small>{trig.label[L]}</small>}
+    <section class="wfl-ideas" aria-labelledby="wfl-ideas-title">
+        <h2 class="wfl-ideas-title" id="wfl-ideas-title">{t(L, 'wf.plantillas')}</h2>
+        <div class="wfl-grid">
+            {IDEAS.map(({ tpl, trig, chain }) => (
+                <button type="button" class="surface-card wfl-idea" data-wf-create={tpl.key}>
+                    <span class="wfl-chain" aria-hidden="true">
+                        {chain.items.map((item, i) => (
+                            <Fragment>
+                                {i > 0 && <span class="wfl-chain-arrow" set:html={ARROW} />}
+                                <span class="wfl-chain-node">
+                                    {item.logo ? <img src={item.logo} alt="" width="18" height="18" loading="lazy" /> : <Fragment set:html={item.svg} />}
+                                </span>
+                            </Fragment>
+                        ))}
+                        {chain.extra > 0 && <span class="wfl-chain-more">+{chain.extra}</span>}
                     </span>
-                    <button type="button" class="wfl-tpl-btn" data-wf-create={tpl.key}>{t(L, 'wf.usar_plantilla')}</button>
-                </div>
-            );
-        })}
+                    <span class="wfl-idea-title">{tpl.nombre[L]}</span>
+                    <span class="wfl-idea-desc">{tpl.descripcion[L]}</span>
+                    <span class="wfl-idea-foot">
+                        {trig && <span class="wfl-idea-trigger">{trig.label[L]}</span>}
+                        <span class="wfl-idea-use">
+                            {t(L, 'wf.usar_plantilla')}
+                            <span set:html={ARROW} />
+                        </span>
+                    </span>
+                </button>
+            ))}
+        </div>
     </section>
 </div>
 
 <style>
-    .wfl-tpl-btn:focus-visible, .wfl-row:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
-
-    .wfl { display: flex; flex-direction: column; gap: 1.6rem; }
+    .wfl { display: flex; flex-direction: column; gap: 1.75rem; }
+    .wfl-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; flex-wrap: wrap; }
     .wfl-intro { margin: 0; max-width: 620px; font-size: 0.92rem; line-height: 1.55; color: var(--color-text-muted); text-wrap: pretty; }
-    .wfl-cupo { margin: -0.9rem 0 0; font-size: 0.78rem; color: var(--color-text-muted); }
+    .wfl-cupo {
+        flex-shrink: 0; font-size: 0.76rem; font-weight: 600; color: var(--color-text-muted);
+        padding: 6px 12px; border-radius: 100px; background: var(--surface); box-shadow: var(--card-shadow);
+    }
+    .wfl-cupo[data-full] { color: #b45309; }
 
-    .wfl-table { display: flex; flex-direction: column; }
+    .wfl-card { overflow: hidden; }
     .wfl-head, .wfl-row {
         display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.3fr) 150px 110px;
-        gap: 1rem; align-items: center; padding: 0.85rem 0.6rem;
+        gap: 1rem; align-items: center; padding: 0.95rem 1.5rem;
     }
-    .wfl-head { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); padding-top: 0; }
-    .wfl-row { text-decoration: none; color: var(--color-text); border-bottom: 1px solid var(--color-border); border-radius: 10px; transition: background 0.2s var(--ease-ios); }
+    .wfl-head { padding-top: 1.05rem; padding-bottom: 0.75rem; font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); }
+    .wfl-row { text-decoration: none; color: var(--color-text); border-top: 1px solid var(--color-border); transition: background 0.2s var(--ease-ios); }
     .wfl-row:hover { background: var(--row-hover); }
-    .wfl-name { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
-    .wfl-glyph { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center; color: var(--color-blue-deep); background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border); }
-    .wfl-glyph svg { width: 18px; height: 18px; }
+    .wfl-row:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: -2px; }
+    .wfl-name { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
+    .wfl-glyph { width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0; display: grid; place-items: center; color: var(--color-blue-deep); background: var(--color-bg-soft); }
+    .wfl-glyph :global(svg) { width: 18px; height: 18px; }
     .wfl-name-text, .wfl-trigger { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .wfl-name-text strong { font-size: 0.88rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .wfl-name-text strong { font-size: 0.9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .wfl-name-text small, .wfl-trigger small { font-size: 0.74rem; color: var(--color-text-muted); }
     .wfl-trigger span { font-size: 0.84rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .wfl-muted { color: var(--color-text-muted); }
@@ -131,35 +179,82 @@ const triggerOf = (w: any) => findTrigger(w.trigger_publicado || w.trigger_borra
     :global(html[data-theme="dark"]) .wfl-estado[data-estado="draft"] { color: #c3cad5; background: rgba(195,202,213,0.12); }
     :global(html[data-theme="dark"]) .wfl-estado[data-estado="active"] { color: #34d399; background: rgba(16,185,129,0.18); }
     :global(html[data-theme="dark"]) .wfl-estado[data-estado="paused"] { color: #fbbf24; background: rgba(245,158,11,0.18); }
+    :global(html[data-theme="dark"]) .wfl-cupo[data-full] { color: #fbbf24; }
 
-    .wfl-empty { padding: 2.4rem 0 0.4rem; }
-    .wfl-empty h2 { margin: 0 0 0.35rem; font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; color: var(--color-text); }
-    .wfl-empty p { margin: 0; font-size: 0.88rem; color: var(--color-text-muted); }
-
-    .wfl-templates .sec-head { margin-bottom: 0.2rem; }
-    .wfl-tpl { display: flex; align-items: center; justify-content: space-between; gap: 1.2rem; padding: 1rem 0.2rem; border-bottom: 1px solid var(--color-border); }
-    .wfl-tpl-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .wfl-tpl-text strong { font-size: 0.9rem; font-weight: 600; color: var(--color-text); }
-    .wfl-tpl-text span { font-size: 0.82rem; line-height: 1.5; color: var(--color-text-muted); max-width: 640px; }
-    .wfl-tpl-text small { font-size: 0.72rem; color: var(--color-text-muted); opacity: 0.85; }
-    .wfl-tpl-btn {
-        flex-shrink: 0; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 600; cursor: pointer;
-        color: var(--color-blue-deep); background: var(--surface); border: 1px solid var(--color-border);
-        padding: 8px 16px; border-radius: 100px; transition: transform 0.3s var(--ease-spring), background 0.2s;
+    .wfl-empty { display: flex; align-items: center; gap: 1.1rem; padding: 1.6rem 1.7rem; }
+    .wfl-empty-glyph { width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0; display: grid; place-items: center; color: var(--color-blue-deep); background: var(--color-bg-soft); }
+    .wfl-empty-glyph :global(svg) { width: 24px; height: 24px; }
+    .wfl-empty-text { flex: 1; min-width: 0; }
+    .wfl-empty h2 { margin: 0 0 0.25rem; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.02em; color: var(--color-text); }
+    .wfl-empty p { margin: 0; font-size: 0.86rem; color: var(--color-text-muted); }
+    .wfl-empty-btn {
+        flex-shrink: 0; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; cursor: pointer;
+        color: #fff; background: var(--color-blue-deep); border: none; padding: 10px 18px; border-radius: 100px;
+        transition: transform 0.3s var(--ease-spring);
     }
-    .wfl-tpl-btn:hover { background: var(--color-bg-soft); transform: translateY(-1px); }
-    .wfl-tpl-btn:active { transform: scale(0.97); }
+    .wfl-empty-btn:hover { transform: translateY(-1px); }
+    .wfl-empty-btn:active { transform: scale(0.97); }
+    .wfl-empty-btn:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+
+    .wfl-ideas { display: flex; flex-direction: column; gap: 0.9rem; }
+    .wfl-ideas-title { margin: 0; font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; color: var(--color-text); }
+    .wfl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .wfl-idea {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; width: 100%; min-height: 100%;
+        padding: 1.25rem 1.35rem 1.1rem; border: none; cursor: pointer; text-align: left;
+        font-family: var(--font-sans); color: var(--color-text);
+        transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-ios);
+    }
+    .wfl-idea:hover { transform: translateY(-2px); box-shadow: var(--card-shadow-hover); }
+    .wfl-idea:active { transform: scale(0.99); }
+    .wfl-idea:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
+    .wfl-chain { display: flex; align-items: center; gap: 6px; margin-bottom: 0.45rem; }
+    .wfl-chain-node {
+        width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+        color: var(--color-blue-deep); background: var(--color-bg-soft);
+    }
+    .wfl-chain-node :global(svg) { width: 17px; height: 17px; }
+    .wfl-chain-node img { width: 18px; height: 18px; border-radius: 4px; }
+    .wfl-chain-arrow { display: grid; color: var(--color-text-muted); opacity: 0.55; }
+    .wfl-chain-arrow :global(svg) { width: 12px; height: 12px; }
+    .wfl-chain-more { font-size: 0.72rem; font-weight: 600; color: var(--color-text-muted); padding-left: 2px; }
+    .wfl-idea-title { font-size: 0.92rem; font-weight: 600; letter-spacing: -0.01em; line-height: 1.35; }
+    .wfl-idea-desc { font-size: 0.8rem; line-height: 1.5; color: var(--color-text-muted); text-wrap: pretty; flex: 1; }
+    .wfl-idea-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; margin-top: 0.4rem; }
+    .wfl-idea-trigger {
+        font-size: 0.7rem; font-weight: 600; color: var(--color-text-muted); background: var(--color-bg-soft);
+        padding: 4px 10px; border-radius: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+    }
+    .wfl-idea-use { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); }
+    .wfl-idea-use :global(svg) { width: 13px; height: 13px; transition: transform 0.3s var(--ease-spring); }
+    .wfl-idea:hover .wfl-idea-use :global(svg) { transform: translateX(3px); }
+    :global(html[data-theme="dark"]) .wfl-glyph,
+    :global(html[data-theme="dark"]) .wfl-empty-glyph,
+    :global(html[data-theme="dark"]) .wfl-chain-node,
+    :global(html[data-theme="dark"]) .wfl-idea-use,
+    :global(html[data-theme="dark"]) .wfl-num .editorial { color: #dbe4f0; }
     [data-wf-create][aria-busy="true"] { opacity: 0.6; pointer-events: none; }
 
+    @media (prefers-reduced-motion: reduce) {
+        .wfl-idea, .wfl-idea:hover, .wfl-idea-use :global(svg) { transition: none; transform: none; }
+    }
+
     @media (max-width: 880px) {
+        .wfl-top { align-items: flex-start; flex-direction: column; gap: 0.75rem; }
         .wfl-head { display: none; }
-        .wfl-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name estado" "trigger num"; row-gap: 0.45rem; padding: 0.95rem 0.2rem; }
+        .wfl-row {
+            grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name estado" "trigger num";
+            row-gap: 0.5rem; padding: 1rem 1.1rem;
+        }
+        .wfl-row:first-of-type { border-top: none; }
         .wfl-name { grid-area: name; }
         .wfl-trigger { grid-area: trigger; }
         .wfl-num { grid-area: num; }
-        .wfl-row > span:last-child { grid-area: estado; justify-self: end; }
-        .wfl-tpl { flex-direction: column; align-items: stretch; }
-        .wfl-tpl-btn { min-height: 46px; }
+        .wfl-estado-cell { grid-area: estado; justify-self: end; }
+        .wfl-empty { flex-direction: column; align-items: flex-start; }
+        .wfl-empty-btn { width: 100%; min-height: 46px; }
+        .wfl-grid { grid-template-columns: 1fr; }
+        .wfl-idea { min-height: 44px; }
     }
 </style>
 
