@@ -2883,7 +2883,7 @@ export const appStrings = {
         "wf.estado.active": "Activo",
         "wf.estado.paused": "Pausado",
         "wf.sin_disparador": "Sin disparador",
-        "wf.fallidas": "{n} fallidas",
+        "wf.fallidas": "{n} con error",
         "wf.cupo": "{usados} de {limite} workflows activos en tu plan",
         "wf.sin_acceso_titulo": "Cord Workflows es para administradores",
         "wf.sin_acceso_desc": "Pide a alguien con permiso de Ajustes que te dé acceso.",

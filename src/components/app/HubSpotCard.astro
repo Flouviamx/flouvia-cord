@@ -1,0 +1,278 @@
+---
+import { t, type AppLocale } from '../../i18n/app';
+import { fmtRelative } from '../../lib/fmt-server';
+import { QUOTE_STATUSES } from '../../lib/integraciones/hubspot/mapping';
+import type { hubspotStatus } from '../../lib/integraciones/hubspot/service';
+
+interface Props {
+    lang: AppLocale;
+    status: Awaited<ReturnType<typeof hubspotStatus>> | null;
+    flash?: string | null;
+}
+
+const { lang: L, status: HS, flash } = Astro.props;
+const HS_CONN = HS?.conexion ?? null;
+const HS_LOGO = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=128';
+const HS_ESTADOS: Record<string, string> = {
+    sent: t(L, 'set.integ.hs.estado.sent'),
+    viewed: t(L, 'set.integ.hs.estado.viewed'),
+    approved: t(L, 'set.integ.hs.estado.approved'),
+    rejected: t(L, 'set.integ.hs.estado.rejected'),
+    expired: t(L, 'set.integ.hs.estado.expired'),
+    paid: t(L, 'set.integ.hs.estado.paid'),
+    invoiced: t(L, 'set.integ.hs.estado.invoiced'),
+};
+const HS_MSG: Record<string, [string, 'ok' | 'error']> = {
+    conectada: [t(L, 'set.integ.hs.msg.conectada'), 'ok'],
+    cancelada: [t(L, 'set.integ.hs.msg.cancelada'), 'error'],
+    estado: [t(L, 'set.integ.hs.msg.estado'), 'error'],
+    otra_org: [t(L, 'set.integ.hs.msg.otra_org'), 'error'],
+    error: [t(L, 'set.integ.hs.msg.error'), 'error'],
+    permiso: [t(L, 'set.integ.hs.msg.permiso'), 'error'],
+    no_disponible: [t(L, 'set.integ.hs.no_disponible'), 'error'],
+};
+const HS_I18N = {
+    eligeEtapa: t(L, 'set.integ.hs.elige_etapa'),
+    sinPipelines: t(L, 'set.integ.hs.sin_pipelines'),
+    etapasGuardadas: t(L, 'set.integ.hs.etapas_guardadas'),
+    enCola: t(L, 'set.integ.hs.en_cola'),
+    desconectarTitulo: t(L, 'set.integ.hs.desconectar_titulo'),
+    desconectarDesc: t(L, 'set.integ.hs.desconectar_desc'),
+    desconectar: t(L, 'set.integ.hs.desconectar'),
+    desconectada: t(L, 'set.integ.hs.desconectada'),
+    errorGenerico: t(L, 'set.integ.hs.error_generico'),
+    flash: HS_MSG[flash ?? ''] ?? null,
+};
+---
+
+<div class="s-block" data-hubspot data-i18n={JSON.stringify(HS_I18N)}>
+    <h3>HubSpot</h3>
+    <div class="s-body">
+        <div class="hsc-head">
+            <span class="hs-logo"><img src={HS_LOGO} alt="" width="24" height="24" loading="lazy" /></span>
+            <p class="hsc-sub">{t(L, 'set.integ.hs.desc')}</p>
+            <span class="hsc-status" data-on={HS_CONN?.estado === 'activa' ? '1' : HS_CONN ? 'warn' : '0'}>
+                {HS_CONN?.estado === 'activa' ? t(L, 'set.integ.hs.estado_activa') : HS_CONN ? t(L, 'set.integ.hs.estado_error') : t(L, 'set.integ.sin_conectar')}
+            </span>
+        </div>
+
+        {!HS?.disponible && !HS_CONN && <p class="hs-note">{t(L, 'set.integ.hs.no_disponible')}</p>}
+
+        {(!HS_CONN || HS_CONN.estado === 'error') && (
+            <div class="hs-rules">
+                <span class="hs-label">{t(L, 'set.integ.hs.que_sincroniza')}</span>
+                <ul>
+                    <li>{t(L, 'set.integ.hs.regla_clientes')}</li>
+                    <li>{t(L, 'set.integ.hs.regla_deals')}</li>
+                    <li>{t(L, 'set.integ.hs.regla_una_via')}</li>
+                </ul>
+            </div>
+        )}
+
+        {HS_CONN && (
+            <dl class="hs-facts">
+                <div><dt>{t(L, 'set.integ.hs.cuenta')}</dt><dd>{HS_CONN.cuenta}</dd></div>
+                <div><dt>{t(L, 'set.integ.hs.ultima_sync')}</dt><dd>{HS_CONN.ultimaSync ? fmtRelative(HS_CONN.ultimaSync) : t(L, 'set.integ.hs.nunca')}</dd></div>
+                <div><dt>{t(L, 'set.integ.hs.pendientes')}</dt><dd class="editorial">{HS_CONN.pendientes}</dd></div>
+                <div><dt>{t(L, 'set.integ.hs.fallidas')}</dt><dd class:list={['editorial', { 'hs-bad': HS_CONN.fallidas > 0 }]}>{HS_CONN.fallidas}</dd></div>
+            </dl>
+        )}
+        {HS_CONN?.ultimoError && (
+            <p class="hs-error"><b>{t(L, 'set.integ.hs.ultimo_error')}:</b> {HS_CONN.ultimoError}</p>
+        )}
+
+        {HS_CONN?.estado === 'activa' && (
+            <div class="hs-stages" data-hs-stages data-ajustes={JSON.stringify(HS_CONN.ajustes)}>
+                <div class="s-field">
+                    <label for="hsPipeline">{t(L, 'set.integ.hs.pipeline')}</label>
+                    <select class="s-input" id="hsPipeline" disabled><option>{t(L, 'set.integ.hs.cargando')}</option></select>
+                </div>
+                <span class="hs-label">{t(L, 'set.integ.hs.etapas_titulo')}</span>
+                <div class="hs-grid">
+                    {QUOTE_STATUSES.map((status) => (
+                        <div class="hs-stage-row">
+                            <label for={`hsStage-${status}`}>{HS_ESTADOS[status]}</label>
+                            <select class="s-input" id={`hsStage-${status}`} data-status={status} disabled></select>
+                        </div>
+                    ))}
+                </div>
+                {!HS_CONN.etapasCompletas && <p class="hs-note">{t(L, 'set.integ.hs.etapas_incompletas')}</p>}
+                <div class="hsc-actions">
+                    <button type="button" class="hsc-btn-solid" data-hs-save disabled>{t(L, 'set.integ.hs.guardar_etapas')}</button>
+                </div>
+            </div>
+        )}
+
+        {HS_CONN?.estado === 'activa' && (
+            <div class="hs-rules">
+                <span class="hs-label">{t(L, 'set.integ.hs.existentes_titulo')}</span>
+                <p class="hsc-sub">{t(L, 'set.integ.hs.existentes_desc')}</p>
+            </div>
+        )}
+
+        <div class="hsc-actions">
+            {(!HS_CONN || HS_CONN.estado === 'error') && HS?.disponible && (
+                <a class="hsc-btn-solid hs-link" href="/api/integraciones/hubspot/conectar">{HS_CONN ? t(L, 'set.integ.hs.reconectar') : t(L, 'set.integ.hs.conectar')}</a>
+            )}
+            {HS_CONN?.estado === 'activa' && (
+                <button type="button" class="hsc-btn-ghost" data-hs-backfill>{t(L, 'set.integ.hs.enviar_existentes')}</button>
+            )}
+            {HS_CONN && (
+                <button type="button" class="hsc-btn-ghost hs-danger" data-hs-disconnect>{t(L, 'set.integ.hs.desconectar')}</button>
+            )}
+        </div>
+    </div>
+</div>
+
+<style>
+    .hsc-head { display: flex; align-items: center; gap: 12px; }
+    .hsc-sub { font-size: 0.78rem; color: var(--color-text-muted); line-height: 1.45; margin: 0; flex: 1; min-width: 0; }
+    .hsc-status { margin-left: auto; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; white-space: nowrap; color: var(--color-text-muted); background: rgba(0,0,0,0.05); }
+    .hsc-status[data-on="1"] { color: var(--color-ok); background: rgba(16,185,129,0.12); }
+    .hsc-status[data-on="warn"] { color: #b45309; background: rgba(245,158,11,0.14); }
+    :global(html[data-theme="dark"]) .hsc-status[data-on="warn"] { color: #fbbf24; background: rgba(245,158,11,0.18); }
+    .hsc-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .hsc-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
+    .hsc-btn-solid:disabled { opacity: 0.6; cursor: wait; }
+    .hsc-btn-ghost { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+    .hsc-btn-solid:focus-visible, .hsc-btn-ghost:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .hs-logo { width: 38px; height: 38px; border-radius: 10px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: inset 0 0 0 1px var(--color-border); }
+    .hs-logo img { width: 22px; height: 22px; }
+    .hs-label { font-size: 0.62rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #99a2af; }
+    .hs-rules { display: flex; flex-direction: column; gap: 0.5rem; }
+    .hs-rules ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .hs-rules li { font-size: 0.8rem; line-height: 1.5; color: var(--color-text-muted); }
+    .hs-note { margin: 0; font-size: 0.78rem; line-height: 1.5; color: var(--color-text-muted); }
+    .hs-error { margin: 0; font-size: 0.78rem; line-height: 1.5; color: var(--color-danger); }
+    .hs-facts { margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.8rem; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); padding: 0.8rem 0; }
+    .hs-facts div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .hs-facts dt { font-size: 0.66rem; color: var(--color-text-muted); }
+    .hs-facts dd { margin: 0; font-size: 0.84rem; font-weight: 600; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hs-facts dd.hs-bad { color: var(--color-danger); }
+    .hs-stages { display: flex; flex-direction: column; gap: 0.8rem; }
+    .hs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; }
+    .hs-stage-row { display: flex; flex-direction: column; gap: 0.3rem; }
+    .hs-stage-row label { font-size: 0.74rem; font-weight: 600; color: var(--color-text); }
+    .hs-link { text-decoration: none; display: inline-flex; align-items: center; }
+    .hs-danger { color: var(--color-danger); }
+
+    @media (max-width: 560px) {
+        .hsc-head { align-items: flex-start; flex-wrap: wrap; }
+        .hsc-sub { flex-basis: calc(100% - 50px); }
+        .hsc-status { margin-left: 50px; }
+        .hsc-actions { display: grid; grid-template-columns: 1fr; width: 100%; }
+        .hsc-btn-solid, .hsc-btn-ghost { min-height: 46px; width: 100%; justify-content: center; }
+        .hs-facts { grid-template-columns: 1fr 1fr; }
+        .hs-grid { grid-template-columns: 1fr; }
+        .hs-stages .s-input { min-height: 46px; font-size: 16px; }
+    }
+</style>
+
+<script>
+    function initHubSpot() {
+        const root = document.querySelector<HTMLElement>('[data-hubspot]');
+        if (!root) return;
+        const I18N = JSON.parse(root.dataset.i18n || '{}');
+        const toast = (msg: string, type: 'ok' | 'error' = 'ok') => (window as any).cordToast?.(msg, type);
+
+        if (I18N.flash) {
+            toast(I18N.flash[0], I18N.flash[1]);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('hubspot');
+            history.replaceState(null, '', url.toString());
+        }
+
+        const post = async (body: Record<string, unknown>) => {
+            const res = await fetch('/api/integraciones/hubspot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || I18N.errorGenerico);
+            return data;
+        };
+
+        const stages = root.querySelector<HTMLElement>('[data-hs-stages]');
+        if (stages) {
+            const pipelineSel = stages.querySelector<HTMLSelectElement>('#hsPipeline')!;
+            const stageSels = [...stages.querySelectorAll<HTMLSelectElement>('select[data-status]')];
+            const saveBtn = stages.querySelector<HTMLButtonElement>('[data-hs-save]')!;
+            const ajustes = JSON.parse(stages.dataset.ajustes || '{}');
+            let pipelines: { id: string; label: string; stages: { id: string; label: string }[] }[] = [];
+
+            const option = (value: string, label: string, selected = false) => {
+                const o = document.createElement('option');
+                o.value = value;
+                o.textContent = label;
+                o.selected = selected;
+                return o;
+            };
+            const fillStages = (pipelineId: string, keep: Record<string, string>) => {
+                const p = pipelines.find((x) => x.id === pipelineId);
+                for (const sel of stageSels) {
+                    const actual = keep[sel.dataset.status!] || '';
+                    sel.replaceChildren(option('', I18N.eligeEtapa), ...(p?.stages ?? []).map((s) => option(s.id, s.label, s.id === actual)));
+                    sel.disabled = !p;
+                }
+            };
+
+            fetch('/api/integraciones/hubspot?pipelines=1')
+                .then((r) => r.json())
+                .then((data) => {
+                    pipelines = Array.isArray(data?.pipelines) ? data.pipelines : [];
+                    if (!pipelines.length) throw new Error();
+                    pipelineSel.replaceChildren(...pipelines.map((p) => option(p.id, p.label, p.id === ajustes.pipeline)));
+                    pipelineSel.disabled = false;
+                    fillStages(pipelineSel.value, ajustes.pipeline === pipelineSel.value ? ajustes.etapas || {} : {});
+                    saveBtn.disabled = false;
+                })
+                .catch(() => {
+                    pipelineSel.replaceChildren(option('', I18N.sinPipelines));
+                });
+
+            pipelineSel.addEventListener('change', () => fillStages(pipelineSel.value, pipelineSel.value === ajustes.pipeline ? ajustes.etapas || {} : {}));
+
+            saveBtn.addEventListener('click', async () => {
+                saveBtn.disabled = true;
+                try {
+                    const etapas = Object.fromEntries(stageSels.map((s) => [s.dataset.status, s.value]));
+                    const data = await post({ action: 'ajustes', pipeline: pipelineSel.value, etapas });
+                    Object.assign(ajustes, data.ajustes);
+                    toast(I18N.etapasGuardadas);
+                } catch (err) {
+                    toast((err as Error).message, 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                }
+            });
+        }
+
+        root.querySelector<HTMLButtonElement>('[data-hs-backfill]')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            btn.disabled = true;
+            try {
+                const data = await post({ action: 'sincronizar' });
+                toast(String(I18N.enCola).replace('{n}', String(data.encolados ?? 0)));
+            } catch (err) {
+                toast((err as Error).message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        root.querySelector<HTMLButtonElement>('[data-hs-disconnect]')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement;
+            const confirmFn = (window as any).cordConfirm;
+            const ok = confirmFn ? await confirmFn({ title: I18N.desconectarTitulo, body: I18N.desconectarDesc, danger: true, confirmText: I18N.desconectar }) : false;
+            if (!ok) return;
+            btn.disabled = true;
+            try {
+                await post({ action: 'desconectar' });
+                toast(I18N.desconectada);
+                window.location.reload();
+            } catch (err) {
+                toast((err as Error).message, 'error');
+                btn.disabled = false;
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initHubSpot);
+    else initHubSpot();
+</script>
