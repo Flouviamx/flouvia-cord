@@ -1,0 +1,38 @@
+# Cord para Make
+
+App de Make construida sobre la API pública v1 de Cord. Toda la definición vive en `app.mjs` y se sube con la API de Make; no hay que editar nada en el editor web de Make.
+
+## Qué incluye
+
+- **Conexión**: llave secreta de Cord (`sk_live_` o `sk_test_`), validada con `GET /v1/me`. La llave se oculta en los logs de Make.
+- **Watch Events**: trigger instantáneo. Al crear el webhook en Make se eligen los eventos; Make lo registra con `POST /v1/webhooks` y lo borra con `DELETE` al quitarlo. Solo pasan los eventos elegidos.
+- **Acciones**: Create a Client, Update a Client, Get a Client, Create a Quote, Get a Quote, Send a Quote, Mark a Quote as Paid y Create a Task.
+- **Búsquedas**: Search Clients y Search Quotes, con paginación.
+- **Make an API Call**: módulo universal limitado a `https://cordhq.app/api`.
+
+Make no expone el cuerpo crudo del webhook, así que no puede recalcular la firma `X-Cord-Signature-V1` como Zapier. La protección es la URL del webhook, que Make genera única y secreta por escenario.
+
+## Desarrollo
+
+```bash
+npm test
+```
+
+## Publicar
+
+Crea en Make un token de API (Perfil › API access) con los scopes `sdk-apps:read` y `sdk-apps:write`, y guárdalo en `integrations/make/.env`, que no se sube a git:
+
+```
+MAKE_API_TOKEN=...
+MAKE_ZONE=us1.make.com
+MAKE_APP_NAME=cord
+```
+
+`MAKE_ZONE` es el dominio con el que entras a Make. Si el nombre `cord` ya está tomado, cambia `MAKE_APP_NAME`.
+
+```bash
+npm run deploy:dry   # muestra lo que haría
+npm run deploy       # crea o actualiza la app
+```
+
+La app queda privada. Para compartirla, genera el link de invitación en Make; para el catálogo público, pide la revisión desde el panel de la app.

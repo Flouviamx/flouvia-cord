@@ -26,9 +26,9 @@ Requiere una cuenta de desarrollador de Zapier.
 
 ```bash
 npm install -g zapier-platform-cli
-zapier login
-zapier register "Cord"
-zapier push
+zapier-platform login
+zapier-platform register "Cord"
+zapier-platform push
 ```
 
-`zapier push` sube una versión privada. Para probarla, invita cuentas desde el panel de Zapier; para listarla en el directorio público, sigue la revisión de Zapier desde ese mismo panel.
+`zapier-platform push` sube una versión privada. Para probarla, invita cuentas desde el panel de Zapier; para listarla en el directorio público, sigue la revisión de Zapier desde ese mismo panel.

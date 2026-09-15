@@ -1,0 +1,14 @@
+{
+  "name": "cord-make",
+  "version": "1.0.0",
+  "description": "App de Cord para Make",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/app.test.mjs",
+    "deploy": "node deploy.mjs",
+    "deploy:dry": "node deploy.mjs --dry"
+  }
+}
