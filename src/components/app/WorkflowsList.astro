@@ -53,7 +53,7 @@ const IDEAS = WORKFLOW_TEMPLATES.map((tpl) => {
     return { tpl, trig: findTrigger(def.trigger), chain: chainOf(def.trigger, def.steps) };
 });
 const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-const GLYPH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="6" rx="1.5" fill="currentColor" fill-opacity="0.14"/><rect x="14" y="15" width="7" height="6" rx="1.5" fill="currentColor" fill-opacity="0.14"/><path d="M6.5 9v3.5a2 2 0 0 0 2 2H14" stroke-opacity="0.6"/><path d="m12 12.5 2 2-2 2" stroke-opacity="0.6"/></svg>';
+const GLYPH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.75" width="10" height="7.5" rx="2.5" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="2.5" y="2.75" width="10" height="7.5" rx="2.5"/><path d="m6.6 4.9 3.2 1.6-3.2 1.6z" fill="currentColor" stroke-width="1"/><rect x="11.5" y="13.75" width="10" height="7.5" rx="2.5" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect x="11.5" y="13.75" width="10" height="7.5" rx="2.5"/><path d="M14.5 17.5h4" stroke-opacity="0.55"/><path d="M7.5 10.25v4a3.25 3.25 0 0 0 3.25 3.25h.75" stroke-opacity="0.7"/></svg>';
 ---
 
 <div class="wfl" data-error={t(L, 'wf.error_guardar')}>
