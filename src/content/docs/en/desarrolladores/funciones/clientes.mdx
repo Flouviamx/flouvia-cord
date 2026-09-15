@@ -89,4 +89,34 @@ curl -X GET "https://cordhq.app/api/v1/clientes?limit=100" \
 }
 ```
 
-`countryCode`, `direccionLine1`/`direccionLine2`, `ciudad`, and `region` come back on reads (the app fills them in to satisfy the recipient's address on an invoice), but this creation endpoint doesn't accept them yet — today they're only captured from Settings › Clients.
+`direccionLine1`/`direccionLine2`, `ciudad`, and `region` come back on reads (the app fills them in to satisfy the recipient's address on an invoice), but the API doesn't accept them yet — today they're only captured from Settings › Clients. `country_code` is accepted on create and update.
+
+### Searching clients
+
+`q` searches company, contact, email, and RFC. `email` matches the exact email, case-insensitive; use it to avoid duplicates before creating a client from another tool.
+
+```bash
+curl -X GET "https://cordhq.app/api/v1/clientes?email=tony@stark.com" \
+     -H "Authorization: Bearer sk_live_tU..."
+```
+
+## Retrieving a Client
+
+`GET /api/v1/clientes/{id}` returns the same object as the list. An id from another organization returns `404`.
+
+## Updating a Client
+
+`PATCH /api/v1/clientes/{id}` changes only the fields you send: `empresa`, `contacto`, `email`, `telefono`, `rfc`, `terminos`, and `country_code`. Everything else is kept. Credit limit, level, and discount can't be changed through this endpoint even if you send them. Requires a key with write permission.
+
+```bash
+curl -X PATCH "https://cordhq.app/api/v1/clientes/8f7b2c..." \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -d '{ "email": "procurement@stark.com" }'
+```
+
+```json
+{ "data": { "ok": true } }
+```
+
+Every change emits the `client.updated` event.

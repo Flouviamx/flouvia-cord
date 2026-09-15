@@ -73,7 +73,7 @@ curl -X GET "https://cordhq.app/api/v1/cotizaciones?status=paid&limit=10" \
      -H "Authorization: Bearer sk_live_tU..."
 ```
 
-El valor de `status` es el estado interno tal cual (en inglés, no traducido): `draft`, `sent`, `viewed`, `approved`, `rejected`, `expired`, `paid` o `invoiced`.
+El valor de `status` es el estado interno tal cual (en inglés, no traducido): `draft`, `sent`, `viewed`, `approved`, `rejected`, `expired`, `paid` o `invoiced`. Para buscar una cotización por su folio usa `folio=COT-00104`: compara el folio completo sin distinguir mayúsculas.
 
 ```json
 {

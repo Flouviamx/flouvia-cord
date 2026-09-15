@@ -22,7 +22,7 @@ import { strictRateLimit } from './ratelimit';
 import { EventsQueryError, listDomainEvents } from './domain-events-read';
 import { type ActionContext, type ActionOutcome, isUuid } from './actions/outcome';
 import { runQuoteAction } from './actions/quotes';
-import { createClient, updateClient } from './actions/clients';
+import { CLIENT_CONTACT_FIELDS, createClient, patchClientContact } from './actions/clients';
 import { createTask } from './actions/tasks';
 import { createPromise } from './actions/promises';
 
@@ -506,12 +506,7 @@ export const MCP_TOOLS: McpToolDef[] = [
         annotations: { title: 'Actualizar cliente', readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
         scope: 'write',
         handler: async (args, ctx) => {
-            const id = String(args?.id ?? '');
-            if (!isUuid(id)) throw new McpToolError('Cliente no encontrado.');
-            const [[actual]] = await withOrgTx(ctx.orgId, sql`select * from clientes where id = ${id} and org_id = ${ctx.orgId}`);
-            if (!actual) throw new McpToolError('Cliente no encontrado.');
-            const merged = { ...clientRowToInput(actual), ...pick(args, CLIENT_FIELDS) };
-            return unwrap(await updateClient(actionContext(ctx), id, merged));
+            return unwrap(await patchClientContact(actionContext(ctx), String(args?.id ?? ''), args ?? {}));
         },
     },
     {
@@ -606,21 +601,12 @@ function quoteActionTool(def: {
     };
 }
 
-const CLIENT_FIELDS = ['empresa', 'contacto', 'email', 'telefono', 'rfc', 'terminos', 'country_code'];
+const CLIENT_FIELDS = [...CLIENT_CONTACT_FIELDS];
 
 function pick(args: any, keys: string[]): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const k of keys) if (args && args[k] !== undefined) out[k] = args[k];
     return out;
-}
-
-function clientRowToInput(c: Record<string, any>): Record<string, unknown> {
-    return {
-        empresa: c.empresa, contacto: c.contacto, email: c.email, telefono: c.telefono, rfc: c.rfc,
-        terminos: c.terminos_default, limite: c.limite_credito, nivel: c.nivel, descuento_pct: c.descuento_pct,
-        regimen_fiscal: c.regimen_fiscal, uso_cfdi: c.uso_cfdi, cp_fiscal: c.cp_fiscal, country_code: c.country_code,
-        direccion_line1: c.direccion_line1, direccion_line2: c.direccion_line2, ciudad: c.ciudad, region: c.region,
-    };
 }
 
 function eventoParaModelo(e: { type: string; actor: string; data: unknown } & Record<string, unknown>) {

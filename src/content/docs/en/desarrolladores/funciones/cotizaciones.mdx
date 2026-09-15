@@ -73,7 +73,7 @@ curl -X GET "https://cordhq.app/api/v1/cotizaciones?status=paid&limit=10" \
      -H "Authorization: Bearer sk_live_tU..."
 ```
 
-The `status` value is the internal state as-is (English, never translated): `draft`, `sent`, `viewed`, `approved`, `rejected`, `expired`, `paid`, or `invoiced`.
+The `status` value is the internal state as-is (English, never translated): `draft`, `sent`, `viewed`, `approved`, `rejected`, `expired`, `paid`, or `invoiced`. To find a quote by its number, use `folio=COT-00104`: it matches the full number, case-insensitive.
 
 ```json
 {

@@ -1,0 +1,31 @@
+---
+title: "Tasks API"
+description: "Create follow-up tasks for your team from other tools."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Tasks</h1>
+  <p class="page-subtitle">Follow-up to-dos for the team, optionally linked to a quote.</p>
+</header>
+
+## Creating a Task
+
+`POST /api/v1/tareas` creates a task in the team's inbox. `titulo` is required. `due_date` is optional, formatted as `YYYY-MM-DD`. `cotizacion_id` is also optional; if you send it, it must be a quote from your organization or the request returns `404`. Requires a key with write permission and accepts `Idempotency-Key`.
+
+```bash
+curl -X POST "https://cordhq.app/api/v1/tareas" \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: follow-up-cot-00104" \
+     -d '{
+       "titulo": "Call Stark Industries about COT-00104",
+       "due_date": "2026-09-20",
+       "cotizacion_id": "2a9d8..."
+     }'
+```
+
+```json
+{ "data": { "id": "7c1e0..." } }
+```
+
+Every new task emits the `task.created` event.

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({
-    run: vi.fn(), createClient: vi.fn(), updateClient: vi.fn(), createTask: vi.fn(), createPromise: vi.fn(),
+    run: vi.fn(), createClient: vi.fn(), patchClient: vi.fn(), createTask: vi.fn(), createPromise: vi.fn(),
     events: vi.fn(), limit: vi.fn(), tx: vi.fn(), idem: vi.fn(),
 }));
 
@@ -23,7 +23,10 @@ vi.mock('../src/lib/api-idempotency', () => ({ withIdempotency: m.idem }));
 vi.mock('../src/lib/ratelimit', () => ({ strictRateLimit: m.limit }));
 vi.mock('../src/lib/domain-events-read', () => ({ listDomainEvents: m.events, EventsQueryError: class extends Error {} }));
 vi.mock('../src/lib/actions/quotes', () => ({ runQuoteAction: m.run }));
-vi.mock('../src/lib/actions/clients', () => ({ createClient: m.createClient, updateClient: m.updateClient }));
+vi.mock('../src/lib/actions/clients', () => ({
+    CLIENT_CONTACT_FIELDS: ['empresa', 'contacto', 'email', 'telefono', 'rfc', 'terminos', 'country_code'],
+    createClient: m.createClient, patchClientContact: m.patchClient,
+}));
 vi.mock('../src/lib/actions/tasks', () => ({ createTask: m.createTask }));
 vi.mock('../src/lib/actions/promises', () => ({ createPromise: m.createPromise }));
 vi.mock('../src/lib/analytics-internal', () => ({ isInternalAnalyticsOrg: async () => true }));
@@ -112,28 +115,17 @@ describe('clientes, tareas y promesas', () => {
         expect(m.createClient.mock.calls[0][1]).toEqual({ empresa: 'ACME', email: 'a@b.test' });
     });
 
-    it('actualizar_cliente conserva lo que no se manda, incluidos crédito, nivel y descuento', async () => {
-        m.tx.mockResolvedValue([[{
-            id: ID, empresa: 'ACME', contacto: 'Ana', email: 'viejo@acme.test', telefono: '555', rfc: 'AAA010101AAA',
-            terminos_default: 'net30', limite_credito: 50000, nivel: 'oro', descuento_pct: 10,
-            regimen_fiscal: '601', uso_cfdi: 'G03', cp_fiscal: '64000', country_code: 'MX',
-            direccion_line1: 'Calle 1', direccion_line2: null, ciudad: 'Monterrey', region: 'NL',
-        }]]);
-        m.updateClient.mockResolvedValue({ status: 200, body: { ok: true } });
-        await call('actualizar_cliente', { id: ID, email: 'nuevo@acme.test', descuento_pct: 95 });
-        const [, id, input] = m.updateClient.mock.calls[0];
-        expect(id).toBe(ID);
-        expect(input).toMatchObject({
-            empresa: 'ACME', contacto: 'Ana', email: 'nuevo@acme.test', terminos: 'net30',
-            limite: 50000, nivel: 'oro', descuento_pct: 10, regimen_fiscal: '601', cp_fiscal: '64000', ciudad: 'Monterrey',
-        });
-        expect(m.tx.mock.calls[0][1].values).toEqual([ID, 'org-a']);
+    it('actualizar_cliente delega en patchClientContact con el actor del MCP', async () => {
+        m.patchClient.mockResolvedValue({ status: 200, body: { ok: true } });
+        expect(await call('actualizar_cliente', { id: ID, email: 'nuevo@acme.test' })).toEqual({ ok: true });
+        const [ctx, id, input] = m.patchClient.mock.calls[0];
+        expect(ctx).toMatchObject({ orgId: 'org-a', actor: 'mcp:key-1', source: 'mcp' });
+        expect([id, input]).toEqual([ID, { id: ID, email: 'nuevo@acme.test' }]);
     });
 
-    it('actualizar_cliente de otra org no llama a la acción', async () => {
-        m.tx.mockResolvedValue([[]]);
+    it('actualizar_cliente de otra org responde error de tool', async () => {
+        m.patchClient.mockResolvedValue({ status: 404, body: { error: 'Cliente no encontrado', code: 'not_found' } });
         await expect(call('actualizar_cliente', { id: ID, email: 'x@y.test' })).rejects.toBeInstanceOf(McpToolError);
-        expect(m.updateClient).not.toHaveBeenCalled();
     });
 
     it('crear_tarea y registrar_promesa_pago usan sus acciones', async () => {

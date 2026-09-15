@@ -1,0 +1,31 @@
+---
+title: "API de Tareas"
+description: "Crea tareas de seguimiento para tu equipo desde otras herramientas."
+---
+
+<header class="content-header">
+  <h1 class="page-title">Tareas</h1>
+  <p class="page-subtitle">Pendientes de seguimiento para el equipo, opcionalmente ligados a una cotización.</p>
+</header>
+
+## Crear una Tarea
+
+`POST /api/v1/tareas` crea una tarea en la bandeja del equipo. `titulo` es obligatorio. `due_date` es opcional y va en formato `YYYY-MM-DD`. `cotizacion_id` también es opcional; si lo envías, debe ser una cotización de tu organización o la petición responde `404`. Requiere una llave con permiso de escritura y acepta `Idempotency-Key`.
+
+```bash
+curl -X POST "https://cordhq.app/api/v1/tareas" \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -H "Idempotency-Key: seguimiento-cot-00104" \
+     -d '{
+       "titulo": "Llamar a Stark Industries por COT-00104",
+       "due_date": "2026-09-20",
+       "cotizacion_id": "2a9d8..."
+     }'
+```
+
+```json
+{ "data": { "id": "7c1e0..." } }
+```
+
+Cada tarea nueva emite el evento `task.created`.

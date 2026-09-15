@@ -89,4 +89,34 @@ curl -X GET "https://cordhq.app/api/v1/clientes?limit=100" \
 }
 ```
 
-`countryCode`, `direccionLine1`/`direccionLine2`, `ciudad` y `region` viajan en la lectura (los completa la app para cumplir el domicilio del receptor en la factura), pero este endpoint de creación todavía no los acepta — hoy solo se capturan desde Ajustes › Clientes.
+`direccionLine1`/`direccionLine2`, `ciudad` y `region` viajan en la lectura (los completa la app para cumplir el domicilio del receptor en la factura), pero la API todavía no los acepta — hoy solo se capturan desde Ajustes › Clientes. `country_code` sí se acepta al crear y al actualizar.
+
+### Buscar clientes
+
+`q` busca en empresa, contacto, correo y RFC. `email` busca el correo exacto sin distinguir mayúsculas; es la forma de evitar duplicados antes de crear un cliente desde otra herramienta.
+
+```bash
+curl -X GET "https://cordhq.app/api/v1/clientes?email=tony@stark.com" \
+     -H "Authorization: Bearer sk_live_tU..."
+```
+
+## Obtener un Cliente
+
+`GET /api/v1/clientes/{id}` devuelve el mismo objeto que el listado. Un id de otra organización responde `404`.
+
+## Actualizar un Cliente
+
+`PATCH /api/v1/clientes/{id}` cambia solo los campos que envíes: `empresa`, `contacto`, `email`, `telefono`, `rfc`, `terminos` y `country_code`. El resto se conserva. El límite de crédito, el nivel y el descuento no se pueden cambiar por este endpoint aunque los envíes. Requiere una llave con permiso de escritura.
+
+```bash
+curl -X PATCH "https://cordhq.app/api/v1/clientes/8f7b2c..." \
+     -H "Authorization: Bearer sk_live_tU..." \
+     -H "Content-Type: application/json" \
+     -d '{ "email": "compras@stark.com" }'
+```
+
+```json
+{ "data": { "ok": true } }
+```
+
+Cada cambio emite el evento `client.updated`.

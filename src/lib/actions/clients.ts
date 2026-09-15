@@ -85,6 +85,26 @@ export async function updateClient(ctx: ActionContext, id: string, input: Record
     return done(200, { ok: true });
 }
 
+export const CLIENT_CONTACT_FIELDS = ['empresa', 'contacto', 'email', 'telefono', 'rfc', 'terminos', 'country_code'] as const;
+
+export async function patchClientContact(ctx: ActionContext, id: string, input: Record<string, any>): Promise<ActionOutcome> {
+    if (!isUuid(id)) return NO_ENCONTRADO;
+    const [[actual]] = await withOrgTx(ctx.orgId, sql`select * from clientes where id = ${id} and org_id = ${ctx.orgId}`);
+    if (!actual) return NO_ENCONTRADO;
+    const changes: Record<string, unknown> = {};
+    for (const k of CLIENT_CONTACT_FIELDS) if (input && input[k] !== undefined) changes[k] = input[k];
+    return updateClient(ctx, id, { ...clientRowToInput(actual), ...changes });
+}
+
+function clientRowToInput(c: Record<string, any>): Record<string, unknown> {
+    return {
+        empresa: c.empresa, contacto: c.contacto, email: c.email, telefono: c.telefono, rfc: c.rfc,
+        terminos: c.terminos_default, limite: c.limite_credito, nivel: c.nivel, descuento_pct: c.descuento_pct,
+        regimen_fiscal: c.regimen_fiscal, uso_cfdi: c.uso_cfdi, cp_fiscal: c.cp_fiscal, country_code: c.country_code,
+        direccion_line1: c.direccion_line1, direccion_line2: c.direccion_line2, ciudad: c.ciudad, region: c.region,
+    };
+}
+
 export async function deleteClient(ctx: ActionContext, id: string): Promise<ActionOutcome> {
     if (!isUuid(id)) return NO_ENCONTRADO;
     const [rows] = await withOrgTx(ctx.orgId, sql`delete from clientes where id = ${id} and org_id = ${ctx.orgId} returning id, empresa`);

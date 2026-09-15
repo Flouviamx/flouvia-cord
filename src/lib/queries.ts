@@ -1103,18 +1103,32 @@ export async function getClientes() {
     return rows.map(mapCliente);
 }
 
-export async function getClientesPage(page: { limit: number; offset: number }) {
+export async function getClientesPage(page: { limit: number; offset: number; q?: string | null; email?: string | null }) {
     const orgId = await getActiveOrgId();
+    const f = clienteFilter(page.q, page.email);
     const [[count], rows] = await withOrgTx(orgId,
-        sql`select count(*)::int as n from clientes where org_id = ${orgId}`,
-        clientesQuery(orgId, page.limit, page.offset));
+        sql`select count(*)::int as n from clientes c where c.org_id = ${orgId}
+            and (${f.q} = '' or c.empresa ilike ${f.like} or c.contacto ilike ${f.like} or c.email ilike ${f.like} or c.rfc ilike ${f.like})
+            and (${f.email} = '' or lower(c.email) = ${f.email})`,
+        clientesQuery(orgId, page.limit, page.offset, f));
     return { items: rows.map(mapCliente), total: Number(count?.n ?? 0) };
+}
+
+export async function getClienteBasico(id: string) {
+    const orgId = await getActiveOrgId();
+    const [rows] = await withOrgTx(orgId, clientesQuery(orgId, 1, 0, clienteFilter(null, null), id));
+    return rows[0] ? mapCliente(rows[0]) : null;
+}
+
+function clienteFilter(q: string | null | undefined, email: string | null | undefined) {
+    const text = String(q ?? '').trim().slice(0, 200);
+    return { q: text, like: `%${text.replace(/[%_\\]/g, '\\$&')}%`, email: String(email ?? '').trim().toLowerCase().slice(0, 254) };
 }
 
 // Lateral join: cuenta y suma cotizaciones POR CLIENTE en la misma query — antes
 // clientes.astro cargaba getCotizaciones() completo (todas las de la org, sin límite)
 // solo para hacer un .filter() por nombre de empresa en memoria. Esto es O(n) real.
-function clientesQuery(orgId: string, limit: number, offset: number) {
+function clientesQuery(orgId: string, limit: number, offset: number, f = clienteFilter(null, null), id: string | null = null) {
     return sql`
         select c.*,
                coalesce(q.n, 0)       as n_cotizaciones,
@@ -1129,6 +1143,9 @@ function clientesQuery(orgId: string, limit: number, offset: number) {
             where org_id = c.org_id and cliente_id = c.id
         ) q on true
         where c.org_id = ${orgId}
+          and (${id}::uuid is null or c.id = ${id}::uuid)
+          and (${f.q} = '' or c.empresa ilike ${f.like} or c.contacto ilike ${f.like} or c.email ilike ${f.like} or c.rfc ilike ${f.like})
+          and (${f.email} = '' or lower(c.email) = ${f.email})
         order by c.empresa, c.id
         limit ${limit} offset ${offset}`;
 }
@@ -1383,16 +1400,19 @@ export async function getCotizaciones(opts?: { limit?: number; offset?: number }
     return rows.map(c => rowToQuote(c, [], [], []));
 }
 
-export async function getCotizacionesPage(page: { limit: number; offset: number; status: string | null }) {
+export async function getCotizacionesPage(page: { limit: number; offset: number; status: string | null; folio?: string | null }) {
+    const folio = String(page.folio ?? '').trim().slice(0, 60);
     const orgId = await getActiveOrgId();
     const [[count], rows] = await withOrgTx(orgId,
         sql`select count(*)::int as n from cotizaciones c
-            where c.org_id = ${orgId} and (${page.status}::text is null or c.status = ${page.status})`,
+            where c.org_id = ${orgId} and (${page.status}::text is null or c.status = ${page.status})
+              and (${folio} = '' or lower(c.folio) = lower(${folio}))`,
         sql`select c.*, cl.empresa, cl.terminos_default,
                    coalesce(c.terminos, cl.terminos_default) as terminos
             from cotizaciones c
             left join clientes cl on cl.id = c.cliente_id and cl.org_id = c.org_id
             where c.org_id = ${orgId} and (${page.status}::text is null or c.status = ${page.status})
+              and (${folio} = '' or lower(c.folio) = lower(${folio}))
             order by c.created_at desc, c.id desc
             limit ${page.limit} offset ${page.offset}`);
     return { items: rows.map(c => rowToQuote(c, [], [], [])), total: Number(count?.n ?? 0) };

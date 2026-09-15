@@ -17,7 +17,7 @@ vi.mock('../src/lib/db', () => ({
     resolvePublicInvoice: vi.fn(),
 }));
 
-const { getCotizacionesPage, getClientesPage, getProductosPage } = await import('../src/lib/queries');
+const { getCotizacionesPage, getClientesPage, getClienteBasico, getProductosPage } = await import('../src/lib/queries');
 
 const A = '00000000-0000-4000-8000-00000000000a';
 const B = '00000000-0000-4000-8000-00000000000b';
@@ -77,5 +77,38 @@ describe('paginación en SQL', () => {
         const productos = await getProductosPage({ limit: 10, offset: 0 });
         expect(productos.total).toBe(3);
         expect(productos.items.map((p) => p.nombre)).not.toContain('Producto de B');
+    });
+});
+
+describe('búsquedas para integraciones', () => {
+    beforeAll(async () => {
+        await m.db.exec(`
+            update clientes set email = 'Compras@Acme.mx', contacto = 'Ana 50%' where empresa = 'Cliente 03';
+            insert into clientes(org_id, empresa, email) values ('${B}', 'Acme de B', 'compras@acme.mx');`);
+    });
+
+    it('clientes: busca por texto y por correo exacto sin mezclar orgs', async () => {
+        expect((await getClientesPage({ limit: 10, offset: 0, q: 'acme' })).items.map((c) => c.empresa)).toEqual(['Cliente 03']);
+        expect((await getClientesPage({ limit: 10, offset: 0, email: 'COMPRAS@acme.mx' })).total).toBe(1);
+        expect((await getClientesPage({ limit: 10, offset: 0, email: 'compras@acme' })).total).toBe(0);
+        expect((await getClientesPage({ limit: 10, offset: 0, q: 'secreto' })).total).toBe(0);
+    });
+
+    it('clientes: el % y el _ del texto se buscan literal', async () => {
+        expect((await getClientesPage({ limit: 10, offset: 0, q: '50%' })).total).toBe(1);
+        expect((await getClientesPage({ limit: 10, offset: 0, q: '%' })).total).toBe(1);
+        expect((await getClientesPage({ limit: 10, offset: 0, q: '_' })).total).toBe(0);
+    });
+
+    it('cliente por id solo dentro de la org', async () => {
+        const [propio] = (await getClientesPage({ limit: 1, offset: 0, q: 'Cliente 03' })).items;
+        expect((await getClienteBasico(propio.id))?.empresa).toBe('Cliente 03');
+        expect(await getClienteBasico(CLIENTE_B)).toBeNull();
+    });
+
+    it('cotizaciones: folio exacto sin distinguir mayúsculas y nunca de otra org', async () => {
+        expect((await getCotizacionesPage({ limit: 5, offset: 0, status: null, folio: 'cot-3' })).items.map((q) => q.folio)).toEqual(['COT-3']);
+        expect((await getCotizacionesPage({ limit: 5, offset: 0, status: null, folio: 'COT-B' })).total).toBe(0);
+        expect((await getCotizacionesPage({ limit: 5, offset: 0, status: null, folio: 'COT-' })).total).toBe(0);
     });
 });
