@@ -113,7 +113,7 @@ async function conectar(org = A, userId = USER_A) {
 }
 
 async function enqueueEvent(type: string, data: Record<string, unknown>, actor = 'user:x', org = A) {
-    const statement = integrationQueueStatement(org, type, data, actor);
+    const statement = integrationQueueStatement(org, type, data, actor) as unknown as { text: string; values: unknown[] } | null;
     if (!statement) return [];
     const [[rows]] = [await m.db.transaction(async (tx: any) => {
         await tx.query("select set_config('app.org_id',$1,true)", [org]);

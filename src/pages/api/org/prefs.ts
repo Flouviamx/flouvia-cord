@@ -1,8 +1,7 @@
 // /api/org/prefs — preferencias en jsonb que no caben en el guardado genérico:
-//   PATCH { notif_prefs?, integraciones?, slack_webhook_url? } → { ok }
+//   PATCH { notif_prefs?, slack_webhook_url? } → { ok }
 // notif_prefs: { [evento]: { email?:bool, slack?:bool } } — la consulta
 // src/lib/notify.ts antes de mandar cada correo/post a Slack (ver historial).
-// integraciones: { [id]: bool }   (toggle de conectores — maqueta que persiste)
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
@@ -12,7 +11,6 @@ import { requirePerm } from '../../../lib/queries';
 // Eventos y canales válidos (whitelist — evita basura en el jsonb).
 const EVENTOS = new Set(['quote_viewed', 'quote_approved', 'quote_rejected', 'quote_paid', 'quote_expiring', 'payment_overdue', 'team_join']);
 const CANALES = new Set(['email', 'slack']);
-const INTEGR = new Set(['shopify', 'woo', 'meli', 'zapier', 'contpaqi', 'slack']);
 
 function sanitizeNotif(input: unknown): Record<string, Record<string, boolean>> {
     const out: Record<string, Record<string, boolean>> = {};
@@ -28,15 +26,6 @@ function sanitizeNotif(input: unknown): Record<string, Record<string, boolean>> 
     return out;
 }
 
-function sanitizeIntegr(input: unknown): Record<string, boolean> {
-    const out: Record<string, boolean> = {};
-    if (!input || typeof input !== 'object') return out;
-    for (const [id, v] of Object.entries(input as Record<string, unknown>)) {
-        if (INTEGR.has(id)) out[id] = Boolean(v);
-    }
-    return out;
-}
-
 export const PATCH: APIRoute = async ({ request }) => {
     const denied = await requirePerm('ajustes');
     if (denied) return denied;
@@ -45,11 +34,10 @@ export const PATCH: APIRoute = async ({ request }) => {
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
     const orgId = await getActiveOrgId();
-    const [actualRows] = await withOrgTx(orgId, sql`select notif_prefs, integraciones, slack_webhook_url from orgs where id = ${orgId}`);
+    const [actualRows] = await withOrgTx(orgId, sql`select notif_prefs, slack_webhook_url from orgs where id = ${orgId}`);
     const actual = actualRows[0];
 
     const notif = body.notif_prefs !== undefined ? sanitizeNotif(body.notif_prefs) : actual.notif_prefs;
-    const integr = body.integraciones !== undefined ? sanitizeIntegr(body.integraciones) : actual.integraciones;
 
     // Slack: vacío = desconectar; URL válida = guardar; URL inválida = ERROR claro
     // (antes se ignoraba en silencio, así que "guardar" no hacía nada y parecía roto).
@@ -62,7 +50,6 @@ export const PATCH: APIRoute = async ({ request }) => {
     }
 
     await withOrgTx(orgId, sql`update orgs set notif_prefs = ${JSON.stringify(notif)}::jsonb,
-                              integraciones = ${JSON.stringify(integr)}::jsonb,
                               slack_webhook_url = ${slack}
               where id = ${orgId}`);
     await logAudit(orgId, { accion: 'org.preferencias', entidad: 'org', entidad_id: orgId, detalle: 'Actualizó notificaciones/integraciones', ip: reqIp(request) });
