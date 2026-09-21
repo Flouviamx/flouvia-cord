@@ -97,6 +97,10 @@ npm solo la genera desde repositorios públicos.
 - El revisor real (`@n8n/scan-community-package`) analiza la fuente del repo con todas las
   reglas y, del paquete, solo `.js` y `package.json`. La 1.0.0 se publicó a mano, sin
   constancia, porque npm solo deja configurar Trusted Publishing en un paquete que ya existe.
+- 1.1.0 publicada el 2026-09-21 desde GitHub Actions con constancia de origen (SLSA v1) y
+  aprobada por `npx @n8n/scan-community-package`. Trusted Publisher se configuró con
+  `npm trust github` (pide segundo factor en el navegador). El registro de npm tarda un
+  par de minutos en mostrar una versión nueva aunque el flujo ya haya terminado.
 
 ## Cord como proveedor OAuth 2.0
 

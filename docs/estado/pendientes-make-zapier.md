@@ -16,7 +16,7 @@
 | **Zapier** | Listo. App privada App246344, solo la versión 1.1.0 (OAuth 2.0 + PKCE); las 1.0.x con llave se borraron. Probado de punta a punta el 2026-09-21 | Tarjeta con link de invitación y "Conexión directa" | Nada para usarla con el link. Opcional: directorio público (sección 5) |
 | **Make** | Listo. App `cord-78vg5m` en us2 con OAuth, probada de punta a punta el 2026-09-21; link de invitación en `MAKE_INVITE_URL` | Tarjeta con "Conexión directa" y botón **Abrir Cord en Make** | Opcional: probar con una cuenta de Make de otra zona; catálogo público de Make cuando haya usuarios |
 | **Slack** | Listo. App `A0C307S6ENB` creada con el CLI de Slack; manifiesto en `integrations/slack/manifest.json` | "Añadir a Slack" en su tarjeta; webhook propio como alternativa | Nada |
-| **n8n** | `n8n-nodes-cord` 1.0.0 en npm; espejo `Flouviamx/n8n-nodes-cord` con `publish.yml`; 1.0.1 pasa el revisor de n8n | Tarjeta "Con llave de API" | Configurar Trusted Publisher en npm, relanzar la 1.0.1 por tag y enviarla a creators.n8n.io/nodes |
+| **n8n** | `n8n-nodes-cord` 1.1.0 en npm con constancia de origen, sobre la plantilla oficial de n8n; pasa el revisor de n8n | Tarjeta con "Crear llave de API" | Enviarlo a verificación en creators.n8n.io/nodes para que aparezca en n8n Cloud |
 
 Nunca pegues tokens ni llaves en el chat. Van en archivos `.env` que no se suben a git.
 
