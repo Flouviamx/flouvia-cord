@@ -9,6 +9,10 @@ const CSRF_EXEMPT_WRITE_EXACT = new Set([
     '/api/resend/marketing-webhook/',
     '/api/integraciones/hubspot/webhook',
     '/api/integraciones/hubspot/webhook/',
+    '/api/oauth/token',
+    '/api/oauth/token/',
+    '/api/oauth/revoke',
+    '/api/oauth/revoke/',
 ]);
 
 /**

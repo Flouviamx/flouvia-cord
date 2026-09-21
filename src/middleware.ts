@@ -51,7 +51,7 @@ const OPS_PUBLIC_API_EXACT = [
 ];
 // OAuth legal intent is unauthenticated by definition (the account does not
 // exist yet), but it remains a same-origin POST subject to the CSRF check.
-const PUBLIC_API_EXACT = ["/api/mcp", "/api/health", "/api/docs-search.json", "/api/geo", "/api/legal/oauth-intent", "/api/resend/marketing-webhook", "/api/integraciones/hubspot/webhook", "/api/build/payment-intent", ...OPS_PUBLIC_API_EXACT];
+const PUBLIC_API_EXACT = ["/api/mcp", "/api/health", "/api/docs-search.json", "/api/geo", "/api/legal/oauth-intent", "/api/resend/marketing-webhook", "/api/integraciones/hubspot/webhook", "/api/build/payment-intent", "/api/oauth/token", "/api/oauth/revoke", ...OPS_PUBLIC_API_EXACT];
 
 // Exención CSRF independiente de "API pública". Solo entra aquí una mutación
 // que se autentica con una credencial que el navegador no adjunta por sí solo

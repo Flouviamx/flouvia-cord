@@ -15,6 +15,7 @@ const LABELS: Record<IntegrationState, string> = {
     off: t(L, 'set.integ.sin_conectar'),
     info: t(L, 'set.integ.dir.con_webhooks'),
     key: t(L, 'set.integ.dir.con_llave'),
+    oauth: t(L, 'set.integ.dir.con_oauth'),
     soon: t(L, 'set.integ.dir.proximamente'),
 };
 ---
@@ -38,10 +39,10 @@ const LABELS: Record<IntegrationState, string> = {
     .igp[data-estado="on"]::before { opacity: 1; }
     .igp[data-estado="warn"] { color: #b45309; background: rgba(245,158,11,0.14); }
     .igp[data-estado="warn"]::before { opacity: 1; }
-    .igp[data-estado="info"], .igp[data-estado="key"] { color: var(--color-blue-deep); }
+    .igp[data-estado="info"], .igp[data-estado="key"], .igp[data-estado="oauth"] { color: var(--color-blue-deep); }
     .igp[data-estado="soon"]::before { display: none; }
     :global(html[data-theme="dark"]) .igp { background: rgba(255,255,255,0.08); }
     :global(html[data-theme="dark"]) .igp[data-estado="on"] { color: #34d399; background: rgba(16,185,129,0.18); }
     :global(html[data-theme="dark"]) .igp[data-estado="warn"] { color: #fbbf24; background: rgba(245,158,11,0.18); }
-    :global(html[data-theme="dark"]) .igp[data-estado="info"], :global(html[data-theme="dark"]) .igp[data-estado="key"] { color: #dbe4f0; }
+    :global(html[data-theme="dark"]) .igp[data-estado="info"], :global(html[data-theme="dark"]) .igp[data-estado="key"], :global(html[data-theme="dark"]) .igp[data-estado="oauth"] { color: #dbe4f0; }
 </style>

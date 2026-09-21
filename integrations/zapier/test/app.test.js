@@ -30,13 +30,19 @@ test('firma: acepta la de Cord, cualquier v1 válido y rechaza alteraciones', ()
     assert.equal(verifyCordSignature({ secret: undefined, headers: signed(content), content }), false);
 });
 
-test('autenticación: rechaza llaves publicables sin llamar a la API', async () => {
-    const z = fakeZ();
-    await assert.rejects(App.authentication.test(z, { authData: { apiKey: 'pk_live_abc' } }), /secret API key/);
-    assert.equal(z.calls.length, 0);
+test('autenticación: OAuth 2.0 con PKCE, renovación automática y etiqueta de la conexión', async () => {
+    const auth = App.authentication;
+    assert.equal(auth.type, 'oauth2');
+    assert.equal(auth.oauth2Config.enablePkce, true);
+    assert.equal(auth.oauth2Config.autoRefresh, true);
+    assert.match(auth.oauth2Config.authorizeUrl.url, /\/oauth\/authorize$/);
+    assert.equal(auth.oauth2Config.authorizeUrl.params.scope, 'write');
+    assert.match(auth.oauth2Config.getAccessToken.url, /\/api\/oauth\/token$/);
+    assert.equal(auth.oauth2Config.getAccessToken.body.grant_type, 'authorization_code');
+    assert.equal(auth.oauth2Config.refreshAccessToken.body.grant_type, 'refresh_token');
     const ok = fakeZ({ 'GET /api/v1/me': { data: { org: { nombre: 'ACME' }, scope: 'write', mode: 'test' } } });
-    const data = await App.authentication.test(ok, { authData: { apiKey: 'sk_test_abc' } });
-    assert.equal(App.authentication.connectionLabel(ok, { inputData: data }), 'ACME (test)');
+    const data = await auth.test(ok);
+    assert.equal(auth.connectionLabel(ok, { inputData: data }), 'ACME (test)');
 });
 
 test('errores de Cord llegan con su mensaje', () => {
@@ -135,9 +141,9 @@ test('buscar cliente prioriza el correo exacto', async () => {
     await assert.rejects(App.searches.find_client.operation.perform(z, { inputData: {} }), /Enter an email or a name/);
 });
 
-test('la llave va en el header y nunca en la URL', () => {
+test('el token va en el header y nunca en la URL', () => {
     const { addAuth } = require('../lib/middleware');
-    const req = addAuth({ url: 'https://cordhq.app/api/v1/me', headers: {} }, fakeZ(), { authData: { apiKey: 'sk_live_x' } });
-    assert.equal(req.headers.Authorization, 'Bearer sk_live_x');
-    assert.ok(!req.url.includes('sk_live_x'));
+    const req = addAuth({ url: 'https://cordhq.app/api/v1/me', headers: {} }, fakeZ(), { authData: { access_token: 'cord_at_x' } });
+    assert.equal(req.headers.Authorization, 'Bearer cord_at_x');
+    assert.ok(!req.url.includes('cord_at_x'));
 });

@@ -4,7 +4,7 @@ App de Zapier construida sobre la API pública v1 de Cord. No tiene servidor pro
 
 ## Qué incluye
 
-- **Conexión**: llave secreta de Cord (`sk_live_` o `sk_test_`). Las llaves publicables se rechazan. Se valida con `GET /v1/me`.
+- **Conexión**: OAuth 2.0 con PKCE. La persona autoriza en la pantalla de Cord (`/oauth/authorize`) y Zapier renueva el token solo (`/api/oauth/token`); no se crea ni se pega ninguna llave. Se valida con `GET /v1/me`. `CLIENT_ID` y `CLIENT_SECRET` viven en las variables de entorno de la app en Zapier, no en el repo.
 - **Disparadores instantáneos**: New Event (cualquiera de los 41 eventos), Quote Approved, Quote Paid, Quote Sent, Quote Opened by Client, Quote Created, Quote Rejected, Partial Payment Received, Invoice Paid y New Client. Cada Zap activo crea un webhook con `POST /v1/webhooks` y lo borra al apagarse. Cada evento entrante se verifica con la firma `X-Cord-Signature-V1` y el secreto de ese webhook; si no cuadra, se ignora.
 - **Acciones**: Create Client, Update Client, Create Quote, Send Quote, Mark Quote as Paid y Create Task.
 - **Búsquedas**: Find Client (correo exacto o nombre), Find Quote (folio) y Find or Create Client.

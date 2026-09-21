@@ -1,6 +1,6 @@
 ---
 title: "Connect Cord with Zapier"
-description: "Accept the invitation to the Cord app on Zapier, paste an API key and create Zaps that start when something happens in Cord."
+description: "Accept the invitation to the Cord app on Zapier, authorize access with one click and create Zaps that start when something happens in Cord."
 category: "Developers"
 order: 5
 ---
@@ -10,8 +10,10 @@ The Cord app for Zapier lets you start a Zap when a quote moves forward and crea
 ### Connect it
 
 1. In Cord open **Settings › Integrations › Zapier** and click **Open Cord on Zapier**. Accept the invitation.
-2. Turn on **Developer mode** (the switch at the bottom of the Settings index), open the **API** tab and create a **secret key** with write access.
-3. In Zapier create a Zap, choose Cord and paste the key when asked.
+2. In Zapier create a Zap, choose Cord and click **Connect**.
+3. On the Cord screen pick the workspace and click **Authorize**. There are no keys to create or paste.
+
+You need access to **Settings** in that workspace to authorize.
 
 ### What you can do
 
@@ -21,4 +23,4 @@ The Cord app for Zapier lets you start a Zap when a quote moves forward and crea
 
 Each active Zap creates its own webhook in Cord, with a limit of 100 per organization separate from your plan's endpoints.
 
-If you think a key leaked, revoke it in the **API** tab and create another; the Zap will ask you to reconnect the account.
+To cut the access, open **Settings › Developer mode › API** and revoke Zapier's connection (it shows as **Authorized connection**). Your Zaps will ask you to reconnect the account.

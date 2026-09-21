@@ -69,7 +69,7 @@ if (hasAccess) {
     if (tab === 'api') {
         [ORG, KEYS, ACTIVITY] = await Promise.all([getOrg(), getApiKeys(), getApiActivity()]);
         LIMITE_KEYS = apiKeyLimit(ORG.plan_raw);
-        ACTIVAS = KEYS.filter((k) => !k.revocada).length;
+        ACTIVAS = KEYS.filter((k) => !k.revocada && !k.oauthApp).length;
         AT_LIMIT_KEYS = ACTIVAS >= LIMITE_KEYS;
     } else if (tab === 'webhooks') {
         [ORG, WEBHOOKS] = await Promise.all([getOrg(), getWebhooks()]);
@@ -332,14 +332,18 @@ const saludOk = caidos.length === 0 && (OV?.wh.fallidos ?? 0) === 0 && (OV?.wh.a
                         <span class="key-cell-name">
                             <span class="key-nm">{k.nombre}</span>
                             <span class="key-tags">
+                                {k.oauthApp ? (
+                                    <span class="key-type sec">{t(L, 'set.api.oauth_tag')}</span>
+                                ) : (
                                 <span class={`key-mode ${k.mode}`}>{k.mode === 'test' ? t(L, 'set.api.prueba') : t(L, 'set.api.vivo')}</span>
+                                )}
                                 {/* Estas clases reemplazan un `style=` inline: un atributo style
                                     gana a cualquier selector, así que el badge se quedaba en
                                     lila claro y era ilegible sobre el navy del dock. */}
-                                <span class={`key-type ${k.type === 'publishable' ? 'pub' : 'sec'}`}>{k.type === 'publishable' ? t(L, 'set.api.publica') : t(L, 'set.api.secreta')}</span>
+                                {!k.oauthApp && <span class={`key-type ${k.type === 'publishable' ? 'pub' : 'sec'}`}>{k.type === 'publishable' ? t(L, 'set.api.publica') : t(L, 'set.api.secreta')}</span>}
                             </span>
                         </span>
-                        <code class="key-cell-token">{k.masked}</code>
+                        {k.oauthApp ? <span class="key-cell-muted">{t(L, 'set.api.oauth_conexion')}</span> : <code class="key-cell-token">{k.masked}</code>}
                         <span class={`key-scope ${k.scope}`}>{k.scope === 'write' ? t(L, 'set.api.escritura') : t(L, 'set.api.lectura')}</span>
                         <span class="key-cell-muted">{k.ultimoUso || t(L, 'set.api.sin_uso')}</span>
                         <span class="key-cell-muted">{k.creada}</span>

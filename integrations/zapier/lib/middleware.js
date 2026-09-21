@@ -4,7 +4,7 @@ const { version } = require('../package.json');
 
 function addAuth(request, z, bundle) {
     request.headers = request.headers || {};
-    if (bundle.authData && bundle.authData.apiKey) request.headers.Authorization = `Bearer ${bundle.authData.apiKey}`;
+    if (bundle.authData && bundle.authData.access_token) request.headers.Authorization = `Bearer ${bundle.authData.access_token}`;
     request.headers.Accept = 'application/json';
     request.headers['User-Agent'] = `Cord-Zapier/${version}`;
     return request;

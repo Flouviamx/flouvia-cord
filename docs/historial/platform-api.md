@@ -6,6 +6,22 @@
 
 ---
 
+✅ **Cord como proveedor OAuth 2.0; Zapier sin llaves (21 sep 2026)**
+   • **Zapier pedía crear y pegar una llave secreta.** Ahora la persona pulsa Conectar, elige el
+     espacio de trabajo en una pantalla de Cord y autoriza. Authorization code con PKCE S256,
+     access de 1 h y refresh de 180 días que se rota en cada uso.
+   • **Un grant es una llave de vida corta**, no un mecanismo paralelo: `/api/v1` y MCP aceptan el
+     token sin tocar cada ruta, y los webhooks que Zapier crea sobreviven a la renovación porque el
+     id de la llave no cambia. No cuenta contra el límite de llaves del plan.
+   • **Solo hash en base de datos**, y el canje del código es una sentencia: se probó el ciclo
+     completo (canje, doble canje, refresh viejo, revocación, cliente ajeno) en una transacción que
+     se deshace, y de punta a punta contra el servidor.
+   • **`security.checkOrigin` de Astro apagado.** Rechazaba el POST de formulario sin `Origin` que
+     es la forma en que cualquier servidor llama a un endpoint de token (RFC 6749). El CSRF real ya
+     vivía en el middleware, con Origin obligatorio y exenciones declaradas.
+   • **Pendiente**: Make y n8n siguen con llave; subir la versión 1.1.0 de la app de Zapier con
+     `CLIENT_ID` y `CLIENT_SECRET`.
+
 ✅ **Mercado Pago llega al pagador, prioridad de riel y onboarding (21 sep 2026)**
    • **El riel estaba construido y desconectado.** Nadie llamaba a `mp-preference` y la página de
      pago exigía Stripe: una cuenta de Colombia conectaba Mercado Pago en Ajustes y su cliente

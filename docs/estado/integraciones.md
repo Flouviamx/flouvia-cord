@@ -58,8 +58,43 @@ plataforma:
   webhook, así que no puede verificar la firma; la protección es la URL única
   que Make genera por escenario.
 
-Mientras la app de Zapier no tenga link de invitación
-(`ZAPIER_INVITE_URL` en el catálogo), la tarjeta dice "Próximamente".
+El link de invitación de Zapier vive en `ZAPIER_INVITE_URL` (catálogo); sin él la
+tarjeta dice "Próximamente". Desde la versión 1.1.0 la app de Zapier se conecta
+por OAuth 2.0 (ver la sección siguiente); Make y n8n siguen con llave de API.
+
+## Cord como proveedor OAuth 2.0
+
+Quien conecta una app externa autoriza en una pantalla de Cord en vez de crear y
+pegar una llave. Código: `src/lib/oauth-core.ts` (tokens, PKCE, scopes, redirect
+exacto — puro y probado en `test/oauth-core.test.ts`), `src/lib/oauth-provider.ts`
+(base de datos), `src/pages/oauth/authorize.astro` (consentimiento),
+`src/pages/api/oauth/{authorize,token,revoke}.ts`.
+
+- **Un grant es una llave de vida corta.** `cord_oauth_issue()` crea una fila de
+  `api_keys` con `oauth_client_id` y `expires_at` (1 h) más una de `oauth_grants`
+  que guarda el hash del refresh token (180 días, se rota en cada uso). Así
+  `/api/v1` y MCP aceptan el token sin tocar cada ruta, y los webhooks que la app
+  crea (`created_by_key`) sobreviven a la renovación porque el id no cambia.
+- **No cuentan contra el límite de llaves del plan** (`active_rank = 0`): son
+  conexiones, no credenciales que el equipo administre. Tope de 25 conexiones
+  vivas por app y organización.
+- **Solo hash en base de datos**: códigos, access y refresh. El endpoint de token
+  no tiene sesión ni organización, así que resuelve todo con funciones
+  `security definer` (`cord_oauth_client`, `_consume_code`, `_issue`, `_refresh`,
+  `_revoke`) y el consumo del código es una sola sentencia: dos canjes
+  simultáneos no pueden ganar los dos.
+- **Consentimiento**: el redirect debe coincidir EXACTO con el registrado; si no,
+  no se redirige a ningún lado. Solo pueden autorizar quienes tienen el permiso
+  `ajustes` en el espacio elegido (los mismos que crean llaves). PKCE S256
+  opcional pero soportado; `plain` no se acepta.
+- **Registro de clientes**: manual, con `scripts/oauth-client.mjs`. Escribe el
+  secreto solo en el `.env` indicado y nunca lo imprime. No hay registro dinámico.
+- **Astro `security.checkOrigin` está en `false`.** Bloqueaba el POST de
+  formulario sin `Origin` del endpoint de token, que es como lo llama cualquier
+  servidor. El CSRF de toda escritura sigue en `src/middleware.ts` con Origin
+  obligatorio y exenciones declaradas (`csrf-policy.ts`).
+- Revocación: la conexión aparece en Ajustes › Modo desarrollador › API como
+  "Conexión autorizada"; revocarla cierra la llave y el grant.
 
 ## Canales de aviso
 

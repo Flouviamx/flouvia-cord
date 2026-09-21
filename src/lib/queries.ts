@@ -226,9 +226,10 @@ export async function getApiKeys() {
     const orgId = await getActiveOrgId();
     let rows: any[] = [];
     try {
-        [rows] = await withOrgTx(orgId, sql`select * from api_keys where org_id = ${orgId} order by created_at desc`);
+        [rows] = await withOrgTx(orgId, sql`select k.*, c.nombre as oauth_app from api_keys k left join oauth_clients c on c.client_id = k.oauth_client_id where k.org_id = ${orgId} order by k.created_at desc`);
     } catch { return []; }
     return rows.map((k) => ({
+        oauthApp: (k.oauth_app as string | null) ?? null,
         id: k.id as string,
         nombre: k.nombre as string,
         masked: `${k.prefix}${'•'.repeat(20)}${k.last4}`,

@@ -17,9 +17,11 @@ The Cord app for Zapier is shared by invitation. In **Settings › Integrations 
 
 <Steps>
 1. **Accept the invitation.** Click **Open Cord on Zapier** and accept. Zapier adds Cord to your apps.
-2. **Create a secret key.** In Cord turn on **Developer mode**, open **API** in the Developers panel and create a key with **write** access.
-3. **Create a Zap.** Choose Cord as a trigger or an action and paste the key when Zapier asks for it.
+2. **Create a Zap.** Choose Cord as a trigger or an action and click **Connect**.
+3. **Authorize in Cord.** A Cord screen opens where you pick the workspace and click **Authorize**. There are no keys to create or paste.
 </Steps>
+
+Whoever authorizes needs access to **Settings** in that workspace. Zapier renews the access on its own; if you ever want to cut it, revoke the connection in **Settings › Developer mode › API**, where it shows up as Zapier's **Authorized connection**.
 
 ## What the app includes
 
@@ -30,10 +32,6 @@ The Cord app for Zapier is shared by invitation. In **Settings › Integrations 
 | **Searches** | Client by email or name, and quote by number. |
 
 Each active Zap creates its own webhook in Cord, with a limit of 100 per organization **separate** from your plan's endpoints, so your Zaps do not take slots.
-
-<Callout type="info">
-The API key connection is temporary: we are moving the app to one-click authorization, with no keys to create. When it is ready your Zaps will keep working and you will only need to authorize the account again.
-</Callout>
 
 ## Alternative: Webhooks by Zapier
 

@@ -84,14 +84,15 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
         [row] = await sql`
             with ranked as (
                 select k.*,
-                       row_number() over (
-                           partition by k.org_id
-                           order by k.created_at asc, k.id asc
-                       )::int as active_rank
+                       case when k.oauth_client_id is not null then 0
+                            else row_number() over (
+                                partition by k.org_id, (k.oauth_client_id is not null)
+                                order by k.created_at asc, k.id asc
+                            )::int end as active_rank
                   from api_keys k
                  where k.revoked_at is null
             )
-            select k.id, k.org_id, k.scope, k.mode, k.type, k.revoked_at,
+            select k.id, k.org_id, k.scope, k.mode, k.type, k.revoked_at, k.expires_at,
                    cord_effective_plan(o.id) as effective_plan,
                    k.active_rank, o.sandbox_of, o.embed_domains
               from ranked k
@@ -104,6 +105,9 @@ export async function authApiKey(request: Request, need: ApiScope = 'read'): Pro
 
     if (!row || row.revoked_at) {
         return jsonError('API key inválida o revocada.', 'invalid_key', 401);
+    }
+    if (row.expires_at && new Date(row.expires_at as string).getTime() <= Date.now()) {
+        return jsonError('El token de acceso venció. Renuévalo con el refresh token.', 'token_expired', 401);
     }
     if (Number(row.active_rank) > apiKeyLimit(String(row.effective_plan || 'free'))) {
         return jsonError(

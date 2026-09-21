@@ -17,9 +17,11 @@ La app de Cord para Zapier se comparte por invitación. En **Ajustes › Integra
 
 <Steps>
 1. **Acepta la invitación.** Pulsa **Abrir Cord en Zapier** y acepta. Zapier agrega Cord a tus apps.
-2. **Crea una llave secreta.** En Cord activa el **Modo desarrollador**, abre **API** en el panel de Desarrolladores y crea una llave con permiso de **escritura**.
-3. **Crea un Zap.** Elige Cord como disparador o como acción y pega la llave cuando Zapier la pida.
+2. **Crea un Zap.** Elige Cord como disparador o como acción y pulsa **Conectar**.
+3. **Autoriza en Cord.** Se abre una pantalla de Cord donde eliges el espacio de trabajo y pulsas **Autorizar**. No hay llaves que crear ni que pegar.
 </Steps>
+
+Quien autoriza necesita acceso a **Ajustes** en ese espacio. Zapier renueva el acceso solo; si algún día quieres cortarlo, revoca la conexión en **Ajustes › Modo desarrollador › API**, donde aparece como **Conexión autorizada** de Zapier.
 
 ## Qué incluye la app
 
@@ -30,10 +32,6 @@ La app de Cord para Zapier se comparte por invitación. En **Ajustes › Integra
 | **Búsquedas** | Cliente por correo o nombre, y cotización por folio. |
 
 Cada Zap activo crea su propio webhook en Cord, con un cupo de 100 por organización **aparte** de los endpoints de tu plan, así que tus Zaps no te quitan lugares.
-
-<Callout type="info">
-La conexión con llave de API es temporal: estamos migrando la app a autorización con un clic, sin crear llaves. Cuando esté lista, tu Zap seguirá funcionando y solo tendrás que volver a autorizar la cuenta.
-</Callout>
 
 ## Alternativa: Webhooks by Zapier
 

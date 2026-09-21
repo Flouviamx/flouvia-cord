@@ -1,0 +1,161 @@
+---
+// /oauth/authorize — pantalla de consentimiento de Cord como proveedor OAuth 2.0.
+// La abre el navegador de quien conecta una app externa (Zapier, Make, n8n). Sin
+// sesión manda a iniciar y regresa aquí con la misma query. Nada de esta URL se
+// da por bueno: cliente y redirect se validan contra lo registrado ANTES de
+// mostrar nada y, si no coinciden, no se redirige a ningún lado.
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import { currentUserId, currentLocale, currentActiveOrgId } from '../../lib/context';
+import { buildRedirect, isValidCodeChallenge, parseScope, redirectAllowed } from '../../lib/oauth-core';
+import { authorizableOrgs, getOAuthClient } from '../../lib/oauth-provider';
+import { t } from '../../i18n/app';
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const L = currentLocale();
+const tf = (key: string, vars: Record<string, string> = {}) => {
+    let s = t(L, key as any);
+    for (const k in vars) s = s.split(`{${k}}`).join(vars[k]);
+    return s;
+};
+
+const q = Astro.url.searchParams;
+const client = await getOAuthClient(q.get('client_id'));
+const redirectUri = q.get('redirect_uri');
+const scope = parseScope(q.get('scope'));
+const challenge = q.get('code_challenge');
+const state = q.get('state');
+
+let fatal: string | null = null;
+if (q.get('error')) fatal = q.get('error') === 'unknown_client' ? 'unknown_client' : 'invalid_request';
+else if (!client) fatal = 'unknown_client';
+else if (!redirectAllowed(client.redirectUris, redirectUri)) fatal = 'bad_redirect';
+
+if (!fatal && client && redirectUri) {
+    if (q.get('response_type') !== 'code') return Astro.redirect(buildRedirect(redirectUri, { error: 'unsupported_response_type', state }));
+    if (!scope) return Astro.redirect(buildRedirect(redirectUri, { error: 'invalid_scope', state }));
+    if (challenge && (!isValidCodeChallenge(challenge) || q.get('code_challenge_method') !== 'S256')) {
+        return Astro.redirect(buildRedirect(redirectUri, { error: 'invalid_request', state }));
+    }
+}
+
+const userId = currentUserId();
+if (!fatal && !userId) {
+    return Astro.redirect(`/sign-in?redirect_url=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`);
+}
+
+const orgs = !fatal && userId ? await authorizableOrgs(userId) : [];
+const preferred = currentActiveOrgId();
+const selected = orgs.find((o) => o.id === preferred) ?? orgs[0] ?? null;
+const puede = scope === 'write' ? ['write_1', 'write_2'] : ['read'];
+const appLogo = client?.dominio
+    ? `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${client.dominio}&size=128`
+    : null;
+---
+
+<Layout title={t(L, 'oauth.eyebrow')} noindex={true} analyticsDisabled={true}>
+    <main class="oa-page">
+        <div class="oa-card">
+            {fatal && (
+                <>
+                    <h1>{t(L, 'oauth.err.titulo')}</h1>
+                    <p class="oa-sub">{t(L, ('oauth.err.' + fatal) as any)}</p>
+                    <a href="/" class="oa-btn ghost">{t(L, 'oauth.volver')}</a>
+                </>
+            )}
+
+            {!fatal && client && orgs.length === 0 && (
+                <>
+                    <h1>{t(L, 'oauth.sin_permiso_titulo')}</h1>
+                    <p class="oa-sub">{t(L, 'oauth.sin_permiso')}</p>
+                    <a href="/" class="oa-btn ghost">{t(L, 'oauth.volver')}</a>
+                </>
+            )}
+
+            {!fatal && client && selected && (
+                <>
+                    <div class="oa-logos" aria-hidden="true">
+                        <img src="/imgs/logo-cord-navy.png" alt="" class="oa-cord" />
+                        <span class="oa-link"></span>
+                        {appLogo && <img src={appLogo} alt="" class="oa-app" width="36" height="36" />}
+                    </div>
+                    <p class="oa-eyebrow">{t(L, 'oauth.eyebrow')}</p>
+                    <h1>{tf('oauth.titulo', { app: client.nombre })}</h1>
+
+                    <form method="post" action="/api/oauth/authorize" class="oa-form">
+                        <input type="hidden" name="client_id" value={client.clientId} />
+                        <input type="hidden" name="redirect_uri" value={redirectUri ?? ''} />
+                        <input type="hidden" name="scope" value={scope ?? 'read'} />
+                        {state && <input type="hidden" name="state" value={state} />}
+                        {challenge && <input type="hidden" name="code_challenge" value={challenge} />}
+                        {challenge && <input type="hidden" name="code_challenge_method" value="S256" />}
+
+                        <label class="oa-field">
+                            <span>{t(L, 'oauth.espacio')}</span>
+                            {orgs.length > 1 ? (
+                                <select name="org_id">
+                                    {orgs.map((o) => <option value={o.id} selected={o.id === selected.id}>{o.nombre}</option>)}
+                                </select>
+                            ) : (
+                                <>
+                                    <input type="hidden" name="org_id" value={selected.id} />
+                                    <strong class="oa-org">{selected.nombre}</strong>
+                                </>
+                            )}
+                        </label>
+
+                        <div class="oa-block">
+                            <p class="oa-h">{tf('oauth.podra', { app: client.nombre })}</p>
+                            <ul>
+                                {puede.map((k) => <li>{t(L, ('oauth.puede.' + k) as any)}</li>)}
+                            </ul>
+                            <p class="oa-no">{t(L, 'oauth.no_podra')}</p>
+                        </div>
+
+                        <div class="oa-actions">
+                            <button type="submit" name="decision" value="deny" class="oa-btn ghost">{t(L, 'oauth.cancelar')}</button>
+                            <button type="submit" name="decision" value="allow" class="oa-btn">{t(L, 'oauth.autorizar')}</button>
+                        </div>
+                        <p class="oa-foot">{t(L, 'oauth.revocable')}</p>
+                    </form>
+                </>
+            )}
+        </div>
+    </main>
+</Layout>
+
+<style>
+    .oa-page { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; background: var(--color-bg-soft, #f5f5f7); }
+    .oa-card { width: min(440px, 100%); background: var(--surface, #fff); border: 1px solid var(--color-border, rgba(10,25,47,0.08)); border-radius: 28px; box-shadow: 0 30px 70px -30px rgba(10,25,47,0.25); padding: 2.4rem 2rem; }
+    .oa-logos { display: flex; align-items: center; justify-content: center; gap: 0.9rem; margin-bottom: 1.6rem; }
+    .oa-cord { height: 22px; }
+    .oa-app { width: 36px; height: 36px; border-radius: 10px; }
+    .oa-link { width: 28px; height: 0; border-top: 1.5px dashed var(--color-border, rgba(10,25,47,0.25)); }
+    .oa-eyebrow { font-size: 0.62rem; font-weight: 800; letter-spacing: 2px; color: #99a2af; margin: 0 0 0.5rem; text-align: center; text-transform: uppercase; }
+    .oa-card h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; margin: 0 0 1.4rem; color: var(--color-text, #050505); text-align: center; text-wrap: balance; }
+    .oa-sub { font-size: 0.9rem; color: var(--color-text-muted, #555); line-height: 1.5; margin: 0 0 1.6rem; text-align: center; }
+    .oa-field { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; font-size: 0.78rem; font-weight: 600; color: var(--color-text-muted, #555); }
+    .oa-field select { font: inherit; font-size: 0.92rem; font-weight: 500; color: var(--color-text, #050505); background: #f5f5f7; border: 1px solid transparent; border-radius: 14px; padding: 12px 14px; }
+    .oa-field select:focus-visible { outline: none; border-color: rgba(10,25,47,0.15); box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+    .oa-org { font-size: 0.95rem; font-weight: 600; color: var(--color-text, #050505); background: #f5f5f7; border-radius: 14px; padding: 12px 14px; }
+    .oa-block { border-top: 1px solid var(--color-border, rgba(10,25,47,0.08)); padding-top: 1.1rem; margin-bottom: 1.4rem; }
+    .oa-h { font-size: 0.82rem; font-weight: 700; margin: 0 0 0.6rem; color: var(--color-text, #050505); }
+    .oa-block ul { margin: 0 0 0.9rem; padding: 0 0 0 1.1rem; display: grid; gap: 0.4rem; font-size: 0.86rem; line-height: 1.45; color: var(--color-text, #050505); }
+    .oa-no { font-size: 0.8rem; line-height: 1.45; color: var(--color-text-muted, #555); margin: 0; }
+    .oa-actions { display: flex; gap: 0.6rem; }
+    .oa-actions .oa-btn { flex: 1; }
+    .oa-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; font-family: var(--font-sans); font-size: 0.9rem; font-weight: 600; text-decoration: none; cursor: pointer; border: none; padding: 12px 24px; border-radius: 999px; background: var(--color-blue-deep, #0a192f); color: #fff; transition: transform 0.3s var(--ease-spring, ease); }
+    .oa-btn:hover { transform: translateY(-2px); }
+    .oa-btn:active { transform: scale(0.97); }
+    .oa-btn:focus-visible { outline: 2px solid var(--color-blue-deep, #0a192f); outline-offset: 2px; }
+    .oa-btn.ghost { background: transparent; color: var(--color-text, #0a192f); border: 1px solid var(--color-border, rgba(10,25,47,0.14)); }
+    .oa-foot { font-size: 0.74rem; color: var(--color-text-muted, #777); text-align: center; margin: 1rem 0 0; line-height: 1.4; }
+
+    @media (max-width: 480px) {
+        .oa-page { align-items: flex-start; padding: max(1rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(.75rem, env(safe-area-inset-left)); }
+        .oa-card { margin-block: auto; padding: 2rem 1.25rem; border-radius: 22px; }
+        .oa-actions { flex-direction: column-reverse; }
+    }
+</style>

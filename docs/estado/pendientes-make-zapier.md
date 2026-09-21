@@ -9,7 +9,7 @@
 
 | App | Estado del código | Estado en Cord hoy | Lo que falta |
 |---|---|---|---|
-| **Zapier** | App subida a Zapier como privada (App246344, versión 1.0.1), 16 pruebas pasando | Tarjeta "Próximamente" | Logo, correo del dominio en el equipo, link de invitación |
+| **Zapier** | App privada App246344; versión 1.1.0 con OAuth 2.0 + PKCE (llave de API retirada), 16 pruebas pasando | Tarjeta con link de invitación y "Conexión directa" | Logo, correo del dominio en el equipo; subir 1.1.0 con `CLIENT_ID` y `CLIENT_SECRET` (`integrations/zapier/.env`) |
 | **Make** | App escrita y probada (7 pruebas), **nunca subida** a Make | Tarjeta "Con webhooks" (funciona con Webhooks + HTTP) | Token de API de Make y correr el deploy |
 
 Nunca pegues tokens ni llaves en el chat. Van en archivos `.env` que no se suben a git.

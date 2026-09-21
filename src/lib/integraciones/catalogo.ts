@@ -26,7 +26,7 @@ export const INTEGRATION_APPS: IntegrationApp[] = [
     { slug: 'n8n', nombre: 'n8n', dominio: 'n8n.io', categoria: 'automatizacion', disponible: true, logo: favicon('n8n.io', 128), tile: true, guia: '/soporte/conectar-n8n' },
 ];
 
-export type IntegrationState = 'on' | 'warn' | 'off' | 'info' | 'key' | 'soon';
+export type IntegrationState = 'on' | 'warn' | 'off' | 'info' | 'key' | 'oauth' | 'soon';
 
 export function integrationState(app: IntegrationApp, ctx: { hubspot: string | null; slack: boolean; teams: boolean; whatsapp: boolean }): IntegrationState {
     if (!app.disponible) return 'soon';
@@ -34,7 +34,8 @@ export function integrationState(app: IntegrationApp, ctx: { hubspot: string | n
     if (app.slug === 'slack') return ctx.slack ? 'on' : 'off';
     if (app.slug === 'teams') return ctx.teams ? 'on' : 'off';
     if (app.slug === 'whatsapp') return ctx.whatsapp ? 'on' : 'off';
-    if (app.slug === 'zapier' || app.slug === 'n8n') return 'key';
+    if (app.slug === 'zapier') return 'oauth';
+    if (app.slug === 'n8n') return 'key';
     return 'info';
 }
 

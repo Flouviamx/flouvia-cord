@@ -58,7 +58,7 @@ export const POST: APIRoute = async ({ request }) => {
             sql`
                 insert into api_keys (org_id, nombre, prefix, last4, hash, scope, mode, type, created_by)
                 select ${orgId}, ${nombre}, ${prefix}, ${last4}, ${hash}, ${scope}, ${mode}, ${type}, ${reqIp(request)}
-                 where (select count(*) from api_keys where org_id = ${orgId} and revoked_at is null) < ${limite}
+                 where (select count(*) from api_keys where org_id = ${orgId} and revoked_at is null and oauth_client_id is null) < ${limite}
                 returning id`,
         );
         [row] = inserted;
@@ -87,6 +87,7 @@ export const DELETE: APIRoute = async ({ request }) => {
     const orgId = await getActiveOrgId();
     await withOrgTx(orgId,
         sql`update api_keys set revoked_at = now() where id = ${id} and org_id = ${orgId} and revoked_at is null`,
+        sql`update oauth_grants set revoked_at = now() where api_key_id = ${id} and org_id = ${orgId} and revoked_at is null`,
         sql`update webhooks set activo = false where org_id = ${orgId} and created_by_key = ${id}`);
     await logAudit(orgId, { accion: 'apikey.revocada', entidad: 'api_key', entidad_id: id, detalle: 'Revocó una API key', ip: reqIp(request) });
     return json({ ok: true });

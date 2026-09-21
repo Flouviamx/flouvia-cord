@@ -1,6 +1,6 @@
 {
   "name": "cord-zapier",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "App de Cord para Zapier",
   "private": true,
   "main": "index.js",

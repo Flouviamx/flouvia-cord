@@ -37,7 +37,7 @@ Toca una tarjeta para abrir la página de esa app. Ahí está todo lo de esa int
 | **Microsoft Teams** | Comunicación | Una tarjeta en tu canal cuando una cotización avanza, y mensajes propios desde workflows. | Pegar la URL del flujo de Power Automate del canal. | [Conectar Teams](/soporte/conectar-teams) |
 | **WhatsApp Business** | Comunicación | Mandarle al cliente recordatorios y avisos por el canal que sí abre, desde tus workflows. | Pegar el identificador del número y un token de Meta. | [Conectar WhatsApp](/soporte/conectar-whatsapp) |
 | **Make** | Automatización | Recibir eventos de Cord en tus escenarios y crear o actualizar datos en Cord desde Make. | Webhooks de Cord y llave de API, desde Make. | [Make](/docs/automatizacion/integraciones/make) |
-| **Zapier** | Automatización | Conectar Cord con miles de apps sin escribir código. | Aceptar la invitación de la app de Cord en Zapier y pegar una llave de API. | [Zapier](/docs/automatizacion/integraciones/zapier) |
+| **Zapier** | Automatización | Conectar Cord con miles de apps sin escribir código. | Aceptar la invitación de la app de Cord en Zapier y autorizar con un clic. | [Zapier](/docs/automatizacion/integraciones/zapier) |
 | **n8n** | Automatización | Flujos propios con el nodo comunitario de Cord, que registra su webhook y verifica la firma. | Llave de API en la credencial de Cord dentro de n8n. | [Conectar n8n](/soporte/conectar-n8n) |
 
 ## Qué conviene para cada caso
@@ -60,7 +60,7 @@ Las integraciones son de la **organización**, no de una persona: si quien conec
 
 ## Seguridad
 
-- **Cord nunca te pide la contraseña de otra herramienta.** HubSpot se autoriza en la página de HubSpot; Slack, Teams, Make, Zapier y n8n usan URLs o llaves que tú generas y puedes revocar.
+- **Cord nunca te pide la contraseña de otra herramienta.** HubSpot se autoriza en la página de HubSpot; Slack, Teams, Make y n8n usan URLs o llaves que tú generas y puedes revocar, y Zapier se autoriza en una pantalla de Cord que también puedes revocar.
 - **Los accesos se guardan cifrados** y solo se usan para lo que describe cada integración.
 - **Desconectar corta el acceso de verdad.** En HubSpot, Cord además revoca su autorización en tu cuenta.
 - **Las URLs de webhook son secretos.** Quien tenga la URL de tu webhook de Slack, del flujo de Teams o de Make puede publicar en ella; no las compartas.
