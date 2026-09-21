@@ -119,8 +119,8 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                     <li>{t(L, 'set.integ.n8n.paso_3')}</li>
                 </ol>
                 <div class="ig-actions">
-                    <a class="ig-btn" href="/app/wb/api">{t(L, 'set.integ.make.ir_api')}</a>
-                    <a class="ig-btn" href="/app/wb/webhooks">{t(L, 'set.integ.make.ir_webhooks')}</a>
+                    <a class="ig-btn ig-btn-solid" href="/app/wb/api">{t(L, 'set.integ.n8n.crear_llave')}</a>
+                    <a class="ig-link" href="https://www.npmjs.com/package/n8n-nodes-cord" target="_blank" rel="noopener noreferrer">{t(L, 'set.integ.n8n.ver_npm')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h6.5V10M12.5 3.5 4 12"/></svg></a>
                 </div>
             </div>
         </div>
@@ -138,7 +138,7 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                     </ol>
                     <div class="ig-actions">
                         {MAKE_INVITE_URL && <a class="ig-btn ig-btn-solid" href={MAKE_INVITE_URL} target="_blank" rel="noopener noreferrer">{t(L, 'set.integ.make.abrir')}</a>}
-                        <a class="ig-btn" href="/app/wb/api">{t(L, 'set.integ.make.ir_api')}</a>
+                        <a class="ig-link" href="/app/wb/api">{t(L, 'set.integ.oauth.ver_conexiones')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></a>
                     </div>
                 </div>
             </div>
@@ -169,7 +169,7 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
                     </ol>
                     <div class="ig-actions">
                         {ZAPIER_INVITE_URL && <a class="ig-btn ig-btn-solid" href={ZAPIER_INVITE_URL} target="_blank" rel="noopener noreferrer">{t(L, 'set.integ.zapier.abrir')}</a>}
-                        <a class="ig-btn" href="/app/wb/api">{t(L, 'set.integ.make.ir_api')}</a>
+                        <a class="ig-link" href="/app/wb/api">{t(L, 'set.integ.oauth.ver_conexiones')}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></a>
                     </div>
                 </div>
             </div>
@@ -241,7 +241,15 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
     .ig-btn:active { transform: scale(0.97); }
     .ig-btn:focus-visible, .ig-back:focus-visible, .ig-hero-links a:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
     .ig-btn[aria-busy="true"] { opacity: 0.6; pointer-events: none; }
-    .ig-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .ig-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.2rem; margin-top: 0.3rem; }
+    .ig-link {
+        display: inline-flex; align-items: center; gap: 4px; min-height: 36px;
+        font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none;
+    }
+    .ig-link svg { width: 13px; height: 13px; transition: transform 0.2s var(--ease-ios); }
+    .ig-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .ig-link:hover svg { transform: translateX(2px); }
+    .ig-link:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; border-radius: 4px; }
     .ig-btn-solid { color: #fff; background: var(--color-blue-deep); border-color: var(--color-blue-deep); }
     .ig-btn-solid:hover { background: var(--color-blue-deep); opacity: 0.92; }
     .ig-list { list-style: disc; }
@@ -251,7 +259,8 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
     .ig-idea-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .ig-idea-text strong { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
     .ig-idea-text span { font-size: 0.78rem; line-height: 1.5; color: var(--color-text-muted); }
-    :global(html[data-theme="dark"]) .ig-hero-links a, :global(html[data-theme="dark"]) .ig-btn { color: #dbe4f0; }
+    :global(html[data-theme="dark"]) .ig-hero-links a, :global(html[data-theme="dark"]) .ig-btn, :global(html[data-theme="dark"]) .ig-link { color: #dbe4f0; }
+    :global(html[data-theme="dark"]) .ig-btn-solid { color: #0a192f; background: #dbe4f0; border-color: #dbe4f0; }
 
     @media (max-width: 560px) {
         .ig-back { min-height: 44px; margin-bottom: 0.6rem; }
