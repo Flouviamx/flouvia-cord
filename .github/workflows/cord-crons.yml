@@ -1,0 +1,119 @@
+name: Cord crons
+
+# Los crons de Cord, disparados desde GitHub y no desde Vercel.
+#
+# Por qué: el plan Hobby de Vercel solo admite crons DIARIOS y un puñado de
+# ellos. Cord tiene 16, y desde que los workflows programados y las esperas
+# condicionadas existen, uno necesita correr CADA HORA — un horario que el
+# negocio eligió ("cada lunes a las 9") no se puede honrar con un barrido al
+# día. Un `0 * * * *` en vercel.json hace que el deployment entero sea
+# rechazado, que es exactamente lo que pasó el 20 de septiembre de 2026.
+#
+# Este workflow corre cada hora y decide qué endpoints tocan, con la MISMA
+# tabla de horarios que tenía vercel.json. Los de vercel.json se quedan como
+# respaldo para el día que la cuenta suba de plan: todos los endpoints son
+# idempotentes, así que una doble corrida no duplica trabajo.
+#
+# Requiere el secret del repositorio CRON_SECRET, con el mismo valor que la
+# variable de entorno CRON_SECRET en Vercel.
+
+on:
+  schedule:
+    # A los :10 de cada hora. No en punto: el minuto 0 es el más congestionado
+    # de la cola de GitHub y los retrasos ahí son de decenas de minutos.
+    - cron: '10 * * * *'
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: 'Correr un solo endpoint (ej. cron/workflows). Vacío = los que tocan por horario.'
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: cord-crons
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      BASE: https://cordhq.app
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - name: Verificar el secret
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::Falta el secret CRON_SECRET en el repositorio"
+            exit 1
+          fi
+
+      - name: Llamar los endpoints que tocan
+        run: |
+          set -u
+          HORA=$(date -u +%-H)
+          MIN_DIA=$(date -u +%-d)
+          MANUAL='${{ inputs.endpoint }}'
+
+          # Tabla de horarios (UTC), espejo de vercel.json. Formato:
+          #   <hora|*>:<día del mes|*>:<ruta>
+          TABLA="
+          *:*:api/cron/workflows
+          10:*:api/health
+          13:*:api/cron/recurrencias
+          15:*:api/cron/recordatorios
+          16:*:api/cron/cobranza
+          5:*:api/cron/webhooks
+          4:*:api/cron/webhooks-limpieza
+          4:*:api/cron/limpieza-capturas
+          4:*:api/cron/stripe-webhook-health
+          5:*:api/cron/billing-reconcile
+          7:*:api/cron/expirar-cotizaciones
+          9:*:api/cron/verifactu-submit
+          12:*:api/cron/anclas-tiempo
+          14:*:api/cron/integraciones
+          6:1:api/cron/intereses
+          8:2:api/cron/comisiones-mensuales
+          "
+
+          fallos=0
+          llamar() {
+            ruta="$1"
+            # 503 no es un fallo de este workflow: es el endpoint diciendo que
+            # algo suyo no está configurado, y eso se ve en sus propios logs.
+            status=$(curl -sS -o /tmp/out.json -w '%{http_code}' --max-time 300 \
+              -H "Authorization: Bearer $CRON_SECRET" "$BASE/$ruta")
+            echo "  $ruta → HTTP $status"
+            head -c 400 /tmp/out.json || true
+            echo
+            if [ "$status" != "200" ] && [ "$status" != "503" ]; then
+              echo "::warning::$ruta respondió $status"
+              fallos=$((fallos + 1))
+            fi
+          }
+
+          if [ -n "$MANUAL" ]; then
+            echo "Corrida manual: $MANUAL"
+            llamar "$MANUAL"
+          else
+            echo "Hora UTC $HORA, día $MIN_DIA"
+            for linea in $TABLA; do
+              [ -z "$linea" ] && continue
+              hora="${linea%%:*}"
+              resto="${linea#*:}"
+              dia="${resto%%:*}"
+              ruta="${resto#*:}"
+              if { [ "$hora" = "*" ] || [ "$hora" = "$HORA" ]; } \
+                 && { [ "$dia" = "*" ] || [ "$dia" = "$MIN_DIA" ]; }; then
+                llamar "$ruta"
+              fi
+            done
+          fi
+
+          # Un endpoint caído no debe tumbar la corrida entera: los demás ya
+          # corrieron y el aviso queda en el resumen del job.
+          if [ "$fallos" -gt 0 ]; then
+            echo "::warning::$fallos endpoint(s) respondieron algo distinto de 200/503"
+          fi

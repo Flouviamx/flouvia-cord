@@ -90,7 +90,7 @@ La actualización documental no debe desplegar el worktree compartido completo.
    `last_used_at`; TTL/cookie se deslizan con throttle de 5 min. Sin migración.
    Falta aceptación integrada de login, múltiples organizaciones, retorno de
    Billing y flujos OAuth de vinculación (no se modificaron esos handlers).
-5. **Eventos, CI y operación:** tres workflows versionados; `.gitignore` ignora
+5. **Eventos, CI y operación:** cuatro workflows versionados; `.gitignore` ignora
    `.github/workflows/*` y cada uno entra con una excepción explícita.
    - `cord-reliability.yml` — PR, push a main y manual: `npm ci` en app y
      Elements, `agents:check`, pruebas/contratos (`test:payments`, que incluye
@@ -99,6 +99,15 @@ La actualización documental no debe desplegar el worktree compartido completo.
    - `elements.yml` — solo si cambia `packages/elements/**`: tipos, build,
      exports contra `api-report.json`, `attw` y `publint`. En verde desde sep 2026.
    - `status-probe.yml` — sonda horaria de disponibilidad (ver `cord-ops.md`).
+   - `cord-crons.yml` — los 16 crons de Cord, cada hora, con la misma tabla de
+     horarios de `vercel.json`. Existe porque el plan Hobby de Vercel solo
+     admite crons DIARIOS: un `0 * * * *` ahí no es un cron que no corre, es un
+     deployment RECHAZADO — pasó el 20 sep 2026 al volver horario el barrido de
+     workflows, que lo necesita para honrar un horario elegido por el negocio y
+     para revisar las esperas condicionadas. Los crons de `vercel.json` se
+     quedan como respaldo diario: todos los endpoints son idempotentes, así que
+     una doble corrida no duplica trabajo. Requiere el secret `CRON_SECRET` del
+     repositorio, con el mismo valor que la variable en Vercel.
 
    Ninguno está configurado como check obligatorio de rama ni como puerta de
    Vercel: un push a main despliega aunque CI falle.

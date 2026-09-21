@@ -59,7 +59,7 @@
     },
     {
       "path": "/api/cron/workflows",
-      "schedule": "0 * * * *"
+      "schedule": "0 14 * * *"
     },
     {
       "path": "/api/cron/integraciones",

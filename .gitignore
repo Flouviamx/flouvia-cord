@@ -35,4 +35,5 @@ archived.hubspot.config.yml
 !.github/workflows/cord-reliability.yml
 !.github/workflows/status-probe.yml
 !.github/workflows/elements.yml
+!.github/workflows/cord-crons.yml
 .env*
