@@ -64,6 +64,7 @@ Don't rely on the nested `error.code` / `error.message` shape to parse the respo
 - `invalid_json`: Your `POST` request body is not valid JSON, or `Content-Type: application/json` wasn't sent.
 - `invalid_request`: A business validation failed (missing field, discount out of range, a quote without a valid client). The `error` field explains the exact reason.
 - `missing_key` / `invalid_key`: The `Authorization: Bearer` header is missing, or the key doesn't exist / was revoked.
+- `token_expired`: The credential of an authorized connection (Zapier, Make) expired. The app renews it on its own with its refresh token.
 - `insufficient_scope`: Your key doesn't have the required scope (a read-only key tried to write, or a Publishable Key tried a route outside its allowed list).
 - `not_found`: The requested resource doesn't exist in your organization.
 - `subscription_required`: The capability requires a higher plan. The response includes `plan` (your current one) and `plan_required`.

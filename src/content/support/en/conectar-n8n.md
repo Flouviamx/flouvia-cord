@@ -9,7 +9,7 @@ n8n connects to Cord in two ways. The **Cord node** is the short path; the **HTT
 
 ### With the Cord node
 
-1. In n8n, go to **Settings › Community nodes** and install `n8n-nodes-cord`. (On n8n Cloud, community nodes are installed from that same screen; on a self-hosted instance you need admin rights.)
+1. In n8n, go to **Settings › Community nodes** and install `n8n-nodes-cord`. You need a self-hosted n8n and admin rights on it. On n8n Cloud it will show up in the nodes panel once n8n finishes verifying it.
 2. Create a secret key in Cord: **Settings**, turn on developer mode at the bottom of the index and open the **API** tab. Use a key with write permission; keys that start with `sk_test_` work against your test environment.
 3. In n8n, create a **Cord API** credential and paste the key. The test button queries your account and tells you whether the key is test or live.
 4. Add the **Cord Trigger** node, choose the events and activate the flow: n8n registers the webhook in Cord for you and deletes it when you deactivate the flow.

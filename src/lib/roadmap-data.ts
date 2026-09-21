@@ -340,6 +340,9 @@ No es una cartera donde Cord retiene tus fondos. La cuenta de cobro pertenece a 
 ### Disponibilidad real
 El alta de cobros en línea depende del país de la organización y de los requisitos que devuelve el proveedor. México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia tienen carril de cuenta conectada. Colombia, Argentina, Chile y Perú pueden cotizar, facturar y registrar pagos manuales, pero hoy no muestran el alta de Cord Payments.
 
+### Qué sigue:
+Mercado Pago como segundo riel de cobro: el cliente paga desde el mismo link y el dinero llega a la cuenta de Mercado Pago del negocio. En Colombia, Argentina, Chile y Perú cubre el hueco de Cord Payments; en México y Brasil queda como alternativa y Cord Payments sigue siendo el principal.
+
 SPEI es un riel mexicano y solo liquida MXN. Fuera de México, Cord no muestra ese método ni aplica una tarifa mexicana a otra divisa.`,
             en: `## From agreement to money, without switching systems
 Cord Payments connects the moment a sale is approved with the moment funds reach your account. The client pays from the quote or invoice link; Cord keeps the payment state next to the document that created it.
@@ -356,6 +359,9 @@ This is not a wallet where Cord holds your funds. The payment account belongs to
 
 ### Actual availability
 Online payment onboarding depends on the organization's country and on the requirements returned by the provider. Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France have a connected-account rail. Colombia, Argentina, Chile, and Peru can quote, invoice, and record manual payments, but do not currently see Cord Payments onboarding.
+
+### What's next:
+Mercado Pago as a second payment rail: the client pays from the same link and the money lands in the business's Mercado Pago account. In Colombia, Argentina, Chile, and Peru it fills the Cord Payments gap; in Mexico and Brazil it stays as an alternative and Cord Payments remains the main rail.
 
 SPEI is a Mexican rail and settles only MXN. Outside Mexico, Cord does not show that method or apply a Mexican fee to another currency.`
         },
@@ -530,27 +536,27 @@ Outside Mexico and Spain, the invoice is not automatically filed with the local 
         id: '13',
         slug: 'notificaciones',
         title: {
-            es: 'Notificaciones por correo y Slack',
-            en: 'Email and Slack notifications'
+            es: 'Notificaciones por correo, Slack y Teams',
+            en: 'Email, Slack and Teams notifications'
         },
         shortDesc: {
-            es: 'Entérate por correo o Slack cuando tu cliente ve, aprueba, rechaza o paga una cotización, sin tener que revisar el dashboard.',
-            en: 'Find out by email or Slack when your client views, approves, rejects, or pays a quote without checking the dashboard.'
+            es: 'Entérate por correo, Slack o Teams cuando tu cliente ve, aprueba, rechaza o paga una cotización, sin tener que revisar el dashboard.',
+            en: 'Find out by email, Slack or Teams when your client views, approves, rejects, or pays a quote without checking the dashboard.'
         },
         content: {
             es: `## Entérate en el momento, no cuando revisas el dashboard
-Una matriz de 7 eventos por 2 canales (correo y Slack) en Ajustes › Notificaciones. Marca las casillas que quieras y se guardan al instante.
+Una matriz de eventos por canal (correo, Slack y Microsoft Teams) en Ajustes › Notificaciones. Marca las casillas que quieras y se guardan al instante.
 
 ### Beneficios clave:
 - **Correo al dueño de la cuenta:** vista, aprobada, rechazada, pago recibido, por vencer, pago vencido y equipo; vienen encendidos por default en aprobada/rechazada/pagada desde el primer día.
-- **Slack para todo el equipo:** conecta un Incoming Webhook y publica los mismos eventos en tu canal, con folio, cliente, total y link directo.
+- **Slack y Teams para todo el equipo:** conecta tu canal de Slack con Añadir a Slack, o el de Teams con su flujo, y publica los mismos eventos con folio, cliente, total y link directo.
 - **Sin ruido falso:** solo se dispara lo que de verdad marcaste; nada se postea "por si acaso".`,
             en: `## Find out the moment it happens, not when you check the dashboard
-A matrix of 7 events by 2 channels (email and Slack) under Settings › Notifications. Check the boxes you want and they save instantly.
+A matrix of events by channel (email, Slack and Microsoft Teams) under Settings › Notifications. Check the boxes you want and they save instantly.
 
 ### Key benefits:
 - **Email to the account owner:** viewed, approved, rejected, payment received, about to expire, overdue, and team; approved/rejected/paid come on by default from day one.
-- **Slack for the whole team:** connect an Incoming Webhook and post the same events to your channel, with folio, client, total, and a direct link.
+- **Slack and Teams for the whole team:** connect your Slack channel with Add to Slack, or your Teams channel with its flow, and post the same events with folio, client, total, and a direct link.
 - **No false noise:** only what you actually checked fires; nothing gets posted "just in case".`
         },
         area: 'finanzas',
@@ -618,11 +624,14 @@ Cord Workflows convierte lo que pasa en una venta en el siguiente paso, sin escr
 - **Acciones reales:** crear una tarea, avisar al equipo por correo, escribirle al cliente con tu marca, caducar una cotización, anular una factura, mandar los datos a una URL, publicar en Slack o Teams, o dejar una nota en el Deal de HubSpot.
 - **Historial de cada ejecución:** qué se disparó, cuándo, con qué resultado y el error legible cuando algo falla. Un paso que falla se reintenta; la entrega es al menos una vez.
 - **HubSpot en los dos sentidos:** tus clientes se mantienen al día con Empresas y Contactos, y cada cotización crea y mueve su Deal por el pipeline. Mover un Deal en HubSpot no cambia nada en Cord.
-- **Slack, Teams, WhatsApp, Make y n8n:** avisos en tu canal, WhatsApp al cliente con tu plantilla aprobada por Meta, escenarios de Make que reciben los eventos de Cord, y el nodo de Cord para n8n con su disparador propio.
+- **Apps de Cord en Zapier y Make, sin llaves:** se conectan con un clic en una pantalla de Cord, con disparadores instantáneos, acciones y búsquedas. Cada conexión se puede revocar desde Ajustes.
+- **Slack con Añadir a Slack:** eliges el canal en Slack y listo, sin copiar URLs. Teams publica tarjetas en tu canal y WhatsApp le escribe al cliente con tu plantilla aprobada por Meta.
+- **Nodo de Cord para n8n:** se instala desde Community Nodes como **n8n-nodes-cord**, con su disparador que registra el webhook y verifica la firma.
+- **La barra superior muestra tus apps conectadas:** los logos de las que usas y el acceso a las demás, sin salir de la pantalla.
 - **Para quien programa:** API pública v1, webhooks firmados con historial de entregas y servidor MCP.
 
 ### Qué sigue:
-Las apps de Cord dentro de los directorios de Zapier y Make, para conectarlas desde ahí sin configurar nada a mano.`,
+Cord en el directorio público de Zapier y Make, el nodo verificado para n8n Cloud y WhatsApp conectado con un botón, sin pasar por la consola de Meta.`,
             en: `## Let the close trigger the rest of the work
 Cord Workflows turns what happens in a sale into the next step, without writing code, and the integrations directory connects Cord with the tools your team already uses.
 
@@ -637,11 +646,14 @@ Cord Workflows turns what happens in a sale into the next step, without writing 
 - **Real actions:** create a task, email your team, email the client with your branding, expire a quote, void an invoice, send the data to a URL, post to Slack or Teams, or add a note to the HubSpot Deal.
 - **History for every run:** what fired, when, with what result, and a readable error when something fails. A failed step is retried; delivery is at least once.
 - **HubSpot both ways:** your clients stay in sync with Companies and Contacts, and every quote creates and moves its Deal through the pipeline. Moving a Deal in HubSpot changes nothing in Cord.
-- **Slack, Teams, WhatsApp, Make and n8n:** alerts in your channel, WhatsApp to the client with your Meta-approved template, Make scenarios that receive Cord events, and the Cord node for n8n with its own trigger.
+- **Cord apps on Zapier and Make, without keys:** connect with one click on a Cord screen, with instant triggers, actions and searches. Each connection can be revoked from Settings.
+- **Slack with Add to Slack:** pick the channel in Slack and you are done, with no URLs to copy. Teams posts cards to your channel and WhatsApp messages the client with your Meta-approved template.
+- **Cord node for n8n:** install it from Community Nodes as **n8n-nodes-cord**, with a trigger that registers its webhook and verifies the signature.
+- **The top bar shows your connected apps:** the logos of the ones you use and quick access to the rest, without leaving the screen.
 - **For developers:** public API v1, signed webhooks with delivery history, and an MCP server.
 
 ### What's next:
-Cord apps inside the Zapier and Make directories, so you can connect them from there without any manual setup.`
+Cord in the public Zapier and Make directories, the verified node for n8n Cloud, and WhatsApp connected with a button, without going through Meta's console.`
         },
         area: 'cotizaciones',
         status: 'live',

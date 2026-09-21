@@ -64,6 +64,7 @@ No confíes en la forma anidada `error.code` / `error.message` para parsear la r
 - `invalid_json`: El cuerpo de tu petición `POST` no es JSON válido, o no se envió `Content-Type: application/json`.
 - `invalid_request`: Fallan las validaciones de negocio (falta un campo, un descuento fuera de rango, una cotización sin cliente válido). El campo `error` explica la razón exacta.
 - `missing_key` / `invalid_key`: Falta el header `Authorization: Bearer`, o la llave no existe / fue revocada.
+- `token_expired`: La credencial de una conexión autorizada (Zapier, Make) venció. La app la renueva sola con su refresh token.
 - `insufficient_scope`: Tu llave no tiene el alcance necesario (una llave de solo lectura intentó escribir, o una Publishable Key intentó una ruta fuera de su lista permitida).
 - `not_found`: El recurso solicitado no existe en tu organización.
 - `subscription_required`: La capacidad requiere un plan superior. La respuesta incluye `plan` (el actual) y `plan_required`.

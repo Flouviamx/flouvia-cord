@@ -40,6 +40,10 @@ Si vas a usar Cord programáticamente:
 curl https://cordhq.app/api/v1/me -H "Authorization: Bearer sk_test_tu_llave"
 ```
 
+## Paso 6: Automatiza y conecta tus apps
+- En **Workflows** crea tu primer workflow desde una de las ideas: por ejemplo, avisar al equipo cuando un cliente aprueba. Es uno de los pasos de la lista **Configura Cord**.
+- En **Ajustes › Integraciones** conecta las herramientas que ya usas. Slack, Zapier y Make se conectan con un clic, sin copiar llaves ni URLs; las apps conectadas aparecen en la barra superior.
+
 ## ¿Qué sigue?
 - [Configurar Webhooks](/soporte/configurar-webhooks)
 - [Invitar a tu equipo](/soporte/invitar-miembros-roles)

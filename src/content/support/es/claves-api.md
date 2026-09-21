@@ -37,6 +37,10 @@ Al crear una llave eliges su modo:
 - **Lectura (`read`):** consulta cotizaciones, clientes, productos y cartera.
 - **Escritura (`write`):** además puede crear cotizaciones, clientes y productos.
 
+### Conexiones autorizadas
+
+Zapier y Make no usan llaves: se conectan con un clic en una pantalla de Cord. Cada conexión aparece en la misma lista como **Conexión autorizada**, con el nombre de la app, y no cuenta contra el número de llaves de tu plan. Para cortar el acceso de una app, revoca su conexión igual que una llave; la app te pedirá volver a autorizarla.
+
 ### Rotación de Llaves
 
 No hay rotación "en sitio" con periodo de gracia. Si una llave se filtró (ej. se subió por error a GitHub):

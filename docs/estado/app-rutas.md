@@ -19,7 +19,10 @@ están conectadas y cuáles se pueden conectar, sin salir de la pantalla actual.
 - Solo se monta para quien tiene el permiso de **ajustes**: a quien no puede
   conectar nada, un botón "Conectar" es un callejón.
 - Las conectadas asoman su logo en el propio botón, así que el estado se ve sin
-  abrir el menú. Lo que todavía no existe dice "Próximamente" y lleva al
+  abrir el menú: hasta dos logos, en el orden del catálogo. Cuenta como conectada
+  una app en estado `on` o `warn`; HubSpot "desconectada" es `off` (antes contaba
+  como `warn` y aparecía siempre), y Zapier y Make son `on` cuando la organización
+  tiene una autorización OAuth viva (`connectedOAuthApps()`). Lo que todavía no existe dice "Próximamente" y lleva al
   directorio, en vez de ofrecer un botón que no lleva a ningún lado (regla 15).
 
 

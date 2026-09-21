@@ -29,10 +29,16 @@ Cord manages the sync: clients with Companies and Contacts both ways, and every 
 
 ## Zapier and Make
 
-Both platforms talk to Cord's public API:
+Both platforms talk to Cord's public API and connect through **OAuth 2.0**: the person authorizes on a Cord screen and there are no keys to create or paste. Each authorization becomes a short-lived credential that Cord renews with a refresh token, and it shows up in **Settings › Developer mode › API** as an **Authorized connection**.
 
-- **Events out:** a webhook subscription created with that integration's API key. They are created and deleted automatically when you turn the Zap or scenario on and off.
-- **Actions into Cord:** the `/api/v1` endpoints with the secret key.
+- **Events out:** a webhook subscription created with that connection's credential. They are created and deleted automatically when you turn the Zap or scenario on and off.
+- **Actions into Cord:** the `/api/v1` endpoints with that same credential.
+
+Cord's OAuth clients are registered by Cord (today: Zapier and Make); there is no open registration for third-party applications. For your own server, use a secret key.
+
+## n8n
+
+The `n8n-nodes-cord` community node (on npm) uses a secret key in its **Cord API** credential: every n8n install has its own return address, so it does not connect through OAuth. Its trigger registers the webhook when the workflow is activated and verifies the `X-Cord-Signature-V1` signature.
 
 Subscriptions created through the API have their own allowance of 100 per organization, separate from the endpoints your team configures. The details are in [Webhooks](/en/docs/desarrolladores/herramientas/webhooks).
 

@@ -37,6 +37,10 @@ When you create a key you choose its mode:
 - **Read (`read`):** query quotes, clients, products, and receivables.
 - **Write (`write`):** can also create quotes, clients, and products.
 
+### Authorized connections
+
+Zapier and Make do not use keys: they connect with one click on a Cord screen. Each connection shows up in the same list as an **Authorized connection**, with the app's name, and does not count toward your plan's number of keys. To cut an app's access, revoke its connection just like a key; the app will ask you to authorize it again.
+
 ### Key Rotation
 
 There is no in-place rotation with a grace period. If a key leaks (e.g. accidentally pushed to GitHub):

@@ -6,6 +6,30 @@
 
 ---
 
+✅ **Zapier y Make sin llaves en producción, "Añadir a Slack" y n8n en npm (21 sep 2026)**
+   • **Zapier, probado de verdad.** La prueba con Zapier destapó dos bugs que curl no ve: la CSP
+     `form-action` bloqueaba el redirect del consentimiento (Chrome lo aplica también al redirect
+     que sigue a un POST) y la app no mandaba el `code_verifier` de PKCE al canjear. Corregidos,
+     probados en producción con un Chrome real vía CDP, y las versiones 1.0.x con llave borradas.
+   • **Make publicada** (`cord-78vg5m`, us2). `www.make.com/oauth/cb/app`, la dirección que
+     documenta Make, no encuentra los intentos de cuentas en otras zonas ("Resource not found"):
+     `pickReturnTo()` regresa al dominio de origen (su `Referer`) si esa dirección está registrada
+     para la app, y el código sigue atado al `redirect_uri` pedido. De paso: la base de la app se
+     escribe con PUT aunque su documentación diga POST, publicar la app no publica sus módulos
+     (cada uno tiene su visibilidad) y Make recolorea el logo (negro → blanco, transparente → tema).
+   • **Slack con un clic.** App creada con el CLI de Slack y la API de manifiestos (Slack no acepta
+     `incoming-webhook` sin `bot_user`), credenciales llevadas a Vercel desde un archivo local sin
+     pasar por el chat, distribución pública activada.
+   • **n8n en npm** (`n8n-nodes-cord`). El revisor de n8n pedía `dist/` y la dependencia par
+     `n8n-workflow`; el nodo sigue en JavaScript plano y el build solo copia. Espejo público
+     `Flouviamx/n8n-nodes-cord` con `publish.yml`, porque la verificación exige constancia de origen.
+   • **Mercado Pago contra su SDK oficial** (3.6.1): la firma omite `request-id` cuando no llega y no
+     tiene ventana de tiempo (los reintentos llegan con la firma original), y el `data.id` firmado es
+     el de la URL en minúsculas. La autorización, el canje y las preferencias ya coincidían.
+   • **Barra superior honesta.** HubSpot desconectada contaba como "requiere reconectar" y salía
+     siempre; Zapier y Make nunca contaban. Ahora muestra hasta dos apps de verdad conectadas.
+     Teams usa el favicon oficial.
+
 ✅ **Cord como proveedor OAuth 2.0; Zapier sin llaves (21 sep 2026)**
    • **Zapier pedía crear y pegar una llave secreta.** Ahora la persona pulsa Conectar, elige el
      espacio de trabajo en una pantalla de Cord y autoriza. Authorization code con PKCE S256,
