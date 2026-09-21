@@ -9,7 +9,7 @@ La app de Cord para Make te deja arrancar un escenario cuando una cotización av
 
 ### Conectarla
 
-1. En Cord abre **Ajustes › Integraciones › Make** y pulsa **Abrir Cord en Make**. Acepta la invitación.
+1. En Cord abre **Ajustes › Integraciones › Make** y pulsa **Abrir Cord en Make**. Pulsa **Instalar**, elige tu organización de Make y confirma. Make solo deja instalar apps a quien es Administrador, Propietario o Desarrollador de aplicaciones de esa organización; si no lo eres, pídeselo a quien lo sea.
 2. En Make, dentro de un escenario, agrega un módulo de Cord y pulsa **Create a connection** › **Save**.
 3. En la pantalla de Cord elige el espacio de trabajo y pulsa **Autorizar**. No hay llaves que crear ni que pegar.
 

@@ -9,7 +9,7 @@ The Cord app for Make lets you start a scenario when a quote moves forward and c
 
 ### Connect it
 
-1. In Cord open **Settings › Integrations › Make** and click **Open Cord on Make**. Accept the invitation.
+1. In Cord open **Settings › Integrations › Make** and click **Open Cord on Make**. Click **Install**, pick your Make organization and confirm. Make only lets Admins, Owners or App Developers of that organization install apps; if you are not one, ask someone who is.
 2. In Make, inside a scenario, add a Cord module and click **Create a connection** › **Save**.
 3. On the Cord screen pick the workspace and click **Authorize**. There are no keys to create or paste.
 
