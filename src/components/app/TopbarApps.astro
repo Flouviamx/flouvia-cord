@@ -40,9 +40,7 @@ const ACCION: Record<IntegrationState, string> = {
             aria-haspopup="menu" aria-expanded="false">
         {CONECTADAS.length > 0 && (
             <span class="tb-apps-logos" aria-hidden="true">
-                {CONECTADAS.slice(0, 2).map(({ app }) => (
-                    <img src={app.logo} alt="" width="16" height="16" loading="lazy" />
-                ))}
+                <img src={CONECTADAS[0].app.logo} alt="" width="18" height="18" loading="lazy" />
             </span>
         )}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -77,16 +75,22 @@ const ACCION: Record<IntegrationState, string> = {
 
 <style>
     .tb-apps-wrap { position: relative; display: flex; }
-    /* El botón crece cuando hay apps conectadas: los logos van DENTRO, como en
-       el chip de Stripe, para que el estado se vea sin abrir nada. */
-    .tb-apps { display: inline-flex; align-items: center; gap: 6px; }
-    /* `.tb-icon` fija 36px de ancho — con los logos dentro hay que soltarlo, o
-       se aplastan contra el icono. Alto y radio se conservan. */
-    .tb-apps:has(.tb-apps-logos) { width: auto; padding: 0 10px; background: var(--color-bg-soft); }
-    /* El logo va SUELTO, sin caja blanca ni anillo: un favicon de marca ya trae
-       su propia forma, y enmarcarlo lo convertía en una estampilla con borde. */
-    .tb-apps-logos { display: inline-flex; align-items: center; gap: 4px; }
-    .tb-apps-logos img { width: 17px; height: 17px; border-radius: 4px; object-fit: contain; }
+    /* Se comporta como cualquier otro icono de la topbar: fondo transparente y
+       el gris suave SOLO al pasar el cursor. Con un fondo permanente, el botón
+       se leía como una caja enmarcada al lado de iconos que no la tienen.
+       `.tb-icon` fija 36px de ancho; con el logo dentro hay que soltarlo. */
+    .tb-apps { display: inline-flex; align-items: center; gap: 7px; }
+    .tb-apps:has(.tb-apps-logos) { width: auto; padding: 0 9px; }
+    /* El logo va suelto: un favicon de marca ya trae su forma, y enmarcarlo lo
+       convertía en una estampilla. El punto dice "hay algo conectado" sin
+       repetir logos que a 17px se vuelven manchas. */
+    .tb-apps-logos { position: relative; display: inline-flex; align-items: center; }
+    .tb-apps-logos img { width: 18px; height: 18px; border-radius: 5px; object-fit: contain; }
+    .tb-apps-logos::after {
+        content: ''; position: absolute; top: -1px; right: -3px;
+        width: 7px; height: 7px; border-radius: 50%;
+        background: var(--color-ok); box-shadow: 0 0 0 2px var(--surface);
+    }
 
     .tb-apps-panel {
         position: absolute; top: calc(100% + 10px); right: 0; z-index: 900;
@@ -121,9 +125,9 @@ const ACCION: Record<IntegrationState, string> = {
     .tb-apps-foot:hover { text-decoration: underline; }
 
     html[data-theme="dark"] .tb-apps-panel { box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.6); }
-    /* En oscuro, un logo monocromo oscuro se pierde contra el chip: una base
-       clara mínima solo donde hace falta, sin convertirlo en caja. */
-    html[data-theme="dark"] .tb-apps-logos img { background: rgba(255, 255, 255, 0.92); padding: 1px; }
+    /* En oscuro, el aro del punto tiene que ser del color de la topbar, no del
+       de una tarjeta, o se ve un halo claro alrededor. */
+    html[data-theme="dark"] .tb-apps-logos::after { box-shadow: 0 0 0 2px #181e28; }
 
     @media (max-width: 880px) {
         .tb-apps-panel { position: fixed; top: auto; bottom: 12px; right: 12px; left: 12px; width: auto; }
