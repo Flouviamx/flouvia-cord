@@ -5,22 +5,19 @@ category: "Account & Team"
 order: 21
 ---
 
-Cord posts to Slack through an **Incoming Webhook**: a URL Slack gives you for a specific channel.
+Cord posts your alerts to the Slack channel you choose.
 
-### Create the URL in Slack
+### Connect it
 
-1. Go to [api.slack.com/apps](https://api.slack.com/apps) and create an app from scratch for your workspace.
-2. Open **Incoming Webhooks** and turn them on.
-3. Click **Add New Webhook to Workspace**, pick the channel for the alerts, and authorize.
-4. Copy the URL that starts with `https://hooks.slack.com/services/`.
+1. Go to **Settings › Integrations › Slack** and click **Add to Slack**.
+2. In Slack pick the channel for the alerts and click **Allow**.
+3. Back in Cord, click **Send test** to confirm the message arrives.
 
-### Paste it in Cord
+Slack adds an app called **Cord** to your workspace, which signs the messages. If your workspace restricts app installs, a Slack admin will need to approve it.
 
-1. Go to **Settings › Integrations › Slack**.
-2. Paste the URL and click **Save**.
-3. Use **Send test** to confirm the message reaches the channel.
+### With your own webhook
 
-Cord only accepts URLs from `hooks.slack.com`.
+If you prefer messages to show your own Slack app's name, open **Use your own webhook** on the same card, paste an Incoming Webhook URL (it starts with `https://hooks.slack.com/services/`) and click **Save**.
 
 ### Which alerts you get
 
@@ -30,4 +27,4 @@ You can also send your own messages from a workflow with the **Send a Slack mess
 
 ### Change the channel or disconnect
 
-To change channels, create another webhook in Slack and paste the new URL. To stop the alerts, clear the URL and save: the connection goes back to not configured and Cord stops posting.
+Click **Change channel** to pick another one in Slack, or **Disconnect** so Cord stops posting.

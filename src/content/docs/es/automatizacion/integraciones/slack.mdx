@@ -1,7 +1,7 @@
 ---
 title: "Slack"
-description: "Cómo conectar un canal de Slack con Cord mediante un Incoming Webhook, activar los avisos por evento, qué contiene cada mensaje, usar Slack en workflows y resolver problemas."
-lastUpdated: "2026-09-15"
+description: "Cómo conectar un canal de Slack con Cord con Añadir a Slack o un webhook propio, activar los avisos por evento, qué contiene cada mensaje, usar Slack en workflows y resolver problemas."
+lastUpdated: "2026-09-21"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -13,7 +13,7 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 
 ## Cómo funciona
 
-Cord publica en Slack con un **Incoming Webhook**: una URL que Slack genera para un canal específico. Cord no instala una app en tu Slack ni lee tus mensajes; solo puede publicar en ese canal.
+Cord publica en Slack con un **Incoming Webhook**: una dirección que Slack genera para un canal específico. Con **Añadir a Slack** eliges el canal en Slack y Cord recibe esa dirección sola; Cord no lee tus mensajes y solo puede publicar en ese canal.
 
 Hay dos formas de recibir mensajes, y puedes usar las dos:
 
@@ -23,30 +23,27 @@ Hay dos formas de recibir mensajes, y puedes usar las dos:
 | **Cuándo** | En los eventos que marques en Ajustes › Notificaciones. | Con cualquiera de los 41 disparadores, con condiciones y esperas. |
 | **Dónde se configura** | **Ajustes › Notificaciones** | **Workflows** |
 
-## 1. Crea la URL en Slack
-
-<Steps>
-1. Entra a **api.slack.com/apps** con tu cuenta de Slack y pulsa **Create New App › From scratch**. Ponle un nombre, por ejemplo "Cord", y elige tu espacio de trabajo.
-2. En el menú de la app abre **Incoming Webhooks** y actívalos.
-3. Pulsa **Add New Webhook to Workspace**, elige el canal donde quieres los avisos y autoriza.
-4. Copia la URL. Empieza con `https://hooks.slack.com/services/`.
-</Steps>
-
-El nombre y el ícono que le pongas a la app en Slack son los que verá tu equipo en cada mensaje.
-
-Si tu espacio de trabajo restringe la instalación de apps, un administrador de Slack tendrá que aprobarla.
-
-## 2. Pégala en Cord
+## 1. Conecta tu canal
 
 <Steps>
 1. Ve a **Ajustes › Integraciones** y toca **Slack**.
-2. Pega la URL en el campo del webhook y pulsa **Guardar**. El estado cambia a **Conectado**.
-3. Pulsa **Enviar prueba**. En el canal debe aparecer un mensaje de una cotización de prueba "COT-PRUEBA". En Cord verás "Mensaje enviado a Slack".
+2. Pulsa **Añadir a Slack**. Se abre Slack: elige el canal donde quieres los avisos y pulsa **Permitir**.
+3. Al volver, la tarjeta dice **Conectado a #tu-canal**. Pulsa **Enviar prueba**: en el canal debe aparecer un mensaje de una cotización de prueba "COT-PRUEBA".
 </Steps>
 
-Guarda antes de probar: la prueba usa la URL guardada, no la que está escrita en el campo.
+Slack agrega a tu espacio de trabajo una app llamada **Cord**; es la que firma los mensajes. Si tu espacio restringe la instalación de apps, un administrador de Slack tendrá que aprobarla.
 
-## 3. Activa los avisos
+### Alternativa: un webhook propio
+
+Si prefieres que los mensajes salgan con el nombre e ícono de tu propia app de Slack, abre **Usar un webhook propio** en la misma tarjeta:
+
+<Steps>
+1. En **api.slack.com/apps** crea una app desde cero, abre **Incoming Webhooks**, actívalos y pulsa **Add New Webhook to Workspace** para elegir el canal.
+2. Copia la URL (empieza con `https://hooks.slack.com/services/`), pégala en Cord y pulsa **Guardar**.
+3. Pulsa **Enviar prueba**. La prueba usa la URL guardada, no la que está escrita en el campo.
+</Steps>
+
+## 2. Activa los avisos
 
 Conectar Slack **no activa ningún aviso por sí solo**. Ve a **Ajustes › Notificaciones** y marca la columna de Slack en los eventos que quieras:
 
@@ -83,8 +80,8 @@ Esta acción publica en el mismo canal y funciona aunque los avisos de Notificac
 
 ## Cambiar de canal o desconectar
 
-- **Cambiar de canal:** crea otro webhook en Slack para el canal nuevo, pega la URL en Cord y guarda.
-- **Desconectar:** borra la URL del campo y pulsa **Guardar**. Cord deja de publicar y el estado vuelve a **Sin conectar**. Los workflows con la acción de Slack empezarán a fallar con "Conecta Slack en Ajustes › Integraciones para usar esta acción."
+- **Cambiar de canal:** pulsa **Cambiar de canal** en la tarjeta y elige otro en Slack. Con webhook propio, crea otro en Slack y pega la URL nueva.
+- **Desconectar:** pulsa **Desconectar** en la tarjeta (con webhook propio, borra la URL y guarda). Cord deja de publicar y el estado vuelve a **Sin conectar**. Los workflows con la acción de Slack empezarán a fallar con "Conecta Slack en Ajustes › Integraciones para usar esta acción."
 - **Revocar desde Slack:** si borras el webhook o la app en Slack, la URL deja de funcionar al instante, aunque siga guardada en Cord.
 
 Cord solo puede publicar en **un canal** a la vez. Si quieres avisos en varios canales, una opción es usar [Make](/docs/automatizacion/integraciones/make) con los webhooks de Cord.

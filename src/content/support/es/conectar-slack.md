@@ -5,22 +5,19 @@ category: "Cuenta y Equipo"
 order: 21
 ---
 
-Cord publica en Slack con un **Incoming Webhook**: una URL que Slack te da para un canal específico.
+Cord publica tus avisos en el canal de Slack que elijas.
 
-### Crear la URL en Slack
+### Conectarlo
 
-1. Entra a [api.slack.com/apps](https://api.slack.com/apps) y crea una app desde cero para tu espacio de trabajo.
-2. Abre **Incoming Webhooks** y actívalos.
-3. Pulsa **Add New Webhook to Workspace**, elige el canal donde quieres los avisos y autoriza.
-4. Copia la URL que empieza con `https://hooks.slack.com/services/`.
+1. Ve a **Ajustes › Integraciones › Slack** y pulsa **Añadir a Slack**.
+2. En Slack elige el canal donde quieres los avisos y pulsa **Permitir**.
+3. De vuelta en Cord, pulsa **Enviar prueba** para confirmar que el mensaje llega.
 
-### Pegarla en Cord
+Slack agrega a tu espacio una app llamada **Cord**, que es la que firma los mensajes. Si tu espacio restringe la instalación de apps, un administrador de Slack tendrá que aprobarla.
 
-1. Ve a **Ajustes › Integraciones › Slack**.
-2. Pega la URL y pulsa **Guardar**.
-3. Usa **Enviar prueba** para confirmar que el mensaje llega al canal.
+### Con un webhook propio
 
-Cord solo acepta URLs de `hooks.slack.com`.
+Si prefieres que los mensajes salgan con el nombre de tu propia app de Slack, abre **Usar un webhook propio** en la misma tarjeta, pega una URL de Incoming Webhook (empieza con `https://hooks.slack.com/services/`) y pulsa **Guardar**.
 
 ### Qué avisos llegan
 
@@ -30,4 +27,4 @@ Además puedes mandar mensajes propios desde un workflow con la acción **Enviar
 
 ### Cambiar de canal o desconectar
 
-Para cambiar de canal, crea otro webhook en Slack y pega la URL nueva. Para dejar de recibir avisos, borra la URL y guarda: la conexión queda sin configurar y Cord deja de publicar.
+Pulsa **Cambiar de canal** para elegir otro en Slack, o **Desconectar** para que Cord deje de publicar.

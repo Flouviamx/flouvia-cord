@@ -52,7 +52,11 @@ para decir a dónde llegan los avisos; guardar una URL a mano los borra. Código
 `src/lib/integraciones/slack-oauth.ts` y `src/pages/api/integraciones/slack/`;
 el state reusa `integracion_oauth_estados`. Se activa con `SLACK_CLIENT_ID` y
 `SLACK_CLIENT_SECRET`; sin ellas la tarjeta solo ofrece pegar un webhook propio.
-La app de Slack debe registrar `https://cordhq.app/api/integraciones/slack/callback`.
+La app de Slack (`A0C307S6ENB`, workspace flouvia) se creó el 2026-09-21 desde
+`integrations/slack/manifest.json` con la API de manifiestos; su manifiesto declara el
+usuario bot porque Slack no acepta `incoming-webhook` sin él. Credenciales en
+`integrations/slack/.env` (ignorado) y en Vercel. Sin distribución pública activada
+solo se puede instalar en el workspace dueño de la app.
 
 ## Zapier y Make
 

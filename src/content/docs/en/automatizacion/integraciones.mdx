@@ -33,7 +33,7 @@ Tap a card to open that app's page. Everything about the integration lives there
 | App | Category | What it is for | How it connects | Guide |
 |---|---|---|---|---|
 | **HubSpot** | CRM | Clients, contacts and Deals synced with your quotes. | **Connect HubSpot** button and authorization in HubSpot. | [Connect](/en/docs/automatizacion/integraciones/hubspot), [What syncs](/en/docs/automatizacion/integraciones/hubspot-sincronizacion), [Stages](/en/docs/automatizacion/integraciones/hubspot-etapas), [Troubleshooting](/en/docs/automatizacion/integraciones/hubspot-problemas) |
-| **Slack** | Communication | An alert in your channel when a quote moves forward, plus custom messages from workflows. | Paste a Slack Incoming Webhook URL. | [Slack](/en/docs/automatizacion/integraciones/slack) |
+| **Slack** | Communication | An alert in your channel when a quote moves forward, plus custom messages from workflows. | **Add to Slack** button and pick the channel (or paste your own webhook). | [Slack](/en/docs/automatizacion/integraciones/slack) |
 | **Microsoft Teams** | Communication | A card in your channel when a quote moves forward, and your own messages from workflows. | Paste the channel's Power Automate flow URL. | [Connect Teams](/en/support/conectar-teams) |
 | **WhatsApp Business** | Communication | Send clients reminders and alerts on the channel they actually open, from your workflows. | Paste the phone number ID and a Meta token. | [Connect WhatsApp](/en/support/conectar-whatsapp) |
 | **Make** | Automation | Receive Cord events in your scenarios and create or update Cord data from Make. | Accept the invitation to the Cord app on Make and authorize with one click. | [Make](/en/docs/automatizacion/integraciones/make) |
@@ -59,7 +59,7 @@ Integrations belong to the **organization**, not a person: if whoever connected 
 
 ## Security
 
-- **Cord never asks for another tool's password.** HubSpot is authorized on HubSpot's own page; Slack, Teams and n8n use URLs or keys you generate and can revoke, and Zapier and Make are authorized on a Cord screen that you can also revoke.
+- **Cord never asks for another tool's password.** HubSpot and Slack are authorized on their own page; Teams and n8n use URLs or keys you generate and can revoke, and Zapier and Make are authorized on a Cord screen that you can also revoke.
 - **Access credentials are stored encrypted** and only used for what each integration describes.
 - **Disconnecting really cuts access.** For HubSpot, Cord also revokes its authorization in your account.
 - **Webhook URLs are secrets.** Anyone with your Slack or Make webhook URL can post to it; do not share them.
