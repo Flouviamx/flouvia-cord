@@ -703,6 +703,13 @@ const securityHeaders = async (context: any, next: any) => {
     const isEmbed = path === "/embed" || path.startsWith("/embed/");
     const isOpsPage = path === "/ops" || path.startsWith("/ops/");
     const isOpsApi = path === "/api/ops" || path.startsWith("/api/ops/");
+    // El consentimiento OAuth termina en un redirect a la app externa, y esa app lo abre en una ventana que necesita su opener.
+    const isOAuthFlow = path === "/oauth/authorize" || path === "/api/oauth/authorize"
+        || (context.url.searchParams.get("redirect_url") ?? "").startsWith("/oauth/authorize");
+    const oauthFormTarget = response.headers.get("x-cord-form-action") ?? "";
+    secureRes.headers.delete("x-cord-form-action");
+    const extraFormAction = path === "/oauth/authorize" && /^(https:\/\/[a-z0-9.-]+|http:\/\/(localhost|127\.0\.0\.1))(:\d+)?$/i.test(oauthFormTarget)
+        ? ` ${oauthFormTarget}` : "";
 
     if (!isEmbed) {
         // 'unsafe-inline' se mantiene (decenas de <script is:inline> en el
@@ -726,7 +733,7 @@ const securityHeaders = async (context: any, next: any) => {
             "frame-src 'self' https://accounts.google.com https://appleid.apple.com https://js.stripe.com https://hooks.stripe.com; " +
             "frame-ancestors 'self'; " +
             "base-uri 'self'; " +
-            "form-action 'self' https://accounts.google.com https://appleid.apple.com; " +
+            `form-action 'self' https://accounts.google.com https://appleid.apple.com${extraFormAction}; ` +
             "object-src 'none';"
         );
         secureRes.headers.set("X-Frame-Options", "SAMEORIGIN");
@@ -765,7 +772,7 @@ const securityHeaders = async (context: any, next: any) => {
         secureRes.headers.set("Cache-Control", "private, no-store, max-age=0");
         secureRes.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
     }
-    secureRes.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    secureRes.headers.set("Cross-Origin-Opener-Policy", isOAuthFlow ? "unsafe-none" : "same-origin-allow-popups");
     if (isOpsPage || isOpsApi) {
         // Ops usa un layout aislado sin analytics, iframes, fuentes ni scripts
         // externos. CSP mucho más cerrada que la landing (que aún necesita

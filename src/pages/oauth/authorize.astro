@@ -47,6 +47,7 @@ if (!fatal && !userId) {
 }
 
 const orgs = !fatal && userId ? await authorizableOrgs(userId) : [];
+if (!fatal && redirectUri && orgs.length) Astro.response.headers.set('X-Cord-Form-Action', new URL(redirectUri).origin);
 const preferred = currentActiveOrgId();
 const selected = orgs.find((o) => o.id === preferred) ?? orgs[0] ?? null;
 const puede = scope === 'write' ? ['write_1', 'write_2'] : ['read'];

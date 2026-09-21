@@ -107,6 +107,14 @@ exacto — puro y probado en `test/oauth-core.test.ts`), `src/lib/oauth-provider
   formulario sin `Origin` del endpoint de token, que es como lo llama cualquier
   servidor. El CSRF de toda escritura sigue en `src/middleware.ts` con Origin
   obligatorio y exenciones declaradas (`csrf-policy.ts`).
+- **CSP y COOP del flujo.** La CSP global limita `form-action`, y Chrome la aplica
+  también al redirect que sigue al POST: sin excepción, "Autorizar" no hacía nada.
+  La página de consentimiento publica el origen del redirect ya validado
+  (`X-Cord-Form-Action`, header interno que el middleware consume y borra) y solo
+  ese origen se suma a `form-action`. El flujo (consentimiento, su POST y el login
+  con `redirect_url` hacia él) va con COOP `unsafe-none`: Zapier y Make abren la
+  autorización en una ventana y necesitan su `opener` al volver. Probado con un
+  Chrome real vía CDP, no con curl, que no aplica CSP.
 - Revocación: la conexión aparece en Ajustes › Modo desarrollador › API como
   "Conexión autorizada"; revocarla cierra la llave y el grant.
 
