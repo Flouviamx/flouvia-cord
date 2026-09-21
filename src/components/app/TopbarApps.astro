@@ -82,10 +82,11 @@ const ACCION: Record<IntegrationState, string> = {
     .tb-apps { display: inline-flex; align-items: center; gap: 6px; }
     /* `.tb-icon` fija 36px de ancho — con los logos dentro hay que soltarlo, o
        se aplastan contra el icono. Alto y radio se conservan. */
-    .tb-apps:has(.tb-apps-logos) { width: auto; padding: 0 9px 0 7px; background: var(--color-bg-soft); }
-    .tb-apps-logos { display: inline-flex; align-items: center; }
-    .tb-apps-logos img { width: 16px; height: 16px; border-radius: 5px; object-fit: contain; background: #fff; }
-    .tb-apps-logos img + img { margin-left: -5px; box-shadow: -1px 0 0 var(--surface); }
+    .tb-apps:has(.tb-apps-logos) { width: auto; padding: 0 10px; background: var(--color-bg-soft); }
+    /* El logo va SUELTO, sin caja blanca ni anillo: un favicon de marca ya trae
+       su propia forma, y enmarcarlo lo convertía en una estampilla con borde. */
+    .tb-apps-logos { display: inline-flex; align-items: center; gap: 4px; }
+    .tb-apps-logos img { width: 17px; height: 17px; border-radius: 4px; object-fit: contain; }
 
     .tb-apps-panel {
         position: absolute; top: calc(100% + 10px); right: 0; z-index: 900;
@@ -120,7 +121,9 @@ const ACCION: Record<IntegrationState, string> = {
     .tb-apps-foot:hover { text-decoration: underline; }
 
     html[data-theme="dark"] .tb-apps-panel { box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.6); }
-    html[data-theme="dark"] .tb-apps-logos img { background: rgba(255, 255, 255, 0.9); }
+    /* En oscuro, un logo monocromo oscuro se pierde contra el chip: una base
+       clara mínima solo donde hace falta, sin convertirlo en caja. */
+    html[data-theme="dark"] .tb-apps-logos img { background: rgba(255, 255, 255, 0.92); padding: 1px; }
 
     @media (max-width: 880px) {
         .tb-apps-panel { position: fixed; top: auto; bottom: 12px; right: 12px; left: 12px; width: auto; }
