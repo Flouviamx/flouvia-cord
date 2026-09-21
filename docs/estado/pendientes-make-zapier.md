@@ -1,6 +1,10 @@
 # Lo que falta para Make y Zapier
 
-> Checklist operativo al 2026-09-15. El código de las dos apps ya está listo y
+> Checklist operativo al 2026-09-21. Zapier quedó completo; lo de Make, Slack,
+> Mercado Pago, n8n y WhatsApp está paso a paso en la guía de activación
+> (https://claude.ai/artifact/TGdoKNjJb6kfQBxpRyBKUj).
+>
+> Originalmente al 2026-09-15. El código de las dos apps ya está listo y
 > probado en `integrations/make/` e `integrations/zapier/`; lo que falta son pasos
 > en las cuentas de Make y Zapier que solo puede hacer el dueño de esas cuentas.
 > Cuando termines cada bloque, avísale a Claude con la frase del final del bloque.
@@ -9,7 +13,7 @@
 
 | App | Estado del código | Estado en Cord hoy | Lo que falta |
 |---|---|---|---|
-| **Zapier** | App privada App246344; versión 1.1.0 con OAuth 2.0 + PKCE (llave de API retirada), 16 pruebas pasando | Tarjeta con link de invitación y "Conexión directa" | Logo, correo del dominio en el equipo; subir 1.1.0 con `CLIENT_ID` y `CLIENT_SECRET` (`integrations/zapier/.env`) |
+| **Zapier** | Listo. App privada App246344, solo la versión 1.1.0 (OAuth 2.0 + PKCE); las 1.0.x con llave se borraron. Probado de punta a punta el 2026-09-21 | Tarjeta con link de invitación y "Conexión directa" | Nada para usarla con el link. Opcional: directorio público (sección 5) |
 | **Make** | App con conexión OAuth 2.0 escrita y probada (8 pruebas), **nunca subida** a Make; cliente `make` ya registrado en Cord con sus credenciales en `.env` | Tarjeta "Con webhooks" (funciona con Webhooks + HTTP) | Token de API de Make y correr el deploy; confirmar el redirect que Make envía (`https://www.make.com/oauth/cb/app` según su documentación) |
 
 Nunca pegues tokens ni llaves en el chat. Van en archivos `.env` que no se suben a git.
@@ -18,50 +22,17 @@ Nunca pegues tokens ni llaves en el chat. Van en archivos `.env` que no se suben
 
 ## Zapier
 
-### 1. Logo e información de la app
+### Hecho (21 sep 2026)
 
-1. Entra a **developer.zapier.com** con la cuenta con la que se hizo `zapier-platform login`.
-2. Abre la integración **Cord** (App246344).
-3. En **Settings** (o **Branding**):
-   - **Logo:** PNG cuadrado de 256 x 256 px, fondo sólido, sin texto pequeño. Usa el isotipo de Cord.
-   - **Description:** "Cord es la plataforma de cierre comercial: de la propuesta al pago, todo en un solo link. Conecta tus cotizaciones, clientes, pagos y facturas con tus apps."
-   - **Homepage URL:** `https://cordhq.app`
-   - **Category:** Sales & CRM (o Invoices / Payment Processing).
-   - **Intended audience:** Private por ahora.
-4. Guarda.
+- Logo, descripción y homepage configurados; `contacto@cordhq.app` es Admin del equipo.
+- Link de invitación en `ZAPIER_INVITE_URL` (`src/lib/integraciones/catalogo.ts`).
+- Conexión por OAuth: la persona pulsa Sign in en Zapier, elige el espacio en la pantalla
+  de Cord y autoriza. Sin llaves. Primer grant real creado y usado.
+- Dos bugs encontrados en la prueba real, ya corregidos: la CSP `form-action` bloqueaba el
+  redirect del consentimiento, y la app no mandaba el `code_verifier` de PKCE al canjear.
+- Versiones 1.0.0, 1.0.1 y 1.0.2 (llave de API, cero usuarios) borradas.
 
-### 2. Equipo con correo del dominio
-
-Zapier pide que quien administra la app tenga un correo del mismo dominio que la homepage.
-
-1. En la integración, abre **Team**.
-2. Invita a `contacto@cordhq.app` como **Admin**.
-3. Acepta la invitación desde ese buzón.
-4. (Opcional) Deja tu correo personal como colaborador.
-
-### 3. Link de invitación
-
-1. En la integración, abre **Sharing** (en algunas cuentas se llama **Invite** o **Share**).
-2. Elige la versión **1.0.1**.
-3. Genera el **link público de invitación** (el que cualquiera con el link puede aceptar).
-4. Copia el link. **Este link sí lo puedes pegar en el chat**: no es un secreto.
-
-### 4. Prueba tú mismo
-
-1. Abre el link de invitación y acepta.
-2. En Cord, crea una llave secreta de **prueba** (`sk_test_…`) con escritura: Ajustes, Modo desarrollador, pestaña API.
-3. En Zapier, crea un Zap: disparador **Cord › Quote Approved**, pega la llave cuando la pida.
-4. Aprueba una cotización de prueba en Cord y confirma que el Zap se dispara.
-5. Agrega una acción **Cord › Create Task** en otro Zap y confirma que la tarea aparece en Cord.
-
-**Cuando termines, dile a Claude:** "ya tengo el link de invitación de Zapier: <link>". Claude hace:
-
-- poner el link en `ZAPIER_INVITE_URL` (`src/lib/integraciones/catalogo.ts`), con lo que la tarjeta pasa de "Próximamente" a "Con llave de API" y aparece el botón **Abrir Cord en Zapier**;
-- reescribir la página de Zapier en docs.cordhq.app con el paso a paso de la app;
-- escribir el artículo de soporte `conectar-zapier`;
-- probar, subir a `main` y verificar en producción.
-
-### 5. Directorio público de Zapier (después, cuando haya usuarios)
+### Siguiente, opcional: directorio público de Zapier
 
 No es necesario para que tus clientes la usen con el link. Para aparecer en el buscador de Zapier:
 
