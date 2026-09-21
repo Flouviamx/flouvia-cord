@@ -1,13 +1,32 @@
 ---
 title: "Connect Cord with Make"
-description: "Receive Cord events in a Make scenario and create or update Cord data from Make."
+description: "Accept the invitation to the Cord app on Make, authorize access with one click and create scenarios that start when something happens in Cord."
 category: "Developers"
 order: 4
 ---
 
-You can connect Cord with Make using two modules Make already includes: **Webhooks** to receive Cord events and **HTTP** to call the Cord API.
+The Cord app for Make lets you start a scenario when a quote moves forward and create or update Cord data from any other app.
 
-### Receive Cord events
+### Connect it
+
+1. In Cord open **Settings › Integrations › Make** and click **Open Cord on Make**. Accept the invitation.
+2. In Make, inside a scenario, add a Cord module and click **Create a connection** › **Save**.
+3. On the Cord screen pick the workspace and click **Authorize**. There are no keys to create or paste.
+
+You need access to **Settings** in that workspace to authorize. To cut the access, open **Settings › Developer mode › API** and revoke Make's connection (it shows as **Authorized connection**).
+
+### What you can do
+
+- **Instant trigger:** Watch Events, with the Cord events you choose.
+- **Actions:** create, update and get clients; create, get and send quotes; mark them paid and create tasks.
+- **Searches:** clients and quotes.
+- **Make an API Call:** any other operation in the Cord API.
+
+### Without installing the app
+
+You can also connect Cord with Make using two modules Make already includes: **Webhooks** to receive Cord events and **HTTP** to call the Cord API.
+
+#### Receive Cord events
 
 1. In your Make scenario, add the **Webhooks › Custom webhook** module, create a webhook, and copy the URL Make gives you.
 2. In Cord, turn on **Developer mode** (the switch at the bottom of the Settings index) and open the **Webhooks** tab in the Developers dock.
@@ -20,7 +39,7 @@ Make does not verify Cord's signature for you. Treat the webhook URL as a secret
 
 Each endpoint counts toward your plan's webhook limit.
 
-### Create or update data in Cord
+#### Create or update data in Cord
 
 1. In Cord, create a **secret key** with write permission from the **API** tab in the Developers dock.
 2. In Make, add the **HTTP › Make a request** module.

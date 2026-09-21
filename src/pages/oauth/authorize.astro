@@ -8,7 +8,8 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import { currentUserId, currentLocale, currentActiveOrgId } from '../../lib/context';
-import { buildRedirect, isValidCodeChallenge, parseScope, redirectAllowed } from '../../lib/oauth-core';
+import { buildRedirect, isValidCodeChallenge, parseScope, pickReturnTo, redirectAllowed } from '../../lib/oauth-core';
+import { log } from '../../lib/log';
 import { authorizableOrgs, getOAuthClient } from '../../lib/oauth-provider';
 import { t } from '../../i18n/app';
 
@@ -33,21 +34,30 @@ if (q.get('error')) fatal = q.get('error') === 'unknown_client' ? 'unknown_clien
 else if (!client) fatal = 'unknown_client';
 else if (!redirectAllowed(client.redirectUris, redirectUri)) fatal = 'bad_redirect';
 
-if (!fatal && client && redirectUri) {
-    if (q.get('response_type') !== 'code') return Astro.redirect(buildRedirect(redirectUri, { error: 'unsupported_response_type', state }));
-    if (!scope) return Astro.redirect(buildRedirect(redirectUri, { error: 'invalid_scope', state }));
+const returnTo = !fatal && client && redirectUri
+    ? pickReturnTo(client.redirectUris, redirectUri, q.get('return_to'), Astro.request.headers.get('referer'))
+    : null;
+
+if (!fatal && client && redirectUri && returnTo) {
+    if (q.get('response_type') !== 'code') return Astro.redirect(buildRedirect(returnTo, { error: 'unsupported_response_type', state }));
+    if (!scope) return Astro.redirect(buildRedirect(returnTo, { error: 'invalid_scope', state }));
     if (challenge && (!isValidCodeChallenge(challenge) || q.get('code_challenge_method') !== 'S256')) {
-        return Astro.redirect(buildRedirect(redirectUri, { error: 'invalid_request', state }));
+        return Astro.redirect(buildRedirect(returnTo, { error: 'invalid_request', state }));
     }
 }
 
 const userId = currentUserId();
 if (!fatal && !userId) {
-    return Astro.redirect(`/sign-in?redirect_url=${encodeURIComponent(Astro.url.pathname + Astro.url.search)}`);
+    const back = new URL(Astro.url.pathname + Astro.url.search, Astro.url.origin);
+    if (returnTo && returnTo !== redirectUri) back.searchParams.set('return_to', returnTo);
+    return Astro.redirect(`/sign-in?redirect_url=${encodeURIComponent(back.pathname + back.search)}`);
 }
 
 const orgs = !fatal && userId ? await authorizableOrgs(userId) : [];
-if (!fatal && redirectUri && orgs.length) Astro.response.headers.set('X-Cord-Form-Action', new URL(redirectUri).origin);
+if (!fatal && returnTo && orgs.length) {
+    Astro.response.headers.set('X-Cord-Form-Action', new URL(returnTo).origin);
+    if (returnTo !== redirectUri) log.info('oauth: regreso por dominio de origen', { route: 'oauth-authorize', client: client?.slug, to: new URL(returnTo).host });
+}
 const preferred = currentActiveOrgId();
 const selected = orgs.find((o) => o.id === preferred) ?? orgs[0] ?? null;
 const puede = scope === 'write' ? ['write_1', 'write_2'] : ['read'];
@@ -88,6 +98,7 @@ const appLogo = client?.dominio
                     <form method="post" action="/api/oauth/authorize" class="oa-form">
                         <input type="hidden" name="client_id" value={client.clientId} />
                         <input type="hidden" name="redirect_uri" value={redirectUri ?? ''} />
+                        {returnTo && returnTo !== redirectUri && <input type="hidden" name="return_to" value={returnTo} />}
                         <input type="hidden" name="scope" value={scope ?? 'read'} />
                         {state && <input type="hidden" name="state" value={state} />}
                         {challenge && <input type="hidden" name="code_challenge" value={challenge} />}

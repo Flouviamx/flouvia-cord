@@ -7,7 +7,7 @@ import SlackCard from './SlackCard.astro';
 import TeamsCard from './TeamsCard.astro';
 import WhatsAppCard from './WhatsAppCard.astro';
 import type { hubspotStatus } from '../../lib/integraciones/hubspot/service';
-import { ZAPIER_INVITE_URL, type IntegrationApp, type IntegrationState } from '../../lib/integraciones/catalogo';
+import { MAKE_INVITE_URL, ZAPIER_INVITE_URL, type IntegrationApp, type IntegrationState } from '../../lib/integraciones/catalogo';
 import { WORKFLOW_TEMPLATES } from '../../lib/workflows/templates';
 import { findAction } from '../../lib/workflows/catalog';
 import type { Step } from '../../lib/workflows/definition';
@@ -129,25 +129,29 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
     {app.slug === 'make' && (
         <Fragment>
             <div class="s-block">
-                <h3>{t(L, 'set.integ.make.recibir_titulo')}</h3>
+                <h3>{t(L, 'set.integ.make.conectar_titulo')}</h3>
                 <div class="s-body">
                     <ol class="ig-steps">
-                        <li>{t(L, 'set.integ.make.recibir_1')}</li>
-                        <li>{t(L, 'set.integ.make.recibir_2')}</li>
-                        <li>{t(L, 'set.integ.make.recibir_3')}</li>
+                        <li>{t(L, 'set.integ.make.paso_1')}</li>
+                        <li>{t(L, 'set.integ.make.paso_2')}</li>
+                        <li>{t(L, 'set.integ.make.paso_3')}</li>
                     </ol>
-                    <p class="ig-note">{t(L, 'set.integ.make.secreto')}</p>
-                    <div><a class="ig-btn" href="/app/wb/webhooks">{t(L, 'set.integ.make.ir_webhooks')}</a></div>
+                    <div class="ig-actions">
+                        {MAKE_INVITE_URL && <a class="ig-btn ig-btn-solid" href={MAKE_INVITE_URL} target="_blank" rel="noopener noreferrer">{t(L, 'set.integ.make.abrir')}</a>}
+                        <a class="ig-btn" href="/app/wb/api">{t(L, 'set.integ.make.ir_api')}</a>
+                    </div>
                 </div>
             </div>
             <div class="s-block">
-                <h3>{t(L, 'set.integ.make.crear_titulo')}</h3>
+                <h3>{t(L, 'set.integ.make.que_titulo')}</h3>
                 <div class="s-body">
-                    <ol class="ig-steps">
-                        <li>{t(L, 'set.integ.make.crear_1')}</li>
-                        <li>{t(L, 'set.integ.make.crear_2')}</li>
-                    </ol>
-                    <div><a class="ig-btn" href="/app/wb/api">{t(L, 'set.integ.make.ir_api')}</a></div>
+                    <ul class="ig-steps ig-list">
+                        <li>{t(L, 'set.integ.make.disparador')}</li>
+                        <li>{t(L, 'set.integ.make.acciones')}</li>
+                        <li>{t(L, 'set.integ.make.busquedas')}</li>
+                        <li>{t(L, 'set.integ.make.universal')}</li>
+                    </ul>
+                    <p class="ig-note">{t(L, 'set.integ.make.cupo')}</p>
                 </div>
             </div>
         </Fragment>

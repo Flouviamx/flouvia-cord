@@ -69,9 +69,9 @@ plataforma:
 
 El link de invitación de Zapier vive en `ZAPIER_INVITE_URL` (catálogo); sin él la
 tarjeta dice "Próximamente". Desde la versión 1.1.0 la app de Zapier se conecta
-por OAuth 2.0 (ver la sección siguiente). Make queda definido con OAuth 2.0 en
-`integrations/make/app.mjs` (`clientId` y `clientSecret` en los datos comunes de la
-conexión, cargados por `deploy.mjs`) y espera el primer deploy. n8n sigue con llave
+por OAuth 2.0 (ver la sección siguiente). Make también: app `cord-78vg5m` en us2,
+compartida con `MAKE_INVITE_URL`, con `clientId` y `clientSecret` en los datos
+comunes de la conexión (`deploy.mjs`). n8n sigue con llave
 de API: cada instancia tiene su propio redirect (`https://<instancia>/rest/oauth2-credential/callback`),
 y el registro de clientes de Cord exige coincidencia exacta; abrirlo a cualquier
 redirect sería justo lo que ese control evita.
@@ -115,6 +115,13 @@ exacto — puro y probado en `test/oauth-core.test.ts`), `src/lib/oauth-provider
   con `redirect_url` hacia él) va con COOP `unsafe-none`: Zapier y Make abren la
   autorización en una ventana y necesitan su `opener` al volver. Probado con un
   Chrome real vía CDP, no con curl, que no aplica CSP.
+- **Regreso por zona (Make).** Make documenta `www.make.com/oauth/cb/app`, pero esa
+  página no encuentra los intentos de cuentas en otras zonas ("Resource not found"):
+  cada zona atiende su propio `/<zona>.make.com/oauth/cb/app`. `pickReturnTo()` regresa
+  al dominio del que vino la persona (su `Referer`) cuando esa dirección, con la misma
+  ruta, está registrada para la app; el código sigue atado al `redirect_uri` que pidió
+  la app, así que el canje no cambia. Si hace falta iniciar sesión, la zona viaja en
+  `return_to`, validado igual contra lo registrado.
 - Revocación: la conexión aparece en Ajustes › Modo desarrollador › API como
   "Conexión autorizada"; revocarla cierra la llave y el grant.
 

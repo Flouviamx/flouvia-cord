@@ -28,24 +28,26 @@ export const POST: APIRoute = async ({ request }) => {
     const redirectUri = field('redirect_uri');
     if (!client || !redirectAllowed(client.redirectUris, redirectUri)) return problem('unknown_client');
     const redirect = redirectUri as string;
+    const hinted = field('return_to');
+    const returnTo = hinted && client.redirectUris.includes(hinted) ? hinted : redirect;
     const state = field('state');
 
     if (field('decision') !== 'allow') {
-        return back(buildRedirect(redirect, { error: 'access_denied', state }));
+        return back(buildRedirect(returnTo, { error: 'access_denied', state }));
     }
 
     const scope = parseScope(field('scope'));
     const challenge = field('code_challenge');
     if (!scope || (challenge && (!isValidCodeChallenge(challenge) || field('code_challenge_method') !== 'S256'))) {
-        return back(buildRedirect(redirect, { error: 'invalid_request', state }));
+        return back(buildRedirect(returnTo, { error: 'invalid_request', state }));
     }
 
     const orgId = field('org_id');
     const orgs = await authorizableOrgs(userId);
     if (!orgId || !orgs.some((o) => o.id === orgId)) {
-        return back(buildRedirect(redirect, { error: 'access_denied', state }));
+        return back(buildRedirect(returnTo, { error: 'access_denied', state }));
     }
 
     const code = await issueAuthorizationCode({ client, userId, orgId, scope, redirectUri: redirect, codeChallenge: challenge });
-    return back(buildRedirect(redirect, { code, state }));
+    return back(buildRedirect(returnTo, { code, state }));
 };

@@ -30,6 +30,24 @@ export function redirectAllowed(registered: readonly string[], uri: string | nul
     return registered.includes(uri);
 }
 
+/**
+ * A dónde regresa el navegador. El código queda atado a `requested`, pero si la
+ * app atiende el regreso en varios dominios (Make, uno por zona) se usa el
+ * dominio del que vino la persona, siempre que esa dirección esté registrada.
+ */
+export function pickReturnTo(registered: readonly string[], requested: string, hinted: string | null | undefined, referer: string | null | undefined): string {
+    if (hinted && registered.includes(hinted)) return hinted;
+    if (referer) {
+        try {
+            const candidate = new URL(referer).origin + new URL(requested).pathname;
+            if (registered.includes(candidate)) return candidate;
+        } catch {
+            return requested;
+        }
+    }
+    return requested;
+}
+
 /** Un redirect registrado debe ser https, o http solo hacia la propia máquina. */
 export function isValidRedirectUri(uri: string): boolean {
     try {

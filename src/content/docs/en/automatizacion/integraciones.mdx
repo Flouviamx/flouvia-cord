@@ -24,7 +24,7 @@ Tap a card to open that app's page. Everything about the integration lives there
 | **Connected** | The integration is active and working. |
 | **Needs reconnecting** | The connection exists but lost its authorization (for example, someone removed the app in HubSpot). Open the app and click **Reconnect**. |
 | **Not connected** | Available and not set up yet. |
-| **Via webhooks** | No connect button: it is used with Cord's webhooks and API from the other tool. This is the case for Make. |
+| **Direct connection** | Connected from the other tool and authorized with one click on a Cord screen, without keys. This is the case for Zapier and Make. |
 | **With an API key** | Connected from the other tool by pasting a Cord API key. |
 | **Coming soon** | On the way and not usable yet. |
 
@@ -36,7 +36,7 @@ Tap a card to open that app's page. Everything about the integration lives there
 | **Slack** | Communication | An alert in your channel when a quote moves forward, plus custom messages from workflows. | Paste a Slack Incoming Webhook URL. | [Slack](/en/docs/automatizacion/integraciones/slack) |
 | **Microsoft Teams** | Communication | A card in your channel when a quote moves forward, and your own messages from workflows. | Paste the channel's Power Automate flow URL. | [Connect Teams](/en/support/conectar-teams) |
 | **WhatsApp Business** | Communication | Send clients reminders and alerts on the channel they actually open, from your workflows. | Paste the phone number ID and a Meta token. | [Connect WhatsApp](/en/support/conectar-whatsapp) |
-| **Make** | Automation | Receive Cord events in your scenarios and create or update Cord data from Make. | Cord webhooks and API key, from Make. | [Make](/en/docs/automatizacion/integraciones/make) |
+| **Make** | Automation | Receive Cord events in your scenarios and create or update Cord data from Make. | Accept the invitation to the Cord app on Make and authorize with one click. | [Make](/en/docs/automatizacion/integraciones/make) |
 | **Zapier** | Automation | Connect Cord with thousands of apps without writing code. | Accept the invitation to the Cord app on Zapier and authorize with one click. | [Zapier](/en/docs/automatizacion/integraciones/zapier) |
 | **n8n** | Automation | Your own flows with the Cord community node, which registers its webhook and verifies the signature. | API key in the Cord credential inside n8n. | [Connect n8n](/en/support/conectar-n8n) |
 
@@ -59,7 +59,7 @@ Integrations belong to the **organization**, not a person: if whoever connected 
 
 ## Security
 
-- **Cord never asks for another tool's password.** HubSpot is authorized on HubSpot's own page; Slack, Teams, Make and n8n use URLs or keys you generate and can revoke, and Zapier is authorized on a Cord screen that you can also revoke.
+- **Cord never asks for another tool's password.** HubSpot is authorized on HubSpot's own page; Slack, Teams and n8n use URLs or keys you generate and can revoke, and Zapier and Make are authorized on a Cord screen that you can also revoke.
 - **Access credentials are stored encrypted** and only used for what each integration describes.
 - **Disconnecting really cuts access.** For HubSpot, Cord also revokes its authorization in your account.
 - **Webhook URLs are secrets.** Anyone with your Slack or Make webhook URL can post to it; do not share them.

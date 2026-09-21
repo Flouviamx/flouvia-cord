@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import {
     buildRedirect, clientSecretMatches, isValidCodeChallenge, isValidRedirectUri, newAccessToken, newAuthCode,
-    newRefreshToken, parseScope, readClientCredentials, redirectAllowed, sha256Hex, tokenDisplay, verifyPkce,
+    newRefreshToken, parseScope, pickReturnTo, readClientCredentials, redirectAllowed, sha256Hex, tokenDisplay, verifyPkce,
 } from '../src/lib/oauth-core';
 
 describe('oauth-core', () => {
@@ -83,5 +83,20 @@ describe('oauth-core', () => {
     it('arma el redirect conservando la query existente y omitiendo vacíos', () => {
         const u = buildRedirect('https://a.com/cb?x=1', { code: 'c', state: null });
         expect(u).toBe('https://a.com/cb?x=1&code=c');
+    });
+
+    it('regreso por zona: solo a direcciones registradas de la misma app', () => {
+        const reg = ['https://www.make.com/oauth/cb/app', 'https://us2.make.com/oauth/cb/app', 'https://eu1.make.com/oauth/cb/app'];
+        const www = reg[0];
+        expect(pickReturnTo(reg, www, null, 'https://us2.make.com/')).toBe('https://us2.make.com/oauth/cb/app');
+        expect(pickReturnTo(reg, www, null, 'https://eu1.make.com/organization/1/scenarios')).toBe('https://eu1.make.com/oauth/cb/app');
+        expect(pickReturnTo(reg, www, null, 'https://eu9.make.com/')).toBe(www);
+        expect(pickReturnTo(reg, www, null, 'https://evil.test/')).toBe(www);
+        expect(pickReturnTo(reg, www, null, 'no es url')).toBe(www);
+        expect(pickReturnTo(reg, www, null, null)).toBe(www);
+        expect(pickReturnTo(reg, www, 'https://eu1.make.com/oauth/cb/app', null)).toBe('https://eu1.make.com/oauth/cb/app');
+        expect(pickReturnTo(reg, www, 'https://evil.test/oauth/cb/app', 'https://us2.make.com/')).toBe('https://us2.make.com/oauth/cb/app');
+        const zap = ['https://zapier.com/dashboard/auth/oauth/return/App246344CLIAPI/'];
+        expect(pickReturnTo(zap, zap[0], null, 'https://zapier.com/editor/1')).toBe(zap[0]);
     });
 });

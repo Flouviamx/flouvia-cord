@@ -1,7 +1,7 @@
 ---
 title: "Make"
-description: "How to connect Cord with Make: receive Cord events in a scenario with Webhooks, create and update Cord data with the HTTP module, avoid duplicates and fix errors."
-lastUpdated: "2026-09-15"
+description: "How to connect the Cord app on Make, which modules it includes, and how to use Webhooks and HTTP as an alternative: events, duplicates and errors."
+lastUpdated: "2026-09-21"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -11,16 +11,37 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <p class="page-subtitle">Send what happens in Cord to any Make app, and create data in Cord from your scenarios.</p>
 </header>
 
-## How it connects
+## Connect the Cord app
 
-Make connects with Cord through two modules Make already includes, with nothing to install:
+The Cord app for Make is shared by invitation. In **Settings › Integrations › Make** you will find the **Open Cord on Make** button, which takes you straight to the invitation.
+
+<Steps>
+1. **Accept the invitation.** Click **Open Cord on Make** and accept. Make adds Cord to your apps.
+2. **Create the connection.** In a scenario add any Cord module and click **Create a connection** › **Save**.
+3. **Authorize in Cord.** A Cord screen opens where you pick the workspace and click **Authorize**. There are no keys to create or paste.
+</Steps>
+
+Whoever authorizes needs access to **Settings** in that workspace. Make renews the access on its own; to cut it, revoke the connection in **Settings › Developer mode › API**, where it shows up as Make's **Authorized connection**.
+
+| Type | Modules |
+|---|---|
+| **Instant trigger** | **Watch Events**: choose the Cord events and the scenario starts as soon as they happen. |
+| **Actions** | Create a Client, Update a Client, Get a Client, Create a Quote, Get a Quote, Send a Quote, Mark a Quote as Paid and Create a Task. |
+| **Searches** | Search Clients and Search Quotes, with pagination. |
+| **Universal** | **Make an API Call**, for any other operation in the Cord API. |
+
+Each active **Watch Events** creates its own webhook in Cord, with a limit separate from your plan's endpoints.
+
+## Alternative: Webhooks and HTTP
+
+If you prefer not to install the app, Make connects with Cord through two modules Make already includes:
 
 | Direction | Make module | What you need in Cord |
 |---|---|---|
 | **Cord → Make**: a Cord event starts your scenario | **Webhooks › Custom webhook** | A webhook endpoint with the Make URL |
 | **Make → Cord**: your scenario creates or updates Cord data | **HTTP › Make a request** | A secret API key with write access |
 
-**Settings › Integrations › Make** summarizes both steps with shortcuts to **Webhooks** and **API**. Both tabs live in the Developers panel: if you do not see it, turn on **Developer mode** with the switch at the bottom of the Settings index.
+Both are set up in the Developers panel (**Webhooks** and **API**): if you do not see it, turn on **Developer mode** with the switch at the bottom of the Settings index.
 
 ## Receive Cord events
 

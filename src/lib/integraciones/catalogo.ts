@@ -13,6 +13,7 @@ export interface IntegrationApp {
 }
 
 export const ZAPIER_INVITE_URL: string | null = 'https://zapier.com/developer/public-invite/246344/a3e1e697b77f2b9e803233fd998ef461/';
+export const MAKE_INVITE_URL: string | null = 'https://www.make.com/en/hq/app-invitation/83a99178a8e30c3b36b5165225176c3f';
 
 const favicon = (domain: string, size = 64) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=${size}`;
 
@@ -34,7 +35,7 @@ export function integrationState(app: IntegrationApp, ctx: { hubspot: string | n
     if (app.slug === 'slack') return ctx.slack ? 'on' : 'off';
     if (app.slug === 'teams') return ctx.teams ? 'on' : 'off';
     if (app.slug === 'whatsapp') return ctx.whatsapp ? 'on' : 'off';
-    if (app.slug === 'zapier') return 'oauth';
+    if (app.slug === 'zapier' || (app.slug === 'make' && MAKE_INVITE_URL)) return 'oauth';
     if (app.slug === 'n8n') return 'key';
     return 'info';
 }
