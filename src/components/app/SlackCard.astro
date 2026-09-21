@@ -4,31 +4,68 @@ import { t, type AppLocale } from '../../i18n/app';
 interface Props {
     lang: AppLocale;
     webhook: string;
+    canal?: string;
+    equipo?: string;
+    oauth?: boolean;
+    flash?: string | null;
 }
 
-const { lang: L, webhook } = Astro.props;
+const { lang: L, webhook, canal = '', equipo = '', oauth = false, flash = null } = Astro.props;
+const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
 ---
 
 <div class="s-block" data-slack>
     <h3>{t(L, 'set.integ.det.conexion')}</h3>
     <div class="s-body">
-        <div class="s-field">
-            <label for="slkUrl">{t(L, 'set.integ.webhook_url')}</label>
-            <input class="s-input" id="slkUrl" value={webhook} placeholder="https://hooks.slack.com/services/T000/B000/xxxx" />
-            <span class="s-hint">{t(L, 'set.integ.webhook_hint_pre')} <b>{t(L, 'set.integ.webhook_hint_mid')}</b>{t(L, 'set.integ.webhook_hint_post')} <a href="/app/ajustes/notificaciones">{t(L, 'set.integ.notificaciones')}</a>.</span>
-        </div>
-        <div class="slk-actions">
-            <button class="slk-btn-solid" id="slkSave">{t(L, 'set.integ.guardar')}</button>
-            <button class="slk-btn-ghost" id="slkTest">{t(L, 'set.integ.enviar_prueba')}</button>
-            <span class="slk-msg" id="slkMsg"
-                data-i18n-url-debe-ser={t(L, 'set.integ.url_debe_ser')} data-i18n-guardado={t(L, 'set.integ.guardado')}
-                data-i18n-no-guardo={t(L, 'set.integ.no_guardo')} data-i18n-mensaje-enviado={t(L, 'set.integ.mensaje_enviado')}
-                data-i18n-no-envio={t(L, 'set.integ.no_envio')}></span>
-        </div>
+        {flash && FLASH.includes(flash) && (
+            <p class="slk-flash" data-bad={flash !== 'conectado' ? '1' : undefined}>{t(L, `set.integ.slack.flash_${flash}` as any)}</p>
+        )}
+
+        {oauth && (
+            <div class="slk-oauth">
+                {webhook && (
+                    <p class="slk-conn">
+                        {canal ? <>{t(L, 'set.integ.slack.conectado_a')} <b>{canal}</b>{equipo && ` · ${equipo}`}</> : t(L, 'set.integ.slack.webhook_propio_estado')}
+                    </p>
+                )}
+                {!webhook && <p class="slk-hint">{t(L, 'set.integ.slack.elige_canal')}</p>}
+                <div class="slk-actions">
+                    <button class="slk-btn-solid" id="slkAdd">{webhook ? t(L, 'set.integ.slack.cambiar') : t(L, 'set.integ.slack.anadir')}</button>
+                    {webhook && <button class="slk-btn-ghost" id="slkTest">{t(L, 'set.integ.enviar_prueba')}</button>}
+                    {webhook && <button class="slk-btn-ghost" id="slkDisc">{t(L, 'set.integ.slack.desconectar')}</button>}
+                </div>
+            </div>
+        )}
+
+        <details class="slk-manual" open={!oauth}>
+            {oauth && <summary>{t(L, 'set.integ.slack.manual_titulo')}</summary>}
+            <div class="s-field">
+                <label for="slkUrl">{t(L, 'set.integ.webhook_url')}</label>
+                <input class="s-input" id="slkUrl" value={webhook} placeholder="https://hooks.slack.com/services/T000/B000/xxxx" />
+                <span class="s-hint">{t(L, 'set.integ.webhook_hint_pre')} <b>{t(L, 'set.integ.webhook_hint_mid')}</b>{t(L, 'set.integ.webhook_hint_post')} <a href="/app/ajustes/notificaciones">{t(L, 'set.integ.notificaciones')}</a>.</span>
+            </div>
+            <div class="slk-actions">
+                <button class="slk-btn-solid" id="slkSave">{t(L, 'set.integ.guardar')}</button>
+                {!oauth && <button class="slk-btn-ghost" id="slkTest">{t(L, 'set.integ.enviar_prueba')}</button>}
+            </div>
+        </details>
+        <span class="slk-msg" id="slkMsg"
+            data-i18n-url-debe-ser={t(L, 'set.integ.url_debe_ser')} data-i18n-guardado={t(L, 'set.integ.guardado')}
+            data-i18n-no-guardo={t(L, 'set.integ.no_guardo')} data-i18n-mensaje-enviado={t(L, 'set.integ.mensaje_enviado')}
+            data-i18n-no-envio={t(L, 'set.integ.no_envio')} data-i18n-no-conecto={t(L, 'set.integ.slack.no_conecto')}
+            data-i18n-no-desconecto={t(L, 'set.integ.slack.no_desconecto')}></span>
     </div>
 </div>
 
 <style>
+    .slk-flash { font-size: 0.82rem; margin: 0 0 1rem; color: var(--color-ok); }
+    .slk-flash[data-bad] { color: var(--color-danger); }
+    .slk-oauth { margin-bottom: 1.2rem; }
+    .slk-conn { font-size: 0.9rem; margin: 0 0 0.8rem; color: var(--color-text); }
+    .slk-hint { font-size: 0.85rem; margin: 0 0 0.8rem; color: var(--color-text-muted); line-height: 1.45; }
+    .slk-manual > summary { font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; margin-bottom: 0.8rem; }
+    .slk-manual > summary:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; border-radius: 4px; }
+    .slk-msg { display: block; margin-top: 0.8rem; min-height: 1.2em; }
     .slk-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
     .slk-msg { font-size: 0.78rem; font-weight: 600; }
     .slk-msg:global(.ok) { color: var(--color-ok); }
@@ -50,9 +87,11 @@ const { lang: L, webhook } = Astro.props;
         const urlIn = document.getElementById('slkUrl') as HTMLInputElement | null;
         const saveBtn = document.getElementById('slkSave') as HTMLButtonElement | null;
         const testBtn = document.getElementById('slkTest') as HTMLButtonElement | null;
+        const addBtn = document.getElementById('slkAdd') as HTMLButtonElement | null;
+        const discBtn = document.getElementById('slkDisc') as HTMLButtonElement | null;
         const msg = document.getElementById('slkMsg');
         const status = document.querySelector<HTMLElement>('[data-integ-status]');
-        if (!urlIn || !saveBtn || !testBtn || !msg) return;
+        if (!urlIn || !saveBtn || !msg) return;
 
         const flash = (text: string, ok: boolean) => { msg.textContent = text; msg.className = 'slk-msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { msg.textContent = ''; msg.className = 'slk-msg'; }, 3200); };
 
@@ -71,14 +110,33 @@ const { lang: L, webhook } = Astro.props;
             } catch { flash(msg.dataset.i18nNoGuardo || '', false); } finally { saveBtn.disabled = false; }
         });
 
-        testBtn.addEventListener('click', async () => {
-            testBtn.disabled = true;
+        addBtn?.addEventListener('click', async () => {
+            addBtn.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/slack/conectar', { method: 'POST' });
+                const d = await res.json();
+                if (!res.ok || !d.redirect) throw new Error(d.error || '');
+                window.location.href = d.redirect;
+            } catch (err: any) { flash(err.message || msg.dataset.i18nNoConecto || '', false); addBtn.disabled = false; }
+        });
+
+        discBtn?.addEventListener('click', async () => {
+            discBtn.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/slack/conectar', { method: 'DELETE' });
+                if (!res.ok) throw new Error();
+                window.location.href = window.location.pathname;
+            } catch { flash(msg.dataset.i18nNoDesconecto || '', false); discBtn.disabled = false; }
+        });
+
+        testBtn?.addEventListener('click', async () => {
+            testBtn!.disabled = true;
             try {
                 const res = await fetch('/api/integraciones/slack-test', { method: 'POST' });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || '');
                 flash(msg.dataset.i18nMensajeEnviado || '', true);
-            } catch (err: any) { flash(err.message || msg.dataset.i18nNoEnvio || '', false); } finally { testBtn.disabled = false; }
+            } catch (err: any) { flash(err.message || msg.dataset.i18nNoEnvio || '', false); } finally { testBtn!.disabled = false; }
         });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSlack);

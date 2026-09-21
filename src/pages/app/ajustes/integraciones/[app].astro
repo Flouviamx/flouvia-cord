@@ -8,6 +8,7 @@ import { getActiveOrgId } from '../../../../lib/db';
 import { currentLocale } from '../../../../lib/context';
 import { hubspotStatus } from '../../../../lib/integraciones/hubspot/service';
 import { findIntegration, integrationState } from '../../../../lib/integraciones/catalogo';
+import { slackCredentials } from '../../../../lib/integraciones/slack-oauth';
 
 export const prerender = false;
 
@@ -31,6 +32,7 @@ const state = integrationState(app, { hubspot: HS?.conexion?.estado ?? null, sla
         hubspot={HS}
         hubspotFlash={Astro.url.searchParams.get('hubspot')}
         slackWebhook={ORG.slackWebhook ?? ''}
+        slack={{ canal: ORG.slackCanal ?? '', equipo: ORG.slackEquipo ?? '', oauth: Boolean(slackCredentials()), flash: Astro.url.searchParams.get('slack') }}
         teamsWebhook={ORG.teamsWebhook ?? ''}
         whatsapp={{ phoneId: ORG.whatsappPhoneId ?? '', plantilla: ORG.whatsappPlantilla ?? '', idioma: ORG.whatsappIdioma ?? '', conectado: Boolean(ORG.whatsappConectado) }}
     />

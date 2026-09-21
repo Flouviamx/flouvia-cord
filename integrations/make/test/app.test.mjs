@@ -35,10 +35,31 @@ test('las llamadas relativas no pueden salir de la API de Cord', () => {
     assert.equal(BASE.baseUrl, `${API_ORIGIN}/api/v1`);
 });
 
-test('la llave nunca queda en los logs', () => {
+test('la conexión es OAuth 2.0 y ningún token ni secreto queda en los logs', () => {
+    assert.equal(CONNECTION.type, 'oauth');
+    assert.deepEqual(CONNECTION.parameters, []);
     assert.ok(BASE.log.sanitize.includes('request.headers.authorization'));
-    assert.ok(CONNECTION.api.log.sanitize.includes('request.headers.authorization'));
-    assert.equal(CONNECTION.parameters[0].type, 'password');
+    assert.ok(CONNECTION.api.info.log.sanitize.includes('request.headers.authorization'));
+    for (const step of [CONNECTION.api.token, CONNECTION.api.refresh]) {
+        for (const field of ['request.body.client_secret', 'response.body.access_token', 'response.body.refresh_token']) {
+            assert.ok(step.log.sanitize.includes(field), field);
+        }
+    }
+});
+
+test('OAuth: endpoints de Cord, credenciales del cliente en common data y renovación antes de vencer', () => {
+    const { authorize, token, refresh, invalidate, info } = CONNECTION.api;
+    assert.equal(authorize.url, `${API_ORIGIN}/oauth/authorize`);
+    assert.equal(authorize.qs.client_id, '{{common.clientId}}');
+    assert.equal(authorize.qs.scope, 'write');
+    assert.equal(token.url, `${API_ORIGIN}/api/oauth/token`);
+    assert.equal(token.body.client_secret, '{{common.clientSecret}}');
+    assert.equal(token.body.grant_type, 'authorization_code');
+    assert.equal(refresh.body.grant_type, 'refresh_token');
+    assert.match(refresh.condition, /addMinutes\(now, 15\)/);
+    assert.equal(invalidate.url, `${API_ORIGIN}/api/oauth/revoke`);
+    assert.equal(info.url, `${API_ORIGIN}/api/v1/me`);
+    assert.equal(BASE.headers.Authorization, 'Bearer {{connection.accessToken}}');
 });
 
 test('el webhook se registra y se borra en Cord y filtra por evento', () => {

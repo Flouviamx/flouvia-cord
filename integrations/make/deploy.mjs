@@ -24,6 +24,11 @@ if (!token || !/^[a-z0-9-]+\.make\.(com|celonis\.com)$/.test(zone)) {
     process.exit(1);
 }
 
+if (!dry && (!env.CLIENT_ID || !env.CLIENT_SECRET)) {
+    console.error('Faltan CLIENT_ID y CLIENT_SECRET en integrations/make/.env. Genéralos con: node scripts/oauth-client.mjs --slug make ... --env integrations/make/.env');
+    process.exit(1);
+}
+
 const API = `https://${zone}/api/v2`;
 
 async function call(method, route, body, contentType = 'application/json') {
@@ -61,6 +66,7 @@ async function ensureConnection(app) {
     const name = existing?.name || objectOf(await call('POST', `/sdk/apps/${app}/connections`, { type: CONNECTION.type, label: CONNECTION.label })).name;
     await setSection(`/sdk/apps/connections/${name}/api`, CONNECTION.api);
     await setSection(`/sdk/apps/connections/${name}/parameters`, CONNECTION.parameters);
+    await call('PUT', `/sdk/apps/connections/${name}/common`, { clientId: env.CLIENT_ID, clientSecret: env.CLIENT_SECRET });
     return name;
 }
 

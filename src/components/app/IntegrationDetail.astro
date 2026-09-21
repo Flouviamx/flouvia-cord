@@ -20,11 +20,12 @@ interface Props {
     hubspot?: Awaited<ReturnType<typeof hubspotStatus>> | null;
     hubspotFlash?: string | null;
     slackWebhook?: string;
+    slack?: { canal: string; equipo: string; oauth: boolean; flash: string | null };
     teamsWebhook?: string;
     whatsapp?: { phoneId: string; plantilla: string; idioma: string; conectado: boolean };
 }
 
-const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '', teamsWebhook = '', whatsapp } = Astro.props;
+const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '', slack = { canal: '', equipo: '', oauth: false, flash: null }, teamsWebhook = '', whatsapp } = Astro.props;
 
 const DESC: Record<string, string> = {
     hubspot: t(L, 'set.integ.hs.desc'),
@@ -74,7 +75,7 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
 <div class="ig-body">
     {app.slug === 'hubspot' && <HubSpotCard lang={L} status={HS} flash={hsFlash} />}
 
-    {app.slug === 'slack' && <SlackCard lang={L} webhook={slackWebhook} />}
+    {app.slug === 'slack' && <SlackCard lang={L} webhook={slackWebhook} canal={slack.canal} equipo={slack.equipo} oauth={slack.oauth} flash={slack.flash} />}
 
     {app.slug === 'teams' && (
         <Fragment>

@@ -17,9 +17,9 @@ export const APP = {
 export const BASE = {
     baseUrl: API,
     headers: {
-        Authorization: 'Bearer {{connection.apiKey}}',
+        Authorization: 'Bearer {{connection.accessToken}}',
         Accept: 'application/json',
-        'User-Agent': 'Cord-Make/1.0',
+        'User-Agent': 'Cord-Make/1.1',
     },
     response: {
         error: {
@@ -29,37 +29,96 @@ export const BASE = {
     log: { sanitize: ['request.headers.authorization'] },
 };
 
+const CLIENT_ID = '{{common.clientId}}';
+const CLIENT_SECRET = '{{common.clientSecret}}';
+const TOKEN_URL = `${API_ORIGIN}/api/oauth/token`;
+const TOKEN_LOG = { sanitize: ['request.body.client_secret', 'request.body.code', 'request.body.refresh_token', 'response.body.access_token', 'response.body.refresh_token'] };
+
 export const CONNECTION = {
     label: 'Cord',
-    type: 'apikey',
-    parameters: [
-        {
-            name: 'apiKey',
-            type: 'password',
-            label: 'Secret API key',
-            required: true,
-            editable: true,
-            help: 'Create a secret key in Cord: turn on Developer mode at the bottom of the Settings index and open the API tab. Use a key with write permission. Keys that start with sk_test_ work with your test environment. Publishable keys (pk_) do not work here.',
-        },
-    ],
+    type: 'oauth',
+    parameters: [],
     api: {
-        url: `${API}/me`,
-        method: 'GET',
-        headers: {
-            Authorization: 'Bearer {{parameters.apiKey}}',
-            Accept: 'application/json',
-        },
-        response: {
-            valid: '{{indexOf(parameters.apiKey, "sk_") == 0}}',
-            error: {
-                message: '[{{statusCode}}] {{ifempty(body.error, "Use a secret API key from Cord (sk_live_ or sk_test_).")}}',
+        authorize: {
+            url: `${API_ORIGIN}/oauth/authorize`,
+            qs: {
+                client_id: CLIENT_ID,
+                redirect_uri: '{{oauth.localRedirectUri}}',
+                response_type: 'code',
+                scope: 'write',
             },
-            metadata: {
-                type: 'text',
-                value: '{{body.data.org.nombre}}{{if(body.data.mode == "test", " (test)", "")}}',
-            },
+            response: { temp: { code: '{{query.code}}' } },
         },
-        log: { sanitize: ['request.headers.authorization'] },
+        token: {
+            url: TOKEN_URL,
+            method: 'POST',
+            type: 'urlencoded',
+            body: {
+                code: '{{temp.code}}',
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                grant_type: 'authorization_code',
+                redirect_uri: '{{oauth.localRedirectUri}}',
+            },
+            response: {
+                data: {
+                    accessToken: '{{body.access_token}}',
+                    refreshToken: '{{body.refresh_token}}',
+                    expires: '{{addSeconds(now, body.expires_in)}}',
+                },
+            },
+            log: TOKEN_LOG,
+        },
+        refresh: {
+            condition: '{{data.expires < addMinutes(now, 15)}}',
+            url: TOKEN_URL,
+            method: 'POST',
+            type: 'urlencoded',
+            body: {
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                grant_type: 'refresh_token',
+                refresh_token: '{{data.refreshToken}}',
+            },
+            response: {
+                data: {
+                    accessToken: '{{body.access_token}}',
+                    refreshToken: '{{body.refresh_token}}',
+                    expires: '{{addSeconds(now, body.expires_in)}}',
+                },
+            },
+            log: TOKEN_LOG,
+        },
+        invalidate: {
+            url: `${API_ORIGIN}/api/oauth/revoke`,
+            method: 'POST',
+            type: 'urlencoded',
+            body: {
+                token: '{{connection.accessToken}}',
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+            },
+            log: { sanitize: ['request.body.client_secret', 'request.body.token'] },
+        },
+        info: {
+            url: `${API}/me`,
+            method: 'GET',
+            headers: {
+                Authorization: 'Bearer {{connection.accessToken}}',
+                Accept: 'application/json',
+            },
+            response: {
+                uid: '{{body.data.org.id}}',
+                metadata: {
+                    type: 'text',
+                    value: '{{body.data.org.nombre}}{{if(body.data.mode == "test", " (test)", "")}}',
+                },
+                error: {
+                    message: '[{{statusCode}}] {{ifempty(body.error, "Cord did not accept the authorization.")}}',
+                },
+            },
+            log: { sanitize: ['request.headers.authorization'] },
+        },
     },
 };
 

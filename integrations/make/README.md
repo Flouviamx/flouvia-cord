@@ -4,7 +4,7 @@ App de Make construida sobre la API pública v1 de Cord. Toda la definición viv
 
 ## Qué incluye
 
-- **Conexión**: llave secreta de Cord (`sk_live_` o `sk_test_`), validada con `GET /v1/me`. La llave se oculta en los logs de Make.
+- **Conexión**: OAuth 2.0. La persona autoriza en la pantalla de Cord y Make renueva el token solo; no hay llave que crear ni pegar. `clientId` y `clientSecret` viven en los datos comunes de la conexión (`deploy.mjs` los lee de `CLIENT_ID` y `CLIENT_SECRET` en `.env`). Se valida con `GET /v1/me`. Tokens y secretos se ocultan en los logs de Make.
 - **Watch Events**: trigger instantáneo. Al crear el webhook en Make se eligen los eventos; Make lo registra con `POST /v1/webhooks` y lo borra con `DELETE` al quitarlo. Solo pasan los eventos elegidos.
 - **Acciones**: Create a Client, Update a Client, Get a Client, Create a Quote, Get a Quote, Send a Quote, Mark a Quote as Paid y Create a Task.
 - **Búsquedas**: Search Clients y Search Quotes, con paginación.

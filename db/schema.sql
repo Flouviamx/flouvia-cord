@@ -354,6 +354,8 @@ alter table orgs add column if not exists portal_bienvenida text;    -- mensaje 
 -- Notificaciones: matriz evento → canal (jsonb) + webhook de Slack.
 alter table orgs add column if not exists notif_prefs jsonb not null default '{}'::jsonb;
 alter table orgs add column if not exists slack_webhook_url text;
+alter table orgs add column if not exists slack_channel text;
+alter table orgs add column if not exists slack_team text;
 -- Microsoft Teams: URL del flujo de Power Automate ("Workflows" en el canal).
 -- Los conectores O365 clásicos de Teams están retirados; la URL vigente es la
 -- del flujo, no un webhook del canal.
@@ -5017,12 +5019,16 @@ create table if not exists integracion_oauth_estados (
   state_hash  text primary key check (state_hash ~ '^[a-f0-9]{64}$'),
   org_id      uuid not null references orgs(id) on delete cascade,
   user_id     uuid not null references users(id) on delete cascade,
-  proveedor   text not null check (proveedor in ('hubspot', 'mercadopago')),
+  proveedor   text not null check (proveedor in ('hubspot', 'mercadopago', 'slack')),
   expires_at  timestamptz not null,
   used_at     timestamptz,
   created_at  timestamptz not null default now()
 );
 create index if not exists idx_integracion_oauth_estados_exp on integracion_oauth_estados(expires_at);
+
+alter table integracion_oauth_estados drop constraint if exists integracion_oauth_estados_proveedor_check;
+alter table integracion_oauth_estados add constraint integracion_oauth_estados_proveedor_check
+  check (proveedor in ('hubspot', 'mercadopago', 'slack'));
 
 create table if not exists integracion_vinculos (
   id               uuid primary key default gen_random_uuid(),

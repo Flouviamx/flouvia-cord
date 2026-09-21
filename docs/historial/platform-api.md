@@ -19,8 +19,17 @@
    • **`security.checkOrigin` de Astro apagado.** Rechazaba el POST de formulario sin `Origin` que
      es la forma en que cualquier servidor llama a un endpoint de token (RFC 6749). El CSRF real ya
      vivía en el middleware, con Origin obligatorio y exenciones declaradas.
-   • **Pendiente**: Make y n8n siguen con llave; subir la versión 1.1.0 de la app de Zapier con
-     `CLIENT_ID` y `CLIENT_SECRET`.
+   • **Zapier 1.1.0 subida** con `CLIENT_ID` y `CLIENT_SECRET`; la redirect URI se confirmó con
+     `zapier-platform describe` (la pestaña Authentication sale con candado en apps de CLI).
+   • **Make** queda definido con OAuth 2.0 (credenciales en los datos comunes de la conexión) y
+     espera el primer deploy. **n8n** sigue con llave: cada instancia tiene su propio redirect y el
+     registro de Cord exige coincidencia exacta.
+   • **"Añadir a Slack"** (OAuth v2): el webhook del canal elegido se guarda donde ya lo leían
+     las notificaciones y los workflows.
+   • **Bug encontrado**: la base viva conservaba `integracion_oauth_estados.proveedor` con solo
+     `'hubspot'` —la migración de Mercado Pago cambió el constraint pero `schema.sql` no, y
+     `db:migrate` solo corre `schema.sql`—, así que "Conectar Mercado Pago" habría fallado al
+     guardar el state. El constraint ahora vive en `schema.sql` y ya está aplicado.
 
 ✅ **Mercado Pago llega al pagador, prioridad de riel y onboarding (21 sep 2026)**
    • **El riel estaba construido y desconectado.** Nadie llamaba a `mp-preference` y la página de

@@ -63,7 +63,9 @@ export const PATCH: APIRoute = async ({ request }) => {
     }
 
     await withOrgTx(orgId, sql`update orgs set notif_prefs = ${JSON.stringify(notif)}::jsonb,
-                              slack_webhook_url = ${slack}, teams_webhook_url = ${teams}
+                              slack_webhook_url = ${slack}, teams_webhook_url = ${teams},
+                              slack_channel = case when ${slack}::text is not distinct from slack_webhook_url then slack_channel else null end,
+                              slack_team = case when ${slack}::text is not distinct from slack_webhook_url then slack_team else null end
               where id = ${orgId}`);
     await logAudit(orgId, { accion: 'org.preferencias', entidad: 'org', entidad_id: orgId, detalle: 'Actualizó notificaciones/integraciones', ip: reqIp(request) });
     return json({ ok: true });

@@ -10,7 +10,7 @@
 | App | Estado del código | Estado en Cord hoy | Lo que falta |
 |---|---|---|---|
 | **Zapier** | App privada App246344; versión 1.1.0 con OAuth 2.0 + PKCE (llave de API retirada), 16 pruebas pasando | Tarjeta con link de invitación y "Conexión directa" | Logo, correo del dominio en el equipo; subir 1.1.0 con `CLIENT_ID` y `CLIENT_SECRET` (`integrations/zapier/.env`) |
-| **Make** | App escrita y probada (7 pruebas), **nunca subida** a Make | Tarjeta "Con webhooks" (funciona con Webhooks + HTTP) | Token de API de Make y correr el deploy |
+| **Make** | App con conexión OAuth 2.0 escrita y probada (8 pruebas), **nunca subida** a Make; cliente `make` ya registrado en Cord con sus credenciales en `.env` | Tarjeta "Con webhooks" (funciona con Webhooks + HTTP) | Token de API de Make y correr el deploy; confirmar el redirect que Make envía (`https://www.make.com/oauth/cb/app` según su documentación) |
 
 Nunca pegues tokens ni llaves en el chat. Van en archivos `.env` que no se suben a git.
 

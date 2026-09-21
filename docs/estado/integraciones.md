@@ -45,6 +45,15 @@ La app pública vive en `integrations/hubspot/` como proyecto del CLI de HubSpot
 Incoming webhook por organización (`orgs.slack_webhook_url`). Lo consumen
 `notify()` y la acción `slack_message` de los workflows.
 
+"Añadir a Slack" (OAuth v2, permiso `incoming-webhook`) escribe en esa MISMA
+columna, así que ningún consumidor cambió: la persona elige el canal en Slack y
+Cord recibe el webhook de ese canal. `slack_channel` y `slack_team` solo sirven
+para decir a dónde llegan los avisos; guardar una URL a mano los borra. Código en
+`src/lib/integraciones/slack-oauth.ts` y `src/pages/api/integraciones/slack/`;
+el state reusa `integracion_oauth_estados`. Se activa con `SLACK_CLIENT_ID` y
+`SLACK_CLIENT_SECRET`; sin ellas la tarjeta solo ofrece pegar un webhook propio.
+La app de Slack debe registrar `https://cordhq.app/api/integraciones/slack/callback`.
+
 ## Zapier y Make
 
 Ambas apps viven como código en el repo y se publican con el CLI o la API de cada
@@ -60,7 +69,12 @@ plataforma:
 
 El link de invitación de Zapier vive en `ZAPIER_INVITE_URL` (catálogo); sin él la
 tarjeta dice "Próximamente". Desde la versión 1.1.0 la app de Zapier se conecta
-por OAuth 2.0 (ver la sección siguiente); Make y n8n siguen con llave de API.
+por OAuth 2.0 (ver la sección siguiente). Make queda definido con OAuth 2.0 en
+`integrations/make/app.mjs` (`clientId` y `clientSecret` en los datos comunes de la
+conexión, cargados por `deploy.mjs`) y espera el primer deploy. n8n sigue con llave
+de API: cada instancia tiene su propio redirect (`https://<instancia>/rest/oauth2-credential/callback`),
+y el registro de clientes de Cord exige coincidencia exacta; abrirlo a cualquier
+redirect sería justo lo que ese control evita.
 
 ## Cord como proveedor OAuth 2.0
 

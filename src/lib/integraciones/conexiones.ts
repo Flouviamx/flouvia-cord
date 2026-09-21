@@ -8,7 +8,7 @@ import { currentLocale } from '../context';
 
 // Mercado Pago no tiene fila en `integracion_conexiones` —su credencial vive en
 // `orgs`, con el resto del riel de cobro—, pero sí usa el mismo state de OAuth.
-export type Proveedor = 'hubspot' | 'mercadopago';
+export type Proveedor = 'hubspot' | 'mercadopago' | 'slack';
 
 export interface Conexion {
     id: string;
