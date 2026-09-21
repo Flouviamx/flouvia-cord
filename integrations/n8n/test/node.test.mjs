@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -8,7 +9,9 @@ const { Cord } = require('../nodes/Cord/Cord.node.js');
 const { CordTrigger, signatureMatches } = require('../nodes/Cord/CordTrigger.node.js');
 const { CordApi } = require('../credentials/CordApi.credentials.js');
 const { EVENTS, EVENT_KEYS } = require('../lib/events.js');
-const canonicos = require('../../zapier/lib/events.js');
+// El catálogo canónico solo existe dentro del repo de Cord; en el repo público del nodo se compara contra la copia.
+const CANONICO = new URL('../../zapier/lib/events.js', import.meta.url);
+const canonicos = existsSync(CANONICO) ? require(CANONICO.pathname) : require('../lib/events.js');
 const pkg = require('../package.json');
 
 test('el paquete declara los archivos que n8n va a cargar', () => {

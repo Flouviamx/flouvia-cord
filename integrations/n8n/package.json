@@ -1,10 +1,27 @@
 {
   "name": "n8n-nodes-cord",
   "version": "1.0.0",
-  "description": "Nodo de n8n para Cord: cotizaciones, clientes, facturas y pagos desde un solo link.",
+  "description": "n8n node for Cord: quotes, clients, invoices and payments in one link.",
   "license": "MIT",
   "homepage": "https://cordhq.app",
-  "keywords": ["n8n-community-node-package", "cord", "quotes", "invoices", "payments"],
+  "author": {
+    "name": "Flouvia",
+    "email": "contacto@cordhq.app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Flouviamx/n8n-nodes-cord.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Flouviamx/n8n-nodes-cord/issues"
+  },
+  "keywords": [
+    "n8n-community-node-package",
+    "cord",
+    "quotes",
+    "invoices",
+    "payments"
+  ],
   "main": "index.js",
   "engines": {
     "node": ">=20"

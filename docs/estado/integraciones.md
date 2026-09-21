@@ -80,6 +80,15 @@ de API: cada instancia tiene su propio redirect (`https://<instancia>/rest/oauth
 y el registro de clientes de Cord exige coincidencia exacta; abrirlo a cualquier
 redirect sería justo lo que ese control evita.
 
+El nodo de n8n se publica en npm como `n8n-nodes-cord`. La fuente de verdad es
+`integrations/n8n/`; el repo público `Flouviamx/n8n-nodes-cord` es su espejo, porque
+n8n solo verifica nodos publicados desde GitHub Actions con constancia de origen y
+npm solo la genera desde repositorios públicos. Para publicar una versión: sube la
+versión en `integrations/n8n/package.json`, copia los archivos al espejo (sin
+`scripts/`, que depende del catálogo de Zapier) y empuja un tag igual a la versión;
+`publish.yml` la publica con Trusted Publishing. La 1.0.0 se publicó a mano porque
+npm solo deja configurar Trusted Publishing en un paquete que ya existe.
+
 ## Cord como proveedor OAuth 2.0
 
 Quien conecta una app externa autoriza en una pantalla de Cord en vez de crear y
