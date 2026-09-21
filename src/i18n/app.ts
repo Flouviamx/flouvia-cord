@@ -1289,7 +1289,7 @@ export const appStrings = {
         "set.integ.no_envio": "No se pudo enviar",
 
         "set.api.claves_titulo": "Claves de API",
-        "set.api.claves_sub": "Autentícate con <code>Authorization: Bearer &lt;clave&gt;</code>. Trátalas como contraseñas: nunca las publiques en el front ni en repos.",
+        "set.api.claves_sub": "Conectan tu propio sistema o n8n con Cord. Zapier y Make no las necesitan: aparecen aquí como conexiones autorizadas. Trata cada llave como una contraseña.",
         "set.api.modo_clave": "Modo de la clave",
         "set.api.prueba": "Prueba",
         "set.api.vivo": "Vivo",
@@ -1366,7 +1366,7 @@ export const appStrings = {
         "set.api.prompt_copiado": "✓ Prompt copiado — Pégalo en ChatGPT o Cursor",
 
         "set.wh.endpoints_titulo": "Endpoints de webhook",
-        "set.wh.endpoints_sub": "Cada entrega lleva la firma <code>X-Cord-Signature: sha256=&lt;hmac&gt;</code>. Verifícala con el secret del endpoint.",
+        "set.wh.endpoints_sub": "Cord avisa a la dirección que registres cuando algo pasa, como una cotización aprobada o un pago. Cada aviso va firmado con <code>X-Cord-Signature-V1</code>; verifícalo con el secreto del endpoint.",
         "set.wh.plan": "Plan {plan}:",
         "set.wh.agregar_endpoint": "+ Agregar endpoint",
         "set.wh.limite_hint": "Tu plan permite {n} webhook(s). Sube de plan para más.",
@@ -4579,7 +4579,7 @@ export const appStrings = {
         "set.integ.no_envio": "Could not send",
 
         "set.api.claves_titulo": "API keys",
-        "set.api.claves_sub": "Authenticate with <code>Authorization: Bearer &lt;key&gt;</code>. Treat them like passwords: never publish them on the frontend or in repos.",
+        "set.api.claves_sub": "They connect your own system or n8n with Cord. Zapier and Make do not need them: they show up here as authorized connections. Treat each key like a password.",
         "set.api.modo_clave": "Key mode",
         "set.api.prueba": "Test",
         "set.api.vivo": "Live",
@@ -4656,7 +4656,7 @@ export const appStrings = {
         "set.api.prompt_copiado": "✓ Prompt copied — Paste it into ChatGPT or Cursor",
 
         "set.wh.endpoints_titulo": "Webhook endpoints",
-        "set.wh.endpoints_sub": "Every delivery carries the <code>X-Cord-Signature: sha256=&lt;hmac&gt;</code> signature. Verify it with the endpoint's secret.",
+        "set.wh.endpoints_sub": "Cord notifies the address you register when something happens, like an approved quote or a payment. Every notification is signed with <code>X-Cord-Signature-V1</code>; verify it with the endpoint's secret.",
         "set.wh.plan": "{plan} plan:",
         "set.wh.agregar_endpoint": "+ Add endpoint",
         "set.wh.limite_hint": "Your plan allows {n} webhook(s). Upgrade your plan for more.",

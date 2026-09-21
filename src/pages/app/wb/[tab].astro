@@ -41,6 +41,8 @@ const tf = (key: string, vars: Record<string, string> = {}) => {
 };
 
 const tab = Astro.params.tab as string;
+// Es un fragmento para el panel de Desarrolladores; abierto como página se vería sin estilos.
+if (Astro.request.headers.get('sec-fetch-dest') === 'document') return Astro.redirect(`/app?wb=${encodeURIComponent(tab)}`);
 const qs = Astro.url.searchParams;
 const rangeParam = qs.get('range') as DevRange | null;
 const RANGE: DevRange = rangeParam && DEV_RANGES.includes(rangeParam) ? rangeParam : '14d';

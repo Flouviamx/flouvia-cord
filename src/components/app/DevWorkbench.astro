@@ -1280,7 +1280,7 @@ const WBI18N = {
         // Redirect legacy (?wb=<tab>, ver middleware.ts).
         const params = new URLSearchParams(location.search);
         const wbParam = params.get('wb');
-        if (wbParam && ['resumen', 'webhooks', 'api', 'registros'].includes(wbParam)) {
+        if (wbParam && ['resumen', 'webhooks', 'api', 'registros', 'eventos', 'salud'].includes(wbParam)) {
             try { localStorage.setItem('cord.devmode', '1'); } catch {}
             document.documentElement.classList.add('cord-dev');
             openDock(wbParam);
