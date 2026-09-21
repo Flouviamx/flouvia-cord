@@ -9,10 +9,11 @@ interface Props {
     slack: boolean;
     teams: boolean;
     whatsapp: boolean;
+    oauth?: readonly string[];
 }
 
-const { lang: L, hubspot, slack, teams, whatsapp } = Astro.props;
-const APPS = INTEGRATION_APPS.map((app) => ({ app, state: integrationState(app, { hubspot, slack, teams, whatsapp }) }));
+const { lang: L, hubspot, slack, teams, whatsapp, oauth = [] } = Astro.props;
+const APPS = INTEGRATION_APPS.map((app) => ({ app, state: integrationState(app, { hubspot, slack, teams, whatsapp, oauth }) }));
 const CONECTADAS = APPS.filter((a) => a.state === 'on' || a.state === 'warn');
 const RESTO = APPS.filter((a) => !CONECTADAS.includes(a));
 ---

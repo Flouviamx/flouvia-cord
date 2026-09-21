@@ -9,6 +9,7 @@ import DevWorkbench from '../components/app/DevWorkbench.astro';
 import Sidebar from '../components/app/Sidebar.astro';
 import TopbarApps from '../components/app/TopbarApps.astro';
 import { getConexion } from '../lib/integraciones/conexiones';
+import { connectedOAuthApps } from '../lib/oauth-provider';
 import CordDynamicBg from '../components/CordDynamicBg.jsx';
 // Shader estándar de Cord — paleta oceánica del Centro de Ayuda
 // (navy casi negro + teal profundo + cobalto).
@@ -70,6 +71,7 @@ const appsCtx = canDev
         slack: Boolean(ORG.slackWebhook),
         teams: Boolean(ORG.teamsWebhook),
         whatsapp: Boolean(ORG.whatsappConectado),
+        oauth: await connectedOAuthApps(ORG.id).catch(() => []),
     }
     : null;
 

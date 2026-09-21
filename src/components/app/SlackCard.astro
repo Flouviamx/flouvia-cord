@@ -37,16 +37,23 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
             </div>
         )}
 
-        <details class="slk-manual" open={!oauth}>
-            {oauth && <summary>{t(L, 'set.integ.slack.manual_titulo')}</summary>}
-            <div class="s-field">
-                <label for="slkUrl">{t(L, 'set.integ.webhook_url')}</label>
-                <input class="s-input" id="slkUrl" value={webhook} placeholder="https://hooks.slack.com/services/T000/B000/xxxx" />
-                <span class="s-hint">{t(L, 'set.integ.webhook_hint_pre')} <b>{t(L, 'set.integ.webhook_hint_mid')}</b>{t(L, 'set.integ.webhook_hint_post')} <a href="/app/ajustes/notificaciones">{t(L, 'set.integ.notificaciones')}</a>.</span>
-            </div>
-            <div class="slk-actions">
-                <button class="slk-btn-solid" id="slkSave">{t(L, 'set.integ.guardar')}</button>
-                {!oauth && <button class="slk-btn-ghost" id="slkTest">{t(L, 'set.integ.enviar_prueba')}</button>}
+        <details class:list={['slk-manual', { solo: !oauth }]} open={!oauth} data-oauth={oauth ? '1' : undefined}>
+            {oauth && (
+                <summary>
+                    <svg class="slk-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+                    {t(L, 'set.integ.slack.manual_titulo')}
+                </summary>
+            )}
+            <div class="slk-manual-body">
+                <div class="s-field">
+                    <label for="slkUrl">{t(L, 'set.integ.webhook_url')}</label>
+                    <input class="s-input" id="slkUrl" value={oauth && canal ? '' : webhook} placeholder="https://hooks.slack.com/services/T000/B000/xxxx" autocomplete="off" spellcheck="false" />
+                    <span class="s-hint slk-hint-line">{t(L, 'set.integ.webhook_hint_pre')} <b>{t(L, 'set.integ.webhook_hint_mid')}</b>{t(L, 'set.integ.webhook_hint_post')} <a href="/app/ajustes/notificaciones">{t(L, 'set.integ.notificaciones')}</a>.</span>
+                </div>
+                <div class="slk-actions">
+                    <button class="slk-btn-solid" id="slkSave">{t(L, 'set.integ.guardar')}</button>
+                    {!oauth && <button class="slk-btn-ghost" id="slkTest">{t(L, 'set.integ.enviar_prueba')}</button>}
+                </div>
             </div>
         </details>
         <span class="slk-msg" id="slkMsg"
@@ -60,11 +67,26 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
 <style>
     .slk-flash { font-size: 0.82rem; margin: 0 0 1rem; color: var(--color-ok); }
     .slk-flash[data-bad] { color: var(--color-danger); }
-    .slk-oauth { margin-bottom: 1.2rem; }
+    .slk-oauth { margin-bottom: 0.4rem; }
     .slk-conn { font-size: 0.9rem; margin: 0 0 0.8rem; color: var(--color-text); }
     .slk-hint { font-size: 0.85rem; margin: 0 0 0.8rem; color: var(--color-text-muted); line-height: 1.45; }
-    .slk-manual > summary { font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); cursor: pointer; margin-bottom: 0.8rem; }
-    .slk-manual > summary:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; border-radius: 4px; }
+    .slk-manual { border-top: 1px solid var(--color-border); padding-top: 0.9rem; }
+    .slk-manual.solo { border-top: 0; padding-top: 0; }
+    .slk-manual > summary {
+        list-style: none; display: inline-flex; align-items: center; gap: 6px;
+        font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted);
+        cursor: pointer; padding: 6px 10px 6px 6px; margin-left: -6px; border-radius: 9px;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .slk-manual > summary::-webkit-details-marker { display: none; }
+    .slk-manual > summary:hover { background: var(--color-bg-soft); color: var(--color-text); }
+    .slk-manual > summary:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .slk-chev { width: 15px; height: 15px; flex-shrink: 0; transition: transform 0.2s ease; }
+    .slk-manual[open] > summary .slk-chev { transform: rotate(90deg); }
+    .slk-manual-body { display: flex; flex-direction: column; gap: 1.1rem; margin-top: 0.85rem; }
+    .slk-manual.solo .slk-manual-body { margin-top: 0; }
+    .slk-hint-line { line-height: 1.55; }
+    @media (prefers-reduced-motion: reduce) { .slk-chev, .slk-manual > summary { transition: none; } }
     .slk-msg { display: block; margin-top: 0.8rem; min-height: 1.2em; }
     .slk-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
     .slk-msg { font-size: 0.78rem; font-weight: 600; }
@@ -97,7 +119,8 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
 
         saveBtn.addEventListener('click', async () => {
             const url = urlIn.value.trim();
-            if (url && !/^https:\/\/hooks\.slack\.com\//.test(url)) { flash(msg.dataset.i18nUrlDebeSer || '', false); return; }
+            const viaOauth = !!urlIn.closest('[data-oauth]');
+            if ((viaOauth && !url) || (url && !/^https:\/\/hooks\.slack\.com\//.test(url))) { flash(msg.dataset.i18nUrlDebeSer || '', false); return; }
             saveBtn.disabled = true;
             try {
                 const res = await fetch('/api/org/prefs', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slack_webhook_url: url }) });

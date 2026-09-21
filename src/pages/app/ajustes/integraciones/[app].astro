@@ -9,6 +9,7 @@ import { currentLocale } from '../../../../lib/context';
 import { hubspotStatus } from '../../../../lib/integraciones/hubspot/service';
 import { findIntegration, integrationState } from '../../../../lib/integraciones/catalogo';
 import { slackCredentials } from '../../../../lib/integraciones/slack-oauth';
+import { connectedOAuthApps } from '../../../../lib/oauth-provider';
 
 export const prerender = false;
 
@@ -20,7 +21,8 @@ const ORG = await getOrg();
 const ME = await getMyMembership();
 const canAjustes = memberCan(ME, 'ajustes');
 const HS = canAjustes && app.slug === 'hubspot' ? await hubspotStatus(await getActiveOrgId(), false).catch(() => null) : null;
-const state = integrationState(app, { hubspot: HS?.conexion?.estado ?? null, slack: Boolean(ORG.slackWebhook), teams: Boolean(ORG.teamsWebhook), whatsapp: Boolean(ORG.whatsappConectado) });
+const OAUTH = app.slug === 'zapier' || app.slug === 'make' ? await connectedOAuthApps(await getActiveOrgId()).catch(() => []) : [];
+const state = integrationState(app, { hubspot: HS?.conexion?.estado ?? null, slack: Boolean(ORG.slackWebhook), teams: Boolean(ORG.teamsWebhook), whatsapp: Boolean(ORG.whatsappConectado), oauth: OAUTH });
 ---
 
 <SettingsShell title={`${app.nombre} — Integraciones`} tab="integraciones" perm="ajustes">

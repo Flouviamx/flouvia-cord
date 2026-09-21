@@ -20,7 +20,7 @@ const favicon = (domain: string, size = 64) => `https://t3.gstatic.com/faviconV2
 export const INTEGRATION_APPS: IntegrationApp[] = [
     { slug: 'hubspot', nombre: 'HubSpot', dominio: 'hubspot.com', categoria: 'crm', disponible: true, logo: favicon('hubspot.com', 128), tile: true, guia: '/soporte/conectar-hubspot' },
     { slug: 'slack', nombre: 'Slack', dominio: 'slack.com', categoria: 'comunicacion', disponible: true, logo: favicon('slack.com'), tile: false, guia: null },
-    { slug: 'teams', nombre: 'Microsoft Teams', dominio: 'teams.microsoft.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/teams.svg', tile: false, guia: '/soporte/conectar-teams' },
+    { slug: 'teams', nombre: 'Microsoft Teams', dominio: 'teams.microsoft.com', categoria: 'comunicacion', disponible: true, logo: favicon('teams.microsoft.com', 128), tile: false, guia: '/soporte/conectar-teams' },
     { slug: 'whatsapp', nombre: 'WhatsApp Business', dominio: 'whatsapp.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/whatsapp.svg', tile: true, guia: '/soporte/conectar-whatsapp' },
     { slug: 'make', nombre: 'Make', dominio: 'make.com', categoria: 'automatizacion', disponible: true, logo: favicon('make.com', 128), tile: true, guia: '/soporte/conectar-make' },
     { slug: 'zapier', nombre: 'Zapier', dominio: 'zapier.com', categoria: 'automatizacion', disponible: ZAPIER_INVITE_URL !== null, logo: favicon('zapier.com', 128), tile: true, guia: null },
@@ -29,9 +29,19 @@ export const INTEGRATION_APPS: IntegrationApp[] = [
 
 export type IntegrationState = 'on' | 'warn' | 'off' | 'info' | 'key' | 'oauth' | 'soon';
 
-export function integrationState(app: IntegrationApp, ctx: { hubspot: string | null; slack: boolean; teams: boolean; whatsapp: boolean }): IntegrationState {
+export interface IntegrationCtx {
+    hubspot: string | null;
+    slack: boolean;
+    teams: boolean;
+    whatsapp: boolean;
+    /** Apps con una autorización OAuth viva en esta organización (slug del cliente). */
+    oauth?: readonly string[];
+}
+
+export function integrationState(app: IntegrationApp, ctx: IntegrationCtx): IntegrationState {
     if (!app.disponible) return 'soon';
-    if (app.slug === 'hubspot') return ctx.hubspot === 'activa' ? 'on' : ctx.hubspot ? 'warn' : 'off';
+    if (app.slug === 'hubspot') return ctx.hubspot === 'activa' ? 'on' : ctx.hubspot === 'error' ? 'warn' : 'off';
+    if (ctx.oauth?.includes(app.slug)) return 'on';
     if (app.slug === 'slack') return ctx.slack ? 'on' : 'off';
     if (app.slug === 'teams') return ctx.teams ? 'on' : 'off';
     if (app.slug === 'whatsapp') return ctx.whatsapp ? 'on' : 'off';

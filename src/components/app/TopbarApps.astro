@@ -7,11 +7,11 @@
 // verse conectada en los dos lugares, y dos fuentes divergen en cuanto alguien
 // agrega la tercera app.
 import { t, type AppLocale } from '../../i18n/app';
-import { INTEGRATION_APPS, integrationState, type IntegrationState } from '../../lib/integraciones/catalogo';
+import { INTEGRATION_APPS, integrationState, type IntegrationCtx, type IntegrationState } from '../../lib/integraciones/catalogo';
 
 interface Props {
     lang: AppLocale;
-    ctx: { hubspot: string | null; slack: boolean; teams: boolean; whatsapp: boolean };
+    ctx: IntegrationCtx;
 }
 
 const { lang: L, ctx } = Astro.props;
@@ -21,7 +21,8 @@ const CONECTADAS = APPS.filter((a) => a.state === 'on' || a.state === 'warn');
 // Primero lo que está conectado, luego lo disponible; lo que todavía no existe
 // va al final y se dice "Próximamente" en vez de ofrecer un botón que no lleva
 // a ningún lado.
-const ORDEN: Record<IntegrationState, number> = { warn: 0, on: 1, off: 2, key: 3, info: 4, soon: 5 };
+const ORDEN: Record<IntegrationState, number> = { warn: 0, on: 1, off: 2, oauth: 3, key: 4, info: 5, soon: 6 };
+const LOGOS = CONECTADAS.slice(0, 2);
 const LISTA = [...APPS].sort((a, b) => ORDEN[a.state] - ORDEN[b.state]).slice(0, 6);
 
 const ACCION: Record<IntegrationState, string> = {
@@ -29,6 +30,7 @@ const ACCION: Record<IntegrationState, string> = {
     warn: t(L, 'topbar.apps.revisar'),
     off: t(L, 'topbar.apps.conectar'),
     key: t(L, 'topbar.apps.conectar'),
+    oauth: t(L, 'topbar.apps.conectar'),
     info: t(L, 'topbar.apps.abrir'),
     soon: t(L, 'topbar.apps.pronto'),
 };
@@ -38,9 +40,13 @@ const ACCION: Record<IntegrationState, string> = {
     <button class:list={['tb-apps', { 'has-apps': CONECTADAS.length > 0 }]} id="tbAppsBtn" type="button"
             title={t(L, 'topbar.apps.titulo')} aria-label={t(L, 'topbar.apps.titulo')}
             aria-haspopup="menu" aria-expanded="false">
-        {CONECTADAS.length > 0 && (
+        {LOGOS.length > 0 && (
             <span class="tb-apps-logos" aria-hidden="true">
-                <img src={CONECTADAS[0].app.logo} alt="" width="22" height="22" loading="lazy" />
+                {LOGOS.map(({ app }) => (
+                    <span class:list={['tb-apps-chip', { tile: app.tile }]}>
+                        <img src={app.logo} alt="" width="26" height="26" loading="lazy" />
+                    </span>
+                ))}
             </span>
         )}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -105,7 +111,15 @@ const ACCION: Record<IntegrationState, string> = {
     .tb-apps.has-apps[aria-expanded="true"] { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--color-blue-deep); }
 
     .tb-apps-logos { position: relative; display: inline-flex; flex-shrink: 0; }
-    .tb-apps-logos img { width: 26px; height: 26px; border-radius: 8px; object-fit: contain; display: block; }
+    .tb-apps-chip {
+        width: 26px; height: 26px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+        display: grid; place-items: center; background: var(--surface);
+        box-shadow: 0 0 0 2px var(--surface), inset 0 0 0 1px var(--color-border);
+    }
+    .tb-apps-chip + .tb-apps-chip { margin-left: -7px; }
+    .tb-apps-chip img { width: 18px; height: 18px; object-fit: contain; display: block; }
+    .tb-apps-chip.tile { box-shadow: 0 0 0 2px var(--surface); }
+    .tb-apps-chip.tile img { width: 100%; height: 100%; object-fit: cover; }
     /* Punto de "conectado". Su aro es del color de la cápsula para que se lea
        como un punto encima del logo y no como una mancha pegada. */
     .tb-apps-logos::after {
@@ -151,6 +165,8 @@ const ACCION: Record<IntegrationState, string> = {
        de una tarjeta, o se ve un halo claro alrededor. */
     html[data-theme="dark"] .tb-apps.has-apps { background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1); }
     html[data-theme="dark"] .tb-apps-logos::after { box-shadow: 0 0 0 2px #181e28; }
+    html[data-theme="dark"] .tb-apps-chip { box-shadow: 0 0 0 2px #181e28, inset 0 0 0 1px rgba(255, 255, 255, 0.1); }
+    html[data-theme="dark"] .tb-apps-chip.tile { box-shadow: 0 0 0 2px #181e28; }
 
     @media (max-width: 880px) {
         .tb-apps { width: 44px; height: 44px; }

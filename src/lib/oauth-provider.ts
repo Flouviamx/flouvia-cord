@@ -133,6 +133,18 @@ export async function refreshTokens(client: OAuthClient, refreshToken: string): 
     };
 }
 
+/** Slugs de las apps con una autorización viva en la organización (Zapier, Make). */
+export async function connectedOAuthApps(orgId: string): Promise<string[]> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select distinct c.slug
+          from oauth_grants g
+          join oauth_clients c on c.client_id = g.client_id
+          join api_keys k on k.id = g.api_key_id
+         where g.org_id = ${orgId} and g.revoked_at is null and g.refresh_expires_at > now()
+           and k.revoked_at is null`);
+    return rows.map((r) => r.slug as string);
+}
+
 export async function revokeToken(client: OAuthClient, token: string): Promise<void> {
     await sql`select cord_oauth_revoke(${client.clientId}, ${sha256Hex(token)})`;
 }
