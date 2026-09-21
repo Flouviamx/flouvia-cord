@@ -16,6 +16,10 @@ Make no expone el cuerpo crudo del webhook, así que no puede recalcular la firm
 
 Make documenta `https://www.make.com/oauth/cb/app` como dirección de regreso, pero con una cuenta en us2 esa página respondía "Resource not found" y nunca canjeaba el código. `MAKE_OAUTH_REDIRECT` en `.env` fija la dirección de la zona (por ejemplo `https://us2.make.com/oauth/cb/app`); sin ella se usa la de la documentación. Cualquier dirección nueva también debe registrarse en el cliente OAuth de Cord (`scripts/oauth-client.mjs`).
 
+## Publicación
+
+Publicar la app en Make (Custom apps › Cord › Publish) no publica sus módulos: cada uno tiene su propia visibilidad y, si se quedan privados, quien acepta la invitación ve "no se han creado módulos o son privados". `deploy.mjs` publica los módulos cuando la app ya está publicada.
+
 ## Logo
 
 `logo.png`: fondo transparente y marca en negro. Make pinta lo negro de blanco y lo transparente con el color del tema, así que se ve navy con barras blancas. El ícono de la app de HubSpot no sirve aquí: su fondo casi negro se volvía blanco.

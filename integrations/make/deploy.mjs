@@ -127,6 +127,14 @@ console.log(`  webhook ${webhook}`);
 await ensureRpcs(app.name, version, connection);
 await ensureModules(app.name, version, connection, webhook);
 await call('PUT', `/sdk/apps/${app.name}/${version}/groups`, GROUPS);
+// Una app publicada con módulos privados se instala pero no se puede usar: cada módulo se publica aparte.
+const published = objectOf(await call('GET', `/sdk/apps/${app.name}/${version}?cols[]=public`)).public === true;
+if (published) {
+    for (const mod of listOf(await call('GET', `/sdk/apps/${app.name}/${version}/modules`)).filter((m) => !m.public)) {
+        await call('POST', `/sdk/apps/${app.name}/${version}/modules/${mod.name}/public`);
+        console.log(`  módulo ${mod.name} publicado`);
+    }
+}
 // Make pinta lo negro de blanco y lo transparente con el color del tema.
 const icon = path.join(dir, 'logo.png');
 if (fs.existsSync(icon)) await call('PUT', `/sdk/apps/${app.name}/${version}/icon`, fs.readFileSync(icon), 'image/png');
