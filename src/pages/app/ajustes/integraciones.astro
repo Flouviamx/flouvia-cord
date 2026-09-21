@@ -19,5 +19,5 @@ const HS = memberCan(ME, 'ajustes') ? await hubspotStatus(await getActiveOrgId()
 ---
 
 <SettingsShell title="Integraciones — Ajustes" tab="integraciones" perm="ajustes" intro={t(L, 'set.integ.intro')}>
-    <IntegrationsDirectory lang={L} hubspot={HS?.conexion?.estado ?? null} slack={Boolean(ORG.slackWebhook)} />
+    <IntegrationsDirectory lang={L} hubspot={HS?.conexion?.estado ?? null} slack={Boolean(ORG.slackWebhook)} teams={Boolean(ORG.teamsWebhook)} whatsapp={Boolean(ORG.whatsappConectado)} />
 </SettingsShell>

@@ -11,6 +11,7 @@ import {
     clienteFromCompany, clienteFromContact, companyProps, contactProps, dealProps, huella, sanitizeAjustes,
     type HubSpotAjustes,
 } from './hubspot/mapping';
+import { hsError } from './hubspot/errors';
 
 export const integrationActor = (conexionId: string) => `integration:hubspot:${conexionId}`;
 
@@ -194,7 +195,7 @@ export async function syncIn(ref: crm.Ref, objeto: 'company' | 'contact', extern
 
     const ctx = { orgId: ref.orgId, origin: siteOrigin(), actor: integrationActor(ref.conexionId) };
     const outcome = await patchClientContact(ctx, clientId, changes);
-    if (outcome.status !== 200) throw new SyncFatalError(String(outcome.body.error ?? 'No se pudo actualizar el cliente con los datos de HubSpot.'));
+    if (outcome.status !== 200) throw new SyncFatalError(String(outcome.body.error ?? hsError('cliente_no_actualizado')));
     await auditAction(ctx, 'cliente.actualizado', 'cliente', clientId, `Desde HubSpot: ${Object.keys(changes).join(', ')}`);
     await setHuella(ref, objeto, externoId, nextHuella);
 }
@@ -275,7 +276,7 @@ export async function processOrgSync(orgId: string, limit = BATCH): Promise<numb
                 break;
             }
             const retryable = !(error instanceof SyncFatalError) && (!(error instanceof HubSpotApiError) || error.retryable);
-            const message = error instanceof HubSpotApiError || error instanceof SyncFatalError ? error.message : 'Error interno al sincronizar con HubSpot.';
+            const message = error instanceof HubSpotApiError || error instanceof SyncFatalError ? error.message : hsError('interno');
             if (!(error instanceof HubSpotApiError) && !(error instanceof SyncFatalError)) {
                 log.error('fallo inesperado sincronizando con HubSpot', { route: 'integraciones/sync', orgId, err: error });
             }

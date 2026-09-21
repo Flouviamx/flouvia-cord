@@ -1,6 +1,6 @@
 ---
 title: "Disparadores"
-description: "Los 41 eventos que pueden iniciar un workflow en Cord, agrupados por categoría, con cuándo ocurren y qué datos trae cada uno."
+description: "Los 44 eventos de Cord y el disparador programado que pueden iniciar un workflow en Cord, agrupados por categoría, con cuándo ocurren y qué datos trae cada uno."
 lastUpdated: "2026-09-15"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -33,6 +33,26 @@ Casi todos los disparadores de un mismo tipo de objeto comparten datos. Para no 
 
 El nombre exacto de cada dato para usarlo en textos (por ejemplo `{{saldo_pendiente}}`) está en [Datos del evento](/docs/automatizacion/workflows/datos-del-evento).
 
+## Programado
+
+Un workflow no siempre reacciona a algo: también puede correr en un horario fijo. Es el único disparador que configuras tú.
+
+| Campo | Detalle |
+|---|---|
+| **Cada cuándo** | Todos los días, cada semana o cada mes. |
+| **Día** | De la semana (lunes a domingo) o del mes (1 a 28). |
+| **Hora** | En punto, en la **zona horaria de tu cuenta** (Ajustes › General). |
+
+Trae los datos del propio tic: **Fecha**, **Día de la semana**, **Día del mes** y **Hora**, que puedes usar en tus textos como `{{fecha}}`.
+
+<Callout type="info">
+El día del mes se topa en **28** a propósito: un "31" se saltaría febrero en silencio, y un corte mensual que no sale es peor que uno que sale tres días antes.
+</Callout>
+
+Un disparador programado no trae cotización ni factura, así que las acciones que actúan sobre un documento —caducar, anular, escribirle al cliente— no se pueden usar ahí, y el editor lo dice al publicar. Lo que sí encaja: [consultas](/docs/automatizacion/workflows/consultas) más un aviso al equipo, a Slack o a Teams.
+
+Cuando pausas un workflow programado, su próximo tic se borra; al reanudarlo se recalcula desde ese momento, así que no dispara los tics que se quedaron atrás mientras estaba pausado.
+
 ## Cotizaciones
 
 | Disparador | Cuándo ocurre | Datos |
@@ -42,8 +62,9 @@ El nombre exacto de cada dato para usarlo en textos (por ejemplo `{{saldo_pendie
 | **El cliente abre la cotización** | El cliente abre el link público. No cuenta cuando alguien de tu equipo abre el link para revisarlo. | Datos de cotización |
 | **Se aprueba una cotización** | La cotización queda aprobada. | Datos de cotización |
 | **Se rechaza una cotización** | La cotización queda rechazada. | Datos de cotización |
-| **Se modifica y reenvía una cotización** | Se reenvía al cliente una cotización que ya estaba enviada, vista o vencida, normalmente después de editarla. | Datos de cotización |
+| **Se modifica y reenvía una cotización** | Se reenvía al cliente una cotización que ya estaba enviada, vista o vencida, normalmente después de editarla. | Datos de cotización más **Total anterior** |
 | **Vence una cotización** | Pasa la fecha de vigencia sin que se cierre. Cord revisa las vigencias una vez al día. | Datos de cotización |
+| **Se acerca el vencimiento de una cotización** | Cada día, mientras falten entre 1 y 30 días para la fecha de vigencia y la cotización siga enviada o vista. Trae **Días para que venza** y **Fecha de vigencia**: con una condición eliges el día exacto en que quieres actuar. | Datos de cotización más los dos campos de fecha |
 | **Se elimina un borrador** | Se borra una cotización en borrador. | Datos de cotización, sin el estado actual (la cotización ya no existe) |
 | **Llega un mensaje en una cotización** | Alguien escribe en el chat de la cotización. | Datos de cotización, **Quién escribió** (El cliente o El equipo) y **Mensaje** |
 
@@ -82,6 +103,8 @@ Los eventos de contracargos, reembolsos, depósitos y cuenta de cobros vienen de
 | **Se paga una factura** | La factura queda pagada. | Datos de factura |
 | **Falla el pago de una factura** | Un intento de pago de la factura no pasó. | Datos de factura |
 | **Vence una factura** | Pasa la fecha de vencimiento con saldo pendiente. Cord lo revisa una vez al día. | Datos de factura |
+| **Se acerca el vencimiento de una factura** | Cada día, mientras falten entre 1 y 30 días para el vencimiento y la factura siga abierta con saldo. Trae **Días para que venza** y **Fecha de vencimiento**. | Datos de factura más los dos campos de fecha |
+| **Una factura lleva días vencida** | Cada día, desde el día siguiente al vencimiento y hasta 90 días después, mientras la factura siga abierta con saldo. Trae **Días de vencida**. | Datos de factura más los dos campos de fecha |
 | **Se anula una factura** | La factura se anula. | Datos de factura |
 | **Se marca una factura como incobrable** | Alguien marca la factura como incobrable. | Datos de factura |
 
@@ -90,7 +113,7 @@ Los eventos de contracargos, reembolsos, depósitos y cuenta de cobros vienen de
 | Disparador | Cuándo ocurre | Datos |
 |---|---|---|
 | **Se crea un cliente** | Se agrega un cliente nuevo. | Datos de cliente |
-| **Se actualiza un cliente** | Cambian los datos de un cliente, incluidos los cambios que llegan desde HubSpot. | Datos de cliente |
+| **Se actualiza un cliente** | Cambian los datos de un cliente, incluidos los cambios que llegan desde HubSpot. | Datos de cliente más el valor anterior de Empresa, Correo y Términos de pago |
 | **Se elimina un cliente** | Se borra un cliente. | Empresa y Quién lo originó |
 
 ## Productos
@@ -98,7 +121,7 @@ Los eventos de contracargos, reembolsos, depósitos y cuenta de cobros vienen de
 | Disparador | Cuándo ocurre | Datos |
 |---|---|---|
 | **Se crea un producto** | Se agrega un producto al catálogo. | Datos de producto |
-| **Se actualiza un producto** | Cambian los datos de un producto. | Datos de producto |
+| **Se actualiza un producto** | Cambian los datos de un producto. | Datos de producto más el valor anterior de Precio de lista y Activo |
 | **Se elimina un producto** | Se borra un producto del catálogo. | Nombre y Quién lo originó |
 
 ## Tareas y promesas

@@ -1,7 +1,7 @@
 ---
 import { t, type AppLocale } from '../../i18n/app';
 import { fmtRelative } from '../../lib/fmt-server';
-import { WORKFLOW_TEMPLATES } from '../../lib/workflows/service';
+import { WORKFLOW_TEMPLATES, type WorkflowHealth } from '../../lib/workflows/service';
 import { findAction, findTrigger, TRIGGER_CATEGORIES } from '../../lib/workflows/catalog';
 import { BRAND_LOGOS, BRAND_TILES, WORKFLOW_ICONS } from '../../lib/workflows/icons';
 import type { Step } from '../../lib/workflows/definition';
@@ -10,9 +10,10 @@ interface Props {
     lang: AppLocale;
     workflows: Record<string, any>[];
     limit: number | null;
+    health: WorkflowHealth | null;
 }
 
-const { lang: L, workflows: WORKFLOWS, limit } = Astro.props;
+const { lang: L, workflows: WORKFLOWS, limit, health: HEALTH } = Astro.props;
 const tf = (key: string, vars: Record<string, string | number>) => {
     let out = t(L, key as any);
     for (const k in vars) out = out.split(`{${k}}`).join(String(vars[k]));
@@ -38,8 +39,13 @@ function chainOf(trigger: string, steps: Step[]): { items: ChainItem[]; extra: n
                 items.push(brand && BRAND_LOGOS[brand] ? { logo: BRAND_LOGOS[brand], tile: BRAND_TILES.has(brand) } : { svg: WORKFLOW_ICONS[s.action] ?? WORKFLOW_ICONS.action });
             } else if (s.type === 'wait') {
                 items.push({ svg: WORKFLOW_ICONS.wait });
-            } else {
-                items.push({ svg: WORKFLOW_ICONS.condition });
+            } else if (s.type === 'query') {
+                items.push({ svg: WORKFLOW_ICONS.query });
+            } else if (s.type === 'condition' || s.type === 'wait_until') {
+                // Solo estos dos tienen ramas. El `else` suelto de antes daba
+                // por hecho que todo lo que no era acción ni espera era una
+                // condición, así que un paso nuevo reventaba la lista entera.
+                items.push({ svg: s.type === 'wait_until' ? WORKFLOW_ICONS.wait_until : WORKFLOW_ICONS.condition });
                 walk(s.then);
                 walk(s.else);
             }
@@ -63,6 +69,39 @@ const GLYPH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
             <span class="wfl-cupo" data-full={activos >= limit ? '1' : undefined}>{tf('wf.cupo', { usados: activos, limite: limit })}</span>
         )}
     </div>
+
+    {HEALTH && HEALTH.total > 0 && (
+        <section class="wfl-health" aria-label={t(L, 'wf.salud_titulo')}>
+            <div class="wfl-health-head">
+                <h2>{t(L, 'wf.salud_titulo')}</h2>
+                <span>{tf('wf.salud_ventana', { dias: HEALTH.dias })}</span>
+            </div>
+            <div class="wfl-kpis">
+                <span class="wfl-kpi"><b class="editorial">{HEALTH.total}</b><small>{t(L, 'wf.salud_total')}</small></span>
+                <span class="wfl-kpi"><b class="editorial">{HEALTH.exitosas}</b><small>{t(L, 'wf.salud_exitosas')}</small></span>
+                <span class="wfl-kpi" data-bad={HEALTH.fallidas > 0 ? '1' : undefined}><b class="editorial">{HEALTH.fallidas}</b><small>{t(L, 'wf.salud_fallidas')}</small></span>
+                <span class="wfl-kpi"><b class="editorial">{HEALTH.esperando}</b><small>{t(L, 'wf.salud_esperando')}</small></span>
+            </div>
+            {HEALTH.causas.length > 0 ? (
+                <div class="wfl-causas">
+                    <span class="wfl-causas-title">{t(L, 'wf.salud_causas')}</span>
+                    <ul>
+                        {HEALTH.causas.map((c) => (
+                            <li>
+                                <span class="wfl-causa-n">{c.n}</span>
+                                <span class="wfl-causa-text">
+                                    <strong>{c.mensaje}</strong>
+                                    <small>{c.workflow}{c.ultima ? ` · ${fmtRelative(c.ultima)}` : ''}</small>
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            ) : (
+                <p class="wfl-causas-ok">{t(L, 'wf.salud_sin_fallos')}</p>
+            )}
+        </section>
+    )}
 
     {WORKFLOWS.length > 0 ? (
         <section class="surface-card pad-0 wfl-card" aria-label={t(L, 'wf.heading')}>
@@ -144,6 +183,29 @@ const GLYPH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 </div>
 
 <style>
+    /* Panel de salud: el conteo por CAUSA es lo que convierte "algo falla" en
+       "Slack se desconectó el martes". */
+    .wfl-health { margin-bottom: 1.4rem; padding: 1.15rem 1.35rem 1.25rem; border-radius: 22px; background: var(--color-bg-soft); border: 1px solid var(--color-border); }
+    .wfl-health-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 0.9rem; }
+    .wfl-health-head h2 { margin: 0; font-size: 0.95rem; font-weight: 650; letter-spacing: -0.02em; }
+    .wfl-health-head span { font-size: 0.76rem; color: var(--color-text-muted); }
+    .wfl-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .wfl-kpi { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 14px; background: var(--surface); }
+    .wfl-kpi b { font-size: 1.28rem; line-height: 1.1; }
+    .wfl-kpi small { font-size: 0.72rem; color: var(--color-text-muted); }
+    .wfl-kpi[data-bad] b { color: var(--color-danger); }
+    .wfl-causas { margin-top: 1rem; }
+    .wfl-causas-title { display: block; margin-bottom: 0.5rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--color-text-muted); }
+    .wfl-causas ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .wfl-causas li { display: flex; align-items: flex-start; gap: 10px; padding: 9px 12px; border-radius: 12px; background: var(--surface); }
+    .wfl-causa-n { flex-shrink: 0; min-width: 26px; padding: 1px 7px; border-radius: 7px; background: rgba(220, 38, 38, 0.1); color: var(--color-danger); font-size: 0.76rem; font-weight: 700; text-align: center; }
+    .wfl-causa-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .wfl-causa-text strong { font-size: 0.83rem; font-weight: 500; }
+    .wfl-causa-text small { font-size: 0.73rem; color: var(--color-text-muted); }
+    .wfl-causas-ok { margin: 1rem 0 0; font-size: 0.82rem; color: var(--color-text-muted); }
+    @media (max-width: 880px) {
+        .wfl-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
     .wfl { display: flex; flex-direction: column; gap: 1.75rem; }
     .wfl-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem 2rem; flex-wrap: wrap; }
     .wfl-intro { margin: 0; max-width: 620px; font-size: 0.92rem; line-height: 1.55; color: var(--color-text-muted); text-wrap: pretty; }

@@ -44,9 +44,11 @@ Ejemplo: tenías 4 workflows activos en Starter y pasas a Gratis. Solo el primer
 | Niveles de pasos (el principal y las ramas dentro de ramas) | 4, es decir, hasta 3 condiciones una dentro de otra |
 | Reglas por condición | 5 |
 | Días por espera | De 1 a 30 |
+| Días de plazo en una espera condicionada | De 1 a 30 |
+| Día del mes en un disparador programado | De 1 a 28 |
 | Nombre del workflow | 120 caracteres |
 
-Al llegar a 30 pasos, el editor ya no deja agregar ni duplicar pasos. Si necesitas más, divide la regla en dos workflows con disparadores distintos.
+Las consultas y las esperas condicionadas cuentan como pasos, igual que una acción. Al llegar a 30, el editor ya no deja agregar ni duplicar pasos. Si necesitas más, divide la regla en dos workflows con disparadores distintos.
 
 ## Largo de los textos
 
@@ -58,6 +60,11 @@ Al llegar a 30 pasos, el editor ya no deja agregar ni duplicar pasos. Si necesit
 | Mensaje del correo | 2,000 caracteres |
 | Mensaje de Slack | 1,000 caracteres |
 | Nota de HubSpot | 2,000 caracteres |
+| Asunto del correo al cliente | 150 caracteres |
+| Mensaje del correo al cliente | 2,000 caracteres |
+| URL de destino del POST | 300 caracteres |
+| Mensaje del POST | 1,000 caracteres |
+| Motivo de la anulación | 200 caracteres |
 | Destinatarios con "Todo el equipo" | Los primeros 25 miembros activos |
 
 ## Topes por hora
@@ -70,6 +77,8 @@ Para que un error de configuración no inunde a tu equipo, cada organización ti
 | Avisar al equipo por correo | 30 |
 | Enviar un mensaje a Slack | 120 |
 | Agregar una nota en HubSpot | 120 |
+| Escribirle al cliente | 60 (y consume la cuota de envíos de tu plan) |
+| Mandar los datos a una URL | 120 |
 
 Al pasarlo, el paso falla con un mensaje como "Se alcanzó el máximo de tareas por hora de los workflows." y la ejecución se reintenta más tarde, dentro de sus 3 intentos. Si ves estos avisos a menudo, revisa si algún workflow se dispara con un evento más frecuente de lo que pensabas, como **Se actualiza un cliente** o **El cliente abre la cotización**.
 

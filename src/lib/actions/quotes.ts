@@ -22,6 +22,7 @@ export type QuotePermission = 'cotizar' | 'aprobar';
 const WH_MAP: Record<string, WebhookEvent> = {
     sent: 'quote.sent', approved: 'quote.approved', rejected: 'quote.rejected',
     paid: 'quote.paid', invoiced: 'invoice.stamped', updated: 'quote.updated',
+    expired: 'quote.expired',
 };
 
 const APROBAR_ACTIONS = new Set(['approve', 'reject', 'approve_request', 'reject_request']);
@@ -34,6 +35,10 @@ const ACTIONS: Record<string, { from: string[]; to: string; evento: string; deta
     reject:       { from: ['sent', 'viewed'],             to: 'rejected', evento: 'rejected', detalle: 'Cotización marcada como rechazada' },
     paid:         { from: ['approved', 'invoiced'],       to: 'paid',     evento: 'paid',     detalle: 'Pago registrado' },
     invoiced:     { from: ['approved', 'paid'],           to: 'invoiced', evento: 'invoiced', detalle: 'CFDI emitido' },
+    // Caducar es lo que el cron hace cada noche por fecha; como acción existe
+    // para que un workflow pueda cerrar la cotización antes, sin inventar un
+    // rechazo que el cliente nunca dio.
+    expire:       { from: ['sent', 'viewed'],             to: 'expired',  evento: 'expired',  detalle: 'Cotización vencida por un workflow' },
 };
 
 export function quoteActionPermission(action: string): QuotePermission {
@@ -122,7 +127,7 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
     const action = ACTIONS[input.action];
     if (!action) return done(400, { error: 'Acción no válida' });
 
-    const [rows] = await withOrgTx(orgId, sql`select id, status, version, base_currency, fiscal_currency, fx_rate
+    const [rows] = await withOrgTx(orgId, sql`select id, status, version, base_currency, fiscal_currency, fx_rate, total
                              from cotizaciones where id = ${id} and org_id = ${orgId}`);
     if (!rows.length) return done(404, { error: 'Cotización no encontrada' });
 
@@ -343,7 +348,13 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
     const whev = action.evento === 'invoiced' && !fiscal?.billable
         ? 'invoice.issued'
         : WH_MAP[action.evento];
-    if (whev) after(dispatchQuoteEvent(orgId, id, whev));
+    // `quote.updated` lleva el total ANTERIOR: sin él, una automatización no
+    // distingue "se reenvió igual" de "le bajaron 20% y se reenvió".
+    if (whev === 'quote.updated') {
+        after(dispatchQuoteEvent(orgId, id, whev, { total_anterior: Number(rows[0].total ?? 0) }));
+    } else if (whev) {
+        after(dispatchQuoteEvent(orgId, id, whev));
+    }
 
     let email: { sent: boolean; skipped?: string } | undefined;
     if (action.to === 'sent') {
@@ -386,6 +397,26 @@ export async function runQuoteAction(ctx: ActionContext, id: string, input: Reco
         }
     }
 
+    // `quote_expired` no admite `source`, así que va aparte del bloque genérico
+    // de arriba. Comparte `event_id` con el cron: la misma cotización vencida
+    // no cuenta dos veces si ambos caminos la tocan.
+    if (input.action === 'expire') {
+        const [expiredRows] = await withOrgTx(orgId, sql`
+            select c.total, c.base_currency, c.sent_at, (o.sandbox_of is not null) as is_sandbox, o.is_demo
+              from cotizaciones c join orgs o on o.id = c.org_id
+             where c.id = ${id} and c.org_id = ${orgId}`);
+        const m = expiredRows[0];
+        if (m) {
+            after(trackServer('quote_expired', orgId, {
+                event_id: id,
+                quote_id: id,
+                total: Number(m.total ?? 0),
+                currency: (m.base_currency as string) || 'MXN',
+                ...(m.sent_at ? { days_since_sent: Math.max(0, Math.round((Date.now() - new Date(m.sent_at as string).getTime()) / 86400000)) } : {}),
+            }, !!m.is_sandbox, !!m.is_demo));
+        }
+    }
+
     return done(200, { ok: true, status: action.to, email, fiscal });
 }
 
@@ -412,6 +443,7 @@ export const resendQuote = (ctx: ActionContext, id: string, input: QuoteInput = 
 export const updateQuoteDraft = (ctx: ActionContext, id: string, input: QuoteInput) => runQuoteAction(ctx, id, { ...input, action: 'update_draft' });
 export const approveQuote = (ctx: ActionContext, id: string) => runQuoteAction(ctx, id, { action: 'approve' });
 export const rejectQuote = (ctx: ActionContext, id: string) => runQuoteAction(ctx, id, { action: 'reject' });
+export const expireQuote = (ctx: ActionContext, id: string) => runQuoteAction(ctx, id, { action: 'expire' });
 export const markQuotePaid = (ctx: ActionContext, id: string, input: { payment_method?: string } = {}) => runQuoteAction(ctx, id, { ...input, action: 'paid' });
 export const invoiceQuote = (ctx: ActionContext, id: string, input: { document_mode?: string } = {}) => runQuoteAction(ctx, id, { ...input, action: 'invoiced' });
 export const decideApprovalRequest = (ctx: ActionContext, id: string, approve: boolean) => runQuoteAction(ctx, id, { action: approve ? 'approve_request' : 'reject_request' });

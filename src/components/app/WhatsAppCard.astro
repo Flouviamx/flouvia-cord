@@ -1,0 +1,139 @@
+---
+import { t, type AppLocale } from '../../i18n/app';
+
+interface Props {
+    lang: AppLocale;
+    phoneId: string;
+    plantilla: string;
+    idioma: string;
+    conectado: boolean;
+}
+
+const { lang: L, phoneId, plantilla, idioma, conectado } = Astro.props;
+---
+
+<div class="s-block" data-whatsapp>
+    <h3>{t(L, 'set.integ.det.conexion')}</h3>
+    <div class="s-body">
+        <div class="s-field">
+            <label for="waPhone">{t(L, 'set.integ.wa.phone_id')}</label>
+            <input class="s-input" id="waPhone" value={phoneId} inputmode="numeric" placeholder="123456789012345" />
+        </div>
+        <div class="s-field">
+            <label for="waToken">{t(L, 'set.integ.wa.token')}</label>
+            <input class="s-input" id="waToken" type="password" autocomplete="off" placeholder={conectado ? '••••••••••••' : 'EAAG...'} />
+            <span class="s-hint">{t(L, 'set.integ.wa.token_hint')}{conectado ? ` · ${t(L, 'set.integ.wa.token_guardado')}` : ''}</span>
+        </div>
+        <div class="wa-grid">
+            <div class="s-field">
+                <label for="waTpl">{t(L, 'set.integ.wa.plantilla')}</label>
+                <input class="s-input" id="waTpl" value={plantilla} placeholder="recordatorio_pago" />
+            </div>
+            <div class="s-field">
+                <label for="waLang">{t(L, 'set.integ.wa.idioma')}</label>
+                <input class="s-input" id="waLang" value={idioma || 'es_MX'} placeholder="es_MX" />
+            </div>
+        </div>
+        <div class="wa-actions">
+            <button class="wa-btn-solid" id="waSave">{t(L, 'set.integ.guardar')}</button>
+            <input class="s-input wa-num" id="waNum" placeholder={t(L, 'set.integ.wa.probar_num')} inputmode="tel" />
+            <button class="wa-btn-ghost" id="waTest">{t(L, 'set.integ.wa.probar')}</button>
+            {conectado && <button class="wa-btn-ghost is-danger" id="waOff">{t(L, 'set.integ.wa.desconectar')}</button>}
+            <span class="wa-msg" id="waMsg"
+                data-i18n-guardado={t(L, 'set.integ.guardado')} data-i18n-no-guardo={t(L, 'set.integ.no_guardo')}
+                data-i18n-enviada={t(L, 'set.integ.wa.enviada')} data-i18n-desconectado={t(L, 'set.integ.wa.desconectado')}></span>
+        </div>
+    </div>
+</div>
+
+<style>
+    .wa-grid { display: grid; grid-template-columns: 1fr 160px; gap: 0.9rem; }
+    .wa-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .wa-num { max-width: 220px; }
+    .wa-msg { font-size: 0.78rem; font-weight: 600; }
+    .wa-msg:global(.ok) { color: var(--color-ok); }
+    .wa-msg:global(.err) { color: var(--color-danger); }
+    .wa-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
+    .wa-btn-ghost { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); border-radius: 9px; padding: 9px 16px; cursor: pointer; }
+    .wa-btn-ghost.is-danger { color: var(--color-danger); border-color: color-mix(in srgb, var(--color-danger) 35%, transparent); }
+    .wa-btn-solid:disabled, .wa-btn-ghost:disabled { opacity: 0.6; cursor: wait; }
+    .wa-btn-solid:focus-visible, .wa-btn-ghost:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+
+    @media (max-width: 560px) {
+        .wa-grid { grid-template-columns: 1fr; }
+        .wa-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+        .wa-num, .wa-msg { grid-column: 1 / -1; max-width: none; }
+        .wa-btn-solid, .wa-btn-ghost { min-height: 46px; width: 100%; }
+    }
+</style>
+
+<script>
+    function initWhatsApp() {
+        const $ = (id: string) => document.getElementById(id) as HTMLInputElement | null;
+        const phone = $('waPhone'), token = $('waToken'), tpl = $('waTpl'), lang = $('waLang'), num = $('waNum');
+        const save = $('waSave'), test = $('waTest'), off = $('waOff');
+        const msg = document.getElementById('waMsg');
+        const status = document.querySelector<HTMLElement>('[data-integ-status]');
+        if (!phone || !tpl || !save || !test || !msg) return;
+
+        const flash = (text: string, ok: boolean) => {
+            msg.textContent = text;
+            msg.className = 'wa-msg ' + (ok ? 'ok' : 'err');
+            setTimeout(() => { msg.textContent = ''; msg.className = 'wa-msg'; }, 4000);
+        };
+        const call = async (method: string, body?: unknown) => {
+            const res = await fetch('/api/integraciones/whatsapp', {
+                method, headers: { 'Content-Type': 'application/json' },
+                ...(body ? { body: JSON.stringify(body) } : {}),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || '');
+            return data;
+        };
+
+        save.addEventListener('click', async () => {
+            (save as HTMLButtonElement).disabled = true;
+            try {
+                await call('PATCH', {
+                    phone_id: phone.value.trim(), token: token?.value.trim() || undefined,
+                    plantilla: tpl.value.trim(), idioma: lang?.value.trim() || 'es_MX',
+                });
+                if (token) token.value = '';
+                if (status) {
+                    status.textContent = status.dataset.labelOn || '';
+                    status.dataset.estado = 'on';
+                }
+                flash(msg.dataset.i18nGuardado || '', true);
+            } catch (err: any) {
+                flash(err.message || msg.dataset.i18nNoGuardo || '', false);
+            } finally { (save as HTMLButtonElement).disabled = false; }
+        });
+
+        test.addEventListener('click', async () => {
+            (test as HTMLButtonElement).disabled = true;
+            try {
+                await call('POST', { telefono: num?.value.trim() });
+                flash(msg.dataset.i18nEnviada || '', true);
+            } catch (err: any) {
+                flash(err.message || msg.dataset.i18nNoGuardo || '', false);
+            } finally { (test as HTMLButtonElement).disabled = false; }
+        });
+
+        off?.addEventListener('click', async () => {
+            (off as HTMLButtonElement).disabled = true;
+            try {
+                await call('DELETE');
+                phone.value = ''; tpl.value = '';
+                if (status) {
+                    status.textContent = status.dataset.labelOff || '';
+                    status.dataset.estado = 'off';
+                }
+                flash(msg.dataset.i18nDesconectado || '', true);
+            } catch (err: any) {
+                flash(err.message || msg.dataset.i18nNoGuardo || '', false);
+            } finally { (off as HTMLButtonElement).disabled = false; }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initWhatsApp);
+    else initWhatsApp();
+</script>

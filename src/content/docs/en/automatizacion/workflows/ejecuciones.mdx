@@ -116,6 +116,14 @@ Step error messages currently appear in Spanish in the app. The tables below giv
 | This action is no longer available. | The run used an action Cord retired. | Edit the workflow and publish again. |
 | Internal error while running the action. | An unexpected Cord failure. | It retries on its own. If it ends Failed, click **Retry** or write to us. |
 
+## The health panel
+
+Above the **Workflows** list there is a summary of the last 30 days: how many runs there were, how many completed, how many failed and how many are still running or waiting.
+
+Below it, **Why they failed**: the five most frequent causes, with how many times each one happened, in which workflow it last happened and when. That is the difference between "something is failing" and "Slack disconnected on Tuesday": if one cause has 40 failures and the rest have none, you already know what to fix.
+
+The panel shows up as soon as there are runs. If nothing failed in the period, it says so instead of showing an empty list.
+
 ## Next
 
 - [Limits](/en/docs/automatizacion/workflows/limites)

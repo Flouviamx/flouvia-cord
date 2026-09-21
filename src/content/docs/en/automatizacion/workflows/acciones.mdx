@@ -19,8 +19,15 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 | **Email the team** | Emails the account owner or the whole team. | Nothing |
 | **Send a Slack message** | Posts a message to your Slack channel. | Slack connected |
 | **Add a note in HubSpot** | Adds a note to the quote's Deal or the client's Company. | HubSpot connected |
+| **Email the client** | Sends a branded email to the client's contact, with the button to view and pay the document. | A quote or invoice trigger, and a client with an email |
+| **Expire the quote** | Marks the quote as expired so the client can no longer approve it. | A quote trigger |
+| **Approve the internal request** | Approves the pending internal approval and sends the quote to the client. | Approvals in your plan |
+| **Void the invoice** | Voids the invoice if it has no payments applied. | An invoice trigger |
+| **Send the data to a URL** | POSTs the event data to the URL you paste. | A public https URL |
+| **Send a Teams message** | Posts a card to your Microsoft Teams channel. | Teams connected |
+| **Send the client a WhatsApp** | Sends your approved WhatsApp template to the client's phone. | WhatsApp connected and a client with a phone |
 
-To add an action, click **Add a step › Add action**, pick one in **Choose an action** and fill in its fields in the panel. Every text field accepts [event data](/en/docs/automatizacion/workflows/datos-del-evento) like `{{cliente}}`.
+To add an action, click **Add a step › Action or lookup**: a finder opens with every action and every [lookup](/en/docs/automatizacion/workflows/consultas), filtered by family (your team, your client, the document, other tools). Pick one and fill in its fields in the panel. Every text field accepts [event data](/en/docs/automatizacion/workflows/datos-del-evento) like `{{cliente}}`.
 
 <Callout type="info">
 Step error messages from runs currently appear in Spanish in the app. This page gives the English meaning of each one.
@@ -71,6 +78,75 @@ Each person receives their own email; nobody sees the others' addresses.
 - "Email is not available right now": it could not be delivered to anyone. It is retried automatically.
 - "Hourly email limit for workflows reached": your workflows sent 30 emails in the last hour.
 
+## Email the client
+
+Emails the contact of the client on the event's document, with the business's branding and the button to the public link: approve, if the event is about a quote; pay, if it is about an invoice.
+
+| Field | Required | Detail |
+|---|---|---|
+| **Subject** | Yes | Up to 150 characters. Accepts event data. |
+| **Message** | Yes | Up to 2,000 characters. Accepts event data and line breaks. Your client reads this. |
+
+**Who receives it:** the email of the document's client, never an address typed into the step. If the client has no email on file, the step fails and says so.
+
+**What Cord adds:** your logo and brand color, the button to the document, the link in plain text in case the button does not open, and your business footer. In the test environment the subject is marked as a test.
+
+**It counts against your plan:** each client email uses one send from your plan's monthly quota, the same as sending a quote by hand. If the quota is gone, the step fails and nothing is sent.
+
+<Callout type="info">
+Cord already sends its own invoice reminders on the cadence set in **Settings › Collections**. If you also build a workflow that emails the client, check that two notices do not land on the same day for the same money.
+</Callout>
+
+## Expire the quote
+
+Marks a quote that is still sent or viewed as **Expired**. The client can no longer approve or reject it from the link, the event is recorded in its history, and **A quote expires** fires for the rest of your automations.
+
+It only works with triggers that carry a quote; if the quote was already approved, rejected or expired, the step fails with "The quote is no longer in a state that allows this action".
+
+## Approve the internal request
+
+Approves the quote's pending internal approval request and sends the quote to the client, exactly as if someone approved it in the app. Use it behind a condition — a total below a certain amount, for example — so small approvals do not wait on a person.
+
+It requires internal approvals in your plan. If the quote no longer has a pending request, the step says so and nothing changes.
+
+## Void the invoice
+
+Voids the event's invoice. It follows the same rules as voiding by hand from **Invoices**: an invoice with payments applied is **not** voided — that is what the credit note is for — and canceling a CFDI with the SAT may stay pending a response. When it cannot be voided, the step fails and the invoice stays as it was.
+
+| Field | Required | Detail |
+|---|---|---|
+| **Reason** | No | Up to 200 characters. It is kept in the invoice history. |
+
+## Send the data to a URL
+
+Makes a `POST` with the event as JSON to the address you paste: a Zapier Zap, a Make scenario, an n8n flow or your own server.
+
+| Field | Required | Detail |
+|---|---|---|
+| **Destination URL** | Yes | It must be `https` and on a public server. Cord rejects internal addresses both when publishing and when running. |
+| **Message** | No | Up to 1,000 characters. Accepts event data; it travels in the `mensaje` field. |
+
+The body looks like this:
+
+```json
+{
+  "workflow": "Large deal alert",
+  "workflow_id": "…",
+  "evento": "quote.approved",
+  "objeto": "quote",
+  "objeto_id": "…",
+  "enviado_en": "2026-09-20T18:00:00.000Z",
+  "mensaje": "ACME approved COT-7",
+  "datos": { "folio": "COT-7", "cliente": "ACME", "total": "150,000", "moneda": "MXN" }
+}
+```
+
+**When it fails:** if the URL is not valid or points to an internal server, and if the destination responds with an error. It retries within the run's 3 attempts.
+
+<Callout type="info">
+This action does not sign the request. If you need to verify that the request comes from Cord, use the [webhooks](/docs/desarrolladores/herramientas/webhooks) in the Developers dock, which are signed.
+</Callout>
+
 ## Send a Slack message
 
 Posts a message to the channel you connected in **Settings › Integrations › Slack**.
@@ -91,6 +167,46 @@ This message is independent from the **Settings › Notifications** alerts: a wo
 - "Hourly message limit for workflows reached": 120 messages in the last hour.
 
 How to connect Slack: [Slack](/en/docs/automatizacion/integraciones/slack).
+
+## Send a Teams message
+
+Posts a card to the channel you connected in **Settings › Integrations › Microsoft Teams**.
+
+| Field | Required | Detail |
+|---|---|---|
+| **Message** | Yes | Up to 1,000 characters. Accepts event data and line breaks. |
+
+**How it looks:** a card with your text in the channel. Teams does not use Slack's formatting, so asterisks and `<url|text>` links show up literally; write plain text.
+
+It is independent from **Settings › Notifications**: the workflow posts even when those notices are off.
+
+**When it fails:**
+
+- "Connect Microsoft Teams in Settings › Integrations to use this action.": there is no flow URL saved.
+- "Teams did not accept the message.": the Power Automate flow was turned off or deleted. Create a new one and paste the new URL.
+- "Workflows reached their hourly limit of Teams messages.": 120 messages in the last hour.
+
+How to connect Teams: [Connect Microsoft Teams](/en/support/conectar-teams).
+
+## Send the client a WhatsApp
+
+Sends the template you set up in **Settings › Integrations › WhatsApp Business** to the phone of the document's client.
+
+| Field | Required | Detail |
+|---|---|---|
+| **Variable 1 to 4** | No | Fill `{{1}}`, `{{2}}`… of your template, in order. They accept event data. |
+
+**Why variables and not a message:** Meta does not allow starting a conversation with free text, only with an approved template. A free-text field here would promise something the provider rejects.
+
+**The phone comes from the client**, never from a field in the step, and it must carry a country code. Cord does not guess the country: the same number exists in several.
+
+**When it fails:**
+
+- "The client has no phone with a country code on file.": edit the client and save the number with `+`.
+- "WhatsApp did not accept your template.": it is not approved, the name does not match, or the number of variables differs.
+- "Workflows reached their hourly limit of WhatsApp messages.": 60 messages in the last hour.
+
+How to connect it: [Connect WhatsApp Business](/en/support/conectar-whatsapp).
 
 ## Add a note in HubSpot
 

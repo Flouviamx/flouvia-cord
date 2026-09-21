@@ -1,6 +1,6 @@
 ---
 title: "Acciones"
-description: "Las cuatro acciones de Cord Workflows en detalle: crear una tarea, avisar al equipo por correo, enviar un mensaje a Slack y agregar una nota en HubSpot."
+description: "Las nueve acciones de Cord Workflows en detalle: tarea, correo al equipo, correo al cliente, caducar cotización, aprobar solicitud interna, anular factura, POST a una URL, Slack y HubSpot."
 lastUpdated: "2026-09-15"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -19,8 +19,15 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
 | **Avisar al equipo por correo** | Envía un correo al dueño de la cuenta o a todo el equipo. | Nada |
 | **Enviar un mensaje a Slack** | Publica un mensaje en tu canal de Slack. | Slack conectado |
 | **Agregar una nota en HubSpot** | Deja una nota en el Deal de la cotización o en la Empresa del cliente. | HubSpot conectado |
+| **Escribirle al cliente** | Manda un correo con tu marca al contacto del cliente, con el botón para ver y pagar el documento. | Un disparador de cotización o de factura, y el cliente con correo |
+| **Caducar la cotización** | Marca la cotización como vencida para que el cliente ya no pueda aprobarla. | Un disparador de cotización |
+| **Aprobar la solicitud interna** | Aprueba la aprobación interna pendiente y envía la cotización al cliente. | Aprobaciones en tu plan |
+| **Anular la factura** | Anula la factura si todavía no tiene pagos aplicados. | Un disparador de factura |
+| **Mandar los datos a una URL** | Hace un POST con los datos del evento a la URL que pegues. | Una URL https pública |
+| **Enviar un mensaje a Teams** | Publica una tarjeta en tu canal de Microsoft Teams. | Teams conectado |
+| **Mandarle un WhatsApp al cliente** | Manda tu plantilla aprobada de WhatsApp al teléfono del cliente. | WhatsApp conectado y el cliente con teléfono |
 
-Para agregar una acción, pulsa **Agregar un paso › Agregar acción**, elige cuál en **Elige una acción** y completa sus campos en el panel. En todos los campos de texto puedes insertar [datos del evento](/docs/automatizacion/workflows/datos-del-evento) como `{{cliente}}`.
+Para agregar una acción, pulsa **Agregar un paso › Acción o consulta**: se abre un buscador con todas las acciones y las [consultas](/docs/automatizacion/workflows/consultas), con filtros por familia (tu equipo, tu cliente, el documento, otras herramientas). Elige una y completa sus campos en el panel. En todos los campos de texto puedes insertar [datos del evento](/docs/automatizacion/workflows/datos-del-evento) como `{{cliente}}`.
 
 ## Crear una tarea
 
@@ -67,6 +74,75 @@ Cada persona recibe su propio correo; nadie ve las direcciones de los demás.
 - "El correo no está disponible por ahora.": no se pudo entregar a nadie. Se reintenta automáticamente.
 - "Se alcanzó el máximo de correos por hora de los workflows.": tus workflows mandaron 30 correos en la última hora.
 
+## Escribirle al cliente
+
+Manda un correo al contacto del cliente del documento del evento, con la marca del negocio y el botón que lleva al link público: aprobar, si el evento es de una cotización; pagar, si es de una factura.
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| **Asunto** | Sí | Hasta 150 caracteres. Admite datos del evento. |
+| **Mensaje** | Sí | Hasta 2,000 caracteres. Admite datos del evento y saltos de línea. Lo lee tu cliente. |
+
+**A quién le llega:** al correo del cliente del documento, nunca a una dirección escrita en el paso. Si el cliente no tiene correo registrado, el paso falla y te lo dice.
+
+**Qué agrega Cord:** el logo y el color de tu marca, el botón al documento, el enlace en texto por si el botón no abre y el pie de tu negocio. En el entorno de prueba el asunto sale marcado como prueba.
+
+**Cuenta contra tu plan:** cada correo al cliente consume un envío de la cuota mensual de tu plan, igual que mandar una cotización a mano. Si la cuota se acabó, el paso falla y no se manda nada.
+
+<Callout type="info">
+Cord ya manda sus propios recordatorios de factura según la cadencia de **Ajustes › Cobranza**. Si además armas un workflow que le escribe al cliente, revisa que no queden dos avisos el mismo día por el mismo dinero.
+</Callout>
+
+## Caducar la cotización
+
+Marca como **Vencida** una cotización que sigue enviada o vista. El cliente deja de poder aprobarla o rechazarla desde el link, queda el evento en su historial y se dispara **Vence una cotización** para el resto de tus automatizaciones.
+
+Solo funciona con disparadores que traen una cotización; si la cotización ya se aprobó, se rechazó o ya estaba vencida, el paso falla con "La cotización ya no está en un estado que admita esta acción".
+
+## Aprobar la solicitud interna
+
+Aprueba la solicitud de aprobación interna pendiente de la cotización y la envía al cliente, igual que si alguien la aprobara desde la app. Úsala con una condición delante — por ejemplo, un total por debajo de cierto monto — para que las aprobaciones chicas no esperen a una persona.
+
+Requiere aprobaciones internas en tu plan. Si la cotización ya no tiene una solicitud pendiente, el paso lo dice y no cambia nada.
+
+## Anular la factura
+
+Anula la factura del evento. Sigue las mismas reglas que anular a mano desde **Facturas**: una factura con pagos aplicados **no** se anula —para eso está la nota de crédito—, y la cancelación de un CFDI ante el SAT puede quedar pendiente de respuesta. Cuando no se puede anular, el paso falla y la factura se queda como estaba.
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| **Motivo** | No | Hasta 200 caracteres. Queda en el historial de la factura. |
+
+## Mandar los datos a una URL
+
+Hace un `POST` con el evento en JSON a la dirección que pegues: un Zap de Zapier, un escenario de Make, un flujo de n8n o tu propio servidor.
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| **URL de destino** | Sí | Tiene que ser `https` y de un servidor público. Cord rechaza direcciones internas al publicar y también al ejecutar. |
+| **Mensaje** | No | Hasta 1,000 caracteres. Admite datos del evento; viaja en el campo `mensaje`. |
+
+El cuerpo se ve así:
+
+```json
+{
+  "workflow": "Aviso de venta grande",
+  "workflow_id": "…",
+  "evento": "quote.approved",
+  "objeto": "quote",
+  "objeto_id": "…",
+  "enviado_en": "2026-09-20T18:00:00.000Z",
+  "mensaje": "ACME aprobó COT-7",
+  "datos": { "folio": "COT-7", "cliente": "ACME", "total": "150,000", "moneda": "MXN" }
+}
+```
+
+**Cuándo falla:** si la URL no es válida o apunta a un servidor interno, y si el destino responde con un error. Se reintenta dentro de los 3 intentos de la ejecución.
+
+<Callout type="info">
+Esta acción no firma el envío. Si necesitas verificar que la petición viene de Cord, usa los [webhooks](/docs/desarrolladores/herramientas/webhooks) del dock de Desarrolladores, que sí van firmados.
+</Callout>
+
 ## Enviar un mensaje a Slack
 
 Publica un mensaje en el canal que conectaste en **Ajustes › Integraciones › Slack**.
@@ -87,6 +163,46 @@ Este mensaje es independiente de los avisos de **Ajustes › Notificaciones**: u
 - "Se alcanzó el máximo de mensajes por hora de los workflows.": 120 mensajes en la última hora.
 
 Cómo conectar Slack: [Slack](/docs/automatizacion/integraciones/slack).
+
+## Enviar un mensaje a Teams
+
+Publica una tarjeta en el canal que conectaste en **Ajustes › Integraciones › Microsoft Teams**.
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| **Mensaje** | Sí | Hasta 1,000 caracteres. Admite datos del evento y saltos de línea. |
+
+**Cómo se ve:** una tarjeta con tu texto en el canal. Teams no usa el formato de Slack, así que los asteriscos y los enlaces con `<url|texto>` salen literales; escribe el texto plano.
+
+Es independiente de los avisos de **Ajustes › Notificaciones**: el workflow publica aunque esos avisos estén apagados.
+
+**Cuándo falla:**
+
+- "Conecta Microsoft Teams en Ajustes › Integraciones para usar esta acción.": no hay una URL de flujo guardada.
+- "Teams no aceptó el mensaje.": el flujo de Power Automate se apagó o se borró. Crea otro y pega la URL nueva.
+- "Se alcanzó el máximo de mensajes de Teams por hora de los workflows.": 120 mensajes en la última hora.
+
+Cómo conectar Teams: [Conectar Microsoft Teams](/soporte/conectar-teams).
+
+## Mandarle un WhatsApp al cliente
+
+Manda la plantilla que configuraste en **Ajustes › Integraciones › WhatsApp Business** al teléfono del cliente del documento.
+
+| Campo | Obligatorio | Detalle |
+|---|---|---|
+| **Variable 1 a 4** | No | Rellenan `{{1}}`, `{{2}}`… de tu plantilla, en orden. Admiten datos del evento. |
+
+**Por qué son variables y no un mensaje:** Meta no permite iniciar una conversación con texto libre; solo con una plantilla aprobada. Un campo de mensaje libre aquí sería prometer algo que el proveedor rechaza.
+
+**El teléfono sale del cliente**, nunca de un campo del paso, y tiene que llevar lada de país. Cord no adivina el país: el mismo número existe en varios.
+
+**Cuándo falla:**
+
+- "El cliente no tiene un teléfono con lada de país registrado.": edita el cliente y guarda el número con `+`.
+- "WhatsApp no aceptó tu plantilla.": no está aprobada, el nombre no coincide o el número de variables es distinto.
+- "Se alcanzó el máximo de WhatsApp por hora de los workflows.": 60 mensajes en la última hora.
+
+Cómo conectarlo: [Conectar WhatsApp Business](/soporte/conectar-whatsapp).
 
 ## Agregar una nota en HubSpot
 

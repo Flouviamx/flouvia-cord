@@ -609,10 +609,16 @@ Cord Workflows convierte lo que pasa en una venta en el siguiente paso, sin escr
 
 ### Qué incluye:
 - **Workflows con condiciones y esperas:** eliges un evento de Cord, pones condiciones visibles y encadenas pasos. Por ejemplo: tres días después de enviar una cotización, si sigue sin abrirse, crea una tarea para llamar al cliente.
-- **Acciones reales:** crear una tarea, avisar al equipo por correo, publicar en tu canal de Slack o dejar una nota en el Deal de HubSpot.
+- **Disparadores de tiempo:** además del evento, un horario fijo ("cada lunes a las 9", en la zona horaria de tu cuenta) y las anclas de vencimiento, que avisan antes de la fecha y no solo cuando ya pasó.
+- **Espera hasta que ocurra:** el workflow espera a que el cliente abra o pague, con un plazo máximo, y sigue por una rama u otra según lo que pase.
+- **Consultas antes de decidir:** cartera vencida, pipeline abierto, cobrado del periodo o el saldo del cliente, para usar ese dato en el mensaje o en la condición.
+- **Prueba sin publicar:** corre el borrador con tu último evento real y muestra qué pasos se cumplirían y con qué texto exacto, sin mandar nada.
+- **Datos de tu negocio en cualquier texto:** el nombre del negocio, su correo, su teléfono, su divisa y la fecha de hoy en tu zona horaria, sin escribirlos a mano en cada workflow.
+- **Panel de salud:** ejecuciones, fallidas y las causas más frecuentes de los últimos 30 días, agrupadas por motivo y no por texto libre.
+- **Acciones reales:** crear una tarea, avisar al equipo por correo, escribirle al cliente con tu marca, caducar una cotización, anular una factura, mandar los datos a una URL, publicar en Slack o Teams, o dejar una nota en el Deal de HubSpot.
 - **Historial de cada ejecución:** qué se disparó, cuándo, con qué resultado y el error legible cuando algo falla. Un paso que falla se reintenta; la entrega es al menos una vez.
 - **HubSpot en los dos sentidos:** tus clientes se mantienen al día con Empresas y Contactos, y cada cotización crea y mueve su Deal por el pipeline. Mover un Deal en HubSpot no cambia nada en Cord.
-- **Slack y Make:** avisos en tu canal, y escenarios de Make que reciben los eventos de Cord y crean datos con la API.
+- **Slack, Teams, WhatsApp, Make y n8n:** avisos en tu canal, WhatsApp al cliente con tu plantilla aprobada por Meta, escenarios de Make que reciben los eventos de Cord, y el nodo de Cord para n8n con su disparador propio.
 - **Para quien programa:** API pública v1, webhooks firmados con historial de entregas y servidor MCP.
 
 ### Qué sigue:
@@ -622,10 +628,16 @@ Cord Workflows turns what happens in a sale into the next step, without writing 
 
 ### What's included:
 - **Workflows with conditions and waits:** pick a Cord event, set visible conditions and chain steps. For example: three days after sending a quote, if it is still unopened, create a task to call the client.
-- **Real actions:** create a task, email your team, post to your Slack channel or add a note to the HubSpot Deal.
+- **Time triggers:** besides the event, a fixed schedule ("every Monday at 9", in your account's time zone) and due-date anchors that warn you before the date, not only once it has passed.
+- **Wait until it happens:** the workflow waits for the client to open or pay, with a time limit, and continues down one branch or the other depending on what happens.
+- **Lookups before deciding:** overdue receivables, open pipeline, what was collected, or the client's balance, to use that number in the message or in the condition.
+- **Test without publishing:** run the draft with your latest real event and see which steps would be met and with what exact text, without sending anything.
+- **Your business data in any text:** the business name, its email, phone, currency and today's date in your time zone, without typing them into every workflow.
+- **Health panel:** runs, failures and the most frequent causes over the last 30 days, grouped by reason rather than by free text.
+- **Real actions:** create a task, email your team, email the client with your branding, expire a quote, void an invoice, send the data to a URL, post to Slack or Teams, or add a note to the HubSpot Deal.
 - **History for every run:** what fired, when, with what result, and a readable error when something fails. A failed step is retried; delivery is at least once.
 - **HubSpot both ways:** your clients stay in sync with Companies and Contacts, and every quote creates and moves its Deal through the pipeline. Moving a Deal in HubSpot changes nothing in Cord.
-- **Slack and Make:** alerts in your channel, and Make scenarios that receive Cord events and create data through the API.
+- **Slack, Teams, WhatsApp, Make and n8n:** alerts in your channel, WhatsApp to the client with your Meta-approved template, Make scenarios that receive Cord events, and the Cord node for n8n with its own trigger.
 - **For developers:** public API v1, signed webhooks with delivery history, and an MCP server.
 
 ### What's next:
@@ -933,7 +945,7 @@ const roadmapEnhancements = {
             es: ['Elige el evento de Cord que arranca el workflow y define condiciones visibles.', 'Encadena acciones —tarea, correo al equipo, Slack o nota en HubSpot— y publícalo cuando esté listo.', 'Revisa cada ejecución, su resultado y el error legible cuando un paso falla.'],
             en: ['Pick the Cord event that starts the workflow and set visible conditions.', 'Chain actions — task, team email, Slack or a HubSpot note — and publish when ready.', 'Review every run, its result, and the readable error when a step fails.']
         },
-        scope: { es: 'Workflows sobre los eventos de Cord, directorio de integraciones con HubSpot y Slack, escenarios de Make por webhooks y API, y la plataforma para desarrolladores: API v1, webhooks firmados y MCP.', en: 'Workflows on Cord events, an integrations directory with HubSpot and Slack, Make scenarios through webhooks and API, and the developer platform: API v1, signed webhooks and MCP.' },
+        scope: { es: 'Workflows sobre los eventos de Cord y sobre un horario fijo, con consultas, esperas condicionadas y prueba sin publicar; directorio de integraciones con HubSpot, Slack y Teams; escenarios de Make y nodo de n8n; y la plataforma para desarrolladores: API v1, webhooks firmados y MCP.', en: 'Workflows on Cord events and on a fixed schedule, with lookups, conditional waits and a test run before publishing; an integrations directory with HubSpot, Slack and Teams; Make scenarios and an n8n node; and the developer platform: API v1, signed webhooks and MCP.' },
         boundaries: { es: 'Un workflow no cobra, no emite facturas ni le escribe al cliente: esas acciones siguen siendo decisiones de una persona. Las esperas se cuentan en días y la entrega es al menos una vez, así que cada paso queda en el historial.', en: 'A workflow never charges, issues invoices or writes to the client: those stay human decisions. Waits are counted in days and delivery is at least once, so every step stays in the history.' },
         related: ['cord-elements', 'notificaciones', 'ciclo-de-vida-contrato']
     },

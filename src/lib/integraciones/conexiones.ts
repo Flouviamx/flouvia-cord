@@ -3,8 +3,12 @@ import { sql, withOrgTx } from '../db';
 import { decryptSecret, encryptRequiredSecret } from '../crypto-secret';
 import { hubspotCredentials } from './hubspot/config';
 import { HubSpotAuthError, refreshTokens, revokeRefreshToken, type HubSpotTokens } from './hubspot/oauth';
+import { hsError, hubspotErrorText } from './hubspot/errors';
+import { currentLocale } from '../context';
 
-export type Proveedor = 'hubspot';
+// Mercado Pago no tiene fila en `integracion_conexiones` —su credencial vive en
+// `orgs`, con el resto del riel de cobro—, pero sí usa el mismo state de OAuth.
+export type Proveedor = 'hubspot' | 'mercadopago';
 
 export interface Conexion {
     id: string;
@@ -35,7 +39,7 @@ function toConexion(r: Record<string, unknown>): Conexion {
         cuentaNombre: (r.cuenta_nombre as string) ?? null,
         scopes: Array.isArray(r.scopes) ? (r.scopes as string[]) : [],
         ajustes: r.ajustes && typeof r.ajustes === 'object' ? (r.ajustes as Record<string, unknown>) : {},
-        ultimoError: (r.ultimo_error as string) ?? null,
+        ultimoError: hubspotErrorText(currentLocale(), r.ultimo_error),
         ultimoErrorAt: iso(r.ultimo_error_at),
         ultimaSyncAt: iso(r.ultima_sync_at),
         createdAt: iso(r.created_at) as string,
@@ -119,13 +123,13 @@ export async function getAccessToken(orgId: string, conexionId: string): Promise
         select access_token_enc, refresh_token_enc, estado,
                (access_expires_at is null or access_expires_at < now() + (${REFRESH_MARGIN_SECONDS} * interval '1 second')) as expira
           from integracion_conexiones where id = ${conexionId} and org_id = ${orgId}`);
-    if (!row || row.estado !== 'activa') throw new HubSpotAuthError('La conexión con HubSpot no está activa.', true);
+    if (!row || row.estado !== 'activa') throw new HubSpotAuthError(hsError('conexion_inactiva'), true);
     const current = decryptSecret(row.access_token_enc as string);
     if (current && !row.expira) return current;
 
     const creds = hubspotCredentials();
     const refresh = decryptSecret(row.refresh_token_enc as string);
-    if (!creds || !refresh) throw new HubSpotAuthError('HubSpot no está disponible por ahora.');
+    if (!creds || !refresh) throw new HubSpotAuthError(hsError('no_disponible'));
     try {
         const tokens = await refreshTokens(creds, refresh);
         await withOrgTx(orgId, sql`

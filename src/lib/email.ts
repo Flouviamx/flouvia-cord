@@ -408,3 +408,112 @@ export async function notifyInvoiceReminder(orgId: string, documentoId: string, 
     });
     return result.sent;
 }
+
+// ── Correo que un workflow le escribe al cliente ────────────────────────────
+// El destinatario NO lo elige el workflow: sale del cliente del documento. El
+// autor solo pone asunto y cuerpo; el enlace, el botón y la marca los pone
+// Cord, con la misma forma que el correo de cotización o de factura para que el
+// cliente no reciba dos estéticas distintas del mismo negocio.
+
+export interface ClientMessage {
+    asunto: string;
+    /** Texto plano del autor; se escapa y se convierte a párrafo aquí. */
+    mensaje: string;
+    locale: 'es' | 'en';
+}
+
+export type ClientMessageResult =
+    | { sent: true }
+    | { sent: false; reason: 'sin_correo' | 'sin_documento' | 'envio' };
+
+/** Correo de workflow sobre una COTIZACIÓN, con el botón al link público. */
+export async function sendClientQuoteMessage(orgId: string, cotizacionId: string, msg: ClientMessage): Promise<ClientMessageResult> {
+    const [rows] = await withOrgTx(orgId, sql`
+        select c.folio, c.total, c.public_token, c.base_currency, cl.empresa, cl.email,
+               o.nombre as org_nombre, coalesce(o.color_marca, '#0a192f') as color,
+               o.email_from_name, o.email_reply_to, o.email_contacto, o.portal_powered, o.sandbox_of, o.moneda
+          from cotizaciones c
+          join orgs o on o.id = c.org_id
+          left join clientes cl on cl.id = c.cliente_id
+         where c.id = ${cotizacionId} and c.org_id = ${orgId}`);
+    const r = rows[0] as any;
+    if (!r || !r.public_token) return { sent: false, reason: 'sin_documento' };
+    if (!r.email) return { sent: false, reason: 'sin_correo' };
+
+    const L = msg.locale;
+    const entitlement = await getEntitlementContext(orgId);
+    const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
+    const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
+    const link = await publicDocumentUrl(orgId, 'q', r.public_token);
+    const color = /^#[0-9a-fA-F]{6}$/.test(r.color) ? r.color : '#0a192f';
+    const poweredLine = canRemoveBranding && r.portal_powered === false
+        ? esc(r.org_nombre)
+        : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
+    const cta = t(L, 'email.ver_cotizacion').replace('{folio}', esc(r.folio));
+
+    const html = `<div style="background-color:#ffffff;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <div style="max-width:540px;margin:0 auto;">
+            <div style="margin-bottom:32px;">
+                <img src="https://cordhq.app/imgs/logo-cord-navy.png" width="90" height="auto" alt="Cord" style="display:block;">
+            </div>
+            <p style="font-size:16px;color:#111827;margin-top:0;font-weight:500;">${esc(r.empresa || t(L, 'email.cliente_generico'))}</p>
+            <p style="font-size:16px;line-height:1.6;color:#374151;margin-bottom:32px;font-weight:400;">${paragraph(msg.mensaje)}</p>
+            <div style="margin:40px 0;">
+                <a href="${link}" style="display:inline-block;background-color:${color};color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 24px;border-radius:8px;">${cta}</a>
+            </div>
+            <p style="font-size:14px;color:#6B7280;line-height:1.5;word-break:break-all;">${t(L, 'email.copie_enlace')}<br><a href="${link}" style="color:#2563EB;text-decoration:none;">${link}</a></p>
+            <div style="margin-top:48px;padding-top:24px;border-top:1px solid #E5E7EB;">
+                <p style="font-size:12px;color:#9CA3AF;margin:0;line-height:1.5;">${poweredLine}</p>
+            </div>
+        </div>
+    </div>`;
+
+    const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
+    const result = await sendEmail({
+        orgId,
+        operation: 'workflow_client_email',
+        to: r.email,
+        subject: `${testPrefix}${msg.asunto}`.slice(0, 200),
+        html,
+        fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
+        replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+    });
+    return result.sent ? { sent: true } : { sent: false, reason: 'envio' };
+}
+
+/** Correo de workflow sobre una FACTURA, con su saldo y el botón de pago. */
+export async function sendClientInvoiceMessage(orgId: string, documentoId: string, msg: ClientMessage): Promise<ClientMessageResult> {
+    const r = await loadInvoiceEmail(orgId, documentoId);
+    if (!r || !r.public_token || r.lifecycle === 'void' || r.lifecycle === 'draft') return { sent: false, reason: 'sin_documento' };
+    if (!r.email) return { sent: false, reason: 'sin_correo' };
+
+    const L = msg.locale;
+    const entitlement = await getEntitlementContext(orgId);
+    const canRemoveBranding = planIncludes(entitlement.effectivePlan, 'remove_branding');
+    const canCustomizeEmail = planIncludes(entitlement.effectivePlan, 'custom_email');
+    const link = await publicDocumentUrl(orgId, 'i', r.public_token);
+    const poweredLine = canRemoveBranding && r.portal_powered === false
+        ? esc(r.org_nombre)
+        : `${esc(r.org_nombre)}${t(L, 'email.enviado_con_cord')}`;
+
+    const html = invoiceEmailHtml(r, {
+        locale: L, link, poweredLine, titulo: '',
+        saldo: Number(r.amount_remaining ?? r.total ?? 0),
+        cuerpo: paragraph(msg.mensaje),
+        cta: t(L, 'fact.e_cta_pagar'),
+    });
+
+    const testPrefix = r.sandbox_of ? t(L, 'email.prueba_prefix') : '';
+    const result = await sendEmail({
+        orgId,
+        operation: 'workflow_client_email',
+        to: r.email,
+        subject: `${testPrefix}${msg.asunto}`.slice(0, 200),
+        html,
+        fromName: canCustomizeEmail ? (r.email_from_name || r.org_nombre) : r.org_nombre,
+        replyTo: canCustomizeEmail ? (r.email_reply_to || r.email_contacto || null) : (r.email_contacto || null),
+    });
+    return result.sent ? { sent: true } : { sent: false, reason: 'envio' };
+}
+
+const paragraph = (text: string) => esc(text).replace(/\r?\n/g, '<br>');

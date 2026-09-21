@@ -19,7 +19,9 @@ const expectedFeatures = {
   cfdi: 'starter', recurring_invoices: 'pro',
   remove_branding: 'starter', custom_email: 'starter', custom_domain: 'pro', advanced_forecast: 'starter',
   international_invoicing: 'free',
-  team: 'pro', roles: 'pro', multi_org: 'pro', live_presence: 'pro', quote_attention: 'pro',
+  // multi_org salió de la matriz (sep 2026): crear espacios de trabajo es libre
+  // y cada uno trae su propio plan.
+  team: 'pro', roles: 'pro', live_presence: 'pro', quote_attention: 'pro',
   cfo_dashboard: 'pro',
   audit_log: 'pro', webhook_replay: 'pro', collections: 'pro', cashflow_90: 'pro',
   approvals: 'scale', collections_ai: 'scale', late_interest: 'scale',

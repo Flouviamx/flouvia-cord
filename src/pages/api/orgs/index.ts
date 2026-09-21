@@ -13,13 +13,12 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, logAudit, reqIp, getActiveOrgId, withUserTx } from '../../../lib/db';
+import { sql, logAudit, reqIp, withUserTx } from '../../../lib/db';
 import { currentUserId } from '../../../lib/context';
 import { rateLimit, tooMany } from '../../../lib/ratelimit';
 import { SUPPORTED_COUNTRIES, getCountryProfile } from '../../../lib/countries';
 import { defaultCountryTaxPct } from '../../../lib/impuestos';
 import { seedTaxCatalog } from '../../../lib/impuestos-db';
-import { requireEntitlement } from '../../../lib/org-entitlements';
 import { log } from '../../../lib/log';
 
 const json = (data: unknown, status = 200) =>
@@ -41,10 +40,10 @@ export const POST: APIRoute = async ({ request }) => {
     const rl = await rateLimit(`orgs-create:${userId}`, 10, 60);
     if (!rl.ok) return tooMany(rl.retryAfter);
 
-    const activeOrgId = await getActiveOrgId();
-    const entitlementDenied = await requireEntitlement(activeOrgId, 'multi_org');
-    if (entitlementDenied) return entitlementDenied;
-
+    // Crear un espacio de trabajo NO se gatea por plan: cada organización trae
+    // el suyo y se cobra por su cuenta, así que un tope aquí no protegía
+    // ingreso — solo impedía abrir el negocio nuevo que después iba a pagar.
+    // Lo que sí acota el abuso es el rate limit de arriba.
     let body: any;
     try { body = await request.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 

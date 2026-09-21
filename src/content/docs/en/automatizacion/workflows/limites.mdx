@@ -44,9 +44,11 @@ Example: you had 4 active workflows on Starter and move to Free. Only the first 
 | Step levels (the main level and branches inside branches) | 4, meaning up to 3 conditions nested inside each other |
 | Rules per condition | 5 |
 | Days per wait | 1 to 30 |
+| Time limit on a conditional wait | 1 to 30 days |
+| Day of the month on a scheduled trigger | 1 to 28 |
 | Workflow name | 120 characters |
 
-At 30 steps, the editor no longer lets you add or duplicate steps. If you need more, split the rule into two workflows with different triggers.
+Lookups and conditional waits count as steps, the same as an action. At 30, the editor no longer lets you add or duplicate steps. If you need more, split the rule into two workflows with different triggers.
 
 ## Text length
 
@@ -58,6 +60,11 @@ At 30 steps, the editor no longer lets you add or duplicate steps. If you need m
 | Email message | 2,000 characters |
 | Slack message | 1,000 characters |
 | HubSpot note | 2,000 characters |
+| Client email subject | 150 characters |
+| Client email message | 2,000 characters |
+| POST destination URL | 300 characters |
+| POST message | 1,000 characters |
+| Void reason | 200 characters |
 | Recipients with "The whole team" | The first 25 active members |
 
 ## Hourly caps
@@ -70,6 +77,8 @@ So a configuration mistake does not flood your team, each organization has an ho
 | Email the team | 30 |
 | Send a Slack message | 120 |
 | Add a note in HubSpot | 120 |
+| Email the client | 60 (and it uses your plan's sending quota) |
+| Send the data to a URL | 120 |
 
 When exceeded, the step fails with a message like "Hourly task limit for workflows reached" and the run is retried later, within its 3 attempts. If you see these often, check whether a workflow fires on an event more frequent than you thought, such as **A client is updated** or **The client opens the quote**.
 

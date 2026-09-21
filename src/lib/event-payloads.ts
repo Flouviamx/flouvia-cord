@@ -30,6 +30,29 @@ export function productEventData(p: DbRow) {
     };
 }
 
+/**
+ * Valores ANTERIORES que viajan con un evento de actualización. Solo los campos
+ * sobre los que una automatización decide algo: el payload de un evento no es
+ * un diff completo de la fila, y un "antes" de cada columna sería ruido que
+ * además queda guardado para siempre en `domain_events`.
+ */
+export function clientPrevData(c: DbRow | undefined) {
+    if (!c) return {};
+    return {
+        empresa_anterior: str(c.empresa),
+        email_anterior: str(c.email),
+        terminos_anterior: str(c.terminos_default),
+    };
+}
+
+export function productPrevData(p: DbRow | undefined) {
+    if (!p) return {};
+    return {
+        precio_lista_anterior: num(p.precio_lista),
+        activo_anterior: p.activo !== false,
+    };
+}
+
 export function taskEventData(t: DbRow) {
     return {
         id: t.id as string,

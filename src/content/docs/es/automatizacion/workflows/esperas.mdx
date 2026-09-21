@@ -1,6 +1,6 @@
 ---
 title: "Esperas"
-description: "Cómo pausar un workflow entre 1 y 30 días: cuándo continúa, qué pasa si lo pausas o lo editas mientras espera, y cómo combinar esperas con el estado actual."
+description: "Cómo pausar un workflow entre 1 y 30 días, cómo esperar hasta que algo ocurra con un plazo máximo, y qué pasa si lo pausas o lo editas mientras espera."
 lastUpdated: "2026-09-15"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -23,9 +23,9 @@ Puedes poner varias esperas en un mismo workflow, en el nivel principal o dentro
 
 ## Cuándo continúa
 
-Los días se cuentan desde el momento en que la ejecución llega a la espera. Cord revisa las esperas **una vez al día**, así que el siguiente paso no corre a la hora exacta: corre en la primera revisión después de que se cumplen los días. En la práctica puede tardar hasta un día más de lo que marca la espera.
+Los días se cuentan desde el momento en que la ejecución llega a la espera. Cord revisa las esperas **cada hora**, así que el siguiente paso corre en la primera revisión después de que se cumplen los días: en la práctica, dentro de la hora siguiente.
 
-Ejemplo: una cotización se envía el lunes por la tarde y el workflow espera 3 días. Los 3 días se cumplen el jueves por la tarde, y el siguiente paso corre en la siguiente revisión, entre el jueves por la tarde y el viernes.
+Ejemplo: una cotización se envía el lunes a las 16:00 y el workflow espera 3 días. Los 3 días se cumplen el jueves a las 16:00, y el siguiente paso corre en la revisión de las 17:00.
 
 Mientras tanto la ejecución aparece como **En espera** en la pestaña **Ejecuciones**, con la fecha en que continúa ("Continúa …").
 
@@ -58,6 +58,31 @@ Si usaras **Estado en el evento** en lugar de estado actual, la condición siemp
 ## Cancelar una ejecución que está esperando
 
 En **Ejecuciones**, abre la ejecución en espera y pulsa **Cancelar**. Queda como **Cancelada** y no corre ningún paso más. Solo se pueden cancelar ejecuciones **En cola** o **En espera**.
+
+## Esperar hasta que ocurra algo
+
+Una espera normal cuenta días. **Esperar hasta que...** cuenta días *y* vigila una condición: en cuanto se cumple, el workflow sigue sin esperar el resto del plazo.
+
+<Steps>
+1. Pulsa **Agregar un paso › Esperar hasta que...**.
+2. Define la condición igual que en una condición normal: por ejemplo, **Estado actual de la cotización** es **Vista**.
+3. Escribe el **Plazo máximo** en días (1 a 30).
+</Steps>
+
+El paso tiene dos ramas:
+
+| Rama | Cuándo se toma |
+|---|---|
+| **Si ocurre** | La condición se cumplió antes de que se acabara el plazo. |
+| **Si se acaba el plazo** | Pasaron los días sin que se cumpliera. |
+
+Cord revisa **cada hora**, así que el paso continúa dentro de la hora siguiente a que ocurra. El plazo se fija la primera vez que la ejecución llega al paso y no se mueve: revisar no lo empuja hacia adelante.
+
+Ejemplo, la idea "Escalera de seguimiento de una cotización": al enviar, espera hasta que el cliente la abra con plazo de 2 días. Si abre, crea la tarea de llamarle mientras está caliente; si no, le escribe y vuelve a esperar su decisión 5 días más.
+
+<Callout type="info">
+Usa **Estado actual** en estas condiciones, no **Estado en el evento**: el estado en el evento nunca cambia, así que una condición sobre él daría siempre la misma respuesta y la espera agotaría el plazo sin motivo.
+</Callout>
 
 ## Siguiente
 

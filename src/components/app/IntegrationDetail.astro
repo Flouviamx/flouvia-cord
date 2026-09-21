@@ -4,6 +4,8 @@ import IntegrationLogo from './IntegrationLogo.astro';
 import IntegrationPill from './IntegrationPill.astro';
 import HubSpotCard from './HubSpotCard.astro';
 import SlackCard from './SlackCard.astro';
+import TeamsCard from './TeamsCard.astro';
+import WhatsAppCard from './WhatsAppCard.astro';
 import type { hubspotStatus } from '../../lib/integraciones/hubspot/service';
 import { ZAPIER_INVITE_URL, type IntegrationApp, type IntegrationState } from '../../lib/integraciones/catalogo';
 import { WORKFLOW_TEMPLATES } from '../../lib/workflows/templates';
@@ -18,19 +20,26 @@ interface Props {
     hubspot?: Awaited<ReturnType<typeof hubspotStatus>> | null;
     hubspotFlash?: string | null;
     slackWebhook?: string;
+    teamsWebhook?: string;
+    whatsapp?: { phoneId: string; plantilla: string; idioma: string; conectado: boolean };
 }
 
-const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '' } = Astro.props;
+const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '', teamsWebhook = '', whatsapp } = Astro.props;
 
 const DESC: Record<string, string> = {
     hubspot: t(L, 'set.integ.hs.desc'),
     slack: t(L, 'set.integ.slack_desc'),
+    teams: t(L, 'set.integ.teams_desc'),
+    whatsapp: t(L, 'set.integ.wa.desc'),
+    n8n: t(L, 'set.integ.n8n.desc'),
     make: t(L, 'set.integ.make.desc'),
     zapier: t(L, 'set.integ.zapier.desc'),
 };
 
 const usesBrand = (steps: Step[]): boolean => steps.some((s) =>
-    s.type === 'action' ? findAction(s.action)?.brand === app.slug : s.type === 'condition' ? usesBrand(s.then) || usesBrand(s.else) : false);
+    s.type === 'action' ? findAction(s.action)?.brand === app.slug
+        : s.type === 'condition' || s.type === 'wait_until' ? usesBrand(s.then) || usesBrand(s.else)
+            : false);
 const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).steps));
 ---
 <a href="/app/ajustes/integraciones" class="ig-back">
@@ -43,7 +52,7 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
     <div class="ig-hero-text">
         <div class="ig-hero-row">
             <h3 class="ig-hero-name">{app.nombre}</h3>
-            <IntegrationPill lang={L} state={state} live={app.slug === 'slack'} />
+            <IntegrationPill lang={L} state={state} live={app.slug === 'slack' || app.slug === 'teams' || app.slug === 'whatsapp'} />
         </div>
         <span class="ig-hero-cat">{t(L, `set.integ.cat.${app.categoria}`)}</span>
         <p class="ig-hero-desc">{DESC[app.slug]}</p>
@@ -66,6 +75,55 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
     {app.slug === 'hubspot' && <HubSpotCard lang={L} status={HS} flash={hsFlash} />}
 
     {app.slug === 'slack' && <SlackCard lang={L} webhook={slackWebhook} />}
+
+    {app.slug === 'teams' && (
+        <Fragment>
+            <div class="s-block">
+                <h3>{t(L, 'set.integ.teams.pasos_titulo')}</h3>
+                <div class="s-body">
+                    <ol class="ig-steps">
+                        <li>{t(L, 'set.integ.teams.paso_1')}</li>
+                        <li>{t(L, 'set.integ.teams.paso_2')}</li>
+                        <li>{t(L, 'set.integ.teams.paso_3')}</li>
+                    </ol>
+                </div>
+            </div>
+            <TeamsCard lang={L} webhook={teamsWebhook} />
+        </Fragment>
+    )}
+
+    {app.slug === 'whatsapp' && whatsapp && (
+        <Fragment>
+            <div class="s-block">
+                <h3>{t(L, 'set.integ.wa.pasos_titulo')}</h3>
+                <div class="s-body">
+                    <ol class="ig-steps">
+                        <li>{t(L, 'set.integ.wa.paso_1')}</li>
+                        <li>{t(L, 'set.integ.wa.paso_2')}</li>
+                        <li>{t(L, 'set.integ.wa.paso_3')}</li>
+                    </ol>
+                </div>
+            </div>
+            <WhatsAppCard lang={L} phoneId={whatsapp.phoneId} plantilla={whatsapp.plantilla} idioma={whatsapp.idioma} conectado={whatsapp.conectado} />
+        </Fragment>
+    )}
+
+    {app.slug === 'n8n' && (
+        <div class="s-block">
+            <h3>{t(L, 'set.integ.n8n.conectar_titulo')}</h3>
+            <div class="s-body">
+                <ol class="ig-steps">
+                    <li>{t(L, 'set.integ.n8n.paso_1')}</li>
+                    <li>{t(L, 'set.integ.n8n.paso_2')}</li>
+                    <li>{t(L, 'set.integ.n8n.paso_3')}</li>
+                </ol>
+                <div class="ig-actions">
+                    <a class="ig-btn" href="/app/wb/api">{t(L, 'set.integ.make.ir_api')}</a>
+                    <a class="ig-btn" href="/app/wb/webhooks">{t(L, 'set.integ.make.ir_webhooks')}</a>
+                </div>
+            </div>
+        </div>
+    )}
 
     {app.slug === 'make' && (
         <Fragment>

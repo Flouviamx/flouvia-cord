@@ -1,0 +1,74 @@
+---
+title: "Lookups"
+description: "How to bring a number from your account into a workflow: overdue receivables, open pipeline, what was collected, what is about to be due, and a client's balance."
+lastUpdated: "2026-09-20"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Lookups</h1>
+  <p class="page-subtitle">A step that asks before deciding. It brings a number from your account and leaves it available to the steps that follow.</p>
+</header>
+
+## What it is for
+
+A workflow only knows what the event carried. "Quote COT-7 for 150,000 was approved" says nothing about how much that client owes you or how your receivables are doing, so an alert could not include it and a condition could not decide on it.
+
+A lookup closes that gap: you place it earlier, Cord runs it, and its results become variables for the rest of the workflow.
+
+<Callout type="info">
+A lookup only **reads**. It never changes anything in your account, so you can use it as often as you want.
+</Callout>
+
+## How to add one
+
+<Steps>
+1. Click **Add a step › Action or lookup**.
+2. In the finder, filter by **Lookup** or type what you are after ("overdue", "pipeline", "balance").
+3. Pick the lookup. If it has a days parameter, set it.
+4. The panel shows **Makes available**: those are the variables you can use afterwards.
+</Steps>
+
+## The lookups
+
+| Lookup | What it brings | Variables |
+|---|---|---|
+| **Overdue receivables** | How much you are owed past the due date. | `{{vencido_total}}`, `{{vencido_cantidad}}`, `{{vencido_dias_max}}` |
+| **Open pipeline** | How much sits in sent or viewed quotes that are undecided. | `{{pipeline_total}}`, `{{pipeline_cantidad}}` |
+| **What was collected** | How much was paid over the last days you choose (1 to 90). | `{{cobrado_total}}`, `{{cobrado_cantidad}}` |
+| **What is about to be due** | How much is due over the next days you choose (1 to 90). | `{{por_vencer_total}}`, `{{por_vencer_cantidad}}` |
+| **Client balance** | How much the event's client owes and how much is overdue. | `{{cliente_saldo}}`, `{{cliente_vencido}}`, `{{cliente_documentos}}` |
+
+Amounts come formatted with your account's currency and number format, like the rest of the event data.
+
+## Order matters
+
+A lookup variable exists **from the step that brings it onward**. If you use it before, the workflow will not publish and the editor says so: "The variable {{vencido_total}} comes from a lookup that runs after this step."
+
+The same applies inside a branch: what the **If met** branch looks up does not exist in the **If not met** branch. If both need it, put the lookup **before** the condition.
+
+## Client balance needs a client
+
+**Client balance** uses the event's client, so it only works with triggers that carry one: quotes, invoices, payments and clients. A scheduled or payout trigger has no client to ask about, and the workflow cannot be published with that lookup.
+
+## A full example
+
+"Month-end summary for the team", one of the ideas Cord ships with:
+
+1. **When this happens:** on the 1st of each month at 8.
+2. **Lookup:** what was collected in 30 days.
+3. **Lookup:** the open pipeline.
+4. **Lookup:** overdue receivables.
+5. **Action:** email the whole team with the three numbers together.
+6. **Action:** post the summary to Slack.
+
+## Limits
+
+Each lookup is a step, so it counts toward the 30-step maximum per workflow. They have no hourly cap of their own: they only read.
+
+## Next
+
+- [Conditions](/en/docs/automatizacion/workflows/condiciones)
+- [Triggers](/en/docs/automatizacion/workflows/disparadores)
+- [Event data](/en/docs/automatizacion/workflows/datos-del-evento)

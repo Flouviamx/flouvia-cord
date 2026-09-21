@@ -24,6 +24,6 @@ Si tu empresa cambió legalmente de identificador fiscal (un RFC nuevo, o el equ
 3. Contacta a soporte para transferir tu plan de suscripción vigente a la cuenta nueva, si no quieres pagar dos suscripciones en paralelo.
 4. Exporta tu catálogo de clientes de la cuenta anterior e impórtalo en la nueva.
 
-Crear un espacio de trabajo adicional requiere plan Profesional o superior; en Gratis y Starter, contacta a soporte para evaluar el cambio.
+Crear espacios de trabajo no depende de tu plan: puedes abrir los que necesites. Cada uno lleva su propia suscripción, así que el nuevo empieza en Gratis hasta que elijas un plan para él.
 
 Este método mantiene tu historial contable anterior intacto e inmutable bajo el identificador fiscal original, para efectos de auditoría de la autoridad fiscal correspondiente.

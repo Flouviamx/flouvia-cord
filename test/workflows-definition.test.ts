@@ -108,6 +108,162 @@ describe('validateForPublish', () => {
         expect(issues.map((i) => i.stepId)).toEqual(['act1', 'act1', 'act1', 'cond1', 'cond1', 'cond1', 'cond1']);
         expect(validateForPublish(broken, 'en')[0].message).toBe('Fill in "To".');
     });
+
+    it('una acción que muta un documento exige un disparador que lo traiga', () => {
+        const mal = sanitizeDefinition({
+            trigger: 'client.created',
+            steps: [{ id: 'anul1', type: 'action', action: 'void_invoice', params: {} }],
+        });
+        expect(validateForPublish(mal).map((i) => i.message)).toEqual(['"Anular la factura" necesita un disparador de ese documento; este evento no lo trae.']);
+
+        const bien = sanitizeDefinition({
+            trigger: 'invoice.past_due',
+            steps: [{ id: 'anul2', type: 'action', action: 'void_invoice', params: {} }],
+        });
+        expect(validateForPublish(bien)).toEqual([]);
+    });
+
+    it('la URL del POST debe ser https y pública', () => {
+        const url = (value: string) => validateForPublish(sanitizeDefinition({
+            trigger: 'quote.approved',
+            steps: [{ id: 'http1', type: 'action', action: 'http_webhook', params: { url: value } }],
+        })).map((i) => i.message);
+        expect(url('https://hooks.zapier.com/abc')).toEqual([]);
+        expect(url('http://hooks.zapier.com/abc')).toHaveLength(1);
+        expect(url('https://localhost/abc')).toHaveLength(1);
+        expect(url('https://169.254.169.254/latest')).toHaveLength(1);
+        expect(url('')).toEqual(['Completa "URL de destino".']);
+    });
+});
+
+describe('pasos de consulta y espera condicionada', () => {
+    it('una variable de consulta solo existe después del paso que la trae', () => {
+        const antes = sanitizeDefinition({
+            trigger: 'quote.approved',
+            steps: [
+                { id: 'mail1', type: 'action', action: 'notify_team', params: { destinatarios: 'owner', asunto: 'x', mensaje: 'Deben {{vencido_total}}' } },
+                { id: 'cons1', type: 'query', dataset: 'cartera_vencida', params: {} },
+            ],
+        });
+        expect(validateForPublish(antes).map((i) => i.message))
+            .toEqual(['La variable {{vencido_total}} viene de una consulta que está después de este paso.']);
+
+        const despues = sanitizeDefinition({
+            trigger: 'quote.approved',
+            steps: [
+                { id: 'cons1', type: 'query', dataset: 'cartera_vencida', params: {} },
+                { id: 'mail1', type: 'action', action: 'notify_team', params: { destinatarios: 'owner', asunto: 'x', mensaje: 'Deben {{vencido_total}}' } },
+            ],
+        });
+        expect(validateForPublish(despues)).toEqual([]);
+    });
+
+    it('lo que consulta una rama no existe en la otra', () => {
+        const def = sanitizeDefinition({
+            trigger: 'quote.approved',
+            steps: [
+                {
+                    id: 'cond1', type: 'condition', match: 'all',
+                    conditions: [{ field: 'total', op: 'gte', value: 1000 }],
+                    then: [{ id: 'cons1', type: 'query', dataset: 'cartera_vencida', params: {} }],
+                    else: [{ id: 'mail1', type: 'action', action: 'notify_team', params: { destinatarios: 'owner', asunto: 'x', mensaje: '{{vencido_total}}' } }],
+                },
+            ],
+        });
+        expect(validateForPublish(def)).toHaveLength(1);
+    });
+
+    it('una consulta de cliente exige un disparador que traiga cliente', () => {
+        const mal = sanitizeDefinition({
+            trigger: 'schedule.tick',
+            schedule: { freq: 'weekly', hour: 9, weekday: 1 },
+            steps: [{ id: 'cons1', type: 'query', dataset: 'saldo_cliente', params: {} }],
+        });
+        expect(validateForPublish(mal).map((i) => i.message))
+            .toEqual(['Esta consulta necesita un disparador con cliente; este evento no lo trae.']);
+
+        const bien = sanitizeDefinition({
+            trigger: 'quote.approved',
+            steps: [{ id: 'cons1', type: 'query', dataset: 'saldo_cliente', params: {} }],
+        });
+        expect(validateForPublish(bien)).toEqual([]);
+    });
+
+    it('el parámetro de días de una consulta se acota al rango del catálogo', () => {
+        const def = sanitizeDefinition({
+            trigger: 'quote.approved',
+            steps: [{ id: 'cons1', type: 'query', dataset: 'cobrado_periodo', params: { dias: 9999 } }],
+        });
+        expect(def.steps[0]).toEqual({ id: 'cons1', type: 'query', dataset: 'cobrado_periodo', params: { dias: 90 } });
+    });
+
+    it('la espera condicionada conserva sus dos ramas y acota el plazo', () => {
+        const def = sanitizeDefinition({
+            trigger: 'quote.sent',
+            steps: [{
+                id: 'esp1', type: 'wait_until', match: 'any', days: 999,
+                conditions: [{ field: 'estado_actual', op: 'eq', value: 'viewed' }],
+                then: [{ id: 'tsk1', type: 'action', action: 'create_task', params: { titulo: 'Abrió' } }],
+                else: [{ id: 'tsk2', type: 'action', action: 'create_task', params: { titulo: 'No abrió' } }],
+            }],
+        });
+        const paso = def.steps[0] as any;
+        expect(paso.days).toBe(30);
+        expect(paso.then).toHaveLength(1);
+        expect(paso.else).toHaveLength(1);
+        expect(validateForPublish(def)).toEqual([]);
+    });
+
+    it('el disparador programado guarda su horario y solo él', () => {
+        const programado = sanitizeDefinition({
+            trigger: 'schedule.tick',
+            schedule: { freq: 'monthly', hour: 31, monthday: 40 },
+            steps: [{ id: 'tsk1', type: 'action', action: 'create_task', params: { titulo: 'Revisar' } }],
+        });
+        expect(programado.schedule).toEqual({ freq: 'monthly', hour: 23, monthday: 28 });
+
+        const porEvento = sanitizeDefinition({
+            trigger: 'quote.approved',
+            schedule: { freq: 'daily', hour: 9 },
+            steps: [],
+        });
+        expect(porEvento.schedule).toBeUndefined();
+    });
+});
+
+describe('condiciones de transición', () => {
+    const cambio = (field: string, op: 'changed' | 'unchanged') =>
+        ({ id: 'c9', type: 'condition', match: 'all', conditions: [{ field, op }], then: [], else: [] }) as Extract<Step, { type: 'condition' }>;
+    const productFields = findTrigger('product.updated')!.fields;
+
+    it('compara el valor actual contra el anterior del evento', () => {
+        const subio = { precio_lista: 120, precio_lista_anterior: 100 };
+        expect(evaluateConditions(cambio('precio_lista', 'changed'), subio, productFields)).toBe(true);
+        expect(evaluateConditions(cambio('precio_lista', 'unchanged'), subio, productFields)).toBe(false);
+
+        const igual = { precio_lista: 100, precio_lista_anterior: 100 };
+        expect(evaluateConditions(cambio('precio_lista', 'changed'), igual, productFields)).toBe(false);
+        expect(evaluateConditions(cambio('precio_lista', 'unchanged'), igual, productFields)).toBe(true);
+    });
+
+    it('sin valor anterior no afirma ni niega el cambio: falla cerrado', () => {
+        expect(evaluateConditions(cambio('precio_lista', 'changed'), { precio_lista: 120 }, productFields)).toBe(false);
+        expect(evaluateConditions(cambio('precio_lista', 'unchanged'), { precio_lista: 120 }, productFields)).toBe(false);
+    });
+
+    it('un campo sin valor anterior no ofrece los operadores de cambio', () => {
+        const mal = sanitizeDefinition({
+            trigger: 'quote.approved',
+            steps: [{ id: 'cond8', type: 'condition', match: 'all', conditions: [{ field: 'total', op: 'changed' }], then: [], else: [] }],
+        });
+        expect(validateForPublish(mal)).toHaveLength(1);
+
+        const bien = sanitizeDefinition({
+            trigger: 'quote.updated',
+            steps: [{ id: 'cond7', type: 'condition', match: 'all', conditions: [{ field: 'total', op: 'changed' }], then: [], else: [] }],
+        });
+        expect(validateForPublish(bien)).toEqual([]);
+    });
 });
 
 describe('evaluación de condiciones', () => {

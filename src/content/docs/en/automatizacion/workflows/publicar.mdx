@@ -44,6 +44,21 @@ Publishing changes to a workflow that was already active does not use another sl
 
 The name and plan limit messages currently appear in Spanish in the app.
 
+## Test before publishing
+
+The **Test** button, next to Save, runs the draft **with the latest real event for its trigger** and tells you, step by step, what would have happened.
+
+- **Conditions** are evaluated with the real data: you see which branch would have been taken.
+- **Lookups** really run, because they only read and they are exactly the number that decides the branch.
+- **Actions are not executed.** Instead you see the finished text — the subject and body your client would have received — so you can review it before letting it go.
+- **Waits** show as "Would wait N days" and the test continues, so you see the whole flow in one go.
+
+If the trigger has never happened in your account, the test says so: there is nothing to test with. Make the event happen once (send a test quote, for example) and try again.
+
+<Callout type="info">
+Testing changes nothing and does not use your sending quota: it is a reading of the draft, not a run.
+</Callout>
+
 ## What happens to runs in progress
 
 Each run keeps a copy of the version published **when the event happened**. If you publish changes, runs already queued or waiting finish with the previous version; new ones use the new version.

@@ -25,21 +25,30 @@ const money = (n: number, currency?: string) => {
 // Texto por evento (sin emojis — Regla 1 de CLAUDE.md). `notify.*` son los
 // eventos que dispara src/lib/notify.ts (matriz de Ajustes › Notificaciones);
 // el resto queda por si algún día vuelve a haber un disparo de integraciones.
-const EVENT_MSG: Record<string, { verbo: string }> = {
-    'quote.sent':        { verbo: 'enviada' },
-    'quote.viewed':      { verbo: 'vista por el cliente' },
-    'quote.approved':    { verbo: '*APROBADA*' },
-    'quote.rejected':    { verbo: 'rechazada' },
-    'quote.paid':        { verbo: '*PAGADA*' },
-    'invoice.issued':    { verbo: 'facturada' },
-    'invoice.stamped':   { verbo: 'facturada (CFDI)' },
-    'notify.quote_viewed':    { verbo: 'vista por el cliente' },
-    'notify.quote_approved':  { verbo: '*APROBADA*' },
-    'notify.quote_rejected':  { verbo: 'rechazada' },
-    'notify.quote_paid':      { verbo: '*PAGADA*' },
-    'notify.quote_expiring':  { verbo: 'está por vencer' },
-    'notify.payment_overdue': { verbo: 'con pago vencido' },
-    'ping': { verbo: 'de prueba' },
+//
+// El canal de Slack habla el idioma de la organización, igual que el correo
+// que sale por el mismo evento (regla 36): una cuenta en inglés recibía el
+// correo en inglés y el mensaje de Slack en español, del mismo aviso.
+type SlackLang = 'es' | 'en';
+const EVENT_MSG: Record<string, Record<SlackLang, string>> = {
+    'quote.sent':        { es: 'enviada', en: 'sent' },
+    'quote.viewed':      { es: 'vista por el cliente', en: 'viewed by the client' },
+    'quote.approved':    { es: '*APROBADA*', en: '*APPROVED*' },
+    'quote.rejected':    { es: 'rechazada', en: 'rejected' },
+    'quote.paid':        { es: '*PAGADA*', en: '*PAID*' },
+    'invoice.issued':    { es: 'facturada', en: 'invoiced' },
+    'invoice.stamped':   { es: 'facturada (CFDI)', en: 'invoiced (CFDI)' },
+    'notify.quote_viewed':    { es: 'vista por el cliente', en: 'viewed by the client' },
+    'notify.quote_approved':  { es: '*APROBADA*', en: '*APPROVED*' },
+    'notify.quote_rejected':  { es: 'rechazada', en: 'rejected' },
+    'notify.quote_paid':      { es: '*PAGADA*', en: '*PAID*' },
+    'notify.quote_expiring':  { es: 'está por vencer', en: 'is about to expire' },
+    'notify.payment_overdue': { es: 'con pago vencido', en: 'is past due' },
+    'ping': { es: 'de prueba', en: 'test' },
+};
+const LABELS: Record<SlackLang, { cotizacion: string; cliente: string; total: string; ver: string }> = {
+    es: { cotizacion: 'Cotización', cliente: 'Cliente', total: 'Total', ver: 'Ver cotización' },
+    en: { cotizacion: 'Quote', cliente: 'Client', total: 'Total', ver: 'View quote' },
 };
 
 export interface SlackPayload {
@@ -49,6 +58,8 @@ export interface SlackPayload {
     link?: string | null;
     /** Divisa ISO del total (MXN si no se especifica). */
     moneda?: string;
+    /** Idioma de la organización. Sin él, español. */
+    lang?: SlackLang;
 }
 
 export async function postSlackText(webhookUrl: string, text: string): Promise<{ ok: boolean; status: number }> {
@@ -69,12 +80,14 @@ export async function postSlackText(webhookUrl: string, text: string): Promise<{
 
 /** Construye y envía el mensaje. Devuelve ok/status sin lanzar. */
 export async function postToSlack(webhookUrl: string, evento: string, data: SlackPayload): Promise<{ ok: boolean; status: number }> {
-    const meta = EVENT_MSG[evento] || { verbo: evento };
+    const lang: SlackLang = data.lang === 'en' ? 'en' : 'es';
+    const verbo = EVENT_MSG[evento]?.[lang] ?? evento;
+    const l = LABELS[lang];
     const lineas = [
-        `Cotización *${data.folio}* ${meta.verbo}`,
-        `Cliente: ${data.cliente || '—'} · Total: *${money(data.total, data.moneda)}*`,
+        `${l.cotizacion} *${data.folio}* ${verbo}`,
+        `${l.cliente}: ${data.cliente || '—'} · ${l.total}: *${money(data.total, data.moneda)}*`,
     ];
-    if (data.link) lineas.push(`<${data.link}|Ver cotización>`);
+    if (data.link) lineas.push(`<${data.link}|${l.ver}>`);
     const body = JSON.stringify({ text: lineas.join('\n') });
 
     try {

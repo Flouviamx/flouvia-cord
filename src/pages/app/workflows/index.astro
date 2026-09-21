@@ -8,7 +8,7 @@ import { memberCan } from '../../../lib/permissions';
 import { getActiveOrgId } from '../../../lib/db';
 import { currentLocale } from '../../../lib/context';
 import { getResourceAllowance } from '../../../lib/org-entitlements';
-import { listWorkflows } from '../../../lib/workflows/service';
+import { listWorkflows, workflowHealth } from '../../../lib/workflows/service';
 import { t } from '../../../i18n/app';
 
 export const prerender = false;
@@ -19,6 +19,7 @@ const canAjustes = memberCan(ME, 'ajustes');
 const orgId = await getActiveOrgId();
 const WORKFLOWS = canAjustes ? await listWorkflows(orgId) : [];
 const allowance = canAjustes ? await getResourceAllowance(orgId, 'active_workflows').catch(() => null) : null;
+const HEALTH = canAjustes ? await workflowHealth(orgId).catch(() => null) : null;
 ---
 
 <AppLayout title={`${t(L, 'wf.heading')} — Cord`} page="workflows" heading={t(L, 'wf.heading')}>
@@ -34,7 +35,7 @@ const allowance = canAjustes ? await getResourceAllowance(orgId, 'active_workflo
     {!canAjustes ? (
         <AccessGate title={t(L, 'wf.sin_acceso_titulo')} desc={t(L, 'wf.sin_acceso_desc')} />
     ) : (
-        <WorkflowsList lang={L} workflows={WORKFLOWS} limit={allowance?.limit ?? null} />
+        <WorkflowsList lang={L} workflows={WORKFLOWS} limit={allowance?.limit ?? null} health={HEALTH} />
     )}
 </AppLayout>
 

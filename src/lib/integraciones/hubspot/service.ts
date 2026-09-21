@@ -10,13 +10,19 @@ import { buildAuthorizeUrl, exchangeCode, HubSpotAuthError } from './oauth';
 import { listDealPipelines } from './objects';
 import { QUOTE_STATUSES, sanitizeAjustes, stagesComplete } from './mapping';
 import { after } from '../../after';
+import { currentLocale } from '../../context';
+import { t } from '../../../i18n/app';
+import { hsError, type HubSpotErrorCode } from './errors';
+
+/** Mensaje ya traducido para la respuesta de esta petición. */
+const hsText = (code: HubSpotErrorCode) => t(currentLocale(), hsError(code) as any);
 
 export type ConnectResult = { redirect: string };
 
 export async function startHubSpotConnect(ctx: ActionContext): Promise<ConnectResult | ActionOutcome> {
     const creds = hubspotCredentials();
-    if (!creds) return done(503, { error: 'La integración con HubSpot todavía no está disponible.', code: 'unavailable' });
-    if (!ctx.userId) return done(401, { error: 'Inicia sesión para conectar HubSpot.', code: 'unauthorized' });
+    if (!creds) return done(503, { error: hsText('integracion_no_disponible'), code: 'unavailable' });
+    if (!ctx.userId) return done(401, { error: hsText('sesion'), code: 'unauthorized' });
     const state = await createOAuthState(ctx.orgId, ctx.userId, 'hubspot');
     return { redirect: buildAuthorizeUrl(creds, hubspotRedirectUri(ctx.origin), state) };
 }
@@ -96,14 +102,14 @@ export async function hubspotStatus(orgId: string, withPipelines: boolean) {
 
 export async function disconnectHubSpot(ctx: ActionContext): Promise<ActionOutcome> {
     const ok = await disconnectConexion(ctx.orgId, 'hubspot');
-    if (!ok) return done(404, { error: 'HubSpot no está conectado.', code: 'not_found' });
+    if (!ok) return done(404, { error: hsText('no_conectado'), code: 'not_found' });
     await auditAction(ctx, 'integracion.desconectada', 'integracion', 'hubspot', 'HubSpot');
     return done(200, { ok: true });
 }
 
 export async function backfillHubSpot(ctx: ActionContext): Promise<ActionOutcome> {
     const conexion = await getConexion(ctx.orgId, 'hubspot');
-    if (!conexion || conexion.estado !== 'activa') return done(409, { error: 'Conecta HubSpot antes de sincronizar.', code: 'invalid_state' });
+    if (!conexion || conexion.estado !== 'activa') return done(409, { error: hsText('conecta_para_sync'), code: 'invalid_state' });
     const encolados = await enqueueBackfill(ctx.orgId, conexion.id);
     await auditAction(ctx, 'integracion.sincronizacion', 'integracion', conexion.id, `${encolados} registros`);
     if (encolados) after(processOrgSync(ctx.orgId));
@@ -114,18 +120,18 @@ export async function saveHubSpotAjustes(ctx: ActionContext, input: unknown): Pr
     const raw = (input && typeof input === 'object' ? input : {}) as Record<string, any>;
     const ajustes = sanitizeAjustes({ pipeline: raw.pipeline, etapas: raw.etapas });
     const conexion = await getConexion(ctx.orgId, 'hubspot');
-    if (!conexion || conexion.estado === 'desconectada') return done(409, { error: 'Conecta HubSpot antes de configurarlo.', code: 'invalid_state' });
+    if (!conexion || conexion.estado === 'desconectada') return done(409, { error: hsText('conecta_para_config'), code: 'invalid_state' });
     if (conexion.estado === 'activa') {
         try {
             const pipelines = await listDealPipelines({ orgId: ctx.orgId, conexionId: conexion.id });
             const pipeline = pipelines.find((p) => p.id === ajustes.pipeline);
-            if (!pipeline) return done(422, { error: 'Ese pipeline no existe en tu cuenta de HubSpot.', code: 'invalid_request' });
+            if (!pipeline) return done(422, { error: hsText('pipeline_inexistente'), code: 'invalid_request' });
             const validas = new Set(pipeline.stages.map((s) => s.id));
             if (QUOTE_STATUSES.some((s) => ajustes.etapas[s] && !validas.has(ajustes.etapas[s]))) {
-                return done(422, { error: 'Alguna etapa no pertenece al pipeline elegido.', code: 'invalid_request' });
+                return done(422, { error: hsText('etapa_ajena'), code: 'invalid_request' });
             }
         } catch {
-            return done(503, { error: 'No pudimos consultar tus pipelines de HubSpot. Intenta de nuevo.', code: 'unavailable' });
+            return done(503, { error: hsText('pipelines_no_consultables'), code: 'unavailable' });
         }
     }
     await updateAjustes(ctx.orgId, 'hubspot', { ...ajustes });

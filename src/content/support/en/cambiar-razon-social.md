@@ -24,6 +24,6 @@ If your company legally changed its tax identifier (a new RFC, or the equivalent
 3. Contact support to transfer your current subscription plan to the new account, if you don't want to pay for two subscriptions in parallel.
 4. Export your client catalog from the previous account and import it into the new one.
 
-Creating an additional workspace requires the Professional plan or higher; on Free or Starter, contact support to discuss the change.
+Creating workspaces does not depend on your plan: open as many as you need. Each one carries its own subscription, so the new one starts on Free until you pick a plan for it.
 
 This method keeps your previous accounting history intact and immutable under the original tax identifier, for audit purposes with the relevant tax authority.

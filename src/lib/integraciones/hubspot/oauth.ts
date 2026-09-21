@@ -1,4 +1,5 @@
 import { HUBSPOT_AUTHORIZE_URL, HUBSPOT_OAUTH_API, HUBSPOT_SCOPES, type HubSpotCredentials } from './config';
+import { hsError } from './errors';
 
 export interface HubSpotTokens {
     accessToken: string;
@@ -40,7 +41,7 @@ async function postForm(path: string, body: Record<string, string>): Promise<{ s
 function parseTokens(data: any): HubSpotTokens {
     const hubId = data?.hub_id === undefined || data?.hub_id === null ? '' : String(data.hub_id);
     if (typeof data?.access_token !== 'string' || typeof data?.refresh_token !== 'string' || !/^[0-9]{1,20}$/.test(hubId)) {
-        throw new HubSpotAuthError('HubSpot devolvió una respuesta de autorización incompleta.');
+        throw new HubSpotAuthError(hsError('autorizacion'));
     }
     return {
         accessToken: data.access_token,
@@ -59,7 +60,7 @@ export async function exchangeCode(creds: HubSpotCredentials, code: string, redi
         redirect_uri: redirectUri,
         code,
     });
-    if (status !== 200) throw new HubSpotAuthError('HubSpot no aceptó la autorización. Intenta conectar de nuevo.');
+    if (status !== 200) throw new HubSpotAuthError(hsError('autorizacion_rechazada'));
     return parseTokens(data);
 }
 
@@ -71,9 +72,9 @@ export async function refreshTokens(creds: HubSpotCredentials, refreshToken: str
         refresh_token: refreshToken,
     });
     if (status === 400 || status === 401) {
-        throw new HubSpotAuthError('HubSpot retiró el acceso de Cord. Vuelve a conectar la cuenta.', true);
+        throw new HubSpotAuthError(hsError('acceso_retirado'), true);
     }
-    if (status !== 200) throw new HubSpotAuthError('HubSpot no respondió al renovar el acceso.');
+    if (status !== 200) throw new HubSpotAuthError(hsError('renovacion'));
     return parseTokens({ ...data, refresh_token: data?.refresh_token ?? refreshToken });
 }
 

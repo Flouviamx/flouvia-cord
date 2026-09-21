@@ -47,6 +47,18 @@ export const DOMAIN_EVENTS = {
     'payout.paid': { object: 'payout', public: true },
     'payout.failed': { object: 'payout', public: true },
     'account.updated': { object: 'account', public: true },
+    // Anclas de tiempo (sep 2026). Las emite /api/cron/anclas-tiempo una vez al
+    // día para que un workflow pueda actuar ANTES de la fecha límite, no solo
+    // cuando ya se cruzó. No son públicas: un suscriptor de webhooks recibiría
+    // el mismo aviso todos los días, y el ciclo de vida ya lo cubren
+    // `quote.expired` e `invoice.overdue`.
+    'quote.expiring': { object: 'quote', public: false },
+    'invoice.due_soon': { object: 'invoice', public: false },
+    'invoice.past_due': { object: 'invoice', public: false },
+    // Tic de un workflow programado. Lo emite el cron SOLO para el workflow que
+    // le toca, no para todos los que escuchan el tipo: cada uno tiene su propio
+    // horario, así que un tic compartido dispararía a los demás fuera de hora.
+    'schedule.tick': { object: 'schedule', public: false },
 } as const;
 
 export type DomainEventType = keyof typeof DOMAIN_EVENTS;

@@ -6,7 +6,7 @@ import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import { describeFee, describeSubscriptionFee, FEE_TERMS_VERSION } from '../../../lib/fees';
 import { payoutSpecFor } from '../../../lib/payout-fields';
-import { supportsOnlinePayments, countryName, getCountryProfile } from '../../../lib/countries';
+import { supportsOnlinePayments, supportsMercadoPago, countryName, getCountryProfile } from '../../../lib/countries';
 const ORG = await getOrg();
 const L = currentLocale();
 
@@ -25,6 +25,11 @@ const speiDisponible = PAIS === 'MX';
 // del negocio (regla 14). La cuenta sirve igual: cotiza, factura y cobra con
 // pago registrado a mano.
 const cobrosEnLinea = supportsOnlinePayments(PAIS);
+// Segundo riel: donde Stripe no abre cuentas, Mercado Pago sí. El dinero llega
+// igual a la cuenta del negocio; lo que cambia es quién procesa la tarjeta.
+const mercadoPago = supportsMercadoPago(PAIS);
+const mpConectado = Boolean(ORG.mpChargesEnabled);
+const mpFlash = Astro.url.searchParams.get('mp');
 // El formato de la cuenta de depósito depende del país: CLABE, IBAN, sort code.
 const PAYOUT = payoutSpecFor(PAIS);
 // La divisa que gobierna la comisión es la de la CUENTA CONECTADA, que Stripe
@@ -82,6 +87,27 @@ const pasos = [
 
 <SettingsShell title="Cobros — Ajustes" tab="cobros" perm="cobros_config"
     intro={t(L, 'set.cobros.intro')} save>
+
+    {mercadoPago && (
+        <section class="mp-card" data-mp>
+            <div class="mp-head">
+                <div>
+                    <span class="mp-eyebrow">{t(L, 'set.cobros.mp.eyebrow')}</span>
+                    <h2 class="editorial mp-title">{t(L, 'set.cobros.mp.titulo')}</h2>
+                </div>
+                <span class="mp-pill" data-estado={mpConectado ? 'on' : 'off'}>
+                    {mpConectado ? t(L, 'set.integ.conectado') : t(L, 'set.integ.sin_conectar')}
+                </span>
+            </div>
+            <p class="mp-desc">{cobrosEnLinea ? t(L, 'set.cobros.mp.desc_alterno') : t(L, 'set.cobros.mp.desc_unico')}</p>
+            {mpFlash && <p class="mp-flash" data-bad={mpFlash !== 'conectada' ? '1' : undefined}>{t(L, `set.cobros.mp.flash_${mpFlash}` as any)}</p>}
+            <div class="mp-actions">
+                <button type="button" class="mp-btn" data-mp-connect>{mpConectado ? t(L, 'set.cobros.mp.reconectar') : t(L, 'set.cobros.mp.conectar')}</button>
+                {mpConectado && <button type="button" class="mp-btn is-ghost" data-mp-off>{t(L, 'set.integ.wa.desconectar')}</button>}
+                <span class="mp-msg" data-mp-msg data-i18n-err={t(L, 'settings.no_se_pudo_guardar')}></span>
+            </div>
+        </section>
+    )}
 
     {!cobrosEnLinea && estado === 'nuevo' ? (
         <div style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border);">
@@ -319,6 +345,24 @@ const pasos = [
 </SettingsShell>
 
 <style>
+    /* Mercado Pago: el segundo riel. No compite visualmente con el alta de
+       Cord Payments — es una tarjeta aparte, no un paso del mismo asistente. */
+    .mp-card { margin-bottom: 2.2rem; padding: 1.25rem 1.4rem 1.35rem; border-radius: 22px; background: var(--color-bg-soft); border: 1px solid var(--color-border); }
+    .mp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+    .mp-eyebrow { font-size: 0.64rem; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--color-text-muted); }
+    .mp-title { font-size: 1.15rem; margin: 0.35rem 0 0; color: var(--color-text); }
+    .mp-pill { flex-shrink: 0; font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 100px; background: var(--surface); color: var(--color-text-muted); }
+    .mp-pill[data-estado="on"] { color: var(--color-ok); }
+    .mp-desc { font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted); max-width: 62ch; margin: 0.8rem 0 1rem; }
+    .mp-flash { font-size: 0.82rem; margin: 0 0 1rem; color: var(--color-ok); }
+    .mp-flash[data-bad] { color: var(--color-danger); }
+    .mp-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .mp-btn { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 100px; padding: 9px 18px; cursor: pointer; }
+    .mp-btn.is-ghost { color: var(--color-text-muted); background: none; border: 1px solid var(--color-border); }
+    .mp-btn:disabled { opacity: 0.6; cursor: wait; }
+    .mp-btn:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .mp-msg { font-size: 0.78rem; font-weight: 600; color: var(--color-danger); }
+    @media (max-width: 880px) { .mp-btn { min-height: 44px; } }
     /* ── Estado (conectado) ── */
     .cobros-status {
         display: flex; align-items: center; gap: 14px;
@@ -689,6 +733,49 @@ const pasos = [
 </style>
 
 <script>
+    // Alta y baja de Mercado Pago. El alta se abre en la misma pestaña: el
+    // proveedor regresa al callback, que es quien guarda las credenciales.
+    (function initMercadoPago() {
+        const run = () => {
+            const connect = document.querySelector<HTMLButtonElement>('[data-mp-connect]');
+            const off = document.querySelector<HTMLButtonElement>('[data-mp-off]');
+            const msg = document.querySelector<HTMLElement>('[data-mp-msg]');
+            if (!connect) return;
+
+            const fail = (text: string) => {
+                if (!msg) return;
+                msg.textContent = text;
+                setTimeout(() => { msg.textContent = ''; }, 4000);
+            };
+
+            connect.addEventListener('click', async () => {
+                connect.disabled = true;
+                try {
+                    const res = await fetch('/api/billing/mercadopago/connect', { method: 'POST' });
+                    const data = await res.json();
+                    if (!res.ok || !data.redirect) throw new Error(data.error || '');
+                    window.location.href = data.redirect;
+                } catch (err: any) {
+                    fail(err.message || msg?.dataset.i18nErr || '');
+                    connect.disabled = false;
+                }
+            });
+
+            off?.addEventListener('click', async () => {
+                off.disabled = true;
+                try {
+                    const res = await fetch('/api/billing/mercadopago/connect', { method: 'DELETE' });
+                    if (!res.ok) throw new Error();
+                    window.location.href = '/app/ajustes/cobros';
+                } catch {
+                    fail(msg?.dataset.i18nErr || '');
+                    off.disabled = false;
+                }
+            });
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+        else run();
+    })();
     // Frecuencia de depósito. El estado inicial se pide al endpoint en vez de
     // renderizarse desde `orgs`: el espejo local puede ir un paso atrás si el
     // proveedor cambió el calendario por su cuenta (verificación pendiente,

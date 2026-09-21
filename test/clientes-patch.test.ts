@@ -27,10 +27,12 @@ beforeEach(() => {
 
 describe('patchClientContact', () => {
     it('solo cambia lo enviado y nunca crédito, nivel ni descuento', async () => {
-        m.tx.mockResolvedValueOnce([[ACTUAL]]).mockResolvedValueOnce([[{ ...ACTUAL, email: 'nuevo@acme.test' }]]);
+        // updateClient viaja con DOS consultas en la misma transacción: el "antes"
+        // para el evento y el update.
+        m.tx.mockResolvedValueOnce([[ACTUAL]]).mockResolvedValueOnce([[ACTUAL], [{ ...ACTUAL, email: 'nuevo@acme.test' }]]);
         const out = await patchClientContact(ctx, ID, { email: 'nuevo@acme.test', descuento_pct: 95, limite: 1, nivel: 'platino' });
         expect(out.status).toBe(200);
-        const update = m.tx.mock.calls[1][1];
+        const update = m.tx.mock.calls[1][2];
         expect(update.text).toContain('update clientes set');
         expect(update.values).toEqual(expect.arrayContaining(['ACME', 'Ana', 'nuevo@acme.test', 'net30', 50000, 'oro', 10, '601', '64000', 'Monterrey']));
         expect(update.values).not.toContain(95);

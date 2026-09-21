@@ -118,6 +118,13 @@ export async function getOrg() {
         portalBienvenida: (o.portal_bienvenida as string) ?? '',
         notifPrefs: (o.notif_prefs as Record<string, Record<string, boolean>>) ?? {},
         slackWebhook: (o.slack_webhook_url as string) ?? '',
+        teamsWebhook: (o.teams_webhook_url as string) ?? '',
+        // Solo la parte pública: el token va cifrado y no sale de la base.
+        whatsappPhoneId: (o.whatsapp_phone_id as string) ?? '',
+        whatsappPlantilla: (o.whatsapp_plantilla as string) ?? '',
+        whatsappIdioma: (o.whatsapp_plantilla_idioma as string) ?? '',
+        whatsappConectado: !!(o.whatsapp_phone_id && o.whatsapp_token_enc && o.whatsapp_plantilla),
+        mpChargesEnabled: (o.mp_charges_enabled as boolean) ?? false,
         aiCobranzaActiva: (o.ai_cobranza_activa as boolean) ?? false,
         csdEstado: (o.csd_estado as string) ?? '',
         csdNombre: (o.csd_nombre as string) ?? '',

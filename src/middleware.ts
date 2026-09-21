@@ -41,7 +41,7 @@ import { canonicalPathForInvalidEnglishRoute, preferredPublicLang } from './i18n
 // pagar (`/api/i/[token]/payment-intent`) ni se registraba la vista
 // (`/api/i/[token]`, la señal de la regla 19). Ambos handlers existían y estaban
 // bien; lo único que faltaba era esta línea.
-const PUBLIC_API_PREFIXES = ["/api/q/", "/api/i/", "/api/stripe/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/auth/", "/api/contacto/", "/api/blog/", "/api/billing/connect/capture/"];
+const PUBLIC_API_PREFIXES = ["/api/q/", "/api/i/", "/api/stripe/", "/api/mercadopago/", "/api/cron/", "/api/v1/", "/api/mcp/sse", "/api/mcp/message", "/api/auth/", "/api/contacto/", "/api/blog/", "/api/billing/connect/capture/"];
 // Solo los tres endpoints que CREAN una sesión de Ops son públicos. Cualquier
 // futura API bajo /api/ops queda privada por default y exige sesión Ops válida.
 const OPS_PUBLIC_API_EXACT = [
@@ -452,8 +452,10 @@ const mainHandler = async (context: any, next: any) => {
     // Piso para APIs públicas que antes quedaban fuera del carril interno. El
     // webhook conserva solo el piso global: Stripe puede enviar ráfagas grandes
     // durante redeliveries y su firma ya autentica cada request.
-    const isStripeWebhook = path === '/api/stripe/webhook';
-    if (isApi && isPublicApi && !isStripeWebhook) {
+    // Los webhooks de proveedor conservan solo el piso global: mandan ráfagas
+    // grandes en un reenvío y su firma ya autentica cada petición.
+    const isProviderWebhook = path === '/api/stripe/webhook' || path === '/api/mercadopago/webhook';
+    if (isApi && isPublicApi && !isProviderWebhook) {
         if (!allow(ip, 'api-public', 300)) {
             return new Response(
                 JSON.stringify({ error: 'Demasiadas peticiones. Intenta de nuevo en un minuto.' }),

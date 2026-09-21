@@ -792,6 +792,15 @@ preservan datos, pero apagan inmediatamente las capacidades no incluidas.
   build de producción. `astro check` aún reporta errores preexistentes ajenos a Billing,
   aunque el build termina correctamente.
 
+✅ **Crear espacios de trabajo deja de depender del plan (20 sep 2026)**
+   `multi_org` era un feature gate en Pro, así que una cuenta Gratis o Starter no podía abrir una
+   organización nueva. No protegía ingreso: cada organización trae su PROPIA suscripción, de modo
+   que el tope solo impedía abrir el negocio que después iba a pagar —y empujaba a soporte el caso
+   más común, el cambio de razón social, que se resuelve creando una cuenta nueva. Fuera de
+   `FEATURE_MIN_PLAN`, fuera del endpoint y fuera del contrato de billing; el rate limit por
+   usuario se queda como lo que acota el abuso. El plan sigue siendo de la ORGANIZACIÓN: una
+   cuenta nueva nace en Gratis aunque quien la creó tenga Scale en otra.
+
 ✅ **Auditoría completa de `docs.cordhq.app` para Cord Pagos (ago 2026)** — André pidió
    revisar que toda la documentación pública de pagos explicara "cada paso" con precisión.
    Todas las páginas de `/docs/pagos/*` databan de antes de que Cord Pagos existiera (jul

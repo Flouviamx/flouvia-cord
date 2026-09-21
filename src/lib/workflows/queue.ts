@@ -10,6 +10,29 @@ export interface QueuedEvent {
     actor: string;
 }
 
+/**
+ * Encola la ejecución de UN workflow programado. El encolado normal empareja
+ * por tipo de disparador; aquí eso dispararía todos los programados de la org a
+ * la vez, cada uno fuera de su horario.
+ */
+export async function enqueueScheduledRun(
+    orgId: string, workflowId: string, version: number, publicado: unknown, eventId: string,
+): Promise<boolean> {
+    try {
+        const [rows] = await withOrgTx(orgId, sql`
+            insert into workflow_runs (org_id, workflow_id, version, publicado, event_id, depth)
+            select ${orgId}, w.id, ${version}, ${JSON.stringify(publicado)}::jsonb, ${eventId}, 0
+              from workflows w
+             where w.id = ${workflowId} and w.org_id = ${orgId} and w.estado = 'active'
+            on conflict (workflow_id, event_id) do nothing
+            returning id`);
+        return rows.length > 0;
+    } catch (err) {
+        log.error('no se pudo encolar un workflow programado', { route: 'workflows/queue', orgId, err });
+        return false;
+    }
+}
+
 export async function enqueueWorkflowRuns(orgId: string, event: QueuedEvent): Promise<number> {
     if (event.depth >= MAX_WORKFLOW_DEPTH) return 0;
     try {

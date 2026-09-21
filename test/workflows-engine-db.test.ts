@@ -8,6 +8,14 @@ const m = vi.hoisted(() => ({
     email: vi.fn(),
     slack: vi.fn(),
     hsNote: vi.fn(),
+    clientQuoteEmail: vi.fn(),
+    clientInvoiceEmail: vi.fn(),
+    expireQuote: vi.fn(),
+    approveRequest: vi.fn(),
+    safeFetch: vi.fn(),
+    reserve: vi.fn(),
+    cancelUsage: vi.fn(),
+    runDataset: vi.fn(),
     recordEvent: null as null | ((orgId: string, type: string, data: Record<string, unknown>, actor?: string) => Promise<string | null>),
 }));
 
@@ -22,9 +30,16 @@ vi.mock('../src/lib/db', () => ({
 }));
 vi.mock('../src/lib/log', () => ({ log: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 vi.mock('../src/lib/after', () => ({ after: (p: Promise<unknown>) => { m.pending.push(Promise.resolve(p).catch(() => {})); } }));
-vi.mock('../src/lib/email', () => ({ siteOrigin: () => 'https://cordhq.app', sendEmail: m.email }));
+vi.mock('../src/lib/email', () => ({
+    siteOrigin: () => 'https://cordhq.app', sendEmail: m.email,
+    sendClientQuoteMessage: m.clientQuoteEmail, sendClientInvoiceMessage: m.clientInvoiceEmail,
+}));
+vi.mock('../src/lib/actions/quotes', () => ({ expireQuote: m.expireQuote, decideApprovalRequest: m.approveRequest }));
+vi.mock('../src/lib/ssrf', () => ({ safeFetch: m.safeFetch }));
+vi.mock('../src/lib/billing', () => ({ reserveUsage: m.reserve, cancelUsage: m.cancelUsage }));
 vi.mock('../src/lib/slack', () => ({ postSlackText: m.slack }));
 vi.mock('../src/lib/ratelimit', () => ({ strictRateLimit: async () => ({ ok: true }) }));
+vi.mock('../src/lib/workflows/datasets-run', () => ({ runDataset: m.runDataset }));
 vi.mock('../src/lib/integraciones/queue', () => ({ integrationQueueStatement: () => null }));
 vi.mock('../src/lib/integraciones/hubspot/actions', () => ({
     addHubSpotNote: m.hsNote,
@@ -69,7 +84,9 @@ const task = (id: string, titulo: string, extra: Record<string, unknown> = {}) =
 beforeAll(async () => {
     m.db = new PGlite();
     await m.db.exec(`
-        create table orgs(id uuid primary key, owner_id uuid, slack_webhook_url text, idioma text default 'es-MX');
+        create table orgs(id uuid primary key, owner_id uuid, slack_webhook_url text, teams_webhook_url text,
+            idioma text default 'es-MX', nombre text default 'Acme', email_contacto text default 'hola@acme.test',
+            telefono text default '555-0100', moneda text default 'MXN', zona_horaria text default 'America/Mexico_City');
         create table users(id uuid primary key, email text);
         create table org_members(org_id uuid, user_id uuid, estado text);
         create table cotizaciones(id uuid primary key, org_id uuid, status text);
@@ -85,12 +102,23 @@ beforeAll(async () => {
     await m.db.exec(readFileSync(new URL('../db/migrations/2026-09-14-domain-events.sql', import.meta.url), 'utf8'));
     await m.db.exec(readFileSync(new URL('../db/migrations/2026-09-14-workflows.sql', import.meta.url), 'utf8'));
     await m.db.exec(readFileSync(new URL('../db/migrations/2026-09-14-workflows.sql', import.meta.url), 'utf8'));
+    // Programados, consultas y esperas condicionadas. Se corre dos veces a
+    // propósito: una migración que no es idempotente rompe el segundo deploy.
+    await m.db.exec(readFileSync(new URL('../db/migrations/2026-09-20-workflows-programados.sql', import.meta.url), 'utf8'));
+    await m.db.exec(readFileSync(new URL('../db/migrations/2026-09-20-workflows-programados.sql', import.meta.url), 'utf8'));
 }, 20000);
 
 beforeEach(async () => {
     vi.clearAllMocks();
     m.pending.length = 0;
     m.email.mockResolvedValue({ sent: true });
+    m.clientQuoteEmail.mockResolvedValue({ sent: true });
+    m.clientInvoiceEmail.mockResolvedValue({ sent: true });
+    m.expireQuote.mockResolvedValue({ status: 200, body: { ok: true } });
+    m.approveRequest.mockResolvedValue({ status: 200, body: { ok: true } });
+    m.safeFetch.mockResolvedValue({ ok: true, status: 200, body: '', error: null, ms: 5 });
+    m.reserve.mockResolvedValue({ ok: true, id: 'res-1' });
+    m.runDataset.mockResolvedValue({ vencido_total: 125000, vencido_cantidad: 4, vencido_dias_max: 31 });
     m.slack.mockResolvedValue({ ok: true, status: 200 });
     await m.db.exec(`delete from workflow_runs; delete from workflows; delete from domain_events; delete from tareas;
         update test_plan set plan = 'pro'; update cotizaciones set status = 'sent'; update orgs set slack_webhook_url = null;`);
@@ -180,7 +208,8 @@ describe('ejecución', () => {
         await flush();
         let [run] = await q('select status, attempts, error from workflow_runs');
         expect(run).toMatchObject({ status: 'queued', attempts: 1 });
-        expect(run.error).toContain('Conecta Slack');
+        // El error se guarda como CÓDIGO: el idioma se resuelve al leerlo (regla 36).
+        expect(run.error).toBe('wf.err.slack_sin_conexion');
         for (let i = 0; i < 2; i++) {
             await m.db.exec(`update workflow_runs set run_at = now() - interval '1 minute'`);
             await processOrgRuns(A);
@@ -222,13 +251,13 @@ describe('ejecución', () => {
         expect(run).toMatchObject({ status: 'queued', attempts: 1 });
 
         await m.db.exec('delete from workflow_runs; delete from workflows; delete from domain_events;');
-        m.hsNote.mockReset().mockRejectedValue(new HubSpotActionError('Conecta HubSpot en Ajustes › Integraciones para usar esta acción.'));
+        m.hsNote.mockReset().mockRejectedValue(new HubSpotActionError('hs.err.sin_conexion'));
         await workflow(A, 'quote.approved', [{ id: 'nota3', type: 'action', action: 'hubspot_note', params: { mensaje: 'x' } }]);
         await quoteEvent();
         await flush();
         expect(m.hsNote).toHaveBeenCalledTimes(1);
         [run] = await q('select error from workflow_runs');
-        expect(run.error).toContain('Conecta HubSpot');
+        expect(run.error).toBe('wf.err.hubspot_datos');
     });
 
     it('avisa solo a miembros activos y escapa el HTML del contenido', async () => {
@@ -272,6 +301,175 @@ describe('anti-bucle', () => {
         const depths = (await q('select max(depth)::int as d, count(*)::int as n from workflow_runs'))[0];
         expect(depths.d).toBeLessThanOrEqual(2);
         expect((await q('select max(depth)::int as d from domain_events'))[0].d).toBeLessThanOrEqual(3);
+    });
+});
+
+describe('acciones sobre el propio Cord', () => {
+    it('le escribe al cliente de la cotización del evento y consume la cuota de envíos', async () => {
+        await workflow(A, 'quote.approved', [{
+            id: 'mail9', type: 'action', action: 'send_client_email',
+            params: { asunto: 'Gracias {{cliente}}', mensaje: 'Aprobaste {{folio}} por {{total}}' },
+        }]);
+        await quoteEvent();
+        await flush();
+        expect(m.reserve).toHaveBeenCalledWith(A, 'envios', 1);
+        expect(m.clientQuoteEmail).toHaveBeenCalledWith(A, QUOTE, expect.objectContaining({
+            asunto: 'Gracias ACME <script>',
+            mensaje: 'Aprobaste COT-7 por 150,000',
+            locale: 'es',
+        }));
+        expect((await q('select status from workflow_runs'))[0].status).toBe('succeeded');
+    });
+
+    it('si el cliente no tiene correo libera la reserva y no insiste en el mismo intento', async () => {
+        m.clientQuoteEmail.mockResolvedValue({ sent: false, reason: 'sin_correo' });
+        await workflow(A, 'quote.approved', [{
+            id: 'mailx', type: 'action', action: 'send_client_email', params: { asunto: 'Hola', mensaje: 'Texto' },
+        }]);
+        await quoteEvent();
+        await flush();
+        expect(m.clientQuoteEmail).toHaveBeenCalledTimes(1);
+        expect(m.cancelUsage).toHaveBeenCalledWith(A, 'res-1');
+        expect((await q('select error from workflow_runs'))[0].error).toBe('wf.err.cliente_sin_correo');
+    });
+
+    it('caduca la cotización del evento, nunca un id escrito en el paso', async () => {
+        await workflow(A, 'quote.approved', [{ id: 'exp1', type: 'action', action: 'expire_quote', params: { cotizacion_id: B } }]);
+        await quoteEvent();
+        await flush();
+        expect(m.expireQuote).toHaveBeenCalledWith(expect.objectContaining({ orgId: A }), QUOTE);
+        expect((await q('select status from workflow_runs'))[0].status).toBe('succeeded');
+    });
+
+    it('un estado que ya no admite la acción se reporta con su código', async () => {
+        m.expireQuote.mockResolvedValue({ status: 409, body: { error: 'x' } });
+        await workflow(A, 'quote.approved', [{ id: 'exp2', type: 'action', action: 'expire_quote', params: {} }]);
+        await quoteEvent();
+        await flush();
+        expect((await q('select error from workflow_runs'))[0].error).toBe('wf.err.cotizacion_estado');
+    });
+});
+
+describe('POST a una URL', () => {
+    const paso = (url: string) => ({ id: 'http1', type: 'action', action: 'http_webhook', params: { url, mensaje: 'Aprobada {{folio}}' } });
+
+    it('manda el evento y sus datos en JSON', async () => {
+        await workflow(A, 'quote.approved', [paso('https://hooks.ejemplo.com/cord')]);
+        await quoteEvent();
+        await flush();
+        const [url, init] = m.safeFetch.mock.calls[0];
+        expect(url).toBe('https://hooks.ejemplo.com/cord');
+        expect(init.method).toBe('POST');
+        const body = JSON.parse(init.body);
+        expect(body).toMatchObject({ evento: 'quote.approved', objeto: 'quote', objeto_id: QUOTE, mensaje: 'Aprobada COT-7' });
+        expect(body.datos.folio).toBe('COT-7');
+        expect((await q('select status from workflow_runs'))[0].status).toBe('succeeded');
+    });
+
+    it('una URL interna o sin https no llega a la red', async () => {
+        await workflow(A, 'quote.approved', [paso('http://169.254.169.254/latest/meta-data')]);
+        await quoteEvent();
+        await flush();
+        expect(m.safeFetch).not.toHaveBeenCalled();
+        expect((await q('select error from workflow_runs'))[0].error).toBe('wf.err.url_invalida');
+    });
+
+    it('si el destino rechaza el envío, el paso falla con su código', async () => {
+        m.safeFetch.mockResolvedValue({ ok: false, status: 500, body: '', error: 'HTTP 500', ms: 5 });
+        await workflow(A, 'quote.approved', [paso('https://hooks.ejemplo.com/cord')]);
+        await quoteEvent();
+        await flush();
+        expect((await q('select error from workflow_runs'))[0].error).toBe('wf.err.http_rechazo');
+    });
+});
+
+describe('datos del negocio', () => {
+    it('cualquier plantilla puede usar el nombre y el contacto del negocio', async () => {
+        await workflow(A, 'quote.approved', [{
+            id: 'mailneg', type: 'action', action: 'notify_team',
+            params: { destinatarios: 'owner', asunto: '{{negocio}}', mensaje: 'Escríbenos a {{negocio_correo}} o al {{negocio_telefono}}. Hoy es {{hoy}}.' },
+        }]);
+        await quoteEvent();
+        await flush();
+        const [call] = m.email.mock.calls.at(-1)!;
+        expect(call.subject).toBe('Acme');
+        expect(call.html).toContain('Escríbenos a hola@acme.test o al 555-0100.');
+        expect(call.html).toMatch(/Hoy es \d{4}-\d{2}-\d{2}\./);
+    });
+});
+
+describe('consultas y esperas condicionadas', () => {
+    it('una consulta deja sus valores disponibles para los pasos siguientes', async () => {
+        await workflow(A, 'quote.approved', [
+            { id: 'cons1', type: 'query', dataset: 'cartera_vencida', params: {} },
+            { id: 'mail1', type: 'action', action: 'notify_team', params: { destinatarios: 'owner', asunto: 'Cartera', mensaje: 'Deben {{vencido_total}} en {{vencido_cantidad}} documentos' } },
+        ]);
+        await quoteEvent();
+        await flush();
+        expect(m.runDataset).toHaveBeenCalledWith('cartera_vencida', A, expect.objectContaining({ clienteId: null }));
+        expect(m.email).toHaveBeenCalledWith(expect.objectContaining({ html: expect.stringContaining('Deben 125,000 en 4 documentos') }));
+        const [run] = await q('select status, datos from workflow_runs');
+        expect(run.status).toBe('succeeded');
+        expect(run.datos).toMatchObject({ vencido_total: 125000 });
+    });
+
+    it('una condición puede decidir con el dato que trajo la consulta', async () => {
+        m.runDataset.mockResolvedValue({ vencido_total: 10, vencido_cantidad: 1, vencido_dias_max: 2 });
+        await workflow(A, 'quote.approved', [
+            { id: 'cons2', type: 'query', dataset: 'cartera_vencida', params: {} },
+            {
+                id: 'cond2', type: 'condition', match: 'all',
+                conditions: [{ field: 'vencido_total', op: 'gte', value: 100000 }],
+                then: [task('tsk1', 'No debería')], else: [task('tsk2', 'Cartera sana')],
+            },
+        ]);
+        await quoteEvent();
+        await flush();
+        expect((await q('select titulo from tareas')).map((r: any) => r.titulo)).toEqual(['Cartera sana']);
+    });
+
+    it('la espera condicionada sigue esperando, y al cumplirse toma la rama de sí', async () => {
+        await workflow(A, 'quote.approved', [{
+            id: 'esp1', type: 'wait_until', match: 'all', days: 7,
+            conditions: [{ field: 'estado_actual', op: 'eq', value: 'paid' }],
+            then: [task('tsk1', 'Ya pagó')], else: [task('tsk2', 'Nunca pagó')],
+        }]);
+        await quoteEvent();
+        await flush();
+
+        let [run] = await q('select status, run_at, datos from workflow_runs');
+        expect(run.status).toBe('waiting');
+        expect(await q('select id from tareas')).toEqual([]);
+        // El plazo se fija una sola vez y queda guardado.
+        const vence = (run.datos as any).__vence.esp1;
+        expect(Date.parse(vence)).toBeGreaterThan(Date.now());
+
+        await m.db.exec(`update cotizaciones set status = 'paid'; update workflow_runs set run_at = now() - interval '1 minute'`);
+        await processOrgRuns(A);
+        [run] = await q('select status, datos from workflow_runs');
+        expect(run.status).toBe('succeeded');
+        expect((run.datos as any).__vence.esp1).toBe(vence);
+        expect((await q('select titulo from tareas')).map((r: any) => r.titulo)).toEqual(['Ya pagó']);
+    });
+
+    it('cuando se acaba el plazo toma la rama de no, sin quedarse esperando para siempre', async () => {
+        await workflow(A, 'quote.approved', [{
+            id: 'esp2', type: 'wait_until', match: 'all', days: 1,
+            conditions: [{ field: 'estado_actual', op: 'eq', value: 'paid' }],
+            then: [task('tsk1', 'Ya pagó')], else: [task('tsk2', 'Nunca pagó')],
+        }]);
+        await quoteEvent();
+        await flush();
+        expect((await q('select status from workflow_runs'))[0].status).toBe('waiting');
+
+        // El plazo ya pasó: la siguiente revisión no vuelve a esperar.
+        await m.db.exec(`update workflow_runs
+            set run_at = now() - interval '1 minute',
+                datos = jsonb_build_object('__vence', jsonb_build_object('esp2', to_char(now() - interval '1 hour', 'YYYY-MM-DD"T"HH24:MI:SSZ')))`);
+        await processOrgRuns(A);
+        const [run] = await q('select status from workflow_runs');
+        expect(run.status).toBe('succeeded');
+        expect((await q('select titulo from tareas')).map((r: any) => r.titulo)).toEqual(['Nunca pagó']);
     });
 });
 

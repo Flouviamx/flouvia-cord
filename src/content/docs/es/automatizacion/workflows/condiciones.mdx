@@ -112,6 +112,24 @@ Regla práctica: después de una espera, usa siempre el **estado actual**. Es lo
 
 Valores posibles del estado de una cotización: Borrador, Enviada, Vista, Aprobada, Rechazada, Vencida, Pagada y Facturada. De una factura: Borrador, Abierta, Pagada, Anulada e Incobrable.
 
+## Qué cambió, no solo qué vale
+
+Tres eventos traen además el valor **anterior**, así que una condición puede preguntar por el cambio y no solo por el valor actual:
+
+| Disparador | Campos con valor anterior |
+|---|---|
+| **Se modifica y reenvía una cotización** | Total |
+| **Se actualiza un cliente** | Empresa, Correo, Términos de pago |
+| **Se actualiza un producto** | Precio de lista, Activo |
+
+En esos campos el editor ofrece dos operadores más: **cambió** y **no cambió**. Además tienes el valor anterior como campo propio (**Total anterior**, **Precio de lista anterior**, etc.), que sirve tanto en condiciones como en tus textos.
+
+Ejemplo: "cuando se reenvía una cotización, si el **Total** cambió y el **Total** es menor que el **Total anterior**, avisa al dueño" — un descuento de última hora, que una condición sobre el total a secas no distingue de una venta que siempre valió eso.
+
+<Callout type="info">
+Si el evento no trae el valor anterior, **cambió** y **no cambió** responden que no: un evento anterior a esta capacidad diría "cambió" a todo, y eso es peor que no responder.
+</Callout>
+
 ## Condiciones anidadas
 
 Puedes poner una condición dentro de la rama de otra, hasta 4 niveles de profundidad. Ejemplo con dos niveles, disparado por **Se aprueba una cotización**:

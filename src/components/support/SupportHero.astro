@@ -112,14 +112,17 @@ const { isEn = false } = Astro.props;
         transform: translateY(-50%);
         width: 22px;
         height: 22px;
-        color: rgba(255, 255, 255, 0.45);
+        color: rgba(255, 255, 255, 0.78);
         pointer-events: none;
         transition: color 0.3s ease;
     }
     .search-container:focus-within .search-icon {
-        color: rgba(255, 255, 255, 0.85);
+        color: #ffffff;
     }
 
+    /* El buscador va SOBRE un shader oscuro y en movimiento: con un fondo al 7%
+       y un borde al 12% se leía como parte del fondo, no como algo donde
+       escribir. Sube a una superficie propia con borde visible. */
     .search-input {
         width: 100%;
         padding: 22px 24px 22px 62px;
@@ -127,23 +130,33 @@ const { isEn = false } = Astro.props;
         font-family: var(--font-sans);
         font-weight: 500;
         color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.34);
         border-radius: 16px;
         outline: none;
-        background: rgba(255, 255, 255, 0.07);
+        background: rgba(8, 18, 38, 0.52);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+        box-shadow: 0 10px 30px rgba(2, 6, 16, 0.32), inset 0 1px 0 rgba(255,255,255,0.14);
+    }
+    .search-input:hover {
+        border-color: rgba(255, 255, 255, 0.46);
     }
     .search-input:focus {
-        border-color: rgba(100, 160, 255, 0.40);
-        background: rgba(255, 255, 255, 0.10);
-        box-shadow: 0 0 0 4px rgba(13, 71, 227, 0.14), inset 0 1px 0 rgba(255,255,255,0.08);
+        border-color: rgba(130, 180, 255, 0.72);
+        background: rgba(8, 18, 38, 0.68);
+        box-shadow: 0 0 0 4px rgba(13, 71, 227, 0.22), inset 0 1px 0 rgba(255,255,255,0.16);
     }
     .search-input::placeholder {
-        color: rgba(255, 255, 255, 0.38);
+        color: rgba(255, 255, 255, 0.72);
         font-weight: 400;
+    }
+    /* Sin blur (Firefox sin composición, "Reducir transparencia" del SO) el
+       fondo semitransparente deja de separar el campo del shader: ahí se sirve
+       sólido (regla 31). */
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        .search-input { background: #0b1526; }
+        .search-input:focus { background: #0e1b31; }
     }
 
 

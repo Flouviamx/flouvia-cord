@@ -11,6 +11,34 @@
 > [`../historial/billing-cobros.md`](../historial/billing-cobros.md). Reglas
 > permanentes: 21–29 y 32–34 de [`../estandares-ingenieria.md`](../estandares-ingenieria.md).
 
+## Riel de cobro: Stripe Connect y Mercado Pago
+
+Cord Payments corre sobre Stripe Connect, que no abre cuentas conectadas en
+Colombia, Argentina, Chile ni Perú. Desde sep 2026 hay un SEGUNDO riel,
+Mercado Pago, para esos cuatro países más México y Brasil, donde convive con
+Connect y el negocio elige.
+
+- `supportsOnlinePayments()` sigue significando **Connect** —es lo que consultan
+  el alta y el KYC—; `supportsMercadoPago()` y `hasOnlinePaymentRail()` viven a
+  su lado en `src/lib/countries.ts`.
+- Credenciales del vendedor en `orgs.mp_*`, CIFRADAS, con renovación por refresh
+  token. Si la renovación falla, `mp_charges_enabled` pasa a false: el vendedor
+  lo ve en Ajustes en vez de descubrirlo por un cobro que no abre.
+- El cobro público (`/api/q/[token]/mp-preference`) cumple las cuatro garantías
+  de la regla 33 y `scripts/payments-contract-check.mjs` ahora reconoce el riel
+  —sin eso, una ruta de dinero nueva quedaba fuera del universo que el linter
+  dice derivar del árbol.
+- El webhook lee el pago EN el proveedor: no se fía del cuerpo que recibe, y su
+  idempotencia es el índice único `uq_cobros_mp_payment`, no un `if`.
+- La liquidación vive en `src/lib/cobros-settle.ts`. El riel de Stripe conserva
+  su propia copia dentro de su webhook: unificarla exige cubrir antes ese camino
+  con pruebas, y tocar dinero vivo sin ellas es peor que dos copias declaradas.
+
+⚠️ Pendiente operativo: `MP_CLIENT_ID`, `MP_CLIENT_SECRET` y `MP_WEBHOOK_SECRET`
+no están configuradas, y la forma de `/oauth/token`, `/checkout/preferences` y
+del encabezado `x-signature` debe reconfirmarse contra la documentación VIGENTE
+de Mercado Pago antes de habilitarlo en producción.
+
 ## Facturación internacional — ago 2026
 
 - México: CFDI 4.0 mediante `MexicoSatProvider` y Facturapi como PAC intercambiable.

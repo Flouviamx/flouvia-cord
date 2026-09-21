@@ -6,6 +6,130 @@
 
 ---
 
+✅ **WhatsApp Business y Mercado Pago (20 sep 2026)**
+   • **WhatsApp (Cloud API de Meta)**: en México y Latinoamérica la cotización se persigue por
+     WhatsApp, y Cord le escribía al cliente por el canal que menos abre. La acción de workflow
+     manda la PLANTILLA aprobada del negocio y rellena sus variables: Meta no permite iniciar una
+     conversación con texto libre, así que un campo de mensaje habría prometido algo que el
+     proveedor rechaza. El token es de la cuenta del negocio y va cifrado; el teléfono sale del
+     cliente del documento y exige lada de país —`toE164()` no la inventa, porque el mismo número
+     existe en varios países y el mensaje llegaría a un desconocido.
+   • **Mercado Pago como SEGUNDO riel de cobro**: Stripe no abre cuentas conectadas en Colombia,
+     Argentina, Chile ni Perú, así que esas cuatro cuentas cotizaban y facturaban pero no cobraban
+     en línea. Ahora hay alta por OAuth, cobro público con las cuatro garantías de la regla 33, y
+     webhook que LEE el pago en el proveedor en vez de creerle al cuerpo que recibe. La
+     idempotencia es el índice `uq_cobros_mp_payment`, no un `if`: Mercado Pago reenvía la misma
+     notificación por diseño. El importe va en unidades MAYORES —Mercado Pago cobra en decimales,
+     no en centavos como Stripe: `toMinorUnits` ahí habría cobrado cien veces de más (regla 21).
+   • **El linter de pagos aprendió el riel nuevo.** `payments-contract-check` derivaba su universo
+     de patrones de Stripe, así que una ruta de dinero de otro proveedor quedaba fuera del
+     contrato que el script dice derivar del árbol. Ahora reconoce `/checkout/preferences`.
+   • **`cobros-settle.ts`**: la liquidación de un cobro (marcar, cancelar sobrantes, flip atómico
+     de la cotización) sale a un módulo compartido. El webhook de Stripe conserva su copia: para
+     unificarla hay que cubrir antes ese camino con pruebas, y se deja dicho en vez de fingir que
+     ya hay una sola.
+   • **Iconos**: los de Workflows se rehicieron con un solo gesto por icono —a 16 px del encadenado
+     de la lista, dos figuras superpuestas son una mancha— y los de Equipo y Workflows del menú
+     dejaron de ser "tres barras" y "un reproductor".
+
+✅ **Workflows programados, consultas, esperas condicionadas y prueba sin publicar (20 sep 2026)**
+   • **Disparador programado** (`schedule.tick`): hasta aquí todo workflow nacía de un evento, así
+     que "cada lunes a las 9" no era expresable. El horario vive en la definición, `next_run_at`
+     dice cuándo toca y el cron lo avanza ANTES de emitir. Se encola solo ESE workflow, no todos
+     los que escuchan el tipo: cada uno tiene su horario. La hora se interpreta en la zona de la
+     organización con `schedule.ts` —puro y probado contra el cambio de horario, donde un día dura
+     23 o 25 horas—, y el día del mes se topa en 28 por el mismo motivo que la recurrencia.
+   • **Paso de consulta**: catálogo CERRADO de cinco lecturas (cartera vencida, pipeline, cobrado,
+     por vencer, saldo del cliente). Los metadatos viven aparte del SQL porque el editor los carga
+     en el navegador. Lo que la consulta devuelve queda disponible para los pasos siguientes, y
+     `validateForPublish` lo verifica en ORDEN: usar `{{vencido_total}}` antes de la consulta no se
+     puede publicar, y lo que consulta una rama no existe en la otra.
+   • **Espera condicionada** (`wait_until`): revisa cada hora hasta que la condición se cumple o
+     vence el plazo, con una rama para cada salida. El plazo se fija la primera vez y se guarda en
+     `workflow_runs.datos`; recalcularlo en cada revisión lo habría empujado para siempre.
+   • **Prueba sin publicar**: la única forma de saber si un workflow hacía lo que uno creía era
+     publicarlo y esperar a que le pasara a un cliente real. Ahora el botón Probar corre el
+     borrador contra el último evento real: las consultas se ejecutan (solo leen, y son el dato que
+     decide la rama), las acciones no, y se devuelve el texto ya renderizado.
+   • **Cron horario**: `/api/cron/workflows` pasó de diario a cada hora. Un horario que el negocio
+     eligió y una espera que vigila no se pueden sostener con un barrido diario.
+   • **Buscador de pasos**: con 10 acciones y 5 consultas, la lista plana dentro del panel obligaba
+     a leerlas todas. Ahora es un buscador con familias (tu equipo, tu cliente, el documento, otras
+     herramientas) y descripción por entrada.
+   • **Datos del negocio en cualquier plantilla** (`{{negocio}}`, su correo, su teléfono, su divisa y
+     `{{hoy}}` en la zona de la cuenta): el vocabulario era fijo por disparador, así que firmar un
+     correo obligaba a escribir el nombre a mano en cada workflow y a editarlos todos al cambiarlo.
+   • **Panel de salud** en `/app/workflows`: ejecuciones, fallidas y las cinco causas más
+     frecuentes de 30 días, agrupadas por el código del error. Es la contrapartida útil de haber
+     dejado de guardar la frase: agrupar por causa es una consulta, no un parser de texto.
+   • **Buscador de soporte**: el campo del hero iba al 7% de opacidad sobre un shader oscuro y se
+     leía como parte del fondo. Sube a superficie propia con borde visible y lleva su `@supports`
+     de respaldo (regla 31), que es justo el caso donde sin blur desaparecía del todo.
+   • **Nueve ideas, no catorce**: se quitaron las que otra ya cubría (cierre de mes contra resumen
+     semanal, cobranza de vencidas contra cobranza escalonada, espera de apertura contra la
+     escalera, aprobación interna contra aprobación express, y vigilar precio).
+   • **Seis plantillas nuevas** que usan lo anterior (escalera de seguimiento, aprobación express,
+     cierre de mes, cobranza escalonada, vigilar cambios de precio, última llamada y cierre) en
+     lugar de seis básicas que ya cubría una sola condición.
+   • **Bug de la lista**: `WorkflowsList` daba por hecho que todo paso que no era acción ni espera
+     era una condición, así que un paso de consulta reventaba `/app/workflows` entero con "list is
+     not iterable". Se arregló ahí y en los otros tres recorridos con la misma suposición.
+
+✅ **Microsoft Teams, nodo de n8n y condiciones de transición (20 sep 2026)**
+   • **Teams como canal propio**: `orgs.teams_webhook_url`, tercera columna en la matriz de
+     Ajustes › Notificaciones, tarjeta de prueba y acción `teams_message` en Workflows. El
+     destino NO es un webhook de canal: Microsoft retiró los conectores O365, así que la URL
+     vigente es la de un flujo de Power Automate (`*.logic.azure.com`) y el cuerpo es una
+     Adaptive Card — Teams no renderiza el markdown de Slack. No se reusó la preferencia de
+     Slack: son canales independientes, y espejarlos habría publicado dos veces lo mismo.
+   • **n8n** (`integrations/n8n/`): nodo comunitario `n8n-nodes-cord` en JavaScript plano —
+     n8n carga lo que declara `package.json`, así que no hay `dist` que se quede viejo. Trae
+     credencial probada contra `/v1/me`, `Cord Trigger` que registra y borra su webhook solo, y
+     el nodo de acción (clientes, cotizaciones, tareas) en estilo declarativo. La firma
+     `X-Cord-Signature-V1` SÍ se verifica —n8n entrega el cuerpo crudo, que es lo que Make no
+     expone—, aceptando las dos firmas de una rotación y cortando entregas fuera de tolerancia.
+     El catálogo de eventos se copia del canónico de Zapier con `npm run sync` y el test falla
+     si las listas se separan: el paquete se publica solo a npm y no puede requerir otra carpeta.
+   • **Condiciones de transición**: una condición sobre el valor actual no distingue "siempre
+     fue 20%" de "acaba de subir a 20%". `quote.updated`, `client.updated` y `product.updated`
+     ahora llevan el valor ANTERIOR de los campos que deciden algo; esos campos declaran
+     `prev: true` y ahí aparecen los operadores `cambió`/`no cambió`. Sin valor anterior el
+     operador responde que NO: un evento anterior a esta capacidad diría "cambió" a todo. El
+     "antes" se lee en la misma transacción que el update, no en una consulta suelta.
+
+✅ **Workflows que actúan, no solo avisan: anclas de tiempo, correo al cliente, acciones sobre el documento y POST a una URL (20 sep 2026)**
+   • **Anclas de tiempo**: hasta aquí un workflow solo reaccionaba a algo que YA pasó
+     (`quote.expired`, `invoice.overdue`) o esperaba N días DESPUÉS de un evento. Lo de ANTES
+     del vencimiento no era expresable, porque una fecha límite no es un evento. Nuevos
+     `quote.expiring`, `invoice.due_soon` e `invoice.past_due`, que emite
+     `/api/cron/anclas-tiempo` (12:00 UTC) una vez al día por documento vivo con la distancia en
+     días como campo. Decisiones: el día exacto lo elige el autor con una condición en vez de una
+     cadencia fija; solo se emite para orgs con un workflow ACTIVO en ese disparador; dedup por
+     `not exists` de 20 horas —no por "el cron corre una vez al día", que era justo el bug que la
+     regla 25 documenta en los recordatorios—; y `public: false` en `DOMAIN_EVENTS`, porque un
+     suscriptor de webhooks recibiría el mismo aviso todos los días.
+   • **Cinco acciones nuevas**: escribirle al cliente (correo con la marca del negocio y el botón
+     al link público), caducar la cotización, aprobar la solicitud interna, anular la factura y
+     mandar los datos a una URL (`safeFetch`, misma defensa SSRF que los webhooks salientes). Con
+     esto la documentación dejó de ser cierta en su punto más visible —"un workflow nunca le
+     escribe al cliente"— y se reescribió el límite: no cobra, no emite fiscal, no registra pagos
+     y no decide por el cliente.
+   • **El objeto sale del evento, nunca del paso.** Un `cotizacion_id` escrito en un parámetro
+     sería un carril para tocar el documento de otra organización. Y como no todo disparador trae
+     un documento (un contracargo puede venir sin cotización), la acción declara `needs` y el
+     disparador declara `object`: el desajuste se dice al PUBLICAR, no en una ejecución fallida.
+   • **Cuota y límites**: el correo al cliente reserva `envios` con `reserveUsage()` antes de
+     mandar y cancela si falla —si no, un workflow era la puerta de atrás para saltarse el tope
+     del plan Gratis—, con techos por hora propios (60 correos al cliente, 120 POST).
+   • **Errores traducibles (regla 36)**: `workflow_runs.error` y el log de pasos guardaban la
+     frase en español, así que una cuenta en inglés leía español en un historial que vive para
+     siempre. Ahora se guarda un CÓDIGO (`wf.err.*`) y se traduce al leer las ejecuciones; mismo
+     patrón en HubSpot (`hs.err.*`) para `ultimo_error` y las respuestas de su API, y el mensaje
+     de Slack de `notify()` pasó a bilingüe —el correo del mismo aviso ya salía en inglés y el de
+     Slack no.
+   • **Dos plantillas nuevas** (recordatorio 3 días antes del vencimiento; última llamada antes de
+     que caduque la cotización) y las guías de docs.cordhq.app y soporte, en ambos idiomas.
+
 ✅ **Guías detalladas de Workflows e Integraciones y tres correcciones (15 sep 2026)**
    • **docs.cordhq.app**: 19 páginas por idioma bajo `src/content/docs/{es,en}/automatizacion/`
      (11 de Workflows, 8 de Integraciones) y dos grupos propios en el menú de `DocsLayout.astro`.

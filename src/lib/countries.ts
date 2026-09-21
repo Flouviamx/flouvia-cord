@@ -65,9 +65,30 @@ export function isSupportedCountry(value: string): value is SupportedCountry {
 // (regla 14). Hoy Colombia, Argentina, Chile y Perú están en ese caso.
 const CONNECT_COUNTRIES = new Set<string>(['MX', 'US', 'CA', 'BR', 'ES', 'GB', 'DE', 'FR']);
 
-/** ¿Cord Payments (cobro en línea) está disponible en este país? */
+/**
+ * Países donde Cord cobra con Mercado Pago. Es el riel que cubre el hueco de
+ * Stripe en Colombia, Argentina, Chile y Perú; en México y Brasil convive con
+ * Connect y el negocio elige con cuál cobra.
+ */
+const MERCADOPAGO_COUNTRIES = new Set<string>(['MX', 'BR', 'AR', 'CL', 'CO', 'PE']);
+
+/** ¿Hay riel de Mercado Pago en este país? */
+export function supportsMercadoPago(code: string): boolean {
+    return MERCADOPAGO_COUNTRIES.has(String(code || '').toUpperCase());
+}
+
+/** ¿Stripe Connect abre cuentas conectadas en este país? */
 export function supportsOnlinePayments(code: string): boolean {
     return CONNECT_COUNTRIES.has(String(code || '').toUpperCase());
+}
+
+/**
+ * ¿El país tiene ALGÚN riel de cobro en línea? Es lo que decide si la cuenta
+ * puede cobrar dentro del link; `supportsOnlinePayments` sigue significando
+ * "Connect", que es lo que consultan el alta y el KYC.
+ */
+export function hasOnlinePaymentRail(code: string): boolean {
+    return supportsOnlinePayments(code) || supportsMercadoPago(code);
 }
 
 export interface CountryProfile {

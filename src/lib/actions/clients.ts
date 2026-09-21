@@ -3,7 +3,7 @@ import { requireResourceCapacity, resourceLimitError } from '../org-entitlements
 import { isCountryCode } from '../countries';
 import { after } from '../after';
 import { dispatchEvent } from '../webhooks';
-import { clientEventData } from '../event-payloads';
+import { clientEventData, clientPrevData } from '../event-payloads';
 import { type ActionContext, type ActionOutcome, auditAction, done, fromResponse, isUuid } from './outcome';
 
 const TERMINOS = ['contado', 'net30', 'net60'];
@@ -69,7 +69,11 @@ export async function updateClient(ctx: ActionContext, id: string, input: Record
     const c = cleanClientInput(input);
     if (!c.empresa) return EMPRESA_OBLIGATORIA;
     if (!isUuid(id)) return NO_ENCONTRADO;
-    const [rows] = await withOrgTx(ctx.orgId, sql`
+    // El "antes" se lee en la MISMA transacción que el update: leerlo fuera
+    // dejaría una ventana donde otro cambio se cuela entre las dos.
+    const [antes, rows] = await withOrgTx(ctx.orgId,
+        sql`select empresa, email, terminos_default from clientes where id = ${id} and org_id = ${ctx.orgId}`,
+        sql`
         update clientes set
             empresa = ${c.empresa}, contacto = ${c.contacto}, email = ${c.email},
             telefono = ${c.telefono}, rfc = ${c.rfc},
@@ -81,7 +85,7 @@ export async function updateClient(ctx: ActionContext, id: string, input: Record
         where id = ${id} and org_id = ${ctx.orgId}
         returning *`);
     if (!rows.length) return NO_ENCONTRADO;
-    after(dispatchEvent(ctx.orgId, 'client.updated', clientEventData(rows[0]), ctx.actor));
+    after(dispatchEvent(ctx.orgId, 'client.updated', { ...clientEventData(rows[0]), ...clientPrevData(antes[0]) }, ctx.actor));
     return done(200, { ok: true });
 }
 

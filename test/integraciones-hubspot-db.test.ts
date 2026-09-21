@@ -332,7 +332,7 @@ describe('HubSpot → Cord', () => {
 describe('acción de Workflows: nota en HubSpot', () => {
     it('va al Deal si existe, si no a la Empresa, y avisa si todavía no hay nada sincronizado', async () => {
         const { addHubSpotNote, HubSpotActionError } = await import('../src/lib/integraciones/hubspot/actions');
-        await expect(addHubSpotNote(A, { quoteId: QUOTE, clientId: CLIENTE }, 'x')).rejects.toThrow(/Conecta HubSpot/);
+        await expect(addHubSpotNote(A, { quoteId: QUOTE, clientId: CLIENTE }, 'x')).rejects.toThrow(/hs\.err\.sin_conexion/);
         await conectar();
         const pendiente = await addHubSpotNote(A, { quoteId: QUOTE, clientId: CLIENTE }, 'x').catch((e) => e);
         expect(pendiente).toBeInstanceOf(HubSpotActionError);
@@ -348,7 +348,7 @@ describe('acción de Workflows: nota en HubSpot', () => {
         hs.calls = [];
         expect(await addHubSpotNote(A, { quoteId: QUOTE, clientId: CLIENTE }, '<p>aprobada</p>')).toBe('deal');
         expect(hs.calls).toContain('POST /crm/v3/objects/notes');
-        expect(await addHubSpotNote(B, { quoteId: QUOTE, clientId: CLIENTE }, 'x').catch((e) => e.message)).toMatch(/Conecta HubSpot/);
+        expect(await addHubSpotNote(B, { quoteId: QUOTE, clientId: CLIENTE }, 'x').catch((e) => e.message)).toMatch(/hs\.err\.sin_conexion/);
     });
 });
 

@@ -11,6 +11,18 @@
 
 ---
 
+## Espacios de trabajo: libres, con plan propio
+
+Crear una organización no se gatea por plan (sep 2026). `multi_org` salió de
+`FEATURE_MIN_PLAN`: un tope ahí no protegía ingreso —cada organización trae su
+propia suscripción y se cobra por su cuenta— y sí impedía abrir el negocio nuevo
+que después iba a pagar. Lo que acota el abuso es el rate limit de
+`/api/orgs` (10 por minuto y por usuario), no el plan.
+
+Consecuencia que debe seguir siendo cierta: el plan es **de la organización**,
+nunca de la persona. Una cuenta nueva nace en Gratis aunque quien la creó tenga
+Scale en otra, y `cord_effective_plan(org_id)` sigue siendo la única fuente.
+
 ## Modelo de negocio
 
 **Configuración operativa verificada (6 sep 2026).** Los 23 Price de Stripe LIVE

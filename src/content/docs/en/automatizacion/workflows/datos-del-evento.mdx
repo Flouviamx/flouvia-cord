@@ -55,6 +55,24 @@ When publishing, Cord checks every text. If you used data that trigger does not 
 
 It usually happens when changing the trigger of a workflow you already built, or when typing the name by hand with a typo. Fix it or insert it from **Event data**.
 
+## Your business data
+
+These five variables exist on **every** trigger, because they come from your account (Settings › General), not from the event:
+
+| Variable | What it brings |
+|---|---|
+| `{{negocio}}` | Your business name. |
+| `{{negocio_correo}}` | Your contact email. |
+| `{{negocio_telefono}}` | Your phone. |
+| `{{negocio_moneda}}` | Your account's currency. |
+| `{{hoy}}` | Today's date in your time zone, like `2026-09-20`. |
+
+They are mostly for signing an email to the client without typing your name by hand in every workflow: if the business changes its name or phone, the workflows come out right without being touched.
+
+<Callout type="info">
+`{{hoy}}` is today in **your** time zone, not the server's. A business in Tokyo saw the date off by one day when the universal date was used.
+</Callout>
+
 ## Full list
 
 ### Quotes, approvals and quote payments

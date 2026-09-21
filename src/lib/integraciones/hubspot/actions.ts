@@ -1,5 +1,6 @@
 import { sql, withOrgTx } from '../../db';
 import { hubspotRequest } from './client';
+import { hsError } from './errors';
 
 export class HubSpotActionError extends Error {
     constructor(message: string, readonly final = true) {
@@ -14,8 +15,8 @@ export async function addHubSpotNote(orgId: string, refs: { quoteId: string | nu
     const [[conn]] = await withOrgTx(orgId, sql`
         select id, estado from integracion_conexiones
          where org_id = ${orgId} and proveedor = 'hubspot' and estado <> 'desconectada'`);
-    if (!conn) throw new HubSpotActionError('Conecta HubSpot en Ajustes › Integraciones para usar esta acción.');
-    if (conn.estado !== 'activa') throw new HubSpotActionError('HubSpot necesita reconectarse en Ajustes › Integraciones.');
+    if (!conn) throw new HubSpotActionError(hsError('sin_conexion'));
+    if (conn.estado !== 'activa') throw new HubSpotActionError(hsError('reconectar'));
 
     const [links] = await withOrgTx(orgId, sql`
         select objeto, externo_id from integracion_vinculos
@@ -27,13 +28,13 @@ export async function addHubSpotNote(orgId: string, refs: { quoteId: string | nu
         ? { id: String(deal.externo_id), typeId: NOTE_TO_DEAL, kind: 'deal' as const }
         : company ? { id: String(company.externo_id), typeId: NOTE_TO_COMPANY, kind: 'company' as const } : null;
     if (!target) {
-        throw new HubSpotActionError('Este registro todavía no está en HubSpot. Se reintenta cuando termine de sincronizarse.', false);
+        throw new HubSpotActionError(hsError('sin_sincronizar'), false);
     }
 
     const res = await hubspotRequest(orgId, conn.id as string, 'POST', '/crm/v3/objects/notes', {
         properties: { hs_timestamp: new Date().toISOString(), hs_note_body: htmlBody },
         associations: [{ to: { id: target.id }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: target.typeId }] }],
     });
-    if (res.status === 404) throw new HubSpotActionError('El registro ya no existe en HubSpot.');
+    if (res.status === 404) throw new HubSpotActionError(hsError('registro_ausente'));
     return target.kind;
 }

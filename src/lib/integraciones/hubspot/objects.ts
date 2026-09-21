@@ -1,4 +1,5 @@
 import { hubspotRequest, HubSpotApiError } from './client';
+import { hsError } from './errors';
 
 export type CrmObject = 'companies' | 'contacts' | 'deals';
 
@@ -11,13 +12,13 @@ const ID_RE = /^[0-9]{1,20}$/;
 
 function requireId(value: unknown): string {
     const id = value === undefined || value === null ? '' : String(value);
-    if (!ID_RE.test(id)) throw new HubSpotApiError('HubSpot devolvió un identificador inesperado.', 502);
+    if (!ID_RE.test(id)) throw new HubSpotApiError(hsError('id_inesperado'), 502);
     return id;
 }
 
 export async function createObject(ref: Ref, type: CrmObject, properties: Record<string, string>): Promise<string> {
     const res = await hubspotRequest(ref.orgId, ref.conexionId, 'POST', `/crm/v3/objects/${type}`, { properties });
-    if (res.status === 404) throw new HubSpotApiError('HubSpot no encontró el recurso para crear el registro.', 404);
+    if (res.status === 404) throw new HubSpotApiError(hsError('recurso'), 404);
     return requireId(res.data?.id);
 }
 

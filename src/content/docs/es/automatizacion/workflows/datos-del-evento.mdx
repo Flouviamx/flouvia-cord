@@ -55,6 +55,24 @@ Al publicar, Cord revisa cada texto. Si usaste un dato que ese disparador no tra
 
 Suele pasar al cambiar el disparador de un workflow ya armado, o al escribir el nombre a mano con un error. Corrígelo o insértalo desde **Datos del evento**.
 
+## Datos de tu negocio
+
+Estas cinco variables existen en **todos** los disparadores, porque no vienen del evento sino de tu cuenta (Ajustes › General):
+
+| Variable | Qué trae |
+|---|---|
+| `{{negocio}}` | El nombre de tu negocio. |
+| `{{negocio_correo}}` | Tu correo de contacto. |
+| `{{negocio_telefono}}` | Tu teléfono. |
+| `{{negocio_moneda}}` | La divisa de tu cuenta. |
+| `{{hoy}}` | La fecha de hoy en tu zona horaria, como `2026-09-20`. |
+
+Sirven sobre todo para firmar un correo al cliente sin escribir tu nombre a mano en cada workflow: si el negocio cambia de nombre o de teléfono, los workflows salen bien sin tocarlos.
+
+<Callout type="info">
+`{{hoy}}` es el hoy de **tu** zona horaria, no la del servidor. Un negocio en Tokio veía la fecha corrida un día cuando se usaba la fecha universal.
+</Callout>
+
 ## Lista completa
 
 ### Cotizaciones, aprobaciones y pagos de cotización

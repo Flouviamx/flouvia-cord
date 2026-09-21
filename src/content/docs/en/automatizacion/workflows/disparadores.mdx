@@ -1,6 +1,6 @@
 ---
 title: "Triggers"
-description: "The 41 events that can start a workflow in Cord, grouped by category, with when they happen and the data each one carries."
+description: "Cord's 44 events and the scheduled trigger that can start a workflow in Cord, grouped by category, with when they happen and the data each one carries."
 lastUpdated: "2026-09-15"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -33,6 +33,26 @@ Most triggers for the same kind of object share data. To avoid repeating it in e
 
 The exact name of each item for your texts (for example `{{saldo_pendiente}}`) is in [Event data](/en/docs/automatizacion/workflows/datos-del-evento).
 
+## Scheduled
+
+A workflow does not always react to something: it can also run on a fixed schedule. It is the only trigger you configure yourself.
+
+| Field | Detail |
+|---|---|
+| **How often** | Every day, every week or every month. |
+| **Day** | Of the week (Monday to Sunday) or of the month (1 to 28). |
+| **Time** | On the hour, in **your account's time zone** (Settings › General). |
+
+It carries the tick's own data: **Date**, **Day of the week**, **Day of the month** and **Hour**, usable in your text as `{{fecha}}`.
+
+<Callout type="info">
+The day of the month caps at **28** on purpose: a "31" would silently skip February, and a monthly cut that never goes out is worse than one that goes out three days early.
+</Callout>
+
+A scheduled trigger carries no quote or invoice, so actions that act on a document — expire, void, email the client — cannot be used there, and the editor says so when you publish. What does fit: [lookups](/en/docs/automatizacion/workflows/consultas) plus an alert to the team, to Slack or to Teams.
+
+When you pause a scheduled workflow its next tick is cleared; resuming recalculates it from that moment, so it does not fire the ticks it missed while paused.
+
 ## Quotes
 
 | Trigger | When it happens | Data |
@@ -42,8 +62,9 @@ The exact name of each item for your texts (for example `{{saldo_pendiente}}`) i
 | **The client opens the quote** | The client opens the public link. It does not count when someone on your team opens the link to review it. | Quote data |
 | **A quote is approved** | The quote becomes approved. | Quote data |
 | **A quote is rejected** | The quote becomes rejected. | Quote data |
-| **A quote is edited and resent** | A quote that was sent, viewed or expired is sent to the client again, usually after editing it. | Quote data |
+| **A quote is edited and resent** | A quote that was sent, viewed or expired is sent to the client again, usually after editing it. | Quote data plus **Previous total** |
 | **A quote expires** | The validity date passes without the quote closing. Cord checks validity once a day. | Quote data |
+| **A quote is about to expire** | Every day, while the expiration date is 1 to 30 days away and the quote is still sent or viewed. It carries **Days until it expires** and **Expiration date**: a condition picks the exact day you want to act on. | Quote data plus the two date fields |
 | **A draft is deleted** | A draft quote is deleted. | Quote data, without current status (the quote no longer exists) |
 | **A message is posted on a quote** | Someone writes in the quote chat. | Quote data, **Who wrote it** (The client or The team) and **Message** |
 
@@ -82,6 +103,8 @@ Dispute, refund, payout and payments account events come from Cord Payments, so 
 | **An invoice is paid** | The invoice becomes paid. | Invoice data |
 | **An invoice payment fails** | A payment attempt on the invoice did not go through. | Invoice data |
 | **An invoice becomes overdue** | The due date passes with a balance due. Cord checks this once a day. | Invoice data |
+| **An invoice is about to be due** | Every day, while the due date is 1 to 30 days away and the invoice is still open with a balance. It carries **Days until due** and **Due date**. | Invoice data plus the two date fields |
+| **An invoice has been past due for days** | Every day, from the day after the due date and up to 90 days later, while the invoice is still open with a balance. It carries **Days past due**. | Invoice data plus the two date fields |
 | **An invoice is voided** | The invoice is voided. | Invoice data |
 | **An invoice is marked uncollectible** | Someone marks the invoice as uncollectible. | Invoice data |
 
@@ -90,7 +113,7 @@ Dispute, refund, payout and payments account events come from Cord Payments, so 
 | Trigger | When it happens | Data |
 |---|---|---|
 | **A client is created** | A new client is added. | Client data |
-| **A client is updated** | A client's data changes, including changes coming from HubSpot. | Client data |
+| **A client is updated** | A client's data changes, including changes coming from HubSpot. | Client data plus the previous value of Company, Email and Payment terms |
 | **A client is deleted** | A client is deleted. | Company and Who caused it |
 
 ## Products
@@ -98,7 +121,7 @@ Dispute, refund, payout and payments account events come from Cord Payments, so 
 | Trigger | When it happens | Data |
 |---|---|---|
 | **A product is created** | A product is added to the catalog. | Product data |
-| **A product is updated** | A product's data changes. | Product data |
+| **A product is updated** | A product's data changes. | Product data plus the previous value of List price and Active |
 | **A product is deleted** | A product is removed from the catalog. | Name and Who caused it |
 
 ## Tasks and promises

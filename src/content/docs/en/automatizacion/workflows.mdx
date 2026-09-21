@@ -31,23 +31,24 @@ Each workflow reads top to bottom in the editor, in two blocks: **When this happ
 
 | Piece | What it does | Guide |
 |---|---|---|
-| **Trigger** | The event that starts the workflow. There are 41, grouped into quotes, approvals, payments, invoices, clients, products, and tasks and promises. Each workflow has exactly one. | [Triggers](/en/docs/automatizacion/workflows/disparadores) |
-| **Action** | Something Cord does for you: create a task, email the team, send a Slack message or add a note in HubSpot. | [Actions](/en/docs/automatizacion/workflows/acciones) |
+| **Trigger** | What starts the workflow: one of Cord's 44 events, or a **fixed schedule** ("every Monday at 9"). Each workflow has exactly one. | [Triggers](/en/docs/automatizacion/workflows/disparadores) |
+| **Action** | Something Cord does for you: create a task, email the team, email the client, expire a quote, approve an internal request, void an invoice, send the data to a URL, post to Slack or add a note in HubSpot. | [Actions](/en/docs/automatizacion/workflows/acciones) |
 | **Condition** | Splits the flow into two branches, **If the condition is met** and **If the condition isn't met**, based on the event data. | [Conditions](/en/docs/automatizacion/workflows/condiciones) |
-| **Wait** | Pauses the flow for 1 to 30 days and then continues with the next step. | [Waits](/en/docs/automatizacion/workflows/esperas) |
+| **Wait** | Pauses the flow for 1 to 30 days and then continues. It can also wait **until something happens**, with a time limit. | [Waits](/en/docs/automatizacion/workflows/esperas) |
+| **Lookup** | Brings a number from your account — overdue receivables, pipeline, client balance — to use in the steps that follow. | [Lookups](/en/docs/automatizacion/workflows/consultas) |
 | **Event data** | Values like `{{cliente}}`, `{{folio}}` or `{{total}}` that you can put in your texts and that are filled in when the workflow runs. | [Event data](/en/docs/automatizacion/workflows/datos-del-evento) |
 
 ## A complete example
 
-"Follow up if the client does not open" is one of the ideas Cord ships with. It reads like this:
+"Quote follow-up ladder" is one of the ideas Cord ships with. It reads like this:
 
 1. **When this happens:** a quote is sent.
-2. **Wait** 3 days.
-3. **Condition:** the current quote status is **Sent** (the client has not opened it yet).
-4. **If met:** create the task "Call `{{cliente}}` about `{{folio}}`" due today.
-5. **If not met:** do nothing; the client already opened it.
+2. **Wait until** the client opens or approves it, with a 2-day limit.
+3. **If it happens:** creates the task "Call `{{cliente}}` while `{{folio}}` is warm".
+4. **If the time runs out:** emails the client asking if anything needs clearing up, and waits another 5 days for a decision.
+5. **If they still do not decide:** looks up the client's balance and tells the owner what they already owe.
 
-Every quote you send starts its own run of this workflow. Three days later, each run checks its own quote and decides separately.
+Every quote you send starts its own run of this workflow, and each one checks its own quote: the one the client opened within the hour goes one way, the one nobody touched goes the other.
 
 ## Draft, published version and runs
 
@@ -60,7 +61,9 @@ All of this is explained in [Publish, pause and delete](/en/docs/automatizacion/
 ## What a workflow never does
 
 <Callout type="warning">
-A workflow works for your team; it does not talk to your client. **It never writes to the client, never charges, never issues or voids invoices, never marks payments and never changes a quote's status.** Those decisions stay with a person. Emails from the "Email the team" action only reach members of your organization.
+A workflow **never charges, never issues invoices or CFDIs, never records payments, and never approves or rejects a quote on your client's behalf.** Those decisions stay with a person or with the client.
+
+What it does do to your documents is narrow and explicit: email the document's client (never an address typed into the step), expire a quote that is past its validity date, approve an internal approval request, and void an invoice that has no payments yet. Each of those actions only applies when the trigger carries the document it acts on; otherwise the workflow cannot be published.
 </Callout>
 
 It also cannot create infinite loops: a workflow is never triggered by the events it causes itself, and a chain of workflows triggering each other stops after three levels. Details in [Limits](/en/docs/automatizacion/workflows/limites).
@@ -68,12 +71,13 @@ It also cannot create infinite loops: a workflow is never triggered by the event
 ## Cord Workflows guides
 
 - [Create your first workflow](/en/docs/automatizacion/workflows/primer-workflow): the editor, step by step.
-- [Ready-made ideas](/en/docs/automatizacion/workflows/ideas): the 9 examples Cord ships with and how to adapt them.
-- [Triggers](/en/docs/automatizacion/workflows/disparadores): the 41 events and the data each one carries.
-- [Actions](/en/docs/automatizacion/workflows/acciones): tasks, emails, Slack and HubSpot.
+- [Ready-made ideas](/en/docs/automatizacion/workflows/ideas): the 9 ideas Cord ships with and how to adapt them.
+- [Triggers](/en/docs/automatizacion/workflows/disparadores): the 44 events and the data each one carries.
+- [Actions](/en/docs/automatizacion/workflows/acciones): tasks, team and client emails, document actions, POST to a URL, Slack and HubSpot.
 - [Conditions](/en/docs/automatizacion/workflows/condiciones): branches, comparisons and current status.
 - [Waits](/en/docs/automatizacion/workflows/esperas): how days are counted.
 - [Event data](/en/docs/automatizacion/workflows/datos-del-evento): variables in your texts.
 - [Publish, pause and delete](/en/docs/automatizacion/workflows/publicar): the life cycle of a workflow.
+- [Lookups](/en/docs/automatizacion/workflows/consultas): bring a number before deciding.
 - [Runs and errors](/en/docs/automatizacion/workflows/ejecuciones): how to read the history and fix failures.
 - [Limits](/en/docs/automatizacion/workflows/limites): plans, size and hourly caps.

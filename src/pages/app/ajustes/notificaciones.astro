@@ -1,5 +1,5 @@
 ---
-// Ajustes › Notificaciones — matriz evento → canal (correo / Slack). Guarda en
+// Ajustes › Notificaciones — matriz evento → canal (correo / Slack / Teams). Guarda en
 // orgs.notif_prefs (jsonb) vía /api/org/prefs; src/lib/notify.ts es quien de
 // verdad la consulta antes de mandar algo (ver historial-app-features.md).
 // No usa el guardado genérico del shell (por eso NO pasa `save`): tiene su
@@ -24,11 +24,12 @@ const EVENTOS = [
 const CANALES = [
     { id: 'email', label: t(L, 'set.notif.canal.email') },
     { id: 'slack', label: t(L, 'set.notif.canal.slack') },
+    { id: 'teams', label: t(L, 'set.notif.canal.teams') },
 ];
 const on = (ev: string, c: string) => !!(P[ev] && P[ev][c]);
-// team_join no tiene forma de mensaje de Slack (no hay folio/cliente/total que
+// team_join no tiene forma de mensaje de canal (no hay folio/cliente/total que
 // mostrar) — se deja sin celda interactiva en vez de fingir que aplica.
-const sinSlack = (ev: string, c: string) => c === 'slack' && ev === 'team_join';
+const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
 ---
 
 <SettingsShell title="Notificaciones — Ajustes" tab="notificaciones"
@@ -48,7 +49,7 @@ const sinSlack = (ev: string, c: string) => c === 'slack' && ev === 'team_join';
                         <span class="notif-ev-desc">{ev.desc}</span>
                     </span>
                     {CANALES.map((c) => (
-                        sinSlack(ev.id, c.id) ? (
+                        sinCanal(ev.id, c.id) ? (
                             <span class="notif-na" title={t(L, 'set.notif.sin_canal')}>—</span>
                         ) : (
                             <label class="notif-cell">
@@ -70,6 +71,11 @@ const sinSlack = (ev: string, c: string) => c === 'slack' && ev === 'team_join';
                 <input class="s-input" id="oSlack" value={ORG.slackWebhook} placeholder="https://hooks.slack.com/services/T000/B000/XXXX" />
                 <span class="s-hint">{t(L, 'set.notif.slack_hint')}</span>
             </div>
+            <div class="s-field">
+                <label for="oTeams">{t(L, 'set.notif.teams_webhook')}</label>
+                <input class="s-input" id="oTeams" value={ORG.teamsWebhook} placeholder="https://prod-00.westus.logic.azure.com:443/workflows/..." />
+                <span class="s-hint">{t(L, 'set.notif.teams_hint')}</span>
+            </div>
         </div>
     </div>
 
@@ -87,7 +93,7 @@ const sinSlack = (ev: string, c: string) => c === 'slack' && ev === 'team_join';
 
 <style>
     .notif-grid { display: flex; flex-direction: column; }
-    .notif-row { display: grid; grid-template-columns: 1fr 72px 72px; align-items: center; gap: 0.5rem; padding: 0.85rem 0.3rem; border-bottom: 1px solid var(--color-border); }
+    .notif-row { display: grid; grid-template-columns: 1fr 72px 72px 72px; align-items: center; gap: 0.5rem; padding: 0.85rem 0.3rem; border-bottom: 1px solid var(--color-border); }
     .notif-head { padding-top: 0; padding-bottom: 0.6rem; }
     .notif-ch { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #99a2af; text-align: center; }
     .notif-ev { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -102,7 +108,7 @@ const sinSlack = (ev: string, c: string) => c === 'slack' && ev === 'team_join';
     .notif-na { display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); opacity: 0.4; font-size: 0.9rem; cursor: default; }
 
     @media (max-width: 560px) {
-        .notif-row { grid-template-columns: 1fr 52px 52px; }
+        .notif-row { grid-template-columns: 1fr 48px 48px 48px; }
         .notif-cell, .notif-na { min-width: 44px; min-height: 44px; }
         .notif-ev-desc { line-height: 1.5; }
     }
@@ -114,6 +120,7 @@ const sinSlack = (ev: string, c: string) => c === 'slack' && ev === 'team_join';
         const msg = document.getElementById('nMsg');
         const grid = document.querySelector('[data-notif]');
         const slack = document.getElementById('oSlack') as HTMLInputElement | null;
+        const teams = document.getElementById('oTeams') as HTMLInputElement | null;
         if (!btn || !msg || !grid) return;
 
         const msgText = msg.querySelector('.s-saved-text') as HTMLElement | null;
@@ -140,7 +147,7 @@ const sinSlack = (ev: string, c: string) => c === 'slack' && ev === 'team_join';
             try {
                 const res = await fetch('/api/org/prefs', {
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ notif_prefs, slack_webhook_url: slack?.value ?? '' }),
+                    body: JSON.stringify({ notif_prefs, slack_webhook_url: slack?.value ?? '', teams_webhook_url: teams?.value ?? '' }),
                 });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || M.i18nErr || 'No se pudo guardar');

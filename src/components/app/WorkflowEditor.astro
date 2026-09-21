@@ -44,6 +44,23 @@ const STR = {
     ejemplosTitulo: t(L, 'wf.ejemplos_titulo'), personalizar: t(L, 'wf.personalizar'), ayudaEmpezar: t(L, 'wf.ayuda_empezar'),
     verEjemplos: t(L, 'wf.ver_ejemplos'), ocultarAyuda: t(L, 'wf.ocultar_ayuda'), reemplazarTitulo: t(L, 'wf.reemplazar_titulo'),
     reemplazarDesc: t(L, 'wf.reemplazar_desc'), reemplazar: t(L, 'wf.reemplazar'), enRamaSi: t(L, 'wf.en_rama_si'), maxPasos: t(L, 'wf.max_pasos'),
+    // Programado, consulta, espera condicionada y prueba.
+    frecuencia: t(L, 'wf.frecuencia'), diaSemana: t(L, 'wf.dia_semana'), diaMes: t(L, 'wf.dia_mes'),
+    diaMesHint: t(L, 'wf.dia_mes_hint'), hora: t(L, 'wf.hora'), horaHint: t(L, 'wf.hora_hint'),
+    freq: { daily: t(L, 'wf.freq.daily'), weekly: t(L, 'wf.freq.weekly'), monthly: t(L, 'wf.freq.monthly') },
+    dias: [t(L, 'wf.dia.1'), t(L, 'wf.dia.2'), t(L, 'wf.dia.3'), t(L, 'wf.dia.4'), t(L, 'wf.dia.5'), t(L, 'wf.dia.6'), t(L, 'wf.dia.7')],
+    menuEsperaHasta: t(L, 'wf.menu_espera_hasta'), buscarPaso: t(L, 'wf.buscar_paso'),
+    consulta: t(L, 'wf.consulta'), eligeConsulta: t(L, 'wf.elige_consulta'), panelConsulta: t(L, 'wf.panel_consulta'),
+    consultaEntrega: t(L, 'wf.consulta_entrega'), consultaEntregaHint: t(L, 'wf.consulta_entrega_hint'),
+    esperaHasta: t(L, 'wf.espera_hasta'), panelEsperaHasta: t(L, 'wf.panel_espera_hasta'), hastaDias: t(L, 'wf.hasta_dias'),
+    continuarCuando: t(L, 'wf.continuar_cuando'), plazoMaximo: t(L, 'wf.plazo_maximo'), plazoHint: t(L, 'wf.plazo_hint'),
+    siOcurre: t(L, 'wf.si_ocurre'), siNoOcurre: t(L, 'wf.si_no_ocurre'),
+    probar: t(L, 'wf.probar'), probarTitulo: t(L, 'wf.probar_titulo'), probarCorriendo: t(L, 'wf.probar_corriendo'),
+    probarSinEvento: t(L, 'wf.probar_sin_evento'), probarConEvento: t(L, 'wf.probar_con_evento'),
+    probarRes: {
+        si: t(L, 'wf.paso.si'), no: t(L, 'wf.paso.no'), ok: t(L, 'wf.probar.haria'),
+        esperaria: t(L, 'wf.probar.esperaria'), omitido: t(L, 'wf.probar.omitido'),
+    },
 };
 
 const DATA = {
@@ -70,6 +87,7 @@ const DATA = {
         <span class="wfe-badge" data-badge></span>
         <span class="wfe-dirty" data-dirty hidden>{STR.cambiosSinPublicar}</span>
         <div class="wfe-actions">
+            <button type="button" class="wfe-btn wfe-btn-ghost" data-test>{STR.probar}</button>
             <button type="button" class="wfe-btn wfe-btn-ghost" data-save>{STR.guardar}</button>
             <button type="button" class="wfe-btn wfe-btn-primary" data-publish>{STR.publicar}</button>
             <div class="wfe-more">
@@ -115,6 +133,7 @@ const DATA = {
         <div data-runs-list></div>
     </section>
 
+    <div class="wfe-test" data-test-panel hidden role="dialog" aria-modal="true" aria-label={STR.probar}></div>
     <div class="wfe-scrim" data-scrim hidden></div>
     <div class="wfe-addmenu" data-addmenu role="menu" hidden></div>
     <div class="wfe-picker" data-picker hidden role="dialog" aria-modal="true" aria-label={STR.buscarDisparador}></div>
@@ -335,6 +354,27 @@ const DATA = {
     .wfe-picker-item span.lbl { flex: 1; font-size: 0.88rem; }
     .wfe-picker-item span.cat { font-size: 0.76rem; color: var(--color-text-muted); }
     .wfe-picker-empty { padding: 18px 10px; font-size: 0.84rem; color: var(--color-text-muted); }
+    /* Entrada con descripción: la acción se elige por lo que hace, no por su nombre. */
+    .wfe-picker-item.is-rich { align-items: flex-start; padding: 11px 10px; }
+    .wfe-picker-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .wfe-picker-text .lbl { font-size: 0.88rem; font-weight: 600; }
+    .wfe-picker-text small { font-size: 0.78rem; line-height: 1.45; color: var(--color-text-muted); }
+    .wfe-picker-item.is-rich .cat { padding-top: 2px; white-space: nowrap; }
+    @media (max-width: 560px) { .wfe-picker-item.is-rich .cat { display: none; } }
+
+    .wfe-test { position: fixed; z-index: 70; inset: auto 0 0; max-height: 72vh; overflow: auto; padding: 22px 24px 28px; background: var(--surface); border-top: 1px solid var(--color-border); border-radius: 22px 22px 0 0; box-shadow: 0 -18px 48px -12px rgba(10,25,47,0.22); }
+    @media (min-width: 881px) { .wfe-test { inset: auto 24px 24px auto; width: min(460px, calc(100vw - 48px)); border: 1px solid var(--color-border); border-radius: 22px; } }
+    .wfe-test-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+    .wfe-test-head h2 { margin: 0; font-size: 1.02rem; font-weight: 650; letter-spacing: -0.02em; }
+    .wfe-test-sub { margin: 0 0 16px; font-size: 0.8rem; line-height: 1.5; color: var(--color-text-muted); }
+    .wfe-test-steps { display: flex; flex-direction: column; gap: 10px; }
+    .wfe-test-step { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border-radius: 14px; background: var(--color-bg-soft); }
+    .wfe-test-step strong { display: block; font-size: 0.85rem; font-weight: 600; }
+    .wfe-test-step small { display: block; font-size: 0.76rem; line-height: 1.5; color: var(--color-text-muted); white-space: pre-wrap; }
+    .wfe-test-res { flex-shrink: 0; margin-left: auto; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--color-text-muted); }
+    .wfe-test-res[data-r="si"], .wfe-test-res[data-r="ok"] { color: var(--color-ok); }
+    .wfe-test-res[data-r="no"] { color: var(--color-text-muted); }
+    .wfe-test-out { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
 
     .wfe-addmenu { position: absolute; z-index: 60; min-width: 220px; padding: 6px; border-radius: 14px; background: var(--surface); border: 1px solid var(--color-border); box-shadow: var(--editor-panel-shadow, 0 16px 40px -8px rgba(10,25,47,0.18)); }
 
@@ -465,9 +505,11 @@ const DATA = {
 
 <script>
     import {
-        OPERATORS, TRIGGER_CATEGORIES, WAIT_MAX_DAYS, WORKFLOW_ACTIONS, WORKFLOW_TRIGGERS, MAX_CONDITIONS, MAX_STEPS,
-        findAction, findTrigger, type Lang, type WorkflowField,
+        TRIGGER_CATEGORIES, WAIT_MAX_DAYS, WORKFLOW_ACTIONS, WORKFLOW_TRIGGERS, MAX_CONDITIONS, MAX_STEPS, SCHEDULE_TRIGGER,
+        ACTION_GROUPS, findAction, findTrigger, operatorsFor, type Lang, type WorkflowField,
     } from '../../lib/workflows/catalog';
+    import { WORKFLOW_DATASETS, findDataset } from '../../lib/workflows/datasets';
+    import { MAX_MONTHDAY, sanitizeSchedule, SCHEDULE_FREQS } from '../../lib/workflows/schedule';
     import { sanitizeDefinition, validateForPublish, type Condition, type Step, type WorkflowDefinition } from '../../lib/workflows/definition';
     import { WORKFLOW_TEMPLATES } from '../../lib/workflows/templates';
     import { WORKFLOW_ICONS, BRAND_LOGOS, BRAND_TILES } from '../../lib/workflows/icons';
@@ -526,7 +568,7 @@ const DATA = {
             for (let i = 0; i < list.length; i++) {
                 const s = list[i];
                 if (s.id === id) return { step: s, list, index: i };
-                if (s.type === 'condition') {
+                if (s.type === 'condition' || s.type === 'wait_until') {
                     const found = findStep(id, s.then) ?? findStep(id, s.else);
                     if (found) return found;
                 }
@@ -536,7 +578,7 @@ const DATA = {
         function depthOf(target: List, list: List = state.def.steps, depth = 1): number {
             if (list === target) return depth;
             for (const s of list) {
-                if (s.type === 'condition') {
+                if (s.type === 'condition' || s.type === 'wait_until') {
                     const d = depthOf(target, s.then, depth + 1) || depthOf(target, s.else, depth + 1);
                     if (d) return d;
                 }
@@ -544,13 +586,20 @@ const DATA = {
             return 0;
         }
         const countSteps = (list: List = state.def.steps): number =>
-            list.reduce((n, s) => n + 1 + (s.type === 'condition' ? countSteps(s.then) + countSteps(s.else) : 0), 0);
+            list.reduce((n, s) => n + 1 + (s.type === 'condition' || s.type === 'wait_until' ? countSteps(s.then) + countSteps(s.else) : 0), 0);
         const trigger = () => findTrigger(state.def.trigger);
-        const fields = (): WorkflowField[] => trigger()?.fields ?? [];
+        // Las variables disponibles son las del disparador MÁS lo que dejan las
+        // consultas del workflow: sin esto, el chip de {{vencido_total}} no
+        // existiría y el campo no se podría elegir en una condición.
+        const datasetFields = (list: List = state.def.steps): WorkflowField[] => list.flatMap((s) =>
+            s.type === 'query' ? (findDataset(s.dataset)?.outputs ?? [])
+                : s.type === 'condition' || s.type === 'wait_until' ? [...datasetFields(s.then), ...datasetFields(s.else)]
+                    : []);
+        const fields = (): WorkflowField[] => [...(trigger()?.fields ?? []), ...datasetFields()];
 
         function clone(step: Step): Step {
             const copy = JSON.parse(JSON.stringify(step)) as Step;
-            const reid = (s: Step) => { s.id = uid(); if (s.type === 'condition') { s.then.forEach(reid); s.else.forEach(reid); } };
+            const reid = (s: Step) => { s.id = uid(); if (s.type === 'condition' || s.type === 'wait_until') { s.then.forEach(reid); s.else.forEach(reid); } };
             reid(copy);
             return copy;
         }
@@ -558,7 +607,7 @@ const DATA = {
         function conditionText(c: Condition, available: WorkflowField[] = fields()) {
             const f = available.find((x) => x.key === c.field);
             if (!f) return '';
-            const op = OPERATORS[f.type].find((o) => o.op === c.op);
+            const op = operatorsFor(f).find((o) => o.op === c.op);
             if (!op) return f.label[L];
             let value = c.value === null || c.value === undefined ? '' : String(c.value);
             if (f.type === 'enum') value = f.options?.find((o) => o.value === c.value)?.label[L] ?? value;
@@ -566,13 +615,64 @@ const DATA = {
             return [f.label[L], op.label[L], op.needsValue ? value : ''].filter(Boolean).join(' ');
         }
         function stepSummary(step: Step, available: WorkflowField[] = fields()): { eyebrow: string; title: string; sub: string; icon: () => Node } {
+            if (step.type === 'query') {
+                const def = findDataset(step.dataset);
+                if (!def) { closePanel(); openStepPicker(step); return; }
+                const change = el('button', { type: 'button', class: 'wfe-btn wfe-btn-ghost', text: S.cambiar });
+                change.addEventListener('click', () => openStepPicker(step));
+                const body: Node[] = [
+                    el('div', { class: 'wfe-summary-card' }, [
+                        el('span', { class: 'wfe-node-icon' }, [svg(ICON.query)]),
+                        el('span', { class: 'wfe-node-text' }, [
+                            el('span', { class: 'wfe-node-title', text: def.label[L] }),
+                            el('span', { class: 'wfe-node-sub', text: def.description[L] }),
+                        ]),
+                        change,
+                    ]),
+                ];
+                for (const p of def.params) {
+                    const fid = `q-${step.id}-${p.key}`;
+                    const input = el('input', {
+                        class: 'wfe-input', type: 'number', min: String(p.min), max: String(p.max), inputmode: 'numeric',
+                        id: fid, value: String(step.params[p.key] ?? p.default),
+                    }) as HTMLInputElement;
+                    input.addEventListener('input', () => {
+                        const n = Math.floor(Number(input.value));
+                        if (Number.isFinite(n)) step.params[p.key] = Math.min(p.max, Math.max(p.min, n));
+                        changed(false);
+                    });
+                    body.push(el('div', { class: 'wfe-field' }, [el('label', { for: fid, text: p.label[L] }), input]));
+                }
+                body.push(el('div', { class: 'wfe-field' }, [
+                    el('span', { class: 'wfe-field-label', text: S.consultaEntrega }),
+                    el('p', { class: 'wfe-hint', text: S.consultaEntregaHint }),
+                    el('div', { class: 'wfe-chips' }, def.outputs.map((o) => el('span', { class: 'wfe-chip', text: `{{${o.key}}}` }))),
+                ]));
+                panelShell(S.panelConsulta, body);
+                return;
+            }
+
             if (step.type === 'wait') {
                 return { eyebrow: S.espera, title: step.days === 1 ? S.esperarDia : fill(S.esperarDias, { n: step.days }), sub: '', icon: () => svg(ICON.wait) };
             }
-            if (step.type === 'condition') {
+            if (step.type === 'condition' || step.type === 'wait_until') {
                 const first = step.conditions[0] ? conditionText(step.conditions[0], available) : '';
                 const more = step.conditions.length > 1 ? ` ${fill(S.yMas, { n: step.conditions.length - 1 })}` : '';
-                return { eyebrow: S.condicion, title: first ? `${first}${more}` : S.defineCondicion, sub: '', icon: () => svg(ICON.condition) };
+                const titulo = first ? `${first}${more}` : S.defineCondicion;
+                if (step.type === 'wait_until') {
+                    return {
+                        eyebrow: S.esperaHasta, title: titulo,
+                        sub: fill(S.hastaDias, { n: step.days }), icon: () => svg(ICON.wait_until),
+                    };
+                }
+                return { eyebrow: S.condicion, title: titulo, sub: '', icon: () => svg(ICON.condition) };
+            }
+            if (step.type === 'query') {
+                const ds = findDataset(step.dataset);
+                return {
+                    eyebrow: S.consulta, title: ds ? ds.label[L] : S.eligeConsulta,
+                    sub: ds ? ds.outputs.map((o) => o.label[L]).join(' · ') : '', icon: () => svg(ICON.query),
+                };
             }
             const def = findAction(step.action);
             const sub = def ? String(step.params.titulo ?? step.params.asunto ?? step.params.mensaje ?? '') : '';
@@ -669,9 +769,13 @@ const DATA = {
             const open = () => select({ kind: 'step', id: step.id });
             card.addEventListener('click', open);
             card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
-            if (step.type !== 'condition') return card;
+            if (step.type !== 'condition' && step.type !== 'wait_until') return card;
 
-            const diamond = el('button', { type: 'button', class: 'wfe-diamond', 'aria-label': S.condicion, 'data-selected': String(selected), 'data-issue': String(Boolean(issue)) }, [svg(ICON.condition)]);
+            const esEspera = step.type === 'wait_until';
+            const diamond = el('button', {
+                type: 'button', class: 'wfe-diamond', 'aria-label': esEspera ? S.esperaHasta : S.condicion,
+                'data-selected': String(selected), 'data-issue': String(Boolean(issue)),
+            }, [svg(esEspera ? ICON.wait_until : ICON.condition)]);
             diamond.addEventListener('click', open);
             card.classList.add('wfe-cond-summary');
             const branch = (label: string, items: List) => el('div', { class: 'wfe-branch' }, [
@@ -680,7 +784,10 @@ const DATA = {
             ]);
             return el('div', { class: 'wfe-cond' }, [
                 diamond, card,
-                el('div', { class: 'wfe-branches' }, [branch(S.siCumple, step.then), branch(S.siNoCumple, step.else)]),
+                el('div', { class: 'wfe-branches' }, [
+                    branch(esEspera ? S.siOcurre : S.siCumple, step.then),
+                    branch(esEspera ? S.siNoOcurre : S.siNoCumple, step.else),
+                ]),
             ]);
         }
 
@@ -727,9 +834,13 @@ const DATA = {
             }
             const canNest = depthOf(list) < 4;
             const options: { label: string; icon: string; make: () => Step }[] = [
+                // "Acción o consulta" es una sola entrada: las dos se eligen en
+                // el mismo buscador, igual que quien busca no piensa si lo que
+                // necesita lee o escribe.
                 { label: S.menuAccion, icon: ICON.action, make: () => ({ id: uid(), type: 'action', action: '', params: {} }) },
                 ...(canNest ? [{ label: S.menuCondicion, icon: ICON.condition, make: (): Step => ({ id: uid(), type: 'condition', match: 'all', conditions: [], then: [], else: [] }) }] : []),
                 { label: S.menuEspera, icon: ICON.wait, make: () => ({ id: uid(), type: 'wait', days: 1 }) },
+                ...(canNest ? [{ label: S.menuEsperaHasta, icon: ICON.wait_until, make: (): Step => ({ id: uid(), type: 'wait_until', match: 'all', conditions: [], days: 7, then: [], else: [] }) }] : []),
             ];
             for (const opt of options) {
                 const b = el('button', { type: 'button', role: 'menuitem' }, [svg(opt.icon), el('span', { text: opt.label })]);
@@ -804,6 +915,49 @@ const DATA = {
             ]);
         }
 
+        /** Frecuencia, día y hora de un disparador programado. La zona horaria es la de la cuenta. */
+        function scheduleFields(): Node[] {
+            const sch = sanitizeSchedule(state.def.schedule);
+            state.def.schedule = sch;
+            const out: Node[] = [];
+
+            const freqSel = el('select', { class: 'wfe-select', id: 'sch-freq' }) as HTMLSelectElement;
+            for (const f of SCHEDULE_FREQS) freqSel.append(el('option', { value: f, text: S.freq[f], selected: f === sch.freq }));
+            freqSel.addEventListener('change', () => {
+                state.def.schedule = sanitizeSchedule({ ...sch, freq: freqSel.value });
+                changed(false); renderPanel();
+            });
+            out.push(el('div', { class: 'wfe-field' }, [el('label', { for: 'sch-freq', text: S.frecuencia }), freqSel]));
+
+            if (sch.freq === 'weekly') {
+                const daySel = el('select', { class: 'wfe-select', id: 'sch-day' }) as HTMLSelectElement;
+                S.dias.forEach((label, i) => daySel.append(el('option', { value: String(i + 1), text: label, selected: i + 1 === sch.weekday })));
+                daySel.addEventListener('change', () => { sch.weekday = Number(daySel.value); changed(false); });
+                out.push(el('div', { class: 'wfe-field' }, [el('label', { for: 'sch-day', text: S.diaSemana }), daySel]));
+            }
+            if (sch.freq === 'monthly') {
+                const input = el('input', { class: 'wfe-input', type: 'number', min: '1', max: String(MAX_MONTHDAY), inputmode: 'numeric', id: 'sch-mday', value: String(sch.monthday ?? 1) }) as HTMLInputElement;
+                input.addEventListener('input', () => {
+                    const n = Math.floor(Number(input.value));
+                    if (Number.isFinite(n)) sch.monthday = Math.min(MAX_MONTHDAY, Math.max(1, n));
+                    changed(false);
+                });
+                out.push(el('div', { class: 'wfe-field' }, [
+                    el('label', { for: 'sch-mday', text: S.diaMes }), input,
+                    el('p', { class: 'wfe-hint', text: S.diaMesHint }),
+                ]));
+            }
+
+            const hourSel = el('select', { class: 'wfe-select', id: 'sch-hour' }) as HTMLSelectElement;
+            for (let h = 0; h < 24; h++) hourSel.append(el('option', { value: String(h), text: `${String(h).padStart(2, '0')}:00`, selected: h === sch.hour }));
+            hourSel.addEventListener('change', () => { sch.hour = Number(hourSel.value); changed(false); });
+            out.push(el('div', { class: 'wfe-field' }, [
+                el('label', { for: 'sch-hour', text: S.hora }), hourSel,
+                el('p', { class: 'wfe-hint', text: S.horaHint }),
+            ]));
+            return out;
+        }
+
         function renderPanel() {
             const sel = state.selected;
             if (!sel) return;
@@ -822,6 +976,7 @@ const DATA = {
                         ]),
                         change,
                     ]),
+                    ...(trig.type === SCHEDULE_TRIGGER ? scheduleFields() : []),
                     el('div', { class: 'wfe-field' }, [el('span', { class: 'wfe-field-label', text: S.variables }), fieldsList]),
                 ]);
                 return;
@@ -829,6 +984,43 @@ const DATA = {
             const found = findStep(sel.id);
             if (!found) { closePanel(); return; }
             const step = found.step;
+
+            if (step.type === 'query') {
+                const def = findDataset(step.dataset);
+                if (!def) { closePanel(); openStepPicker(step); return; }
+                const change = el('button', { type: 'button', class: 'wfe-btn wfe-btn-ghost', text: S.cambiar });
+                change.addEventListener('click', () => openStepPicker(step));
+                const body: Node[] = [
+                    el('div', { class: 'wfe-summary-card' }, [
+                        el('span', { class: 'wfe-node-icon' }, [svg(ICON.query)]),
+                        el('span', { class: 'wfe-node-text' }, [
+                            el('span', { class: 'wfe-node-title', text: def.label[L] }),
+                            el('span', { class: 'wfe-node-sub', text: def.description[L] }),
+                        ]),
+                        change,
+                    ]),
+                ];
+                for (const p of def.params) {
+                    const fid = `q-${step.id}-${p.key}`;
+                    const input = el('input', {
+                        class: 'wfe-input', type: 'number', min: String(p.min), max: String(p.max), inputmode: 'numeric',
+                        id: fid, value: String(step.params[p.key] ?? p.default),
+                    }) as HTMLInputElement;
+                    input.addEventListener('input', () => {
+                        const n = Math.floor(Number(input.value));
+                        if (Number.isFinite(n)) step.params[p.key] = Math.min(p.max, Math.max(p.min, n));
+                        changed(false);
+                    });
+                    body.push(el('div', { class: 'wfe-field' }, [el('label', { for: fid, text: p.label[L] }), input]));
+                }
+                body.push(el('div', { class: 'wfe-field' }, [
+                    el('span', { class: 'wfe-field-label', text: S.consultaEntrega }),
+                    el('p', { class: 'wfe-hint', text: S.consultaEntregaHint }),
+                    el('div', { class: 'wfe-chips' }, def.outputs.map((o) => el('span', { class: 'wfe-chip', text: `{{${o.key}}}` }))),
+                ]));
+                panelShell(S.panelConsulta, body);
+                return;
+            }
 
             if (step.type === 'wait') {
                 const input = el('input', { class: 'wfe-input', type: 'number', min: '1', max: String(WAIT_MAX_DAYS), inputmode: 'numeric', value: String(step.days), id: `wait-${step.id}` }) as HTMLInputElement;
@@ -844,26 +1036,10 @@ const DATA = {
 
             if (step.type === 'action') {
                 const def = findAction(step.action);
-                if (!def) {
-                    const choice = el('div', { class: 'wfe-choice' });
-                    for (const a of WORKFLOW_ACTIONS) {
-                        const b = el('button', { type: 'button' }, [
-                            el('span', { class: 'wfe-node-icon' }, [iconFor(a.key, a.brand)]),
-                            el('span', { class: 'wfe-choice-text' }, [
-                                el('strong', { text: a.label[L] }),
-                                el('small', { text: a.description[L] }),
-                                a.requires ? el('em', { class: 'wfe-requires', text: a.requires[L] }) : null,
-                            ]),
-                        ]);
-                        b.addEventListener('click', () => { step.action = a.key; step.params = {}; changed(); renderPanel(); });
-                        choice.append(b);
-                    }
-                    panelShell(S.panelAccion, [choice]);
-                    return;
-                }
+                if (!def) { closePanel(); openStepPicker(step); return; }
                 let lastText: HTMLInputElement | HTMLTextAreaElement | null = null;
                 const change = el('button', { type: 'button', class: 'wfe-btn wfe-btn-ghost', text: S.cambiar });
-                change.addEventListener('click', () => { step.action = ''; step.params = {}; changed(); renderPanel(); });
+                change.addEventListener('click', () => openStepPicker(step));
                 const body: Node[] = [
                     el('div', { class: 'wfe-summary-card' }, [
                         el('span', { class: 'wfe-node-icon' }, [iconFor(def.key, def.brand)]),
@@ -891,11 +1067,15 @@ const DATA = {
                     } else {
                         const input = (p.kind === 'template_long'
                             ? el('textarea', { class: 'wfe-textarea', id: fid, maxlength: String(p.max ?? 2000) })
-                            : el('input', { class: 'wfe-input', id: fid, maxlength: String(p.max ?? 200) })) as HTMLInputElement | HTMLTextAreaElement;
+                            : el('input', { class: 'wfe-input', id: fid, maxlength: String(p.max ?? 200), ...(p.kind === 'url' ? { type: 'url', inputmode: 'url', placeholder: 'https://' } : {}) })) as HTMLInputElement | HTMLTextAreaElement;
                         input.value = String(step.params[p.key] ?? '');
                         input.addEventListener('input', () => { step.params[p.key] = input.value; changed(false); });
-                        input.addEventListener('focus', () => { lastText = input; });
-                        if (!lastText) lastText = input;
+                        // Una URL no recibe variables: el chip de {{folio}} no
+                        // tiene nada que hacer dentro del destino del POST.
+                        if (p.kind !== 'url') {
+                            input.addEventListener('focus', () => { lastText = input; });
+                            if (!lastText) lastText = input;
+                        }
                         control = input;
                     }
                     body.push(el('div', { class: 'wfe-field' }, [el('label', { for: fid, text: p.label[L] }), control, p.hint ? el('p', { class: 'wfe-hint', text: p.hint[L] }) : null]));
@@ -907,6 +1087,7 @@ const DATA = {
                 return;
             }
 
+            if (step.type !== 'condition' && step.type !== 'wait_until') return;
             const available = fields();
             const segment = el('div', { class: 'wfe-segment', role: 'group' });
             for (const m of ['all', 'any'] as const) {
@@ -922,17 +1103,17 @@ const DATA = {
                 fieldSel.addEventListener('change', () => {
                     const f = available.find((x) => x.key === fieldSel.value);
                     c.field = fieldSel.value;
-                    c.op = f ? OPERATORS[f.type][0].op : ('eq' as any);
+                    c.op = f ? operatorsFor(f)[0].op : ('eq' as any);
                     c.value = null;
                     changed(false); renderPanel();
                 });
                 const parts: Node[] = [fieldSel];
                 if (field) {
                     const opSel = el('select', { class: 'wfe-select', 'aria-label': S.operador }) as HTMLSelectElement;
-                    for (const o of OPERATORS[field.type]) opSel.append(el('option', { value: o.op, text: o.label[L], selected: o.op === c.op }));
+                    for (const o of operatorsFor(field)) opSel.append(el('option', { value: o.op, text: o.label[L], selected: o.op === c.op }));
                     opSel.addEventListener('change', () => { c.op = opSel.value as any; changed(false); renderPanel(); });
                     parts.push(opSel);
-                    const op = OPERATORS[field.type].find((o) => o.op === c.op);
+                    const op = operatorsFor(field).find((o) => o.op === c.op);
                     if (op?.needsValue) {
                         if (field.type === 'enum') {
                             const valSel = el('select', { class: 'wfe-select', 'aria-label': S.valor }) as HTMLSelectElement;
@@ -960,13 +1141,30 @@ const DATA = {
             const addCond = el('button', { type: 'button', class: 'wfe-link-btn', text: `+ ${S.agregarOtra}` });
             addCond.addEventListener('click', () => {
                 const f = available[0];
-                step.conditions.push({ field: f?.key ?? '', op: f ? OPERATORS[f.type][0].op : ('eq' as any), value: null });
+                step.conditions.push({ field: f?.key ?? '', op: f ? operatorsFor(f)[0].op : ('eq' as any), value: null });
                 changed(false); renderPanel();
             });
-            panelShell(S.panelCondicion, [
-                el('div', { class: 'wfe-field' }, [el('span', { class: 'wfe-field-label', text: S.continuarSi }), segment]),
+            const esEspera = step.type === 'wait_until';
+            const plazo: Node[] = [];
+            if (esEspera) {
+                const input = el('input', {
+                    class: 'wfe-input', type: 'number', min: '1', max: String(WAIT_MAX_DAYS), inputmode: 'numeric',
+                    id: `wu-${step.id}`, value: String(step.days),
+                }) as HTMLInputElement;
+                input.addEventListener('input', () => {
+                    const n = Math.floor(Number(input.value));
+                    if (Number.isFinite(n) && n >= 1) { step.days = Math.min(WAIT_MAX_DAYS, n); changed(false); }
+                });
+                plazo.push(el('div', { class: 'wfe-field' }, [
+                    el('label', { for: `wu-${step.id}`, text: S.plazoMaximo }), input,
+                    el('p', { class: 'wfe-hint', text: S.plazoHint }),
+                ]));
+            }
+            panelShell(esEspera ? S.panelEsperaHasta : S.panelCondicion, [
+                el('div', { class: 'wfe-field' }, [el('span', { class: 'wfe-field-label', text: esEspera ? S.continuarCuando : S.continuarSi }), segment]),
                 ...rows,
                 step.conditions.length < MAX_CONDITIONS && available.length ? addCond : null,
+                ...plazo,
             ].filter(Boolean) as Node[]);
         }
 
@@ -1013,6 +1211,90 @@ const DATA = {
             drawChips(); drawList();
             input.focus();
         }
+        /**
+         * Buscador de pasos: acciones y consultas en una sola lista, con
+         * búsqueda y familias. Con 10 acciones y 5 consultas, una lista plana
+         * dentro del panel obligaba a leerlas todas para encontrar una.
+         */
+        function openStepPicker(step: Extract<Step, { type: 'action' } | { type: 'query' }>) {
+            closeMenus();
+            let group = '';
+            const input = el('input', { type: 'search', placeholder: S.buscarPaso, 'aria-label': S.buscarPaso, autocomplete: 'off' }) as HTMLInputElement;
+            const chips = el('div', { class: 'wfe-chips', role: 'group' });
+            const list = el('div', { class: 'wfe-picker-list' });
+
+            type Entry = { key: string; kind: 'action' | 'query'; group: string; groupLabel: string; label: string; desc: string; requires?: string; icon: () => Node };
+            const entries: Entry[] = [
+                ...WORKFLOW_ACTIONS.map((a) => ({
+                    key: a.key, kind: 'action' as const, group: a.group,
+                    groupLabel: ACTION_GROUPS.find((g) => g.key === a.group)?.label[L] ?? '',
+                    label: a.label[L], desc: a.description[L], requires: a.requires?.[L],
+                    icon: () => iconFor(a.key, a.brand),
+                })),
+                ...WORKFLOW_DATASETS.map((d) => ({
+                    key: d.key, kind: 'query' as const, group: 'consulta',
+                    groupLabel: S.consulta, label: d.label[L], desc: d.description[L],
+                    icon: () => svg(ICON.query),
+                })),
+            ];
+            const cats = [
+                { key: '', label: S.todos },
+                ...ACTION_GROUPS.map((g) => ({ key: g.key, label: g.label[L] })),
+                { key: 'consulta', label: S.consulta },
+            ];
+
+            const drawChips = () => {
+                chips.replaceChildren(...cats.map((c) => {
+                    const b = el('button', { type: 'button', class: 'wfe-chip', 'aria-pressed': String(group === c.key), text: c.label });
+                    b.addEventListener('click', () => { group = c.key; drawChips(); drawList(); });
+                    return b;
+                }));
+            };
+            const drawList = () => {
+                const q = input.value.trim().toLowerCase();
+                const items = entries.filter((e) => (!group || e.group === group)
+                    && (!q || e.label.toLowerCase().includes(q) || e.desc.toLowerCase().includes(q)));
+                list.replaceChildren(...(items.length ? items.map((e) => {
+                    const b = el('button', { type: 'button', class: 'wfe-picker-item is-rich' }, [
+                        el('span', { class: 'wfe-node-icon' }, [e.icon()]),
+                        el('span', { class: 'wfe-picker-text' }, [
+                            el('span', { class: 'lbl', text: e.label }),
+                            el('small', { text: e.desc }),
+                            e.requires ? el('em', { class: 'wfe-requires', text: e.requires }) : null,
+                        ]),
+                        el('span', { class: 'cat', text: e.groupLabel }),
+                    ]);
+                    b.addEventListener('click', () => {
+                        // El paso puede cambiar de naturaleza: elegir una consulta
+                        // donde había una acción reemplaza el paso en su sitio.
+                        const found = findStep(step.id);
+                        if (!found) { closePicker(); return; }
+                        if (e.kind === 'action') {
+                            found.list[found.index] = { id: step.id, type: 'action', action: e.key, params: {} };
+                        } else {
+                            const ds = findDataset(e.key)!;
+                            found.list[found.index] = {
+                                id: step.id, type: 'query', dataset: e.key,
+                                params: Object.fromEntries(ds.params.map((p) => [p.key, p.default])),
+                            };
+                        }
+                        closePicker();
+                        changed();
+                        select({ kind: 'step', id: step.id });
+                    });
+                    return b;
+                }) : [el('p', { class: 'wfe-picker-empty', text: S.sinResultados })]));
+            };
+            input.addEventListener('input', drawList);
+            picker.replaceChildren(el('div', { class: 'wfe-picker-card' }, [
+                el('div', { class: 'wfe-picker-top' }, [el('div', { class: 'wfe-search' }, [svg(ICON.search), input]), chips]),
+                list,
+            ]));
+            picker.hidden = false;
+            drawChips(); drawList();
+            input.focus();
+        }
+
         function closePicker() { picker.hidden = true; picker.replaceChildren(); }
         picker.addEventListener('click', (e) => { if (e.target === picker) closePicker(); });
 
@@ -1032,9 +1314,10 @@ const DATA = {
             const renderSteps = (steps: Step[], parent: HTMLElement) => {
                 for (const s of steps) {
                     parent.append(line());
-                    if (s.type === 'condition') {
+                    if (s.type === 'condition' || s.type === 'wait_until') {
                         const text = s.conditions.map((c) => conditionText(c, available)).filter(Boolean).join(s.match === 'any' ? ' · ' : ' + ');
-                        parent.append(node(svg(ICON.condition), S.condicion, text || S.defineCondicion));
+                        const esEspera = s.type === 'wait_until';
+                        parent.append(node(svg(esEspera ? ICON.wait_until : ICON.condition), esEspera ? S.esperaHasta : S.condicion, text || S.defineCondicion));
                         if (s.then.length) {
                             parent.append(line(), el('span', { class: 'wfe-ex-branch', text: S.enRamaSi }));
                             const indent = el('div', { class: 'wfe-ex-indent' });
@@ -1155,6 +1438,56 @@ const DATA = {
                 btn.removeAttribute('aria-busy');
             }
         }
+        // ── Probar sin publicar ────────────────────────────────────────────
+        const testPanel = $('[data-test-panel]');
+        const closeTest = () => { testPanel.hidden = true; testPanel.replaceChildren(); };
+
+        function testHead(sub: string) {
+            const close = el('button', { type: 'button', class: 'wfe-icon-btn', 'aria-label': S.cerrar }, [svg(ICON.close)]);
+            close.addEventListener('click', closeTest);
+            return [
+                el('div', { class: 'wfe-test-head' }, [el('h2', { text: S.probarTitulo }), close]),
+                el('p', { class: 'wfe-test-sub', text: sub }),
+            ];
+        }
+
+        $('[data-test]').addEventListener('click', async () => {
+            const btn = $<HTMLButtonElement>('[data-test]');
+            btn.disabled = true;
+            testPanel.hidden = false;
+            testPanel.replaceChildren(...testHead(S.probarCorriendo));
+            try {
+                const res = await fetch(`/api/workflows/${DATA.workflow.id}/probar`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ definicion: sanitizeDefinition(state.def) }),
+                });
+                const body = await res.json();
+                if (!res.ok) { testPanel.replaceChildren(...testHead(body.error || S.errorGuardar)); return; }
+                if (!body.ok) { testPanel.replaceChildren(...testHead(S.probarSinEvento)); return; }
+
+                const fecha = new Date(body.evento.fecha).toLocaleString(L === 'en' ? 'en-US' : 'es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+                const steps = el('div', { class: 'wfe-test-steps' });
+                for (const paso of body.pasos as any[]) {
+                    const etiqueta = S.probarRes[paso.resultado] ?? paso.resultado;
+                    const titulo = paso.titulo || (paso.tipo === 'wait' ? fill(S.esperarDias, { n: paso.detalle })
+                        : paso.tipo === 'wait_until' ? S.esperaHasta : S.condicion);
+                    const salida = Array.isArray(paso.salida) && paso.salida.length
+                        ? el('ul', { class: 'wfe-test-out' }, paso.salida.map((x: any) => el('li', {}, [el('small', { text: `${x.label}: ${x.valor}` })])))
+                        : null;
+                    steps.append(el('div', { class: 'wfe-test-step' }, [
+                        el('span', { class: 'wfe-node-icon' }, [svg(ICON[paso.tipo === 'action' ? 'action' : paso.tipo === 'query' ? 'query' : paso.tipo === 'wait_until' ? 'wait_until' : paso.tipo === 'wait' ? 'wait' : 'condition'])]),
+                        el('span', { class: 'wfe-node-text' }, [el('strong', { text: titulo }), salida]),
+                        el('span', { class: 'wfe-test-res', 'data-r': paso.resultado, text: etiqueta }),
+                    ]));
+                }
+                testPanel.replaceChildren(...testHead(fill(S.probarConEvento, { fecha })), steps);
+            } catch {
+                testPanel.replaceChildren(...testHead(S.errorGuardar));
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
         $('[data-save]').addEventListener('click', () => save());
 
         function focusIssue(pending: { stepId: string | null; message: string }[]) {
@@ -1269,7 +1602,7 @@ const DATA = {
             const find = (list: Step[]): Step | null => {
                 for (const s of list) {
                     if (s.id === stepId) return s;
-                    if (s.type === 'condition') { const f = find(s.then) ?? find(s.else); if (f) return f; }
+                    if (s.type === 'condition' || s.type === 'wait_until') { const f = find(s.then) ?? find(s.else); if (f) return f; }
                 }
                 return null;
             };

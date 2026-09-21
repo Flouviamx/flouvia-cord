@@ -13,6 +13,7 @@
 import { sql, withOrgTx } from './db';
 import { sendEmail, siteOrigin } from './email';
 import { postToSlack } from './slack';
+import { postToTeams } from './teams';
 import { currencyDecimals, normalizeCurrency } from './currency';
 
 export type NotifyEvent =
@@ -24,7 +25,7 @@ export type NotifyEvent =
 // lo menos de que su cliente decidió algo, la feature estrella del producto.
 // Una vez que la org guarda UNA vez, la UI serializa las 7 filas completas
 // (marcadas o no), así que a partir de ahí se respeta literalmente lo guardado.
-const DEFAULTS: Partial<Record<NotifyEvent, { email?: boolean; slack?: boolean }>> = {
+const DEFAULTS: Partial<Record<NotifyEvent, { email?: boolean; slack?: boolean; teams?: boolean }>> = {
     quote_approved: { email: true },
     quote_rejected: { email: true },
     quote_paid: { email: true },
@@ -127,7 +128,7 @@ function renderEmail(evento: NotifyEvent, en: boolean, orgNombre: string, color:
 export async function notify(orgId: string, evento: NotifyEvent, data: NotifyData = {}): Promise<void> {
     try {
         const [orgRows] = await withOrgTx(orgId, sql`
-            select o.notif_prefs, o.slack_webhook_url, o.sandbox_of, o.is_demo,
+            select o.notif_prefs, o.slack_webhook_url, o.teams_webhook_url, o.sandbox_of, o.is_demo,
                    o.nombre, o.moneda, coalesce(o.idioma, 'es-MX') as idioma,
                    coalesce(o.color_marca, '#0a192f') as color,
                    u.email as owner_email
@@ -139,7 +140,7 @@ export async function notify(orgId: string, evento: NotifyEvent, data: NotifyDat
         // datos que no son reales — mismo criterio que crons/otros emisores.
         if (!org || org.sandbox_of || org.is_demo) return;
 
-        const P = (org.notif_prefs || {}) as Record<string, { email?: boolean; slack?: boolean }>;
+        const P = (org.notif_prefs || {}) as Record<string, { email?: boolean; slack?: boolean; teams?: boolean }>;
         const usaDefaults = Object.keys(P).length === 0;
         const pref = usaDefaults ? (DEFAULTS[evento] || {}) : (P[evento] || {});
 
@@ -153,10 +154,14 @@ export async function notify(orgId: string, evento: NotifyEvent, data: NotifyDat
             const { subject, html } = renderEmail(evento, en, org.nombre as string, org.color as string, data, link, currency);
             await sendEmail({ orgId, operation: `notify_${evento}`, to: org.owner_email as string, subject, html });
         }
+        const canal = { folio: data.folio ?? '', cliente: data.cliente ?? null, total: data.total ?? 0, link, moneda: currency, lang: (en ? 'en' : 'es') as 'en' | 'es' };
         if (pref.slack && org.slack_webhook_url && data.folio) {
-            await postToSlack(org.slack_webhook_url as string, `notify.${evento}`, {
-                folio: data.folio, cliente: data.cliente ?? null, total: data.total ?? 0, link, moneda: currency,
-            });
+            await postToSlack(org.slack_webhook_url as string, `notify.${evento}`, canal);
+        }
+        // Teams es un canal propio, no un espejo de Slack: una org puede tener
+        // los dos conectados y querer el aviso solo en uno.
+        if (pref.teams && org.teams_webhook_url && data.folio) {
+            await postToTeams(org.teams_webhook_url as string, `notify.${evento}`, canal);
         }
     } catch { /* nunca romper la operación que originó el evento */ }
 }

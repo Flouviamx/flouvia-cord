@@ -54,8 +54,12 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/anclas-tiempo",
+      "schedule": "0 12 * * *"
+    },
+    {
       "path": "/api/cron/workflows",
-      "schedule": "0 14 * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron/integraciones",

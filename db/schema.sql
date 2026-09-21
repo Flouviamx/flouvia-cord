@@ -354,6 +354,23 @@ alter table orgs add column if not exists portal_bienvenida text;    -- mensaje 
 -- Notificaciones: matriz evento → canal (jsonb) + webhook de Slack.
 alter table orgs add column if not exists notif_prefs jsonb not null default '{}'::jsonb;
 alter table orgs add column if not exists slack_webhook_url text;
+-- Microsoft Teams: URL del flujo de Power Automate ("Workflows" en el canal).
+-- Los conectores O365 clásicos de Teams están retirados; la URL vigente es la
+-- del flujo, no un webhook del canal.
+alter table orgs add column if not exists teams_webhook_url text;
+-- WhatsApp Business (Cloud API): número emisor, token CIFRADO y la plantilla
+-- aprobada por Meta con la que se inicia la conversación.
+alter table orgs add column if not exists whatsapp_phone_id text;
+alter table orgs add column if not exists whatsapp_token_enc text;
+alter table orgs add column if not exists whatsapp_plantilla text;
+alter table orgs add column if not exists whatsapp_plantilla_idioma text;
+-- Mercado Pago: segundo riel de cobro, para los países donde Stripe no abre
+-- cuentas conectadas. Tokens CIFRADOS (son credenciales de dinero).
+alter table orgs add column if not exists mp_user_id text;
+alter table orgs add column if not exists mp_access_token_enc text;
+alter table orgs add column if not exists mp_refresh_token_enc text;
+alter table orgs add column if not exists mp_token_expira timestamptz;
+alter table orgs add column if not exists mp_charges_enabled boolean not null default false;
 -- Integraciones: qué conectores están activados (jsonb, maqueta que persiste).
 alter table orgs add column if not exists integraciones jsonb not null default '{}'::jsonb;
 -- Facturación/CFDI: estado del CSD. REAL (jun 2026) vía Facturapi Organizations
@@ -1751,6 +1768,13 @@ alter table cotizacion_cobros force row level security;
 alter table cotizacion_cobros add column if not exists payment_failed_at timestamptz;
 alter table cotizacion_cobros add column if not exists payment_error_code text;
 alter table cotizacion_cobros add column if not exists metodo_pago text;
+-- Mercado Pago: la preferencia con la que se cobró y el pago que la saldó. El
+-- unique del pago es lo que hace idempotente el webhook, que Mercado Pago
+-- reenvía varias veces por diseño.
+alter table cotizacion_cobros add column if not exists mp_preference_id text;
+alter table cotizacion_cobros add column if not exists mp_payment_id text;
+create unique index if not exists uq_cobros_mp_payment on cotizacion_cobros(org_id, mp_payment_id)
+  where mp_payment_id is not null;
 alter table cotizacion_cobros add column if not exists application_fee_cents int;
 alter table cotizacion_cobros add column if not exists stripe_fee_cents int;
 alter table cotizacion_cobros add column if not exists fee_base_cents int;
@@ -4895,6 +4919,11 @@ create table if not exists workflows (
 );
 create index if not exists idx_workflows_org on workflows(org_id, updated_at desc);
 create index if not exists idx_workflows_trigger on workflows(org_id, trigger_publicado) where estado = 'active';
+-- Disparador programado: cuándo toca el siguiente tic. Lo avanza el cron ANTES
+-- de emitir el evento, nunca después (regla 25).
+alter table workflows add column if not exists next_run_at timestamptz;
+create index if not exists idx_workflows_programados on workflows(next_run_at)
+  where estado = 'active' and next_run_at is not null;
 
 create table if not exists workflow_runs (
   id            uuid primary key default gen_random_uuid(),
@@ -4909,6 +4938,8 @@ create table if not exists workflow_runs (
   locked_until  timestamptz,
   attempts      int not null default 0 check (attempts >= 0),
   cursor        jsonb not null default '[]'::jsonb,
+  -- Valores producidos por la propia ejecución (consultas, esperas condicionadas).
+  datos         jsonb not null default '{}'::jsonb,
   log           jsonb not null default '[]'::jsonb,
   error         text,
   created_at    timestamptz not null default now(),
@@ -4918,6 +4949,9 @@ create table if not exists workflow_runs (
   foreign key (org_id, workflow_id) references workflows(org_id, id) on delete cascade,
   foreign key (org_id, event_id) references domain_events(org_id, id) on delete cascade
 );
+-- La columna va también como `alter` porque `create table if not exists` no
+-- toca una tabla que ya existe: sin esto, una base viva se queda sin ella.
+alter table workflow_runs add column if not exists datos jsonb not null default '{}'::jsonb;
 create index if not exists idx_workflow_runs_due on workflow_runs(org_id, run_at) where status in ('queued', 'waiting', 'running');
 create index if not exists idx_workflow_runs_workflow on workflow_runs(org_id, workflow_id, created_at desc, id desc);
 create index if not exists idx_workflow_runs_event on workflow_runs(org_id, event_id);
@@ -4983,7 +5017,7 @@ create table if not exists integracion_oauth_estados (
   state_hash  text primary key check (state_hash ~ '^[a-f0-9]{64}$'),
   org_id      uuid not null references orgs(id) on delete cascade,
   user_id     uuid not null references users(id) on delete cascade,
-  proveedor   text not null check (proveedor in ('hubspot')),
+  proveedor   text not null check (proveedor in ('hubspot', 'mercadopago')),
   expires_at  timestamptz not null,
   used_at     timestamptz,
   created_at  timestamptz not null default now()

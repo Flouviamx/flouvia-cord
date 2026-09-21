@@ -1,0 +1,32 @@
+{
+  "name": "n8n-nodes-cord",
+  "version": "1.0.0",
+  "description": "Nodo de n8n para Cord: cotizaciones, clientes, facturas y pagos desde un solo link.",
+  "license": "MIT",
+  "homepage": "https://cordhq.app",
+  "keywords": ["n8n-community-node-package", "cord", "quotes", "invoices", "payments"],
+  "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/node.test.mjs",
+    "sync": "node scripts/sync-events.mjs"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "nodes",
+    "credentials"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "credentials/CordApi.credentials.js"
+    ],
+    "nodes": [
+      "nodes/Cord/Cord.node.js",
+      "nodes/Cord/CordTrigger.node.js"
+    ]
+  }
+}

@@ -7,19 +7,25 @@ import type { APIRoute } from 'astro';
 import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
 import { postToSlack } from '../../../lib/slack';
+import { currentLocale } from '../../../lib/context';
+import { t } from '../../../i18n/app';
 
 export const POST: APIRoute = async () => {
     const denied = await requirePerm('ajustes');
     if (denied) return denied;
 
+    const L = currentLocale();
     const orgId = await getActiveOrgId();
     const [orgRows] = await withOrgTx(orgId, sql`select slack_webhook_url from orgs where id = ${orgId}`);
     const o = orgRows[0];
     const url = o?.slack_webhook_url as string | null;
-    if (!url) return json({ error: 'No hay un webhook de Slack conectado. Pega la URL y guarda primero.' }, 400);
+    if (!url) return json({ error: t(L, 'slack.test.sin_webhook') }, 400);
 
-    const r = await postToSlack(url, 'ping', { folio: 'COT-PRUEBA', cliente: 'Cliente de prueba', total: 12500, link: null });
-    if (!r.ok) return json({ error: `Slack respondió ${r.status || 'sin conexión'}. Revisa la URL del webhook.` }, 400);
+    const r = await postToSlack(url, 'ping', {
+        folio: t(L, 'slack.test.folio'), cliente: t(L, 'slack.test.cliente'),
+        total: 12500, link: null, lang: L,
+    });
+    if (!r.ok) return json({ error: t(L, 'slack.test.rechazo') }, 400);
     return json({ ok: true });
 };
 

@@ -7,10 +7,12 @@ interface Props {
     lang: AppLocale;
     hubspot: string | null;
     slack: boolean;
+    teams: boolean;
+    whatsapp: boolean;
 }
 
-const { lang: L, hubspot, slack } = Astro.props;
-const APPS = INTEGRATION_APPS.map((app) => ({ app, state: integrationState(app, { hubspot, slack }) }));
+const { lang: L, hubspot, slack, teams, whatsapp } = Astro.props;
+const APPS = INTEGRATION_APPS.map((app) => ({ app, state: integrationState(app, { hubspot, slack, teams, whatsapp }) }));
 const CONECTADAS = APPS.filter((a) => a.state === 'on' || a.state === 'warn');
 const RESTO = APPS.filter((a) => !CONECTADAS.includes(a));
 ---

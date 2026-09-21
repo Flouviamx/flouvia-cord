@@ -42,6 +42,10 @@ const EXENTOS = new Map([
 
 // ── Qué cuenta como "mueve dinero" ──────────────────────────────────────────
 const CREA_DINERO = [
+    // Mercado Pago: el segundo riel de cobro. Sin esto, una ruta de dinero
+    // nueva quedaba fuera del universo que este linter dice derivar del árbol.
+    /\/checkout\/preferences/,
+    /createMpPreference\s*\(/,
     /\/v1\/payment_intents/,
     /\/v1\/checkout\/sessions/,
     /\/v1\/subscriptions\b/,
@@ -55,6 +59,8 @@ const CREA_DINERO = [
 // `POST /v1/subscriptions/sub_123` MODIFICA una que ya existe y no necesita
 // clave de idempotencia; `POST /v1/subscriptions` acuña una nueva y sí.
 const CREA_OBJETO = [
+    /\/checkout\/preferences['"`]/,
+    /createMpPreference\s*\(/,
     /\/v1\/payment_intents['"`]/,
     /\/v1\/checkout\/sessions['"`]/,
     /\/v1\/customers['"`]/,

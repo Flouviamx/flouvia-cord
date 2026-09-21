@@ -34,18 +34,22 @@ Toca una tarjeta para abrir la página de esa app. Ahí está todo lo de esa int
 |---|---|---|---|---|
 | **HubSpot** | CRM | Clientes, contactos y Deals sincronizados con tus cotizaciones. | Botón **Conectar HubSpot** y autorización en HubSpot. | [Conectar](/docs/automatizacion/integraciones/hubspot), [Qué se sincroniza](/docs/automatizacion/integraciones/hubspot-sincronizacion), [Etapas](/docs/automatizacion/integraciones/hubspot-etapas), [Problemas](/docs/automatizacion/integraciones/hubspot-problemas) |
 | **Slack** | Comunicación | Un aviso en tu canal cuando una cotización avanza, y mensajes propios desde workflows. | Pegar la URL de un Incoming Webhook de Slack. | [Slack](/docs/automatizacion/integraciones/slack) |
+| **Microsoft Teams** | Comunicación | Una tarjeta en tu canal cuando una cotización avanza, y mensajes propios desde workflows. | Pegar la URL del flujo de Power Automate del canal. | [Conectar Teams](/soporte/conectar-teams) |
+| **WhatsApp Business** | Comunicación | Mandarle al cliente recordatorios y avisos por el canal que sí abre, desde tus workflows. | Pegar el identificador del número y un token de Meta. | [Conectar WhatsApp](/soporte/conectar-whatsapp) |
 | **Make** | Automatización | Recibir eventos de Cord en tus escenarios y crear o actualizar datos en Cord desde Make. | Webhooks de Cord y llave de API, desde Make. | [Make](/docs/automatizacion/integraciones/make) |
 | **Zapier** | Automatización | Conectar Cord con miles de apps sin escribir código. | Próximamente. Mientras tanto, con webhooks y la API. | [Zapier](/docs/automatizacion/integraciones/zapier) |
+| **n8n** | Automatización | Flujos propios con el nodo comunitario de Cord, que registra su webhook y verifica la firma. | Llave de API en la credencial de Cord dentro de n8n. | [Conectar n8n](/soporte/conectar-n8n) |
 
 ## Qué conviene para cada caso
 
 | Quieres | Usa |
 |---|---|
 | Que tu equipo comercial vea en HubSpot los clientes y las ventas de Cord | **HubSpot** |
-| Enterarte en un canal cuando el cliente abre, aprueba o paga | **Slack** con los avisos de Ajustes › Notificaciones |
+| Enterarte en un canal cuando el cliente abre, aprueba o paga | **Slack** o **Microsoft Teams** con los avisos de Ajustes › Notificaciones |
+| Que tu cliente reciba el recordatorio donde sí lo lee | **WhatsApp Business** con un [workflow](/docs/automatizacion/workflows) |
 | Un mensaje en Slack con tu propio texto, o solo en ciertos casos | **Slack** con un [workflow](/docs/automatizacion/workflows) |
 | Crear tareas o avisar por correo cuando pasa algo en Cord | [Cord Workflows](/docs/automatizacion/workflows), sin conectar nada |
-| Llevar datos de Cord a una hoja de cálculo, un ERP o cualquier otra app | **Make** (o Zapier cuando esté disponible) |
+| Llevar datos de Cord a una hoja de cálculo, un ERP o cualquier otra app | **Make**, **n8n** (o Zapier cuando esté disponible) |
 | Construir tu propia integración | La [guía para desarrolladores](/docs/desarrolladores/herramientas/integraciones) |
 
 ## Quién puede conectar integraciones
@@ -56,11 +60,11 @@ Las integraciones son de la **organización**, no de una persona: si quien conec
 
 ## Seguridad
 
-- **Cord nunca te pide la contraseña de otra herramienta.** HubSpot se autoriza en la página de HubSpot; Slack, Make y Zapier usan URLs o llaves que tú generas y puedes revocar.
+- **Cord nunca te pide la contraseña de otra herramienta.** HubSpot se autoriza en la página de HubSpot; Slack, Teams, Make, Zapier y n8n usan URLs o llaves que tú generas y puedes revocar.
 - **Los accesos se guardan cifrados** y solo se usan para lo que describe cada integración.
 - **Desconectar corta el acceso de verdad.** En HubSpot, Cord además revoca su autorización en tu cuenta.
-- **Las URLs de webhook son secretos.** Quien tenga la URL de tu webhook de Slack o de Make puede publicar en ella; no las compartas.
+- **Las URLs de webhook son secretos.** Quien tenga la URL de tu webhook de Slack, del flujo de Teams o de Make puede publicar en ella; no las compartas.
 
 ## Si no está tu herramienta
 
-Con los webhooks y la API de Cord puedes conectar hoy cualquier sistema que reciba o haga llamadas HTTP, como n8n o tu propio desarrollo. Si quieres una integración directa con otra app, escríbenos a contacto@cordhq.app.
+Con los webhooks y la API de Cord puedes conectar hoy cualquier sistema que reciba o haga llamadas HTTP. Si quieres una integración directa con otra app, escríbenos a contacto@cordhq.app.

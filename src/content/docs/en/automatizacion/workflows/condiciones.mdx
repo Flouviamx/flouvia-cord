@@ -112,6 +112,24 @@ Rule of thumb: after a wait, always use the **current status**. That is what let
 
 Possible quote statuses: Draft, Sent, Viewed, Approved, Rejected, Expired, Paid and Invoiced. Invoice statuses: Draft, Open, Paid, Void and Uncollectible.
 
+## What changed, not just what it is
+
+Three events also carry the **previous** value, so a condition can ask about the change and not only about the current value:
+
+| Trigger | Fields with a previous value |
+|---|---|
+| **A quote is edited and resent** | Total |
+| **A client is updated** | Company, Email, Payment terms |
+| **A product is updated** | List price, Active |
+
+On those fields the editor offers two more operators: **changed** and **did not change**. You also get the previous value as its own field (**Previous total**, **Previous list price**, and so on), usable both in conditions and in your text.
+
+Example: "when a quote is resent, if the **Total** changed and the **Total** is lower than the **Previous total**, tell the owner" — a last-minute discount, which a plain condition on the total cannot tell apart from a deal that was always worth that.
+
+<Callout type="info">
+If the event does not carry the previous value, **changed** and **did not change** both answer no: an event from before this capability would answer "changed" to everything, and that is worse than not answering.
+</Callout>
+
 ## Nested conditions
 
 You can put a condition inside a branch of another one, up to 4 levels deep. Example with two levels, triggered by **A quote is approved**:

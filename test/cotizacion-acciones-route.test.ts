@@ -225,7 +225,8 @@ describe('send', () => {
         withStatus('viewed');
         expect((await patch({ action: 'resend' })).status).toBe(200);
         expect(m.reserve).not.toHaveBeenCalled();
-        expect(m.dispatch).toHaveBeenCalledWith('org-a', 'cot-1', 'quote.updated');
+        // quote.updated lleva el total anterior para las condiciones de cambio.
+        expect(m.dispatch).toHaveBeenCalledWith('org-a', 'cot-1', 'quote.updated', { total_anterior: expect.any(Number) });
         expect(m.track).toHaveBeenCalledWith('quote_sent', 'org-a', expect.objectContaining({ send_type: 'resend' }), false, false);
     });
 });

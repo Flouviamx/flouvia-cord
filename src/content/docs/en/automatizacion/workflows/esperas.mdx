@@ -1,6 +1,6 @@
 ---
 title: "Waits"
-description: "How to pause a workflow for 1 to 30 days: when it continues, what happens if you pause or edit it while waiting, and how to combine waits with the current status."
+description: "How to pause a workflow for 1 to 30 days, how to wait until something happens with a time limit, and what happens if you pause or edit it while waiting."
 lastUpdated: "2026-09-15"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
@@ -23,9 +23,9 @@ You can add several waits to the same workflow, at the main level or inside a br
 
 ## When it continues
 
-Days are counted from the moment the run reaches the wait. Cord checks waits **once a day**, so the next step does not run at the exact hour: it runs in the first check after the days have passed. In practice it can take up to one day longer than the wait says.
+Days are counted from the moment the run reaches the wait. Cord checks waits **every hour**, so the next step runs in the first check after the days have passed: in practice, within the hour.
 
-Example: a quote is sent on Monday afternoon and the workflow waits 3 days. The 3 days are up on Thursday afternoon, and the next step runs in the following check, between Thursday afternoon and Friday.
+Example: a quote is sent on Monday at 16:00 and the workflow waits 3 days. The 3 days are up on Thursday at 16:00, and the next step runs in the 17:00 check.
 
 Meanwhile the run shows as **Waiting** in the **Runs** tab, with the date it resumes ("Resumes …").
 
@@ -58,6 +58,31 @@ If you used **Status at the event** instead of current status, the condition wou
 ## Cancel a waiting run
 
 In **Runs**, open the waiting run and click **Cancel**. It becomes **Canceled** and no more steps run. Only **Queued** or **Waiting** runs can be canceled.
+
+## Wait until something happens
+
+A plain wait counts days. **Wait until...** counts days *and* watches a condition: the moment it is met, the workflow continues without sitting out the rest of the limit.
+
+<Steps>
+1. Click **Add a step › Wait until...**.
+2. Define the condition just like a regular one: for example, **Current quote status** is **Viewed**.
+3. Set the **Time limit** in days (1 to 30).
+</Steps>
+
+The step has two branches:
+
+| Branch | When it is taken |
+|---|---|
+| **If it happens** | The condition was met before the limit ran out. |
+| **If the time runs out** | The days passed without it being met. |
+
+Cord checks **every hour**, so the step continues within the hour after it happens. The limit is set the first time the run reaches the step and does not move: checking does not push it forward.
+
+Example, the "Quote follow-up ladder" idea: after sending, it waits until the client opens it, with a 2-day limit. If they open it, it creates the task to call while the deal is warm; if not, it emails them and waits another 5 days for a decision.
+
+<Callout type="info">
+Use **Current status** in these conditions, not **Status at the event**: the status at the event never changes, so a condition on it would always answer the same and the wait would burn the whole limit for nothing.
+</Callout>
 
 ## Next
 

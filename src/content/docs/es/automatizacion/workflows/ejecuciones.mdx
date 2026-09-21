@@ -112,6 +112,14 @@ En una ejecución **En cola** o **En espera**, pulsa **Cancelar**. Queda **Cance
 | Esta acción ya no está disponible. | La ejecución usaba una acción que Cord retiró. | Edita el workflow y publica de nuevo. |
 | Error interno al ejecutar la acción. | Un fallo inesperado de Cord. | Se reintenta solo. Si queda Fallida, pulsa **Reintentar** o escríbenos. |
 
+## El panel de salud
+
+Arriba de la lista de **Workflows** hay un resumen de los últimos 30 días: cuántas ejecuciones hubo, cuántas se completaron, cuántas fallaron y cuántas siguen en curso o en espera.
+
+Debajo, **Por qué fallaron**: las cinco causas más frecuentes, con cuántas veces pasó cada una, en qué workflow fue la última y cuándo. Ahí se ve la diferencia entre "algo falla" y "Slack se desconectó el martes": si una causa tiene 40 fallos y las demás ninguno, ya sabes qué arreglar.
+
+El panel aparece en cuanto hay ejecuciones. Si ninguna falló en el periodo, lo dice en vez de mostrar una lista vacía.
+
 ## Siguiente
 
 - [Límites](/docs/automatizacion/workflows/limites)

@@ -42,6 +42,21 @@ Mientras editas, la versión publicada sigue corriendo sin cambios. Si hay difer
 
 Publicar cambios en un workflow que ya estaba activo no consume otro lugar del límite.
 
+## Probar antes de publicar
+
+El botón **Probar**, junto a Guardar, corre el borrador **con el último evento real de su disparador** y te dice, paso por paso, qué habría pasado.
+
+- Las **condiciones** se evalúan con los datos de verdad: ves qué rama se habría tomado.
+- Las **consultas** sí se ejecutan, porque solo leen y son justo el dato que decide la rama.
+- Las **acciones no se ejecutan**. En su lugar ves el texto ya armado —el asunto y el cuerpo que habría recibido tu cliente— para revisarlo antes de soltarlo.
+- Las **esperas** se muestran como "Esperaría N días" y la prueba continúa, para que veas el flujo completo de una sentada.
+
+Si el disparador todavía no ha ocurrido nunca en tu cuenta, la prueba lo dice: no hay con qué probar. Genera el evento una vez (por ejemplo, envía una cotización de prueba) y vuelve a intentarlo.
+
+<Callout type="info">
+Probar no cambia nada ni consume tu cuota de envíos: es la lectura del borrador, no una ejecución.
+</Callout>
+
 ## Qué pasa con las ejecuciones en curso
 
 Cada ejecución guarda una copia de la versión publicada **en el momento en que ocurrió el evento**. Si publicas cambios, las ejecuciones que ya estaban en cola o en espera terminan con la versión anterior; las nuevas usan la nueva.

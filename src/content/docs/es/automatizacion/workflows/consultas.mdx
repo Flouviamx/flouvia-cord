@@ -1,0 +1,74 @@
+---
+title: "Consultas"
+description: "Cómo traer un dato de tu cuenta dentro de un workflow: cartera vencida, pipeline abierto, cobrado del periodo, lo que está por vencer y el saldo de un cliente."
+lastUpdated: "2026-09-20"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Consultas</h1>
+  <p class="page-subtitle">Un paso que pregunta antes de decidir. Trae un número de tu cuenta y lo deja disponible para los pasos que siguen.</p>
+</header>
+
+## Para qué sirve
+
+Un workflow solo sabe lo que traía el evento. "Se aprobó la cotización COT-7 por 150,000" no dice cuánto te debe ese cliente ni cómo va tu cartera, así que un aviso no podía incluirlo y una condición no podía decidir con eso.
+
+Una consulta cierra ese hueco: la pones antes, Cord la ejecuta y sus resultados quedan como variables para el resto del workflow.
+
+<Callout type="info">
+Una consulta solo **lee**. Nunca cambia nada en tu cuenta, así que puedes ponerla las veces que quieras sin riesgo.
+</Callout>
+
+## Cómo se agrega
+
+<Steps>
+1. Pulsa **Agregar un paso › Acción o consulta**.
+2. En el buscador, filtra por **Consulta** o escribe lo que buscas ("cartera", "pipeline", "saldo").
+3. Elige la consulta. Si tiene un parámetro de días, ajústalo.
+4. En el panel verás **Deja disponibles**: esas son las variables que puedes usar después.
+</Steps>
+
+## Las consultas
+
+| Consulta | Qué trae | Variables |
+|---|---|---|
+| **Cartera vencida** | Cuánto te deben con el plazo ya pasado. | `{{vencido_total}}`, `{{vencido_cantidad}}`, `{{vencido_dias_max}}` |
+| **Pipeline abierto** | Cuánto hay en cotizaciones enviadas o vistas sin decidir. | `{{pipeline_total}}`, `{{pipeline_cantidad}}` |
+| **Lo cobrado** | Cuánto se pagó en los últimos días que elijas (1 a 90). | `{{cobrado_total}}`, `{{cobrado_cantidad}}` |
+| **Lo que está por vencer** | Cuánto vence en los próximos días que elijas (1 a 90). | `{{por_vencer_total}}`, `{{por_vencer_cantidad}}` |
+| **Saldo del cliente** | Cuánto debe el cliente del evento y cuánto ya venció. | `{{cliente_saldo}}`, `{{cliente_vencido}}`, `{{cliente_documentos}}` |
+
+Los importes salen formateados con la divisa y el formato de tu cuenta, igual que el resto de los datos del evento.
+
+## El orden importa
+
+Una variable de consulta existe **a partir del paso que la trae**. Si la usas antes, el workflow no se publica y el editor lo dice: "La variable {{vencido_total}} viene de una consulta que está después de este paso."
+
+Lo mismo dentro de una rama: lo que consulta la rama **Si se cumple** no existe en la rama **Si no se cumple**. Si las dos lo necesitan, pon la consulta **antes** de la condición.
+
+## Saldo del cliente: necesita un cliente
+
+**Saldo del cliente** usa el cliente del evento, así que solo funciona con disparadores que traen uno: cotizaciones, facturas, pagos y clientes. En un disparador programado o de depósito no hay cliente al que preguntarle, y el workflow no se puede publicar con esa consulta.
+
+## Un ejemplo completo
+
+"Cierre de mes al equipo", una de las ideas que trae Cord:
+
+1. **Cuando pase esto:** el día 1 de cada mes a las 8.
+2. **Consulta:** lo cobrado en 30 días.
+3. **Consulta:** el pipeline abierto.
+4. **Consulta:** la cartera vencida.
+5. **Acción:** avisar a todo el equipo con los tres números en el mismo correo.
+6. **Acción:** publicar el resumen en Slack.
+
+## Límites
+
+Cada consulta es un paso, así que cuenta para el máximo de 30 pasos por workflow. No tienen tope por hora propio: solo leen.
+
+## Siguiente
+
+- [Condiciones](/docs/automatizacion/workflows/condiciones)
+- [Disparadores](/docs/automatizacion/workflows/disparadores)
+- [Datos del evento](/docs/automatizacion/workflows/datos-del-evento)

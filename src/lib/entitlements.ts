@@ -38,7 +38,6 @@ export type FeatureKey =
     | 'advanced_forecast'
     | 'team'
     | 'roles'
-    | 'multi_org'
     | 'live_presence'
     | 'quote_attention'
     | 'cfo_dashboard'
@@ -68,7 +67,6 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanId> = {
     international_invoicing: 'free',
     team: 'pro',
     roles: 'pro',
-    multi_org: 'pro',
     live_presence: 'pro',
     quote_attention: 'pro',
     cfo_dashboard: 'pro',
@@ -93,7 +91,6 @@ export const FEATURE_LABEL: Record<FeatureKey, string> = {
     advanced_forecast: 'Pronóstico y margen cedido',
     team: 'Invitar a tu equipo',
     roles: 'Roles y permisos personalizados',
-    multi_org: 'Espacios de trabajo adicionales',
     live_presence: 'Presencia en vivo',
     quote_attention: 'Atención del cliente',
     cfo_dashboard: 'CFO Dashboard',
