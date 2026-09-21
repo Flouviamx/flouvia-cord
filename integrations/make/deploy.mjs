@@ -31,6 +31,15 @@ if (!dry && (!env.CLIENT_ID || !env.CLIENT_SECRET)) {
 
 const API = `https://${zone}/api/v2`;
 
+if (env.MAKE_OAUTH_REDIRECT) {
+    if (!/^https:\/\/[a-z0-9.-]+\.make\.com\/oauth\/cb\/app$/.test(env.MAKE_OAUTH_REDIRECT)) {
+        console.error('MAKE_OAUTH_REDIRECT debe ser https://<zona>.make.com/oauth/cb/app');
+        process.exit(1);
+    }
+    CONNECTION.api.authorize.qs.redirect_uri = env.MAKE_OAUTH_REDIRECT;
+    CONNECTION.api.token.body.redirect_uri = env.MAKE_OAUTH_REDIRECT;
+}
+
 async function call(method, route, body, contentType = 'application/json') {
     if (dry && method !== 'GET') {
         console.log(`[dry] ${method} ${route}`);
@@ -118,6 +127,7 @@ console.log(`  webhook ${webhook}`);
 await ensureRpcs(app.name, version, connection);
 await ensureModules(app.name, version, connection, webhook);
 await call('PUT', `/sdk/apps/${app.name}/${version}/groups`, GROUPS);
-const icon = path.join(dir, '..', 'hubspot', 'src', 'app', 'cord-logo.png');
+// Make pinta lo negro de blanco y lo transparente con el color del tema.
+const icon = path.join(dir, 'logo.png');
 if (fs.existsSync(icon)) await call('PUT', `/sdk/apps/${app.name}/${version}/icon`, fs.readFileSync(icon), 'image/png');
 console.log('Listo.');
