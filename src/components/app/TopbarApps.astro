@@ -35,12 +35,12 @@ const ACCION: Record<IntegrationState, string> = {
 ---
 
 <div class="tb-apps-wrap">
-    <button class="tb-icon tb-apps" id="tbAppsBtn" type="button"
+    <button class:list={['tb-apps', { 'has-apps': CONECTADAS.length > 0 }]} id="tbAppsBtn" type="button"
             title={t(L, 'topbar.apps.titulo')} aria-label={t(L, 'topbar.apps.titulo')}
             aria-haspopup="menu" aria-expanded="false">
         {CONECTADAS.length > 0 && (
             <span class="tb-apps-logos" aria-hidden="true">
-                <img src={CONECTADAS[0].app.logo} alt="" width="18" height="18" loading="lazy" />
+                <img src={CONECTADAS[0].app.logo} alt="" width="22" height="22" loading="lazy" />
             </span>
         )}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -74,21 +74,43 @@ const ACCION: Record<IntegrationState, string> = {
 </div>
 
 <style>
-    .tb-apps-wrap { position: relative; display: flex; }
-    /* Se comporta como cualquier otro icono de la topbar: fondo transparente y
-       el gris suave SOLO al pasar el cursor. Con un fondo permanente, el botón
-       se leía como una caja enmarcada al lado de iconos que no la tienen.
-       `.tb-icon` fija 36px de ancho; con el logo dentro hay que soltarlo. */
-    .tb-apps { display: inline-flex; align-items: center; gap: 7px; }
-    .tb-apps:has(.tb-apps-logos) { width: auto; padding: 0 9px; }
-    /* El logo va suelto: un favicon de marca ya trae su forma, y enmarcarlo lo
-       convertía en una estampilla. El punto dice "hay algo conectado" sin
-       repetir logos que a 17px se vuelven manchas. */
-    .tb-apps-logos { position: relative; display: inline-flex; align-items: center; }
-    .tb-apps-logos img { width: 18px; height: 18px; border-radius: 5px; object-fit: contain; }
+    .tb-apps-wrap { position: relative; display: flex; align-items: center; }
+
+    /* Estilos PROPIOS y completos. `.tb-icon` vive en el <style> scopeado de
+       AppLayout y Astro no se lo aplica al markup de otro componente (regla
+       11): heredarlo en el nombre dejaba al navegador pintar su botón por
+       defecto, con fondo gris y borde. */
+    .tb-apps {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        width: 36px; height: 36px; padding: 0; margin: 0;
+        border: none; border-radius: 9px; background: transparent;
+        color: var(--color-text-muted); font: inherit; cursor: pointer;
+        transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s var(--ease-spring);
+        -webkit-appearance: none; appearance: none;
+    }
+    .tb-apps svg { width: 17px; height: 17px; flex-shrink: 0; }
+    .tb-apps:hover { background: var(--color-bg-soft); color: var(--color-blue-deep); transform: translateY(-1px); }
+    .tb-apps:active { transform: scale(0.96); }
+    .tb-apps:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
+    .tb-apps[aria-expanded="true"] { background: var(--color-bg-soft); color: var(--color-blue-deep); }
+
+    /* Con una app conectada se vuelve cápsula, del mismo lenguaje que la de
+       "Guía de configuración": superficie blanca, contorno de un pelo y
+       radio completo. El logo va primero porque ES el estado. */
+    .tb-apps.has-apps {
+        width: auto; height: 40px; padding: 0 13px 0 7px; border-radius: 999px;
+        background: var(--surface); box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .tb-apps.has-apps:hover { background: var(--surface); box-shadow: inset 0 0 0 1px var(--color-border), 0 6px 16px -8px rgba(10, 25, 47, 0.28); }
+    .tb-apps.has-apps[aria-expanded="true"] { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--color-blue-deep); }
+
+    .tb-apps-logos { position: relative; display: inline-flex; flex-shrink: 0; }
+    .tb-apps-logos img { width: 26px; height: 26px; border-radius: 8px; object-fit: contain; display: block; }
+    /* Punto de "conectado". Su aro es del color de la cápsula para que se lea
+       como un punto encima del logo y no como una mancha pegada. */
     .tb-apps-logos::after {
-        content: ''; position: absolute; top: -1px; right: -3px;
-        width: 7px; height: 7px; border-radius: 50%;
+        content: ''; position: absolute; top: -2px; right: -2px;
+        width: 8px; height: 8px; border-radius: 50%;
         background: var(--color-ok); box-shadow: 0 0 0 2px var(--surface);
     }
 
@@ -127,9 +149,12 @@ const ACCION: Record<IntegrationState, string> = {
     html[data-theme="dark"] .tb-apps-panel { box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.6); }
     /* En oscuro, el aro del punto tiene que ser del color de la topbar, no del
        de una tarjeta, o se ve un halo claro alrededor. */
+    html[data-theme="dark"] .tb-apps.has-apps { background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1); }
     html[data-theme="dark"] .tb-apps-logos::after { box-shadow: 0 0 0 2px #181e28; }
 
     @media (max-width: 880px) {
+        .tb-apps { width: 44px; height: 44px; }
+        .tb-apps.has-apps { width: auto; height: 44px; }
         .tb-apps-panel { position: fixed; top: auto; bottom: 12px; right: 12px; left: 12px; width: auto; }
         .tb-apps-item { min-height: 52px; }
     }
