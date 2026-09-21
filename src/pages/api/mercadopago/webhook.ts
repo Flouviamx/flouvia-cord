@@ -31,7 +31,8 @@ export const POST: APIRoute = async ({ request, url }) => {
     let body: any = {};
     try { body = await request.json(); } catch { /* algunas notificaciones llegan solo con query */ }
 
-    const dataId = String(body?.data?.id ?? url.searchParams.get('data.id') ?? url.searchParams.get('id') ?? '');
+    // Mercado Pago firma el `data.id` de la URL, en minúsculas.
+    const dataId = String(url.searchParams.get('data.id') ?? body?.data?.id ?? url.searchParams.get('id') ?? '').toLowerCase();
     const tipo = String(body?.type ?? url.searchParams.get('type') ?? url.searchParams.get('topic') ?? '');
     if (!dataId) return json({ ok: true, ignorado: 'sin_id' });
 

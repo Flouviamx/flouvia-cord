@@ -19,9 +19,9 @@
 //  - **Ningún mensaje del proveedor sale hacia el pagador** (regla 14): esta
 //    capa devuelve resultados tipados y el llamador los traduce.
 //
-// ⚠️ Antes de habilitarlo en producción, reconfirma contra la documentación
-// VIGENTE de Mercado Pago la forma de `/oauth/token`, de `/checkout/preferences`
-// y del encabezado `x-signature`: son de un tercero y cambian sin avisarnos.
+// Verificado el 2026-09-21 contra el SDK oficial `mercadopago` 3.6.1: URL de
+// autorización, `/oauth/token` (canje y renovación), campos de
+// `/checkout/preferences` y la firma `x-signature` (`WebhookSignatureValidator`).
 
 import { sql, withOrgTx } from './db';
 import { decryptSecret, encryptRequiredSecret } from './crypto-secret';
@@ -264,9 +264,11 @@ export async function fetchMpPayment(orgId: string, paymentId: string): Promise<
 }
 
 /**
- * Firma del webhook: HMAC-SHA256 sobre `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`.
- * Sin secreto configurado devuelve false: un webhook de dinero sin verificar es
- * una puerta abierta a que cualquiera declare un pago (falla cerrada).
+ * Firma del webhook, igual que `WebhookSignatureValidator` del SDK oficial:
+ * HMAC-SHA256 sobre `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`, omitiendo
+ * el tramo que no llegue. Sin secreto devuelve false (falla cerrada). No hay
+ * ventana de tiempo: Mercado Pago reintenta con la firma original y el webhook
+ * ya es idempotente y lee el pago en el proveedor.
  */
 export function mpSignatureValid(header: string | null, requestId: string | null, dataId: string, secret: string): boolean {
     if (!header || !secret || !dataId) return false;
@@ -274,18 +276,17 @@ export function mpSignatureValid(header: string | null, requestId: string | null
     for (const parte of header.split(',')) {
         const eq = parte.indexOf('=');
         if (eq === -1) continue;
-        const clave = parte.slice(0, eq).trim();
+        const clave = parte.slice(0, eq).trim().toLowerCase();
         const valor = parte.slice(eq + 1).trim();
         if (clave === 'ts') ts = valor;
         else if (clave === 'v1') v1 = valor;
     }
-    if (!ts || !v1) return false;
-    // Fuera de tolerancia = reenvío viejo. Cinco minutos, igual que el resto de
-    // las firmas que verifica Cord.
-    const edad = Math.abs(Date.now() - Number(ts) * (String(ts).length > 10 ? 1 : 1000));
-    if (!Number.isFinite(edad) || edad > 5 * 60 * 1000) return false;
+    if (!/^\d+$/.test(ts) || !v1) return false;
 
-    const manifest = `id:${dataId};request-id:${requestId ?? ''};ts:${ts};`;
+    const partes = [`id:${dataId}`];
+    if (requestId?.trim()) partes.push(`request-id:${requestId.trim()}`);
+    partes.push(`ts:${ts}`);
+    const manifest = partes.join(';') + ';';
     const esperado = createHmac('sha256', secret).update(manifest).digest('hex');
     const a = Buffer.from(esperado, 'utf8');
     const b = Buffer.from(v1, 'utf8');

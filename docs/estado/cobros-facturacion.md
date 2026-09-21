@@ -50,10 +50,14 @@ Connect y el negocio elige.
 - Solo cotizaciones: la factura hospedada (`/i/[token]`) todavía no ofrece
   Mercado Pago.
 
+La forma de la autorización, `/oauth/token`, `/checkout/preferences` y la firma
+`x-signature` se verificó el 2026-09-21 contra el SDK oficial (`mercadopago`
+3.6.1). La firma omite el tramo `request-id` cuando no llega y no tiene ventana de
+tiempo, igual que el validador oficial: los reintentos llegan con la firma original.
+
 ⚠️ Pendiente operativo: `MP_CLIENT_ID`, `MP_CLIENT_SECRET` y `MP_WEBHOOK_SECRET`
-no están configuradas, y la forma de `/oauth/token`, `/checkout/preferences` y
-del encabezado `x-signature` debe reconfirmarse contra la documentación VIGENTE
-de Mercado Pago antes de habilitarlo en producción.
+no están configuradas. Sin confirmar: si una aplicación de un país puede conectar
+vendedores de otro país.
 
 ## Facturación internacional — ago 2026
 

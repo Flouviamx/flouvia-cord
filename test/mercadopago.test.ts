@@ -30,10 +30,25 @@ describe('firma del webhook de Mercado Pago', () => {
         expect(mpSignatureValid(`ts=${ts}`, 'req-1', '123', 's3cret')).toBe(false);
     });
 
-    it('una notificación vieja no se puede reenviar', () => {
-        const viejo = ahora() - 3600;
+    it('un reintento tardío con la firma original sigue siendo válido', () => {
+        const viejo = ahora() - 3600 * 6;
         const v1 = firmar('s3cret', `id:123;request-id:req-1;ts:${viejo};`);
-        expect(mpSignatureValid(`ts=${viejo},v1=${v1}`, 'req-1', '123', 's3cret')).toBe(false);
+        expect(mpSignatureValid(`ts=${viejo},v1=${v1}`, 'req-1', '123', 's3cret')).toBe(true);
+    });
+
+    it('sin x-request-id el tramo se omite, como en el SDK oficial', () => {
+        const ts = ahora();
+        const v1 = firmar('s3cret', `id:123;ts:${ts};`);
+        expect(mpSignatureValid(`ts=${ts},v1=${v1}`, null, '123', 's3cret')).toBe(true);
+        expect(mpSignatureValid(`ts=${ts},v1=${v1}`, '  ', '123', 's3cret')).toBe(true);
+        expect(mpSignatureValid(`ts=${ts},v1=${firmar('s3cret', `id:123;request-id:;ts:${ts};`)}`, null, '123', 's3cret')).toBe(false);
+    });
+
+    it('acepta claves del encabezado en mayúsculas y rechaza un ts que no es número', () => {
+        const ts = ahora();
+        const v1 = firmar('s3cret', `id:123;request-id:req-1;ts:${ts};`);
+        expect(mpSignatureValid(`TS=${ts}, V1=${v1}`, 'req-1', '123', 's3cret')).toBe(true);
+        expect(mpSignatureValid(`ts=abc,v1=${v1}`, 'req-1', '123', 's3cret')).toBe(false);
     });
 });
 
