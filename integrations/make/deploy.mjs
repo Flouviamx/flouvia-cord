@@ -51,7 +51,7 @@ const objectOf = (payload) => Object.values(payload || {}).find((v) => v && type
 
 async function ensureApp() {
     const apps = listOf(await call('GET', '/sdk/apps'));
-    const found = apps.find((a) => a.name === appName);
+    const found = apps.find((a) => a.name === appName) || apps.find((a) => a.name.startsWith(`${appName}-`) && a.label === APP.label);
     if (found) return found;
     const created = objectOf(await call('POST', '/sdk/apps', { name: appName, label: APP.label, description: APP.description, theme: APP.theme, language: APP.language }));
     return { name: appName, version: 1, ...created };
@@ -109,7 +109,7 @@ async function ensureModules(app, version, connection, webhook) {
 const app = await ensureApp();
 const version = app.version || 1;
 console.log(`App ${app.name} v${version} en ${zone}`);
-await call('POST', `/sdk/apps/${app.name}/${version}/base`, BASE);
+await call('PUT', `/sdk/apps/${app.name}/${version}/base`, BASE);
 await call('PUT', `/sdk/apps/${app.name}/${version}/readme`, README, 'text/markdown');
 const connection = await ensureConnection(app.name);
 console.log(`  conexión ${connection}`);

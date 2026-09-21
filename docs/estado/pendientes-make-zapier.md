@@ -14,7 +14,7 @@
 | App | Estado del código | Estado en Cord hoy | Lo que falta |
 |---|---|---|---|
 | **Zapier** | Listo. App privada App246344, solo la versión 1.1.0 (OAuth 2.0 + PKCE); las 1.0.x con llave se borraron. Probado de punta a punta el 2026-09-21 | Tarjeta con link de invitación y "Conexión directa" | Nada para usarla con el link. Opcional: directorio público (sección 5) |
-| **Make** | App con conexión OAuth 2.0 escrita y probada (8 pruebas), **nunca subida** a Make; cliente `make` ya registrado en Cord con sus credenciales en `.env` | Tarjeta "Con webhooks" (funciona con Webhooks + HTTP) | Token de API de Make y correr el deploy; confirmar el redirect que Make envía (`https://www.make.com/oauth/cb/app` según su documentación) |
+| **Make** | Subida el 2026-09-21 a us2 como `cord-78vg5m` (Make agrega el sufijo): conexión OAuth 2.0 con `clientId`/`clientSecret` en los datos comunes, webhook y 12 módulos | Tarjeta "Con webhooks" hasta tener el link | Probar la conexión desde un escenario, publicar (Custom apps › Cord › Publish) y mandar el link de invitación |
 
 Nunca pegues tokens ni llaves en el chat. Van en archivos `.env` que no se suben a git.
 
