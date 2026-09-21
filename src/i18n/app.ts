@@ -116,6 +116,13 @@ export const appStrings = {
         // Topbar
         "topbar.buscar": "Buscar…",
         "topbar.notificaciones": "Notificaciones",
+        "topbar.apps.titulo": "Aplicaciones",
+        "topbar.apps.destacadas": "Tus integraciones",
+        "topbar.apps.explorar": "Explorar integraciones",
+        "topbar.apps.conectar": "Conectar",
+        "topbar.apps.abrir": "Abrir",
+        "topbar.apps.revisar": "Revisar",
+        "topbar.apps.pronto": "Próximamente",
         "topbar.ajustes": "Ajustes",
 
         // AppLayout — banner de entorno de prueba
@@ -3356,6 +3363,13 @@ export const appStrings = {
         // Topbar
         "topbar.buscar": "Search…",
         "topbar.notificaciones": "Notifications",
+        "topbar.apps.titulo": "Apps",
+        "topbar.apps.destacadas": "Your integrations",
+        "topbar.apps.explorar": "Explore integrations",
+        "topbar.apps.conectar": "Connect",
+        "topbar.apps.abrir": "Open",
+        "topbar.apps.revisar": "Review",
+        "topbar.apps.pronto": "Coming soon",
         "topbar.ajustes": "Settings",
 
         // AppLayout — test mode banner

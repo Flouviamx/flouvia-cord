@@ -8,6 +8,21 @@
 > política RLS, carriles de contexto, 2FA en APIs) se movió a
 > [`multi-tenant.md`](multi-tenant.md).
 
+## Menú de aplicaciones de la topbar
+
+`TopbarApps.astro` vive en la topbar de `AppLayout` y muestra qué integraciones
+están conectadas y cuáles se pueden conectar, sin salir de la pantalla actual.
+
+- El estado sale del MISMO catálogo que Ajustes › Integraciones
+  (`integrationState`), no de una lista aparte: dos fuentes divergen en cuanto
+  alguien agrega la tercera app.
+- Solo se monta para quien tiene el permiso de **ajustes**: a quien no puede
+  conectar nada, un botón "Conectar" es un callejón.
+- Las conectadas asoman su logo en el propio botón, así que el estado se ve sin
+  abrir el menú. Lo que todavía no existe dice "Próximamente" y lleva al
+  directorio, en vez de ofrecer un botón que no lleva a ningún lado (regla 15).
+
+
 ## Mapa de rutas
 
 Dominios propios de clientes: contrato y activación en

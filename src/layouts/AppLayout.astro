@@ -7,6 +7,8 @@ import { getOrg, getSetupProgress, getMyMembership } from '../lib/queries';
 import OnboardingWidget from '../components/app/OnboardingWidget.astro';
 import DevWorkbench from '../components/app/DevWorkbench.astro';
 import Sidebar from '../components/app/Sidebar.astro';
+import TopbarApps from '../components/app/TopbarApps.astro';
+import { getConexion } from '../lib/integraciones/conexiones';
 import CordDynamicBg from '../components/CordDynamicBg.jsx';
 // Shader estándar de Cord — paleta oceánica del Centro de Ayuda
 // (navy casi negro + teal profundo + cobalto).
@@ -56,6 +58,20 @@ const canCreateAny = canCotizar || canClientes || canProductos;
 // el resto de Ajustes; el gate REAL de visibilidad es client-side (clase
 // .cord-dev, toggle "Modo desarrollador"), esto es defensa en profundidad.
 const canDev = memberCan(ME, 'ajustes');
+
+// Menú de aplicaciones de la topbar. Solo para quien puede conectar algo: a
+// quien no tiene el permiso, ofrecerle "Conectar" sería un callejón.
+// La conexión de HubSpot se lee directa (una fila) en vez de `hubspotStatus`,
+// que además cuenta trabajos de sincronización — eso es de su pantalla, no de
+// un menú que se pinta en CADA página de la app.
+const appsCtx = canDev
+    ? {
+        hubspot: (await getConexion(ORG.id, 'hubspot').catch(() => null))?.estado ?? null,
+        slack: Boolean(ORG.slackWebhook),
+        teams: Boolean(ORG.teamsWebhook),
+        whatsapp: Boolean(ORG.whatsappConectado),
+    }
+    : null;
 
 // Avance de configuración (Fase 3). Si la cuenta ya está 100% lista no montamos
 // el widget de onboarding ni la píldora de la topbar.
@@ -241,6 +257,7 @@ const isTestEnv = Astro.cookies.get('cord_test_mode')?.value === '1';
                                 </div>
                             </div>
                         )}
+                        {appsCtx && <TopbarApps lang={L} ctx={appsCtx} />}
                         <div class="tb-notif-wrap">
                             <button class="tb-icon tb-activity" id="notifBtn" type="button" title={t(L, 'layout.aria.actividad')} aria-label={t(L, 'topbar.notificaciones')} aria-haspopup="menu" aria-expanded="false">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>

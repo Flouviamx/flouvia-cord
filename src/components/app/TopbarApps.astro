@@ -1,0 +1,154 @@
+---
+// Menú de aplicaciones de la topbar: qué está conectado y qué se puede
+// conectar, sin salir de la pantalla en la que estás.
+//
+// El estado sale del MISMO catálogo que Ajustes › Integraciones
+// (`integrationState`), no de una lista aparte: una app conectada tiene que
+// verse conectada en los dos lugares, y dos fuentes divergen en cuanto alguien
+// agrega la tercera app.
+import { t, type AppLocale } from '../../i18n/app';
+import { INTEGRATION_APPS, integrationState, type IntegrationState } from '../../lib/integraciones/catalogo';
+
+interface Props {
+    lang: AppLocale;
+    ctx: { hubspot: string | null; slack: boolean; teams: boolean; whatsapp: boolean };
+}
+
+const { lang: L, ctx } = Astro.props;
+
+const APPS = INTEGRATION_APPS.map((app) => ({ app, state: integrationState(app, ctx) }));
+const CONECTADAS = APPS.filter((a) => a.state === 'on' || a.state === 'warn');
+// Primero lo que está conectado, luego lo disponible; lo que todavía no existe
+// va al final y se dice "Próximamente" en vez de ofrecer un botón que no lleva
+// a ningún lado.
+const ORDEN: Record<IntegrationState, number> = { warn: 0, on: 1, off: 2, key: 3, info: 4, soon: 5 };
+const LISTA = [...APPS].sort((a, b) => ORDEN[a.state] - ORDEN[b.state]).slice(0, 6);
+
+const ACCION: Record<IntegrationState, string> = {
+    on: t(L, 'topbar.apps.abrir'),
+    warn: t(L, 'topbar.apps.revisar'),
+    off: t(L, 'topbar.apps.conectar'),
+    key: t(L, 'topbar.apps.conectar'),
+    info: t(L, 'topbar.apps.abrir'),
+    soon: t(L, 'topbar.apps.pronto'),
+};
+---
+
+<div class="tb-apps-wrap">
+    <button class="tb-icon tb-apps" id="tbAppsBtn" type="button"
+            title={t(L, 'topbar.apps.titulo')} aria-label={t(L, 'topbar.apps.titulo')}
+            aria-haspopup="menu" aria-expanded="false">
+        {CONECTADAS.length > 0 && (
+            <span class="tb-apps-logos" aria-hidden="true">
+                {CONECTADAS.slice(0, 2).map(({ app }) => (
+                    <img src={app.logo} alt="" width="16" height="16" loading="lazy" />
+                ))}
+            </span>
+        )}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/>
+            <rect x="14" y="14" width="7" height="7" rx="2"/><path d="M17.5 3v7M21 6.5h-7"/>
+        </svg>
+    </button>
+
+    <div class="tb-apps-panel" id="tbAppsPanel" role="menu" hidden>
+        <span class="tb-apps-title">{t(L, 'topbar.apps.destacadas')}</span>
+        <div class="tb-apps-list">
+            {LISTA.map(({ app, state }) => (
+                <a class="tb-apps-item" href={state === 'soon' ? '/app/ajustes/integraciones' : `/app/ajustes/integraciones/${app.slug}`} role="menuitem">
+                    <img class:list={['tb-apps-logo', { tile: app.tile }]} src={app.logo} alt="" width="34" height="34" loading="lazy" />
+                    <span class="tb-apps-text">
+                        <strong>{app.nombre}</strong>
+                        <small>{t(L, `set.integ.app.${app.slug}` as any)}</small>
+                    </span>
+                    <span class="tb-apps-cta" data-estado={state}>{ACCION[state]}</span>
+                </a>
+            ))}
+        </div>
+        <a class="tb-apps-foot" href="/app/ajustes/integraciones" role="menuitem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/>
+                <rect x="14" y="14" width="7" height="7" rx="2"/><path d="M17.5 3v7M21 6.5h-7"/>
+            </svg>
+            {t(L, 'topbar.apps.explorar')}
+        </a>
+    </div>
+</div>
+
+<style>
+    .tb-apps-wrap { position: relative; display: flex; }
+    /* El botón crece cuando hay apps conectadas: los logos van DENTRO, como en
+       el chip de Stripe, para que el estado se vea sin abrir nada. */
+    .tb-apps { display: inline-flex; align-items: center; gap: 6px; }
+    /* `.tb-icon` fija 36px de ancho — con los logos dentro hay que soltarlo, o
+       se aplastan contra el icono. Alto y radio se conservan. */
+    .tb-apps:has(.tb-apps-logos) { width: auto; padding: 0 9px 0 7px; background: var(--color-bg-soft); }
+    .tb-apps-logos { display: inline-flex; align-items: center; }
+    .tb-apps-logos img { width: 16px; height: 16px; border-radius: 5px; object-fit: contain; background: #fff; }
+    .tb-apps-logos img + img { margin-left: -5px; box-shadow: -1px 0 0 var(--surface); }
+
+    .tb-apps-panel {
+        position: absolute; top: calc(100% + 10px); right: 0; z-index: 900;
+        width: min(360px, calc(100vw - 32px)); padding: 14px 10px 10px;
+        background: var(--surface); border: 1px solid var(--color-border); border-radius: 20px;
+        box-shadow: 0 24px 60px -18px rgba(10, 25, 47, 0.28);
+    }
+    .tb-apps-title { display: block; padding: 0 10px 8px; font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); }
+    .tb-apps-list { display: flex; flex-direction: column; }
+    .tb-apps-item {
+        display: flex; align-items: center; gap: 12px; padding: 9px 10px;
+        border-radius: 14px; text-decoration: none; color: var(--color-text);
+    }
+    .tb-apps-item:hover, .tb-apps-item:focus-visible { background: var(--color-bg-soft); outline: none; }
+    .tb-apps-logo { width: 34px; height: 34px; border-radius: 10px; object-fit: contain; flex-shrink: 0; }
+    /* Un favicon que no llena su casilla necesita fondo y aire; uno que sí la
+       llena (`tile`) se ve mejor a sangre. */
+    .tb-apps-logo:not(.tile) { padding: 6px; background: var(--color-bg-soft); }
+    .tb-apps-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+    .tb-apps-text strong { font-size: 0.86rem; font-weight: 600; }
+    .tb-apps-text small { font-size: 0.76rem; line-height: 1.4; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tb-apps-cta { flex-shrink: 0; font-size: 0.8rem; font-weight: 600; color: var(--color-blue-deep); }
+    .tb-apps-cta[data-estado="on"] { color: var(--color-ok); }
+    .tb-apps-cta[data-estado="warn"] { color: var(--color-danger); }
+    .tb-apps-cta[data-estado="soon"] { color: var(--color-text-muted); font-weight: 500; }
+    .tb-apps-foot {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        margin-top: 8px; padding: 12px 10px 4px; border-top: 1px solid var(--color-border);
+        font-size: 0.85rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none;
+    }
+    .tb-apps-foot svg { width: 16px; height: 16px; }
+    .tb-apps-foot:hover { text-decoration: underline; }
+
+    html[data-theme="dark"] .tb-apps-panel { box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.6); }
+    html[data-theme="dark"] .tb-apps-logos img { background: rgba(255, 255, 255, 0.9); }
+
+    @media (max-width: 880px) {
+        .tb-apps-panel { position: fixed; top: auto; bottom: 12px; right: 12px; left: 12px; width: auto; }
+        .tb-apps-item { min-height: 52px; }
+    }
+</style>
+
+<script>
+    function initTopbarApps() {
+        const btn = document.getElementById('tbAppsBtn');
+        const panel = document.getElementById('tbAppsPanel');
+        if (!btn || !panel) return;
+
+        const cerrar = () => { panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const abierto = !panel.hidden;
+            // Cierra lo demás de la topbar antes de abrir: dos paneles abiertos
+            // a la vez se tapan entre sí.
+            document.getElementById('notifPanel')?.setAttribute('hidden', '');
+            panel.hidden = abierto;
+            btn.setAttribute('aria-expanded', String(!abierto));
+        });
+        document.addEventListener('click', (e) => {
+            if (!panel.hidden && !panel.contains(e.target as Node) && e.target !== btn) cerrar();
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrar(); });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initTopbarApps);
+    else initTopbarApps();
+</script>
