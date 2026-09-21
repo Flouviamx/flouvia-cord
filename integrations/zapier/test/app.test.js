@@ -39,6 +39,7 @@ test('autenticación: OAuth 2.0 con PKCE, renovación automática y etiqueta de 
     assert.equal(auth.oauth2Config.authorizeUrl.params.scope, 'write');
     assert.match(auth.oauth2Config.getAccessToken.url, /\/api\/oauth\/token$/);
     assert.equal(auth.oauth2Config.getAccessToken.body.grant_type, 'authorization_code');
+    assert.equal(auth.oauth2Config.getAccessToken.body.code_verifier, '{{bundle.inputData.code_verifier}}');
     assert.equal(auth.oauth2Config.refreshAccessToken.body.grant_type, 'refresh_token');
     const ok = fakeZ({ 'GET /api/v1/me': { data: { org: { nombre: 'ACME' }, scope: 'write', mode: 'test' } } });
     const data = await auth.test(ok);
