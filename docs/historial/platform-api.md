@@ -6,6 +6,23 @@
 
 ---
 
+✅ **Mercado Pago llega al pagador, prioridad de riel y onboarding (21 sep 2026)**
+   • **El riel estaba construido y desconectado.** Nadie llamaba a `mp-preference` y la página de
+     pago exigía Stripe: una cuenta de Colombia conectaba Mercado Pago en Ajustes y su cliente
+     nunca veía un botón. Ahora `pay.astro` ofrece Mercado Pago, y el link público, el embed y la
+     tarjeta deciden con `canCollectOnline()` en vez de preguntar por Stripe.
+   • **Una sola decisión de riel** (`payment-rail.ts`): Cord Payments primero donde existe; donde
+     solo hay Mercado Pago, la pantalla de Cobros lo dice en vez de mostrar la tarjeta de
+     Mercado Pago junto a un aviso de "cobros no disponibles" —una contradicción que estaba en
+     producción.
+   • **Onboarding**: el paso de cobros en línea ya no exige Cord Payments en los cuatro países
+     donde no existe, y hay un paso nuevo de Workflows (`SETUP_TASKS` ahora incluye `workflows`).
+   • **Webhook**: distingue reenvío de segundo pago y alerta el doble cobro entre rieles.
+   • **Red**: el driver de Neon reintenta solo la fase de CONEXIÓN (`db-fetch.ts`); un reset a media
+     petición no se repite, porque podría ejecutar dos veces la misma escritura.
+   • **Zapier**: la app privada ya tiene link de invitación; docs, tabla de integraciones y
+     artículo de soporte actualizados. Queda la autorización OAuth.
+
 ✅ **WhatsApp Business y Mercado Pago (20 sep 2026)**
    • **WhatsApp (Cloud API de Meta)**: en México y Latinoamérica la cotización se persigue por
      WhatsApp, y Cord le escribía al cliente por el canal que menos abre. La acción de workflow

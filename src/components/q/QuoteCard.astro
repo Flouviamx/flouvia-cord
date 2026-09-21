@@ -4,6 +4,7 @@
 // Reutilizado por /q/[token] (página pública) y /embed/[token] (CORD Elements).
 import { money, lineTotal, quoteSubtotal, quoteTotal, quoteTaxBreakdown, quoteRetenciones } from '../../lib/queries';
 import { getCountryProfile } from '../../lib/countries';
+import { canCollectOnline } from '../../lib/payment-rail';
 import { splitAnticipo } from '../../lib/cobros';
 import { currentLocale } from '../../lib/context';
 import { t, getQuoteCardRuntimeI18n } from '../../i18n/app';
@@ -76,7 +77,7 @@ const cobroTipoLabel = (co: any) =>
     : co.tipo === 'cuota' ? tf('q.tipo_cuota', { n: String(co.numeroCuota) })
     : t(L, 'q.total');
 const montoAPagar = nextCobro ? money(nextCobro.monto) : total;
-const orgCobraOnline = (ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled;
+const orgCobraOnline = canCollectOnline({ ...ORG, country: ORG.paisCode });
 // Crédito (Net 30/60) SIN cobros parciales y sin nada pagable todavía: en vez
 // del botón de pago se muestra la fecha en la que vence el saldo.
 const esCreditoPendiente = q.pagoDisponible === false && cobros.length === 0 && !!q.saldoVence;
@@ -500,11 +501,11 @@ const demoRuntimeJson = esDemo
                                 </div>
                             )}
 
-                            {ORG.aceptaTransferencia && (ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled && (
+                            {ORG.aceptaTransferencia && orgCobraOnline && (
                                 <div class="ql-pay-divider">{t(L, 'q.pagar_en_linea_divider')}</div>
                             )}
 
-                            {(ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled && (
+                            {orgCobraOnline && (
                                 <div class="ql-pay">
                                     <div class="ql-pay-amount">
                                         <span class="ql-pay-label">{nextCobro && nextCobro.tipo !== 'total' ? `${t(L, 'q.a_pagar_ahora')} · ${cobroTipoLabel(nextCobro).toUpperCase()}` : t(L, 'q.a_pagar_ahora')}</span>

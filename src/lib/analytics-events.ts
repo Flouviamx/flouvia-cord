@@ -120,7 +120,7 @@ export const ONBOARDING_CASOS_USO = [
 export const SETUP_GROUPS = ['negocio', 'catalogo', 'venta', 'dinero', 'equipo'] as const;
 export const SETUP_TASKS = [
   'marca', 'fiscal', 'documento', 'productos', 'clientes',
-  'cotizacion', 'enviar', 'online_cobros', 'cobro', 'equipo',
+  'cotizacion', 'enviar', 'online_cobros', 'cobro', 'workflows', 'equipo',
 ] as const;
 
 // ── EL CATÁLOGO ────────────────────────────────────────────────────────────

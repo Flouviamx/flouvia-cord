@@ -34,6 +34,22 @@ Connect y el negocio elige.
   su propia copia dentro de su webhook: unificarla exige cubrir antes ese camino
   con pruebas, y tocar dinero vivo sin ellas es peor que dos copias declaradas.
 
+- **Prioridad de riel** (`src/lib/payment-rail.ts`, fuente única): donde conviven
+  ambos (MX, BR) Cord Payments es el principal y Mercado Pago la alternativa;
+  donde solo hay Mercado Pago, Ajustes › Cobros lo dice ("Cord Payments no está
+  disponible por el momento") y muestra Mercado Pago primero. `availableRails()`
+  decide qué rieles ve el pagador; `canCollectOnline()` alimenta el link público,
+  el embed y la tarjeta; `onlinePaymentsSetup()` alimenta el onboarding (el paso
+  "Activar cobros en línea" habla de Mercado Pago solo en los países que no
+  tienen Connect, para no pedirles algo imposible).
+- **Doble cobro entre rieles**: si una cotización se paga por Cord Payments y
+  por Mercado Pago a la vez, el webhook lo distingue de un reenvío (mismo
+  `mp_payment_id`) y avisa a Ops y al historial en vez de tragárselo.
+- El `init_point` que devuelve Mercado Pago se valida (`isMpCheckoutUrl`, solo
+  https y dominios de Mercado Pago) antes de mandar al cliente ahí.
+- Solo cotizaciones: la factura hospedada (`/i/[token]`) todavía no ofrece
+  Mercado Pago.
+
 ⚠️ Pendiente operativo: `MP_CLIENT_ID`, `MP_CLIENT_SECRET` y `MP_WEBHOOK_SECRET`
 no están configuradas, y la forma de `/oauth/token`, `/checkout/preferences` y
 del encabezado `x-signature` debe reconfirmarse contra la documentación VIGENTE

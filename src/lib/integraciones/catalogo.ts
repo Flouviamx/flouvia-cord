@@ -12,15 +12,15 @@ export interface IntegrationApp {
     guia: string | null;
 }
 
-export const ZAPIER_INVITE_URL: string | null = null;
+export const ZAPIER_INVITE_URL: string | null = 'https://zapier.com/developer/public-invite/246344/a3e1e697b77f2b9e803233fd998ef461/';
 
 const favicon = (domain: string, size = 64) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=${size}`;
 
 export const INTEGRATION_APPS: IntegrationApp[] = [
     { slug: 'hubspot', nombre: 'HubSpot', dominio: 'hubspot.com', categoria: 'crm', disponible: true, logo: favicon('hubspot.com', 128), tile: true, guia: '/soporte/conectar-hubspot' },
     { slug: 'slack', nombre: 'Slack', dominio: 'slack.com', categoria: 'comunicacion', disponible: true, logo: favicon('slack.com'), tile: false, guia: null },
-    { slug: 'teams', nombre: 'Microsoft Teams', dominio: 'teams.microsoft.com', categoria: 'comunicacion', disponible: true, logo: favicon('teams.microsoft.com', 128), tile: true, guia: '/soporte/conectar-teams' },
-    { slug: 'whatsapp', nombre: 'WhatsApp Business', dominio: 'whatsapp.com', categoria: 'comunicacion', disponible: true, logo: favicon('business.whatsapp.com', 128), tile: true, guia: '/soporte/conectar-whatsapp' },
+    { slug: 'teams', nombre: 'Microsoft Teams', dominio: 'teams.microsoft.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/teams.svg', tile: false, guia: '/soporte/conectar-teams' },
+    { slug: 'whatsapp', nombre: 'WhatsApp Business', dominio: 'whatsapp.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/whatsapp.svg', tile: true, guia: '/soporte/conectar-whatsapp' },
     { slug: 'make', nombre: 'Make', dominio: 'make.com', categoria: 'automatizacion', disponible: true, logo: favicon('make.com', 128), tile: true, guia: '/soporte/conectar-make' },
     { slug: 'zapier', nombre: 'Zapier', dominio: 'zapier.com', categoria: 'automatizacion', disponible: ZAPIER_INVITE_URL !== null, logo: favicon('zapier.com', 128), tile: true, guia: null },
     { slug: 'n8n', nombre: 'n8n', dominio: 'n8n.io', categoria: 'automatizacion', disponible: true, logo: favicon('n8n.io', 128), tile: true, guia: '/soporte/conectar-n8n' },

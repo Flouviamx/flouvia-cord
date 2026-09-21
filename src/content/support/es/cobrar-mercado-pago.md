@@ -5,9 +5,9 @@ category: "Pagos y Depósitos"
 order: 12
 ---
 
-Cord Payments corre sobre Stripe, que no abre cuentas conectadas en Colombia, Argentina, Chile ni Perú. **Mercado Pago** cubre ese hueco: el cliente paga con tarjeta desde el mismo link y el dinero llega a tu cuenta de Mercado Pago.
+Cord Payments todavía no está disponible en Colombia, Argentina, Chile ni Perú. **Mercado Pago** cubre ese hueco: el cliente paga con tarjeta desde el mismo link y el dinero llega a tu cuenta de Mercado Pago.
 
-En México y Brasil puedes usar los dos: Cord Payments y Mercado Pago.
+En México y Brasil puedes usar los dos. Cord Payments es el principal: es el que ve tu cliente primero, y Mercado Pago queda como segunda opción en la misma página de pago. En Ajustes › Cobros, Cord Payments aparece primero y Mercado Pago como alternativa.
 
 ### Conectarlo
 
@@ -19,7 +19,7 @@ Cord guarda las credenciales que autorizaste, cifradas. No toca tu saldo ni pued
 
 ### Cómo se ve para tu cliente
 
-Igual que el resto: abre el link de la cotización, pulsa pagar y sigue al checkout de Mercado Pago. Al terminar regresa a tu link.
+Igual que el resto: abre el link de la cotización, pulsa pagar y, si tu cuenta solo cobra con Mercado Pago, sigue al checkout de Mercado Pago. Si tienes los dos, elige entre pagar en la página de Cord o con Mercado Pago. Al terminar regresa a tu link.
 
 El desglose es el mismo de Cord: si la cotización tiene anticipo y saldo, o cuotas, cada parte se cobra por separado y la cotización se marca pagada cuando no queda nada pendiente.
 

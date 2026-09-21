@@ -74,6 +74,10 @@ export const appStrings = {
         "onb.t.enviar.desc": "Compártela por link, correo o WhatsApp y mira EN VIVO cuándo tu cliente la abre y la aprueba con firma electrónica.",
         "onb.t.online_cobros": "Activa los cobros en línea",
         "onb.t.online_cobros.desc": "Conecta tu cuenta bancaria de forma segura para recibir pagos con tarjeta o SPEI directo a tu banco — incluye anticipos.",
+        "onb.t.online_cobros_mp": "Cobra con Mercado Pago",
+        "onb.t.online_cobros_mp.desc": "Conecta tu cuenta de Mercado Pago para que tus clientes paguen con tarjeta desde el mismo link. Cord Payments todavía no está disponible en tu país; por ahora este es el camino.",
+        "onb.t.workflows": "Automatiza tu seguimiento",
+        "onb.t.workflows.desc": "Crea tu primer workflow para que Cord dé el siguiente paso solo —avisarte, escribirle a tu cliente o crear la tarea— cuando pase algo en una venta.",
         "onb.t.cobro": "Cobra y factura",
         "onb.t.cobro.desc": "Cobra en línea con Cord Payments o márcala como pagada, factura el CFDI 4.0 y cierra el ciclo de venta en Cobranza.",
         "onb.t.equipo": "Invita a tu equipo",
@@ -813,6 +817,8 @@ export const appStrings = {
 
         // Ajustes › Cobros
         "set.cobros.intro": "Recibe pagos de tus cotizaciones en línea. El dinero cae directo a tu cuenta; Cord no toca ni retiene tus fondos.",
+        "set.cobros.cord_no_disponible_titulo": "Cord Payments todavía no está disponible en tu país",
+        "set.cobros.cord_no_disponible_desc": "Por el momento no hay otra forma de cobrar con tarjeta dentro del link que Mercado Pago, arriba. Cord Payments —la cuenta propia de Cord— se abrirá aquí cuando el proveedor habilite tu país. Mientras tanto también puedes recibir transferencia y registrar el pago tú mismo.",
         "set.cobros.pais_titulo": "El cobro en línea todavía no está disponible en tu país",
         "set.cobros.pais_desc": "Cord funciona completo en tu cuenta —cotizas, facturas y le das seguimiento a la cobranza—, pero el pago con tarjeta dentro del link todavía no opera aquí. Mientras tanto puedes recibir transferencia y registrar el pago tú mismo: el saldo del cliente y la cobranza se actualizan igual.",
         "set.cobros.pais_contacto": "Escríbenos si quieres que te avisemos en cuanto se habilite.",
@@ -2796,6 +2802,10 @@ export const appStrings = {
         "wb.salud.desactivado": "Desactivado",
         "wb.salud.fallos_seguidos": "fallos seguidos",
         // Isla de pago del link público (/q)
+        "pay.mp_pagar": "Pagar con Mercado Pago",
+        "pay.mp_o": "o",
+        "pay.mp_redirigiendo": "Redirigiendo a Mercado Pago…",
+        "pay.mp_error": "No pudimos abrir Mercado Pago. Intenta de nuevo.",
         "pay.metodo_pago": "Método de pago",
         "pay.tarjeta": "Tarjeta",
         "pay.elige_metodo": "Elige cómo quieres pagar para continuar.",
@@ -3324,6 +3334,10 @@ export const appStrings = {
         "onb.t.enviar.desc": "Share it by link, email or WhatsApp and watch LIVE when your client opens it and approves with an electronic signature.",
         "onb.t.online_cobros": "Turn on online payments",
         "onb.t.online_cobros.desc": "Securely connect your bank account to receive card payments straight to your bank — deposits included.",
+        "onb.t.online_cobros_mp": "Get paid with Mercado Pago",
+        "onb.t.online_cobros_mp.desc": "Connect your Mercado Pago account so clients can pay by card from the same link. Cord Payments isn't available in your country yet; for now this is the way.",
+        "onb.t.workflows": "Automate your follow-up",
+        "onb.t.workflows.desc": "Create your first workflow so Cord takes the next step on its own — alert you, message the client or create the task — when something happens on a sale.",
         "onb.t.cobro": "Charge and invoice",
         "onb.t.cobro.desc": "Charge online with Cord Payments or mark it as paid, issue the invoice and close the sales cycle in Collections.",
         "onb.t.equipo": "Invite your team",
@@ -4053,6 +4067,8 @@ export const appStrings = {
 
         // Settings › Payments
         "set.cobros.intro": "Accept quote payments online. Funds go straight to your account; Cord never touches or holds them.",
+        "set.cobros.cord_no_disponible_titulo": "Cord Payments isn't available in your country yet",
+        "set.cobros.cord_no_disponible_desc": "For now, Mercado Pago, above, is the only way to take card payments inside the link. Cord Payments — Cord's own account — will open here once the provider enables your country. Meanwhile you can also take a bank transfer and record the payment yourself.",
         "set.cobros.pais_titulo": "Online payments aren't available in your country yet",
         "set.cobros.pais_desc": "Cord works fully in your account — you quote, invoice and chase collections — but card payments inside the link don't operate here yet. In the meantime you can take a bank transfer and record the payment yourself: the client's balance and your collections update just the same.",
         "set.cobros.pais_contacto": "Write to us if you want a heads-up as soon as it's enabled.",
@@ -6036,6 +6052,10 @@ export const appStrings = {
         "wb.salud.desactivado": "Disabled",
         "wb.salud.fallos_seguidos": "failures in a row",
         // Isla de pago del link público (/q)
+        "pay.mp_pagar": "Pay with Mercado Pago",
+        "pay.mp_o": "or",
+        "pay.mp_redirigiendo": "Redirecting to Mercado Pago…",
+        "pay.mp_error": "We could not open Mercado Pago. Try again.",
         "pay.metodo_pago": "Payment method",
         "pay.tarjeta": "Card",
         "pay.elige_metodo": "Choose how you'd like to pay to continue.",

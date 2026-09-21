@@ -6,7 +6,8 @@
 // parametriza automáticamente (a prueba de inyección). Para queries dinámicas
 // usar sql.query('... $1 ...', [params]).
 
-import { neon, type NeonQueryPromise } from '@neondatabase/serverless';
+import { neon, neonConfig, type NeonQueryPromise } from '@neondatabase/serverless';
+import { withConnectRetry } from './db-fetch';
 import { createHash } from 'node:crypto';
 import { currentUserId, currentOrgIdOverride, currentActiveOrgId, memoizedOrgId, memoizeOrgId, isTestModeRequest, isCronScope, isOpsScope, setRequestCurrency, setRequestLocale, setRequestFormatLocale, setRequestTimeZone } from './context';
 import { getCountryProfile } from './countries';
@@ -33,6 +34,10 @@ if (!url) {
 // `npm run build` entero con "Database connection string format for neon()".
 // Con una URL válida pero inservible, el módulo carga y el fallo ocurre al primer
 // query, que es justo lo que el comentario prometía.
+// Un corte de red momentáneo no debe tumbar la página: se reintenta, pero SOLO
+// cuando la petición garantizadamente no salió (ver db-fetch.ts).
+neonConfig.fetchFunction = withConnectRetry((input, init) => fetch(input, init));
+
 export const sql = neon(url || 'postgresql://unset:unset@db.invalid/unset');
 
 // ── Tenancy seam ──────────────────────────────────────────────────────────

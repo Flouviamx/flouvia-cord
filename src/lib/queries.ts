@@ -20,6 +20,7 @@ import { decryptSecret } from './crypto-secret';
 import { publicDocumentUrl } from './public-links';
 import { normalizeCurrency } from './currency';
 import { getCountryProfile, taxKindLabel } from './countries';
+import { onlinePaymentsSetup } from './payment-rail';
 import { fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
 import { calculateDocumentTotals } from '../../packages/elements/src/engine';
 import { dueDateFor, venceDia } from './cobros';
@@ -1851,6 +1852,7 @@ export async function getCotizacionByToken(token: string) {
                o.is_demo as org_es_demo,
                o.stripe_account_id as org_stripe_account_id,
                o.stripe_charges_enabled as org_stripe_charges_enabled,
+               o.mp_charges_enabled as org_mp_charges_enabled,
                o.acepta_tarjeta as org_acepta_tarjeta,
                o.acepta_transferencia as org_acepta_transferencia,
                o.cobro_spei_auto as org_cobro_spei_auto,
@@ -2026,6 +2028,7 @@ export async function getCotizacionByToken(token: string) {
             esDemo: (rows[0].org_es_demo as boolean) ?? false,
             stripeAccountId: (rows[0].org_stripe_account_id as string) || null,
             stripeChargesEnabled: !!rows[0].org_stripe_charges_enabled,
+            mpChargesEnabled: !!rows[0].org_mp_charges_enabled,
             aceptaTarjeta: rows[0].org_acepta_tarjeta !== false,
             aceptaTransferencia: !!rows[0].org_acepta_transferencia,
             cobroSpeiAuto: !!rows[0].org_cobro_spei_auto,
@@ -3849,7 +3852,8 @@ function buildPricingSuggestion(rows: any[], precioLista: number): PricingSugges
 export async function getSetupProgress() {
     const orgId = await getActiveOrgId();
     const [[o]] = await withOrgTx(orgId, sql`select logo_url, email_contacto, telefono, rfc, color_marca,
-        pdf_mensaje, pdf_condiciones, portal_bienvenida, stripe_charges_enabled, created_at,
+        pdf_mensaje, pdf_condiciones, portal_bienvenida, stripe_charges_enabled, mp_charges_enabled,
+        upper(coalesce(country_code, 'MX')) as pais, created_at,
         (sandbox_of is not null) as is_sandbox, is_demo
         from orgs where id = ${orgId}`);
     // Columna nueva: si el deploy corre antes de la migración, no debe tumbar el
@@ -3861,13 +3865,16 @@ export async function getSetupProgress() {
         emittedSteps = Array.isArray(row?.setup_steps_emitted) ? row.setup_steps_emitted as string[] : [];
     } catch { /* columna aún no migrada → analítica de setup en pausa hasta migrar */ }
     // Señales de avance en un solo batch (mismas tablas multi-tenant → seguras bajo RLS).
-    const [[{ np }], [{ nc }], [{ nq }], [{ nsent }], [{ ncobro }], [{ nmem }]] = await withOrgTx(orgId,
+    const [[{ np }], [{ nc }], [{ nq }], [{ nsent }], [{ ncobro }], [{ nmem }], [{ nwf }]] = await withOrgTx(orgId,
         sql`select count(*)::int as np from productos where org_id = ${orgId}`,
         sql`select count(*)::int as nc from clientes where org_id = ${orgId}`,
         sql`select count(*)::int as nq from cotizaciones where org_id = ${orgId}`,
         sql`select count(*)::int as nsent from cotizaciones where org_id = ${orgId} and status <> 'draft'`,
         sql`select count(*)::int as ncobro from cotizaciones where org_id = ${orgId} and status in ('paid','invoiced')`,
         sql`select count(*)::int as nmem from org_members where org_id = ${orgId} and estado in ('activo','invitado')`,
+        // Un workflow ACTIVO, no uno en borrador: el paso dice "automatiza", y un
+        // borrador no automatiza nada.
+        sql`select count(*)::int as nwf from workflows where org_id = ${orgId} and estado = 'active'`,
     );
     // Onboarding tipo Stripe: SECCIONES (grupos) con sub-pasos anidados. Cada
     // grupo representa una etapa del ciclo (preparar → catálogo → vender → cobrar
@@ -3887,6 +3894,16 @@ export async function getSetupProgress() {
         { id: 'equipo',   icon: 'users'  },
     ] as const).map((g) => ({ ...g, label: i18nT(L, `onb.g.${g.id}`), desc: i18nT(L, `onb.g.${g.id}.desc`) }));
 
+    // Cobros en línea: hay DOS rieles y el paso tiene que ser alcanzable en todos
+    // los países. Cord Payments es la prioridad; donde solo existe Mercado Pago
+    // (CO, AR, CL, PE) el paso habla de Mercado Pago —con Stripe nunca se podría
+    // completar— y dice que Cord Payments no está disponible por el momento.
+    // Se da por hecho con CUALQUIER riel activo: el objetivo es poder cobrar en línea.
+    const cobrosSetup = onlinePaymentsSetup(String(o?.pais || 'MX'), {
+        stripe: !!o?.stripe_charges_enabled,
+        mercadopago: !!o?.mp_charges_enabled,
+    });
+
     const tasks = ([
         { group: 'negocio',  id: 'marca',         href: '/app/ajustes/branding',    done: !!(o?.logo_url || o?.email_contacto || o?.telefono) },
         { group: 'negocio',  id: 'fiscal',        href: '/app/ajustes/fiscal',      done: !!o?.rfc },
@@ -3895,10 +3912,15 @@ export async function getSetupProgress() {
         { group: 'catalogo', id: 'clientes',      href: '/app/clientes',            done: Number(nc) > 0 },
         { group: 'venta',    id: 'cotizacion',    href: '/app/cotizaciones/nueva',  done: Number(nq) > 0 },
         { group: 'venta',    id: 'enviar',        href: '/app/cotizaciones',        done: Number(nsent) > 0 },
-        { group: 'dinero',   id: 'online_cobros', href: '/app/ajustes/cobros',      done: !!o?.stripe_charges_enabled },
+        { group: 'dinero',   id: 'online_cobros', href: '/app/ajustes/cobros',      done: cobrosSetup.done, copy: cobrosSetup.copy },
         { group: 'dinero',   id: 'cobro',         href: '/app/cobranza',            done: Number(ncobro) > 0 },
+        { group: 'equipo',   id: 'workflows',     href: '/app/workflows',           done: Number(nwf) > 0 },
         { group: 'equipo',   id: 'equipo',        href: '/app/ajustes/equipo',      done: Number(nmem) > 1 },
-    ] as const).map((t) => ({ ...t, label: i18nT(L, `onb.t.${t.id}`), desc: i18nT(L, `onb.t.${t.id}.desc`) }));
+    ] as const).map((t) => {
+        // El id es de ANALÍTICA y no cambia; el texto puede variar por país.
+        const copy = 'copy' in t ? t.copy : t.id;
+        return { ...t, label: i18nT(L, `onb.t.${copy}`), desc: i18nT(L, `onb.t.${copy}.desc`) };
+    });
 
     // Agrupa los pasos y calcula el sub-progreso de cada sección.
     const groups = groupsDef.map((g) => {

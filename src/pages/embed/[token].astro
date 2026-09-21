@@ -11,6 +11,7 @@ export const prerender = false;
 import EmbedLayout from '../../layouts/EmbedLayout.astro';
 import QuoteCard from '../../components/q/QuoteCard.astro';
 import { getCotizacionByToken } from '../../lib/queries';
+import { canCollectOnline } from '../../lib/payment-rail';
 import { readVisitorId } from '../../lib/public-viewer';
 
 const { token } = Astro.params;
@@ -147,8 +148,7 @@ const pagoDisponible = cobrosQ.length > 0
     ? hayCobroPagable
     : ((q as any).pagoDisponible !== false || anticipoPagable);
 const puedePagar = pagoActivo && pagoDisponible && (
-    ORG.aceptaTransferencia ||
-    ((ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled)
+    ORG.aceptaTransferencia || canCollectOnline({ ...ORG, country: ORG.paisCode })
 );
 ---
 

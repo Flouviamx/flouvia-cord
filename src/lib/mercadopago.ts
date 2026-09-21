@@ -40,6 +40,20 @@ export const mpCredentials = () => {
     return clientId && clientSecret ? { clientId, clientSecret } : null;
 };
 
+/**
+ * ¿La URL es un checkout de Mercado Pago? Es lo que se le entrega al pagador
+ * para que salga de Cord con su dinero, así que se verifica en vez de darla por
+ * buena: https y un dominio de Mercado Pago (incluido su sandbox), nunca un
+ * host arbitrario que el proveedor —o algo entre nosotros y él— devolviera.
+ */
+export function isMpCheckoutUrl(value: string): boolean {
+    let url: URL;
+    try { url = new URL(value); } catch { return false; }
+    if (url.protocol !== 'https:') return false;
+    return /(^|\.)mercadopago\.(com(\.[a-z]{2})?|[a-z]{2})$/i.test(url.hostname)
+        || /(^|\.)mercadolibre\.com(\.[a-z]{2})?$/i.test(url.hostname);
+}
+
 export const mpWebhookSecret = () => import.meta.env.MP_WEBHOOK_SECRET || process.env.MP_WEBHOOK_SECRET || '';
 
 export function mpAuthorizeUrl(redirectUri: string, state: string): string | null {
@@ -203,6 +217,10 @@ export async function createMpPreference(orgId: string, input: PreferenceInput):
         });
         if (status >= 400 || !data?.id || !data?.init_point) {
             log.error('Mercado Pago rechazó la preferencia', { route: 'mercadopago', orgId, status });
+            return { ok: false, reason: 'rechazo' };
+        }
+        if (!isMpCheckoutUrl(String(data.init_point))) {
+            log.error('Mercado Pago devolvió un enlace que no es de Mercado Pago', { route: 'mercadopago', orgId });
             return { ok: false, reason: 'rechazo' };
         }
         return { ok: true, id: String(data.id), initPoint: String(data.init_point) };

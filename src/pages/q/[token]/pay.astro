@@ -8,6 +8,7 @@ import { normalizeCurrency, currencyDecimals } from '../../../lib/currency';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 import type { PayStrings } from '../../../components/q/PaymentIsland';
+import { availableRails } from '../../../lib/payment-rail';
 
 const token = Astro.params.token ?? '';
 const identity = await resolvePublicQuote(token);
@@ -17,6 +18,7 @@ const [rows] = await withOrgTx(identity.orgId, sql`
            coalesce(c.terminos, cl.terminos_default) as terminos,
            o.nombre, o.color_marca, o.logo_url,
            o.stripe_account_id, o.stripe_charges_enabled, o.acepta_tarjeta, o.cobro_spei_auto, o.sandbox_of,
+           o.mp_charges_enabled, upper(coalesce(o.country_code, 'MX')) as pais,
            o.checkout_v2
     from cotizaciones c
     left join clientes cl on cl.id = c.cliente_id
@@ -30,6 +32,20 @@ if (!rows.length) {
 const q = rows[0];
 const orgId = q.org_id as string;
 const yaPagada = q.status === 'paid';
+
+// Rieles de cobro en orden de prioridad: Cord Payments primero. Donde la cuenta
+// tiene los dos se ofrece el primero y el otro queda como alternativa; donde
+// solo hay uno, ese es el único.
+const RAILS = availableRails({
+    stripeAccountId: q.stripe_account_id as string | null,
+    stripeChargesEnabled: !!q.stripe_charges_enabled,
+    aceptaTarjeta: !!q.acepta_tarjeta,
+    cobroSpeiAuto: !!q.cobro_spei_auto,
+    mpChargesEnabled: !!q.mp_charges_enabled,
+    country: q.pais as string,
+});
+const TIENE_CORD = RAILS.includes('cord_payments');
+const TIENE_MP = RAILS.includes('mercadopago');
 
 // La divisa sale de la COTIZACIÓN, no de una constante. Con `currency: 'MXN'`
 // fijo, una venta en euros se le mostraba al comprador como "MX$5,000.00" —con
@@ -110,8 +126,7 @@ if (esRecurrente) {
 } else {
     const pagable = ['approved', 'invoiced'].includes(q.status as string)
         && !q.sandbox_of
-        && !!q.stripe_account_id && !!q.stripe_charges_enabled
-        && (q.acepta_tarjeta || q.cobro_spei_auto);
+        && RAILS.length > 0;
 
     // ── ¿QUÉ se paga hoy? ──
     // Cobros parciales (anticipo/saldo/cuotas): se paga el siguiente cobro pendiente
@@ -166,7 +181,9 @@ if (esRecurrente) {
         ? (L === 'en' ? `of a ${fmtMoney(Number(q.total))} total` : `del total de ${fmtMoney(Number(q.total))}`)
         : '';
     cobroId = nextCobro ? (nextCobro.id as string) : '';
-    metodos = [q.acepta_tarjeta ? (L === 'en' ? 'Card' : 'Tarjeta') : null, q.cobro_spei_auto ? (L === 'en' ? 'SPEI transfer' : 'Transferencia SPEI') : null].filter(Boolean).join(' · ');
+    metodos = TIENE_CORD
+        ? [q.acepta_tarjeta ? (L === 'en' ? 'Card' : 'Tarjeta') : null, q.cobro_spei_auto ? (L === 'en' ? 'SPEI transfer' : 'Transferencia SPEI') : null].filter(Boolean).join(' · ')
+        : (L === 'en' ? 'Card and Mercado Pago' : 'Tarjeta y Mercado Pago');
 }
 ---
 
@@ -211,15 +228,34 @@ if (esRecurrente) {
                         <a class="payp-paid-link" href={`/q/${token}`}>{t(L, 'pay.ver_cotizacion')}</a>
                     </div>
                 ) : (
-                    <div class="payp-element" style={`--theme-color: ${color};`}>
-                        <PaymentIsland client:only="react" token={token} color={color} amountLabel={amount} cobroId={cobroId} subscription={esRecurrente} acceptsCard={!!q.acepta_tarjeta} acceptsSpei={!!q.cobro_spei_auto} checkoutV2={!!q.checkout_v2} strings={PAY_STRINGS} locale={L} />
-                    </div>
+                    <Fragment>
+                        {(TIENE_CORD || esRecurrente) && (
+                            <div class="payp-element" style={`--theme-color: ${color};`}>
+                                <PaymentIsland client:only="react" token={token} color={color} amountLabel={amount} cobroId={cobroId} subscription={esRecurrente} acceptsCard={!!q.acepta_tarjeta} acceptsSpei={!!q.cobro_spei_auto} checkoutV2={!!q.checkout_v2} strings={PAY_STRINGS} locale={L} />
+                            </div>
+                        )}
+                        {/* Mercado Pago: una iguala recurrente necesita la suscripción de
+                            Cord Payments, así que ahí no se ofrece. Con los dos rieles es la
+                            alternativa (Cord Payments va primero); si es el único, es el botón. */}
+                        {TIENE_MP && !esRecurrente && (
+                            <div class:list={['payp-mp', { 'is-secondary': TIENE_CORD }]} style={`--theme-color: ${color};`}>
+                                {TIENE_CORD && <div class="payp-or"><span>{t(L, 'pay.mp_o')}</span></div>}
+                                <button type="button" class="payp-mp-btn" data-mp-pay data-token={token} data-cobro={cobroId}
+                                    data-i18n-loading={t(L, 'pay.mp_redirigiendo')} data-i18n-error={t(L, 'pay.mp_error')}>
+                                    <span data-mp-label>{t(L, 'pay.mp_pagar')}</span>
+                                </button>
+                                <p class="payp-mp-err" data-mp-err role="alert" hidden></p>
+                            </div>
+                        )}
+                    </Fragment>
                 )}
             </section>
 
             <footer class="payp-foot">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                {L === 'en' ? `Encrypted and processed by Cord Payments. ${q.nombre} never sees your card details.` : `Pago cifrado y procesado por Cord Payments. ${q.nombre} nunca ve los datos de tu tarjeta.`}
+                {TIENE_CORD || esRecurrente
+                    ? (L === 'en' ? `Encrypted and processed by Cord Payments. ${q.nombre} never sees your card details.` : `Pago cifrado y procesado por Cord Payments. ${q.nombre} nunca ve los datos de tu tarjeta.`)
+                    : (L === 'en' ? `Encrypted and processed by Mercado Pago. ${q.nombre} never sees your card details.` : `Pago cifrado y procesado por Mercado Pago. ${q.nombre} nunca ve los datos de tu tarjeta.`)}
             </footer>
         </div>
     </main>
@@ -292,6 +328,26 @@ if (esRecurrente) {
     .payp-paid-link { font-size: 0.85rem; font-weight: 600; color: #0a192f; text-decoration: none; margin-top: 0.4rem; }
     .payp-paid-link:hover { text-decoration: underline; }
 
+    /* Mercado Pago: botón principal si es el único riel; alternativa discreta si
+       Cord Payments va primero. */
+    .payp-mp { margin-top: 1.1rem; }
+    .payp-mp-btn {
+        width: 100%; min-height: 52px; padding: 0 1.2rem; border: none; border-radius: 14px;
+        background: var(--theme-color, #0a192f); color: #fff; cursor: pointer;
+        font: inherit; font-size: 0.95rem; font-weight: 600; letter-spacing: -0.01em;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, opacity 0.2s ease;
+        box-shadow: 0 10px 24px -12px rgba(10, 25, 47, 0.5);
+    }
+    .payp-mp-btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .payp-mp-btn:active:not(:disabled) { transform: scale(0.985); }
+    .payp-mp-btn:disabled { opacity: 0.65; cursor: wait; }
+    .payp-mp-btn:focus-visible { outline: 2px solid var(--theme-color, #0a192f); outline-offset: 3px; }
+    .payp-mp.is-secondary .payp-mp-btn { background: #fff; color: #0a192f; box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.16); font-weight: 500; }
+    .payp-mp.is-secondary .payp-mp-btn:hover:not(:disabled) { box-shadow: inset 0 0 0 1px rgba(10, 25, 47, 0.32); }
+    .payp-or { display: flex; align-items: center; gap: 12px; margin: 0.2rem 0 1rem; color: #8a93a2; font-size: 0.75rem; }
+    .payp-or::before, .payp-or::after { content: ''; flex: 1; height: 1px; background: rgba(10, 25, 47, 0.1); }
+    .payp-mp-err { margin: 0.7rem 0 0; font-size: 0.82rem; color: #b42318; text-align: center; }
+
     .payp-foot {
         display: flex; align-items: center; justify-content: center; gap: 7px;
         font-size: 0.72rem; color: #9aa2af; margin-top: 1.5rem; text-align: center;
@@ -310,3 +366,40 @@ if (esRecurrente) {
         .payp-paid-link { min-height: 44px; display: inline-flex; align-items: center; }
     }
 </style>
+
+<script>
+    // Mercado Pago: pide la preferencia y manda al cliente a su checkout.
+    // Los textos vienen del servidor (data-i18n-*), no de un diccionario en el
+    // navegador: quien abre este link es el cliente del vendedor.
+    function initMercadoPago() {
+        const btn = document.querySelector<HTMLButtonElement>('[data-mp-pay]');
+        if (!btn) return;
+        const label = btn.querySelector<HTMLElement>('[data-mp-label]');
+        const err = document.querySelector<HTMLElement>('[data-mp-err]');
+        const original = label?.textContent ?? '';
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            if (label) label.textContent = btn.dataset.i18nLoading || '';
+            if (err) err.hidden = true;
+            try {
+                const res = await fetch(`/api/q/${encodeURIComponent(btn.dataset.token || '')}/mp-preference`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(btn.dataset.cobro ? { cobro_id: btn.dataset.cobro } : {}),
+                });
+                const data = await res.json().catch(() => ({}));
+                // Ya estaba pagado: de vuelta al link, que lo explica.
+                if (data.alreadyPaid) { window.location.href = `/q/${btn.dataset.token}`; return; }
+                if (!res.ok || !data.url) throw new Error(data.error || '');
+                window.location.href = data.url;
+            } catch (e: any) {
+                if (err) { err.textContent = e?.message || btn.dataset.i18nError || ''; err.hidden = false; }
+                if (label) label.textContent = original;
+                btn.disabled = false;
+            }
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initMercadoPago);
+    else initMercadoPago();
+</script>

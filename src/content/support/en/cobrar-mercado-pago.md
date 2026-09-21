@@ -5,9 +5,9 @@ category: "Payments & Deposits"
 order: 12
 ---
 
-Cord Payments runs on Stripe, which does not open connected accounts in Colombia, Argentina, Chile or Peru. **Mercado Pago** covers that gap: the client pays by card from the same link and the money lands in your Mercado Pago account.
+Cord Payments is not available yet in Colombia, Argentina, Chile or Peru. **Mercado Pago** covers that gap: the client pays by card from the same link and the money lands in your Mercado Pago account.
 
-In Mexico and Brazil you can use both: Cord Payments and Mercado Pago.
+In Mexico and Brazil you can use both. Cord Payments is the main one: it is what your client sees first, and Mercado Pago stays as a second option on the same payment page. In Settings › Payments, Cord Payments shows first and Mercado Pago as an alternative.
 
 ### Connecting it
 
@@ -19,7 +19,7 @@ Cord stores the credentials you authorized, encrypted. It does not touch your ba
 
 ### What your client sees
 
-The same as always: they open the quote link, hit pay and continue to Mercado Pago's checkout. When they finish they return to your link.
+The same as always: they open the quote link, hit pay and, if your account only collects with Mercado Pago, continue to Mercado Pago's checkout. If you have both, they choose between paying on Cord's page or with Mercado Pago. When they finish they return to your link.
 
 The breakdown is Cord's own: if the quote has a deposit and a balance, or installments, each part is charged separately and the quote is marked paid when nothing is left.
 

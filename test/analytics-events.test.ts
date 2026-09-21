@@ -108,7 +108,7 @@ describe('enums de la guía de configuración', () => {
     expect([...SETUP_GROUPS]).toEqual(['negocio', 'catalogo', 'venta', 'dinero', 'equipo']);
     expect([...SETUP_TASKS]).toEqual([
       'marca', 'fiscal', 'documento', 'productos', 'clientes',
-      'cotizacion', 'enviar', 'online_cobros', 'cobro', 'equipo',
+      'cotizacion', 'enviar', 'online_cobros', 'cobro', 'workflows', 'equipo',
     ]);
   });
 });

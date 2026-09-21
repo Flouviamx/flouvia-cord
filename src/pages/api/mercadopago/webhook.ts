@@ -18,6 +18,8 @@ import { reqContext } from '../../../lib/context';
 import { log } from '../../../lib/log';
 import { fetchMpPayment, mpSignatureValid, mpWebhookSecret } from '../../../lib/mercadopago';
 import { settleQuoteCobro } from '../../../lib/cobros-settle';
+import { sendOpsAlert } from '../../../lib/ops-alert';
+import { logAudit } from '../../../lib/db';
 
 export const POST: APIRoute = async ({ request, url }) => {
     const secret = mpWebhookSecret();
@@ -102,7 +104,20 @@ async function liquidar(orgId: string, paymentId: string, silencioso = false): P
                set mp_payment_id = ${pago.id}
              where id = ${pago.referencia} and org_id = ${orgId} and mp_payment_id is null
             returning id, cotizacion_id`);
-        if (!reclamado.length) return json({ ok: true, repetida: true });
+        if (!reclamado.length) {
+            // Dos casos que se ven igual y NO lo son. Mercado Pago reenvía la misma
+            // notificación por diseño (mismo pago: no hay nada que hacer), pero un
+            // SEGUNDO pago distinto contra el mismo cobro es dinero que llegó dos
+            // veces y nadie lo iba a notar.
+            const [[actual]] = await withOrgTx(orgId, sql`
+                select mp_payment_id, cotizacion_id from cotizacion_cobros
+                 where id = ${pago.referencia} and org_id = ${orgId}`);
+            if (actual && actual.mp_payment_id && String(actual.mp_payment_id) !== pago.id) {
+                await avisarDobleCobro(orgId, String(actual.cotizacion_id), pago.id, pago.monto, pago.moneda);
+                return json({ ok: true, duplicado: true });
+            }
+            return json({ ok: true, repetida: true });
+        }
 
         const resultado = await settleQuoteCobro(orgId, {
             cotizacionId: String(reclamado[0].cotizacion_id),
@@ -113,8 +128,27 @@ async function liquidar(orgId: string, paymentId: string, silencioso = false): P
             pagoId: pago.id,
             proveedor: 'Mercado Pago',
         });
+        // El cobro ya estaba pagado por OTRO riel (Cord Payments): el dinero de
+        // Mercado Pago llegó igual y hay que devolverlo.
+        if (resultado === 'repetida') {
+            await avisarDobleCobro(orgId, String(reclamado[0].cotizacion_id), pago.id, pago.monto, pago.moneda);
+            return json({ ok: true, duplicado: true });
+        }
         return json({ ok: true, resultado });
     });
+}
+
+/** Un cobro recibió dinero por segunda vez: queda a la vista del vendedor y de operaciones. */
+async function avisarDobleCobro(orgId: string, cotizacionId: string, pagoId: string, monto: number, moneda: string) {
+    await withOrgTx(orgId, sql`
+        insert into eventos (org_id, cotizacion_id, tipo, detalle)
+        values (${orgId}, ${cotizacionId}, 'paid',
+                ${`Se recibió un segundo pago de ${monto.toFixed(2)} ${moneda} por Mercado Pago para un cobro ya pagado; revisa si hay que reembolsarlo`})`);
+    await logAudit(orgId, {
+        accion: 'cotizacion.pago_duplicado', entidad: 'cotizacion', entidad_id: cotizacionId,
+        detalle: `Mercado Pago ${pagoId}`,
+    });
+    await sendOpsAlert('Pago duplicado en Mercado Pago', `Organización ${orgId}; cotización ${cotizacionId}; pago ${pagoId}; ${monto} ${moneda}`);
 }
 
 function json(data: unknown, status = 200) {

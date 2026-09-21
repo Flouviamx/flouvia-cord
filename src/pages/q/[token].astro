@@ -4,6 +4,7 @@ import Layout from '../../layouts/Layout.astro';
 import QuoteCard from '../../components/q/QuoteCard.astro';
 import DemoExperience from '../../components/q/DemoExperience.astro';
 import { getCotizacionByToken } from '../../lib/queries';
+import { canCollectOnline } from '../../lib/payment-rail';
 import { getDemoQuote, isDemoQuoteToken } from '../../lib/demo-quote';
 import { isInternalAnalyticsOrg } from '../../lib/analytics-internal';
 import { resolveViewer } from '../../lib/public-viewer';
@@ -74,8 +75,7 @@ const pagoDisponible = cobrosQ.length > 0
     ? hayCobroPagable
     : ((q as any).pagoDisponible !== false || anticipoPagable);
 const puedePagar = pagoActivo && pagoDisponible && (
-    ORG.aceptaTransferencia ||
-    ((ORG.aceptaTarjeta || ORG.cobroSpeiAuto) && ORG.stripeAccountId && ORG.stripeChargesEnabled)
+    ORG.aceptaTransferencia || canCollectOnline({ ...ORG, country: ORG.paisCode })
 );
 
 const color = ORG.colorMarca || '#0a192f';

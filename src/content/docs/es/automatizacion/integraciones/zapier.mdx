@@ -1,7 +1,7 @@
 ---
 title: "Zapier"
-description: "Estado de la app de Cord para Zapier, qué incluirá y cómo conectar Cord con Zapier hoy usando Webhooks by Zapier y la API de Cord."
-lastUpdated: "2026-09-15"
+description: "Cómo conectar la app de Cord en Zapier, qué disparadores y acciones incluye y cómo usar Webhooks by Zapier y la API de Cord."
+lastUpdated: "2026-09-21"
 reviewedBy: "Producto y operaciones de Cord"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -11,29 +11,33 @@ availablePlans: [Free, Starter, Pro, Scale, Developer]
   <p class="page-subtitle">Conecta Cord con miles de apps sin escribir código.</p>
 </header>
 
-## Estado
+## Conectar la app de Cord
 
-La app de Cord para Zapier está **en camino**. En **Ajustes › Integraciones** aparece como **Próximamente** y todavía no se puede instalar. Cuando esté lista, la tarjeta cambiará a **Con llave de API** y esta página tendrá el paso a paso.
+La app de Cord para Zapier se comparte por invitación. En **Ajustes › Integraciones › Zapier** está el botón **Abrir Cord en Zapier**, que lleva directo a la invitación.
 
-Mientras tanto puedes conectar Zapier con Cord hoy mismo con los módulos genéricos de Zapier, como se explica abajo.
+<Steps>
+1. **Acepta la invitación.** Pulsa **Abrir Cord en Zapier** y acepta. Zapier agrega Cord a tus apps.
+2. **Crea una llave secreta.** En Cord activa el **Modo desarrollador**, abre **API** en el panel de Desarrolladores y crea una llave con permiso de **escritura**.
+3. **Crea un Zap.** Elige Cord como disparador o como acción y pega la llave cuando Zapier la pida.
+</Steps>
 
-## Qué incluirá la app
+## Qué incluye la app
 
-| Tipo | Qué podrás hacer |
+| Tipo | Qué puedes hacer |
 |---|---|
 | **Disparadores instantáneos** | Cotización creada, enviada, abierta, aprobada, rechazada o pagada; pago parcial; factura pagada; cliente nuevo; o cualquier evento de Cord. |
 | **Acciones** | Crear y actualizar clientes, crear y enviar cotizaciones, marcarlas pagadas y crear tareas. |
 | **Búsquedas** | Cliente por correo o nombre, y cotización por folio. |
 
-Así se conectará:
+Cada Zap activo crea su propio webhook en Cord, con un cupo de 100 por organización **aparte** de los endpoints de tu plan, así que tus Zaps no te quitan lugares.
 
-1. Abrir Cord en Zapier y aceptar la invitación.
-2. Crear en Cord una llave secreta con permiso de escritura.
-3. En Zapier, crear un Zap, elegir Cord y pegar la llave cuando la pida.
+<Callout type="info">
+La conexión con llave de API es temporal: estamos migrando la app a autorización con un clic, sin crear llaves. Cuando esté lista, tu Zap seguirá funcionando y solo tendrás que volver a autorizar la cuenta.
+</Callout>
 
-Cada Zap activo creará su propio webhook en Cord, con un cupo de 100 por organización **aparte** de los endpoints de tu plan, así que tus Zaps no te quitarán lugares.
+## Alternativa: Webhooks by Zapier
 
-## Conectar hoy con Webhooks by Zapier
+Si prefieres no instalar la app, puedes conectar Zapier con los módulos genéricos.
 
 Webhooks by Zapier es una app de Zapier disponible en sus planes de pago.
 
