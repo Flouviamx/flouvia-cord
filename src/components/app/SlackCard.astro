@@ -40,8 +40,14 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
         <details class:list={['slk-manual', { solo: !oauth }]} open={!oauth} data-oauth={oauth ? '1' : undefined}>
             {oauth && (
                 <summary>
+                    <span class="slk-sum-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="4" fill="currentColor" fill-opacity="0.12"/><path d="M10.6 13.4a2.4 2.4 0 0 0 3.4 0l2-2a2.4 2.4 0 0 0-3.4-3.4l-.6.6M13.4 10.6a2.4 2.4 0 0 0-3.4 0l-2 2a2.4 2.4 0 0 0 3.4 3.4l.6-.6"/></svg>
+                    </span>
+                    <span class="slk-sum-text">
+                        <strong>{t(L, 'set.integ.slack.manual_titulo')}</strong>
+                        <small>{t(L, 'set.integ.slack.manual_desc')}</small>
+                    </span>
                     <svg class="slk-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
-                    {t(L, 'set.integ.slack.manual_titulo')}
                 </summary>
             )}
             <div class="slk-manual-body">
@@ -70,22 +76,30 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
     .slk-oauth { margin-bottom: 0.4rem; }
     .slk-conn { font-size: 0.9rem; margin: 0 0 0.8rem; color: var(--color-text); }
     .slk-hint { font-size: 0.85rem; margin: 0 0 0.8rem; color: var(--color-text-muted); line-height: 1.45; }
-    .slk-manual { border-top: 1px solid var(--color-border); padding-top: 0.9rem; }
-    .slk-manual.solo { border-top: 0; padding-top: 0; }
+    .slk-manual { margin-top: 0.4rem; border-radius: 16px; background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border); overflow: hidden; }
+    .slk-manual.solo { margin-top: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; }
     .slk-manual > summary {
-        list-style: none; display: inline-flex; align-items: center; gap: 6px;
-        font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted);
-        cursor: pointer; padding: 6px 10px 6px 6px; margin-left: -6px; border-radius: 9px;
-        transition: background 0.15s ease, color 0.15s ease;
+        list-style: none; display: flex; align-items: center; gap: 12px;
+        padding: 14px 16px; cursor: pointer; transition: background 0.15s ease;
     }
     .slk-manual > summary::-webkit-details-marker { display: none; }
-    .slk-manual > summary:hover { background: var(--color-bg-soft); color: var(--color-text); }
-    .slk-manual > summary:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
-    .slk-chev { width: 15px; height: 15px; flex-shrink: 0; transition: transform 0.2s ease; }
+    .slk-manual > summary:hover { background: rgba(10, 25, 47, 0.03); }
+    .slk-manual > summary:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: -2px; border-radius: 16px; }
+    .slk-sum-icon {
+        width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center;
+        color: var(--color-text-muted); background: var(--surface); box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .slk-sum-icon svg { width: 18px; height: 18px; }
+    .slk-sum-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .slk-sum-text strong { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .slk-sum-text small { font-size: 0.76rem; line-height: 1.4; color: var(--color-text-muted); }
+    .slk-chev { width: 15px; height: 15px; flex-shrink: 0; color: var(--color-text-muted); transition: transform 0.2s ease; }
     .slk-manual[open] > summary .slk-chev { transform: rotate(90deg); }
-    .slk-manual-body { display: flex; flex-direction: column; gap: 1.1rem; margin-top: 0.85rem; }
-    .slk-manual.solo .slk-manual-body { margin-top: 0; }
+    .slk-manual[open] > summary { box-shadow: inset 0 -1px 0 var(--color-border); }
+    .slk-manual-body { display: flex; flex-direction: column; gap: 1.1rem; padding: 16px; background: var(--surface); }
+    .slk-manual.solo .slk-manual-body { padding: 0; background: none; }
     .slk-hint-line { line-height: 1.55; }
+    :global(html[data-theme="dark"]) .slk-manual > summary:hover { background: rgba(255, 255, 255, 0.04); }
     @media (prefers-reduced-motion: reduce) { .slk-chev, .slk-manual > summary { transition: none; } }
     .slk-msg { display: block; margin-top: 0.8rem; min-height: 1.2em; }
     .slk-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
