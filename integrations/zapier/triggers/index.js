@@ -5,16 +5,16 @@ const { api } = require('../lib/config');
 const { CLIENT } = require('../lib/samples');
 
 const hooks = [
-    hookTrigger({ key: 'new_event', noun: 'Event', label: 'New Event', description: 'Triggers instantly when the Cord event you choose happens.' }),
-    hookTrigger({ key: 'quote_approved', noun: 'Quote', label: 'Quote Approved', description: 'Triggers instantly when a client approves a quote.', events: ['quote.approved'] }),
-    hookTrigger({ key: 'quote_paid', noun: 'Quote', label: 'Quote Paid', description: 'Triggers instantly when a quote is paid in full.', events: ['quote.paid'] }),
-    hookTrigger({ key: 'quote_sent', noun: 'Quote', label: 'Quote Sent', description: 'Triggers instantly when a quote is sent to a client.', events: ['quote.sent'] }),
-    hookTrigger({ key: 'quote_viewed', noun: 'Quote', label: 'Quote Opened by Client', description: 'Triggers instantly the first time a client opens a quote.', events: ['quote.viewed'] }),
-    hookTrigger({ key: 'quote_created', noun: 'Quote', label: 'Quote Created', description: 'Triggers instantly when a quote is created.', events: ['quote.created'] }),
-    hookTrigger({ key: 'quote_rejected', noun: 'Quote', label: 'Quote Rejected', description: 'Triggers instantly when a client rejects a quote.', events: ['quote.rejected'] }),
-    hookTrigger({ key: 'payment_partial', noun: 'Payment', label: 'Partial Payment Received', description: 'Triggers instantly when a deposit, balance or installment is paid without completing the quote.', events: ['payment.partial'] }),
-    hookTrigger({ key: 'invoice_paid', noun: 'Invoice', label: 'Invoice Paid', description: 'Triggers instantly when an invoice is paid.', events: ['invoice.paid'] }),
-    hookTrigger({ key: 'client_created', noun: 'Client', label: 'New Client', description: 'Triggers instantly when a client is created in Cord.', events: ['client.created'] }),
+    hookTrigger({ key: 'new_event', noun: 'Event', label: 'New Event', description: 'Triggers when the Cord event you choose happens.' }),
+    hookTrigger({ key: 'quote_approved', noun: 'Quote', label: 'Quote Approved', description: 'Triggers when a client approves a quote.', events: ['quote.approved'] }),
+    hookTrigger({ key: 'quote_paid', noun: 'Quote', label: 'Quote Paid', description: 'Triggers when a quote is paid in full.', events: ['quote.paid'] }),
+    hookTrigger({ key: 'quote_sent', noun: 'Quote', label: 'Quote Sent', description: 'Triggers when a quote is sent to a client.', events: ['quote.sent'] }),
+    hookTrigger({ key: 'quote_viewed', noun: 'Quote', label: 'Quote Opened by Client', description: 'Triggers when a client opens a quote for the first time.', events: ['quote.viewed'] }),
+    hookTrigger({ key: 'quote_created', noun: 'Quote', label: 'Quote Created', description: 'Triggers when a quote is created.', events: ['quote.created'] }),
+    hookTrigger({ key: 'quote_rejected', noun: 'Quote', label: 'Quote Rejected', description: 'Triggers when a client rejects a quote.', events: ['quote.rejected'] }),
+    hookTrigger({ key: 'payment_partial', noun: 'Payment', label: 'Partial Payment Received', description: 'Triggers when a deposit, balance or installment is paid without completing the quote.', events: ['payment.partial'] }),
+    hookTrigger({ key: 'invoice_paid', noun: 'Invoice', label: 'Invoice Paid', description: 'Triggers when an invoice is paid.', events: ['invoice.paid'] }),
+    hookTrigger({ key: 'client_created', noun: 'Client', label: 'New Client', description: 'Triggers when a client is created in Cord.', events: ['client.created'] }),
 ];
 
 const clientList = {
