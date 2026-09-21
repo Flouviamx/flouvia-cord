@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-cord",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "n8n node for Cord: quotes, clients, invoices and payments in one link.",
   "license": "MIT",
   "homepage": "https://cordhq.app",
@@ -22,28 +22,30 @@
     "invoices",
     "payments"
   ],
-  "main": "index.js",
+  "main": "dist/index.js",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test test/node.test.mjs",
-    "sync": "node scripts/sync-events.mjs"
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/build.mjs && node --test test/node.test.mjs",
+    "sync": "node scripts/sync-events.mjs",
+    "prepublishOnly": "npm test"
   },
   "files": [
-    "index.js",
-    "lib",
-    "nodes",
-    "credentials"
+    "dist"
   ],
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "credentials/CordApi.credentials.js"
+      "dist/credentials/CordApi.credentials.js"
     ],
     "nodes": [
-      "nodes/Cord/Cord.node.js",
-      "nodes/Cord/CordTrigger.node.js"
+      "dist/nodes/Cord/Cord.node.js",
+      "dist/nodes/Cord/CordTrigger.node.js"
     ]
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
   }
 }
