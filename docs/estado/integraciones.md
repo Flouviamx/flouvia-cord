@@ -80,14 +80,23 @@ de API: cada instancia tiene su propio redirect (`https://<instancia>/rest/oauth
 y el registro de clientes de Cord exige coincidencia exacta; abrirlo a cualquier
 redirect sería justo lo que ese control evita.
 
-El nodo de n8n se publica en npm como `n8n-nodes-cord`. La fuente de verdad es
-`integrations/n8n/`; el repo público `Flouviamx/n8n-nodes-cord` es su espejo, porque
-n8n solo verifica nodos publicados desde GitHub Actions con constancia de origen y
-npm solo la genera desde repositorios públicos. Para publicar una versión: sube la
-versión en `integrations/n8n/package.json`, copia los archivos al espejo (sin
-`scripts/`, que depende del catálogo de Zapier) y empuja un tag igual a la versión;
-`publish.yml` la publica con Trusted Publishing. La 1.0.0 se publicó a mano porque
-npm solo deja configurar Trusted Publishing en un paquete que ya existe.
+El nodo de n8n se publica en npm como `n8n-nodes-cord`. Desde la 1.1.0 está armado
+sobre la plantilla oficial de n8n (`n8n-node new`): TypeScript, lint estricto de
+`@n8n/node-cli` y soporte para n8n Cloud activado (`n8n-node cloud-support`). La fuente
+de verdad es `integrations/n8n/`; el repo público `Flouviamx/n8n-nodes-cord` es su espejo,
+porque n8n solo verifica nodos publicados desde GitHub Actions con constancia de origen y
+npm solo la genera desde repositorios públicos.
+
+- `npm run lint` corre las reglas de n8n; `npm test` compila y verifica paquete, eventos
+  y firma. `nodes/Cord/events.ts` se genera con `npm run sync` desde el catálogo de Zapier.
+- Para publicar: copia al espejo (sin `scripts/sync-events.mjs`, que solo existe aquí) y
+  empuja un tag igual a la versión; `publish.yml` corre `npm run release`, que en CI
+  publica con constancia. Requiere Trusted Publisher configurado en npm.
+- La plantilla de `n8n-node new` 0.48.6 genera los flujos de GitHub sin las expresiones
+  `${{ ... }}` (`NPM_TOKEN: $`, `group: ci-$`); están corregidos a mano.
+- El revisor real (`@n8n/scan-community-package`) analiza la fuente del repo con todas las
+  reglas y, del paquete, solo `.js` y `package.json`. La 1.0.0 se publicó a mano, sin
+  constancia, porque npm solo deja configurar Trusted Publishing en un paquete que ya existe.
 
 ## Cord como proveedor OAuth 2.0
 

@@ -1,0 +1,370 @@
+import type { INodeProperties, INodePropertyOptions, INodeType, INodeTypeDescription } from 'n8n-workflow';
+import { NodeConnectionTypes } from 'n8n-workflow';
+
+export const API = 'https://cordhq.app/api/v1';
+
+const paymentTerms: INodePropertyOptions[] = [
+	{ name: 'Net 30', value: 'net30' },
+	{ name: 'Net 60', value: 'net60' },
+	{ name: 'Upfront', value: 'contado' },
+];
+
+const contactFields = (operation: string, required: boolean): INodeProperties[] => [
+	{
+		displayName: 'Company',
+		name: 'empresa',
+		type: 'string',
+		default: '',
+		required,
+		displayOptions: { show: { resource: ['client'], operation: [operation] } },
+		routing: { send: { type: 'body', property: 'empresa' } },
+	},
+	{
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: { show: { resource: ['client'], operation: [operation] } },
+		options: [
+			{
+				displayName: 'Contact',
+				name: 'contacto',
+				type: 'string',
+				default: '',
+				routing: { send: { type: 'body', property: 'contacto' } },
+			},
+			{
+				displayName: 'Country Code',
+				name: 'country_code',
+				type: 'string',
+				default: '',
+				description: 'Two-letter ISO code, for example MX, US or ES',
+				routing: { send: { type: 'body', property: 'country_code' } },
+			},
+			{
+				displayName: 'Email',
+				name: 'email',
+				type: 'string',
+				placeholder: 'name@email.com',
+				default: '',
+				routing: { send: { type: 'body', property: 'email' } },
+			},
+			{
+				displayName: 'Payment Terms',
+				name: 'terminos',
+				type: 'options',
+				options: paymentTerms,
+				default: 'contado',
+				routing: { send: { type: 'body', property: 'terminos' } },
+			},
+			{
+				displayName: 'Phone',
+				name: 'telefono',
+				type: 'string',
+				default: '',
+				routing: { send: { type: 'body', property: 'telefono' } },
+			},
+			{
+				displayName: 'Tax ID',
+				name: 'rfc',
+				type: 'string',
+				default: '',
+				description: 'Only for clients invoiced in Mexico',
+				routing: { send: { type: 'body', property: 'rfc' } },
+			},
+		],
+	},
+];
+
+export const properties: INodeProperties[] = [
+	{
+		displayName: 'Resource',
+		name: 'resource',
+		type: 'options',
+		noDataExpression: true,
+		default: 'quote',
+		options: [
+			{ name: 'Client', value: 'client' },
+			{ name: 'Quote', value: 'quote' },
+			{ name: 'Task', value: 'task' },
+		],
+	},
+
+	{
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		default: 'create',
+		displayOptions: { show: { resource: ['client'] } },
+		options: [
+			{
+				name: 'Create',
+				value: 'create',
+				action: 'Create a client',
+				routing: { request: { method: 'POST', url: '/clientes' } },
+			},
+			{
+				name: 'Get',
+				value: 'get',
+				action: 'Get a client',
+				routing: { request: { method: 'GET', url: '=/clientes/{{$parameter.clientId}}' } },
+			},
+			{
+				name: 'Search',
+				value: 'search',
+				action: 'Search clients',
+				routing: { request: { method: 'GET', url: '/clientes' } },
+			},
+			{
+				name: 'Update',
+				value: 'update',
+				action: 'Update a client',
+				routing: { request: { method: 'PATCH', url: '=/clientes/{{$parameter.clientId}}' } },
+			},
+		],
+	},
+	{
+		displayName: 'Client ID',
+		name: 'clientId',
+		type: 'string',
+		default: '',
+		required: true,
+		displayOptions: { show: { resource: ['client'], operation: ['update', 'get'] } },
+	},
+	...contactFields('create', true),
+	...contactFields('update', false),
+	{
+		displayName: 'Search',
+		name: 'q',
+		type: 'string',
+		default: '',
+		description: 'Text or email to look for',
+		displayOptions: { show: { resource: ['client'], operation: ['search'] } },
+		routing: { send: { type: 'query', property: 'q' } },
+	},
+
+	{
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		default: 'create',
+		displayOptions: { show: { resource: ['quote'] } },
+		options: [
+			{
+				name: 'Create',
+				value: 'create',
+				action: 'Create a quote',
+				routing: { request: { method: 'POST', url: '/cotizaciones' } },
+			},
+			{
+				name: 'Get',
+				value: 'get',
+				action: 'Get a quote',
+				routing: { request: { method: 'GET', url: '=/cotizaciones/{{$parameter.quoteId}}' } },
+			},
+			{
+				name: 'Mark as Paid',
+				value: 'paid',
+				action: 'Mark a quote as paid',
+				routing: {
+					request: { method: 'POST', url: '=/cotizaciones/{{$parameter.quoteId}}', body: { action: 'paid' } },
+				},
+			},
+			{
+				name: 'Search',
+				value: 'search',
+				action: 'Search quotes',
+				routing: { request: { method: 'GET', url: '/cotizaciones' } },
+			},
+			{
+				name: 'Send',
+				value: 'send',
+				action: 'Send a quote',
+				routing: {
+					request: { method: 'POST', url: '=/cotizaciones/{{$parameter.quoteId}}', body: { action: 'send' } },
+				},
+			},
+		],
+	},
+	{
+		displayName: 'Quote ID',
+		name: 'quoteId',
+		type: 'string',
+		default: '',
+		required: true,
+		displayOptions: { show: { resource: ['quote'], operation: ['get', 'send', 'paid'] } },
+	},
+	{
+		displayName: 'Client ID',
+		name: 'cliente_id',
+		type: 'string',
+		default: '',
+		required: true,
+		displayOptions: { show: { resource: ['quote'], operation: ['create'] } },
+		routing: { send: { type: 'body', property: 'cliente_id' } },
+	},
+	{
+		displayName: 'Items',
+		name: 'items',
+		placeholder: 'Add Item',
+		type: 'fixedCollection',
+		typeOptions: { multipleValues: true },
+		default: {},
+		displayOptions: { show: { resource: ['quote'], operation: ['create'] } },
+		options: [
+			{
+				name: 'item',
+				displayName: 'Item',
+				values: [
+					{ displayName: 'Description', name: 'descripcion', type: 'string', default: '' },
+					{ displayName: 'Quantity', name: 'cantidad', type: 'number', default: 1 },
+					{ displayName: 'Unit Price', name: 'precio_unitario', type: 'number', default: 0 },
+				],
+			},
+		],
+		routing: { send: { type: 'body', property: 'items', value: '={{ $value.item }}' } },
+	},
+	{
+		displayName: 'Additional Fields',
+		name: 'quoteAdditionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: { show: { resource: ['quote'], operation: ['create'] } },
+		options: [
+			{
+				displayName: 'Currency',
+				name: 'base_currency',
+				type: 'string',
+				default: '',
+				description: 'ISO 4217 code, for example MXN or USD. Empty uses your account currency.',
+				routing: { send: { type: 'body', property: 'base_currency' } },
+			},
+			{
+				displayName: 'Notes',
+				name: 'notas',
+				type: 'string',
+				typeOptions: { rows: 3 },
+				default: '',
+				routing: { send: { type: 'body', property: 'notas' } },
+			},
+			{
+				displayName: 'Payment Terms',
+				name: 'terminos',
+				type: 'options',
+				options: paymentTerms,
+				default: 'contado',
+				routing: { send: { type: 'body', property: 'terminos' } },
+			},
+			{
+				displayName: 'Send Now',
+				name: 'send',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to send the quote to the client right away',
+				routing: { send: { type: 'body', property: 'send' } },
+			},
+			{
+				displayName: 'Valid For (Days)',
+				name: 'vigencia_dias',
+				type: 'number',
+				default: 15,
+				routing: { send: { type: 'body', property: 'vigencia_dias' } },
+			},
+		],
+	},
+	{
+		displayName: 'Search',
+		name: 'q',
+		type: 'string',
+		default: '',
+		description: 'Quote number or client to look for',
+		displayOptions: { show: { resource: ['quote'], operation: ['search'] } },
+		routing: { send: { type: 'query', property: 'q' } },
+	},
+	{
+		displayName: 'Payment Method',
+		name: 'payment_method',
+		type: 'string',
+		default: '',
+		description: 'Optional, for example transfer or cash',
+		displayOptions: { show: { resource: ['quote'], operation: ['paid'] } },
+		routing: { send: { type: 'body', property: 'payment_method' } },
+	},
+
+	{
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		default: 'create',
+		displayOptions: { show: { resource: ['task'] } },
+		options: [
+			{
+				name: 'Create',
+				value: 'create',
+				action: 'Create a task',
+				routing: { request: { method: 'POST', url: '/tareas' } },
+			},
+		],
+	},
+	{
+		displayName: 'Title',
+		name: 'titulo',
+		type: 'string',
+		default: '',
+		required: true,
+		displayOptions: { show: { resource: ['task'], operation: ['create'] } },
+		routing: { send: { type: 'body', property: 'titulo' } },
+	},
+	{
+		displayName: 'Additional Fields',
+		name: 'taskAdditionalFields',
+		type: 'collection',
+		placeholder: 'Add Field',
+		default: {},
+		displayOptions: { show: { resource: ['task'], operation: ['create'] } },
+		options: [
+			{
+				displayName: 'Due Date',
+				name: 'due_date',
+				type: 'dateTime',
+				default: '',
+				description: 'Only the date is used',
+				routing: { send: { type: 'body', property: 'due_date' } },
+			},
+			{
+				displayName: 'Quote ID',
+				name: 'cotizacion_id',
+				type: 'string',
+				default: '',
+				routing: { send: { type: 'body', property: 'cotizacion_id' } },
+			},
+		],
+	},
+];
+
+export class Cord implements INodeType {
+	description: INodeTypeDescription = {
+		displayName: 'Cord',
+		name: 'cord',
+		icon: { light: 'file:cord.svg', dark: 'file:cord.dark.svg' },
+		group: ['transform'],
+		version: 1,
+		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
+		description: 'Create and manage clients, quotes and tasks in Cord',
+		defaults: { name: 'Cord' },
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
+		usableAsTool: true,
+		credentials: [{ name: 'cordApi', required: true }],
+		requestDefaults: {
+			baseURL: API,
+			headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+		},
+		properties,
+	};
+}

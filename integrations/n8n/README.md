@@ -22,14 +22,27 @@ The node uses a **Cord API** credential with a secret API key.
   - Quotes: create, get, search, send and mark as paid.
   - Tasks: create.
 
+The **Cord** node can also be used as a tool by AI agents in n8n.
+
 ## Compatibility
 
-Requires n8n 1.x and Node.js 20 or later.
+Requires n8n 1.x. Built with the official `@n8n/node-cli` and eligible for n8n Cloud verification.
 
 ## Resources
 
 - [Connect Cord with n8n](https://cordhq.app/en/support/conectar-n8n)
 - [Cord API documentation](https://cordhq.app/en/docs)
+
+## Development
+
+```bash
+npm install
+npm run lint     # n8n's rules for community nodes, including n8n Cloud eligibility
+npm test         # builds, then checks the package, the event list and the signature
+npm run dev      # runs n8n locally with this node
+```
+
+`npm run release` bumps the version, tags it and pushes; the Publish workflow publishes to npm with provenance.
 
 ## License
 

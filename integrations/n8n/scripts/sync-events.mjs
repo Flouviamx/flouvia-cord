@@ -1,20 +1,26 @@
 // Copia el catálogo de eventos canónico (integrations/zapier/lib/events.js) a
-// este paquete. n8n-nodes-cord se publica a npm por su cuenta, así que no puede
-// requerir un archivo de otra carpeta del repo: lleva su copia, y el test falla
-// si la copia y el original dejan de coincidir.
+// nodes/Cord/events.ts. Solo corre dentro del repo de Cord; el repo público del
+// nodo recibe el archivo ya generado.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { EVENTS } = require('../../zapier/lib/events.js');
 
-const out = `'use strict';\n\n// GENERADO por scripts/sync-events.mjs — no editar a mano.\n// Fuente: integrations/zapier/lib/events.js\nconst EVENTS = ${JSON.stringify(EVENTS, null, 4)};\n\nconst EVENT_KEYS = EVENTS.map((e) => e.key);\nconst EVENT_OPTIONS = EVENTS.map((e) => ({ name: \`\${e.category}: \${e.label}\`, value: e.key }));\n\nmodule.exports = { EVENTS, EVENT_KEYS, EVENT_OPTIONS };\n`;
+const out = `// Generado por scripts/sync-events.mjs desde integrations/zapier/lib/events.js. No editar a mano.
+import type { INodePropertyOptions } from 'n8n-workflow';
 
-const target = new URL('../lib/events.js', import.meta.url);
+export const EVENTS = ${JSON.stringify(EVENTS, null, '\t')};
+
+export const EVENT_KEYS: string[] = EVENTS.map((e) => e.key);
+
+export const EVENT_OPTIONS: INodePropertyOptions[] = EVENTS.map((e) => ({
+\tname: \`\${e.category}: \${e.label}\`,
+\tvalue: e.key,
+}));
+`;
+
+const target = new URL('../nodes/Cord/events.ts', import.meta.url);
 const previo = (() => { try { return readFileSync(target, 'utf8'); } catch { return ''; } })();
-if (previo === out) {
-    console.log('lib/events.js ya está al día');
-} else {
-    writeFileSync(target, out);
-    console.log(`lib/events.js actualizado (${EVENTS.length} eventos)`);
-}
+if (previo === out) console.log('nodes/Cord/events.ts ya está al día');
+else { writeFileSync(target, out); console.log(`nodes/Cord/events.ts actualizado (${EVENTS.length} eventos)`); }

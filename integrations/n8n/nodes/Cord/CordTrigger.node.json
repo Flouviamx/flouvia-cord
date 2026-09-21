@@ -1,0 +1,10 @@
+{
+	"node": "n8n-nodes-cord.cordTrigger",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Sales", "Finance & Accounting"],
+	"resources": {
+		"credentialDocumentation": [{ "url": "https://cordhq.app/en/support/conectar-n8n" }],
+		"primaryDocumentation": [{ "url": "https://github.com/Flouviamx/n8n-nodes-cord#readme" }]
+	}
+}
