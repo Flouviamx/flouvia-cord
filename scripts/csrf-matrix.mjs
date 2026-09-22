@@ -4,6 +4,7 @@ import { isAllowedMutationOrigin, isCsrfExemptWrite } from '../src/lib/csrf-poli
 const uuid = '123e4567-e89b-12d3-a456-426614174000';
 const exempt = [
     ['/api/stripe/webhook', 'POST'],
+    ['/api/mercadopago/webhook', 'POST'],
     ['/api/v1/cotizaciones', 'POST'],
     ['/api/mcp', 'POST'],
     ['/api/mcp/message', 'POST'],

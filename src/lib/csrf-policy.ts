@@ -1,6 +1,8 @@
 const CSRF_EXEMPT_WRITE_EXACT = new Set([
     '/api/stripe/webhook',
     '/api/stripe/webhook/',
+    '/api/mercadopago/webhook',
+    '/api/mercadopago/webhook/',
     '/api/mcp',
     '/api/mcp/',
     '/api/mcp/message',
