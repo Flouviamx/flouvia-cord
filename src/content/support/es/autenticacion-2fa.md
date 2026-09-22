@@ -4,8 +4,6 @@ description: "Configura 2FA y entiende cuándo se exige para continuar."
 category: "Cuenta y Equipo"
 ---
 
-# Configurar autenticación en dos pasos
-
 
 ## Verificación en dos pasos y acceso
 

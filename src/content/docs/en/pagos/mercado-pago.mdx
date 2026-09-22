@@ -1,0 +1,76 @@
+---
+title: "Mercado Pago"
+description: "Collect quotes with your Mercado Pago account: which countries it applies to, how to connect, what your client sees, how payments are confirmed, and what it does not do yet."
+lastUpdated: "2026-09-21"
+reviewedBy: "Cord product and operations"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Mercado Pago</h1>
+  <p class="page-subtitle">Your client pays from the same quote link and the money lands in your Mercado Pago account.</p>
+</header>
+
+## When it applies
+
+Mercado Pago is a second online payment rail, next to [Cord Payments](/en/docs/pagos/onboarding). Its role depends on your account's country:
+
+| Country | Cord Payments | Mercado Pago |
+|---|---|---|
+| Mexico and Brazil | Available, the main rail | Alternative on the same payment page |
+| Colombia, Argentina, Chile, and Peru | Not available | The way to collect online |
+| Other Cord countries | Depends on the country | Not offered |
+
+<Callout type="info">
+The connection is confirmed with Mercado Pago accounts from **Mexico** (September 2026). We are still confirming the other countries: if Mercado Pago shows an error when you authorize your account, write to contacto@cordhq.app and we will tell you how to continue.
+</Callout>
+
+## Connect your account
+
+1. Open **Settings › Payments**. You need the **Payment settings** permission.
+2. On the **Mercado Pago** card, click **Connect Mercado Pago**.
+3. Sign in to Mercado Pago with the account that will receive the money and authorize Cord.
+4. You return to Cord and the card says **Connected**.
+
+Use a business account in your company's name: it is the seller shown at checkout and the one that receives each payment.
+
+Cord stores that access encrypted and renews it on its own. It only uses it to open the payment for your quotes and to read whether it was paid. If Mercado Pago stops accepting the renewal, for example because you removed the authorization from your account, the card asks you to connect again and Mercado Pago is no longer offered to your clients until you do.
+
+To disconnect, click **Disconnect** on the same card. Open payments can no longer be paid with Mercado Pago; paid ones keep their history.
+
+## What your client sees
+
+On the quote's payment page:
+
+- **If Mercado Pago is your only rail**, they see a blue **Pay with Mercado Pago** button with the Mercado Pago logo.
+- **If you also have Cord Payments**, they first see the Cord Payments form and, below a divider, the **Pay with Mercado Pago** button.
+
+Clicking it opens Mercado Pago's checkout, where they pay with the methods Mercado Pago offers in their country. Once the payment is approved, they return to your link.
+
+If the quote has a deposit and balance, or installments, each part is collected separately, and the quote is paid once no balance remains.
+
+## How payments are confirmed
+
+1. Mercado Pago notifies Cord that there was a payment. The notice arrives signed, and Cord rejects any notice whose signature does not match.
+2. Cord **reads the payment in Mercado Pago** with your account's access. It never treats a payment as done based on the notice alone.
+3. Only an **approved** payment marks the charge as paid. A payment that stays pending, such as cash, is marked paid when Mercado Pago approves it.
+4. Mercado Pago resends its notices by design. A repeated notice does not record the payment twice.
+
+If the same charge ends up paid through both Cord Payments and Mercado Pago, Cord notes it in the quote history so you can decide whether to refund one.
+
+## What it does not do yet
+
+| Case | Today |
+|---|---|
+| Cord Invoicing invoices | The invoice link does not offer Mercado Pago; quotes only. |
+| Recurring retainers | Not offered: a retainer needs the Cord Payments subscription. |
+| Refunds | Made from your Mercado Pago account. Cord does not read them yet, so the quote stays marked as paid; note it in its history. |
+| Countries outside Mexico | Being confirmed (see above). |
+
+## FAQ
+
+**Does Cord charge with my account or Cord's?** Yours. The money never goes through Cord.
+
+**What fee does Mercado Pago charge?** Your account's fee, under the terms you have with Mercado Pago. It is deducted from each payment.
+
+**Can I test without charging for real?** Create a quote for a small amount, pay it from another browser without a session using a card that is not from the same Mercado Pago account (Mercado Pago does not let you pay yourself), and refund it afterwards from Mercado Pago.

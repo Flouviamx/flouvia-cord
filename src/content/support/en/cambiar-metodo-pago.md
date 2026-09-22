@@ -4,8 +4,6 @@ description: "What to check before trying a different payment method."
 category: "Payments & Deposits"
 ---
 
-# Switch between SPEI and card
-
 
 ## Choose how to pay
 

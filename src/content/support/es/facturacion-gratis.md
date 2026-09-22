@@ -4,7 +4,6 @@ description: "Diez facturas comerciales al mes, cómo se consume la cuota y cuá
 category: "Cuenta y Equipo"
 ---
 
-# Facturación comercial en Gratis
 
 Gratis incluye **diez facturas comerciales por mes natural (UTC)**,
 independientes de sus cinco envíos de cotizaciones. Por ejemplo, cotizar y después

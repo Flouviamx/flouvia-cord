@@ -5,8 +5,6 @@ category: "Payments & Deposits"
 order: 4
 ---
 
-# Issue refunds to customers
-
 
 Cord lets you initiate a full or partial refund from the payment history without leaving the platform. The tax correction remains a separate step when the payment already has a CFDI.
 

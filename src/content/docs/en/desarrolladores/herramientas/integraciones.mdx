@@ -38,11 +38,11 @@ Cord's OAuth clients are registered by Cord (today: Zapier and Make); there is n
 
 ## n8n
 
-The `n8n-nodes-cord` community node (on npm) uses a secret key in its **Cord API** credential: every n8n install has its own return address, so it does not connect through OAuth. Its trigger registers the webhook when the workflow is activated and verifies the `X-Cord-Signature-V1` signature.
+The `n8n-nodes-cord` community node (on npm) uses a secret key in its **Cord API** credential: every n8n install has its own return address, so it does not connect through OAuth. Its trigger registers the webhook when the workflow is activated and verifies the `X-Cord-Signature-V1` signature. Today it installs on self-hosted n8n; version 1.1.0 was published with provenance and submitted to n8n's verification on September 21, 2026, and it will appear in n8n Cloud once n8n approves it.
 
 Subscriptions created through the API have their own allowance of 100 per organization, separate from the endpoints your team configures. The details are in [Webhooks](/en/docs/desarrolladores/herramientas/webhooks).
 
-If you prefer to build it by hand in Make, the [support guide](/en/support/conectar-make) walks through the Webhooks and HTTP modules.
+If you prefer to build it by hand in Make, the [support guide](https://cordhq.app/en/support/conectar-make) walks through the Webhooks and HTTP modules.
 
 ## API v1 and webhooks
 

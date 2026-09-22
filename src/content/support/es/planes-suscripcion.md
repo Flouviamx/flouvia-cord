@@ -4,8 +4,6 @@ description: "Planes en MXN, USD y EUR, cuotas, excedentes y conservación de tu
 category: "Cuenta y Equipo"
 ---
 
-# Tu suscripción a Cord
-
 
 ## Divisa y precio base
 

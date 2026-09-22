@@ -1,27 +1,37 @@
-Lo que te falta de Make y Zapier
+Lo que falta en integraciones y cobros (21 sep 2026)
 
-Está paso a paso en docs/estado/pendientes-make-zapier.md. En corto:
+El detalle completo, app por app, está en docs/estado/pendientes-integraciones.md.
+La guía paso a paso es la de la página "Integraciones por activar". En corto:
 
-- Zapier (el código ya está subido en Zapier como app privada):
-  a. Subir el logo.
-  b. Invitar a contacto@cordhq.app al equipo como administrador.
-  c. Generar el link de invitación y pasármelo. Ese link no es secreto.
-- Make (el código está listo, pero nunca se subió):
-  a. Crear un token en Perfil › API access con los permisos sdk-apps:read y sdk-apps:write.
-  b. Ponerlo en integrations/make/.env. No lo pegues en el chat.
-  c. Correr npm run deploy, o decirme "ya" y lo corro yo.
-  d. Pasarme el link de invitación de la app.
+Te toca a ti:
+1. Mercado Pago: el pago de prueba de $10 MXN (otro navegador, sin sesión, con una
+   tarjeta que no sea de la cuenta de Flouvia) y reembolsarlo después.
+2. Mercado Pago: renovar el Access Token y el Client Secret en Credenciales de
+   producción, porque se pegaron en el chat. Si renuevas el Client Secret, pégalo en
+   integrations/mercadopago/.env (no en el chat) y avísame para subirlo a Vercel.
+3. Mercado Pago: conseguir una cuenta de vendedor de Colombia o Argentina para probar
+   si la app de México los deja conectar.
+4. Make: probar la conexión con una cuenta de Make de otra zona (us1, eu1 o eu2).
+5. WhatsApp: probar con el número de prueba de Meta desde un workflow.
 
-Con cada link, yo cambio la tarjeta en Cord, reescribo la guía y lo subo.
+Esperando a alguien más:
+- n8n: la verificación de n8n (enviada el 21 sep) para que aparezca en n8n Cloud.
+- WhatsApp con un botón: la verificación de negocio de Flouvia en Meta.
+- HubSpot: 3 instalaciones de cuentas ajenas para publicar la ficha del marketplace.
 
-Apps que te recomiendo además de Shopify
+En pausa por decisión tuya:
+- Teams "Conectar con Microsoft": el código está listo y apagado. Se activa cuando
+  quieras pagar Microsoft 365 (unos 6 USD por usuario al mes) o un cliente con Teams
+  te preste su cuenta para la prueba.
 
-El md tiene la tabla completa con el porqué y el esfuerzo de cada una. El orden que te sugiero:
+Decisión pendiente:
+- Mercado Pago aparece en Ajustes › Cobros también en Brasil, Colombia, Argentina,
+  Chile y Perú, pero solo está confirmado en México. ¿Lo ocultamos fuera de México
+  hasta confirmarlo?
 
-1. Microsoft Teams y n8n: son las más fáciles. Teams reutiliza casi todo lo de Slack.
-2. WhatsApp Business: es la que más ventas cerraría en México y Latinoamérica, pero lleva más trámite con Meta.
-3. QuickBooks o Xero (y Alegra o Holded según el país): para que cada factura y pago de Cord caiga solo en la contabilidad.
-4. Mercado Pago: permitiría cobrar con tarjeta en Colombia, Argentina, Chile y Perú, donde hoy Cord no puede cobrar en línea.
-5. Pipedrive, y más adelante Salesforce, cuando algún cliente grande lo pida.
+Código que falta (lo hago yo cuando digas):
+- Mercado Pago en el link de las facturas, no solo en cotizaciones.
+- Que Cord lea los reembolsos hechos en Mercado Pago.
+- El link de pago en la cobranza con IA cuando el único riel es Mercado Pago.
 
-Una aclaración: en inglés, algunos mensajes de error de los workflows y de HubSpot, y los avisos automáticos de Slack, todavía salen en español dentro de la app. En las guías en inglés viene lo que significa cada uno.
+Opcional, cuando haya clientes usándolas: directorios públicos de Zapier, Make y Slack.

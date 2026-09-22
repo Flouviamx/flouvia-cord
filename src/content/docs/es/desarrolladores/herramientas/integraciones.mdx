@@ -38,11 +38,11 @@ Los clientes OAuth de Cord se registran por Cord (hoy: Zapier y Make); no hay re
 
 ## n8n
 
-El nodo comunitario `n8n-nodes-cord` (en npm) usa una llave secreta en su credencial **Cord API**: cada instalación de n8n tiene su propia dirección de regreso, así que no se conecta por OAuth. Su disparador registra el webhook al activar el flujo y verifica la firma `X-Cord-Signature-V1`.
+El nodo comunitario `n8n-nodes-cord` (en npm) usa una llave secreta en su credencial **Cord API**: cada instalación de n8n tiene su propia dirección de regreso, así que no se conecta por OAuth. Su disparador registra el webhook al activar el flujo y verifica la firma `X-Cord-Signature-V1`. Hoy se instala en n8n autoalojado; la versión 1.1.0 se publicó con constancia de origen y se envió a verificación de n8n el 21 de septiembre de 2026, y aparecerá en n8n Cloud cuando n8n la apruebe.
 
 Las suscripciones creadas por API tienen su propio cupo de 100 por organización, aparte de los endpoints que configura tu equipo. El detalle está en [Webhooks](/docs/desarrolladores/herramientas/webhooks).
 
-Si prefieres armarlo a mano en Make, la [guía de soporte](/soporte/conectar-make) explica los módulos de Webhooks y HTTP paso a paso.
+Si prefieres armarlo a mano en Make, la [guía de soporte](https://cordhq.app/soporte/conectar-make) explica los módulos de Webhooks y HTTP paso a paso.
 
 ## API v1 y webhooks
 

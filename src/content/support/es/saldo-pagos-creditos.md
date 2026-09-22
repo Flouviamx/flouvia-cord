@@ -4,8 +4,6 @@ description: "Pagos parciales, créditos y dinero devuelto."
 category: "Facturación"
 ---
 
-# Entender el saldo de una factura
-
 
 ## Pagos, créditos y reembolsos no son lo mismo
 

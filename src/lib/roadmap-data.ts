@@ -336,12 +336,16 @@ No es una cartera donde Cord retiene tus fondos. La cuenta de cobro pertenece a 
 - **Facturas cobrables:** las facturas de Cord Invoicing también tienen un link público con el saldo vigente y el método disponible para esa cuenta.
 - **Depósitos y conciliación:** el negocio consulta los depósitos enviados a su cuenta bancaria, su estado y la frecuencia configurada.
 - **Operación posterior al cobro:** reembolsos, contracargos y evidencia permanecen ligados a la organización y al movimiento que los originó.
+- **Mercado Pago como segundo riel:** el cliente paga la cotización desde el mismo link con el botón de Mercado Pago y el dinero llega a la cuenta de Mercado Pago del negocio. Cord confirma el pago leyéndolo en Mercado Pago, no confiando en el aviso. En México y Brasil es la alternativa y Cord Payments sigue siendo el principal.
 
 ### Disponibilidad real
-El alta de cobros en línea depende del país de la organización y de los requisitos que devuelve el proveedor. México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia tienen carril de cuenta conectada. Colombia, Argentina, Chile y Perú pueden cotizar, facturar y registrar pagos manuales, pero hoy no muestran el alta de Cord Payments.
+El alta de cobros en línea depende del país de la organización y de los requisitos que devuelve el proveedor. México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia tienen carril de cuenta conectada. En Colombia, Argentina, Chile y Perú, Cord Payments no está disponible y el cobro en línea es con Mercado Pago. Mercado Pago está confirmado con cuentas de México desde el 21 de septiembre de 2026; en Brasil, Colombia, Argentina, Chile y Perú la conexión de cuentas todavía se está confirmando.
 
 ### Qué sigue:
-Mercado Pago como segundo riel de cobro: el cliente paga desde el mismo link y el dinero llega a la cuenta de Mercado Pago del negocio. En Colombia, Argentina, Chile y Perú cubre el hueco de Cord Payments; en México y Brasil queda como alternativa y Cord Payments sigue siendo el principal.
+- Confirmar Mercado Pago con cuentas de Brasil, Colombia, Argentina, Chile y Perú.
+- Mercado Pago en el link de las facturas, no solo en cotizaciones.
+- Que Cord lea los reembolsos hechos en Mercado Pago y ajuste el cobro solo.
+- El link de pago en la cobranza con IA también cuando el único riel es Mercado Pago.
 
 SPEI es un riel mexicano y solo liquida MXN. Fuera de México, Cord no muestra ese método ni aplica una tarifa mexicana a otra divisa.`,
             en: `## From agreement to money, without switching systems
@@ -356,12 +360,16 @@ This is not a wallet where Cord holds your funds. The payment account belongs to
 - **Payable invoices:** Cord Invoicing documents also have a public link with the current balance and the method available to that account.
 - **Payouts and reconciliation:** the business can review payouts sent to its bank account, their status, and the configured schedule.
 - **After-payment operations:** refunds, disputes, and evidence remain tied to the organization and the movement that created them.
+- **Mercado Pago as a second rail:** the client pays the quote from the same link with the Mercado Pago button and the money lands in the business's Mercado Pago account. Cord confirms the payment by reading it in Mercado Pago, not by trusting the notice. In Mexico and Brazil it is the alternative and Cord Payments remains the main rail.
 
 ### Actual availability
-Online payment onboarding depends on the organization's country and on the requirements returned by the provider. Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France have a connected-account rail. Colombia, Argentina, Chile, and Peru can quote, invoice, and record manual payments, but do not currently see Cord Payments onboarding.
+Online payment onboarding depends on the organization's country and on the requirements returned by the provider. Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France have a connected-account rail. In Colombia, Argentina, Chile, and Peru, Cord Payments is not available and online collection runs on Mercado Pago. Mercado Pago is confirmed with Mexican accounts since September 21, 2026; in Brazil, Colombia, Argentina, Chile, and Peru the account connection is still being confirmed.
 
 ### What's next:
-Mercado Pago as a second payment rail: the client pays from the same link and the money lands in the business's Mercado Pago account. In Colombia, Argentina, Chile, and Peru it fills the Cord Payments gap; in Mexico and Brazil it stays as an alternative and Cord Payments remains the main rail.
+- Confirm Mercado Pago with accounts from Brazil, Colombia, Argentina, Chile, and Peru.
+- Mercado Pago on invoice links, not only on quotes.
+- Cord reading refunds made in Mercado Pago and adjusting the charge on its own.
+- The payment link in AI collections also when Mercado Pago is the only rail.
 
 SPEI is a Mexican rail and settles only MXN. Outside Mexico, Cord does not show that method or apply a Mexican fee to another currency.`
         },
@@ -626,12 +634,15 @@ Cord Workflows convierte lo que pasa en una venta en el siguiente paso, sin escr
 - **HubSpot en los dos sentidos:** tus clientes se mantienen al día con Empresas y Contactos, y cada cotización crea y mueve su Deal por el pipeline. Mover un Deal en HubSpot no cambia nada en Cord.
 - **Apps de Cord en Zapier y Make, sin llaves:** se conectan con un clic en una pantalla de Cord, con disparadores instantáneos, acciones y búsquedas. Cada conexión se puede revocar desde Ajustes.
 - **Slack con Añadir a Slack:** eliges el canal en Slack y listo, sin copiar URLs. Teams publica tarjetas en tu canal y WhatsApp le escribe al cliente con tu plantilla aprobada por Meta.
-- **Nodo de Cord para n8n:** se instala desde Community Nodes como **n8n-nodes-cord**, con su disparador que registra el webhook y verifica la firma.
+- **Nodo de Cord para n8n:** se instala desde Community Nodes como **n8n-nodes-cord** en n8n autoalojado, con su disparador que registra el webhook y verifica la firma.
 - **La barra superior muestra tus apps conectadas:** los logos de las que usas y el acceso a las demás, sin salir de la pantalla.
 - **Para quien programa:** API pública v1, webhooks firmados con historial de entregas y servidor MCP.
 
 ### Qué sigue:
-Cord en el directorio público de Zapier y Make, el nodo verificado para n8n Cloud y WhatsApp conectado con un botón, sin pasar por la consola de Meta.`,
+- **n8n Cloud:** el nodo se envió a verificación de n8n el 21 de septiembre de 2026; aparece en n8n Cloud cuando n8n lo apruebe.
+- **Microsoft Teams con tu cuenta:** iniciar sesión con Microsoft y elegir el equipo y el canal en Cord, sin copiar la URL de un flujo.
+- **WhatsApp con un botón:** conectar el número sin pasar por la consola de Meta, cuando Meta apruebe a Cord como proveedor.
+- **Directorios públicos:** Cord en el buscador de Zapier, en el catálogo de Make y en el directorio de apps de Slack.`,
             en: `## Let the close trigger the rest of the work
 Cord Workflows turns what happens in a sale into the next step, without writing code, and the integrations directory connects Cord with the tools your team already uses.
 
@@ -648,12 +659,15 @@ Cord Workflows turns what happens in a sale into the next step, without writing 
 - **HubSpot both ways:** your clients stay in sync with Companies and Contacts, and every quote creates and moves its Deal through the pipeline. Moving a Deal in HubSpot changes nothing in Cord.
 - **Cord apps on Zapier and Make, without keys:** connect with one click on a Cord screen, with instant triggers, actions and searches. Each connection can be revoked from Settings.
 - **Slack with Add to Slack:** pick the channel in Slack and you are done, with no URLs to copy. Teams posts cards to your channel and WhatsApp messages the client with your Meta-approved template.
-- **Cord node for n8n:** install it from Community Nodes as **n8n-nodes-cord**, with a trigger that registers its webhook and verifies the signature.
+- **Cord node for n8n:** install it from Community Nodes as **n8n-nodes-cord** on self-hosted n8n, with a trigger that registers its webhook and verifies the signature.
 - **The top bar shows your connected apps:** the logos of the ones you use and quick access to the rest, without leaving the screen.
 - **For developers:** public API v1, signed webhooks with delivery history, and an MCP server.
 
 ### What's next:
-Cord in the public Zapier and Make directories, the verified node for n8n Cloud, and WhatsApp connected with a button, without going through Meta's console.`
+- **n8n Cloud:** the node was submitted to n8n's verification on September 21, 2026; it appears in n8n Cloud once n8n approves it.
+- **Microsoft Teams with your account:** sign in with Microsoft and pick the team and channel in Cord, without copying a flow URL.
+- **WhatsApp with a button:** connect the number without going through Meta's console, once Meta approves Cord as a provider.
+- **Public directories:** Cord in Zapier's search, Make's catalog, and the Slack app directory.`
         },
         area: 'cotizaciones',
         status: 'live',
@@ -878,7 +892,7 @@ const roadmapEnhancements = {
             en: ['Set the deposit percentage and balance terms.', 'The link explains how much is due today and how much remains.', 'Every charge updates the balance until the quote or invoice is fully settled.']
         },
         scope: { es: 'Admite anticipos, saldos, pagos parciales y cuotas asociadas a una misma venta, con movimientos independientes y trazables.', en: 'Supports deposits, balances, partial payments, and installments tied to one sale, with independent traceable movements.' },
-        boundaries: { es: 'El pago en línea requiere Cord Payments activo. Donde no existe ese carril, el negocio puede registrar pagos manuales sin fingir una conciliación bancaria automática.', en: 'Online payment requires active Cord Payments. Where that rail is unavailable, the business can record manual payments without pretending automatic bank reconciliation.' },
+        boundaries: { es: 'El pago en línea requiere Cord Payments o Mercado Pago activo. Donde no existe ese carril, el negocio puede registrar pagos manuales sin fingir una conciliación bancaria automática.', en: 'Online payment requires active Cord Payments or Mercado Pago. Where that rail is unavailable, the business can record manual payments without pretending automatic bank reconciliation.' },
         related: ['cord-payments', 'pagos-por-milestones', 'clientes-credito']
     },
     'cord-payments': {
@@ -887,8 +901,8 @@ const roadmapEnhancements = {
             es: ['Completa el alta de la empresa, representantes y beneficiarios que pida el proveedor.', 'Activa los métodos disponibles para el país y acepta la tarifa aplicable cuando exista.', 'Cobra desde el link y consulta movimientos, depósitos, reembolsos o contracargos en Cord.'],
             en: ['Complete onboarding for the company, representatives, and owners required by the provider.', 'Enable methods available for the country and accept the applicable fee when one exists.', 'Collect from the link and review movements, payouts, refunds, or disputes in Cord.']
         },
-        scope: { es: 'Tarjeta en MX, US, CA, BR, ES, GB, DE y FR. SPEI solo para operaciones en MXN de cuentas mexicanas.', en: 'Cards in MX, US, CA, BR, ES, GB, DE, and FR. SPEI only for MXN transactions on Mexican accounts.' },
-        boundaries: { es: 'CO, AR, CL y PE permanecen con pagos manuales. Las tarifas de plataforma fuera de MXN no se inventan: mientras no exista una tabla verificada, Cord no aplica una comisión regional.', en: 'CO, AR, CL, and PE remain on manual payments. Platform fees outside MXN are not invented: until a verified schedule exists, Cord does not apply a regional fee.' },
+        scope: { es: 'Tarjeta en MX, US, CA, BR, ES, GB, DE y FR. SPEI solo para operaciones en MXN de cuentas mexicanas. Mercado Pago como segundo riel para cotizaciones, confirmado con cuentas de México.', en: 'Cards in MX, US, CA, BR, ES, GB, DE, and FR. SPEI only for MXN transactions on Mexican accounts. Mercado Pago as a second rail for quotes, confirmed with Mexican accounts.' },
+        boundaries: { es: 'En CO, AR, CL y PE el cobro en línea es con Mercado Pago, cuya conexión en esos países todavía se confirma; mientras tanto, pagos manuales. Mercado Pago no cobra facturas ni igualas. Las tarifas de plataforma fuera de MXN no se inventan: mientras no exista una tabla verificada, Cord no aplica una comisión regional.', en: 'In CO, AR, CL, and PE online collection runs on Mercado Pago, whose connection in those countries is still being confirmed; meanwhile, manual payments. Mercado Pago does not collect invoices or retainers. Platform fees outside MXN are not invented: until a verified schedule exists, Cord does not apply a regional fee.' },
         related: ['anticipos-pagos-parciales', 'cobranza-ia', 'facturas-emitidas']
     },
     'cfdi-automatico': {
@@ -932,13 +946,13 @@ const roadmapEnhancements = {
         related: ['facturas-emitidas', 'verifactu-espana', 'multi-divisa-fx']
     },
     'notificaciones': {
-        family: 'quotes', market: { es: 'Correo y Slack', en: 'Email and Slack' },
+        family: 'quotes', market: { es: 'Correo, Slack y Teams', en: 'Email, Slack and Teams' },
         workflow: {
             es: ['Elige canal y evento en Ajustes.', 'Cord guarda la matriz de preferencias al cambiar cada opción.', 'Cuando ocurre una vista, aprobación, rechazo o pago, envía solo los avisos activados.'],
             en: ['Choose channel and event in Settings.', 'Cord saves the preference matrix as each option changes.', 'When a view, approval, rejection, or payment occurs, it sends only enabled alerts.']
         },
-        scope: { es: 'Siete clases de evento por correo y Slack, con folio, cliente, total y enlace cuando el canal permite ese contexto.', en: 'Seven event classes across email and Slack, with number, customer, total, and link when the channel supports that context.' },
-        boundaries: { es: 'Slack requiere un Incoming Webhook configurado por la organización. Cord no publica eventos desactivados ni sustituye el historial interno por mensajes externos.', en: 'Slack requires an Incoming Webhook configured by the organization. Cord does not publish disabled events or replace internal history with external messages.' },
+        scope: { es: 'Siete clases de evento por correo, Slack y Microsoft Teams, con folio, cliente, total y enlace cuando el canal permite ese contexto.', en: 'Seven event classes across email, Slack, and Microsoft Teams, with number, customer, total, and link when the channel supports that context.' },
+        boundaries: { es: 'Slack se conecta con Añadir a Slack o un webhook propio; Teams, con un flujo de Power Automate del canal. Cord no publica eventos desactivados ni sustituye el historial interno por mensajes externos.', en: 'Slack connects with Add to Slack or your own webhook; Teams, with the channel\'s Power Automate flow. Cord does not publish disabled events or replace internal history with external messages.' },
         related: ['seguimiento-vivo', 'link-publico', 'integraciones-y-flujos']
     },
     'facturas-emitidas': {
@@ -958,7 +972,7 @@ const roadmapEnhancements = {
             en: ['Pick the Cord event that starts the workflow and set visible conditions.', 'Chain actions — task, team email, Slack or a HubSpot note — and publish when ready.', 'Review every run, its result, and the readable error when a step fails.']
         },
         scope: { es: 'Workflows sobre los eventos de Cord y sobre un horario fijo, con consultas, esperas condicionadas y prueba sin publicar; directorio de integraciones con HubSpot, Slack y Teams; escenarios de Make y nodo de n8n; y la plataforma para desarrolladores: API v1, webhooks firmados y MCP.', en: 'Workflows on Cord events and on a fixed schedule, with lookups, conditional waits and a test run before publishing; an integrations directory with HubSpot, Slack and Teams; Make scenarios and an n8n node; and the developer platform: API v1, signed webhooks and MCP.' },
-        boundaries: { es: 'Un workflow no cobra, no emite facturas ni le escribe al cliente: esas acciones siguen siendo decisiones de una persona. Las esperas se cuentan en días y la entrega es al menos una vez, así que cada paso queda en el historial.', en: 'A workflow never charges, issues invoices or writes to the client: those stay human decisions. Waits are counted in days and delivery is at least once, so every step stays in the history.' },
+        boundaries: { es: 'Un workflow no cobra ni emite facturas: esas siguen siendo decisiones de una persona. Cuando le escribe al cliente, lo hace con tu marca o, por WhatsApp, con tu plantilla aprobada por Meta. Las esperas se cuentan en días y la entrega es al menos una vez, así que cada paso queda en el historial.', en: 'A workflow never charges or issues invoices: those stay human decisions. When it writes to the client, it does so with your branding or, on WhatsApp, with your Meta-approved template. Waits are counted in days and delivery is at least once, so every step stays in the history.' },
         related: ['cord-elements', 'notificaciones', 'ciclo-de-vida-contrato']
     },
     'ciclo-de-vida-contrato': {

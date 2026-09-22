@@ -260,17 +260,18 @@ Contrato completo en [`app-rutas.md`](app-rutas.md) y en el historial. Resumen:
   de redacción partiría una causa en dos.
 - Límite de workflows activos como hard limit `active_workflows` (regla 18).
 
-## Pendiente operativo
+## Pendiente
 
-Nada de esto se resuelve con código:
+El checklist completo, app por app (qué está hecho, qué falta, quién y qué lo
+bloquea), vive en [`pendientes-integraciones.md`](pendientes-integraciones.md). En
+corto, al 2026-09-21:
 
-- **HubSpot:** publicar la ficha del marketplace; pide 3 instalaciones activas de
-  cuentas ajenas. La certificación exige 60 y 6 meses listado.
-- **Zapier:** logo, persona administradora con correo del dominio, link de
-  invitación y, para el directorio público, Zaps reales corriendo más una cuenta
-  de prueba para sus revisores.
-- **Make:** token de API con scopes `sdk-apps` para publicar la app, y después
-  pedir la revisión.
-
-Checklist paso a paso de Make y Zapier, y apps recomendadas para después:
-[`pendientes-make-zapier.md`](pendientes-make-zapier.md).
+- **HubSpot:** ficha del marketplace (3 instalaciones ajenas).
+- **Zapier, Make y Slack:** en producción; faltan los directorios públicos y
+  probar Make desde otra zona.
+- **n8n:** esperando la verificación de n8n para n8n Cloud.
+- **Teams:** "Conectar con Microsoft" construido e inactivo hasta tener un Microsoft
+  365 para probarlo y registrar la app en Entra.
+- **WhatsApp:** prueba con número real y registro integrado de Meta.
+- **Mercado Pago:** en producción en México; faltan el pago real de prueba, renovar
+  credenciales expuestas, confirmar otros países, facturas y reembolsos.

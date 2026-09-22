@@ -1,0 +1,76 @@
+---
+title: "Mercado Pago"
+description: "Cobra cotizaciones con tu cuenta de Mercado Pago: en qué países aplica, cómo se conecta, qué ve tu cliente, cómo se confirma el pago y lo que todavía no hace."
+lastUpdated: "2026-09-21"
+reviewedBy: "Producto y operaciones de Cord"
+availablePlans: [Free, Starter, Pro, Scale, Developer]
+---
+
+<header class="content-header">
+  <h1 class="page-title">Mercado Pago</h1>
+  <p class="page-subtitle">Tu cliente paga desde el mismo link de la cotización y el dinero llega a tu cuenta de Mercado Pago.</p>
+</header>
+
+## Cuándo aplica
+
+Mercado Pago es un segundo riel de cobro en línea, junto a [Cord Payments](/docs/pagos/onboarding). Su papel depende del país de tu cuenta:
+
+| País | Cord Payments | Mercado Pago |
+|---|---|---|
+| México y Brasil | Disponible, es el principal | Alternativa en la misma página de pago |
+| Colombia, Argentina, Chile y Perú | No disponible | Es la forma de cobrar en línea |
+| Resto de países de Cord | Según el país | No se ofrece |
+
+<Callout type="info">
+La conexión está confirmada con cuentas de Mercado Pago de **México** (septiembre de 2026). En los demás países la estamos confirmando: si Mercado Pago muestra un error al autorizar tu cuenta, escríbenos a contacto@cordhq.app y te decimos cómo seguir.
+</Callout>
+
+## Conectar tu cuenta
+
+1. Abre **Ajustes › Cobros**. Necesitas el permiso **Configurar cobros**.
+2. En la tarjeta de **Mercado Pago**, pulsa **Conectar Mercado Pago**.
+3. Inicia sesión en Mercado Pago con la cuenta que va a recibir el dinero y autoriza a Cord.
+4. Vuelves a Cord y la tarjeta dice **Conectado**.
+
+Usa una cuenta de negocio a nombre de tu empresa: es la que aparece como vendedor en el checkout y la que recibe cada pago.
+
+Cord guarda ese acceso cifrado y lo renueva solo. Solo lo usa para abrir el cobro de tus cotizaciones y leer si ya se pagó. Si Mercado Pago deja de aceptar la renovación, por ejemplo porque quitaste la autorización desde tu cuenta, la tarjeta vuelve a pedirte que conectes y Mercado Pago deja de ofrecerse a tus clientes hasta entonces.
+
+Para desconectar, pulsa **Desconectar** en la misma tarjeta. Los cobros abiertos dejan de poder pagarse por Mercado Pago; los ya pagados conservan su historial.
+
+## Qué ve tu cliente
+
+En la página de pago de la cotización:
+
+- **Si Mercado Pago es tu único riel**, ve un botón azul **Pagar con Mercado Pago** con el logo de Mercado Pago.
+- **Si también tienes Cord Payments**, primero ve el pago con Cord Payments y debajo, después de un separador, el botón **Pagar con Mercado Pago**.
+
+Al pulsarlo va al checkout de Mercado Pago, donde paga con los métodos que Mercado Pago tenga disponibles en su país. Cuando el pago se aprueba, regresa a tu link.
+
+Si la cotización tiene anticipo y saldo, o cuotas, cada parte se cobra por separado, y la cotización queda pagada cuando ya no hay saldo pendiente.
+
+## Cómo se confirma el pago
+
+1. Mercado Pago avisa a Cord que hubo un pago. El aviso llega firmado y Cord rechaza cualquiera cuya firma no coincida.
+2. Cord **lee el pago en Mercado Pago** con el acceso de tu cuenta. Nunca da un pago por hecho solo por el aviso.
+3. Solo un pago **aprobado** marca el cobro como pagado. Un pago que queda pendiente, por ejemplo en efectivo, se marca pagado cuando Mercado Pago lo aprueba.
+4. Mercado Pago reenvía sus avisos por diseño. Un aviso repetido no registra el pago dos veces.
+
+Si el mismo cobro llega a pagarse por Cord Payments y por Mercado Pago, Cord lo anota en el historial de la cotización para que decidas si reembolsas uno.
+
+## Lo que todavía no hace
+
+| Caso | Hoy |
+|---|---|
+| Facturas de Cord Invoicing | El link de la factura no ofrece Mercado Pago; solo cotizaciones. |
+| Igualas recurrentes | No se ofrece: una iguala necesita la suscripción de Cord Payments. |
+| Reembolsos | Se hacen desde tu cuenta de Mercado Pago. Cord todavía no los lee, así que la cotización sigue marcada como pagada; anótalo en su historial. |
+| Países fuera de México | En confirmación (ver arriba). |
+
+## Preguntas frecuentes
+
+**¿Cord cobra con mi cuenta o con la de Cord?** Con la tuya. El dinero nunca pasa por Cord.
+
+**¿Qué comisión cobra Mercado Pago?** La de tu cuenta, según las condiciones que tengas con Mercado Pago. Se descuenta de cada pago.
+
+**¿Puedo probar sin cobrar de verdad?** Crea una cotización por un importe bajo, págala desde otro navegador sin sesión con una tarjeta que no sea de la misma cuenta de Mercado Pago (Mercado Pago no deja pagarte a ti mismo) y reembólsala después desde Mercado Pago.

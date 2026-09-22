@@ -4,8 +4,6 @@ description: "Qué revisar antes de intentar pagar por otro método."
 category: "Pagos y Depósitos"
 ---
 
-# Cambiar entre SPEI y tarjeta
-
 
 ## Elegir cómo pagar
 

@@ -4,8 +4,6 @@ description: "Distinguish requests, confirmation and credit notes."
 category: "Invoicing"
 ---
 
-# Void invoices and check cancellation status
-
 
 ## Voiding and crediting are different actions
 
