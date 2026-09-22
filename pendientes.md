@@ -8,8 +8,8 @@ Te toca a ti:
 2. Mercado Pago: renovar también el Client Secret (sigue siendo el que se pegó en el
    chat). Pégalo en integrations/mercadopago/.env, no en el chat, y avísame para
    subirlo a Vercel.
-3. Mercado Pago: probar la conexión con el vendedor de prueba de Colombia que ya está
-   creado (TESTUSER1518459834063318184) desde un espacio de Cord con país Colombia.
+3. Hecho: Colombia conectó con la app de México, así que Mercado Pago sirve en los
+   seis países sin crear una app por país.
 4. Make: probar la conexión con una cuenta de Make de otra zona (us1, eu1 o eu2).
 5. WhatsApp: probar con el número de prueba de Meta desde un workflow.
 
@@ -22,11 +22,6 @@ En pausa por decisión tuya:
 - Teams "Conectar con Microsoft": el código está listo y apagado. Se activa cuando
   quieras pagar Microsoft 365 (unos 6 USD por usuario al mes) o un cliente con Teams
   te preste su cuenta para la prueba.
-
-Decisión pendiente:
-- Mercado Pago aparece en Ajustes › Cobros también en Brasil, Colombia, Argentina,
-  Chile y Perú, pero solo está confirmado en México. ¿Lo ocultamos fuera de México
-  hasta confirmarlo?
 
 Código que falta (lo hago yo cuando digas):
 - Mercado Pago en el link de las facturas, no solo en cotizaciones.

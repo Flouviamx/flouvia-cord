@@ -13,7 +13,7 @@ Con **Mercado Pago**, tu cliente paga desde el mismo link de la cotización y el
 - **Colombia, Argentina, Chile y Perú:** Cord Payments todavía no está disponible, así que Mercado Pago es la forma de cobrar en línea.
 - **El resto de los países de Cord:** Mercado Pago no se ofrece.
 
-Hoy la conexión está confirmada con cuentas de Mercado Pago de **México**. En los demás países la estamos confirmando. Si Mercado Pago te muestra un error al autorizar, escríbenos a contacto@cordhq.app.
+En todos esos países cobras con tu propia cuenta de Mercado Pago del país y con los métodos que Mercado Pago ofrezca ahí.
 
 ### Conectarlo
 

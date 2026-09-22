@@ -19,7 +19,7 @@
 | **n8n** | `n8n-nodes-cord` 1.1.0 en npm con constancia de origen | Verificación de n8n para n8n Cloud | n8n | Respuesta de n8n (enviado el 21 sep) |
 | **Microsoft Teams** | Flujo de Power Automate en producción; "Conectar con Microsoft" construido e **inactivo** | Registrar la app en Entra, credenciales, prueba real, verificación de editor | André, luego Claude | Microsoft 365 de pago (decisión: no pagar todavía) |
 | **WhatsApp Business** | Nivel 1 en producción (número + token + plantilla) | Prueba con número real; registro integrado de Meta | André | Verificación de negocio en Meta |
-| **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; probar Colombia; facturas; reembolsos | André, luego Claude | Nada para México |
+| **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; facturas; reembolsos | André, luego Claude | Nada para México |
 
 ---
 
@@ -179,18 +179,12 @@ variables. Meta le cobra cada mensaje de plantilla a la cuenta del negocio.
   sigue válido). Renovarlo en Credenciales de producción, ponerlo en
   `integrations/mercadopago/.env`, actualizar `MP_CLIENT_SECRET` en Vercel y
   redeploy; si no, la renovación de acceso de los vendedores conectados falla.
-- [ ] **Otros países:** la app es de México (MLM). No está confirmado que conecte
-  vendedores de BR, CO, AR, CL o PE; la documentación de Mercado Pago no lo dice.
-  Vendedor de prueba de Colombia creado con el MCP (`TESTUSER1518459834063318184`,
-  user id `3708111760`; contraseña y código de verificación en el panel de
-  Mercado Pago › Cuentas de prueba). Probar: espacio de Cord con país Colombia,
-  ventana de incógnito, Ajustes › Cobros › Conectar Mercado Pago con ese usuario.
-  Si falla, hace falta una app por país y código que elija las credenciales por
-  `site_id`.
-- [ ] **Decisión pendiente:** mientras no se confirme, Ajustes › Cobros ofrece
-  Mercado Pago en esos países (`MERCADOPAGO_COUNTRIES` en `src/lib/countries.ts`).
-  Por la regla 28, un riel que no funciona se dice antes, no se descubre en el
-  proveedor: decidir si se oculta fuera de México hasta confirmar.
+- [x] **Otros países** (21 sep): la app de México conecta vendedores de otro país.
+  Confirmado con el vendedor de prueba de Colombia `TESTUSER1518459834063318184`
+  (user id `3708111760`, creado con el MCP) desde el espacio "Flouvia Colombia".
+  No hace falta una app por país.
+- [ ] Opcional: un pago de prueba en COP desde "Flouvia Colombia" con un comprador
+  de prueba de Colombia y una tarjeta de prueba, para confirmar la divisa.
 - [ ] Opcional: `quality_evaluation` del MCP sobre el primer pago real para ver qué
   pide Mercado Pago mejorar en la integración.
 

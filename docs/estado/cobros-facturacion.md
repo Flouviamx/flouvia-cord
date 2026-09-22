@@ -62,8 +62,9 @@ webhook es CSRF-exento (su credencial es la firma) y se probó en producción co
 firma real: sin firma 401, con firma 200. La búsqueda por preferencia usa
 `cotizacion_cobros.mp_preference_at` (la tabla no tiene `updated_at`).
 Primer pago real de punta a punta confirmado el 2026-09-21 ($10 MXN con tarjeta,
-marcado pagado por el webhook). Sin confirmar: si una aplicación de un país puede
-conectar vendedores de otro país.
+marcado pagado por el webhook). La app de México (MLM) conecta vendedores de otro
+país: se confirmó el mismo día con un vendedor de prueba de Colombia (MCO), así que
+no hace falta una app por país.
 
 ## Facturación internacional — ago 2026
 

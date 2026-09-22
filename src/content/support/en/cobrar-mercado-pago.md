@@ -13,7 +13,7 @@ With **Mercado Pago**, your client pays from the same quote link and the money l
 - **Colombia, Argentina, Chile, and Peru:** Cord Payments is not available yet, so Mercado Pago is the way to collect online.
 - **Other Cord countries:** Mercado Pago is not offered.
 
-Today the connection is confirmed with Mercado Pago accounts from **Mexico**. We are still confirming the other countries. If Mercado Pago shows you an error when you authorize, write to contacto@cordhq.app.
+In all of those countries you collect with your own local Mercado Pago account and with the methods Mercado Pago offers there.
 
 ### Connect it
 
