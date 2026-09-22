@@ -4,6 +4,8 @@ description: "Check balances, download documents and verify payment confirmation
 category: "Invoicing"
 ---
 
+# Use an invoice link
+
 
 An invoice link lets the recipient view that document without creating an
 account or entering the seller's dashboard. It shows the balance, line items,

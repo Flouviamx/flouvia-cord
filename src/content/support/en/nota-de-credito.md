@@ -4,6 +4,8 @@ description: "Apply refunds and bonuses on top of an already-issued invoice."
 category: "Invoicing"
 ---
 
+# Issue a Credit Note
+
 
 A Credit Note is the mechanism to credit the balance of an already-issued invoice without cancelling it outright — for example, when you give a client a post-sale discount, or need to refund part of what was collected. In Mexico it's issued as an Expense-type CFDI, linked by its UUID to the original invoice.
 

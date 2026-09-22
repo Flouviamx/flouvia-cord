@@ -4,6 +4,8 @@ description: "Qué revisar cuando falla una emisión o su correo."
 category: "Facturación"
 ---
 
+# Evitar repetir una factura recurrente
+
 
 ## Protección del periodo programado
 

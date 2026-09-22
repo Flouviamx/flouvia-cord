@@ -14,12 +14,9 @@ export interface Props {
   appliesToMarkets?: string[];
   availablePlans?: string[];
   prerequisites?: string[];
-  seoTitle?: string;
-  alternates?: PublicAlternates;
 }
 
-import { cleanPathname, type PublicAlternates } from "../i18n/utils";
-import { cordOrganization, DOCS_SITE, ORG_ID } from "../lib/seo/entities";
+import { altLangUrls } from "../i18n/utils";
 
 const {
   title,
@@ -30,13 +27,9 @@ const {
   reviewedBy,
   appliesToMarkets = [],
   availablePlans = [],
-  prerequisites = [],
-  seoTitle,
-  alternates
+  prerequisites = []
 } = Astro.props;
-const pagePath = cleanPathname(Astro.url.pathname);
-const esUrl = alternates?.es ?? '/docs';
-const enUrl = alternates?.en ?? '/en/docs';
+const { esUrl, enUrl } = altLangUrls(Astro.url);
 
 const getUrl = (path: string) => lang === 'en' ? `/en${path}` : path;
 const isPage = (path: string) => Astro.url.pathname.replace(/\/$/, '') === getUrl(path);
@@ -59,7 +52,7 @@ const isStartSection = !isPaymentsSection && !isDeveloperSection && !isQuoteSect
 // El canonical público es estable incluso detrás de proxies que entregan la
 // petición interna por HTTP. Usar Astro.url.origin podía publicar `http://` en
 // previews o adaptadores que no preservaran correctamente X-Forwarded-Proto.
-const pageOrigin = DOCS_SITE;
+const pageOrigin = 'https://docs.cordhq.app';
 
 const marketNames: Record<string, { es: string; en: string }> = {
   MX: { es: 'México', en: 'Mexico' },
@@ -78,42 +71,57 @@ const marketNames: Record<string, { es: string; en: string }> = {
 const localizedMarkets = appliesToMarkets.map((code) => marketNames[code]?.[lang] || code);
 const hasEditorialMetadata = Boolean(lastUpdated || reviewedBy || localizedMarkets.length || availablePlans.length || prerequisites.length);
 
-const docsHome = lang === 'en' ? `${pageOrigin}/en/docs` : `${pageOrigin}/docs`;
-const pageUrl = `${pageOrigin}${pagePath}`;
-const isDocsHome = pageUrl === docsHome;
-const docsWebsiteId = `${pageOrigin}/#website`;
+// Build breadcrumb from URL path
+const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
+const breadcrumbItems = pathSegments.map((segment, index) => {
+  const path = '/' + pathSegments.slice(0, index + 1).join('/');
+  const label = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
+  return { name: label, url: `${pageOrigin}${path}` };
+});
 
+// JSON-LD structured data
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
-    cordOrganization(),
+    {
+      "@type": "Organization",
+      "@id": "https://cordhq.app/#organization",
+      "name": "Cord",
+      "url": "https://cordhq.app",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://cordhq.app/imgs/logo-cord-navy.png"
+      },
+      "sameAs": []
+    },
     {
       "@type": "WebSite",
-      "@id": docsWebsiteId,
-      "url": `${pageOrigin}/`,
-      "name": "Cord Docs",
-      "alternateName": lang === "es" ? "Documentación de Cord" : "Cord Documentation",
-      "publisher": { "@id": ORG_ID },
-      "inLanguage": ["es", "en"]
+      "@id": "https://cordhq.app/#website",
+      "url": "https://cordhq.app",
+      "name": "Cord",
+      "publisher": { "@id": "https://cordhq.app/#organization" },
+      "inLanguage": lang === "es" ? "es-MX" : "en-US"
     },
     {
       "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Cord Docs", "item": docsHome },
-        ...(isDocsHome ? [] : [{ "@type": "ListItem", "position": 2, "name": title, "item": pageUrl }])
-      ]
+      "itemListElement": breadcrumbItems.map((item, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "name": item.name,
+        "item": item.url
+      }))
     },
     {
       "@type": "TechArticle",
       "headline": title,
       ...(description ? { "description": description } : {}),
-      "url": pageUrl,
-      "mainEntityOfPage": pageUrl,
-      "inLanguage": lang,
-      "isPartOf": { "@id": docsWebsiteId },
-      "about": { "@id": "https://cordhq.app/#software" },
-      "author": { "@id": ORG_ID },
-      "publisher": { "@id": ORG_ID },
+      "url": `${pageOrigin}${Astro.url.pathname}`,
+      "mainEntityOfPage": `${pageOrigin}${Astro.url.pathname}`,
+      "inLanguage": lang === "es" ? "es-MX" : "en-US",
+      "isPartOf": { "@id": "https://cordhq.app/#website" },
+      "about": { "@id": "https://cordhq.app/#organization" },
+      "author": { "@id": "https://cordhq.app/#organization" },
+      "publisher": { "@id": "https://cordhq.app/#organization" },
       ...(lastUpdated ? { "dateModified": lastUpdated } : {}),
       ...(localizedMarkets.length ? {
         "spatialCoverage": localizedMarkets.map((name) => ({ "@type": "Place", "name": name }))
@@ -127,7 +135,7 @@ const jsonLd = {
 };
 ---
 
-<Layout title={`${seoTitle ?? title} | Cord Docs`} description={description} ogType="article" canonicalOrigin={pageOrigin} alternates={alternates}>
+<Layout title={`${title} | Cord Docs`} description={description} ogType="article" canonicalOrigin={pageOrigin}>
   <style is:inline>
     :root { color-scheme: light; }
     html { lang: ${lang}; }

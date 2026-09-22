@@ -4,6 +4,8 @@ description: "Plans in MXN, USD and EUR, allowances, overage and existing contra
 category: "Account & Team"
 ---
 
+# Your Cord subscription
+
 
 ## Currency and base price
 

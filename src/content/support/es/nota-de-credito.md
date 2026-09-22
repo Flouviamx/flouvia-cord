@@ -4,6 +4,8 @@ description: "Aplica devoluciones y bonificaciones sobre una factura ya emitida.
 category: "Facturación"
 ---
 
+# Emitir una Nota de Crédito
+
 
 Una Nota de Crédito es el mecanismo para acreditar el saldo de una factura ya emitida sin cancelarla por completo — por ejemplo, cuando le haces un descuento post-venta a un cliente, o necesitas devolverle parte de lo cobrado. En México se emite como CFDI de tipo Egreso, vinculado por su UUID a la factura original.
 

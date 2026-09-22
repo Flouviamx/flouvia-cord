@@ -5,6 +5,8 @@ category: "Pagos y Depósitos"
 order: 4
 ---
 
+# Emitir reembolsos a clientes
+
 
 Cord permite iniciar un reembolso total o parcial desde el mismo historial del cobro, sin abandonar la plataforma. La corrección fiscal sigue siendo un paso separado cuando el pago ya tiene CFDI.
 

@@ -4,6 +4,8 @@ description: "Set up 2FA and understand when it is required."
 category: "Account & Team"
 ---
 
+# Configure two-factor authentication
+
 
 ## Two-factor verification and access
 

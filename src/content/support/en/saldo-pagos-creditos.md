@@ -4,6 +4,8 @@ description: "Partial payments, credits and money returned."
 category: "Invoicing"
 ---
 
+# Understand an invoice balance
+
 
 ## Payments, credits and refunds are different
 

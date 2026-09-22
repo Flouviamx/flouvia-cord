@@ -44,7 +44,7 @@ Amounts come formatted with your account's currency and number format, like the 
 
 ## Order matters
 
-A lookup variable exists **from the step that brings it onward**. If you use it before, the workflow will not publish and the editor says so: "The variable `{{vencido_total}}` comes from a lookup that runs after this step."
+A lookup variable exists **from the step that brings it onward**. If you use it before, the workflow will not publish and the editor says so: "The variable {{vencido_total}} comes from a lookup that runs after this step."
 
 The same applies inside a branch: what the **If met** branch looks up does not exist in the **If not met** branch. If both need it, put the lookup **before** the condition.
 

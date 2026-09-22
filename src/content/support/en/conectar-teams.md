@@ -1,7 +1,7 @@
 ---
 title: "Connect Microsoft Teams"
 description: "Get a card in your Teams channel every time a quote is opened, approved or paid, and post from your workflows."
-category: "Account & Team"
+category: "Account and Team"
 order: 22
 ---
 

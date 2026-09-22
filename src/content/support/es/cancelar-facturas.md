@@ -4,6 +4,8 @@ description: "Distingue solicitud, confirmación y nota de crédito."
 category: "Facturación"
 ---
 
+# Anular facturas y consultar cancelaciones
+
 
 ## Anular y acreditar son acciones distintas
 

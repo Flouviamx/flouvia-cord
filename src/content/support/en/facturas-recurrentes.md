@@ -4,6 +4,8 @@ description: "What to check when issuance or email delivery fails."
 category: "Invoicing"
 ---
 
+# Avoid duplicating a recurring invoice
+
 
 ## Scheduled-period protection
 
