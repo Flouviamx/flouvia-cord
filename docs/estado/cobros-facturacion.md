@@ -55,9 +55,14 @@ La forma de la autorización, `/oauth/token`, `/checkout/preferences` y la firma
 3.6.1). La firma omite el tramo `request-id` cuando no llega y no tiene ventana de
 tiempo, igual que el validador oficial: los reintentos llegan con la firma original.
 
-⚠️ Pendiente operativo: `MP_CLIENT_ID`, `MP_CLIENT_SECRET` y `MP_WEBHOOK_SECRET`
-no están configuradas. Sin confirmar: si una aplicación de un país puede conectar
-vendedores de otro país.
+Activado el 2026-09-21: app "Cord" (`7210198958457914`, MLM, Checkout Pro) en la
+cuenta de empresa de Flouvia, creada con el MCP oficial de Mercado Pago; webhook
+de `payment` a `/api/mercadopago/webhook`; las tres variables en Vercel. El
+webhook es CSRF-exento (su credencial es la firma) y se probó en producción con
+firma real: sin firma 401, con firma 200. La búsqueda por preferencia usa
+`cotizacion_cobros.mp_preference_at` (la tabla no tiene `updated_at`).
+Sin confirmar: el primer pago real de punta a punta y si una aplicación de un país
+puede conectar vendedores de otro país.
 
 ## Facturación internacional — ago 2026
 

@@ -7,6 +7,14 @@
 
 ---
 
+**Mercado Pago activado en producción (21 sep 2026)** — la app se creó con el MCP
+oficial de Mercado Pago (`create_application`, `save_webhook`) en vez del panel. La
+prueba del webhook con firma real destapó dos bugs que ningún test cubría: la
+política CSRF rechazaba el POST de Mercado Pago (403, ningún pago se habría
+confirmado) y la búsqueda por preferencia consultaba `cotizacion_cobros.updated_at`,
+que no existe (500). Ahora hay `mp_preference_at`. El botón de pago usa la marca de
+Mercado Pago y la tarjeta de Ajustes › Cobros lleva su logo.
+
 **Documentación de la auditoría y continuación de fase 1 (8 sep 2026)** — se
 actualizan Docs y Ayuda ES/EN con tarifas EUR, límites reales de Starter, pagos
 parciales, saldo, créditos, reembolsos, descargas, recurrencia y 2FA. Se corrigen
