@@ -23,9 +23,13 @@ En pausa por decisión tuya:
   quieras pagar Microsoft 365 (unos 6 USD por usuario al mes) o un cliente con Teams
   te preste su cuenta para la prueba.
 
+Hecho el 22 sep: Mercado Pago cobra facturas (con abono parcial), Cord lee los
+reembolsos hechos en Mercado Pago y la cobranza con IA manda link de pago con
+cualquiera de los dos rieles.
+
 Código que falta (lo hago yo cuando digas):
-- Mercado Pago en el link de las facturas, no solo en cotizaciones.
-- Que Cord lea los reembolsos hechos en Mercado Pago.
-- El link de pago en la cobranza con IA cuando el único riel es Mercado Pago.
+- Igualas recurrentes con Mercado Pago: exige guardar el medio de pago, que su
+  Checkout Pro no hace; necesita su producto de suscripciones.
+- Leer contracargos de Mercado Pago, no solo pagos y reembolsos.
 
 Opcional, cuando haya clientes usándolas: directorios públicos de Zapier, Make y Slack.

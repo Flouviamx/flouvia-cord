@@ -72,6 +72,9 @@ const CONNECT_COUNTRIES = new Set<string>(['MX', 'US', 'CA', 'BR', 'ES', 'GB', '
  */
 const MERCADOPAGO_COUNTRIES = new Set<string>(['MX', 'BR', 'AR', 'CL', 'CO', 'PE']);
 
+/** El mismo set, para las consultas que necesitan leerlo dentro de SQL. */
+export const MERCADOPAGO_COUNTRY_LIST: string[] = [...MERCADOPAGO_COUNTRIES];
+
 /** ¿Hay riel de Mercado Pago en este país? */
 export function supportsMercadoPago(code: string): boolean {
     return MERCADOPAGO_COUNTRIES.has(String(code || '').toUpperCase());

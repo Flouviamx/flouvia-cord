@@ -20,7 +20,9 @@ export const invoiceBalanceQuery = (orgId: string, id: string) => sql`
         where r.org_id = d.org_id and r.currency = d.currency and r.status = 'succeeded'
           and exists (select 1 from documento_pagos p where p.documento_id = d.id
             and p.org_id = d.org_id and p.currency = r.currency
-            and p.stripe_payment_intent_id = r.stripe_payment_intent_id)), 0) as refunded
+            -- El reembolso se liga al pago por el id del riel que cobró.
+            and (p.stripe_payment_intent_id = r.stripe_payment_intent_id
+              or p.mp_payment_id = r.mp_payment_id))), 0) as refunded
     from documentos_fiscales d where d.id = ${id} and d.org_id = ${orgId}
       and d.credit_note_of is null and d.document_type not in ('credit_note', 'cfdi_egreso')
   )
@@ -55,7 +57,7 @@ export async function recordInvoiceRefund(orgId: string, refund: {
   const [, , docs] = await withOrgTx(orgId, invoicePaymentLock(orgId, refund.paymentIntentId), sql`
     insert into documento_reembolsos (org_id, stripe_refund_id, stripe_payment_intent_id, monto, currency, status, provider_event_created)
     values (${orgId}, ${refund.id}, ${refund.paymentIntentId}, ${refund.amount}, ${refund.currency}, ${refund.status}, ${refund.eventCreated})
-    on conflict (org_id, stripe_refund_id) do update set
+    on conflict (org_id, stripe_refund_id) where stripe_refund_id is not null do update set
       status = excluded.status, provider_event_created = excluded.provider_event_created, updated_at = now()
     where documento_reembolsos.stripe_payment_intent_id = excluded.stripe_payment_intent_id
       and documento_reembolsos.currency = excluded.currency and documento_reembolsos.monto = excluded.monto
@@ -63,5 +65,27 @@ export async function recordInvoiceRefund(orgId: string, refund: {
   sql`
     select distinct documento_id from documento_pagos
     where org_id = ${orgId} and stripe_payment_intent_id = ${refund.paymentIntentId} and currency = ${refund.currency}`);
+  for (const doc of docs) await reconcileInvoice(orgId, String(doc.documento_id));
+}
+
+/** Mismo contrato que `recordInvoiceRefund`, con el par de ids de Mercado Pago. */
+export async function recordMpInvoiceRefund(orgId: string, refund: {
+  id: string; paymentId: string; amount: number; currency: string; status: string;
+}) {
+  if (!refund.id || !refund.paymentId || !Number.isFinite(refund.amount) || refund.amount <= 0
+    || !/^[A-Z]{3}$/.test(refund.currency)
+    || !['pending', 'succeeded', 'failed'].includes(refund.status)) {
+    throw new Error('El reembolso no contiene un desglose válido.');
+  }
+  const [, , docs] = await withOrgTx(orgId, invoicePaymentLock(orgId, refund.paymentId), sql`
+    insert into documento_reembolsos (org_id, mp_refund_id, mp_payment_id, monto, currency, status)
+    values (${orgId}, ${refund.id}, ${refund.paymentId}, ${refund.amount}, ${refund.currency}, ${refund.status})
+    on conflict (org_id, mp_refund_id) where mp_refund_id is not null do update set
+      status = excluded.status, updated_at = now()
+    where documento_reembolsos.mp_payment_id = excluded.mp_payment_id
+      and documento_reembolsos.currency = excluded.currency and documento_reembolsos.monto = excluded.monto`,
+  sql`
+    select distinct documento_id from documento_pagos
+    where org_id = ${orgId} and mp_payment_id = ${refund.paymentId} and currency = ${refund.currency}`);
   for (const doc of docs) await reconcileInvoice(orgId, String(doc.documento_id));
 }

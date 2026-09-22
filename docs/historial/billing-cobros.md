@@ -7,6 +7,23 @@
 
 ---
 
+**Mercado Pago cobra facturas y lee sus reembolsos (22 sep 2026)** — el riel dejó de
+ser solo de cotizaciones. Tres cosas que costaron decisión:
+- **Dos ledgers, una notificación.** El webhook recibe un id de pago y nada más, así
+  que `external_reference` lleva el prefijo `fac:` cuando quien cobra es una factura.
+  Sin él, el dinero de una factura se aplicaría al cobro de cotización con ese id.
+- **Idempotencia por índice, no por proveedor.** `documento_pagos.mp_payment_id` es
+  único por documento, y `documento_reembolsos` dejó de tener a Stripe en su llave
+  primaria: ahora cada riel tiene su par de ids y su índice parcial. El saldo se
+  recalcula desde el ledger, así que el reembolso de un riel no toca el pago del otro
+  (probado contra PostgreSQL real en `test/invoice-reconciliation-db.test.ts`).
+- **El reembolso se registra ANTES de mirar el estado del pago.** Un pago devuelto por
+  completo deja de estar `approved` y salía por la puerta de "estado no aprobado" sin
+  que nadie lo anotara.
+De paso, la cobranza con IA manda link de pago con cualquiera de los dos rieles: su
+condición miraba solo Stripe, así que una cuenta de Colombia perseguía su cartera sin
+forma de pagar.
+
 **Mercado Pago activado en producción (21 sep 2026)** — la app se creó con el MCP
 oficial de Mercado Pago (`create_application`, `save_webhook`) en vez del panel. La
 prueba del webhook con firma real destapó dos bugs que ningún test cubría: la

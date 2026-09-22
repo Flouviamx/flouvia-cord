@@ -28,7 +28,7 @@ Cord guarda ese acceso cifrado y lo renueva solo. Solo lo usa para abrir el cobr
 
 ### Cómo se ve para tu cliente
 
-Abre el link de la cotización y pulsa pagar:
+Abre el link de la cotización o de la factura y pulsa pagar:
 
 - Si Mercado Pago es tu única forma de cobro en línea, ve un botón azul **Pagar con Mercado Pago** con el logo de Mercado Pago.
 - Si también tienes Cord Payments, ve primero el pago con Cord Payments y, debajo, el botón **Pagar con Mercado Pago**.
@@ -36,6 +36,10 @@ Abre el link de la cotización y pulsa pagar:
 Al pulsarlo sigue al checkout de Mercado Pago y paga con los métodos que Mercado Pago tenga en su país. Cuando el pago se aprueba, regresa a tu link.
 
 El desglose es el mismo de Cord: si la cotización tiene anticipo y saldo, o cuotas, cada parte se cobra por separado, y la cotización se marca pagada cuando no queda nada pendiente.
+
+### Reembolsos
+
+El reembolso lo haces desde tu cuenta de Mercado Pago, y Cord lo lee solo. Cuando Mercado Pago confirma que el dinero salió, Cord baja el importe pagado, vuelve a dejar el saldo abierto y lo anota en el historial. Un reembolso que todavía está en proceso no cambia el saldo.
 
 ### Cuándo se marca pagada
 
@@ -48,9 +52,8 @@ Mercado Pago avisa a Cord en cuanto hay un pago. Cord revisa la firma del aviso 
 
 ### Lo que todavía no hace
 
-- **Facturas:** el link de una factura de Cord todavía no ofrece Mercado Pago. Por ahora es solo para cotizaciones.
 - **Igualas recurrentes:** no se ofrece, porque una iguala necesita la suscripción de Cord Payments.
-- **Reembolsos:** se hacen desde tu cuenta de Mercado Pago. Cord todavía no los lee, así que la cotización sigue marcada como pagada en Cord. Anota el reembolso en su historial.
+- **Cobro programado:** Mercado Pago cobra cuando tu cliente abre el link; no guarda su tarjeta para cobrarle después.
 
 ### Probarlo antes de cobrar de verdad
 

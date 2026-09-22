@@ -19,7 +19,7 @@ import { emitSetupSteps } from './setup-analytics';
 import { decryptSecret } from './crypto-secret';
 import { publicDocumentUrl } from './public-links';
 import { normalizeCurrency } from './currency';
-import { getCountryProfile, taxKindLabel } from './countries';
+import { getCountryProfile, supportsMercadoPago, taxKindLabel } from './countries';
 import { onlinePaymentsSetup } from './payment-rail';
 import { fmtDate, fmtRelative, intlLocale, money } from './fmt-server';
 import { calculateDocumentTotals } from '../../packages/elements/src/engine';
@@ -1664,7 +1664,8 @@ export async function getFacturaByToken(token: string) {
                    o.stripe_account_id as org_stripe_account_id,
                    o.stripe_charges_enabled as org_stripe_charges_enabled,
                    o.acepta_tarjeta as org_acepta_tarjeta,
-                   o.acepta_transferencia as org_acepta_transferencia
+                   o.acepta_transferencia as org_acepta_transferencia,
+                   o.mp_charges_enabled as org_mp_charges_enabled
               from documentos_fiscales d
               join orgs o on o.id = d.org_id
               left join cotizaciones c on c.id = d.cotizacion_id
@@ -1746,6 +1747,12 @@ export async function getFacturaByToken(token: string) {
             && !!r.org_stripe_charges_enabled,
         aceptaTarjeta: !!r.org_acepta_tarjeta,
         aceptaTransferencia: !!r.org_acepta_transferencia,
+        // El segundo riel: cobrar la factura con Mercado Pago. Exige además que
+        // el país lo tenga, igual que en la cotización (`availableRails`).
+        mercadoPago: saldo > 0
+            && r.lifecycle === 'open'
+            && !!r.org_mp_charges_enabled
+            && supportsMercadoPago(String(r.org_country_code || 'MX')),
         quoteToken: (r.quote_token as string) || null,
         quoteFolio: (r.quote_folio as string) || null,
         simulado: !!(r.provider_data && (r.provider_data as any).simulado === true),

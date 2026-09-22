@@ -20,6 +20,7 @@ import { getCountryProfile } from '../../lib/countries';
 import { currentLocale } from '../../lib/context';
 import { t } from '../../i18n/app';
 import { publicInvoiceGuidance, publicInvoiceContact } from '../../lib/fiscal/public-invoice-state';
+import { MP_MARK } from '../../lib/brand-marks';
 
 const { token } = Astro.params;
 const f = await getFacturaByToken(token ?? '');
@@ -35,8 +36,11 @@ const esVistaPrevia = viewer.rol === 'seller';
 
 const color = /^#[0-9a-fA-F]{6}$/.test(f.org.color ?? '') ? f.org.color! : '#0a192f';
 const pagoActivo = !!(import.meta.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const puedePagar = !f.esNotaCredito && pagoActivo && f.pagoDisponible && f.aceptaTarjeta
-    && !f.esPrueba && !f.simulado && !f.testMode;
+const documentoCobrable = !f.esNotaCredito && !f.esPrueba && !f.simulado && !f.testMode;
+const puedePagar = documentoCobrable && pagoActivo && f.pagoDisponible && f.aceptaTarjeta;
+// Mercado Pago es un riel aparte: no depende de la cuenta de Cord Payments ni
+// de la llave de Stripe, así que una factura de Colombia también se puede pagar.
+const puedePagarMp = documentoCobrable && f.mercadoPago;
 const regresoDePago = Astro.url.searchParams.get('pagado') === '1' && f.estado !== 'paid';
 const guidance = publicInvoiceGuidance({ ...f, puedePagar, regresoDePago }, L);
 const contact = publicInvoiceContact(f.org.email, f.org.telefono, f.numero ?? '', L);
@@ -70,6 +74,8 @@ const titulo = f.tipo === 'proforma' ? 'Proforma' : f.esNotaCredito ? t(L, 'fact
         errorPago: t(L, 'fact.p_error_pago'),
         errorConfirmar: t(L, 'fact.p_error_confirmar'),
         montoInvalido: t(L, 'fact.p_monto_invalido'),
+        mpRedirigiendo: t(L, 'pay.mp_redirigiendo'),
+        mpError: t(L, 'pay.mp_error'),
     })}>
         {esVistaPrevia && (
             <div class="iv-note" role="status">
@@ -223,6 +229,10 @@ const titulo = f.tipo === 'proforma' ? 'Proforma' : f.esNotaCredito ? t(L, 'fact
                             todo" admite. Sin esta opción el cliente que quiere
                             abonar la mitad transfiere por fuera y el ledger de
                             la factura se queda mudo. */}
+                    </Fragment>
+                )}
+                {(puedePagar || puedePagarMp) && !regresoDePago && (
+                    <Fragment>
                         <button type="button" class="iv-pay-partial" id="ivPartial">{t(L, 'fact.p_pagar_otro')}</button>
                         <div class="iv-partial-box" id="ivPartialBox" hidden>
                             <label for="ivMonto">{t(L, 'fact.p_monto_abono')}</label>
@@ -236,6 +246,16 @@ const titulo = f.tipo === 'proforma' ? 'Proforma' : f.esNotaCredito ? t(L, 'fact
                                 <button type="button" class="iv-partial-ok" id="ivPartialOk" style={`background:${color}`}>{t(L, 'fact.p_continuar')}</button>
                             </div>
                         </div>
+                    </Fragment>
+                )}
+                {puedePagarMp && !regresoDePago && (
+                    <Fragment>
+                        {puedePagar && <div class="iv-or"><span>{t(L, 'pay.mp_o')}</span></div>}
+                        <button type="button" class="iv-mp" id="ivMp">
+                            <svg class="iv-mp-logo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d={MP_MARK} /></svg>
+                            <span id="ivMpLabel">{t(L, 'pay.mp_pagar')}</span>
+                            <svg class="iv-mp-go" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 10.5 10.5 5.5M6.5 5.5h4v4"/></svg>
+                        </button>
                     </Fragment>
                 )}
                 <p class="iv-payerr" id="ivPayErr" role="alert" hidden></p>
@@ -608,6 +628,23 @@ const titulo = f.tipo === 'proforma' ? 'Proforma' : f.esNotaCredito ? t(L, 'fact
     .iv-payinner { background: #fff; border-radius: 24px; padding: 28px; box-shadow: 0 1px 2px rgba(10, 25, 47, 0.04); }
     .iv-payinner .iv-pay { margin-top: 20px; }
     .iv-payerr { color: #b42318; font-size: 13px; margin: 12px 0 0; }
+    /* Mercado Pago: su propio riel, con su marca. Cuando convive con Cord
+       Payments va debajo, después del separador. */
+    .iv-or { display: flex; align-items: center; gap: 12px; margin: 14px 0 12px; color: #8a93a2; font-size: 0.75rem; }
+    .iv-or::before, .iv-or::after { content: ''; flex: 1; height: 1px; background: rgba(10, 25, 47, 0.1); }
+    .iv-mp {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        width: 100%; min-height: 50px; border: none; border-radius: 14px; cursor: pointer;
+        background: #009ee3; color: #fff; font: inherit; font-size: 0.94rem; font-weight: 650;
+        box-shadow: 0 12px 28px -14px rgba(0, 120, 180, 0.55);
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, opacity 0.2s ease;
+    }
+    .iv-mp:hover { transform: translateY(-2px); }
+    .iv-mp:active { transform: scale(0.985); }
+    .iv-mp:disabled { opacity: 0.65; cursor: wait; transform: none; }
+    .iv-mp:focus-visible { outline: 2px solid #009ee3; outline-offset: 3px; }
+    .iv-mp-logo { width: 30px; height: 30px; flex-shrink: 0; }
+    .iv-mp-go { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.7; }
 
     @media (max-width: 640px) {
         .iv-main { padding: 24px 14px 60px; }
@@ -628,3 +665,78 @@ const titulo = f.tipo === 'proforma' ? 'Proforma' : f.esNotaCredito ? t(L, 'fact
     }
     @media screen and (max-width: 480px) { .iv-lines-hint { display: block; } }
 </style>
+
+<script>
+    // Mercado Pago: pide la preferencia y manda al cliente a su checkout. Vive
+    // aparte del bloque de Cord Payments porque una factura puede tener SOLO
+    // este riel (Colombia, Argentina, Chile y Perú), y ahí aquel ni se monta.
+    const mpBtn = document.getElementById('ivMp') as HTMLButtonElement | null;
+    if (mpBtn) {
+        const T = JSON.parse((document.querySelector('.iv-main') as HTMLElement)?.dataset.i18n || '{}');
+        const token = location.pathname.split('/').filter(Boolean).pop();
+        const err = document.getElementById('ivPayErr');
+        const label = document.getElementById('ivMpLabel');
+        const montoEl = document.getElementById('ivMonto') as HTMLInputElement | null;
+        const partialBox = document.getElementById('ivPartialBox');
+        const original = label?.textContent ?? '';
+
+        const fallar = (texto: string) => {
+            if (!err) return;
+            err.textContent = texto;
+            err.hidden = false;
+        };
+
+        // Con el abono parcial abierto se cobra ESE importe; el servidor lo
+        // vuelve a acotar contra el saldo real.
+        const irAMercadoPago = async (monto?: number) => {
+            mpBtn.disabled = true;
+            if (label) label.textContent = T.mpRedirigiendo || original;
+            if (err) err.hidden = true;
+            try {
+                const res = await fetch(`/api/i/${token}/mp-preference`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(monto ? { monto } : {}),
+                });
+                const data = await res.json();
+                if (!res.ok || !data?.url) throw new Error(data?.error || T.mpError || '');
+                window.location.href = data.url;
+            } catch (e: any) {
+                fallar(e?.message || T.mpError || '');
+                mpBtn.disabled = false;
+                if (label) label.textContent = original;
+            }
+        };
+
+        mpBtn.addEventListener('click', () => {
+            const abono = partialBox && !partialBox.hidden ? Number(montoEl?.value) : undefined;
+            void irAMercadoPago(Number.isFinite(abono as number) && (abono as number) > 0 ? abono : undefined);
+        });
+
+        // Sin Cord Payments en esta factura, el abono parcial también sale por
+        // Mercado Pago: su botón "Continuar" no tiene otro destino.
+        if (!document.getElementById('ivPay')) {
+            const partialBtn = document.getElementById('ivPartial');
+            partialBtn?.addEventListener('click', () => {
+                if (!partialBox) return;
+                partialBox.hidden = false;
+                partialBtn.setAttribute('hidden', '');
+                montoEl?.focus();
+                montoEl?.select();
+            });
+            document.getElementById('ivPartialCancel')?.addEventListener('click', () => {
+                if (partialBox) partialBox.hidden = true;
+                partialBtn?.removeAttribute('hidden');
+            });
+            document.getElementById('ivPartialOk')?.addEventListener('click', () => {
+                const monto = Number(montoEl?.value);
+                const saldoMax = Number(montoEl?.max || 0);
+                if (!Number.isFinite(monto) || monto <= 0 || (saldoMax > 0 && monto > saldoMax + 1e-9)) {
+                    fallar(T.montoInvalido);
+                    return;
+                }
+                void irAMercadoPago(monto);
+            });
+        }
+    }
+</script>

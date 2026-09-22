@@ -28,7 +28,7 @@ Cord stores that access encrypted and renews it on its own. It only uses it to o
 
 ### What your client sees
 
-They open the quote link and click pay:
+They open the quote or invoice link and click pay:
 
 - If Mercado Pago is your only online payment method, they see a blue **Pay with Mercado Pago** button with the Mercado Pago logo.
 - If you also have Cord Payments, they first see the Cord Payments form and, below it, the **Pay with Mercado Pago** button.
@@ -36,6 +36,10 @@ They open the quote link and click pay:
 Clicking it opens Mercado Pago's checkout, where they pay with the methods Mercado Pago offers in their country. Once the payment is approved, they return to your link.
 
 The breakdown is the same as in Cord: if the quote has a deposit and balance, or installments, each part is collected separately, and the quote is marked paid once nothing is pending.
+
+### Refunds
+
+You issue the refund from your Mercado Pago account, and Cord reads it on its own. Once Mercado Pago confirms the money went out, Cord lowers the paid amount, reopens the balance, and records it in the history. A refund still in process does not change the balance.
 
 ### When it is marked paid
 
@@ -48,9 +52,8 @@ Mercado Pago notifies Cord as soon as there is a payment. Cord checks the notice
 
 ### What it does not do yet
 
-- **Invoices:** a Cord invoice link does not offer Mercado Pago yet. For now it is quotes only.
 - **Recurring retainers:** not offered, because a retainer needs the Cord Payments subscription.
-- **Refunds:** made from your Mercado Pago account. Cord does not read them yet, so the quote stays marked as paid in Cord. Note the refund in its history.
+- **Scheduled charges:** Mercado Pago charges when your client opens the link; it does not store their card to charge later.
 
 ### Test it before charging for real
 

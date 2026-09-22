@@ -1935,6 +1935,7 @@ create table if not exists cobro_reembolsos (
   org_id             uuid not null references orgs(id) on delete cascade,
   cobro_id           uuid not null references cotizacion_cobros(id) on delete cascade,
   stripe_refund_id   text unique,
+  mp_refund_id       text unique,
   amount_cents       int not null check (amount_cents > 0),
   currency           text not null default 'MXN',
   status             text not null default 'pending',
@@ -3472,6 +3473,15 @@ create index if not exists idx_documento_pagos_org on documento_pagos(org_id);
 -- Idempotencia del webhook de Stripe: un PaymentIntent se aplica UNA vez a una
 -- factura. Sin esto, un reintento de Stripe (que reintenta por diseño) cobraría
 -- dos veces contra el saldo y dejaría la factura en `paid` con la mitad cobrada.
+-- Mercado Pago paga facturas por su propio carril: su idempotencia es el id del
+-- pago del proveedor, no el PaymentIntent de Stripe.
+alter table documentos_fiscales add column if not exists mp_preference_id text;
+alter table documentos_fiscales add column if not exists mp_preference_at timestamptz;
+
+alter table documento_pagos add column if not exists mp_payment_id text;
+create unique index if not exists uq_documento_pagos_mp
+  on documento_pagos(documento_id, mp_payment_id) where mp_payment_id is not null;
+
 create unique index if not exists uq_documento_pagos_pi
   on documento_pagos(documento_id, stripe_payment_intent_id)
   where stripe_payment_intent_id is not null;
@@ -5365,6 +5375,23 @@ create table if not exists documento_reembolsos (
   primary key (org_id, stripe_refund_id)
 );
 create index if not exists idx_documento_reembolsos_pi on documento_reembolsos(org_id, stripe_payment_intent_id);
+-- Un reembolso llega por el riel que cobró: Stripe trae refund + PaymentIntent y
+-- Mercado Pago su propio par. La llave primaria original solo cabía para Stripe.
+alter table documento_reembolsos add column if not exists mp_refund_id text;
+alter table documento_reembolsos add column if not exists mp_payment_id text;
+alter table documento_reembolsos drop constraint if exists documento_reembolsos_pkey;
+alter table documento_reembolsos alter column stripe_refund_id drop not null;
+alter table documento_reembolsos alter column stripe_payment_intent_id drop not null;
+create unique index if not exists uq_documento_reembolsos_stripe
+  on documento_reembolsos(org_id, stripe_refund_id) where stripe_refund_id is not null;
+create unique index if not exists uq_documento_reembolsos_mp
+  on documento_reembolsos(org_id, mp_refund_id) where mp_refund_id is not null;
+alter table documento_reembolsos drop constraint if exists documento_reembolsos_proveedor_ck;
+alter table documento_reembolsos add constraint documento_reembolsos_proveedor_ck
+  check ((stripe_refund_id is not null and stripe_payment_intent_id is not null)
+      or (mp_refund_id is not null and mp_payment_id is not null));
+create index if not exists idx_documento_reembolsos_mp on documento_reembolsos(org_id, mp_payment_id);
+
 alter table documento_reembolsos enable row level security;
 alter table documento_reembolsos force row level security;
 drop policy if exists rls_documento_reembolsos on documento_reembolsos;

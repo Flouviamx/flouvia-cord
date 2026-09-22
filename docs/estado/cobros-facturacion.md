@@ -47,8 +47,21 @@ Connect y el negocio elige.
   `mp_payment_id`) y avisa a Ops y al historial en vez de tragárselo.
 - El `init_point` que devuelve Mercado Pago se valida (`isMpCheckoutUrl`, solo
   https y dominios de Mercado Pago) antes de mandar al cliente ahí.
-- Solo cotizaciones: la factura hospedada (`/i/[token]`) todavía no ofrece
-  Mercado Pago.
+- **Los dos documentos.** La cotización cobra "rebanadas" (anticipo, saldo,
+  cuotas) y la factura hospedada (`/i/[token]`) cobra el saldo del documento,
+  con abono parcial. Son dos ledgers y el webhook los distingue por el prefijo
+  `fac:` de `external_reference` (`MP_INVOICE_REF`): sin él, el dinero de una
+  factura se aplicaría al cobro de una cotización con el mismo id. La
+  idempotencia de la factura es `documento_pagos.mp_payment_id`, índice único,
+  no un `if`; el webhook encuentra a la organización dueña por
+  `documentos_fiscales.mp_preference_at`.
+- **Reembolsos leídos, no inventados.** Un reembolso hecho en Mercado Pago llega
+  como una notificación más del mismo pago; se registra ANTES de mirar el estado,
+  porque un pago devuelto por completo deja de estar `approved` y saldría sin que
+  nadie lo anotara. Cotización → `cobro_reembolsos.mp_refund_id`; factura →
+  `documento_reembolsos` con su par `mp_refund_id`/`mp_payment_id`, que
+  `invoiceBalanceQuery` liga al pago por el id del riel que cobró. Solo un
+  reembolso `approved` baja el saldo: uno en proceso todavía puede caerse.
 
 La forma de la autorización, `/oauth/token`, `/checkout/preferences` y la firma
 `x-signature` se verificó el 2026-09-21 contra el SDK oficial (`mercadopago`

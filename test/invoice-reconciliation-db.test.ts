@@ -10,7 +10,7 @@ vi.mock('../src/lib/fiscal/timeline', () => ({ logInvoiceEvent: m.event }));
 vi.mock('../src/lib/crypto-secret', () => ({ decryptSecret: () => undefined }));
 vi.mock('../src/lib/fiscal/emit', () => ({ metadata: (v: unknown) => v || {}, cleanPrefix: () => 'F', documentTypeFor: () => 'cfdi_40', isBillableCfdi: () => false, money: (n: number) => Math.round(n * 100) / 100, newInvoiceToken: () => crypto.randomUUID() }));
 vi.mock('../src/lib/impuestos-db', () => ({ taxCatalogFor: vi.fn(), TaxCatalogUnavailableError: class extends Error {} }));
-import { reconcileInvoice, recordInvoiceRefund } from '../src/lib/fiscal/reconciliation';
+import { reconcileInvoice, recordInvoiceRefund, recordMpInvoiceRefund } from '../src/lib/fiscal/reconciliation';
 import { applyPayment } from '../src/lib/fiscal/payments';
 import { createCreditNote, finalizeInvoice, voidInvoice } from '../src/lib/fiscal/invoices';
 const org = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
@@ -21,6 +21,9 @@ const q = (text: string, values: unknown[] = []) => db.query<any>(text, values);
 const read = async () => (await q('select * from documentos_fiscales where id=$1', [id])).rows[0];
 const refund = (status = 'succeeded', extra = {}) => recordInvoiceRefund(org, { id: 're_a', paymentIntentId: 'pi_a', amount: 40, currency: 'MXN', status, eventCreated: 1, ...extra });
 const pay = (monto = 100, pi = 'pi_a') => applyPayment(org, id, { monto, currency: 'MXN', stripePaymentIntentId: pi });
+const payMp = (monto = 100, mp = 'mp_1') => applyPayment(org, id, { monto, currency: 'MXN', metodo: 'mercadopago', mpPaymentId: mp });
+const refundMp = (status = 'succeeded', amount = 40, refundId = 'mpr_1') =>
+  recordMpInvoiceRefund(org, { id: refundId, paymentId: 'mp_1', amount, currency: 'MXN', status });
 const issueCredit = async (monto: number) => {
   const draft = await createCreditNote(org, id, { monto }); expect(draft.ok).toBe(true);
   await q("update documentos_fiscales set status='issued', lifecycle='open' where id=$1", [draft.documentId]);
@@ -52,10 +55,11 @@ beforeAll(async () => {
     );
     create table documento_pagos (
       id uuid primary key default gen_random_uuid(), org_id uuid not null, documento_id uuid not null,
-      monto numeric, currency text, stripe_payment_intent_id text, metodo text, referencia text,
+      monto numeric, currency text, stripe_payment_intent_id text, mp_payment_id text, metodo text, referencia text,
       cobro_id uuid, nota text, registrado_por uuid
     );
     create unique index pagos_pi on documento_pagos(documento_id,stripe_payment_intent_id) where stripe_payment_intent_id is not null;
+    create unique index pagos_mp on documento_pagos(documento_id,mp_payment_id) where mp_payment_id is not null;
   `);
   const schema = readFileSync(new URL('../db/schema.sql', import.meta.url), 'utf8');
   await db.exec(schema.slice(schema.indexOf('-- Conciliación de facturas:')));
@@ -113,6 +117,26 @@ describe('conciliación ejecutada en PostgreSQL local', () => {
     await pay(); await issueCredit(40); await refund('succeeded', { eventCreated: 3 });
     await refund('pending', { eventCreated: 2 }); expect((await read()).refund_due).toBe('0');
     await refund('failed', { eventCreated: 4 }); expect((await read()).refund_due).toBe('40');
+  });
+  it('un pago de Mercado Pago liquida la factura y su reenvío no cobra dos veces', async () => {
+    expect((await payMp()).justPaid).toBe(true);
+    expect(await read()).toMatchObject({ amount_paid: '100', amount_remaining: '0', lifecycle: 'paid' });
+    const repetido = await payMp();
+    expect(repetido.duplicate).toBe(true);
+    expect(repetido.justPaid).toBe(false);
+    expect((await q('select * from documento_pagos')).rows).toHaveLength(1);
+  });
+  it('un reembolso de Mercado Pago reabre la deuda, y solo el efectivo cuenta', async () => {
+    await payMp();
+    await refundMp('pending');
+    expect(await read()).toMatchObject({ amount_refunded: '0', amount_remaining: '0', lifecycle: 'paid' });
+    await refundMp('succeeded');
+    expect(await read()).toMatchObject({ amount_refunded: '40', amount_remaining: '40', lifecycle: 'open' });
+  });
+  it('el reembolso de un riel no toca el pago del otro', async () => {
+    await pay(50, 'pi_a'); await payMp(50, 'mp_1');
+    await refundMp('succeeded', 50);
+    expect(await read()).toMatchObject({ amount_paid: '100', amount_refunded: '50', amount_remaining: '50' });
   });
   it('pago duplicado y reembolso parcial no se suman dos veces', async () => {
     await pay(); expect((await pay()).duplicate).toBe(true); await refund(); await pay();

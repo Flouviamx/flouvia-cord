@@ -2,7 +2,7 @@
 title: "Mercado Pago"
 seoTitle: "Get paid with Mercado Pago in Cord"
 description: "Collect quotes with your Mercado Pago account: which countries it applies to, how to connect, what your client sees, how payments are confirmed, and what it does not do yet."
-lastUpdated: "2026-09-21"
+lastUpdated: "2026-09-22"
 reviewedBy: "Cord product and operations"
 availablePlans: [Free, Starter, Pro, Scale, Developer]
 ---
@@ -41,14 +41,14 @@ To disconnect, click **Disconnect** on the same card. Open payments can no longe
 
 ## What your client sees
 
-On the quote's payment page:
+On the **quote's** payment page and on the **invoice's** public link:
 
 - **If Mercado Pago is your only rail**, they see a blue **Pay with Mercado Pago** button with the Mercado Pago logo.
 - **If you also have Cord Payments**, they first see the Cord Payments form and, below a divider, the **Pay with Mercado Pago** button.
 
 Clicking it opens Mercado Pago's checkout, where they pay with the methods Mercado Pago offers in their country. Once the payment is approved, they return to your link.
 
-If the quote has a deposit and balance, or installments, each part is collected separately, and the quote is paid once no balance remains.
+If the quote has a deposit and balance, or installments, each part is collected separately, and the quote is paid once no balance remains. On an invoice they can **pay part of it**: click "Pay another amount", type how much, and Cord caps it at the real balance.
 
 ## How payments are confirmed
 
@@ -59,13 +59,16 @@ If the quote has a deposit and balance, or installments, each part is collected 
 
 If the same charge ends up paid through both Cord Payments and Mercado Pago, Cord notes it in the quote history so you can decide whether to refund one.
 
+## Refunds
+
+The refund is issued **from your Mercado Pago account**. Cord reads it on its own: once Mercado Pago confirms the money went out, it lowers the paid amount, reopens the balance, and records it in the document's history. A refund Mercado Pago has not confirmed yet does not touch the balance.
+
 ## What it does not do yet
 
 | Case | Today |
 |---|---|
-| Cord Invoicing invoices | The invoice link does not offer Mercado Pago; quotes only. |
 | Recurring retainers | Not offered: a retainer needs the Cord Payments subscription. |
-| Refunds | Made from your Mercado Pago account. Cord does not read them yet, so the quote stays marked as paid; note it in its history. |
+| Scheduled charges | Mercado Pago charges when your client opens the link; it does not store their card to charge later. |
 
 ## FAQ
 

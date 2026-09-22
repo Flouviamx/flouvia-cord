@@ -230,6 +230,21 @@ export async function createMpPreference(orgId: string, input: PreferenceInput):
     }
 }
 
+/**
+ * Prefijo de `external_reference` cuando quien cobra es una FACTURA. Sin él, el
+ * webhook no puede distinguir el id de un cobro de cotización del de un
+ * documento fiscal: son dos ledgers distintos y aplicar el dinero al equivocado
+ * deja una factura cobrada dos veces y otra sin cobrar.
+ */
+export const MP_INVOICE_REF = 'fac:';
+
+export interface MpRefund {
+    id: string;
+    monto: number;
+    /** Estado del proveedor traducido al vocabulario del ledger de Cord. */
+    status: 'succeeded' | 'pending' | 'failed';
+}
+
 export interface MpPayment {
     id: string;
     status: string;
@@ -237,6 +252,23 @@ export interface MpPayment {
     moneda: string;
     referencia: string | null;
     metodo: string | null;
+    /** Reembolsos que Mercado Pago ya tiene registrados sobre este pago. */
+    reembolsos: MpRefund[];
+}
+
+/** `approved` es el único estado que sacó dinero; el resto todavía puede caerse. */
+const refundStatus = (raw: unknown): MpRefund['status'] => {
+    const v = String(raw ?? '').toLowerCase();
+    if (v === 'approved') return 'succeeded';
+    if (v === 'rejected' || v === 'cancelled' || v === 'canceled') return 'failed';
+    return 'pending';
+};
+
+export function parseMpRefunds(data: any): MpRefund[] {
+    const raw = Array.isArray(data?.refunds) ? data.refunds : [];
+    return raw
+        .filter((r: any) => r?.id !== undefined && r?.id !== null && Number(r?.amount) > 0)
+        .map((r: any) => ({ id: String(r.id), monto: Number(r.amount), status: refundStatus(r.status) }));
 }
 
 /** Lee el pago en el proveedor. El webhook NUNCA confía en el cuerpo que recibe. */
@@ -256,6 +288,7 @@ export async function fetchMpPayment(orgId: string, paymentId: string): Promise<
             moneda: String(data.currency_id ?? ''),
             referencia: data.external_reference ? String(data.external_reference) : null,
             metodo: data.payment_type_id ? String(data.payment_type_id) : null,
+            reembolsos: parseMpRefunds(data),
         };
     } catch (err) {
         log.error('Mercado Pago no respondió al leer el pago', { route: 'mercadopago', orgId, err });

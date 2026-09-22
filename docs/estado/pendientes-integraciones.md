@@ -19,7 +19,7 @@
 | **n8n** | `n8n-nodes-cord` 1.1.0 en npm con constancia de origen | Verificación de n8n para n8n Cloud | n8n | Respuesta de n8n (enviado el 21 sep) |
 | **Microsoft Teams** | Flujo de Power Automate en producción; "Conectar con Microsoft" construido e **inactivo** | Registrar la app en Entra, credenciales, prueba real, verificación de editor | André, luego Claude | Microsoft 365 de pago (decisión: no pagar todavía) |
 | **WhatsApp Business** | Nivel 1 en producción (número + token + plantilla) | Prueba con número real; registro integrado de Meta | André | Verificación de negocio en Meta |
-| **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; facturas; reembolsos | André, luego Claude | Nada para México |
+| **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; igualas y contracargos | André, luego Claude | Nada para México |
 
 ---
 
@@ -189,11 +189,13 @@ variables. Meta le cobra cada mensaje de plantilla a la cuenta del negocio.
   pide Mercado Pago mejorar en la integración.
 
 **Falta, código:**
-- [ ] Mercado Pago en la factura hospedada (`/i/[token]`); hoy solo cotizaciones.
-- [ ] Leer reembolsos y contracargos de Mercado Pago (hoy el webhook solo actúa con
-  `approved`; un reembolso hecho en Mercado Pago deja la cotización pagada en Cord).
-- [ ] Link de pago en la cobranza con IA cuando el único riel es Mercado Pago
-  (`cobra_online` en `src/lib/agents/cobranza-run.ts` solo mira Stripe).
+- [x] Mercado Pago en la factura hospedada, con abono parcial (22 sep).
+- [x] Reembolsos leídos del proveedor, en cotización y en factura (22 sep).
+- [x] Link de pago en la cobranza con IA con cualquiera de los dos rieles (22 sep).
+- [ ] Igualas recurrentes con Mercado Pago: exige guardar el medio de pago, que
+  Checkout Pro no hace. Requiere el producto de suscripciones del proveedor.
+- [ ] Contracargos de Mercado Pago (`topic_chargebacks_wh`): hoy solo se leen pagos
+  y reembolsos.
 - [ ] Opcional: PKCE en la autorización (Cord no lo manda; no activarlo en el panel
   hasta implementarlo).
 

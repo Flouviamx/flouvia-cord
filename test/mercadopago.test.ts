@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createHmac } from 'node:crypto';
-import { isMpCheckoutUrl, mpSignatureValid } from '../src/lib/mercadopago';
+import { isMpCheckoutUrl, MP_INVOICE_REF, mpSignatureValid, parseMpRefunds } from '../src/lib/mercadopago';
 
 const firmar = (secret: string, manifest: string) => createHmac('sha256', secret).update(manifest).digest('hex');
 const ahora = () => Math.floor(Date.now() / 1000);
@@ -67,5 +67,46 @@ describe('isMpCheckoutUrl', () => {
         expect(isMpCheckoutUrl('https://notmercadopago.com/checkout')).toBe(false);
         expect(isMpCheckoutUrl('javascript:alert(1)')).toBe(false);
         expect(isMpCheckoutUrl('')).toBe(false);
+    });
+});
+
+describe('reembolsos leídos del pago', () => {
+    it('traduce el estado del proveedor al del ledger', () => {
+        expect(parseMpRefunds({ refunds: [
+            { id: 1, amount: 10, status: 'approved' },
+            { id: 2, amount: 5, status: 'in_process' },
+            { id: 3, amount: 7, status: 'rejected' },
+            { id: 4, amount: 9, status: 'cancelled' },
+        ] })).toEqual([
+            { id: '1', monto: 10, status: 'succeeded' },
+            { id: '2', monto: 5, status: 'pending' },
+            { id: '3', monto: 7, status: 'failed' },
+            { id: '4', monto: 9, status: 'failed' },
+        ]);
+    });
+
+    it('un estado desconocido no cuenta como dinero devuelto', () => {
+        expect(parseMpRefunds({ refunds: [{ id: 9, amount: 3, status: 'algo_nuevo' }] }))
+            .toEqual([{ id: '9', monto: 3, status: 'pending' }]);
+    });
+
+    it('descarta reembolsos sin id o sin importe', () => {
+        expect(parseMpRefunds({ refunds: [{ amount: 10, status: 'approved' }, { id: 5, amount: 0, status: 'approved' }] })).toEqual([]);
+        expect(parseMpRefunds({})).toEqual([]);
+        expect(parseMpRefunds(null)).toEqual([]);
+    });
+
+    it('un id 0 sigue siendo un reembolso', () => {
+        expect(parseMpRefunds({ refunds: [{ id: 0, amount: 4, status: 'approved' }] }))
+            .toEqual([{ id: '0', monto: 4, status: 'succeeded' }]);
+    });
+});
+
+describe('referencia del cobro', () => {
+    it('la factura lleva prefijo y la cotización no: son dos ledgers', () => {
+        const documentoId = '8f4c6f0e-7a1b-4c2d-9e3f-1a2b3c4d5e6f';
+        expect(`${MP_INVOICE_REF}${documentoId}`.startsWith(MP_INVOICE_REF)).toBe(true);
+        expect(`${MP_INVOICE_REF}${documentoId}`.slice(MP_INVOICE_REF.length)).toBe(documentoId);
+        expect(documentoId.startsWith(MP_INVOICE_REF)).toBe(false);
     });
 });

@@ -336,15 +336,13 @@ No es una cartera donde Cord retiene tus fondos. La cuenta de cobro pertenece a 
 - **Facturas cobrables:** las facturas de Cord Invoicing también tienen un link público con el saldo vigente y el método disponible para esa cuenta.
 - **Depósitos y conciliación:** el negocio consulta los depósitos enviados a su cuenta bancaria, su estado y la frecuencia configurada.
 - **Operación posterior al cobro:** reembolsos, contracargos y evidencia permanecen ligados a la organización y al movimiento que los originó.
-- **Mercado Pago como segundo riel:** el cliente paga la cotización desde el mismo link con el botón de Mercado Pago y el dinero llega a la cuenta de Mercado Pago del negocio. Cord confirma el pago leyéndolo en Mercado Pago, no confiando en el aviso. En México y Brasil es la alternativa y Cord Payments sigue siendo el principal.
+- **Mercado Pago como segundo riel:** el cliente paga la cotización o la factura desde el mismo link con el botón de Mercado Pago, y el dinero llega a la cuenta de Mercado Pago del negocio. Admite abono parcial de una factura, Cord confirma el pago leyéndolo en Mercado Pago —no confiando en el aviso— y lee los reembolsos hechos ahí para reabrir el saldo. En México y Brasil es la alternativa y Cord Payments sigue siendo el principal.
 
 ### Disponibilidad real
 El alta de cobros en línea depende del país de la organización y de los requisitos que devuelve el proveedor. México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia tienen carril de cuenta conectada. En Colombia, Argentina, Chile y Perú, Cord Payments no está disponible y el cobro en línea es con Mercado Pago. Mercado Pago funciona en México, Brasil, Colombia, Argentina, Chile y Perú: la conexión se confirmó el 21 de septiembre de 2026 con cuentas de México y de Colombia.
 
 ### Qué sigue:
-- Mercado Pago en el link de las facturas, no solo en cotizaciones.
-- Que Cord lea los reembolsos hechos en Mercado Pago y ajuste el cobro solo.
-- El link de pago en la cobranza con IA también cuando el único riel es Mercado Pago.
+Igualas recurrentes con Mercado Pago: hoy una iguala necesita la suscripción de Cord Payments, porque Mercado Pago cobra cuando el cliente abre el link y no guarda su tarjeta para después.
 
 SPEI es un riel mexicano y solo liquida MXN. Fuera de México, Cord no muestra ese método ni aplica una tarifa mexicana a otra divisa.`,
             en: `## From agreement to money, without switching systems
@@ -359,15 +357,13 @@ This is not a wallet where Cord holds your funds. The payment account belongs to
 - **Payable invoices:** Cord Invoicing documents also have a public link with the current balance and the method available to that account.
 - **Payouts and reconciliation:** the business can review payouts sent to its bank account, their status, and the configured schedule.
 - **After-payment operations:** refunds, disputes, and evidence remain tied to the organization and the movement that created them.
-- **Mercado Pago as a second rail:** the client pays the quote from the same link with the Mercado Pago button and the money lands in the business's Mercado Pago account. Cord confirms the payment by reading it in Mercado Pago, not by trusting the notice. In Mexico and Brazil it is the alternative and Cord Payments remains the main rail.
+- **Mercado Pago as a second rail:** the client pays the quote or the invoice from the same link with the Mercado Pago button, and the money lands in the business's Mercado Pago account. It supports partial payment of an invoice, Cord confirms the payment by reading it in Mercado Pago — not by trusting the notice — and reads refunds issued there to reopen the balance. In Mexico and Brazil it is the alternative and Cord Payments remains the main rail.
 
 ### Actual availability
 Online payment onboarding depends on the organization's country and on the requirements returned by the provider. Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France have a connected-account rail. In Colombia, Argentina, Chile, and Peru, Cord Payments is not available and online collection runs on Mercado Pago. Mercado Pago works in Mexico, Brazil, Colombia, Argentina, Chile, and Peru: the connection was confirmed on September 21, 2026 with Mexican and Colombian accounts.
 
 ### What's next:
-- Mercado Pago on invoice links, not only on quotes.
-- Cord reading refunds made in Mercado Pago and adjusting the charge on its own.
-- The payment link in AI collections also when Mercado Pago is the only rail.
+Recurring retainers with Mercado Pago: today a retainer needs the Cord Payments subscription, because Mercado Pago charges when the client opens the link and does not store their card for later.
 
 SPEI is a Mexican rail and settles only MXN. Outside Mexico, Cord does not show that method or apply a Mexican fee to another currency.`
         },
@@ -880,7 +876,7 @@ const roadmapEnhancements = {
             en: ['The business enables autonomous collections and defines which receivables it may manage.', 'Once overdue, the agent sends reminders with the balance and a payable link when available.', 'If the customer requests installments, the agent may offer only plans within configured rules.']
         },
         scope: { es: 'Opera por correo y mantiene el historial junto a la deuda. Puede crear dos o tres cuotas que sumen el adeudo sin aplicar descuentos.', en: 'It operates by email and keeps history next to the debt. It can create two or three installments that add up to the balance without discounts.' },
-        boundaries: { es: 'Es opt-in por negocio y no decide condonaciones, descuentos ni acciones legales. El link de pago aparece solo donde Cord Payments está disponible y activo.', en: 'It is opt-in per business and does not decide write-offs, discounts, or legal action. The payment link appears only where Cord Payments is available and active.' },
+        boundaries: { es: 'Es opt-in por negocio y no decide condonaciones, descuentos ni acciones legales. El link de pago aparece donde hay un riel de cobro en línea activo, sea Cord Payments o Mercado Pago.', en: 'It is opt-in per business and does not decide write-offs, discounts, or legal action. The payment link appears where an online payment rail is active, either Cord Payments or Mercado Pago.' },
         related: ['clientes-credito', 'cord-payments', 'anticipos-pagos-parciales']
     },
     'anticipos-pagos-parciales': {
@@ -899,8 +895,8 @@ const roadmapEnhancements = {
             es: ['Completa el alta de la empresa, representantes y beneficiarios que pida el proveedor.', 'Activa los métodos disponibles para el país y acepta la tarifa aplicable cuando exista.', 'Cobra desde el link y consulta movimientos, depósitos, reembolsos o contracargos en Cord.'],
             en: ['Complete onboarding for the company, representatives, and owners required by the provider.', 'Enable methods available for the country and accept the applicable fee when one exists.', 'Collect from the link and review movements, payouts, refunds, or disputes in Cord.']
         },
-        scope: { es: 'Tarjeta en MX, US, CA, BR, ES, GB, DE y FR. SPEI solo para operaciones en MXN de cuentas mexicanas. Mercado Pago como segundo riel para cotizaciones en MX, BR, CO, AR, CL y PE.', en: 'Cards in MX, US, CA, BR, ES, GB, DE, and FR. SPEI only for MXN transactions on Mexican accounts. Mercado Pago as a second rail for quotes in MX, BR, CO, AR, CL, and PE.' },
-        boundaries: { es: 'En CO, AR, CL y PE el cobro en línea es con Mercado Pago; sin él, pagos manuales. Mercado Pago no cobra facturas ni igualas. Las tarifas de plataforma fuera de MXN no se inventan: mientras no exista una tabla verificada, Cord no aplica una comisión regional.', en: 'In CO, AR, CL, and PE online collection runs on Mercado Pago; without it, manual payments. Mercado Pago does not collect invoices or retainers. Platform fees outside MXN are not invented: until a verified schedule exists, Cord does not apply a regional fee.' },
+        scope: { es: 'Tarjeta en MX, US, CA, BR, ES, GB, DE y FR. SPEI solo para operaciones en MXN de cuentas mexicanas. Mercado Pago como segundo riel para cotizaciones y facturas en MX, BR, CO, AR, CL y PE.', en: 'Cards in MX, US, CA, BR, ES, GB, DE, and FR. SPEI only for MXN transactions on Mexican accounts. Mercado Pago as a second rail for quotes and invoices in MX, BR, CO, AR, CL, and PE.' },
+        boundaries: { es: 'En CO, AR, CL y PE el cobro en línea es con Mercado Pago; sin él, pagos manuales. Mercado Pago no cobra igualas recurrentes. Las tarifas de plataforma fuera de MXN no se inventan: mientras no exista una tabla verificada, Cord no aplica una comisión regional.', en: 'In CO, AR, CL, and PE online collection runs on Mercado Pago; without it, manual payments. Mercado Pago does not collect recurring retainers. Platform fees outside MXN are not invented: until a verified schedule exists, Cord does not apply a regional fee.' },
         related: ['anticipos-pagos-parciales', 'cobranza-ia', 'facturas-emitidas']
     },
     'cfdi-automatico': {

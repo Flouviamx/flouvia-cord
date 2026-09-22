@@ -17,6 +17,7 @@ import { sendEmail } from '../email';
 import { publicDocumentUrl } from '../public-links';
 import { moneyFull } from '../fmt';
 import { checkEntitlement } from '../org-entitlements';
+import { MERCADOPAGO_COUNTRY_LIST } from '../countries';
 
 export interface CobranzaConfig {
     activa: boolean;
@@ -208,8 +209,12 @@ export async function runCobranzaOrg(
           cxc.folio, cxc.total, cxc.token as public_token, cxc.cliente_id,
           cxc.saldo, cxc.pagado, cxc.dias_vencido,
           cl.empresa as cliente_nombre, cl.email as cliente_email,
-          (o.stripe_charges_enabled and o.stripe_account_id is not null
-           and (o.acepta_tarjeta or o.cobro_spei_auto)) as cobra_online,
+          -- Los DOS rieles: con solo Stripe aquí, una cuenta de Colombia que
+          -- cobra con Mercado Pago mandaba su cobranza sin link de pago.
+          -- availableRails() es la fuente; esto es su lectura en SQL.
+          ((o.stripe_charges_enabled and o.stripe_account_id is not null
+            and (o.acepta_tarjeta or o.cobro_spei_auto))
+           or (o.mp_charges_enabled and upper(coalesce(o.country_code, 'MX')) = any(${MERCADOPAGO_COUNTRY_LIST}::text[]))) as cobra_online,
           exists(select 1 from cobranza_exclusiones x
                  where x.org_id = cxc.org_id
                    and (x.cliente_id = cxc.cliente_id

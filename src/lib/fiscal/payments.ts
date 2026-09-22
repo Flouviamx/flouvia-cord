@@ -21,6 +21,8 @@ export interface ApplyPaymentInput {
   metodo?: string;
   referencia?: string | null;
   stripePaymentIntentId?: string | null;
+  /** Idempotencia del carril de Mercado Pago: su id de pago, no el de Stripe. */
+  mpPaymentId?: string | null;
   cobroId?: string | null;
   nota?: string | null;
   registradoPor?: string | null;
@@ -87,36 +89,60 @@ export async function applyPayment(
   }
 
   const pi = input.stripePaymentIntentId || null;
+  const mp = input.mpPaymentId || null;
+  // Un pago del proveedor llega con la llave de SU riel. Las dos columnas
+  // existen por separado para que cada índice único sea el que hace el trabajo;
+  // con una sola compartida, dos ids distintos podrían chocar entre rieles.
+  const proveedorId = pi || mp;
 
   // Insertar + recalcular + promover, en UNA transacción. El recálculo lee el
   // ledger completo (incluida la fila recién insertada) y el lifecycle se
   // deriva de ese número, nunca de un incremento.
   const [, , inserted, updated, recorded] = await withOrgTx(orgId,
-    invoicePaymentLock(orgId, pi || documentoId), invoiceBalanceLock(orgId, documentoId),
-    sql`insert into documento_pagos (
-          org_id, documento_id, cobro_id, monto, currency, metodo,
-          referencia, stripe_payment_intent_id, nota, registrado_por
-        )
-        select
-          ${orgId}, ${documentoId}, ${input.cobroId || null}, ${monto}, ${payCurrency},
-          ${input.metodo || 'manual'}, ${input.referencia || null}, ${pi},
-          ${input.nota || null}, ${input.registradoPor || null}
-        from documentos_fiscales d
-        where d.id = ${documentoId} and d.org_id = ${orgId} and d.status = 'issued'
-          and d.lifecycle not in ('draft', 'void') and d.credit_note_of is null
-          and d.document_type not in ('credit_note', 'cfdi_egreso') and d.currency = ${payCurrency}
-          and (${pi}::text is not null or ${monto} <= d.amount_remaining)
-        on conflict (documento_id, stripe_payment_intent_id) where stripe_payment_intent_id is not null
-        do nothing
-        returning id`,
+    invoicePaymentLock(orgId, proveedorId || documentoId), invoiceBalanceLock(orgId, documentoId),
+    mp
+      ? sql`insert into documento_pagos (
+              org_id, documento_id, cobro_id, monto, currency, metodo,
+              referencia, mp_payment_id, nota, registrado_por
+            )
+            select
+              ${orgId}, ${documentoId}, ${input.cobroId || null}, ${monto}, ${payCurrency},
+              ${input.metodo || 'manual'}, ${input.referencia || null}, ${mp},
+              ${input.nota || null}, ${input.registradoPor || null}
+            from documentos_fiscales d
+            where d.id = ${documentoId} and d.org_id = ${orgId} and d.status = 'issued'
+              and d.lifecycle not in ('draft', 'void') and d.credit_note_of is null
+              and d.document_type not in ('credit_note', 'cfdi_egreso') and d.currency = ${payCurrency}
+            on conflict (documento_id, mp_payment_id) where mp_payment_id is not null
+            do nothing
+            returning id`
+      : sql`insert into documento_pagos (
+              org_id, documento_id, cobro_id, monto, currency, metodo,
+              referencia, stripe_payment_intent_id, nota, registrado_por
+            )
+            select
+              ${orgId}, ${documentoId}, ${input.cobroId || null}, ${monto}, ${payCurrency},
+              ${input.metodo || 'manual'}, ${input.referencia || null}, ${pi},
+              ${input.nota || null}, ${input.registradoPor || null}
+            from documentos_fiscales d
+            where d.id = ${documentoId} and d.org_id = ${orgId} and d.status = 'issued'
+              and d.lifecycle not in ('draft', 'void') and d.credit_note_of is null
+              and d.document_type not in ('credit_note', 'cfdi_egreso') and d.currency = ${payCurrency}
+              and (${pi}::text is not null or ${monto} <= d.amount_remaining)
+            on conflict (documento_id, stripe_payment_intent_id) where stripe_payment_intent_id is not null
+            do nothing
+            returning id`,
     invoiceBalanceQuery(orgId, documentoId),
-    sql`select id from documento_pagos where documento_id = ${documentoId} and org_id = ${orgId}
-      and stripe_payment_intent_id = ${pi} and currency = ${payCurrency}`,
+    mp
+      ? sql`select id from documento_pagos where documento_id = ${documentoId} and org_id = ${orgId}
+          and mp_payment_id = ${mp} and currency = ${payCurrency}`
+      : sql`select id from documento_pagos where documento_id = ${documentoId} and org_id = ${orgId}
+          and stripe_payment_intent_id = ${pi} and currency = ${payCurrency}`,
   );
-  if (!pi && !inserted.length) return { ok: false, error: 'El pago supera el saldo actual o la factura ya no admite pagos.' };
+  if (!proveedorId && !inserted.length) return { ok: false, error: 'El pago supera el saldo actual o la factura ya no admite pagos.' };
 
-  if (pi && !inserted.length && !recorded.length) return { ok: false, error: 'El pago recibido aún no pudo aplicarse a la factura.' };
-  const duplicate = pi !== null && inserted.length === 0;
+  if (proveedorId && !inserted.length && !recorded.length) return { ok: false, error: 'El pago recibido aún no pudo aplicarse a la factura.' };
+  const duplicate = proveedorId !== null && inserted.length === 0;
   const row = updated[0];
   if (!row) return { ok: false, error: 'No se pudo actualizar el saldo de la factura.' };
 
