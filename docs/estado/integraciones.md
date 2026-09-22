@@ -163,6 +163,24 @@ uno solo.
   conectores O365 de Teams están retirados, así que la URL vigente es la del
   flujo (`*.logic.azure.com`) y eso es lo que valida `isTeamsWebhookUrl()`.
   `webhook.office.com` se acepta para tenants que aún lo conserven.
+- Teams con "Conectar con Microsoft" (sep 2026, **inactivo** hasta que existan
+  `TEAMS_CLIENT_ID`/`TEAMS_CLIENT_SECRET`; sin ellas la tarjeta solo ofrece el
+  flujo). OAuth delegado de Microsoft Graph contra `organizations` (cuentas de
+  trabajo o escuela; los canales no existen en cuentas personales) con
+  `User.Read`, `Team.ReadBasic.All`, `Channel.ReadBasic.All` y
+  `ChannelMessage.Send`, ninguno con consentimiento de administrador. Graph solo
+  permite publicar en un canal con permiso delegado, así que la tarjeta sale a
+  nombre de quien conectó y la UI lo dice. Tokens cifrados en
+  `orgs.teams_graph_*`; el refresh se renueva con margen de 2 min y un
+  `invalid_grant`/`interaction_required` marca `teams_graph_estado = 'error'`
+  (estado `warn` en el catálogo y "Volver a conectar"). El equipo y el canal se
+  eligen de las listas reales de Graph y sus nombres salen de Graph, no del
+  navegador. **Un solo destino**: elegir canal borra `teams_webhook_url` y
+  guardar un flujo propio desconecta Graph. `deliverTeams()` en
+  `src/lib/integraciones/teams-graph.ts` es la única salida para avisos,
+  workflows y la prueba. Microsoft no tiene revocación de un solo refresh token:
+  desconectar borra el acceso en Cord y la persona quita la app desde
+  myapps.microsoft.com si quiere. Sin probar contra un tenant real todavía.
 
 ## WhatsApp Business
 

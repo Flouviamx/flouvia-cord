@@ -69,7 +69,8 @@ const appsCtx = canDev
     ? {
         hubspot: (await getConexion(ORG.id, 'hubspot').catch(() => null))?.estado ?? null,
         slack: Boolean(ORG.slackWebhook),
-        teams: Boolean(ORG.teamsWebhook),
+        teams: Boolean(ORG.teamsWebhook || ORG.teamsCanal),
+        teamsError: ORG.teamsGraph === 'error',
         whatsapp: Boolean(ORG.whatsappConectado),
         oauth: await connectedOAuthApps(ORG.id).catch(() => []),
     }

@@ -13,7 +13,8 @@
 import { sql, withOrgTx } from './db';
 import { sendEmail, siteOrigin } from './email';
 import { postToSlack } from './slack';
-import { postToTeams } from './teams';
+import { quoteCard } from './teams';
+import { deliverTeams } from './integraciones/teams-graph';
 import { currencyDecimals, normalizeCurrency } from './currency';
 
 export type NotifyEvent =
@@ -128,7 +129,7 @@ function renderEmail(evento: NotifyEvent, en: boolean, orgNombre: string, color:
 export async function notify(orgId: string, evento: NotifyEvent, data: NotifyData = {}): Promise<void> {
     try {
         const [orgRows] = await withOrgTx(orgId, sql`
-            select o.notif_prefs, o.slack_webhook_url, o.teams_webhook_url, o.sandbox_of, o.is_demo,
+            select o.notif_prefs, o.slack_webhook_url, o.teams_webhook_url, o.teams_channel_id, o.sandbox_of, o.is_demo,
                    o.nombre, o.moneda, coalesce(o.idioma, 'es-MX') as idioma,
                    coalesce(o.color_marca, '#0a192f') as color,
                    u.email as owner_email
@@ -160,8 +161,8 @@ export async function notify(orgId: string, evento: NotifyEvent, data: NotifyDat
         }
         // Teams es un canal propio, no un espejo de Slack: una org puede tener
         // los dos conectados y querer el aviso solo en uno.
-        if (pref.teams && org.teams_webhook_url && data.folio) {
-            await postToTeams(org.teams_webhook_url as string, `notify.${evento}`, canal);
+        if (pref.teams && (org.teams_webhook_url || org.teams_channel_id) && data.folio) {
+            await deliverTeams(orgId, quoteCard(`notify.${evento}`, canal));
         }
     } catch { /* nunca romper la operación que originó el evento */ }
 }

@@ -12,6 +12,7 @@ interface Props {
 
 const { lang: L, webhook, canal = '', equipo = '', oauth = false, flash = null } = Astro.props;
 const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
+const Manual = oauth ? 'details' : 'div';
 ---
 
 <div class="s-block" data-slack>
@@ -37,7 +38,7 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
             </div>
         )}
 
-        <details class:list={['slk-manual', { solo: !oauth }]} open={!oauth} data-oauth={oauth ? '1' : undefined}>
+        <Manual class:list={['slk-manual', { solo: !oauth }]} data-oauth={oauth ? '1' : undefined}>
             {oauth && (
                 <summary>
                     <span class="slk-sum-icon" aria-hidden="true">
@@ -61,7 +62,7 @@ const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
                     {!oauth && <button class="slk-btn-ghost" id="slkTest">{t(L, 'set.integ.enviar_prueba')}</button>}
                 </div>
             </div>
-        </details>
+        </Manual>
         <span class="slk-msg" id="slkMsg"
             data-i18n-url-debe-ser={t(L, 'set.integ.url_debe_ser')} data-i18n-guardado={t(L, 'set.integ.guardado')}
             data-i18n-no-guardo={t(L, 'set.integ.no_guardo')} data-i18n-mensaje-enviado={t(L, 'set.integ.mensaje_enviado')}

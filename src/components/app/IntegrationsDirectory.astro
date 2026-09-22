@@ -8,12 +8,13 @@ interface Props {
     hubspot: string | null;
     slack: boolean;
     teams: boolean;
+    teamsError?: boolean;
     whatsapp: boolean;
     oauth?: readonly string[];
 }
 
-const { lang: L, hubspot, slack, teams, whatsapp, oauth = [] } = Astro.props;
-const APPS = INTEGRATION_APPS.map((app) => ({ app, state: integrationState(app, { hubspot, slack, teams, whatsapp, oauth }) }));
+const { lang: L, hubspot, slack, teams, teamsError = false, whatsapp, oauth = [] } = Astro.props;
+const APPS = INTEGRATION_APPS.map((app) => ({ app, state: integrationState(app, { hubspot, slack, teams, teamsError, whatsapp, oauth }) }));
 const CONECTADAS = APPS.filter((a) => a.state === 'on' || a.state === 'warn');
 const RESTO = APPS.filter((a) => !CONECTADAS.includes(a));
 ---

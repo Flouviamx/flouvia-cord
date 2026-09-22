@@ -6,6 +6,17 @@
 
 ---
 
+✅ **Teams con "Conectar con Microsoft", construido e inactivo (21 sep 2026)**
+   • Graph solo deja publicar en un canal con permiso delegado (el de aplicación es para
+     migraciones), así que la tarjeta sale a nombre de quien conectó. Se eligió eso sobre un bot
+     de Teams, que exige Azure Bot Service y que alguien instale la app en cada equipo.
+   • El código queda oculto hasta que existan `TEAMS_CLIENT_ID`/`TEAMS_CLIENT_SECRET`: registrar
+     la app en Entra no cuesta, pero probarla exige un Teams de empresa (Microsoft 365) y André
+     decidió no pagar todavía. El flujo de Power Automate sigue siendo el camino vigente.
+   • De paso: el export de la organización dejó de incluir las columnas `*_enc` y la sección de
+     webhook propio de Slack/Teams deja de dibujarse como desplegable cuando no hay OAuth (el
+     navegador le ponía "Detalles"). n8n usa su logo oficial en SVG en vez del favicon.
+
 ✅ **Zapier y Make sin llaves en producción, "Añadir a Slack" y n8n en npm (21 sep 2026)**
    • **Zapier, probado de verdad.** La prueba con Zapier destapó dos bugs que curl no ve: la CSP
      `form-action` bloqueaba el redirect del consentimiento (Chrome lo aplica también al redirect

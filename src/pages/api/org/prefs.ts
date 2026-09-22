@@ -10,6 +10,7 @@ import { requirePerm } from '../../../lib/queries';
 import { isTeamsWebhookUrl } from '../../../lib/teams';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
+import { disconnectTeamsGraph } from '../../../lib/integraciones/teams-graph';
 
 // Eventos y canales válidos (whitelist — evita basura en el jsonb).
 const EVENTOS = new Set(['quote_viewed', 'quote_approved', 'quote_rejected', 'quote_paid', 'quote_expiring', 'payment_overdue', 'team_join']);
@@ -67,6 +68,8 @@ export const PATCH: APIRoute = async ({ request }) => {
                               slack_channel = case when ${slack}::text is not distinct from slack_webhook_url then slack_channel else null end,
                               slack_team = case when ${slack}::text is not distinct from slack_webhook_url then slack_team else null end
               where id = ${orgId}`);
+    // Un solo destino de Teams: pegar un flujo propio reemplaza el canal elegido con Microsoft.
+    if (teams && teams !== actual.teams_webhook_url) await disconnectTeamsGraph(orgId);
     await logAudit(orgId, { accion: 'org.preferencias', entidad: 'org', entidad_id: orgId, detalle: 'Actualizó notificaciones/integraciones', ip: reqIp(request) });
     return json({ ok: true });
 };

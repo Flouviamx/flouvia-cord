@@ -3,7 +3,8 @@ import { reqContext } from '../context';
 import { log } from '../log';
 import { siteOrigin, sendEmail, sendClientQuoteMessage, sendClientInvoiceMessage } from '../email';
 import { postSlackText } from '../slack';
-import { postTeamsText } from '../teams';
+import { textCard } from '../teams';
+import { deliverTeams } from '../integraciones/teams-graph';
 import { sendWhatsAppTemplate, WHATSAPP_MAX_VARS } from '../whatsapp';
 import { strictRateLimit } from '../ratelimit';
 import { createTask } from '../actions/tasks';
@@ -579,17 +580,18 @@ async function runAction(step: Extract<Step, { type: 'action' }>, input: ActionI
     }
 
     if (step.action === 'teams_message') {
-        const [[org]] = await withOrgTx(orgId, sql`select teams_webhook_url from orgs where id = ${orgId}`);
-        const url = (org?.teams_webhook_url as string) || '';
-        if (!url) throw new WorkflowStepError(wfError('teams_sin_conexion'), true);
         const rl = await strictRateLimit(`wf-teams:${orgId}`, 120, 3600);
         if (!rl.ok) throw new WorkflowStepError(wfError('limite_teams'), true);
         // La tarjeta de Teams es JSON, no markdown: el texto viaja en un campo
         // y no hay escape que hacer más allá de acotarlo.
         const text = renderTemplate(String(p.mensaje ?? ''), values).slice(0, 3000);
         if (!text.trim()) throw new WorkflowStepError(wfError('mensaje_vacio'), true);
-        const r = await postTeamsText(url, text);
-        if (!r.ok) throw new WorkflowStepError(wfError('teams_rechazo'));
+        const r = await deliverTeams(orgId, textCard(text));
+        if (!r.ok) {
+            if (r.reason === 'sin_conexion') throw new WorkflowStepError(wfError('teams_sin_conexion'), true);
+            if (r.reason === 'reconectar') throw new WorkflowStepError(wfError('teams_reconectar'), true);
+            throw new WorkflowStepError(wfError('teams_rechazo'));
+        }
         return 'teams';
     }
 

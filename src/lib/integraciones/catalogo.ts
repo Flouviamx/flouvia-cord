@@ -24,7 +24,7 @@ export const INTEGRATION_APPS: IntegrationApp[] = [
     { slug: 'whatsapp', nombre: 'WhatsApp Business', dominio: 'whatsapp.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/whatsapp.svg', tile: true, guia: '/soporte/conectar-whatsapp' },
     { slug: 'make', nombre: 'Make', dominio: 'make.com', categoria: 'automatizacion', disponible: true, logo: favicon('make.com', 128), tile: true, guia: '/soporte/conectar-make' },
     { slug: 'zapier', nombre: 'Zapier', dominio: 'zapier.com', categoria: 'automatizacion', disponible: ZAPIER_INVITE_URL !== null, logo: favicon('zapier.com', 128), tile: true, guia: null },
-    { slug: 'n8n', nombre: 'n8n', dominio: 'n8n.io', categoria: 'automatizacion', disponible: true, logo: favicon('n8n.io', 128), tile: true, guia: '/soporte/conectar-n8n' },
+    { slug: 'n8n', nombre: 'n8n', dominio: 'n8n.io', categoria: 'automatizacion', disponible: true, logo: '/imgs/integrations/n8n.svg', tile: true, guia: '/soporte/conectar-n8n' },
 ];
 
 export type IntegrationState = 'on' | 'warn' | 'off' | 'info' | 'key' | 'oauth' | 'soon';
@@ -33,6 +33,8 @@ export interface IntegrationCtx {
     hubspot: string | null;
     slack: boolean;
     teams: boolean;
+    /** Microsoft ya no acepta la conexión de Teams y hay que volver a iniciar sesión. */
+    teamsError?: boolean;
     whatsapp: boolean;
     /** Apps con una autorización OAuth viva en esta organización (slug del cliente). */
     oauth?: readonly string[];
@@ -43,7 +45,7 @@ export function integrationState(app: IntegrationApp, ctx: IntegrationCtx): Inte
     if (app.slug === 'hubspot') return ctx.hubspot === 'activa' ? 'on' : ctx.hubspot === 'error' ? 'warn' : 'off';
     if (ctx.oauth?.includes(app.slug)) return 'on';
     if (app.slug === 'slack') return ctx.slack ? 'on' : 'off';
-    if (app.slug === 'teams') return ctx.teams ? 'on' : 'off';
+    if (app.slug === 'teams') return ctx.teamsError ? 'warn' : ctx.teams ? 'on' : 'off';
     if (app.slug === 'whatsapp') return ctx.whatsapp ? 'on' : 'off';
     if (app.slug === 'zapier' || (app.slug === 'make' && MAKE_INVITE_URL)) return 'oauth';
     if (app.slug === 'n8n') return 'key';

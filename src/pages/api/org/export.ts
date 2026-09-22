@@ -19,7 +19,7 @@ export const GET: APIRoute = async () => {
 
     const orgId = await getActiveOrgId();
     const [orgRows] = await withOrgTx(orgId, sql`select * from orgs where id = ${orgId}`);
-    const org = orgRows[0];
+    const org = Object.fromEntries(Object.entries(orgRows[0] ?? {}).filter(([k]) => !k.endsWith('_enc')));
     const productos = await safe(withOrgTx(orgId, sql`select * from productos where org_id = ${orgId} order by nombre`));
     const clientes = await safe(withOrgTx(orgId, sql`select * from clientes where org_id = ${orgId} order by empresa`));
     const cotizaciones = await safe(withOrgTx(orgId, sql`select * from cotizaciones where org_id = ${orgId} order by created_at desc`));

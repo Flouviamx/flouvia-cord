@@ -4,33 +4,155 @@ import { t, type AppLocale } from '../../i18n/app';
 interface Props {
     lang: AppLocale;
     webhook: string;
+    graph?: { canal: string; equipo: string; usuario: string; estado: string; oauth: boolean; flash: string | null };
 }
 
-const { lang: L, webhook } = Astro.props;
+const { lang: L, webhook, graph = { canal: '', equipo: '', usuario: '', estado: '', oauth: false, flash: null } } = Astro.props;
+const oauth = graph.oauth;
+const conectada = graph.estado === 'activa';
+const vencida = graph.estado === 'error';
+const eligiendo = conectada && !graph.canal;
+const FLASH = ['conectado', 'cancelada', 'estado', 'error'];
+const Manual = oauth ? 'details' : 'div';
 ---
+
+{!oauth && (
+    <div class="s-block">
+        <h3>{t(L, 'set.integ.teams.pasos_titulo')}</h3>
+        <div class="s-body">
+            <ol class="tms-steps">
+                <li>{t(L, 'set.integ.teams.paso_1')}</li>
+                <li>{t(L, 'set.integ.teams.paso_2')}</li>
+                <li>{t(L, 'set.integ.teams.paso_3')}</li>
+            </ol>
+        </div>
+    </div>
+)}
 
 <div class="s-block" data-teams>
     <h3>{t(L, 'set.integ.det.conexion')}</h3>
     <div class="s-body">
-        <div class="s-field">
-            <label for="tmsUrl">{t(L, 'set.integ.teams_url')}</label>
-            <input class="s-input" id="tmsUrl" value={webhook} placeholder="https://prod-00.westus.logic.azure.com:443/workflows/..." />
-            <span class="s-hint">{t(L, 'set.integ.teams_hint')} <a href="/app/ajustes/notificaciones">{t(L, 'set.integ.notificaciones')}</a>.</span>
-        </div>
-        <div class="tms-actions">
-            <button class="tms-btn-solid" id="tmsSave">{t(L, 'set.integ.guardar')}</button>
-            <button class="tms-btn-ghost" id="tmsTest">{t(L, 'set.integ.enviar_prueba')}</button>
-            <span class="tms-msg" id="tmsMsg"
-                data-i18n-url-debe-ser={t(L, 'set.integ.teams_url_debe_ser')} data-i18n-guardado={t(L, 'set.integ.guardado')}
-                data-i18n-no-guardo={t(L, 'set.integ.no_guardo')} data-i18n-mensaje-enviado={t(L, 'set.integ.mensaje_enviado')}
-                data-i18n-no-envio={t(L, 'set.integ.no_envio')}></span>
-        </div>
+        {graph.flash && FLASH.includes(graph.flash) && (
+            <p class="tms-flash" data-bad={graph.flash !== 'conectado' ? '1' : undefined}>{t(L, `set.integ.teams.flash_${graph.flash}` as any)}</p>
+        )}
+
+        {oauth && (
+            <div class="tms-oauth">
+                {conectada && graph.canal && (
+                    <p class="tms-conn">
+                        {t(L, 'set.integ.slack.conectado_a')} <b>{graph.canal}</b>{graph.equipo && ` · ${graph.equipo}`}
+                        {graph.usuario && <span class="tms-sub">{t(L, 'set.integ.teams.publica_como')} {graph.usuario}</span>}
+                    </p>
+                )}
+                {vencida && <p class="tms-hint tms-bad">{t(L, 'set.integ.teams.vencida')}</p>}
+                {!graph.estado && <p class="tms-hint">{webhook ? t(L, 'set.integ.teams.flujo_estado') : t(L, 'set.integ.teams.elige_canal')}</p>}
+
+                <div class="tms-picker" id="tmsPicker" hidden={!eligiendo}
+                    data-i18n-cargando={t(L, 'set.integ.teams.cargando')} data-i18n-sin-equipos={t(L, 'set.integ.teams.sin_equipos')}>
+                    {eligiendo && <p class="tms-hint">{t(L, 'set.integ.teams.elige_destino')}</p>}
+                    <div class="tms-selects">
+                        <div class="s-field">
+                            <label for="tmsTeam">{t(L, 'set.integ.teams.equipo')}</label>
+                            <select class="s-input" id="tmsTeam" disabled><option value="">{t(L, 'set.integ.teams.cargando')}</option></select>
+                        </div>
+                        <div class="s-field">
+                            <label for="tmsChannel">{t(L, 'set.integ.teams.canal')}</label>
+                            <select class="s-input" id="tmsChannel" disabled><option value=""></option></select>
+                        </div>
+                    </div>
+                    <div class="tms-actions">
+                        <button class="tms-btn-solid" id="tmsUse" disabled>{t(L, 'set.integ.teams.usar_canal')}</button>
+                        {graph.canal && <button class="tms-btn-ghost" id="tmsCancel" type="button">{t(L, 'set.integ.teams.cancelar')}</button>}
+                    </div>
+                </div>
+
+                <div class="tms-actions" id="tmsMain" hidden={eligiendo}>
+                    {!conectada && <button class="tms-btn-solid" id="tmsAdd">{vencida ? t(L, 'set.integ.teams.reconectar') : t(L, 'set.integ.teams.conectar')}</button>}
+                    {conectada && graph.canal && <button class="tms-btn-solid" id="tmsChange">{t(L, 'set.integ.slack.cambiar')}</button>}
+                    {(graph.canal || (!graph.estado && webhook)) && <button class="tms-btn-ghost" id="tmsTest">{t(L, 'set.integ.enviar_prueba')}</button>}
+                    {graph.estado && <button class="tms-btn-ghost" id="tmsDisc">{t(L, 'set.integ.slack.desconectar')}</button>}
+                </div>
+            </div>
+        )}
+
+        <Manual class:list={['tms-manual', { solo: !oauth }]} data-oauth={oauth ? '1' : undefined}>
+            {oauth && (
+                <summary>
+                    <span class="tms-sum-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="4" fill="currentColor" fill-opacity="0.12"/><path d="M10.6 13.4a2.4 2.4 0 0 0 3.4 0l2-2a2.4 2.4 0 0 0-3.4-3.4l-.6.6M13.4 10.6a2.4 2.4 0 0 0-3.4 0l-2 2a2.4 2.4 0 0 0 3.4 3.4l.6-.6"/></svg>
+                    </span>
+                    <span class="tms-sum-text">
+                        <strong>{t(L, 'set.integ.teams.manual_titulo')}</strong>
+                        <small>{t(L, 'set.integ.teams.manual_desc')}</small>
+                    </span>
+                    <svg class="tms-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+                </summary>
+            )}
+            <div class="tms-manual-body">
+                {oauth && (
+                    <ol class="tms-steps">
+                        <li>{t(L, 'set.integ.teams.paso_1')}</li>
+                        <li>{t(L, 'set.integ.teams.paso_2')}</li>
+                        <li>{t(L, 'set.integ.teams.paso_3')}</li>
+                    </ol>
+                )}
+                <div class="s-field">
+                    <label for="tmsUrl">{t(L, 'set.integ.teams_url')}</label>
+                    <input class="s-input" id="tmsUrl" value={webhook} placeholder="https://prod-00.westus.logic.azure.com:443/workflows/..." autocomplete="off" spellcheck="false" />
+                    <span class="s-hint">{t(L, 'set.integ.teams_hint')} <a href="/app/ajustes/notificaciones">{t(L, 'set.integ.notificaciones')}</a>.</span>
+                </div>
+                <div class="tms-actions">
+                    <button class="tms-btn-solid" id="tmsSave">{t(L, 'set.integ.guardar')}</button>
+                    {!oauth && <button class="tms-btn-ghost" id="tmsTest">{t(L, 'set.integ.enviar_prueba')}</button>}
+                </div>
+            </div>
+        </Manual>
+        <span class="tms-msg" id="tmsMsg"
+            data-i18n-url-debe-ser={t(L, 'set.integ.teams_url_debe_ser')} data-i18n-guardado={t(L, 'set.integ.guardado')}
+            data-i18n-no-guardo={t(L, 'set.integ.no_guardo')} data-i18n-mensaje-enviado={t(L, 'set.integ.mensaje_enviado')}
+            data-i18n-no-envio={t(L, 'set.integ.no_envio')} data-i18n-no-conecto={t(L, 'set.integ.teams.no_conecto')}
+            data-i18n-no-desconecto={t(L, 'set.integ.teams.no_desconecto')} data-i18n-no-lista={t(L, 'teams.err.lista')}></span>
     </div>
 </div>
 
 <style>
+    .tms-steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.84rem; line-height: 1.55; color: var(--color-text); }
+    .tms-flash { font-size: 0.82rem; margin: 0 0 1rem; color: var(--color-ok); }
+    .tms-flash[data-bad] { color: var(--color-danger); }
+    .tms-oauth { margin-bottom: 0.4rem; display: flex; flex-direction: column; }
+    .tms-conn { font-size: 0.9rem; margin: 0 0 0.8rem; color: var(--color-text); }
+    .tms-sub { display: block; margin-top: 3px; font-size: 0.78rem; color: var(--color-text-muted); }
+    .tms-hint { font-size: 0.85rem; margin: 0 0 0.8rem; color: var(--color-text-muted); line-height: 1.45; }
+    .tms-bad { color: var(--color-danger); }
+    .tms-picker { display: flex; flex-direction: column; margin-bottom: 0.4rem; }
+    .tms-picker[hidden], .tms-actions[hidden] { display: none; }
+    .tms-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.9rem; }
+    .tms-manual { margin-top: 0.8rem; border-radius: 16px; background: var(--color-bg-soft); box-shadow: inset 0 0 0 1px var(--color-border); overflow: hidden; }
+    .tms-manual.solo { margin-top: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible; }
+    .tms-manual > summary {
+        list-style: none; display: flex; align-items: center; gap: 12px;
+        padding: 14px 16px; cursor: pointer; transition: background 0.15s ease;
+    }
+    .tms-manual > summary::-webkit-details-marker { display: none; }
+    .tms-manual > summary:hover { background: rgba(10, 25, 47, 0.03); }
+    .tms-manual > summary:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: -2px; border-radius: 16px; }
+    .tms-sum-icon {
+        width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center;
+        color: var(--color-text-muted); background: var(--surface); box-shadow: inset 0 0 0 1px var(--color-border);
+    }
+    .tms-sum-icon svg { width: 18px; height: 18px; }
+    .tms-sum-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .tms-sum-text strong { font-size: 0.86rem; font-weight: 600; color: var(--color-text); }
+    .tms-sum-text small { font-size: 0.76rem; line-height: 1.4; color: var(--color-text-muted); }
+    .tms-chev { width: 15px; height: 15px; flex-shrink: 0; color: var(--color-text-muted); transition: transform 0.2s ease; }
+    .tms-manual[open] > summary .tms-chev { transform: rotate(90deg); }
+    .tms-manual[open] > summary { box-shadow: inset 0 -1px 0 var(--color-border); }
+    .tms-manual-body { display: flex; flex-direction: column; gap: 1.1rem; padding: 16px; background: var(--surface); }
+    .tms-manual.solo .tms-manual-body { padding: 0; background: none; }
+    :global(html[data-theme="dark"]) .tms-manual > summary:hover { background: rgba(255, 255, 255, 0.04); }
+    @media (prefers-reduced-motion: reduce) { .tms-chev, .tms-manual > summary { transition: none; } }
     .tms-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
-    .tms-msg { font-size: 0.78rem; font-weight: 600; }
+    .tms-msg { display: block; margin-top: 0.8rem; min-height: 1.2em; font-size: 0.78rem; font-weight: 600; }
     .tms-msg:global(.ok) { color: var(--color-ok); }
     .tms-msg:global(.err) { color: var(--color-danger); }
     .tms-btn-solid { font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; color: #fff; background: var(--color-blue-deep); border: none; border-radius: 9px; padding: 9px 18px; cursor: pointer; }
@@ -39,30 +161,33 @@ const { lang: L, webhook } = Astro.props;
     .tms-btn-solid:focus-visible, .tms-btn-ghost:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 2px; }
 
     @media (max-width: 560px) {
+        .tms-selects { grid-template-columns: 1fr; }
         .tms-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
-        .tms-msg { grid-column: 1 / -1; }
         .tms-btn-solid, .tms-btn-ghost { min-height: 46px; width: 100%; }
     }
 </style>
 
 <script>
     function initTeams() {
-        const urlIn = document.getElementById('tmsUrl') as HTMLInputElement | null;
-        const saveBtn = document.getElementById('tmsSave') as HTMLButtonElement | null;
-        const testBtn = document.getElementById('tmsTest') as HTMLButtonElement | null;
-        const msg = document.getElementById('tmsMsg');
+        const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+        const urlIn = $<HTMLInputElement>('tmsUrl');
+        const saveBtn = $<HTMLButtonElement>('tmsSave');
+        const msg = $('tmsMsg');
         const status = document.querySelector<HTMLElement>('[data-integ-status]');
-        if (!urlIn || !saveBtn || !testBtn || !msg) return;
+        if (!urlIn || !saveBtn || !msg) return;
 
         const flash = (text: string, ok: boolean) => { msg.textContent = text; msg.className = 'tms-msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { msg.textContent = ''; msg.className = 'tms-msg'; }, 3200); };
+        const reload = () => { window.location.href = window.location.pathname; };
 
         saveBtn.addEventListener('click', async () => {
             const url = urlIn.value.trim();
-            if (url && !/^https:\/\/([a-z0-9-]+\.)*(logic\.azure\.com|azure-api\.net|webhook\.office\.com)(:443)?\//i.test(url)) { flash(msg.dataset.i18nUrlDebeSer || '', false); return; }
+            const viaOauth = !!urlIn.closest('[data-oauth]');
+            if ((viaOauth && !url) || (url && !/^https:\/\/([a-z0-9-]+\.)*(logic\.azure\.com|azure-api\.net|webhook\.office\.com)(:443)?\//i.test(url))) { flash(msg.dataset.i18nUrlDebeSer || '', false); return; }
             saveBtn.disabled = true;
             try {
                 const res = await fetch('/api/org/prefs', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teams_webhook_url: url }) });
                 if (!res.ok) throw new Error();
+                if (viaOauth) { reload(); return; }
                 if (status) {
                     status.textContent = (url ? status.dataset.labelOn : status.dataset.labelOff) || '';
                     status.dataset.estado = url ? 'on' : 'off';
@@ -71,7 +196,7 @@ const { lang: L, webhook } = Astro.props;
             } catch { flash(msg.dataset.i18nNoGuardo || '', false); } finally { saveBtn.disabled = false; }
         });
 
-        testBtn.addEventListener('click', async () => {
+        document.querySelectorAll<HTMLButtonElement>('#tmsTest').forEach((testBtn) => testBtn.addEventListener('click', async () => {
             testBtn.disabled = true;
             try {
                 const res = await fetch('/api/integraciones/teams-test', { method: 'POST' });
@@ -79,7 +204,83 @@ const { lang: L, webhook } = Astro.props;
                 if (!res.ok) throw new Error(d.error || '');
                 flash(msg.dataset.i18nMensajeEnviado || '', true);
             } catch (err: any) { flash(err.message || msg.dataset.i18nNoEnvio || '', false); } finally { testBtn.disabled = false; }
+        }));
+
+        const addBtn = $<HTMLButtonElement>('tmsAdd');
+        addBtn?.addEventListener('click', async () => {
+            addBtn.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/teams/conectar', { method: 'POST' });
+                const d = await res.json();
+                if (!res.ok || !d.redirect) throw new Error(d.error || '');
+                window.location.href = d.redirect;
+            } catch (err: any) { flash(err.message || msg.dataset.i18nNoConecto || '', false); addBtn.disabled = false; }
         });
+
+        const discBtn = $<HTMLButtonElement>('tmsDisc');
+        discBtn?.addEventListener('click', async () => {
+            discBtn.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/teams/conectar', { method: 'DELETE' });
+                if (!res.ok) throw new Error();
+                reload();
+            } catch { flash(msg.dataset.i18nNoDesconecto || '', false); discBtn.disabled = false; }
+        });
+
+        const picker = $('tmsPicker');
+        const main = $('tmsMain');
+        const teamSel = $<HTMLSelectElement>('tmsTeam');
+        const chanSel = $<HTMLSelectElement>('tmsChannel');
+        const useBtn = $<HTMLButtonElement>('tmsUse');
+        if (!picker || !teamSel || !chanSel || !useBtn) return;
+
+        const fill = (sel: HTMLSelectElement, items: { id: string; nombre: string }[], empty: string) => {
+            sel.replaceChildren(...(items.length ? items : [{ id: '', nombre: empty }]).map((x) => new Option(x.nombre, x.id)));
+            sel.disabled = !items.length;
+        };
+        const get = async (qs = '') => {
+            const res = await fetch('/api/integraciones/teams/canales' + qs);
+            const d = await res.json();
+            if (!res.ok) throw new Error(d.error || '');
+            return d;
+        };
+        const loadChannels = async () => {
+            useBtn.disabled = true;
+            fill(chanSel, [], picker.dataset.i18nCargando || '');
+            if (!teamSel.value) return;
+            try {
+                const d = await get('?equipo=' + encodeURIComponent(teamSel.value));
+                fill(chanSel, d.canales, '');
+                useBtn.disabled = !chanSel.value;
+            } catch (err: any) { flash(err.message || msg.dataset.i18nNoLista || '', false); }
+        };
+        let loaded = false;
+        const open = async () => {
+            picker.hidden = false;
+            if (main) main.hidden = true;
+            if (loaded) return;
+            try {
+                const d = await get();
+                fill(teamSel, d.equipos, picker.dataset.i18nSinEquipos || '');
+                loaded = true;
+                await loadChannels();
+            } catch (err: any) { flash(err.message || msg.dataset.i18nNoLista || '', false); }
+        };
+
+        teamSel.addEventListener('change', loadChannels);
+        chanSel.addEventListener('change', () => { useBtn.disabled = !chanSel.value; });
+        $('tmsChange')?.addEventListener('click', open);
+        $('tmsCancel')?.addEventListener('click', () => { picker.hidden = true; if (main) main.hidden = false; });
+        useBtn.addEventListener('click', async () => {
+            useBtn.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/teams/canales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ equipo: teamSel.value, canal: chanSel.value }) });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || '');
+                reload();
+            } catch (err: any) { flash(err.message || msg.dataset.i18nNoGuardo || '', false); useBtn.disabled = false; }
+        });
+        if (!picker.hidden) open();
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initTeams);
     else initTeams();

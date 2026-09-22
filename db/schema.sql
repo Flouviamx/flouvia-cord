@@ -360,6 +360,15 @@ alter table orgs add column if not exists slack_team text;
 -- Los conectores O365 clásicos de Teams están retirados; la URL vigente es la
 -- del flujo, no un webhook del canal.
 alter table orgs add column if not exists teams_webhook_url text;
+alter table orgs add column if not exists teams_graph_access_enc text;
+alter table orgs add column if not exists teams_graph_refresh_enc text;
+alter table orgs add column if not exists teams_graph_expira timestamptz;
+alter table orgs add column if not exists teams_graph_usuario text;
+alter table orgs add column if not exists teams_graph_estado text;
+alter table orgs add column if not exists teams_team_id text;
+alter table orgs add column if not exists teams_team_nombre text;
+alter table orgs add column if not exists teams_channel_id text;
+alter table orgs add column if not exists teams_channel_nombre text;
 -- WhatsApp Business (Cloud API): número emisor, token CIFRADO y la plantilla
 -- aprobada por Meta con la que se inicia la conversación.
 alter table orgs add column if not exists whatsapp_phone_id text;
@@ -5019,7 +5028,7 @@ create table if not exists integracion_oauth_estados (
   state_hash  text primary key check (state_hash ~ '^[a-f0-9]{64}$'),
   org_id      uuid not null references orgs(id) on delete cascade,
   user_id     uuid not null references users(id) on delete cascade,
-  proveedor   text not null check (proveedor in ('hubspot', 'mercadopago', 'slack')),
+  proveedor   text not null check (proveedor in ('hubspot', 'mercadopago', 'slack', 'teams')),
   expires_at  timestamptz not null,
   used_at     timestamptz,
   created_at  timestamptz not null default now()
@@ -5028,7 +5037,7 @@ create index if not exists idx_integracion_oauth_estados_exp on integracion_oaut
 
 alter table integracion_oauth_estados drop constraint if exists integracion_oauth_estados_proveedor_check;
 alter table integracion_oauth_estados add constraint integracion_oauth_estados_proveedor_check
-  check (proveedor in ('hubspot', 'mercadopago', 'slack'));
+  check (proveedor in ('hubspot', 'mercadopago', 'slack', 'teams'));
 
 create table if not exists integracion_vinculos (
   id               uuid primary key default gen_random_uuid(),

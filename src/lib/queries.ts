@@ -122,6 +122,10 @@ export async function getOrg() {
         slackCanal: (o.slack_channel as string) ?? '',
         slackEquipo: (o.slack_team as string) ?? '',
         teamsWebhook: (o.teams_webhook_url as string) ?? '',
+        teamsCanal: (o.teams_channel_nombre as string) ?? '',
+        teamsEquipo: (o.teams_team_nombre as string) ?? '',
+        teamsUsuario: (o.teams_graph_usuario as string) ?? '',
+        teamsGraph: (o.teams_graph_estado as string) ?? '',
         // Solo la parte pública: el token va cifrado y no sale de la base.
         whatsappPhoneId: (o.whatsapp_phone_id as string) ?? '',
         whatsappPlantilla: (o.whatsapp_plantilla as string) ?? '',

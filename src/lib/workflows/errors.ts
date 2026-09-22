@@ -11,7 +11,7 @@ export type WorkflowErrorCode =
     | 'limite_tareas' | 'limite_correos' | 'limite_slack' | 'limite_hubspot' | 'limite_cliente' | 'limite_http'
     | 'tarea_titulo' | 'tarea_fallo' | 'sin_destinatarios' | 'correo_no_disponible' | 'mensaje_vacio'
     | 'slack_sin_conexion' | 'slack_rechazo' | 'nota_vacia'
-    | 'teams_sin_conexion' | 'teams_rechazo' | 'limite_teams'
+    | 'teams_sin_conexion' | 'teams_reconectar' | 'teams_rechazo' | 'limite_teams'
     | 'wa_sin_conexion' | 'wa_sin_telefono' | 'wa_plantilla' | 'wa_rechazo' | 'limite_wa'
     | 'hubspot_conexion' | 'hubspot_datos' | 'hubspot_temporal'
     | 'sin_cotizacion' | 'sin_factura' | 'cliente_sin_correo' | 'correo_cliente_fallo' | 'cuota_envios'

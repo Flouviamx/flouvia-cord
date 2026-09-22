@@ -71,11 +71,18 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
                 <input class="s-input" id="oSlack" value={ORG.slackWebhook} placeholder="https://hooks.slack.com/services/T000/B000/XXXX" />
                 <span class="s-hint">{t(L, 'set.notif.slack_hint')}</span>
             </div>
-            <div class="s-field">
-                <label for="oTeams">{t(L, 'set.notif.teams_webhook')}</label>
-                <input class="s-input" id="oTeams" value={ORG.teamsWebhook} placeholder="https://prod-00.westus.logic.azure.com:443/workflows/..." />
-                <span class="s-hint">{t(L, 'set.notif.teams_hint')}</span>
-            </div>
+            {ORG.teamsCanal ? (
+                <div class="s-field">
+                    <label>Microsoft Teams</label>
+                    <span class="s-hint">{t(L, 'set.integ.slack.conectado_a')} <b>{ORG.teamsCanal}</b>{ORG.teamsEquipo && ` · ${ORG.teamsEquipo}`}. <a href="/app/ajustes/integraciones/teams">{t(L, 'set.notif.teams_administrar')}</a></span>
+                </div>
+            ) : (
+                <div class="s-field">
+                    <label for="oTeams">{t(L, 'set.notif.teams_webhook')}</label>
+                    <input class="s-input" id="oTeams" value={ORG.teamsWebhook} placeholder="https://prod-00.westus.logic.azure.com:443/workflows/..." />
+                    <span class="s-hint">{t(L, 'set.notif.teams_hint')}</span>
+                </div>
+            )}
         </div>
     </div>
 
@@ -147,7 +154,7 @@ const sinCanal = (ev: string, c: string) => c !== 'email' && ev === 'team_join';
             try {
                 const res = await fetch('/api/org/prefs', {
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ notif_prefs, slack_webhook_url: slack?.value ?? '', teams_webhook_url: teams?.value ?? '' }),
+                    body: JSON.stringify({ notif_prefs, slack_webhook_url: slack?.value ?? '', teams_webhook_url: teams ? teams.value : undefined }),
                 });
                 const d = await res.json();
                 if (!res.ok) throw new Error(d.error || M.i18nErr || 'No se pudo guardar');

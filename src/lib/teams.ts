@@ -70,30 +70,31 @@ async function post(url: string, body: unknown): Promise<{ ok: boolean; status: 
     }
 }
 
-/** Envoltorio de Adaptive Card que Teams espera de un flujo de Power Automate. */
-function card(blocks: unknown[], actions: unknown[] = []) {
+export type AdaptiveCard = Record<string, unknown>;
+
+function adaptiveCard(blocks: unknown[], actions: unknown[] = []): AdaptiveCard {
     return {
-        type: 'message',
-        attachments: [{
-            contentType: 'application/vnd.microsoft.card.adaptive',
-            content: {
-                type: 'AdaptiveCard',
-                $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
-                version: '1.4',
-                body: blocks,
-                ...(actions.length ? { actions } : {}),
-            },
-        }],
+        type: 'AdaptiveCard',
+        $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+        version: '1.4',
+        body: blocks,
+        ...(actions.length ? { actions } : {}),
     };
 }
 
+/** Envoltorio que Teams espera de un flujo de Power Automate. */
+const webhookMessage = (content: AdaptiveCard) => ({
+    type: 'message',
+    attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', content }],
+});
+
+export const postTeamsCard = (webhookUrl: string, content: AdaptiveCard) => post(webhookUrl, webhookMessage(content));
+
 /** Texto libre (acción de workflow). El autor escribe el mensaje; Cord no le agrega nada. */
-export async function postTeamsText(webhookUrl: string, text: string): Promise<{ ok: boolean; status: number }> {
-    return post(webhookUrl, card([{ type: 'TextBlock', text, wrap: true }]));
-}
+export const textCard = (text: string): AdaptiveCard => adaptiveCard([{ type: 'TextBlock', text, wrap: true }]);
 
 /** Aviso con forma fija de una cotización (matriz de Ajustes › Notificaciones). */
-export async function postToTeams(webhookUrl: string, evento: string, data: TeamsPayload): Promise<{ ok: boolean; status: number }> {
+export function quoteCard(evento: string, data: TeamsPayload): AdaptiveCard {
     const lang: TeamsLang = data.lang === 'en' ? 'en' : 'es';
     const verbo = EVENT_MSG[evento]?.[lang] ?? evento;
     const l = LABELS[lang];
@@ -108,5 +109,5 @@ export async function postToTeams(webhookUrl: string, evento: string, data: Team
         },
     ];
     const actions = data.link ? [{ type: 'Action.OpenUrl', title: l.ver, url: data.link }] : [];
-    return post(webhookUrl, card(blocks, actions));
+    return adaptiveCard(blocks, actions);
 }

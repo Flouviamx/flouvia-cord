@@ -1,12 +1,14 @@
 // /api/integraciones/teams-test — manda una tarjeta de prueba al Teams conectado.
-// Sesión + permiso 'ajustes'. Usa el teams_webhook_url ya guardado en la org.
-//   POST → { ok, status } | { error }
+// Sesión + permiso 'ajustes'. Usa el canal elegido con Microsoft o el flujo de Power Automate.
+//   POST → { ok } | { error }
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { sql, getActiveOrgId, withOrgTx } from '../../../lib/db';
+import { getActiveOrgId } from '../../../lib/db';
 import { requirePerm } from '../../../lib/queries';
-import { postToTeams } from '../../../lib/teams';
+import { quoteCard } from '../../../lib/teams';
+import { deliverTeams } from '../../../lib/integraciones/teams-graph';
+import { strictRateLimit, strictLimitResponse } from '../../../lib/ratelimit';
 import { currentLocale } from '../../../lib/context';
 import { t } from '../../../i18n/app';
 
@@ -16,16 +18,17 @@ export const POST: APIRoute = async () => {
 
     const L = currentLocale();
     const orgId = await getActiveOrgId();
-    const [orgRows] = await withOrgTx(orgId, sql`select teams_webhook_url from orgs where id = ${orgId}`);
-    const url = orgRows[0]?.teams_webhook_url as string | null;
-    if (!url) return json({ error: t(L, 'teams.test.sin_webhook') }, 400);
+    const limitado = strictLimitResponse(await strictRateLimit(`teams-test:${orgId}`, 10, 60));
+    if (limitado) return limitado;
 
-    const r = await postToTeams(url, 'ping', {
+    const r = await deliverTeams(orgId, quoteCard('ping', {
         folio: t(L, 'slack.test.folio'), cliente: t(L, 'slack.test.cliente'),
         total: 12500, link: null, lang: L,
-    });
-    if (!r.ok) return json({ error: t(L, 'teams.test.rechazo') }, 400);
-    return json({ ok: true });
+    }));
+    if (r.ok) return json({ ok: true });
+    if (r.reason === 'sin_conexion') return json({ error: t(L, 'teams.test.sin_webhook') }, 400);
+    if (r.reason === 'reconectar') return json({ error: t(L, 'teams.test.reconectar') }, 400);
+    return json({ error: t(L, 'teams.test.rechazo') }, 400);
 };
 
 function json(data: unknown, status = 200) {
