@@ -19,7 +19,7 @@
 | **n8n** | `n8n-nodes-cord` 1.1.0 en npm con constancia de origen | Verificación de n8n para n8n Cloud | n8n | Respuesta de n8n (enviado el 21 sep) |
 | **Microsoft Teams** | Flujo de Power Automate en producción; "Conectar con Microsoft" construido e **inactivo** | Registrar la app en Entra, credenciales, prueba real, verificación de editor | André, luego Claude | Microsoft 365 de pago (decisión: no pagar todavía) |
 | **WhatsApp Business** | Nivel 1 en producción (número + token + plantilla) | Prueba con número real; registro integrado de Meta | André | Verificación de negocio en Meta |
-| **Mercado Pago** | En producción en México; app `7210198958457914` | Pago real de prueba; renovar credenciales expuestas; otros países; facturas; reembolsos | André, luego Claude | Nada para México |
+| **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; probar Colombia; facturas; reembolsos | André, luego Claude | Nada para México |
 
 ---
 
