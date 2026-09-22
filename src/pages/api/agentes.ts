@@ -18,6 +18,7 @@ import {
   listMcpServers, addMcpServer, deleteMcpServer, setServerActivo, setServerPermitido,
 } from '../../lib/agents/governance';
 import { requireEntitlement } from '../../lib/org-entitlements';
+import { validateWebhookUrl } from '../../lib/ssrf';
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -59,7 +60,12 @@ export const POST: APIRoute = async ({ request }) => {
       const url = String(body.url_sse ?? '').trim();
       const token = body.auth_token ? String(body.auth_token).trim() : null;
       if (!nombre) return json({ error: 'Ponle un nombre al servidor' }, 400);
-      if (!/^https?:\/\//.test(url)) return json({ error: 'La URL debe empezar con http(s)://' }, 400);
+      // Mismo filtro que un webhook saliente: https y ningún destino interno.
+      // Antes bastaba con que empezara por http(s)://, así que se podía guardar
+      // un servidor apuntando a la red interna; lo frenaba el guard de conexión,
+      // pero el alta lo aceptaba y el fallo aparecía después sin explicación.
+      const urlCheck = validateWebhookUrl(url);
+      if (!urlCheck.ok) return json({ error: urlCheck.error }, 400);
       const id = await addMcpServer(orgId, nombre, url, token);
       await logAudit(orgId, { accion: 'agente.mcp_server_agregado', entidad: 'mcp_server', entidad_id: id, detalle: nombre, ip });
       return json({ ok: true, id });

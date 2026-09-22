@@ -260,6 +260,50 @@ Contrato completo en [`app-rutas.md`](app-rutas.md) y en el historial. Resumen:
   de redacción partiría una causa en dos.
 - Límite de workflows activos como hard limit `active_workflows` (regla 18).
 
+## Contrato de seguridad
+
+Auditado el 2026-09-22 sobre HubSpot, Slack, Zapier, Make, n8n, Mercado Pago, la
+API pública, MCP y Cord Workflows (Teams y WhatsApp quedaron fuera de esa
+revisión). Lo que sostiene cada carril, y que no se debe romper sin reemplazarlo:
+
+- **Toda firma se compara en tiempo constante** (`timingSafeEqual`): Stripe,
+  Mercado Pago, HubSpot, correo entrante, cron, TOTP, contraseñas y el secreto
+  de cliente de OAuth. Una comparación con `===` filtra el secreto byte a byte.
+- **Todo destino que elige el usuario pasa por `src/lib/ssrf.ts`.** La IP se
+  valida en el momento de abrir el socket (`guardedLookup` dentro del dispatcher
+  de undici), no antes: validar y luego conectar deja una ventana de DNS
+  rebinding. Nunca se sigue una redirección —un 302 hacia `169.254.169.254`
+  evadiría cualquier validación previa— y el cuerpo se acota. Aplica a webhooks
+  salientes, a la acción HTTP de Workflows y a los servidores MCP remotos.
+- **OAuth de Cord**: PKCE S256 (`plain` no se acepta), `redirect_uri` con
+  coincidencia EXACTA contra lo registrado, código de 5 minutos y un solo uso
+  resuelto en una sola sentencia, secreto de cliente guardado como hash, access
+  de 1 h y refresh rotatorio de 180 días. El **reuso de un refresh ya rotado
+  revoca la conexión entera** fuera de una ventana de gracia de 30 s
+  (RFC 9700 §4.14.2) y avisa a operaciones; dentro de la ventana solo se rechaza,
+  para no castigar el reintento de un cliente que no recibió la respuesta.
+- **CSRF cerrado por defecto**: toda escritura exige `Origin` del mismo origen,
+  incluso sin el header, y la lista de exenciones vive en `csrf-policy.ts` — solo
+  entra ahí un carril cuya credencial es una firma o un token portador, nunca una
+  cookie. La CSP de `/oauth/authorize` se amplía con un header que pone el propio
+  servidor en la RESPUESTA y se borra antes de salir: el navegador no puede
+  fijarlo.
+- **Rate limit con dos carriles**: `strictRateLimit` falla CERRADO en superficies
+  privilegiadas y de dinero (incluido el carril público de pago, con componente
+  de IP); `rateLimit` protege el resto y degrada a un contador local solo si ni
+  Upstash ni Neon responden.
+- **Ningún secreto sale de la base**: tokens de integración cifrados
+  (`crypto-secret.ts`), secretos de webhook enmascarados al listarlos, el token
+  de un servidor MCP se muestra como `••••••`, el export de la organización
+  excluye las columnas `*_enc` y los logs guardan el estado HTTP, nunca el valor.
+- **Datos ajenos escapados en cada destino**: HTML en los correos, `escapeSlack`
+  en Slack (un nombre de cliente con `<url|texto>` llegaría como enlace al canal
+  del vendedor) y el texto de Teams viaja como campo de una tarjeta.
+- **Workflows con techo**: profundidad máxima de cadena, anidamiento acotado,
+  200 pasos por ejecución, límite por acción (`strictRateLimit`), el correo al
+  cliente consume la cuota del plan y solo puede escribirle al cliente del
+  documento — no a una dirección arbitraria.
+
 ## Pendiente
 
 El checklist completo, app por app (qué está hecho, qué falta, quién y qué lo

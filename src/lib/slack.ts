@@ -78,14 +78,22 @@ export async function postSlackText(webhookUrl: string, text: string): Promise<{
     }
 }
 
+/**
+ * Slack interpreta `<...|texto>` como enlace en el texto del mensaje, así que un
+ * dato que Cord no escribió —el nombre que el cliente teclea al aprobar, por
+ * ejemplo— podría llegar al canal del vendedor como un enlace a donde el cliente
+ * quiera. Se escapa todo lo que viene del dato, no del mensaje.
+ */
+export const escapeSlack = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 /** Construye y envía el mensaje. Devuelve ok/status sin lanzar. */
 export async function postToSlack(webhookUrl: string, evento: string, data: SlackPayload): Promise<{ ok: boolean; status: number }> {
     const lang: SlackLang = data.lang === 'en' ? 'en' : 'es';
     const verbo = EVENT_MSG[evento]?.[lang] ?? evento;
     const l = LABELS[lang];
     const lineas = [
-        `${l.cotizacion} *${data.folio}* ${verbo}`,
-        `${l.cliente}: ${data.cliente || '—'} · ${l.total}: *${money(data.total, data.moneda)}*`,
+        `${l.cotizacion} *${escapeSlack(data.folio)}* ${verbo}`,
+        `${l.cliente}: ${escapeSlack(data.cliente || '—')} · ${l.total}: *${money(data.total, data.moneda)}*`,
     ];
     if (data.link) lineas.push(`<${data.link}|${l.ver}>`);
     const body = JSON.stringify({ text: lineas.join('\n') });

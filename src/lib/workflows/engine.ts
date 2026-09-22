@@ -2,7 +2,7 @@ import { sql, withOrgTx, type DbRow } from '../db';
 import { reqContext } from '../context';
 import { log } from '../log';
 import { siteOrigin, sendEmail, sendClientQuoteMessage, sendClientInvoiceMessage } from '../email';
-import { postSlackText } from '../slack';
+import { escapeSlack, postSlackText } from '../slack';
 import { textCard } from '../teams';
 import { deliverTeams } from '../integraciones/teams-graph';
 import { sendWhatsAppTemplate, WHATSAPP_MAX_VARS } from '../whatsapp';
@@ -384,7 +384,6 @@ export function displayValues(values: Record<string, unknown>, fields: WorkflowF
 }
 
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-const escapeSlack = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const oneLine = (s: string) => s.replace(/[\r\n\t]+/g, ' ').trim();
 
 interface ActionInput {

@@ -4,6 +4,7 @@ vi.mock('../src/lib/db', () => ({ sql: vi.fn(), withOrgTx: vi.fn() }));
 vi.mock('../src/lib/log', () => ({ log: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 
 const { parseSlackAccess, slackAuthorizeUrl, slackCredentials } = await import('../src/lib/integraciones/slack-oauth');
+const { escapeSlack } = await import('../src/lib/slack');
 
 describe('slack-oauth', () => {
     const saved = { id: process.env.SLACK_CLIENT_ID, secret: process.env.SLACK_CLIENT_SECRET };
@@ -49,5 +50,14 @@ describe('slack-oauth', () => {
         expect(parseSlackAccess({ ok: true, incoming_webhook: { url: 'https://hooks.slack.com/services/T/B/x' } })).toEqual({
             webhookUrl: 'https://hooks.slack.com/services/T/B/x', channel: null, team: null,
         });
+    });
+});
+
+describe('datos ajenos en un mensaje de Slack', () => {
+    it('un nombre con sintaxis de enlace llega como texto, no como enlace', () => {
+        expect(escapeSlack('<https://evil.example|Da clic aquí>'))
+            .toBe('&lt;https://evil.example|Da clic aquí&gt;');
+        expect(escapeSlack('ACME & Co')).toBe('ACME &amp; Co');
+        expect(escapeSlack('Cliente normal')).toBe('Cliente normal');
     });
 });

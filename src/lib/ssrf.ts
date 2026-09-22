@@ -112,6 +112,23 @@ export function guardedLookup(
 // request desperdiciaría el pooling de undici y filtraría sockets.
 const guardedAgent = new Agent({ connect: { lookup: guardedLookup } as any });
 
+/**
+ * `fetch` con el mismo guard de red que `safeFetch`, pero que devuelve la
+ * Response tal cual: para protocolos que necesitan el cuerpo en streaming
+ * (SSE de un servidor MCP remoto), donde acotar y cerrar el cuerpo rompería el
+ * transporte. Conserva lo que de verdad cierra el SSRF: la IP se valida en el
+ * momento de abrir el socket (guardedAgent) y NUNCA se sigue una redirección
+ * —un 302 hacia una IP interna evadiría cualquier validación previa—.
+ */
+export function guardedFetch(input: any, init: any = {}): Promise<any> {
+    return undiciFetch(input, { ...init, redirect: 'manual', dispatcher: guardedAgent } as any).then((res: any) => {
+        if (res.status >= 300 && res.status < 400) {
+            throw new Error(`Redirección no permitida (HTTP ${res.status})`);
+        }
+        return res;
+    });
+}
+
 export interface SafeFetchResult {
     status: number;
     ok: boolean;

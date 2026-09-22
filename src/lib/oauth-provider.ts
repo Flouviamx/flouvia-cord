@@ -1,4 +1,5 @@
 import { sql, withOrgTx, withUserTx, logAudit } from './db';
+import { sendOpsAlert } from './ops-alert';
 import { memberCan, type PermMap } from './permissions';
 import {
     OAUTH_ACCESS_TTL_S, OAUTH_CODE_TTL_S, OAUTH_REFRESH_TTL_DAYS, newAccessToken, newAuthCode, newRefreshToken,
@@ -123,10 +124,18 @@ export async function refreshTokens(client: OAuthClient, refreshToken: string): 
     const refresh = newRefreshToken();
     const shown = tokenDisplay(access);
     const [row] = await sql`
-        select grant_id, scope from cord_oauth_refresh(${client.clientId}, ${sha256Hex(refreshToken)},
+        select grant_id, scope, replay from cord_oauth_refresh(${client.clientId}, ${sha256Hex(refreshToken)},
                                                        ${sha256Hex(access)}, ${shown.prefix}, ${shown.last4}, ${OAUTH_ACCESS_TTL_S},
                                                        ${sha256Hex(refresh)}, ${OAUTH_REFRESH_TTL_DAYS})`;
     if (!row) return { ok: false, error: 'invalid_grant' };
+    // Un refresh ya rotado se presentó de nuevo: puede ser robo, así que la
+    // función revocó la conexión entera. Se avisa a operaciones porque el
+    // cliente legítimo va a ver su integración desconectada sin haber tocado nada.
+    if (row.replay) {
+        await sendOpsAlert('Reuso de refresh token OAuth',
+            `Cliente ${client.clientId}; grant ${row.grant_id}. Se revocó la conexión: el mismo refresh token se usó dos veces.`);
+        return { ok: false, error: 'invalid_grant' };
+    }
     return {
         ok: true, grantId: row.grant_id as string,
         tokens: { access_token: access, token_type: 'Bearer', expires_in: OAUTH_ACCESS_TTL_S, refresh_token: refresh, scope: row.scope as OAuthScope },

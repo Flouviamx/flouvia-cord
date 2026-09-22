@@ -37,7 +37,7 @@ vi.mock('../src/lib/email', () => ({
 vi.mock('../src/lib/actions/quotes', () => ({ expireQuote: m.expireQuote, decideApprovalRequest: m.approveRequest }));
 vi.mock('../src/lib/ssrf', () => ({ safeFetch: m.safeFetch }));
 vi.mock('../src/lib/billing', () => ({ reserveUsage: m.reserve, cancelUsage: m.cancelUsage }));
-vi.mock('../src/lib/slack', () => ({ postSlackText: m.slack }));
+vi.mock('../src/lib/slack', () => ({ postSlackText: m.slack, escapeSlack: (v: string) => v.replace(/[<>&]/g, '_') }));
 vi.mock('../src/lib/ratelimit', () => ({ strictRateLimit: async () => ({ ok: true }) }));
 vi.mock('../src/lib/workflows/datasets-run', () => ({ runDataset: m.runDataset }));
 vi.mock('../src/lib/integraciones/queue', () => ({ integrationQueueStatement: () => null }));

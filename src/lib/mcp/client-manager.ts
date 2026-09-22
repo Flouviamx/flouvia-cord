@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { sql, withOrgTx } from "../db";
-import { assertSafeWebhookTarget } from "../ssrf";
+import { assertSafeWebhookTarget, guardedFetch } from "../ssrf";
 import { decryptSecret } from "../crypto-secret";
 import { checkEntitlement } from "../org-entitlements";
 import { log } from '../log';
@@ -106,11 +106,18 @@ export class McpClientManager {
         const authHeaders: Record<string, string> = server.auth_token
           ? { Authorization: `Bearer ${server.auth_token}` }
           : {};
+        // `assertSafeWebhookTarget` valida el DNS de AHORA, pero entre esa
+        // resolución y el socket hay una ventana (rebinding), y el `fetch`
+        // normal además SIGUE redirecciones: un servidor público podría
+        // responder 302 hacia 169.254.169.254 y Cord leería la metadata de la
+        // nube. `guardedFetch` valida la IP al abrir el socket y no sigue
+        // redirecciones, para la conexión SSE y para cada POST del transporte.
         const transport = new SSEClientTransport(url, {
           requestInit: { headers: authHeaders },
+          fetch: guardedFetch as any,
           eventSourceInit: {
             fetch: (u: any, init: any) =>
-              fetch(u, { ...init, headers: { ...(init?.headers || {}), ...authHeaders } }),
+              guardedFetch(u, { ...init, headers: { ...(init?.headers || {}), ...authHeaders } }),
           },
         } as any);
 

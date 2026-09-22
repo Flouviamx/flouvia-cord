@@ -6,6 +6,28 @@
 
 ---
 
+✅ **Auditoría de seguridad de las integraciones (22 sep 2026)** — revisión de
+HubSpot, Slack, Zapier, Make, n8n, Mercado Pago, API pública, MCP y Workflows.
+Tres huecos reales, corregidos:
+   • **SSRF en el cliente MCP.** La URL del servidor remoto se validaba antes de
+     conectar, pero después se usaba `fetch` normal: seguía redirecciones (un 302
+     hacia `169.254.169.254` leería la metadata de la nube) y dejaba la ventana de
+     DNS rebinding entre la validación y el socket. Ahora usa `guardedFetch`, con
+     la misma defensa que los webhooks salientes. El alta además solo aceptaba
+     `http(s)://`, así que se podía guardar un destino interno y descubrir el
+     fallo más tarde; ahora valida igual que un webhook.
+   • **Sin detección de reuso de refresh token.** La rotación impedía usar dos
+     veces el mismo token, pero no distinguía un reintento de un robo. Ahora
+     `cord_oauth_refresh` guarda el hash anterior y, fuera de 30 s de gracia,
+     revoca el grant y su llave, lo deja en auditoría y avisa a operaciones.
+     Probado contra PostgreSQL real en `test/oauth-refresh-reuse-db.test.ts`.
+   • **Avisos de Slack sin escapar.** Los workflows ya escapaban, pero la matriz
+     de notificaciones no: un nombre de cliente con la sintaxis `<url|texto>`
+     llegaba al canal del vendedor como un enlace. `escapeSlack` pasó a
+     `src/lib/slack.ts` como fuente única y lo usan los dos caminos.
+El resto del contrato quedó escrito en la sección "Contrato de seguridad" de
+`estado/integraciones.md` para que la próxima sesión no lo re-derive.
+
 ✅ **Teams con "Conectar con Microsoft", construido e inactivo (21 sep 2026)**
    • Graph solo deja publicar en un canal con permiso delegado (el de aplicación es para
      migraciones), así que la tarjeta sale a nombre de quien conectó. Se eligió eso sobre un bot
