@@ -128,7 +128,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     await withOrgTx(orgId, sql`
-        update cotizacion_cobros set mp_preference_id = ${preferencia.id}
+        update cotizacion_cobros set mp_preference_id = ${preferencia.id}, mp_preference_at = now()
          where id = ${cobro.id} and org_id = ${orgId}`);
 
     return json({ url: preferencia.initPoint, cobro_id: cobro.id });

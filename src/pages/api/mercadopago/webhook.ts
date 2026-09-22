@@ -77,7 +77,7 @@ async function porReferencia(paymentId: string): Promise<Response> {
               join orgs o on o.id = cc.org_id
              where cc.status = 'pendiente' and cc.mp_preference_id is not null
                and o.mp_charges_enabled
-               and cc.updated_at > now() - interval '30 days'
+               and coalesce(cc.mp_preference_at, cc.created_at) > now() - interval '30 days'
              limit 25`);
         return rows.map((r) => String(r.org_id));
     });

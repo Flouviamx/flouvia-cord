@@ -1784,6 +1784,7 @@ alter table cotizacion_cobros add column if not exists metodo_pago text;
 -- reenvía varias veces por diseño.
 alter table cotizacion_cobros add column if not exists mp_preference_id text;
 alter table cotizacion_cobros add column if not exists mp_payment_id text;
+alter table cotizacion_cobros add column if not exists mp_preference_at timestamptz;
 create unique index if not exists uq_cobros_mp_payment on cotizacion_cobros(org_id, mp_payment_id)
   where mp_payment_id is not null;
 alter table cotizacion_cobros add column if not exists application_fee_cents int;
