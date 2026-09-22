@@ -1,6 +1,6 @@
 # Cord
 
-> Last reviewed: 2026-08-28
+> Last reviewed: 2026-09-21
 >
 > Cord is a commercial-closing platform built by Flouvia. It connects an
 > interactive quote, client approval, payment, invoicing, and collections in one
@@ -25,10 +25,11 @@ Cord currently offers signup in 12 markets:
 - Peru (PE)
 
 Online payments through Cord Payments are currently available for businesses in
-MX, US, CA, BR, ES, GB, DE, and FR. Businesses in CO, AR, CL, and PE can quote,
-invoice, track collections, and record payments received outside Cord, but cannot
-activate online payments inside the Cord link yet. SPEI is available only for
-eligible Mexican accounts and MXN transactions.
+MX, US, CA, BR, ES, GB, DE, and FR. Mercado Pago is a second online payment rail
+for quotes in Mexico and Latin America: an alternative to Cord Payments in MX and
+BR, and the online payment rail in CO, AR, CL, and PE. Payments go to the
+business's own Mercado Pago account. SPEI is available only for eligible Mexican
+accounts and MXN transactions.
 
 Cord offers these transaction currencies: MXN, USD, CAD, BRL, EUR, GBP, COP,
 ARS, CLP, PEN, JPY, CNY, CHF, and AUD. Availability of an online payment also
@@ -50,6 +51,15 @@ depends on the business country, currency, provider, and account eligibility.
 - Quote in one currency and keep books in another using a dated FX rate. FX Lock
   preserves the accepted rate for the configured quote window; it is not a
   financial derivative or a guarantee from a bank.
+- Automate follow-up with Cord Workflows: 44 Cord events or a fixed schedule
+  trigger tasks, emails to the team or client, WhatsApp template messages, Slack
+  and Microsoft Teams messages, HubSpot notes, or an HTTPS call, with conditions,
+  waits and lookups. No code. 1 active workflow on Free, 5 on Starter, no cap
+  from Professional. A workflow never charges, issues invoices or approves a
+  quote on the client's behalf.
+- Connect HubSpot (two-way client sync, quotes as Deals), Slack, Microsoft
+  Teams, WhatsApp Business, Zapier, Make, n8n, and Mercado Pago. Integrations
+  are included in every plan.
 - Use a public REST API, signed webhooks, an MCP server, and Cord Elements.
 
 ## Fiscal boundaries
@@ -68,8 +78,6 @@ depends on the business country, currency, provider, and account eligibility.
 Cord stores technical evidence of an approval. It does not provide legal advice,
 notarial certification, or a guarantee that evidence will win a dispute or have
 the same legal effect in every jurisdiction.
-
-## Documentation
 
 ## Plans and free allowance
 
@@ -96,6 +104,9 @@ for prices, currencies and included usage.
 - [Fiscal invoicing by country](https://docs.cordhq.app/docs/pagos/facturacion)
 - [Quotes overview](https://docs.cordhq.app/docs/cotizacion/resumen)
 - [Approval and technical evidence](https://docs.cordhq.app/docs/interaccion/firma)
+- [Cord Workflows guide](https://docs.cordhq.app/docs/automatizacion/workflows)
+- [Integrations guide](https://docs.cordhq.app/docs/automatizacion/integraciones)
+- [Mercado Pago guide](https://docs.cordhq.app/docs/pagos/mercado-pago)
 - [Developer overview](https://docs.cordhq.app/docs/desarrolladores/empezar/resumen)
 - [API authentication](https://docs.cordhq.app/docs/desarrolladores/esenciales/autenticacion)
 - [Webhooks](https://docs.cordhq.app/docs/desarrolladores/herramientas/webhooks)
@@ -116,8 +127,25 @@ for prices, currencies and included usage.
 
 - [Product overview](https://cordhq.app/producto/editor)
 - [Pricing](https://cordhq.app/precios)
-- [Invoicing](https://cordhq.app/producto/facturacion)
+- [Cord Payments](https://cordhq.app/producto/pagos)
+- [Cord Invoicing](https://cordhq.app/producto/facturacion)
+- [Cord Workflows](https://cordhq.app/producto/workflows)
 - [Multi-currency and FX](https://cordhq.app/producto/divisas)
+
+## Integrations
+
+- [All integrations](https://cordhq.app/integraciones)
+- [HubSpot](https://cordhq.app/integraciones/hubspot)
+- [Mercado Pago](https://cordhq.app/integraciones/mercado-pago)
+- [Slack](https://cordhq.app/integraciones/slack)
+- [Microsoft Teams](https://cordhq.app/integraciones/teams)
+- [WhatsApp Business](https://cordhq.app/integraciones/whatsapp)
+- [Zapier](https://cordhq.app/integraciones/zapier)
+- [Make](https://cordhq.app/integraciones/make)
+- [n8n](https://cordhq.app/integraciones/n8n)
+
+## Help
+
 - [Help center](https://cordhq.app/soporte)
 - [Public roadmap](https://cordhq.app/roadmap)
 - [Terms](https://cordhq.app/terminos)

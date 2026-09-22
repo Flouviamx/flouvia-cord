@@ -13,7 +13,7 @@ const devBase = "/dev-blog"; // prefijo fijo → paths matchean ruta → status 
 const { lang: langProp } = Astro.props as { lang?: 'es' | 'en' };
 const lang = langProp ?? 'es';
 if (!langProp && Astro.url.searchParams.get('lang') === 'en') {
-  return Astro.redirect(`${devBase}/en/`);
+  return Astro.redirect(`${devBase}/en`);
 }
 
 const allDevBlogs = await getCollection('devBlog', ({ id }) => {
@@ -115,7 +115,12 @@ const searchMatrix = [
 ];
 ---
 
-<DevBlogLayout title={lang === 'en' ? 'Cord Developer Blog' : 'Blog de Desarrolladores Cord'} lang={lang}>
+<DevBlogLayout
+  title={lang === 'en' ? 'Cord Developers: engineering, API and payments' : 'Cord Developers: ingeniería, API y pagos'}
+  description={lang === 'en' ? 'Engineering from the Cord team: multi-tenant architecture, financial webhooks, idempotency, the quotes API and how we build payments and invoicing.' : 'Ingeniería del equipo de Cord: arquitectura multi-tenant, webhooks financieros, idempotencia, la API de cotizaciones y cómo construimos pagos y facturación.'}
+  lang={lang}
+  isHome
+>
   <!-- Hero Section -->
   <header class="dev-hero">
     <h1 class="dev-title">

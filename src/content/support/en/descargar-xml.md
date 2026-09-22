@@ -4,8 +4,6 @@ description: "Find the files for any CFDI you've stamped, invoice by invoice."
 category: "Invoicing"
 ---
 
-# Download an invoice's PDF and XML
-
 
 Every CFDI you stamp in Cord automatically generates its PDF (printable version) and its XML (the actual tax document — the one your accountant needs). Outside Mexico, every invoice generates its PDF the same way; the XML is specific to the CFDI.
 

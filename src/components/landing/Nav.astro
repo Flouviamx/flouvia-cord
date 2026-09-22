@@ -2,8 +2,8 @@
 // Navbar de Cord — replica el sistema de flouvia.com:
 // top-bar editorial + glass pill con indicador deslizante + wordmark central
 // que se transforma en píldora al hacer scroll. Wordmark "cord" en texto (no SVG).
-import { altLangUrls, languagePreferenceUrl, publicPath, useTranslations } from '../../i18n/utils';
-const { esUrl, enUrl, lang } = altLangUrls(Astro.url);
+import { languageSwitchTargets, languagePreferenceUrl, publicPath, useTranslations } from '../../i18n/utils';
+const { esUrl, enUrl, lang } = languageSwitchTargets(Astro.url, Astro.locals.publicAlternates);
 const isEn = lang === 'en';
 const t = useTranslations(lang);
 const l = (p: string) => publicPath(p, lang);
@@ -86,6 +86,14 @@ const { darkHero = false } = Astro.props;
                                 <a href={l("/producto/facturacion")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" fill="currentColor" fill-opacity="0.12" /><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg></span>
                                     <span class="mega-copy"><b>{t("nav.mega.prod.8.title")}</b><i>{t("nav.mega.prod.8.desc")}</i></span>
+                                </a>
+                                <a href={l("/producto/workflows")} class="mega-item">
+                                    <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor" fill-opacity="0.12" /><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor" fill-opacity="0.12" /><rect x="14" y="14" width="7" height="7" rx="2" /><path d="M6.5 10v4a3 3 0 0 0 3 3H14" stroke-opacity="0.6" /></svg></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.13.title")}</b><i>{t("nav.mega.prod.13.desc")}</i></span>
+                                </a>
+                                <a href={l("/integraciones")} class="mega-item">
+                                    <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v4M15 3v4" /><path d="M6 7h12v4a6 6 0 0 1-12 0z" fill="currentColor" fill-opacity="0.12" /><path d="M6 7h12v4a6 6 0 0 1-12 0z" /><path d="M12 17v4" stroke-opacity="0.6" /></svg></span>
+                                    <span class="mega-copy"><b>{t("nav.mega.prod.14.title")}</b><i>{t("nav.mega.prod.14.desc")}</i></span>
                                 </a>
                                 <a href={l("/producto/equipo")} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" /><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5" /><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5" /></svg></span>
@@ -189,7 +197,7 @@ const { darkHero = false } = Astro.props;
                                 
                                 <div class="mega-divider">{isEn ? 'Help & Contact' : 'Ayuda y Contacto'}</div>
 
-                                <a href={isEn ? 'https://docs.cordhq.app/?lang=en' : 'https://docs.cordhq.app'} class="mega-item">
+                                <a href={isEn ? 'https://docs.cordhq.app/en/docs' : 'https://docs.cordhq.app'} class="mega-item">
                                     <span class="mega-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z" fill="currentColor" fill-opacity="0.12" /><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z" /><path d="M8 8.5h7M8 12h7" stroke-opacity="0.5" /></svg></span>
                                     <span class="mega-copy"><b>{isEn ? 'Documentation' : 'Documentación'}</b><i>{isEn ? 'Step-by-step guides to set up and use Cord' : 'Guías paso a paso para configurar y usar Cord'}</i></span>
                                 </a>
@@ -327,6 +335,14 @@ const { darkHero = false } = Astro.props;
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" fill="currentColor" fill-opacity="0.12" /><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg></span>
                                 <span class="m-sub-copy"><b>{t("nav.mega.prod.8.title")}</b><i>{t("nav.mega.prod.8.desc")}</i></span>
                             </a>
+                            <a href={l("/producto/workflows")} class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor" fill-opacity="0.12" /><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor" fill-opacity="0.12" /><rect x="14" y="14" width="7" height="7" rx="2" /><path d="M6.5 10v4a3 3 0 0 0 3 3H14" stroke-opacity="0.6" /></svg></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.prod.13.title")}</b><i>{t("nav.mega.prod.13.desc")}</i></span>
+                            </a>
+                            <a href={l("/integraciones")} class="m-sub" data-close>
+                                <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v4M15 3v4" /><path d="M6 7h12v4a6 6 0 0 1-12 0z" fill="currentColor" fill-opacity="0.12" /><path d="M6 7h12v4a6 6 0 0 1-12 0z" /><path d="M12 17v4" stroke-opacity="0.6" /></svg></span>
+                                <span class="m-sub-copy"><b>{t("nav.mega.prod.14.title")}</b><i>{t("nav.mega.prod.14.desc")}</i></span>
+                            </a>
                             <a href={l("/producto/equipo")} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" /><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5" /><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5" /></svg></span>
                                 <span class="m-sub-copy"><b>{t("nav.mega.prod.11.title")}</b><i>{t("nav.mega.prod.11.desc")}</i></span>
@@ -426,7 +442,7 @@ const { darkHero = false } = Astro.props;
                             
                             <div class="m-sub-divider">{isEn ? 'Help & Contact' : 'Ayuda y Contacto'}</div>
 
-                            <a href={isEn ? 'https://docs.cordhq.app/?lang=en' : 'https://docs.cordhq.app'} class="m-sub" data-close>
+                            <a href={isEn ? 'https://docs.cordhq.app/en/docs' : 'https://docs.cordhq.app'} class="m-sub" data-close>
                                 <span class="m-sub-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z" fill="currentColor" fill-opacity="0.12" /><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z" /><path d="M8 8.5h7M8 12h7" stroke-opacity="0.5" /></svg></span>
                                 <span class="m-sub-copy"><b>{isEn ? 'Documentation' : 'Documentación'}</b><i>{isEn ? 'Step-by-step guides to set up and use Cord' : 'Guías paso a paso para configurar y usar Cord'}</i></span>
                             </a>

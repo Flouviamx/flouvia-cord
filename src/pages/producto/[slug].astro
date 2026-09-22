@@ -34,10 +34,11 @@ const RELATED: Record<string, string[]> = {
     'link-publico':    ['pagos', 'editor', 'seguimiento'],
     'seguimiento':     ['link-publico', 'editor', 'cobranza-ia'],
     'clientes-credito':['facturacion', 'cobranza-ia', 'finanzas'],
-    'cobranza-ia':     ['clientes-credito', 'seguimiento', 'finanzas'],
+    'cobranza-ia':     ['clientes-credito', 'workflows', 'finanzas'],
     'divisas':         ['pagos', 'facturacion', 'clientes-credito'],
     'facturacion':     ['pagos', 'divisas', 'clientes-credito'],
-    'pagos':           ['facturacion', 'link-publico', 'divisas'],
+    'pagos':           ['facturacion', 'workflows', 'divisas'],
+    'workflows':       ['seguimiento', 'cobranza-ia', 'facturacion'],
     'finanzas':        ['cobranza-ia', 'clientes-credito'],
     'aprobaciones':    ['editor', 'equipo', 'negociacion'],
     'equipo':          ['aprobaciones', 'editor', 'clientes-credito'],
@@ -57,13 +58,14 @@ const DOCS_PATH: Record<string, string> = {
     'divisas':          'pagos/tesoreria-fx',
     'facturacion':      'pagos/facturacion',
     'pagos':            'pagos/onboarding',
+    'workflows':        'automatizacion/workflows',
     'finanzas':         'gestion/dashboard',
     'aprobaciones':     'cuenta/configuracion',
     'equipo':           'cuenta/resumen',
     'negociacion':      'interaccion/chat',
 
 };
-const docsUrl = `https://docs.cordhq.app/docs/${DOCS_PATH[feature.slug] ?? 'resumen'}${isEn ? '?lang=en' : ''}`;
+const docsUrl = isEn ? `https://docs.cordhq.app/en/docs/${DOCS_PATH[feature.slug] ?? 'resumen'}` : `https://docs.cordhq.app/docs/${DOCS_PATH[feature.slug] ?? 'resumen'}`;
 
 const allFeatures = isEn ? FEATURES_EN : FEATURES;
 const relatedSlugs = RELATED[feature.slug] ?? [];
@@ -113,7 +115,7 @@ const appSchema = {
     '@type': 'SoftwareApplication',
     name: `Cord — ${feature.nav}`,
     applicationCategory: 'BusinessApplication',
-    applicationSubCategory: feature.slug === 'facturacion' ? 'Invoicing' : undefined,
+    applicationSubCategory: ({ facturacion: 'Invoicing', pagos: 'Payments', workflows: 'Workflow automation' } as Record<string, string>)[feature.slug],
     operatingSystem: 'Web',
     url: `${base}/producto/${feature.slug}`,
     description: feature.metaDescription ?? feature.sub,
@@ -148,6 +150,23 @@ const HOWTO: Record<string, { name: string; steps: { name: string; text: string 
             { name: 'Sigue el saldo', text: 'Los pagos con tarjeta desde el link y las transferencias que registras a mano bajan el mismo saldo. Al llegar a cero, la factura se marca pagada.' },
         ],
     },
+};
+HOWTO.workflows = isEn ? {
+    name: 'How to publish a workflow in Cord',
+    steps: [
+        { name: 'Open Workflows', text: 'Open Workflows in the side menu and start from one of the 9 ready ideas or from scratch.' },
+        { name: 'Choose the trigger', text: 'Pick one of the 44 Cord events, or a fixed schedule read in your business time zone.' },
+        { name: 'Add the steps', text: 'Add actions, conditions, waits and lookups under "Do this". Event data such as {{client}} or {{total}} fills in at run time.' },
+        { name: 'Test and publish', text: 'Test the draft against the latest real event —lookups run, actions do not— and press Publish.' },
+    ],
+} : {
+    name: 'Cómo publicar un workflow en Cord',
+    steps: [
+        { name: 'Abre Workflows', text: 'Entra a Workflows en el menú lateral y empieza desde una de las 9 ideas listas o desde cero.' },
+        { name: 'Elige el disparador', text: 'Elige uno de los 44 eventos de Cord, o un horario fijo interpretado en la zona horaria de tu negocio.' },
+        { name: 'Agrega los pasos', text: 'Agrega acciones, condiciones, esperas y consultas en "Haz esto". Los datos del evento, como {{cliente}} o {{total}}, se completan al ejecutar.' },
+        { name: 'Prueba y publica', text: 'Prueba el borrador contra el último evento real —las consultas corren, las acciones no— y pulsa Publicar.' },
+    ],
 };
 const howto = HOWTO[feature.slug];
 const howtoSchema = howto ? {
@@ -556,6 +575,59 @@ const howtoSchema = howto ? {
                             </div>
                         )}
 
+                        {feature.slug === 'workflows' && (
+                            <div class="mk-window mk-wf" id="wfHero">
+                                <div class="mk-bar">
+                                    <span class="mk-bar-title">{isEn ? 'Quote follow-up ladder' : 'Escalera de seguimiento'}</span>
+                                    <div class="mk-bar-actions">
+                                        <span class="mk-wf-runs">{isEn ? '143 runs · 30 days' : '143 ejecuciones · 30 días'}</span>
+                                        <span class="mk-badge mk-badge-ok">● {isEn ? 'Active' : 'Activo'}</span>
+                                    </div>
+                                </div>
+                                <div class="mk-wf-body">
+                                    <span class="mk-wf-sec">{isEn ? 'When this happens' : 'Cuando pase esto'}</span>
+                                    <div class="mk-wf-node mk-wf-trigger">
+                                        <i class="mk-wf-ico mk-wf-ico-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.14" d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z" fill="currentColor" fill-opacity="0.14"/></svg></i>
+                                        <div><b>{isEn ? 'A quote is sent' : 'Se envía una cotización'}</b><em>quote.sent</em></div>
+                                    </div>
+                                    <span class="mk-wf-line" aria-hidden="true"></span>
+                                    <span class="mk-wf-sec">{isEn ? 'Do this' : 'Haz esto'}</span>
+                                    <div class="mk-wf-node">
+                                        <i class="mk-wf-ico mk-wf-ico-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="M12 7v5l3 2"/></svg></i>
+                                        <div><b>{isEn ? 'Wait until the client opens or approves' : 'Espera hasta que el cliente la abra o la apruebe'}</b><em>{isEn ? 'Deadline: 2 days' : 'Plazo: 2 días'}</em></div>
+                                    </div>
+                                    <div class="mk-wf-branches">
+                                        <div class="mk-wf-branch">
+                                            <span class="mk-wf-tag mk-wf-tag-ok">{isEn ? 'If it happens' : 'Si ocurre'}</span>
+                                            <div class="mk-wf-node mk-wf-node-sm">
+                                                <i class="mk-wf-ico mk-wf-ico-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></i>
+                                                <div><b>{isEn ? 'Create a task' : 'Crear una tarea'}</b><em>{isEn ? 'Call {{client}} about {{folio}}' : 'Llamar a {{cliente}} por {{folio}}'}</em></div>
+                                            </div>
+                                            <div class="mk-wf-node mk-wf-node-sm">
+                                                <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=64" alt="Slack" width="18" height="18" loading="lazy" />
+                                                <div><b>{isEn ? 'Send a Slack message' : 'Enviar un mensaje a Slack'}</b><em>#ventas</em></div>
+                                            </div>
+                                        </div>
+                                        <div class="mk-wf-branch">
+                                            <span class="mk-wf-tag mk-wf-tag-warn">{isEn ? 'If the deadline passes' : 'Si vence el plazo'}</span>
+                                            <div class="mk-wf-node mk-wf-node-sm">
+                                                <i class="mk-wf-ico mk-wf-ico-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="m22 6-10 7L2 6"/></svg></i>
+                                                <div><b>{isEn ? 'Email the client' : 'Escribirle al cliente'}</b><em>{isEn ? 'Any questions about {{folio}}?' : '¿Alguna duda sobre {{folio}}?'}</em></div>
+                                            </div>
+                                            <div class="mk-wf-node mk-wf-node-sm">
+                                                <img src="/imgs/integrations/whatsapp.svg" alt="WhatsApp" width="18" height="18" loading="lazy" />
+                                                <div><b>{isEn ? 'Send the client a WhatsApp' : 'Mandarle un WhatsApp al cliente'}</b><em>{isEn ? 'Approved template' : 'Plantilla aprobada'}</em></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mk-wf-foot">
+                                    <span><i class="mk-wf-dot"></i>{isEn ? 'Last run 12:36 · COT-0148 · completed' : 'Última ejecución 12:36 · COT-0148 · completada'}</span>
+                                    <b>{isEn ? '0 errors' : '0 errores'}</b>
+                                </div>
+                            </div>
+                        )}
+
                         {feature.slug === 'negociacion' && (
                             <div class="mk-window mk-nego" id="negoHero" style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1);">
                                 <div class="mk-bar">
@@ -702,7 +774,7 @@ const howtoSchema = howto ? {
         </section>
 
         <!-- ── PRODUCT ACCORDION ── -->
-        <ProductAccordion slug={feature.slug} client:only="react" />
+        <ProductAccordion slug={feature.slug} lang={isEn ? 'en' : 'es'} client:only="react" />
 
         <!-- ── BENTO GRID ── -->
         <section class="pp-bento">
@@ -1402,6 +1474,39 @@ const howtoSchema = howto ? {
     .mk-intl-pill { display: inline-flex; align-items: center; gap: 5px; position: absolute; top: 46px; right: 14px; z-index: 3; font-size: 0.64rem; font-weight: 700; color: #2563eb; background: rgba(255,255,255,0.95); border: 1px solid rgba(37,99,235,0.25); padding: 5px 11px; border-radius: 100px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
     .mk-intl-pill svg { width: 12px; height: 12px; flex-shrink: 0; }
 
+    /* ── CORD WORKFLOWS — editor con disparador, espera y ramas ── */
+    .mk-wf { max-width: 620px; margin: 0 auto; }
+    .mk-wf-runs { font-size: 0.64rem; color: #94a3b8; font-weight: 600; white-space: nowrap; }
+    .mk-wf-body { padding: 1.05rem 1.2rem 1.15rem; display: flex; flex-direction: column; background: linear-gradient(180deg, #fcfdfe 0%, #ffffff 60%); }
+    .mk-wf-sec { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.9px; text-transform: uppercase; color: #94a3b8; margin: 0 0 7px 2px; }
+    .mk-wf-node { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 6px 16px -10px rgba(10,25,47,0.18); }
+    .mk-wf-node > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .mk-wf-node b { font-size: 0.74rem; font-weight: 650; color: #0f172a; letter-spacing: -0.01em; line-height: 1.25; }
+    .mk-wf-node em { font-style: normal; font-size: 0.64rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-wf-trigger { border-color: rgba(37,99,235,0.22); box-shadow: 0 0 0 3px rgba(37,99,235,0.06), 0 6px 16px -10px rgba(10,25,47,0.18); }
+    .mk-wf-trigger em { font-family: ui-monospace, 'SF Mono', Menlo, monospace; color: #2563eb; }
+    .mk-wf-node img { width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0; }
+    .mk-wf-ico { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .mk-wf-ico svg { width: 15px; height: 15px; }
+    .mk-wf-ico-blue { color: #2563eb; background: rgba(37,99,235,0.08); }
+    .mk-wf-ico-amber { color: #b45309; background: rgba(245,158,11,0.10); }
+    .mk-wf-ico-green { color: #059669; background: rgba(16,185,129,0.10); }
+    .mk-wf-line { display: block; width: 1px; height: 16px; background: rgba(10,25,47,0.14); margin: 6px 0 8px 26px; }
+    .mk-wf-branches { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(10,25,47,0.12); }
+    .mk-wf-branch { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+    .mk-wf-node-sm { padding: 8px 10px; gap: 8px; border-radius: 10px; }
+    .mk-wf-node-sm .mk-wf-ico { width: 24px; height: 24px; border-radius: 7px; }
+    .mk-wf-node-sm .mk-wf-ico svg { width: 13px; height: 13px; }
+    .mk-wf-node-sm b { font-size: 0.68rem; }
+    .mk-wf-node-sm em { font-size: 0.6rem; }
+    .mk-wf-tag { align-self: flex-start; font-size: 0.58rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; }
+    .mk-wf-tag-ok { color: #059669; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); }
+    .mk-wf-tag-warn { color: #b45309; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.22); }
+    .mk-wf-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 18px; border-top: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; font-size: 0.64rem; color: #64748b; }
+    .mk-wf-foot span { display: inline-flex; align-items: center; gap: 7px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-wf-foot b { color: #059669; font-weight: 700; white-space: nowrap; }
+    .mk-wf-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; flex-shrink: 0; }
+
     /* ── FINANZAS / CFO — dashboard con barras ── */
     .mk-fin-body { padding: 1.2rem 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 1.05rem; }
     .mk-fin-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -1767,6 +1872,14 @@ const howtoSchema = howto ? {
         .mk-pay-tot-final b { font-size: 1.3rem; }
         .mk-pay-cvc { display: none; }
         .mk-pay-vpill { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* ── workflows: las dos ramas se apilan como en el editor móvil ── */
+        .mk-wf-runs { display: none; }
+        .mk-wf-body { padding: 0.95rem 0.95rem 1rem; }
+        .mk-wf-branches { grid-template-columns: 1fr; }
+        .mk-wf-node b { font-size: 0.8rem; }
+        .mk-wf-node em { font-size: 0.7rem; white-space: normal; }
+        .mk-wf-foot { padding: 10px 13px; }
 
         /* ── finanzas: la etiqueta de dos renglones desalineaba el KPI ── */
         .mk-fin-kpi { justify-content: space-between; }

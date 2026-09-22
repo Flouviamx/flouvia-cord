@@ -11,5 +11,6 @@ declare namespace App {
     interface Locals {
         customerDomainOrgId?: string;
         opsOperator?: import('./lib/ops-auth').OpsOperator;
+        publicAlternates?: import('./i18n/utils').PublicAlternates | null;
     }
 }

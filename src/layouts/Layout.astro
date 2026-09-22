@@ -24,18 +24,24 @@ interface Props {
     // Idioma real del contenido cuando no sale de la URL: el link público usa
     // el idioma del negocio (o el elegido en la demo) sin prefijo /en.
     htmlLang?: 'es' | 'en';
+    alternates?: PublicAlternates | null;
+    imageAlt?: string;
 }
 
-import { getLangFromUrl, altLangUrls } from '../i18n/utils';
+import { getLangFromUrl, cleanPathname, publicAlternates, type PublicAlternates } from '../i18n/utils';
 import CookieConsent from '../components/CookieConsent.astro';
 import CordAnalytics from '../components/CordAnalytics.astro';
 import PrivacySafeAnalytics from '../components/PrivacySafeAnalytics.astro';
 import SpeedInsights from '../components/SpeedInsights.astro';
 
+const lang = getLangFromUrl(Astro.url);
 const {
     title,
-    description = 'Cord lleva una venta de la propuesta al pago en un solo link: cotizaciones interactivas, evidencia de aprobación, control de margen, cobros y facturación en los mercados disponibles.',
+    description = lang === 'en'
+        ? 'Cord takes a sale from proposal to payment in one link: interactive quotes, approval evidence, margin control, payments and invoicing in supported markets.'
+        : 'Cord lleva una venta de la propuesta al pago en un solo link: cotizaciones interactivas, evidencia de aprobación, control de margen, cobros y facturación en los mercados disponibles.',
     image = '/og-cord.jpg',
+    imageAlt,
     noindex = false,
     ogType = 'website',
     canonicalOrigin,
@@ -47,14 +53,17 @@ const {
 } = Astro.props;
 
 const SITE      = canonicalOrigin ? new URL(canonicalOrigin) : (Astro.site ?? new URL('https://cordhq.app'));
-const canonical = new URL(Astro.url.pathname, SITE).href;
+const canonical = new URL(cleanPathname(Astro.url.pathname), SITE).href;
 const ogImage   = new URL(image, SITE).href;
+const isDefaultImage = image === '/og-cord.jpg';
 
-const lang = getLangFromUrl(Astro.url);
-const { esUrl, enUrl } = altLangUrls(Astro.url);
-const siteCanonicalEs = new URL(esUrl, SITE).href;
-const siteCanonicalEn = new URL(enUrl, SITE).href;
-const locale = lang === 'es' ? 'es_MX' : 'en_US';
+const alternates = 'alternates' in Astro.props ? Astro.props.alternates ?? null : publicAlternates(Astro.url);
+Astro.locals.publicAlternates = alternates;
+const hreflang = !noindex && alternates?.es && alternates?.en
+    ? { es: new URL(alternates.es, SITE).href, en: new URL(alternates.en, SITE).href }
+    : null;
+const locale = (htmlLang ?? lang) === 'es' ? 'es_MX' : 'en_US';
+const robots = noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
 ---
 
 <!doctype html>
@@ -72,23 +81,28 @@ const locale = lang === 'es' ? 'es_MX' : 'en_US';
         </script>
 
         <meta name="description" content={description} />
-        <link rel="canonical" href={canonical} />
-        <link rel="alternate" hreflang="es" href={siteCanonicalEs} />
-        <link rel="alternate" hreflang="en" href={siteCanonicalEn} />
-        <link rel="alternate" hreflang="x-default" href={siteCanonicalEs} />
-        {noindex && <meta name="robots" content="noindex, nofollow" />}
+        {!noindex && <link rel="canonical" href={canonical} />}
+        {hreflang && <link rel="alternate" hreflang="es" href={hreflang.es} />}
+        {hreflang && <link rel="alternate" hreflang="en" href={hreflang.en} />}
+        {hreflang && <link rel="alternate" hreflang="x-default" href={hreflang.es} />}
+        <meta name="robots" content={robots} />
 
         <!-- Open Graph -->
         <meta property="og:type" content={ogType} />
         <meta property="og:site_name" content="Cord" />
         <meta property="og:locale" content={locale} />
+        {hreflang && <meta property="og:locale:alternate" content={locale === 'es_MX' ? 'en_US' : 'es_MX'} />}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
         <meta property="og:image" content={ogImage} />
+        {isDefaultImage && <meta property="og:image:width" content="1200" />}
+        {isDefaultImage && <meta property="og:image:height" content="630" />}
+        <meta property="og:image:alt" content={imageAlt ?? title} />
 
         <!-- Twitter -->
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@usecordapp" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
         <meta name="twitter:image" content={ogImage} />

@@ -280,6 +280,18 @@ const SLIDES = {
     { label: '04', title: '100% de las acciones registradas', sub: 'Audit log inmutable: quién cotizó, quién aprobó, quién modificó un precio y cuándo. Trazabilidad total para auditorías, disputas y cumplimiento.', icon: 'receipt' },
   ],
 
+  pagos: [
+    { label: '01', title: 'El cliente paga donde aprueba', sub: 'La tarjeta se cobra en la misma página de la cotización o la factura. Sin checkout ajeno, sin descargar nada, en la divisa que negociaste.', icon: 'zap' },
+    { label: '02', title: 'Varios socios, no un dueño forzado', sub: 'Cada socio o titular real se registra como una persona con su porcentaje. El alta pregunta los roles reales en vez de declarar un solo dueño al 100%.', icon: 'users' },
+    { label: '03', title: 'El alta vive dentro de Cord', sub: 'Documentos, socios y cuenta de depósito en una pantalla de Cord. Si hace falta, continúas en tu teléfono para tomar la foto de tu identificación.', icon: 'lock' },
+    { label: '04', title: 'Ves cuándo te depositan', sub: 'Historial de depósitos con fecha y estado, frecuencia configurable y la cuenta de tu país validada antes de guardarla.', icon: 'chart' },
+  ],
+  workflows: [
+    { label: '01', title: 'Un evento real arranca el flujo', sub: 'Cotización enviada, anticipo recibido, factura por vencer o contracargo: 44 eventos de Cord, o un horario fijo en tu zona horaria.', icon: 'zap' },
+    { label: '02', title: 'Once acciones en un solo editor', sub: 'Tareas, correo al equipo y al cliente, WhatsApp, Slack, Teams, notas en HubSpot o los datos a tu propia URL.', icon: 'layers' },
+    { label: '03', title: 'Ramas, esperas y consultas', sub: 'Divide el flujo según los datos, espera hasta que el cliente decida con un plazo y consulta la cartera o el saldo antes de actuar.', icon: 'git_branch' },
+    { label: '04', title: 'Nada es una caja negra', sub: 'Pruebas sin publicar contra el último evento real, historial paso por paso y fallas agrupadas por causa en el panel de salud.', icon: 'eye' },
+  ],
   negociacion: [
     { label: '01', title: 'Negocia producto por producto', sub: 'El cliente aprueba 9 artículos y hace contraoferta solo en 1. Sin rechazar toda la cotización — tú aceptas, ajustas o contrapropones y la venta sigue activa.', icon: 'tag' },
     { label: '02', title: 'El historial que no miente', sub: 'Cada versión revisada genera un snapshot inmutable: v1, v2, v3. Si el cliente dice "yo aprobé otra cosa", tienes el registro exacto de quién, cuándo y qué aprobó.', icon: 'git_branch' },
@@ -288,8 +300,95 @@ const SLIDES = {
   ],
 };
 
+const SLIDES_EN = {
+  editor: [
+    { label: '01', title: 'A quote ready in 30 seconds', sub: 'Type the order in your own words. AI matches it to your catalog, applies volume pricing and hands you a quote ready to review and send.', icon: 'sparkle' },
+    { label: '02', title: 'A unique price for every client', sub: 'Adjust any line on its own. The discount and the list price stay visible, so you know exactly how much you gave before confirming.', icon: 'tag' },
+    { label: '03', title: 'Your catalog works for you', sub: 'Instant search by name or SKU. Volume price tiers apply on their own when the quantity changes, no calculator needed.', icon: 'layers' },
+    { label: '04', title: 'Tax and totals without typos', sub: 'Subtotal, configurable tax and total recalculate live. Sequential numbering, automatic validity and gross margin per line for the seller.', icon: 'calculator' },
+  ],
+  'link-publico': [
+    { label: '01', title: 'Approve without an account', sub: 'The client opens the link from WhatsApp or email, reviews the quote with your brand and approves with one button. No sign-up, no app, no PDF attachment.', icon: 'check_circle' },
+    { label: '02', title: 'Your logo, your brand', sub: 'Your logo, colors and business name lead the public page. On paid plans "Powered by Cord" goes away and the experience is fully yours.', icon: 'shield' },
+    { label: '03', title: 'Evidence on every approval', sub: 'The client signs with their full name. Timestamp, IP address and a SHA-256 fingerprint of the document are recorded.', icon: 'lock' },
+    { label: '04', title: 'From yes to payment in seconds', sub: 'The client approves and can pay by card right there. Without leaving the quote and without sharing bank details over chat.', icon: 'zap' },
+  ],
+  seguimiento: [
+    { label: '01', title: 'Know the moment they open it', sub: 'A notification as soon as your client opens the link. Date, time and number of views, so you call while the quote is fresh.', icon: 'bell' },
+    { label: '02', title: 'The whole story in one thread', sub: 'Created, sent, viewed, approved, paid, invoiced. Anyone on the team understands the status in seconds.', icon: 'eye' },
+    { label: '03', title: 'Your real pipeline', sub: 'Live KPIs: amount to close, closed this month and conversion rate. Spot quotes about to expire before the client forgets them.', icon: 'chart' },
+    { label: '04', title: 'See when they are reviewing now', sub: 'A discreet "Viewing now" indicator when the client has the link open, the perfect moment to follow up.', icon: 'trending' },
+  ],
+  cfdi: [
+    { label: '01', title: 'From approved quote to invoice', sub: 'The data is already captured: products, quantities, prices and the client tax ID. Stamping is one click.', icon: 'zap' },
+    { label: '02', title: 'Your CSD connected once', sub: 'Upload your Digital Seal Certificate once. It stays encrypted and isolated in your account.', icon: 'lock' },
+    { label: '03', title: 'A UUID valid with the SAT', sub: 'Real CFDI 4.0 with the SAT UUID, XML and PDF available instantly, stamped through an authorized PAC.', icon: 'receipt' },
+    { label: '04', title: 'Quote, payment and invoice together', sub: 'The invoice stays linked to its quote in the timeline: who approved, when they paid and the UUID, in one place.', icon: 'check_circle' },
+  ],
+  'clientes-credito': [
+    { label: '01', title: 'One profile that says it all', sub: 'Company, contact, tax ID, payment terms and credit limit in a single profile. The whole team quotes with the agreed conditions.', icon: 'users' },
+    { label: '02', title: 'Credit limit visible before quoting', sub: 'Set a limit per client. Before sending, Cord shows how much credit is left.', icon: 'shield' },
+    { label: '03', title: 'Net 30 or Net 60 applied on their own', sub: 'The credit term is stored on the client profile and shows up automatically when you quote them.', icon: 'tag' },
+    { label: '04', title: 'Good clients stand out', sub: 'Full history of quotes, approvals and payments per client. Decide with evidence who gets better prices.', icon: 'trending' },
+  ],
+  'cobranza-ia': [
+    { label: '01', title: 'Your collector works at night', sub: 'AI contacts clients by email, understands the reply and negotiates a plan of up to 3 monthly installments within the limits you set.', icon: 'robot' },
+    { label: '02', title: 'Cash flow projected 90 days out', sub: 'Cord crosses each client\'s real payment delay with your weighted pipeline to estimate income week by week.', icon: 'chart' },
+    { label: '03', title: 'AI proposes. You approve.', sub: 'Opt-in client by client. You define how far the agent can negotiate and supervise every conversation.', icon: 'shield' },
+    { label: '04', title: 'Every agreement in the audit log', sub: 'Every email sent, every installment agreed and every rejection is recorded. The agent is never a black box.', icon: 'receipt' },
+  ],
+  divisas: [
+    { label: '01', title: 'Your client sees dollars. Your books see your currency.', sub: 'The sale currency and the accounting currency are independent. The client approves in USD or EUR; you keep your books in yours.', icon: 'currency' },
+    { label: '02', title: 'Today\'s rate, not the spreadsheet\'s', sub: 'A dated spot rate from a real source while you build the quote, with no manual entry.', icon: 'globe' },
+    { label: '03', title: 'The rate is locked for 30 days', sub: 'Once the quote is created, the rate stays locked for the quote window. The number you closed is the number you invoice.', icon: 'lock' },
+    { label: '04', title: 'A buffer that protects your margin', sub: 'Cord can add an adjustable percentage to the spot rate to absorb volatility.', icon: 'shield' },
+  ],
+  pagos: [
+    { label: '01', title: 'The client pays where they approve', sub: 'The card is charged on the same quote or invoice page. No third-party checkout, nothing to download, in the currency you negotiated.', icon: 'zap' },
+    { label: '02', title: 'Several owners, not one forced owner', sub: 'Every owner or beneficial owner is registered as a person with their stake. Onboarding asks the real roles instead of declaring a single 100% owner.', icon: 'users' },
+    { label: '03', title: 'Onboarding lives inside Cord', sub: 'Documents, owners and payout account on one Cord screen. If needed, continue on your phone to photograph your ID.', icon: 'lock' },
+    { label: '04', title: 'See when you get paid', sub: 'Payout history with date and status, a configurable schedule and your country\'s account format validated before saving.', icon: 'chart' },
+  ],
+  facturacion: [
+    { label: '01', title: 'A draft burns no number', sub: 'Build the invoice, review it and fix it without committing anything. The number is reserved when you issue it, so a discarded draft leaves no gap.', icon: 'layers' },
+    { label: '02', title: 'Every invoice has its own link', sub: 'A branded page where the client sees items, due date, payments received and balance, and pays by card right there.', icon: 'globe' },
+    { label: '03', title: 'The balance goes down by itself', sub: 'A card payment from the link and a wire you record by hand reduce the same balance. At zero the invoice is marked paid.', icon: 'chart' },
+    { label: '04', title: 'Voiding and crediting are not the same', sub: 'With no payments applied, Cord cancels with the SAT using your certificate. With payments applied it requires a credit note.', icon: 'shield' },
+  ],
+  workflows: [
+    { label: '01', title: 'A real event starts the flow', sub: 'Quote sent, deposit received, invoice due soon or chargeback: 44 Cord events, or a fixed schedule in your time zone.', icon: 'zap' },
+    { label: '02', title: 'Eleven actions in one editor', sub: 'Tasks, email to the team and the client, WhatsApp, Slack, Teams, HubSpot notes or the data to your own URL.', icon: 'layers' },
+    { label: '03', title: 'Branches, waits and lookups', sub: 'Split the flow on the data, wait until the client decides with a deadline and look up receivables or balance before acting.', icon: 'git_branch' },
+    { label: '04', title: 'Nothing is a black box', sub: 'Tests without publishing against the latest real event, step-by-step history and failures grouped by cause in the health panel.', icon: 'eye' },
+  ],
+  finanzas: [
+    { label: '01', title: 'The real delay, not the theoretical one', sub: 'Cord does not assume Net 30 is paid on day 30. It reads each client\'s history and projects with the actual delay.', icon: 'chart' },
+    { label: '02', title: 'Know what you will collect before you do', sub: 'Weighted pipeline plus real payment history give a 90-day projection, week by week, with probability scenarios.', icon: 'trending' },
+    { label: '03', title: 'An alert before the check bounces', sub: 'If a client that represents a large share of your receivables starts paying late, you hear it first.', icon: 'bell' },
+    { label: '04', title: 'The finance meeting in seconds', sub: 'A dashboard with KPIs, weekly projection and a weighted client ranking, updated with every new quote.', icon: 'receipt' },
+  ],
+  aprobaciones: [
+    { label: '01', title: 'Clear rules for the whole team', sub: 'Set that a seller can give up to 10% off. Anything above that threshold pauses and needs approval before it goes out.', icon: 'shield' },
+    { label: '02', title: 'Validation that doesn\'t interrupt', sub: 'It runs in the background and only acts when something is out of range. The team closes, you protect the margin.', icon: 'eye' },
+    { label: '03', title: 'Approve from your phone', sub: 'An instant notification when a quote crosses the threshold. See how much the seller gave and approve or reject in one tap.', icon: 'check_circle' },
+    { label: '04', title: 'Who approved, when and why', sub: 'The timeline keeps who requested the approval, who granted it and when.', icon: 'receipt' },
+  ],
+  equipo: [
+    { label: '01', title: 'Everyone sees what is theirs', sub: 'Sellers see their own pipeline, managers see all of it, accounting downloads invoices. Predefined roles and granular permissions.', icon: 'users' },
+    { label: '02', title: 'Several companies, one panel', sub: 'If you operate several legal entities, switch between them in one click, with isolated catalogs and tax settings.', icon: 'layers' },
+    { label: '03', title: 'Sign in with Google or Microsoft', sub: 'Your team signs in with the corporate domain. When someone leaves, deactivate them there and they lose access to Cord.', icon: 'shield' },
+    { label: '04', title: 'Every action recorded', sub: 'An audit log of who quoted, who approved, who changed a price and when. Full traceability for audits and disputes.', icon: 'receipt' },
+  ],
+  negociacion: [
+    { label: '01', title: 'Negotiate product by product', sub: 'The client approves 9 items and counters on 1. The quote stays alive: you accept, adjust or counter.', icon: 'tag' },
+    { label: '02', title: 'A history that doesn\'t lie', sub: 'Every revised version keeps an immutable snapshot: v1, v2, v3. If the client says they approved something else, you have the exact record.', icon: 'git_branch' },
+    { label: '03', title: 'A cryptographic seal on every deal', sub: 'The approved version is sealed with SHA-256. Not a comma can change without breaking the fingerprint.', icon: 'lock' },
+    { label: '04', title: 'Negotiate inside the quote', sub: 'Messages and counteroffers inside the public link. Everything in the timeline, not scattered across WhatsApp.', icon: 'zap' },
+  ],
+};
+
 // ── Componente principal ──────────────────────────────────────────────────────
-export default function ProductAccordion({ slug = 'editor' }) {
+export default function ProductAccordion({ slug = 'editor', lang = 'es' }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const cardsRef   = useRef([]);
   const textsRef   = useRef([]);
@@ -302,7 +401,8 @@ export default function ProductAccordion({ slug = 'editor' }) {
     }
   }
 
-  const slides = SLIDES[slug] || SLIDES.editor;
+  const dict = lang === 'en' ? SLIDES_EN : SLIDES;
+  const slides = dict[slug] || dict.editor;
 
   // Estado inicial cuando cambia el slug
   useEffect(() => {

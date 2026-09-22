@@ -546,7 +546,11 @@ export const FEATURES_EN: Feature[] = [
             },
             {
                 q: 'Which countries can I collect card payments in with Cord?',
-                a: 'Today, 8 of the 12 countries Cord supports end-to-end: Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France. In Colombia, Argentina, Chile, and Peru your account still quotes, invoices, and tracks collections, but card payments aren\'t available there yet — and Cord says so before you start onboarding, not after it fails.',
+                a: 'Today, 8 of the 12 countries Cord supports end-to-end: Mexico, the United States, Canada, Brazil, Spain, the United Kingdom, Germany, and France. In Colombia, Argentina, Chile, and Peru your account still quotes, invoices, and tracks collections, but Cord Payments isn\'t available there yet — and Cord says so before you start onboarding, not after it fails. In those countries, online payment runs through Mercado Pago.',
+            },
+            {
+                q: 'Can I get paid through Mercado Pago?',
+                a: 'Yes, for quotes. You connect your Mercado Pago account from Settings › Payments and your client pays from the same link; the money lands in your Mercado Pago account, not Cord\'s. In Mexico and Brazil it shows up as an alternative below Cord Payments; in Colombia, Argentina, Chile and Peru it is the way to take payments online. Invoice links don\'t offer Mercado Pago yet.',
             },
             {
                 q: 'How do I set up my account to start collecting payments?',
@@ -665,6 +669,101 @@ export const FEATURES_EN: Feature[] = [
             },
         ],
         cta: { titulo: 'Issue, send and collect. In one place.', sub: 'Invoice with your own numbering, send it with its payment link, and watch the balance drop. Start for free.' },
+    },
+    {
+        slug: 'workflows',
+        nav: 'Cord Workflows',
+        eyebrow: 'CORD WORKFLOWS',
+        titulo: 'Follow-up on every sale, on autopilot.',
+        sub: '"When this happens, do this" rules that take the next step for you: a task when the client opens the quote, a reminder before the invoice is due, a Slack message when the deposit lands. No code.',
+        metaTitle: 'Cord Workflows: no-code sales and collections automation — Cord',
+        metaDescription: 'Automate follow-up on quotes and invoices: 44 events or a fixed schedule trigger tasks, emails, WhatsApp, Slack, Teams and HubSpot notes, with conditions and waits.',
+        plan: 'Starting on the Free plan: 1 active workflow on Free, 5 on Starter and no cap from Professional. Runs are unlimited',
+        stats: [
+            { valor: '44', countup: 44, label: 'Cord events that can start a workflow, plus a fixed schedule' },
+            { valor: '11', countup: 11, label: 'actions: tasks, email, WhatsApp, Slack, Teams, HubSpot and more' },
+            { valor: '9', countup: 9, label: 'ready-to-publish ideas, one per real use case' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'WHEN THIS HAPPENS',
+                titulo: 'A real event starts the flow, not a reminder in your calendar.',
+                copy: 'A workflow watches your account. When the client opens a quote, a deposit arrives, an invoice falls due or a chargeback is opened, it runs on its own. It can also run at a fixed time —"every Monday at 9"— read in your business time zone, not the server\'s.',
+                bullets: [
+                    '44 events across quotes, payments, invoices, clients, products and tasks',
+                    'A fixed schedule in your account time zone',
+                    'Time signals: quote expiring, invoice due soon and invoice past due',
+                ],
+            },
+            {
+                eyebrow: 'DO THIS',
+                titulo: 'Eleven actions, from a task to a HubSpot note.',
+                copy: 'Create a task for the right person, email the team, write to the client with your brand or send them a WhatsApp with your approved template. Post to Slack or Teams, add a note in HubSpot or send the data to your own URL. On the document itself it only does what is bounded: expire an out-of-date quote, approve an internal request or void an invoice with no payments.',
+                bullets: [
+                    'Email and WhatsApp go to the document\'s client, never to a typed-in address',
+                    'Slack, Microsoft Teams and HubSpot from the same editor',
+                    'Event data sent to your own URL over HTTPS',
+                ],
+            },
+            {
+                eyebrow: 'CONDITIONS, WAITS AND LOOKUPS',
+                titulo: 'Wait for the client to decide. And if they don\'t, follow up.',
+                copy: 'Split the flow into two branches based on the event data, wait 1 to 30 days or until something happens with a deadline, and look up a figure from your account —overdue receivables, open pipeline, client balance— before deciding. Before publishing, test the draft against the latest real event: lookups run, actions don\'t.',
+                bullets: [
+                    '"If met / if not met" branches, no formulas',
+                    'Conditional wait: until the client opens or approves, with a deadline',
+                    'Test without publishing against the latest real event',
+                ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'THE QUOTE NOBODY OPENED',
+                titulo: 'Follow-up stopped depending on someone remembering.',
+                copy: 'The follow-up ladder waits two days for the client to open the quote. If they do, it creates the task to call them while it is fresh; if not, it writes to them for you.',
+            },
+            {
+                eyebrow: 'THE INVOICE THAT WENT OVERDUE QUIETLY',
+                titulo: 'Collections start before the due date, not a month after.',
+                copy: 'A reminder to the client three days before, another on the due date and, if it is still unpaid, an alert to the owner with the balance already owed.',
+            },
+            {
+                eyebrow: 'NOTHING IS A BLACK BOX',
+                titulo: 'Every run says what it did, step by step.',
+                copy: 'The history shows the status of every run and the result of every step. The health panel groups the last 30 days of failures by cause, not by message.',
+            },
+        ],
+        faqs: [
+            {
+                q: 'Do I need to know how to code to use Cord Workflows?',
+                a: 'No. The editor reads top to bottom in two blocks, "When this happens" and "Do this", and every step is picked from a list. Cord also ships 9 ready-to-use ideas —such as the quote follow-up ladder or the staged collection of an overdue invoice— that you can publish as they are or adapt.',
+            },
+            {
+                q: 'What can start a workflow?',
+                a: 'Any of Cord\'s 44 events —quotes sent, viewed, approved or paid; deposits and failed payments; invoices issued, due soon or past due; chargebacks, refunds and payouts; clients, products and tasks— or a fixed schedule such as "every Monday at 9" in your business time zone. Each workflow has exactly one trigger.',
+            },
+            {
+                q: 'Can a workflow charge or issue invoices for me?',
+                a: 'No. A workflow does not charge, does not issue invoices or CFDI, does not record payments and does not approve or reject a quote on your client\'s behalf: those decisions stay with a person or the client. What it does on your documents is bounded and explicit: write to the document\'s client, expire a quote that is past its validity, approve an internal approval request and void an invoice that has no payments yet.',
+            },
+            {
+                q: 'How many workflows can I have on each plan?',
+                a: 'The Free plan allows 1 active workflow, Starter 5 and from Professional there is no cap. Only active ones count: drafts and paused workflows take no slot. Runs are unlimited too; an active workflow runs every time its event happens.',
+            },
+            {
+                q: 'What happens to runs in progress if I change a workflow?',
+                a: 'They finish with the version they started with. What you edit is a draft, and what runs only changes when you press Publish; every new run takes a copy of the version published at that moment.',
+            },
+            {
+                q: 'Can a workflow trigger itself forever?',
+                a: 'No. A workflow is never triggered by the events it causes, and a chain of workflows triggering each other is cut after three levels.',
+            },
+            {
+                q: 'Which tools does it connect to?',
+                a: 'Actions post to Slack and Microsoft Teams, add notes in HubSpot and send WhatsApp messages with your WhatsApp Business account. To take Cord events to any other app there are Zapier, Make and n8n, or an action that sends the data to your own URL.',
+            },
+        ],
+        cta: { titulo: 'Let the next step take itself.', sub: 'Publish your first workflow from one of the 9 ready ideas. Free to start.' },
     },
     {
         slug: 'finanzas',

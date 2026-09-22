@@ -13,12 +13,14 @@ import AdvancedFeatures from '../components/landing/AdvancedFeatures.astro';
 import Steps from '../components/landing/Steps.astro';
 import PaymentsSection from '../components/landing/PaymentsSection.astro';
 import InvoicingSection from '../components/landing/InvoicingSection.astro';
+import ConnectSection from '../components/landing/ConnectSection.astro';
 
 import ClientView from '../components/landing/ClientView.astro';
 import Pricing from '../components/landing/Pricing.astro';
 import Faq from '../components/landing/Faq.astro';
 import Footer from '../components/landing/Footer.astro';
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import { cordOrganization, flouviaEntity, FLOUVIA_ID, ORG_ID, SITE, SOFTWARE_ID, WEBSITE_ID } from '../lib/seo/entities';
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = lang === 'en';
@@ -77,62 +79,66 @@ const howToSchema = {
 // confianza secundario dentro de la descripción, sin liderar el mensaje.
 // ACTUALIZACIÓN: Se implementa enfoque "Transaccional Absoluto".
 const title = isEn
-    ? "Free Online Quote Software | Proposals to Payments | Cord"
-    : "Software de cotizaciones online gratis y cobranza | Cord";
+    ? "Free Quote Software with Payments & Invoicing | Cord"
+    : "Software de cotizaciones gratis, cobros y facturación | Cord";
 
 const description = isEn
-    ? "Create professional quotes, share a link and follow up through payment. Start with 5 free sends each month and up to 5 active quotes. No credit card required."
-    : "Crea cotizaciones profesionales, comparte un link y da seguimiento hasta el pago. Empieza con 5 envíos gratis al mes y hasta 5 cotizaciones activas. Sin tarjeta.";
+    ? "Quote, take card payments and invoice from one link, with workflows and integrations. Start free: 5 sends a month and up to 5 active quotes, no credit card."
+    : "Cotiza, cobra con tarjeta y factura desde un solo link, con workflows e integraciones. Empieza gratis: 5 envíos al mes y hasta 5 cotizaciones activas, sin tarjeta.";
 
-// ── Datos estructurados adicionales (jul 2026) ──────────────────────────
-// Organization (Flouvia, la empresa creadora) + SoftwareApplication (Cord,
-// el producto — independiente, con su propio dominio/oferta) + FAQPage
-// (misma fuente que <Faq /> más abajo, así el schema SIEMPRE coincide con
-// el texto visible). Este trío es la forma "machine-readable" correcta de
-// decir "Cord es un producto propio, hecho por Flouvia, disponible para
-// cualquier negocio" — exactamente el problema que los LLMs venían
-// malinterpretando al no encontrar esta señal explícita en el HTML.
-const orgSchema = {
+const homeUrl = isEn ? `${SITE}/en` : `${SITE}/`;
+const siteGraph = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
-    '@id': 'https://flouvia.com/#organization',
-    name: 'Flouvia',
-    url: 'https://flouvia.com',
-    logo: 'https://cordhq.app/imgs/logo-cord-navy.png',
-    sameAs: [
-        'https://instagram.com/flouvia',
-        'https://tiktok.com/@flouvia',
-        'https://x.com/flouvia',
+    '@graph': [
+        flouviaEntity(),
+        cordOrganization(),
+        {
+            '@type': 'WebSite',
+            '@id': WEBSITE_ID,
+            url: `${SITE}/`,
+            name: 'Cord',
+            alternateName: ['Cord HQ', 'cordhq.app'],
+            description,
+            publisher: { '@id': ORG_ID },
+            inLanguage: ['es', 'en'],
+        },
+        {
+            '@type': 'WebPage',
+            '@id': `${homeUrl}#webpage`,
+            url: homeUrl,
+            name: title,
+            description,
+            isPartOf: { '@id': WEBSITE_ID },
+            about: { '@id': SOFTWARE_ID },
+            inLanguage: lang,
+        },
+        {
+            '@type': 'SoftwareApplication',
+            '@id': SOFTWARE_ID,
+            name: 'Cord',
+            url: `${SITE}/`,
+            image: `${SITE}/og-cord.jpg`,
+            applicationCategory: 'BusinessApplication',
+            applicationSubCategory: isEn ? 'Commercial Closing Platform' : 'Plataforma de Cierre Comercial',
+            operatingSystem: 'Web',
+            description,
+            audience: {
+                '@type': 'BusinessAudience',
+                audienceType: isEn ? 'Businesses of any size that sell with quotes and invoices' : 'Negocios de cualquier tamaño que venden con cotizaciones y facturas',
+            },
+            creator: { '@id': FLOUVIA_ID },
+            publisher: { '@id': ORG_ID },
+            offers: {
+                '@type': 'Offer',
+                price: '0',
+                description: t('hero.free.note'),
+                url: `${SITE}${isEn ? '/en' : ''}/precios`,
+            },
+            featureList: isEn
+                ? ['Interactive quotes with one-click approval', 'Real-time view tracking', 'Cord Payments: card payments inside the quote and invoice link', 'Cord Invoicing: invoices with their own payment link and live balance, CFDI 4.0 in Mexico', 'Cord Workflows: no-code automations triggered by sales events', 'Integrations with HubSpot, Slack, Microsoft Teams, WhatsApp, Zapier, Make and n8n', 'Mercado Pago as a payment rail', 'AI-powered collections', 'Multi-currency quoting with dated FX rates', 'Public REST API, signed webhooks and MCP server']
+                : ['Cotizaciones interactivas con aprobación en un clic', 'Seguimiento en tiempo real', 'Cord Payments: cobro con tarjeta dentro del link de la cotización y la factura', 'Cord Invoicing: facturas con link de pago y saldo vivo, CFDI 4.0 en México', 'Cord Workflows: automatizaciones sin código disparadas por eventos de venta', 'Integraciones con HubSpot, Slack, Microsoft Teams, WhatsApp, Zapier, Make y n8n', 'Mercado Pago como riel de cobro', 'Cobranza automatizada con IA', 'Cotización multi-divisa con tipo de cambio fechado', 'API REST pública, webhooks firmados y servidor MCP'],
+        },
     ],
-};
-
-const softwareSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    '@id': 'https://cordhq.app/#software',
-    name: 'Cord',
-    url: 'https://cordhq.app',
-    applicationCategory: 'BusinessApplication',
-    applicationSubCategory: isEn ? 'Commercial Closing Platform' : 'Plataforma de Cierre Comercial',
-    operatingSystem: 'Web',
-    description,
-    audience: {
-        '@type': 'BusinessAudience',
-        audienceType: isEn ? 'Any business worldwide (distributors, wholesalers, manufacturers, service providers, SaaS, agencies)' : 'Cualquier negocio en cualquier país (distribuidoras, mayoristas, manufactura, servicios, SaaS, agencias)',
-    },
-    creator: { '@id': 'https://flouvia.com/#organization' },
-    provider: { '@id': 'https://flouvia.com/#organization' },
-    offers: {
-        // Sin priceCurrency a propósito: es un plan $0 (no hay precio real que
-        // convertir), y atar la moneda al idioma (MXN=ES / USD=EN) era una señal
-        // implícita de "ES = México" que contradice el posicionamiento universal.
-        '@type': 'Offer',
-        price: '0',
-        description: t('hero.free.note'),
-    },
-    featureList: isEn 
-        ? ['Negotiated pricing', 'One-click quote approval', 'Real-time view tracking', 'AI-powered collections', 'Approval with technical evidence', 'Net 30/60 credit terms', 'Public API & webhooks']
-        : ['Precios negociados', 'Aprobación de cotizaciones en un clic', 'Seguimiento en tiempo real', 'Cobranza automatizada con IA', 'Aprobación con evidencia técnica', 'Términos de crédito Net 30/60', 'API pública y webhooks'],
 };
 
 // Misma fuente (claves faq.1..faq.8 de ui.ts) que consume <Faq /> — el
@@ -156,13 +162,7 @@ const faqSchema = {
         slot="head"
         type="application/ld+json"
         is:inline
-        set:html={JSON.stringify(orgSchema)}
-    />
-    <script
-        slot="head"
-        type="application/ld+json"
-        is:inline
-        set:html={JSON.stringify(softwareSchema)}
+        set:html={JSON.stringify(siteGraph)}
     />
     <script
         slot="head"
@@ -184,6 +184,7 @@ const faqSchema = {
         <Steps />
         <PaymentsSection />
         <InvoicingSection />
+        <ConnectSection />
 
         <ClientView />
         <Pricing />

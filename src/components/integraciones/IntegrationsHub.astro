@@ -1,0 +1,186 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../landing/Nav.astro';
+import Footer from '../landing/Footer.astro';
+import PageAnims from '../landing/PageAnims.astro';
+import FaqAccordion from '../landing/FaqAccordion.astro';
+import { CATEGORY_LABEL, INTEGRATION_PAGES, type IntegrationLandingCategory } from '../../lib/integraciones-landing';
+import { SITE, SOFTWARE_ID } from '../../lib/seo/entities';
+
+interface Props { isEn?: boolean }
+const { isEn = false } = Astro.props;
+const lang = isEn ? 'en' : 'es';
+const base = isEn ? `${SITE}/en` : SITE;
+const pre = isEn ? '/en' : '';
+const pageUrl = `${base}/integraciones`;
+
+const title = isEn
+    ? 'Cord integrations: HubSpot, Slack, Zapier, Make, Mercado Pago and more'
+    : 'Integraciones de Cord: HubSpot, Slack, Zapier, Make, Mercado Pago y más';
+const description = isEn
+    ? 'Connect Cord with the tools your team already uses: HubSpot, Slack, Microsoft Teams, WhatsApp Business, Zapier, Make, n8n and Mercado Pago. Included in every plan, starting with Free.'
+    : 'Conecta Cord con las herramientas de tu equipo: HubSpot, Slack, Microsoft Teams, WhatsApp Business, Zapier, Make, n8n y Mercado Pago. Incluidas en todos los planes, desde Gratis.';
+
+const ORDER: IntegrationLandingCategory[] = ['crm', 'cobros', 'comunicacion', 'automatizacion'];
+const groups = ORDER.map((cat) => ({ cat, label: CATEGORY_LABEL[cat][lang], items: INTEGRATION_PAGES.filter((p) => p.categoria === cat) }))
+    .filter((g) => g.items.length);
+
+const faqs = isEn ? [
+    { q: 'Do integrations cost extra?', a: 'No. Every integration is included in every Cord plan, starting with Free. Some tools charge on their side: Meta bills WhatsApp conversations to your account, Mercado Pago charges its fee on each payment and Webhooks by Zapier is on Zapier\'s paid plans.' },
+    { q: 'Who can connect an integration?', a: 'Anyone with the Settings permission in the workspace. Integrations belong to the organization, not to a person: if whoever connected HubSpot leaves the team, the connection keeps working. Every connect, configure, sync or disconnect action is recorded in the audit log.' },
+    { q: 'Does Cord ask for my password to other tools?', a: 'Never. HubSpot and Slack are authorized on their own pages; Zapier and Make are authorized on a Cord screen you can revoke; Teams, WhatsApp and n8n use URLs or keys you generate and can revoke. Access is stored encrypted.' },
+    { q: 'What if my tool is not on the list?', a: 'With Cord webhooks and the public REST API you can connect any system that receives or makes HTTP calls, and Zapier, Make and n8n reach thousands of other apps. If you want a direct integration with another app, write to contacto@cordhq.app.' },
+] : [
+    { q: '¿Las integraciones cuestan extra?', a: 'No. Todas las integraciones están incluidas en todos los planes de Cord, desde Gratis. Algunas herramientas cobran de su lado: Meta cobra las conversaciones de WhatsApp a tu cuenta, Mercado Pago cobra su comisión en cada pago y Webhooks by Zapier está en los planes de pago de Zapier.' },
+    { q: '¿Quién puede conectar una integración?', a: 'Quien tenga el permiso de Ajustes en el espacio de trabajo. Las integraciones son de la organización, no de una persona: si quien conectó HubSpot deja el equipo, la conexión sigue funcionando. Cada acción de conectar, configurar, sincronizar o desconectar queda en la auditoría.' },
+    { q: '¿Cord me pide la contraseña de otras herramientas?', a: 'Nunca. HubSpot y Slack se autorizan en su propia página; Zapier y Make, en una pantalla de Cord que puedes revocar; Teams, WhatsApp y n8n usan URLs o llaves que tú generas y puedes revocar. Los accesos se guardan cifrados.' },
+    { q: '¿Y si mi herramienta no está en la lista?', a: 'Con los webhooks y la API REST pública de Cord puedes conectar cualquier sistema que reciba o haga llamadas HTTP, y Zapier, Make y n8n llegan a miles de apps más. Si quieres una integración directa con otra app, escríbenos a contacto@cordhq.app.' },
+];
+
+const schema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'CollectionPage',
+            '@id': `${pageUrl}#webpage`,
+            url: pageUrl,
+            name: title,
+            description,
+            inLanguage: lang,
+            isPartOf: { '@id': `${SITE}/#website` },
+            about: { '@id': SOFTWARE_ID },
+            mainEntity: {
+                '@type': 'ItemList',
+                itemListElement: INTEGRATION_PAGES.map((p, i) => ({
+                    '@type': 'ListItem',
+                    position: i + 1,
+                    name: p.nombre,
+                    url: `${base}/integraciones/${p.slug}`,
+                })),
+            },
+        },
+        {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+                { '@type': 'ListItem', position: 2, name: isEn ? 'Integrations' : 'Integraciones', item: pageUrl },
+            ],
+        },
+        {
+            '@type': 'FAQPage',
+            mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+        },
+    ],
+};
+---
+
+<Layout title={title} description={description}>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+    <Nav />
+    <main class="ih">
+        <section class="ih-hero">
+            <div class="ih-hero-mesh" aria-hidden="true"></div>
+            <div class="ih-hero-inner">
+                <p class="ih-eyebrow reveal">{isEn ? 'INTEGRATIONS' : 'INTEGRACIONES'}</p>
+                <h1 class="ih-title masked-title">{isEn ? 'Cord, connected to the tools your team already uses.' : 'Cord, conectado a las herramientas que tu equipo ya usa.'}</h1>
+                <p class="ih-sub reveal">{isEn ? 'Your CRM, your channels, your automations and your payment rail, in sync with every quote and every invoice. Nothing is required: Cord works complete without connecting anything.' : 'Tu CRM, tus canales, tus automatizaciones y tu riel de cobro, al día con cada cotización y cada factura. Nada es obligatorio: Cord funciona completo sin conectar nada.'}</p>
+                <div class="ih-logos reveal" aria-hidden="true">
+                    {INTEGRATION_PAGES.map((p) => <span class="ih-logo"><img src={p.logo} alt="" width="30" height="30" /></span>)}
+                </div>
+            </div>
+        </section>
+
+        <section class="ih-groups">
+            {groups.map((g) => (
+                <div class="ih-group">
+                    <h2 class="ih-group-title reveal">{g.label}</h2>
+                    <div class="ih-grid">
+                        {g.items.map((p) => (
+                            <a href={`${pre}/integraciones/${p.slug}`} class="ih-card reveal">
+                                <span class="ih-card-logo"><img src={p.logo} alt="" width="36" height="36" loading="lazy" /></span>
+                                <span class="ih-card-body">
+                                    <b>{p.nombre}</b>
+                                    <i>{(isEn ? p.en : p.es).resumen}</i>
+                                </span>
+                                <svg class="ih-card-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </section>
+
+        <section class="ih-build">
+            <div class="ih-build-inner reveal">
+                <div>
+                    <p class="ih-eyebrow">{isEn ? 'BUILD YOUR OWN' : 'CONSTRUYE LA TUYA'}</p>
+                    <h2 class="ih-build-title">{isEn ? 'Any other system, through the API, webhooks and Cord Workflows.' : 'Cualquier otro sistema, con la API, los webhooks y Cord Workflows.'}</h2>
+                </div>
+                <div class="ih-build-links">
+                    <a href={`${pre}/producto/workflows`}><b>Cord Workflows</b><i>{isEn ? 'No-code automations triggered by sales events' : 'Automatizaciones sin código disparadas por tus ventas'}</i></a>
+                    <a href={`${pre}/desarrolladores/integraciones`}><b>{isEn ? 'Webhooks' : 'Webhooks'}</b><i>{isEn ? 'Signed events for every sales step' : 'Eventos firmados en cada paso de la venta'}</i></a>
+                    <a href={`${pre}/desarrolladores/api`}><b>{isEn ? 'Public REST API' : 'API REST pública'}</b><i>{isEn ? 'Clients, quotes, invoices and tasks' : 'Clientes, cotizaciones, facturas y tareas'}</i></a>
+                    <a href={`${pre}/desarrolladores/mcp`}><b>{isEn ? 'MCP server' : 'Servidor MCP'}</b><i>{isEn ? 'Let an AI assistant work with your account' : 'Que un asistente de IA trabaje con tu cuenta'}</i></a>
+                </div>
+            </div>
+        </section>
+
+        <FaqAccordion faqs={faqs} eyebrow={isEn ? 'QUESTIONS' : 'PREGUNTAS'} title={isEn ? 'Integrations, answered' : 'Integraciones, sin rodeos'} id="faq-integraciones" />
+    </main>
+    <Footer
+        ctaTitle={isEn ? 'Connect Cord in minutes.' : 'Conecta Cord en minutos.'}
+        ctaSub={isEn ? 'Every integration is included from the Free plan. Start today.' : 'Todas las integraciones están incluidas desde el plan Gratis. Empieza hoy.'}
+    />
+    <PageAnims />
+</Layout>
+
+<style>
+    .ih { background: var(--color-bg); }
+    .ih-hero { position: relative; overflow-x: clip; }
+    .ih-hero-mesh {
+        position: absolute; inset: -20% -10% auto; height: 90%; pointer-events: none;
+        background: radial-gradient(ellipse 55% 60% at 50% 12%, rgba(10,25,47,0.05) 0%, transparent 62%);
+    }
+    .ih-hero-inner { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 10rem 6% 5rem; text-align: center; }
+    .ih-eyebrow { font-size: 0.66rem; font-weight: 800; letter-spacing: 2.2px; text-transform: uppercase; color: #8a8f98; margin: 0 0 1.2rem; }
+    .ih-title { color: #050505; }
+    .ih-sub { font-size: 1.1rem; line-height: 1.65; color: var(--color-text-muted); max-width: 640px; margin: -1.4rem auto 2.6rem; }
+    .ih-logos { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem; }
+    .ih-logo { width: 58px; height: 58px; border-radius: 18px; background: #fff; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1px rgba(10,25,47,0.05), 0 10px 24px -12px rgba(10,25,47,0.25); }
+    .ih-logo img { width: 30px; height: 30px; border-radius: 8px; object-fit: contain; }
+
+    .ih-groups { max-width: 1120px; margin: 0 auto; padding: 2rem 6% 6rem; display: flex; flex-direction: column; gap: 3.4rem; }
+    .ih-group-title { font-size: 0.72rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #8a8f98; margin: 0 0 1.1rem; padding-bottom: 0.9rem; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .ih-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+    .ih-card {
+        display: flex; align-items: center; gap: 1rem; padding: 1.3rem 1.4rem; border-radius: 26px; background: #f5f5f7; text-decoration: none; min-height: 44px;
+        transition: background 0.3s ease, transform 0.45s var(--ease-spring), box-shadow 0.45s var(--ease-spring);
+    }
+    .ih-card:hover { background: #fff; transform: translateY(-3px); box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 18px 40px -20px rgba(10,25,47,0.25); }
+    .ih-card:active { transform: scale(0.99); }
+    .ih-card:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
+    .ih-card-logo { width: 54px; height: 54px; border-radius: 16px; background: #fff; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(10,25,47,0.05); }
+    .ih-card-logo img { width: 34px; height: 34px; border-radius: 9px; object-fit: contain; }
+    .ih-card-body { flex: 1; min-width: 0; }
+    .ih-card-body b { display: block; font-size: 1.02rem; color: #0f172a; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .ih-card-body i { display: block; font-style: normal; font-size: 0.86rem; line-height: 1.45; color: var(--color-text-muted); }
+    .ih-card-arrow { width: 18px; height: 18px; color: #94a3b8; flex-shrink: 0; transition: transform 0.4s var(--ease-spring), color 0.3s ease; }
+    .ih-card:hover .ih-card-arrow { transform: translateX(4px); color: var(--color-blue-deep); }
+
+    .ih-build { background: #f5f5f7; }
+    .ih-build-inner { max-width: 1120px; margin: 0 auto; padding: 6rem 6%; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 3rem; align-items: start; }
+    .ih-build-title { font-size: clamp(1.6rem, 2.4vw, 2.2rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1.12; color: #050505; margin: 0; text-wrap: balance; }
+    .ih-build-links { display: flex; flex-direction: column; }
+    .ih-build-links a { display: flex; flex-direction: column; gap: 3px; padding: 1.05rem 0; border-bottom: 1px solid rgba(10,25,47,0.08); text-decoration: none; min-height: 44px; }
+    .ih-build-links a:first-child { border-top: 1px solid rgba(10,25,47,0.08); }
+    .ih-build-links b { font-size: 0.98rem; color: #0f172a; }
+    .ih-build-links i { font-style: normal; font-size: 0.86rem; color: var(--color-text-muted); }
+    .ih-build-links a:hover b { color: var(--color-blue-deep); }
+
+    @media (max-width: 880px) {
+        .ih-hero-inner { padding: 8rem 5% 3.5rem; }
+        .ih-groups { padding: 1rem 5% 4.5rem; }
+        .ih-grid { grid-template-columns: 1fr; }
+        .ih-build-inner { grid-template-columns: 1fr; padding: 4.5rem 5%; gap: 1.6rem; }
+    }
+</style>

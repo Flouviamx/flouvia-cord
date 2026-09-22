@@ -1,4 +1,5 @@
 ---
+import { DEV_SITE, ORG_ID } from '../../lib/seo/entities';
 import { getEntry, render } from 'astro:content';
 import DevBlogLayout from "../../layouts/DevBlogLayout.astro";
 import PixelIcon from "../../components/dev-blog/PixelIcon.jsx";
@@ -82,7 +83,7 @@ if (!entry) {
 }
 
 if (!entry) {
-  return Astro.redirect('/404');
+  return Astro.rewrite('/404');
 }
 
 const { Content } = await render(entry);
@@ -94,29 +95,36 @@ const authorTags = authors ? authors.map(a => `<span class="dashed-tag">${a}</sp
 const isoDate = date ? date.replace(/\./g, '-') : undefined;
 const articleDescription = description || `${title} — articulo tecnico del equipo de ingenieria de Cord sobre ${topic.toLowerCase()}.`;
 
-// Article JSON-LD
+const postUrl = `${DEV_SITE}/dev-blog${lang === 'en' ? '/en' : ''}/${slug}`;
+const devHome = `${DEV_SITE}/dev-blog${lang === 'en' ? '/en' : ''}`;
 const articleJsonLd = {
   "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  "headline": title,
-  "description": articleDescription,
-  "datePublished": isoDate,
-  "dateModified": isoDate,
-  "author": authors ? authors.map(a => ({ "@type": "Person", "name": a })) : [{ "@type": "Organization", "name": "Cord" }],
-  "publisher": {
-    "@type": "Organization",
-    "name": "Cord",
-    "logo": { "@type": "ImageObject", "url": "https://cordhq.app/imgs/logo-cord-navy.png" }
-  },
-  "mainEntityOfPage": {
-    "@type": "WebPage",
-    // La página real vive en dev.cordhq.app, no en el dominio apex (que
-    // 301-redirige aquí) — usar el origin real de la request. La versión EN
-    // vive en /dev-blog/en/<slug>, nunca /en/dev-blog/<slug>.
-    "@id": `${Astro.url.origin}/dev-blog${lang === 'en' ? '/en' : ''}/${slug}`
-  },
-  "inLanguage": lang === "es" ? "es-MX" : "en-US",
-  "image": "https://cordhq.app/og-cord.jpg"
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "headline": title,
+      "description": articleDescription,
+      "datePublished": isoDate,
+      "dateModified": isoDate,
+      "author": authors ? authors.map(a => ({ "@type": "Person", "name": a })) : [{ "@id": ORG_ID }],
+      "publisher": { "@id": ORG_ID },
+      "mainEntityOfPage": { "@type": "WebPage", "@id": postUrl },
+      "url": postUrl,
+      "isPartOf": { "@id": `${DEV_SITE}/#website` },
+      "about": { "@id": "https://cordhq.app/#software" },
+      "articleSection": topic,
+      "inLanguage": lang,
+      "image": "https://cordhq.app/og-cord.jpg"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Cord Developers", "item": devHome },
+        { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${devHome}/blog` },
+        { "@type": "ListItem", "position": 3, "name": title, "item": postUrl }
+      ]
+    }
+  ]
 };
 ---
 

@@ -4,8 +4,6 @@ description: "Revisa pagos, notas y estado antes de anular."
 category: "Facturación"
 ---
 
-# Cancelar CFDI con documentos relacionados
-
 
 ## Anular y acreditar son acciones distintas
 

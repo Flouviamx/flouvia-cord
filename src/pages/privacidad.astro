@@ -18,7 +18,10 @@ const entry = await getEntry('legal', `${variant.locale.toLowerCase()}/${variant
 const legalHtml = publishedLegalHtml(entry, variant);
 ---
 
-<Layout title={isEn ? "Privacy Policy | CORD by Flouvia" : "Aviso de Privacidad | CORD by Flouvia"}>
+<Layout
+    title={isEn ? "Privacy Policy | Cord" : "Aviso de Privacidad | Cord"}
+    description={isEn ? "How Cord collects, uses and protects personal data from businesses and their clients, which providers process it and how to exercise your rights." : "Cómo Cord recaba, usa y protege los datos personales de los negocios y de sus clientes, qué proveedores los tratan y cómo ejercer tus derechos."}
+>
   <Nav />
   
   <PageAnims />

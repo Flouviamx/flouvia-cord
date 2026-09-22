@@ -10,6 +10,7 @@ import FeedbackWidget from '../../components/support/FeedbackWidget.astro';
 export const prerender = true;
 
 import { getLangFromUrl } from '../../i18n/utils';
+import { supportCategoryByName } from '../../lib/support-categories';
 
 export async function getStaticPaths() {
   const supportEntries = await getCollection('support');
@@ -50,8 +51,7 @@ const nextEntry = currentIndex < categoryEntries.length - 1 ? categoryEntries[cu
 const relatedArticles = categoryEntries.filter(a => a.id !== entry.id).slice(0, 3);
 
 // Helper to format category for URLs
-const slugifyCategory = (cat: string) => cat.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'y').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-const catSlug = slugifyCategory(entry.data.category);
+const catSlug = supportCategoryByName(entry.data.category)?.slug ?? '';
 
 // Datos estructurados (jul 2026, auditoría SEO/AI-SEO): los 140 artículos de
 // soporte (70 ES + 70 EN, ago 2026) no tenían ningún JSON-LD. Article (no BlogPosting:
@@ -128,6 +128,7 @@ const breadcrumbSchema = {
                 </nav>
 
                 <article class="markdown-body" id="markdownContent">
+                    <h1>{entry.data.title}</h1>
                     <Content />
                 </article>
 
@@ -188,7 +189,7 @@ const breadcrumbSchema = {
             )}
         </div>
     </main>
-    <Footer ctaTitle="¿Necesitas más ayuda?" ctaSub="Contacta a nuestro equipo especializado." />
+    <Footer ctaTitle={isEn ? 'Need more help?' : '¿Necesitas más ayuda?'} ctaSub={isEn ? 'Contact our specialist team.' : 'Contacta a nuestro equipo especializado.'} isEn={isEn} />
     <PageAnims />
 </Layout>
 

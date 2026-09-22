@@ -3,7 +3,9 @@
 // .shw-panel de FeatureShowcase.astro. 36 escenas (12 features × 3 tabs).
 // Contrato: recibe { slug, index } y llena por completo su contenedor (inset:0).
 // Solo markup + CSS estático; el crossfade/autoplay lo maneja el padre.
+import { getLangFromUrl } from '../../i18n/utils';
 const { slug, index } = Astro.props as { slug: string; index: number };
+const en = getLangFromUrl(Astro.url) === 'en';
 ---
 <div class={`shwm-wrap shwm-${slug}-${index}`}>
 
@@ -700,6 +702,125 @@ const { slug, index } = Astro.props as { slug: string; index: number };
           </div>
         </div>
         <div class="shwm-foot"><span>Crear, emitir, enviar, cobrar y anular por API</span><b>Y por MCP</b></div>
+      </div>
+    </div>
+  )}
+
+  {/* ═══════════════════════════════ CORD PAYMENTS ═══════════════════════════════ */}
+  {slug === 'pagos' && index === 0 && (
+    <div class="shwm-frame">
+      <div class="shwm-app shwm-app-narrow">
+        <div class="shwm-bar">
+          <span class="shwm-bar-t">COT-0148 · {en ? 'Valle Materials' : 'Materiales del Valle'}</span>
+          <span class="shwm-badge shwm-badge-green">{en ? 'Paid' : 'Pagada'}</span>
+        </div>
+        <div class="shwm-body">
+          <div class="shwm-g shwm-g-audit shwm-g-head"><span>{en ? 'Event' : 'Evento'}</span><span>{en ? 'Channel' : 'Canal'}</span><span class="shwm-r">{en ? 'Time' : 'Hora'}</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot blue"></i>{en ? 'Quote sent' : 'Cotización enviada'}</div><span class="shwm-audit-actor">WhatsApp</span><span class="shwm-r shwm-mut">11:02</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>{en ? 'Approved by the client' : 'Aprobada por el cliente'}</div><span class="shwm-audit-actor">{en ? 'Public link' : 'Link público'}</span><span class="shwm-r shwm-mut">12:36</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'Card payment · $196,469.20' : 'Pago con tarjeta · $196,469.20'}</div><span class="shwm-audit-actor">{en ? 'Same link' : 'Mismo link'}</span><span class="shwm-r shwm-mut">12:38</span></div>
+        </div>
+        <div class="shwm-lock-strip">
+          <span class="shwm-lock-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div><b>{en ? 'Two minutes from approval to payment' : 'Dos minutos entre la aprobación y el pago'}</b><em>{en ? 'No wire to chase, no bank details over chat' : 'Sin transferencia que perseguir ni datos bancarios por chat'}</em></div>
+        </div>
+        <div class="shwm-foot"><span>{en ? 'Funds go to' : 'El dinero va a'}</span><b>{en ? 'Your connected account' : 'Tu cuenta conectada'}</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'pagos' && index === 1 && (
+    <div class="shwm-frame">
+      <div class="shwm-app shwm-app-narrow">
+        <div class="shwm-bar">
+          <span class="shwm-bar-t">{en ? 'Owners and beneficial owners' : 'Socios y titulares reales'}</span>
+          <span class="shwm-badge shwm-badge-blue">100%</span>
+        </div>
+        <div class="shwm-body">
+          <div class="shwm-g shwm-g-audit shwm-g-head"><span>{en ? 'Person' : 'Persona'}</span><span>{en ? 'Role' : 'Rol'}</span><span class="shwm-r">{en ? 'Stake' : 'Participación'}</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>Raúl Mendoza</div><span class="shwm-audit-actor">{en ? 'Owner · director' : 'Dueño · director'}</span><span class="shwm-r"><b>40%</b></span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>Lucía Ferreira</div><span class="shwm-audit-actor">{en ? 'Owner' : 'Socia'}</span><span class="shwm-r"><b>30%</b></span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>Andrés Solís</div><span class="shwm-audit-actor">{en ? 'Owner' : 'Socio'}</span><span class="shwm-r"><b>30%</b></span></div>
+        </div>
+        <div class="shwm-foot"><span>{en ? 'Every owner as a real person' : 'Cada socio como una persona real'}</span><b>{en ? 'Not one forced 100% owner' : 'No un dueño forzado al 100%'}</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'pagos' && index === 2 && (
+    <div class="shwm-frame">
+      <div class="shwm-app shwm-app-narrow">
+        <div class="shwm-bar">
+          <span class="shwm-bar-t">{en ? 'Payouts' : 'Depósitos'}</span>
+          <span class="shwm-badge shwm-badge-gray">{en ? 'Weekly' : 'Semanal'}</span>
+        </div>
+        <div class="shwm-body">
+          <div class="shwm-g shwm-g-audit shwm-g-head"><span>{en ? 'Date' : 'Fecha'}</span><span>{en ? 'Status' : 'Estado'}</span><span class="shwm-r">{en ? 'Amount' : 'Monto'}</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'Sep 12, 2026' : '12 sep 2026'}</div><span class="shwm-audit-actor">{en ? 'Paid' : 'Pagado'}</span><span class="shwm-r"><b class="editorial">$84,210.00</b></span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'Sep 5, 2026' : '5 sep 2026'}</div><span class="shwm-audit-actor">{en ? 'Paid' : 'Pagado'}</span><span class="shwm-r"><b class="editorial">$71,940.00</b></span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>{en ? 'Sep 19, 2026' : '19 sep 2026'}</div><span class="shwm-audit-actor">{en ? 'In transit' : 'En camino'}</span><span class="shwm-r"><b class="editorial">$63,500.00</b></span></div>
+        </div>
+        <div class="shwm-foot"><span>CLABE •••• 4821</span><b>{en ? 'Validated before saving' : 'Validada antes de guardar'}</b></div>
+      </div>
+    </div>
+  )}
+
+  {/* ═══════════════════════════════ CORD WORKFLOWS ═══════════════════════════════ */}
+  {slug === 'workflows' && index === 0 && (
+    <div class="shwm-frame">
+      <div class="shwm-app">
+        <div class="shwm-bar">
+          <span class="shwm-bar-t">{en ? 'Run · COT-0152 · Grupo Norte' : 'Ejecución · COT-0152 · Grupo Norte'}</span>
+          <span class="shwm-badge shwm-badge-blue">{en ? 'Waiting' : 'En espera'}</span>
+        </div>
+        <div class="shwm-body">
+          <div class="shwm-g shwm-g-audit shwm-g-head"><span>{en ? 'Step' : 'Paso'}</span><span>{en ? 'Result' : 'Resultado'}</span><span class="shwm-r">{en ? 'When' : 'Cuándo'}</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'A quote is sent' : 'Se envía una cotización'}</div><span class="shwm-audit-actor">{en ? 'Trigger' : 'Disparador'}</span><span class="shwm-r shwm-mut">{en ? 'Mon 10:41' : 'Lun 10:41'}</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>{en ? 'Wait until opened · 2 days' : 'Espera hasta que la abra · 2 días'}</div><span class="shwm-audit-actor">{en ? 'Deadline passed' : 'Venció el plazo'}</span><span class="shwm-r shwm-mut">{en ? 'Wed 10:41' : 'Mié 10:41'}</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'Email the client' : 'Escribirle al cliente'}</div><span class="shwm-audit-actor">{en ? 'Delivered' : 'Entregado'}</span><span class="shwm-r shwm-mut">{en ? 'Wed 10:41' : 'Mié 10:41'}</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot blue"></i>{en ? 'Wait for the decision · 5 days' : 'Espera su decisión · 5 días'}</div><span class="shwm-audit-actor">{en ? 'In progress' : 'En curso'}</span><span class="shwm-r shwm-mut">{en ? 'until Mon' : 'hasta el lun'}</span></div>
+        </div>
+        <div class="shwm-foot"><span>{en ? 'Each quote runs its own copy' : 'Cada cotización corre su propia copia'}</span><b>{en ? 'Quote follow-up ladder' : 'Escalera de seguimiento'}</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'workflows' && index === 1 && (
+    <div class="shwm-frame">
+      <div class="shwm-app shwm-app-narrow">
+        <div class="shwm-bar">
+          <span class="shwm-bar-t">{en ? 'Staged collection · A-001052' : 'Cobranza escalonada · A-001052'}</span>
+          <span class="shwm-badge shwm-badge-amber">{en ? 'Due in 3 days' : 'Vence en 3 días'}</span>
+        </div>
+        <div class="shwm-body">
+          <div class="shwm-g shwm-g-audit shwm-g-head"><span>{en ? 'Step' : 'Paso'}</span><span>{en ? 'Channel' : 'Canal'}</span><span class="shwm-r">{en ? 'Day' : 'Día'}</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'Friendly reminder' : 'Recordatorio amable'}</div><span class="shwm-audit-actor">{en ? 'Email' : 'Correo'}</span><span class="shwm-r shwm-mut">−3</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>{en ? 'Due today, with payment link' : 'Vence hoy, con link de pago'}</div><span class="shwm-audit-actor">WhatsApp</span><span class="shwm-r shwm-mut">0</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot blue"></i>{en ? 'Alert the owner with the balance' : 'Aviso al dueño con el saldo'}</div><span class="shwm-audit-actor">Slack</span><span class="shwm-r shwm-mut">+7</span></div>
+        </div>
+        <div class="shwm-lock-strip">
+          <span class="shwm-lock-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div><b>{en ? 'It stops by itself when the invoice is paid' : 'Se detiene sola cuando la factura se paga'}</b><em>{en ? 'A condition checks the balance before every step' : 'Una condición revisa el saldo antes de cada paso'}</em></div>
+        </div>
+        <div class="shwm-foot"><span>{en ? 'Days counted in' : 'Días contados en'}</span><b>{en ? 'Your time zone' : 'Tu zona horaria'}</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'workflows' && index === 2 && (
+    <div class="shwm-frame">
+      <div class="shwm-app">
+        <div class="shwm-bar">
+          <span class="shwm-bar-t">{en ? 'Workflow health · 30 days' : 'Salud de los workflows · 30 días'}</span>
+          <span class="shwm-badge shwm-badge-green">{en ? '98.6% completed' : '98.6% completadas'}</span>
+        </div>
+        <div class="shwm-body">
+          <div class="shwm-g shwm-g-audit shwm-g-head"><span>{en ? 'Cause' : 'Causa'}</span><span>{en ? 'Workflow' : 'Workflow'}</span><span class="shwm-r">{en ? 'Runs' : 'Ejecuciones'}</span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>{en ? 'Completed' : 'Completadas'}</div><span class="shwm-audit-actor">{en ? 'All' : 'Todos'}</span><span class="shwm-r"><b>412</b></span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>{en ? 'Client phone without country code' : 'Teléfono del cliente sin lada'}</div><span class="shwm-audit-actor">{en ? 'Due-date reminder' : 'Recordatorio de vencimiento'}</span><span class="shwm-r"><b>4</b></span></div>
+          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>{en ? 'Slack is not connected' : 'Slack no está conectado'}</div><span class="shwm-audit-actor">{en ? 'Monday summary' : 'Resumen del lunes'}</span><span class="shwm-r"><b>2</b></span></div>
+        </div>
+        <div class="shwm-foot"><span>{en ? 'Failures grouped by cause' : 'Fallas agrupadas por causa'}</span><b>{en ? 'Not by message' : 'No por mensaje'}</b></div>
       </div>
     </div>
   )}

@@ -4,8 +4,6 @@ description: "Consulta el saldo, descarga documentos y verifica la confirmación
 category: "Facturación"
 ---
 
-# Usar el enlace de una factura
-
 
 El enlace de una factura permite consultar ese documento sin crear una cuenta
 ni entrar al panel del vendedor. Muestra saldo, conceptos, pagos y descargas

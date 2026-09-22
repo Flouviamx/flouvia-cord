@@ -7,6 +7,36 @@
 
 ---
 
+**SEO técnico de los tres hosts, páginas de integraciones y Cord Workflows (21 sep 2026)** —
+Auditoría en vivo de los sitemaps de `cordhq.app`, `docs.` y `dev.` (843 URLs rastreadas).
+• **Canonical roto en 285 URLs:** las páginas prerenderizadas publicaban canonical,
+  `og:url`, hreflang y el selector de idioma con `/` final, y `/x` y `/x/` respondían 200.
+  Google veía cada URL del sitemap declarando otra como canónica. Arreglo:
+  `trailingSlash: 'never'` (308 en Vercel) y `cleanPathname()` en todo constructor de URL.
+• **Hreflang a páginas inexistentes:** casos de uso, auth, `/q/demo` y un post solo en
+  español anunciaban una versión `/en` que da 404. Ahora los pares salen de lo que existe.
+• **Docs caída en producción:** `automatizacion/workflows/consultas` respondía 200 vacío
+  (ES y EN) porque `{{vencido_total}}` sin escapar se evaluaba como variable de MDX.
+• **Soporte:** 73 de 85 artículos por idioma sin H1; los enlaces de categoría generaban slugs que no
+  existen (`pagos-y-depositos`, `account-y-team`) y el breadcrumb JSON-LD apuntaba a 404.
+  Fuente única en `src/lib/support-categories.ts`.
+• `/producto/pagos` mostraba las diapositivas del editor y el showcase vacío; las páginas
+  EN mostraban el acordeón en español. Se agregaron diapositivas de Payments y Workflows y
+  el set completo en inglés.
+• Nuevas páginas: `/producto/workflows`, `/integraciones` y ocho integraciones, ES/EN,
+  enlazadas desde home, megamenú, footer, sitemap y `llms.txt`. Mercado Pago se describe
+  disponible en México y Latinoamérica (confirmado por André el 21 sep); los docs de
+  Mercado Pago dejaron de decir "en confirmación".
+• Legales sin "CORD by Flouvia" en el título y con descripción propia; dev-blog con redes
+  de Cord, canonical fijo a `dev.cordhq.app`, sin el enlace a `/meetups` (no existe) y
+  títulos distintos para portada y listado. Docs con `seoTitle` en 24 páginas de título
+  corto y un `WebSite` propio.
+• Verificado: `npm run test:payments`, `npm run build`, `npm run security:css`, capturas
+  con Playwright del build en 1440 y 390 px y rastreo de enlaces internos del build.
+⚠️ Sin resolver, para decidir: el acordeón de `/producto/link-publico` promete
+  "evidencia con validez jurídica" (el propio `llms.txt` dice que Cord no garantiza efecto
+  legal) y el footer del dev-blog decía "CORD, INC." (se cambió a "CORD · BY FLOUVIA").
+
 **Roadmap público reestructurado, contenido ampliado y Cord Payments visible (28 ago 2026)** —
 Se reemplazaron las páginas ES/EN duplicadas por componentes compartidos para índice y
 detalle. El filtro lateral sobredimensionado dejó de ser una tarjeta alta: en escritorio

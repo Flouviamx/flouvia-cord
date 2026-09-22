@@ -429,7 +429,7 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                             <div class="int-card-text">
                                 <h3 class="int-card-title">Cord Elements</h3>
                                 <p class="int-card-desc">Embebe el cotizador en tu web o app con Cord Elements: Web Component, React y Vue.</p>
-                                <a href="/desarrolladores/elements" class="int-link">Más información <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+                                <a href={isEn ? "/en/elements" : "/elements"} class="int-link">{isEn ? "Learn more" : "Más información"} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
                             </div>
                             <div class="int-card-graphic">
                                 <div class="mock-ui imk-embed-bg">
@@ -569,10 +569,10 @@ const clientLogos = ['GAMA', 'ACEROS', 'VERTICE', 'ZARCO', 'FERREX', 'CEMENTOS']
                                     <p class="stripe-fg-desc">{block.copy}</p>
                                     <div class="stripe-fg-tags">
                                         {block.bullets.map((b, bulletIdx) => {
-                                            const slugs = ['aprobaciones', 'finanzas', 'cfdi', 'editor', 'equipo'];
+                                            const slugs = ['aprobaciones', 'finanzas', 'facturacion', 'editor', 'equipo'];
                                             const targetSlug = slugs[(idx + bulletIdx) % slugs.length];
                                             return (
-                                                <a href={`/producto/${targetSlug}`} class="stripe-fg-tag">{b}</a>
+                                                <a href={`${isEn ? '/en' : ''}/producto/${targetSlug}`} class="stripe-fg-tag">{b}</a>
                                             );
                                         })}
                                     </div>

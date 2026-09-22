@@ -302,3 +302,42 @@ de método. La FAQ distingue anulación, nota de crédito y devolución. El road
 `confiabilidad-operativa` permanece en `next` con progreso y límites explícitos.
 Ver [confiabilidad.md](confiabilidad.md) para evidencia y pendientes; esta página
 no certifica publicación ni cambia el estado de los dominios propios.
+
+## SEO y descubrimiento
+
+- **Una sola forma de cada URL.** `trailingSlash: 'never'` en `astro.config.mjs`:
+  Vercel responde 308 de `/x/` a `/x`. Canonical, `og:url` y hreflang salen de
+  `cleanPathname()` (`src/i18n/utils.ts`), nunca de `Astro.url.pathname` crudo,
+  porque en páginas prerenderizadas trae la `/` final.
+- **Hreflang solo entre páginas que existen.** `Layout.astro` calcula los pares con
+  `publicAlternates()`: las rutas globales (`/app`, auth, `/q`) no llevan hreflang y
+  los casos de uso son solo ES. Una página con una sola versión pasa `alternates`
+  (blog y docs lo hacen al comparar la colección). El selector de idioma lee los
+  mismos pares y, si falta la traducción, lleva al índice de la sección.
+- **Sitemap por host** (`src/pages/sitemap.xml.ts`): `cordhq.app`, `docs.` y `dev.`
+  reciben solo sus URLs, sin `/` final, con `lastmod` únicamente donde el contenido
+  declara fecha (blog, docs, dev-blog). Incluye producto, integraciones, categorías
+  de soporte y contacto de ventas.
+- **Entidades.** `src/lib/seo/entities.ts` define `Organization` de Cord (con
+  Flouvia como `parentOrganization`), `WebSite` y `SoftwareApplication`. La home
+  publica el grafo completo; docs y dev publican su propio `WebSite`.
+- **IndexNow.** `npm run seo:indexnow` manda las URLs de los tres sitemaps a Bing y
+  demás buscadores de IndexNow. La llave vive en `public/<llave>.txt`.
+- **404 real.** Un slug inexistente de docs o dev-blog hace `Astro.rewrite('/404')`
+  en vez de redirigir a la portada.
+
+## Integraciones y Cord Workflows
+
+- `/integraciones` y `/integraciones/[slug]` (ES/EN) salen de
+  `src/lib/integraciones-landing.ts`: HubSpot, Mercado Pago, Slack, Microsoft Teams,
+  WhatsApp Business, Zapier, Make y n8n. Plantilla en
+  `src/components/integraciones/`; cada página publica `HowTo`, `FAQPage` y
+  `BreadcrumbList` desde los mismos datos que se ven, y una sección "Lo que todavía
+  no hace" con los límites reales de cada app. El copy sigue los docs de
+  `automatizacion/` y `pagos/mercado-pago`; al cambiar una integración se actualizan
+  los dos.
+- `/producto/workflows` es un feature más de `src/lib/producto.ts`, con mockups en
+  `[slug].astro`, `BlockMockup` y `ShowcaseMockup`, y sus diapositivas en
+  `ProductAccordion.jsx`.
+- La home enlaza a todas desde `ConnectSection.astro`; el megamenú y el footer
+  llevan Workflows e Integraciones.

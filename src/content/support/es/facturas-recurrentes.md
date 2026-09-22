@@ -4,8 +4,6 @@ description: "Qué revisar cuando falla una emisión o su correo."
 category: "Facturación"
 ---
 
-# Evitar repetir una factura recurrente
-
 
 ## Protección del periodo programado
 
@@ -19,6 +17,6 @@ No hay cobro automático nuevo por crear una recurrencia. Si la emisión falla, 
 **Último error** y el documento antes de repetirla; no existe una recuperación
 automática completa de todos los periodos fallidos.
 
-Si solo falló el correo, reenvía la factura existente. Consulta [la guía de recurrencias](/docs/pagos/facturas-recurrentes).
+Si solo falló el correo, reenvía la factura existente. Consulta [la guía de recurrencias](https://docs.cordhq.app/docs/pagos/facturas-recurrentes).
 
 > La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

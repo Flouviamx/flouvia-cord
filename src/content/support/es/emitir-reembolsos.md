@@ -5,8 +5,6 @@ category: "Pagos y Depósitos"
 order: 4
 ---
 
-# Emitir reembolsos a clientes
-
 
 Cord permite iniciar un reembolso total o parcial desde el mismo historial del cobro, sin abandonar la plataforma. La corrección fiscal sigue siendo un paso separado cuando el pago ya tiene CFDI.
 
@@ -39,6 +37,6 @@ Cord distingue un reembolso solicitado de uno confirmado. Solo el confirmado se
 incorpora al dinero devuelto de la factura; un evento repetido no debe restarlo
 otra vez. Puede llegar antes que el registro del pago y quedar pendiente de esa
 vinculación. La nota de crédito reduce el importe del documento y el reembolso
-devuelve dinero: son acciones separadas. Revisa [el cálculo de saldo](/docs/pagos/facturas-emitidas).
+devuelve dinero: son acciones separadas. Revisa [el cálculo de saldo](https://docs.cordhq.app/docs/pagos/facturas-emitidas).
 
 > La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

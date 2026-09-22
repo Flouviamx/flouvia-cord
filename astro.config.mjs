@@ -7,6 +7,7 @@ import mdx from '@astrojs/mdx';
 export default defineConfig({
   site: 'https://cordhq.app',
   output: 'server',
+  trailingSlash: 'never',
 
   // El CSRF de toda escritura lo aplica src/middleware.ts; el chequeo por defecto de Astro bloquea el POST de formulario sin Origin del endpoint de token OAuth.
   security: { checkOrigin: false },

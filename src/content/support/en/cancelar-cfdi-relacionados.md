@@ -4,8 +4,6 @@ description: "Review payments, credit notes and status before voiding."
 category: "Invoicing"
 ---
 
-# Cancel CFDI with related documents
-
 
 ## Voiding and crediting are different actions
 

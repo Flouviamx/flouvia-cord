@@ -60,6 +60,7 @@ const docsCollection = defineCollection({
   loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/docs" }),
   schema: z.object({
     title: z.string(),
+    seoTitle: z.string().max(70).optional(),
     description: z.string().optional(),
     order: z.number().optional(),
     // Fecha editorial real. Si falta, el layout omite dateModified en vez de

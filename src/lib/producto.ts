@@ -590,7 +590,11 @@ export const FEATURES: Feature[] = [
             },
             {
                 q: '¿En qué países puedo cobrar con tarjeta con Cord?',
-                a: 'Hoy en 8 de los 12 países que Cord sostiene de punta a punta: México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia. En Colombia, Argentina, Chile y Perú tu cuenta cotiza, factura y lleva cobranza igual, pero el cobro con tarjeta todavía no está disponible ahí y Cord lo dice antes de que empieces el alta, no después de que falle.',
+                a: 'Hoy en 8 de los 12 países que Cord sostiene de punta a punta: México, Estados Unidos, Canadá, Brasil, España, Reino Unido, Alemania y Francia. En Colombia, Argentina, Chile y Perú tu cuenta cotiza, factura y lleva cobranza igual, pero Cord Payments todavía no está disponible ahí y Cord lo dice antes de que empieces el alta, no después de que falle. En esos países el cobro en línea es con Mercado Pago.',
+            },
+            {
+                q: '¿Puedo cobrar con Mercado Pago?',
+                a: 'Sí, para cotizaciones. Conectas tu cuenta de Mercado Pago desde Ajustes › Cobros y tu cliente paga desde el mismo link; el dinero llega a tu cuenta de Mercado Pago, no a la de Cord. En México y Brasil aparece como alternativa debajo de Cord Payments; en Colombia, Argentina, Chile y Perú es la forma de cobrar en línea. El link de una factura todavía no ofrece Mercado Pago.',
             },
             {
                 q: '¿Cómo doy de alta mi cuenta para poder cobrar?',
@@ -709,6 +713,101 @@ export const FEATURES: Feature[] = [
             },
         ],
         cta: { titulo: 'Emite, manda y cobra. En un solo lugar.', sub: 'Factura con folio propio, mándala con su link de pago y mira cómo baja el saldo. Empieza gratis.' },
+    },
+    {
+        slug: 'workflows',
+        nav: 'Cord Workflows',
+        eyebrow: 'CORD WORKFLOWS',
+        titulo: 'El seguimiento de cada venta, en piloto automático.',
+        sub: 'Reglas de "cuando pase esto, haz esto" que dan el siguiente paso por ti: una tarea cuando el cliente abre la cotización, un recordatorio antes de que venza la factura, un aviso en Slack cuando entra el anticipo. Sin escribir código.',
+        metaTitle: 'Cord Workflows: automatiza ventas y cobranza sin código — Cord',
+        metaDescription: 'Automatiza el seguimiento de cotizaciones y facturas: 44 eventos o un horario fijo disparan tareas, correos, WhatsApp, Slack, Teams y notas en HubSpot, con condiciones y esperas.',
+        plan: 'Desde el plan Gratis: 1 workflow activo en Gratis, 5 en Starter y sin tope desde Profesional. Las ejecuciones no tienen tope',
+        stats: [
+            { valor: '44', countup: 44, label: 'eventos de Cord que pueden iniciar un workflow, además de un horario fijo' },
+            { valor: '11', countup: 11, label: 'acciones: tareas, correo, WhatsApp, Slack, Teams, HubSpot y más' },
+            { valor: '9', countup: 9, label: 'ideas listas para publicar, una por caso de uso real' },
+        ],
+        blocks: [
+            {
+                eyebrow: 'CUANDO PASE ESTO',
+                titulo: 'Un evento real arranca el flujo, no un recordatorio en tu calendario.',
+                copy: 'Un workflow vigila tu cuenta. Cuando el cliente abre una cotización, llega un anticipo, vence una factura o te abren un contracargo, se ejecuta solo. También puede correr a una hora fija —"cada lunes a las 9"— interpretada en la zona horaria de tu negocio, no en la del servidor.',
+                bullets: [
+                    '44 eventos de cotizaciones, pagos, facturas, clientes, productos y tareas',
+                    'Horario fijo en la zona horaria de tu cuenta',
+                    'Avisos de tiempo: cotización por vencer, factura por vencer y factura vencida',
+                ],
+            },
+            {
+                eyebrow: 'HAZ ESTO',
+                titulo: 'Once acciones, de una tarea a una nota en HubSpot.',
+                copy: 'Crea una tarea para la persona correcta, avisa al equipo por correo, escríbele al cliente con tu marca o mándale un WhatsApp con tu plantilla aprobada. Publica en Slack o en Teams, deja una nota en HubSpot o manda los datos a tu propia URL. Sobre el documento solo hace lo acotado: caducar una cotización vencida, aprobar una solicitud interna o anular una factura sin pagos.',
+                bullets: [
+                    'Correo y WhatsApp al cliente del documento, nunca a una dirección escrita a mano',
+                    'Slack, Microsoft Teams y HubSpot desde el mismo editor',
+                    'Los datos del evento viajan a tu propia URL por HTTPS',
+                ],
+            },
+            {
+                eyebrow: 'CONDICIONES, ESPERAS Y CONSULTAS',
+                titulo: 'Espera a que el cliente decida. Y si no decide, insiste.',
+                copy: 'Divide el flujo en dos ramas según los datos del evento, espera de 1 a 30 días o hasta que ocurra algo con un plazo máximo, y consulta un dato de tu cuenta —cartera vencida, pipeline abierto, saldo del cliente— antes de decidir. Antes de publicar, prueba el borrador contra el último evento real: las consultas corren y las acciones no.',
+                bullets: [
+                    'Ramas "si se cumple / si no se cumple", sin fórmulas',
+                    'Espera condicionada: hasta que el cliente abra o apruebe, con plazo',
+                    'Prueba sin publicar contra el último evento real',
+                ],
+            },
+        ],
+        showcase: [
+            {
+                eyebrow: 'LA COTIZACIÓN QUE NADIE ABRIÓ',
+                titulo: 'El seguimiento dejó de depender de que alguien se acuerde.',
+                copy: 'La escalera de seguimiento espera dos días a que el cliente abra la cotización. Si la abre, crea la tarea de llamarle mientras está caliente; si no, le escribe por ti.',
+            },
+            {
+                eyebrow: 'LA FACTURA QUE SE VENCIÓ EN SILENCIO',
+                titulo: 'La cobranza empieza antes del vencimiento, no un mes después.',
+                copy: 'Un recordatorio al cliente tres días antes, otro el día que vence y, si sigue sin pagarse, un aviso al dueño con el saldo que ya le deben.',
+            },
+            {
+                eyebrow: 'NADA ES UNA CAJA NEGRA',
+                titulo: 'Cada ejecución dice qué hizo, paso por paso.',
+                copy: 'El historial muestra el estado de cada ejecución y el resultado de cada paso. El panel de salud agrupa las fallas de los últimos 30 días por causa, no por mensaje.',
+            },
+        ],
+        faqs: [
+            {
+                q: '¿Necesito saber programar para usar Cord Workflows?',
+                a: 'No. El editor se lee de arriba abajo en dos bloques, "Cuando pase esto" y "Haz esto", y cada paso se elige de una lista. Además Cord trae 9 ideas listas para usar —como la escalera de seguimiento de una cotización o la cobranza escalonada de una factura vencida— que puedes publicar tal cual o adaptar.',
+            },
+            {
+                q: '¿Qué puede iniciar un workflow?',
+                a: 'Cualquiera de los 44 eventos de Cord —cotizaciones enviadas, vistas, aprobadas o pagadas; anticipos y pagos fallidos; facturas emitidas, por vencer o vencidas; contracargos, reembolsos y depósitos; clientes, productos y tareas— o un horario fijo, como "cada lunes a las 9", en la zona horaria de tu negocio. Cada workflow tiene exactamente un disparador.',
+            },
+            {
+                q: '¿Un workflow puede cobrar o emitir facturas por mí?',
+                a: 'No. Un workflow no cobra, no emite facturas ni CFDI, no registra pagos y no aprueba ni rechaza una cotización en nombre de tu cliente: esas decisiones siguen siendo de una persona o del cliente. Lo que sí hace sobre tus documentos es acotado y explícito: escribirle al cliente del documento, caducar una cotización que ya pasó su vigencia, aprobar una solicitud de aprobación interna y anular una factura que todavía no tiene pagos.',
+            },
+            {
+                q: '¿Cuántos workflows puedo tener en cada plan?',
+                a: 'El plan Gratis permite 1 workflow activo, Starter 5 y desde Profesional no hay tope. Solo cuentan los activos: los borradores y los pausados no ocupan lugar. Las ejecuciones tampoco tienen tope; un workflow activo corre cada vez que ocurre su evento.',
+            },
+            {
+                q: '¿Qué pasa con las ejecuciones en curso si cambio un workflow?',
+                a: 'Terminan con la versión con la que empezaron. Lo que editas es un borrador y solo cambia lo que corre cuando pulsas Publicar; cada ejecución nueva toma una copia de la versión publicada en ese momento.',
+            },
+            {
+                q: '¿Un workflow puede dispararse a sí mismo sin fin?',
+                a: 'No. Un workflow nunca se dispara con los eventos que él mismo provoca, y una cadena de workflows que se disparan entre sí se corta después de tres niveles.',
+            },
+            {
+                q: '¿Con qué herramientas se conecta?',
+                a: 'Las acciones publican en Slack y Microsoft Teams, dejan notas en HubSpot y mandan WhatsApp con tu cuenta de WhatsApp Business. Para llevar los eventos de Cord a cualquier otra app están Zapier, Make y n8n, o una acción que manda los datos a tu propia URL.',
+            },
+        ],
+        cta: { titulo: 'Deja que el siguiente paso se dé solo.', sub: 'Publica tu primer workflow desde una de las 9 ideas listas. Gratis para empezar.' },
     },
     {
         slug: 'finanzas',

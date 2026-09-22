@@ -18,7 +18,10 @@ const entry = await getEntry('legal', `${variant.locale.toLowerCase()}/${variant
 const legalHtml = publishedLegalHtml(entry, variant);
 ---
 
-<Layout title={isEn ? "Terms and Conditions | CORD by Flouvia" : "Términos y Condiciones | CORD by Flouvia"}>
+<Layout
+    title={isEn ? "Terms and Conditions | Cord" : "Términos y Condiciones | Cord"}
+    description={isEn ? "Terms and conditions for using Cord: accounts, plans, Cord Payments, invoicing, integrations, acceptable use and liability." : "Términos y condiciones de uso de Cord: cuentas, planes, Cord Payments, facturación, integraciones, uso aceptable y responsabilidad."}
+>
   <Nav />
   
   <PageAnims />

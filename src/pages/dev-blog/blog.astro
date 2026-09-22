@@ -90,7 +90,11 @@ const checkboxFilled = [
 ];
 ---
 
-<DevBlogLayout title={lang === 'en' ? 'Cord Developer Blog' : 'Blog de Desarrolladores Cord'} lang={lang}>
+<DevBlogLayout
+  title={lang === 'en' ? 'All engineering articles' : 'Todos los artículos de ingeniería'}
+  description={lang === 'en' ? 'Every technical article from Cord engineering: API design, webhooks, reconciliation, billing and platform architecture.' : 'Todos los artículos técnicos de ingeniería de Cord: diseño de API, webhooks, conciliación, facturación y arquitectura de la plataforma.'}
+  lang={lang}
+>
   <!-- Hero Section -->
   <header class="dev-hero">
     <h1 class="dev-title">

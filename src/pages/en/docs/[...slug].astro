@@ -20,9 +20,15 @@ const entrySlug = slug === "index" ? "resumen" : slug;
 const doc = await getEntry("docs", `${lang}/${entrySlug}`);
 
 if (!doc) {
-  // If the document doesn't exist, redirect back to the main overview
-  return Astro.redirect(`/en/docs`);
+  return Astro.rewrite('/404');
 }
+
+const counterpart = await getEntry("docs", `es/${entrySlug}`);
+const esPath = entrySlug === "resumen" ? "/docs" : `/docs/${entrySlug}`;
+const alternates = {
+  ...(counterpart ? { es: esPath } : {}),
+  en: `/en${esPath}`,
+};
 
 import Callout from "../../../components/docs/mdx/Callout.astro";
 import Tabs from "../../../components/docs/mdx/Tabs.astro";
@@ -36,8 +42,9 @@ const reviewedBy = doc.data.reviewedBy || undefined;
 const appliesToMarkets = doc.data.appliesToMarkets || undefined;
 const availablePlans = doc.data.availablePlans || undefined;
 const prerequisites = doc.data.prerequisites || undefined;
+const seoTitle = doc.data.seoTitle || undefined;
 ---
 
-<DocsLayout title={doc.data.title} lang={lang} description={description} headings={headings} lastUpdated={lastUpdated} reviewedBy={reviewedBy} appliesToMarkets={appliesToMarkets} availablePlans={availablePlans} prerequisites={prerequisites}>
+<DocsLayout title={doc.data.title} lang={lang} description={description} headings={headings} lastUpdated={lastUpdated} reviewedBy={reviewedBy} appliesToMarkets={appliesToMarkets} availablePlans={availablePlans} prerequisites={prerequisites} seoTitle={seoTitle} alternates={alternates}>
   <Content components={{ Callout, Tabs, TabItem, Steps }} />
 </DocsLayout>

@@ -8,8 +8,10 @@ interface Props {
   // [slug].astro), nunca se re-deriva de la URL aquí, para que layout y página
   // nunca puedan divergir sobre en qué idioma están.
   lang?: 'es' | 'en';
+  isHome?: boolean;
 }
 
+import { cordOrganization, DEV_SITE, ORG_ID } from "../lib/seo/entities";
 import DevConsole from "../components/dev-blog/DevConsole.jsx";
 import PixelDevelopers from "../components/dev-blog/PixelDevelopers.jsx";
 import PixelIcon from "../components/dev-blog/PixelIcon.jsx";
@@ -58,7 +60,7 @@ const tkMatrix = [
   [0,0,0,0,1,1,1,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0,0]
 ];
-const { title, description = "Blog técnico de Cord: artículos de ingeniería sobre arquitectura multi-tenant, pagos, webhooks financieros y la API de cotizaciones.", articleDate, articleAuthors, lang = 'es' } = Astro.props;
+const { title, description = "Blog técnico de Cord: artículos de ingeniería sobre arquitectura multi-tenant, pagos, webhooks financieros y la API de cotizaciones.", articleDate, articleAuthors, lang = 'es', isHome: isHomeProp = false } = Astro.props;
 // Los links del dev-blog usan SIEMPRE el prefijo /dev-blog (dev y prod). En el
 // subdominio dev.cordhq.app, el middleware sirve el árbol /dev-blog; que los links
 // apunten a /dev-blog/* hace que el navegador pida un path que SÍ matchea una ruta
@@ -68,7 +70,7 @@ const { title, description = "Blog técnico de Cord: artículos de ingeniería s
 // patrón que docs (links /docs/*). La raíz dev.cordhq.app/ igual muestra el home
 // (el middleware reescribe / → /dev-blog, y / matchea index → 200).
 const devBase = "/dev-blog";
-const currentPath = Astro.url.pathname;
+const currentPath = Astro.url.pathname.length > 1 ? Astro.url.pathname.replace(/\/+$/, '') : Astro.url.pathname;
 const isBlog = currentPath.includes('/blog');
 const isHome = !isBlog;
 
@@ -89,22 +91,36 @@ const enPath = `/dev-blog/en${tail}`;
 // JSON-LD deben apuntar ahí, no al dominio apex (que 301-redirige a este mismo
 // subdominio; con el hardcode viejo el canonical apuntaba a una URL que redirige
 // de vuelta a sí misma). Astro.url.origin refleja el host real de la request.
-const SITE = Astro.url.origin;
-const canonical = `${SITE}${currentPath}`;
+const SITE = DEV_SITE;
+const canonical = `${SITE}${currentPath === '/' ? '/dev-blog' : currentPath}`;
 const esUrl = `${SITE}${esPath}`;
 const enUrl = `${SITE}${enPath}`;
 const locale = lang === 'es' ? 'es_MX' : 'en_US';
-const ogImage = `${SITE}/og-cord.jpg`;
+const ogImage = 'https://cordhq.app/og-cord.jpg';
 
-// La entidad Organization SÍ se queda anclada al dominio de marca (cordhq.app) —
-// es la misma marca sin importar en qué subdominio se lea el JSON-LD.
-const orgJsonLd = {
+const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "Organization",
-  "@id": "https://cordhq.app/#organization",
-  "name": "Cord",
-  "url": "https://cordhq.app",
-  "logo": { "@type": "ImageObject", "url": "https://cordhq.app/imgs/logo-cord-navy.png" }
+  "@graph": [
+    cordOrganization(),
+    {
+      "@type": "WebSite",
+      "@id": `${SITE}/#website`,
+      "url": `${SITE}/`,
+      "name": "Cord Developers",
+      "alternateName": "Cord Dev Blog",
+      "publisher": { "@id": ORG_ID },
+      "inLanguage": ["es", "en"]
+    },
+    ...(isHomeProp ? [{
+      "@type": "Blog",
+      "@id": `${SITE}${lang === 'en' ? '/dev-blog/en' : '/dev-blog'}#blog`,
+      "name": title,
+      "description": description,
+      "url": canonical,
+      "inLanguage": lang,
+      "publisher": { "@id": ORG_ID }
+    }] : [])
+  ]
 };
 ---
 
@@ -131,17 +147,20 @@ const orgJsonLd = {
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     {articleDate && <meta property="article:published_time" content={articleDate} />}
     {articleAuthors && articleAuthors.map(a => <meta property="article:author" content={a} />)}
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@usecordapp" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
     
-    <!-- JSON-LD Organization -->
-    <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
     <!-- Fonts: JetBrains Mono, Inter, and Pixelify Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -221,20 +240,20 @@ const orgJsonLd = {
           <p class="footer-desc">{lang === 'en' ? 'Explore our guides and examples to integrate Cord.' : 'Explora nuestras guías y ejemplos para integrar Cord.'}</p>
           <a href="https://docs.cordhq.app" target="_blank" rel="noopener noreferrer" class="btn-learn-more">{lang === 'en' ? 'Learn more' : 'Saber más'}</a>
           
-          <div class="copyright" style="margin-top: 40px;">© 2026 CORD, INC.</div>
+          <div class="copyright" style="margin-top: 40px;">© 2026 CORD · BY FLOUVIA</div>
         </div>
 
         <div class="footer-right">
           <div class="footer-list-group">
             <div class="footer-section-title">SOCIAL</div>
             <div class="footer-tags">
-              <a href="https://instagram.com/flouvia" target="_blank" rel="noopener noreferrer" class="dashed-tag">
+              <a href="https://instagram.com/cord.hq" target="_blank" rel="noopener noreferrer" class="dashed-tag">
                 <PixelIcon matrix={igMatrix} pixelSize={1.5} baseColor="var(--dev-text-muted)" client:load /> INSTAGRAM
               </a>
-              <a href="https://tiktok.com/@flouvia" target="_blank" rel="noopener noreferrer" class="dashed-tag">
+              <a href="https://tiktok.com/@cord.hq" target="_blank" rel="noopener noreferrer" class="dashed-tag">
                 <PixelIcon matrix={tkMatrix} pixelSize={1.5} baseColor="var(--dev-text-muted)" client:load /> TIKTOK
               </a>
-              <a href="https://x.com/flouvia" target="_blank" rel="noopener noreferrer" class="dashed-tag">
+              <a href="https://x.com/usecordapp" target="_blank" rel="noopener noreferrer" class="dashed-tag">
                 <PixelIcon matrix={xMatrix} pixelSize={1.5} baseColor="var(--dev-text-muted)" client:load /> X
               </a>
             </div>
@@ -243,14 +262,13 @@ const orgJsonLd = {
             <div class="footer-section-title">RESOURCES</div>
             <div class="footer-tags">
               <a href="https://docs.cordhq.app" target="_blank" rel="noopener noreferrer" class="dashed-tag">DOCS</a>
-              <a href={`${devBase}/meetups`} class="dashed-tag">DEVELOPER MEETUPS</a>
             </div>
           </div>
           <div class="footer-list-group bottom-links">
             <div class="footer-tags">
-              <a href="/privacidad" class="dashed-tag">PRIVACY</a>
-              <a href="/terminos" class="dashed-tag">LEGAL</a>
-              <a href="https://cordhq.app" target="_blank" rel="noopener noreferrer" class="dashed-tag">CORD.COM</a>
+              <a href={lang === 'en' ? 'https://cordhq.app/en/privacidad' : 'https://cordhq.app/privacidad'} class="dashed-tag">PRIVACY</a>
+              <a href={lang === 'en' ? 'https://cordhq.app/en/terminos' : 'https://cordhq.app/terminos'} class="dashed-tag">LEGAL</a>
+              <a href={lang === 'en' ? 'https://cordhq.app/en' : 'https://cordhq.app'} class="dashed-tag">CORDHQ.APP</a>
             </div>
           </div>
         </div>

@@ -4,8 +4,6 @@ description: "What to check before trying a different payment method."
 category: "Payments & Deposits"
 ---
 
-# Switch between SPEI and card
-
 
 ## Choose how to pay
 
@@ -49,8 +47,8 @@ just to try it. Refresh the link or contact the business. The improvement does
 not include automatic refunds of late transfers or automatic recovery of every
 uncertain attempt.
 
-See [the scope of the changes](/en/docs/pagos/mejoras-confiabilidad) and
-[method-specific fees](/en/docs/pagos/condiciones). Sale currency is separate from
-[your Cord subscription currency](/en/docs/cuenta/suscripcion).
+See [the scope of the changes](https://docs.cordhq.app/en/docs/pagos/mejoras-confiabilidad) and
+[method-specific fees](https://docs.cordhq.app/en/docs/pagos/condiciones). Sale currency is separate from
+[your Cord subscription currency](https://docs.cordhq.app/en/docs/cuenta/suscripcion).
 
 > Availability of the September improvements is being verified. See [scope and release status](https://docs.cordhq.app/en/pagos/mejoras-confiabilidad); contact support if a described action is not yet shown in your account.

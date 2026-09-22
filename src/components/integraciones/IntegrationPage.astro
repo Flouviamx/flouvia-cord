@@ -1,0 +1,335 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../landing/Nav.astro';
+import Footer from '../landing/Footer.astro';
+import PageAnims from '../landing/PageAnims.astro';
+import FaqAccordion from '../landing/FaqAccordion.astro';
+import { CATEGORY_LABEL, INTEGRATION_PAGES, type IntegrationLanding } from '../../lib/integraciones-landing';
+import { FEATURES } from '../../lib/producto';
+import { FEATURES_EN } from '../../lib/producto.en';
+import { SITE, SOFTWARE_ID } from '../../lib/seo/entities';
+
+interface Props {
+    page: IntegrationLanding;
+    isEn?: boolean;
+}
+
+const { page, isEn = false } = Astro.props;
+const c = isEn ? page.en : page.es;
+const lang = isEn ? 'en' : 'es';
+const base = isEn ? `${SITE}/en` : SITE;
+const pre = isEn ? '/en' : '';
+const pageUrl = `${base}/integraciones/${page.slug}`;
+const hubLabel = isEn ? 'Integrations' : 'Integraciones';
+const category = CATEGORY_LABEL[page.categoria][lang];
+const producto = (isEn ? FEATURES_EN : FEATURES).find((f) => f.slug === page.producto);
+const related = page.related
+    .map((slug) => INTEGRATION_PAGES.find((p) => p.slug === slug))
+    .filter(Boolean) as IntegrationLanding[];
+
+const schema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'WebPage',
+            '@id': `${pageUrl}#webpage`,
+            url: pageUrl,
+            name: c.metaTitle,
+            description: c.metaDescription,
+            inLanguage: lang,
+            isPartOf: { '@id': `${SITE}/#website` },
+            about: [
+                { '@id': SOFTWARE_ID },
+                { '@type': 'SoftwareApplication', name: page.nombre, url: `https://${page.dominio}` },
+            ],
+        },
+        {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Cord', item: `${base}/` },
+                { '@type': 'ListItem', position: 2, name: hubLabel, item: `${base}/integraciones` },
+                { '@type': 'ListItem', position: 3, name: page.nombre, item: pageUrl },
+            ],
+        },
+        {
+            '@type': 'HowTo',
+            name: isEn ? `How to connect ${page.nombre} with Cord` : `Cómo conectar ${page.nombre} con Cord`,
+            description: c.sub,
+            step: c.pasos.map((step, i) => ({ '@type': 'HowToStep', position: i + 1, name: step.name, text: step.text })),
+        },
+        {
+            '@type': 'FAQPage',
+            mainEntity: c.faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+        },
+    ],
+};
+---
+
+<Layout title={c.metaTitle} description={c.metaDescription} imageAlt={`Cord + ${page.nombre}`}>
+    <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+    <Nav />
+    <main class="ig">
+        <section class="ig-hero">
+            <div class="ig-hero-mesh" aria-hidden="true"></div>
+            <div class="ig-hero-inner">
+                <div class="ig-hero-text">
+                    <nav class="ig-crumbs reveal" aria-label={isEn ? 'Breadcrumb' : 'Ruta'}>
+                        <a href={`${pre}/integraciones`}>{hubLabel}</a>
+                        <span aria-hidden="true">/</span>
+                        <span>{page.nombre}</span>
+                    </nav>
+                    <h1 class="ig-title masked-title">{c.titulo}</h1>
+                    <p class="ig-sub reveal">{c.sub}</p>
+                    <div class="ig-actions reveal">
+                        <a href="/sign-up" class="ig-btn-primary">
+                            <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                        {c.guias[0] && <a href={c.guias[0].href} class="ig-btn-ghost">{isEn ? 'Read the guide' : 'Ver la guía'}</a>}
+                    </div>
+                    <p class="ig-plan reveal">{c.plan}</p>
+                </div>
+
+                <div class="ig-visual reveal-mockup">
+                    <div class="ig-pair">
+                        <div class="ig-tile"><img src="/favicon-192x192.png" alt="Cord" width="56" height="56" /></div>
+                        <div class="ig-cord" aria-hidden="true"><span class="ig-cord-pulse"></span></div>
+                        <div class="ig-tile"><img src={page.logo} alt={page.nombre} width="56" height="56" /></div>
+                    </div>
+                    <div class="ig-sync">
+                        <div class="ig-sync-head">
+                            <b>{c.flujoTitulo}</b>
+                            <span class="ig-live"><i></i>{category}</span>
+                        </div>
+                        {c.flujo.map((row) => (
+                            <div class="ig-sync-row">
+                                <span class="ig-sync-cord">{row.cord}</span>
+                                <svg class="ig-sync-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
+                                <span class="ig-sync-app"><b>{row.app}</b><em>{row.dir}</em></span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="ig-blocks">
+            {c.blocks.map((b, i) => (
+                <article class="ig-block reveal">
+                    <span class="ig-block-num editorial">{String(i + 1).padStart(2, '0')}</span>
+                    <div class="ig-block-text">
+                        <p class="ig-eyebrow">{b.eyebrow}</p>
+                        <h2 class="ig-block-title">{b.titulo}</h2>
+                        <p class="ig-block-copy">{b.copy}</p>
+                    </div>
+                    <ul class="ig-bullets">
+                        {b.bullets.map((bullet) => (
+                            <li>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.13"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+                                <span>{bullet}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </article>
+            ))}
+        </section>
+
+        <section class="ig-steps">
+            <div class="ig-steps-inner">
+                <p class="ig-eyebrow reveal">{isEn ? 'SETUP' : 'CONFIGURACIÓN'}</p>
+                <h2 class="ig-section-title reveal">{isEn ? `How to connect ${page.nombre}` : `Cómo conectar ${page.nombre}`}</h2>
+                <ol class="ig-step-list">
+                    {c.pasos.map((step, i) => (
+                        <li class="ig-step reveal">
+                            <span class="ig-step-n editorial">{i + 1}</span>
+                            <div>
+                                <h3>{step.name}</h3>
+                                <p>{step.text}</p>
+                            </div>
+                        </li>
+                    ))}
+                </ol>
+            </div>
+        </section>
+
+        <section class="ig-limits">
+            <div class="ig-limits-inner reveal">
+                <div>
+                    <p class="ig-eyebrow">{isEn ? 'NO SURPRISES' : 'SIN SORPRESAS'}</p>
+                    <h2 class="ig-section-title">{isEn ? 'What it does not do yet' : 'Lo que todavía no hace'}</h2>
+                    <p class="ig-limits-lede">{isEn ? 'We would rather you read it here than find it out halfway through.' : 'Preferimos que lo leas aquí a que lo descubras a medio camino.'}</p>
+                </div>
+                <ul>
+                    {c.limites.map((l) => <li>{l}</li>)}
+                </ul>
+            </div>
+        </section>
+
+        <FaqAccordion faqs={c.faqs} eyebrow={isEn ? 'QUESTIONS' : 'PREGUNTAS'} title={isEn ? `${page.nombre} and Cord, answered` : `${page.nombre} y Cord, sin rodeos`} id={`faq-${page.slug}`} />
+
+        <section class="ig-more">
+            <div class="ig-more-inner">
+                <div class="ig-more-col reveal">
+                    <p class="ig-eyebrow">{isEn ? 'GUIDES' : 'GUÍAS'}</p>
+                    <ul class="ig-links">
+                        {c.guias.map((g) => (
+                            <li><a href={g.href}>{g.label}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></svg></a></li>
+                        ))}
+                        {producto && (
+                            <li><a href={`${pre}/producto/${producto.slug}`}>{producto.nav}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a></li>
+                        )}
+                    </ul>
+                </div>
+                <div class="ig-more-col ig-more-related reveal">
+                    <p class="ig-eyebrow">{isEn ? 'MORE INTEGRATIONS' : 'MÁS INTEGRACIONES'}</p>
+                    <div class="ig-related">
+                        {related.map((r) => (
+                            <a href={`${pre}/integraciones/${r.slug}`} class="ig-related-card">
+                                <img src={r.logo} alt="" width="28" height="28" loading="lazy" />
+                                <span><b>{r.nombre}</b><i>{(isEn ? r.en : r.es).resumen}</i></span>
+                            </a>
+                        ))}
+                    </div>
+                    <a href={`${pre}/integraciones`} class="ig-all">{isEn ? 'See every integration' : 'Ver todas las integraciones'}</a>
+                </div>
+            </div>
+        </section>
+    </main>
+    <Footer ctaTitle={c.cta.titulo} ctaSub={c.cta.sub} />
+    <PageAnims />
+</Layout>
+
+<style>
+    .ig { background: var(--color-bg); }
+    .ig-hero { position: relative; overflow-x: clip; }
+    .ig-hero-mesh {
+        position: absolute; inset: -20% -10% auto; height: 90%; pointer-events: none;
+        background:
+            radial-gradient(ellipse 50% 60% at 24% 18%, rgba(10,25,47,0.05) 0%, transparent 60%),
+            radial-gradient(ellipse 44% 54% at 78% 14%, rgba(10,25,47,0.04) 0%, transparent 60%);
+    }
+    .ig-hero-inner {
+        position: relative; z-index: 1; max-width: 1240px; margin: 0 auto;
+        padding: 9.5rem 6% 6rem; display: grid; grid-template-columns: 1fr 1.05fr; gap: 4rem; align-items: center;
+    }
+    .ig-crumbs { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 600; color: #8a8f98; margin-bottom: 1.6rem; }
+    .ig-crumbs a { color: var(--color-blue-deep); text-decoration: none; }
+    .ig-crumbs a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .ig-title { color: #050505; margin: 0 0 1.4rem !important; text-align: left !important; }
+    .ig-sub { font-size: 1.08rem; line-height: 1.65; color: var(--color-text-muted); max-width: 520px; margin: 0 0 2.2rem; }
+    .ig-actions { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; }
+    .ig-btn-primary {
+        display: inline-flex; align-items: center; gap: 10px; background: var(--color-blue-deep); color: #fff;
+        text-decoration: none; font-size: 0.98rem; font-weight: 600; padding: 14px 30px; border-radius: 999px;
+        box-shadow: 0 18px 44px -16px rgba(10,25,47,0.55);
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .ig-btn-primary svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring); }
+    .ig-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
+    .ig-btn-primary:hover svg { transform: translateX(4px); }
+    .ig-btn-primary:active { transform: scale(0.98); }
+    .ig-btn-ghost {
+        display: inline-flex; align-items: center; color: var(--color-blue-deep); text-decoration: none; font-size: 0.95rem; font-weight: 600;
+        padding: 13px 24px; border-radius: 999px; background: #f5f5f7; transition: background 0.3s ease, transform 0.3s var(--ease-spring);
+    }
+    .ig-btn-ghost:hover { background: #ececf0; }
+    .ig-btn-ghost:active { transform: scale(0.98); }
+    .ig-btn-primary:focus-visible, .ig-btn-ghost:focus-visible, .ig a:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
+    .ig-plan { margin: 1.4rem 0 0; font-size: 0.8rem; color: #8a8f98; }
+
+    .ig-visual { display: flex; flex-direction: column; gap: 1.4rem; }
+    .ig-pair { display: flex; align-items: center; justify-content: center; gap: 0; }
+    .ig-tile {
+        width: 92px; height: 92px; border-radius: 26px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.05), 0 12px 28px -10px rgba(10,25,47,0.22), 0 30px 60px -30px rgba(10,25,47,0.25);
+    }
+    .ig-tile img { width: 56px; height: 56px; border-radius: 14px; object-fit: contain; }
+    .ig-cord { position: relative; width: 120px; height: 2px; background: repeating-linear-gradient(90deg, rgba(10,25,47,0.28) 0 6px, transparent 6px 11px); }
+    .ig-cord-pulse {
+        position: absolute; top: 50%; left: 0; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%;
+        background: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,0.18);
+        animation: ig-travel 2.6s var(--ease-smooth) infinite;
+    }
+    @keyframes ig-travel {
+        0% { left: 0; opacity: 0; }
+        12% { opacity: 1; }
+        88% { opacity: 1; }
+        100% { left: calc(100% - 10px); opacity: 0; }
+    }
+    .ig-sync {
+        background: #fff; border-radius: 22px; padding: 0.4rem 0 0.6rem;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.045), 0 2px 6px rgba(10,25,47,0.04), 0 18px 40px -12px rgba(10,25,47,0.16), 0 40px 80px -40px rgba(10,25,47,0.22);
+    }
+    .ig-sync-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0.9rem 1.3rem 0.8rem; border-bottom: 1px solid rgba(10,25,47,0.06); }
+    .ig-sync-head b { font-size: 0.86rem; font-weight: 650; color: #0f172a; letter-spacing: -0.01em; }
+    .ig-live { display: inline-flex; align-items: center; gap: 6px; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #059669; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
+    .ig-live i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+    .ig-sync-row { display: grid; grid-template-columns: 1fr 22px 1.25fr; align-items: center; gap: 12px; padding: 0.85rem 1.3rem; border-bottom: 1px solid rgba(10,25,47,0.045); }
+    .ig-sync-row:last-child { border-bottom: none; }
+    .ig-sync-cord { font-size: 0.84rem; font-weight: 600; color: #0f172a; }
+    .ig-sync-arrow { width: 18px; height: 18px; color: #94a3b8; }
+    .ig-sync-app { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .ig-sync-app b { font-size: 0.84rem; font-weight: 600; color: #0f172a; }
+    .ig-sync-app em { font-style: normal; font-size: 0.74rem; color: #64748b; }
+
+    .ig-eyebrow { font-size: 0.66rem; font-weight: 800; letter-spacing: 2.2px; text-transform: uppercase; color: #8a8f98; margin: 0 0 1rem; }
+    .ig-section-title { font-size: clamp(1.7rem, 2.6vw, 2.4rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; color: #050505; margin: 0 0 1rem; text-wrap: balance; }
+
+    .ig-blocks { max-width: 1120px; margin: 0 auto; padding: 3rem 6% 7rem; }
+    .ig-block { display: grid; grid-template-columns: 70px 1.2fr 1fr; gap: 2.4rem; padding: 3.4rem 0; border-top: 1px solid rgba(10,25,47,0.08); }
+    .ig-block:last-child { border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .ig-block-num { font-size: 0.95rem; color: #b0b5bd; padding-top: 0.2rem; }
+    .ig-block-title { font-size: clamp(1.35rem, 2vw, 1.75rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.15; color: #050505; margin: 0 0 1rem; text-wrap: balance; }
+    .ig-block-copy { font-size: 1rem; line-height: 1.7; color: var(--color-text-muted); margin: 0; }
+    .ig-bullets { list-style: none; margin: 0; padding: 2rem 0 0; display: flex; flex-direction: column; gap: 1rem; }
+    .ig-bullets li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.95rem; line-height: 1.5; color: #1d1d1f; }
+    .ig-bullets svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--color-blue-deep); margin-top: 1px; }
+
+    .ig-steps { background: #f5f5f7; }
+    .ig-steps-inner { max-width: 1120px; margin: 0 auto; padding: 7rem 6%; }
+    .ig-step-list { list-style: none; margin: 2.6rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; }
+    .ig-step { background: #fff; border-radius: 28px; padding: 1.8rem 1.6rem; box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 16px 40px -24px rgba(10,25,47,0.18); display: flex; flex-direction: column; gap: 1.1rem; }
+    .ig-step-n { width: 34px; height: 34px; border-radius: 50%; background: var(--color-blue-deep); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+    .ig-step h3 { font-size: 1.02rem; font-weight: 700; letter-spacing: -0.02em; color: #050505; margin: 0 0 0.5rem; }
+    .ig-step p { font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted); margin: 0; }
+
+    .ig-limits { max-width: 1120px; margin: 0 auto; padding: 7rem 6% 2rem; }
+    .ig-limits-inner { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 3rem; align-items: start; }
+    .ig-limits-lede { font-size: 0.98rem; line-height: 1.65; color: var(--color-text-muted); margin: 0; max-width: 360px; }
+    .ig-limits ul { list-style: none; margin: 0; padding: 0; }
+    .ig-limits li { position: relative; padding: 1.1rem 0 1.1rem 1.6rem; border-top: 1px solid rgba(10,25,47,0.08); font-size: 0.95rem; line-height: 1.6; color: #1d1d1f; }
+    .ig-limits li:last-child { border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .ig-limits li::before { content: ''; position: absolute; left: 0; top: 1.72rem; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; }
+
+    .ig-more { max-width: 1120px; margin: 0 auto; padding: 2rem 6% 8rem; }
+    .ig-more-inner { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 3rem; padding-top: 3rem; border-top: 1px solid rgba(10,25,47,0.08); }
+    .ig-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .ig-links a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0.95rem 0; border-bottom: 1px solid rgba(10,25,47,0.06); color: #0f172a; text-decoration: none; font-weight: 600; font-size: 0.95rem; min-height: 44px; }
+    .ig-links a:hover { color: var(--color-blue-deep); }
+    .ig-links svg { width: 16px; height: 16px; color: #94a3b8; flex-shrink: 0; }
+    .ig-related { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.8rem; }
+    .ig-related-card { display: flex; gap: 12px; align-items: flex-start; padding: 1.1rem 1.2rem; border-radius: 20px; background: #f5f5f7; text-decoration: none; transition: background 0.3s ease, transform 0.4s var(--ease-spring); }
+    .ig-related-card:hover { background: #ececf0; transform: translateY(-2px); }
+    .ig-related-card img { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; background: #fff; }
+    .ig-related-card b { display: block; font-size: 0.92rem; color: #0f172a; margin-bottom: 3px; }
+    .ig-related-card i { display: block; font-style: normal; font-size: 0.8rem; line-height: 1.45; color: var(--color-text-muted); }
+    .ig-all { display: inline-flex; margin-top: 1.2rem; font-size: 0.9rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; min-height: 44px; align-items: center; }
+    .ig-all:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    @media (max-width: 880px) {
+        .ig-hero-inner { grid-template-columns: 1fr; padding: 8rem 5% 4rem; gap: 3rem; }
+        .ig-block { grid-template-columns: 1fr; gap: 0.8rem; padding: 2.6rem 0; }
+        .ig-bullets { padding-top: 0.6rem; }
+        .ig-limits-inner, .ig-more-inner { grid-template-columns: 1fr; gap: 1.6rem; }
+        .ig-steps-inner { padding: 5rem 5%; }
+        .ig-blocks, .ig-limits, .ig-more { padding-left: 5%; padding-right: 5%; }
+        .ig-sync-row { grid-template-columns: 1fr; gap: 4px; }
+        .ig-sync-arrow { transform: rotate(90deg); width: 14px; height: 14px; }
+        .ig-cord { width: 72px; }
+        .ig-tile { width: 76px; height: 76px; border-radius: 22px; }
+        .ig-tile img { width: 46px; height: 46px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .ig-cord-pulse { animation: none; left: calc(50% - 5px); }
+    }
+</style>

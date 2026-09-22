@@ -21,6 +21,12 @@ Disallow: /forgot-password
 Disallow: /verify-email
 Disallow: /onboarding/
 Disallow: /ops/
+Disallow: /oauth/
+Disallow: /unirse/
+Disallow: /verificar-identidad/
+Disallow: /reset-password
+Disallow: /verify-2fa
+Disallow: /billing/
 
 # Search and answer-engine crawlers may read public pages. Product and account
 # surfaces remain blocked by the same rules above.
@@ -49,6 +55,12 @@ Disallow: /forgot-password
 Disallow: /verify-email
 Disallow: /onboarding/
 Disallow: /ops/
+Disallow: /oauth/
+Disallow: /unirse/
+Disallow: /verificar-identidad/
+Disallow: /reset-password
+Disallow: /verify-2fa
+Disallow: /billing/
 
 Sitemap: ${origin}/sitemap.xml
 `;

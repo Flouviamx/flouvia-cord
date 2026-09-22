@@ -21,6 +21,12 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const { Content, headings } = await render(entry);
+const blogSlug = entry.id.replace(/^(es|en)\//, '');
+const blogIds = new Set((await getCollection('blog')).map((post) => post.id));
+const alternates = {
+    ...(blogIds.has(`es/${blogSlug}`) ? { es: `/blog/${blogSlug}` } : {}),
+    ...(blogIds.has(`en/${blogSlug}`) ? { en: `/en/blog/${blogSlug}` } : {}),
+};
 
 const lang = getLangFromUrl(Astro.url);
 const isEn = Astro.props.isEn || lang === 'en';
@@ -96,6 +102,7 @@ const breadcrumbSchema = {
     description={entry.data.excerpt}
     image={entry.data.img?.startsWith('http') ? entry.data.img : '/og-cord.jpg'}
     ogType="article"
+    alternates={alternates}
 >
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(articleSchema)} />
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />

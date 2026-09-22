@@ -1,7 +1,6 @@
-// Sitemap XML de las páginas públicas y estáticas de Cord (ES + EN), más
-// blog/soporte/roadmap (Content Collections + roadmap-data.ts). Cada host recibe
-// solo sus propias URLs y los pares hreflang se crean únicamente cuando ambos
-// contenidos existen; los slugs no se asumen idénticos entre idiomas.
+// Sitemap por host: cordhq.app, docs.cordhq.app y dev.cordhq.app reciben solo sus
+// URLs. Los pares hreflang se emiten únicamente cuando las dos versiones existen y
+// lastmod solo cuando el contenido declara una fecha real.
 export const prerender = false;
 
 import { getCollection } from 'astro:content';
@@ -9,166 +8,168 @@ import { FEATURES } from '../lib/producto';
 import { SOLUCIONES } from '../lib/solucion';
 import { DEV_PAGES } from '../lib/desarrolladores';
 import { roadmapData } from '../lib/roadmap-data';
+import { INTEGRATION_PAGES } from '../lib/integraciones-landing';
+import { SUPPORT_CATEGORIES } from '../lib/support-categories';
+import { DEV_SITE, DOCS_SITE, SITE } from '../lib/seo/entities';
 
-const SITE = 'https://cordhq.app';
-const DEV_SITE = 'https://dev.cordhq.app';
-const DOCS_SITE = 'https://docs.cordhq.app';
+type Entry = { es?: string; en?: string; lastmod?: string };
+
+const ES_ONLY = new Set(['/casos-de-uso/saas', '/casos-de-uso/agencias', '/casos-de-uso/comercializadoras', '/casos-de-uso/software-factory']);
 
 const STATIC_PATHS = [
-    { path: '/', priority: '1.0', changefreq: 'weekly' },
-    { path: '/precios', priority: '0.9', changefreq: 'weekly' },
-    { path: '/como-funciona', priority: '0.7', changefreq: 'monthly' },
-    { path: '/elements', priority: '0.6', changefreq: 'monthly' },
-    { path: '/roadmap', priority: '0.5', changefreq: 'weekly' },
-    { path: '/blog', priority: '0.6', changefreq: 'weekly' },
-    { path: '/soporte', priority: '0.5', changefreq: 'weekly' },
-    { path: '/soluciones/empresas', priority: '0.7', changefreq: 'monthly' },
-    { path: '/soluciones/startups', priority: '0.7', changefreq: 'monthly' },
-    { path: '/casos-de-uso/saas', priority: '0.6', changefreq: 'monthly' },
-    { path: '/casos-de-uso/agencias', priority: '0.6', changefreq: 'monthly' },
-    { path: '/casos-de-uso/comercializadoras', priority: '0.6', changefreq: 'monthly' },
-    { path: '/casos-de-uso/software-factory', priority: '0.6', changefreq: 'monthly' },
-    { path: '/comparar/facturacion', priority: '0.6', changefreq: 'monthly' },
-    { path: '/desarrolladores/status', priority: '0.3', changefreq: 'daily' },
-    { path: '/privacidad', priority: '0.2', changefreq: 'yearly' },
-    { path: '/terminos', priority: '0.2', changefreq: 'yearly' },
-];
-
-const PRODUCT_PATHS = FEATURES.map((f) => ({ path: `/producto/${f.slug}`, priority: '0.7', changefreq: 'monthly' }));
-const SOLUTION_PATHS = SOLUCIONES.map((s) => ({ path: `/soluciones/${s.slug}`, priority: '0.7', changefreq: 'monthly' })).filter(
-    (s) => !STATIC_PATHS.some((p) => p.path === s.path)
-);
-// 'elements' vive en /elements (STATIC_PATHS), no en /desarrolladores/elements (301) — se excluye.
-const DEV_PATHS = DEV_PAGES.filter((d) => d.slug !== 'elements').map((d) => ({ path: `/desarrolladores/${d.slug}`, priority: '0.5', changefreq: 'monthly' }));
-const ROADMAP_PATHS = roadmapData.map((r) => ({ path: `/roadmap/${r.slug}`, priority: '0.4', changefreq: 'monthly' }));
-
-const ALL_PATHS = [...STATIC_PATHS, ...PRODUCT_PATHS, ...SOLUTION_PATHS, ...DEV_PATHS, ...ROADMAP_PATHS];
-const ES_ONLY_PATHS = new Set([
+    '/',
+    '/precios',
+    '/como-funciona',
+    '/integraciones',
+    '/elements',
+    '/roadmap',
+    '/blog',
+    '/contacto/ventas',
+    '/soluciones/empresas',
+    '/soluciones/startups',
     '/casos-de-uso/saas',
     '/casos-de-uso/agencias',
     '/casos-de-uso/comercializadoras',
     '/casos-de-uso/software-factory',
-]);
+    '/comparar/facturacion',
+    '/desarrolladores/status',
+    '/privacidad',
+    '/terminos',
+];
 
-// path/en-prefix par (mismo slug, mismo patrón de ruta en ambos idiomas)
-const urlEntry = (path: string, priority: string, changefreq: string) => {
-    const es = `${SITE}${path}`;
-    const en = `${SITE}/en${path === '/' ? '' : path}`;
-    return pairEntry(es, en, priority, changefreq);
+const paired = (path: string): Entry => {
+    if (ES_ONLY.has(path)) return { es: `${SITE}${path}` };
+    return { es: `${SITE}${path === '/' ? '/' : path}`, en: `${SITE}/en${path === '/' ? '' : path}` };
 };
 
-// par explícito ES/EN cuando la ruta no sigue el patrón /en/ prefix (soporte→support)
-const pairEntry = (es: string, en: string, priority: string, changefreq: string) => `  <url>
-    <loc>${es}</loc>
-    <xhtml:link rel="alternate" hreflang="es" href="${es}" />
-    <xhtml:link rel="alternate" hreflang="en" href="${en}" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="${es}" />
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority}</priority>
-  </url>
-  <url>
-    <loc>${en}</loc>
-    <xhtml:link rel="alternate" hreflang="es" href="${es}" />
-    <xhtml:link rel="alternate" hreflang="en" href="${en}" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="${es}" />
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority}</priority>
-  </url>`;
+const isoDay = (value?: string) => {
+    if (!value) return undefined;
+    const normalized = value.trim().replace(/\./g, '-');
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? new Date(`${normalized}T00:00:00Z`) : new Date(normalized);
+    return Number.isNaN(date.getTime()) ? undefined : date.toISOString().slice(0, 10);
+};
 
-const singleEntry = (loc: string, lang: 'es' | 'en', priority: string, changefreq: string) => `  <url>
-    <loc>${loc}</loc>
-    <xhtml:link rel="alternate" hreflang="${lang}" href="${loc}" />
-    ${lang === 'es' ? `<xhtml:link rel="alternate" hreflang="x-default" href="${loc}" />` : ''}
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority}</priority>
-  </url>`;
+const newest = (...dates: (string | undefined)[]) => dates.filter(Boolean).sort().at(-1);
+
+const urlXml = (loc: string, entry: Entry) => {
+    const alternates = entry.es && entry.en
+        ? [
+            `    <xhtml:link rel="alternate" hreflang="es" href="${entry.es}" />`,
+            `    <xhtml:link rel="alternate" hreflang="en" href="${entry.en}" />`,
+            `    <xhtml:link rel="alternate" hreflang="x-default" href="${entry.es}" />`,
+        ].join('\n')
+        : '';
+    return [
+        '  <url>',
+        `    <loc>${loc}</loc>`,
+        alternates,
+        entry.lastmod ? `    <lastmod>${entry.lastmod}</lastmod>` : '',
+        '  </url>',
+    ].filter(Boolean).join('\n');
+};
+
+const render = (entries: Entry[]) => entries
+    .flatMap((entry) => [entry.es, entry.en].filter(Boolean).map((loc) => urlXml(loc as string, entry)))
+    .join('\n');
+
+async function apexEntries(): Promise<Entry[]> {
+    const entries: Entry[] = STATIC_PATHS.map(paired);
+    entries.push({ es: `${SITE}/soporte`, en: `${SITE}/en/support` });
+    entries.push(...FEATURES.map((f) => paired(`/producto/${f.slug}`)));
+    entries.push(...SOLUCIONES.filter((s) => !STATIC_PATHS.includes(`/soluciones/${s.slug}`)).map((s) => paired(`/soluciones/${s.slug}`)));
+    entries.push(...DEV_PAGES.filter((d) => d.slug !== 'elements').map((d) => paired(`/desarrolladores/${d.slug}`)));
+    entries.push(...roadmapData.map((r) => paired(`/roadmap/${r.slug}`)));
+    entries.push(...INTEGRATION_PAGES.map((p) => paired(`/integraciones/${p.slug}`)));
+    entries.push(...SUPPORT_CATEGORIES.map((c) => ({ es: `${SITE}/soporte/categoria/${c.slug}`, en: `${SITE}/en/support/category/${c.slug}` })));
+
+    const blog = await getCollection('blog');
+    const blogBySlug = new Map<string, { es?: (typeof blog)[number]; en?: (typeof blog)[number] }>();
+    for (const post of blog) {
+        const [lang, ...rest] = post.id.split('/');
+        const slug = rest.join('/');
+        const slot = blogBySlug.get(slug) ?? {};
+        slot[lang as 'es' | 'en'] = post;
+        blogBySlug.set(slug, slot);
+    }
+    for (const [slug, { es, en }] of blogBySlug) {
+        const dates = [es, en].flatMap((p) => p ? [isoDay(p.data.lastUpdated), isoDay(p.data.publishedAt), isoDay(p.data.date)] : []);
+        entries.push({
+            es: es ? `${SITE}/blog/${slug}` : undefined,
+            en: en ? `${SITE}/en/blog/${slug}` : undefined,
+            lastmod: newest(...dates),
+        });
+    }
+
+    const support = await getCollection('support');
+    const supportSlugs = new Map<string, Set<string>>();
+    for (const article of support) {
+        const [lang, ...rest] = article.id.split('/');
+        const slug = rest.join('/');
+        supportSlugs.set(slug, (supportSlugs.get(slug) ?? new Set()).add(lang));
+    }
+    for (const [slug, langs] of supportSlugs) {
+        entries.push({
+            es: langs.has('es') ? `${SITE}/soporte/${slug}` : undefined,
+            en: langs.has('en') ? `${SITE}/en/support/${slug}` : undefined,
+        });
+    }
+    return entries;
+}
+
+async function docsEntries(): Promise<Entry[]> {
+    const docs = await getCollection('docs');
+    const bySlug = new Map<string, { es?: string; en?: string; dates: (string | undefined)[] }>();
+    for (const doc of docs) {
+        const [lang, ...rest] = doc.id.split('/');
+        const slug = rest.join('/');
+        const path = slug === 'resumen' ? '/docs' : `/docs/${slug}`;
+        const slot = bySlug.get(slug) ?? { dates: [] };
+        slot[lang as 'es' | 'en'] = lang === 'en' ? `${DOCS_SITE}/en${path}` : `${DOCS_SITE}${path}`;
+        slot.dates.push(isoDay(doc.data.lastUpdated));
+        bySlug.set(slug, slot);
+    }
+    return [...bySlug.values()].map((s) => ({ es: s.es, en: s.en, lastmod: newest(...s.dates) }));
+}
+
+async function devEntries(): Promise<Entry[]> {
+    const posts = await getCollection('devBlog');
+    const bySlug = new Map<string, { langs: Set<string>; dates: (string | undefined)[] }>();
+    for (const post of posts) {
+        const [lang, ...rest] = post.id.split('/');
+        const slug = rest.join('/');
+        const slot = bySlug.get(slug) ?? { langs: new Set(), dates: [] };
+        slot.langs.add(lang);
+        slot.dates.push(isoDay(post.data.date));
+        bySlug.set(slug, slot);
+    }
+    const latest = newest(...[...bySlug.values()].flatMap((s) => s.dates));
+    return [
+        { es: `${DEV_SITE}/dev-blog`, en: `${DEV_SITE}/dev-blog/en`, lastmod: latest },
+        { es: `${DEV_SITE}/dev-blog/blog`, en: `${DEV_SITE}/dev-blog/en/blog`, lastmod: latest },
+        ...[...bySlug.entries()].map(([slug, s]) => ({
+            es: s.langs.has('es') ? `${DEV_SITE}/dev-blog/${slug}` : undefined,
+            en: s.langs.has('en') ? `${DEV_SITE}/dev-blog/en/${slug}` : undefined,
+            lastmod: newest(...s.dates),
+        })),
+    ];
+}
 
 export async function GET({ url }: { url: URL }) {
-    const blogEntries = await getCollection('blog');
-    const blogEsSlugs = new Set(blogEntries.filter((e) => e.id.startsWith('es/')).map((e) => e.id.replace(/^es\//, '')));
-    const blogEnSlugs = new Set(blogEntries.filter((e) => e.id.startsWith('en/')).map((e) => e.id.replace(/^en\//, '')));
-    const blogSlugs = [...new Set([...blogEsSlugs, ...blogEnSlugs])];
-    const blogXml = blogSlugs.map((slug) => {
-        if (blogEsSlugs.has(slug) && blogEnSlugs.has(slug)) {
-            return pairEntry(`${SITE}/blog/${slug}`, `${SITE}/en/blog/${slug}`, '0.5', 'monthly');
-        }
-        return blogEsSlugs.has(slug)
-            ? singleEntry(`${SITE}/blog/${slug}`, 'es', '0.5', 'monthly')
-            : singleEntry(`${SITE}/en/blog/${slug}`, 'en', '0.5', 'monthly');
-    }).join('\n');
-
-    const supportEntries = await getCollection('support');
-    const supportEsSlugs = new Set(supportEntries.filter((e) => e.id.startsWith('es/')).map((e) => e.id.replace(/^es\//, '')));
-    const supportEnSlugs = new Set(supportEntries.filter((e) => e.id.startsWith('en/')).map((e) => e.id.replace(/^en\//, '')));
-    const supportSlugs = [...new Set([...supportEsSlugs, ...supportEnSlugs])];
-    const supportXml = supportSlugs.map((slug) => {
-        if (supportEsSlugs.has(slug) && supportEnSlugs.has(slug)) {
-            return pairEntry(`${SITE}/soporte/${slug}`, `${SITE}/en/support/${slug}`, '0.4', 'monthly');
-        }
-        return supportEsSlugs.has(slug)
-            ? singleEntry(`${SITE}/soporte/${slug}`, 'es', '0.4', 'monthly')
-            : singleEntry(`${SITE}/en/support/${slug}`, 'en', '0.4', 'monthly');
-    }).join('\n');
-
-    // dev.cordhq.app — EN vive en /dev-blog/en/* (rutas reales, ver
-    // src/pages/dev-blog/en/*.astro), así que se empareja hreflang igual que
-    // blog/soporte. Todo post tiene ambos idiomas hoy (verificado: mismos
-    // nombres de archivo en content/dev-blog/es y /en); si algún día no fuera
-    // 1:1, aquí se rompería silenciosamente — mismo riesgo que blog/soporte.
-    const devHome = pairEntry(`${DEV_SITE}/dev-blog`, `${DEV_SITE}/dev-blog/en`, '0.6', 'weekly');
-    const devBlogListing = pairEntry(`${DEV_SITE}/dev-blog/blog`, `${DEV_SITE}/dev-blog/en/blog`, '0.5', 'weekly');
-    const devBlogEntries = await getCollection('devBlog');
-    const devBlogSlugs = [...new Set(devBlogEntries.map((e) => e.id.replace(/^(es|en)\//, '')))];
-    const devBlogXml = devBlogSlugs
-        .map((slug) => pairEntry(`${DEV_SITE}/dev-blog/${slug}`, `${DEV_SITE}/dev-blog/en/${slug}`, '0.5', 'monthly'))
-        .join('\n');
-
-    // docs.cordhq.app — a diferencia de blog/soporte, ES y EN NO son 1:1 (hay páginas
-    // ES sin contraparte EN todavía). Solo se empareja hreflang cuando el par EN
-    // realmente existe; si no, se emite una sola entrada ES (sin alternate "en" roto).
-    const docsEntries = await getCollection('docs');
-    const docsEnPaths = new Set(
-        docsEntries.filter((e) => e.id.startsWith('en/')).map((e) => e.id.replace(/^en\//, ''))
-    );
-    const docsEsPaths = [...new Set(
-        docsEntries.filter((e) => e.id.startsWith('es/')).map((e) => e.id.replace(/^es\//, ''))
-    )];
-    const docsXml = docsEsPaths
-        .map((path) => {
-            const es = path === 'resumen' ? `${DOCS_SITE}/docs` : `${DOCS_SITE}/docs/${path}`;
-            if (docsEnPaths.has(path)) {
-                const en = path === 'resumen' ? `${DOCS_SITE}/en/docs` : `${DOCS_SITE}/en/docs/${path}`;
-                return pairEntry(es, en, '0.4', 'monthly');
-            }
-            return singleEntry(es, 'es', '0.4', 'monthly');
-        })
-        .join('\n');
-
     const host = url.hostname.toLowerCase();
-    let entries = '';
-    if (host === 'docs.cordhq.app') {
-        entries = docsXml;
-    } else if (host === 'dev.cordhq.app') {
-        entries = `${devHome}\n${devBlogListing}\n${devBlogXml}`;
-    } else if (host === 'cordhq.app' || host === 'www.cordhq.app' || host === 'localhost' || host === '127.0.0.1') {
-        const staticXml = ALL_PATHS.map((p) => {
-            if (p.path === '/soporte') {
-                return pairEntry(`${SITE}/soporte`, `${SITE}/en/support`, p.priority, p.changefreq);
-            }
-            if (ES_ONLY_PATHS.has(p.path)) {
-                return singleEntry(`${SITE}${p.path}`, 'es', p.priority, p.changefreq);
-            }
-            return urlEntry(p.path, p.priority, p.changefreq);
-        }).join('\n');
-        entries = `${staticXml}\n${blogXml}\n${supportXml}`;
-    }
+    let entries: Entry[] = [];
+    if (host === 'docs.cordhq.app') entries = await docsEntries();
+    else if (host === 'dev.cordhq.app') entries = await devEntries();
+    else if (host === 'cordhq.app' || host === 'www.cordhq.app' || host === 'localhost' || host === '127.0.0.1') entries = await apexEntries();
 
     const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-${entries}
+${render(entries)}
 </urlset>
 `;
     return new Response(body, {
-        headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+        headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+        },
     });
 }

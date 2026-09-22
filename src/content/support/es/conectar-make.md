@@ -58,4 +58,4 @@ Lo que puedes hacer desde Make:
 - Enviarla o marcarla pagada con `POST /api/v1/cotizaciones/{id}` y `action`.
 - Crear una tarea con `POST /api/v1/tareas`.
 
-Los campos de cada endpoint están en la [documentación para desarrolladores](/docs/desarrolladores/funciones/clientes).
+Los campos de cada endpoint están en la [documentación para desarrolladores](https://docs.cordhq.app/docs/desarrolladores/funciones/clientes).

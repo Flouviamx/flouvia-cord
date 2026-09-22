@@ -4,7 +4,6 @@ description: "Ten commercial invoices per month, how usage works and when Starte
 category: "Account & Team"
 ---
 
-# Commercial invoicing on Free
 
 Free includes **ten commercial invoices per calendar month (UTC)**, separately
 from its five quote sends. For example, quoting and then invoicing a sale uses

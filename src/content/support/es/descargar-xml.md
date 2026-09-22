@@ -4,8 +4,6 @@ description: "Encuentra los archivos de cualquier CFDI que hayas timbrado, folio
 category: "Facturación"
 ---
 
-# Descargar el PDF y el XML de una factura
-
 
 Cada CFDI que timbras en Cord genera automáticamente su PDF (representación impresa) y su XML (el comprobante fiscal en sí, el que necesita tu contador). Fuera de México, cada factura genera su PDF de la misma forma; el XML es exclusivo del CFDI.
 

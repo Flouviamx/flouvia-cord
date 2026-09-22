@@ -44,7 +44,8 @@
     "security:tax": "node scripts/tax-check.mjs",
     "security:verifactu": "node --experimental-strip-types scripts/verifactu-check.mjs",
     "security:payments": "node scripts/payments-contract-check.mjs",
-    "security:analytics": "node --experimental-strip-types scripts/analytics-contract-check.mjs"
+    "security:analytics": "node --experimental-strip-types scripts/analytics-contract-check.mjs",
+    "seo:indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

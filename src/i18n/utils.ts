@@ -12,6 +12,7 @@ const TRANSLATED_PUBLIC_ROUTES = [
   '/contacto/ventas',
   '/desarrolladores',
   '/elements',
+  '/integraciones',
   '/precios',
   '/privacidad',
   '/producto',
@@ -48,6 +49,34 @@ function splitPathSuffix(path: string): { pathname: string; suffix: string } {
   return {
     pathname: path.slice(0, suffixAt) || '/',
     suffix: path.slice(suffixAt),
+  };
+}
+
+export type PublicAlternates = { es?: string; en?: string };
+
+const ES_ONLY_PREFIXES = ['/casos-de-uso'] as const;
+
+export function cleanPathname(pathname: string): string {
+  const path = pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
+  return path.length > 1 ? path.replace(/\/+$/, '') || '/' : '/';
+}
+
+export function publicAlternates(url: URL): PublicAlternates | null {
+  const { esUrl, enUrl } = altLangUrls(url);
+  if (GLOBAL_ROUTE_PREFIXES.some((route) => routeMatches(esUrl, route))) return null;
+  if (ES_ONLY_PREFIXES.some((route) => routeMatches(esUrl, route))) return { es: esUrl };
+  return { es: esUrl, en: enUrl };
+}
+
+export function languageSwitchTargets(url: URL, alternates: PublicAlternates | null | undefined) {
+  const fallback = altLangUrls(url);
+  if (!alternates) return fallback;
+  const section = `/${(alternates.es ?? fallback.esUrl).split('/')[1] ?? ''}`;
+  const enSection = section !== '/' && TRANSLATED_PUBLIC_ROUTES.some((route) => route === section) ? `/en${section}` : '/en';
+  return {
+    esUrl: alternates.es ?? '/',
+    enUrl: alternates.en ?? enSection,
+    lang: fallback.lang,
   };
 }
 
@@ -137,11 +166,11 @@ export function useTranslations(lang: keyof typeof ui) {
 // Devuelve {esUrl, enUrl} equivalentes a la ruta actual, conservando el resto
 // del path. Español = sin prefijo (/), inglés = /en/...  (mismo patrón flouvia).
 export function altLangUrls(url: URL) {
-  let pathname = url.pathname;
+  let pathname = cleanPathname(url.pathname);
   const lang = getLangFromUrl(url);
   
   let esUrl = lang === 'en' ? pathname.replace(/^\/en/, '') || '/' : pathname;
-  let enUrl = lang === 'es' ? '/en' + pathname : pathname;
+  let enUrl = lang === 'es' ? (pathname === '/' ? '/en' : '/en' + pathname) : pathname;
 
   // Fix support center routes mapping
   if (esUrl.startsWith('/support')) {

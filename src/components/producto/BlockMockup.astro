@@ -1,5 +1,10 @@
 ---
+import { getLangFromUrl } from '../../i18n/utils';
 const { slug, index } = Astro.props;
+const en = getLangFromUrl(Astro.url) === 'en';
+const slackLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=64';
+const hubspotLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=64';
+const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://teams.microsoft.com&size=64';
 ---
 <div class={`bm-wrap bm-${slug}-${index}`}>
   <div class="bm-mesh" aria-hidden="true"></div>
@@ -447,6 +452,68 @@ const { slug, index } = Astro.props;
     </div>
   )}
 
+  {/* ────────────────── CORD WORKFLOWS ────────────────── */}
+  {slug === 'workflows' && index === 0 && (
+    <div class="bm-stage bm-wf-m0">
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">{en ? 'Choose the trigger' : 'Elige el disparador'}</span>
+          <span class="bm-app-badge bm-badge-blue">{en ? '44 events' : '44 eventos'}</span>
+        </div>
+        <div class="bm-app-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="bm-search-q">{en ? 'invoice' : 'factura'}</span><span class="bm-search-caret"></span>
+        </div>
+        <div class="bm-app-body">
+          <div class="bm-kv bm-active"><div class="bm-uid-tx"><b>{en ? 'An invoice is due soon' : 'Una factura está por vencer'}</b><span>invoice.due_soon</span></div><span class="bm-tg bm-tg-amber">{en ? 'Time' : 'Tiempo'}</span></div>
+          <div class="bm-kv"><div class="bm-uid-tx"><b>{en ? 'An invoice is past due' : 'Una factura se venció'}</b><span>invoice.past_due</span></div><span class="bm-tg bm-tg-red">{en ? 'Time' : 'Tiempo'}</span></div>
+          <div class="bm-kv"><div class="bm-uid-tx"><b>{en ? 'An invoice is paid' : 'Se paga una factura'}</b><span>invoice.paid</span></div><span class="bm-tg bm-tg-green">{en ? 'Payments' : 'Pagos'}</span></div>
+          <div class="bm-kv"><div class="bm-uid-tx"><b>{en ? 'Every Monday at 9:00' : 'Cada lunes a las 9:00'}</b><span>{en ? 'Schedule · America/Mexico_City' : 'Horario · America/Mexico_City'}</span></div><span class="bm-tg bm-tg-purple">{en ? 'Schedule' : 'Horario'}</span></div>
+        </div>
+        <div class="bm-app-foot"><span>{en ? 'One trigger per workflow' : 'Un disparador por workflow'}</span><b>{en ? 'Your time zone' : 'Tu zona horaria'}</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'workflows' && index === 1 && (
+    <div class="bm-stage bm-wf-m1">
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">{en ? 'Add an action' : 'Agregar una acción'}</span>
+          <span class="bm-app-badge">{en ? '11 actions' : '11 acciones'}</span>
+        </div>
+        <div class="bm-app-body">
+          <div class="bm-kv"><div class="bm-uid"><span class="bm-wf-ico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" fill-opacity="0.14"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+          </span><div class="bm-uid-tx"><b>{en ? 'Create a task' : 'Crear una tarea'}</b><span>{en ? 'For the right person, with a due date' : 'Para la persona correcta, con fecha'}</span></div></div></div>
+          <div class="bm-kv"><div class="bm-uid"><img class="bm-wf-logo" src={slackLogo} alt="Slack" width="22" height="22" loading="lazy" /><div class="bm-uid-tx"><b>{en ? 'Send a Slack message' : 'Enviar un mensaje a Slack'}</b><span>{en ? 'Your own text with event data' : 'Tu texto con datos del evento'}</span></div></div></div>
+          <div class="bm-kv"><div class="bm-uid"><img class="bm-wf-logo" src={teamsLogo} alt="Microsoft Teams" width="22" height="22" loading="lazy" /><div class="bm-uid-tx"><b>{en ? 'Send a Teams message' : 'Enviar un mensaje a Teams'}</b><span>{en ? 'A card in your channel' : 'Una tarjeta en tu canal'}</span></div></div></div>
+          <div class="bm-kv"><div class="bm-uid"><img class="bm-wf-logo" src={hubspotLogo} alt="HubSpot" width="22" height="22" loading="lazy" /><div class="bm-uid-tx"><b>{en ? 'Add a note in HubSpot' : 'Agregar una nota en HubSpot'}</b><span>{en ? 'On the client\'s company' : 'En la empresa del cliente'}</span></div></div></div>
+          <div class="bm-kv"><div class="bm-uid"><img class="bm-wf-logo" src="/imgs/integrations/whatsapp.svg" alt="WhatsApp" width="22" height="22" loading="lazy" /><div class="bm-uid-tx"><b>{en ? 'Send the client a WhatsApp' : 'Mandarle un WhatsApp al cliente'}</b><span>{en ? 'With your approved template' : 'Con tu plantilla aprobada'}</span></div></div></div>
+        </div>
+        <div class="bm-app-foot"><span>{en ? 'Recipient' : 'Destinatario'}</span><b>{en ? 'Always the document\'s client' : 'Siempre el cliente del documento'}</b></div>
+      </div>
+    </div>
+  )}
+
+  {slug === 'workflows' && index === 2 && (
+    <div class="bm-stage bm-wf-m2">
+      <div class="bm-app">
+        <div class="bm-app-bar">
+          <span class="bm-app-title">{en ? 'Test against the latest event' : 'Probar contra el último evento'}</span>
+          <span class="bm-app-badge bm-badge-green">{en ? 'Draft' : 'Borrador'}</span>
+        </div>
+        <div class="bm-app-body">
+          <div class="bm-kv"><span>{en ? 'Lookup · client balance' : 'Consulta · saldo del cliente'}</span><b class="editorial">$134,880.00</b></div>
+          <div class="bm-kv"><span>{en ? 'Condition · balance > $100,000' : 'Condición · saldo > $100,000'}</span><span class="bm-tg bm-tg-green">{en ? 'Met' : 'Se cumple'}</span></div>
+          <div class="bm-kv"><span>{en ? 'Wait until paid · 5 days' : 'Espera hasta que se pague · 5 días'}</span><span class="bm-tg bm-tg-amber">{en ? 'Would wait' : 'Esperaría'}</span></div>
+          <div class="bm-kv"><span>{en ? 'Email the owner' : 'Avisar al dueño por correo'}</span><span class="bm-tg bm-tg-gray">{en ? 'Not sent' : 'No se envía'}</span></div>
+        </div>
+        <div class="bm-app-foot"><span>{en ? 'Lookups run, actions don\'t' : 'Las consultas corren, las acciones no'}</span><b>COT-0148</b></div>
+      </div>
+    </div>
+  )}
+
   {/* ────────────────── CORD INVOICING ────────────────── */}
   {slug === 'facturacion' && index === 0 && (
     <div class="bm-stage bm-intl-m0">
@@ -799,6 +866,10 @@ const { slug, index } = Astro.props;
   .bm-tot-final { margin-top: 4px; padding-top: 10px; border-top: 1px solid rgba(10,25,47,0.08); }
   .bm-tot-final span { font-weight: 700; color: #0f172a; }
   .bm-large { font-size: 1.05rem !important; }
+
+  .bm-wf-ico { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: #059669; background: rgba(16,185,129,0.1); }
+  .bm-wf-ico svg { width: 16px; height: 16px; }
+  .bm-wf-logo { width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; margin: 0 4px; }
 
   /* ── Helpers reutilizables para las ventanas completas ── */
   .bm-kv { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(10,25,47,0.05); font-size: 0.77rem; color: #475569; }

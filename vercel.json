@@ -93,12 +93,12 @@
     },
     {
       "source": "/producto/cfdi",
-      "destination": "/producto/internacional",
+      "destination": "/producto/facturacion",
       "permanent": true
     },
     {
       "source": "/en/producto/cfdi",
-      "destination": "/en/producto/internacional",
+      "destination": "/en/producto/facturacion",
       "permanent": true
     }
   ]

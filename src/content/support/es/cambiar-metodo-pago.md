@@ -4,8 +4,6 @@ description: "Qué revisar antes de intentar pagar por otro método."
 category: "Pagos y Depósitos"
 ---
 
-# Cambiar entre SPEI y tarjeta
-
 
 ## Elegir cómo pagar
 
@@ -50,8 +48,8 @@ otro método para probar. Actualiza el enlace o contacta al negocio. La mejora n
 incluye devolución automática de transferencias tardías ni recuperación automática
 de todos los intentos inciertos.
 
-Consulta [el alcance de las mejoras](/docs/pagos/mejoras-confiabilidad) y
-[las tarifas por método](/docs/pagos/condiciones). La moneda de venta es distinta
-de [la moneda de tu suscripción a Cord](/docs/cuenta/suscripcion).
+Consulta [el alcance de las mejoras](https://docs.cordhq.app/docs/pagos/mejoras-confiabilidad) y
+[las tarifas por método](https://docs.cordhq.app/docs/pagos/condiciones). La moneda de venta es distinta
+de [la moneda de tu suscripción a Cord](https://docs.cordhq.app/docs/cuenta/suscripcion).
 
 > La disponibilidad de las mejoras de septiembre está en verificación. Consulta [alcance y publicación](https://docs.cordhq.app/pagos/mejoras-confiabilidad); contacta a soporte si una acción descrita todavía no aparece en tu cuenta.

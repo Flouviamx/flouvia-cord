@@ -1,0 +1,13 @@
+---
+export const prerender = true;
+
+import IntegrationPage from '../../../components/integraciones/IntegrationPage.astro';
+import { INTEGRATION_PAGES } from '../../../lib/integraciones-landing';
+
+export function getStaticPaths() {
+    return INTEGRATION_PAGES.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+
+const { page } = Astro.props;
+---
+<IntegrationPage page={page} isEn={true} />
