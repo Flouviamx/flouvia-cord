@@ -172,18 +172,21 @@ variables. Meta le cobra cada mensaje de plantilla a la cuenta del negocio.
 - Botón de pago con la marca de Mercado Pago y tarjeta de Ajustes › Cobros con logo.
 
 **Falta, operativo:**
-- [ ] **Pago real de prueba:** cotización de $10 MXN en Flouvia, pagarla desde otro
-  navegador sin sesión con una tarjeta ajena a la cuenta de Flouvia, confirmar que
-  se marca pagada sola y reembolsar desde Mercado Pago. Después revisar los logs y
-  `notifications_history` del MCP.
-- [ ] **Renovar credenciales expuestas:** el Access Token y el Client Secret de
-  producción se pegaron en el chat. Renovarlos en Credenciales de producción. El
-  Access Token no lo usa Cord. Si se renueva el Client Secret, actualizar
-  `integrations/mercadopago/.env`, `MP_CLIENT_SECRET` en Vercel y redeploy.
+- [x] **Pago real de prueba** (21 sep): cotización de $10 MXN pagada con tarjeta
+  por Mercado Pago; Cord la marcó pagada sola por el webhook.
+- [x] **Access Token renovado** (21 sep).
+- [ ] **Client Secret:** sigue siendo el que se pegó en el chat (se verificó que
+  sigue válido). Renovarlo en Credenciales de producción, ponerlo en
+  `integrations/mercadopago/.env`, actualizar `MP_CLIENT_SECRET` en Vercel y
+  redeploy; si no, la renovación de acceso de los vendedores conectados falla.
 - [ ] **Otros países:** la app es de México (MLM). No está confirmado que conecte
   vendedores de BR, CO, AR, CL o PE; la documentación de Mercado Pago no lo dice.
-  Probar con una cuenta de vendedor de Colombia o Argentina. Si falla, hace falta
-  una app por país y código que elija las credenciales por `site_id`.
+  Vendedor de prueba de Colombia creado con el MCP (`TESTUSER1518459834063318184`,
+  user id `3708111760`; contraseña y código de verificación en el panel de
+  Mercado Pago › Cuentas de prueba). Probar: espacio de Cord con país Colombia,
+  ventana de incógnito, Ajustes › Cobros › Conectar Mercado Pago con ese usuario.
+  Si falla, hace falta una app por país y código que elija las credenciales por
+  `site_id`.
 - [ ] **Decisión pendiente:** mientras no se confirme, Ajustes › Cobros ofrece
   Mercado Pago en esos países (`MERCADOPAGO_COUNTRIES` en `src/lib/countries.ts`).
   Por la regla 28, un riel que no funciona se dice antes, no se descubre en el

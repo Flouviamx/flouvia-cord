@@ -61,8 +61,9 @@ de `payment` a `/api/mercadopago/webhook`; las tres variables en Vercel. El
 webhook es CSRF-exento (su credencial es la firma) y se probó en producción con
 firma real: sin firma 401, con firma 200. La búsqueda por preferencia usa
 `cotizacion_cobros.mp_preference_at` (la tabla no tiene `updated_at`).
-Sin confirmar: el primer pago real de punta a punta y si una aplicación de un país
-puede conectar vendedores de otro país.
+Primer pago real de punta a punta confirmado el 2026-09-21 ($10 MXN con tarjeta,
+marcado pagado por el webhook). Sin confirmar: si una aplicación de un país puede
+conectar vendedores de otro país.
 
 ## Facturación internacional — ago 2026
 

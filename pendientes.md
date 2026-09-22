@@ -4,13 +4,12 @@ El detalle completo, app por app, está en docs/estado/pendientes-integraciones.
 La guía paso a paso es la de la página "Integraciones por activar". En corto:
 
 Te toca a ti:
-1. Mercado Pago: el pago de prueba de $10 MXN (otro navegador, sin sesión, con una
-   tarjeta que no sea de la cuenta de Flouvia) y reembolsarlo después.
-2. Mercado Pago: renovar el Access Token y el Client Secret en Credenciales de
-   producción, porque se pegaron en el chat. Si renuevas el Client Secret, pégalo en
-   integrations/mercadopago/.env (no en el chat) y avísame para subirlo a Vercel.
-3. Mercado Pago: conseguir una cuenta de vendedor de Colombia o Argentina para probar
-   si la app de México los deja conectar.
+1. Hecho: el pago de prueba de $10 MXN salió perfecto y el Access Token ya se renovó.
+2. Mercado Pago: renovar también el Client Secret (sigue siendo el que se pegó en el
+   chat). Pégalo en integrations/mercadopago/.env, no en el chat, y avísame para
+   subirlo a Vercel.
+3. Mercado Pago: probar la conexión con el vendedor de prueba de Colombia que ya está
+   creado (TESTUSER1518459834063318184) desde un espacio de Cord con país Colombia.
 4. Make: probar la conexión con una cuenta de Make de otra zona (us1, eu1 o eu2).
 5. WhatsApp: probar con el número de prueba de Meta desde un workflow.
 
