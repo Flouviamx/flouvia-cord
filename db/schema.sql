@@ -5012,9 +5012,10 @@ end $$;
 create table if not exists integracion_conexiones (
   id                 uuid primary key default gen_random_uuid(),
   org_id             uuid not null references orgs(id) on delete cascade,
-  proveedor          text not null check (proveedor in ('hubspot')),
+  proveedor          text not null check (proveedor in ('hubspot', 'shopify')),
   estado             text not null default 'activa' check (estado in ('activa', 'error', 'desconectada')),
-  cuenta_externa     text not null check (cuenta_externa ~ '^[0-9]{1,20}$'),
+  -- HubSpot identifica la cuenta con un número; Shopify con el dominio de la tienda.
+  cuenta_externa     text not null check (cuenta_externa ~ '^[0-9]{1,20}$' or cuenta_externa ~ '^[a-z0-9][a-z0-9-]{0,59}\.myshopify\.com$'),
   cuenta_nombre      text check (cuenta_nombre is null or length(cuenta_nombre) <= 200),
   scopes             text[] not null default '{}',
   access_token_enc   text,
@@ -5054,9 +5055,9 @@ create table if not exists integracion_vinculos (
   id               uuid primary key default gen_random_uuid(),
   org_id           uuid not null,
   conexion_id      uuid not null,
-  objeto           text not null check (objeto in ('client', 'client_contact', 'quote')),
+  objeto           text not null check (objeto in ('client', 'client_contact', 'quote', 'product')),
   local_id         uuid not null,
-  externo_tipo     text not null check (externo_tipo in ('company', 'contact', 'deal')),
+  externo_tipo     text not null check (externo_tipo in ('company', 'contact', 'deal', 'shopify_product', 'shopify_customer')),
   externo_id       text not null check (externo_id ~ '^[0-9]{1,20}$'),
   huella           text check (huella is null or huella ~ '^[a-f0-9]{64}$'),
   sincronizado_at  timestamptz,
@@ -5141,6 +5142,32 @@ do $$ begin
     grant execute on function cord_resolve_integracion(text, text) to cord_app;
   end if;
 end $$;
+-- Shopify entra al mismo carril que HubSpot: una conexión por organización, con
+-- el dominio de la tienda como cuenta. Los checks originales eran de HubSpot.
+alter table integracion_conexiones drop constraint if exists integracion_conexiones_proveedor_check;
+alter table integracion_conexiones add constraint integracion_conexiones_proveedor_check
+  check (proveedor in ('hubspot', 'shopify'));
+alter table integracion_conexiones drop constraint if exists integracion_conexiones_cuenta_externa_check;
+alter table integracion_conexiones add constraint integracion_conexiones_cuenta_externa_check
+  check (cuenta_externa ~ '^[0-9]{1,20}$' or cuenta_externa ~ '^[a-z0-9][a-z0-9-]{0,59}\.myshopify\.com$');
+alter table integracion_vinculos drop constraint if exists integracion_vinculos_objeto_check;
+alter table integracion_vinculos add constraint integracion_vinculos_objeto_check
+  check (objeto in ('client', 'client_contact', 'quote', 'product'));
+alter table integracion_vinculos drop constraint if exists integracion_vinculos_externo_tipo_check;
+alter table integracion_vinculos add constraint integracion_vinculos_externo_tipo_check
+  check (externo_tipo in ('company', 'contact', 'deal', 'shopify_product', 'shopify_customer'));
+alter table integracion_oauth_estados drop constraint if exists integracion_oauth_estados_proveedor_check;
+alter table integracion_oauth_estados add constraint integracion_oauth_estados_proveedor_check
+  check (proveedor in ('hubspot', 'mercadopago', 'slack', 'teams', 'shopify'));
+-- El token de Shopify es "offline": no vence y no hay refresh que guardar. La
+-- condición original era de HubSpot, donde el refresh ES la credencial viva.
+alter table integracion_conexiones drop constraint if exists integracion_conexiones_check;
+alter table integracion_conexiones add constraint integracion_conexiones_credencial_viva_check
+  check (estado = 'desconectada' or proveedor = 'shopify' or refresh_token_enc is not null);
+alter table integracion_conexiones drop constraint if exists integracion_conexiones_credencial_activa_check;
+alter table integracion_conexiones add constraint integracion_conexiones_credencial_activa_check
+  check (estado <> 'desconectada' or (refresh_token_enc is null and access_token_enc is null));
+alter table integracion_conexiones drop constraint if exists integracion_conexiones_check1;
 -- END integraciones-tables
 
 -- BEGIN oauth-provider

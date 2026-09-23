@@ -68,6 +68,7 @@ const canDev = memberCan(ME, 'ajustes');
 const appsCtx = canDev
     ? {
         hubspot: (await getConexion(ORG.id, 'hubspot').catch(() => null))?.estado ?? null,
+        shopify: (await getConexion(ORG.id, 'shopify').catch(() => null))?.estado ?? null,
         slack: Boolean(ORG.slackWebhook),
         teams: Boolean(ORG.teamsWebhook || ORG.teamsCanal),
         teamsError: ORG.teamsGraph === 'error',

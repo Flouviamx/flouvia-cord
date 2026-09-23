@@ -1,5 +1,5 @@
-export type IntegrationSlug = 'hubspot' | 'slack' | 'teams' | 'whatsapp' | 'make' | 'zapier' | 'n8n';
-export type IntegrationCategory = 'crm' | 'comunicacion' | 'automatizacion';
+export type IntegrationSlug = 'hubspot' | 'shopify' | 'slack' | 'teams' | 'whatsapp' | 'make' | 'zapier' | 'n8n';
+export type IntegrationCategory = 'crm' | 'ecommerce' | 'comunicacion' | 'automatizacion';
 
 export interface IntegrationApp {
     slug: IntegrationSlug;
@@ -15,10 +15,21 @@ export interface IntegrationApp {
 export const ZAPIER_INVITE_URL: string | null = 'https://zapier.com/developer/public-invite/246344/a3e1e697b77f2b9e803233fd998ef461/';
 export const MAKE_INVITE_URL: string | null = 'https://www.make.com/en/hq/app-invitation/83a99178a8e30c3b36b5165225176c3f';
 
+/**
+ * Shopify solo aparece cuando la app de Cord existe del lado de Shopify. Sin
+ * credenciales, una tarjeta "Conectar" mandaría a la persona a una pantalla de
+ * error de Shopify (regla 15).
+ */
+export const SHOPIFY_LISTO = Boolean(
+    (import.meta.env.SHOPIFY_CLIENT_ID || process.env.SHOPIFY_CLIENT_ID)
+    && (import.meta.env.SHOPIFY_CLIENT_SECRET || process.env.SHOPIFY_CLIENT_SECRET),
+);
+
 const favicon = (domain: string, size = 64) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${domain}&size=${size}`;
 
 export const INTEGRATION_APPS: IntegrationApp[] = [
     { slug: 'hubspot', nombre: 'HubSpot', dominio: 'hubspot.com', categoria: 'crm', disponible: true, logo: favicon('hubspot.com', 128), tile: true, guia: '/soporte/conectar-hubspot' },
+    { slug: 'shopify', nombre: 'Shopify', dominio: 'shopify.com', categoria: 'ecommerce', disponible: SHOPIFY_LISTO, logo: favicon('shopify.com', 128), tile: true, guia: '/soporte/conectar-shopify' },
     { slug: 'slack', nombre: 'Slack', dominio: 'slack.com', categoria: 'comunicacion', disponible: true, logo: favicon('slack.com'), tile: false, guia: null },
     { slug: 'teams', nombre: 'Microsoft Teams', dominio: 'teams.microsoft.com', categoria: 'comunicacion', disponible: true, logo: favicon('teams.microsoft.com', 128), tile: false, guia: '/soporte/conectar-teams' },
     { slug: 'whatsapp', nombre: 'WhatsApp Business', dominio: 'whatsapp.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/whatsapp.svg', tile: true, guia: '/soporte/conectar-whatsapp' },
@@ -31,6 +42,8 @@ export type IntegrationState = 'on' | 'warn' | 'off' | 'info' | 'key' | 'oauth' 
 
 export interface IntegrationCtx {
     hubspot: string | null;
+    /** Estado de la conexión de Shopify: 'activa' | 'error' | null. */
+    shopify: string | null;
     slack: boolean;
     teams: boolean;
     /** Microsoft ya no acepta la conexión de Teams y hay que volver a iniciar sesión. */
@@ -43,6 +56,7 @@ export interface IntegrationCtx {
 export function integrationState(app: IntegrationApp, ctx: IntegrationCtx): IntegrationState {
     if (!app.disponible) return 'soon';
     if (app.slug === 'hubspot') return ctx.hubspot === 'activa' ? 'on' : ctx.hubspot === 'error' ? 'warn' : 'off';
+    if (app.slug === 'shopify') return ctx.shopify === 'activa' ? 'on' : ctx.shopify === 'error' ? 'warn' : 'off';
     if (ctx.oauth?.includes(app.slug)) return 'on';
     if (app.slug === 'slack') return ctx.slack ? 'on' : 'off';
     if (app.slug === 'teams') return ctx.teamsError ? 'warn' : ctx.teams ? 'on' : 'off';

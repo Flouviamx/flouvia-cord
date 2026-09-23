@@ -18,6 +18,7 @@
 | **Slack** | En producción, "Añadir a Slack", app `A0C307S6ENB` | Directorio de apps de Slack (opcional) | André | Revisión de Slack |
 | **n8n** | `n8n-nodes-cord` 1.1.0 en npm con constancia de origen | Verificación de n8n para n8n Cloud | n8n | Respuesta de n8n (enviado el 21 sep) |
 | **Microsoft Teams** | Flujo de Power Automate en producción; "Conectar con Microsoft" construido e **inactivo** | Registrar la app en Entra, credenciales, prueba real, verificación de editor | André, luego Claude | Microsoft 365 de pago (decisión: no pagar todavía) |
+| **Shopify** | Fase 1 construida (catálogo y clientes hacia Cord), oculta sin credenciales | Crear la app en Partners, credenciales en Vercel, probar con tienda de desarrollo; fase 2 (pedido de vuelta) | André, luego Claude | Nada, es gratis |
 | **WhatsApp Business** | Nivel 1 en producción (número + token + plantilla) | Prueba con número real; registro integrado de Meta | André | Verificación de negocio en Meta |
 | **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; igualas y contracargos | André, luego Claude | Nada para México |
 
@@ -137,6 +138,27 @@ todavía. El flujo de Power Automate sigue siendo el camino vigente.
 - [ ] Después de probar: reescribir `conectar-teams.md` (es/en), la fila de Teams
   en `automatizacion/integraciones.mdx` (es/en) y mover el punto del roadmap a lo
   disponible.
+
+---
+
+## Shopify
+
+**Hecho (22 sep):** fase 1 completa y oculta hasta tener credenciales. OAuth de
+la tienda, catálogo y clientes hacia Cord con anti-eco por huella, webhooks de
+productos, clientes y desinstalación con firma verificada, webhooks obligatorios
+de privacidad, tarjeta en Ajustes con "Sincronizar ahora" y artículo de ayuda.
+Código en `src/lib/integraciones/shopify/` y `src/pages/api/integraciones/shopify/`.
+
+**Falta:**
+- [ ] Crear la app en partners.shopify.com (pasos en la guía), pegar el Client ID
+  y el Client secret en `integrations/shopify/.env` y avisar para subirlos a Vercel.
+- [ ] Configurar en el panel de Partners las URL de los webhooks obligatorios de
+  privacidad, apuntando a `https://cordhq.app/api/integraciones/shopify/webhook`.
+- [ ] Probar con una tienda de desarrollo: conectar, ver catálogo y clientes,
+  cambiar un producto en Shopify y confirmar que llega, desinstalar y reconectar.
+- [ ] Fase 2: cotización aprobada o pagada → pedido en Shopify (`write_draft_orders`,
+  exige reinstalar la app porque cambian los permisos).
+- [ ] Opcional: publicar la app en la tienda de aplicaciones de Shopify (revisión).
 
 ---
 

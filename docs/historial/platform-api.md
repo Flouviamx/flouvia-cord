@@ -6,6 +6,26 @@
 
 ---
 
+✅ **Shopify, fase 1: la tienda entra a Cord (22 sep 2026)** — catálogo y clientes
+hacia Cord, en una sola dirección, para cotizar mayoreo con datos reales. Decisiones
+que no eran obvias:
+   • **Una VARIANTE es un producto de Cord.** Shopify tiene producto + variantes y
+     Cord solo productos; la variante es la que tiene precio y SKU, así que aplanar
+     por producto perdería el precio de cada talla.
+   • **Un producto borrado se desactiva, no se borra**: puede estar dentro de una
+     cotización ya enviada, y borrarlo dejaría esa venta sin respaldo.
+   • **El token de Shopify no vence ni se renueva**, así que el CHECK de
+     `integracion_conexiones` que exigía `refresh_token_enc` —escrito para HubSpot,
+     donde el refresh ES la credencial— ahora excluye a Shopify en vez de obligar a
+     guardar un dato falso.
+   • **Dos firmas con el mismo secreto**: el regreso de OAuth en hex sobre los
+     parámetros ordenados (con caducidad de 5 min contra replay) y cada webhook en
+     base64 sobre el cuerpo crudo, que responde 401 si no cuadra, como Shopify exige.
+     El webhook entró a `CSRF_EXEMPT_WRITE_EXACT` desde el principio: es exactamente
+     el bug que Mercado Pago tuvo el día anterior.
+   • La app no aparece en el directorio sin credenciales (`SHOPIFY_LISTO`).
+Pendiente, fase 2: cotización aprobada o pagada → pedido en Shopify.
+
 ✅ **Auditoría de seguridad de las integraciones (22 sep 2026)** — revisión de
 HubSpot, Slack, Zapier, Make, n8n, Mercado Pago, API pública, MCP y Workflows.
 Tres huecos reales, corregidos:

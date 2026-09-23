@@ -5,6 +5,7 @@ import IntegrationPill from './IntegrationPill.astro';
 import HubSpotCard from './HubSpotCard.astro';
 import SlackCard from './SlackCard.astro';
 import TeamsCard from './TeamsCard.astro';
+import ShopifyCard from './ShopifyCard.astro';
 import WhatsAppCard from './WhatsAppCard.astro';
 import type { hubspotStatus } from '../../lib/integraciones/hubspot/service';
 import { MAKE_INVITE_URL, ZAPIER_INVITE_URL, type IntegrationApp, type IntegrationState } from '../../lib/integraciones/catalogo';
@@ -21,17 +22,19 @@ interface Props {
     hubspotFlash?: string | null;
     slackWebhook?: string;
     slack?: { canal: string; equipo: string; oauth: boolean; flash: string | null };
+    shopify?: { conexion: any; disponible: boolean; flash: string | null; tiendaSugerida: string | null };
     teamsWebhook?: string;
     teams?: { canal: string; equipo: string; usuario: string; estado: string; oauth: boolean; flash: string | null };
     whatsapp?: { phoneId: string; plantilla: string; idioma: string; conectado: boolean };
 }
 
-const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '', slack = { canal: '', equipo: '', oauth: false, flash: null }, teamsWebhook = '', teams, whatsapp } = Astro.props;
+const { lang: L, app, state, canAjustes, hubspot: HS = null, hubspotFlash: hsFlash = null, slackWebhook = '', slack = { canal: '', equipo: '', oauth: false, flash: null }, teamsWebhook = '', teams, shopify, whatsapp } = Astro.props;
 
 const DESC: Record<string, string> = {
     hubspot: t(L, 'set.integ.hs.desc'),
     slack: t(L, 'set.integ.slack_desc'),
     teams: t(L, 'set.integ.teams_desc'),
+    shopify: t(L, 'set.integ.shopify_desc'),
     whatsapp: t(L, 'set.integ.wa.desc'),
     n8n: t(L, 'set.integ.n8n.desc'),
     make: t(L, 'set.integ.make.desc'),
@@ -79,6 +82,11 @@ const IDEAS = WORKFLOW_TEMPLATES.filter((tpl) => usesBrand(tpl.definicion(L).ste
     {app.slug === 'slack' && <SlackCard lang={L} webhook={slackWebhook} canal={slack.canal} equipo={slack.equipo} oauth={slack.oauth} flash={slack.flash} />}
 
     {app.slug === 'teams' && <TeamsCard lang={L} webhook={teamsWebhook} graph={teams} />}
+
+    {app.slug === 'shopify' && shopify && (
+        <ShopifyCard lang={L} conexion={shopify.conexion} disponible={shopify.disponible}
+            flash={shopify.flash} tiendaSugerida={shopify.tiendaSugerida} />
+    )}
 
     {app.slug === 'whatsapp' && whatsapp && (
         <Fragment>

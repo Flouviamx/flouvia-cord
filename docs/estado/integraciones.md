@@ -58,6 +58,43 @@ usuario bot porque Slack no acepta `incoming-webhook` sin él. Credenciales en
 `integrations/slack/.env` (ignorado) y en Vercel. Sin distribución pública activada
 solo se puede instalar en el workspace dueño de la app.
 
+## Shopify
+
+Fase 1 (22 sep 2026), en una sola dirección: la tienda entra a Cord. Nada sale
+hacia Shopify todavía, así que ningún error de aquí toca su inventario ni sus
+pedidos. Vive en `src/lib/integraciones/shopify/` y reusa el carril de HubSpot
+(`integracion_conexiones` + `integracion_vinculos`), no una tabla propia.
+
+- **Una variante es un producto.** Shopify tiene producto + variantes y Cord
+  solo productos: la variante es la que tiene precio y SKU, así que aplanar por
+  producto perdería el precio de cada talla. Un producto borrado se DESACTIVA,
+  nunca se borra: puede estar dentro de una cotización ya enviada.
+- **Un cliente no se duplica.** Si el correo ya existe en `clientes`, se adopta
+  esa fila y se completa lo que falte en vez de crear una segunda empresa.
+- **Anti-eco por huella** (`integracion_vinculos.huella`), igual que HubSpot:
+  Shopify manda un webhook por cada campo que toque el comerciante, y sin la
+  huella cada uno reescribiría la fila.
+- **El token es "offline": no vence y no hay refresh.** Por eso el CHECK de
+  `integracion_conexiones` que exige `refresh_token_enc` excluye a Shopify: el
+  contrato original era de HubSpot, donde el refresh ES la credencial viva.
+- **Dos firmas, un secreto.** El regreso de OAuth se firma en hex sobre los
+  parámetros ordenados y cada webhook en base64 sobre el cuerpo CRUDO; las dos
+  se comparan en tiempo constante y un webhook sin firma válida responde 401,
+  como Shopify exige para aprobar la app. El regreso además caduca a los 5 min.
+- **El dominio identifica, no autoriza** (regla 30): el webhook resuelve la
+  organización con `cord_resolve_integracion` y vuelve a `withOrgTx`. El
+  dominio se valida con forma estricta porque con él se arma la URL a la que
+  Cord llama: aceptarlo libre sería dejar que el atacante elija el destino.
+- **Webhooks obligatorios de privacidad** (`customers/data_request`,
+  `customers/redact`, `shop/redact`) se contestan siempre, aun sin conexión
+  viva; Cord no guarda compradores de la tienda, el negocio es el responsable.
+- La app no aparece en el directorio sin `SHOPIFY_CLIENT_ID`/`SECRET`
+  (`SHOPIFY_LISTO` en el catálogo): una tarjeta "Conectar" sin app detrás
+  mandaría a la persona a un error de Shopify (regla 15).
+
+Pendiente, fase 2: cotización aprobada o pagada → pedido en Shopify. Exige
+`write_draft_orders` y reinstalar la app, y ahí sí toca inventario.
+
 ## Zapier y Make
 
 Ambas apps viven como código en el repo y se publican con el CLI o la API de cada

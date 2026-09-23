@@ -11,6 +11,7 @@ const exempt = [
     ['/api/cron/webhook-heartbeat', 'POST'],
     ['/api/resend/marketing-webhook', 'POST'],
     ['/api/integraciones/hubspot/webhook', 'POST'],
+    ['/api/integraciones/shopify/webhook', 'POST'],
     [`/api/auth/saml/${uuid}/acs`, 'POST'],
 ];
 for (const [path, method] of exempt) {

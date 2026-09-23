@@ -11,6 +11,8 @@ const CSRF_EXEMPT_WRITE_EXACT = new Set([
     '/api/resend/marketing-webhook/',
     '/api/integraciones/hubspot/webhook',
     '/api/integraciones/hubspot/webhook/',
+    '/api/integraciones/shopify/webhook',
+    '/api/integraciones/shopify/webhook/',
     '/api/oauth/token',
     '/api/oauth/token/',
     '/api/oauth/revoke',
