@@ -1,8 +1,8 @@
 // Shopify → Cord: catálogo y clientes.
 //
-// Dirección ÚNICA en esta fase: lo que existe en la tienda entra a Cord para
-// poder cotizarlo con datos reales. Nada sale hacia Shopify todavía, así que
-// ningún error de aquí puede tocar inventario ni pedidos de la tienda.
+// Este archivo es la dirección de ENTRADA: lo que existe en la tienda llega a
+// Cord para poder cotizarlo con datos reales, así que ningún error de aquí toca
+// inventario ni pedidos. La salida vive aparte, en `orders.ts`.
 //
 // El aislamiento es el de siempre (regla 30): el webhook resuelve la
 // organización con `cord_resolve_integracion` —una función estrecha— y desde ahí

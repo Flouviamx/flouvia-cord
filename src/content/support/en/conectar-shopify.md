@@ -7,13 +7,13 @@ order: 24
 
 With Shopify connected, your store's catalog and customers come into Cord and stay current. You quote wholesale with the prices and SKUs you already have, without typing them again.
 
-**Cord only reads from your store.** It does not change prices, inventory, or orders in Shopify.
+**Cord reads your store and writes only what you turn on.** Products and customers come in on their own; creating the order when a quote closes starts off and you turn it on. Cord never changes prices or edits your catalog.
 
 ### Connect it
 
 1. Go to **Settings › Integrations › Shopify**. You need the **Settings** permission.
 2. Type your store domain, the one ending in `myshopify.com`. You'll find it in Shopify › Settings › Domains.
-3. Click **Connect Shopify**. It takes you to Shopify to authorize the app, where you can see exactly what it asks for: read products and read customers.
+3. Click **Connect Shopify**. It takes you to Shopify to authorize the app, where you can see exactly what it asks for: read products and customers, and create orders once you turn that on.
 4. When you return, the card says connected. The first sync takes a few minutes depending on catalog size.
 
 ### What it brings, and how

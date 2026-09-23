@@ -7,13 +7,13 @@ order: 24
 
 Con Shopify conectado, tu catálogo y tus clientes de la tienda entran a Cord y se mantienen al día. Así cotizas mayoreo con los precios y los SKU que ya tienes, sin volver a capturarlos.
 
-**Cord solo lee de tu tienda.** No cambia precios, ni inventario, ni pedidos en Shopify.
+**Cord lee tu tienda y escribe solo lo que tú enciendas.** Productos y clientes entran solos; crear el pedido al cerrar la cotización nace apagado y lo activas tú. Cord nunca cambia precios ni edita tu catálogo.
 
 ### Conectarla
 
 1. Entra a **Ajustes › Integraciones › Shopify**. Necesitas el permiso de **Ajustes**.
 2. Escribe el dominio de tu tienda, el que termina en `myshopify.com`. Lo ves en Shopify › Configuración › Dominios.
-3. Pulsa **Conectar Shopify**. Te lleva a Shopify para autorizar la app; ahí ves exactamente qué permisos pide: leer productos y leer clientes.
+3. Pulsa **Conectar Shopify**. Te lleva a Shopify para autorizar la app; ahí ves exactamente qué permisos pide: leer productos y clientes, y crear pedidos cuando tú lo actives.
 4. Al volver, la tarjeta dice conectada. La primera sincronización tarda unos minutos según el tamaño del catálogo.
 
 ### Qué trae, y cómo

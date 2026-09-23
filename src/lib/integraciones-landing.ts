@@ -247,13 +247,13 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
         producto: 'editor',
         es: {
             metaTitle: 'Integración con Shopify: cotiza mayoreo con el catálogo de tu tienda | Cord',
-            metaDescription: 'Conecta tu tienda de Shopify y cotiza mayoreo con tus productos, precios y clientes reales. Cord solo lee de la tienda: no cambia precios, inventario ni pedidos.',
+            metaDescription: 'Conecta tu tienda de Shopify y cotiza mayoreo con tus productos, precios y clientes reales. Cuando la cotización cierra, el pedido vuelve a tu tienda si tú lo activas.',
             eyebrow: 'INTEGRACIÓN · SHOPIFY',
             titulo: 'Tu tienda vende al público. Cord cierra el mayoreo.',
-            sub: 'Los productos y los clientes de Shopify entran a Cord y se mantienen al día solos, así cotizas volumen con los SKU y los precios que ya tienes, sin capturar nada dos veces.',
-            resumen: 'Catálogo y clientes de tu tienda, listos para cotizar.',
+            sub: 'Los productos y los clientes de Shopify entran a Cord y se mantienen al día solos, así cotizas volumen con los SKU y los precios que ya tienes. Cuando la cotización cierra, el pedido vuelve a tu tienda si tú lo activas.',
+            resumen: 'Catálogo y clientes para cotizar, y el pedido de vuelta al cerrar.',
             plan: 'Incluida en todos los planes de Cord, desde Gratis',
-            flujoTitulo: 'Qué entra a Cord',
+            flujoTitulo: 'Qué viaja entre Cord y tu tienda',
             flujo: [
                 { cord: 'Productos y variantes', app: 'Catálogo de Cord', dir: 'Cada variante con su precio y su SKU' },
                 { cord: 'Clientes de la tienda', app: 'Clientes de Cord', dir: 'Sin duplicar a quien ya existe' },
@@ -282,20 +282,20 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                     ],
                 },
                 {
-                    eyebrow: 'SOLO LECTURA',
-                    titulo: 'Cord no toca tu tienda.',
-                    copy: 'La app pide dos permisos: leer productos y leer clientes. Nada más. No cambia precios, no mueve inventario y no crea pedidos, así que conectarla no puede alterar lo que vendes al público. Si desinstalas la app desde Shopify, Cord se entera solo y deja de sincronizar.',
+                    eyebrow: 'TÚ DECIDES QUÉ ESCRIBE',
+                    titulo: 'Cord lee tu tienda, y solo escribe lo que tú enciendas.',
+                    copy: 'Leer productos y clientes es automático. Crear pedidos no: nace apagado y lo activas tú en la tarjeta, eligiendo si el pedido entra al aprobarse la cotización o cuando el cliente pague. Cord no edita tu catálogo ni cambia precios; lo único que escribe es ese pedido, que descuenta inventario como cualquier otro de tu tienda. Si desinstalas la app desde Shopify, Cord se entera solo y deja de sincronizar.',
                     bullets: [
-                        'Dos permisos de lectura, cero de escritura',
+                        'La única escritura es el pedido, y nace apagado',
+                        'No edita tu catálogo ni cambia tus precios',
                         'Desinstalar en Shopify desconecta en Cord',
-                        'Lo que ya entró se queda contigo',
                     ],
                 },
             ],
             pasos: [
                 { name: 'Abre la tarjeta de Shopify', text: 'En Cord, entra a Ajustes › Integraciones › Shopify.' },
                 { name: 'Escribe el dominio de tu tienda', text: 'El que termina en myshopify.com; lo ves en Shopify › Configuración › Dominios.' },
-                { name: 'Autoriza en Shopify', text: 'Shopify te muestra exactamente qué pide la app: leer productos y leer clientes.' },
+                { name: 'Autoriza en Shopify', text: 'Shopify te muestra exactamente qué pide la app: leer productos y clientes, y crear pedidos cuando tú lo actives.' },
                 { name: 'Cotiza con tu catálogo', text: 'En unos minutos tus productos y clientes están en Cord, listos para armar la cotización.' },
             ],
             limites: [
@@ -308,7 +308,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
             faqs: [
                 {
                     q: '¿Cord puede cambiar algo en mi tienda?',
-                    a: 'No. La app pide solo dos permisos de lectura: productos y clientes. No puede modificar precios, inventario ni pedidos.',
+                    a: 'Solo lo que tú enciendas. Lee productos y clientes, y la única escritura es crear el pedido al cerrar la cotización, que nace apagado. Nunca cambia precios ni edita tu catálogo.',
                 },
                 {
                     q: '¿Qué pasa con los productos que borro en Shopify?',
@@ -335,13 +335,13 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
         },
         en: {
             metaTitle: 'Shopify integration: quote wholesale with your store catalog | Cord',
-            metaDescription: 'Connect your Shopify store and quote wholesale with your real products, prices and customers. Cord only reads from the store: it never changes prices, inventory or orders.',
+            metaDescription: 'Connect your Shopify store and quote wholesale with your real products, prices and customers. When the quote closes, the order goes back to your store if you turn it on.',
             eyebrow: 'INTEGRATION · SHOPIFY',
             titulo: 'Your store sells retail. Cord closes the wholesale.',
-            sub: 'Shopify products and customers flow into Cord and stay current on their own, so you quote volume with the SKUs and prices you already have, without typing anything twice.',
-            resumen: 'Your store catalog and customers, ready to quote.',
+            sub: 'Shopify products and customers flow into Cord and stay current on their own, so you quote volume with the SKUs and prices you already have. When the quote closes, the order goes back to your store if you turn it on.',
+            resumen: 'Catalog and customers to quote with, and the order back when you close.',
             plan: 'Included in every Cord plan, starting with Free',
-            flujoTitulo: 'What comes into Cord',
+            flujoTitulo: 'What flows between Cord and your store',
             flujo: [
                 { cord: 'Products and variants', app: 'Cord catalog', dir: 'Each variant with its price and SKU' },
                 { cord: 'Store customers', app: 'Cord clients', dir: 'Without duplicating who already exists' },
@@ -370,20 +370,20 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                     ],
                 },
                 {
-                    eyebrow: 'READ ONLY',
-                    titulo: 'Cord does not touch your store.',
-                    copy: 'The app asks for two permissions: read products and read customers. Nothing else. It does not change prices, move inventory or create orders, so connecting it cannot alter what you sell retail. If you uninstall the app from Shopify, Cord finds out on its own and stops syncing.',
+                    eyebrow: 'YOU DECIDE WHAT IT WRITES',
+                    titulo: 'Cord reads your store, and only writes what you turn on.',
+                    copy: 'Reading products and customers is automatic. Creating orders is not: it starts off and you turn it on from the card, choosing whether the order lands when the quote is approved or when the client pays. Cord never edits your catalog or changes prices; the only thing it writes is that order, which draws down inventory like any other order in your store. If you uninstall the app from Shopify, Cord finds out on its own and stops syncing.',
                     bullets: [
-                        'Two read permissions, zero write',
+                        'The only write is the order, and it starts off',
+                        'It never edits your catalog or changes your prices',
                         'Uninstalling in Shopify disconnects in Cord',
-                        'What already came in stays with you',
                     ],
                 },
             ],
             pasos: [
                 { name: 'Open the Shopify card', text: 'In Cord, go to Settings › Integrations › Shopify.' },
                 { name: 'Type your store domain', text: 'The one ending in myshopify.com; you will find it in Shopify › Settings › Domains.' },
-                { name: 'Authorize in Shopify', text: 'Shopify shows exactly what the app asks for: read products and read customers.' },
+                { name: 'Authorize in Shopify', text: 'Shopify shows exactly what the app asks for: read products and customers, and create orders when you turn that on.' },
                 { name: 'Quote with your catalog', text: 'Within minutes your products and customers are in Cord, ready to build the quote.' },
             ],
             limites: [
@@ -396,7 +396,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
             faqs: [
                 {
                     q: 'Can Cord change anything in my store?',
-                    a: 'No. The app asks for only two read permissions: products and customers. It cannot modify prices, inventory or orders.',
+                    a: 'Only what you turn on. It reads products and customers, and the only write is creating the order when a quote closes, which starts off. It never changes your prices or edits your catalog.',
                 },
                 {
                     q: 'What happens to products I delete in Shopify?',
