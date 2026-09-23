@@ -1,0 +1,41 @@
+# Configuración de la app de Cord en Shopify, como código.
+#
+# `shopify app config link` rellena client_id; `shopify app deploy` empuja URLs,
+# permisos y webhooks. Declarar los webhooks AQUÍ (y no registrarlos por API en
+# cada instalación) hace que Shopify los entregue para toda tienda que instale
+# la app, sin una llamada extra que pueda fallar a mitad del alta.
+name = "Cord"
+client_id = ""
+application_url = "https://cordhq.app/api/integraciones/shopify/instalar"
+embedded = false
+
+[access_scopes]
+# Fase 1: solo leer. Escribir pedidos llega en la fase 2 y obliga a que cada
+# tienda vuelva a autorizar, así que no se pide "por si acaso".
+scopes = "read_products,read_customers"
+
+[auth]
+redirect_urls = [ "https://cordhq.app/api/integraciones/shopify/callback" ]
+
+[webhooks]
+api_version = "2026-07"
+
+[[webhooks.subscriptions]]
+topics = [
+  "products/create",
+  "products/update",
+  "products/delete",
+  "customers/create",
+  "customers/update",
+  "app/uninstalled",
+]
+uri = "https://cordhq.app/api/integraciones/shopify/webhook"
+
+# Obligatorios para que Shopify revise la app. Cord los contesta siempre, aun
+# sin conexión viva, y deja constancia en la auditoría de la organización.
+[[webhooks.subscriptions]]
+compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+uri = "https://cordhq.app/api/integraciones/shopify/webhook"
+
+[build]
+include_config_on_deploy = true

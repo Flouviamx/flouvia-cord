@@ -150,10 +150,12 @@ de privacidad, tarjeta en Ajustes con "Sincronizar ahora" y artículo de ayuda.
 Código en `src/lib/integraciones/shopify/` y `src/pages/api/integraciones/shopify/`.
 
 **Falta:**
-- [ ] Crear la app en partners.shopify.com (pasos en la guía), pegar el Client ID
-  y el Client secret en `integrations/shopify/.env` y avisar para subirlos a Vercel.
-- [ ] Configurar en el panel de Partners las URL de los webhooks obligatorios de
-  privacidad, apuntando a `https://cordhq.app/api/integraciones/shopify/webhook`.
+- [ ] André: `cd integrations/shopify && npx @shopify/cli@latest app config link`
+  (necesita terminal interactiva; el resto lo corre Claude). Crea la app "Cord" en
+  la cuenta de socio y llena `client_id` en el toml.
+- [ ] Claude, después: `app deploy` (sube URLs, permisos y webhooks, incluidos los
+  obligatorios de privacidad), `app env pull` y las credenciales a Vercel como
+  `SHOPIFY_CLIENT_ID` / `SHOPIFY_CLIENT_SECRET`.
 - [ ] Probar con una tienda de desarrollo: conectar, ver catálogo y clientes,
   cambiar un producto en Shopify y confirmar que llega, desinstalar y reconectar.
 - [ ] Fase 2: cotización aprobada o pagada → pedido en Shopify (`write_draft_orders`,

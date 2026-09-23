@@ -14,8 +14,7 @@ import { after } from '../../../../lib/after';
 import { consumeOAuthState } from '../../../../lib/integraciones/conexiones';
 import { isShopDomain, shopifyCredentials } from '../../../../lib/integraciones/shopify/config';
 import { exchangeShopifyCode, oauthTimestampFresh, verifyOAuthHmac } from '../../../../lib/integraciones/shopify/oauth';
-import { leerNombreTienda, registrarWebhooks, saveShopifyConexion, syncShopify } from '../../../../lib/integraciones/shopify/service';
-import { siteOrigin } from '../../../../lib/email';
+import { leerNombreTienda, saveShopifyConexion, syncShopify } from '../../../../lib/integraciones/shopify/service';
 
 const VUELTA = '/app/ajustes/integraciones/shopify';
 
@@ -50,9 +49,8 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
 
     // La primera sincronización puede tardar: la persona no espera frente a una
     // pantalla en blanco, ve la tarjeta conectada y el catálogo llega solo.
-    after((async () => {
-        await registrarWebhooks(orgId, `${siteOrigin()}/api/integraciones/shopify/webhook`);
-        await syncShopify(orgId);
-    })());
+    // Los webhooks NO se registran aquí: se declaran en `shopify.app.toml` y
+    // Shopify los entrega a toda tienda que instale la app.
+    after(syncShopify(orgId));
     return redirect(`${VUELTA}?shopify=conectada`);
 };

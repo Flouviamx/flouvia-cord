@@ -88,6 +88,11 @@ pedidos. Vive en `src/lib/integraciones/shopify/` y reusa el carril de HubSpot
 - **Webhooks obligatorios de privacidad** (`customers/data_request`,
   `customers/redact`, `shop/redact`) se contestan siempre, aun sin conexión
   viva; Cord no guarda compradores de la tienda, el negocio es el responsable.
+- **La configuración de la app es código**: `integrations/shopify/shopify.app.toml`
+  (URLs, permisos y webhooks) se publica con `shopify app config link` +
+  `shopify app deploy`. Los webhooks se declaran ahí, NO se registran por API en
+  cada instalación: así Shopify los entrega a toda tienda que instale la app y
+  no hay una llamada extra que pueda fallar a mitad del alta.
 - La app no aparece en el directorio sin `SHOPIFY_CLIENT_ID`/`SECRET`
   (`SHOPIFY_LISTO` en el catálogo): una tarjeta "Conectar" sin app detrás
   mandaría a la persona a un error de Shopify (regla 15).
