@@ -634,6 +634,7 @@ Cord Workflows convierte lo que pasa en una venta en el siguiente paso, sin escr
 - **Para quien programa:** API pública v1, webhooks firmados con historial de entregas y servidor MCP.
 
 ### Qué sigue:
+- **Contabilidad y hojas de cálculo:** las siguientes conexiones son donde aterriza el dinero que ya cerraste — Google Sheets y Excel para llevar tus ventas a la hoja que usas cada mes, y después contabilidad: QuickBooks, Xero, Alegra, Holded y Siigo.
 - **n8n Cloud:** el nodo se envió a verificación de n8n el 21 de septiembre de 2026; aparece en n8n Cloud cuando n8n lo apruebe.
 - **Microsoft Teams con tu cuenta:** iniciar sesión con Microsoft y elegir el equipo y el canal en Cord, sin copiar la URL de un flujo.
 - **WhatsApp con un botón:** conectar el número sin pasar por la consola de Meta, cuando Meta apruebe a Cord como proveedor.
@@ -660,6 +661,7 @@ Cord Workflows turns what happens in a sale into the next step, without writing 
 - **For developers:** public API v1, signed webhooks with delivery history, and an MCP server.
 
 ### What's next:
+- **Accounting and spreadsheets:** the next connections are where the money you already closed lands — Google Sheets and Excel to push your sales into the sheet you use every month, and then accounting: QuickBooks, Xero, Alegra, Holded and Siigo.
 - **n8n Cloud:** the node was submitted to n8n's verification on September 21, 2026; it appears in n8n Cloud once n8n approves it.
 - **Microsoft Teams with your account:** sign in with Microsoft and pick the team and channel in Cord, without copying a flow URL.
 - **WhatsApp with a button:** connect the number without going through Meta's console, once Meta approves Cord as a provider.

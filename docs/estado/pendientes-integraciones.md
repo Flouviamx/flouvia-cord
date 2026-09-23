@@ -17,7 +17,7 @@
 | **Make** | En producción, OAuth, app `cord-78vg5m` (us2) | Prueba desde otra zona; catálogo público (opcional) | André | Usuarios reales |
 | **Slack** | En producción, "Añadir a Slack", app `A0C307S6ENB` | Directorio de apps de Slack (opcional) | André | Revisión de Slack |
 | **n8n** | `n8n-nodes-cord` 1.1.0 en npm con constancia de origen | Verificación de n8n para n8n Cloud | n8n | Respuesta de n8n (enviado el 21 sep) |
-| **Microsoft Teams** | Flujo de Power Automate en producción; "Conectar con Microsoft" construido e **inactivo** | Registrar la app en Entra, credenciales, prueba real, verificación de editor | André, luego Claude | Microsoft 365 de pago (decisión: no pagar todavía) |
+| **Microsoft Teams** | App de Entra registrada y credenciales en Vercel (23 sep 2026); falta probarlo | Conectar, elegir canal y mandar prueba; verificación de editor | André prueba | Nada; el mes de prueba de Microsoft 365 corre desde el 23 sep 2026 |
 | **Shopify** | Fases 1 y 2 en producción (catálogo y clientes hacia Cord; pedido de vuelta al cerrar) | Probar con una tienda de desarrollo; fases 3-5 (facturar pedidos, cotizar desde el admin, precios en vivo) | André prueba, Claude construye | Nada, es gratis |
 | **WhatsApp Business** | Nivel 1 en producción (número + token + plantilla) | Prueba con número real; registro integrado de Meta | André | Verificación de negocio en Meta |
 | **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; igualas y contracargos | André, luego Claude | Nada para México |
@@ -112,21 +112,30 @@ organización. `src/lib/integraciones/teams-graph.ts`, rutas
 `orgs.teams_team_*`, `orgs.teams_channel_*`. El botón solo aparece con
 `TEAMS_CLIENT_ID` y `TEAMS_CLIENT_SECRET`.
 
-**Por qué está en pausa:** registrar la app en Entra es gratis, pero probarla exige
-un Teams de empresa. Microsoft 365 Business Basic cuesta unos 6 USD por usuario al
-mes (un mes de prueba gratis que se cobra si no se cancela). André decidió no pagar
-todavía. El flujo de Power Automate sigue siendo el camino vigente.
+**Estado (23 sep 2026):** hecho el registro, falta la prueba. Tenant Flouvia
+(`efaefa11-ccf5-41df-8d72-92b236b4f7d5`), app `Cord`
+(`9c8b8fe6-8096-48a2-b991-32f978c12a9a`), creada con el CLI de Azure — que en esta
+Mac vive en `~/.azure-cli-venv/bin/az`, no en Homebrew.
+
+**Aviso operativo:** el asistente de Microsoft 365 pidió mover los MX de
+`cordhq.app` a Exchange y se aplicó por error; el correo del dominio estuvo
+apuntando a Microsoft unos 10 minutos y lo que llegó en esa ventana rebotó. Se
+revirtió a `smtp.google.com` con SPF `include:_spf.google.com`. Teams NO necesita
+el dominio: funciona con el `.onmicrosoft.com`.
 
 **Para activarlo:**
-- [ ] Conseguir un tenant de Microsoft 365 con Teams (Business Basic o un cliente
-  que preste el suyo para la prueba).
-- [ ] Registrar la app en Entra: multiinquilino, solo cuentas de trabajo o escuela,
-  redirección `https://cordhq.app/api/integraciones/teams/callback`, permisos
-  delegados `User.Read`, `Team.ReadBasic.All`, `Channel.ReadBasic.All`,
-  `ChannelMessage.Send` (ninguno pide consentimiento de administrador).
-- [ ] Crear el secreto de cliente y poner un recordatorio: vence en máximo 24 meses
-  y, vencido, ninguna organización puede renovar su acceso.
-- [ ] `TEAMS_CLIENT_ID` y `TEAMS_CLIENT_SECRET` en Vercel y redeploy.
+- [x] Tenant de Microsoft 365 con Teams (mes de prueba, desde el 23 sep 2026 —
+  se cobra si no se cancela).
+- [x] App en Entra: multiinquilino (`AzureADMultipleOrgs`), redirecciones de
+  producción y de `localhost:4321`, permisos delegados `offline_access`,
+  `User.Read`, `Team.ReadBasic.All`, `Channel.ReadBasic.All` y
+  `ChannelMessage.Send`, con consentimiento de administrador otorgado en el
+  tenant.
+- [x] Secreto de cliente `cord-prod`. **Vence el 23 de septiembre de 2028**, y
+  vencido ninguna organización puede renovar su acceso. Renovarlo con
+  `az ad app credential reset --id <appId> --append --years 2`.
+- [x] `TEAMS_CLIENT_ID` y `TEAMS_CLIENT_SECRET` en Vercel (production, preview y
+  development) y en el `.env` local.
 - [ ] Probar en producción: conectar, elegir canal, **Enviar prueba**, un aviso de
   Notificaciones, la acción de workflow, la renovación después de una hora y la
   revocación desde myapps.microsoft.com (debe quedar en "Requiere reconectar").
@@ -236,17 +245,23 @@ interactiva y recargar la ventana.
 ## Apps que conviene conectar después
 
 Ordenadas por impacto para Cord (de la propuesta al pago, con fuerte uso en México,
-Latinoamérica, Estados Unidos y España).
+Latinoamérica, Estados Unidos y España). El criterio de la lista es dónde
+ATERRIZA el dinero que Cord cierra: hojas de cálculo y contabilidad primero,
+porque es el trabajo que el negocio hace igual a mano cada mes. Una conexión
+que solo suma un logo al directorio no entra.
 
 | Prioridad | App | Por qué le sirve a Cord | Esfuerzo |
 |---|---|---|---|
-| 1 | **QuickBooks Online y Xero** | Que cada factura y pago de Cord aparezca solo en la contabilidad. QuickBooks domina en Estados Unidos; Xero en Reino Unido y buena parte de Europa. | Medio: OAuth y revisión de sus marketplaces |
-| 2 | **Alegra / Holded / Siigo** | Contabilidad local: Alegra (México, Colombia, Perú), Holded (España), Siigo (Colombia). | Medio por cada una |
-| 3 | **Pipedrive** | El CRM más usado por equipos pequeños después de HubSpot; mismo modelo de sincronización. | Medio |
-| 4 | **Shopify** | Cotizar mayoreo para tiendas que ya venden en línea. | Medio |
+| 1 | **Google Sheets y Excel** | Cada cotización, factura y pago en la hoja donde el negocio ya lleva sus números, sin exportar a mano. Es lo más pedido y lo de menor esfuerzo: las dos tienen API estable y ninguna exige revisión de marketplace. | Bajo |
+| 2 | **QuickBooks Online y Xero** | Que cada factura y pago de Cord aparezca solo en la contabilidad. QuickBooks domina en Estados Unidos; Xero en Reino Unido y buena parte de Europa. | Medio: OAuth y revisión de sus marketplaces |
+| 3 | **Alegra / Holded / Siigo** | Contabilidad local: Alegra (México, Colombia, Perú), Holded (España), Siigo (Colombia). | Medio por cada una |
+| 4 | **Pipedrive** | El CRM más usado por equipos pequeños después de HubSpot; mismo modelo de sincronización. | Medio |
 | 5 | **Tiendanube y WooCommerce** | El equivalente de Shopify en Latinoamérica y en sitios propios. | Medio |
 | 6 | **Salesforce** | Cuentas grandes (plan Scale). | Alto: AppExchange y revisión de seguridad |
-| 7 | **Google Workspace** | Crear cotizaciones desde Gmail y exportar ventas a Sheets. Sheets y Calendar ya se cubren con Make y Zapier. | Medio |
+| 7 | **Gmail** | Crear cotizaciones desde el correo, donde de verdad empieza la conversación. Calendar ya se cubre con Make y Zapier. | Medio |
+
+Shopify salió de esta lista el 23 de septiembre de 2026: está en producción en
+los dos sentidos.
 
 Todo lo que se agregue sigue la regla 15: nada aparece en Ajustes › Integraciones
 como disponible hasta que funcione de punta a punta.

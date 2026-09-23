@@ -232,9 +232,10 @@ uno solo.
   conectores O365 de Teams están retirados, así que la URL vigente es la del
   flujo (`*.logic.azure.com`) y eso es lo que valida `isTeamsWebhookUrl()`.
   `webhook.office.com` se acepta para tenants que aún lo conserven.
-- Teams con "Conectar con Microsoft" (sep 2026, **inactivo** hasta que existan
-  `TEAMS_CLIENT_ID`/`TEAMS_CLIENT_SECRET`; sin ellas la tarjeta solo ofrece el
-  flujo). OAuth delegado de Microsoft Graph contra `organizations` (cuentas de
+- Teams con "Conectar con Microsoft" (sep 2026; app de Entra `Cord`
+  `9c8b8fe6-8096-48a2-b991-32f978c12a9a` registrada el 23 sep 2026 en el tenant
+  Flouvia, con `TEAMS_CLIENT_ID`/`TEAMS_CLIENT_SECRET` en Vercel. Sin esas dos
+  variables la tarjeta solo ofrece el flujo). OAuth delegado de Microsoft Graph contra `organizations` (cuentas de
   trabajo o escuela; los canales no existen en cuentas personales) con
   `User.Read`, `Team.ReadBasic.All`, `Channel.ReadBasic.All` y
   `ChannelMessage.Send`, ninguno con consentimiento de administrador. Graph solo
@@ -383,8 +384,8 @@ corto, al 2026-09-21:
 - **Zapier, Make y Slack:** en producción; faltan los directorios públicos y
   probar Make desde otra zona.
 - **n8n:** esperando la verificación de n8n para n8n Cloud.
-- **Teams:** "Conectar con Microsoft" construido e inactivo hasta tener un Microsoft
-  365 para probarlo y registrar la app en Entra.
+- **Teams:** app registrada y credenciales puestas; falta la prueba real de punta a
+  punta y la verificación de editor.
 - **WhatsApp:** prueba con número real y registro integrado de Meta.
 - **Mercado Pago:** en producción en México; faltan el pago real de prueba, renovar
   credenciales expuestas, confirmar otros países, facturas y reembolsos.
