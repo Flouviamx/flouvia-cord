@@ -20,7 +20,13 @@ export function integrationQueueStatement(orgId: string, type: string, data: Rec
         insert into integracion_sync (org_id, conexion_id, direccion, objeto, clave)
         select c.org_id, c.id, 'salida', ${objeto}, ${id}
           from integracion_conexiones c
-         where c.org_id = ${orgId} and c.estado = 'activa' and ${actor} <> ('integration:hubspot:' || c.id::text)
+         where c.org_id = ${orgId} and c.estado = 'activa'
+           -- Esta cola es de HubSpot: su procesador habla la API de HubSpot con
+           -- el token de la conexión. Sin este filtro, una conexión de Shopify
+           -- en la misma organización recibiría trabajo que no entiende y
+           -- acabaría marcada como rota delante del comerciante.
+           and c.proveedor = 'hubspot'
+           and ${actor} <> ('integration:hubspot:' || c.id::text)
         on conflict (conexion_id, direccion, objeto, clave) where status = 'queued' do nothing
         returning id`;
 }

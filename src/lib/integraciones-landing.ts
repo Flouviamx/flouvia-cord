@@ -1,7 +1,7 @@
 import { BRAND_LOGOS } from './integraciones/catalogo';
 
-export type IntegrationLandingSlug = 'hubspot' | 'mercado-pago' | 'slack' | 'zapier' | 'make' | 'n8n' | 'teams' | 'whatsapp';
-export type IntegrationLandingCategory = 'crm' | 'cobros' | 'comunicacion' | 'automatizacion';
+export type IntegrationLandingSlug = 'hubspot' | 'shopify' | 'mercado-pago' | 'slack' | 'zapier' | 'make' | 'n8n' | 'teams' | 'whatsapp';
+export type IntegrationLandingCategory = 'crm' | 'ecommerce' | 'cobros' | 'comunicacion' | 'automatizacion';
 
 export interface IntegrationFlow { cord: string; app: string; dir: string }
 export interface IntegrationBlock { eyebrow: string; titulo: string; copy: string; bullets: string[] }
@@ -43,6 +43,7 @@ const DOCS_EN = 'https://docs.cordhq.app/en/docs';
 
 export const CATEGORY_LABEL: Record<IntegrationLandingCategory, { es: string; en: string }> = {
     crm: { es: 'CRM', en: 'CRM' },
+    ecommerce: { es: 'Comercio electrónico', en: 'E-commerce' },
     cobros: { es: 'Cobros', en: 'Payments' },
     comunicacion: { es: 'Comunicación', en: 'Communication' },
     automatizacion: { es: 'Automatización', en: 'Automation' },
@@ -234,6 +235,185 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 { label: 'HubSpot troubleshooting', href: `${DOCS_EN}/automatizacion/integraciones/hubspot-problemas` },
             ],
             cta: { titulo: 'Your CRM up to date, without entering data twice.', sub: 'Connect HubSpot from Settings and let every quote move its Deal. Free to start.' },
+        },
+    },
+    {
+        slug: 'shopify',
+        nombre: 'Shopify',
+        dominio: 'shopify.com',
+        logo: BRAND_LOGOS.shopify,
+        categoria: 'ecommerce',
+        related: ['hubspot', 'zapier', 'make'],
+        producto: 'editor',
+        es: {
+            metaTitle: 'Integración con Shopify: cotiza mayoreo con el catálogo de tu tienda | Cord',
+            metaDescription: 'Conecta tu tienda de Shopify y cotiza mayoreo con tus productos, precios y clientes reales. Cord solo lee de la tienda: no cambia precios, inventario ni pedidos.',
+            eyebrow: 'INTEGRACIÓN · SHOPIFY',
+            titulo: 'Tu tienda vende al público. Cord cierra el mayoreo.',
+            sub: 'Los productos y los clientes de Shopify entran a Cord y se mantienen al día solos, así cotizas volumen con los SKU y los precios que ya tienes, sin capturar nada dos veces.',
+            resumen: 'Catálogo y clientes de tu tienda, listos para cotizar.',
+            plan: 'Incluida en todos los planes de Cord, desde Gratis',
+            flujoTitulo: 'Qué entra a Cord',
+            flujo: [
+                { cord: 'Productos y variantes', app: 'Catálogo de Cord', dir: 'Cada variante con su precio y su SKU' },
+                { cord: 'Clientes de la tienda', app: 'Clientes de Cord', dir: 'Sin duplicar a quien ya existe' },
+                { cord: 'Cambios en Shopify', app: 'Se reflejan en Cord', dir: 'En segundos, por webhook' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'CADA VARIANTE, SU PRECIO',
+                    titulo: 'Una camisa con tres tallas son tres productos, no uno.',
+                    copy: 'En Shopify el precio y el SKU viven en la variante, no en el producto. Cord respeta eso: cada variante entra como un producto propio, así que cotizas la talla exacta con su precio exacto. Un producto que borras en Shopify se desactiva en Cord en vez de desaparecer, porque puede estar dentro de una cotización que ya enviaste.',
+                    bullets: [
+                        'Precio y SKU por variante',
+                        'Un borrado en la tienda no rompe una cotización enviada',
+                        'Sincronización completa cuando la pidas, con un botón',
+                    ],
+                },
+                {
+                    eyebrow: 'SIN DUPLICAR CLIENTES',
+                    titulo: 'Tu lista de clientes no se llena de copias.',
+                    copy: 'La empresa sale de la compañía del cliente en Shopify y, si no tiene, de su nombre. Si ese correo ya existe en Cord, la integración lo reconoce y completa lo que falte en lugar de crear una segunda ficha. Cuando el comerciante cambia algo en Shopify, Cord lo actualiza en segundos y solo si de verdad cambió.',
+                    bullets: [
+                        'La empresa sale de la compañía, no de un campo vacío',
+                        'Un correo conocido se reconoce, no se duplica',
+                        'Un cambio repetido no reescribe la ficha',
+                    ],
+                },
+                {
+                    eyebrow: 'SOLO LECTURA',
+                    titulo: 'Cord no toca tu tienda.',
+                    copy: 'La app pide dos permisos: leer productos y leer clientes. Nada más. No cambia precios, no mueve inventario y no crea pedidos, así que conectarla no puede alterar lo que vendes al público. Si desinstalas la app desde Shopify, Cord se entera solo y deja de sincronizar.',
+                    bullets: [
+                        'Dos permisos de lectura, cero de escritura',
+                        'Desinstalar en Shopify desconecta en Cord',
+                        'Lo que ya entró se queda contigo',
+                    ],
+                },
+            ],
+            pasos: [
+                { name: 'Abre la tarjeta de Shopify', text: 'En Cord, entra a Ajustes › Integraciones › Shopify.' },
+                { name: 'Escribe el dominio de tu tienda', text: 'El que termina en myshopify.com; lo ves en Shopify › Configuración › Dominios.' },
+                { name: 'Autoriza en Shopify', text: 'Shopify te muestra exactamente qué pide la app: leer productos y leer clientes.' },
+                { name: 'Cotiza con tu catálogo', text: 'En unos minutos tus productos y clientes están en Cord, listos para armar la cotización.' },
+            ],
+            limites: [
+                'Hoy la sincronización va en un sentido: de Shopify hacia Cord. Crear el pedido en Shopify cuando se aprueba o se paga la cotización está en camino.',
+                'Cada variante entra como un producto de Cord, así que un catálogo con muchas variantes llega con muchos renglones.',
+                'Las existencias todavía no se consultan al cotizar; el catálogo trae precio y SKU.',
+            ],
+            faqs: [
+                {
+                    q: '¿Cord puede cambiar algo en mi tienda?',
+                    a: 'No. La app pide solo dos permisos de lectura: productos y clientes. No puede modificar precios, inventario ni pedidos.',
+                },
+                {
+                    q: '¿Qué pasa con los productos que borro en Shopify?',
+                    a: 'Se desactivan en Cord en lugar de borrarse, porque pueden estar dentro de una cotización que ya enviaste. Desactivado significa que no aparece al armar cotizaciones nuevas.',
+                },
+                {
+                    q: '¿Se duplican mis clientes?',
+                    a: 'No. Si el correo del cliente de Shopify ya existe en Cord, se reconoce esa ficha y se completa lo que falte.',
+                },
+                {
+                    q: '¿Cada cuánto se actualiza?',
+                    a: 'Los cambios llegan por webhook en segundos. Además puedes pedir una sincronización completa desde la tarjeta cuando quieras.',
+                },
+                {
+                    q: '¿Sirve con cualquier plan de Shopify?',
+                    a: 'Sí. La integración usa la API de administración estándar, así que no exige Shopify Plus.',
+                },
+            ],
+            guias: [
+                { label: 'Conectar Shopify', href: 'https://cordhq.app/soporte/conectar-shopify' },
+                { label: 'Editor de cotizaciones', href: `${DOCS}/cotizacion/editor` },
+            ],
+            cta: { titulo: 'Cotiza mayoreo con el catálogo que ya tienes.', sub: 'Conecta tu tienda desde Ajustes y empieza a cotizar con tus productos reales. Gratis para empezar.' },
+        },
+        en: {
+            metaTitle: 'Shopify integration: quote wholesale with your store catalog | Cord',
+            metaDescription: 'Connect your Shopify store and quote wholesale with your real products, prices and customers. Cord only reads from the store: it never changes prices, inventory or orders.',
+            eyebrow: 'INTEGRATION · SHOPIFY',
+            titulo: 'Your store sells retail. Cord closes the wholesale.',
+            sub: 'Shopify products and customers flow into Cord and stay current on their own, so you quote volume with the SKUs and prices you already have, without typing anything twice.',
+            resumen: 'Your store catalog and customers, ready to quote.',
+            plan: 'Included in every Cord plan, starting with Free',
+            flujoTitulo: 'What comes into Cord',
+            flujo: [
+                { cord: 'Products and variants', app: 'Cord catalog', dir: 'Each variant with its price and SKU' },
+                { cord: 'Store customers', app: 'Cord clients', dir: 'Without duplicating who already exists' },
+                { cord: 'Changes in Shopify', app: 'Reflected in Cord', dir: 'Within seconds, by webhook' },
+            ],
+            blocks: [
+                {
+                    eyebrow: 'EACH VARIANT, ITS PRICE',
+                    titulo: 'A shirt in three sizes is three products, not one.',
+                    copy: 'In Shopify, price and SKU live on the variant, not the product. Cord respects that: every variant comes in as its own product, so you quote the exact size at the exact price. A product you delete in Shopify is deactivated in Cord instead of disappearing, because it may sit inside a quote you already sent.',
+                    bullets: [
+                        'Price and SKU per variant',
+                        'A deletion in the store never breaks a sent quote',
+                        'Full sync whenever you ask, with one button',
+                    ],
+                },
+                {
+                    eyebrow: 'NO DUPLICATE CUSTOMERS',
+                    titulo: 'Your client list does not fill up with copies.',
+                    copy: 'The company comes from the customer\'s company in Shopify and, if there is none, from their name. If that email already exists in Cord, the integration recognizes it and fills in what is missing instead of creating a second record. When the merchant changes something in Shopify, Cord updates it within seconds, and only if it really changed.',
+                    bullets: [
+                        'The company comes from the company field, not an empty one',
+                        'A known email is recognized, not duplicated',
+                        'A repeated change does not rewrite the record',
+                    ],
+                },
+                {
+                    eyebrow: 'READ ONLY',
+                    titulo: 'Cord does not touch your store.',
+                    copy: 'The app asks for two permissions: read products and read customers. Nothing else. It does not change prices, move inventory or create orders, so connecting it cannot alter what you sell retail. If you uninstall the app from Shopify, Cord finds out on its own and stops syncing.',
+                    bullets: [
+                        'Two read permissions, zero write',
+                        'Uninstalling in Shopify disconnects in Cord',
+                        'What already came in stays with you',
+                    ],
+                },
+            ],
+            pasos: [
+                { name: 'Open the Shopify card', text: 'In Cord, go to Settings › Integrations › Shopify.' },
+                { name: 'Type your store domain', text: 'The one ending in myshopify.com; you will find it in Shopify › Settings › Domains.' },
+                { name: 'Authorize in Shopify', text: 'Shopify shows exactly what the app asks for: read products and read customers.' },
+                { name: 'Quote with your catalog', text: 'Within minutes your products and customers are in Cord, ready to build the quote.' },
+            ],
+            limites: [
+                'Today the sync runs one way: from Shopify into Cord. Creating the order in Shopify when a quote is approved or paid is on the way.',
+                'Each variant comes in as a Cord product, so a catalog with many variants arrives with many rows.',
+                'Stock levels are not checked while quoting yet; the catalog brings price and SKU.',
+            ],
+            faqs: [
+                {
+                    q: 'Can Cord change anything in my store?',
+                    a: 'No. The app asks for only two read permissions: products and customers. It cannot modify prices, inventory or orders.',
+                },
+                {
+                    q: 'What happens to products I delete in Shopify?',
+                    a: 'They are deactivated in Cord instead of deleted, because they may sit inside a quote you already sent. Deactivated means they no longer appear when building new quotes.',
+                },
+                {
+                    q: 'Will my customers be duplicated?',
+                    a: 'No. If the Shopify customer email already exists in Cord, that record is recognized and completed with whatever is missing.',
+                },
+                {
+                    q: 'How often does it update?',
+                    a: 'Changes arrive by webhook within seconds. You can also request a full sync from the card whenever you want.',
+                },
+                {
+                    q: 'Does it work with any Shopify plan?',
+                    a: 'Yes. The integration uses the standard Admin API, so it does not require Shopify Plus.',
+                },
+            ],
+            guias: [
+                { label: 'Connect Shopify', href: 'https://cordhq.app/en/support/conectar-shopify' },
+                { label: 'Quote editor', href: `${DOCS_EN}/cotizacion/editor` },
+            ],
+            cta: { titulo: 'Quote wholesale with the catalog you already have.', sub: 'Connect your store from Settings and start quoting with your real products. Free to start.' },
         },
     },
     {

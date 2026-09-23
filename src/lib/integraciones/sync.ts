@@ -234,6 +234,7 @@ export async function processOrgSync(orgId: string, limit = BATCH): Promise<numb
              where s.id in (
                 select j.id from integracion_sync j
                   join integracion_conexiones c on c.id = j.conexion_id and c.org_id = j.org_id and c.estado = 'activa'
+                   and c.proveedor = 'hubspot'
                  where j.org_id = ${orgId} and j.run_at <= now() and j.status in ('queued', 'running')
                    and (j.status <> 'running' or j.locked_until is null or j.locked_until <= now())
                  order by j.run_at
