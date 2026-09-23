@@ -29,7 +29,7 @@ const favicon = (domain: string, size = 64) => `https://t3.gstatic.com/faviconV2
 
 export const INTEGRATION_APPS: IntegrationApp[] = [
     { slug: 'hubspot', nombre: 'HubSpot', dominio: 'hubspot.com', categoria: 'crm', disponible: true, logo: favicon('hubspot.com', 128), tile: true, guia: '/soporte/conectar-hubspot' },
-    { slug: 'shopify', nombre: 'Shopify', dominio: 'shopify.com', categoria: 'ecommerce', disponible: SHOPIFY_LISTO, logo: favicon('shopify.com', 128), tile: true, guia: '/soporte/conectar-shopify' },
+    { slug: 'shopify', nombre: 'Shopify', dominio: 'shopify.com', categoria: 'ecommerce', disponible: SHOPIFY_LISTO, logo: '/imgs/integrations/shopify.svg', tile: true, guia: '/soporte/conectar-shopify' },
     { slug: 'slack', nombre: 'Slack', dominio: 'slack.com', categoria: 'comunicacion', disponible: true, logo: favicon('slack.com'), tile: false, guia: null },
     { slug: 'teams', nombre: 'Microsoft Teams', dominio: 'teams.microsoft.com', categoria: 'comunicacion', disponible: true, logo: favicon('teams.microsoft.com', 128), tile: false, guia: '/soporte/conectar-teams' },
     { slug: 'whatsapp', nombre: 'WhatsApp Business', dominio: 'whatsapp.com', categoria: 'comunicacion', disponible: true, logo: '/imgs/integrations/whatsapp.svg', tile: true, guia: '/soporte/conectar-whatsapp' },

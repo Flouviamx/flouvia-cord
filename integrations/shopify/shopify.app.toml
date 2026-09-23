@@ -24,7 +24,12 @@ optional_scopes = [ ]
 use_legacy_install_flow = true
 
 [auth]
-redirect_urls = [ "https://cordhq.app/api/integraciones/shopify/callback" ]
+redirect_urls = [
+  "https://cordhq.app/api/integraciones/shopify/callback",
+  # Desarrollo: Shopify admite localhost, y sin esto la tarjeta en la máquina de
+  # quien programa solo puede mirarse, no probarse.
+  "http://localhost:4321/api/integraciones/shopify/callback",
+]
 
 [webhooks]
 api_version = "2026-07"
