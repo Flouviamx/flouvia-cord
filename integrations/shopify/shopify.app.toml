@@ -17,9 +17,10 @@ application_url = "https://cordhq.app/api/integraciones/shopify/instalar"
 embedded = false
 
 [access_scopes]
-# Fase 1: solo leer. Escribir pedidos llega en la fase 2 y obliga a que cada
-# tienda vuelva a autorizar, así que no se pide "por si acaso".
-scopes = "read_products,read_customers"
+# Leer catálogo y clientes, y escribir el borrador de pedido que Cord crea al
+# cerrar la venta. Cambiar esta línea obliga a que cada tienda ya conectada
+# vuelva a autorizar: la tarjeta lo detecta y se lo pide, en vez de fallar.
+scopes = "read_products,read_customers,write_draft_orders,read_orders"
 optional_scopes = [ ]
 use_legacy_install_flow = true
 

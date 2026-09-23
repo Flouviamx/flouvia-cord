@@ -23,6 +23,22 @@ With Shopify connected, your store's catalog and customers come into Cord and st
 - **Kept current:** when you change a product or customer in Shopify, Cord updates it within seconds. A product deleted in Shopify is **deactivated** in Cord, not deleted: it may sit inside a quote you already sent.
 - **Sync now:** the button on the card reads the whole catalog again. Useful right after connecting, or whenever something looks off.
 
+### Create the Shopify order when the quote closes
+
+When the quote closes, Cord can create the order in your store so fulfillment, inventory and shipping live there. It **starts off**: you turn it on from the Shopify card, choosing when it is created.
+
+- **When the quote is approved:** the order lands in Shopify as a draft, ready to fulfill or to collect from there.
+- **When the client pays:** Cord collects and the order enters your store marked as paid.
+
+Every line with a product from your store travels as that variant, so the order draws down inventory; a free-text line travels as a custom item with its price, instead of being lost. The price sent is the negotiated one, with its discount applied.
+
+Two things worth knowing:
+
+- **Currency rules.** The order is created in your store currency. If the quote uses a different one, Cord does not create the order instead of charging in the wrong currency.
+- **Taxes are calculated by Shopify** with your store settings. If they differ from the quote, Cord's fiscal document is the one that counts.
+
+One quote creates one order: if the event repeats, Cord recognizes the one that already exists.
+
 ### Disconnect
 
 From the same card, with **Disconnect**. The products and customers already imported stay in Cord, like any other data of yours; they simply stop updating. If you uninstall the app from Shopify, Cord finds out on its own and marks the connection as disconnected.

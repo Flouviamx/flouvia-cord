@@ -14,7 +14,7 @@ import { after } from '../../../../lib/after';
 import { consumeOAuthState } from '../../../../lib/integraciones/conexiones';
 import { isShopDomain, shopifyCredentials } from '../../../../lib/integraciones/shopify/config';
 import { exchangeShopifyCode, oauthTimestampFresh, verifyOAuthHmac } from '../../../../lib/integraciones/shopify/oauth';
-import { leerNombreTienda, registrarWebhooks, saveShopifyConexion, syncShopify } from '../../../../lib/integraciones/shopify/service';
+import { leerTienda, registrarWebhooks, saveShopifyConexion, syncShopify } from '../../../../lib/integraciones/shopify/service';
 import { siteOrigin } from '../../../../lib/email';
 
 const VUELTA = '/app/ajustes/integraciones/shopify';
@@ -41,11 +41,14 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
     const token = await exchangeShopifyCode(shop, code.slice(0, 500));
     if (!token) return redirect(`${VUELTA}?shopify=error`);
 
-    const tienda = await leerNombreTienda(shop, token.accessToken);
-    await saveShopifyConexion({ orgId, userId, shop, token: token.accessToken, scopes: token.scopes, tienda });
+    const tienda = await leerTienda(shop, token.accessToken);
+    await saveShopifyConexion({
+        orgId, userId, shop, token: token.accessToken, scopes: token.scopes,
+        tienda: tienda.nombre, moneda: tienda.moneda,
+    });
     await logAudit(orgId, {
         accion: 'integracion.shopify_conectada', entidad: 'org', entidad_id: orgId,
-        detalle: `Tienda ${tienda ?? shop}`, ip: reqIp(request),
+        detalle: `Tienda ${tienda.nombre ?? shop}`, ip: reqIp(request),
     });
 
     // La primera sincronización puede tardar: la persona no espera frente a una

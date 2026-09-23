@@ -103,6 +103,11 @@ export async function recordDomainEvent(orgId: string, type: string, data: Recor
             after(import('./workflows/engine').then((m) => m.processOrgRuns(orgId)));
         }
         if (id) await queueIntegrations(orgId, type, data, who);
+        // Shopify tiene su propio carril: su disparador lo elige el comerciante
+        // y nace apagado, así que esto casi siempre es una consulta y nada más.
+        if (id && objectId && (type === 'quote.approved' || type === 'quote.paid')) {
+            after(import('./integraciones/shopify/orders').then((m) => m.onQuoteEvent(orgId, type, objectId)));
+        }
         return id;
     } catch (err) {
         log.error('no se pudo registrar el evento de dominio', { route: 'domain-events', type, orgId, err });

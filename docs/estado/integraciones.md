@@ -60,9 +60,9 @@ solo se puede instalar en el workspace dueño de la app.
 
 ## Shopify
 
-Fase 1 (22 sep 2026), en una sola dirección: la tienda entra a Cord. Nada sale
-hacia Shopify todavía, así que ningún error de aquí toca su inventario ni sus
-pedidos. Vive en `src/lib/integraciones/shopify/` y reusa el carril de HubSpot
+Dos direcciones: la tienda entra a Cord (fase 1, 22 sep 2026) y la cotización
+cerrada sale como pedido (fase 2, 23 sep 2026). Vive en
+`src/lib/integraciones/shopify/` y reusa el carril de HubSpot
 (`integracion_conexiones` + `integracion_vinculos`), no una tabla propia.
 
 - **Una variante es un producto.** Shopify tiene producto + variantes y Cord
@@ -89,16 +89,43 @@ pedidos. Vive en `src/lib/integraciones/shopify/` y reusa el carril de HubSpot
   `customers/redact`, `shop/redact`) se contestan siempre, aun sin conexión
   viva; Cord no guarda compradores de la tienda, el negocio es el responsable.
 - **La configuración de la app es código**: `integrations/shopify/shopify.app.toml`
-  (URLs, permisos y webhooks) se publica con `shopify app config link` +
-  `shopify app deploy`. Los webhooks se declaran ahí, NO se registran por API en
-  cada instalación: así Shopify los entrega a toda tienda que instale la app y
-  no hay una llamada extra que pueda fallar a mitad del alta.
+  (URLs y permisos) se publica con `shopify app config link` + `shopify app
+  deploy`. Los webhooks de negocio se registran POR TIENDA con la API
+  (`registrarWebhooks()`), no en el toml: una app no embebida necesita
+  `use_legacy_install_flow = true`, y ese modo rechaza los webhooks declarativos
+  a nivel de app. En el toml quedan solo los obligatorios de privacidad, que sí
+  acepta.
 - La app no aparece en el directorio sin `SHOPIFY_CLIENT_ID`/`SECRET`
   (`SHOPIFY_LISTO` en el catálogo): una tarjeta "Conectar" sin app detrás
   mandaría a la persona a un error de Shopify (regla 15).
 
-Pendiente, fase 2: cotización aprobada o pagada → pedido en Shopify. Exige
-`write_draft_orders` y reinstalar la app, y ahí sí toca inventario.
+### Fase 2: el pedido de vuelta (23 sep 2026)
+
+`src/lib/integraciones/shopify/orders.ts` es la PRIMERA dirección en la que Cord
+escribe en el negocio de alguien más, así que todo está acotado a propósito:
+
+- **Nace apagado.** El disparador vive en `integracion_conexiones.ajustes.pedidos`
+  (`no` | `aprobada` | `pagada`) y el default es `no`: crear pedidos toca
+  inventario y números de la tienda, y eso no puede aparecer por sorpresa
+  (regla 15). Se elige en la tarjeta de Ajustes y se guarda al cambiar el select.
+- **Un pedido por cotización lo garantiza el vínculo, no un `if`.** La fila de
+  `integracion_vinculos` con `objeto = 'quote'` es la llave: el tipo pasa de
+  `shopify_draft_order` a `shopify_order` al completarse. Un evento repetido
+  reusa el que existe.
+- **Una divisa distinta no se convierte, se detiene** (regla 21). Si la
+  cotización va en otra divisa que la tienda —guardada al conectar con
+  `leerTienda()`— no se crea el pedido. Mandar el número sin su divisa lo
+  cobraría en la equivocada.
+- **El precio que viaja es el negociado con su descuento.** Una línea con
+  producto vinculado va como variante (descuenta inventario) y una línea libre
+  como concepto suelto, en vez de perderse. El impuesto lo calcula Shopify con
+  la configuración de la tienda; el documento fiscal sigue siendo el de Cord.
+- **El permiso se detecta, no se asume.** `write_draft_orders` y `read_orders`
+  se agregaron a los scopes, así que una tienda conectada ANTES de esta fase no
+  los tiene: la tarjeta muestra "reconectar" en lugar de fallar contra el
+  proveedor (regla 14). Publicado como versión `cord-4`.
+- **Un fallo aquí no rompe la venta.** `onQuoteEvent()` cuelga de
+  `domain-events.ts` dentro de `after(...)` y nunca lanza.
 
 ## Zapier y Make
 

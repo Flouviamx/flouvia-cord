@@ -258,6 +258,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 { cord: 'Productos y variantes', app: 'Catálogo de Cord', dir: 'Cada variante con su precio y su SKU' },
                 { cord: 'Clientes de la tienda', app: 'Clientes de Cord', dir: 'Sin duplicar a quien ya existe' },
                 { cord: 'Cambios en Shopify', app: 'Se reflejan en Cord', dir: 'En segundos, por webhook' },
+                { cord: 'Cotización cerrada', app: 'Pedido en tu tienda', dir: 'Si tú lo activas' },
             ],
             blocks: [
                 {
@@ -298,7 +299,9 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 { name: 'Cotiza con tu catálogo', text: 'En unos minutos tus productos y clientes están en Cord, listos para armar la cotización.' },
             ],
             limites: [
-                'Hoy la sincronización va en un sentido: de Shopify hacia Cord. Crear el pedido en Shopify cuando se aprueba o se paga la cotización está en camino.',
+'El pedido en Shopify nace apagado: lo activas tú en la tarjeta, eligiendo si se crea al aprobarse la cotización o cuando el cliente pague.',
+                'El pedido se crea en la divisa de tu tienda. Si la cotización va en otra divisa, Cord no lo crea en vez de cobrar en la equivocada.',
+                'El impuesto del pedido lo calcula Shopify con la configuración de tu tienda; el documento fiscal sigue siendo el de Cord.',
                 'Cada variante entra como un producto de Cord, así que un catálogo con muchas variantes llega con muchos renglones.',
                 'Las existencias todavía no se consultan al cotizar; el catálogo trae precio y SKU.',
             ],
@@ -343,6 +346,7 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 { cord: 'Products and variants', app: 'Cord catalog', dir: 'Each variant with its price and SKU' },
                 { cord: 'Store customers', app: 'Cord clients', dir: 'Without duplicating who already exists' },
                 { cord: 'Changes in Shopify', app: 'Reflected in Cord', dir: 'Within seconds, by webhook' },
+                { cord: 'Quote closed', app: 'Order in your store', dir: 'If you turn it on' },
             ],
             blocks: [
                 {
@@ -383,7 +387,9 @@ export const INTEGRATION_PAGES: IntegrationLanding[] = [
                 { name: 'Quote with your catalog', text: 'Within minutes your products and customers are in Cord, ready to build the quote.' },
             ],
             limites: [
-                'Today the sync runs one way: from Shopify into Cord. Creating the order in Shopify when a quote is approved or paid is on the way.',
+'The Shopify order starts off: you turn it on in the card, choosing whether it is created when the quote is approved or when the client pays.',
+                'The order is created in your store currency. If the quote uses a different currency, Cord does not create it instead of charging in the wrong one.',
+                'Order taxes are calculated by Shopify with your store settings; the fiscal document is still the one from Cord.',
                 'Each variant comes in as a Cord product, so a catalog with many variants arrives with many rows.',
                 'Stock levels are not checked while quoting yet; the catalog brings price and SKU.',
             ],

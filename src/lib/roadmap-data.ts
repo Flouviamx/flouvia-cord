@@ -626,6 +626,7 @@ Cord Workflows convierte lo que pasa en una venta en el siguiente paso, sin escr
 - **Acciones reales:** crear una tarea, avisar al equipo por correo, escribirle al cliente con tu marca, caducar una cotización, anular una factura, mandar los datos a una URL, publicar en Slack o Teams, o dejar una nota en el Deal de HubSpot.
 - **Historial de cada ejecución:** qué se disparó, cuándo, con qué resultado y el error legible cuando algo falla. Un paso que falla se reintenta; la entrega es al menos una vez.
 - **HubSpot en los dos sentidos:** tus clientes se mantienen al día con Empresas y Contactos, y cada cotización crea y mueve su Deal por el pipeline. Mover un Deal en HubSpot no cambia nada en Cord.
+- **Shopify en los dos sentidos:** el catálogo y los clientes de tu tienda entran a Cord para cotizar mayoreo con precios y SKU reales, y cuando la cotización se aprueba o se paga, el pedido se crea en tu tienda para que el surtido y el inventario sigan donde ya viven. El pedido nace apagado: lo activas tú.
 - **Apps de Cord en Zapier y Make, sin llaves:** se conectan con un clic en una pantalla de Cord, con disparadores instantáneos, acciones y búsquedas. Cada conexión se puede revocar desde Ajustes.
 - **Slack con Añadir a Slack:** eliges el canal en Slack y listo, sin copiar URLs. Teams publica tarjetas en tu canal y WhatsApp le escribe al cliente con tu plantilla aprobada por Meta.
 - **Nodo de Cord para n8n:** se instala desde Community Nodes como **n8n-nodes-cord** en n8n autoalojado, con su disparador que registra el webhook y verifica la firma.
@@ -651,6 +652,7 @@ Cord Workflows turns what happens in a sale into the next step, without writing 
 - **Real actions:** create a task, email your team, email the client with your branding, expire a quote, void an invoice, send the data to a URL, post to Slack or Teams, or add a note to the HubSpot Deal.
 - **History for every run:** what fired, when, with what result, and a readable error when something fails. A failed step is retried; delivery is at least once.
 - **HubSpot both ways:** your clients stay in sync with Companies and Contacts, and every quote creates and moves its Deal through the pipeline. Moving a Deal in HubSpot changes nothing in Cord.
+- **Shopify both ways:** your store's catalog and customers flow into Cord so you can quote wholesale with real prices and SKUs, and when the quote is approved or paid, the order is created in your store so fulfillment and inventory stay where they already live. Orders start off: you turn them on.
 - **Cord apps on Zapier and Make, without keys:** connect with one click on a Cord screen, with instant triggers, actions and searches. Each connection can be revoked from Settings.
 - **Slack with Add to Slack:** pick the channel in Slack and you are done, with no URLs to copy. Teams posts cards to your channel and WhatsApp messages the client with your Meta-approved template.
 - **Cord node for n8n:** install it from Community Nodes as **n8n-nodes-cord** on self-hosted n8n, with a trigger that registers its webhook and verifies the signature.

@@ -22,13 +22,18 @@ export interface ShopifyConexion {
     tienda: string | null;
     ultimaSync: string | null;
     ultimoError: string | null;
+    /** Cuándo crear el pedido en la tienda: 'no' | 'aprobada' | 'pagada'. */
+    pedidos: string;
+    /** Falso cuando la tienda se conectó antes de que existieran los pedidos. */
+    puedePedidos: boolean;
 }
 
 export async function getShopifyConexion(orgId: string): Promise<ShopifyConexion | null> {
     const [[row]] = await withOrgTx(orgId, sql`
-        select id, cuenta_externa, cuenta_nombre, estado, ultima_sync_at, ultimo_error
+        select id, cuenta_externa, cuenta_nombre, estado, ultima_sync_at, ultimo_error, scopes, ajustes
           from integracion_conexiones where org_id = ${orgId} and proveedor = 'shopify'`);
     if (!row) return null;
+    const ajustes = (row.ajustes ?? {}) as Record<string, unknown>;
     return {
         id: row.id as string,
         shop: row.cuenta_externa as string,
@@ -36,6 +41,8 @@ export async function getShopifyConexion(orgId: string): Promise<ShopifyConexion
         tienda: (row.cuenta_nombre as string) ?? null,
         ultimaSync: row.ultima_sync_at ? new Date(row.ultima_sync_at as string).toISOString() : null,
         ultimoError: (row.ultimo_error as string) ?? null,
+        pedidos: typeof ajustes.pedidos === 'string' ? ajustes.pedidos : 'no',
+        puedePedidos: Array.isArray(row.scopes) && (row.scopes as string[]).includes('write_draft_orders'),
     };
 }
 
@@ -50,16 +57,22 @@ async function accessToken(orgId: string): Promise<{ shop: string; token: string
 }
 
 export async function saveShopifyConexion(input: {
-    orgId: string; userId: string | null; shop: string; token: string; scopes: string[]; tienda: string | null;
+    orgId: string; userId: string | null; shop: string; token: string; scopes: string[];
+    tienda: string | null; moneda: string | null;
 }): Promise<string> {
+    // `ajustes` conserva lo que ya eligió el comerciante (el disparador de
+    // pedidos) y solo actualiza la divisa: reconectar no debe apagarle nada.
     const [[row]] = await withOrgTx(input.orgId, sql`
         insert into integracion_conexiones
-            (org_id, proveedor, estado, cuenta_externa, cuenta_nombre, scopes, access_token_enc, conectada_por)
+            (org_id, proveedor, estado, cuenta_externa, cuenta_nombre, scopes, access_token_enc, conectada_por, ajustes)
         values (${input.orgId}, 'shopify', 'activa', ${input.shop}, ${input.tienda},
-                ${input.scopes}::text[], ${encryptRequiredSecret(input.token)}, ${input.userId})
+                ${input.scopes}::text[], ${encryptRequiredSecret(input.token)}, ${input.userId},
+                jsonb_build_object('moneda', ${input.moneda}::text))
         on conflict (org_id, proveedor) do update set
             estado = 'activa', cuenta_externa = excluded.cuenta_externa, cuenta_nombre = excluded.cuenta_nombre,
             scopes = excluded.scopes, access_token_enc = excluded.access_token_enc,
+            ajustes = coalesce(integracion_conexiones.ajustes, '{}'::jsonb)
+                      || jsonb_build_object('moneda', ${input.moneda}::text),
             ultimo_error = null, ultimo_error_at = null, updated_at = now()
         returning id`);
     return row.id as string;
@@ -318,11 +331,20 @@ export async function registrarWebhooks(orgId: string, callbackUrl: string): Pro
     return creados;
 }
 
-/** Nombre visible de la tienda, para que la tarjeta no muestre solo el dominio. */
-export async function leerNombreTienda(shop: string, token: string): Promise<string | null> {
-    const res = await shopifyGraphQL<any>(shop, token, `{ shop { name } }`);
-    const nombre = res.ok ? res.data?.shop?.name : null;
-    return typeof nombre === 'string' && nombre.trim() ? nombre.trim().slice(0, 200) : null;
+/**
+ * Nombre y divisa de la tienda. El nombre es para que la tarjeta no muestre solo
+ * el dominio; la divisa decide si Cord puede crear pedidos: un pedido en otra
+ * divisa que la tienda se cobraría en la equivocada (regla 21).
+ */
+export async function leerTienda(shop: string, token: string): Promise<{ nombre: string | null; moneda: string | null }> {
+    const res = await shopifyGraphQL<any>(shop, token, `{ shop { name currencyCode } }`);
+    if (!res.ok) return { nombre: null, moneda: null };
+    const nombre = res.data?.shop?.name;
+    const moneda = res.data?.shop?.currencyCode;
+    return {
+        nombre: typeof nombre === 'string' && nombre.trim() ? nombre.trim().slice(0, 200) : null,
+        moneda: typeof moneda === 'string' && /^[A-Z]{3}$/.test(moneda) ? moneda : null,
+    };
 }
 
 export { idFromGid };

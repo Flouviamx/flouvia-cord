@@ -16,6 +16,7 @@ const m = vi.hoisted(() => ({
     reserve: vi.fn(),
     cancelUsage: vi.fn(),
     runDataset: vi.fn(),
+    shopifyPedido: vi.fn(),
     recordEvent: null as null | ((orgId: string, type: string, data: Record<string, unknown>, actor?: string) => Promise<string | null>),
 }));
 
@@ -41,6 +42,7 @@ vi.mock('../src/lib/slack', () => ({ postSlackText: m.slack, escapeSlack: (v: st
 vi.mock('../src/lib/ratelimit', () => ({ strictRateLimit: async () => ({ ok: true }) }));
 vi.mock('../src/lib/workflows/datasets-run', () => ({ runDataset: m.runDataset }));
 vi.mock('../src/lib/integraciones/queue', () => ({ integrationQueueStatement: () => null }));
+vi.mock('../src/lib/integraciones/shopify/orders', () => ({ onQuoteEvent: m.shopifyPedido }));
 vi.mock('../src/lib/integraciones/hubspot/actions', () => ({
     addHubSpotNote: m.hsNote,
     HubSpotActionError: class extends Error { constructor(message: string, readonly final = true) { super(message); } },
@@ -138,7 +140,9 @@ describe('encolado', () => {
         await quoteEvent();
         const runs = await q('select workflow_id, org_id, depth, status from workflow_runs');
         expect(runs).toEqual([{ workflow_id: activo, org_id: A, depth: 0, status: 'queued' }]);
-        expect(m.pending.length).toBe(1);
+        // Dos carriles diferidos: el motor de workflows y la consulta de Shopify.
+        expect(m.pending.length).toBe(2);
+        expect(m.shopifyPedido).toHaveBeenCalledWith(A, 'quote.approved', QUOTE);
     });
 
     it('un borrador nunca se ejecuta aunque tenga disparador', async () => {

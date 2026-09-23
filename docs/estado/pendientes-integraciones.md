@@ -18,7 +18,7 @@
 | **Slack** | En producción, "Añadir a Slack", app `A0C307S6ENB` | Directorio de apps de Slack (opcional) | André | Revisión de Slack |
 | **n8n** | `n8n-nodes-cord` 1.1.0 en npm con constancia de origen | Verificación de n8n para n8n Cloud | n8n | Respuesta de n8n (enviado el 21 sep) |
 | **Microsoft Teams** | Flujo de Power Automate en producción; "Conectar con Microsoft" construido e **inactivo** | Registrar la app en Entra, credenciales, prueba real, verificación de editor | André, luego Claude | Microsoft 365 de pago (decisión: no pagar todavía) |
-| **Shopify** | Fase 1 construida (catálogo y clientes hacia Cord), oculta sin credenciales | Crear la app en Partners, credenciales en Vercel, probar con tienda de desarrollo; fase 2 (pedido de vuelta) | André, luego Claude | Nada, es gratis |
+| **Shopify** | Fases 1 y 2 en producción (catálogo y clientes hacia Cord; pedido de vuelta al cerrar) | Probar con una tienda de desarrollo; fases 3-5 (facturar pedidos, cotizar desde el admin, precios en vivo) | André prueba, Claude construye | Nada, es gratis |
 | **WhatsApp Business** | Nivel 1 en producción (número + token + plantilla) | Prueba con número real; registro integrado de Meta | André | Verificación de negocio en Meta |
 | **Mercado Pago** | En producción en México, pago real confirmado; app `7210198958457914` | Renovar el Client Secret; igualas y contracargos | André, luego Claude | Nada para México |
 
@@ -143,23 +143,25 @@ todavía. El flujo de Power Automate sigue siendo el camino vigente.
 
 ## Shopify
 
-**Hecho (22 sep):** fase 1 completa y oculta hasta tener credenciales. OAuth de
-la tienda, catálogo y clientes hacia Cord con anti-eco por huella, webhooks de
-productos, clientes y desinstalación con firma verificada, webhooks obligatorios
-de privacidad, tarjeta en Ajustes con "Sincronizar ahora" y artículo de ayuda.
+**Hecho (22-23 sep):** app creada y publicada (`cord-4`), credenciales en Vercel
+y en localhost. Fase 1: OAuth de la tienda, catálogo y clientes hacia Cord con
+anti-eco por huella, webhooks de productos, clientes y desinstalación con firma
+verificada, webhooks obligatorios de privacidad, tarjeta en Ajustes con
+"Sincronizar ahora" y artículo de ayuda. Fase 2: pedido en Shopify al aprobarse o
+pagarse la cotización, apagado por default, con guardia de divisa y un pedido por
+cotización garantizado por el vínculo.
 Código en `src/lib/integraciones/shopify/` y `src/pages/api/integraciones/shopify/`.
 
 **Falta:**
-- [ ] André: `cd integrations/shopify && npx @shopify/cli@latest app config link`
-  (necesita terminal interactiva; el resto lo corre Claude). Crea la app "Cord" en
-  la cuenta de socio y llena `client_id` en el toml.
-- [ ] Claude, después: `app deploy` (sube URLs, permisos y webhooks, incluidos los
-  obligatorios de privacidad), `app env pull` y las credenciales a Vercel como
-  `SHOPIFY_CLIENT_ID` / `SHOPIFY_CLIENT_SECRET`.
-- [ ] Probar con una tienda de desarrollo: conectar, ver catálogo y clientes,
-  cambiar un producto en Shopify y confirmar que llega, desinstalar y reconectar.
-- [ ] Fase 2: cotización aprobada o pagada → pedido en Shopify (`write_draft_orders`,
-  exige reinstalar la app porque cambian los permisos).
+- [ ] André: probar con una tienda de desarrollo — conectar, ver catálogo y
+  clientes, cambiar un producto en Shopify y confirmar que llega, prender los
+  pedidos y cerrar una cotización, desinstalar y reconectar.
+- [ ] André, opcional: rotar el `client_secret` en Partners (se imprimió en la
+  terminal al hacer `app env pull`); si se rota, actualizar Vercel y el `.env`.
+- [ ] Fase 3: facturar los pedidos que nacen en la tienda (CFDI en México).
+- [ ] Fase 4: cotizar desde el admin de Shopify (app embebida + admin action).
+  Es la única fase que exige volver a `embedded = true` y session tokens.
+- [ ] Fase 5: precios e inventario en vivo dentro del editor de cotizaciones.
 - [ ] Opcional: publicar la app en la tienda de aplicaciones de Shopify (revisión).
 
 ---

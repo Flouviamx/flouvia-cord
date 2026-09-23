@@ -3,7 +3,7 @@ import { t, type AppLocale } from '../../i18n/app';
 
 interface Props {
     lang: AppLocale;
-    conexion: { shop: string; estado: string; tienda: string | null; ultimaSync: string | null } | null;
+    conexion: { shop: string; estado: string; tienda: string | null; ultimaSync: string | null; pedidos: string; puedePedidos: boolean } | null;
     /** La app de Cord existe del lado de Shopify; sin esto no hay a dónde mandar a la persona. */
     disponible: boolean;
     flash: string | null;
@@ -41,6 +41,26 @@ const fecha = conexion?.ultimaSync
                     <button class="shp-btn-solid" id="shpSync">{t(L, 'set.integ.shopify.sincronizar')}</button>
                     <button class="shp-btn-ghost" id="shpOff">{t(L, 'set.integ.shopify.desconectar')}</button>
                 </div>
+
+                <div class="shp-pedidos">
+                    <h4>{t(L, 'set.integ.shopify.pedidos_titulo')}</h4>
+                    <p class="shp-que">{t(L, 'set.integ.shopify.pedidos_desc')}</p>
+                    {conexion?.puedePedidos ? (
+                        <div class="s-field">
+                            <label for="shpPedidos">{t(L, 'set.integ.shopify.pedidos_titulo')}</label>
+                            <select class="s-input" id="shpPedidos">
+                                <option value="no" selected={conexion?.pedidos !== 'aprobada' && conexion?.pedidos !== 'pagada'}>{t(L, 'set.integ.shopify.pedidos_no')}</option>
+                                <option value="aprobada" selected={conexion?.pedidos === 'aprobada'}>{t(L, 'set.integ.shopify.pedidos_aprobada')}</option>
+                                <option value="pagada" selected={conexion?.pedidos === 'pagada'}>{t(L, 'set.integ.shopify.pedidos_pagada')}</option>
+                            </select>
+                        </div>
+                    ) : (
+                        <p class="shp-permiso">
+                            {t(L, 'set.integ.shopify.pedidos_permiso')}
+                            <button class="shp-btn-ghost shp-reconectar" id="shpReconectar" data-shop={conexion?.shop}>{t(L, 'set.integ.shopify.reconectar')}</button>
+                        </p>
+                    )}
+                </div>
             </Fragment>
         ) : (
             <Fragment>
@@ -61,7 +81,8 @@ const fecha = conexion?.ultimaSync
             data-i18n-no-desconecto={t(L, 'set.integ.shopify.no_desconecto')}
             data-i18n-tienda={t(L, 'shopify.err.tienda')}
             data-i18n-sincronizando={t(L, 'set.integ.shopify.sincronizando')}
-            data-i18n-resultado={t(L, 'set.integ.shopify.resultado')}></span>
+            data-i18n-resultado={t(L, 'set.integ.shopify.resultado')}
+            data-i18n-pedidos-guardado={t(L, 'set.integ.shopify.pedidos_guardado')}></span>
     </div>
 </div>
 
@@ -73,6 +94,10 @@ const fecha = conexion?.ultimaSync
     .shp-sub { display: block; margin-top: 2px; font-size: 0.78rem; color: var(--color-text-muted); }
     .shp-sync { font-size: 0.82rem; color: var(--color-text-muted); margin: 0 0 1rem; }
     .shp-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .shp-pedidos { margin-top: 1.6rem; padding-top: 1.3rem; border-top: 1px solid var(--color-border); }
+    .shp-pedidos h4 { font-size: 0.86rem; font-weight: 650; color: var(--color-text); margin: 0 0 0.35rem; }
+    .shp-permiso { font-size: 0.85rem; line-height: 1.5; color: var(--color-text-muted); margin: 0; }
+    .shp-reconectar { margin-left: 0.5rem; }
     .shp-msg { display: block; margin-top: 0.8rem; min-height: 1.2em; font-size: 0.78rem; font-weight: 600; }
     .shp-msg:global(.ok) { color: var(--color-ok); }
     .shp-msg:global(.err) { color: var(--color-danger); }
@@ -124,6 +149,45 @@ const fecha = conexion?.ultimaSync
             } catch {
                 flash(msg.dataset.i18nNoDesconecto || '', false);
                 off.disabled = false;
+            }
+        });
+
+        // El disparador se guarda al elegirlo: un botón "guardar" extra para un
+        // solo campo es un paso que la gente olvida y luego cree que quedó puesto.
+        const pedidos = document.getElementById('shpPedidos') as HTMLSelectElement | null;
+        pedidos?.addEventListener('change', async () => {
+            pedidos.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/shopify/pedidos', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ disparador: pedidos.value }),
+                });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.error || '');
+                flash(msg.dataset.i18nPedidosGuardado || '', true);
+            } catch (err: any) {
+                flash(err.message || '', false);
+            } finally {
+                pedidos.disabled = false;
+            }
+        });
+
+        // Reconectar es la MISMA instalación, con la tienda que ya está guardada:
+        // Shopify vuelve a pedir permiso y esta vez incluye el de pedidos.
+        const reconectar = document.getElementById('shpReconectar') as HTMLButtonElement | null;
+        reconectar?.addEventListener('click', async () => {
+            reconectar.disabled = true;
+            try {
+                const res = await fetch('/api/integraciones/shopify/conectar', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ shop: reconectar.dataset.shop || '' }),
+                });
+                const d = await res.json();
+                if (!res.ok || !d.redirect) throw new Error(d.error || '');
+                window.location.href = d.redirect;
+            } catch (err: any) {
+                flash(err.message || msg.dataset.i18nNoConecto || '', false);
+                reconectar.disabled = false;
             }
         });
 

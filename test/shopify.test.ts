@@ -2,12 +2,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { createHmac } from 'node:crypto';
 
 vi.mock('../src/lib/log', () => ({ log: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
+vi.mock('../src/lib/db', () => ({ sql: vi.fn(() => ''), withOrgTx: vi.fn() }));
+vi.mock('../src/lib/crypto-secret', () => ({ decryptSecret: (v: string) => v, encryptRequiredSecret: (v: string) => v }));
 
 const { isShopDomain, normalizeShopDomain } = await import('../src/lib/integraciones/shopify/config');
 const { oauthTimestampFresh, parseTokenResponse, verifyOAuthHmac, verifyWebhookHmac } =
     await import('../src/lib/integraciones/shopify/oauth');
 const { idFromGid } = await import('../src/lib/integraciones/shopify/client');
 const { huellaDe, mapCustomer, mapProductVariants } = await import('../src/lib/integraciones/shopify/mapping');
+const { mapLineItems } = await import('../src/lib/integraciones/shopify/orders');
 
 const SECRET = 'shpss_secreto';
 
@@ -140,5 +143,40 @@ describe('mapeo a la forma de Cord', () => {
     it('la huella cambia solo cuando cambia el dato', () => {
         expect(huellaDe(['a', 1])).toBe(huellaDe(['a', 1]));
         expect(huellaDe(['a', 1])).not.toBe(huellaDe(['a', 2]));
+    });
+});
+
+describe('líneas de la cotización hacia el pedido', () => {
+    it('viaja el precio negociado con su descuento, no el de lista', () => {
+        expect(mapLineItems([
+            { descripcion: 'Camisa', cantidad: 10, precio_unitario: 200, precio_negociado: 150, descuento_pct: 10, variante: '11' },
+        ], 'MXN')).toEqual([
+            { variantId: 'gid://shopify/ProductVariant/11', quantity: 10, priceOverride: { amount: '135.00', currencyCode: 'MXN' } },
+        ]);
+    });
+
+    it('una línea sin producto de la tienda no se pierde: va como concepto', () => {
+        expect(mapLineItems([{ descripcion: 'Instalación', cantidad: 1, precio_unitario: 1200 }], 'MXN')).toEqual([
+            { title: 'Instalación', quantity: 1, originalUnitPrice: '1200.00' },
+        ]);
+    });
+
+    it('un precio negociado de cero es un precio, no un campo vacío', () => {
+        const [linea] = mapLineItems([
+            { descripcion: 'Muestra', cantidad: 2, precio_unitario: 500, precio_negociado: 0 },
+        ], 'MXN');
+        expect(linea).toMatchObject({ originalUnitPrice: '0.00', quantity: 2 });
+    });
+
+    it('cantidades raras no rompen el pedido', () => {
+        expect(mapLineItems([{ descripcion: 'X', cantidad: 2.4, precio_unitario: 10 }], 'MXN')[0]).toMatchObject({ quantity: 2 });
+        expect(mapLineItems([{ descripcion: 'X', cantidad: 0, precio_unitario: 10 }], 'MXN')[0]).toMatchObject({ quantity: 1 });
+        expect(mapLineItems([{ descripcion: 'X', cantidad: 'dos', precio_unitario: 'mil' }], 'MXN')[0])
+            .toMatchObject({ quantity: 1, originalUnitPrice: '0.00' });
+    });
+
+    it('un descuento del 100 por ciento no produce un precio negativo', () => {
+        expect(mapLineItems([{ descripcion: 'Regalo', cantidad: 1, precio_unitario: 300, descuento_pct: 120 }], 'MXN')[0])
+            .toMatchObject({ originalUnitPrice: '0.00' });
     });
 });

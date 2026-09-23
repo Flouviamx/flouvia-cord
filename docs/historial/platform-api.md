@@ -24,7 +24,31 @@ que no eran obvias:
      El webhook entró a `CSRF_EXEMPT_WRITE_EXACT` desde el principio: es exactamente
      el bug que Mercado Pago tuvo el día anterior.
    • La app no aparece en el directorio sin credenciales (`SHOPIFY_LISTO`).
-Pendiente, fase 2: cotización aprobada o pagada → pedido en Shopify.
+
+✅ **Shopify, fase 2: el pedido de vuelta (23 sep 2026)** — la cotización cerrada
+crea el pedido en la tienda, para que el surtido, el inventario y el envío vivan
+donde ya viven. Es la primera vez que Cord ESCRIBE en el sistema de otro negocio,
+y eso dictó las decisiones:
+   • **Nace apagado** (`ajustes.pedidos = 'no'`). Crear pedidos mueve inventario y
+     números reales: un default encendido habría sorprendido a toda tienda ya
+     conectada (regla 15). El comerciante elige si se crea al aprobarse o al
+     pagarse.
+   • **El vínculo es la idempotencia**, no un `if`. La fila `objeto = 'quote'`
+     pasa de `shopify_draft_order` a `shopify_order` cuando se completa; un
+     evento repetido reusa el pedido en vez de acuñar un segundo.
+   • **Divisa distinta = no se crea** (regla 21). La moneda de la tienda se guarda
+     al conectar; sin esa guardia, una cotización en USD se habría cobrado como
+     el mismo número en MXN.
+   • **El permiso nuevo se detecta y se dice.** `write_draft_orders` +
+     `read_orders` cambian los scopes, así que toda tienda conectada antes queda
+     sin ellos: la tarjeta ofrece reconectar en lugar de fallar contra el
+     proveedor (regla 14).
+   • **Los webhooks volvieron a registrarse por tienda.** Una app no embebida
+     necesita `use_legacy_install_flow = true`, y ese modo RECHAZA los webhooks
+     declarativos del toml — el `app deploy` lo rebota. En el toml quedaron solo
+     los de privacidad.
+Pendiente, fases 3-5: facturar pedidos de la tienda, cotizar desde el admin de
+Shopify y precios e inventario en vivo.
 
 ✅ **Auditoría de seguridad de las integraciones (22 sep 2026)** — revisión de
 HubSpot, Slack, Zapier, Make, n8n, Mercado Pago, API pública, MCP y Workflows.

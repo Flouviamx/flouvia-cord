@@ -5057,7 +5057,7 @@ create table if not exists integracion_vinculos (
   conexion_id      uuid not null,
   objeto           text not null check (objeto in ('client', 'client_contact', 'quote', 'product')),
   local_id         uuid not null,
-  externo_tipo     text not null check (externo_tipo in ('company', 'contact', 'deal', 'shopify_product', 'shopify_customer')),
+  externo_tipo     text not null check (externo_tipo in ('company', 'contact', 'deal', 'shopify_product', 'shopify_customer', 'shopify_draft_order', 'shopify_order')),
   externo_id       text not null check (externo_id ~ '^[0-9]{1,20}$'),
   huella           text check (huella is null or huella ~ '^[a-f0-9]{64}$'),
   sincronizado_at  timestamptz,
@@ -5155,7 +5155,7 @@ alter table integracion_vinculos add constraint integracion_vinculos_objeto_chec
   check (objeto in ('client', 'client_contact', 'quote', 'product'));
 alter table integracion_vinculos drop constraint if exists integracion_vinculos_externo_tipo_check;
 alter table integracion_vinculos add constraint integracion_vinculos_externo_tipo_check
-  check (externo_tipo in ('company', 'contact', 'deal', 'shopify_product', 'shopify_customer'));
+  check (externo_tipo in ('company', 'contact', 'deal', 'shopify_product', 'shopify_customer', 'shopify_draft_order', 'shopify_order'));
 alter table integracion_oauth_estados drop constraint if exists integracion_oauth_estados_proveedor_check;
 alter table integracion_oauth_estados add constraint integracion_oauth_estados_proveedor_check
   check (proveedor in ('hubspot', 'mercadopago', 'slack', 'teams', 'shopify'));

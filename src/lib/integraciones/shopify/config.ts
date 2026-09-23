@@ -7,8 +7,13 @@
 
 export const SHOPIFY_API_VERSION = '2026-07';
 
-/** Fase 1: leer. Escribir pedidos llega con la fase 2 y exige reinstalar la app. */
-export const SHOPIFY_SCOPES = ['read_products', 'read_customers'] as const;
+/**
+ * Escribir borradores de pedido es lo único que Cord necesita para cerrar la
+ * venta en la tienda; `read_orders` sirve para leer el pedido que resulta. Una
+ * tienda conectada ANTES de la fase 2 no tiene estos permisos: la tarjeta se lo
+ * dice y le pide volver a conectar, en vez de fallar contra el proveedor.
+ */
+export const SHOPIFY_SCOPES = ['read_products', 'read_customers', 'write_draft_orders', 'read_orders'] as const;
 
 export const shopifyCredentials = () => {
     const clientId = import.meta.env.SHOPIFY_CLIENT_ID || process.env.SHOPIFY_CLIENT_ID;

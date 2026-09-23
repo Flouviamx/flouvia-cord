@@ -23,6 +23,22 @@ Con Shopify conectado, tu catálogo y tus clientes de la tienda entran a Cord y 
 - **Al día solos:** cuando cambias un producto o un cliente en Shopify, Cord lo actualiza en segundos. Un producto borrado en Shopify se **desactiva** en Cord, no se borra: pudo quedar dentro de una cotización ya enviada.
 - **Sincronizar ahora:** el botón de la tarjeta vuelve a leer todo el catálogo. Sirve si conectaste hace poco o si dudas de algo.
 
+### Crear el pedido en Shopify al cerrar
+
+Cuando la cotización cierra, Cord puede crear el pedido en tu tienda para que el surtido, el inventario y el envío vivan ahí. **Nace apagado**: lo activas tú en la tarjeta de Shopify, eligiendo cuándo se crea.
+
+- **Al aprobarse la cotización:** el pedido queda como borrador en Shopify, listo para surtir o para cobrar desde ahí.
+- **Cuando el cliente pague:** Cord cobra y el pedido entra a tu tienda marcado como pagado.
+
+Cada línea con un producto de tu tienda viaja como esa variante, así el pedido descuenta inventario; una línea libre viaja como concepto con su precio, en vez de perderse. El precio que se manda es el negociado, con su descuento aplicado.
+
+Dos cosas que conviene saber:
+
+- **La divisa manda.** El pedido se crea en la divisa de tu tienda. Si la cotización va en otra, Cord no crea el pedido en lugar de cobrar en la equivocada.
+- **El impuesto lo calcula Shopify** con la configuración de tu tienda. Si no coincide con el de la cotización, el documento fiscal de Cord es el que vale.
+
+Una cotización genera un solo pedido: si el evento se repite, Cord reconoce el que ya existe.
+
 ### Desconectar
 
 Desde la misma tarjeta, con **Desconectar**. Los productos y clientes que ya entraron se quedan en Cord, como cualquier otro dato tuyo; simplemente dejan de actualizarse. Si desinstalas la app desde Shopify, Cord se entera solo y marca la conexión como desconectada.
