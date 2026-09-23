@@ -5,189 +5,394 @@ const en = getLangFromUrl(Astro.url) === 'en';
 const slackLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=64';
 const hubspotLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://hubspot.com&size=64';
 const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://teams.microsoft.com&size=64';
+const CALCA = ['editor', 'link-publico', 'seguimiento', 'aprobaciones'].includes(slug);
+const LOC = en ? 'en-US' : 'es-MX';
+const mx = (n: number, d = 2) => new Intl.NumberFormat(LOC, { style: 'currency', currency: 'MXN', minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+const tx = (es: string, e: string) => (en ? e : es);
+const wrapClass = `bm-wrap bm-${slug}-${index}${CALCA ? ` bm-x${index === 2 ? ' bm-x-full' : ''}` : ''}`;
+const chk = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 ---
-<div class={`bm-wrap bm-${slug}-${index}`}>
+<div class={wrapClass} data-loc={CALCA ? LOC : undefined}>
   <div class="bm-mesh" aria-hidden="true"></div>
   <div class="bm-glow" aria-hidden="true"></div>
 
   {/* ────────────────── EDITOR ────────────────── */}
   {slug === 'editor' && index === 0 && (
-    <div class="bm-stage bm-editor-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">COT-0149 · Distribuidora El Zarco</span>
-          <span class="bm-app-badge">Borrador</span>
+    <div class="bm-stage" data-bmx="ed0">
+      <div class="bm-app bm-w">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Cotizaciones', 'Quotes')}</span><span class="bm-w-sep">/</span><strong>{tx('Nueva cotización', 'New quote')}</strong></span>
+          <span class="bm-w-draft">{tx('Borrador', 'Draft')}</span>
         </div>
-        <div class="bm-app-body">
-          <div class="bm-g bm-g5 bm-g-head"><span>Producto</span><span>Cant.</span><span>Lista</span><span>Negociado</span><span class="bm-r">Importe</span></div>
-          <div class="bm-g bm-g5"><span>Cemento gris 50kg</span><span>120</span><span class="bm-mut">$182.00</span><b>$182.00</b><b class="editorial bm-r">$21,840</b></div>
-          <div class="bm-g bm-g5 bm-row-target"><span>Varilla 3/8" × 12m</span><span>340</span><span class="bm-mut bm-strike">$191.48</span><b class="mk-green"><span class="price-val">$168.50</span> <i class="mk-chip bm-chip-hide">−12%</i></b><b class="editorial bm-r">$57,290</b></div>
-          <div class="bm-g bm-g5"><span>Block hueco 15×20×40</span><span>2,400</span><span class="bm-mut">$14.20</span><b>$14.20</b><b class="editorial bm-r">$34,080</b></div>
-          <div class="bm-g bm-g5"><span>Malla electro. 6×6</span><span>180</span><span class="bm-mut">$312.00</span><b>$312.00</b><b class="editorial bm-r">$56,160</b></div>
-          <div class="bm-g bm-g5"><span>Arena de río</span><span>60 m³</span><span class="bm-mut">$540.00</span><b>$540.00</b><b class="editorial bm-r">$32,400</b></div>
-          <div class="bm-g bm-g5"><span>Grava 3/4"</span><span>45 m³</span><span class="bm-mut">$410.00</span><b>$410.00</b><b class="editorial bm-r">$18,450</b></div>
+        <div class="bm-ed-client">
+          <span class="bm-field bm-ed-select"><span>Distribuidora El Zarco — Raúl Mendoza</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+          <span class="bm-chips"><span>{tx('Contado', 'Cash')}</span><span class="on">Net 30</span><span>Net 60</span></span>
         </div>
-        <div class="bm-app-foot"><span>6 partidas · IVA incluido</span><b class="editorial">Total $196,469.20</b></div>
-      </div>
-      <div class="bm-fake-cursor">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+        <div class="bm-ed-lines">
+          <div class="bm-ed-head"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Lista', 'List')}</span><span>{tx('Negociado', 'Negotiated')}</span><span class="r">{tx('Importe', 'Amount')}</span><span class="c">{tx('Margen', 'Margin')}</span></div>
+          <div class="bm-ed-row">
+            <span class="bm-ed-name">{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>{tx('pieza', 'piece')}</small></span>
+            <span class="bm-in bm-ed-q">340</span>
+            <span class="bm-ed-list">{mx(191.48)}</span>
+            <span class="bm-in bm-ed-nego is-deal is-focus" data-nego><span data-v>168.50</span><span class="bm-caret"></span></span>
+            <span class="editorial bm-ed-amt" data-amt>{mx(57290)}</span>
+            <span class="bm-mg" data-mg>18%</span>
+          </div>
+          <div class="bm-ed-row">
+            <span class="bm-ed-name">{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>{tx('saco', 'bag')}</small></span>
+            <span class="bm-in bm-ed-q">120</span>
+            <span class="bm-ed-list">{mx(182)}</span>
+            <span class="bm-in bm-ed-nego">182.00</span>
+            <span class="editorial bm-ed-amt">{mx(21840)}</span>
+            <span class="bm-mg">22%</span>
+          </div>
+          <div class="bm-ed-row">
+            <span class="bm-ed-name">{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}<small>{tx('pieza', 'piece')}</small></span>
+            <span class="bm-in bm-ed-q">2400</span>
+            <span class="bm-ed-list">{mx(14.2)}</span>
+            <span class="bm-in bm-ed-nego">14.20</span>
+            <span class="editorial bm-ed-amt">{mx(34080)}</span>
+            <span class="bm-mg">31%</span>
+          </div>
+          <div class="bm-ed-row">
+            <span class="bm-ed-name">{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>{tx('hoja', 'sheet')}</small></span>
+            <span class="bm-in bm-ed-q">180</span>
+            <span class="bm-ed-list">{mx(312)}</span>
+            <span class="bm-in bm-ed-nego">312.00</span>
+            <span class="editorial bm-ed-amt">{mx(56160)}</span>
+            <span class="bm-mg">24%</span>
+          </div>
+        </div>
+        <div class="bm-ed-add">
+          <span class="bm-field bm-ed-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span>{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span>
+          <span class="bm-ed-free">{tx('+ Línea libre', '+ Free line')}</span>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'editor' && index === 1 && (
-    <div class="bm-stage bm-editor-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Catálogo · 248 productos</span>
-          <span class="bm-app-badge bm-badge-blue">+ Nuevo</span>
+    <div class="bm-stage" data-bmx="ed1" data-total="248" data-label={tx('productos', 'products')} data-of={tx('de', 'of')}>
+      <div class="bm-app bm-w">
+        <div class="bm-w-bar">
+          <span class="bm-tabs"><span class="on">{tx('Catálogo', 'Catalog')}</span><span>Kits</span></span>
+          <span class="bm-cat-act">
+            <span class="bm-cat-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="bm-cat-q" data-q></span><span class="bm-caret"></span><span class="bm-cat-ph" data-ph>{tx('Buscar productos…', 'Search products…')}</span></span>
+            <span class="bm-btn-soft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>{tx('Importar CSV', 'Import CSV')}</span>
+            <span class="bm-btn-navy">{tx('+ Nuevo producto', '+ New product')}</span>
+          </span>
         </div>
-        <div class="bm-app-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span class="bm-search-q">Varilla</span><span class="bm-search-caret"></span></div>
-        <div class="bm-app-body">
-          <div class="bm-g bm-gcat bm-g-head"><span>Producto</span><span>SKU</span><span>Precio</span><span class="bm-r">Estado</span></div>
-          <div class="bm-g bm-gcat cat-r"><span>Cemento gris 50kg</span><span class="bm-mut">CEM-050</span><b>$182.00</b><span class="bm-r"><i class="bm-st bm-st-on"></i>Activo</span></div>
-          <div class="bm-g bm-gcat cat-r bm-active"><span>Varilla 3/8" × 12m</span><span class="bm-mut">VAR-038</span><b>$191.48</b><span class="bm-r"><i class="bm-st bm-st-on"></i>Activo</span></div>
-          <div class="bm-g bm-gcat cat-r"><span>Block hueco 15×20×40</span><span class="bm-mut">BLK-154</span><b>$14.20</b><span class="bm-r"><i class="bm-st bm-st-on"></i>Activo</span></div>
-          <div class="bm-g bm-gcat cat-r"><span>Malla electro. 6×6</span><span class="bm-mut">MAL-066</span><b>$312.00</b><span class="bm-r"><i class="bm-st bm-st-on"></i>Activo</span></div>
-          <div class="bm-g bm-gcat cat-r"><span>Arena de río m³</span><span class="bm-mut">ARE-001</span><b>$540.00</b><span class="bm-r"><i class="bm-st bm-st-off"></i>Pausado</span></div>
-          <div class="bm-g bm-gcat cat-r"><span>Grava 3/4" m³</span><span class="bm-mut">GRA-034</span><b>$410.00</b><span class="bm-r"><i class="bm-st bm-st-on"></i>Activo</span></div>
+        <div class="bm-sec-h"><strong>{tx('Catálogo', 'Catalog')}</strong><span data-count>248 {tx('productos', 'products')}</span></div>
+        <div class="bm-filters">
+          <span class="on">{tx('Todos', 'All')}<em>248</em></span><span>{tx('Activos', 'Active')}<em>236</em></span><span>{tx('Inactivos', 'Inactive')}<em>12</em></span><span>{tx('Con precio por volumen', 'With volume pricing')}<em>31</em></span><span>{tx('Sin costo', 'No cost set')}<em>4</em></span>
+        </div>
+        <div class="bm-cat">
+          <div class="bm-cat-head"><span>SKU</span><span>{tx('Producto', 'Product')}</span><span>{tx('Unidad', 'Unit')}</span><span class="r">{tx('Precio de lista', 'List price')}</span><span>{tx('Estado', 'Status')}</span></div>
+          {[
+            ['ALM-018', tx('Alambre recocido cal. 18', 'Annealed wire gauge 18'), 'kg', 38.5, true],
+            ['ARE-001', tx('Arena de río', 'River sand'), 'm³', 540, true],
+            ['BLK-154', tx('Block hueco 15×20×40', 'Hollow block 15×20×40'), tx('pieza', 'piece'), 14.2, true],
+            ['CEM-050', tx('Cemento gris 50 kg', 'Gray cement 50 kg'), tx('saco', 'bag'), 182, true],
+            ['GRA-034', tx('Grava 3/4"', 'Gravel 3/4"'), 'm³', 410, false],
+            ['MAL-066', tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6'), tx('hoja', 'sheet'), 312, true],
+            ['VAR-012', tx('Varilla corrugada 1/2" × 12 m', 'Rebar 1/2" × 12 m'), tx('pieza', 'piece'), 338.9, true],
+            ['VAR-038', tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m'), tx('pieza', 'piece'), 191.48, true],
+            ['VAR-058', tx('Varilla corrugada 5/8" × 12 m', 'Rebar 5/8" × 12 m'), tx('pieza', 'piece'), 512.4, true],
+          ].map(([sku, name, unit, price, on]) => (
+            <div class="bm-cat-row" data-sku={sku as string}>
+              <span class="bm-cat-sku" data-m={tx('SKU', 'SKU')}>{sku}</span>
+              <span class="bm-cat-name">{name}</span>
+              <span class="bm-cat-unit" data-m={tx('Unidad', 'Unit')}>{unit}</span>
+              <span class="editorial bm-cat-price">{mx(price as number)}</span>
+              <span class={`bm-cat-st ${on ? 'on' : 'off'}`}>{on ? tx('● Activo', '● Active') : tx('○ Inactivo', '○ Inactive')}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   )}
 
   {slug === 'editor' && index === 2 && (
-    <div class="bm-stage bm-editor-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">COT-0149 · Resumen</span>
-          <span class="bm-app-badge bm-badge-green">Listo</span>
+    <div class="bm-stage" data-bmx="ed2">
+      <div class="bm-app bm-w bm-ed2-back">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Cotizaciones', 'Quotes')}</span><span class="bm-w-sep">/</span><strong>{tx('Nueva cotización', 'New quote')}</strong></span>
+          <span class="bm-w-draft">{tx('Borrador', 'Draft')}</span>
         </div>
-        <div class="bm-app-body">
-          <div class="bm-g bm-g3 bm-g-head"><span>Concepto</span><span>Cant.</span><span class="bm-r">Importe</span></div>
-          <div class="bm-g bm-g3"><span>Cemento gris 50kg</span><span>120</span><b class="editorial bm-r">$21,840.00</b></div>
-          <div class="bm-g bm-g3"><span>Varilla 3/8" × 12m</span><span>340</span><b class="editorial bm-r">$57,290.00</b></div>
-          <div class="bm-g bm-g3"><span>Block hueco 15×20×40</span><span>2,400</span><b class="editorial bm-r">$34,080.00</b></div>
-          <div class="bm-g bm-g3"><span>Malla electro. 6×6</span><span>180</span><b class="editorial bm-r">$56,160.00</b></div>
-          <div class="bm-app-tot">
-            <div class="bm-tot-r bm-stag-row"><span>Subtotal</span><b class="editorial">$169,370.00</b></div>
-            <div class="bm-tot-r bm-stag-row"><span>IVA 16%</span><b class="editorial">$27,099.20</b></div>
-            <div class="bm-tot-r bm-tot-final bm-stag-row"><span>Total a pagar</span><b class="editorial bm-large">$196,469.20</b></div>
-          </div>
+        <div class="bm-step-h"><span class="n">2</span><span class="t">{tx('¿Qué le vas a cotizar?', 'What are you quoting them?')}</span></div>
+        <div class="bm-ed-lines bm-ed-lines-b">
+          <div class="bm-ed-head"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Lista', 'List')}</span><span>{tx('Negociado', 'Negotiated')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
+          <div class="bm-ed-row"><span class="bm-ed-name">{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>{tx('pieza', 'piece')}</small></span><span class="bm-in bm-ed-q">340</span><span class="bm-ed-list">{mx(191.48)}</span><span class="bm-in bm-ed-nego is-deal">168.50</span><span class="editorial bm-ed-amt">{mx(57290)}</span></div>
+          <div class="bm-ed-row"><span class="bm-ed-name">{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>{tx('saco', 'bag')}</small></span><span class="bm-in bm-ed-q">120</span><span class="bm-ed-list">{mx(182)}</span><span class="bm-in bm-ed-nego">182.00</span><span class="editorial bm-ed-amt">{mx(21840)}</span></div>
+          <div class="bm-ed-row"><span class="bm-ed-name">{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}<small>{tx('pieza', 'piece')}</small></span><span class="bm-in bm-ed-q is-focus" data-qty><span data-v>2400</span><span class="bm-caret"></span></span><span class="bm-ed-list">{mx(14.2)}</span><span class="bm-in bm-ed-nego">14.20</span><span class="editorial bm-ed-amt" data-amt>{mx(34080)}</span></div>
+          <div class="bm-ed-row"><span class="bm-ed-name">{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>{tx('hoja', 'sheet')}</small></span><span class="bm-in bm-ed-q">180</span><span class="bm-ed-list">{mx(312)}</span><span class="bm-in bm-ed-nego">312.00</span><span class="editorial bm-ed-amt">{mx(56160)}</span></div>
         </div>
+        <div class="bm-ed-add">
+          <span class="bm-field bm-ed-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span>{tx('Busca un producto de tu catálogo…', 'Search a product in your catalog…')}</span></span>
+          <span class="bm-ed-free">{tx('+ Línea libre', '+ Free line')}</span>
+        </div>
+        <div class="bm-ed-notes"><span class="h">{tx('Notas para el cliente', 'Notes for the client')} <em>{tx('(opcional)', '(optional)')}</em></span><span class="bm-field">{tx('Precio especial por volumen — entrega en obra incluida.', 'Special bulk price — on-site delivery included.')}</span></div>
+      </div>
+      <div class="bm-sum" data-lines={tx('líneas', 'lines')} data-pcs={tx('piezas', 'pieces')}>
+        <div class="bm-sum-h">{tx('Revisa y envía', 'Review and send')}</div>
+        <div class="bm-sum-count" data-count>4 {tx('líneas', 'lines')} · 3,040 {tx('piezas', 'pieces')}</div>
+        <div class="bm-sum-l"><span>Subtotal</span><span class="editorial" data-sub>{mx(169370)}</span></div>
+        <div class="bm-sum-l save"><span>{tx('Le descontaste', 'You discounted them')}</span><span class="editorial">−{mx(7813.2)}</span></div>
+        <div class="bm-sum-tg"><span>{tx('Precios ya incluyen IVA', 'Prices already include tax')}</span><span class="bm-tog"></span></div>
+        <div class="bm-sum-l tax"><span>{tx('IVA 16%', 'VAT 16%')}</span><span class="editorial" data-iva>{mx(27099.2)}</span></div>
+        <div class="bm-sum-div"></div>
+        <div class="bm-sum-l total"><span>Total</span><span class="editorial" data-tot>{mx(196469.2)}</span></div>
+        <div class="bm-sum-f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="bm-field">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+        <div class="bm-sum-f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="bm-field">MXN — {tx('peso mexicano', 'Mexican peso')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+        <span class="bm-sum-send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
     </div>
   )}
 
   {/* ────────────────── LINK PÚBLICO ────────────────── */}
   {slug === 'link-publico' && index === 0 && (
-    <div class="bm-stage bm-public-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">portal.cord.mx/q/COT-0148</span>
-          <span class="bm-app-badge bm-badge-green">Abierto</span>
-        </div>
-        <div class="bm-uid" style="padding:14px 16px;border-bottom:1px solid rgba(10,25,47,0.05);">
-          <span class="bm-avat a2">MV</span>
-          <div class="bm-uid-tx"><b>Materiales del Valle</b><span>te envió una cotización</span></div>
-        </div>
-        <div class="bm-total-hero"><span>Total con IVA</span><b class="editorial">$196,469.20</b><em>Net 30 · vigente al 24 jun 2026</em></div>
-        <div class="bm-cc" style="padding-top:0;">
-          <div class="bm-cc-b bm-cc-cl">¿Incluye la maniobra de descarga?</div>
-          <div class="bm-cc-b bm-cc-ai">Sí, la descarga a pie de obra está incluida en el total.</div>
-        </div>
-        <div style="display:flex;gap:8px;padding:4px 12px 14px;">
-          <div class="bm-btn2 bm-btn2-nav bm-lp-approve" style="flex:1;margin:0;">Aprobar cotización</div>
-          <div class="bm-btn2 bm-btn2-ghost" style="margin:0;">Rechazar</div>
+    <div class="bm-stage" data-bmx="lp0">
+      <div class="bm-app bm-x-free">
+        <div class="bm-phone">
+          <div class="bm-phone-scr">
+            <div class="bm-ios">
+              <span class="t">9:41</span><span class="isl"></span>
+              <span class="ic">
+                <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.7"/><rect x="5" y="5" width="3" height="7" rx="0.7"/><rect x="10" y="2.5" width="3" height="9.5" rx="0.7"/><rect x="15" y="0" width="3" height="12" rx="0.7"/></svg>
+                <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.2a12.5 12.5 0 0 1 17 0M4.6 8.4a8 8 0 0 1 10.8 0M7.8 11.5a3.2 3.2 0 0 1 4.4 0"/></svg>
+                <svg viewBox="0 0 27 13" fill="none"><rect x="0.6" y="0.6" width="22.8" height="11.8" rx="3.4" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="17" height="8.2" rx="2" fill="currentColor"/><path d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z" fill="currentColor" fill-opacity="0.45"/></svg>
+              </span>
+            </div>
+            <div class="bm-qp">
+              <div class="bm-qc">
+                <div class="bm-qc-head">
+                  <span class="bm-qc-brand"><span class="bm-qc-mark">M</span><span class="bm-qc-bt"><span class="n">Materiales del Valle</span><span class="r">RFC MVA240611AB3</span></span></span>
+                  <span class="bm-qc-folio"><span class="e">{tx('COTIZACIÓN', 'QUOTE')}</span><span class="f">COT-0148</span></span>
+                </div>
+                <div class="bm-qc-rule"></div>
+                <div class="bm-qc-sign" data-form>
+                  <div class="bm-qc-sh"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></span><span>{tx('Firma digital', 'Digital signature')}</span></div>
+                  <div class="bm-qc-pill">{tx('Aprobando', 'Approving')} <strong>COT-0148</strong> {tx('por', 'for')} <strong class="acc">{mx(196469.2)} MXN</strong></div>
+                  <div class="bm-qc-f"><span class="lb">{tx('Nombre completo del firmante', "Signer's full name")}</span><span class="in"><span data-name>Raúl Mendoza</span><span class="bm-caret"></span><span class="ph" data-nph>{tx('Ej. María García López', 'E.g. Jane Smith')}</span></span></div>
+                  <div class="bm-qc-ck"><span class="bx" data-check set:html={chk}></span><span>{tx('He revisado esta cotización y acepto los términos y condiciones indicados', 'I have reviewed this quote and accept the stated terms and conditions')}</span></div>
+                  <span class="bm-qc-cta" data-cta>{tx('Confirmar y firmar', 'Confirm and sign')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                </div>
+                <div class="bm-qc-done" data-done aria-hidden="true">
+                  <span class="ring"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="14,27 22,35 38,18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                  <span class="tt">{tx('Cotización aprobada', 'Quote approved')}</span>
+                  <span class="st">{tx('Materiales del Valle recibió tu confirmación y se pondrá en contacto contigo en breve.', 'Materiales del Valle received your confirmation and will be in touch shortly.')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   )}
 
   {slug === 'link-publico' && index === 1 && (
-    <div class="bm-stage bm-public-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Ajustes · Marca</span>
-          <span class="bm-app-badge bm-badge-blue">Guardar</span>
+    <div class="bm-stage" data-bmx="lp1">
+      <div class="bm-app bm-w">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Portal del cliente', 'Client portal')}</strong></span>
         </div>
-        <div class="bm-uid" style="padding:14px 16px;border-bottom:1px solid rgba(10,25,47,0.05);">
-          <span class="bm-avat a3" style="border-radius:10px;">AM</span>
-          <div class="bm-uid-tx"><b>Acero Monterrey</b><span>acero-monterrey.cord.mx</span></div>
+        <div class="bm-set-tabs"><span>Branding</span><span class="on">{tx('Portal del cliente', 'Client portal')}</span><span>{tx('Dominio propio', 'Custom domain')}</span></div>
+        <div class="bm-pt">
+          <div class="bm-pt-form">
+            <div class="bm-pt-b bm-pt-msg">
+              <span class="h">{tx('Mensajes', 'Messages')}</span>
+              <span class="lb">{tx('Banner superior', 'Top banner')}</span>
+              <span class="bm-field">{tx('Precios válidos al 31 de octubre · Flete sin costo a obra', 'Prices valid through October 31 · Free delivery to site')}</span>
+            </div>
+            <div class="bm-pt-b">
+              <span class="h">{tx('Color de marca', 'Brand color')}</span>
+              <span class="lb">{tx('Acento del portal', 'Portal accent')}</span>
+              <span class="bm-pt-color"><span class="sw" data-sw></span><span class="bm-field hex"><span data-hex>#B45309</span></span></span>
+              <span class="hint">{tx('Botones, montos y detalles del portal usan este color.', 'Buttons, amounts, and portal details use this color.')}</span>
+            </div>
+            <div class="bm-pt-b bm-pt-int">
+              <span class="h">{tx('Interacción', 'Interaction')}</span>
+              <span class="bm-pt-tg"><span class="bm-tog on"></span><span>{tx('Permitir comentarios y contraofertas del cliente', 'Allow client comments and counteroffers')}</span></span>
+              <span class="bm-pt-tg"><span class="bm-tog" data-ptog></span><span>{tx('Mostrar "enviado vía Cord"', 'Show "sent via Cord"')}</span></span>
+            </div>
+          </div>
+          <div class="bm-pt-pane">
+            <span class="bm-pt-ph">{tx('Vista del cliente', 'Client view')}</span>
+            <div class="bm-pt-frame" data-acc>
+              <div class="bm-pt-banner">{tx('Precios válidos al 31 de octubre · Flete sin costo a obra', 'Prices valid through October 31 · Free delivery to site')}</div>
+              <div class="bm-pt-card">
+                <div class="bm-pt-top"><span class="bm-pt-mark">M</span><span><strong>Materiales del Valle</strong><em>{tx('Cotización COT-0149', 'Quote COT-0149')}</em></span></div>
+                <div class="bm-pt-r"><span>{tx('Cemento gris 50kg × 120', 'Gray cement 50kg × 120')}</span><span class="editorial">{mx(21840, 0)}</span></div>
+                <div class="bm-pt-r"><span>{tx('Varilla 3/8" × 340', 'Rebar 3/8" × 340')}</span><span class="editorial">{mx(57290, 0)}</span></div>
+                <div class="bm-pt-tot"><span>Total</span><span class="editorial">{mx(131323.6)}</span></div>
+                <span class="bm-pt-cta">{tx('Aprobar cotización', 'Approve quote')}</span>
+                <span class="bm-pt-chat">{tx('Escribe un comentario o contraoferta…', 'Write a comment or counteroffer…')}</span>
+              </div>
+              <div class="bm-pt-pw" data-powered hidden>{tx('enviado vía', 'sent via')} <strong>Cord</strong></div>
+            </div>
+          </div>
         </div>
-        <div class="bm-kv"><span>Logotipo</span><span class="bm-tg bm-tg-green">Subido</span></div>
-        <div class="bm-kv"><span>Color de marca</span><div class="bm-sw"><i style="background:#2563eb;"></i><i style="background:#0a192f;"></i><i style="background:#059669;"></i></div></div>
-        <div class="bm-kv"><span>"Powered by Cord"</span><span class="bm-tg bm-tg-gray">Oculto</span></div>
-        <div class="bm-kv"><span>PDF con tu marca</span><span class="bm-tg bm-tg-green">Activo</span></div>
       </div>
     </div>
   )}
 
   {slug === 'link-publico' && index === 2 && (
-    <div class="bm-stage bm-public-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">COT-0148 · Actividad</span>
-          <span class="bm-app-badge bm-badge-green">Aprobada</span>
+    <div class="bm-stage" data-bmx="lp2">
+      <div class="bm-app bm-w bm-x-main">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Cotizaciones', 'Quotes')}</span><span class="bm-w-sep">/</span><strong>COT-0148</strong></span>
+          <span class="bm-sp bm-sp-approved" data-pill data-was={tx('Vista', 'Viewed')}>{tx('Aprobada', 'Approved')}</span>
         </div>
-        <div class="bm-steps">
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Aprobada por el cliente</b><span>El Zarco firmó digitalmente · hoy 12:36</span></div></div>
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Pago recibido</b><span>Stripe · $196,469.20 · 12:41</span></div></div>
-          <div class="bm-step"><span class="bm-step-ico pend"></span><div class="bm-step-tx"><b>Factura CFDI</b><span>lista para timbrar</span></div></div>
+        <div class="bm-dt">
+          <div class="bm-stp" data-stp>
+            <span class="bm-stp-s done"><span class="d" set:html={chk}></span><span class="l">{tx('Borrador', 'Draft')}</span></span>
+            <span class="bm-stp-s done"><span class="d" set:html={chk}></span><span class="l">{tx('Enviada', 'Sent')}</span></span>
+            <span class="bm-stp-s done" data-s3><span class="d"><span class="k" set:html={chk}></span><span class="n">3</span></span><span class="l">{tx('Vista', 'Viewed')}</span></span>
+            <span class="bm-stp-s cur" data-s4><span class="d"><span class="k" set:html={chk}></span><span class="n">4</span></span><span class="l">{tx('Aprobada', 'Approved')}</span></span>
+            <span class="bm-stp-s"><span class="d"><span class="n">5</span></span><span class="l">{tx('Pagada', 'Paid')}</span></span>
+          </div>
+          <div class="bm-dh">
+            <span class="bm-dh-av">D</span>
+            <span class="bm-dh-tx"><span class="bm-dh-n">Distribuidora El Zarco <span class="bm-vb">V1</span></span><span class="bm-dh-m">Net 30 · {tx('Vigente hasta 22 oct 2026', 'Valid until Oct 22, 2026')}</span></span>
+            <span class="bm-dh-tot"><span>TOTAL</span><span class="editorial">{mx(196469.2)}</span></span>
+          </div>
+          <div class="bm-sec-h"><strong>{tx('Actividad', 'Activity')}</strong></div>
+          <div class="bm-tl">
+            <div class="bm-tl-i" data-new><span class="bm-tl-d" style="background:#10b981"></span><span class="bm-tl-b"><span class="t">{tx('Firmado digitalmente por "Raúl Mendoza" (IP 189.203.44.10)', 'Digitally signed by "Raúl Mendoza" (IP 189.203.44.10)')}</span><span class="w">{tx('hoy, 12:36', 'today, 12:36')}</span></span></div>
+            <div class="bm-tl-i"><span class="bm-tl-d" style="background:#7c3aed"></span><span class="bm-tl-b"><span class="t">{tx('Abierta por el cliente desde el link', 'Opened by the client from the link')}</span><span class="w">{tx('hoy, 12:31', 'today, 12:31')}</span></span></div>
+            <div class="bm-tl-i"><span class="bm-tl-d" style="background:#cbd5e1"></span><span class="bm-tl-b"><span class="t">{tx('Correo enviado al cliente', 'Email sent to the client')}</span><span class="w">{tx('ayer, 11:02', 'yesterday, 11:02')}</span></span></div>
+            <div class="bm-tl-i"><span class="bm-tl-d" style="background:#3b82f6"></span><span class="bm-tl-b"><span class="t">{tx('Cotización enviada — link generado', 'Quote sent — link generated')}</span><span class="w">{tx('ayer, 11:02', 'yesterday, 11:02')}</span></span></div>
+            <div class="bm-tl-i"><span class="bm-tl-d" style="background:#cbd5e1"></span><span class="bm-tl-b"><span class="t">{tx('Borrador creado', 'Draft created')}</span><span class="w">{tx('ayer, 10:41', 'yesterday, 10:41')}</span></span></div>
+          </div>
         </div>
-        <div class="bm-app-foot"><span>Aviso enviado a tu equipo</span><b>$196,469.20</b></div>
+      </div>
+      <div class="bm-notif" data-notif>
+        <img src="/favicon-192x192.png" alt="" width="30" height="30" loading="lazy" />
+        <span class="bm-notif-b">
+          <span class="bm-notif-h"><strong>Cord</strong><span>{tx('ahora', 'now')}</span></span>
+          <span class="bm-notif-s">{tx('Distribuidora El Zarco aprobó tu cotización COT-0148', 'Distribuidora El Zarco approved your quote COT-0148')}</span>
+          <span class="bm-notif-t">{tx('Distribuidora El Zarco aprobó la cotización COT-0148 por', 'Distribuidora El Zarco approved quote COT-0148 for')} {mx(196469.2)}.</span>
+        </span>
       </div>
     </div>
   )}
 
   {/* ────────────────── SEGUIMIENTO ────────────────── */}
   {slug === 'seguimiento' && index === 0 && (
-    <div class="bm-stage bm-track-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Actividad reciente</span>
-          <span class="bm-app-badge bm-badge-green">● En vivo</span>
+    <div class="bm-stage" data-bmx="tr0" data-ap={tx('aperturas', 'opens')}>
+      <div class="bm-app bm-w">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Cotizaciones', 'Quotes')}</span><span class="bm-w-sep">/</span><strong>COT-0148</strong></span>
+          <span class="bm-sp bm-sp-viewed">{tx('Vista', 'Viewed')}</span>
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a1">RM</span><div class="bm-uid-tx"><b>Raúl abrió COT-0148</b><span>hace 5 min · 3ª vez</span></div></div><span class="bm-tg bm-tg-amber">Comparando</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">LF</span><div class="bm-uid-tx"><b>Lucía abrió COT-0151</b><span>hace 22 min · 1ª vez</span></div></div><span class="bm-tg bm-tg-blue">Nueva vista</span></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a3">MR</span><div class="bm-uid-tx"><b>Marco abrió COT-0149</b><span>hace 1 h · 2ª vez</span></div></div><span class="bm-tg bm-tg-gray">Vista</span></div>
-        <div class="bm-app-foot"><span>Llama mientras está caliente</span><b>3 aperturas</b></div>
+        <div class="bm-dh bm-dh-lg">
+          <span class="bm-dh-av">D</span>
+          <span class="bm-dh-tx">
+            <span class="bm-dh-n">Distribuidora El Zarco <span class="bm-vb">V1</span><span class="bm-lv" data-lv><span class="dot"></span>{tx('Viendo ahora', 'Viewing now')}<span class="sec"> — {tx('Partidas', 'Line items')}</span></span></span>
+            <span class="bm-dh-m">Net 30 · {tx('Vigente hasta 22 oct 2026', 'Valid until Oct 22, 2026')}</span>
+          </span>
+        </div>
+        <div class="bm-at">
+          <div class="bm-sec-h"><strong>{tx('Atención del cliente', 'Client attention')}</strong></div>
+          <div class="bm-at-sum"><span>{tx('1 persona', '1 person')}</span><span class="sep">·</span><span data-aps>3 {tx('aperturas', 'opens')}</span></div>
+          <div class="bm-at-dt"><span><strong>{tx('Primera', 'First')}</strong> {tx('22 sep 2026, 6:52 p.m.', 'Sep 22, 2026, 6:52 PM')}</span><span><strong>{tx('Última', 'Last')}</strong> <span data-last data-was={tx('23 sep 2026, 9:14 a.m.', 'Sep 23, 2026, 9:14 AM')}>{tx('23 sep 2026, 12:31 p.m.', 'Sep 23, 2026, 12:31 PM')}</span></span></div>
+          <div class="bm-at-bars">
+            <div class="bm-at-r" data-s="72"><span class="lb">{tx('Resumen', 'Summary')}</span><span class="tr"><span class="fl" style="width:33%"></span></span><span class="editorial v">1m 12s</span></div>
+            <div class="bm-at-r" data-s="220"><span class="lb">{tx('Partidas', 'Line items')}</span><span class="tr"><span class="fl" style="width:100%"></span></span><span class="editorial v">3m 40s</span></div>
+            <div class="bm-at-r" data-s="22"><span class="lb">{tx('Notas y términos', 'Notes and terms')}</span><span class="tr"><span class="fl" style="width:10%"></span></span><span class="editorial v">22s</span></div>
+            <div class="bm-at-r" data-s="48"><span class="lb">{tx('Aprobación y pago', 'Approval and payment')}</span><span class="tr"><span class="fl" style="width:22%"></span></span><span class="editorial v">48s</span></div>
+            <div class="bm-at-r" data-s="9"><span class="lb">{tx('Conversación', 'Conversation')}</span><span class="tr"><span class="fl" style="width:4%"></span></span><span class="editorial v">9s</span></div>
+          </div>
+          <p class="bm-at-n">{tx('Abrió el PDF · 1', 'Opened the PDF · 1')}</p>
+          <p class="bm-at-n tot">{tx('Tiempo total sobre la propuesta', 'Total time on the proposal')} <span data-total>6m 11s</span></p>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'seguimiento' && index === 1 && (
-    <div class="bm-stage bm-track-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">COT-0148 · Historia</span>
-          <span class="bm-app-badge bm-badge-green">Pagada</span>
+    <div class="bm-stage" data-bmx="tr1">
+      <div class="bm-app bm-w">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Cotizaciones', 'Quotes')}</span><span class="bm-w-sep">/</span><strong>COT-0148</strong></span>
+          <span class="bm-sp bm-sp-paid" data-pill data-was={tx('Aprobada', 'Approved')}>{tx('Pagada', 'Paid')}</span>
         </div>
-        <div class="bm-steps">
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Creada</b><span>Borrador · 10:41</span></div></div>
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Enviada</b><span>Correo y WhatsApp · 11:02</span></div></div>
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Vista (3 veces)</b><span>Raúl Mendoza · 12:31</span></div></div>
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Aprobada · Pagada</b><span>Stripe · 12:41</span></div></div>
+        <div class="bm-stp bm-stp-pad" data-stp>
+          <span class="bm-stp-s done"><span class="d" set:html={chk}></span><span class="l">{tx('Borrador', 'Draft')}</span></span>
+          <span class="bm-stp-s done"><span class="d" set:html={chk}></span><span class="l">{tx('Enviada', 'Sent')}</span></span>
+          <span class="bm-stp-s done"><span class="d" set:html={chk}></span><span class="l">{tx('Vista', 'Viewed')}</span></span>
+          <span class="bm-stp-s done" data-s3><span class="d"><span class="k" set:html={chk}></span><span class="n">4</span></span><span class="l">{tx('Aprobada', 'Approved')}</span></span>
+          <span class="bm-stp-s cur" data-s4><span class="d"><span class="k" set:html={chk}></span><span class="n">5</span></span><span class="l">{tx('Pagada', 'Paid')}</span></span>
+        </div>
+        <div class="bm-tr1">
+          <div class="bm-tr1-main">
+            <div class="bm-dh">
+              <span class="bm-dh-av">D</span>
+              <span class="bm-dh-tx"><span class="bm-dh-n">Distribuidora El Zarco <span class="bm-vb">V1</span></span><span class="bm-dh-m">Net 30 · {tx('Creada 22 sep 2026', 'Created Sep 22, 2026')}</span></span>
+            </div>
+            <div class="bm-di-head"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
+            <div class="bm-di-row"><span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}</span><span>340</span><span class="editorial r">{mx(57290)}</span></div>
+            <div class="bm-di-row"><span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}</span><span>180</span><span class="editorial r">{mx(56160)}</span></div>
+            <div class="bm-di-row"><span>{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}</span><span>2,400</span><span class="editorial r">{mx(34080)}</span></div>
+            <div class="bm-di-row"><span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}</span><span>120</span><span class="editorial r">{mx(21840)}</span></div>
+            <div class="bm-di-tot"><span>Total</span><span class="editorial">{mx(196469.2)}</span></div>
+          </div>
+          <div class="bm-tr1-side">
+            <div class="bm-sec-h"><strong>{tx('Actividad', 'Activity')}</strong></div>
+            <div class="bm-tl">
+              <div class="bm-tl-i" data-new><span class="bm-tl-d" style="background:#10b981"></span><span class="bm-tl-b"><span class="t">{tx('Pago recibido con Cord Payments; cotización saldada', 'Payment received with Cord Payments; quote settled')}</span><span class="w">{tx('hoy, 12:41', 'today, 12:41')}</span></span></div>
+              <div class="bm-tl-i"><span class="bm-tl-d" style="background:#10b981"></span><span class="bm-tl-b"><span class="t">{tx('Firmado digitalmente por "Raúl Mendoza" (IP 189.203.44.10)', 'Digitally signed by "Raúl Mendoza" (IP 189.203.44.10)')}</span><span class="w">{tx('hoy, 12:36', 'today, 12:36')}</span></span></div>
+              <div class="bm-tl-i"><span class="bm-tl-d" style="background:#7c3aed"></span><span class="bm-tl-b"><span class="t">{tx('Abierta por el cliente desde el link', 'Opened by the client from the link')}</span><span class="w">{tx('ayer, 18:52', 'yesterday, 18:52')}</span></span></div>
+              <div class="bm-tl-i"><span class="bm-tl-d" style="background:#cbd5e1"></span><span class="bm-tl-b"><span class="t">{tx('Correo enviado al cliente', 'Email sent to the client')}</span><span class="w">{tx('ayer, 11:02', 'yesterday, 11:02')}</span></span></div>
+              <div class="bm-tl-i"><span class="bm-tl-d" style="background:#3b82f6"></span><span class="bm-tl-b"><span class="t">{tx('Cotización enviada — link generado', 'Quote sent — link generated')}</span><span class="w">{tx('ayer, 11:02', 'yesterday, 11:02')}</span></span></div>
+              <div class="bm-tl-i"><span class="bm-tl-d" style="background:#cbd5e1"></span><span class="bm-tl-b"><span class="t">{tx('Borrador creado', 'Draft created')}</span><span class="w">{tx('ayer, 10:41', 'yesterday, 10:41')}</span></span></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   )}
 
   {slug === 'seguimiento' && index === 2 && (
-    <div class="bm-stage bm-track-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Pipeline</span>
-          <span class="bm-app-badge bm-badge-blue">Este mes</span>
+    <div class="bm-stage" data-bmx="tr2">
+      <div class="bm-app bm-w bm-x-main">
+        <div class="bm-w-bar">
+          <strong class="bm-w-h">{tx('Cotizaciones', 'Quotes')}</strong>
+          <span class="bm-btn-navy">+ {tx('Nueva cotización', 'New quote')}</span>
         </div>
-        <div class="bm-2col">
-          <div class="bm-stat"><span>Por cerrar</span><b class="editorial">$1.84M</b></div>
-          <div class="bm-stat"><span>Cerrado</span><b class="editorial g">$920k</b></div>
+        <div class="bm-cs">
+          <span class="bm-cs-i"><span class="editorial v" data-pipe data-was={mx(2002550, 0)}>{mx(1806080.8, 0)}</span><span class="l" data-open data-was={tx('en pipeline · 8 abiertas', 'in pipeline · 8 open')}>{tx('en pipeline · 7 abiertas', 'in pipeline · 7 open')}</span></span>
+          <span class="bm-cs-i"><span class="editorial v" data-appr data-was={mx(401380, 0)}>{mx(597849.2, 0)}</span><span class="l">{tx('aprobado, por cobrar', 'approved, to be collected')}</span></span>
+          <span class="bm-cs-i warn"><span class="editorial v">1</span><span class="l">{tx('esperan tu aprobación', 'awaiting your approval')}</span></span>
         </div>
-        <div class="bm-kv"><span>Enviadas · 12</span><div class="bm-cbar" style="width:120px;"><i style="width:70%;"></i></div></div>
-        <div class="bm-kv"><span>Vistas · 8</span><div class="bm-cbar" style="width:120px;"><i style="width:48%;background:#f59e0b;"></i></div></div>
-        <div class="bm-kv"><span>Aprobadas · 5</span><div class="bm-cbar" style="width:120px;"><i style="width:30%;background:#059669;"></i></div></div>
-        <div class="bm-app-foot"><span>2 por vencer en 48 h</span><b>Tasa de cierre 41%</b></div>
+        <div class="bm-vr">
+          <span class="bm-filters bm-filters-in"><span class="on">{tx('Todas', 'All')}<em>14</em></span><span>{tx('Abiertas', 'Open')}<em>7</em></span><span>{tx('Por aprobar', 'Needs approval')}<em>1</em></span><span>{tx('Aprobadas', 'Approved')}<em>3</em></span><span>{tx('Pagadas', 'Paid')}<em>2</em></span></span>
+          <span class="bm-vt"><span>{tx('Lista', 'List')}</span><span class="on">{tx('Tablero', 'Board')}</span></span>
+        </div>
+        <div class="bm-bd-view">
+          <div class="bm-bd" data-bd>
+            {[
+              { k: 'draft', l: tx('Borrador', 'Draft'), c: '#64748b', n: 2, t: 159950, cards: [['COT-0153', 'Tlapalería La Esperanza', 38150], ['COT-0152', 'Grupo Ferrex', 121800]] },
+              { k: 'sent', l: tx('Enviada', 'Sent'), c: '#2563eb', n: 3, t: 950260, cards: [['COT-0151', 'Constructora GAMA', 412300], ['COT-0150', 'Aceros del Norte', 148920], ['COT-0147', 'Inmobiliaria Valle Real', 389040]] },
+              { k: 'viewed', l: tx('Vista', 'Viewed'), c: '#7c3aed', n: 2, t: 695870.8, cards: [['COT-0148', 'Distribuidora El Zarco', 196469.2, 'from'], ['COT-0146', 'Ferretería Central', 84310.8], ['COT-0144', 'Urbanizadora Sierra', 611560]] },
+              { k: 'approved', l: tx('Aprobada', 'Approved'), c: '#059669', n: 3, t: 597849.2, cards: [['COT-0148', 'Distribuidora El Zarco', 196469.2, 'to'], ['COT-0145', 'Grupo Ferrex', 268900], ['COT-0143', 'Constructora Apex', 132480]] },
+              { k: 'paid', l: tx('Pagada', 'Paid'), c: '#059669', n: 2, t: 519020, cards: [['COT-0142', 'Distribuidora El Zarco', 176238.4], ['COT-0141', 'Obras del Bajío', 342781.6]] },
+            ].map((col) => (
+              <div class={`bm-bd-col bm-bd-${col.k}`}>
+                <div class="bm-bd-h"><span class="dot" style={`background:${col.c}`}></span><span class="lb">{col.l}</span><span class="ct" data-n>{col.n}</span></div>
+                <div class="editorial bm-bd-t" data-t>{mx(col.t, 0)}</div>
+                <div class="bm-bd-cards">
+                  {col.cards.map(([f, cl, a, role]) => (
+                    <div class={`bm-bd-card${role === 'from' ? ' is-from' : ''}${role === 'to' ? ' is-to' : ''}`} data-role={role}>
+                      <div class="top"><span class="f">{f}</span><span class="editorial a">{mx(a as number, 0)}</span></div>
+                      <div class="cl"><span class="av">{(cl as string).charAt(0)}</span>{cl}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )}
@@ -617,52 +822,103 @@ const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&f
 
   {/* ────────────────── APROBACIONES ────────────────── */}
   {slug === 'aprobaciones' && index === 0 && (
-    <div class="bm-stage bm-appr-m0">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">Reglas de descuento</span>
-          <span class="bm-app-badge bm-badge-blue">Por rol</span>
+    <div class="bm-stage" data-bmx="ap0">
+      <div class="bm-app bm-w">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Aprobaciones', 'Approvals')}</strong></span>
         </div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a4">VJ</span><div class="bm-uid-tx"><b>Vendedor Junior</b><span>catálogo estándar</span></div></div><b class="bm-tg bm-tg-gray">Máx 5%</b></div>
-        <div class="bm-kv"><div class="bm-uid"><span class="bm-avat a2">VS</span><div class="bm-uid-tx"><b>Vendedor Senior</b><span>cuentas asignadas</span></div></div><b class="bm-tg bm-tg-blue">Máx 15%</b></div>
-        <div class="bm-kv bm-active" style="border-radius:0;"><div class="bm-uid"><span class="bm-avat a1">!</span><div class="bm-uid-tx"><b>Margen mínimo 25%</b><span>por debajo se bloquea</span></div></div><span class="bm-tg bm-tg-amber">Gerencia</span></div>
-        <div class="bm-app-foot"><span>Validación silenciosa en tiempo real</span><b>Auto-bloqueo</b></div>
+        <div class="bm-set-tabs"><span>{tx('Folio e IVA', 'Numbering & tax')}</span><span>{tx('Impuestos', 'Taxes')}</span><span>{tx('Documento PDF', 'PDF document')}</span><span class="on">{tx('Aprobaciones', 'Approvals')}</span><span>{tx('Plantillas', 'Templates')}</span></div>
+        <p class="bm-set-intro">{tx('Protege tus márgenes con topes que disparan aprobación de gerencia.', 'Protect your margins with thresholds that trigger management approval.')}</p>
+        <div class="bm-set">
+          <span class="bm-set-h">{tx('Umbrales de aprobación', 'Approval thresholds')}</span>
+          <div class="bm-set-row">
+            <span class="bm-set-f">
+              <span class="lb">{tx('Descuento máx. sin aprobación (%)', 'Max discount without approval (%)')}</span>
+              <span class="bm-field in" data-desc><span data-v>10</span><span class="bm-caret"></span></span>
+              <span class="hint">{tx('0 = sin tope. Por encima, "Enviar" pide aprobación de gerencia.', '0 = no limit. Above it, "Send" requires management approval.')}</span>
+            </span>
+            <span class="bm-set-f">
+              <span class="lb">{tx('Monto máx. sin aprobación (MXN)', 'Max amount without approval (MXN)')}</span>
+              <span class="bm-field in">250000</span>
+              <span class="hint">{tx('0 = sin tope.', '0 = no limit.')}</span>
+            </span>
+          </div>
+          <div class="bm-set-row">
+            <span class="bm-set-f">
+              <span class="lb">{tx('Margen bruto mínimo sin aprobación (%)', 'Minimum gross margin without approval (%)')}</span>
+              <span class="bm-field in">15</span>
+              <span class="hint">{tx('Si alguna línea baja de este margen, la cotización se bloquea hasta que gerencia apruebe.', 'If any line falls below this margin, the quote is blocked until management approves.')}</span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   )}
 
   {slug === 'aprobaciones' && index === 1 && (
-    <div class="bm-stage bm-appr-m1">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">COT-0294 · Aprobación</span>
-          <span class="bm-app-badge bm-badge-amber">Pendiente</span>
+    <div class="bm-stage" data-bmx="ap1">
+      <div class="bm-app bm-w">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span>{tx('Cotizaciones', 'Quotes')}</span><span class="bm-w-sep">/</span><strong>COT-0294</strong></span>
+          <span class="bm-sp bm-sp-draft" data-pill data-to={tx('Enviada', 'Sent')}>{tx('Borrador', 'Draft')}</span>
         </div>
-        <div class="bm-kv"><span>Vendedor</span><b>Laura G. · descuento 18%</b></div>
-        <div class="bm-kv"><span>Margen resultante</span><b class="bm-tg bm-tg-red">18% · bajo mínimo</b></div>
-        <div class="bm-kv"><span>Monto</span><b class="editorial">$240,000</b></div>
-        <div class="bm-cc" style="padding:8px 12px 0;"><div class="bm-cc-b bm-cc-ai" style="font-size:0.74rem;"><span class="bm-cc-tag">Laura</span>Cliente clave, ¿lo autorizas?</div></div>
-        <div style="display:flex;gap:8px;padding:8px 12px 14px;">
-          <div class="bm-btn2 bm-btn2-nav" style="flex:1;margin:0;">Aprobar</div>
-          <div class="bm-btn2 bm-btn2-ghost" style="margin:0;">Rechazar</div>
+        <div class="bm-ab-wrap" data-banner>
+          <div class="bm-ab">
+            <span class="bm-ab-info">
+              <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><polyline points="12 7 12 12 15.5 14"/></svg>{tx('Pendiente de aprobación', 'Pending approval')}</span>
+              <span class="m">{tx('descuento 22% supera el 10% permitido y margen bruto 7% está por debajo del mínimo de 15%', 'discount 22% exceeds the 10% allowed and gross margin 7% is below the 15% minimum')}</span>
+            </span>
+            <span class="bm-ab-act"><span class="ok" data-ok>{tx('Aprobar y enviar', 'Approve and send')}</span><span class="no">{tx('Rechazar', 'Reject')}</span></span>
+          </div>
+        </div>
+        <div class="bm-dt">
+          <div class="bm-stp" data-stp>
+            <span class="bm-stp-s cur" data-s3><span class="d"><span class="k" set:html={chk}></span><span class="n">1</span></span><span class="l">{tx('Borrador', 'Draft')}</span></span>
+            <span class="bm-stp-s" data-s4><span class="d"><span class="k" set:html={chk}></span><span class="n">2</span></span><span class="l">{tx('Enviada', 'Sent')}</span></span>
+            <span class="bm-stp-s"><span class="d"><span class="n">3</span></span><span class="l">{tx('Vista', 'Viewed')}</span></span>
+            <span class="bm-stp-s"><span class="d"><span class="n">4</span></span><span class="l">{tx('Aprobada', 'Approved')}</span></span>
+            <span class="bm-stp-s"><span class="d"><span class="n">5</span></span><span class="l">{tx('Pagada', 'Paid')}</span></span>
+          </div>
+          <div class="bm-dh">
+            <span class="bm-dh-av">C</span>
+            <span class="bm-dh-tx"><span class="bm-dh-n">Constructora GAMA <span class="bm-vb">V1</span></span><span class="bm-dh-m">Net 30 · {tx('Vigente hasta 23 oct 2026', 'Valid until Oct 23, 2026')}</span></span>
+            <span class="bm-dh-tot"><span>TOTAL</span><span class="editorial">{mx(241001.6)}</span></span>
+          </div>
+          <div class="bm-di-head bm-di4"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Precio', 'Price')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
+          <div class="bm-di-row bm-di4"><span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}</span><span>800</span><span class="bm-di-p"><s>{mx(191.48)}</s><span class="editorial">{mx(149)}</span></span><span class="editorial r">{mx(119200)}</span></div>
+          <div class="bm-di-row bm-di4"><span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}</span><span>300</span><span class="bm-di-p"><s>{mx(182)}</s><span class="editorial">{mx(176)}</span></span><span class="editorial r">{mx(52800)}</span></div>
+          <div class="bm-di-row bm-di4"><span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}</span><span>120</span><span class="bm-di-p"><s>{mx(312)}</s><span class="editorial">{mx(298)}</span></span><span class="editorial r">{mx(35760)}</span></div>
         </div>
       </div>
     </div>
   )}
 
   {slug === 'aprobaciones' && index === 2 && (
-    <div class="bm-stage bm-appr-m2">
-      <div class="bm-app">
-        <div class="bm-app-bar">
-          <span class="bm-app-title">COT-0294 · Bitácora</span>
-          <span class="bm-app-badge bm-badge-green">Aprobada</span>
+    <div class="bm-stage" data-bmx="ap2">
+      <div class="bm-app bm-w bm-x-main">
+        <div class="bm-w-bar">
+          <span class="bm-w-crumbs"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="bm-w-sep">/</span><strong>{tx('Auditoría', 'Audit log')}</strong></span>
         </div>
-        <div class="bm-steps">
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Solicitud enviada</b><span>Laura G. · 18% descuento · 10:15</span></div></div>
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Margen revisado</b><span>Auditor silencioso · 18% &lt; 25% · 10:22</span></div></div>
-          <div class="bm-step"><span class="bm-step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div class="bm-step-tx"><b>Aprobación liberada</b><span>Ana P. · Gerencia · 10:24</span></div></div>
+        <div class="bm-set-tabs"><span>{tx('Datos y privacidad', 'Data & privacy')}</span><span class="on">{tx('Auditoría', 'Audit log')}</span></div>
+        <p class="bm-set-intro">{tx('Registro inmutable de cada cambio: qué, cuándo e IP. Solo lectura — para tus auditores.', 'Immutable log of every change: what, when, and IP. Read-only — for your auditors.')}</p>
+        <div class="bm-au">
+          {[
+            ['cotizacion.aprobacion_aprobada', 'COT-0294', tx('hoy, 10:24', 'today, 10:24'), '201.141.28.77', 'new'],
+            ['cotizacion.aprobacion_solicitada', tx('COT-0294 — descuento 22% supera el 10% permitido y margen bruto 7% está por debajo del mínimo de 15%', 'COT-0294 — discount 22% exceeds the 10% allowed and gross margin 7% is below the 15% minimum'), tx('hoy, 10:15', 'today, 10:15'), '187.190.4.212', ''],
+            ['cotizacion.paid', tx('Pago en línea con Cord Payments', 'Online payment with Cord Payments'), tx('hoy, 09:58', 'today, 09:58'), '', ''],
+            ['org.actualizada', tx('Campos: aprob_descuento_max, aprob_margen_min', 'Fields: aprob_descuento_max, aprob_margen_min'), tx('hoy, 09:02', 'today, 09:02'), '201.141.28.77', ''],
+            ['cotizacion.aprobacion_rechazada', 'COT-0289', tx('ayer, 17:05', 'yesterday, 17:05'), '201.141.28.77', ''],
+            ['cotizacion.aprobacion_solicitada', tx(`COT-0289 — total ${mx(1240000, 0)} supera el tope de ${mx(250000, 0)}`, `COT-0289 — total ${mx(1240000, 0)} exceeds the ${mx(250000, 0)} cap`), tx('ayer, 16:52', 'yesterday, 16:52'), '189.203.12.40', ''],
+            ['cotizacion.enviada', 'COT-0288', tx('ayer, 13:20', 'yesterday, 13:20'), '189.203.12.40', ''],
+            ['cotizacion.creada', 'COT-0287', tx('ayer, 12:10', 'yesterday, 12:10'), '187.190.4.212', ''],
+          ].map(([a, d, w, ip, role]) => (
+            <div class="bm-au-r" data-new={role === 'new' ? '' : undefined}>
+              <span class="a">{a}</span>
+              <span class="d">{d}</span>
+              <span class="w">{w}{ip ? ` · ${ip}` : ''}</span>
+            </div>
+          ))}
         </div>
-        <div class="bm-app-foot"><span>Responsabilidad clara por descuento</span><b>Log inmutable</b></div>
       </div>
     </div>
   )}
@@ -845,27 +1101,15 @@ const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&f
 
   /* grid rows */
   .bm-g { display: grid; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; font-size: 0.75rem; color: #475569; }
-  .bm-g5 { grid-template-columns: 1.7fr 0.6fr 0.8fr 1fr 0.9fr; }
-  .bm-gcat { grid-template-columns: 1.7fr 0.9fr 0.8fr 0.9fr; }
   .bm-g3 { grid-template-columns: 1.9fr 0.6fr 1fr; }
   .bm-g-head { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #a3adba; padding-bottom: 4px; padding-top: 2px; }
   .bm-g:not(.bm-g-head) { border-bottom: 1px solid rgba(10,25,47,0.04); border-radius: 0; }
   .bm-g b { color: #0f172a; font-weight: 600; }
   .bm-r { text-align: right; justify-self: end; }
   .bm-mut { color: #94a3b8; }
-  .bm-strike { text-decoration: line-through; }
   .bm-active { background: rgba(37,99,235,0.05); border-radius: 8px; }
-  .bm-st { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
-  .bm-st-on { background: #10b981; }
-  .bm-st-off { background: #cbd5e1; }
   .bm-app-foot { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; font-size: 0.72rem; color: #94a3b8; }
   .bm-app-foot b { color: #0f172a; font-weight: 700; }
-  .bm-app-tot { margin: 8px 6px 2px; padding: 10px 10px 4px; border-top: 1px solid rgba(10,25,47,0.08); }
-  .bm-tot-r { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 0.78rem; color: #64748b; }
-  .bm-tot-r b { color: #0f172a; font-weight: 600; }
-  .bm-tot-final { margin-top: 4px; padding-top: 10px; border-top: 1px solid rgba(10,25,47,0.08); }
-  .bm-tot-final span { font-weight: 700; color: #0f172a; }
-  .bm-large { font-size: 1.05rem !important; }
 
   .bm-wf-ico { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: #059669; background: rgba(16,185,129,0.1); }
   .bm-wf-ico svg { width: 16px; height: 16px; }
@@ -911,14 +1155,7 @@ const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&f
   .bm-cc-ai { align-self: flex-start; background: #ffffff; color: #334155; border: 1px solid rgba(10,25,47,0.06); border-radius: 15px 15px 15px 4px; }
   .bm-cc-cl { align-self: flex-end; background: #0a192f; color: #fff; border-radius: 15px 15px 4px 15px; }
   .bm-cc-tag { display: block; font-size: 0.55rem; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; color: #2563eb; margin-bottom: 3px; }
-  .bm-sw { display: flex; gap: 8px; }
-  .bm-sw > i { width: 26px; height: 26px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.8), 0 2px 6px rgba(0,0,0,0.12); }
-  .bm-total-hero { text-align: center; padding: 16px; }
-  .bm-total-hero span { display: block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #a3adba; }
-  .bm-total-hero b { display: block; font-size: 1.9rem; color: #0f172a; letter-spacing: -0.03em; margin-top: 4px; }
-  .bm-total-hero em { display: block; font-style: normal; font-size: 0.68rem; color: #94a3b8; margin-top: 4px; }
   .bm-btn2 { text-align: center; font-size: 0.8rem; font-weight: 700; padding: 11px; border-radius: 10px; margin: 4px 12px; }
-  .bm-btn2-nav { background: #0a192f; color: #fff; }
   .bm-btn2-ghost { border: 1px solid rgba(10,25,47,0.12); color: #475569; }
   .bm-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 12px; }
   .bm-stat { background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); border-radius: 10px; padding: 10px 11px; }
@@ -956,7 +1193,6 @@ const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&f
   i { font-style: normal; color: rgba(255,255,255,0.5); font-size: 0.66rem; }
   .bm-green { color: #34d399; }
   .bm-orange { color: #f59e0b; }
-  .mk-green { color: #34d399; font-weight: 600; }
   .editorial { font-family: var(--font-mono, monospace); letter-spacing: -0.2px; }
 
   .bm-row {
@@ -967,10 +1203,8 @@ const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&f
   }
   .bm-row:last-child { margin-bottom: 0; }
   .bm-row span { color: rgba(255,255,255,0.65); }
-  .bm-row-target { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.12); }
   .bm-active { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); }
   .bm-total-row { padding: 9px 10px; }
-  .bm-large { font-size: 1.05rem; }
   .bm-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 8px 0; }
   .bm-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.4); margin-bottom: 10px; padding: 0 4px; }
   .bm-dim { opacity: 0.5; }
@@ -1011,15 +1245,7 @@ const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&f
   .bm-avatar-sm { width: 16px; height: 16px; border-radius: 4px; background: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 800; color: #fff; }
   .bm-icon-check { width: 18px; height: 18px; border-radius: 50%; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-style: normal; font-weight: 800; box-shadow: 0 2px 8px rgba(16,185,129,0.3); }
 
-  .bm-fake-cursor {
-    position: absolute; z-index: 50; top: 0; left: 0;
-    width: 22px; height: 22px; color: #fff; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5));
-    opacity: 0; pointer-events: none;
-  }
-
   /* ── Chip & Tag states ── */
-  .mk-chip { display: inline-block; background: rgba(16,185,129,0.18); color: #34d399; padding: 2px 6px; border-radius: 4px; font-size: 0.55rem; font-style: normal; font-weight: 700; margin-left: 4px; border: 1px solid rgba(52,211,153,0.2); }
-  .bm-chip-hide { opacity: 0; transform: scale(0.5); }
   .bm-stamp-hide { opacity: 0; }
   .bm-msg-hide { display: none; }
 
@@ -1137,10 +1363,7 @@ const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&f
   .bm-chart-col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
   .bm-chart-col-fill { width: 100%; background: rgba(255,255,255,0.08); border-radius: 4px 4px 0 0; height: 0%; transition: height 0.3s; }
   .bm-chart-active .bm-chart-col-fill { background: linear-gradient(180deg, #3b82f6, #2563eb); }
-  /* ── MÓVIL: la ventana del bento pierde columnas, no tamaño de letra ──
-     A 390px las cinco columnas dejaban los nombres en tres renglones y los
-     importes pegados. Se van las columnas que el copy no necesita (el precio
-     de lista, el SKU) y el resto respira. */
+  /* Móvil: la ventana del bento conserva su tamaño de letra */
   @media (max-width: 700px) {
     .bm-app { font-size: 0.8rem; }
     .bm-app-bar { padding: 11px 12px; gap: 8px; }
@@ -1149,14 +1372,8 @@ const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&f
     .bm-app-body { padding: 4px 4px 6px; }
     .bm-g { gap: 8px; padding: 9px 8px; font-size: 0.76rem; }
     .bm-g-head { font-size: 0.55rem; }
-    .bm-g5 { grid-template-columns: 1.5fr 0.5fr 1fr 0.95fr; }
-    .bm-g5 > *:nth-child(3) { display: none; }            /* precio de lista */
-    .bm-gcat { grid-template-columns: 1.6fr 0.85fr 0.85fr; }
-    .bm-gcat > *:nth-child(2) { display: none; }           /* SKU */
     .bm-app-search { margin: 9px 6px 2px; padding: 8px 10px; font-size: 0.76rem; }
     .bm-app-foot { padding: 11px 12px; gap: 10px; font-size: 0.7rem; }
-    .bm-app-tot { margin: 6px 4px 2px; padding: 9px 8px 4px; }
-    .bm-tot-r { font-size: 0.78rem; }
     .bm-kv { padding: 10px; font-size: 0.78rem; }
   }
 
@@ -1170,4 +1387,699 @@ const teamsLogo = 'https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&f
     .bm-float-bottom-right, .bm-float-bottom-left { transform: translate(5%, 35%); }
   }
 
+
+  /* ═══ Calcas de la app: editor, link público, seguimiento, aprobaciones ═══ */
+  .bm-wrap.bm-x { padding: 26px 26px 0 !important; align-items: flex-start !important; justify-content: center !important; min-height: 0 !important; --c-list: 54px; --c-amt: 72px; --c-price: 96px; }
+  .bm-wrap.bm-x[data-loc="en-US"] { --c-list: 66px; --c-amt: 86px; --c-price: 96px; }
+  .bm-x .bm-stage { width: 100% !important; max-width: none !important; transform: none !important; display: block; z-index: 2; }
+  .bm-x .editorial { font-family: var(--font-sans) !important; font-weight: 600 !important; letter-spacing: -0.02em !important; font-variant-numeric: tabular-nums; color: inherit !important; }
+  .bm-x strong { font-weight: 600; color: inherit; }
+  .bm-x em { font-style: normal; }
+  .bm-x .bm-w { position: relative; border-radius: 14px; border: 1px solid rgba(10,25,47,0.07); font-size: 0.74rem; line-height: 1.35; color: #0f1729; background: #ffffff; box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 16px 36px -16px rgba(10,25,47,0.16), 0 44px 84px -40px rgba(10,25,47,0.24); }
+
+  .bm-w-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 9px 14px; border-bottom: 1px solid rgba(10,25,47,0.07); background: #fcfdfe; }
+  .bm-w-crumbs { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 0.74rem; font-weight: 600; color: #5b6472; white-space: nowrap; overflow: hidden; }
+  .bm-w-crumbs strong { color: #0f1729; overflow: hidden; text-overflow: ellipsis; }
+  .bm-w-crumbs .bk { display: inline-flex; align-items: center; gap: 3px; }
+  .bm-w-crumbs .bk svg { width: 12px; height: 12px; }
+  .bm-w-sep { color: #c9ced6; }
+  .bm-w-h { font-size: 0.82rem; font-weight: 700; color: #0f1729; letter-spacing: -0.01em; }
+  .bm-w-draft { flex-shrink: 0; font-size: 0.66rem; font-weight: 600; color: #5b6472; background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); padding: 3px 8px; border-radius: 6px; }
+
+  .bm-sp { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.2px; padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
+  .bm-sp::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .bm-sp-draft { color: #64748b; background: rgba(100,116,139,0.1); }
+  .bm-sp-sent { color: #2563eb; background: rgba(37,99,235,0.09); }
+  .bm-sp-viewed { color: #7c3aed; background: rgba(124,58,237,0.09); }
+  .bm-sp-approved { color: #059669; background: rgba(16,185,129,0.1); }
+  .bm-sp-paid { color: #059669; background: rgba(16,185,129,0.14); }
+
+  .bm-field { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; background: #f5f5f7; border: 1.5px solid transparent; border-radius: 9px; padding: 6px 10px; font-size: 0.72rem; font-weight: 500; color: #0f1729; }
+  .bm-field svg { width: 13px; height: 13px; color: #99a2af; flex-shrink: 0; }
+  .bm-field > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bm-in { display: inline-flex; align-items: center; justify-self: start; background: #f5f5f7; border: 1.5px solid transparent; border-radius: 7px; padding: 4px 7px; font-size: 0.72rem; font-weight: 500; color: #0f1729; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bm-x .is-focus { background: #ffffff; border-color: #0a192f; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+  .bm-caret { display: none; width: 1.5px; height: 1.05em; margin-left: 1px; background: #0a192f; animation: bm-caret 1.05s step-end infinite; }
+  .is-focus > .bm-caret { display: inline-block; }
+  @keyframes bm-caret { 50% { opacity: 0; } }
+  .bm-chips { display: inline-flex; gap: 4px; flex-shrink: 0; }
+  .bm-chips > span { font-size: 0.66rem; font-weight: 600; color: #5b6472; background: #f5f5f7; border-radius: 999px; padding: 5px 11px; white-space: nowrap; }
+  .bm-chips > span.on { background: #0a192f; color: #ffffff; box-shadow: 0 2px 8px -2px rgba(10,25,47,0.3); }
+  .bm-tog { position: relative; flex-shrink: 0; width: 28px; height: 16px; border-radius: 100px; background: rgba(10,25,47,0.14); transition: background 0.3s; }
+  .bm-tog::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #ffffff; box-shadow: 0 1px 3px rgba(10,25,47,0.25); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1); }
+  .bm-tog.on { background: #0a192f; }
+  .bm-tog.on::after { transform: translateX(12px); }
+  .bm-sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 12px 14px 0; padding-bottom: 8px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-sec-h strong { font-size: 0.8rem; color: #0f1729; letter-spacing: -0.01em; }
+  .bm-sec-h span { font-size: 0.68rem; font-weight: 600; color: #5b6472; }
+  .bm-filters { display: flex; gap: 5px; padding: 10px 14px 4px; overflow: hidden; white-space: nowrap; }
+  .bm-filters > span { display: inline-flex; align-items: center; font-size: 0.66rem; font-weight: 600; color: #5b6472; background: #ffffff; border: 1px solid rgba(10,25,47,0.08); border-radius: 100px; padding: 4px 9px; }
+  .bm-filters em { display: inline-flex; align-items: center; justify-content: center; min-width: 15px; height: 15px; padding: 0 4px; margin-left: 5px; border-radius: 100px; font-size: 0.56rem; font-weight: 700; background: #fafbfc; color: #5b6472; }
+  .bm-filters > span.on { background: #0a192f; border-color: #0a192f; color: #ffffff; box-shadow: 0 4px 14px -6px rgba(10,25,47,0.45); }
+  .bm-filters > span.on em { background: rgba(255,255,255,0.22); color: #ffffff; }
+  .bm-btn-soft { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; font-size: 0.66rem; font-weight: 600; color: #0f1729; background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); border-radius: 9px; padding: 5px 9px; white-space: nowrap; }
+  .bm-btn-soft svg { width: 12px; height: 12px; }
+  .bm-btn-navy { flex-shrink: 0; font-size: 0.66rem; font-weight: 600; color: #ffffff; background: #0a192f; border-radius: 9px; padding: 6px 11px; white-space: nowrap; box-shadow: 0 4px 12px -6px rgba(10,25,47,0.5); }
+
+  /* editor · líneas */
+  .bm-ed-client { display: flex; align-items: center; gap: 8px; padding: 12px 14px 8px; }
+  .bm-ed-select { flex: 1; }
+  .bm-ed-lines { padding: 0 14px; }
+  .bm-ed-head, .bm-ed-row { display: grid; grid-template-columns: minmax(0,1fr) 44px var(--c-list) 60px var(--c-amt) 36px; gap: 8px; align-items: center; }
+  .bm-ed-head { font-size: 0.64rem; font-weight: 500; color: #5b6472; padding: 6px 0 7px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-ed-head .r, .bm-ed-amt { text-align: right; justify-self: end; }
+  .bm-ed-head .c { text-align: center; }
+  .bm-ed-row { padding: 8px 0; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .bm-ed-name { display: flex; flex-direction: column; min-width: 0; font-size: 0.73rem; font-weight: 500; color: #0f1729; line-height: 1.3; }
+  .bm-ed-name small { font-size: 0.6rem; font-weight: 500; color: #5b6472; }
+  .bm-ed-list { font-size: 0.68rem; color: #5b6472; text-decoration: line-through; white-space: nowrap; }
+  .bm-ed-nego.is-deal { color: #059669; font-weight: 600; }
+  .bm-ed-amt { font-size: 0.74rem; white-space: nowrap; }
+  .bm-mg { justify-self: center; font-size: 0.62rem; font-weight: 600; color: #059669; background: rgba(16,185,129,0.1); border-radius: 4px; padding: 2px 5px; }
+  .bm-mg.low { color: #dc2626; background: rgba(220,38,38,0.1); }
+  .bm-ed-add { display: flex; gap: 8px; padding: 12px 14px 16px; }
+  .bm-ed-search { flex: 1; justify-content: flex-start; color: #99a2af; }
+  .bm-ed-free { flex-shrink: 0; font-size: 0.68rem; font-weight: 600; color: #5b6472; background: #f5f5f7; border-radius: 9px; padding: 7px 11px; white-space: nowrap; }
+
+  /* editor · catálogo */
+  .bm-tabs { display: inline-flex; gap: 2px; padding: 2px; border-radius: 10px; background: rgba(10,25,47,0.065); }
+  .bm-tabs > span { font-size: 0.68rem; font-weight: 600; color: #5b6472; padding: 4px 10px; border-radius: 8px; }
+  .bm-tabs > span.on { color: #0f1729; background: #ffffff; box-shadow: 0 1px 2px rgba(10,25,47,0.13); }
+  .bm-cat-act { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+  .bm-cat-search { display: inline-flex; align-items: center; gap: 6px; width: 176px; min-width: 0; padding: 5px 9px; border-radius: 9px; background: #f5f5f7; border: 1.5px solid transparent; font-size: 0.7rem; white-space: nowrap; overflow: hidden; }
+  .bm-cat-search svg { width: 13px; height: 13px; color: #999999; flex-shrink: 0; }
+  .bm-cat-search.is-focus svg { color: #0a192f; }
+  .bm-cat-q { color: #0f1729; font-weight: 500; }
+  .bm-cat-q:empty { display: none; }
+  .bm-cat-ph { color: #b5b9c0; }
+  .bm-cat { padding: 0 14px 14px; }
+  .bm-cat-head, .bm-cat-row { display: grid; grid-template-columns: 60px minmax(0,1fr) 44px var(--c-price) 64px; gap: 10px; align-items: center; }
+  .bm-cat-head > span { white-space: nowrap; }
+  .bm-cat-head { font-size: 0.56rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #5b6472; padding: 10px 4px 7px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-cat-head .r, .bm-cat-price { text-align: right; }
+  .bm-cat-row { padding: 8px 4px; border-bottom: 1px solid rgba(10,25,47,0.07); overflow: hidden; }
+  .bm-cat-sku { font-size: 0.62rem; font-weight: 700; color: #5b6472; letter-spacing: 0.4px; }
+  .bm-cat-name { font-size: 0.73rem; font-weight: 600; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-cat-unit { font-size: 0.68rem; color: #5b6472; }
+  .bm-cat-price { font-size: 0.78rem; color: #0a192f; white-space: nowrap; }
+  .bm-cat-st { font-size: 0.62rem; font-weight: 700; white-space: nowrap; }
+  .bm-cat-st.on { color: #059669; }
+  .bm-cat-st.off { color: #99a2af; }
+
+  /* editor · resumen (capa sobre la ventana) */
+  .bm-step-h { display: flex; align-items: center; gap: 8px; padding: 12px 14px 4px; }
+  .bm-step-h .n { width: 20px; height: 20px; border-radius: 6px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.64rem; font-weight: 700; }
+  .bm-step-h .t { font-size: 0.78rem; font-weight: 600; color: #0f1729; }
+  .bm-ed-lines-b .bm-ed-head, .bm-ed-lines-b .bm-ed-row { grid-template-columns: minmax(0,1fr) 50px var(--c-list) 60px var(--c-amt); }
+  .bm-ed-notes { margin: 14px 14px 18px; }
+  .bm-ed-notes .h { display: block; font-size: 0.74rem; font-weight: 600; color: #0f1729; margin-bottom: 6px; }
+  .bm-ed-notes .h em { font-weight: 400; color: #5b6472; font-size: 0.66rem; }
+  .bm-ed-notes .bm-field { display: block; white-space: normal; line-height: 1.45; padding: 8px 10px 18px; color: #0f1729; }
+  .bm-sum { background: #ffffff; border-radius: 18px; border: 1px solid rgba(10,25,47,0.08); padding: 17px 17px 20px; display: flex; flex-direction: column; gap: 8px; color: #0f1729; font-size: 0.74rem; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -18px rgba(10,25,47,0.22), 0 70px 120px -50px rgba(10,25,47,0.28); }
+  .bm-sum-h { font-size: 0.86rem; font-weight: 700; letter-spacing: -0.02em; }
+  .bm-sum-count { font-size: 0.68rem; color: #5b6472; margin: -3px 0 3px; }
+  .bm-sum-l { display: flex; justify-content: space-between; gap: 10px; font-size: 0.74rem; color: #5b6472; }
+  .bm-sum-l .editorial { color: #0f1729 !important; font-size: 0.82rem; border-radius: 5px; padding: 0 4px; margin-right: -4px; }
+  .bm-sum-l.save, .bm-sum-l.save .editorial { color: #059669 !important; }
+  .bm-sum-l.tax { font-size: 0.7rem; padding-left: 8px; }
+  .bm-sum-l.tax .editorial { font-size: 0.76rem; }
+  .bm-sum-tg { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.72rem; color: #0f1729; margin-top: 3px; }
+  .bm-sum-div { height: 1px; background: rgba(10,25,47,0.08); margin: 4px 0; }
+  .bm-sum-l.total { font-weight: 700; color: #0f1729; align-items: baseline; }
+  .bm-sum-l.total .editorial { font-size: 1.36rem; letter-spacing: -0.03em !important; }
+  .bm-sum-f { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; }
+  .bm-sum-f .lb { font-size: 0.64rem; font-weight: 500; color: #5b6472; }
+  .bm-sum-f .bm-field { padding: 7px 10px; }
+  .bm-sum-send { margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 0.76rem; font-weight: 600; color: #ffffff; background: #0a192f; border-radius: 999px; padding: 10px 16px; box-shadow: 0 4px 14px -4px rgba(10,25,47,0.4); }
+  .bm-sum-send svg { width: 14px; height: 14px; }
+  .bm-flash { animation: bm-flash 0.9s ease; }
+  @keyframes bm-flash { 0% { background: rgba(16,185,129,0.16); } 100% { background: transparent; } }
+
+  /* composición de tarjeta ancha */
+  .bm-wrap.bm-x-full { padding: 0 !important; }
+  .bm-x-full .bm-stage { position: absolute !important; inset: 0; }
+  .bm-x-full [data-bmx="ed2"] .bm-ed2-back { position: absolute; left: 30px; top: 40px; width: 440px; }
+  .bm-x-full [data-bmx="ed2"] .bm-sum { position: absolute; right: 30px; top: 22px; width: 276px; z-index: 3; }
+  .bm-x-full .bm-x-main { position: absolute; left: 34px; top: 36px; right: -40px; width: auto; }
+  .bm-x-full [data-bmx="lp2"] .bm-x-main { right: 110px; }
+  .bm-x-full [data-bmx="ap2"] .bm-x-main { right: 34px; }
+
+  /* link público · teléfono */
+  .bm-x .bm-x-free.bm-app { background: none !important; border: 0 !important; box-shadow: none !important; overflow: visible !important; border-radius: 0 !important; display: flex; justify-content: center; }
+  .bm-phone { position: relative; width: 262px; padding: 9px; border-radius: 48px; background: #1b1d21; box-shadow: inset 0 0 0 1.5px #3b3e44, inset 0 0 0 3px #111214, 0 2px 4px rgba(10,25,47,0.12), 0 30px 60px -22px rgba(10,25,47,0.38), 0 70px 110px -50px rgba(10,25,47,0.34); }
+  .bm-phone::before { content: ''; position: absolute; right: -2px; top: 118px; width: 3px; height: 62px; border-radius: 0 3px 3px 0; background: #2a2d32; }
+  .bm-phone::after { content: ''; position: absolute; left: -2px; top: 96px; width: 3px; height: 34px; border-radius: 3px 0 0 3px; background: #2a2d32; box-shadow: 0 46px 0 #2a2d32; }
+  .bm-phone-scr { position: relative; min-height: 480px; border-radius: 39px; overflow: hidden; background: #f3f2ef; }
+  .bm-ios { position: relative; display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 4px 22px 0 26px; color: #0f1729; }
+  .bm-ios .t { font-size: 0.7rem; font-weight: 700; letter-spacing: -0.01em; }
+  .bm-ios .isl { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 78px; height: 22px; border-radius: 100px; background: #000000; }
+  .bm-ios .ic { display: inline-flex; align-items: center; gap: 4px; }
+  .bm-ios .ic svg { height: 10px; width: auto; }
+  .bm-qp { padding: 2px 8px 24px; }
+  .bm-qc { position: relative; display: flex; flex-direction: column; gap: 12px; background: #ffffff; border-radius: 20px; padding: 15px 14px 16px; box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 4px 6px rgba(10,25,47,0.03), 0 20px 60px -20px rgba(10,25,47,0.12); }
+  .bm-qc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .bm-qc-brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .bm-qc-mark { width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; background: #b45309; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; }
+  .bm-qc-bt .n { display: block; font-size: 0.7rem; font-weight: 700; color: #111111; letter-spacing: -0.2px; white-space: nowrap; }
+  .bm-qc-bt .r { display: block; font-size: 0.5rem; font-weight: 500; color: #9ca3af; }
+  .bm-qc-folio { text-align: right; flex-shrink: 0; }
+  .bm-qc-folio .e { display: block; font-size: 0.4rem; font-weight: 800; letter-spacing: 1.6px; color: #c9cdd3; }
+  .bm-qc-folio .f { display: block; font-size: 0.64rem; font-weight: 800; color: #111111; }
+  .bm-qc-rule { height: 1px; margin: -3px 0; background: linear-gradient(to right, transparent, rgba(10,25,47,0.08) 15%, rgba(10,25,47,0.08) 85%, transparent); }
+  .bm-qc-sign { display: flex; flex-direction: column; gap: 9px; }
+  .bm-qc-sh { display: flex; align-items: center; gap: 7px; font-size: 0.72rem; font-weight: 700; color: #111111; }
+  .bm-qc-sh .bk { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(10,25,47,0.1); display: inline-flex; align-items: center; justify-content: center; color: #9ca3af; }
+  .bm-qc-sh .bk svg { width: 11px; height: 11px; }
+  .bm-qc-pill { background: #fafafa; border: 1px solid rgba(10,25,47,0.055); border-radius: 10px; padding: 8px 10px; font-size: 0.6rem; line-height: 1.5; color: #6b7280; }
+  .bm-qc-pill strong { color: #111111; font-weight: 700; }
+  .bm-qc-pill strong.acc { color: #b45309; }
+  .bm-qc-f { display: flex; flex-direction: column; gap: 4px; }
+  .bm-qc-f .lb { font-size: 0.56rem; font-weight: 600; color: #6b7280; }
+  .bm-qc-f .in { display: flex; align-items: center; min-height: 30px; padding: 6px 9px; font-size: 0.7rem; color: #111111; background: #ffffff; border: 1.5px solid rgba(10,25,47,0.35); border-radius: 9px; box-shadow: 0 0 0 3px rgba(10,25,47,0.05); }
+  .bm-qc-f .in .bm-caret { display: inline-block; }
+  .bm-qc-f .in .ph { display: none; color: #b0b5bd; }
+  .bm-qc-f .in.is-empty .ph { display: inline; }
+  .bm-qc-ck { display: flex; gap: 7px; align-items: flex-start; font-size: 0.56rem; line-height: 1.45; color: #6b7280; }
+  .bm-qc-ck .bx { flex-shrink: 0; width: 13px; height: 13px; margin-top: 1px; border-radius: 4px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; }
+  .bm-qc-ck .bx svg { width: 9px; height: 9px; }
+  .bm-qc-ck .bx.off { background: #ffffff; color: transparent; box-shadow: inset 0 0 0 1.5px rgba(10,25,47,0.25); }
+  .bm-qc-cta { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.74rem; font-weight: 600; color: #ffffff; background: #b45309; border-radius: 11px; padding: 10px 12px; box-shadow: 0 10px 22px -10px rgba(180,83,9,0.55); transition: opacity 0.3s, box-shadow 0.3s; }
+  .bm-qc-cta svg { width: 12px; height: 12px; }
+  .bm-qc-cta.is-off { opacity: 0.45; box-shadow: none; }
+  .bm-qc-done { position: absolute; left: 0; right: 0; top: 60px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; padding: 26px 16px 18px; text-align: center; background: #ffffff; border-radius: 0 0 20px 20px; opacity: 0; visibility: hidden; }
+  .bm-qc-done .ring { width: 46px; height: 46px; color: #b45309; }
+  .bm-qc-done .ring svg { width: 100%; height: 100%; }
+  .bm-qc-done .tt { font-size: 0.84rem; font-weight: 700; color: #111111; }
+  .bm-qc-done .st { font-size: 0.58rem; line-height: 1.5; color: #6b7280; }
+
+  /* link público · portal */
+  .bm-set-tabs { display: flex; margin: 10px 14px 0; }
+  .bm-set-tabs, .bm-tabs { width: max-content; max-width: calc(100% - 28px); overflow: hidden; }
+  .bm-set-tabs { gap: 2px; padding: 2px; border-radius: 10px; background: rgba(10,25,47,0.065); }
+  .bm-set-tabs > span { font-size: 0.66rem; font-weight: 600; color: #5b6472; padding: 4px 9px; border-radius: 8px; white-space: nowrap; }
+  .bm-set-tabs > span.on { color: #0f1729; background: #ffffff; box-shadow: 0 1px 2px rgba(10,25,47,0.13); }
+  .bm-pt { --acc: #b45309; display: grid; grid-template-columns: minmax(0,1fr) 250px; gap: 18px; padding: 4px 14px 18px; }
+  .bm-pt-form { display: flex; flex-direction: column; min-width: 0; }
+  .bm-pt-b { display: flex; flex-direction: column; gap: 5px; padding: 12px 0; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .bm-pt-b:last-child { border-bottom: 0; }
+  .bm-pt-b .h { font-size: 0.74rem; font-weight: 600; color: #0f1729; margin-bottom: 2px; }
+  .bm-pt-b .lb { font-size: 0.64rem; font-weight: 500; color: #5b6472; }
+  .bm-pt-b .hint { font-size: 0.6rem; color: #99a2af; line-height: 1.4; }
+  .bm-pt-color { display: flex; align-items: center; gap: 7px; }
+  .bm-pt-color .sw { width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; background: var(--acc); box-shadow: inset 0 0 0 1px rgba(10,25,47,0.12); }
+  .bm-pt-color .hex { width: 96px; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+  .bm-pt-tg { display: flex; align-items: center; gap: 8px; font-size: 0.66rem; color: #0f1729; padding: 3px 0; }
+  .bm-pt-pane { display: flex; flex-direction: column; gap: 7px; padding-top: 12px; }
+  .bm-pt-ph { font-size: 0.54rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; color: #99a2af; }
+  .bm-pt-frame { background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); border-radius: 14px; padding: 10px; }
+  .bm-pt-banner { background: var(--acc); color: #ffffff; font-size: 0.58rem; font-weight: 600; text-align: center; line-height: 1.4; padding: 6px 8px; border-radius: 8px; margin-bottom: 8px; }
+  .bm-pt-card { background: #ffffff; border: 1px solid rgba(10,25,47,0.08); border-radius: 11px; padding: 11px; box-shadow: 0 14px 40px -28px rgba(10,25,47,0.4); }
+  .bm-pt-top { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+  .bm-pt-top strong { display: block; font-size: 0.68rem; font-weight: 700; line-height: 1.15; }
+  .bm-pt-top em { display: block; font-size: 0.56rem; color: #99a2af; }
+  .bm-pt-mark { width: 26px; height: 26px; flex-shrink: 0; border-radius: 7px; background: var(--acc); color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; }
+  .bm-pt-r { display: flex; justify-content: space-between; gap: 10px; font-size: 0.6rem; color: #0f1729; margin-bottom: 4px; }
+  .bm-pt-tot { display: flex; justify-content: space-between; align-items: baseline; margin: 7px 0 9px; padding-top: 6px; border-top: 1.5px solid var(--acc); font-size: 0.6rem; color: #5b6472; }
+  .bm-pt-tot .editorial { font-size: 0.84rem; color: var(--acc) !important; }
+  .bm-pt-cta { display: block; text-align: center; font-size: 0.64rem; font-weight: 600; color: #ffffff; background: var(--acc); border-radius: 8px; padding: 7px; }
+  .bm-pt-chat { display: block; margin-top: 7px; font-size: 0.58rem; color: #99a2af; background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); border-radius: 7px; padding: 6px 8px; }
+  .bm-pt-pw { text-align: center; font-size: 0.56rem; color: #99a2af; margin-top: 8px; overflow: hidden; }
+  .bm-pt-pw strong { color: #5b6472; }
+  .bm-pt-pw[hidden] { display: none; }
+
+  /* detalle de cotización */
+  .bm-dt { padding: 12px 16px 16px; }
+  .bm-stp { display: flex; align-items: center; margin-bottom: 14px; }
+  .bm-stp-pad { margin: 12px 14px 4px; }
+  .bm-stp-s { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+  .bm-stp-s:last-child { flex: none; }
+  .bm-stp-s:not(:last-child)::after { content: ''; flex: 1; height: 2px; margin: 0 7px; border-radius: 2px; background: rgba(10,25,47,0.08); }
+  .bm-stp-s.done:not(:last-child)::after { background: #10b981; }
+  .bm-stp-s .d { position: relative; width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800; color: #5b6472; background: #fafbfc; border: 1.5px solid rgba(10,25,47,0.1); }
+  .bm-stp-s .d svg { width: 10px; height: 10px; }
+  .bm-stp-s .d .k { display: none; }
+  .bm-stp-s.done .d { background: #10b981; border-color: #10b981; color: #ffffff; }
+  .bm-stp-s.done .d .k { display: inline-flex; }
+  .bm-stp-s.done .d .n { display: none; }
+  .bm-stp-s.cur .d { background: #0a192f; border-color: #0a192f; color: #ffffff; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+  .bm-stp-s .l { font-size: 0.64rem; font-weight: 600; color: #5b6472; white-space: nowrap; }
+  .bm-stp-s.done .l, .bm-stp-s.cur .l { color: #0f1729; }
+  .bm-dh { display: flex; align-items: center; gap: 11px; padding: 12px 0 13px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-dh-lg { margin: 0 14px; padding-top: 14px; }
+  .bm-dh-av { width: 34px; height: 34px; flex-shrink: 0; border-radius: 10px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 800; }
+  .bm-dh-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+  .bm-dh-n { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 7px; font-size: 0.86rem; font-weight: 700; letter-spacing: -0.2px; color: #0f1729; }
+  .bm-dh-m { font-size: 0.64rem; color: #5b6472; }
+  .bm-dh-tot { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+  .bm-dh-tot > span:first-child { font-size: 0.5rem; font-weight: 800; letter-spacing: 1.4px; color: #99a2af; }
+  .bm-dh-tot .editorial { font-size: 1.12rem; color: #0a192f !important; line-height: 1.15; }
+  .bm-vb { font-size: 0.56rem; font-weight: 700; color: #5b6472; background: rgba(10,25,47,0.06); border-radius: 5px; padding: 1px 5px; }
+  .bm-lv { display: inline-flex; align-items: center; gap: 5px; font-size: 0.58rem; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 20px; padding: 3px 8px; letter-spacing: 0; }
+  .bm-lv .dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: bm-live 1.8s infinite; }
+  .bm-lv .sec { font-weight: 500; opacity: 0.85; }
+  @keyframes bm-live { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+  .bm-tl { position: relative; display: flex; flex-direction: column; gap: 11px; padding: 12px 0 4px; }
+  .bm-tl::before { content: ''; position: absolute; left: 3.5px; top: 18px; bottom: 10px; width: 1px; background: rgba(10,25,47,0.08); }
+  .bm-tl-i { position: relative; display: flex; gap: 11px; }
+  .bm-tl-d { width: 8px; height: 8px; flex-shrink: 0; margin-top: 3px; border-radius: 50%; box-shadow: 0 0 0 3px #ffffff; z-index: 1; }
+  .bm-tl-b { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .bm-tl-b .t { font-size: 0.72rem; font-weight: 500; color: #0f1729; }
+  .bm-tl-b .w { font-size: 0.6rem; color: #5b6472; }
+  .bm-notif { position: absolute; right: 26px; top: 54%; z-index: 4; display: flex; gap: 10px; width: 292px; padding: 11px 13px; border-radius: 16px; background: rgba(252,252,253,0.94); border: 1px solid rgba(10,25,47,0.08); -webkit-backdrop-filter: blur(18px) saturate(1.6); backdrop-filter: blur(18px) saturate(1.6); box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 22px 44px -16px rgba(10,25,47,0.3); }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .bm-notif { background: #fcfcfd; } }
+  .bm-notif img { width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; }
+  .bm-notif-b { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .bm-notif-h { display: flex; justify-content: space-between; gap: 8px; font-size: 0.6rem; color: #5b6472; }
+  .bm-notif-h strong { color: #0f1729; font-weight: 700; }
+  .bm-notif-s { font-size: 0.68rem; font-weight: 600; color: #0f1729; line-height: 1.3; }
+  .bm-notif-t { font-size: 0.64rem; color: #5b6472; line-height: 1.35; }
+
+  /* seguimiento · atención */
+  .bm-at { padding: 0 0 16px; }
+  .bm-at .bm-sec-h { margin-top: 14px; }
+  .bm-at-sum { display: flex; align-items: center; gap: 5px; margin: 11px 14px 0; font-size: 0.78rem; font-weight: 600; color: #0f1729; }
+  .bm-at-sum .sep { color: rgba(10,25,47,0.2); }
+  .bm-at-dt { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 5px 14px 0; font-size: 0.62rem; color: #5b6472; }
+  .bm-at-dt strong { color: #5b6472; }
+  .bm-at-bars { display: flex; flex-direction: column; gap: 7px; margin: 12px 14px 0; }
+  .bm-at-r { display: grid; grid-template-columns: minmax(84px, 0.9fr) 1fr auto; align-items: center; gap: 9px; }
+  .bm-at-r .lb { font-size: 0.66rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-at-r .tr { height: 6px; border-radius: 100px; background: rgba(10,25,47,0.07); overflow: hidden; }
+  .bm-at-r .fl { display: block; height: 100%; border-radius: 100px; background: #0a192f; }
+  .bm-at-r .v { min-width: 44px; text-align: right; font-size: 0.64rem; color: #0f1729; white-space: nowrap; }
+  .bm-at-n { margin: 10px 14px 0; font-size: 0.64rem; color: #5b6472; }
+  .bm-at-n.tot { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(10,25,47,0.08); }
+
+  /* seguimiento · historia */
+  .bm-tr1 { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); gap: 22px; padding: 2px 14px 16px; }
+  .bm-tr1-side .bm-sec-h { margin: 12px 0 0; }
+  .bm-di-head, .bm-di-row { display: grid; grid-template-columns: minmax(0,1fr) 44px var(--c-amt); gap: 8px; align-items: center; }
+  .bm-di-head { font-size: 0.6rem; font-weight: 600; color: #5b6472; padding: 12px 2px 6px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-di-row { padding: 8px 2px; border-bottom: 1px solid rgba(10,25,47,0.06); font-size: 0.7rem; color: #0f1729; }
+  .bm-di-row > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .bm-di-row > span:nth-child(2) { color: #5b6472; }
+  .bm-di-head .r, .bm-di-row .r { text-align: right; white-space: nowrap; }
+  .bm-di-tot { display: flex; justify-content: space-between; padding: 10px 2px 0; font-size: 0.74rem; font-weight: 700; color: #0f1729; }
+  .bm-di4.bm-di-head, .bm-di4.bm-di-row { grid-template-columns: minmax(0,1fr) 38px var(--c-list) var(--c-amt); }
+  .bm-di-p { display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
+  .bm-di-p s { font-size: 0.58rem; color: #b8bdc6; }
+  .bm-di-p .editorial { font-size: 0.7rem; }
+
+  /* seguimiento · tablero */
+  .bm-cs { display: flex; gap: 26px; margin: 14px 16px 0; padding-bottom: 12px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-cs-i { display: flex; flex-direction: column; gap: 3px; }
+  .bm-cs-i .v { font-size: 1.2rem; line-height: 1; color: #0a192f !important; }
+  .bm-cs-i.warn .v { color: #d97706 !important; }
+  .bm-cs-i .l { font-size: 0.62rem; color: #5b6472; }
+  .bm-vr { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px 0; }
+  .bm-filters-in { padding: 0; }
+  .bm-vt { flex-shrink: 0; display: inline-flex; gap: 2px; padding: 2px; border-radius: 100px; background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); }
+  .bm-vt > span { font-size: 0.62rem; font-weight: 600; color: #5b6472; padding: 3px 9px; border-radius: 100px; }
+  .bm-vt > span.on { background: #0a192f; color: #ffffff; }
+  .bm-bd-view { overflow: hidden; padding: 14px 16px 20px; }
+  .bm-bd { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 152px; gap: 10px; align-items: start; }
+  .bm-bd-col { padding: 0 6px; border-left: 1px solid rgba(10,25,47,0.08); min-height: 150px; }
+  .bm-bd-col:first-child { border-left: 0; padding-left: 0; }
+  .bm-bd-h { display: flex; align-items: center; gap: 6px; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #0f1729; }
+  .bm-bd-h .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .bm-bd-h .ct { margin-left: auto; font-size: 0.58rem; color: #5b6472; }
+  .bm-bd-t { font-size: 0.84rem; color: #0a192f !important; margin: 3px 0 8px; }
+  .bm-bd-card { padding: 7px 6px; border-radius: 8px; background: #ffffff; }
+  .bm-bd-card + .bm-bd-card { border-top: 1px solid rgba(10,25,47,0.08); }
+  .bm-bd-card.is-from:not(.is-live) { display: none; }
+  .bm-bd-card.is-from:not(.is-live) + .bm-bd-card { border-top: 0; }
+  .bm-bd-card .top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+  .bm-bd-card .f { font-size: 0.64rem; font-weight: 700; color: #0f1729; }
+  .bm-bd-card .a { font-size: 0.68rem; color: #0a192f !important; white-space: nowrap; }
+  .bm-bd-card .cl { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 0.6rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-bd-card .av { width: 15px; height: 15px; flex-shrink: 0; border-radius: 4px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.42rem; font-weight: 800; }
+  .bm-bd-ghost { position: absolute; z-index: 5; pointer-events: none; box-shadow: 0 1px 2px rgba(10,25,47,0.06), 0 16px 32px -12px rgba(10,25,47,0.3); }
+
+  /* aprobaciones */
+  .bm-set-intro { margin: 12px 14px 0; font-size: 0.7rem; line-height: 1.45; color: #5b6472; }
+  .bm-set { padding: 4px 14px 18px; }
+  .bm-set-h { display: block; font-size: 0.78rem; font-weight: 600; color: #0f1729; padding: 12px 0 10px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .bm-set-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding-top: 12px; }
+  .bm-set-f { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .bm-set-f .lb { font-size: 0.66rem; font-weight: 600; color: #0f1729; }
+  .bm-set-f .in { justify-content: flex-start; padding: 7px 10px; font-size: 0.74rem; font-variant-numeric: tabular-nums; }
+  .bm-set-f .hint { font-size: 0.58rem; line-height: 1.4; color: #99a2af; }
+  .bm-ab-wrap { overflow: hidden; }
+  .bm-ab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 16px 0; padding: 10px 12px; border-radius: 11px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); }
+  .bm-ab-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .bm-ab-info .t { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 700; color: #92600a; }
+  .bm-ab-info .t svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .bm-ab-info .m { font-size: 0.62rem; line-height: 1.4; color: #5b6472; }
+  .bm-ab-act { display: flex; gap: 6px; flex-shrink: 0; }
+  .bm-ab-act .ok { font-size: 0.66rem; font-weight: 700; color: #ffffff; background: #10b981; border-radius: 8px; padding: 7px 11px; white-space: nowrap; }
+  .bm-ab-act .no { font-size: 0.66rem; font-weight: 600; color: #ef4444; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; padding: 6px 10px; white-space: nowrap; }
+  .bm-au { padding: 6px 16px 18px; }
+  .bm-au-r { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .bm-au-r .a { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.6rem; font-weight: 700; color: #0a192f; white-space: nowrap; }
+  .bm-au-r .d { font-size: 0.7rem; color: #0f1729; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bm-au-r .w { font-size: 0.58rem; color: #5b6472; white-space: nowrap; }
+
+  @media (max-width: 1180px) {
+    .bm-x-full [data-bmx="ed2"] .bm-ed2-back { width: 400px; left: 22px; }
+    .bm-x-full [data-bmx="ed2"] .bm-sum { width: 256px; right: 22px; }
+    .bm-x-full [data-bmx="lp2"] .bm-x-main { right: 60px; }
+  }
+  @media (max-width: 960px) {
+    .bm-wrap.bm-x-full { padding: 24px 24px 0 !important; }
+    .bm-x-full .bm-stage { position: relative !important; inset: auto; }
+    .bm-x-full .bm-x-main, .bm-x-full [data-bmx="lp2"] .bm-x-main { position: relative; left: auto; top: auto; right: auto; }
+    .bm-x-full [data-bmx="ed2"] .bm-ed2-back { display: none; }
+    .bm-x-full [data-bmx="ed2"] .bm-sum { position: relative; right: auto; top: auto; width: 100%; max-width: 340px; margin: 0 auto; }
+    [data-bmx="lp2"] { display: flex; flex-direction: column-reverse; }
+    .bm-notif { position: relative; right: auto; top: auto; width: min(320px, calc(100% - 20px)); margin: 0 auto -14px; }
+  }
+  @media (max-width: 700px) {
+    .bm-wrap.bm-x { padding: 24px 24px 0 !important; }
+    .bm-x .bm-w { font-size: 0.74rem; }
+    .bm-ed-client { flex-direction: column; align-items: stretch; }
+    .bm-ed-select { flex: none; }
+    .bm-ed-head { display: none; }
+    .bm-ed-row { grid-template-columns: minmax(0,1fr) auto auto; grid-template-areas: "name name name" "q nego nego" "list mg amt"; gap: 7px 10px; padding: 10px 0; }
+    .bm-ed-row > .bm-ed-name { grid-area: name; }
+    .bm-ed-row > .bm-ed-q { grid-area: q; }
+    .bm-ed-row > .bm-ed-nego { grid-area: nego; justify-self: stretch; }
+    .bm-ed-row > .bm-ed-list { grid-area: list; }
+    .bm-ed-row > .bm-mg { grid-area: mg; justify-self: start; }
+    .bm-ed-row > .bm-ed-amt { grid-area: amt; }
+    .bm-ed-add { flex-direction: column; }
+    .bm-cat-act .bm-btn-soft, .bm-cat-act .bm-btn-navy { display: none; }
+    .bm-cat-search { width: 150px; }
+    .bm-cat-head { display: none; }
+    .bm-cat-row { grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "name name" "sku price" "unit st"; gap: 5px 10px; padding: 10px 0; }
+    .bm-cat-name { grid-area: name; }
+    .bm-cat-sku { grid-area: sku; }
+    .bm-cat-price { grid-area: price; }
+    .bm-cat-unit { grid-area: unit; }
+    .bm-cat-st { grid-area: st; justify-self: end; }
+    .bm-cat-sku::before, .bm-cat-unit::before { content: attr(data-m) " · "; font-weight: 600; font-size: 0.58rem; color: #5b6472; letter-spacing: 0; }
+    .bm-pt { grid-template-columns: 1fr; gap: 8px; }
+    .bm-pt-msg, .bm-pt-int { display: none; }
+    .bm-stp-s .l { display: none; }
+    .bm-dh { flex-wrap: wrap; }
+    .bm-dh-tot { align-items: flex-start; width: 100%; padding-left: 45px; }
+    .bm-tr1 { grid-template-columns: 1fr; }
+    .bm-tr1-main { display: none; }
+    .bm-cs { gap: 16px; flex-wrap: wrap; }
+    .bm-cs-i .v { font-size: 1.02rem; }
+    .bm-vr .bm-filters { display: none; }
+    .bm-bd { grid-auto-columns: 132px; gap: 8px; transform: translateX(-280px); }
+    .bm-set-row { grid-template-columns: 1fr; gap: 10px; }
+    .bm-ab { flex-direction: column; align-items: stretch; }
+    .bm-ab-act > span { flex: 1; text-align: center; padding-top: 9px; padding-bottom: 9px; }
+    .bm-au-r { grid-template-columns: 1fr; gap: 2px; }
+    [data-bmx="ap0"] .bm-set-tabs > span:nth-child(-n+2) { display: none; }
+    .bm-bd-card .f { white-space: nowrap; }
+    .bm-bd-card .a { font-size: 0.62rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bm-caret, .bm-lv .dot { animation: none; }
+  }
 </style>
+
+<script>
+  import { gsap } from 'gsap';
+
+  type Build = (root: HTMLElement, loc: string) => gsap.core.Timeline;
+  const $ = <T extends HTMLElement = HTMLElement>(r: ParentNode, s: string) => r.querySelector<T>(s)!;
+  const money = (loc: string, n: number, d = 2) => new Intl.NumberFormat(loc, { style: 'currency', currency: 'MXN', minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+  const num = (loc: string, n: number) => new Intl.NumberFormat(loc).format(n);
+  const dwell = (s: number) => (s < 60 ? `${s}s` : `${Math.floor(s / 60)}m${s % 60 ? ` ${s % 60}s` : ''}`);
+
+  const typeText = (tl: gsap.core.Timeline, el: HTMLElement, text: string, at: number, step = 0.1) => {
+    for (let i = 1; i <= text.length; i++) tl.call(() => { el.textContent = text.slice(0, i); }, [], at + (i - 1) * step);
+    return at + text.length * step;
+  };
+  const collapse = (els: Element[] | Element) => gsap.to(els, { height: 0, paddingTop: 0, paddingBottom: 0, marginTop: 0, borderBottomWidth: 0, opacity: 0, overflow: 'hidden', duration: 0.42, ease: 'power2.inOut', stagger: 0.02 });
+  const expand = (els: Element[] | Element) => {
+    gsap.set(els, { clearProps: 'all' });
+    gsap.from(els, { height: 0, paddingTop: 0, paddingBottom: 0, marginTop: 0, opacity: 0, overflow: 'hidden', duration: 0.5, ease: 'power2.out', stagger: 0.02, clearProps: 'all' });
+  };
+  const countTo = (tl: gsap.core.Timeline, el: HTMLElement, from: number, to: number, at: number, f: (n: number) => string, dur = 0.8) => {
+    const o = { n: from };
+    tl.fromTo(o, { n: from }, { n: to, duration: dur, ease: 'power2.out', onUpdate: () => { el.textContent = f(o.n); } }, at);
+  };
+  const swapPill = (el: HTMLElement, cls: string, text: string) => {
+    el.className = el.className.replace(/bm-sp-\w+/, cls);
+    el.textContent = text;
+  };
+
+  const BUILD: Record<string, Build> = {
+    ed0(root, loc) {
+      const nego = $(root, '[data-nego]'), v = $(nego, '[data-v]'), amt = $(root, '[data-amt]'), mg = $(root, '[data-mg]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to([v, amt, mg], { opacity: 0, duration: 0.25 }, 1.4)
+        .call(() => { nego.classList.remove('is-focus', 'is-deal'); v.textContent = '191.48'; amt.textContent = money(loc, 65103.2); mg.textContent = '28%'; }, [], 1.66)
+        .to([v, amt, mg], { opacity: 1, duration: 0.25 }, 1.7)
+        .call(() => nego.classList.add('is-focus'), [], 2.5)
+        .call(() => { v.textContent = ''; }, [], 3);
+      const end = typeText(tl, v, '168.50', 3.15, 0.12);
+      tl.call(() => nego.classList.add('is-deal'), [], end);
+      countTo(tl, amt, 65103.2, 57290, end + 0.05, (n) => money(loc, n), 0.7);
+      tl.call(() => { mg.textContent = '18%'; }, [], end + 0.35)
+        .fromTo([amt, mg], { backgroundColor: 'rgba(16,185,129,0.18)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.1, clearProps: 'backgroundColor' }, end + 0.1)
+        .to({}, { duration: 3.4 }, end + 0.4);
+      return tl;
+    },
+
+    ed1(root, loc) {
+      const box = $(root, '.bm-cat-search'), q = $(root, '[data-q]'), ph = $(root, '[data-ph]'), count = $(root, '[data-count]');
+      const rows = Array.from(root.querySelectorAll<HTMLElement>('.bm-cat-row'));
+      const miss = rows.filter((r) => !(r.dataset.sku || '').startsWith('VAR'));
+      const total = root.dataset.total || '248', label = root.dataset.label || '', of = root.dataset.of || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => box.classList.add('is-focus'), [], 1.2)
+        .call(() => { ph.style.display = 'none'; }, [], 1.6);
+      let at = typeText(tl, q, 'VAR', 1.6, 0.16);
+      tl.call(() => { collapse(miss); count.textContent = `3 ${of} ${total} ${label}`; }, [], at + 0.1);
+      at += 3.4;
+      tl.call(() => { q.textContent = 'VA'; }, [], at)
+        .call(() => { q.textContent = 'V'; }, [], at + 0.1)
+        .call(() => { q.textContent = ''; ph.style.display = ''; expand(miss); count.textContent = `${total} ${label}`; }, [], at + 0.2)
+        .call(() => box.classList.remove('is-focus'), [], at + 0.9)
+        .to({}, { duration: 2.2 }, at + 1);
+      return tl;
+    },
+
+    ed2(root, loc) {
+      const qty = $(root, '[data-qty]'), v = $(qty, '[data-v]'), amt = $(root, '[data-amt]');
+      const sum = $(root, '.bm-sum'), cnt = $(sum, '[data-count]'), sub = $(sum, '[data-sub]'), iva = $(sum, '[data-iva]'), tot = $(sum, '[data-tot]');
+      const lines = sum.dataset.lines || '', pcs = sum.dataset.pcs || '';
+      const fx = [v, amt, cnt, sub, iva, tot];
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(fx, { opacity: 0, duration: 0.25 }, 1.4)
+        .call(() => {
+          v.textContent = '2000'; amt.textContent = money(loc, 28400);
+          cnt.textContent = `4 ${lines} · ${num(loc, 2640)} ${pcs}`;
+          sub.textContent = money(loc, 163690); iva.textContent = money(loc, 26190.4); tot.textContent = money(loc, 189880.4);
+        }, [], 1.66)
+        .to(fx, { opacity: 1, duration: 0.25 }, 1.7)
+        .call(() => { v.textContent = ''; }, [], 2.8);
+      const end = typeText(tl, v, '2400', 2.95, 0.14);
+      countTo(tl, amt, 28400, 34080, end, (n) => money(loc, n));
+      countTo(tl, sub, 163690, 169370, end + 0.05, (n) => money(loc, n));
+      countTo(tl, iva, 26190.4, 27099.2, end + 0.05, (n) => money(loc, n));
+      countTo(tl, tot, 189880.4, 196469.2, end + 0.05, (n) => money(loc, n), 0.95);
+      tl.call(() => { cnt.textContent = `4 ${lines} · ${num(loc, 3040)} ${pcs}`; }, [], end + 0.05)
+        .fromTo([sub, iva, tot], { backgroundColor: 'rgba(16,185,129,0.14)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.2, clearProps: 'backgroundColor' }, end + 0.1)
+        .to({}, { duration: 3.6 }, end + 0.4);
+      return tl;
+    },
+
+    lp0(root) {
+      const name = $(root, '[data-name]'), box = name.parentElement!, check = $(root, '[data-check]'), cta = $(root, '[data-cta]');
+      const done = $(root, '[data-done]'), ring = done.querySelector('.ring svg') as SVGElement;
+      const full = name.textContent || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(name, { opacity: 0, duration: 0.2 }, 1.2)
+        .call(() => { name.textContent = ''; box.classList.add('is-empty'); check.classList.add('off'); cta.classList.add('is-off'); }, [], 1.42)
+        .set(name, { opacity: 1 }, 1.45)
+        .call(() => box.classList.remove('is-empty'), [], 2.2);
+      const end = typeText(tl, name, full, 2.2, 0.075);
+      tl.call(() => check.classList.remove('off'), [], end + 0.45)
+        .call(() => cta.classList.remove('is-off'), [], end + 0.6)
+        .to(cta, { scale: 0.96, duration: 0.12, yoyo: true, repeat: 1, ease: 'power1.inOut' }, end + 1.4)
+        .fromTo(done, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: 'power2.out' }, end + 1.75)
+        .fromTo(ring, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.8)', transformOrigin: '50% 50%' }, end + 1.85)
+        .to(done, { autoAlpha: 0, duration: 0.4 }, end + 4.6)
+        .to({}, { duration: 0.8 }, end + 5);
+      return tl;
+    },
+
+    lp1(root) {
+      const pt = $(root, '.bm-pt'), hex = $(root, '[data-hex]'), field = hex.parentElement!, tog = $(root, '[data-ptog]'), pw = $(root, '[data-powered]');
+      const tl = gsap.timeline({ repeat: -1 });
+      const step = (at: number, code: string, color: string, powered: boolean) => {
+        tl.call(() => field.classList.add('is-focus'), [], at)
+          .call(() => { hex.textContent = '#'; }, [], at + 0.3);
+        const end = typeText(tl, hex, code, at + 0.4, 0.08);
+        tl.to(pt, { '--acc': color, duration: 0.6, ease: 'power2.out' }, end)
+          .call(() => field.classList.remove('is-focus'), [], end + 0.5)
+          .call(() => {
+            tog.classList.toggle('on', powered);
+            if (powered) { pw.hidden = false; gsap.from(pw, { height: 0, marginTop: 0, opacity: 0, duration: 0.4, clearProps: 'all' }); }
+            else gsap.to(pw, { height: 0, marginTop: 0, opacity: 0, duration: 0.4, onComplete: () => { pw.hidden = true; gsap.set(pw, { clearProps: 'all' }); } });
+          }, [], end + 0.9);
+        return end + 2.4;
+      };
+      let at = step(1.6, '#047857', '#047857', false);
+      at = step(at, '#0A192F', '#0a192f', true);
+      at = step(at, '#B45309', '#b45309', false);
+      tl.to({}, { duration: 0.6 }, at);
+      return tl;
+    },
+
+    lp2(root) {
+      const pill = $(root, '[data-pill]'), s3 = $(root, '[data-s3]'), s4 = $(root, '[data-s4]'), row = $(root, '[data-new]'), notif = $(root, '[data-notif]');
+      const fin = pill.textContent || '', was = pill.dataset.was || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(notif, { autoAlpha: 0, y: -8, duration: 0.35 }, 2.2)
+        .call(() => { collapse(row); swapPill(pill, 'bm-sp-viewed', was); s3.classList.replace('done', 'cur'); s4.classList.remove('cur'); }, [], 2.3)
+        .call(() => { expand(row); swapPill(pill, 'bm-sp-approved', fin); s3.classList.replace('cur', 'done'); s4.classList.add('cur'); }, [], 4.4)
+        .fromTo(notif, { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power3.out' }, 4.55)
+        .to({}, { duration: 3 }, 5.1);
+      return tl;
+    },
+
+    tr0(root, loc) {
+      const lv = $(root, '[data-lv]'), aps = $(root, '[data-aps]'), last = $(root, '[data-last]'), total = $(root, '[data-total]');
+      const word = root.dataset.ap || '';
+      const bars = Array.from(root.querySelectorAll<HTMLElement>('.bm-at-r'));
+      const secs = bars.map((b) => Number(b.dataset.s || 0));
+      const hot = secs.indexOf(Math.max(...secs));
+      const now = last.textContent || '', before = last.dataset.was || '';
+      const paint = (partidas: number, dur: number) => {
+        const s = secs.slice(); s[hot] = partidas;
+        const max = Math.max(...s);
+        bars.forEach((b, i) => {
+          gsap.to($(b, '.fl'), { width: `${Math.round((s[i] / max) * 100)}%`, duration: dur, ease: 'power2.out' });
+          $(b, '.v').textContent = dwell(s[i]);
+        });
+        total.textContent = dwell(s.reduce((a, c) => a + c, 0));
+      };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(lv, { autoAlpha: 0, scale: 0.92, duration: 0.3 }, 1.6)
+        .call(() => { aps.textContent = `2 ${word}`; last.textContent = before; paint(secs[hot] - 30, 0.4); }, [], 1.8)
+        .fromTo(lv, { autoAlpha: 0, scale: 0.92 }, { autoAlpha: 1, scale: 1, duration: 0.45, ease: 'back.out(2)' }, 3.4)
+        .call(() => { aps.textContent = `3 ${word}`; last.textContent = now; }, [], 3.45)
+        .fromTo([aps, last], { backgroundColor: 'rgba(16,185,129,0.16)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.2, clearProps: 'backgroundColor' }, 3.45)
+        .call(() => paint(secs[hot] - 20, 0.5), [], 4.8)
+        .call(() => paint(secs[hot] - 10, 0.5), [], 6)
+        .call(() => paint(secs[hot], 0.5), [], 7.2)
+        .to({}, { duration: 2 }, 7.4);
+      return tl;
+    },
+
+    tr1(root) {
+      const pill = $(root, '[data-pill]'), s3 = $(root, '[data-s3]'), s4 = $(root, '[data-s4]'), row = $(root, '[data-new]');
+      const fin = pill.textContent || '', was = pill.dataset.was || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { collapse(row); swapPill(pill, 'bm-sp-approved', was); s3.classList.replace('done', 'cur'); s4.classList.remove('cur'); }, [], 2.4)
+        .call(() => { expand(row); swapPill(pill, 'bm-sp-paid', fin); s3.classList.replace('cur', 'done'); s4.classList.add('cur'); }, [], 4.6)
+        .fromTo(row, { backgroundColor: 'rgba(16,185,129,0.12)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.4, clearProps: 'backgroundColor' }, 4.7)
+        .to({}, { duration: 2.6 }, 5.2);
+      return tl;
+    },
+
+    tr2(root, loc) {
+      const bd = $(root, '[data-bd]'), from = $(root, '.is-from'), to = $(root, '.is-to');
+      const vCol = $(root, '.bm-bd-viewed'), aCol = $(root, '.bm-bd-approved');
+      const vN = $(vCol, '[data-n]'), vT = $(vCol, '[data-t]'), aN = $(aCol, '[data-n]'), aT = $(aCol, '[data-t]');
+      const pipe = $(root, '[data-pipe]'), open = $(root, '[data-open]'), appr = $(root, '[data-appr]');
+      const after = { pipe: pipe.textContent || '', open: open.textContent || '', appr: appr.textContent || '' };
+      const m0 = (n: number) => money(loc, n, 0);
+      let ghost: HTMLElement | null = null;
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => {
+        collapse(to);
+        from.classList.add('is-live'); expand(from);
+        vN.textContent = '3'; vT.textContent = m0(892340); aN.textContent = '2'; aT.textContent = m0(401380);
+        pipe.textContent = pipe.dataset.was || ''; open.textContent = open.dataset.was || ''; appr.textContent = appr.dataset.was || '';
+      }, [], 1.8)
+        .call(() => {
+          const b = bd.getBoundingClientRect(), f = from.getBoundingClientRect();
+          ghost = from.cloneNode(true) as HTMLElement;
+          ghost.classList.add('bm-bd-ghost');
+          Object.assign(ghost.style, { left: `${f.left - b.left}px`, top: `${f.top - b.top}px`, width: `${f.width}px`, display: 'block', margin: '0' });
+          bd.appendChild(ghost);
+          from.style.visibility = 'hidden';
+          gsap.fromTo(ghost, { scale: 1, boxShadow: '0 0 0 rgba(10,25,47,0)' }, { scale: 1.04, boxShadow: '0 1px 2px rgba(10,25,47,0.06), 0 18px 36px -12px rgba(10,25,47,0.32)', duration: 0.25 });
+        }, [], 3.6)
+        .call(() => {
+          if (!ghost) return;
+          const g = ghost.getBoundingClientRect();
+          gsap.set(to, { clearProps: 'all' });
+          const t = to.getBoundingClientRect();
+          gsap.set(to, { opacity: 0 });
+          gsap.from(to, { height: 0, paddingTop: 0, paddingBottom: 0, duration: 0.55, ease: 'power2.inOut' });
+          collapse(from);
+          gsap.to(ghost, { x: t.left - g.left + (g.width - t.width) / 2, y: t.top - g.top, duration: 0.75, ease: 'power2.inOut' });
+        }, [], 3.95)
+        .call(() => {
+          gsap.to(ghost, { scale: 1, boxShadow: '0 0 0 rgba(10,25,47,0)', duration: 0.2, onComplete: () => { ghost?.remove(); ghost = null; gsap.set(to, { clearProps: 'all' }); } });
+          from.classList.remove('is-live'); gsap.set(from, { clearProps: 'all' });
+          vN.textContent = '2'; aN.textContent = '3';
+          pipe.textContent = after.pipe; open.textContent = after.open; appr.textContent = after.appr;
+        }, [], 4.75);
+      countTo(tl, vT, 892340, 695870.8, 4.75, m0, 0.6);
+      countTo(tl, aT, 401380, 597849.2, 4.75, m0, 0.6);
+      tl.to({}, { duration: 2.6 }, 5.4);
+      return tl;
+    },
+
+    ap0(root) {
+      const f = $(root, '[data-desc]'), v = $(f, '[data-v]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(v, { opacity: 0, duration: 0.2 }, 1.4)
+        .call(() => { v.textContent = '15'; }, [], 1.62)
+        .to(v, { opacity: 1, duration: 0.2 }, 1.64)
+        .call(() => f.classList.add('is-focus'), [], 2.6)
+        .call(() => { v.textContent = ''; }, [], 3.1);
+      const end = typeText(tl, v, '10', 3.25, 0.2);
+      tl.call(() => f.classList.remove('is-focus'), [], end + 1.6)
+        .to({}, { duration: 2 }, end + 1.7);
+      return tl;
+    },
+
+    ap1(root) {
+      const wrap = $(root, '[data-banner]'), ok = $(root, '[data-ok]'), pill = $(root, '[data-pill]'), s3 = $(root, '[data-s3]'), s4 = $(root, '[data-s4]');
+      const draft = pill.textContent || '', sent = pill.dataset.to || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(ok, { scale: 0.94, duration: 0.12, yoyo: true, repeat: 1, ease: 'power1.inOut' }, 2.6)
+        .call(() => { collapse(wrap); swapPill(pill, 'bm-sp-sent', sent); s3.classList.replace('cur', 'done'); s4.classList.add('cur'); }, [], 2.95)
+        .call(() => { expand(wrap); swapPill(pill, 'bm-sp-draft', draft); s3.classList.replace('done', 'cur'); s4.classList.remove('cur'); }, [], 6.4)
+        .to({}, { duration: 1.2 }, 6.9);
+      return tl;
+    },
+
+    ap2(root) {
+      const row = $(root, '[data-new]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => collapse(row), [], 2.6)
+        .call(() => expand(row), [], 4.2)
+        .fromTo(row, { backgroundColor: 'rgba(16,185,129,0.12)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.4, clearProps: 'backgroundColor' }, 4.3)
+        .to({}, { duration: 2.4 }, 4.8);
+      return tl;
+    },
+  };
+
+  const init = () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.querySelectorAll<HTMLElement>('[data-bmx]').forEach((root) => {
+      const build = BUILD[root.dataset.bmx || ''];
+      if (!build) return;
+      const loc = root.closest<HTMLElement>('[data-loc]')?.dataset.loc || 'es-MX';
+      let tl: gsap.core.Timeline | null = null;
+      new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) { tl ??= build(root, loc); tl.play(); }
+        else tl?.pause();
+      }, { threshold: 0.3 }).observe(root);
+    });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+</script>

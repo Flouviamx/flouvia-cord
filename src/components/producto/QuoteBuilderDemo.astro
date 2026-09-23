@@ -1,5 +1,2019 @@
 ---
+import { createHash } from 'node:crypto';
+import { calculateDocumentTotals } from '../../../packages/elements/src/engine';
+import { currencyDecimals, isOfferedCurrency } from '../../lib/currency';
+import { getCountryProfile } from '../../lib/countries';
+import { t, getQuoteCardRuntimeI18n } from '../../i18n/app';
+
 interface Props { isEn?: boolean }
 const { isEn = false } = Astro.props;
+
+const L = isEn ? 'en' : 'es';
+const INTL = isEn ? 'en-US' : 'es-MX';
+const tq = (key: string) => t(L, key as any);
+const fill = (tpl: string, vars: Record<string, string>) =>
+    Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), tpl);
+
+// Emisor mexicano: el impuesto sale de su país (regla 23), la divisa es la de venta (regla 21).
+const TAX_RATE = 0.16;
+const TAX_LABEL = getCountryProfile('MX', L).taxLabel;
+const COLOR = '#0a192f';
+const FOLIO = 'COT-0149';
+const TOKEN = '7c1e9a04b5d24f6e8a13c0d97b25e4f1';
+const ANTICIPO_PCT = 50;
+const ORG = { nombre: isEn ? 'Valle Materials' : 'Materiales del Valle', inicial: 'MV', rfc: 'MVA240611AB3' };
+
+type Sku = 'cem' | 'var' | 'blk' | 'mal' | 'gra' | 'fle';
+type Cur = 'MXN' | 'USD' | 'EUR' | 'CAD';
+interface Product { sku: Sku; code: string; name: string; unit: string; step: number; qty: number; tile: string; price: Record<Cur, number> }
+
+// Precio de lista por divisa: nada se convierte con una tasa inventada (regla 22).
+const CATALOG: Product[] = [
+    { sku: 'cem', code: 'CEM-050', name: isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg', unit: isEn ? 'bag' : 'bto', step: 10, qty: 120, tile: '#ebe6de', price: { MXN: 182, USD: 10.4, EUR: 9.6, CAD: 14.2 } },
+    { sku: 'var', code: 'VAR-038', name: isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m', unit: isEn ? 'ea' : 'pza', step: 10, qty: 340, tile: '#e2e7ee', price: { MXN: 191.48, USD: 10.95, EUR: 10.1, CAD: 14.95 } },
+    { sku: 'blk', code: 'BLK-154', name: isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40', unit: isEn ? 'ea' : 'pza', step: 100, qty: 2400, tile: '#e6e6e2', price: { MXN: 14.2, USD: 0.82, EUR: 0.76, CAD: 1.12 } },
+    { sku: 'mal', code: 'MAL-066', name: isEn ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6', unit: isEn ? 'ea' : 'pza', step: 10, qty: 180, tile: '#e1e9ea', price: { MXN: 312, USD: 17.8, EUR: 16.45, CAD: 24.35 } },
+    { sku: 'gra', code: 'GRA-034', name: isEn ? 'Crushed gravel 3/4"' : 'Grava triturada 3/4"', unit: 'm³', step: 1, qty: 14, tile: '#ece5d9', price: { MXN: 540, USD: 30.9, EUR: 28.5, CAD: 42.2 } },
+    { sku: 'fle', code: 'FLE-014', name: isEn ? 'Job-site delivery, 14 t truck' : 'Flete a obra, torton 14 t', unit: isEn ? 'trip' : 'serv', step: 1, qty: 2, tile: '#e3e7f0', price: { MXN: 3200, USD: 183, EUR: 169, CAD: 250 } },
+];
+const CAT = new Map(CATALOG.map((p) => [p.sku, p]));
+
+const CLIENTS = [
+    { id: 'zarco', name: isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco', contacto: 'Raúl Mendoza', desc: 5, terms: 'net30' },
+    { id: 'apex', name: isEn ? 'Apex Construction' : 'Constructora Apex', contacto: 'Lucía Ferrer', desc: 0, terms: 'contado' },
+    { id: 'polanco', name: isEn ? 'Polanco Developments' : 'Desarrollos Inmobiliarios Polanco', contacto: 'Andrés Ibarra', desc: 3, terms: 'net60' },
+];
+const TERM_CODES = ['contado', 'net30', 'net60'] as const;
+const TERM_DAYS: Record<string, number> = { contado: 0, net30: 30, net60: 60 };
+const TERM_LABEL: Record<string, string> = { contado: isEn ? 'Due on receipt' : 'Contado', net30: 'Net 30', net60: 'Net 60' };
+const VIGENCIAS = [15, 30, 60];
+const CURRENCIES = (['MXN', 'USD', 'EUR', 'CAD'] as Cur[]).filter((c) => isOfferedCurrency(c));
+const currencyName = (c: string) => {
+    const n = new Intl.DisplayNames([INTL], { type: 'currency' }).of(c) ?? c;
+    return n.charAt(0).toUpperCase() + n.slice(1);
+};
+
+type Cobro = 'unico' | 'anticipo' | 'iguala';
+interface State { client: string; terms: string; lines: { sku: Sku; qty: number }[]; currency: Cur; vig: number; cobro: Cobro; pay: boolean; chat: boolean }
+const DEF: State = {
+    client: 'zarco',
+    terms: 'net30',
+    lines: [{ sku: 'cem', qty: 120 }, { sku: 'var', qty: 340 }, { sku: 'blk', qty: 2400 }, { sku: 'mal', qty: 180 }],
+    currency: 'MXN',
+    vig: 15,
+    cobro: 'anticipo',
+    pay: true,
+    chat: true,
+};
+
+const RT = getQuoteCardRuntimeI18n(L);
+const S = {
+    vigEnDias: tq('q.vig_en_dias'),
+    totalNote: tq('q.total_note'),
+    splitAlAprobar: tq('q.split_al_aprobar'),
+    splitHoyPagas: tq('q.split_hoy_pagas'),
+    splitDeAnticipo: tq('q.split_de_anticipo'),
+    splitVenceSaldo: tq('q.split_vence_saldo'),
+    igualaSplit: tq('q.iguala_split_mensual'),
+    recibio: tq('q.recibio_confirmacion'),
+    pedidoCredito: tq('q.pedido_confirmado_credito'),
+    pagoVence: tq('q.pago_vence'),
+    pagoVenceOnline: tq('q.pago_vence_online'),
+    pagoVenceManual: tq('q.pago_vence_manual'),
+    tipoAnticipo: tq('q.tipo_anticipo'),
+    aPagarAhora: tq('q.a_pagar_ahora'),
+    porPagar: tq('q.por_pagar'),
+    venceEl: tq('q.vence_el'),
+    tarjetaOSpei: tq('q.tarjeta_o_spei'),
+    pagoProtegido: tq('q.pago_protegido'),
+    igualaDesc: tq('q.autoriza_iguala_desc'),
+    propPh: tq('q.propuesta_placeholder'),
+    cambioEra: RT.cambioEra,
+    descOn: isEn ? 'Client tier: −{d}% off list prices, applied automatically.' : 'Nivel del cliente: −{d}% sobre precios de lista, automático.',
+    descOff: isEn ? 'List prices, no tier discount.' : 'Precios de lista, sin descuento por nivel.',
+    noteUnicoContado: isEn ? 'Your client pays the full amount on approval.' : 'Tu cliente paga el total al aprobar.',
+    noteUnicoCredito: isEn ? 'Your client pays the full amount when their {terms} term is due.' : 'Tu cliente paga el total al vencer su plazo {terms}.',
+    noteAnticipo: isEn ? '50% on approval, the balance on their payment terms.' : 'El 50% al aprobar y el saldo según sus términos.',
+    noteIguala: isEn ? 'The total is charged to their card every month, due on receipt.' : 'El total se cobra cada mes a su tarjeta, de contado.',
+    payDescMx: isEn ? 'Card or SPEI through Cord Payments' : 'Tarjeta o SPEI con Cord Payments',
+    payDesc: isEn ? 'Card through Cord Payments' : 'Tarjeta con Cord Payments',
+    add: isEn ? 'Add item' : 'Agregar concepto',
+    allAdded: isEn ? 'The whole catalog is in the quote' : 'Todo el catálogo ya está en la cotización',
+    live: isEn ? 'Total due {total} {cur}, {n} items.' : 'Total a pagar {total} {cur}, {n} conceptos.',
+};
+
+const C = isEn ? {
+    eyebrow: 'TRY IT',
+    title: 'Build a quote and share it in a single link.',
+    sub: 'Pick the client, the items and the currency, and watch the link your client receives to review and approve it, live.',
+    cta: 'Create a quote',
+    panel: 'Interactive demo',
+    reset: 'Reset the demo',
+    client: 'Client',
+    terms: 'Payment terms',
+    items: 'Items',
+    catalog: 'Valle Materials catalog',
+    added: 'Added',
+    qty: 'Quantity',
+    less: 'Decrease',
+    more: 'Increase',
+    remove: 'Remove',
+    currency: 'Currency',
+    vig: 'Valid for',
+    days: 'days',
+    cobro: 'Payment',
+    unico: 'One payment',
+    anticipo: '50% deposit',
+    iguala: 'Monthly plan',
+    opts: 'Additional options',
+    pay: 'Online payment',
+    chat: 'Chat with your client',
+    chatDesc: 'Messages and comments on each line',
+    tablist: 'Preview',
+    tabReview: 'Client link',
+    tabApproved: 'After approval',
+    notes: 'Delivery to the job site within 48 business hours of confirmation. Prices subject to stock.',
+} : {
+    eyebrow: 'PRUÉBALO',
+    title: 'Arma una cotización y compártela en un solo link.',
+    sub: 'Elige cliente, conceptos y moneda, y mira en vivo el link que recibe tu cliente para revisarla y aprobarla.',
+    cta: 'Crear una cotización',
+    panel: 'Demostración interactiva',
+    reset: 'Restablecer la demostración',
+    client: 'Cliente',
+    terms: 'Términos de pago',
+    items: 'Conceptos',
+    catalog: 'Catálogo de Materiales del Valle',
+    added: 'Agregado',
+    qty: 'Cantidad',
+    less: 'Restar',
+    more: 'Sumar',
+    remove: 'Quitar',
+    currency: 'Moneda',
+    vig: 'Vigencia',
+    days: 'días',
+    cobro: 'Cobro',
+    unico: 'Pago único',
+    anticipo: 'Anticipo 50%',
+    iguala: 'Iguala mensual',
+    opts: 'Opciones adicionales',
+    pay: 'Pago en línea',
+    chat: 'Chat con tu cliente',
+    chatDesc: 'Mensajes y comentarios por partida',
+    tablist: 'Vista previa',
+    tabReview: 'Link del cliente',
+    tabApproved: 'Después de aprobar',
+    notes: 'Entrega en obra dentro de 48 horas hábiles a partir de la confirmación. Precios sujetos a existencias.',
+};
+
+const moneyFmt = (n: number, cur: string) => {
+    const d = currencyDecimals(cur);
+    return new Intl.NumberFormat(INTL, { style: 'currency', currency: cur, minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+};
+const fmtDate = (d: Date) => new Intl.DateTimeFormat(INTL, { day: 'numeric', month: 'short', year: 'numeric' }).format(d).replace('.', '');
+const today = new Date(); today.setHours(0, 0, 0, 0);
+const plusDays = (n: number) => { const d = new Date(today); d.setDate(d.getDate() + n); return d; };
+
+// Misma aritmética que el script del cliente: motor único y splitAnticipo() de lib/cobros.ts.
+function buildModel(s: State) {
+    const cur = s.currency;
+    const m = (n: number) => moneyFmt(n, cur);
+    const scale = 10 ** currencyDecimals(cur);
+    const client = CLIENTS.find((c) => c.id === s.client)!;
+    const days = TERM_DAYS[s.terms] ?? 0;
+    const lines = s.lines.map((l) => {
+        const p = CAT.get(l.sku)!;
+        const lista = p.price[cur];
+        const nego = client.desc > 0 ? Math.round(lista * (1 - client.desc / 100) * scale) / scale : null;
+        const precio = nego ?? lista;
+        return { sku: l.sku, p, qty: l.qty, lista, nego, precio, importe: precio * l.qty };
+    });
+    const totals = calculateDocumentTotals(
+        lines.map((l) => ({ descripcion: l.p.name, cantidad: l.qty, precio_unitario: l.lista, precio_negociado: l.nego, tax_rate: TAX_RATE })),
+        { ivaIncluido: false, retenciones: [] },
+    );
+    const total = totals.total;
+    const totalUnits = Math.round(total * scale);
+    const antUnits = Math.round((totalUnits * ANTICIPO_PCT) / 100);
+    const ant = antUnits / scale;
+    const sal = (totalUnits - antUnits) / scale;
+    const saldoVence = days > 0 ? fmtDate(plusDays(days)) : '';
+    const deAnticipo = fill(S.splitDeAnticipo, { pct: String(ANTICIPO_PCT), saldo: m(sal) });
+    const splitReview = s.cobro === 'anticipo'
+        ? `${S.splitAlAprobar} ${m(ant)}${deAnticipo}${saldoVence ? fill(S.splitVenceSaldo, { fecha: saldoVence }) : ''}`
+        : s.cobro === 'iguala' ? fill(S.igualaSplit, { monto: m(total) }) : '';
+    const splitApproved = s.cobro === 'anticipo'
+        ? `${S.splitHoyPagas} ${m(ant)}${deAnticipo}${fill(S.splitVenceSaldo, { fecha: saldoVence || fmtDate(today) })}`
+        : splitReview;
+    const tax = totals.porTasa.filter((r) => r.impuesto > 0)[0];
+    const [igPre, igPost] = S.igualaDesc.split('{monto}');
+    const pagoDisponible = s.cobro === 'anticipo' || days === 0;
+    return {
+        cur,
+        client,
+        total,
+        totalText: m(total),
+        termLabel: TERM_LABEL[s.terms],
+        vigDate: fmtDate(plusDays(s.vig)),
+        vigChip: fill(S.vigEnDias, { n: String(s.vig), s: s.vig === 1 ? '' : 's' }),
+        totalNote: `${cur} · ${S.totalNote}`,
+        splitReview,
+        splitApproved,
+        rows: lines.map((l) => ({
+            sku: l.sku,
+            qtyText: `${l.qty.toLocaleString(INTL)} ${l.p.unit}`,
+            showList: l.nego != null && l.nego < l.lista,
+            listText: m(l.lista),
+            priceText: m(l.precio),
+            amountText: m(l.importe),
+            importe: l.importe,
+        })),
+        subtotal: m(totals.subtotal),
+        taxLabel: tax ? `${TAX_LABEL} ${Math.round(tax.tasa * 10000) / 100}%` : '',
+        taxText: tax ? m(tax.impuesto) : '',
+        credit: s.cobro === 'unico' && days > 0
+            ? {
+                title: fill(S.pedidoCredito, { terminos: TERM_LABEL[s.terms] }),
+                text: fill(S.pagoVence, { total: `${m(total)} ${cur}`, fecha: saldoVence }) + (s.pay ? S.pagoVenceOnline : S.pagoVenceManual),
+            }
+            : null,
+        cobros: s.cobro === 'anticipo' ? { ant: m(ant), sal: m(sal), salStatus: days > 0 ? fill(S.venceEl, { fecha: saldoVence }) : S.porPagar } : null,
+        iguala: s.cobro === 'iguala' && s.pay ? { pre: igPre ?? '', monto: m(total), post: igPost ?? '' } : null,
+        pay: s.pay && pagoDisponible && s.cobro !== 'iguala'
+            ? {
+                label: s.cobro === 'anticipo' ? `${S.aPagarAhora} · ${S.tipoAnticipo.toUpperCase()}` : S.aPagarAhora,
+                amount: m(s.cobro === 'anticipo' ? ant : total),
+                secure: cur === 'MXN' ? S.tarjetaOSpei : S.pagoProtegido,
+            }
+            : null,
+        propPh: S.propPh.replace('MXN', cur),
+        lines,
+    };
+}
+
+const M = buildModel(DEF);
+const inDefault = (sku: string) => DEF.lines.some((l) => l.sku === sku);
+const defRow = (sku: string) => M.rows.find((r) => r.sku === sku);
+const defLine = (sku: string) => M.lines.find((l) => l.sku === sku);
+const cobroNote = (s: State) => s.cobro === 'anticipo' ? S.noteAnticipo
+    : s.cobro === 'iguala' ? S.noteIguala
+    : (TERM_DAYS[s.terms] ?? 0) > 0 ? fill(S.noteUnicoCredito, { terms: TERM_LABEL[s.terms] }) : S.noteUnicoContado;
+
+const signedAt = new Date().toLocaleString(INTL, { dateStyle: 'long', timeStyle: 'short' });
+const HASH = createHash('sha256').update(JSON.stringify({
+    folio: FOLIO,
+    status: 'approved',
+    signed_by: M.client.contacto,
+    signed_at: new Date().toISOString(),
+    items: M.lines.map((l) => ({ id: l.sku, descripcion: l.p.name, cantidad: l.qty, unidad: l.p.unit, precio: l.precio, taxRate: TAX_RATE })),
+})).digest('hex');
+
+const CONFIG = {
+    intl: INTL,
+    taxRate: TAX_RATE,
+    taxLabel: TAX_LABEL,
+    org: ORG.nombre,
+    folio: FOLIO,
+    anticipoPct: ANTICIPO_PCT,
+    termDays: TERM_DAYS,
+    termLabels: TERM_LABEL,
+    catalog: CATALOG.map(({ sku, code, name, unit, step, qty, price }) => ({ sku, code, name, unit, step, qty, price })),
+    clients: CLIENTS,
+    defaults: DEF,
+    s: S,
+};
+const CONFIG_JSON = JSON.stringify(CONFIG).replace(/</g, '\\u003c');
+
+const G = 'fill="currentColor" fill-opacity="0.16"';
+const icon = (inner: string, size = 22, sw = 1.6) =>
+    `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+const THUMBS: Record<Sku, string> = {
+    cem: icon(`<path d="M7.2 6.4 8.4 3.6h7.2l1.2 2.8"/><path d="M5.9 7.9a1.5 1.5 0 0 1 1.5-1.5h9.2a1.5 1.5 0 0 1 1.5 1.5l.7 10.7a1.8 1.8 0 0 1-1.8 1.9H7a1.8 1.8 0 0 1-1.8-1.9z" ${G}/><path d="M5.7 11.6h12.6M5.5 15.4h13" stroke-opacity="0.5"/>`),
+    var: icon(`<rect x="2.5" y="8.6" width="19" height="2.8" rx="1.4" transform="rotate(-30 12 10)" ${G}/><rect x="2.5" y="12.8" width="19" height="2.8" rx="1.4" transform="rotate(-30 12 14.2)" ${G}/><path d="M7.9 11l1.2 2.1M11.4 9l1.2 2.1M14.9 7l1.2 2.1M7.9 15.2l1.2 2.1M11.4 13.2l1.2 2.1M14.9 11.2l1.2 2.1" stroke-opacity="0.55" stroke-width="1.2"/>`),
+    blk: icon(`<rect x="2.8" y="6.8" width="18.4" height="11" rx="1.6" ${G}/><rect x="5.6" y="9.4" width="5" height="5.8" rx="0.9"/><rect x="13.4" y="9.4" width="5" height="5.8" rx="0.9"/>`),
+    mal: icon(`<rect x="3.5" y="3.5" width="17" height="17" rx="1.6" ${G}/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17" stroke-opacity="0.7"/>`),
+    gra: icon(`<path d="M4.2 16.8c.2-1.9 1.9-3.2 3.8-3s3.2 1.6 3 3.4-1.8 2.9-3.8 2.7-3.2-1.3-3-3.1z" ${G}/><path d="M12.6 17.2c.3-1.8 2-2.9 3.9-2.6s3.1 1.8 2.8 3.4-2 2.6-3.9 2.3-3.1-1.4-2.8-3.1z" ${G}/><path d="M8.2 9.4c.3-1.9 2.1-3.1 4-2.8s3.2 1.9 2.9 3.7-2.1 2.9-4 2.6-3.2-1.7-2.9-3.5z" ${G}/>`),
+    fle: icon(`<path d="M3.2 7.2A1.2 1.2 0 0 1 4.4 6h8.9a1.2 1.2 0 0 1 1.2 1.2v8.6H3.2z" ${G}/><path d="M14.5 9.6h3.4l2.9 3.3v2.9h-6.3z" ${G}/><circle cx="7.3" cy="17" r="1.9" fill="currentColor" fill-opacity="0.25"/><circle cx="17.2" cy="17" r="1.9" fill="currentColor" fill-opacity="0.25"/>`),
+};
+const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`;
 ---
-<section class="qbd" data-quote-demo data-lang={isEn ? 'en' : 'es'}></section>
+
+<section class="qbd" data-quote-demo data-lang={L} aria-labelledby="qbd-title" style={`--qbd-chevron:${CHEVRON};--qbd-brand:${COLOR}`}>
+    <script type="application/json" is:inline data-qbd-config set:html={CONFIG_JSON} />
+
+    <div class="qbd-intro">
+        <p class="qbd-eyebrow reveal">{C.eyebrow}</p>
+        <h2 id="qbd-title" class="qbd-h2 masked-title">{C.title}</h2>
+        <p class="qbd-sub reveal">{C.sub}</p>
+        <a href="/sign-up" class="qbd-cta reveal">
+            <span>{C.cta}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+    </div>
+
+    <div class="qbd-stage reveal-mockup">
+        <!-- Controles: lo que el vendedor arma -->
+        <div class="qbd-panel" role="group" aria-labelledby="qbd-panel-title">
+            <div class="qbd-panel-head">
+                <span class="qbd-panel-ico" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2.8 5.2 13.3h6.2l-1.2 7.9 8.3-10.7h-6.2z" fill="currentColor" fill-opacity="0.22"/></svg>
+                </span>
+                <span class="qbd-panel-title" id="qbd-panel-title">{C.panel}</span>
+                <button type="button" class="qbd-reset" data-qbd-reset aria-label={C.reset} title={C.reset}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.4v4.3h4.3"/></svg>
+                </button>
+            </div>
+
+            <div class="qbd-panel-body">
+                <div class="qbd-group qbd-g-client">
+                    <label class="qbd-label" for="qbd-client">{C.client}</label>
+                    <select id="qbd-client" class="qbd-select" data-qbd-client>
+                        {CLIENTS.map((c) => <option value={c.id} selected={c.id === DEF.client}>{c.name} — {c.contacto}</option>)}
+                    </select>
+                    <fieldset class="qbd-fieldset">
+                        <legend class="qbd-sr">{C.terms}</legend>
+                        <div class="qbd-chips">
+                            {TERM_CODES.map((code) => (
+                                <label class="qbd-chip">
+                                    <input type="radio" name="qbd-terms" value={code} checked={code === DEF.terms} />
+                                    <span>{TERM_LABEL[code]}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </fieldset>
+                    <p class="qbd-note" data-qbd-desc>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12.2V4.8c0-.7.6-1.3 1.3-1.3h7.4l8.3 8.3a1.3 1.3 0 0 1 0 1.8l-7.3 7.3a1.3 1.3 0 0 1-1.8 0z" fill="currentColor" fill-opacity="0.15"/><circle cx="8.3" cy="8.3" r="1.3"/></svg>
+                        <span data-qbd-desc-text>{M.client.desc > 0 ? fill(S.descOn, { d: String(M.client.desc) }) : S.descOff}</span>
+                    </p>
+                </div>
+
+                <div class="qbd-group qbd-g-lines">
+                    <span class="qbd-label" id="qbd-lines-label">{C.items}</span>
+                    <ul class="qbd-lines" aria-labelledby="qbd-lines-label" data-qbd-lines>
+                        {DEF.lines.map((l) => CAT.get(l.sku)!).concat(CATALOG.filter((p) => !inDefault(p.sku))).map((p) => {
+                            const dl = defLine(p.sku);
+                            const lista = p.price[DEF.currency];
+                            const nego = dl?.nego ?? null;
+                            return (
+                                <li class="qbd-line" data-qbd-line={p.sku} hidden={!dl}>
+                                    <span class="qbd-thumb" style={`--tile:${p.tile}`} set:html={THUMBS[p.sku]} />
+                                    <span class="qbd-line-text">
+                                        <span class="qbd-line-name">{p.name}</span>
+                                        <span class="qbd-line-meta">
+                                            <s data-f="lm-list" hidden={nego == null}>{moneyFmt(lista, DEF.currency)}</s>
+                                            <span data-f="lm-price">{moneyFmt(nego ?? lista, DEF.currency)}</span>
+                                            <span> / {p.unit}</span>
+                                        </span>
+                                    </span>
+                                    <span class="qbd-step">
+                                        <button type="button" data-qbd-dec aria-label={`${C.less} ${p.step} · ${p.name}`}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        </button>
+                                        <input type="text" inputmode="numeric" autocomplete="off" value={(dl?.qty ?? p.qty).toLocaleString(INTL)} aria-label={`${C.qty} · ${p.name}`} data-qbd-qty />
+                                        <button type="button" data-qbd-inc aria-label={`${C.more} ${p.step} · ${p.name}`}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        </button>
+                                    </span>
+                                    <button type="button" class="qbd-remove" data-qbd-remove aria-label={`${C.remove} ${p.name}`}>
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+                                    </button>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                    <div class="qbd-add-wrap">
+                        <button type="button" class="qbd-add" data-qbd-add aria-haspopup="listbox" aria-expanded="false" aria-controls="qbd-catalog">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <span data-qbd-add-text>{S.add}</span>
+                        </button>
+                        <ul class="qbd-catalog" id="qbd-catalog" role="listbox" tabindex="-1" aria-label={C.catalog} hidden data-qbd-catalog>
+                            {CATALOG.map((p) => (
+                                <li role="option" id={`qbd-opt-${p.sku}`} class="qbd-opt" data-sku={p.sku} aria-selected="false" aria-disabled={inDefault(p.sku) ? 'true' : 'false'}>
+                                    <span class="qbd-thumb qbd-thumb-lg" style={`--tile:${p.tile}`} set:html={THUMBS[p.sku]} />
+                                    <span class="qbd-opt-text">
+                                        <span class="qbd-opt-name">{p.name}</span>
+                                        <span class="qbd-opt-meta">{p.code} · <span data-f="opt-price">{moneyFmt(p.price[DEF.currency], DEF.currency)}</span> / {p.unit}</span>
+                                    </span>
+                                    <span class="qbd-opt-tag">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                        <span class="qbd-opt-tag-text">{C.added}</span>
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="qbd-group qbd-g-money">
+                    <div class="qbd-duo">
+                        <div class="qbd-field">
+                            <label class="qbd-label" for="qbd-currency">{C.currency}</label>
+                            <select id="qbd-currency" class="qbd-select" data-qbd-currency>
+                                {CURRENCIES.map((c) => <option value={c} selected={c === DEF.currency} title={currencyName(c)}>{c}</option>)}
+                            </select>
+                        </div>
+                        <div class="qbd-field">
+                            <label class="qbd-label" for="qbd-vig">{C.vig}</label>
+                            <select id="qbd-vig" class="qbd-select" data-qbd-vig>
+                                {VIGENCIAS.map((n) => <option value={n} selected={n === DEF.vig}>{n} {C.days}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="qbd-group qbd-g-cobro">
+                    <fieldset class="qbd-fieldset">
+                        <legend class="qbd-label">{C.cobro}</legend>
+                        <div class="qbd-seg">
+                            {(['unico', 'anticipo', 'iguala'] as Cobro[]).map((k) => (
+                                <label class="qbd-seg-opt">
+                                    <input type="radio" name="qbd-cobro" value={k} checked={k === DEF.cobro} />
+                                    <span>{C[k]}</span>
+                                </label>
+                            ))}
+                        </div>
+                        <p class="qbd-note qbd-note-plain" data-qbd-cobro-note>{cobroNote(DEF)}</p>
+                    </fieldset>
+                </div>
+
+                <div class="qbd-group qbd-g-opts">
+                    <fieldset class="qbd-fieldset">
+                        <legend class="qbd-label">{C.opts}</legend>
+                        <label class="qbd-opt-row">
+                            <span class="qbd-check"><input type="checkbox" data-qbd-pay checked={DEF.pay} /><span aria-hidden="true"></span></span>
+                            <span class="qbd-opt-copy">
+                                <span class="qbd-opt-title">{C.pay}</span>
+                                <span class="qbd-opt-desc" data-qbd-pay-desc>{DEF.currency === 'MXN' ? S.payDescMx : S.payDesc}</span>
+                            </span>
+                        </label>
+                        <label class="qbd-opt-row">
+                            <span class="qbd-check"><input type="checkbox" data-qbd-chat checked={DEF.chat} /><span aria-hidden="true"></span></span>
+                            <span class="qbd-opt-copy">
+                                <span class="qbd-opt-title">{C.chat}</span>
+                                <span class="qbd-opt-desc">{C.chatDesc}</span>
+                            </span>
+                        </label>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista previa: calca de /q/[token] (QuoteCard.astro) -->
+        <div class="qbd-preview">
+            <div class="qbd-tabs" role="tablist" aria-label={C.tablist} data-qbd-tabs>
+                <span class="qbd-tab-ind" aria-hidden="true" data-qbd-ind></span>
+                <button type="button" role="tab" id="qbd-tab-review" class="qbd-tab" aria-selected="true" aria-controls="qbd-tabpanel" data-qbd-tab="review">{C.tabReview}</button>
+                <button type="button" role="tab" id="qbd-tab-approved" class="qbd-tab" aria-selected="false" aria-controls="qbd-tabpanel" tabindex="-1" data-qbd-tab="approved">{C.tabApproved}</button>
+            </div>
+
+            <div class="qbd-browser">
+                <div class="qbd-chrome" aria-hidden="true">
+                    <span class="qbd-url">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor" fill-opacity="0.16"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
+                        <span class="qbd-url-text"><b>cordhq.app</b>/q/{TOKEN}</span>
+                    </span>
+                </div>
+                <div class="qbd-orb qbd-orb-top" aria-hidden="true"></div>
+                <div class="qbd-orb qbd-orb-bot" aria-hidden="true"></div>
+
+                <div class="qbd-view" id="qbd-tabpanel" role="tabpanel" aria-labelledby="qbd-tab-review" tabindex="0" data-qbd-view>
+                    <div class="qbd-qp-main">
+                        <div class="qbd-q-card" data-state="review" data-qbd-card>
+                            <header class="qbd-q-header">
+                                <div class="qbd-q-brand-row">
+                                    <div class="qbd-q-logo-initial" style={`background:${COLOR}`}>{ORG.inicial}</div>
+                                    <div class="qbd-q-brand-text">
+                                        <span class="qbd-q-company">{ORG.nombre}</span>
+                                        <span class="qbd-q-rfc">RFC {ORG.rfc}</span>
+                                    </div>
+                                </div>
+                                <div class="qbd-q-folio-tag">
+                                    <span class="qbd-q-folio-eyebrow">{tq('q.folio_eyebrow')}</span>
+                                    <span class="qbd-q-folio-num">{FOLIO}</span>
+                                </div>
+                            </header>
+
+                            <div class="qbd-q-rule"></div>
+
+                            <div class="qbd-q-meta" data-fx="meta">
+                                <div class="qbd-q-meta-col">
+                                    <span class="qbd-q-meta-label">{tq('q.meta_para')}</span>
+                                    <span class="qbd-q-meta-val" data-f="client">{M.client.name}</span>
+                                </div>
+                                <div class="qbd-q-meta-col">
+                                    <span class="qbd-q-meta-label">{tq('q.meta_vigencia')}</span>
+                                    <span class="qbd-q-meta-val" data-f="vig-date">{M.vigDate}</span>
+                                    <span class="qbd-q-vig-chip qbd-rv" data-f="vig-chip">{M.vigChip}</span>
+                                </div>
+                                <div class="qbd-q-meta-col">
+                                    <span class="qbd-q-meta-label">{tq('q.meta_terminos')}</span>
+                                    <span class="qbd-q-meta-val" data-f="terms">{M.termLabel}</span>
+                                </div>
+                            </div>
+
+                            <div class="qbd-q-total-hero" data-fx="total">
+                                <div class="qbd-q-total-inner">
+                                    <span class="qbd-q-total-eyebrow">{tq('q.total_eyebrow')}</span>
+                                    <span class="editorial qbd-q-total-amount" style={`color:${COLOR}`} data-f="total">{M.totalText}</span>
+                                    <span class="qbd-q-total-note" data-f="total-note">{M.totalNote}</span>
+                                    <span class="qbd-q-total-split" data-f="split" hidden={!M.splitReview}>{M.splitReview}</span>
+                                </div>
+                            </div>
+
+                            <div class="qbd-q-items" data-fx="items">
+                                <div class="qbd-qi-head">
+                                    <span>{tq('q.th_concepto')}</span>
+                                    <span class="qbd-qi-center">{tq('q.th_cant')}</span>
+                                    <span class="qbd-qi-right">{tq('q.th_unit')}</span>
+                                    <span class="qbd-qi-right">{tq('q.th_importe')}</span>
+                                </div>
+                                {DEF.lines.map((l) => CAT.get(l.sku)!).concat(CATALOG.filter((p) => !inDefault(p.sku))).map((p) => {
+                                    const r = defRow(p.sku);
+                                    return (
+                                        <div class="qbd-qi-row-wrapper" data-qbd-row={p.sku} hidden={!r}>
+                                            <div class="qbd-qi-row">
+                                                <span class="qbd-qi-name">
+                                                    <span class="qbd-qi-pick qbd-rv" aria-hidden="true"><span class="qbd-qi-pick-box"></span></span>
+                                                    <span>{p.name}</span>
+                                                    <span class="qbd-qi-chat-btn qbd-rv" data-chat aria-hidden="true" hidden={!DEF.chat}>
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                                    </span>
+                                                </span>
+                                                <span class="qbd-qi-center qbd-qi-qty" data-label={tq('q.th_cant')} data-f="qty">{r?.qtyText ?? ''}</span>
+                                                <span class="editorial qbd-qi-right qbd-qi-price" data-label={tq('q.th_unit')}>
+                                                    <s class="qbd-qi-list" data-f="list" hidden={!r?.showList}>{r?.listText ?? ''}</s>
+                                                    <span class="qbd-qi-price-val" data-f="price">{r?.priceText ?? ''}</span>
+                                                </span>
+                                                <span class="editorial qbd-qi-right qbd-qi-total" data-label={tq('q.th_importe')}>
+                                                    <span data-f="amount">{r?.amountText ?? ''}</span>
+                                                    <span class="qbd-q-was" data-f="was" hidden></span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                <div class="qbd-qi-subtotals" data-qbd-subtotals>
+                                    <div class="qbd-qt-row"><span>{tq('q.subtotal')}</span><span class="editorial" data-f="subtotal">{M.subtotal}</span></div>
+                                    <div class="qbd-qt-row" data-f-row="tax"><span data-f="tax-label">{M.taxLabel}</span><span class="editorial" data-f="tax">{M.taxText}</span></div>
+                                    <div class="qbd-qt-row qbd-qt-grand"><span>{tq('q.total')}</span><span class="editorial" data-f="grand">{M.totalText}</span></div>
+                                </div>
+                            </div>
+
+                            <p class="qbd-q-notes">{C.notes}</p>
+
+                            <div class="qbd-q-trust qbd-rv">
+                                <span class="qbd-q-trust-live"><span class="qbd-q-live-dot"></span> <span>{tq('q.conectado_vivo')}</span></span>
+                                <span class="qbd-q-trust-secure">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                    {tq('q.cifrado_firma')}
+                                </span>
+                            </div>
+
+                            <div class="qbd-q-actions-area">
+                                <div class="qbd-ql-step qbd-rv">
+                                    <button type="button" class="qbd-ql-cta" style={`background:${COLOR}`} data-qbd-approve data-qbd-cta>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                                        {tq('q.aprobar_cotizacion')}
+                                    </button>
+                                    <div class="qbd-ql-secondary-row" aria-hidden="true">
+                                        <span class="qbd-ql-ghost">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                            {tq('q.descargar_pdf')}
+                                        </span>
+                                        <span class="qbd-ql-ghost qbd-ql-reject-link">{tq('q.rechazar')}</span>
+                                    </div>
+                                </div>
+
+                                <div class="qbd-ql-step qbd-ap">
+                                    <div class="qbd-ql-success" data-fx="success">
+                                        <div class="qbd-ql-check-ring" data-qbd-ring>
+                                            <svg class="qbd-ql-check-svg" viewBox="0 0 52 52" aria-hidden="true">
+                                                <circle class="qbd-ql-check-circle" cx="26" cy="26" r="23" fill="none" stroke={COLOR} stroke-width="2"/>
+                                                <polyline class="qbd-ql-check-mark" points="14,27 22,35 38,18" fill="none" stroke={COLOR} stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </div>
+                                        <span class="qbd-ql-done-title">{tq('q.cotizacion_aprobada')}</span>
+                                        <span class="qbd-ql-done-sub">{fill(S.recibio, { org: ORG.nombre })}</span>
+                                        <div class="qbd-ql-done-actions" data-fx="done">
+                                            <div class="qbd-ql-credit-note" data-blk="credit" hidden={!M.credit}>
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3" fill="currentColor" fill-opacity="0.08"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 15l2 2 4-4"/></svg>
+                                                <div class="qbd-ql-credit-text">
+                                                    <strong data-f="credit-title">{M.credit?.title ?? ''}</strong>
+                                                    <span data-f="credit-text">{M.credit?.text ?? ''}</span>
+                                                </div>
+                                            </div>
+                                            <div class="qbd-ql-cobros" data-blk="cobros" hidden={!M.cobros}>
+                                                <div class="qbd-ql-cobros-title">{tq('q.plan_de_pago')}</div>
+                                                <div class="qbd-ql-cobro-row">
+                                                    <span class="qbd-ql-cobro-tipo">{tq('q.tipo_anticipo')}</span>
+                                                    <span class="editorial qbd-ql-cobro-monto" data-f="ant">{M.cobros?.ant ?? ''}</span>
+                                                    <span class="qbd-ql-cobro-status">{S.porPagar}</span>
+                                                </div>
+                                                <div class="qbd-ql-cobro-row">
+                                                    <span class="qbd-ql-cobro-tipo">{tq('q.tipo_saldo')}</span>
+                                                    <span class="editorial qbd-ql-cobro-monto" data-f="sal">{M.cobros?.sal ?? ''}</span>
+                                                    <span class="qbd-ql-cobro-status" data-f="sal-status">{M.cobros?.salStatus ?? ''}</span>
+                                                </div>
+                                            </div>
+                                            <div class="qbd-ql-pay" data-blk="iguala" hidden={!M.iguala}>
+                                                <div class="qbd-ql-sub-copy">
+                                                    <strong>{tq('q.autoriza_iguala')}</strong>
+                                                    <span><span data-f="ig-pre">{M.iguala?.pre ?? ''}</span><b data-f="ig-monto">{M.iguala?.monto ?? ''}</b><span data-f="ig-post">{M.iguala?.post ?? ''}</span></span>
+                                                </div>
+                                                <span class="qbd-ql-cta" style={`background:${COLOR}`} aria-hidden="true">
+                                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                    {tq('q.autorizar_cobro_mensual')}
+                                                </span>
+                                                <div class="qbd-ql-pay-secure">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                    {tq('q.suscripcion_stripe')}
+                                                    <span class="qbd-ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>
+                                                </div>
+                                            </div>
+                                            <div class="qbd-ql-pay-options" data-blk="pay" hidden={!M.pay}>
+                                                <div class="qbd-ql-pay">
+                                                    <div class="qbd-ql-pay-amount">
+                                                        <span class="qbd-ql-pay-label" data-f="pay-label">{M.pay?.label ?? ''}</span>
+                                                        <span class="editorial qbd-ql-pay-total" style={`color:${COLOR}`}><span data-f="pay-total">{M.pay?.amount ?? ''}</span> <small data-f="cur">{M.cur}</small></span>
+                                                    </div>
+                                                    <span class="qbd-ql-cta" style={`background:${COLOR}`} aria-hidden="true">
+                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                        {tq('q.pagar_seguro')}
+                                                    </span>
+                                                    <div class="qbd-ql-pay-secure">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                        <span data-f="pay-secure">{M.pay?.secure ?? ''}</span>
+                                                        <span class="qbd-ql-pay-cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span class="qbd-ql-ghost qbd-ql-ghost-receipt" aria-hidden="true">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                                {tq('q.descargar_comprobante')}
+                                            </span>
+                                        </div>
+                                        <div class="qbd-ql-audit-stamp">
+                                            <div class="qbd-ql-audit-header">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                                                <span>{tq('q.documento_verificado')}</span>
+                                            </div>
+                                            <div class="qbd-ql-audit-row"><strong>{tq('q.firmante')}</strong> <span data-f="signer">{M.client.contacto}</span></div>
+                                            <div class="qbd-ql-audit-row"><strong>{tq('q.fecha')}</strong> <span data-f="signed-at">{signedAt}</span></div>
+                                            <div class="qbd-ql-audit-row"><strong>{tq('q.sello')}</strong> <span class="qbd-ql-hash" data-f="hash">{HASH}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="qbd-q-chat qbd-rv" data-blk="chat" hidden={!DEF.chat}>
+                                <div class="qbd-q-compose" aria-hidden="true">
+                                    <div class="qbd-q-compose-row">
+                                        <span class="qbd-q-compose-ta">{tq('q.escribe_mensaje')}</span>
+                                        <span class="qbd-q-compose-send" style={`background:${COLOR}`}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                        </span>
+                                    </div>
+                                    <div class="qbd-q-compose-extras">
+                                        <span class="qbd-q-compose-price" data-f="prop-ph">{M.propPh}</span>
+                                        <span class="qbd-q-counter-pill" style={`color:${COLOR}; border-color:${COLOR}`}>
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                                            {tq('q.contraoferta')}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="qbd-q-contact">
+                                <span class="qbd-q-contact-label">{fill(tq('q.dudas_contacta'), { org: ORG.nombre })}</span>
+                                <div class="qbd-q-contact-links" aria-hidden="true">
+                                    <span class="qbd-q-contact-link">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.26-.1-.46-.15-.65.15-.2.3-.74.94-.9 1.13-.17.2-.34.22-.63.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.64-2.04-.17-.3-.02-.46.13-.6.13-.14.3-.34.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.65-1.57-.9-2.15-.24-.56-.48-.48-.65-.49h-.56c-.2 0-.5.07-.77.37-.26.3-1 .98-1 2.4 0 1.4 1.03 2.76 1.17 2.96.14.2 2.02 3.08 4.9 4.32.68.3 1.22.47 1.64.6.69.22 1.31.19 1.8.12.55-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.56-.34zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.33A10 10 0 1 0 12 2z"/></svg>
+                                        {tq('q.whatsapp')}
+                                    </span>
+                                    <span class="qbd-q-contact-link">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+                                        {tq('q.correo')}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="qbd-q-cord-badge">
+                                <span class="qbd-q-cord-badge-trust">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V5z" fill="currentColor" fill-opacity="0.14"/><polyline points="8.5 12 11 14.5 15.5 9"/></svg>
+                                    {tq('q.firma_validez_legal')}
+                                </span>
+                                <span class="qbd-q-cord-badge-cta">
+                                    {tq('q.verificado_por')} <img src="/imgs/logo-cord-navy.png" alt="Cord" width="46" height="11" loading="lazy" /> {tq('q.crea_las_tuyas')}
+                                </span>
+                            </div>
+                        </div>
+                        <p class="qbd-qp-aviso">{tq('q.aviso_actividad')}</p>
+                    </div>
+                </div>
+
+                <div class="qbd-q-sticky" aria-hidden="true" data-qbd-sticky>
+                    <div class="qbd-q-sticky-inner">
+                        <div class="qbd-q-sticky-info">
+                            <span class="qbd-q-sticky-label">{tq('q.total_a_pagar')}</span>
+                            <span class="editorial qbd-q-sticky-total" style={`color:${COLOR}`} data-f="sticky-total">{M.totalText}</span>
+                        </div>
+                        <button type="button" class="qbd-q-sticky-cta" style={`background:${COLOR}`} tabindex="-1" data-qbd-approve>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                            {tq('q.aprobar')}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <p class="qbd-sr" aria-live="polite" data-qbd-live></p>
+        </div>
+    </div>
+</section>
+
+<script>
+    import { calculateDocumentTotals } from '../../../packages/elements/src/engine';
+    import { currencyDecimals } from '../../lib/currency';
+
+    type Cobro = 'unico' | 'anticipo' | 'iguala';
+    interface Line { sku: string; qty: number }
+    interface State { client: string; terms: string; lines: Line[]; currency: string; vig: number; cobro: Cobro; pay: boolean; chat: boolean }
+    interface Product { sku: string; code: string; name: string; unit: string; step: number; qty: number; price: Record<string, number> }
+    interface Client { id: string; name: string; contacto: string; desc: number; terms: string }
+    interface Cfg {
+        intl: string; taxRate: number; taxLabel: string; org: string; folio: string; anticipoPct: number;
+        termDays: Record<string, number>; termLabels: Record<string, string>;
+        catalog: Product[]; clients: Client[]; defaults: State; s: Record<string, string>;
+    }
+    type Kind = 'init' | 'reset' | 'client' | 'terms' | 'qty' | 'add' | 'remove' | 'currency' | 'vig' | 'cobro' | 'pay' | 'chat';
+
+    const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const fill = (tpl: string, vars: Record<string, string>) =>
+        Object.entries(vars).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), tpl);
+
+    function initDemo(root: HTMLElement) {
+        const cfgEl = root.querySelector('[data-qbd-config]');
+        if (!cfgEl) return;
+        let cfg: Cfg;
+        try { cfg = JSON.parse(cfgEl.textContent || ''); } catch { return; }
+        const S = cfg.s;
+        const q = <T extends Element = HTMLElement>(sel: string, el: ParentNode = root) => el.querySelector<T>(sel);
+        const qa = <T extends Element = HTMLElement>(sel: string, el: ParentNode = root) => Array.from(el.querySelectorAll<T>(sel));
+        const CAT = new Map(cfg.catalog.map((p) => [p.sku, p]));
+        const CLI = new Map(cfg.clients.map((c) => [c.id, c]));
+        const clone = (s: State): State => ({ ...s, lines: s.lines.map((l) => ({ ...l })) });
+        let state = clone(cfg.defaults);
+        let tab: 'review' | 'approved' = 'review';
+
+        const card = q('[data-qbd-card]')!;
+        const view = q('[data-qbd-view]')!;
+        const sticky = q('[data-qbd-sticky]')!;
+        const tabsEl = q('[data-qbd-tabs]')!;
+        const ind = q('[data-qbd-ind]')!;
+        const tabBtns = qa<HTMLButtonElement>('[data-qbd-tab]');
+        const linesEl = q('[data-qbd-lines]')!;
+        const subtotals = q('[data-qbd-subtotals]')!;
+        const addBtn = q<HTMLButtonElement>('[data-qbd-add]')!;
+        const listbox = q('[data-qbd-catalog]')!;
+        const liveEl = q('[data-qbd-live]')!;
+
+        const fmtCache = new Map<string, Intl.NumberFormat>();
+        const money = (n: number, cur: string) => {
+            let f = fmtCache.get(cur);
+            if (!f) {
+                const d = currencyDecimals(cur);
+                f = new Intl.NumberFormat(cfg.intl, { style: 'currency', currency: cur, minimumFractionDigits: d, maximumFractionDigits: d });
+                fmtCache.set(cur, f);
+            }
+            return f.format(Number(n) || 0);
+        };
+        const fmtDate = (d: Date) => new Intl.DateTimeFormat(cfg.intl, { day: 'numeric', month: 'short', year: 'numeric' }).format(d).replace('.', '');
+        const plusDays = (n: number) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n); return d; };
+
+        // Misma aritmética que el frontmatter: motor único y splitAnticipo() de lib/cobros.ts.
+        function model() {
+            const cur = state.currency;
+            const m = (n: number) => money(n, cur);
+            const scale = 10 ** currencyDecimals(cur);
+            const client = CLI.get(state.client)!;
+            const days = cfg.termDays[state.terms] ?? 0;
+            const lines = state.lines.map((l) => {
+                const p = CAT.get(l.sku)!;
+                const lista = p.price[cur];
+                const nego = client.desc > 0 ? Math.round(lista * (1 - client.desc / 100) * scale) / scale : null;
+                const precio = nego ?? lista;
+                return { sku: l.sku, p, qty: l.qty, lista, nego, precio, importe: precio * l.qty };
+            });
+            const totals = calculateDocumentTotals(
+                lines.map((l) => ({ descripcion: l.p.name, cantidad: l.qty, precio_unitario: l.lista, precio_negociado: l.nego, tax_rate: cfg.taxRate })),
+                { ivaIncluido: false, retenciones: [] },
+            );
+            const total = totals.total;
+            const totalUnits = Math.round(total * scale);
+            const antUnits = Math.round((totalUnits * cfg.anticipoPct) / 100);
+            const ant = antUnits / scale;
+            const sal = (totalUnits - antUnits) / scale;
+            const saldoVence = days > 0 ? fmtDate(plusDays(days)) : '';
+            const deAnticipo = fill(S.splitDeAnticipo, { pct: String(cfg.anticipoPct), saldo: m(sal) });
+            const splitReview = state.cobro === 'anticipo'
+                ? `${S.splitAlAprobar} ${m(ant)}${deAnticipo}${saldoVence ? fill(S.splitVenceSaldo, { fecha: saldoVence }) : ''}`
+                : state.cobro === 'iguala' ? fill(S.igualaSplit, { monto: m(total) }) : '';
+            const splitApproved = state.cobro === 'anticipo'
+                ? `${S.splitHoyPagas} ${m(ant)}${deAnticipo}${fill(S.splitVenceSaldo, { fecha: saldoVence || fmtDate(plusDays(0)) })}`
+                : splitReview;
+            const tax = totals.porTasa.filter((r) => r.impuesto > 0)[0];
+            const [igPre, igPost] = S.igualaDesc.split('{monto}');
+            const pagoDisponible = state.cobro === 'anticipo' || days === 0;
+            const termLabel = cfg.termLabels[state.terms];
+            return {
+                cur, client, lines, total,
+                totalText: m(total),
+                termLabel,
+                vigDate: fmtDate(plusDays(state.vig)),
+                vigChip: fill(S.vigEnDias, { n: String(state.vig), s: state.vig === 1 ? '' : 's' }),
+                totalNote: `${cur} · ${S.totalNote}`,
+                splitReview, splitApproved,
+                rows: lines.map((l) => ({
+                    sku: l.sku,
+                    qtyText: `${l.qty.toLocaleString(cfg.intl)} ${l.p.unit}`,
+                    showList: l.nego != null && l.nego < l.lista,
+                    listText: m(l.lista),
+                    priceText: m(l.precio),
+                    amountText: m(l.importe),
+                    importe: l.importe,
+                })),
+                subtotal: m(totals.subtotal),
+                taxLabel: tax ? `${cfg.taxLabel} ${Math.round(tax.tasa * 10000) / 100}%` : '',
+                taxText: tax ? m(tax.impuesto) : '',
+                credit: state.cobro === 'unico' && days > 0
+                    ? {
+                        title: fill(S.pedidoCredito, { terminos: termLabel }),
+                        text: fill(S.pagoVence, { total: `${m(total)} ${cur}`, fecha: saldoVence }) + (state.pay ? S.pagoVenceOnline : S.pagoVenceManual),
+                    }
+                    : null,
+                cobros: state.cobro === 'anticipo' ? { ant: m(ant), sal: m(sal), salStatus: days > 0 ? fill(S.venceEl, { fecha: saldoVence }) : S.porPagar } : null,
+                iguala: state.cobro === 'iguala' && state.pay ? { pre: igPre ?? '', monto: m(total), post: igPost ?? '' } : null,
+                pay: state.pay && pagoDisponible && state.cobro !== 'iguala'
+                    ? {
+                        label: state.cobro === 'anticipo' ? `${S.aPagarAhora} · ${S.tipoAnticipo.toUpperCase()}` : S.aPagarAhora,
+                        amount: m(state.cobro === 'anticipo' ? ant : total),
+                        secure: cur === 'MXN' ? S.tarjetaOSpei : S.pagoProtegido,
+                    }
+                    : null,
+                propPh: S.propPh.replace('MXN', cur),
+            };
+        }
+
+        const setF = (key: string, text: string, scope: ParentNode = root) => {
+            qa(`[data-f="${key}"]`, scope).forEach((el) => { if (el.textContent !== text) el.textContent = text; });
+        };
+        const showBlk = (key: string, on: boolean) => { const el = q(`[data-blk="${key}"]`); if (el) el.hidden = !on; };
+
+        // ── Animaciones del link real: count-up del total y flash de la línea que cambió ──
+        let countRaf = 0;
+        let shownTotal = 0;
+        const countUp = (el: HTMLElement, from: number, to: number, cur: string) => {
+            cancelAnimationFrame(countRaf);
+            if (reduced() || Math.abs(from - to) < 0.005) { el.textContent = money(to, cur); shownTotal = to; return; }
+            const dur = 1000; let t0 = 0;
+            const tick = (t: number) => {
+                if (!t0) t0 = t;
+                const p = Math.min((t - t0) / dur, 1);
+                shownTotal = from + (to - from) * (1 - Math.pow(1 - p, 3));
+                el.textContent = money(shownTotal, cur);
+                if (p < 1) countRaf = requestAnimationFrame(tick);
+            };
+            countRaf = requestAnimationFrame(tick);
+        };
+        const restartClass = (el: Element | null, cls: string) => {
+            if (!el) return;
+            el.classList.remove(cls);
+            void (el as HTMLElement).offsetWidth;
+            el.classList.add(cls);
+            el.addEventListener('animationend', () => el.classList.remove(cls), { once: true });
+        };
+        const wasTimers = new Map<string, number>();
+        const showWas = (row: HTMLElement, sku: string, before: number, cur: string) => {
+            const was = q('[data-f="was"]', row);
+            if (!was) return;
+            was.textContent = fill(S.cambioEra, { monto: money(before, cur) });
+            was.hidden = false;
+            restartClass(was, 'is-on');
+            clearTimeout(wasTimers.get(sku));
+            wasTimers.set(sku, window.setTimeout(() => { was.hidden = true; }, 8000));
+        };
+
+        // ── Cámara: el navegador de la vista previa se desplaza a lo que cambió ──
+        const stickyH = () => (sticky.classList.contains('is-show') ? sticky.getBoundingClientRect().height + 8 : 0);
+        const scrollViewTo = (top: number) => view.scrollTo({ top: Math.max(0, top), behavior: reduced() ? 'auto' : 'smooth' });
+        const ensureVisible = (el: Element | null, align: 'auto' | 'top' = 'auto') => {
+            if (!el || (el as HTMLElement).offsetParent === null) return;
+            const vr = view.getBoundingClientRect();
+            const er = el.getBoundingClientRect();
+            const pad = 20;
+            if (align === 'top') { scrollViewTo(view.scrollTop + (er.top - vr.top) - pad); return; }
+            const bottomLimit = vr.bottom - stickyH() - pad;
+            if (er.top >= vr.top + pad && er.bottom <= bottomLimit) return;
+            const room = vr.height - stickyH();
+            const offset = er.height < room - pad * 2 ? Math.min((room - er.height) * 0.3, 90) : pad;
+            scrollViewTo(view.scrollTop + (er.top - vr.top) - offset);
+        };
+
+        // ── Barra fija del link real: aparece cuando el botón de aprobar sale de la vista ──
+        let ctaVisible = false;
+        const updateSticky = () => sticky.classList.toggle('is-show', tab === 'review' && !ctaVisible);
+        const cta = q('[data-qbd-cta]');
+        if ('IntersectionObserver' in window && cta) {
+            new IntersectionObserver((entries) => {
+                ctaVisible = entries[0]?.isIntersecting ?? false;
+                updateSticky();
+            }, { root: view, threshold: 0.4 }).observe(cta);
+        }
+
+        // ── Sello: SHA-256 real del contenido firmado, como el modo demo de /q ──
+        let hashTimer = 0;
+        const scheduleHash = (m: ReturnType<typeof model>) => {
+            clearTimeout(hashTimer);
+            hashTimer = window.setTimeout(async () => {
+                if (!globalThis.crypto?.subtle) return;
+                const contenido = JSON.stringify({
+                    folio: cfg.folio,
+                    status: 'approved',
+                    signed_by: m.client.contacto,
+                    signed_at: new Date().toISOString(),
+                    items: m.lines.map((l) => ({ id: l.sku, descripcion: l.p.name, cantidad: l.qty, unidad: l.p.unit, precio: l.precio, taxRate: cfg.taxRate })),
+                });
+                try {
+                    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(contenido));
+                    setF('hash', Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join(''));
+                    setF('signed-at', new Date().toLocaleString(cfg.intl, { dateStyle: 'long', timeStyle: 'short' }));
+                } catch { /* sin crypto.subtle el sello del render inicial se queda */ }
+            }, 220);
+        };
+
+        let liveTimer = 0;
+        const announce = (m: ReturnType<typeof model>) => {
+            clearTimeout(liveTimer);
+            liveTimer = window.setTimeout(() => {
+                liveEl.textContent = fill(S.live, { total: m.totalText, cur: m.cur, n: String(m.lines.length) });
+            }, 700);
+        };
+
+        let prevCur = state.currency;
+        const prevImporte = new Map<string, number>();
+
+        function renderSplit(m: ReturnType<typeof model>, animate: boolean) {
+            const el = q('[data-f="split"]');
+            if (!el) return;
+            const text = tab === 'approved' ? m.splitApproved : m.splitReview;
+            const was = el.textContent;
+            el.hidden = !text;
+            if (text && was !== text) {
+                el.textContent = text;
+                if (animate) restartClass(el, 'qbd-qi-reveal');
+            }
+        }
+
+        function render(kind: Kind = 'init', sku?: string) {
+            const m = model();
+            const animate = !['init', 'reset', 'currency'].includes(kind) && !reduced();
+
+            // Panel
+            const clientSel = q<HTMLSelectElement>('[data-qbd-client]');
+            if (clientSel) clientSel.value = state.client;
+            qa<HTMLInputElement>('input[name="qbd-terms"]').forEach((r) => { r.checked = r.value === state.terms; });
+            const desc = q('[data-qbd-desc-text]');
+            if (desc) desc.textContent = m.client.desc > 0 ? fill(S.descOn, { d: String(m.client.desc) }) : S.descOff;
+
+            const used = new Set(state.lines.map((l) => l.sku));
+            if (kind === 'init' || kind === 'reset') {
+                state.lines.forEach((l) => { const li = q(`[data-qbd-line="${l.sku}"]`); if (li) linesEl.appendChild(li); });
+            }
+            if (kind === 'add' && sku) { const li = q(`[data-qbd-line="${sku}"]`); if (li) linesEl.appendChild(li); }
+            qa('[data-qbd-line]').forEach((li) => { li.hidden = !used.has(li.dataset.qbdLine || ''); });
+            m.lines.forEach((l) => {
+                const li = q(`[data-qbd-line="${l.sku}"]`);
+                if (!li) return;
+                const list = q('[data-f="lm-list"]', li);
+                if (list) { list.hidden = !(l.nego != null && l.nego < l.lista); list.textContent = money(l.lista, m.cur); }
+                setF('lm-price', money(l.precio, m.cur), li);
+                const inp = q<HTMLInputElement>('[data-qbd-qty]', li);
+                if (inp && document.activeElement !== inp) inp.value = l.qty.toLocaleString(cfg.intl);
+                const dec = q<HTMLButtonElement>('[data-qbd-dec]', li);
+                if (dec) dec.disabled = l.qty <= 1;
+                const rm = q<HTMLButtonElement>('[data-qbd-remove]', li);
+                if (rm) rm.disabled = state.lines.length <= 1;
+            });
+            qa('[role="option"]', listbox).forEach((opt) => {
+                const s = opt.dataset.sku || '';
+                opt.setAttribute('aria-disabled', used.has(s) ? 'true' : 'false');
+                const p = CAT.get(s);
+                if (p) setF('opt-price', money(p.price[m.cur], m.cur), opt);
+            });
+            const allIn = used.size >= cfg.catalog.length;
+            addBtn.disabled = allIn;
+            const addText = q('[data-qbd-add-text]');
+            if (addText) addText.textContent = allIn ? S.allAdded : S.add;
+
+            const curSel = q<HTMLSelectElement>('[data-qbd-currency]');
+            if (curSel) curSel.value = state.currency;
+            const vigSel = q<HTMLSelectElement>('[data-qbd-vig]');
+            if (vigSel) vigSel.value = String(state.vig);
+            qa<HTMLInputElement>('input[name="qbd-cobro"]').forEach((r) => { r.checked = r.value === state.cobro; });
+            const cobroNote = q('[data-qbd-cobro-note]');
+            if (cobroNote) {
+                cobroNote.textContent = state.cobro === 'anticipo' ? S.noteAnticipo
+                    : state.cobro === 'iguala' ? S.noteIguala
+                    : (cfg.termDays[state.terms] ?? 0) > 0 ? fill(S.noteUnicoCredito, { terms: m.termLabel }) : S.noteUnicoContado;
+            }
+            const payCb = q<HTMLInputElement>('[data-qbd-pay]');
+            if (payCb) payCb.checked = state.pay;
+            const chatCb = q<HTMLInputElement>('[data-qbd-chat]');
+            if (chatCb) chatCb.checked = state.chat;
+            const payDesc = q('[data-qbd-pay-desc]');
+            if (payDesc) payDesc.textContent = m.cur === 'MXN' ? S.payDescMx : S.payDesc;
+
+            // Vista previa
+            setF('client', m.client.name);
+            setF('vig-date', m.vigDate);
+            setF('vig-chip', m.vigChip);
+            setF('terms', m.termLabel);
+            const totalEl = q('[data-f="total"]');
+            if (totalEl) {
+                if (animate && prevCur === m.cur) countUp(totalEl, shownTotal, m.total, m.cur);
+                else { cancelAnimationFrame(countRaf); totalEl.textContent = m.totalText; shownTotal = m.total; }
+            }
+            setF('total-note', m.totalNote);
+            renderSplit(m, animate);
+
+            if (kind === 'init' || kind === 'reset') {
+                state.lines.forEach((l) => { const r = q(`[data-qbd-row="${l.sku}"]`); if (r) subtotals.before(r); });
+            }
+            if (kind === 'add' && sku) { const r = q(`[data-qbd-row="${sku}"]`); if (r) subtotals.before(r); }
+            qa('[data-qbd-row]').forEach((r) => { r.hidden = !used.has(r.dataset.qbdRow || ''); });
+            m.rows.forEach((row) => {
+                const el = q(`[data-qbd-row="${row.sku}"]`);
+                if (!el) return;
+                const before = prevImporte.get(row.sku);
+                setF('qty', row.qtyText, el);
+                const list = q('[data-f="list"]', el);
+                if (list) { list.hidden = !row.showList; list.textContent = row.listText; }
+                setF('price', row.priceText, el);
+                setF('amount', row.amountText, el);
+                if (animate && kind === 'add' && row.sku === sku) restartClass(el, 'qbd-qi-reveal');
+                else if (animate && before !== undefined && Math.abs(before - row.importe) > 0.005) {
+                    restartClass(el, 'qbd-q-flash');
+                    if (kind === 'qty' && row.sku === sku) showWas(el, row.sku, before, m.cur);
+                }
+            });
+            prevImporte.clear();
+            m.rows.forEach((r) => prevImporte.set(r.sku, r.importe));
+            if (kind === 'currency' || kind === 'reset') qa('[data-f="was"]').forEach((w) => { w.hidden = true; });
+
+            setF('subtotal', m.subtotal);
+            const taxRow = q('[data-f-row="tax"]');
+            if (taxRow) taxRow.hidden = !m.taxText;
+            setF('tax-label', m.taxLabel);
+            setF('tax', m.taxText);
+            setF('grand', m.totalText);
+            setF('sticky-total', m.totalText);
+            setF('prop-ph', m.propPh);
+            qa('[data-chat]').forEach((el) => { el.hidden = !state.chat; });
+            showBlk('chat', state.chat);
+
+            showBlk('credit', !!m.credit);
+            if (m.credit) { setF('credit-title', m.credit.title); setF('credit-text', m.credit.text); }
+            showBlk('cobros', !!m.cobros);
+            if (m.cobros) { setF('ant', m.cobros.ant); setF('sal', m.cobros.sal); setF('sal-status', m.cobros.salStatus); }
+            showBlk('iguala', !!m.iguala);
+            if (m.iguala) { setF('ig-pre', m.iguala.pre); setF('ig-monto', m.iguala.monto); setF('ig-post', m.iguala.post); }
+            showBlk('pay', !!m.pay);
+            if (m.pay) { setF('pay-label', m.pay.label); setF('pay-total', m.pay.amount); setF('pay-secure', m.pay.secure); }
+            setF('cur', m.cur);
+            setF('signer', m.client.contacto);
+            if (kind !== 'init') scheduleHash(m);
+            if (kind === 'currency' && !reduced()) restartClass(card, 'qbd-q-fade');
+
+            prevCur = m.cur;
+            if (kind !== 'init') announce(m);
+            return m;
+        }
+
+        // ── Pestañas ──
+        const moveIndicator = (instant = false) => {
+            const sel = tabBtns.find((b) => b.dataset.qbdTab === tab);
+            if (!sel) return;
+            if (instant) ind.style.transition = 'none';
+            ind.style.width = `${sel.offsetWidth}px`;
+            ind.style.transform = `translateX(${sel.offsetLeft}px)`;
+            if (instant) { void ind.offsetWidth; ind.style.transition = ''; }
+        };
+        const restartCheck = () => {
+            const ring = q('[data-qbd-ring]');
+            if (!ring || reduced()) return;
+            ring.classList.remove('is-drawing');
+            void (ring as HTMLElement).offsetWidth;
+            ring.classList.add('is-drawing');
+        };
+        let swapTimer = 0;
+        function setTab(next: 'review' | 'approved', opts: { focus?: boolean; after?: () => void } = {}) {
+            if (next === tab) { opts.after?.(); return; }
+            tab = next;
+            tabBtns.forEach((b) => {
+                const on = b.dataset.qbdTab === tab;
+                b.setAttribute('aria-selected', String(on));
+                b.tabIndex = on ? 0 : -1;
+                if (on && opts.focus) b.focus({ preventScroll: true });
+            });
+            view.setAttribute('aria-labelledby', `qbd-tab-${tab}`);
+            moveIndicator();
+            const apply = () => {
+                card.dataset.state = tab;
+                renderSplit(model(), false);
+                updateSticky();
+                if (tab === 'approved') restartCheck();
+                requestAnimationFrame(() => {
+                    if (opts.after) opts.after();
+                    else if (tab === 'approved') ensureVisible(q('[data-fx="success"]'), 'top');
+                    else scrollViewTo(0);
+                });
+            };
+            clearTimeout(swapTimer);
+            if (reduced()) { apply(); return; }
+            card.classList.add('is-swapping');
+            swapTimer = window.setTimeout(() => {
+                apply();
+                requestAnimationFrame(() => card.classList.remove('is-swapping'));
+            }, 150);
+        }
+        tabBtns.forEach((b) => b.addEventListener('click', () => setTab(b.dataset.qbdTab === 'approved' ? 'approved' : 'review')));
+        tabsEl.addEventListener('keydown', (e) => {
+            const i = tabBtns.findIndex((b) => b.dataset.qbdTab === tab);
+            let n = -1;
+            if (e.key === 'ArrowRight') n = (i + 1) % tabBtns.length;
+            else if (e.key === 'ArrowLeft') n = (i - 1 + tabBtns.length) % tabBtns.length;
+            else if (e.key === 'Home') n = 0;
+            else if (e.key === 'End') n = tabBtns.length - 1;
+            if (n < 0) return;
+            e.preventDefault();
+            setTab(tabBtns[n].dataset.qbdTab === 'approved' ? 'approved' : 'review', { focus: true });
+        });
+        qa('[data-qbd-approve]').forEach((b) => b.addEventListener('click', () => setTab('approved', { focus: true })));
+
+        // ── Cambios desde el panel ──
+        const region = (key: string) => q(`[data-fx="${key}"]`);
+        function change(kind: Kind, sku?: string) {
+            if (kind === 'pay' && tab === 'review') {
+                render(kind, sku);
+                setTab('approved', { after: () => ensureVisible(region('done')) });
+                return;
+            }
+            if (kind === 'chat' && tab === 'approved') {
+                render(kind, sku);
+                setTab('review', { after: () => ensureVisible(state.chat ? q('[data-blk="chat"]') : region('items')) });
+                return;
+            }
+            render(kind, sku);
+            const target = (() => {
+                switch (kind) {
+                    case 'client': case 'vig': return region('meta');
+                    case 'terms': case 'cobro': return tab === 'approved' ? region('done') : kind === 'terms' ? region('meta') : region('total');
+                    case 'pay': return region('done');
+                    case 'qty': case 'add': return sku ? q(`[data-qbd-row="${sku}"]`) : null;
+                    case 'remove': return region('items');
+                    case 'chat': return state.chat ? q('[data-blk="chat"]') : region('items');
+                    default: return null;
+                }
+            })();
+            if (target) requestAnimationFrame(() => ensureVisible(target));
+        }
+
+        q('[data-qbd-client]')?.addEventListener('change', (e) => {
+            const c = CLI.get((e.target as HTMLSelectElement).value);
+            if (!c) return;
+            state.client = c.id;
+            state.terms = c.terms;
+            if (state.cobro === 'iguala' && state.terms !== 'contado') state.cobro = 'unico';
+            change('client');
+        });
+        qa<HTMLInputElement>('input[name="qbd-terms"]').forEach((r) => r.addEventListener('change', () => {
+            if (!r.checked) return;
+            state.terms = r.value;
+            if (state.cobro === 'iguala' && state.terms !== 'contado') state.cobro = 'unico';
+            change('terms');
+        }));
+        q('[data-qbd-currency]')?.addEventListener('change', (e) => { state.currency = (e.target as HTMLSelectElement).value; change('currency'); });
+        q('[data-qbd-vig]')?.addEventListener('change', (e) => { state.vig = Number((e.target as HTMLSelectElement).value) || 15; change('vig'); });
+        qa<HTMLInputElement>('input[name="qbd-cobro"]').forEach((r) => r.addEventListener('change', () => {
+            if (!r.checked) return;
+            state.cobro = r.value as Cobro;
+            if (state.cobro === 'iguala') state.terms = 'contado';
+            change('cobro');
+        }));
+        q('[data-qbd-pay]')?.addEventListener('change', (e) => { state.pay = (e.target as HTMLInputElement).checked; change('pay'); });
+        q('[data-qbd-chat]')?.addEventListener('change', (e) => { state.chat = (e.target as HTMLInputElement).checked; change('chat'); });
+
+        const setQty = (sku: string, qty: number) => {
+            const line = state.lines.find((l) => l.sku === sku);
+            if (!line) return;
+            const next = Math.min(99999, Math.max(1, Math.round(qty)));
+            if (next === line.qty) return;
+            line.qty = next;
+            change('qty', sku);
+        };
+        linesEl.addEventListener('click', (e) => {
+            const btn = (e.target as HTMLElement).closest('button');
+            const li = btn?.closest<HTMLElement>('[data-qbd-line]');
+            if (!btn || !li) return;
+            const sku = li.dataset.qbdLine || '';
+            const p = CAT.get(sku);
+            const line = state.lines.find((l) => l.sku === sku);
+            if (!p || !line) return;
+            if (btn.hasAttribute('data-qbd-dec')) setQty(sku, line.qty - p.step);
+            else if (btn.hasAttribute('data-qbd-inc')) setQty(sku, line.qty + p.step);
+            else if (btn.hasAttribute('data-qbd-remove')) {
+                if (state.lines.length <= 1) return;
+                const visible = qa('[data-qbd-line]:not([hidden])');
+                const idx = visible.indexOf(li);
+                state.lines = state.lines.filter((l) => l.sku !== sku);
+                change('remove');
+                const nextLi = visible[idx + 1] ?? visible[idx - 1];
+                (nextLi ? q<HTMLButtonElement>('[data-qbd-remove]', nextLi) : addBtn)?.focus();
+            }
+        });
+        const qtyTimers = new Map<string, number>();
+        qa<HTMLInputElement>('[data-qbd-qty]').forEach((inp) => {
+            const sku = inp.closest<HTMLElement>('[data-qbd-line]')?.dataset.qbdLine || '';
+            inp.addEventListener('input', () => {
+                const digits = inp.value.replace(/\D/g, '');
+                clearTimeout(qtyTimers.get(sku));
+                if (!digits) return;
+                qtyTimers.set(sku, window.setTimeout(() => setQty(sku, parseInt(digits, 10)), 380));
+            });
+            inp.addEventListener('blur', () => {
+                const line = state.lines.find((l) => l.sku === sku);
+                const digits = inp.value.replace(/\D/g, '');
+                if (line && digits && parseInt(digits, 10) !== line.qty) { clearTimeout(qtyTimers.get(sku)); setQty(sku, parseInt(digits, 10)); return; }
+                if (line) inp.value = line.qty.toLocaleString(cfg.intl);
+            });
+            inp.addEventListener('keydown', (e) => {
+                const line = state.lines.find((l) => l.sku === sku);
+                const p = CAT.get(sku);
+                if (!line || !p) return;
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setQty(sku, line.qty + (e.key === 'ArrowUp' ? p.step : -p.step));
+                    inp.value = (state.lines.find((l) => l.sku === sku)?.qty ?? line.qty).toLocaleString(cfg.intl);
+                } else if (e.key === 'Enter') inp.blur();
+            });
+        });
+
+        // ── Catálogo (listbox con miniaturas) ──
+        const options = qa('[role="option"]', listbox);
+        let active = -1;
+        const enabledIdx = () => options.map((o, i) => (o.getAttribute('aria-disabled') === 'true' ? -1 : i)).filter((i) => i >= 0);
+        const setActive = (i: number) => {
+            active = i;
+            options.forEach((o, j) => o.classList.toggle('is-active', j === i));
+            if (i >= 0) { listbox.setAttribute('aria-activedescendant', options[i].id); options[i].scrollIntoView({ block: 'nearest' }); }
+            else listbox.removeAttribute('aria-activedescendant');
+        };
+        const openList = () => {
+            if (addBtn.disabled) return;
+            listbox.hidden = false;
+            addBtn.setAttribute('aria-expanded', 'true');
+            setActive(enabledIdx()[0] ?? -1);
+            listbox.focus({ preventScroll: true });
+        };
+        const closeList = (refocus: boolean) => {
+            if (listbox.hidden) return;
+            listbox.hidden = true;
+            addBtn.setAttribute('aria-expanded', 'false');
+            setActive(-1);
+            if (refocus) addBtn.focus();
+        };
+        const choose = (i: number) => {
+            const opt = options[i];
+            if (!opt || opt.getAttribute('aria-disabled') === 'true') return;
+            const sku = opt.dataset.sku || '';
+            const p = CAT.get(sku);
+            if (!p) return;
+            state.lines.push({ sku, qty: p.qty });
+            closeList(true);
+            change('add', sku);
+        };
+        addBtn.addEventListener('click', () => (listbox.hidden ? openList() : closeList(true)));
+        addBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); openList(); }
+        });
+        listbox.addEventListener('keydown', (e) => {
+            const en = enabledIdx();
+            const pos = en.indexOf(active);
+            if (e.key === 'ArrowDown') { e.preventDefault(); setActive(en[Math.min(en.length - 1, pos + 1)] ?? active); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(en[Math.max(0, pos - 1)] ?? active); }
+            else if (e.key === 'Home') { e.preventDefault(); setActive(en[0] ?? -1); }
+            else if (e.key === 'End') { e.preventDefault(); setActive(en[en.length - 1] ?? -1); }
+            else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(active); }
+            else if (e.key === 'Escape') { e.preventDefault(); closeList(true); }
+            else if (e.key === 'Tab') closeList(false);
+        });
+        options.forEach((o, i) => {
+            o.addEventListener('click', () => choose(i));
+            o.addEventListener('pointermove', () => { if (o.getAttribute('aria-disabled') !== 'true' && active !== i) setActive(i); });
+        });
+        document.addEventListener('pointerdown', (e) => {
+            if (listbox.hidden) return;
+            const tgt = e.target as Node;
+            if (!listbox.contains(tgt) && !addBtn.contains(tgt)) closeList(false);
+        });
+
+        q('[data-qbd-reset]')?.addEventListener('click', () => {
+            closeList(false);
+            state = clone(cfg.defaults);
+            render('reset');
+            setTab('review');
+            scrollViewTo(0);
+        });
+
+        // Arranque: fechas de hoy, orden de líneas y totales con el motor del cliente.
+        const m0 = render('init');
+        shownTotal = m0.total;
+        m0.rows.forEach((r) => prevImporte.set(r.sku, r.importe));
+        scheduleHash(m0);
+        tabsEl.classList.add('is-ready');
+        moveIndicator(true);
+        if ('ResizeObserver' in window) new ResizeObserver(() => moveIndicator(true)).observe(tabsEl);
+        document.fonts?.ready.then(() => moveIndicator(true));
+        updateSticky();
+    }
+
+    document.querySelectorAll<HTMLElement>('[data-quote-demo]').forEach(initDemo);
+</script>
+
+<style>
+    /* ════════ Sección ════════ */
+    .qbd {
+        --qbd-zoom: 1;
+        max-width: 1360px;
+        margin: 0 auto;
+        padding: 5.5rem 5% 0;
+    }
+    .qbd [hidden] { display: none !important; }
+    .qbd-sr {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+    }
+
+    .qbd-intro { max-width: 760px; margin: 0 0 2.6rem; }
+    .qbd-eyebrow {
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 3px;
+        text-transform: uppercase; color: #b0b0b8; margin: 0 0 0.9rem;
+    }
+    .qbd-h2 {
+        font-size: clamp(1.85rem, 2.9vw, 2.6rem);
+        font-weight: 800; letter-spacing: -0.035em; line-height: 1.1;
+        color: #050505; margin: 0 0 1rem; text-wrap: balance;
+    }
+    .qbd-sub {
+        font-size: 1.05rem; line-height: 1.6; color: var(--color-text-muted);
+        max-width: 560px; margin: 0 0 1.8rem; text-wrap: pretty;
+    }
+    .qbd-cta {
+        display: inline-flex; align-items: center; gap: 10px; position: relative; overflow: hidden;
+        background: var(--color-blue-deep); color: #fff; text-decoration: none;
+        font-size: 0.95rem; font-weight: 600; padding: 13px 26px; border-radius: 999px;
+        box-shadow: 0 1px 2px rgba(10,25,47,0.2), 0 18px 44px -16px rgba(10,25,47,0.55);
+        transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
+    }
+    .qbd-cta::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.18) 50%, transparent 62%);
+        transform: translateX(-110%); transition: transform 0.55s ease;
+    }
+    .qbd-cta:hover::after { transform: translateX(110%); }
+    .qbd-cta svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring); }
+    .qbd-cta:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(10,25,47,0.2), 0 26px 56px -16px rgba(10,25,47,0.6); }
+    .qbd-cta:hover svg { transform: translateX(4px); }
+    .qbd-cta:active { transform: scale(0.97); }
+    .qbd-cta:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
+
+    /* ════════ Escenario navy con retícula de puntos ════════ */
+    .qbd-stage {
+        position: relative; isolation: isolate;
+        display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 26px;
+        padding: 24px 24px 0;
+        min-height: 780px;
+        border-radius: 28px;
+        background:
+            radial-gradient(ellipse 60% 55% at 82% -8%, rgba(96,128,178,0.22) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 60% at -5% 105%, rgba(38,68,112,0.35) 0%, transparent 70%),
+            linear-gradient(165deg, #0e2240 0%, #0a192f 50%, #081424 100%);
+        box-shadow:
+            0 2px 4px rgba(10,25,47,0.06),
+            0 40px 80px -32px rgba(10,25,47,0.5),
+            inset 0 1px 0 rgba(255,255,255,0.06);
+        overflow: hidden;
+    }
+    .qbd-stage::before {
+        content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+        background-image: radial-gradient(rgba(255,255,255,0.11) 1px, transparent 1.4px);
+        background-size: 22px 22px; background-position: 11px 11px;
+        -webkit-mask-image: radial-gradient(ellipse 85% 75% at 30% 25%, #000 25%, transparent 78%);
+        mask-image: radial-gradient(ellipse 85% 75% at 30% 25%, #000 25%, transparent 78%);
+    }
+
+    /* ════════ Panel de controles ════════ */
+    .qbd-panel {
+        position: relative; z-index: 2;
+        align-self: start; margin-bottom: 24px;
+        color: #e8edf4;
+        background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.028) 100%);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 24px 48px -24px rgba(0,0,0,0.5);
+    }
+    .qbd-panel-head {
+        display: flex; align-items: center; gap: 10px;
+        padding: 11px 10px 11px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .qbd-panel-ico {
+        width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+        display: grid; place-items: center;
+        background: rgba(255,255,255,0.08); color: #fff;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    .qbd-panel-title { flex: 1; font-size: 0.86rem; font-weight: 600; letter-spacing: -0.01em; color: #fff; }
+    .qbd-reset {
+        width: 32px; height: 32px; border-radius: 9px; border: 0; cursor: pointer;
+        display: grid; place-items: center;
+        background: transparent; color: rgba(226,232,240,0.6);
+        transition: background 0.2s, color 0.2s, transform 0.4s var(--ease-spring);
+    }
+    .qbd-reset:hover { background: rgba(255,255,255,0.07); color: #fff; }
+    .qbd-reset:active { transform: rotate(-40deg) scale(0.94); }
+    .qbd-reset:focus-visible { outline: 2px solid rgba(255,255,255,0.75); outline-offset: 1px; }
+
+    .qbd-panel-body { padding: 2px 16px 6px; }
+    .qbd-group { padding: 12px 0 13px; }
+    .qbd-group + .qbd-group { border-top: 1px solid rgba(255,255,255,0.065); }
+    .qbd-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+    .qbd-label {
+        display: block; padding: 0; margin: 0 0 8px;
+        font-size: 0.7rem; font-weight: 600; letter-spacing: 0.01em;
+        color: rgba(226,232,240,0.62);
+    }
+    .qbd-note {
+        display: flex; align-items: flex-start; gap: 7px;
+        margin: 8px 0 0; font-size: 0.7rem; line-height: 1.45; color: rgba(226,232,240,0.58);
+    }
+    .qbd-note svg { flex-shrink: 0; margin-top: 1px; color: rgba(226,232,240,0.7); }
+    .qbd-note-plain { display: block; }
+
+    .qbd-select {
+        width: 100%; height: 40px; padding: 0 34px 0 12px;
+        -webkit-appearance: none; appearance: none;
+        border: 1px solid transparent; border-radius: 10px;
+        background: rgba(255,255,255,0.07) var(--qbd-chevron) no-repeat right 12px center / 12px 12px;
+        color: #f8fafc; font: 500 0.83rem var(--font-sans); letter-spacing: -0.005em;
+        cursor: pointer; text-overflow: ellipsis;
+        transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .qbd-select:hover { background-color: rgba(255,255,255,0.1); }
+    .qbd-select:focus-visible { outline: none; border-color: rgba(255,255,255,0.55); box-shadow: 0 0 0 3px rgba(255,255,255,0.14); }
+    .qbd-select option { color: #0a192f; background: #fff; }
+
+    .qbd-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .qbd-chip, .qbd-seg-opt { position: relative; display: inline-flex; }
+    .qbd-chip input, .qbd-seg-opt input {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        margin: 0; opacity: 0; cursor: pointer;
+    }
+    .qbd-chip span {
+        display: inline-flex; align-items: center; height: 30px; padding: 0 12px;
+        border-radius: 999px; background: rgba(255,255,255,0.06);
+        font-size: 0.73rem; font-weight: 600; color: rgba(226,232,240,0.78);
+        transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+    }
+    .qbd-chip:hover span { background: rgba(255,255,255,0.1); color: #fff; }
+    .qbd-chip input:checked + span, .qbd-seg-opt input:checked + span {
+        background: #fff; color: #0a192f;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.25), 0 6px 14px -8px rgba(0,0,0,0.5);
+    }
+    .qbd-chip input:focus-visible + span, .qbd-seg-opt input:focus-visible + span {
+        outline: 2px solid rgba(255,255,255,0.8); outline-offset: 2px;
+    }
+
+    .qbd-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; padding: 3px; border-radius: 12px; background: rgba(255,255,255,0.06); }
+    .qbd-seg-opt { display: flex; }
+    .qbd-seg-opt span {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        min-height: 34px; padding: 6px 6px; border-radius: 9px; text-align: center;
+        font-size: 0.72rem; font-weight: 600; line-height: 1.2; color: rgba(226,232,240,0.75);
+        transition: background 0.25s, color 0.25s, box-shadow 0.25s, opacity 0.25s;
+    }
+    .qbd-seg-opt:hover input:not(:checked) + span { color: #fff; background: rgba(255,255,255,0.05); }
+
+    .qbd-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .qbd-field { min-width: 0; }
+
+    /* Líneas de la cotización */
+    .qbd-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .qbd-line {
+        display: grid; grid-template-columns: 34px minmax(0, 1fr) auto 26px;
+        grid-template-areas: "thumb text step rm";
+        align-items: center; gap: 10px;
+        padding: 6px 0;
+    }
+    .qbd-line:not([hidden]) ~ .qbd-line:not([hidden]) { border-top: 1px solid rgba(255,255,255,0.06); }
+    .qbd-line > .qbd-thumb { grid-area: thumb; }
+    .qbd-thumb {
+        width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+        display: grid; place-items: center;
+        color: #3b4556;
+        background: linear-gradient(150deg, #ffffff 0%, var(--tile) 72%);
+        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.07), 0 1px 2px rgba(0,0,0,0.25);
+    }
+    .qbd-thumb-lg { width: 40px; height: 40px; border-radius: 10px; }
+    .qbd-line-text { grid-area: text; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .qbd-line-name { font-size: 0.79rem; font-weight: 600; line-height: 1.25; color: #f8fafc; letter-spacing: -0.005em; }
+    .qbd-line-meta { font-size: 0.68rem; color: rgba(226,232,240,0.55); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .qbd-line-meta s { margin-right: 4px; color: rgba(226,232,240,0.38); text-decoration-color: rgba(226,232,240,0.45); }
+
+    .qbd-step {
+        grid-area: step;
+        display: inline-flex; align-items: center; height: 30px;
+        border-radius: 9px; background: rgba(255,255,255,0.06);
+    }
+    .qbd-step button {
+        width: 26px; height: 30px; border: 0; padding: 0; cursor: pointer;
+        display: grid; place-items: center; border-radius: 9px;
+        background: transparent; color: rgba(226,232,240,0.75);
+        transition: color 0.2s, background 0.2s;
+    }
+    .qbd-step button:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,0.07); }
+    .qbd-step button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .qbd-step input {
+        width: 50px; height: 30px; padding: 0; border: 0; border-radius: 6px;
+        background: transparent; color: #fff; text-align: center;
+        font: 600 0.77rem var(--font-sans); font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+    }
+    .qbd-step input:focus-visible, .qbd-step button:focus-visible { outline: none; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.6); }
+    .qbd-remove {
+        grid-area: rm;
+        width: 26px; height: 26px; border: 0; padding: 0; border-radius: 8px; cursor: pointer;
+        display: grid; place-items: center;
+        background: transparent; color: rgba(226,232,240,0.42);
+        transition: color 0.2s, background 0.2s;
+    }
+    .qbd-remove:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,0.07); }
+    .qbd-remove:disabled { opacity: 0.25; cursor: not-allowed; }
+    .qbd-remove:focus-visible { outline: 2px solid rgba(255,255,255,0.75); outline-offset: 1px; }
+
+    .qbd-add-wrap { position: relative; margin-top: 6px; }
+    .qbd-add {
+        width: 100%; height: 36px; border-radius: 10px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        border: 1px dashed rgba(255,255,255,0.18); background: transparent;
+        color: rgba(226,232,240,0.85); font: 600 0.77rem var(--font-sans);
+        transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .qbd-add:hover:not(:disabled) { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.3); color: #fff; }
+    .qbd-add:disabled { opacity: 0.45; cursor: default; }
+    .qbd-add:focus-visible { outline: 2px solid rgba(255,255,255,0.75); outline-offset: 2px; }
+
+    .qbd-catalog {
+        position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 30;
+        list-style: none; margin: 0; padding: 6px;
+        max-height: 336px; overflow-y: auto; scrollbar-width: none;
+        background: #fff; border-radius: 14px;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 2px 4px rgba(10,25,47,0.08), 0 28px 56px -14px rgba(0,0,0,0.55);
+        animation: qbdPop 0.22s var(--ease-spring) both;
+    }
+    .qbd-catalog::-webkit-scrollbar { display: none; }
+    .qbd-catalog:focus { outline: none; }
+    .qbd-catalog:focus-visible { box-shadow: 0 0 0 2px rgba(255,255,255,0.8), 0 28px 56px -14px rgba(0,0,0,0.55); }
+    @keyframes qbdPop { from { opacity: 0; transform: translateY(-4px) scale(0.985); } to { opacity: 1; transform: none; } }
+    .qbd-opt {
+        display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+        padding: 8px 10px; border-radius: 10px; cursor: pointer;
+    }
+    .qbd-opt.is-active { background: #f3f4f6; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.06); }
+    .qbd-opt[aria-disabled="true"] { cursor: default; }
+    .qbd-opt[aria-disabled="true"] .qbd-thumb, .qbd-opt[aria-disabled="true"] .qbd-opt-text { opacity: 0.45; }
+    .qbd-opt-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .qbd-opt-name { font-size: 0.82rem; font-weight: 600; color: #0a192f; letter-spacing: -0.01em; }
+    .qbd-opt-meta { font-size: 0.7rem; color: #6b7280; font-variant-numeric: tabular-nums; }
+    .qbd-opt-tag {
+        display: none; align-items: center; gap: 4px;
+        font-size: 0.64rem; font-weight: 700; color: #047857;
+        background: rgba(16,185,129,0.12); padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+    }
+    .qbd-opt[aria-disabled="true"] .qbd-opt-tag { display: inline-flex; }
+
+    .qbd-opt-row { display: flex; align-items: flex-start; gap: 11px; padding: 5px 0; cursor: pointer; }
+    .qbd-check { position: relative; width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+    .qbd-check input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+    .qbd-check span {
+        position: absolute; inset: 0; border-radius: 5px; pointer-events: none;
+        border: 1.5px solid rgba(255,255,255,0.32); background: rgba(255,255,255,0.03);
+        transition: background 0.2s, border-color 0.2s;
+    }
+    .qbd-check input:checked + span { background: #fff; border-color: #fff; }
+    .qbd-check input:checked + span::after {
+        content: ''; position: absolute; left: 5.5px; top: 2px; width: 4px; height: 8.5px;
+        border: solid #0a192f; border-width: 0 2px 2px 0; transform: rotate(45deg);
+    }
+    .qbd-check input:focus-visible + span { outline: 2px solid rgba(255,255,255,0.8); outline-offset: 2px; }
+    .qbd-opt-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .qbd-opt-title { font-size: 0.8rem; font-weight: 600; color: #f8fafc; letter-spacing: -0.005em; }
+    .qbd-opt-desc { font-size: 0.7rem; color: rgba(226,232,240,0.55); line-height: 1.4; }
+
+    /* ════════ Vista previa: pestañas + navegador ════════ */
+    .qbd-preview { position: relative; z-index: 1; display: flex; flex-direction: column; min-width: 0; }
+    .qbd-tabs {
+        position: relative; align-self: center;
+        display: inline-flex; padding: 4px; margin: 0 0 16px;
+        border-radius: 999px; background: rgba(255,255,255,0.07);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.07);
+    }
+    .qbd-tab {
+        position: relative; z-index: 1;
+        height: 34px; padding: 0 17px; border: 0; border-radius: 999px; cursor: pointer;
+        background: transparent; color: rgba(226,232,240,0.72);
+        font: 600 0.8rem var(--font-sans); letter-spacing: -0.005em; white-space: nowrap;
+        transition: color 0.35s var(--ease-spring);
+    }
+    .qbd-tab:hover { color: #fff; }
+    .qbd-tab[aria-selected="true"] { color: #0a192f; background: #fff; }
+    .qbd-tab:focus-visible { outline: 2px solid rgba(255,255,255,0.8); outline-offset: 2px; }
+    .qbd-tab-ind { display: none; }
+    .qbd-tabs.is-ready .qbd-tab[aria-selected="true"] { background: transparent; }
+    .qbd-tabs.is-ready .qbd-tab-ind {
+        display: block; position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: 0;
+        border-radius: 999px; background: #fff;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.25), 0 8px 18px -10px rgba(0,0,0,0.6);
+        transition: transform 0.45s var(--ease-spring), width 0.45s var(--ease-spring);
+    }
+
+    .qbd-browser {
+        position: relative; flex: 1 1 0px; min-height: 560px;
+        display: flex; flex-direction: column;
+        background: #f3f2ef;
+        border-radius: 16px 16px 0 0;
+        overflow: hidden;
+        container: qbdb / inline-size;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 40px 90px -30px rgba(0,0,0,0.75);
+    }
+    .qbd-chrome {
+        position: relative; z-index: 3; flex-shrink: 0;
+        height: 44px; display: flex; align-items: center; justify-content: center; padding: 0 14px;
+        background: #fbfbfa; border-bottom: 1px solid rgba(10,25,47,0.07);
+    }
+    .qbd-url {
+        display: inline-flex; align-items: center; gap: 8px;
+        max-width: min(470px, 100%); height: 28px; padding: 0 14px;
+        border-radius: 999px; background: #f0f0ed;
+        box-shadow: inset 0 0 0 1px rgba(10,25,47,0.05);
+        color: #6b7280; font: 500 11.5px ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    .qbd-url svg { flex-shrink: 0; color: #059669; }
+    .qbd-url-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .qbd-url b { color: #0a192f; font-weight: 600; }
+    .qbd-orb { position: absolute; z-index: 0; border-radius: 50%; pointer-events: none; }
+    .qbd-orb-top { width: 70%; aspect-ratio: 1; top: -30%; left: -15%; background: radial-gradient(circle, rgba(10,25,47,0.05) 0%, transparent 70%); }
+    .qbd-orb-bot { width: 55%; aspect-ratio: 1; bottom: -20%; right: -10%; opacity: 0.7; background: radial-gradient(circle, rgba(10,25,47,0.08) 0%, transparent 70%); }
+    .qbd-view {
+        position: relative; z-index: 1; flex: 1; min-height: 0;
+        overflow-x: hidden; overflow-y: auto; overscroll-behavior: auto;
+        scrollbar-width: none;
+    }
+    .qbd-view::-webkit-scrollbar { display: none; }
+    .qbd-view:focus-visible { outline: 2px solid rgba(10,25,47,0.35); outline-offset: -4px; }
+
+    /* ════════ Calca de /q/[token] (QuoteCard.astro), prefijada ════════ */
+    .qbd-qp-main {
+        zoom: var(--qbd-zoom);
+        display: flex; flex-direction: column; align-items: center;
+        gap: 1.8rem; padding: 2.6rem 5% 3.2rem;
+    }
+    .qbd-q-card {
+        position: relative; width: 100%; max-width: 680px;
+        background: #fff; border-radius: 28px; padding: 2.8rem 3rem;
+        box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 4px 6px rgba(10,25,47,0.03), 0 20px 60px -20px rgba(10,25,47,0.12);
+        display: flex; flex-direction: column; gap: 2rem;
+        font-family: var(--font-sans); text-align: left;
+        transition: opacity 0.15s ease;
+    }
+    .qbd-q-card.is-swapping { opacity: 0.25; }
+    .qbd-q-card[data-state="approved"] .qbd-rv { display: none !important; }
+    .qbd-q-card[data-state="review"] .qbd-ap { display: none !important; }
+    .qbd-q-fade { animation: qbdFade 0.35s ease both; }
+    @keyframes qbdFade { from { opacity: 0.35; } to { opacity: 1; } }
+
+    .qbd-q-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .qbd-q-brand-row { display: flex; align-items: center; gap: 13px; }
+    .qbd-q-logo-initial {
+        width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0;
+        color: #fff; display: flex; align-items: center; justify-content: center;
+        font-size: 1rem; font-weight: 800;
+    }
+    .qbd-q-brand-text { display: flex; flex-direction: column; gap: 2px; }
+    .qbd-q-company { font-size: 1rem; font-weight: 700; letter-spacing: -0.3px; color: #111; }
+    .qbd-q-rfc { font-size: 0.68rem; color: #9ca3af; font-weight: 500; }
+    .qbd-q-folio-tag { text-align: right; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+    .qbd-q-folio-eyebrow { font-size: 0.5rem; font-weight: 800; letter-spacing: 2px; color: #d1d5db; }
+    .qbd-q-folio-num { font-size: 0.92rem; font-weight: 800; color: #111; letter-spacing: -0.3px; }
+    .qbd-q-rule { height: 1px; margin: -0.5rem 0; background: linear-gradient(to right, transparent, rgba(10,25,47,0.07) 15%, rgba(10,25,47,0.07) 85%, transparent); }
+
+    .qbd-q-meta { display: flex; gap: 2.2rem; flex-wrap: wrap; }
+    .qbd-q-meta-col { display: flex; flex-direction: column; gap: 4px; }
+    .qbd-q-meta-label { font-size: 0.49rem; font-weight: 800; letter-spacing: 2px; color: #d1d5db; }
+    .qbd-q-meta-val { font-size: 0.875rem; font-weight: 600; color: #111; }
+    .qbd-q-vig-chip { margin-top: 4px; font-size: 0.6rem; font-weight: 700; color: #6b7280; background: rgba(10,25,47,0.05); padding: 2px 8px; border-radius: 100px; align-self: flex-start; }
+
+    .qbd-q-total-hero { background: #fafafa; border: 1px solid rgba(10,25,47,0.055); border-radius: 20px; padding: 2rem 1.5rem; display: flex; justify-content: center; }
+    .qbd-q-total-inner { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+    .qbd-q-total-eyebrow { font-size: 0.5rem; font-weight: 800; letter-spacing: 2.5px; color: #d1d5db; }
+    .qbd-q-total-amount { font-size: clamp(2.5rem, 8vw, 3.4rem); line-height: 1; letter-spacing: -0.04em; }
+    .qbd-q-total-note { font-size: 0.7rem; font-weight: 500; color: #9ca3af; }
+    .qbd-q-total-split { display: inline-block; margin-top: 8px; padding: 5px 13px; font-size: 0.76rem; font-weight: 600; color: #0a192f; background: rgba(10,25,47,0.05); border-radius: 999px; }
+
+    .qbd-q-items { display: flex; flex-direction: column; }
+    .qbd-qi-head { display: grid; grid-template-columns: 1.9fr 0.8fr 0.9fr 1fr; gap: 1rem; padding: 0 0 0.65rem; font-size: 0.5rem; font-weight: 800; letter-spacing: 1.5px; color: #d1d5db; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .qbd-qi-row-wrapper { border-bottom: 1px solid rgba(10,25,47,0.045); }
+    .qbd-qi-row { display: grid; grid-template-columns: 1.9fr 0.8fr 0.9fr 1fr; gap: 1rem; align-items: center; padding: 0.9rem 0; font-size: 0.875rem; }
+    .qbd-qi-name { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #111; }
+    .qbd-qi-center { text-align: center; }
+    .qbd-qi-right { text-align: right; }
+    .qbd-qi-qty { color: #9ca3af; font-size: 0.78rem; }
+    .qbd-qi-price { color: #9ca3af; font-size: 0.83rem; }
+    .qbd-qi-list { display: block; font-size: 0.72rem; line-height: 1.2; color: #b8bdc6; text-decoration-color: rgba(0,0,0,0.3); }
+    .qbd-qi-total { color: #111; }
+    .qbd-qi-subtotals { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; padding-top: 1.1rem; }
+    .qbd-qt-row { display: flex; justify-content: space-between; gap: 3rem; min-width: 200px; font-size: 0.82rem; color: #9ca3af; }
+    .qbd-qt-row .editorial { color: #6b7280; font-size: 0.87rem; }
+    .qbd-qt-grand { color: #111; font-weight: 700; border-top: 1px solid rgba(10,25,47,0.07); padding-top: 0.6rem; margin-top: 0.2rem; }
+    .qbd-qt-grand .editorial { font-size: 1.2rem; color: #111; }
+    .qbd-qi-chat-btn { background: rgba(10,25,47,0.04); border-radius: 6px; padding: 3px 6px; color: #6b7280; display: inline-flex; align-items: center; gap: 4px; }
+    .qbd-qi-pick { display: inline-flex; align-items: center; flex-shrink: 0; }
+    .qbd-qi-pick-box { position: relative; width: 18px; height: 18px; border-radius: 5px; background: #0a192f; border: 1.5px solid #0a192f; }
+    .qbd-qi-pick-box::after { content: ''; position: absolute; left: 4.5px; top: 1.5px; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
+    .qbd-q-flash { animation: qbdFlash 1.2s ease-out both; }
+    @keyframes qbdFlash { 0% { background: rgba(245,158,11,0.22); } 100% { background: transparent; } }
+    .qbd-q-was { display: block; margin-top: 2px; font-size: 0.62rem; font-weight: 600; color: #b45309; text-decoration: line-through; text-decoration-color: rgba(180,83,9,0.4); }
+    .qbd-q-was.is-on { animation: qbdWasOut 8s linear both; }
+    @keyframes qbdWasOut { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+    .qbd-qi-reveal { animation: qbdReveal 0.5s var(--ease-spring) both; }
+    @keyframes qbdReveal { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+
+    .qbd-q-notes { margin: 0; padding: 1rem 1.2rem; background: #fafafa; border-radius: 14px; font-size: 0.84rem; color: #6b7280; line-height: 1.6; border: 1px solid rgba(10,25,47,0.055); }
+
+    .qbd-q-trust { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .qbd-q-trust-live { display: inline-flex; align-items: center; gap: 8px; font-size: 0.74rem; font-weight: 600; color: #6b7280; }
+    .qbd-q-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; flex-shrink: 0; animation: qbdLivePulse 1.9s infinite; }
+    @keyframes qbdLivePulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .qbd-q-trust-secure { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 500; color: #9ca3af; }
+
+    .qbd-q-actions-area { display: flex; flex-direction: column; }
+    .qbd-ql-step { display: flex; flex-direction: column; gap: 0.9rem; }
+    .qbd-ql-cta {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        font-family: var(--font-sans); font-size: 0.97rem; font-weight: 600;
+        color: #fff; border: none; border-radius: 14px; padding: 16px 22px; width: 100%;
+        box-shadow: 0 10px 28px -10px rgba(10,25,47,0.42);
+        transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s ease, filter 0.4s ease;
+    }
+    button.qbd-ql-cta { cursor: pointer; }
+    button.qbd-ql-cta:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 20px 42px -12px rgba(10,25,47,0.55); filter: brightness(1.05); }
+    button.qbd-ql-cta:active { transform: translateY(1px) scale(0.98); transition-duration: 0.1s; }
+    button.qbd-ql-cta:focus-visible { outline: 2px solid #0a192f; outline-offset: 3px; }
+    .qbd-ql-secondary-row { display: flex; gap: 0.7rem; }
+    .qbd-ql-ghost {
+        flex: 1; font-family: var(--font-sans); font-size: 0.855rem; font-weight: 600;
+        color: #6b7280; border: 1px solid rgba(10,25,47,0.1); border-radius: 12px;
+        padding: 11px 16px; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .qbd-ql-reject-link { flex: none; padding-inline: 18px; border-color: transparent; color: #9ca3af; }
+    .qbd-ql-ghost-receipt { margin-top: 1rem; }
+
+    .qbd-ql-success { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; padding: 0.3rem 0; text-align: center; }
+    .qbd-ql-check-ring { width: 68px; height: 68px; margin-bottom: 0.4rem; }
+    .qbd-ql-check-svg { width: 68px; height: 68px; }
+    .qbd-ql-check-circle { stroke-dasharray: 145; stroke-dashoffset: 0; }
+    .qbd-ql-check-mark { stroke-dasharray: 36; stroke-dashoffset: 0; }
+    .qbd-ql-check-ring.is-drawing .qbd-ql-check-circle { animation: qbdCircleIn 0.5s cubic-bezier(0.22,1,0.36,1) 0.1s both; }
+    .qbd-ql-check-ring.is-drawing .qbd-ql-check-mark { animation: qbdCheckIn 0.4s cubic-bezier(0.22,1,0.36,1) 0.5s both; }
+    @keyframes qbdCircleIn { from { stroke-dashoffset: 145; } to { stroke-dashoffset: 0; } }
+    @keyframes qbdCheckIn { from { stroke-dashoffset: 36; } to { stroke-dashoffset: 0; } }
+    .qbd-ql-done-title { font-size: 1.12rem; font-weight: 700; color: #111; }
+    .qbd-ql-done-sub { font-size: 0.84rem; color: #9ca3af; max-width: 360px; line-height: 1.55; }
+    .qbd-ql-done-actions { display: flex; flex-direction: column; gap: 0.55rem; width: 100%; margin-top: 0.5rem; }
+
+    .qbd-ql-credit-note { display: flex; align-items: flex-start; gap: 12px; padding: 1.1rem 1.2rem; background: #f5f5f7; border-radius: 16px; text-align: left; }
+    .qbd-ql-credit-note svg { flex-shrink: 0; color: #0a192f; margin-top: 2px; }
+    .qbd-ql-credit-text { display: flex; flex-direction: column; gap: 3px; }
+    .qbd-ql-credit-text strong { font-size: 0.88rem; font-weight: 600; color: #0a192f; letter-spacing: -0.01em; }
+    .qbd-ql-credit-text span { font-size: 0.8rem; color: #6b7686; line-height: 1.55; }
+    .qbd-ql-cobros { display: flex; flex-direction: column; padding: 0.4rem 1.2rem 0.6rem; background: #fff; border: 1px solid rgba(10,25,47,0.07); border-radius: 16px; text-align: left; }
+    .qbd-ql-cobros-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #8a93a2; padding: 0.7rem 0 0.35rem; }
+    .qbd-ql-cobro-row { display: flex; align-items: center; gap: 10px; padding: 0.6rem 0; border-top: 1px solid rgba(10,25,47,0.06); }
+    .qbd-ql-cobro-tipo { font-size: 0.84rem; font-weight: 600; color: #0a192f; flex: 1; }
+    .qbd-ql-cobro-monto { font-size: 0.86rem; color: #0a192f; }
+    .qbd-ql-cobro-status { font-size: 0.72rem; font-weight: 600; color: #8a93a2; min-width: 88px; text-align: right; }
+
+    .qbd-ql-pay-options { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; margin-bottom: 0.5rem; }
+    .qbd-ql-pay { display: flex; flex-direction: column; gap: 0.65rem; padding: 1.2rem; background: #fafafa; border: 1px solid rgba(10,25,47,0.06); border-radius: 16px; }
+    .qbd-ql-sub-copy { display: flex; flex-direction: column; gap: 4px; text-align: left; margin-bottom: 0.35rem; }
+    .qbd-ql-sub-copy strong { font-size: 0.95rem; font-weight: 600; color: #050505; letter-spacing: -0.01em; }
+    .qbd-ql-sub-copy > span { font-size: 0.82rem; color: #6b7686; line-height: 1.55; }
+    .qbd-ql-sub-copy b { color: #0a192f; font-weight: 600; }
+    .qbd-ql-pay-amount { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+    .qbd-ql-pay-label { font-size: 0.52rem; font-weight: 800; letter-spacing: 2px; color: #9ca3af; }
+    .qbd-ql-pay-total { font-size: 1.55rem; line-height: 1; }
+    .qbd-ql-pay-total small { font-size: 0.7rem; color: #9ca3af; font-weight: 600; letter-spacing: 0; }
+    .qbd-ql-pay-secure { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 0.66rem; color: #9ca3af; }
+    .qbd-ql-pay-cards { display: inline-flex; gap: 5px; margin-left: auto; }
+    .qbd-ql-pay-cards span { font-size: 0.48rem; font-weight: 800; letter-spacing: 0.4px; color: #6b7280; background: #fff; border: 1px solid rgba(10,25,47,0.1); border-radius: 4px; padding: 2px 5px; }
+
+    .qbd-ql-audit-stamp {
+        background: #f9fafb; border: 1px dashed rgba(10,25,47,0.15); border-radius: 12px;
+        padding: 12px 14px; text-align: left; margin-top: 0.5rem; width: 100%; word-break: break-all;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.65rem; color: #6b7280; line-height: 1.6;
+    }
+    .qbd-ql-audit-header {
+        display: flex; align-items: center; gap: 6px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+        font-size: 0.72rem; font-weight: 600; color: #059669;
+        margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed rgba(5,150,105,0.2);
+    }
+    .qbd-ql-audit-header svg { flex-shrink: 0; }
+    .qbd-ql-audit-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
+    .qbd-ql-audit-row strong { color: #374151; font-weight: 600; }
+    .qbd-ql-hash { color: #059669; font-weight: 600; }
+
+    .qbd-q-chat { display: flex; flex-direction: column; gap: 0.75rem; }
+    .qbd-q-compose { display: flex; flex-direction: column; background: #f9fafb; border: 1px solid rgba(10,25,47,0.07); border-radius: 16px; overflow: hidden; }
+    .qbd-q-compose-row { display: flex; align-items: flex-end; padding: 0.75rem 0.75rem 0.6rem; }
+    .qbd-q-compose-ta { flex: 1; font-size: 0.875rem; line-height: 1.5; min-height: 22px; color: #c1c8d4; }
+    .qbd-q-compose-send { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; margin-left: 10px; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 2px 8px -2px rgba(10,25,47,0.35); }
+    .qbd-q-compose-extras { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; padding: 0.5rem 0.75rem 0.6rem; border-top: 1px solid rgba(10,25,47,0.055); }
+    .qbd-q-compose-price { font-size: 0.77rem; color: #cdd2da; background: #fff; border: 1px solid rgba(10,25,47,0.09); border-radius: 8px; padding: 5px 10px; flex: 1; min-width: 0; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .qbd-q-counter-pill { font-size: 0.73rem; font-weight: 600; border: 1px solid; border-radius: 100px; padding: 5px 11px; display: inline-flex; align-items: center; gap: 5px; opacity: 0.8; white-space: nowrap; }
+
+    .qbd-q-contact { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: 1.5rem; border-top: 1px solid rgba(10,25,47,0.06); }
+    .qbd-q-contact-label { font-size: 0.78rem; color: #6b7280; font-weight: 500; }
+    .qbd-q-contact-links { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .qbd-q-contact-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; color: #374151; background: #fafafa; border: 1px solid rgba(10,25,47,0.08); border-radius: 10px; padding: 7px 12px; }
+
+    .qbd-q-cord-badge { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: 1.1rem; margin-top: 0.25rem; border-top: 1px solid rgba(10,25,47,0.06); }
+    .qbd-q-cord-badge-trust { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 500; color: #059669; }
+    .qbd-q-cord-badge-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 500; color: rgba(10,25,47,0.35); letter-spacing: 0.01em; }
+    .qbd-q-cord-badge-cta img { height: 11px; width: auto; opacity: 0.45; }
+
+    .qbd-qp-aviso { max-width: 560px; width: 100%; margin: -0.6rem 0 0; font-size: 0.72rem; color: #8a8a8e; line-height: 1.5; text-align: center; text-wrap: balance; }
+
+    /* Barra fija del link real, anclada al navegador de la vista previa */
+    .qbd-q-sticky {
+        position: absolute; left: 0; right: 0; bottom: 0; z-index: 4;
+        display: flex; justify-content: center; padding: 0 1rem 1rem;
+        zoom: var(--qbd-zoom);
+        pointer-events: none; opacity: 0; transform: translateY(130%);
+        transition: opacity 0.35s cubic-bezier(0.22,1,0.36,1), transform 0.45s cubic-bezier(0.22,1,0.36,1);
+    }
+    .qbd-q-sticky.is-show { opacity: 1; transform: none; }
+    .qbd-q-sticky-inner {
+        pointer-events: auto; width: 100%; max-width: 680px;
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        padding: 0.65rem 0.65rem 0.65rem 1.3rem; border-radius: 18px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.74));
+        -webkit-backdrop-filter: blur(36px) saturate(1.8);
+        backdrop-filter: blur(36px) saturate(1.8);
+        border: 1px solid rgba(255,255,255,0.7);
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.9), inset 0 0 0 0.5px rgba(255,255,255,0.5), 0 18px 50px -12px rgba(10,25,47,0.32);
+    }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        .qbd-q-sticky-inner { background: #ffffff; }
+    }
+    .qbd-q-sticky-info { display: flex; flex-direction: column; gap: 1px; }
+    .qbd-q-sticky-label { font-size: 0.55rem; font-weight: 800; letter-spacing: 1.5px; color: #9ca3af; text-transform: uppercase; }
+    .qbd-q-sticky-total { font-size: 1.3rem; line-height: 1; }
+    .qbd-q-sticky-cta {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-family: var(--font-sans); font-size: 0.95rem; font-weight: 650;
+        color: #fff; border: none; border-radius: 13px; padding: 13px 24px; cursor: pointer; white-space: nowrap;
+        box-shadow: 0 10px 26px -10px rgba(10,25,47,0.5);
+        transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), filter 0.3s;
+    }
+    .qbd-q-sticky-cta:hover { transform: translateY(-2px); filter: brightness(1.05); }
+    .qbd-q-sticky-cta:active { transform: scale(0.97); }
+
+    /* Mismo corte que el link real bajo 600 px, medido sobre el navegador de la vista previa */
+    @container qbdb (max-width: 600px) {
+        .qbd-qp-main { gap: 1rem; padding: 1rem 0.75rem 5.5rem; }
+        .qbd-q-card { padding: 1.5rem 1rem; gap: 1.4rem; border-radius: 22px; }
+        .qbd-q-header { flex-wrap: wrap; }
+        .qbd-q-brand-row, .qbd-q-brand-text { min-width: 0; }
+        .qbd-q-folio-tag { width: 100%; flex-direction: row; align-items: baseline; justify-content: space-between; text-align: left; padding-top: 0.75rem; border-top: 1px solid rgba(10,25,47,0.06); }
+        .qbd-q-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+        .qbd-q-meta-col { min-width: 0; }
+        .qbd-q-meta-val { overflow-wrap: anywhere; }
+        .qbd-q-total-hero { padding: 1.6rem 0.75rem; }
+        .qbd-q-total-amount { max-width: 100%; font-size: clamp(2rem, 10cqi, 2.4rem); overflow-wrap: anywhere; }
+        .qbd-qi-head { display: none; }
+        .qbd-qi-row { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "name name name" "qty price total"; gap: 0.7rem 0.5rem; align-items: end; }
+        .qbd-qi-name { grid-area: name; align-items: flex-start; flex-wrap: wrap; }
+        .qbd-qi-qty { grid-area: qty; text-align: left; }
+        .qbd-qi-price { grid-area: price; text-align: center; }
+        .qbd-qi-total { grid-area: total; text-align: right; }
+        .qbd-qi-qty, .qbd-qi-price, .qbd-qi-total { display: flex; min-width: 0; flex-direction: column; gap: 3px; overflow-wrap: anywhere; }
+        .qbd-qi-qty::before, .qbd-qi-price::before, .qbd-qi-total::before { content: attr(data-label); font-family: var(--font-sans); font-size: 0.5rem; font-weight: 800; line-height: 1; letter-spacing: 0.08em; text-transform: uppercase; color: #c0c5cd; }
+        .qbd-qt-row { min-width: 0; width: 100%; gap: 1rem; }
+        .qbd-ql-secondary-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+        .qbd-q-contact { justify-content: flex-start; }
+        .qbd-q-contact-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+        .qbd-q-contact-link { justify-content: center; }
+        .qbd-ql-pay-amount { align-items: flex-start; flex-direction: column; }
+        .qbd-ql-pay-cards { margin-left: 0; }
+        .qbd-ql-cobro-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+        .qbd-ql-cobro-status { grid-column: 1 / -1; min-width: 0; text-align: left; }
+        .qbd-q-sticky { padding: 0 0.6rem 0.6rem; }
+        .qbd-q-sticky-inner { gap: 0.65rem; padding: 0.55rem 0.55rem 0.55rem 0.9rem; }
+        .qbd-q-sticky-total { font-size: 1.05rem; }
+        .qbd-q-sticky-cta { padding: 12px 16px; font-size: 0.88rem; }
+        .qbd-url { font-size: 10.5px; padding: 0 12px; }
+    }
+    @container qbdb (max-width: 420px) {
+        .qbd-qp-main { padding-inline: 0.5rem; }
+        .qbd-q-card { padding-inline: 0.85rem; }
+    }
+
+    /* ════════ Responsive ════════ */
+    @media (min-width: 1081px) { .qbd { --qbd-zoom: 0.86; } }
+    @media (min-width: 1600px) { .qbd { --qbd-zoom: 0.9; } }
+    @media (max-width: 1080px) {
+        .qbd { --qbd-zoom: 0.92; padding-top: 4.5rem; }
+        .qbd-stage { grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 22px 22px 0; min-height: 0; }
+        .qbd-panel { margin-bottom: 0; }
+        .qbd-panel-body {
+            display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); column-gap: 28px;
+            grid-template-areas: "client money" "lines cobro" "lines opts"; align-items: start;
+        }
+        .qbd-g-client { grid-area: client; }
+        .qbd-g-lines { grid-area: lines; }
+        .qbd-g-money { grid-area: money; border-top: 0 !important; }
+        .qbd-g-cobro { grid-area: cobro; }
+        .qbd-g-opts { grid-area: opts; }
+        .qbd-browser { flex: none; height: 680px; min-height: 0; }
+    }
+    @media (max-width: 880px) {
+        .qbd-select { height: 44px; font-size: 16px; }
+        .qbd-chip span { height: 44px; padding: 0 16px; font-size: 0.8rem; }
+        .qbd-seg-opt span { min-height: 44px; font-size: 0.76rem; }
+        .qbd-step { height: 44px; }
+        .qbd-step button { width: 44px; height: 44px; }
+        .qbd-step input { width: 58px; height: 44px; font-size: 16px; }
+        .qbd-remove { width: 44px; height: 44px; }
+        .qbd-add { height: 44px; font-size: 0.82rem; }
+        .qbd-opt { min-height: 56px; }
+        .qbd-opt-row { min-height: 44px; align-items: center; }
+        .qbd-reset { width: 44px; height: 44px; }
+        .qbd-tab { height: 44px; padding: 0 18px; }
+        .qbd-line { grid-template-columns: 34px minmax(0, 1fr) auto 44px; }
+        .qbd-view { overflow-y: hidden; }
+    }
+    @media (max-width: 720px) {
+        .qbd-panel-body { display: block; }
+        .qbd-g-money { border-top: 1px solid rgba(255,255,255,0.065) !important; }
+        .qbd-line {
+            grid-template-columns: 34px minmax(0, 1fr) 44px;
+            grid-template-areas: "thumb text rm" "thumb step step";
+            row-gap: 8px; align-items: start;
+        }
+        .qbd-line-text { padding-top: 2px; }
+        .qbd-step { justify-self: start; }
+        .qbd-line-meta { white-space: normal; }
+        .qbd-opt { gap: 10px; padding: 8px; }
+        .qbd-opt-tag { padding: 5px; }
+        .qbd-opt-tag-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    }
+    @media (max-width: 600px) {
+        .qbd { --qbd-zoom: 1; padding: 4rem 5% 0; }
+        .qbd-intro { margin-bottom: 2rem; }
+        .qbd-sub { font-size: 1rem; }
+        .qbd-cta { width: 100%; justify-content: center; min-height: 48px; }
+        .qbd-stage { padding: 12px 12px 0; gap: 18px; border-radius: 22px; }
+        .qbd-panel { border-radius: 16px; }
+        .qbd-panel-body { padding: 0 14px 4px; }
+        .qbd-panel-head { padding-left: 14px; }
+        .qbd-tabs { align-self: stretch; }
+        .qbd-tab { flex: 1; padding: 0 10px; font-size: 0.78rem; }
+        .qbd-browser { height: 620px; border-radius: 14px 14px 0 0; }
+        .qbd-chrome { height: 40px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .qbd-q-live-dot, .qbd-catalog, .qbd-q-flash, .qbd-qi-reveal, .qbd-q-was.is-on, .qbd-q-fade { animation: none; }
+        .qbd-q-card, .qbd-q-sticky, .qbd-tab-ind { transition: none !important; }
+    }
+</style>

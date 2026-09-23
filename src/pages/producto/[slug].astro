@@ -205,6 +205,45 @@ const howtoSchema = howto ? {
         text: step.text,
     })),
 } : null;
+
+// Iconos del hero-calca (mismos trazos que Sidebar.astro y la topbar de AppLayout).
+const MKI = {
+    inicio: '<rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
+    cotizaciones: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8" stroke-opacity="0.5"/><line x1="16" y1="13" x2="8" y2="13" stroke-opacity="0.5"/><line x1="16" y1="17" x2="8" y2="17" stroke-opacity="0.5"/>',
+    clientes: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity="0.25" stroke="none"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87" stroke-opacity="0.5"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-opacity="0.5"/>',
+    productos: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5" stroke-opacity="0.5"/><path d="M12 22V12" stroke-opacity="0.5"/>',
+    facturas: '<path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><polyline points="15 2 15 7 20 7" stroke-opacity="0.5"/><path d="M9 13h6" stroke-opacity="0.55"/><path d="M9 17h4" stroke-opacity="0.55"/>',
+    cobros: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.1" stroke="none"/><path d="M12 2v20" stroke-opacity="0.5"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+    cobranza: '<rect width="20" height="14" x="2" y="5" rx="2" fill="currentColor" fill-opacity="0.15" stroke="none"/><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10" stroke-opacity="0.5"/>',
+    informes: '<rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 16l3-3 2.5 2.5L17 10"/><path d="M15 10h2v2" stroke-opacity="0.55"/>',
+    equipo: '<circle cx="9" cy="8" r="3.4" fill="currentColor" fill-opacity="0.15"/><path d="M2.8 20.2a6.2 6.2 0 0 1 12.4 0" stroke-opacity="0.8"/><circle cx="17.2" cy="9.4" r="2.4" fill="currentColor" fill-opacity="0.15" stroke-opacity="0.75"/><path d="M16 14.1a5 5 0 0 1 5.2 4.8" stroke-opacity="0.55"/>',
+    panel: '<rect x="4" y="5" width="16" height="14" rx="2.5"/><rect x="4" y="5" width="7" height="14" rx="2.5" fill="currentColor" fill-opacity="0.3" stroke="none"/>',
+    search: '<circle cx="11" cy="11" r="7.5" fill="currentColor" fill-opacity="0.1"/><line x1="21" y1="21" x2="16.4" y2="16.4"/>',
+    plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    caret: '<polyline points="6 9 12 15 18 9"/>',
+    bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" fill="currentColor" fill-opacity="0.12"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+    help: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z" fill="currentColor" fill-opacity="0.1"/><path d="M9.1 9a2.9 2.9 0 0 1 5.6 1c0 2-2.9 2.9-2.9 2.9"/><line x1="12" y1="17" x2="12" y2="17"/>',
+    moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor" fill-opacity="0.12"/>',
+    gear: '<circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.15"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    lock: '<rect x="4" y="11" width="16" height="10" rx="2" fill="currentColor" fill-opacity="0.15"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    back: '<polyline points="15 18 9 12 15 6"/>',
+    fwd: '<polyline points="9 18 15 12 9 6"/>',
+    reload: '<path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><polyline points="20.5 3.5 20.5 8.5 15.5 8.5"/>',
+    share: '<path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" fill="currentColor" fill-opacity="0.1"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>',
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    arrow: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor" fill-opacity="0.12"/>',
+    clock: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><polyline points="12 7 12 12 15.5 14"/>',
+    chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" fill-opacity="0.12"/>',
+    doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/>',
+    burger: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
+    cursor: '<path d="M5.5 3.2 19 14.6l-6.1.5 3.5 7.3-2.6 1.2-3.4-7.4-4.9 4.6z"/>',
+};
+const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
+    { k: 'inicio' }, { k: 'cotizaciones', on: true }, { k: 'clientes' }, { k: 'productos' },
+    { k: 'facturas', sep: true }, { k: 'cobros' }, { k: 'cobranza' },
+    { k: 'informes', sep: true }, { k: 'equipo' },
+];
 ---
 
 <Layout
@@ -270,100 +309,284 @@ const howtoSchema = howto ? {
                     <div class="pp-mockup">
 
                         {feature.slug === 'editor' && (
-                            <div class="mk-window">
-                                <div class="mk-bar">
-                                    <span class="mk-bar-title">COT-0149 · {isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</span>
-                                    <div class="mk-bar-actions">
-                                        <span class="mk-avatar-sm">RM</span>
-                                        <span class="mk-badge mk-badge-draft">● {isEn ? 'Draft' : 'Borrador'}</span>
+                            <div class="mkc-stage mkc-ed-stage" id="edHero" aria-hidden="true">
+                              <div class="mkc-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org">M</span>
+                                    {MK_RAIL.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-pgh">
+                                        <div class="mkc-pgh-t">
+                                            <span class="mkc-crumbs"><span>{isEn ? 'Quotes' : 'Cotizaciones'}</span><b>{isEn ? 'New quote' : 'Nueva cotización'}</b></span>
+                                            <span class="mkc-title">{isEn ? 'New quote' : 'Nueva cotización'}</span>
+                                        </div>
+                                        <span class="mkc-draft">{isEn ? 'Draft' : 'Borrador'}</span>
                                     </div>
-                                </div>
-                                <div class="mk-body">
-                                    <div class="mk-sidebar">
-                                        <div class="mk-sb-item mk-sb-active"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.12" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></i> {isEn ? 'Current quote' : 'Cotización actual'}</div>
-                                        <div class="mk-sb-item"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.12" d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4" fill="currentColor" fill-opacity="0.12"/></svg></i> {isEn ? 'Client details' : 'Datos del cliente'}</div>
-                                        <div class="mk-sb-item"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.15"/><path fill="currentColor" fill-opacity="0.08" d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></i> {isEn ? 'Settings' : 'Configuración'}</div>
-                                    </div>
-                                    <div class="mk-content">
-                                        <div class="mk-rows">
-                                            <div class="mk-row mk-row-head"><span>{isEn ? 'Product' : 'Producto'}</span><span>{isEn ? 'Qty' : 'Cant.'}</span><span>{isEn ? 'Price' : 'Precio'}</span><span>{isEn ? 'Amount' : 'Importe'}</span></div>
-                                            <div class="mk-row"><span>{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}</span><span>120</span><span class="editorial">$182.00</span><span class="editorial">$21,840.00</span></div>
-                                            <div class="mk-row mk-row-edit" id="editorTargetRow">
-                                                <span>{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}</span><span>340</span>
-                                                <span class="editorial mk-green" id="editorPrice">$191.48 <i class="mk-chip" id="editorChip">−12%</i></span>
-                                                <span class="editorial" id="editorImport">$65,103.20</span>
+                                    <div class="mkc-ed">
+                                        <div class="mkc-ed-main">
+                                            <div class="mkc-step">
+                                                <div class="mkc-step-h"><span class="mkc-step-n">1</span><div><b>{isEn ? 'Who are you quoting?' : '¿A quién le cotizas?'}</b></div></div>
+                                                <div class="mkc-client">
+                                                    <span class="mkc-field">{isEn ? 'El Zarco Distribution — Raúl Mendoza' : 'Distribuidora El Zarco — Raúl Mendoza'}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                                    <span class="mkc-chips"><i>{isEn ? 'Cash' : 'Contado'}</i><i class="on">Net 30</i><i>Net 60</i></span>
+                                                </div>
                                             </div>
-                                            <div class="mk-row"><span>{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}</span><span>2,400</span><span class="editorial">$14.20</span><span class="editorial">$34,080.00</span></div>
-                                            <div class="mk-row"><span>{isEn ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6'}</span><span>180</span><span class="editorial">$312.00</span><span class="editorial">$56,160.00</span></div>
+                                            <div class="mkc-step">
+                                                <div class="mkc-step-h"><span class="mkc-step-n">2</span><div><b>{isEn ? 'What are you quoting them?' : '¿Qué le vas a cotizar?'}</b><span>{isEn ? 'Lower the price in ' : 'Baja el precio en '}<b>{isEn ? 'Negotiated' : 'Negociado'}</b>{isEn ? ' without touching your list.' : ' sin tocar tu lista.'}</span></div></div>
+                                                <div class="mkc-lh"><span>{isEn ? 'Product' : 'Producto'}</span><span>{isEn ? 'Qty.' : 'Cant.'}</span><span>{isEn ? 'List' : 'Lista'}</span><span>{isEn ? 'Negotiated' : 'Negociado'}</span><span class="r">{isEn ? 'Amount' : 'Importe'}</span><span class="c">{isEn ? 'Margin' : 'Margen'}</span></div>
+                                                <div class="mkc-lr">
+                                                    <span class="mkc-lr-n">{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}<small>{isEn ? 'bag' : 'saco'} · <b class="mkc-vol">{isEn ? 'bulk pricing (100+)' : 'precio x volumen (100+)'}</b></small></span>
+                                                    <span class="mkc-in">120</span>
+                                                    <span class="mkc-lista">$198.00</span>
+                                                    <span class="mkc-in deal">182.00</span>
+                                                    <span class="mkc-imp editorial">$21,840.00</span>
+                                                    <span class="mkc-mg">31%</span>
+                                                </div>
+                                                <div class="mkc-lr" id="edRow">
+                                                    <span class="mkc-lr-n">{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}<small>{isEn ? 'piece' : 'pieza'}<span class="mkc-hintw mkc-gone" id="edHintW"> · <u class="mkc-hint" id="edHint">{isEn ? 'Suggested: $168.50 (62% close)' : 'Sugerido: $168.50 (62% cierra)'}</u></span></small></span>
+                                                    <span class="mkc-in">340</span>
+                                                    <span class="mkc-lista">$180.00</span>
+                                                    <span class="mkc-in deal" id="edNego">168.50</span>
+                                                    <span class="mkc-imp editorial" id="edImp">$57,290.00</span>
+                                                    <span class="mkc-mg" id="edMg">26%</span>
+                                                </div>
+                                                <div class="mkc-lr">
+                                                    <span class="mkc-lr-n">{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}<small>{isEn ? 'piece' : 'pieza'} · <b class="mkc-vol">{isEn ? 'bulk pricing (1000+)' : 'precio x volumen (1000+)'}</b></small></span>
+                                                    <span class="mkc-in">2400</span>
+                                                    <span class="mkc-lista">$16.50</span>
+                                                    <span class="mkc-in deal">14.20</span>
+                                                    <span class="mkc-imp editorial">$34,080.00</span>
+                                                    <span class="mkc-mg">27%</span>
+                                                </div>
+                                                <div class="mkc-lr">
+                                                    <span class="mkc-lr-n">{isEn ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6'}<small>{isEn ? 'roll' : 'rollo'} · <u class="mkc-hint">{isEn ? 'Suggested: $305.00 (58% close)' : 'Sugerido: $305.00 (58% cierra)'}</u></small></span>
+                                                    <span class="mkc-in">180</span>
+                                                    <span class="mkc-lista">$332.00</span>
+                                                    <span class="mkc-in deal">312.00</span>
+                                                    <span class="mkc-imp editorial">$56,160.00</span>
+                                                    <span class="mkc-mg">27%</span>
+                                                </div>
+                                                <div class="mkc-add">
+                                                    <span class="mkc-field mkc-field-s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.search} />{isEn ? 'Search a product in your catalog… (name or SKU)' : 'Busca un producto de tu catálogo… (nombre o SKU)'}</span>
+                                                    <span class="mkc-soft">{isEn ? '+ Free line' : '+ Línea libre'}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="mk-totals">
-                                            <div class="mk-tot-col"><span>{isEn ? 'Subtotal' : 'Subtotal'}</span><b class="editorial">$169,370.00</b></div>
-                                            <div class="mk-tot-col"><span>{isEn ? 'Tax (16%)' : 'IVA 16%'}</span><b class="editorial">$27,099.20</b></div>
-                                            <div class="mk-tot-col mk-tot-final"><span>{isEn ? 'Total' : 'Total'}</span><b class="editorial" id="editorTotal">$196,469.20</b></div>
-                                        </div>
+                                        <aside class="mkc-sum">
+                                            <b class="mkc-sum-h">{isEn ? 'Review and send' : 'Revisa y envía'}</b>
+                                            <span class="mkc-sum-c">{isEn ? '4 lines · 3,040 units' : '4 líneas · 3,040 piezas'}</span>
+                                            <div class="mkc-sl"><span>Subtotal</span><span class="editorial" id="edSub">$169,370.00</span></div>
+                                            <div class="mkc-sl mkc-sl-save"><span>{isEn ? 'You discounted them' : 'Le descontaste'}</span><span class="editorial" id="edSave">−$14,950.00</span></div>
+                                            <div class="mkc-sl mkc-sl-tog"><span>{isEn ? 'Prices already include tax' : 'Precios ya incluyen IVA'}</span><i class="mkc-tog"></i></div>
+                                            <div class="mkc-sl mkc-sl-tax"><span>IVA 16%</span><span class="editorial" id="edTax">$27,099.20</span></div>
+                                            <span class="mkc-sum-div"></span>
+                                            <div class="mkc-sl mkc-sl-tot"><span>Total</span><span><b class="editorial" id="edTot">$196,469.20</b><em>MXN</em></span></div>
+                                            <div class="mkc-sf"><label>{isEn ? 'Valid for' : 'Vigencia'}</label><span class="mkc-field">{isEn ? '30 days' : '30 días'}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span></div>
+                                            <div class="mkc-sf"><label>{isEn ? 'What currency are you quoting in?' : '¿En qué moneda le cotizas?'}</label><span class="mkc-field">{isEn ? 'MXN — Mexican peso' : 'MXN — Peso mexicano'}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span></div>
+                                            <span class="mkc-send">{isEn ? 'Create and send' : 'Crear y enviar'}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.arrow} /></span>
+                                            <span class="mkc-soft mkc-sum-draft">{isEn ? 'Save draft' : 'Guardar borrador'}</span>
+                                        </aside>
                                     </div>
                                 </div>
-                                <!-- Cursor GSAP -->
-                                <div class="mk-cursor" id="editorCursor">
-                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.25 1-3.2-7.4-4.4 4.7z"/></svg>
-                                </div>
+                              </div>
+                              <span class="mkc-cursor" id="edCursor"><svg viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="1.3" stroke-linejoin="round" set:html={MKI.cursor} /></span>
                             </div>
                         )}
 
                         {feature.slug === 'link-publico' && (
-                          <>
-                            <div class="mk-public" id="publicWrap">
-                                <div class="mk-public-card" id="publicCard">
-                                    <div class="mk-public-head">
-                                        <span class="mk-avatar">MV</span>
-                                        <div>
-                                            <b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b>
-                                            <i>{isEn ? 'sent you a quote' : 'te envió una cotización'}</i>
+                            <div class="mkc-stage mkc-lp" id="lpHero" aria-hidden="true">
+                                <div class="mkc-br">
+                                    <div class="mkc-br-bar">
+                                        <span class="mkc-br-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.back} /><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.fwd} /><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.reload} /></span>
+                                        <span class="mkc-br-url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.lock} />cordhq.app/q/k7Hq2mX9</span>
+                                        <span class="mkc-br-nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.share} /></span>
+                                    </div>
+                                    <div class="mkc-br-page">
+                                        <div class="mkc-q">
+                                            <div class="mkc-q-head">
+                                                <div class="mkc-q-brand"><span class="mkc-q-logo">MV</span><div><b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b><i>RFC MVA240611AB3</i></div></div>
+                                                <div class="mkc-q-folio"><span>{isEn ? 'QUOTE' : 'COTIZACIÓN'}</span><b>COT-0148</b></div>
+                                            </div>
+                                            <span class="mkc-q-rule"></span>
+                                            <div class="mkc-q-meta">
+                                                <div><span>{isEn ? 'FOR' : 'PARA'}</span><b>{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</b></div>
+                                                <div><span>{isEn ? 'VALID UNTIL' : 'VÁLIDA HASTA'}</span><b>{isEn ? 'Jul 10, 2026' : '10 jul 2026'}</b><em>{isEn ? 'Due in 12 days' : 'Vence en 12 días'}</em></div>
+                                                <div><span>{isEn ? 'TERMS' : 'TÉRMINOS'}</span><b>Net 30</b></div>
+                                            </div>
+                                            <div class="mkc-q-total"><span>{isEn ? 'TOTAL DUE' : 'TOTAL A PAGAR'}</span><b class="editorial">$196,469.20</b><i>MXN · {isEn ? 'tax included' : 'IVA incluido'}</i></div>
+                                            <div class="mkc-q-items">
+                                                <div class="mkc-q-ih"><span>{isEn ? 'Item' : 'Concepto'}</span><span class="c">{isEn ? 'Qty.' : 'Cant.'}</span><span class="r">{isEn ? 'Unit price' : 'P. Unit.'}</span><span class="r">{isEn ? 'Amount' : 'Importe'}</span></div>
+                                                <div class="mkc-q-ir"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}</span><span class="c mkc-q-qty">120 {isEn ? 'bag' : 'saco'}</span><span class="r editorial"><s>$198.00</s>$182.00</span><span class="r editorial">$21,840.00</span></div>
+                                                <div class="mkc-q-ir"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}<em class="mkc-q-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.chat} />2</em></span><span class="c mkc-q-qty">340 {isEn ? 'piece' : 'pieza'}</span><span class="r editorial"><s>$180.00</s>$168.50</span><span class="r editorial">$57,290.00</span></div>
+                                                <div class="mkc-q-ir"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}</span><span class="c mkc-q-qty">2,400 {isEn ? 'piece' : 'pieza'}</span><span class="r editorial"><s>$16.50</s>$14.20</span><span class="r editorial">$34,080.00</span></div>
+                                                <div class="mkc-q-ir"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6'}</span><span class="c mkc-q-qty">180 {isEn ? 'roll' : 'rollo'}</span><span class="r editorial"><s>$332.00</s>$312.00</span><span class="r editorial">$56,160.00</span></div>
+                                            </div>
                                         </div>
-                                        <span class="mk-badge mk-badge-sent">● COT-0148</span>
                                     </div>
-                                    <div class="mk-public-total">
-                                        <span>{isEn ? 'Total with tax' : 'Total con IVA'}</span>
-                                        <b class="editorial">$196,469.20</b>
-                                        <i>Net 30 · {isEn ? 'valid until Jun 24, 2026' : 'vigente al 24 jun 2026'}</i>
-                                    </div>
-                                    <div class="mk-public-actions">
-                                        <div class="mk-btn-wrap" id="publicApproveBtn">
-                                            <div class="mk-btn-glow" id="publicGlow"></div>
-                                            <span class="mk-approve">{isEn ? 'Approve quote' : 'Aprobar cotización'}</span>
+                                </div>
+
+                                <div class="mkc-phone mkc-lp-phone">
+                                    <div class="mkc-phone-scr">
+                                        <div class="mkc-ios"><b>9:41</b><span class="mkc-island"></span><span class="mkc-ios-r"><i class="mkc-ios-sig"><i></i><i></i><i></i><i></i></i><svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.3 10.3 0 0 0 8 .4 10.3 10.3 0 0 0 .8 3.3L2 4.6a8.5 8.5 0 0 1 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.4l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.9l1.3 1.3C5.5 6.3 6.7 5.8 8 5.8zm0 3.5c.5 0 1 .2 1.3.6L8 11.2 6.7 9.9c.3-.4.8-.6 1.3-.6z"/></svg><i class="mkc-ios-bat"><i></i></i></span></div>
+                                        <div class="mkc-phone-page">
+                                            <div class="mkc-qm">
+                                                <div class="mkc-qm-top"><span class="mkc-q-logo">MV</span><b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b></div>
+                                                <div class="mkc-qm-tots">
+                                                    <div class="mkc-qm-grand"><span>Total</span><span class="editorial">$196,469.20</span></div>
+                                                </div>
+                                                <div class="mkc-qm-trust"><i></i>{isEn ? 'Connected in real time' : 'Conectado en tiempo real'}</div>
+                                                <div class="mkc-qm-step">
+                                                    <div class="mkc-qm-sign" id="lpSign">
+                                                        <div class="mkc-qm-sh"><span class="mkc-qm-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.back} /></span><b>{isEn ? 'Digital signature' : 'Firma digital'}</b></div>
+                                                        <div class="mkc-qm-pill">{isEn ? 'Approving' : 'Aprobando'} <b>COT-0148</b> {isEn ? 'for' : 'por'} <b>$196,469.20 MXN</b></div>
+                                                        <div class="mkc-qm-f"><label>{isEn ? "Signer's full name" : 'Nombre completo del firmante'}</label><span class="mkc-qm-in on"><span id="lpName">Raúl Mendoza</span><i class="mkc-qm-caret" id="lpCaret"></i></span></div>
+                                                        <div class="mkc-qm-f"><label>{isEn ? 'Email (optional)' : 'Correo electrónico (opcional)'}</label><span class="mkc-qm-in">compras@elzarco.mx</span></div>
+                                                        <div class="mkc-qm-chk"><i class="on" id="lpChk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i><span>{isEn ? 'I have reviewed this quote and accept the stated terms and conditions' : 'He revisado esta cotización y acepto los términos y condiciones indicados'}</span></div>
+                                                        <span class="mkc-qm-cta" id="lpCta"><span class="mkc-qm-cta-a">{isEn ? 'Confirm and sign' : 'Confirmar y firmar'}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.arrow} /></span><span class="mkc-qm-cta-b">{isEn ? 'Signing…' : 'Firmando…'}</span></span>
+                                                    </div>
+                                                    <div class="mkc-qm-done" id="lpDone">
+                                                        <span class="mkc-qm-ring"><svg viewBox="0 0 52 52" fill="none" stroke="#0a192f" stroke-linecap="round" stroke-linejoin="round"><circle id="lpRing" cx="26" cy="26" r="23" stroke-width="2"/><polyline id="lpTick" points="14,27 22,35 38,18" stroke-width="2.8"/></svg></span>
+                                                        <b class="mkc-qm-dt">{isEn ? 'Quote approved' : 'Cotización aprobada'}</b>
+                                                        <span class="mkc-qm-ds">{isEn ? 'Valle Materials received your confirmation and will be in touch shortly.' : 'Materiales del Valle recibió tu confirmación y se pondrá en contacto contigo en breve.'}</span>
+                                                        <div class="mkc-qm-credit" id="lpCredit"><b>{isEn ? 'Order confirmed with Net 30 credit' : 'Pedido confirmado con crédito Net 30'}</b><span>{isEn ? 'The payment of $196,469.20 MXN is due on Aug 9, 2026.' : 'El pago de $196,469.20 MXN vence el 9 ago 2026.'}</span></div>
+                                                        <div class="mkc-qm-audit" id="lpAudit"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.shield} />{isEn ? 'Document verified' : 'Documento verificado'}</b><span><em>{isEn ? 'Signer:' : 'Firmante:'}</em> Raúl Mendoza (IP 189.203.44.12)</span><span><em>{isEn ? 'Seal:' : 'Sello:'}</em> 9f2c7a41e6d0…b3e0</span></div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <span class="mk-reject">{isEn ? 'Reject' : 'Rechazar'}</span>
+                                        <div class="mkc-safari"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.lock} />cordhq.app</span></div>
+                                        <span class="mkc-home"></span>
                                     </div>
-                                    <span class="mk-via">vía <b>cord</b></span>
-                                </div>
-                                <div class="mk-success-overlay" id="publicSuccess">
-                                    <div class="mk-success-ring"></div>
-                                    <i class="mk-success-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></i>
-                                    <b>¡{isEn ? 'Successfully approved!' : 'Aprobada exitosamente!'}</b>
                                 </div>
                             </div>
-                            <div class="pp-bub pp-bub-in pp-lp-bub" id="lpBub1" style="top: 6%; left: 1%;">
-                                <span class="pp-bub-name">{isEn ? 'Client' : 'Cliente'}</span>
-                                {isEn ? 'Any better price on the rebar?' : '¿Me mejoras el precio del acero?'}
-                            </div>
-                            <div class="pp-bub pp-bub-out pp-lp-bub" id="lpBub2" style="bottom: 20%; left: 6%;">
-                                {isEn ? 'Done — updated the line ✓' : 'Listo — actualicé la línea ✓'}
-                            </div>
-                          </>
                         )}
 
                         {feature.slug === 'seguimiento' && (
-                            <div class="mk-window mk-track2">
-                                <div class="mk-track-topbar">
-                                    <div class="mk-track-ti"><b>{isEn ? 'Activity' : 'Actividad'}</b><span>COT-0148 · {isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</span></div>
-                                    <span class="mk-live-pill"><i id="satTrDot"></i> {isEn ? 'Viewing now' : 'Viendo ahora'}</span>
+                            <div class="mkc-stage mkc-tr" id="trHero" aria-hidden="true">
+                              <div class="mkc-app mkc-tr-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org">M</span>
+                                    {MK_RAIL.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-pgh">
+                                        <div class="mkc-pgh-t">
+                                            <span class="mkc-crumbs"><span>{isEn ? 'Quotes' : 'Cotizaciones'}</span><b>COT-0148</b></span>
+                                            <span class="mkc-title">COT-0148</span>
+                                        </div>
+                                        <span class="mkc-pill mkc-pill-viewed">{isEn ? 'Viewed' : 'Vista'}</span>
+                                    </div>
+                                    <div class="mkc-stp">
+                                        <span class="mkc-stp-s done"><i class="mkc-stp-d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i><b>{isEn ? 'Draft' : 'Borrador'}</b></span>
+                                        <span class="mkc-stp-s done"><i class="mkc-stp-d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i><b>{isEn ? 'Sent' : 'Enviada'}</b></span>
+                                        <span class="mkc-stp-s cur"><i class="mkc-stp-d">3</i><b>{isEn ? 'Viewed' : 'Vista'}</b></span>
+                                        <span class="mkc-stp-s"><i class="mkc-stp-d">4</i><b>{isEn ? 'Approved' : 'Aprobada'}</b></span>
+                                        <span class="mkc-stp-s"><i class="mkc-stp-d">5</i><b>{isEn ? 'Paid' : 'Pagada'}</b></span>
+                                    </div>
+                                    <div class="mkc-dg">
+                                        <div class="mkc-dm">
+                                            <div class="mkc-dh">
+                                                <span class="mkc-dh-av">EZ</span>
+                                                <div class="mkc-dh-t">
+                                                    <span class="mkc-dh-n">{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}<em class="mkc-ver">V1</em></span>
+                                                    <span class="mkc-lv" id="trLive"><i></i>{isEn ? 'Viewing now' : 'Viendo ahora'}<em id="trSec">{isEn ? ' — Line items' : ' — Partidas'}</em></span>
+                                                    <span class="mkc-dh-m">Net 30 · {isEn ? 'Valid until Jul 10, 2026' : 'Vigente hasta 10 jul 2026'}</span>
+                                                </div>
+                                                <div class="mkc-dh-tot"><span>TOTAL</span><b class="editorial">$196,469.20</b><em>MXN</em></div>
+                                            </div>
+                                            <div class="mkc-sec">{isEn ? 'Detail' : 'Detalle'}</div>
+                                            <div class="mkc-dih"><span>{isEn ? 'Product' : 'Producto'}</span><span>{isEn ? 'Qty.' : 'Cant.'}</span><span>{isEn ? 'Price' : 'Precio'}</span><span class="r">{isEn ? 'Amount' : 'Importe'}</span></div>
+                                            <div class="mkc-dir"><span class="mkc-dir-n">{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}<small>{isEn ? 'bag' : 'saco'}</small></span><span class="mkc-dir-q">120</span><span class="mkc-dir-p"><s>$198.00</s><b class="editorial">$182.00</b></span><span class="mkc-dir-a editorial">$21,840.00</span></div>
+                                            <div class="mkc-dir"><span class="mkc-dir-n">{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}<small>{isEn ? 'piece' : 'pieza'}</small></span><span class="mkc-dir-q">340</span><span class="mkc-dir-p"><s>$180.00</s><b class="editorial">$168.50</b></span><span class="mkc-dir-a editorial">$57,290.00</span></div>
+                                            <div class="mkc-dir"><span class="mkc-dir-n">{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}<small>{isEn ? 'piece' : 'pieza'}</small></span><span class="mkc-dir-q">2,400</span><span class="mkc-dir-p"><s>$16.50</s><b class="editorial">$14.20</b></span><span class="mkc-dir-a editorial">$34,080.00</span></div>
+                                            <div class="mkc-dir"><span class="mkc-dir-n">{isEn ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6'}<small>{isEn ? 'roll' : 'rollo'}</small></span><span class="mkc-dir-q">180</span><span class="mkc-dir-p"><s>$332.00</s><b class="editorial">$312.00</b></span><span class="mkc-dir-a editorial">$56,160.00</span></div>
+                                        </div>
+                                        <aside class="mkc-ds">
+                                            <div class="mkc-sec">{isEn ? 'Client attention' : 'Atención del cliente'}</div>
+                                            <div class="mkc-at-sum"><b>{isEn ? '1 person' : '1 persona'}</b><i>·</i><b>{isEn ? '4 opens' : '4 aperturas'}</b></div>
+                                            <div class="mkc-at-f"><span><b>{isEn ? 'First' : 'Primera'}</b> {isEn ? 'Jun 10, 11:45 AM' : '10 jun 2026, 11:45'}</span><span><b>{isEn ? 'Last' : 'Última'}</b> {isEn ? 'Today, 12:31 PM' : 'hoy, 12:31'}</span></div>
+                                            <div class="mkc-at-bars">
+                                                <div class="mkc-at-r" data-sec="resumen"><span class="mkc-at-l">{isEn ? 'Summary' : 'Resumen'}</span><span class="mkc-at-k"><i style="width:33%"></i></span><span class="mkc-at-v editorial">1m 12s</span></div>
+                                                <div class="mkc-at-r on" data-sec="partidas"><span class="mkc-at-l">{isEn ? 'Line items' : 'Partidas'}</span><span class="mkc-at-k"><i id="trBar" style="width:100%"></i></span><span class="mkc-at-v editorial" id="trVal">3m 40s</span></div>
+                                                <div class="mkc-at-r" data-sec="notas"><span class="mkc-at-l">{isEn ? 'Notes and terms' : 'Notas y términos'}</span><span class="mkc-at-k"><i style="width:17%"></i></span><span class="mkc-at-v editorial">38s</span></div>
+                                                <div class="mkc-at-r" data-sec="pago"><span class="mkc-at-l">{isEn ? 'Approval and payment' : 'Aprobación y pago'}</span><span class="mkc-at-k"><i style="width:10%"></i></span><span class="mkc-at-v editorial">22s</span></div>
+                                                <div class="mkc-at-r" data-sec="conversacion"><span class="mkc-at-l">{isEn ? 'Conversation' : 'Conversación'}</span><span class="mkc-at-k"><i style="width:30%"></i></span><span class="mkc-at-v editorial">1m 5s</span></div>
+                                            </div>
+                                            <p class="mkc-at-n">{isEn ? 'Opened the PDF · 2' : 'Abrió el PDF · 2'}</p>
+                                            <p class="mkc-at-n mkc-at-t">{isEn ? 'Total time on the proposal' : 'Tiempo total sobre la propuesta'} <b class="editorial" id="trTot">6m 57s</b></p>
+                                            <div class="mkc-sec mkc-sec-2">{isEn ? 'Activity' : 'Actividad'}</div>
+                                            <div class="mkc-tl">
+                                                <div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#7c3aed"></i><div class="mkc-tl-b"><b>{isEn ? 'Opened by the client from the link' : 'Abierta por el cliente desde el link'}</b><span>{isEn ? 'Jun 10, 11:45 AM' : '10 jun, 11:45'}</span></div></div>
+                                                <div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#cbd5e1"></i><div class="mkc-tl-b"><b>{isEn ? 'Email sent to the client' : 'Correo enviado al cliente'}</b><span>{isEn ? 'Jun 10, 11:02 AM' : '10 jun, 11:02'}</span></div></div>
+                                                <div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#3b82f6"></i><div class="mkc-tl-b"><b>{isEn ? 'Quote sent — link generated' : 'Cotización enviada — link generado'}</b><span>{isEn ? 'Jun 10, 11:02 AM' : '10 jun, 11:02'}</span></div></div>
+                                            </div>
+                                        </aside>
+                                    </div>
                                 </div>
-                                <div class="mk-tl">
-                                    <div class="mk-tl-row mk-on track-item"><i class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></i><div class="mk-tl-info"><b>{isEn ? 'Approved' : 'Aprobada'}</b><span>{isEn ? 'El Zarco approved the quote' : 'El Zarco aprobó la cotización'} · 12:36</span></div><span class="mk-avatar-sm">EZ</span></div>
-                                    <div class="mk-tl-row mk-on track-item"><i class="warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.12" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.2"/></svg></i><div class="mk-tl-info"><b>{isEn ? 'Viewed 3 times' : 'Vista 3 veces'}</b><span>{isEn ? 'Raúl opened the link' : 'Raúl Mendoza abrió el link'} · 12:31</span></div><span class="mk-avatar-sm">RM</span></div>
-                                    <div class="mk-tl-row track-item"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" fill="currentColor" fill-opacity="0.12"/><polyline points="22,6 12,13 2,6"/></svg></i><div class="mk-tl-info"><b>{isEn ? 'Sent' : 'Enviada'}</b><span>{isEn ? 'By email and WhatsApp' : 'Por correo y WhatsApp'} · 11:02</span></div></div>
-                                    <div class="mk-tl-row track-item"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path fill="currentColor" fill-opacity="0.12" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></i><div class="mk-tl-info"><b>{isEn ? 'Created' : 'Creada'}</b><span>{isEn ? 'Draft' : 'Borrador'} COT-0148 · 10:41</span></div></div>
-                                </div>
+                              </div>
+
+                              <div class="mkc-phone mkc-tr-phone">
+                                  <div class="mkc-phone-scr">
+                                      <div class="mkc-ios"><b>9:41</b><span class="mkc-island"></span><span class="mkc-ios-r"><i class="mkc-ios-sig"><i></i><i></i><i></i><i></i></i><svg viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.3A10.3 10.3 0 0 0 8 .4 10.3 10.3 0 0 0 .8 3.3L2 4.6a8.5 8.5 0 0 1 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.4l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.9l1.3 1.3C5.5 6.3 6.7 5.8 8 5.8zm0 3.5c.5 0 1 .2 1.3.6L8 11.2 6.7 9.9c.3-.4.8-.6 1.3-.6z"/></svg><i class="mkc-ios-bat"><i></i></i></span></div>
+                                      <div class="mkc-phone-page">
+                                          <div class="mkc-qm mkc-tr-scroll" id="trScroll">
+                                              <div class="mkc-q-head">
+                                                  <div class="mkc-q-brand"><span class="mkc-q-logo">MV</span><div><b>{isEn ? 'Valle Materials' : 'Materiales del Valle'}</b><i>RFC MVA240611AB3</i></div></div>
+                                              </div>
+                                              <div class="mkc-qm-fol"><span>{isEn ? 'QUOTE' : 'COTIZACIÓN'}</span><b>COT-0148</b></div>
+                                              <div class="mkc-q-meta mkc-qm-meta">
+                                                  <div><span>{isEn ? 'FOR' : 'PARA'}</span><b>{isEn ? 'El Zarco Distribution' : 'Distribuidora El Zarco'}</b></div>
+                                                  <div><span>{isEn ? 'VALID UNTIL' : 'VÁLIDA HASTA'}</span><b>{isEn ? 'Jul 10, 2026' : '10 jul 2026'}</b><em>{isEn ? 'Due in 12 days' : 'Vence en 12 días'}</em></div>
+                                              </div>
+                                              <div class="mkc-q-total mkc-qm-total"><span>{isEn ? 'TOTAL DUE' : 'TOTAL A PAGAR'}</span><b class="editorial">$196,469.20</b><i>MXN · {isEn ? 'tax included' : 'IVA incluido'}</i></div>
+                                              <div class="mkc-qm-items" id="trItems">
+                                                  <div class="mkc-qm-it"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}</span><div class="mkc-qm-kv"><span><em>{isEn ? 'QTY.' : 'CANT.'}</em>120 {isEn ? 'bag' : 'saco'}</span><span><em>{isEn ? 'UNIT' : 'P. UNIT.'}</em><s>$198.00</s>$182.00</span><span class="r"><em>{isEn ? 'AMOUNT' : 'IMPORTE'}</em><b>$21,840.00</b></span></div></div>
+                                                  <div class="mkc-qm-it"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}</span><div class="mkc-qm-kv"><span><em>{isEn ? 'QTY.' : 'CANT.'}</em>340 {isEn ? 'piece' : 'pieza'}</span><span><em>{isEn ? 'UNIT' : 'P. UNIT.'}</em><s>$180.00</s>$168.50</span><span class="r"><em>{isEn ? 'AMOUNT' : 'IMPORTE'}</em><b>$57,290.00</b></span></div></div>
+                                                  <div class="mkc-qm-it"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}</span><div class="mkc-qm-kv"><span><em>{isEn ? 'QTY.' : 'CANT.'}</em>2,400 {isEn ? 'piece' : 'pieza'}</span><span><em>{isEn ? 'UNIT' : 'P. UNIT.'}</em><s>$16.50</s>$14.20</span><span class="r"><em>{isEn ? 'AMOUNT' : 'IMPORTE'}</em><b>$34,080.00</b></span></div></div>
+                                                  <div class="mkc-qm-it"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6'}</span><div class="mkc-qm-kv"><span><em>{isEn ? 'QTY.' : 'CANT.'}</em>180 {isEn ? 'roll' : 'rollo'}</span><span><em>{isEn ? 'UNIT' : 'P. UNIT.'}</em><s>$332.00</s>$312.00</span><span class="r"><em>{isEn ? 'AMOUNT' : 'IMPORTE'}</em><b>$56,160.00</b></span></div></div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                      <div class="mkc-qm-sticky" id="trSticky"><div><span>{isEn ? 'Total due' : 'Total a pagar'}</span><b class="editorial">$196,469.20</b></div><span class="mkc-qm-sticky-b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} />{isEn ? 'Approve' : 'Aprobar'}</span></div>
+                                      <div class="mkc-safari"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.lock} />cordhq.app</span></div>
+                                      <span class="mkc-home"></span>
+                                  </div>
+                              </div>
                             </div>
                         )}
 
@@ -725,32 +948,83 @@ const howtoSchema = howto ? {
                         )}
 
                         {feature.slug === 'aprobaciones' && (
-                            <div class="mk-window mk-apr" id="aprHero">
-                                <div class="mk-bar">
-                                    <span class="mk-dots"><i></i><i></i><i></i></span>
-                                    <span class="mk-bar-title">COT-0148</span>
-                                    <span class="mk-badge mk-apr-pending">● {isEn ? 'Pending' : 'Pendiente'}</span>
-                                </div>
-                                <div class="mk-apr-body">
-                                    <div class="mk-apr-line">
-                                        <div class="mk-apr-line-info"><b>{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}</b><i>340 pz · {isEn ? 'negotiated' : 'negociado'} $168.50</i></div>
-                                        <span class="mk-apr-margin" id="aprMargin">{isEn ? 'Margin' : 'Margen'} 18%</span>
+                            <div class="mkc-stage mkc-ap" id="apHero" aria-hidden="true">
+                              <div class="mkc-app mkc-ap-app">
+                                <aside class="mkc-rail">
+                                    <span class="mkc-rail-org">M</span>
+                                    {MK_RAIL.map((it) => (
+                                        <Fragment>
+                                            {it.sep && <span class="mkc-rail-sep"></span>}
+                                            <span class:list={['mkc-rail-i', { on: it.on }]}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" set:html={MKI[it.k]} /></span>
+                                        </Fragment>
+                                    ))}
+                                    <span class="mkc-rail-i mkc-rail-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.panel} /></span>
+                                </aside>
+                                <div class="mkc-main">
+                                    <header class="mkc-top">
+                                        <span class="mkc-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.burger} /></span>
+                                        <span class="mkc-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.search} /><span>{isEn ? 'Search…' : 'Buscar…'}</span><kbd>⌘K</kbd></span>
+                                        <span class="mkc-top-r">
+                                            <span class="mkc-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" set:html={MKI.plus} />{isEn ? 'Create' : 'Crear'}<svg class="mkc-create-c" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.caret} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.bell} /><i class="mkc-ti-dot"></i></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.help} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.moon} /></span>
+                                            <span class="mkc-ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.gear} /></span>
+                                        </span>
+                                    </header>
+                                    <div class="mkc-pgh">
+                                        <div class="mkc-pgh-t">
+                                            <span class="mkc-crumbs"><span>{isEn ? 'Quotes' : 'Cotizaciones'}</span><b>COT-0151</b></span>
+                                            <span class="mkc-title">COT-0151</span>
+                                        </div>
+                                        <span class="mkc-pill-w"><span class="mkc-pill mkc-pill-draft" id="apPillA">{isEn ? 'Draft' : 'Borrador'}</span><span class="mkc-pill mkc-pill-sent" id="apPillB">{isEn ? 'Sent' : 'Enviada'}</span></span>
                                     </div>
-                                    <div class="mk-apr-gauge">
-                                        <div class="mk-apr-gauge-track">
-                                            <div class="mk-apr-gauge-fill" id="aprFill"></div>
-                                            <div class="mk-apr-gauge-min"><span>{isEn ? 'min 25%' : 'mín 25%'}</span></div>
+                                    <div class="mkc-apb-w" id="apBannerW">
+                                        <div class="mkc-apb" id="apBanner">
+                                            <div class="mkc-apb-i">
+                                                <b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.clock} />{isEn ? 'Pending approval' : 'Pendiente de aprobación'}</b>
+                                                <span>{isEn ? 'discount 15% exceeds the 10% allowed and gross margin 18% is below the 25% minimum' : 'descuento 15% supera el 10% permitido y margen bruto 18% está por debajo del mínimo de 25%'}</span>
+                                            </div>
+                                            <div class="mkc-apb-a"><span class="mkc-apb-ok" id="apOk">{isEn ? 'Approve and send' : 'Aprobar y enviar'}</span><span class="mkc-apb-no">{isEn ? 'Reject' : 'Rechazar'}</span></div>
                                         </div>
                                     </div>
-                                    <div class="mk-apr-alert" id="aprAlert">
-                                        <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path fill="currentColor" fill-opacity="0.12" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></i>
-                                        <span>{isEn ? 'Margin 18% is below the 25% minimum' : 'Margen 18% por debajo del mínimo de 25%'}</span>
+                                    <div class="mkc-stp mkc-ap-stp">
+                                        <span class="mkc-stp-s cur" id="apS1"><i class="mkc-stp-d"><em class="mkc-stp-n">1</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i><b>{isEn ? 'Draft' : 'Borrador'}</b></span>
+                                        <span class="mkc-stp-s" id="apS2"><i class="mkc-stp-d">2</i><b>{isEn ? 'Sent' : 'Enviada'}</b></span>
+                                        <span class="mkc-stp-s"><i class="mkc-stp-d">3</i><b>{isEn ? 'Viewed' : 'Vista'}</b></span>
+                                        <span class="mkc-stp-s"><i class="mkc-stp-d">4</i><b>{isEn ? 'Approved' : 'Aprobada'}</b></span>
+                                        <span class="mkc-stp-s"><i class="mkc-stp-d">5</i><b>{isEn ? 'Paid' : 'Pagada'}</b></span>
                                     </div>
-                                    <div class="mk-apr-actions">
-                                        <span class="mk-apr-reject">{isEn ? 'Reject' : 'Rechazar'}</span>
-                                        <span class="mk-apr-approve" id="aprBtn">{isEn ? 'Approve anyway' : 'Aprobar de todos modos'}</span>
+                                    <div class="mkc-dg">
+                                        <div class="mkc-dm">
+                                            <div class="mkc-dh">
+                                                <span class="mkc-dh-av">CG</span>
+                                                <div class="mkc-dh-t">
+                                                    <span class="mkc-dh-n">{isEn ? 'GAMA Construction' : 'Constructora GAMA'}<em class="mkc-ver">V1</em></span>
+                                                    <span class="mkc-dh-m">Net 60 · {isEn ? 'Valid until Jul 24, 2026' : 'Vigente hasta 24 jul 2026'} · {isEn ? 'Created Jun 24, 2026' : 'Creada 24 jun 2026'}</span>
+                                                </div>
+                                                <div class="mkc-dh-tot"><span>TOTAL</span><b class="editorial">$190,356.00</b><em>MXN</em></div>
+                                            </div>
+                                            <div class="mkc-sec">{isEn ? 'Detail' : 'Detalle'}</div>
+                                            <div class="mkc-dih"><span>{isEn ? 'Product' : 'Producto'}</span><span>{isEn ? 'Qty.' : 'Cant.'}</span><span>{isEn ? 'Price' : 'Precio'}</span><span class="r">{isEn ? 'Amount' : 'Importe'}</span></div>
+                                            <div class="mkc-dir"><span class="mkc-dir-n">{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}<small>{isEn ? 'bag' : 'saco'}</small></span><span class="mkc-dir-q">120</span><span class="mkc-dir-p"><s>$198.00</s><b class="editorial">$182.00</b></span><span class="mkc-dir-a editorial">$21,840.00</span></div>
+                                            <div class="mkc-dir mkc-dir-hot"><span class="mkc-dir-n">{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}<small>{isEn ? 'piece' : 'pieza'}</small></span><span class="mkc-dir-q">340</span><span class="mkc-dir-p"><s>$180.00</s><b class="editorial">$153.00</b></span><span class="mkc-dir-a editorial">$52,020.00</span></div>
+                                            <div class="mkc-dir"><span class="mkc-dir-n">{isEn ? 'Hollow block 15×20×40' : 'Block hueco 15×20×40'}<small>{isEn ? 'piece' : 'pieza'}</small></span><span class="mkc-dir-q">2,400</span><span class="mkc-dir-p"><s>$16.50</s><b class="editorial">$14.20</b></span><span class="mkc-dir-a editorial">$34,080.00</span></div>
+                                            <div class="mkc-dir"><span class="mkc-dir-n">{isEn ? 'Welded wire mesh 6×6' : 'Malla electrosoldada 6×6'}<small>{isEn ? 'roll' : 'rollo'}</small></span><span class="mkc-dir-q">180</span><span class="mkc-dir-p"><s>$332.00</s><b class="editorial">$312.00</b></span><span class="mkc-dir-a editorial">$56,160.00</span></div>
+                                        </div>
+                                        <aside class="mkc-ds">
+                                            <div class="mkc-sec">{isEn ? 'Activity' : 'Actividad'}</div>
+                                            <div class="mkc-tl">
+                                                <div class="mkc-tl-new" id="apNew"><div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#3b82f6"></i><div class="mkc-tl-b"><b>{isEn ? 'Approved by management and sent to the client' : 'Aprobada por gerencia y enviada al cliente'}</b><span>{isEn ? 'Today, 12:14 PM' : 'hoy, 12:14'}</span></div></div></div>
+                                                <div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#cbd5e1"></i><div class="mkc-tl-b"><b>{isEn ? 'Approval request: discount 15% exceeds the 10% allowed and gross margin 18% is below the 25% minimum' : 'Solicitud de aprobación: descuento 15% supera el 10% permitido y margen bruto 18% está por debajo del mínimo de 25%'}</b><span>{isEn ? 'Today, 12:08 PM' : 'hoy, 12:08'}</span></div></div>
+                                                <div class="mkc-tl-i"><i class="mkc-tl-d" style="background:#cbd5e1"></i><div class="mkc-tl-b"><b>{isEn ? 'Draft created' : 'Borrador creado'}</b><span>{isEn ? 'Today, 12:07 PM' : 'hoy, 12:07'}</span></div></div>
+                                            </div>
+                                        </aside>
                                     </div>
                                 </div>
+                              </div>
+
+                              <span class="mkc-cursor" id="apCursor"><svg viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="1.3" stroke-linejoin="round" set:html={MKI.cursor} /></span>
                             </div>
                         )}
 
@@ -925,7 +1199,6 @@ const howtoSchema = howto ? {
     .pp-hero-visual {
         position: relative;
         overflow: visible;
-        translate: 0 calc(var(--band-t) * 0.6);
         margin-right: -16%;
         display: flex;
         align-items: center;
@@ -1020,12 +1293,6 @@ const howtoSchema = howto ? {
     .pp-sat-live { display: inline-flex; align-items: center; gap: 7px; font-size: 0.7rem; font-weight: 700; color: #0f172a; }
     .pp-sat-live i { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
 
-    /* Burbujas de chat que flotan libres (conversación fuera de card) */
-    .pp-bub { position: absolute; z-index: 9; max-width: 210px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.4; font-weight: 500;
-        box-shadow: 0 6px 20px -6px rgba(10,25,47,0.18); }
-    .pp-bub-in { background: #ffffff; color: #334155; border: 1px solid rgba(10,25,47,0.06); border-radius: 16px 16px 16px 4px; }
-    .pp-bub-out { background: #0a192f; color: #fff; border-radius: 16px 16px 4px 16px; }
-    .pp-bub-name { display: block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: #94a3b8; margin-bottom: 3px; }
     .pp-cfdi-file { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.4px; color: #475569; background: #f1f5f9; border: 1px solid rgba(10,25,47,0.08); padding: 3px 7px; border-radius: 6px; }
     
     .pp-mesh-bg {
@@ -1080,13 +1347,6 @@ const howtoSchema = howto ? {
     .mk-avatar-cg { background: #047857; }
     .mk-avatar-gf { background: #6d28d9; }
 
-    .mk-avatar-sm {
-        width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
-        background: #475569; color: #fff;
-        display: inline-flex; align-items: center; justify-content: center;
-        font-size: 0.55rem; font-weight: 700;
-    }
-
     /* ── EDITOR APP SIMULATION — LIGHT / premium Linear-Stripe frame ── */
     .mk-window {
         background: #ffffff;
@@ -1117,15 +1377,6 @@ const howtoSchema = howto ? {
     .mk-bar-title { font-size: 0.8rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; margin-right: auto; }
     .mk-bar-actions { display: flex; align-items: center; gap: 10px; }
 
-    .mk-body { display: flex; height: 320px; }
-    .mk-sidebar { width: 180px; background: #f8fafc; border-right: 1px solid rgba(0,0,0,0.06); padding: 12px; display: flex; flex-direction: column; gap: 4px; }
-    .mk-sb-item { padding: 8px 10px; border-radius: 6px; font-size: 0.7rem; color: #64748b; display: flex; align-items: center; gap: 8px; cursor: default; }
-    .mk-sb-active { background: rgba(37,99,235,0.08); color: #2563eb; font-weight: 600; }
-    .mk-sb-item i { display: flex; align-items: center; flex-shrink: 0; }
-    .mk-sb-item i svg { width: 13px; height: 13px; }
-
-    .mk-content { flex: 1; padding: 1.5rem; display: flex; flex-direction: column; background: #fff; }
-    .mk-rows { display: flex; flex-direction: column; gap: 4px; flex: 1; }
     .mk-row {
         display: grid; grid-template-columns: 2fr 0.5fr 1fr 1fr;
         gap: 8px; align-items: center;
@@ -1136,128 +1387,7 @@ const howtoSchema = howto ? {
     }
     .mk-row span:nth-child(n+2) { text-align: right; }
     .mk-row-head { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #94a3b8; padding-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,0.06); border-radius: 0; }
-    .mk-row-edit { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.15); position: relative; }
     .mk-green { color: #059669; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end; }
-    .mk-chip {
-        font-style: normal; font-size: 0.55rem; font-weight: 800;
-        color: #059669; background: rgba(16,185,129,0.10); border: 1px solid rgba(16,185,129,0.2);
-        padding: 2px 4px; border-radius: 4px;
-        opacity: 0; transform: scale(0.5); /* for GSAP */
-    }
-    .mk-totals {
-        display: flex; justify-content: flex-end; gap: 2rem;
-        margin-top: auto; padding-top: 1rem;
-        border-top: 1px solid rgba(0,0,0,0.06);
-    }
-    .mk-tot-col { display: flex; flex-direction: column; gap: 4px; text-align: right; }
-    .mk-tot-col span { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-    .mk-tot-col b { font-size: 0.8rem; color: #334155; font-weight: 600; }
-    .mk-tot-final b { font-size: 1.1rem; color: #0a192f; font-weight: 800; }
-
-    .mk-cursor {
-        position: absolute; top: 0; left: 0; width: 20px; height: 20px; color: #0a192f;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); z-index: 100;
-        pointer-events: none; opacity: 0;
-    }
-    
-    /* ── LINK PÚBLICO SIMULATION ── */
-    .mk-public { position: relative; max-width: 440px; margin: 0 auto; perspective: 1000px; }
-    .mk-public-card {
-        display: flex; flex-direction: column; gap: 1.25rem; padding: 1.5rem;
-        background: #ffffff;
-        border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08), 0 40px 80px rgba(0,0,0,0.06);
-        border: 1px solid rgba(0,0,0,0.07);
-    }
-    .mk-public-head { display: flex; align-items: center; gap: 12px; }
-    .mk-public-head b { display: block; font-size: 0.95rem; font-weight: 600; color: #0f172a; }
-    .mk-public-head i { display: block; font-style: normal; font-size: 0.75rem; color: #64748b; margin-top: 2px; }
-    .mk-public-head .mk-badge { margin-left: auto; }
-    .mk-public-total {
-        text-align: center; padding: 1.75rem 1rem;
-        background: #f8fafc; border-radius: 14px;
-        border: 1px solid rgba(0,0,0,0.06);
-    }
-    .mk-public-total span { display: block; font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; }
-    .mk-public-total b { display: block; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; color: #0a192f; }
-    .mk-public-total i { display: block; font-style: normal; font-size: 0.7rem; color: #94a3b8; margin-top: 8px; }
-    .mk-public-actions { display: flex; gap: 0.85rem; }
-
-    .mk-btn-wrap { position: relative; flex: 1; display: flex; cursor: pointer; }
-    .mk-btn-glow { position: absolute; inset: 0; background: #2563eb; filter: blur(14px); opacity: 0; border-radius: 12px; transition: opacity 0.3s; }
-    .mk-approve {
-        position: relative; flex: 1; text-align: center; display: flex; align-items: center; justify-content: center;
-        background: #0a192f; color: #fff;
-        font-size: 0.9rem; font-weight: 700;
-        padding: 14px; border-radius: 12px; box-shadow: 0 4px 12px rgba(10,25,47,0.25); z-index: 2;
-    }
-    .mk-reject {
-        text-align: center; color: #64748b; display: flex; align-items: center; justify-content: center;
-        font-size: 0.9rem; font-weight: 600;
-        padding: 14px 20px; border-radius: 12px; background: #f1f5f9; border: 1px solid rgba(0,0,0,0.08);
-    }
-    .mk-via { text-align: center; font-size: 0.7rem; color: #94a3b8; margin-top: -0.5rem; }
-    .mk-via b { color: #64748b; }
-    
-    .mk-success-overlay {
-        position: absolute; inset: 0; background: rgba(16,185,129,0.9);
-        border-radius: 18px; backdrop-filter: blur(8px);
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        opacity: 0; pointer-events: none; z-index: 10; gap: 12px;
-    }
-    .mk-success-ring { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 2px solid #fff; opacity: 0; }
-    .mk-success-check { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; font-style: normal; color: #fff; }
-    .mk-success-check svg { width: 52px; height: 52px; }
-    .mk-success-overlay b { color: #fff; font-size: 1.2rem; }
-
-    /* ── SEGUIMIENTO TIMELINE ── */
-    .mk-track { display: flex; flex-direction: column; gap: 1.25rem; max-width: 520px; margin: 0 auto; }
-    .mk-track-head { display: flex; justify-content: center; height: 50px; }
-    .mk-toast {
-        display: flex; align-items: center; gap: 12px;
-        background: #ffffff; border-radius: 100px; border: 1px solid rgba(0,0,0,0.08);
-        padding: 8px 16px; font-size: 0.75rem; color: #334155;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.04);
-        opacity: 0; transform: translateY(20px); /* GSAP target */
-    }
-    .mk-toast-dot {
-        width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; flex-shrink: 0;
-        box-shadow: 0 0 0 4px rgba(56,189,248,0.2); animation: mk-pulse 2s infinite;
-    }
-    .mk-toast-content { display: flex; align-items: center; gap: 6px; }
-    .mk-toast-content i { color: #94a3b8; }
-
-    /* Seguimiento v2 — una sola card de actividad, pro y limpia */
-    .mk-track2 { max-width: 500px; margin: 0 auto; }
-    .mk-track-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid rgba(10,25,47,0.06); background: #fcfdfe; }
-    .mk-track-ti b { display: block; font-size: 0.85rem; font-weight: 600; color: #0f172a; letter-spacing: -0.01em; }
-    .mk-track-ti span { display: block; font-size: 0.68rem; color: #94a3b8; margin-top: 2px; }
-    .mk-live-pill { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; font-size: 0.66rem; font-weight: 700; color: #059669; background: rgba(16,185,129,0.09); border: 1px solid rgba(16,185,129,0.22); padding: 5px 11px; border-radius: 100px; }
-    .mk-live-pill i { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
-    .mk-track2 .mk-tl { background: transparent; border: none; border-radius: 0; box-shadow: none; padding: 0.5rem 0.7rem; }
-
-    .mk-tl {
-        display: flex; flex-direction: column; gap: 4px;
-        background: #ffffff;
-        border-radius: 18px; padding: 1.25rem; border: 1px solid rgba(0,0,0,0.07);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.07);
-    }
-    .mk-tl-row {
-        display: flex; align-items: center; gap: 14px;
-        padding: 12px 14px; border-radius: 12px;
-        opacity: 0; transform: translateX(-20px); /* GSAP staggered */
-    }
-    .mk-tl-row.mk-on { background: #f8fafc; border: 1px solid rgba(0,0,0,0.05); }
-    .mk-tl-row i {
-        width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        background: #e2e8f0; flex-shrink: 0; font-style: normal; color: #64748b;
-    }
-    .mk-tl-row i svg { width: 11px; height: 11px; }
-    .mk-tl-row i.ok { background: #10b981; color: #fff; box-shadow: 0 0 10px rgba(16,185,129,0.3); }
-    .mk-tl-row i.warn { background: #f59e0b; color: #fff; box-shadow: 0 0 10px rgba(245,158,11,0.3); }
-    .mk-tl-info { flex: 1; }
-    .mk-tl-info b { display: block; font-size: 0.85rem; color: #0f172a; margin-bottom: 2px; }
-    .mk-tl-info span { display: block; font-size: 0.7rem; color: #94a3b8; }
-    
     /* ── CFDI — LIGHT ── */
     .mk-cfdi {
         position: relative; display: flex; flex-direction: column; max-width: 520px; margin: 0 auto;
@@ -1567,25 +1697,348 @@ const howtoSchema = howto ? {
     .mk-fin-insight span { font-size: 0.74rem; line-height: 1.5; color: #475569; }
     .mk-fin-insight b { color: #0f172a; font-weight: 700; }
 
-    /* ── APROBACIONES / control de márgenes ── */
-    .mk-apr-body { padding: 1.3rem 1.3rem 1.4rem; display: flex; flex-direction: column; gap: 1.05rem; }
-    .mk-apr-pending { color: #d97706; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.28); }
-    .mk-apr-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 15px; border-radius: 12px; background: #f8fafc; border: 1px solid rgba(10,25,47,0.05); }
-    .mk-apr-line-info b { display: block; font-size: 0.9rem; color: #0f172a; font-weight: 600; margin-bottom: 3px; }
-    .mk-apr-line-info i { font-style: normal; font-size: 0.72rem; color: #94a3b8; }
-    .mk-apr-margin { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.3px; color: #dc2626; background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.2); padding: 5px 11px; border-radius: 100px; }
-    .mk-apr-gauge { padding: 2px 2px 0; }
-    .mk-apr-gauge-track { position: relative; height: 10px; border-radius: 100px; background: #eef2f7; overflow: visible; }
-    .mk-apr-gauge-fill { height: 100%; width: 0%; border-radius: 100px; background: linear-gradient(90deg, #f87171, #dc2626); box-shadow: 0 2px 8px -1px rgba(220,38,38,0.4); }
-    .mk-apr-gauge-min { position: absolute; top: -5px; bottom: -5px; left: 50%; width: 2px; border-radius: 2px; background: #0f172a; }
-    .mk-apr-gauge-min span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; color: #0f172a; }
-    .mk-apr-alert { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-radius: 12px; background: rgba(220,38,38,0.05); border: 1px solid rgba(220,38,38,0.16); }
-    .mk-apr-alert i { flex-shrink: 0; color: #dc2626; display: flex; }
-    .mk-apr-alert i svg { width: 17px; height: 17px; }
-    .mk-apr-alert span { font-size: 0.76rem; font-weight: 500; line-height: 1.45; color: #b91c1c; }
-    .mk-apr-actions { display: flex; gap: 10px; justify-content: flex-end; }
-    .mk-apr-reject { padding: 9px 18px; border-radius: 8px; border: 1px solid rgba(10,25,47,0.12); color: #475569; font-size: 0.8rem; font-weight: 600; }
-    .mk-apr-approve { padding: 9px 18px; border-radius: 8px; background: #0f172a; color: #fff; font-size: 0.8rem; font-weight: 600; box-shadow: 0 4px 12px -3px rgba(15,23,42,0.4); }
+    /* ══ HERO CALCA (editor · link público · seguimiento · aprobaciones): réplica de AppLayout, cotizaciones/nueva, cotizaciones/[id] y q/[token] ══ */
+    .mkc-stage { position: relative; width: 100%; container-type: inline-size; text-align: left; color: #0f1729; }
+    .mkc-stage svg { display: block; flex-shrink: 0; }
+    .mkc-app {
+        --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        --gut: 44px;
+        position: relative; display: flex; gap: 9px; padding: 9px;
+        font-family: var(--font-sans); -webkit-font-smoothing: antialiased;
+        background: #f5f5f7; border-radius: 18px; overflow: hidden; isolation: isolate;
+        box-shadow:
+            0 0 0 1px rgba(10,25,47,0.07),
+            0 2px 4px rgba(10,25,47,0.05),
+            0 24px 48px -20px rgba(10,25,47,0.30),
+            0 60px 110px -40px rgba(8,20,50,0.45);
+    }
+    .mkc-app::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }
+
+    /* Sidebar en su estado colapsado (html.sb-collapsed) */
+    .mkc-rail { flex: 0 0 46px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0 8px; background: #fff; border-radius: 14px; box-shadow: 0 6px 20px -10px rgba(10,25,47,0.12), inset 0 0 0 1px rgba(10,25,47,0.045); }
+    .mkc-rail-org { width: 28px; height: 28px; border-radius: 9px; margin-bottom: 9px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #1b3a64, #0a192f); box-shadow: inset 0 1px 1px rgba(255,255,255,0.25), 0 3px 8px -3px rgba(10,25,47,0.45); }
+    .mkc-rail-i { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: #5b6472; }
+    .mkc-rail-i svg { width: 16px; height: 16px; opacity: 0.72; }
+    .mkc-rail-i.on { color: #0a192f; background: rgba(10,25,47,0.07); }
+    .mkc-rail-i.on svg { opacity: 1; }
+    .mkc-rail-sep { width: 18px; height: 1px; margin: 5px 0; background: rgba(10,25,47,0.09); }
+    .mkc-rail-foot { margin-top: auto; }
+
+    .mkc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .mkc-top { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 8px; background: #fff; border-radius: 14px; box-shadow: 0 6px 20px -10px rgba(10,25,47,0.12), inset 0 0 0 1px rgba(10,25,47,0.045); }
+    .mkc-burger { display: none; }
+    .mkc-search { flex: 0 1 230px; min-width: 0; display: flex; align-items: center; gap: 7px; padding: 5px 6px 5px 9px; font-size: 11.5px; color: #5b6472; background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); border-radius: 8px; }
+    .mkc-search svg { width: 12px; height: 12px; color: #99a2af; }
+    .mkc-search span { flex: 1; white-space: nowrap; }
+    .mkc-search kbd { font: 700 9px/1 var(--font-sans); color: #5b6472; background: #fff; border: 1px solid rgba(10,25,47,0.08); border-radius: 5px; padding: 3px 5px; box-shadow: 0 1px 0 rgba(10,25,47,0.06); }
+    .mkc-top-r { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+    .mkc-create { display: inline-flex; align-items: center; gap: 5px; margin-right: 5px; padding: 5px 7px 5px 7px; border-radius: 7px; background: #0a192f; color: #fff; font-size: 11px; font-weight: 600; box-shadow: 0 6px 14px -8px rgba(10,25,47,0.6), inset 0 1px 0 rgba(255,255,255,0.12); }
+    .mkc-create svg { width: 11px; height: 11px; }
+    .mkc-create .mkc-create-c { width: 9px; height: 9px; opacity: 0.7; }
+    .mkc-ti { position: relative; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: #5b6472; }
+    .mkc-ti svg { width: 14px; height: 14px; }
+    .mkc-ti-dot { position: absolute; top: 5px; right: 6px; width: 5px; height: 5px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 1.5px #fff; }
+
+    .mkc-pgh { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 14px var(--gut) 12px 10px; }
+    .mkc-pgh-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .mkc-crumbs { display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: #5b6472; white-space: nowrap; }
+    .mkc-crumbs > span::after { content: '/'; margin-left: 5px; color: #c4cad3; }
+    .mkc-crumbs b { font-weight: 600; color: #0f1729; }
+    .mkc-title { font-size: 19px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.1; color: #0f1729; }
+    .mkc-draft { font-size: 10.5px; font-weight: 600; color: #5b6472; background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); padding: 3px 8px; border-radius: 6px; }
+    .mkc-pill { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; letter-spacing: 0.2px; padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
+    .mkc-pill-viewed { color: #7c3aed; background: rgba(124,58,237,0.09); }
+    .mkc-pill-draft { color: #64748b; background: rgba(100,116,139,0.1); }
+    .mkc-pill-sent { color: #2563eb; background: rgba(37,99,235,0.09); }
+    .mkc-field { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; font-size: 11.5px; color: #0f1729; background: #ebebee; border-radius: 8px; white-space: nowrap; overflow: hidden; }
+    .mkc-field svg { width: 10px; height: 10px; color: #99a2af; }
+    .mkc-soft { font-size: 11px; font-weight: 500; color: #5b6472; background: #ebebee; padding: 7px 11px; border-radius: 8px; white-space: nowrap; }
+    .mkc-cursor { position: absolute; left: 0; top: 0; z-index: 30; width: 19px; height: 19px; color: #0a192f; opacity: 0; pointer-events: none; filter: drop-shadow(0 3px 5px rgba(10,25,47,0.35)); }
+    .mkc-cursor svg { width: 19px; height: 19px; }
+
+    /* ── Editor (cotizaciones/nueva) ── */
+    .mkc-ed-stage > .mkc-app { min-width: 820px; }
+    .mkc-ed { display: grid; grid-template-columns: minmax(0, 1fr) 216px; gap: 18px; align-items: start; padding: 0 var(--gut) 0 10px; }
+    .mkc-ed-main { display: flex; flex-direction: column; gap: 17px; min-width: 0; }
+    .mkc-step-h { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 9px; }
+    .mkc-step-n { flex-shrink: 0; width: 18px; height: 18px; border-radius: 6px; background: #0a192f; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .mkc-step-h > div { min-width: 0; }
+    .mkc-step-h b { display: block; font-size: 12.5px; font-weight: 600; line-height: 18px; color: #0f1729; }
+    .mkc-step-h > div span { display: block; font-size: 10.5px; color: #5b6472; }
+    .mkc-step-h > div span b { display: inline; font-size: inherit; line-height: inherit; }
+    .mkc-client { display: flex; align-items: center; gap: 8px; }
+    .mkc-client .mkc-field { flex: 1; min-width: 0; }
+    .mkc-chips { display: flex; gap: 4px; flex-shrink: 0; }
+    .mkc-chips i { font-style: normal; font-size: 10.5px; font-weight: 600; color: #5b6472; background: #ebebee; padding: 5px 10px; border-radius: 999px; }
+    .mkc-chips i.on { background: #0a192f; color: #fff; box-shadow: 0 2px 8px -2px rgba(10,25,47,0.35); }
+    .mkc-lh, .mkc-lr { display: grid; grid-template-columns: minmax(0, 1.9fr) 42px 52px 60px minmax(0, 1fr) 34px; gap: 8px; align-items: center; }
+    .mkc-lh { padding-bottom: 6px; font-size: 10px; font-weight: 500; color: #5b6472; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .mkc-lh .r { text-align: right; }
+    .mkc-lh .c { text-align: center; }
+    .mkc-lr { padding: 8px 0; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .mkc-lr-n { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 11.5px; font-weight: 500; color: #0f1729; }
+    .mkc-lr-n small { font-size: 9.5px; font-weight: 500; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-vol { color: #059669; font-weight: 600; }
+    .mkc-hint { color: #0a192f; font-weight: 600; text-decoration: none; border-bottom: 1px dashed rgba(10,25,47,0.35); }
+    .mkc-gone { display: none; }
+    .mkc-in { font-size: 11px; font-weight: 500; color: #0f1729; background: #ebebee; border: 1.5px solid transparent; border-radius: 7px; padding: 4px 6px; white-space: nowrap; }
+    .mkc-in.deal { color: #059669; font-weight: 600; }
+    .mkc-lista { font-size: 10.5px; color: #5b6472; text-decoration: line-through; }
+    .mkc-imp { font-size: 12px; color: #0f1729; text-align: right; white-space: nowrap; }
+    .mkc-mg { justify-self: center; font-size: 10px; font-weight: 600; color: #059669; background: rgba(16,185,129,0.1); padding: 2px 5px; border-radius: 4px; }
+    .mkc-add { display: flex; gap: 6px; margin-top: 11px; }
+    .mkc-add .mkc-field { flex: 1; min-width: 0; justify-content: flex-start; color: #99a2af; }
+    .mkc-sum { display: flex; flex-direction: column; gap: 7px; padding: 14px; background: #fff; border-radius: 16px; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 0 0 0.5px rgba(0,0,0,0.04), 0 4px 12px -2px rgba(0,0,0,0.06), 0 16px 40px -8px rgba(10,25,47,0.10); }
+    .mkc-sum .mkc-field { background: #f5f5f7; }
+    .mkc-sum-h { font-size: 12.5px; font-weight: 700; letter-spacing: -0.02em; }
+    .mkc-sum-c { font-size: 10px; color: #5b6472; margin: -3px 0 2px; }
+    .mkc-sl { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: #5b6472; }
+    .mkc-sl .editorial { font-size: 11.5px; color: #0f1729; }
+    .mkc-sl-save, .mkc-sl .mkc-save { color: #059669; }
+    .mkc-sl-save .editorial { color: #059669; }
+    .mkc-sl-tog > span { color: #0f1729; }
+    .mkc-tog { position: relative; width: 26px; height: 15px; border-radius: 99px; background: #e3e5ea; flex-shrink: 0; }
+    .mkc-tog::after { content: ''; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(10,25,47,0.25); }
+    .mkc-sl-tax { padding-left: 6px; font-size: 10.5px; }
+    .mkc-sum-div { height: 1px; background: rgba(10,25,47,0.08); margin: 1px 0; }
+    .mkc-sl-tot { align-items: baseline; font-weight: 700; color: #0f1729; }
+    .mkc-sl-tot .editorial { font-size: 19px; letter-spacing: -0.03em; }
+    .mkc-sl-tot em { font-style: normal; font-size: 9.5px; font-weight: 600; color: #5b6472; margin-left: 4px; }
+    .mkc-sf { display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
+    .mkc-sf label { font-size: 10px; font-weight: 500; color: #5b6472; }
+    .mkc-send { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 5px; padding: 9px; border-radius: 999px; background: #0a192f; color: #fff; font-size: 11.5px; font-weight: 600; box-shadow: 0 4px 14px -4px rgba(10,25,47,0.4); }
+    .mkc-send svg { width: 12px; height: 12px; }
+    .mkc-sum-draft { text-align: center; border-radius: 999px; padding: 8px; font-weight: 600; color: #0f1729; background: #f5f5f7; }
+
+    /* ── Detalle de cotización (cotizaciones/[id]) ── */
+    .mkc-stp { display: flex; align-items: center; padding: 0 var(--gut) 14px 10px; }
+    .mkc-stp-s { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+    .mkc-stp-s:last-child { flex: 0 0 auto; }
+    .mkc-stp-s:not(:last-child)::after { content: ''; flex: 1; height: 2px; margin: 0 8px; border-radius: 2px; background: rgba(10,25,47,0.09); }
+    .mkc-stp-s.done:not(:last-child)::after { background: #10b981; }
+    .mkc-stp-d { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 9px; font-weight: 800; color: #5b6472; background: #fafbfc; border: 1.5px solid rgba(10,25,47,0.09); }
+    .mkc-stp-d svg { width: 9px; height: 9px; }
+    .mkc-stp-s.done .mkc-stp-d { background: #10b981; border-color: #10b981; color: #fff; }
+    .mkc-stp-s.cur .mkc-stp-d { background: #0a192f; border-color: #0a192f; color: #fff; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+    .mkc-stp-s b { font-size: 10px; font-weight: 600; color: #5b6472; white-space: nowrap; }
+    .mkc-stp-s.done b, .mkc-stp-s.cur b { color: #0f1729; }
+    .mkc-dg { display: grid; grid-template-columns: minmax(0, 1fr) 214px; gap: 22px; align-items: start; padding: 0 var(--gut) 0 10px; }
+    .mkc-dm { min-width: 0; }
+    .mkc-dh { display: flex; align-items: center; gap: 10px; padding-bottom: 13px; margin-bottom: 14px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .mkc-dh-av { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; background: #0a192f; }
+    .mkc-dh-t { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+    .mkc-dh-n { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; letter-spacing: -0.25px; white-space: nowrap; }
+    .mkc-ver { font-style: normal; font-size: 9px; font-weight: 700; color: #5b6472; background: #eceef1; padding: 1px 5px; border-radius: 4px; letter-spacing: 0; }
+    .mkc-dh-m { font-size: 10px; color: #5b6472; white-space: nowrap; }
+    .mkc-dh-tot { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+    .mkc-dh-tot span { font-size: 8px; font-weight: 800; letter-spacing: 1.4px; color: #99a2af; }
+    .mkc-dh-tot b { font-size: 20px; line-height: 1.15; color: #0a192f; }
+    .mkc-dh-tot em { font-style: normal; font-size: 9px; font-weight: 600; color: #5b6472; }
+    .mkc-lv { display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 20px; padding: 2px 8px 2px 7px; white-space: nowrap; }
+    .mkc-lv > i { width: 5px; height: 5px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,0.5); animation: mkc-pulse 1.8s infinite; }
+    .mkc-lv em { font-style: normal; font-weight: 500; opacity: 0.85; }
+    @keyframes mkc-pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 5px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .mkc-sec { font-size: 12px; font-weight: 600; letter-spacing: -0.01em; color: #0f1729; padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .mkc-sec-2 { margin-top: 16px; }
+    .mkc-dih, .mkc-dir { display: grid; grid-template-columns: minmax(0, 1.8fr) 40px 70px minmax(0, 1fr); gap: 8px; align-items: center; padding: 7px 4px; }
+    .mkc-dih { padding-top: 0; font-size: 8.5px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #5b6472; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .mkc-dih .r { text-align: right; }
+    .mkc-dir { border-bottom: 1px solid rgba(10,25,47,0.07); border-radius: 6px; }
+    .mkc-dir-n { display: flex; flex-direction: column; min-width: 0; font-size: 11px; font-weight: 600; line-height: 1.3; }
+    .mkc-dir-n small { font-size: 9px; font-weight: 500; color: #99a2af; }
+    .mkc-dir-q { font-size: 11px; }
+    .mkc-dir-p { display: flex; flex-direction: column; }
+    .mkc-dir-p s { font-size: 8.5px; color: #b6bcc6; }
+    .mkc-dir-p b { font-size: 11.5px; color: #0a192f; }
+    .mkc-dir-a { font-size: 12px; text-align: right; color: #0a192f; white-space: nowrap; }
+    .mkc-ds { min-width: 0; }
+    .mkc-at-sum { display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; }
+    .mkc-at-sum i { font-style: normal; color: rgba(10,25,47,0.22); }
+    .mkc-at-f { display: flex; flex-wrap: wrap; gap: 2px 10px; margin: 5px 0 10px; font-size: 9.5px; color: #5b6472; }
+    .mkc-at-f b { font-weight: 600; }
+    .mkc-at-bars { display: flex; flex-direction: column; gap: 6px; }
+    .mkc-at-r { display: grid; grid-template-columns: 92px minmax(0, 1fr) 34px; align-items: center; gap: 6px; }
+    .mkc-at-l { font-size: 9.5px; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-at-k { height: 5px; border-radius: 99px; background: rgba(10,25,47,0.07); overflow: hidden; }
+    .mkc-at-k i { display: block; height: 100%; border-radius: 99px; background: #b8bfca; }
+    .mkc-at-r.on .mkc-at-k i { background: #0a192f; }
+    .mkc-at-r.on .mkc-at-l { color: #0f1729; font-weight: 600; }
+    .mkc-at-v { font-size: 9.5px; text-align: right; white-space: nowrap; }
+    .mkc-at-n { margin: 9px 0 0; font-size: 9.5px; color: #5b6472; }
+    .mkc-at-t { padding-top: 7px; border-top: 1px solid rgba(10,25,47,0.08); }
+    .mkc-at-t b { color: #0f1729; }
+    .mkc-tl { position: relative; display: flex; flex-direction: column; gap: 10px; }
+    .mkc-tl::before { content: ''; position: absolute; left: 3px; top: 6px; bottom: 6px; width: 1px; background: rgba(10,25,47,0.09); }
+    .mkc-tl-i { position: relative; display: flex; gap: 10px; }
+    .mkc-tl-d { position: relative; z-index: 1; width: 7px; height: 7px; margin-top: 3px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 3px #f5f5f7; }
+    .mkc-tl-b { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .mkc-tl-b b { font-size: 10.5px; font-weight: 500; line-height: 1.35; color: #0f1729; }
+    .mkc-tl-b span { font-size: 9px; color: #5b6472; }
+
+    /* ── Seguimiento: el cliente lee en su teléfono, el vendedor lo ve en vivo ── */
+    .mkc-tr { height: 500px; }
+    .mkc-tr-app { margin-left: 190px; min-width: 600px; height: 468px; }
+    .mkc-tr-phone { left: 0; top: 30px; }
+    .mkc-tr-scroll { will-change: transform; }
+
+    /* ── Aprobaciones: la cotización espera a gerencia ── */
+    .mkc-ap-app { min-width: 800px; height: 486px; }
+    .mkc-pill-w { display: grid; justify-items: end; }
+    .mkc-pill-w > .mkc-pill { grid-area: 1 / 1; }
+    .mkc-pill-sent { opacity: 0; }
+    .mkc-apb-w { overflow: hidden; padding-bottom: 2px; }
+    .mkc-apb { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 var(--gut) 14px 10px; padding: 9px 10px 9px 12px; border-radius: 10px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); }
+    .mkc-apb-i { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .mkc-apb-i b { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #92600a; }
+    .mkc-apb-i b svg { width: 13px; height: 13px; }
+    .mkc-apb-i span { font-size: 10px; line-height: 1.4; color: #5b6472; }
+    .mkc-apb-a { display: flex; gap: 6px; flex-shrink: 0; }
+    .mkc-apb-ok { font-size: 10.5px; font-weight: 700; color: #fff; background: #10b981; border-radius: 8px; padding: 6px 11px; }
+    .mkc-apb-no { font-size: 10.5px; font-weight: 600; color: #ef4444; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px; padding: 5px 10px; }
+    .mkc-tl-new { display: none; overflow: hidden; }
+    .mkc-stp-d .mkc-stp-n { font-style: normal; }
+    .mkc-stp-d .mkc-stp-n + svg { display: none; }
+    .mkc-stp-s.done .mkc-stp-n { display: none; }
+    .mkc-stp-s.done .mkc-stp-n + svg { display: block; }
+
+    /* ── Link público (q/[token]) — escritorio y teléfono ── */
+    .mkc-lp { height: 478px; }
+    .mkc-br { position: absolute; left: 190px; top: 0; width: max(570px, calc(100% - 190px)); height: 430px; overflow: hidden; background: #fff; border-radius: 14px; box-shadow: 0 0 0 1px rgba(10,25,47,0.08), 0 2px 4px rgba(10,25,47,0.05), 0 24px 48px -20px rgba(10,25,47,0.30), 0 60px 110px -40px rgba(8,20,50,0.45); }
+    .mkc-br-bar { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 12px; background: #f7f7f8; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .mkc-br-nav { display: flex; align-items: center; gap: 9px; color: #9aa1ab; }
+    .mkc-br-nav svg { width: 13px; height: 13px; }
+    .mkc-br-url { flex: 1; max-width: 290px; height: 24px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 5px; border-radius: 7px; background: #ebebee; font-size: 11px; font-weight: 500; color: #3c4350; }
+    .mkc-br-url svg { width: 10px; height: 10px; color: #6b7280; }
+    .mkc-br-page { position: absolute; inset: 38px 0 0; display: flex; justify-content: center; padding: 22px 26px 0; background: #f3f2ef; }
+    .mkc-q { width: 100%; max-width: 470px; align-self: flex-start; display: flex; flex-direction: column; gap: 15px; padding: 24px 26px 18px; background: #fff; border-radius: 22px; box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 4px 6px rgba(10,25,47,0.03), 0 20px 60px -20px rgba(10,25,47,0.12); }
+    .mkc-q-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .mkc-q-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .mkc-q-brand b { display: block; font-size: 12.5px; font-weight: 700; letter-spacing: -0.3px; color: #111; }
+    .mkc-q-brand i { display: block; font-style: normal; font-size: 9px; font-weight: 500; color: #9ca3af; }
+    .mkc-q-logo { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 800; color: #fff; background: #14365c; }
+    .mkc-q-folio { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .mkc-q-folio span { font-size: 7px; font-weight: 800; letter-spacing: 2px; color: #d1d5db; }
+    .mkc-q-folio b { font-size: 12px; font-weight: 800; letter-spacing: -0.3px; color: #111; }
+    .mkc-q-rule { height: 1px; margin: -4px 0; background: linear-gradient(to right, transparent, rgba(10,25,47,0.07) 15%, rgba(10,25,47,0.07) 85%, transparent); }
+    .mkc-q-meta { display: flex; flex-wrap: wrap; gap: 8px 26px; }
+    .mkc-q-meta > div { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+    .mkc-q-meta span { font-size: 7px; font-weight: 800; letter-spacing: 2px; color: #c6cad1; }
+    .mkc-q-meta b { font-size: 11.5px; font-weight: 600; color: #111; }
+    .mkc-q-meta em { font-style: normal; margin-top: 1px; font-size: 8.5px; font-weight: 700; color: #6b7280; background: rgba(10,25,47,0.05); padding: 1px 7px; border-radius: 100px; }
+    .mkc-q-total { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 18px 14px; text-align: center; background: #fafafa; border: 1px solid rgba(10,25,47,0.055); border-radius: 16px; }
+    .mkc-q-total span { font-size: 7px; font-weight: 800; letter-spacing: 2.5px; color: #c6cad1; }
+    .mkc-q-total b { font-size: 36px; line-height: 1; letter-spacing: -0.04em; color: #14365c; }
+    .mkc-q-total i { font-style: normal; font-size: 9.5px; font-weight: 500; color: #9ca3af; }
+    .mkc-q-ih, .mkc-q-ir { display: grid; grid-template-columns: minmax(0, 1.9fr) 0.8fr 0.9fr 1fr; gap: 10px; align-items: center; }
+    .mkc-q-ih { padding-bottom: 6px; font-size: 7px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: #c6cad1; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .mkc-q-ir { padding: 9px 0; font-size: 11px; border-bottom: 1px solid rgba(10,25,47,0.045); }
+    .mkc-q-ih .c, .mkc-q-ir .c { text-align: center; }
+    .mkc-q-ih .r, .mkc-q-ir .r { text-align: right; }
+    .mkc-q-ir s { display: block; font-size: 8.5px; line-height: 1.2; color: #b8bdc6; }
+    .mkc-q-n { display: flex; align-items: center; gap: 7px; min-width: 0; font-weight: 600; color: #111; }
+    .mkc-q-qty { font-size: 10px; color: #9ca3af; }
+    .mkc-q-cb { width: 13px; height: 13px; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; background: #14365c; }
+    .mkc-q-cb svg { width: 8px; height: 8px; }
+    .mkc-q-chat { display: inline-flex; align-items: center; gap: 3px; margin-left: 2px; padding: 2px 5px; font-style: normal; font-size: 8.5px; font-weight: 700; color: #6b7280; background: #f3f4f6; border-radius: 6px; }
+    .mkc-q-chat svg { width: 8px; height: 8px; }
+
+    /* Teléfono */
+    .mkc-phone { position: absolute; z-index: 3; width: 236px; height: 470px; padding: 7px; border-radius: 42px; background: #1d1f24; box-shadow: inset 0 0 0 1.5px #3b3e45, inset 0 0 0 3px #121418, 0 2px 4px rgba(10,25,47,0.14), 0 30px 60px -18px rgba(10,25,47,0.45), 0 70px 120px -40px rgba(8,20,50,0.5); }
+    .mkc-phone::before, .mkc-phone::after { content: ''; position: absolute; width: 3px; border-radius: 2px; background: #2a2d33; }
+    .mkc-phone::before { left: -2px; top: 104px; height: 44px; box-shadow: 0 56px 0 #2a2d33; }
+    .mkc-phone::after { right: -2px; top: 138px; height: 66px; }
+    .mkc-phone-scr { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 35px; background: #f3f2ef; isolation: isolate; }
+    .mkc-lp-phone { left: 0; top: 8px; }
+    .mkc-ios { position: absolute; top: 0; left: 0; right: 0; z-index: 6; height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 3px 20px 0 27px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; color: #111; background: linear-gradient(#f3f2ef 72%, rgba(243,242,239,0)); }
+    .mkc-ios b { font-size: 12px; font-weight: 600; letter-spacing: -0.2px; }
+    .mkc-island { position: absolute; top: 8px; left: 50%; width: 74px; height: 21px; border-radius: 20px; background: #08090b; transform: translateX(-50%); }
+    .mkc-ios-r { display: flex; align-items: center; gap: 4px; }
+    .mkc-ios-r svg { width: 13px; height: 10px; }
+    .mkc-ios-sig { display: flex; align-items: flex-end; gap: 1.5px; height: 9px; }
+    .mkc-ios-sig i { width: 2.5px; border-radius: 1px; background: #111; }
+    .mkc-ios-sig i:nth-child(1) { height: 3px; }
+    .mkc-ios-sig i:nth-child(2) { height: 5px; }
+    .mkc-ios-sig i:nth-child(3) { height: 7px; }
+    .mkc-ios-sig i:nth-child(4) { height: 9px; }
+    .mkc-ios-bat { position: relative; width: 20px; height: 10px; padding: 1.5px; border-radius: 3px; border: 1px solid rgba(17,17,17,0.4); }
+    .mkc-ios-bat::after { content: ''; position: absolute; right: -3px; top: 3px; width: 1.5px; height: 3px; border-radius: 0 1px 1px 0; background: rgba(17,17,17,0.4); }
+    .mkc-ios-bat i { display: block; width: 78%; height: 100%; border-radius: 1.5px; background: #111; }
+    .mkc-phone-page { position: absolute; inset: 34px 0 0; padding: 4px 7px 0; overflow: hidden; }
+    .mkc-safari { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; padding: 5px 12px 15px; background: rgba(246,246,247,0.96); border-top: 0.5px solid rgba(0,0,0,0.08); }
+    .mkc-safari span { display: flex; align-items: center; justify-content: center; gap: 4px; height: 16px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; font-size: 10.5px; font-weight: 500; color: #1d1d1f; }
+    .mkc-safari svg { width: 9px; height: 9px; color: #6b7280; }
+    .mkc-home { position: absolute; left: 50%; bottom: 6px; z-index: 7; width: 86px; height: 4px; border-radius: 4px; background: #111; transform: translateX(-50%); }
+
+    /* La tarjeta de q/[token] en ancho móvil */
+    .mkc-qm { display: flex; flex-direction: column; gap: 11px; padding: 14px 13px; background: #fff; border-radius: 18px; box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 12px 30px -18px rgba(10,25,47,0.2); }
+    .mkc-qm-top { display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid rgba(10,25,47,0.06); }
+    .mkc-qm-top .mkc-q-logo { width: 24px; height: 24px; border-radius: 7px; font-size: 8.5px; }
+    .mkc-qm-top b { flex: 1; min-width: 0; font-size: 11px; font-weight: 700; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-qm-top em { font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: -0.2px; }
+    .mkc-qm-tots { display: flex; flex-direction: column; gap: 5px; }
+    .mkc-qm-tots > div { display: flex; justify-content: space-between; gap: 10px; font-size: 10.5px; color: #9ca3af; }
+    .mkc-qm-tots .editorial { color: #6b7280; }
+    .mkc-qm-grand { font-weight: 700; color: #111 !important; }
+    .mkc-qm-grand .editorial { font-size: 14px; color: #111 !important; }
+    .mkc-qm-trust { display: flex; align-items: center; gap: 6px; font-size: 9.5px; font-weight: 600; color: #374151; }
+    .mkc-qm-trust i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+    .mkc-qm-step { position: relative; }
+    .mkc-qm-sign { display: flex; flex-direction: column; gap: 8px; }
+    .mkc-qm-sh { display: flex; align-items: center; gap: 8px; }
+    .mkc-qm-sh b { font-size: 12px; font-weight: 700; }
+    .mkc-qm-back { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #9ca3af; border: 1px solid rgba(10,25,47,0.1); }
+    .mkc-qm-back svg { width: 11px; height: 11px; }
+    .mkc-qm-pill { padding: 8px 10px; font-size: 10px; line-height: 1.45; color: #6b7280; background: #fafafa; border: 1px solid rgba(10,25,47,0.055); border-radius: 10px; }
+    .mkc-qm-pill b { color: #111; font-weight: 700; }
+    .mkc-qm-f { display: flex; flex-direction: column; gap: 4px; }
+    .mkc-qm-f label { font-size: 9px; font-weight: 600; color: #6b7280; }
+    .mkc-qm-in { display: flex; align-items: center; min-height: 30px; padding: 0 10px; font-size: 11px; color: #111; background: #fff; border: 1.5px solid rgba(10,25,47,0.12); border-radius: 9px; }
+    .mkc-qm-in.on { border-color: rgba(10,25,47,0.35); box-shadow: 0 0 0 3px rgba(10,25,47,0.05); }
+    .mkc-qm-caret { width: 1.5px; height: 13px; margin-left: 1px; background: #0a192f; opacity: 0; }
+    .mkc-qm-chk { display: flex; align-items: flex-start; gap: 7px; font-size: 9.5px; line-height: 1.4; color: #374151; }
+    .mkc-qm-chk > i { width: 14px; height: 14px; margin-top: 1px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: transparent; border: 1.5px solid #cbd5e1; border-radius: 4px; }
+    .mkc-qm-chk > i.on { color: #fff; background: #0a192f; border-color: #0a192f; }
+    .mkc-qm-chk svg { width: 9px; height: 9px; }
+    .mkc-qm-cta { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 11px; font-size: 11.5px; font-weight: 600; color: #fff; background: #14365c; border-radius: 11px; box-shadow: 0 10px 24px -10px rgba(10,25,47,0.5); }
+    .mkc-qm-cta svg { width: 11px; height: 11px; }
+    .mkc-qm-cta-a { display: inline-flex; align-items: center; gap: 6px; }
+    .mkc-qm-cta-b { display: none; }
+    .mkc-qm-cta.busy .mkc-qm-cta-a { display: none; }
+    .mkc-qm-cta.busy .mkc-qm-cta-b { display: inline; }
+    .mkc-qm-done { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 6px; text-align: center; background: #fff; }
+    .mkc-qm-ring svg { width: 40px; height: 40px; }
+    .mkc-qm-dt { margin-top: 2px; font-size: 13px; font-weight: 700; }
+    .mkc-qm-ds { max-width: 200px; font-size: 9.5px; line-height: 1.45; color: #6b7280; }
+    .mkc-qm-credit { width: 100%; display: flex; flex-direction: column; gap: 2px; margin-top: 4px; padding: 8px 10px; text-align: left; background: #fafafa; border: 1px solid rgba(10,25,47,0.07); border-radius: 10px; }
+    .mkc-qm-credit b { font-size: 10px; font-weight: 700; color: #111; }
+    .mkc-qm-credit span { font-size: 9px; line-height: 1.4; color: #6b7280; }
+    .mkc-qm-audit { width: 100%; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; text-align: left; color: #059669; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.16); border-radius: 10px; }
+    .mkc-qm-audit b { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; }
+    .mkc-qm-audit b svg { width: 11px; height: 11px; }
+    .mkc-qm-audit span { font-size: 8.5px; color: #4b5563; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-qm-audit em { font-style: normal; font-weight: 600; color: #111; }
+    .mkc-qm-fol { display: flex; align-items: baseline; justify-content: space-between; padding: 9px 0; border-top: 1px solid rgba(10,25,47,0.06); border-bottom: 1px solid rgba(10,25,47,0.06); }
+    .mkc-qm-fol span { font-size: 7px; font-weight: 800; letter-spacing: 2px; color: #c6cad1; }
+    .mkc-qm-fol b { font-size: 11.5px; font-weight: 800; }
+    .mkc-qm-meta { gap: 8px 16px; }
+    .mkc-qm-meta b { font-size: 10.5px; }
+    .mkc-qm-total { padding: 16px 10px; }
+    .mkc-qm-total b { font-size: 26px; }
+    .mkc-qm-items { display: flex; flex-direction: column; }
+    .mkc-qm-it { display: flex; flex-direction: column; gap: 7px; padding: 10px 0; border-bottom: 1px solid rgba(10,25,47,0.05); }
+    .mkc-qm-it .mkc-q-n { font-size: 11px; }
+    .mkc-qm-kv { display: grid; grid-template-columns: 0.9fr 1fr 1fr; gap: 6px; }
+    .mkc-qm-kv span { display: flex; flex-direction: column; gap: 1px; font-size: 9.5px; color: #9ca3af; }
+    .mkc-qm-kv span.r { align-items: flex-end; }
+    .mkc-qm-kv em { font-style: normal; font-size: 6.5px; font-weight: 800; letter-spacing: 1.2px; color: #c6cad1; }
+    .mkc-qm-kv s { font-size: 8px; color: #b8bdc6; }
+    .mkc-qm-kv b { font-size: 10.5px; font-weight: 600; color: #111; font-variant-numeric: tabular-nums; }
+    .mkc-qm-sticky { position: absolute; left: 8px; right: 8px; bottom: 44px; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 7px 7px 11px; border-radius: 14px; background: rgba(255,255,255,0.96); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 14px 34px -12px rgba(10,25,47,0.35), 0 0 0 0.5px rgba(10,25,47,0.06); }
+    .mkc-qm-sticky > div { display: flex; flex-direction: column; gap: 1px; }
+    .mkc-qm-sticky span { font-size: 6.5px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #9ca3af; }
+    .mkc-qm-sticky b { font-size: 13px; line-height: 1; color: #111; }
+    .mkc-qm-sticky-b { display: inline-flex !important; align-items: center; gap: 4px; padding: 8px 12px; font-size: 10.5px !important; font-weight: 650 !important; letter-spacing: 0 !important; text-transform: none !important; color: #fff !important; background: #14365c; border-radius: 10px; }
+    .mkc-qm-sticky-b svg { width: 10px; height: 10px; }
 
     /* ── EQUIPO / roles ── */
     .mk-team-body { padding: 1rem 1.1rem 1.15rem; display: flex; flex-direction: column; gap: 8px; }
@@ -1836,7 +2289,6 @@ const howtoSchema = howto ? {
             margin-right: 0;
             justify-content: flex-start;
             min-width: 0;
-            translate: none;
         }
         .pp-mockup-wrap { max-width: 100%; }
     }
@@ -1864,32 +2316,83 @@ const howtoSchema = howto ? {
         .mk-bar-title { font-size: 0.8rem; }
         .mk-bar-actions { flex-shrink: 0; }
 
-        /* ── editor: el sidebar vive detrás de un drawer en la app real ── */
-        .mk-sidebar { display: none; }
-        .mk-body { height: auto; }
-        .mk-content { padding: 1rem; }
+        /* ── facturación comparte .mk-row ── */
         .mk-row { grid-template-columns: 1fr 46px 92px; gap: 10px; padding: 9px 8px; font-size: 0.82rem; }
         .mk-row-head { font-size: 0.62rem; }
-        .mk-rows { gap: 2px; }
-        /* Los totales dejan de ser tres columnas: se apilan como renglones */
-        .mk-totals { flex-direction: column; gap: 0.45rem; margin-top: 1rem; }
-        .mk-tot-col { flex-direction: row; align-items: baseline; justify-content: space-between; text-align: left; gap: 1rem; }
-        .mk-tot-col span { font-size: 0.68rem; }
-        .mk-tot-col b { font-size: 0.9rem; }
-        .mk-tot-final { padding-top: 0.45rem; border-top: 1px solid rgba(0,0,0,0.06); }
-        .mk-tot-final b { font-size: 1.15rem; }
-        .mk-cursor { display: none; }
 
-        /* ── link público: las burbujas flotantes caían encima de la card ── */
-        .pp-lp-bub { display: none; }
-        .mk-public-card { width: 100%; }
-        .mk-public-head { gap: 10px; }
-        .mk-public-head > div { min-width: 0; }
-        .mk-public-head b { font-size: 0.9rem; }
-        .mk-public-head .mk-badge { flex-shrink: 0; }
-        .mk-public-total { padding: 1.4rem 0.9rem; }
-        .mk-public-total b { font-size: 1.85rem; }
+        /* ── hero calca: la app en su forma móvil (sidebar en drawer, una columna) ── */
+        .mkc-app { --gut: 12px; padding: 8px; border-radius: 16px; }
+        .mkc-ed-stage > .mkc-app, .mkc-tr-app, .mkc-ap-app { min-width: 0; height: auto; margin-left: 0; }
+        .mkc-rail { display: none; }
+        .mkc-top { gap: 6px; padding: 5px 5px 5px 6px; }
+        .mkc-burger { display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; color: #5b6472; }
+        .mkc-burger svg { width: 16px; height: 16px; }
+        .mkc-search { flex: 0 0 auto; padding: 6px; border-radius: 8px; }
+        .mkc-search span, .mkc-search kbd { display: none; }
+        .mkc-search svg { width: 14px; height: 14px; }
+        .mkc-top-r .mkc-ti:nth-child(n+3) { display: none; }
+        .mkc-create { font-size: 12px; padding: 6px 9px; }
+        .mkc-pgh { padding: 14px var(--gut) 12px; }
+        .mkc-title { font-size: 20px; }
+        .mkc-crumbs { font-size: 11px; }
+        .mkc-cursor { display: none; }
 
+        .mkc-ed { grid-template-columns: 1fr; gap: 14px; padding: 0 var(--gut) 4px; }
+        .mkc-client { flex-direction: column; align-items: stretch; }
+        .mkc-chips i { font-size: 11.5px; padding: 6px 12px; }
+        .mkc-field { font-size: 12.5px; padding: 9px 11px; }
+        .mkc-ed-main > .mkc-step:first-child, .mkc-lh, .mkc-add, .mkc-ed-stage .mkc-lr:nth-of-type(n+5) { display: none; }
+        .mkc-lr {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+            grid-template-areas: "name name name" "qty nego nego" "list margin amount";
+            gap: 7px 8px; padding: 11px 0;
+        }
+        .mkc-lr-n { grid-area: name; font-size: 13px; }
+        .mkc-lr-n small { font-size: 11px; }
+        .mkc-lr > .mkc-in:nth-child(2) { grid-area: qty; }
+        .mkc-lr > .mkc-lista { grid-area: list; font-size: 11.5px; }
+        .mkc-lr > .mkc-in.deal { grid-area: nego; }
+        .mkc-lr > .mkc-imp { grid-area: amount; font-size: 13px; }
+        .mkc-lr > .mkc-mg { grid-area: margin; justify-self: start; font-size: 11px; }
+        .mkc-in { font-size: 13px; padding: 8px 10px; }
+        .mkc-sum { padding: 14px; }
+        .mkc-sum .mkc-sf, .mkc-sum-draft { display: none; }
+        .mkc-sl { font-size: 12px; }
+        .mkc-sl .editorial { font-size: 12.5px; }
+        .mkc-sl-tot .editorial { font-size: 21px; }
+        .mkc-send { font-size: 13px; padding: 11px; }
+
+        .mkc-lp { height: 480px; }
+        .mkc-br { display: none; }
+        .mkc-lp-phone { left: 50%; top: 4px; margin-left: -118px; }
+
+        .mkc-tr { padding: 0; }
+        .mkc-tr-phone, .mkc-stp .mkc-stp-s:not(.cur) b, .mkc-tr .mkc-dih, .mkc-tr .mkc-dir, .mkc-tr .mkc-dm > .mkc-sec, .mkc-tr .mkc-sec-2, .mkc-tr .mkc-tl { display: none; }
+        .mkc-stp { padding-bottom: 14px; }
+        .mkc-stp-s:not(:last-child)::after { margin: 0 5px; }
+        .mkc-dg { grid-template-columns: 1fr; gap: 6px; padding: 0 var(--gut) 6px; }
+        .mkc-dh { flex-wrap: wrap; }
+        .mkc-dh-n { font-size: 14.5px; }
+        .mkc-dh-m { font-size: 11px; white-space: normal; }
+        .mkc-lv { font-size: 10.5px; }
+        .mkc-dh-tot { width: 100%; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; }
+        .mkc-dh-tot b { font-size: 21px; margin-left: auto; }
+        .mkc-at-sum { font-size: 13px; }
+        .mkc-at-f, .mkc-at-l, .mkc-at-v, .mkc-at-n { font-size: 11px; }
+        .mkc-at-r { grid-template-columns: 112px minmax(0, 1fr) 42px; }
+        .mkc-tl-b b { font-size: 12px; }
+        .mkc-tl-b span { font-size: 10.5px; }
+        .mkc-sec { font-size: 13px; }
+
+        .mkc-apb { flex-direction: column; align-items: stretch; gap: 10px; }
+        .mkc-apb-i b { font-size: 13px; }
+        .mkc-apb-i span { font-size: 11.5px; }
+        .mkc-apb-ok, .mkc-apb-no { flex: 1; text-align: center; font-size: 12px; padding: 9px 10px; }
+        .mkc-ap .mkc-ds, .mkc-ap .mkc-dir:nth-of-type(n+6) { display: none; }
+        .mkc-dih, .mkc-dir { grid-template-columns: minmax(0, 1fr) 70px 82px; }
+        .mkc-dih > :nth-child(2), .mkc-dir > .mkc-dir-q { display: none; }
+        .mkc-dir-n { font-size: 12.5px; }
+        .mkc-dir-p b, .mkc-dir-a { font-size: 12.5px; }
         /* ── cobranza IA: el chat estaba corrido 22% a la derecha ── */
         .mk-chatfree { margin: 0 auto; max-width: 100%; }
         .cf-msg { max-width: 100%; }
@@ -2163,60 +2666,196 @@ const howtoSchema = howto ? {
             // cursor que negocia el precio, aprobación, timeline, timbrado, crédito.
             const wrap = document.querySelector('.pp-mockup-wrap');
             if (wrap) {
-                // Editor Animation
-                const editorTarget = document.getElementById('editorTargetRow');
-                if (editorTarget) {
-                    const cursor = document.getElementById('editorCursor');
-                    const chip = document.getElementById('editorChip');
-                    const price = document.getElementById('editorPrice');
-                    const imp = document.getElementById('editorImport');
-                    const total = document.getElementById('editorTotal');
-                    
-                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 3 });
-                    tl.set(cursor, { x: 300, y: 250, opacity: 0 })
-                      .set(chip, { scale: 0, opacity: 0 })
-                      .to(cursor, { opacity: 1, duration: 0.5 })
-                      .to(cursor, { x: 280, y: 155, duration: 1, ease: 'power3.inOut' })
-                      .to(cursor, { scale: 0.8, duration: 0.1, yoyo: true, repeat: 1 }) // click
-                      .to(editorTarget, { backgroundColor: 'rgba(16,185,129,0.16)', duration: 0.3 })
-                      .to(chip, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(1.5)' })
-                      .to(editorTarget, { backgroundColor: 'rgba(16,185,129,0.04)', duration: 0.3 })
-                      .to(cursor, { x: 100, y: 350, opacity: 0, duration: 1, ease: 'power2.inOut' }, '+=0.5')
-                      .to([price, imp, total], { color: '#34d399', duration: 0.2 }, '-=1')
-                      .to([price, imp, total], { color: '', duration: 0.4 }, '-=0.5');
+                // ── Hero calca: helpers (posiciones en coordenadas de layout, inmunes al settle 3D) ──
+                const mkcPos = (stage, el) => {
+                    let x = 0, y = 0, n = el;
+                    while (n && n !== stage) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; }
+                    return { x, y, w: el.offsetWidth, h: el.offsetHeight };
+                };
+                const mkcMoney = (v) => '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const mkcCount = (el, from, to, dur, pre = '') => {
+                    const o = { v: from };
+                    return gsap.to(o, { v: to, duration: dur, ease: 'power2.out', onUpdate: () => { el.textContent = pre + mkcMoney(o.v); } });
+                };
+                const mkcDur = (s) => (s >= 60 ? Math.floor(s / 60) + 'm ' + (s % 60) + 's' : s + 's');
+
+                // Editor: el cursor aplica el precio sugerido y todo el resumen se recalcula en vivo
+                const edHero = document.getElementById('edHero');
+                if (edHero) {
+                    const cursor = document.getElementById('edCursor');
+                    const hintW = document.getElementById('edHintW');
+                    const hint = document.getElementById('edHint');
+                    const nego = document.getElementById('edNego');
+                    const imp = document.getElementById('edImp');
+                    const mg = document.getElementById('edMg');
+                    const sub = document.getElementById('edSub');
+                    const save = document.getElementById('edSave');
+                    const tax = document.getElementById('edTax');
+                    const tot = document.getElementById('edTot');
+                    const moving = [nego, imp, mg, sub, save, tax, tot];
+                    const before = () => {
+                        hintW.classList.remove('mkc-gone'); gsap.set(hintW, { opacity: 1 }); gsap.set(hint, { color: '' });
+                        nego.textContent = '180.00'; nego.classList.remove('deal');
+                        imp.textContent = '$61,200.00'; mg.textContent = '31%';
+                        sub.textContent = '$173,280.00'; save.textContent = '−$11,040.00';
+                        tax.textContent = '$27,724.80'; tot.textContent = '$201,004.80';
+                    };
+                    const loop = (first) => {
+                        const tl = gsap.timeline({ onComplete: () => loop(false) });
+                        if (!first) tl.to(moving, { opacity: 0.25, duration: 0.25 }).call(before).to(moving, { opacity: 1, duration: 0.35 });
+                        else tl.call(before);
+                        tl.call(() => {
+                            const h = mkcPos(edHero, hint);
+                            gsap.set(cursor, { x: h.x + h.w * 0.5 + 150, y: h.y + 150, scale: 1 });
+                        });
+                        tl.to(cursor, { opacity: 1, duration: 0.3 }, '+=0.9');
+                        tl.to(cursor, { x: () => { const h = mkcPos(edHero, hint); return h.x + h.w * 0.55; }, y: () => { const h = mkcPos(edHero, hint); return h.y + h.h * 0.3; }, duration: 1.05, ease: 'power3.inOut' });
+                        tl.to(hint, { color: '#059669', duration: 0.2 });
+                        tl.to(cursor, { scale: 0.82, duration: 0.09, yoyo: true, repeat: 1 }, '<');
+                        tl.call(() => { nego.textContent = '168.50'; nego.classList.add('deal'); });
+                        tl.fromTo(nego, { borderColor: '#0a192f', boxShadow: '0 0 0 3px rgba(10,25,47,0.10)', backgroundColor: '#ffffff' }, { borderColor: 'rgba(0,0,0,0)', boxShadow: '0 0 0 0 rgba(10,25,47,0)', backgroundColor: '#ebebee', duration: 0.9, ease: 'power2.in', delay: 0.5 }, '<');
+                        tl.add(mkcCount(imp, 61200, 57290, 0.8), '<-0.45');
+                        tl.add(mkcCount(sub, 173280, 169370, 0.9), '<0.1');
+                        tl.add(mkcCount(save, 11040, 14950, 0.9, '−'), '<');
+                        tl.add(mkcCount(tax, 27724.8, 27099.2, 0.9), '<');
+                        tl.add(mkcCount(tot, 201004.8, 196469.2, 1.0), '<');
+                        tl.call(() => { mg.textContent = '26%'; }, null, '<0.3');
+                        tl.fromTo(mg, { scale: 1.18 }, { scale: 1, duration: 0.35, ease: 'back.out(2)' }, '<');
+                        tl.to(hintW, { opacity: 0, duration: 0.35 }, '<0.2');
+                        tl.call(() => hintW.classList.add('mkc-gone'));
+                        tl.fromTo(tot, { color: '#059669' }, { color: '#0f1729', duration: 1.2 }, '<');
+                        tl.to(cursor, { x: '+=70', y: '+=120', opacity: 0, duration: 0.8, ease: 'power2.in' }, '<0.3');
+                        tl.to({}, { duration: 3.4 });
+                    };
+                    ScrollTrigger.create({ trigger: edHero, start: 'top 90%', once: true, onEnter: () => loop(true) });
                 }
 
-                // Public Link Animation
-                const pubWrap = document.getElementById('publicWrap');
-                if (pubWrap) {
-                    const btn = document.getElementById('publicApproveBtn');
-                    const glow = document.getElementById('publicGlow');
-                    const card = document.getElementById('publicCard');
-                    const success = document.getElementById('publicSuccess');
-                    const ring = document.querySelector('.mk-success-ring');
-                    const check = document.querySelector('.mk-success-check');
-                    
-                    const tl = gsap.timeline({ repeat: -1, repeatDelay: 2 });
-                    tl.to(glow, { opacity: 0.8, duration: 0.8, yoyo: true, repeat: 3 })
-                      .to(btn, { scale: 0.95, duration: 0.1 }) // click
-                      .to(btn, { scale: 1, duration: 0.1 })
-                      .to(card, { scale: 0.95, opacity: 0, duration: 0.4, ease: 'power2.in' })
-                      .to(success, { opacity: 1, duration: 0.3 })
-                      .fromTo(ring, { scale: 0.5, opacity: 1 }, { scale: 1.5, opacity: 0, duration: 0.8, ease: 'power2.out' }, '<')
-                      .fromTo(check, { scale: 0, rotation: -45 }, { scale: 1, rotation: 0, duration: 0.6, ease: 'back.out(2)' }, '<0.1')
-                      .to(success, { opacity: 0, duration: 0.5 }, '+=2')
-                      .to(card, { scale: 1, opacity: 1, duration: 0.5 }, '<');
+                // Link público: el cliente firma desde su teléfono y la cotización queda aprobada
+                const lpHero = document.getElementById('lpHero');
+                if (lpHero) {
+                    const phone = lpHero.querySelector('.mkc-lp-phone');
+                    const name = document.getElementById('lpName');
+                    const caret = document.getElementById('lpCaret');
+                    const chk = document.getElementById('lpChk');
+                    const cta = document.getElementById('lpCta');
+                    const done = document.getElementById('lpDone');
+                    const ring = document.getElementById('lpRing');
+                    const tick = document.getElementById('lpTick');
+                    const extras = [document.getElementById('lpCredit'), document.getElementById('lpAudit')];
+                    const full = name.textContent || '';
+                    gsap.set(ring, { strokeDasharray: 145 });
+                    gsap.set(tick, { strokeDasharray: 40 });
+                    const blink = gsap.to(caret, { opacity: 1, duration: 0.5, repeat: -1, yoyo: true, ease: 'steps(1)', paused: true });
+                    const reset = () => {
+                        name.textContent = ''; chk.classList.remove('on'); cta.classList.remove('busy');
+                        gsap.set(cta, { opacity: 0.45, scale: 1 }); gsap.set(done, { autoAlpha: 0 });
+                        gsap.set(ring, { strokeDashoffset: 145 }); gsap.set(tick, { strokeDashoffset: 40 }); gsap.set(extras, { opacity: 0, y: 8 });
+                        blink.play(0);
+                    };
+                    const loop = () => {
+                        const tl = gsap.timeline({ onComplete: loop });
+                        tl.to(done, { autoAlpha: 0, duration: 0.35 }).call(reset).to({}, { duration: 0.7 });
+                        for (let i = 1; i <= full.length; i++) tl.call(() => { name.textContent = full.slice(0, i); }, null, '+=0.065');
+                        tl.to({}, { duration: 0.35 });
+                        tl.call(() => chk.classList.add('on'));
+                        tl.fromTo(chk, { scale: 0.7 }, { scale: 1, duration: 0.3, ease: 'back.out(2.2)' }, '<');
+                        tl.to(cta, { opacity: 1, duration: 0.3 }, '<0.1');
+                        tl.call(() => { blink.pause(); gsap.set(caret, { opacity: 0 }); }, null, '+=0.35');
+                        tl.to(cta, { scale: 0.96, duration: 0.1, yoyo: true, repeat: 1, ease: 'power2.inOut' });
+                        tl.call(() => cta.classList.add('busy'));
+                        tl.to(done, { autoAlpha: 1, duration: 0.35 }, '+=0.65');
+                        tl.to(ring, { strokeDashoffset: 0, duration: 0.6, ease: 'power2.out' }, '<0.05');
+                        tl.to(tick, { strokeDashoffset: 0, duration: 0.4, ease: 'power2.out' }, '-=0.2');
+                        tl.to(extras, { opacity: 1, y: 0, duration: 0.45, stagger: 0.12, ease: 'power2.out' }, '-=0.1');
+                        tl.to({}, { duration: 3.6 });
+                    };
+                    ScrollTrigger.create({ trigger: lpHero, start: 'top 90%', once: true, onEnter: () => gsap.delayedCall(0.8, loop) });
+                    if (phone) gsap.to(phone, { y: 6, duration: 3.9, ease: 'sine.inOut', yoyo: true, repeat: -1 });
                 }
 
-                // Seguimiento Animation (filas del timeline; el toast lo maneja el sistema de satélites)
-                const trackItems = document.querySelectorAll('.track-item');
-                if (trackItems.length) {
-                    gsap.to(trackItems, {
-                        opacity: 1, x: 0, duration: 0.7, stagger: 0.14, ease: 'power2.out', delay: 0.4,
-                        scrollTrigger: { trigger: '.mk-track2', start: 'top 80%', once: true }
-                    });
+                // Seguimiento: el cliente baja a las partidas y el vendedor lo ve en ese instante
+                const trHero = document.getElementById('trHero');
+                if (trHero) {
+                    const phone = trHero.querySelector('.mkc-tr-phone');
+                    const scroller = document.getElementById('trScroll');
+                    const items = document.getElementById('trItems');
+                    const sticky = document.getElementById('trSticky');
+                    const sec = document.getElementById('trSec');
+                    const live = document.getElementById('trLive');
+                    const rowRes = trHero.querySelector('[data-sec="resumen"]');
+                    const rowPar = trHero.querySelector('[data-sec="partidas"]');
+                    const bar = document.getElementById('trBar');
+                    const val = document.getElementById('trVal');
+                    const totEl = document.getElementById('trTot');
+                    const [secRes, secPar] = [rowRes.querySelector('.mkc-at-l').textContent, rowPar.querySelector('.mkc-at-l').textContent];
+                    const deep = () => -Math.max(0, items.offsetTop - 10);
+                    const loop = (first) => {
+                        const tl = gsap.timeline({ onComplete: () => loop(false) });
+                        const clock = { s: 210 };
+                        if (!first) tl.to(scroller, { y: 0, duration: 1.1, ease: 'power2.inOut' }).to(sticky, { opacity: 0, y: 14, duration: 0.3 }, '<');
+                        else { gsap.set(scroller, { y: 0 }); gsap.set(sticky, { opacity: 0, y: 14 }); }
+                        tl.call(() => {
+                            sec.textContent = ' — ' + secRes; rowRes.classList.add('on'); rowPar.classList.remove('on');
+                            val.textContent = '3m 30s'; totEl.textContent = '6m 47s'; gsap.set(bar, { width: '97%' });
+                        });
+                        tl.fromTo(live, { backgroundColor: 'rgba(16,185,129,0.22)' }, { backgroundColor: 'rgba(16,185,129,0.1)', duration: 0.7 }, '<');
+                        tl.to(scroller, { y: deep, duration: 1.5, ease: 'power2.inOut' }, '+=1.6');
+                        tl.to(sticky, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, '-=0.6');
+                        tl.call(() => { sec.textContent = ' — ' + secPar; rowRes.classList.remove('on'); rowPar.classList.add('on'); }, null, '-=0.2');
+                        tl.fromTo(live, { backgroundColor: 'rgba(16,185,129,0.24)', scale: 1.06 }, { backgroundColor: 'rgba(16,185,129,0.1)', scale: 1, duration: 0.6, ease: 'power2.out' }, '<');
+                        tl.to(clock, { s: 220, duration: 3.2, ease: 'none', onUpdate: () => { const s = Math.round(clock.s); val.textContent = mkcDur(s); totEl.textContent = mkcDur(s + 197); } }, '<');
+                        tl.to(bar, { width: '100%', duration: 3.2, ease: 'none' }, '<');
+                        tl.to({}, { duration: 2.4 });
+                    };
+                    ScrollTrigger.create({ trigger: trHero, start: 'top 90%', once: true, onEnter: () => gsap.delayedCall(0.6, () => loop(true)) });
+                    if (phone) gsap.to(phone, { y: 6, duration: 3.9, ease: 'sine.inOut', yoyo: true, repeat: -1 });
                 }
-                
+
+                // Aprobaciones: gerencia aprueba y la cotización sale al cliente
+                const apHero = document.getElementById('apHero');
+                if (apHero) {
+                    const cursor = document.getElementById('apCursor');
+                    const ok = document.getElementById('apOk');
+                    const bannerW = document.getElementById('apBannerW');
+                    const pillA = document.getElementById('apPillA');
+                    const pillB = document.getElementById('apPillB');
+                    const fresh = document.getElementById('apNew');
+                    const hot = apHero.querySelector('.mkc-dir-hot');
+                    const s1 = document.getElementById('apS1');
+                    const s2 = document.getElementById('apS2');
+                    const stepTo = (sent) => { s1.classList.toggle('cur', !sent); s1.classList.toggle('done', sent); s2.classList.toggle('cur', sent); };
+                    const loop = (first) => {
+                        const tl = gsap.timeline({ onComplete: () => loop(false) });
+                        if (!first) {
+                            tl.to(fresh, { height: 0, opacity: 0, duration: 0.4, ease: 'power2.inOut' })
+                              .set(fresh, { display: 'none' })
+                              .to(bannerW, { height: 'auto', opacity: 1, duration: 0.5, ease: 'power2.out' }, '<')
+                              .to(pillB, { opacity: 0, duration: 0.3 }, '<').to(pillA, { opacity: 1, duration: 0.3 }, '<')
+                              .set(ok, { opacity: 1 })
+                              .call(() => stepTo(false), null, '<');
+                        }
+                        tl.call(() => {
+                            const r = mkcPos(apHero, hot);
+                            gsap.set(cursor, { x: r.x + r.w * 0.62, y: r.y + r.h + 70, scale: 1 });
+                        });
+                        tl.to(cursor, { opacity: 1, duration: 0.3 }, '+=1.1');
+                        tl.to(cursor, { x: () => { const r = mkcPos(apHero, hot); return r.x + r.w * 0.55; }, y: () => { const r = mkcPos(apHero, hot); return r.y + r.h * 0.5; }, duration: 0.8, ease: 'power2.inOut' });
+                        tl.to(hot, { backgroundColor: 'rgba(10,25,47,0.035)', duration: 0.25 }, '-=0.2');
+                        tl.to(cursor, { x: () => { const r = mkcPos(apHero, ok); return r.x + r.w * 0.5; }, y: () => { const r = mkcPos(apHero, ok); return r.y + r.h * 0.6; }, duration: 1.0, ease: 'power3.inOut' }, '+=0.9');
+                        tl.to(hot, { backgroundColor: 'rgba(10,25,47,0)', duration: 0.3 }, '<');
+                        tl.to(cursor, { scale: 0.82, duration: 0.09, yoyo: true, repeat: 1 });
+                        tl.to(ok, { opacity: 0.6, duration: 0.15 }, '<');
+                        tl.to(bannerW, { height: 0, opacity: 0, duration: 0.5, ease: 'power2.inOut' }, '+=0.45');
+                        tl.to(pillA, { opacity: 0, duration: 0.3 }, '<0.1').to(pillB, { opacity: 1, duration: 0.3 }, '<');
+                        tl.call(() => stepTo(true), null, '<');
+                        tl.set(fresh, { display: 'block', height: 0, opacity: 0 });
+                        tl.to(fresh, { height: 'auto', opacity: 1, duration: 0.5, ease: 'power2.out' });
+                        tl.to(cursor, { x: '+=80', y: '+=110', opacity: 0, duration: 0.8, ease: 'power2.in' }, '<');
+                        tl.to({}, { duration: 3.2 });
+                    };
+                    ScrollTrigger.create({ trigger: apHero, start: 'top 90%', once: true, onEnter: () => loop(true) });
+                }
+
                 // CFDI Animation
                 const cfdiStamp = document.getElementById('cfdiStamp');
                 if (cfdiStamp) {
@@ -2379,27 +3018,6 @@ const howtoSchema = howto ? {
                     });
                 }
 
-                // Aprobaciones — el gauge llena a 18% (zona roja bajo el mínimo), alerta entra, botón pulsa
-                const aprHero = document.getElementById('aprHero');
-                if (aprHero) {
-                    const fill = document.getElementById('aprFill');
-                    const alert = document.getElementById('aprAlert');
-                    const btn = document.getElementById('aprBtn');
-                    const margin = document.getElementById('aprMargin');
-                    gsap.set(alert, { opacity: 0, y: 8 });
-                    gsap.set(margin, { scale: 0.6, opacity: 0 });
-                    ScrollTrigger.create({
-                        trigger: aprHero, start: 'top 78%', once: true,
-                        onEnter: () => {
-                            gsap.timeline({ delay: 0.4 })
-                                .to(fill, { width: '18%', duration: 0.9, ease: 'power3.out' })
-                                .to(margin, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(1.6)' }, '-=0.4')
-                                .to(alert, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, '-=0.15')
-                                .fromTo(btn, { boxShadow: '0 0 0 0 rgba(15,23,42,0)' }, { boxShadow: '0 0 0 5px rgba(15,23,42,0.12)', duration: 0.7, yoyo: true, repeat: 3, ease: 'sine.inOut' }, '+=0.2');
-                        },
-                    });
-                }
-
                 // Equipo — filas entran en cascada + el botón invitar pulsa
                 const teamHero = document.getElementById('teamHero');
                 if (teamHero) {
@@ -2425,25 +3043,6 @@ const howtoSchema = howto ? {
                     gsap.to(heroMock, { y: '-=7', duration: 4.6, ease: 'sine.inOut', yoyo: true, repeat: -1 });
                 }
 
-                // ── Burbujas de chat flotantes (link público): entrada + float suave ──
-                const bubs = wrap.querySelectorAll('.pp-bub');
-                if (bubs.length) {
-                    gsap.set(bubs, { opacity: 0, y: 14, scale: 0.92 });
-                    ScrollTrigger.create({
-                        trigger: wrap, start: 'top 82%', once: true,
-                        onEnter: () => {
-                            gsap.to(bubs, { opacity: 1, y: 0, scale: 1, duration: 0.7, stagger: 0.2, ease: 'back.out(1.4)', delay: 0.5,
-                                onComplete: () => {
-                                    wrap.querySelectorAll('.pp-bub-in').forEach((el) => gsap.to(el, { y: '-=8', duration: 3.8, ease: 'sine.inOut', yoyo: true, repeat: -1 }));
-                                    wrap.querySelectorAll('.pp-bub-out').forEach((el) => gsap.to(el, { y: '+=8', duration: 4.4, ease: 'sine.inOut', yoyo: true, repeat: -1 }));
-                                },
-                            });
-                        },
-                    });
-                }
-                // pulso del punto "Viendo ahora" (seguimiento)
-                const liveDot = document.getElementById('satTrDot');
-                if (liveDot) gsap.to(liveDot, { boxShadow: '0 0 0 6px rgba(16,185,129,0)', duration: 1.4, repeat: -1, ease: 'power1.out' });
             }
 
             // ───────────────────────── BLOCK MOCKUPS GSAP ─────────────────────────
