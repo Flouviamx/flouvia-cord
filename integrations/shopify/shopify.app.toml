@@ -1,35 +1,33 @@
 # Configuración de la app de Cord en Shopify, como código.
 #
-# `shopify app config link` rellena client_id; `shopify app deploy` empuja URLs,
-# permisos y webhooks. Declarar los webhooks AQUÍ (y no registrarlos por API en
-# cada instalación) hace que Shopify los entregue para toda tienda que instale
-# la app, sin una llamada extra que pueda fallar a mitad del alta.
+# `shopify app config link` la enlazó (client_id); `shopify app deploy` empuja
+# URLs, permisos y los webhooks de privacidad.
+#
+# Los webhooks de productos y clientes NO se declaran aquí: Shopify solo admite
+# webhooks declarativos con instalación gestionada, que exige una app embebida,
+# y Cord no lo es (la persona conecta su tienda desde Cord). Con el flujo
+# clásico se registran por tienda al instalar, en `registrarWebhooks()`.
+client_id = "140ab76a89855bc9b49703ba7f50115c"
 name = "Cord"
-client_id = ""
 application_url = "https://cordhq.app/api/integraciones/shopify/instalar"
+
+# Cord NO vive dentro del panel de Shopify: la persona conecta su tienda desde
+# Cord. Por eso no es embebida y usa el flujo clásico de autorización — la
+# instalación gestionada con token exchange es solo para apps embebidas.
 embedded = false
 
 [access_scopes]
 # Fase 1: solo leer. Escribir pedidos llega en la fase 2 y obliga a que cada
 # tienda vuelva a autorizar, así que no se pide "por si acaso".
 scopes = "read_products,read_customers"
+optional_scopes = [ ]
+use_legacy_install_flow = true
 
 [auth]
 redirect_urls = [ "https://cordhq.app/api/integraciones/shopify/callback" ]
 
 [webhooks]
 api_version = "2026-07"
-
-[[webhooks.subscriptions]]
-topics = [
-  "products/create",
-  "products/update",
-  "products/delete",
-  "customers/create",
-  "customers/update",
-  "app/uninstalled",
-]
-uri = "https://cordhq.app/api/integraciones/shopify/webhook"
 
 # Obligatorios para que Shopify revise la app. Cord los contesta siempre, aun
 # sin conexión viva, y deja constancia en la auditoría de la organización.
@@ -38,4 +36,3 @@ compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact
 uri = "https://cordhq.app/api/integraciones/shopify/webhook"
 
 [build]
-include_config_on_deploy = true

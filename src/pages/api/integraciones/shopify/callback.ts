@@ -14,7 +14,8 @@ import { after } from '../../../../lib/after';
 import { consumeOAuthState } from '../../../../lib/integraciones/conexiones';
 import { isShopDomain, shopifyCredentials } from '../../../../lib/integraciones/shopify/config';
 import { exchangeShopifyCode, oauthTimestampFresh, verifyOAuthHmac } from '../../../../lib/integraciones/shopify/oauth';
-import { leerNombreTienda, saveShopifyConexion, syncShopify } from '../../../../lib/integraciones/shopify/service';
+import { leerNombreTienda, registrarWebhooks, saveShopifyConexion, syncShopify } from '../../../../lib/integraciones/shopify/service';
+import { siteOrigin } from '../../../../lib/email';
 
 const VUELTA = '/app/ajustes/integraciones/shopify';
 
@@ -49,8 +50,12 @@ export const GET: APIRoute = async ({ request, url, redirect }) => {
 
     // La primera sincronización puede tardar: la persona no espera frente a una
     // pantalla en blanco, ve la tarjeta conectada y el catálogo llega solo.
-    // Los webhooks NO se registran aquí: se declaran en `shopify.app.toml` y
-    // Shopify los entrega a toda tienda que instale la app.
-    after(syncShopify(orgId));
+    // Los webhooks se registran POR TIENDA: los declarativos del
+    // `shopify.app.toml` solo existen con instalación gestionada, que es para
+    // apps embebidas, y Cord no lo es. Shopify lo rechaza explícitamente.
+    after((async () => {
+        await registrarWebhooks(orgId, `${siteOrigin()}/api/integraciones/shopify/webhook`);
+        await syncShopify(orgId);
+    })());
     return redirect(`${VUELTA}?shopify=conectada`);
 };

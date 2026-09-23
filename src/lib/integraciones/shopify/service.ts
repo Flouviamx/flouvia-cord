@@ -295,6 +295,29 @@ export async function aplicarWebhook(orgId: string, topic: string, payload: any)
     }
 }
 
+const WEBHOOK_TOPICS = [
+    'PRODUCTS_CREATE', 'PRODUCTS_UPDATE', 'PRODUCTS_DELETE',
+    'CUSTOMERS_CREATE', 'CUSTOMERS_UPDATE', 'APP_UNINSTALLED',
+] as const;
+
+/** Suscribe la tienda a los eventos que Cord necesita. Idempotente del lado de Shopify. */
+export async function registrarWebhooks(orgId: string, callbackUrl: string): Promise<number> {
+    const cred = await accessToken(orgId);
+    if (!cred) return 0;
+    let creados = 0;
+    for (const topic of WEBHOOK_TOPICS) {
+        const res = await shopifyGraphQL<any>(cred.shop, cred.token, `
+            mutation($topic: WebhookSubscriptionTopic!, $url: URL!) {
+              webhookSubscriptionCreate(topic: $topic, webhookSubscription: { callbackUrl: $url, format: JSON }) {
+                userErrors { field message }
+                webhookSubscription { id }
+              }
+            }`, { topic, url: callbackUrl });
+        if (res.ok && res.data?.webhookSubscriptionCreate?.webhookSubscription?.id) creados += 1;
+    }
+    return creados;
+}
+
 /** Nombre visible de la tienda, para que la tarjeta no muestre solo el dominio. */
 export async function leerNombreTienda(shop: string, token: string): Promise<string | null> {
     const res = await shopifyGraphQL<any>(shop, token, `{ shop { name } }`);
