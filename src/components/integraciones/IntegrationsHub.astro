@@ -85,7 +85,7 @@ const schema = {
                 <h1 class="ih-title masked-title">{isEn ? 'Cord, connected to the tools your team already uses.' : 'Cord, conectado a las herramientas que tu equipo ya usa.'}</h1>
                 <p class="ih-sub reveal">{isEn ? 'Your CRM, your channels, your automations and your payment rail, in sync with every quote and every invoice. Nothing is required: Cord works complete without connecting anything.' : 'Tu CRM, tus canales, tus automatizaciones y tu riel de cobro, al día con cada cotización y cada factura. Nada es obligatorio: Cord funciona completo sin conectar nada.'}</p>
                 <div class="ih-logos reveal" aria-hidden="true">
-                    {INTEGRATION_PAGES.map((p) => <span class="ih-logo"><img src={p.logo} alt="" width="30" height="30" /></span>)}
+                    {INTEGRATION_PAGES.map((p) => <span class="ih-logo"><img src={p.logo} alt="" width="52" height="52" /></span>)}
                 </div>
             </div>
         </section>
@@ -97,7 +97,7 @@ const schema = {
                     <div class="ih-grid">
                         {g.items.map((p) => (
                             <a href={`${pre}/integraciones/${p.slug}`} class="ih-card reveal">
-                                <span class="ih-card-logo"><img src={p.logo} alt="" width="36" height="36" loading="lazy" /></span>
+                                <span class="ih-card-logo"><img src={p.logo} alt="" width="48" height="48" loading="lazy" /></span>
                                 <span class="ih-card-body">
                                     <b>{p.nombre}</b>
                                     <i>{(isEn ? p.en : p.es).resumen}</i>
@@ -146,8 +146,8 @@ const schema = {
     .ih-title { color: #050505; }
     .ih-sub { font-size: 1.1rem; line-height: 1.65; color: var(--color-text-muted); max-width: 640px; margin: -1.4rem auto 2.6rem; }
     .ih-logos { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem; }
-    .ih-logo { width: 58px; height: 58px; border-radius: 18px; background: #fff; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1px rgba(10,25,47,0.05), 0 10px 24px -12px rgba(10,25,47,0.25); }
-    .ih-logo img { width: 30px; height: 30px; border-radius: 8px; object-fit: contain; }
+    .ih-logo { display: inline-flex; }
+    .ih-logo img { width: 52px; height: 52px; border-radius: 24%; object-fit: contain; }
 
     .ih-groups { max-width: 1120px; margin: 0 auto; padding: 2rem 6% 6rem; display: flex; flex-direction: column; gap: 3.4rem; }
     .ih-group-title { font-size: 0.72rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #8a8f98; margin: 0 0 1.1rem; padding-bottom: 0.9rem; border-bottom: 1px solid rgba(10,25,47,0.08); }
@@ -159,8 +159,8 @@ const schema = {
     .ih-card:hover { background: #fff; transform: translateY(-3px); box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 18px 40px -20px rgba(10,25,47,0.25); }
     .ih-card:active { transform: scale(0.99); }
     .ih-card:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
-    .ih-card-logo { width: 54px; height: 54px; border-radius: 16px; background: #fff; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(10,25,47,0.05); }
-    .ih-card-logo img { width: 34px; height: 34px; border-radius: 9px; object-fit: contain; }
+    .ih-card-logo { display: inline-flex; flex-shrink: 0; }
+    .ih-card-logo img { width: 48px; height: 48px; border-radius: 24%; object-fit: contain; }
     .ih-card-body { flex: 1; min-width: 0; }
     .ih-card-body b { display: block; font-size: 1.02rem; color: #0f172a; letter-spacing: -0.02em; margin-bottom: 4px; }
     .ih-card-body i { display: block; font-style: normal; font-size: 0.86rem; line-height: 1.45; color: var(--color-text-muted); }

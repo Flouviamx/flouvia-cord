@@ -1,0 +1,1810 @@
+---
+import type { IntegrationLandingSlug } from '../../lib/integraciones-landing';
+import { MP_MARK } from '../../lib/brand-marks';
+
+interface Props {
+    slug: IntegrationLandingSlug;
+    logo: string;
+    en?: boolean;
+}
+
+const { slug, logo, en = false } = Astro.props;
+const L = (es: string, eng: string) => (en ? eng : es);
+const CORD = '/favicon-192x192.png';
+const fav = (d: string) => `https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${d}&size=128`;
+const mx = (n: string) => (en ? `MX$${n}` : `$${n}`);
+const SHEETS = '<path d="M6.2 2.5h8.3l4.3 4.3v13.7a1 1 0 0 1-1 1H6.2a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z" fill="#0f9d58"/><path d="M14.5 2.5v3.3a1 1 0 0 0 1 1h3.3z" fill="#87ceac"/><path d="M8.3 11h7.4v7H8.3z" fill="#fff"/><path d="M8.3 13.35h7.4M8.3 15.65h7.4M11.1 11v7" stroke="#0f9d58" stroke-width="1"/>';
+const toks = (s: string) => s.split(/(\{\{\w+\}\})/).filter(Boolean).map((t) => ({ t, tok: /^\{\{\w+\}\}$/.test(t) }));
+
+const I: Record<string, string> = {
+    search: '<circle cx="11" cy="11" r="6.5" fill="currentColor" fill-opacity=".14"/><path d="m20 20-4.2-4.2"/>',
+    down: '<path d="m6 9 6 6 6-6"/>',
+    left: '<path d="m15 6-6 6 6 6"/>',
+    right: '<path d="m9 6 6 6-6 6"/>',
+    back: '<path d="M19 12H5M11 18l-6-6 6-6"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    x: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+    bell: '<path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z" fill="currentColor" fill-opacity=".14"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+    gear: '<path d="M10.3 3.5h3.4l.5 2.3a6.8 6.8 0 0 1 1.7 1l2.2-.8 1.7 3-1.7 1.5a6.8 6.8 0 0 1 0 2l1.7 1.5-1.7 3-2.2-.8a6.8 6.8 0 0 1-1.7 1l-.5 2.3h-3.4l-.5-2.3a6.8 6.8 0 0 1-1.7-1l-2.2.8-1.7-3 1.7-1.5a6.8 6.8 0 0 1 0-2L4.2 9l1.7-3 2.2.8a6.8 6.8 0 0 1 1.7-1z" fill="currentColor" fill-opacity=".14"/><circle cx="12" cy="12" r="2.6"/>',
+    help: '<circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".14"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.4v.4M12 16.8h.01"/>',
+    apps: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.6" fill="currentColor" fill-opacity=".14"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6" fill="currentColor" fill-opacity=".14"/>',
+    board: '<rect x="3.5" y="4" width="5" height="16" rx="1.4" fill="currentColor" fill-opacity=".16"/><rect x="9.5" y="4" width="5" height="11" rx="1.4"/><rect x="15.5" y="4" width="5" height="7" rx="1.4"/>',
+    rows: '<path d="M4.5 6.5h15M4.5 12h15M4.5 17.5h15"/>',
+    building: '<path d="M5 20V5.5A1.5 1.5 0 0 1 6.5 4h7A1.5 1.5 0 0 1 15 5.5V20" fill="currentColor" fill-opacity=".14"/><path d="M15 10h3.5a1.5 1.5 0 0 1 1.5 1.5V20M3 20h18M8.5 8h3M8.5 12h3M8.5 16h3"/>',
+    person: '<circle cx="12" cy="8" r="3.5" fill="currentColor" fill-opacity=".14"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+    note: '<path d="M4.5 19.5h4L19 9a2.1 2.1 0 0 0-3-3L5.5 16.5z" fill="currentColor" fill-opacity=".14"/><path d="m14.5 7.5 3 3"/>',
+    mail: '<rect x="3.5" y="5.5" width="17" height="13" rx="2.2" fill="currentColor" fill-opacity=".14"/><path d="m4.5 7.5 7.5 5.5 7.5-5.5"/>',
+    phone: '<path d="M6.8 3.5h2.3l1.4 4-2.1 1.3a11 11 0 0 0 6.8 6.8l1.3-2.1 4 1.4v2.3a2 2 0 0 1-2.2 2A16 16 0 0 1 4.8 5.7a2 2 0 0 1 2-2.2z" fill="currentColor" fill-opacity=".14"/>',
+    task: '<rect x="4" y="4" width="16" height="16" rx="3.2" fill="currentColor" fill-opacity=".14"/><path d="m8.5 12.2 2.4 2.4 4.6-5"/>',
+    cal: '<rect x="4" y="5" width="16" height="15" rx="2.6" fill="currentColor" fill-opacity=".14"/><path d="M4 10h16M8.5 3v4M15.5 3v4"/>',
+    deal: '<path d="M4 12.8V5a1 1 0 0 1 1-1h7.8l7.7 7.7a1 1 0 0 1 0 1.4l-7.1 7.1a1 1 0 0 1-1.4 0z" fill="currentColor" fill-opacity=".14"/><circle cx="8.5" cy="8.5" r="1.3"/>',
+    home: '<path d="M4 11 12 4.5l8 6.5v8.5a.5.5 0 0 1-.5.5H15v-6H9v6H4.5a.5.5 0 0 1-.5-.5z" fill="currentColor" fill-opacity=".14"/>',
+    dms: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h8A2.5 2.5 0 0 1 17 6.5v5a2.5 2.5 0 0 1-2.5 2.5H9.5L5.5 17v-3.2A2.5 2.5 0 0 1 4 11.5z" fill="currentColor" fill-opacity=".14"/><path d="M19.8 9v6.5a2.5 2.5 0 0 1-2.5 2.5h-5"/>',
+    more: '<circle cx="6" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18" cy="12" r="1.2" fill="currentColor"/>',
+    thread: '<path d="M4.5 6.5A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7A2.5 2.5 0 0 1 17 16h-6l-4.5 3.5V16A2.5 2.5 0 0 1 4.5 13.5z" fill="currentColor" fill-opacity=".14"/><path d="M8.5 8.5h7M8.5 11.5h4"/>',
+    head: '<path d="M4.5 15v-3a7.5 7.5 0 0 1 15 0v3"/><rect x="3.5" y="13.5" width="4.2" height="6.5" rx="1.6" fill="currentColor" fill-opacity=".16"/><rect x="16.3" y="13.5" width="4.2" height="6.5" rx="1.6" fill="currentColor" fill-opacity=".16"/>',
+    send: '<path d="M4 12 20 4.5 16 20l-4-6.5z" fill="currentColor" fill-opacity=".14"/><path d="M12 13.5 20 4.5"/>',
+    file: '<path d="M6.5 3.5h7.5l4 4v12.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-16a.5.5 0 0 1 .5-.5z" fill="currentColor" fill-opacity=".14"/><path d="M14 3.5V8h4"/>',
+    canvas: '<rect x="4.5" y="3.5" width="15" height="17" rx="2.2" fill="currentColor" fill-opacity=".14"/><path d="M8 8h8M8 11.5h8M8 15h5"/>',
+    link: '<path d="M10 14a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1 1"/><path d="M14 10a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1-1"/>',
+    list: '<path d="M9 7h11M9 12h11M9 17h11"/><circle cx="4.8" cy="7" r=".9" fill="currentColor"/><circle cx="4.8" cy="12" r=".9" fill="currentColor"/><circle cx="4.8" cy="17" r=".9" fill="currentColor"/>',
+    code: '<path d="m8.5 8-4 4 4 4M15.5 8l4 4-4 4"/>',
+    at: '<circle cx="12" cy="12" r="3.3"/><path d="M15.3 12v1.4a2.3 2.3 0 0 0 4.6 0V12a7.9 7.9 0 1 0-3.1 6.3"/>',
+    mic: '<rect x="9" y="3.5" width="6" height="11" rx="3" fill="currentColor" fill-opacity=".16"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"/>',
+    video: '<rect x="3.5" y="6.5" width="12" height="11" rx="2.6" fill="currentColor" fill-opacity=".14"/><path d="m15.5 10.5 5-3v9l-5-3"/>',
+    camera: '<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2L9 5h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5V18a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18z" fill="currentColor" fill-opacity=".14"/><circle cx="12" cy="13" r="3.2"/>',
+    lock: '<rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="currentColor" fill-opacity=".16"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+    card: '<rect x="3" y="5.5" width="18" height="13" rx="2.6" fill="currentColor" fill-opacity=".14"/><path d="M3 10h18M7 15h3"/>',
+    bank: '<path d="M3.5 9.5 12 4.5l8.5 5z" fill="currentColor" fill-opacity=".16"/><path d="M5.8 10v7M9.9 10v7M14.1 10v7M18.2 10v7M3.5 19.5h17"/>',
+    ext: '<path d="M14 5h5v5M19 5l-8 8M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    ok: '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity=".16"/><path d="m8 12.3 2.8 2.8L16.2 9.6"/>',
+    bolt: '<path d="M13 3 5 13.5h6l-1 7.5 8-10.5h-6z" fill="currentColor" fill-opacity=".22"/>',
+    boltf: '<path d="M13 3 5 13.5h6l-1 7.5 8-10.5h-6z" fill="currentColor"/>',
+    funnel: '<path d="M4 5h16l-6 7.5V19l-4-2v-4.5z" fill="currentColor" fill-opacity=".16"/>',
+    layers: '<path d="m12 4 8.5 4.5L12 13 3.5 8.5z" fill="currentColor" fill-opacity=".14"/><path d="m3.5 12.5 8.5 4.5 8.5-4.5M3.5 16.5 12 21l8.5-4.5"/>',
+    play: '<path d="M8.5 6v12l9.5-6z" fill="currentColor"/>',
+    router: '<circle cx="5" cy="12" r="1.6" fill="currentColor"/><path d="M6.5 12h3.5l4.5-5.5h4.5M10 12l4.5 5.5h4.5"/>',
+    zin: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2M8.5 11h5M11 8.5v5"/>',
+    zout: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2M8.5 11h5"/>',
+    fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+    flask: '<path d="M9.5 3.5h5M10.5 3.5V9L5 18.5a1.5 1.5 0 0 0 1.3 2h11.4a1.5 1.5 0 0 0 1.3-2L13.5 9V3.5" fill="currentColor" fill-opacity=".16"/>',
+    users: '<circle cx="9" cy="8.5" r="3.2" fill="currentColor" fill-opacity=".14"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 6M18 19a5.5 5.5 0 0 0-2.6-4.6"/>',
+    cloud: '<path d="M7 18.5a4 4 0 0 1-.6-8 5.5 5.5 0 0 1 10.6-1.3A4.5 4.5 0 0 1 17 18.5z" fill="currentColor" fill-opacity=".14"/>',
+    signpost: '<path d="M12 3v18"/><path d="M12 5h6l2 2.5-2 2.5h-6zM12 13H6l-2 2.5 2 2.5h6z" fill="currentColor" fill-opacity=".18"/>',
+    pencil: '<path d="M4.5 19.5h4L19 9a2.1 2.1 0 0 0-3-3L5.5 16.5z"/>',
+    info: '<circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".14"/><path d="M12 11v5.2M12 7.8h.01"/>',
+    download: '<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>',
+    history: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9M12 8v4.2l2.8 1.8"/>',
+    compose: '<path d="M12 4.5H6.5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V12"/><path d="M17.5 3.5 20.5 6.5 13 14h-3v-3z" fill="currentColor" fill-opacity=".14"/>',
+    hash: '<path d="M9.5 4 8 20M16 4l-1.5 16M4.5 9h15.5M4 15h15.5"/>',
+    signal: '<rect x="4" y="14" width="3" height="5" rx=".8" fill="currentColor"/><rect x="9" y="11" width="3" height="8" rx=".8" fill="currentColor"/><rect x="14" y="8" width="3" height="11" rx=".8" fill="currentColor"/><rect x="19" y="5" width="3" height="14" rx=".8" fill="currentColor" fill-opacity=".35"/>',
+    wifi: '<path d="M3.5 9.5a12 12 0 0 1 17 0M6.5 12.8a7.7 7.7 0 0 1 11 0M9.5 16a3.4 3.4 0 0 1 5 0"/><circle cx="12" cy="18.7" r="1" fill="currentColor"/>',
+};
+
+type HsCard = { folio: string; cliente: string; monto: string; cierre?: string; owner: string; oc: string; sel?: boolean };
+const hsCols: { name: string; total: string; cards: HsCard[] }[] = [
+    { name: L('Cotización enviada', 'Quote sent'), total: mx('312,480.00'), cards: [
+        { folio: 'COT-0157', cliente: 'Grupo Ferretero Alba', monto: mx('96,400.00'), owner: 'AS', oc: 'c3' },
+        { folio: 'COT-0156', cliente: 'Constructora Apex', monto: mx('216,080.00'), owner: 'AR', oc: 'c1' },
+    ] },
+    { name: L('Vista por el cliente', 'Viewed by client'), total: mx('186,500.00'), cards: [
+        { folio: 'COT-0155', cliente: 'Obras y Pavimentos del Sur', monto: mx('58,960.00'), owner: 'SR', oc: 'c4' },
+        { folio: 'COT-0153', cliente: 'Inmobiliaria Cumbres', monto: mx('127,540.00'), owner: 'AR', oc: 'c1' },
+    ] },
+    { name: L('Aprobada', 'Approved'), total: mx('184,300.00'), cards: [
+        { folio: 'COT-0152', cliente: 'Aceros del Norte', monto: mx('184,300.00'), owner: 'AR', oc: 'c1', sel: true },
+    ] },
+    { name: L('Pagada', 'Paid'), total: mx('245,189.20'), cards: [
+        { folio: 'COT-0150', cliente: 'Distribuidora El Zarco', monto: mx('196,469.20'), cierre: L('21/09/2026', '09/21/2026'), owner: 'AS', oc: 'c3' },
+        { folio: 'COT-0148', cliente: 'Distribuidora del Bajío', monto: mx('48,720.00'), cierre: L('22/09/2026', '09/22/2026'), owner: 'LO', oc: 'c2' },
+    ] },
+    { name: L('Facturada', 'Invoiced'), total: mx('31,900.00'), cards: [
+        { folio: 'COT-0146', cliente: 'Textiles Monterrey', monto: mx('31,900.00'), cierre: L('18/09/2026', '09/18/2026'), owner: 'SR', oc: 'c4' },
+    ] },
+];
+
+const zpFields: [string, string][] = [
+    ['Id', 'evt_4c1e8b27d9a05f36'],
+    ['Event', 'quote.paid'],
+    ['Created At', '2026-09-22T17:42:07Z'],
+    ['Folio', 'COT-0148'],
+    ['Status', 'paid'],
+    ['Moneda', 'MXN'],
+    ['Total', '48720'],
+    ['Cliente', 'Distribuidora del Bajío'],
+    ['Link Publico', 'https://cordhq.app/q/8fJq2LmX'],
+];
+
+const gsRows: string[][] = [
+    ['COT-0136', 'Constructora Apex', '121,900.00', 'MXN', L('08/09/2026', '9/8/2026')],
+    ['COT-0140', 'Inmobiliaria Cumbres', '87,215.50', 'MXN', L('12/09/2026', '9/12/2026')],
+    ['COT-0146', 'Textiles Monterrey', '31,900.00', 'MXN', L('18/09/2026', '9/18/2026')],
+    ['COT-0150', 'Distribuidora El Zarco', '196,469.20', 'MXN', L('21/09/2026', '9/21/2026')],
+];
+
+const ntRows: { ev: string; on: [boolean, boolean, boolean] }[] = [
+    { ev: L('Tu cliente vio la cotización', 'Your client viewed the quote'), on: [true, true, false] },
+    { ev: L('Cotización aprobada', 'Quote approved'), on: [true, true, true] },
+    { ev: L('Cotización rechazada', 'Quote rejected'), on: [true, false, false] },
+    { ev: L('Pago recibido', 'Payment received'), on: [true, false, true] },
+    { ev: L('Cotización por vencer', 'Quote about to expire'), on: [true, false, false] },
+    { ev: L('Pago vencido', 'Overdue payment'), on: [false, false, true] },
+];
+
+const slMsg = toks(L(
+    'Entró el anticipo de {{cliente}}: {{monto}} {{moneda}} de la {{folio}}. Preparen la entrega.',
+    'The {{cliente}} deposit is in: {{monto}} {{moneda}} for {{folio}}. Get the delivery ready.',
+));
+const SI: Record<string, string> = {
+    orders: '<path d="M4 13.5 6.1 6a1.6 1.6 0 0 1 1.5-1.2h8.8A1.6 1.6 0 0 1 17.9 6L20 13.5v4.8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.3z" fill="currentColor" fill-opacity=".14"/><path d="M4 13.5h4.4l1.3 2.2h4.6l1.3-2.2H20"/>',
+    target: '<circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".14"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.1" fill="currentColor"/>',
+    discount: '<path d="M12 3.6l2.1 1.5 2.6-.1.8 2.5 2.1 1.5-.8 2.5.8 2.5-2.1 1.5-.8 2.5-2.6-.1L12 20.4l-2.1-1.5-2.6.1-.8-2.5-2.1-1.5.8-2.5-.8-2.5 2.1-1.5.8-2.5 2.6.1z" fill="currentColor" fill-opacity=".14"/><path d="m9.6 14.4 4.8-4.8"/><circle cx="9.7" cy="9.7" r=".8" fill="currentColor"/><circle cx="14.3" cy="14.3" r=".8" fill="currentColor"/>',
+    content: '<rect x="4" y="4.5" width="16" height="15" rx="2.6" fill="currentColor" fill-opacity=".14"/><circle cx="9" cy="9.6" r="1.6"/><path d="m4.6 17.2 4.6-4.4 3.4 3.2 2.4-2.2 4.4 4"/>',
+    globe: '<circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".14"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5S9.7 5.9 12 3.5z"/>',
+    chart: '<rect x="4.5" y="12" width="3.6" height="7.5" rx="1" fill="currentColor" fill-opacity=".16"/><rect x="10.2" y="7.5" width="3.6" height="12" rx="1"/><rect x="15.9" y="4.5" width="3.6" height="15" rx="1" fill="currentColor" fill-opacity=".16"/>',
+    store: '<path d="M4.5 9.2 5.9 4.5h12.2l1.4 4.7a2.4 2.4 0 0 1-4.8.6 2.4 2.4 0 0 1-4.7 0 2.4 2.4 0 0 1-4.8-.6z" fill="currentColor" fill-opacity=".14"/><path d="M5.6 11.6v7.9h12.8v-7.9M10 19.5v-4.6h4v4.6"/>',
+    pos: '<rect x="6" y="3.5" width="12" height="17" rx="2.6" fill="currentColor" fill-opacity=".14"/><path d="M9 7.5h6M9 11.2h.01M12 11.2h.01M15 11.2h.01M9 14.4h.01M12 14.4h.01M15 14.4h.01"/>',
+    image: '<rect x="4" y="5" width="16" height="14" rx="2.6"/><circle cx="9" cy="10" r="1.5"/><path d="m4.6 16.8 4.4-3.9 3.4 3 2.5-2 4.5 3.4"/>',
+    drag: '<circle cx="9" cy="6.5" r=".9" fill="currentColor"/><circle cx="15" cy="6.5" r=".9" fill="currentColor"/><circle cx="9" cy="12" r=".9" fill="currentColor"/><circle cx="15" cy="12" r=".9" fill="currentColor"/><circle cx="9" cy="17.5" r=".9" fill="currentColor"/><circle cx="15" cy="17.5" r=".9" fill="currentColor"/>',
+    plusc: '<circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".14"/><path d="M12 8.4v7.2M8.4 12h7.2"/>',
+    updown: '<path d="m8.5 9.5 3.5-3.5 3.5 3.5M8.5 14.5l3.5 3.5 3.5-3.5"/>',
+};
+const shNav: { icon: string; label: string; on?: boolean; count?: string; sub?: string[] }[] = [
+    { icon: I.home, label: L('Inicio', 'Home') },
+    { icon: SI.orders, label: L('Pedidos', 'Orders'), count: '8' },
+    { icon: I.deal, label: L('Productos', 'Products'), on: true, sub: [
+        L('Colecciones', 'Collections'), L('Inventario', 'Inventory'), L('Órdenes de compra', 'Purchase orders'),
+        L('Transferencias', 'Transfers'), L('Tarjetas de regalo', 'Gift cards'),
+    ] },
+    { icon: I.person, label: L('Clientes', 'Customers') },
+    { icon: SI.target, label: 'Marketing' },
+    { icon: SI.discount, label: L('Descuentos', 'Discounts') },
+    { icon: SI.content, label: L('Contenido', 'Content') },
+    { icon: SI.globe, label: L('Mercados', 'Markets') },
+    { icon: I.bank, label: L('Finanzas', 'Finance') },
+    { icon: SI.chart, label: L('Análisis', 'Analytics') },
+];
+const shProd = L('Varilla corrugada', 'Corrugated rebar');
+const shVars: { v: string; sku: string; precio: string; disp: string }[] = [
+    { v: '3/8"', sku: 'VAR-N3-12M', precio: '158.00', disp: '420' },
+    { v: '1/2"', sku: 'VAR-N4-12M', precio: '276.50', disp: '265' },
+    { v: '5/8"', sku: 'VAR-N5-12M', precio: '432.00', disp: '140' },
+    { v: '3/4"', sku: 'VAR-N6-12M', precio: '618.00', disp: '88' },
+];
+
+const waVars: { label: string; value: string; hint?: string }[] = [
+    { label: L('Variable 1 de la plantilla', 'Template variable 1'), value: '{{cliente}}', hint: L('Rellena {{1}} de tu plantilla aprobada. Meta no permite texto libre para iniciar la conversación.', 'Fills {{1}} of your approved template. Meta does not allow free text to start the conversation.') },
+    { label: L('Variable 2', 'Variable 2'), value: '{{folio}}' },
+    { label: L('Variable 3', 'Variable 3'), value: '{{total}} {{moneda}}' },
+    { label: L('Variable 4', 'Variable 4'), value: '{{vence}}' },
+];
+---
+
+<div class={`iam iam-${slug}`} data-iam>
+    {slug === 'hubspot' && (
+        <div class="iam-stage iam-hs">
+            <div class="iam-win iam-hs-win">
+                <div class="iam-hs-nav">
+                    <img class="iam-hs-logo" src={logo} alt="" width="20" height="20" loading="lazy" />
+                    <span class="iam-hs-search"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.search} />{L('Buscar en HubSpot', 'Search HubSpot')}</span>
+                    <span class="iam-hs-navr">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.apps} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.help} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.gear} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.bell} />
+                        <span class="iam-hs-acct"><i class="iam-av c1">AR</i>Materiales del Valle<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    </span>
+                </div>
+                <div class="iam-hs-head">
+                    <div class="iam-hs-title">
+                        <b>{L('Negocios', 'Deals')}</b>
+                        <span class="iam-hs-pipe">{L('Pipeline:', 'Pipeline:')} <strong>{L('Ventas con Cord', 'Sales with Cord')}</strong><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    </div>
+                    <div class="iam-hs-actions">
+                        <span class="iam-hs-btn">{L('Acciones', 'Actions')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                        <span class="iam-hs-btn iam-hs-hide-s">{L('Importar', 'Import')}</span>
+                        <span class="iam-hs-btn is-primary">{L('Crear negocio', 'Create deal')}</span>
+                    </div>
+                </div>
+                <div class="iam-hs-tabs">
+                    <span class="is-on">{L('Todos los negocios', 'All deals')}<i class="editorial">8</i></span>
+                    <span>{L('Mis negocios', 'My deals')}</span>
+                    <span class="iam-hs-hide-s">{L('Cierran este mes', 'Closing this month')}</span>
+                    <span class="iam-hs-view"><b><svg class="iam-i" viewBox="0 0 24 24" set:html={I.board} /></b><b><svg class="iam-i" viewBox="0 0 24 24" set:html={I.rows} /></b></span>
+                </div>
+                <div class="iam-hs-filters">
+                    <span>{L('Propietario del negocio', 'Deal owner')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <span>{L('Fecha de creación', 'Create date')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <span>{L('Última actividad', 'Last activity date')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <span>{L('Fecha de cierre', 'Close date')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    <span class="is-link"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} />{L('Más', 'More')}</span>
+                </div>
+                <div class="iam-hs-board">
+                    {hsCols.map((col, ci) => (
+                        <section class={`iam-hs-col iam-hs-c${ci}`}>
+                            <header><b>{col.name}</b><span class="editorial">{col.cards.length}</span></header>
+                            <div class="iam-hs-cards">
+                                {col.cards.map((c) => (
+                                    <article class={`iam-hs-card${c.sel ? ' is-sel' : ''}`}>
+                                        <b>{c.folio} · {c.cliente}</b>
+                                        <span>{L('Importe', 'Amount')}: <em class="editorial">{c.monto}</em></span>
+                                        <span>{L('Fecha de cierre', 'Close date')}: <em>{c.cierre ?? '--'}</em></span>
+                                        <span class="iam-hs-meta">
+                                            <span class="iam-hs-assoc">
+                                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.building} />1
+                                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.person} />1
+                                            </span>
+                                            <i class={`iam-av ${c.oc}`}>{c.owner}</i>
+                                        </span>
+                                    </article>
+                                ))}
+                            </div>
+                            <footer><span>{L('Importe total', 'Total amount')}</span><b class="editorial">{col.total}</b></footer>
+                        </section>
+                    ))}
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-hs-pv">
+                <div class="iam-hs-pv-bar">
+                    <span>{L('Vista previa del negocio', 'Deal preview')}</span>
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} />
+                </div>
+                <div class="iam-hs-pv-id">
+                    <span class="iam-hs-pv-ico"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.deal} /></span>
+                    <div>
+                        <b>COT-0152 · Aceros del Norte</b>
+                        <span>{L('Importe', 'Amount')}: <em class="editorial">{mx('184,300.00')}</em></span>
+                        <span>{L('Divisa', 'Currency')}: <em>MXN</em> · {L('Cierre', 'Close')}: <em>--</em></span>
+                    </div>
+                </div>
+                <div class="iam-hs-pv-stage">
+                    <span>{L('Etapa', 'Stage')}</span>
+                    <b>{L('Aprobada', 'Approved')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></b>
+                </div>
+                <div class="iam-hs-pv-acts">
+                    <span><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.note} /></i>{L('Nota', 'Note')}</span>
+                    <span><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.mail} /></i>{L('Correo', 'Email')}</span>
+                    <span><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.phone} /></i>{L('Llamada', 'Call')}</span>
+                    <span><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.task} /></i>{L('Tarea', 'Task')}</span>
+                    <span><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.cal} /></i>{L('Reunión', 'Meeting')}</span>
+                </div>
+                <div class="iam-hs-pv-sec">
+                    <p class="iam-hs-pv-h"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} />{L('Historial de la etapa', 'Deal stage history')}</p>
+                    <ol class="iam-hs-hist">
+                        <li class="is-now"><b>{L('Aprobada', 'Approved')}</b><span>{L('Por Cord · hoy 11:08', 'By Cord · today 11:08 AM')}</span></li>
+                        <li><b>{L('Vista por el cliente', 'Viewed by client')}</b><span>{L('Por Cord · ayer 16:42', 'By Cord · yesterday 4:42 PM')}</span></li>
+                        <li><b>{L('Cotización enviada', 'Quote sent')}</b><span>{L('Por Cord · 19 sep 10:15', 'By Cord · Sep 19, 10:15 AM')}</span></li>
+                    </ol>
+                </div>
+                <div class="iam-hs-pv-sec iam-hs-pv-assoc">
+                    <p class="iam-hs-pv-h"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} />{L('Empresas (1)', 'Companies (1)')}</p>
+                    <div class="iam-hs-arow"><i class="iam-av sq c5">AN</i><span><b>Aceros del Norte</b></span></div>
+                    <p class="iam-hs-pv-h"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} />{L('Contactos (1)', 'Contacts (1)')}</p>
+                    <div class="iam-hs-arow"><i class="iam-av c2">JT</i><span><b>Jorge Treviño</b><em>jtrevino@acerosdelnorte.mx</em></span></div>
+                </div>
+            </aside>
+        </div>
+    )}
+
+    {slug === 'shopify' && (
+        <div class="iam-stage iam-sh">
+            <div class="iam-win iam-sh-win">
+                <div class="iam-sh-top">
+                    <span class="iam-sh-brand"><img src={logo} alt="" width="22" height="22" loading="lazy" /></span>
+                    <span class="iam-sh-search">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.search} />
+                        {L('Buscar', 'Search')}
+                        <span class="iam-sh-kbd"><kbd>⌘</kbd><kbd>K</kbd></span>
+                    </span>
+                    <span class="iam-sh-topr">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.bell} />
+                        <span class="iam-sh-store"><i class="iam-av sq c3">MV</i><span>Materiales del Valle</span></span>
+                    </span>
+                </div>
+                <div class="iam-sh-body">
+                    <nav class="iam-sh-nav">
+                        {shNav.map((n) => (
+                            <Fragment>
+                                <span class={`iam-sh-ni${n.on ? ' is-on' : ''}`}>
+                                    <svg class="iam-i" viewBox="0 0 24 24" set:html={n.icon} />{n.label}
+                                    {n.count && <em class="editorial">{n.count}</em>}
+                                </span>
+                                {n.sub?.map((s) => <span class="iam-sh-sub">{s}</span>)}
+                            </Fragment>
+                        ))}
+                        <small class="iam-sh-nsec">{L('Canales de ventas', 'Sales channels')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.right} /></small>
+                        <span class="iam-sh-ni"><svg class="iam-i" viewBox="0 0 24 24" set:html={SI.store} />{L('Tienda online', 'Online Store')}</span>
+                        <span class="iam-sh-ni"><svg class="iam-i" viewBox="0 0 24 24" set:html={SI.pos} />{L('Punto de venta', 'Point of Sale')}</span>
+                        <span class="iam-sh-ni iam-sh-set"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.gear} />{L('Configuración', 'Settings')}</span>
+                    </nav>
+                    <div class="iam-sh-main">
+                        <div class="iam-sh-head">
+                            <span class="iam-sh-crumb">
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.deal} />
+                                <svg class="iam-i iam-sh-chev" viewBox="0 0 24 24" set:html={I.right} />
+                                <b>{shProd}</b>
+                            </span>
+                            <span class="iam-sh-acts">
+                                <span class="iam-sh-btn iam-sh-hide-s">{L('Duplicar', 'Duplicate')}</span>
+                                <span class="iam-sh-btn iam-sh-hide-s">{L('Vista previa', 'Preview')}</span>
+                                <span class="iam-sh-btn">{L('Más acciones', 'More actions')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                                <span class="iam-sh-pager"><b><svg class="iam-i" viewBox="0 0 24 24" set:html={I.left} /></b><b><svg class="iam-i" viewBox="0 0 24 24" set:html={I.right} /></b></span>
+                            </span>
+                        </div>
+                        <div class="iam-sh-layout">
+                            <div class="iam-sh-col">
+                                <section class="iam-sh-card iam-sh-pad">
+                                    <span class="iam-sh-lbl">{L('Título', 'Title')}</span>
+                                    <span class="iam-sh-in">{shProd}</span>
+                                    <span class="iam-sh-lbl">{L('Descripción', 'Description')}</span>
+                                    <div class="iam-sh-ed">
+                                        <div class="iam-sh-edbar">
+                                            <span class="iam-sh-fmt">{L('Párrafo', 'Paragraph')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                                            <i class="iam-sh-sep"></i>
+                                            <b>B</b><i class="is-it">I</i><u>U</u>
+                                            <i class="iam-sh-sep"></i>
+                                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.link} />
+                                            <svg class="iam-i" viewBox="0 0 24 24" set:html={SI.image} />
+                                            <svg class="iam-i iam-sh-hide-s" viewBox="0 0 24 24" set:html={I.video} />
+                                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.more} />
+                                            <svg class="iam-i iam-sh-code" viewBox="0 0 24 24" set:html={I.code} />
+                                        </div>
+                                        <p class="iam-sh-edtxt">{L('Acero corrugado grado 42 en tramos de 12\u00a0m.', 'Grade 42 corrugated steel in 12\u00a0m lengths.')}</p>
+                                    </div>
+                                </section>
+                                <section class="iam-sh-card">
+                                    <p class="iam-sh-vh">{L('Variantes', 'Variants')}</p>
+                                    <div class="iam-sh-opt">
+                                        <svg class="iam-i" viewBox="0 0 24 24" set:html={SI.drag} />
+                                        <b>{L('Diámetro', 'Diameter')}</b>
+                                        <span class="iam-sh-vals">{shVars.map((r) => <span>{r.v}</span>)}</span>
+                                    </div>
+                                    <p class="iam-sh-add"><svg class="iam-i" viewBox="0 0 24 24" set:html={SI.plusc} />{L('Agregar otra opción', 'Add another option')}</p>
+                                    <div>
+                                        <div class="iam-sh-vth"><i class="iam-sh-cb"></i><span>{L('Variante', 'Variant')}</span><span>{L('Precio', 'Price')}</span><span>{L('Disponible', 'Available')}</span></div>
+                                        {shVars.map((r) => (
+                                            <div class="iam-sh-vr">
+                                                <i class="iam-sh-cb"></i>
+                                                <span class="iam-sh-thumb"><svg class="iam-i" viewBox="0 0 24 24" set:html={SI.image} /></span>
+                                                <b>{r.v}</b>
+                                                <span class="iam-sh-num"><i>$</i><span class="editorial">{r.precio}</span></span>
+                                                <span class="iam-sh-num"><span class="editorial">{r.disp}</span></span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p class="iam-sh-vf">{L('Inventario total en Bodega Querétaro:', 'Total inventory at Bodega Querétaro:')} <span class="editorial">913</span> {L('disponibles', 'available')}</p>
+                                </section>
+                            </div>
+                            <div class="iam-sh-col iam-sh-side">
+                                <section class="iam-sh-card iam-sh-pad">
+                                    <span class="iam-sh-ct">{L('Estado', 'Status')}</span>
+                                    <span class="iam-sh-in is-sel">{L('Activo', 'Active')}<svg class="iam-i" viewBox="0 0 24 24" set:html={SI.updown} /></span>
+                                </section>
+                                <section class="iam-sh-card iam-sh-pad">
+                                    <span class="iam-sh-ct">{L('Publicación', 'Publishing')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.gear} /></span>
+                                    <span class="iam-sh-chan"><svg class="iam-i" viewBox="0 0 24 24" set:html={SI.store} />{L('Tienda online', 'Online Store')}</span>
+                                    <span class="iam-sh-chan"><svg class="iam-i" viewBox="0 0 24 24" set:html={SI.pos} />{L('Punto de venta', 'Point of Sale')}</span>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-sh-cat">
+                <div class="iam-shc-bar">
+                    <img src={CORD} alt="" width="18" height="18" />
+                    <b>{L('Catálogo', 'Catalog')}</b>
+                    <span class="iam-shc-count">{L('4 de 248 productos', '4 of 248 products')}</span>
+                    <span class="iam-shc-search">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.search} />
+                        <em>{L('varilla', 'rebar')}</em>
+                        <svg class="iam-i iam-shc-x" viewBox="0 0 24 24" set:html={I.x} />
+                    </span>
+                </div>
+                <div class="iam-shc-pills">
+                    <span class="is-on">{L('Todos', 'All')}<em class="editorial">248</em></span>
+                    <span>{L('Activos', 'Active')}<em class="editorial">243</em></span>
+                    <span>{L('Inactivos', 'Inactive')}<em class="editorial">5</em></span>
+                </div>
+                <div class="iam-shc-row iam-shc-head"><span>SKU</span><span>{L('Producto', 'Product')}</span><span>{L('Precio de lista', 'List price')}</span><span>{L('Estado', 'Status')}</span></div>
+                {shVars.map((r) => (
+                    <div class="iam-shc-row">
+                        <span class="iam-shc-sku">{r.sku}</span>
+                        <span class="iam-shc-name">{shProd} · {r.v}</span>
+                        <span class="iam-shc-amt editorial">{mx(r.precio)}</span>
+                        <span class="iam-shc-st">{L('● Activo', '● Active')}</span>
+                    </div>
+                ))}
+            </aside>
+        </div>
+    )}
+
+    {slug === 'mercado-pago' && (
+        <div class="iam-stage iam-mp">
+            <div class="iam-mp-col">
+                <span class="iam-mp-back"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.back} />{L('Volver a la cotización', 'Back to the quote')}</span>
+                <section class="iam-mp-card">
+                    <div class="iam-mp-brand">
+                        <span class="iam-mp-org">M</span>
+                        <span><b>Materiales del Valle</b><i>{L('Cotización', 'Quote')} COT-0148</i></span>
+                    </div>
+                    <div class="iam-mp-amt">
+                        <span>{L('Total a pagar', 'Total due')}</span>
+                        <b class="editorial">$48,720.00 <small>MXN</small></b>
+                        <em>{L('Tarjeta · Transferencia SPEI', 'Card · SPEI transfer')}</em>
+                    </div>
+                    <div>
+                        <div class="iam-mp-tabs">
+                            <span class="is-on"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.card} />{L('Tarjeta', 'Card')}</span>
+                            <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.bank} />{L('Transferencia SPEI', 'SPEI transfer')}</span>
+                        </div>
+                        <label class="iam-mp-lbl">{L('Número de tarjeta', 'Card number')}</label>
+                        <span class="iam-mp-in">
+                            <span class="editorial">1234 1234 1234 1234</span>
+                            <span class="iam-mp-brands">
+                                <img src={fav('visa.com')} alt="" width="16" height="16" loading="lazy" />
+                                <img src={fav('mastercard.com')} alt="" width="16" height="16" loading="lazy" />
+                                <img src={fav('americanexpress.com')} alt="" width="16" height="16" loading="lazy" />
+                            </span>
+                        </span>
+                        <div class="iam-mp-row2">
+                            <div><label class="iam-mp-lbl">{L('Vencimiento', 'Expiration')}</label><span class="iam-mp-in">{L('MM / AA', 'MM / YY')}</span></div>
+                            <div><label class="iam-mp-lbl">CVC</label><span class="iam-mp-in">CVC</span></div>
+                        </div>
+                        <span class="iam-mp-cta">{L('Pagar', 'Pay')} <span class="editorial">$48,720.00</span></span>
+                    </div>
+                    <div class="iam-mp-or"><span>{L('o', 'or')}</span></div>
+                    <span class="iam-mp-btn">
+                        <svg class="iam-mp-mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d={MP_MARK} /></svg>
+                        {L('Pagar con Mercado Pago', 'Pay with Mercado Pago')}
+                        <svg class="iam-i iam-mp-go" viewBox="0 0 24 24" set:html={I.ext} />
+                    </span>
+                </section>
+                <p class="iam-mp-foot"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.lock} />{L('Pago cifrado y procesado por Cord Payments. Materiales del Valle nunca ve los datos de tu tarjeta.', 'Encrypted and processed by Cord Payments. Materiales del Valle never sees your card details.')}</p>
+            </div>
+
+            <aside class="iam-layer iam-mp-ok">
+                <div class="iam-mp-ok-top">
+                    <img src={logo} alt="" width="22" height="22" loading="lazy" />
+                    <b>Mercado Pago</b>
+                    <span class="iam-mp-ok-sec"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.lock} />{L('Pago seguro', 'Secure payment')}</span>
+                </div>
+                <div class="iam-mp-ok-hero">
+                    <span class="iam-mp-ok-ic"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.check} /></span>
+                    <b>{L('¡Listo! Se acreditó tu pago', 'Done! Your payment was approved')}</b>
+                </div>
+                <div class="iam-mp-ok-body">
+                    <span class="iam-mp-ok-amt editorial">$48,720.00</span>
+                    <span class="iam-mp-ok-to">{L('Pagaste a', 'You paid')} <b>Materiales del Valle</b></span>
+                    <dl>
+                        <div><dt>{L('Medio de pago', 'Payment method')}</dt><dd><img src={fav('visa.com')} alt="" width="14" height="14" loading="lazy" />{L('Crédito', 'Credit')} <span class="editorial">•••• 4821</span></dd></div>
+                        <div><dt>{L('Operación', 'Transaction')}</dt><dd class="editorial">#1320457788</dd></div>
+                        <div><dt>{L('Fecha', 'Date')}</dt><dd>{L('22 sep 2026, 11:42', 'Sep 22, 2026, 11:42 AM')}</dd></div>
+                    </dl>
+                    <span class="iam-mp-ok-btn">{L('Volver a Materiales del Valle', 'Back to Materiales del Valle')}</span>
+                </div>
+            </aside>
+        </div>
+    )}
+
+    {slug === 'slack' && (
+        <div class="iam-stage iam-sl">
+            <div class="iam-win iam-sl-win">
+                <div class="iam-sl-top">
+                    <span class="iam-sl-hist">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.back} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.history} />
+                    </span>
+                    <span class="iam-sl-search"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.search} />{L('Buscar en Materiales del Valle', 'Search Materiales del Valle')}</span>
+                    <svg class="iam-i iam-sl-help" viewBox="0 0 24 24" set:html={I.help} />
+                </div>
+                <div class="iam-sl-shell">
+                    <nav class="iam-sl-rail">
+                        <span class="iam-sl-ws">MV</span>
+                        <span class="iam-sl-ri is-on"><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.home} /></i>{L('Inicio', 'Home')}</span>
+                        <span class="iam-sl-ri"><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.dms} /></i>{L('MD', 'DMs')}</span>
+                        <span class="iam-sl-ri"><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.bell} /></i>{L('Actividad', 'Activity')}</span>
+                        <span class="iam-sl-ri"><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.more} /></i>{L('Más', 'More')}</span>
+                        <span class="iam-sl-me"><i class="iam-av sq c1">AR</i></span>
+                    </nav>
+                    <aside class="iam-sl-side">
+                        <header><b>Materiales del Valle</b><svg class="iam-i" viewBox="0 0 24 24" set:html={I.compose} /></header>
+                        <span class="iam-sl-it"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.thread} />{L('Hilos', 'Threads')}</span>
+                        <span class="iam-sl-it"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.head} />Huddles</span>
+                        <span class="iam-sl-it"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.send} />{L('Borradores y enviados', 'Drafts & sent')}</span>
+                        <small class="iam-sl-sec"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} />{L('Canales', 'Channels')}</small>
+                        <span class="iam-sl-it"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.hash} />{L('cobranza', 'collections')}</span>
+                        <span class="iam-sl-it"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.hash} />general</span>
+                        <span class="iam-sl-it"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.hash} />{L('operaciones', 'operations')}</span>
+                        <span class="iam-sl-it is-on"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.hash} />{L('ventas', 'sales')}</span>
+                        <small class="iam-sl-sec"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} />Apps</small>
+                        <span class="iam-sl-it"><img src={CORD} alt="" width="16" height="16" />Cord</span>
+                        <small class="iam-sl-sec"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} />{L('Mensajes directos', 'Direct messages')}</small>
+                        <span class="iam-sl-it"><i class="iam-av sq c2">LO</i>Lucía Ortega</span>
+                        <span class="iam-sl-it"><i class="iam-av sq c3">AS</i>Andrés Salgado</span>
+                    </aside>
+                    <main class="iam-sl-main">
+                        <header class="iam-sl-ch">
+                            <b><svg class="iam-i" viewBox="0 0 24 24" set:html={I.hash} />{L('ventas', 'sales')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></b>
+                            <span class="iam-sl-mem">
+                                <span class="iam-sl-stack"><i class="iam-av sq c2">LO</i><i class="iam-av sq c3">AS</i><i class="iam-av sq c4">SR</i></span>
+                                <em class="editorial">14</em>
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.head} />
+                            </span>
+                        </header>
+                        <div class="iam-sl-tabs">
+                            <span class="is-on"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.dms} />{L('Mensajes', 'Messages')}</span>
+                            <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.canvas} />Canvas</span>
+                            <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.file} />{L('Archivos', 'Files')}</span>
+                            <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} /></span>
+                        </div>
+                        <div class="iam-sl-feed">
+                            <div class="iam-sl-day"><span>{L('Hoy', 'Today')}<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span></div>
+                            <div class="iam-sl-msg is-first">
+                                <img class="iam-sl-av" src={CORD} alt="" width="32" height="32" />
+                                <div>
+                                    <p class="iam-sl-who"><b>Cord</b><span class="iam-sl-app">APP</span><time>10:42</time></p>
+                                    <p>{L('Cotización', 'Quote')} <b>COT-0152</b> {L('vista por el cliente', 'viewed by the client')}</p>
+                                    <p>{L('Cliente', 'Client')}: Aceros del Norte · Total: <b class="editorial">{mx('184,300.00')}</b></p>
+                                    <p><span class="iam-sl-link">{L('Ver cotización', 'View quote')}</span></p>
+                                </div>
+                            </div>
+                            <div class="iam-sl-msg">
+                                <img class="iam-sl-av" src={CORD} alt="" width="32" height="32" />
+                                <div>
+                                    <p class="iam-sl-who"><b>Cord</b><span class="iam-sl-app">APP</span><time>11:08</time></p>
+                                    <p>{L('Cotización', 'Quote')} <b>COT-0152</b> <b>{L('APROBADA', 'APPROVED')}</b></p>
+                                    <p>{L('Cliente', 'Client')}: Aceros del Norte · Total: <b class="editorial">{mx('184,300.00')}</b></p>
+                                    <p><span class="iam-sl-link">{L('Ver cotización', 'View quote')}</span></p>
+                                    <p class="iam-sl-thread"><i class="iam-av sq c2">LO</i><i class="iam-av sq c3">AS</i><span class="iam-sl-link">{L('2 respuestas', '2 replies')}</span><span>{L('Última respuesta hace 4 min', 'Last reply 4 min ago')}</span></p>
+                                </div>
+                            </div>
+                            <div class="iam-sl-new"><span>{L('Nuevo', 'New')}</span></div>
+                            <div class="iam-sl-msg is-new">
+                                <img class="iam-sl-av" src={CORD} alt="" width="32" height="32" />
+                                <div>
+                                    <p class="iam-sl-who"><b>Cord</b><span class="iam-sl-app">APP</span><time>11:31</time></p>
+                                    <p>{L('Entró el anticipo de Aceros del Norte:', 'The Aceros del Norte deposit is in:')} <span class="editorial">92,150</span> MXN {L('de la', 'for')} COT-0152. {L('Preparen la entrega.', 'Get the delivery ready.')}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="iam-sl-compose">
+                            <div class="iam-sl-fmt">
+                                <b>B</b><i>I</i><s>S</s>
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.link} />
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.list} />
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.code} />
+                            </div>
+                            <p class="iam-sl-in">{L('Enviar mensaje a #ventas', 'Message #sales')}</p>
+                            <div class="iam-sl-tools">
+                                <span class="iam-sl-plus"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} /></span>
+                                <b>Aa</b>
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.at} />
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.video} />
+                                <svg class="iam-i" viewBox="0 0 24 24" set:html={I.mic} />
+                                <svg class="iam-i iam-sl-send" viewBox="0 0 24 24" set:html={I.send} />
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-wf iam-sl-wf">
+                <div class="iam-wf-head">
+                    <span class="iam-wf-t"><img src={logo} alt="" width="18" height="18" loading="lazy" /><b>{L('Enviar un mensaje a Slack', 'Send a Slack message')}</b></span>
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} />
+                </div>
+                <div class="iam-wf-body">
+                    <div class="iam-wf-f">
+                        <label>{L('Mensaje', 'Message')}</label>
+                        <p class="iam-wf-in iam-wf-ta">{slMsg.map((p) => p.tok ? <em>{p.t}</em> : p.t)}</p>
+                    </div>
+                    <div class="iam-wf-f">
+                        <label>{L('Datos del evento', 'Event data')}</label>
+                        <div class="iam-wf-chips">
+                            <span>{L('Folio', 'Number')}</span>
+                            <span>{L('Cliente', 'Client')}</span>
+                            <span>{L('Monto pagado', 'Amount paid')}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="iam-wf-foot"><span class="iam-wf-btn">{L('Listo', 'Done')}</span></div>
+            </aside>
+        </div>
+    )}
+
+    {slug === 'zapier' && (
+        <div class="iam-stage iam-zp">
+            <div class="iam-win iam-zp-win">
+                <div class="iam-zp-top">
+                    <span class="iam-zp-tl">
+                        <img src={logo} alt="" width="20" height="20" loading="lazy" />
+                        <span class="iam-zp-crumb">Zaps</span>
+                        <span class="iam-zp-sep">/</span>
+                        <b>{L('Cotización pagada a Sheets y tarea', 'Quote paid to Sheets and a task')}</b>
+                        <svg class="iam-i iam-zp-pen" viewBox="0 0 24 24" set:html={I.pencil} />
+                    </span>
+                    <span class="iam-zp-tr">
+                        <span class="iam-zp-ver">{L('Versión 3', 'Version 3')}</span>
+                        <span class="iam-toggle is-on"><i></i>{L('Encendido', 'On')}</span>
+                        <span class="iam-zp-pub">{L('Publicar', 'Publish')}</span>
+                    </span>
+                </div>
+                <div class="iam-zp-body">
+                    <nav class="iam-zp-rail">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.gear} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.history} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.layers} />
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.note} />
+                    </nav>
+                    <div class="iam-zp-canvas">
+                        <div class="iam-zp-step is-sel">
+                            <img src={CORD} alt="" width="26" height="26" />
+                            <span class="iam-zp-st"><small><svg class="iam-i" viewBox="0 0 24 24" set:html={I.boltf} />{L('Disparador', 'Trigger')}</small><b>1. Quote Paid</b><i>Cord</i></span>
+                            <svg class="iam-i iam-zp-ok" viewBox="0 0 24 24" set:html={I.ok} />
+                        </div>
+                        <span class="iam-zp-link"><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} /></i></span>
+                        <div class="iam-zp-step">
+                            <span class="iam-zp-gly"><svg viewBox="0 0 24 24" aria-hidden="true" set:html={SHEETS} /></span>
+                            <span class="iam-zp-st"><small>{L('Acción', 'Action')}</small><b>2. Create Spreadsheet Row</b><i>Google Sheets</i></span>
+                            <svg class="iam-i iam-zp-ok" viewBox="0 0 24 24" set:html={I.ok} />
+                        </div>
+                        <span class="iam-zp-link"><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} /></i></span>
+                        <div class="iam-zp-step">
+                            <img src={CORD} alt="" width="26" height="26" />
+                            <span class="iam-zp-st"><small>{L('Acción', 'Action')}</small><b>3. Create Task</b><i>Cord</i></span>
+                            <svg class="iam-i iam-zp-ok" viewBox="0 0 24 24" set:html={I.ok} />
+                        </div>
+                        <span class="iam-zp-link is-end"><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} /></i></span>
+                        <span class="iam-zp-zoom">
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.zin} />
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.zout} />
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.fit} />
+                        </span>
+                    </div>
+                    <aside class="iam-zp-panel">
+                        <div class="iam-zp-ph">
+                            <img src={CORD} alt="" width="24" height="24" />
+                            <span><b>1. Quote Paid</b><i>Cord · {L('Instantáneo', 'Instant')}</i></span>
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} />
+                        </div>
+                        <div class="iam-zp-tabs">
+                            <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.ok} />{L('Configurar', 'Setup')}</span>
+                            <span class="is-on"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.ok} />{L('Probar', 'Test')}</span>
+                        </div>
+                        <div class="iam-zp-rec">
+                            <span><b>quote A</b><i>{L('Registro seleccionado', 'Selected record')}</i></span>
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} />
+                        </div>
+                        <dl class="iam-zp-fields">
+                            {zpFields.map(([k, v]) => (
+                                <div><dt>{k}</dt><dd class={k === 'Total' ? 'editorial' : undefined}>{v}</dd></div>
+                            ))}
+                        </dl>
+                        <span class="iam-zp-cont">{L('Continuar con el registro seleccionado', 'Continue with selected record')}</span>
+                    </aside>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-gs">
+                <div class="iam-gs-top">
+                    <svg class="iam-gs-logo" viewBox="0 0 24 24" aria-hidden="true" set:html={SHEETS} />
+                    <span><b>{L('Cotizaciones pagadas 2026', 'Paid quotes 2026')}</b><i>{L('Archivo  Editar  Ver  Insertar  Formato  Datos', 'File  Edit  View  Insert  Format  Data')}</i></span>
+                </div>
+                <div class="iam-gs-bar"><span class="iam-gs-ref">A6</span><i>fx</i><span>COT-0148</span></div>
+                <div class="iam-gs-grid">
+                    <span class="iam-gs-hd"></span><span class="iam-gs-hd">A</span><span class="iam-gs-hd">B</span><span class="iam-gs-hd">C</span><span class="iam-gs-hd">D</span><span class="iam-gs-hd">E</span>
+                    <span class="iam-gs-rn">1</span><b>{L('Folio', 'Number')}</b><b>{L('Cliente', 'Client')}</b><b>Total</b><b>{L('Divisa', 'Curr.')}</b><b>{L('Pagada', 'Paid')}</b>
+                    {gsRows.map((r, i) => (
+                        <Fragment>
+                            <span class="iam-gs-rn">{i + 2}</span>
+                            <span>{r[0]}</span><span>{r[1]}</span><span class="iam-gs-num editorial">{r[2]}</span><span>{r[3]}</span><span>{r[4]}</span>
+                        </Fragment>
+                    ))}
+                    <span class="iam-gs-rn is-new">6</span>
+                    <span class="is-new is-cur">COT-0148</span><span class="is-new">Distribuidora del Bajío</span><span class="is-new iam-gs-num editorial">48,720.00</span><span class="is-new">MXN</span><span class="is-new">{L('22/09/2026', '9/22/2026')}</span>
+                </div>
+                <div class="iam-gs-tabs"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} /><svg class="iam-i" viewBox="0 0 24 24" set:html={I.rows} /><span>{L('Hoja 1', 'Sheet1')}</span></div>
+            </aside>
+        </div>
+    )}
+
+    {slug === 'make' && (
+        <div class="iam-stage iam-mk">
+            <div class="iam-win iam-mk-win">
+                <nav class="iam-mk-side">
+                    <img src={logo} alt="" width="26" height="26" loading="lazy" />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.users} />
+                    <svg class="iam-i is-on" viewBox="0 0 24 24" set:html={I.router} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.layers} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.link} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.bolt} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.help} />
+                </nav>
+                <div class="iam-mk-main">
+                    <div class="iam-mk-top">
+                        <svg class="iam-i" viewBox="0 0 24 24" set:html={I.back} />
+                        <b>{L('Cotizaciones aprobadas y pagadas', 'Approved and paid quotes')}</b>
+                        <svg class="iam-i iam-mk-pen" viewBox="0 0 24 24" set:html={I.pencil} />
+                        <span class="iam-mk-tr"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.history} /><svg class="iam-i" viewBox="0 0 24 24" set:html={I.more} /><i class="iam-av c1">AR</i></span>
+                    </div>
+                    <div class="iam-mk-canvas">
+                        <svg class="iam-mk-wires" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+                            <path d="M150 150 L350 150" vector-effect="non-scaling-stroke" />
+                            <path d="M350 150 C 450 150, 470 78, 570 78" vector-effect="non-scaling-stroke" />
+                            <path d="M570 78 L805 78" vector-effect="non-scaling-stroke" />
+                            <path d="M350 150 C 450 150, 470 222, 570 222" vector-effect="non-scaling-stroke" />
+                        </svg>
+                        <span class="iam-mk-flt" style="left:46.5%;top:27%"><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.funnel} /></i>{L('Aprobada', 'Approved')}</span>
+                        <span class="iam-mk-flt" style="left:46.5%;top:73%"><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.funnel} /></i>{L('Pagada', 'Paid')}</span>
+                        <div class="iam-mk-node" style="left:15%;top:50%">
+                            <span class="iam-mk-bub is-cord"><img src={CORD} alt="" width="40" height="40" /><em class="iam-mk-ops editorial">1</em><em class="iam-mk-inst"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.boltf} /></em></span>
+                            <b class="iam-mk-lbl">Cord <em>1</em></b><i class="iam-mk-sub">Watch Events</i>
+                        </div>
+                        <div class="iam-mk-node is-sm" style="left:35%;top:50%">
+                            <span class="iam-mk-bub is-router"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.router} /></span>
+                            <b class="iam-mk-lbl">Router <em>2</em></b>
+                        </div>
+                        <div class="iam-mk-node" style="left:57%;top:26%">
+                            <span class="iam-mk-bub is-sheets">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 2.5h8L19 7v14.5H6.5z" fill="#fff"/><path d="M14.5 2.5V7H19z" fill="#b7e1cd"/><path d="M9 11h7.5v7.5H9zM9 13.5h7.5M9 16h7.5M12 11v7.5" fill="none" stroke="#0f9d58" stroke-width="1.1"/></svg>
+                                <em class="iam-mk-ops editorial">1</em>
+                            </span>
+                            <b class="iam-mk-lbl">Google Sheets <em>3</em></b><i class="iam-mk-sub">Add a Row</i>
+                        </div>
+                        <div class="iam-mk-node" style="left:80.5%;top:26%">
+                            <span class="iam-mk-bub is-slack"><img src={fav('slack.com')} alt="" width="34" height="34" loading="lazy" /><em class="iam-mk-ops editorial">1</em></span>
+                            <b class="iam-mk-lbl">Slack <em>4</em></b><i class="iam-mk-sub">Create a Message</i>
+                        </div>
+                        <div class="iam-mk-node" style="left:57%;top:74%">
+                            <span class="iam-mk-bub is-cord"><img src={CORD} alt="" width="40" height="40" /></span>
+                            <b class="iam-mk-lbl">Cord <em>5</em></b><i class="iam-mk-sub">Create a Task</i>
+                        </div>
+                    </div>
+                    <div class="iam-mk-bar">
+                        <span class="iam-mk-run"><i><svg class="iam-i" viewBox="0 0 24 24" set:html={I.play} /></i>{L('Ejecutar una vez', 'Run once')}</span>
+                        <span class="iam-mk-sched"><span class="iam-toggle is-on is-mk"><i></i></span>{L('Inmediatamente al llegar los datos', 'Immediately as data arrives')}</span>
+                        <span class="iam-mk-tools">
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.gear} />
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.note} />
+                            <svg class="iam-i" viewBox="0 0 24 24" set:html={I.fit} />
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-mk-insp">
+                <div class="iam-mk-ih">
+                    <span class="iam-mk-mini"><img src={CORD} alt="" width="14" height="14" /></span>
+                    <b>Cord · Watch Events</b>
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} />
+                </div>
+                <p class="iam-mk-isub">{L('Operación 1', 'Operation 1')}</p>
+                <p class="iam-mk-isec"><span>{L('SALIDA', 'OUTPUT')}</span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.download} /></p>
+                <ul class="iam-mk-tree">
+                    <li class="is-grp"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} />Bundle 1: <em>(Collection)</em></li>
+                    <li class="d1"><span>Event ID</span><b>evt_7d3f1a9b2c4e6f80</b></li>
+                    <li class="d1"><span>Event type</span><b>quote.approved</b></li>
+                    <li class="d1"><span>Created at</span><b>{L('22 de septiembre de 2026 11:08', 'September 22, 2026 11:08 AM')}</b></li>
+                    <li class="is-grp d1"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} />Data: <em>(Collection)</em></li>
+                    <li class="d2"><span>Quote number</span><b>COT-0152</b></li>
+                    <li class="d2"><span>Quote status</span><b>approved</b></li>
+                    <li class="d2"><span>Currency</span><b>MXN</b></li>
+                    <li class="d2"><span>Total</span><b class="editorial">184300</b></li>
+                    <li class="d2"><span>Client name</span><b>Aceros del Norte</b></li>
+                    <li class="d2"><span>Public link</span><b>https://cordhq.app/q/5nRt8WcK</b></li>
+                </ul>
+            </aside>
+        </div>
+    )}
+
+    {slug === 'n8n' && (
+        <div class="iam-stage iam-n8">
+            <div class="iam-win iam-n8-win">
+                <nav class="iam-n8-side">
+                    <img src={logo} alt="" width="26" height="26" loading="lazy" />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.home} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.layers} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.code} />
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.help} />
+                </nav>
+                <div class="iam-n8-main">
+                    <div class="iam-n8-top">
+                        <span class="iam-n8-tl"><span class="iam-n8-crumb">Personal /</span><b>{L('Cotizaciones grandes', 'Large quotes')}</b><span class="iam-n8-tag">{L('ventas', 'sales')}</span></span>
+                        <span class="iam-n8-seg"><b>Editor</b><span>Executions</span></span>
+                        <span class="iam-n8-tr"><span class="iam-n8-act">Active<span class="iam-toggle is-on is-n8"><i></i></span></span><span class="iam-n8-share">Share</span><span class="iam-n8-saved">Saved</span></span>
+                    </div>
+                    <div class="iam-n8-canvas">
+                        <svg class="iam-n8-wires" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+                            <path class="is-ok" d="M118 132 L262 132" vector-effect="non-scaling-stroke" />
+                            <path class="is-ok" d="M318 118 C 380 118, 380 62, 452 62" vector-effect="non-scaling-stroke" />
+                            <path d="M318 146 C 380 146, 380 206, 452 206" vector-effect="non-scaling-stroke" />
+                        </svg>
+                        <span class="iam-n8-item editorial" style="left:19%;top:44%">1 item</span>
+                        <span class="iam-n8-item editorial" style="left:38.5%;top:26%">1 item</span>
+                        <div class="iam-n8-node is-trigger is-ok" style="left:9%;top:44%">
+                            <span class="iam-n8-box"><img src={CORD} alt="" width="38" height="38" /><svg class="iam-i iam-n8-bolt" viewBox="0 0 24 24" set:html={I.boltf} /><svg class="iam-i iam-n8-chk" viewBox="0 0 24 24" set:html={I.check} /></span>
+                            <b class="iam-n8-name">Cord Trigger</b><i class="iam-n8-sub">quote.approved, quote.paid</i>
+                        </div>
+                        <div class="iam-n8-node is-ok" style="left:29%;top:44%">
+                            <span class="iam-n8-box iam-n8-if"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.signpost} /><svg class="iam-i iam-n8-chk" viewBox="0 0 24 24" set:html={I.check} /><em class="iam-n8-o is-t">true</em><em class="iam-n8-o is-f">false</em></span>
+                            <b class="iam-n8-name">{L('¿Más de 100 mil?', 'Over 100k?')}</b>
+                        </div>
+                        <div class="iam-n8-node is-ok" style="left:50%;top:20.5%">
+                            <span class="iam-n8-box"><img src={CORD} alt="" width="38" height="38" /><svg class="iam-i iam-n8-chk" viewBox="0 0 24 24" set:html={I.check} /></span>
+                            <b class="iam-n8-name">Cord</b><i class="iam-n8-sub">create: task</i>
+                        </div>
+                        <div class="iam-n8-node" style="left:50%;top:68.5%">
+                            <span class="iam-n8-box"><img src={fav('slack.com')} alt="" width="34" height="34" loading="lazy" /></span>
+                            <b class="iam-n8-name">Slack</b><i class="iam-n8-sub">post: message</i>
+                        </div>
+                        <span class="iam-n8-zoom">
+                            <b><svg class="iam-i" viewBox="0 0 24 24" set:html={I.fit} /></b>
+                            <b><svg class="iam-i" viewBox="0 0 24 24" set:html={I.zin} /></b>
+                            <b><svg class="iam-i" viewBox="0 0 24 24" set:html={I.zout} /></b>
+                        </span>
+                        <span class="iam-n8-test"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.flask} />Test workflow</span>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-n8-ndv">
+                <div class="iam-n8-nh">
+                    <img src={CORD} alt="" width="20" height="20" />
+                    <b>Cord Trigger</b>
+                    <span class="iam-n8-ntabs"><b>Parameters</b><span>Settings</span></span>
+                </div>
+                <div class="iam-n8-nb">
+                    <p class="iam-n8-coll"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.right} />Webhook URLs</p>
+                    <div class="iam-n8-f">
+                        <label>Credential to connect with</label>
+                        <span class="iam-n8-sel">Cord account<svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /></span>
+                    </div>
+                    <div class="iam-n8-f">
+                        <label>Events <i>*</i></label>
+                        <span class="iam-n8-chips"><span>Quotes: Quote approved<svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} /></span><span>Payments: Quote paid in full<svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} /></span></span>
+                    </div>
+                    <div class="iam-n8-f iam-n8-sw">
+                        <label>Verify Signature<svg class="iam-i" viewBox="0 0 24 24" set:html={I.info} /></label>
+                        <span class="iam-toggle is-on is-n8"><i></i></span>
+                    </div>
+                    <p class="iam-n8-tip">Whether to reject deliveries whose <span>X-Cord-Signature-V1</span> does not match the webhook secret</p>
+                </div>
+            </aside>
+        </div>
+    )}
+
+    {slug === 'teams' && (
+        <div class="iam-stage iam-tm">
+            <div class="iam-win iam-tm-win">
+                <div class="iam-tm-title">
+                    <span class="iam-tm-hist"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.left} /><svg class="iam-i" viewBox="0 0 24 24" set:html={I.right} /></span>
+                    <span class="iam-tm-search"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.search} />{L('Buscar', 'Search')}</span>
+                    <span class="iam-tm-me"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.more} /><i class="iam-av c1">AR</i></span>
+                </div>
+                <div class="iam-tm-shell">
+                    <nav class="iam-tm-rail">
+                        <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.bell} />{L('Actividad', 'Activity')}</span>
+                        <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.dms} />Chat</span>
+                        <span class="is-on"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.users} />{L('Equipos', 'Teams')}</span>
+                        <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.cal} />{L('Calendario', 'Calendar')}</span>
+                        <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.phone} />{L('Llamadas', 'Calls')}</span>
+                        <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.cloud} />OneDrive</span>
+                    </nav>
+                    <aside class="iam-tm-list">
+                        <header><b>{L('Equipos', 'Teams')}</b><span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.funnel} /><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} /></span></header>
+                        <span class="iam-tm-team"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.down} /><i class="iam-tm-tile">MV</i>Materiales del Valle</span>
+                        <span class="iam-tm-chan">General</span>
+                        <span class="iam-tm-chan">{L('Cobranza', 'Collections')}</span>
+                        <span class="iam-tm-chan">{L('Operaciones', 'Operations')}</span>
+                        <span class="iam-tm-chan is-on">{L('Ventas', 'Sales')}</span>
+                        <span class="iam-tm-team"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.right} /><i class="iam-tm-tile is-b">CO</i>{L('Compras', 'Purchasing')}</span>
+                        <span class="iam-tm-team"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.right} /><i class="iam-tm-tile is-c">DI</i>{L('Dirección', 'Leadership')}</span>
+                    </aside>
+                    <main class="iam-tm-main">
+                        <header class="iam-tm-ch">
+                            <i class="iam-tm-tile">MV</i>
+                            <b>{L('Ventas', 'Sales')}</b>
+                            <span class="iam-tm-tabs"><span class="is-on">{L('Publicaciones', 'Posts')}</span><span>{L('Archivos', 'Files')}</span><span>{L('Notas', 'Notes')}</span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} /></span>
+                            <span class="iam-tm-meet"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.video} />{L('Reunirse', 'Meet')}</span>
+                        </header>
+                        <div class="iam-tm-feed">
+                            <article class="iam-tm-post">
+                                <div class="iam-tm-ph">
+                                    <span class="iam-tm-wf"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.router} /></span>
+                                    <b>Workflows</b><time>11:08</time>
+                                </div>
+                                <div class="iam-tm-card">
+                                    <b class="iam-tm-ct">{L('Cotización', 'Quote')} COT-0152 {L('APROBADA', 'APPROVED')}</b>
+                                    <dl>
+                                        <div><dt>{L('Cliente', 'Client')}</dt><dd>Aceros del Norte</dd></div>
+                                        <div><dt>Total</dt><dd class="editorial">{mx('184,300.00')}</dd></div>
+                                    </dl>
+                                    <span class="iam-tm-btn">{L('Ver cotización', 'View quote')}</span>
+                                </div>
+                                <div class="iam-tm-reply">
+                                    <i class="iam-av c2">LO</i>
+                                    <p><b>Lucía Ortega</b><time>11:12</time><span>{L('Aparto el material en almacén; sale el jueves a obra.', 'Setting the material aside; it ships to the site Thursday.')}</span></p>
+                                </div>
+                            </article>
+                            <article class="iam-tm-post">
+                                <div class="iam-tm-ph">
+                                    <span class="iam-tm-wf"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.router} /></span>
+                                    <b>Workflows</b><time>11:42</time>
+                                </div>
+                                <div class="iam-tm-card">
+                                    <b class="iam-tm-ct">{L('Cotización', 'Quote')} COT-0148 {L('PAGADA', 'PAID')}</b>
+                                    <dl>
+                                        <div><dt>{L('Cliente', 'Client')}</dt><dd>Distribuidora del Bajío</dd></div>
+                                        <div><dt>Total</dt><dd class="editorial">{mx('48,720.00')}</dd></div>
+                                    </dl>
+                                    <span class="iam-tm-btn">{L('Ver cotización', 'View quote')}</span>
+                                </div>
+                            </article>
+                        </div>
+                        <div class="iam-tm-compose"><span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.pencil} />{L('Iniciar una publicación', 'Start a post')}</span></div>
+                    </main>
+                </div>
+            </div>
+
+            <aside class="iam-layer iam-nt">
+                <div class="iam-nt-h">
+                    <span>{L('Ajustes', 'Settings')} <svg class="iam-i" viewBox="0 0 24 24" set:html={I.right} /> {L('Notificaciones', 'Notifications')}</span>
+                    <b>{L('Eventos', 'Events')}</b>
+                </div>
+                <div class="iam-nt-row iam-nt-head"><span></span><span>{L('Correo', 'Email')}</span><span>Slack</span><span class="is-tm">Teams</span></div>
+                {ntRows.map((r) => (
+                    <div class="iam-nt-row">
+                        <span>{r.ev}</span>
+                        {r.on.map((on, i) => (
+                            <span class={`iam-nt-box${on ? ' is-on' : ''}${i === 2 ? ' is-tm' : ''}`}>{on && <svg class="iam-i" viewBox="0 0 24 24" set:html={I.check} />}</span>
+                        ))}
+                    </div>
+                ))}
+            </aside>
+        </div>
+    )}
+
+    {slug === 'whatsapp' && (
+        <div class="iam-stage iam-wa">
+            <div class="iam-wa-phone">
+                <div class="iam-wa-sb">
+                    <b class="editorial">9:41</b>
+                    <span><svg class="iam-i" viewBox="0 0 24 24" set:html={I.signal} /><svg class="iam-i" viewBox="0 0 24 24" set:html={I.wifi} /><i class="iam-wa-bat"></i></span>
+                </div>
+                <header class="iam-wa-head">
+                    <svg class="iam-i iam-wa-back" viewBox="0 0 24 24" set:html={I.left} />
+                    <span class="iam-wa-av">MV</span>
+                    <span class="iam-wa-who"><b>Materiales del Valle</b><i>{L('Cuenta de empresa', 'Business account')}</i></span>
+                    <span class="iam-wa-hi"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.video} /><svg class="iam-i" viewBox="0 0 24 24" set:html={I.phone} /></span>
+                </header>
+                <div class="iam-wa-chat">
+                    <p class="iam-wa-sys"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.lock} />{L('Esta empresa usa un servicio seguro de Meta para administrar este chat. Toca para obtener más información.', 'This business uses a secure service from Meta to manage this chat. Tap to learn more.')}</p>
+                    <span class="iam-wa-day is-old">{L('12 de septiembre', 'September 12')}</span>
+                    <div class="iam-wa-in is-old">
+                        <p>{L('Hola', 'Hi')} <b>Aceros del Norte</b>, {L('te recordamos que tu cotización', 'a reminder that your quote')} <b>COT-0139</b> {L('por', 'for')} <b class="editorial">62,480 MXN</b> {L('vence el', 'expires on')} <b class="editorial">2026-09-15</b>. {L('La encuentras en el correo que te enviamos.', 'You can find it in the email we sent you.')}</p>
+                        <span class="iam-wa-ft">Materiales del Valle</span>
+                        <time class="editorial">9:00</time>
+                    </div>
+                    <span class="iam-wa-day">{L('Hoy', 'Today')}</span>
+                    <div class="iam-wa-in">
+                        <p>{L('Hola', 'Hi')} <b>Aceros del Norte</b>, {L('te recordamos que tu cotización', 'a reminder that your quote')} <b>COT-0152</b> {L('por', 'for')} <b class="editorial">184,300 MXN</b> {L('vence el', 'expires on')} <b class="editorial">2026-09-26</b>. {L('La encuentras en el correo que te enviamos.', 'You can find it in the email we sent you.')}</p>
+                        <span class="iam-wa-ft">Materiales del Valle</span>
+                        <time class="editorial">9:00</time>
+                    </div>
+                </div>
+                <footer class="iam-wa-bar">
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.plus} />
+                    <span class="iam-wa-input">{L('Mensaje', 'Message')}</span>
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.camera} />
+                    <span class="iam-wa-mic"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.mic} /></span>
+                </footer>
+            </div>
+
+            <aside class="iam-layer iam-wf iam-wa-wf">
+                <div class="iam-wf-head">
+                    <span class="iam-wf-t"><img src={logo} alt="" width="18" height="18" loading="lazy" /><b>{L('Mandarle un WhatsApp al cliente', 'Send the client a WhatsApp')}</b></span>
+                    <svg class="iam-i" viewBox="0 0 24 24" set:html={I.x} />
+                </div>
+                <div class="iam-wf-body">
+                    <p class="iam-wf-req"><svg class="iam-i" viewBox="0 0 24 24" set:html={I.info} />{L('Requiere WhatsApp conectado y el cliente con teléfono', 'Requires WhatsApp connected and a client with a phone')}</p>
+                    {waVars.map((v) => (
+                        <div class="iam-wf-f">
+                            <label>{v.label}</label>
+                            <p class="iam-wf-in">{toks(v.value).map((p) => p.tok ? <em>{p.t}</em> : p.t)}</p>
+                            {v.hint && <p class="iam-wf-hint">{v.hint}</p>}
+                        </div>
+                    ))}
+                </div>
+                <div class="iam-wf-foot"><span class="iam-wf-btn">{L('Listo', 'Done')}</span></div>
+            </aside>
+        </div>
+    )}
+</div>
+
+<script>
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
+
+    const initIam = () => {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        document.querySelectorAll<HTMLElement>('[data-iam]').forEach((root) => {
+            const layers = root.querySelectorAll<HTMLElement>('.iam-layer');
+            if (!layers.length) return;
+            gsap.set(layers, { opacity: 0, y: 28 });
+            ScrollTrigger.create({
+                trigger: root, start: 'top 80%', once: true,
+                onEnter: () => gsap.to(layers, { opacity: 1, y: 0, duration: 0.95, delay: 0.5, ease: 'power3.out', clearProps: 'opacity,transform' }),
+            });
+        });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initIam);
+    else initIam();
+</script>
+
+<style>
+    .iam { position: relative; width: 100%; container: iam / inline-size; font-family: var(--font-sans, Inter, system-ui, sans-serif); color: #0a192f; text-align: left; -webkit-font-smoothing: antialiased; }
+    .iam *, .iam *::before, .iam *::after { box-sizing: border-box; }
+    .iam img { display: block; object-fit: contain; }
+    .iam p { margin: 0; }
+    .iam dl, .iam dd, .iam ol, .iam ul { margin: 0; padding: 0; }
+    .iam em, .iam i { font-style: normal; }
+    .iam-i { width: 14px; height: 14px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .iam-stage { position: relative; }
+    .iam-win {
+        position: relative; z-index: 1; background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid rgba(10,25,47,0.08);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.08), 0 18px 36px -18px rgba(10,25,47,0.35), 0 50px 90px -34px rgba(10,25,47,0.55);
+    }
+    .iam-layer {
+        position: absolute; z-index: 3; background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid rgba(10,25,47,0.08);
+        box-shadow: 0 1px 2px rgba(10,25,47,0.08), 0 12px 24px -12px rgba(10,25,47,0.32), 0 40px 80px -26px rgba(10,25,47,0.6);
+    }
+    .iam-av { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 8px; font-weight: 650; letter-spacing: 0; color: #fff; background: #475569; flex-shrink: 0; }
+    .iam-av.sq { border-radius: 5px; }
+    .iam-av.c1 { background: #475569; }
+    .iam-av.c2 { background: #7c5a3c; }
+    .iam-av.c3 { background: #3f6b5c; }
+    .iam-av.c4 { background: #5b4f7a; }
+    .iam-av.c5 { background: #8a6a2a; }
+    .iam-toggle { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; color: #334155; white-space: nowrap; }
+    .iam-toggle i { position: relative; width: 26px; height: 15px; border-radius: 999px; background: #cbd5e1; }
+    .iam-toggle i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .iam-toggle.is-on i { background: #16a34a; }
+    .iam-toggle.is-on i::after { left: auto; right: 2px; }
+
+    /* HubSpot */
+    .iam-hs { padding-bottom: 36px; }
+    .iam-hs-win { width: calc(100% - 172px); color: #33475b; }
+    .iam-hs-nav { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; background: #2d3e50; color: #cbd6e2; }
+    .iam-hs-logo { width: 20px; height: 20px; border-radius: 5px; }
+    .iam-hs-search { flex: 1; max-width: 240px; height: 25px; border-radius: 6px; background: rgba(255,255,255,0.1); display: flex; align-items: center; gap: 7px; padding: 0 9px; font-size: 11px; color: #9fb1c4; white-space: nowrap; overflow: hidden; }
+    .iam-hs-search .iam-i { width: 13px; height: 13px; }
+    .iam-hs-navr { margin-left: auto; display: flex; align-items: center; gap: 13px; }
+    .iam-hs-navr > .iam-i { width: 15px; height: 15px; }
+    .iam-hs-acct { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #fff; font-weight: 500; white-space: nowrap; }
+    .iam-hs-acct .iam-i { width: 11px; height: 11px; }
+    .iam-hs-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px 10px; }
+    .iam-hs-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .iam-hs-title > b { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: #33475b; }
+    .iam-hs-pipe { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #516f90; padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd6e2; background: #fff; white-space: nowrap; }
+    .iam-hs-pipe strong { color: #33475b; font-weight: 600; }
+    .iam-hs-pipe .iam-i { width: 11px; height: 11px; }
+    .iam-hs-actions { display: flex; gap: 6px; }
+    .iam-hs-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 6px 10px; border-radius: 4px; border: 1px solid #cbd6e2; color: #33475b; background: #f5f8fa; white-space: nowrap; }
+    .iam-hs-btn .iam-i { width: 11px; height: 11px; }
+    .iam-hs-btn.is-primary { background: #ff5c35; border-color: #ff5c35; color: #fff; }
+    .iam-hs-tabs { display: flex; align-items: flex-end; gap: 18px; padding: 0 14px; border-bottom: 1px solid #dfe3eb; font-size: 11.5px; color: #516f90; }
+    .iam-hs-tabs > span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 0 8px; white-space: nowrap; }
+    .iam-hs-tabs > span.is-on { color: #33475b; font-weight: 600; box-shadow: inset 0 -2px 0 #33475b; }
+    .iam-hs-tabs i { font-size: 10px; background: #eaf0f6; color: #516f90; padding: 1px 6px; border-radius: 999px; }
+    .iam-hs-view { margin-left: auto; align-self: center; padding: 0 !important; display: inline-flex !important; gap: 0 !important; border: 1px solid #cbd6e2; border-radius: 4px; overflow: hidden; }
+    .iam-hs-view b { width: 26px; height: 22px; display: grid; place-items: center; color: #516f90; }
+    .iam-hs-view b:first-child { background: #eaf0f6; color: #33475b; border-right: 1px solid #cbd6e2; }
+    .iam-hs-filters { display: flex; align-items: center; gap: 16px; padding: 9px 14px; font-size: 11px; color: #33475b; border-bottom: 1px solid #dfe3eb; white-space: nowrap; overflow: hidden; }
+    .iam-hs-filters span { display: inline-flex; align-items: center; gap: 3px; font-weight: 500; }
+    .iam-hs-filters .iam-i { width: 11px; height: 11px; color: #516f90; }
+    .iam-hs-filters .is-link { color: #0091ae; font-weight: 600; }
+    .iam-hs-filters .is-link .iam-i { color: #0091ae; }
+    .iam-hs-board { display: flex; align-items: stretch; gap: 8px; padding: 10px; overflow: hidden; background: #fff; }
+    .iam-hs-col { flex: 0 0 150px; display: flex; flex-direction: column; background: #f5f8fa; border: 1px solid #dfe3eb; border-radius: 4px; min-width: 0; }
+    .iam-hs-col > header { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 9px 7px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.04em; color: #33475b; }
+    .iam-hs-col > header b { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-hs-col > header span { font-size: 10px; color: #7c98b6; }
+    .iam-hs-cards { display: flex; flex-direction: column; gap: 6px; padding: 0 6px 8px; }
+    .iam-hs-card { display: flex; flex-direction: column; gap: 3px; padding: 8px 9px; background: #fff; border: 1px solid #dfe3eb; border-radius: 4px; box-shadow: 0 1px 1px rgba(45,62,80,0.05); font-size: 10px; color: #516f90; }
+    .iam-hs-card > b { font-size: 11px; font-weight: 600; color: #0091ae; line-height: 1.3; margin-bottom: 1px; }
+    .iam-hs-card em { color: #33475b; }
+    .iam-hs-meta { display: flex !important; align-items: center; justify-content: space-between; margin-top: 4px; }
+    .iam-hs-assoc { display: inline-flex; align-items: center; gap: 3px; color: #7c98b6; font-size: 9.5px; }
+    .iam-hs-assoc .iam-i { width: 11px; height: 11px; }
+    .iam-hs-assoc .iam-i + .iam-i, .iam-hs-assoc .iam-i:nth-of-type(2) { margin-left: 5px; }
+    .iam-hs-card .iam-av { width: 18px; height: 18px; font-size: 7.5px; }
+    .iam-hs-card.is-sel { border-color: #0091ae; box-shadow: 0 0 0 2px rgba(0,145,174,0.2), 0 8px 16px -10px rgba(0,91,110,0.5); }
+    .iam-hs-col > footer { margin-top: auto; padding-top: 8px !important; display: flex; flex-direction: column; gap: 1px; padding: 7px 9px; border-top: 1px solid #dfe3eb; font-size: 9.5px; color: #7c98b6; }
+    .iam-hs-col > footer b { font-size: 11px; color: #33475b; }
+    .iam-hs-pv { top: 96px; right: 0; width: 246px; border-radius: 10px; color: #33475b; }
+    .iam-hs-pv-bar { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: #f5f8fa; border-bottom: 1px solid #dfe3eb; font-size: 10.5px; font-weight: 600; color: #516f90; }
+    .iam-hs-pv-id { display: flex; gap: 9px; padding: 12px 12px 10px; }
+    .iam-hs-pv-ico { width: 30px; height: 30px; border-radius: 7px; background: #eaf0f6; color: #516f90; display: grid; place-items: center; flex-shrink: 0; }
+    .iam-hs-pv-ico .iam-i { width: 16px; height: 16px; }
+    .iam-hs-pv-id b { display: block; font-size: 12.5px; font-weight: 700; color: #33475b; line-height: 1.3; margin-bottom: 3px; }
+    .iam-hs-pv-id span { display: block; font-size: 10px; color: #516f90; line-height: 1.5; }
+    .iam-hs-pv-id em { color: #33475b; }
+    .iam-hs-pv-stage { margin: 0 12px; padding: 6px 9px; border: 1px solid #cbd6e2; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #516f90; }
+    .iam-hs-pv-stage b { display: inline-flex; align-items: center; gap: 4px; color: #33475b; font-weight: 600; }
+    .iam-hs-pv-stage .iam-i { width: 11px; height: 11px; }
+    .iam-hs-pv-acts { display: flex; justify-content: space-between; padding: 12px 14px 11px; border-bottom: 1px solid #dfe3eb; }
+    .iam-hs-pv-acts > span { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 8.5px; color: #516f90; }
+    .iam-hs-pv-acts i { width: 26px; height: 26px; border-radius: 50%; background: #eaf0f6; color: #33475b; display: grid; place-items: center; }
+    .iam-hs-pv-acts .iam-i { width: 13px; height: 13px; }
+    .iam-hs-pv-sec { padding: 10px 12px 11px; border-bottom: 1px solid #dfe3eb; }
+    .iam-hs-pv-sec:last-child { border-bottom: none; }
+    .iam-hs-pv-h { display: flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700; color: #33475b; margin-bottom: 8px !important; }
+    .iam-hs-pv-h .iam-i { width: 11px; height: 11px; color: #516f90; }
+    .iam-hs-hist { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-left: 5px !important; padding-left: 12px !important; border-left: 2px solid #dfe3eb; }
+    .iam-hs-hist li { position: relative; display: flex; flex-direction: column; gap: 1px; font-size: 10.5px; }
+    .iam-hs-hist li::before { content: ''; position: absolute; left: -18px; top: 2px; width: 10px; height: 10px; border-radius: 50%; background: #cbd6e2; border: 2px solid #fff; }
+    .iam-hs-hist li.is-now::before { background: #00a4bd; }
+    .iam-hs-hist b { font-weight: 600; color: #33475b; }
+    .iam-hs-hist span { font-size: 9.5px; color: #7c98b6; }
+    .iam-hs-pv-assoc .iam-hs-pv-h + .iam-hs-arow { margin-bottom: 10px; }
+    .iam-hs-arow { display: flex; align-items: center; gap: 8px; font-size: 10.5px; }
+    .iam-hs-arow .iam-av { width: 22px; height: 22px; font-size: 8px; }
+    .iam-hs-arow span { display: flex; flex-direction: column; min-width: 0; }
+    .iam-hs-arow b { color: #0091ae; font-weight: 600; }
+    .iam-hs-arow em { font-size: 9.5px; color: #7c98b6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Shopify */
+    .iam-sh { padding-bottom: 34px; }
+    .iam-sh-win { width: calc(100% - 206px); background: #f1f1f1; color: #303030; border-color: rgba(0,0,0,0.14); }
+    .iam-sh-top { display: grid; grid-template-columns: 152px minmax(0, 1fr) auto; align-items: center; gap: 12px; height: 44px; padding: 0 12px 0 14px; background: #1a1a1a; color: #e3e3e3; }
+    .iam-sh-brand img { width: 22px; height: 22px; border-radius: 6px; }
+    .iam-sh-search { justify-self: center; width: min(100%, 300px); height: 28px; display: flex; align-items: center; gap: 7px; padding: 0 5px 0 10px; border-radius: 8px; background: #303030; box-shadow: inset 0 0 0 1px #4a4a4a; font-size: 11px; color: #b5b5b5; white-space: nowrap; overflow: hidden; }
+    .iam-sh-search > .iam-i { width: 13px; height: 13px; }
+    .iam-sh-kbd { margin-left: auto; display: flex; gap: 3px; }
+    .iam-sh-kbd kbd { min-width: 17px; height: 17px; padding: 0 4px; border-radius: 4px; background: #474747; color: #e3e3e3; font: 600 9.5px/17px var(--font-sans, Inter, system-ui, sans-serif); text-align: center; }
+    .iam-sh-topr { display: flex; align-items: center; gap: 13px; }
+    .iam-sh-topr > .iam-i { width: 15px; height: 15px; color: #e3e3e3; }
+    .iam-sh-store { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; }
+    .iam-sh-store .iam-av { width: 22px; height: 22px; border-radius: 6px; font-size: 8.5px; }
+    .iam-sh-body { display: grid; grid-template-columns: 152px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 532px; }
+    .iam-sh-nav { display: flex; flex-direction: column; gap: 1px; padding: 9px 7px 8px; background: #ebebeb; font-size: 11.5px; font-weight: 600; color: #303030; overflow: hidden; }
+    .iam-sh-ni { display: flex; align-items: center; gap: 8px; min-height: 24px; padding: 0 7px; border-radius: 8px; white-space: nowrap; }
+    .iam-sh-ni .iam-i { width: 15px; height: 15px; color: #4a4a4a; }
+    .iam-sh-ni.is-on { background: #fafafa; color: #1a1a1a; box-shadow: 0 1px 0 rgba(0,0,0,0.06); }
+    .iam-sh-ni.is-on .iam-i { color: #1a1a1a; }
+    .iam-sh-ni em { margin-left: auto; padding: 0 6px; border-radius: 6px; background: rgba(0,0,0,0.07); font-size: 10px; line-height: 16px; }
+    .iam-sh-sub { display: block; min-height: 21px; padding-left: 30px; font-size: 11px; font-weight: 500; line-height: 21px; color: #616161; white-space: nowrap; }
+    .iam-sh-nsec { display: flex; align-items: center; justify-content: space-between; margin-top: 7px; padding: 3px 7px 3px; font-size: 10.5px; font-weight: 600; color: #616161; }
+    .iam-sh-nsec .iam-i { width: 11px; height: 11px; }
+    .iam-sh-set { margin-top: auto; }
+    .iam-sh-main { min-width: 0; padding: 12px 14px 0; overflow: hidden; }
+    .iam-sh-head { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+    .iam-sh-crumb { display: flex; align-items: center; gap: 3px; min-width: 0; }
+    .iam-sh-crumb > .iam-i { width: 16px; height: 16px; color: #4a4a4a; }
+    .iam-sh-crumb > .iam-sh-chev { width: 11px; height: 11px; color: #8a8a8a; }
+    .iam-sh-crumb b { margin-left: 3px; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: #303030; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-sh-acts { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+    .iam-sh-btn, .iam-sh-pager b { display: inline-flex; align-items: center; gap: 3px; height: 26px; padding: 0 9px; border-radius: 8px; background: #fff; font-size: 11px; font-weight: 600; color: #303030; white-space: nowrap; box-shadow: inset 0 -1px 0 #b5b5b5, inset 0 0 0 1px rgba(0,0,0,0.1), 0 1px 0 rgba(0,0,0,0.04); }
+    .iam-sh-btn .iam-i { width: 11px; height: 11px; }
+    .iam-sh-pager { display: inline-flex; gap: 2px; }
+    .iam-sh-pager b { width: 26px; padding: 0; justify-content: center; }
+    .iam-sh-pager .iam-i { width: 12px; height: 12px; color: #616161; }
+    .iam-sh-layout { display: grid; grid-template-columns: minmax(0, 1fr) 168px; gap: 12px; align-items: start; }
+    .iam-sh-col { display: flex; flex-direction: column; gap: 11px; min-width: 0; }
+    .iam-sh-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 0 rgba(26,26,26,0.07), inset 0 1px 0 rgba(204,204,204,0.5), inset 0 -1px 0 rgba(0,0,0,0.17), inset 1px 0 0 rgba(0,0,0,0.12), inset -1px 0 0 rgba(0,0,0,0.12); }
+    .iam-sh-pad { display: flex; flex-direction: column; padding: 11px 12px 12px; }
+    .iam-sh-lbl { font-size: 11px; font-weight: 500; color: #303030; margin: 0 0 4px; }
+    .iam-sh-in + .iam-sh-lbl { margin-top: 9px; }
+    .iam-sh-in { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 28px; padding: 0 9px; border-radius: 8px; background: #fdfdfd; border: 1px solid #8a8a8a; font-size: 11.5px; color: #303030; white-space: nowrap; overflow: hidden; }
+    .iam-sh-in .iam-i { width: 13px; height: 13px; color: #4a4a4a; }
+    .iam-sh-in.is-sel { border-color: #b5b5b5; background: #fff; box-shadow: inset 0 -1px 0 #b5b5b5; }
+    .iam-sh-ed { border: 1px solid #8a8a8a; border-radius: 8px; overflow: hidden; }
+    .iam-sh-edbar { display: flex; align-items: center; gap: 9px; height: 27px; padding: 0 8px; background: #f7f7f7; border-bottom: 1px solid #e3e3e3; color: #4a4a4a; font-size: 11px; }
+    .iam-sh-edbar .iam-i { width: 13px; height: 13px; }
+    .iam-sh-edbar b { font-weight: 700; }
+    .iam-sh-edbar .is-it { font-style: italic; font-family: Georgia, serif; }
+    .iam-sh-fmt { display: inline-flex; align-items: center; gap: 3px; font-weight: 500; color: #303030; }
+    .iam-sh-fmt .iam-i { width: 10px; height: 10px; }
+    .iam-sh-sep { width: 1px; height: 14px; background: #d4d4d4; }
+    .iam-sh-code { margin-left: auto; }
+    .iam-sh-edtxt { padding: 6px 9px 8px; font-size: 11px; line-height: 1.5; color: #303030; }
+    .iam-sh-vh { padding: 10px 12px 8px; font-size: 12px; font-weight: 650; }
+    .iam-sh-opt { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 5px 7px; align-items: center; padding: 0 12px 10px; }
+    .iam-sh-opt > .iam-i { width: 14px; height: 14px; color: #8a8a8a; stroke-width: 1; }
+    .iam-sh-opt > b { font-size: 11.5px; font-weight: 600; }
+    .iam-sh-vals { grid-column: 2; display: flex; flex-wrap: wrap; gap: 5px; }
+    .iam-sh-vals span { padding: 2px 8px; border-radius: 8px; background: #e3e3e3; font-size: 10.5px; font-weight: 500; color: #303030; }
+    .iam-sh-add { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-top: 1px solid #ebebeb; font-size: 11px; font-weight: 550; color: #303030; }
+    .iam-sh-add .iam-i { width: 14px; height: 14px; color: #4a4a4a; }
+    .iam-sh-vth, .iam-sh-vr { display: grid; grid-template-columns: 13px 28px minmax(0, 1fr) 84px 56px; align-items: center; gap: 9px; padding: 0 12px; border-top: 1px solid #ebebeb; }
+    .iam-sh-vth { height: 29px; background: #f7f7f7; font-size: 10.5px; font-weight: 550; color: #616161; }
+    .iam-sh-vth > span:first-of-type { grid-column: 2 / 4; }
+    .iam-sh-vr { height: 36px; font-size: 11.5px; }
+    .iam-sh-vr > b { font-weight: 550; color: #303030; }
+    .iam-sh-cb { width: 13px; height: 13px; border-radius: 4px; border: 1px solid #8a8a8a; background: #fff; }
+    .iam-sh-thumb { width: 28px; height: 28px; border-radius: 7px; border: 1px dashed #b5b5b5; display: grid; place-items: center; color: #8a8a8a; }
+    .iam-sh-thumb .iam-i { width: 13px; height: 13px; }
+    .iam-sh-num { display: flex; align-items: center; gap: 5px; height: 26px; padding: 0 7px; border-radius: 8px; border: 1px solid #8a8a8a; background: #fdfdfd; font-size: 11px; color: #303030; }
+    .iam-sh-num i { color: #616161; }
+    .iam-sh-num .editorial { font-weight: 500; }
+    .iam-sh-vf { padding: 8px 12px 9px; border-top: 1px solid #ebebeb; font-size: 10.5px; color: #616161; }
+    .iam-sh-vf .editorial { font-weight: 600; color: #303030; }
+    .iam-sh-ct { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 11.5px; font-weight: 650; color: #303030; }
+    .iam-sh-ct .iam-i { width: 13px; height: 13px; color: #616161; }
+    .iam-sh-chan { display: flex; align-items: center; gap: 7px; padding: 3px 0; font-size: 11px; color: #303030; }
+    .iam-sh-chan .iam-i { width: 14px; height: 14px; color: #4a4a4a; }
+    .iam-sh-cat { top: 279.5px; right: 0; width: 392px; border-radius: 16px; color: #0a192f; }
+    .iam-shc-bar { display: flex; align-items: center; gap: 8px; padding: 12px 14px 11px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .iam-shc-bar img { width: 18px; height: 18px; border-radius: 5px; }
+    .iam-shc-bar > b { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+    .iam-shc-count { font-size: 10px; font-weight: 600; color: #6b7686; white-space: nowrap; }
+    .iam-shc-search { margin-left: auto; display: flex; align-items: center; gap: 6px; width: 124px; height: 27px; padding: 0 7px 0 9px; border-radius: 9px; background: #f5f5f7; box-shadow: inset 0 0 0 1.5px rgba(10,25,47,0.15); font-size: 11px; }
+    .iam-shc-search .iam-i { width: 12px; height: 12px; color: #0a192f; }
+    .iam-shc-search em { flex: 1; min-width: 0; letter-spacing: -0.01em; }
+    .iam-shc-search .iam-shc-x { width: 10px; height: 10px; color: #99a2af; stroke-width: 2.4; }
+    .iam-shc-pills { display: flex; gap: 5px; padding: 10px 14px 6px; }
+    .iam-shc-pills span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border: 1px solid rgba(10,25,47,0.1); border-radius: 100px; font-size: 10px; font-weight: 600; color: #6b7686; }
+    .iam-shc-pills span.is-on { background: #0a192f; border-color: #0a192f; color: #fff; box-shadow: 0 4px 14px -6px rgba(10,25,47,0.45); }
+    .iam-shc-pills em { min-width: 16px; padding: 0 5px; border-radius: 100px; background: #f5f5f7; font-size: 9px; line-height: 15px; text-align: center; }
+    .iam-shc-pills .is-on em { background: rgba(255,255,255,0.22); }
+    .iam-shc-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 70px 50px; gap: 8px; align-items: center; height: 36px; padding: 0 14px; border-top: 1px solid rgba(10,25,47,0.07); }
+    .iam-shc-head { height: auto; padding: 8px 14px 7px; border-top: none; font-size: 8px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #99a2af; }
+    .iam-shc-head span { white-space: nowrap; }
+    .iam-shc-head span:nth-child(3) { justify-self: end; }
+    .iam-shc-sku { font-size: 9.5px; font-weight: 700; letter-spacing: 0.4px; color: #6b7686; white-space: nowrap; }
+    .iam-shc-name { font-size: 11px; font-weight: 600; color: #0a192f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-shc-amt { justify-self: end; font-size: 11.5px; color: #0a192f; white-space: nowrap; }
+    .iam-shc-st { font-size: 9.5px; font-weight: 700; color: #059669; white-space: nowrap; }
+
+    /* Mercado Pago */
+    .iam-mp { padding-left: calc(50% - 318px); min-height: 560px; }
+    .iam-mp-col { position: relative; z-index: 1; width: 400px; }
+    .iam-mp-back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 12px 4px; font-size: 11.5px; font-weight: 500; color: rgba(255,255,255,0.86); }
+    .iam-mp-card {
+        background: #fff; border-radius: 24px; padding: 22px 22px 20px; border: 1px solid rgba(10,25,47,0.05);
+        box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 28px 56px -14px rgba(10,25,47,0.3), 0 60px 100px -40px rgba(3,40,80,0.55);
+    }
+    .iam-mp-brand { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
+    .iam-mp-org { width: 34px; height: 34px; border-radius: 10px; background: #0a192f; color: #fff; display: grid; place-items: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+    .iam-mp-brand > span:last-child { display: flex; flex-direction: column; gap: 1px; }
+    .iam-mp-brand b { font-size: 13px; font-weight: 600; color: #050505; letter-spacing: -0.01em; }
+    .iam-mp-brand i { font-size: 10.5px; color: #6b7686; }
+    .iam-mp-amt { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px; margin-bottom: 16px; background: #f5f5f7; border-radius: 14px; }
+    .iam-mp-amt > span { font-size: 9px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #8a93a2; }
+    .iam-mp-amt b { font-size: 25px; line-height: 1.15; color: #050505; }
+    .iam-mp-amt small { font-size: 11.5px; font-weight: 600; color: #8a93a2; }
+    .iam-mp-amt em { font-size: 10.5px; color: #8a93a2; }
+    .iam-mp-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .iam-mp-tabs span { display: flex; flex-direction: column; gap: 5px; padding: 8px 10px; border: 1px solid #e3e6ea; border-radius: 10px; font-size: 10.5px; font-weight: 600; color: #6b7686; }
+    .iam-mp-tabs span.is-on { border-color: #0a192f; color: #0a192f; box-shadow: 0 0 0 1px #0a192f; }
+    .iam-mp-tabs .iam-i { width: 15px; height: 15px; }
+    .iam-mp-lbl { display: block; font-size: 10.5px; font-weight: 500; color: #4b5563; margin-bottom: 5px; }
+    .iam-mp-in { display: flex; align-items: center; justify-content: space-between; height: 34px; padding: 0 11px; border: 1px solid #e3e6ea; border-radius: 9px; font-size: 11.5px; color: #9aa3af; box-shadow: 0 1px 2px rgba(10,25,47,0.04); }
+    .iam-mp-in .editorial { font-weight: 500; letter-spacing: 0.02em; }
+    .iam-mp-brands { display: flex; gap: 4px; }
+    .iam-mp-brands img { width: 18px; height: 13px; object-fit: contain; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px #eceef1; }
+    .iam-mp-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .iam-mp-cta { display: flex; align-items: center; justify-content: center; gap: 5px; height: 40px; margin-top: 14px; border-radius: 12px; background: #0a192f; color: #fff; font-size: 12.5px; font-weight: 600; }
+    .iam-mp-or { display: flex; align-items: center; gap: 10px; margin: 13px 0 11px; font-size: 10.5px; color: #8a93a2; }
+    .iam-mp-or::before, .iam-mp-or::after { content: ''; flex: 1; height: 1px; background: rgba(10,25,47,0.1); }
+    .iam-mp-btn { display: flex; align-items: center; justify-content: center; gap: 9px; height: 46px; border-radius: 13px; background: #fff; color: #0a192f; font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.32), 0 0 0 4px rgba(0,158,227,0.16); }
+    .iam-mp-mark { width: 26px; height: 26px; color: #009ee3; flex-shrink: 0; }
+    .iam-mp-go { width: 12px; height: 12px; opacity: 0.6; }
+    .iam-mp-foot { display: flex; align-items: flex-start; justify-content: center; gap: 6px; margin: 12px 14px 0 !important; font-size: 10px; line-height: 1.45; color: rgba(255,255,255,0.78); text-align: center; }
+    .iam-mp-foot .iam-i { width: 11px; height: 11px; margin-top: 2px; }
+    .iam-mp-ok { top: 118px; left: calc(50% + 22px); width: 290px; border-radius: 12px; color: rgba(0,0,0,0.9); }
+    .iam-mp-ok-top { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #ededed; }
+    .iam-mp-ok-top img { width: 22px; height: 22px; border-radius: 6px; }
+    .iam-mp-ok-top b { font-size: 12px; font-weight: 700; color: #2d3277; }
+    .iam-mp-ok-sec { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; color: rgba(0,0,0,0.5); }
+    .iam-mp-ok-sec .iam-i { width: 10px; height: 10px; }
+    .iam-mp-ok-hero { display: flex; flex-direction: column; gap: 10px; padding: 16px 16px 18px; background: #00a650; color: #fff; }
+    .iam-mp-ok-ic { width: 34px; height: 34px; border-radius: 50%; background: #fff; color: #00a650; display: grid; place-items: center; }
+    .iam-mp-ok-ic .iam-i { width: 18px; height: 18px; stroke-width: 2.6; }
+    .iam-mp-ok-hero b { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.25; }
+    .iam-mp-ok-body { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 16px; }
+    .iam-mp-ok-amt { font-size: 23px; color: rgba(0,0,0,0.9); }
+    .iam-mp-ok-to { font-size: 11px; color: rgba(0,0,0,0.55); }
+    .iam-mp-ok-to b { color: rgba(0,0,0,0.9); font-weight: 600; }
+    .iam-mp-ok dl { display: flex; flex-direction: column; margin: 6px 0 6px !important; border-top: 1px solid #ededed; }
+    .iam-mp-ok dl > div { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid #ededed; font-size: 10.5px; }
+    .iam-mp-ok dt { color: rgba(0,0,0,0.55); }
+    .iam-mp-ok dd { display: inline-flex; align-items: center; gap: 5px; color: rgba(0,0,0,0.9); font-weight: 500; }
+    .iam-mp-ok dd img { width: 16px; height: 11px; border-radius: 2px; box-shadow: 0 0 0 1px #ececec; }
+    .iam-mp-ok-btn { display: grid; place-items: center; height: 34px; border-radius: 6px; background: #009ee3; color: #fff; font-size: 11.5px; font-weight: 600; }
+
+    /* Slack */
+    .iam-sl { padding: 0 0 84px 22px; }
+    .iam-sl-win { background: #3f0e40; border-color: rgba(30,0,32,0.4); color: #1d1c1d; }
+    .iam-sl-top { position: relative; height: 38px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.8); }
+    .iam-sl-hist { position: absolute; left: 76px; display: flex; gap: 12px; opacity: 0.65; }
+    .iam-sl-search { width: 44%; height: 24px; border-radius: 6px; background: rgba(255,255,255,0.18); display: flex; align-items: center; gap: 7px; padding: 0 10px; font-size: 11px; color: rgba(255,255,255,0.78); white-space: nowrap; overflow: hidden; }
+    .iam-sl-search .iam-i { width: 12px; height: 12px; }
+    .iam-sl-help { position: absolute; right: 14px; }
+    .iam-sl-shell { display: grid; grid-template-columns: 62px 192px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 468px; }
+    .iam-sl-rail { display: flex; flex-direction: column; align-items: center; gap: 11px; padding: 4px 0 12px; color: #fff; }
+    .iam-sl-ws { width: 34px; height: 34px; border-radius: 9px; background: #fff; color: #3f0e40; font-size: 12px; font-weight: 800; display: grid; place-items: center; margin-bottom: 4px; }
+    .iam-sl-ri { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.85); }
+    .iam-sl-ri i { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+    .iam-sl-ri .iam-i { width: 17px; height: 17px; }
+    .iam-sl-ri.is-on i { background: rgba(255,255,255,0.2); }
+    .iam-sl-me { margin-top: auto; }
+    .iam-sl-me .iam-av { width: 28px; height: 28px; font-size: 10px; border-radius: 7px; }
+    .iam-sl-side { display: flex; flex-direction: column; gap: 1px; padding: 8px 8px 0; margin-bottom: 6px; border-radius: 8px 0 0 8px; background: #4f2050; color: rgba(255,255,255,0.72); font-size: 12px; overflow: hidden; }
+    .iam-sl-side header { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 8px 10px; color: #fff; }
+    .iam-sl-side header b { font-size: 13.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-sl-it { display: flex; align-items: center; gap: 8px; min-height: 25px; padding: 0 8px; border-radius: 6px; white-space: nowrap; }
+    .iam-sl-it .iam-i { width: 14px; height: 14px; opacity: 0.85; }
+    .iam-sl-it img { width: 16px; height: 16px; border-radius: 4px; }
+    .iam-sl-it .iam-av { width: 18px; height: 18px; font-size: 7.5px; border-radius: 4px; }
+    .iam-sl-it.is-on { background: rgba(249,237,255,0.94); color: #39063a; font-weight: 700; }
+    .iam-sl-sec { display: flex; align-items: center; gap: 6px; padding: 10px 8px 3px; font-size: 11.5px; font-weight: 600; color: rgba(255,255,255,0.7); }
+    .iam-sl-sec .iam-i { width: 11px; height: 11px; }
+    .iam-sl-main { display: flex; flex-direction: column; min-width: 0; margin: 0 6px 6px 0; border-radius: 0 8px 8px 0; background: #fff; overflow: hidden; }
+    .iam-sl-ch { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px 6px; }
+    .iam-sl-ch b { display: inline-flex; align-items: center; gap: 3px; font-size: 14px; font-weight: 800; }
+    .iam-sl-ch b .iam-i:last-child { width: 11px; height: 11px; }
+    .iam-sl-mem { display: flex; align-items: center; gap: 8px; color: #616061; }
+    .iam-sl-mem em { font-size: 11px; font-weight: 600; margin-left: -2px; }
+    .iam-sl-stack { display: flex; }
+    .iam-sl-stack .iam-av { width: 20px; height: 20px; font-size: 7.5px; box-shadow: 0 0 0 2px #fff; }
+    .iam-sl-stack .iam-av + .iam-av { margin-left: -3px; }
+    .iam-sl-stack .iam-av:nth-child(1) { z-index: 3; }
+    .iam-sl-stack .iam-av:nth-child(2) { z-index: 2; }
+    .iam-sl-stack .iam-av { position: relative; }
+    .iam-sl-tabs { display: flex; gap: 16px; padding: 0 14px; border-bottom: 1px solid #e8e8e8; font-size: 11.5px; color: #616061; }
+    .iam-sl-tabs span { display: inline-flex; align-items: center; gap: 5px; padding: 5px 0 7px; }
+    .iam-sl-tabs .iam-i { width: 13px; height: 13px; }
+    .iam-sl-tabs .is-on { color: #1d1c1d; font-weight: 600; box-shadow: inset 0 -2px 0 #1d1c1d; }
+    .iam-sl-feed { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 0 6px; overflow: hidden; }
+    .iam-sl-day { position: relative; display: flex; justify-content: center; margin: 2px 0 4px; }
+    .iam-sl-day::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #e8e8e8; }
+    .iam-sl-day span { position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px 3px 12px; border: 1px solid #e0e0e0; border-radius: 999px; background: #fff; font-size: 10.5px; font-weight: 700; }
+    .iam-sl-day .iam-i { width: 10px; height: 10px; }
+    .iam-sl-msg { display: flex; gap: 9px; padding: 6px 16px; font-size: 12px; line-height: 1.46; }
+    .iam-sl-msg.is-new { background: #fdf8ec; }
+    .iam-sl-av { width: 32px; height: 32px; border-radius: 7px; flex-shrink: 0; }
+    .iam-sl-msg b { font-weight: 700; }
+    .iam-sl-who { display: flex; align-items: baseline; gap: 6px; }
+    .iam-sl-who b { font-size: 12.5px; font-weight: 900; }
+    .iam-sl-app { font-size: 8.5px; font-weight: 700; color: rgba(29,28,29,0.7); background: rgba(29,28,29,0.08); padding: 1px 3px; border-radius: 3px; }
+    .iam-sl-who time { font-size: 10.5px; color: #616061; }
+    .iam-sl-link { color: #1264a3; }
+    .iam-sl-thread { display: flex; align-items: center; gap: 5px; margin-top: 5px !important; font-size: 11px; }
+    .iam-sl-thread .iam-av { width: 18px; height: 18px; font-size: 7px; border-radius: 4px; }
+    .iam-sl-thread .iam-sl-link { font-weight: 700; margin-left: 2px; }
+    .iam-sl-thread span { color: #616061; }
+    .iam-sl-new { position: relative; height: 1px; margin: 7px 16px 3px; background: #e01e5a; }
+    .iam-sl-new span { position: absolute; right: 0; top: -7px; padding: 0 4px; background: #fff; font-size: 10px; font-weight: 700; color: #e01e5a; line-height: 14px; }
+    .iam-sl-compose { margin: 2px 14px 12px; border: 1px solid #bbbabb; border-radius: 8px; overflow: hidden; }
+    .iam-sl-fmt { display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: #f8f8f8; color: #a3a3a3; font-size: 11.5px; }
+    .iam-sl-fmt i { font-style: italic; }
+    .iam-sl-fmt .iam-i { width: 13px; height: 13px; }
+    .iam-sl-in { padding: 8px 11px 4px; font-size: 12px; color: #8a8a8a; }
+    .iam-sl-tools { display: flex; align-items: center; gap: 12px; padding: 4px 8px 6px; color: #616061; font-size: 11px; }
+    .iam-sl-tools .iam-i { width: 14px; height: 14px; }
+    .iam-sl-plus { width: 20px; height: 20px; border-radius: 50%; background: #efefef; display: grid; place-items: center; }
+    .iam-sl-plus .iam-i { width: 11px; height: 11px; }
+    .iam-sl-send { margin-left: auto; color: #b3b3b3; }
+    .iam-sl-wf { left: 0; bottom: 0; width: 272px; }
+
+    /* Cord Workflows panel (Slack + WhatsApp) */
+    .iam-wf { border-radius: 16px; }
+    .iam-wf-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px 11px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .iam-wf-t { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .iam-wf-t img { width: 18px; height: 18px; border-radius: 5px; }
+    .iam-wf-t b { font-size: 12.5px; font-weight: 700; letter-spacing: -0.02em; color: #0a192f; }
+    .iam-wf-head > .iam-i { color: #6b7686; }
+    .iam-wf-body { display: flex; flex-direction: column; gap: 11px; padding: 12px 14px 13px; }
+    .iam-wf-req { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #6b7686; line-height: 1.4; }
+    .iam-wf-req .iam-i { width: 12px; height: 12px; }
+    .iam-wf-f { display: flex; flex-direction: column; gap: 5px; }
+    .iam-wf-f > label { font-size: 10.5px; font-weight: 600; color: #0a192f; }
+    .iam-wf-in { padding: 7px 10px; border-radius: 10px; background: #f5f5f7; font-size: 11px; line-height: 1.5; color: #0a192f; }
+    .iam-wf-ta { min-height: 64px; }
+    .iam-wf-in em { font-weight: 600; color: #0a192f; background: rgba(10,25,47,0.06); border-radius: 4px; padding: 0 2px; }
+    .iam-wf-hint { font-size: 9.5px; line-height: 1.45; color: #6b7686; }
+    .iam-wf-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .iam-wf-chips span { padding: 3px 9px; border: 1px solid rgba(10,25,47,0.1); border-radius: 100px; font-size: 9.5px; font-weight: 600; color: #6b7686; }
+    .iam-wf-foot { display: flex; justify-content: flex-end; padding: 10px 14px; border-top: 1px solid rgba(10,25,47,0.08); }
+    .iam-wf-btn { padding: 6px 16px; border-radius: 999px; background: #0a192f; color: #fff; font-size: 11px; font-weight: 600; }
+
+    /* Zapier */
+    .iam-zp { padding: 0 0 92px 24px; }
+    .iam-zp-win { color: #201515; }
+    .iam-zp-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; height: 46px; padding: 0 12px; border-bottom: 1px solid #e7e5df; }
+    .iam-zp-tl { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; }
+    .iam-zp-tl img { width: 20px; height: 20px; border-radius: 5px; }
+    .iam-zp-crumb, .iam-zp-sep { color: #6b6a64; white-space: nowrap; }
+    .iam-zp-tl b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-zp-pen { width: 12px; height: 12px; color: #6b6a64; }
+    .iam-zp-tr { display: flex; align-items: center; gap: 12px; }
+    .iam-zp-ver { font-size: 10.5px; color: #6b6a64; white-space: nowrap; }
+    .iam-zp-pub { padding: 6px 14px; border-radius: 6px; background: #503ebd; color: #fff; font-size: 11px; font-weight: 600; }
+    .iam-zp-body { display: grid; grid-template-columns: 42px minmax(0, 1fr) 286px; grid-template-rows: minmax(0, 1fr); height: 400px; }
+    .iam-zp-rail { display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 14px; border-right: 1px solid #e7e5df; color: #6b6a64; }
+    .iam-zp-rail .iam-i { width: 16px; height: 16px; }
+    .iam-zp-canvas { position: relative; display: flex; flex-direction: column; align-items: center; padding-top: 16px; background-color: #f6f5f2; background-image: radial-gradient(rgba(32,21,21,0.16) 1px, transparent 1.2px); background-size: 16px 16px; }
+    .iam-zp-step { display: flex; align-items: center; gap: 10px; width: 264px; padding: 9px 11px; background: #fff; border: 1px solid #d7d4cb; border-radius: 8px; box-shadow: 0 1px 2px rgba(32,21,21,0.06); }
+    .iam-zp-step.is-sel { border-color: #695be8; box-shadow: 0 0 0 2px rgba(105,91,232,0.25), 0 6px 14px -8px rgba(60,40,160,0.35); }
+    .iam-zp-gly { width: 28px; height: 28px; padding: 3px; border: 1px solid #ecebe7; border-radius: 7px; background: #fff; flex-shrink: 0; }
+    .iam-zp-gly svg { width: 100%; height: 100%; }
+    .iam-zp-step img { width: 28px; height: 28px; padding: 3px; border: 1px solid #ecebe7; border-radius: 7px; background: #fff; }
+    .iam-zp-st { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+    .iam-zp-st small { display: inline-flex; align-items: center; gap: 3px; font-size: 9.5px; font-weight: 600; color: #6b6a64; }
+    .iam-zp-st small .iam-i { width: 10px; height: 10px; stroke: none; fill: #ff4f00; }
+    .iam-zp-st b { font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-zp-st i { font-size: 10px; color: #6b6a64; }
+    .iam-zp-ok { width: 16px; height: 16px; color: #1e8a4c; }
+    .iam-zp-link { position: relative; display: flex; justify-content: center; width: 20px; height: 26px; }
+    .iam-zp-link::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1.5px; margin-left: -0.75px; background: #b8b4a8; }
+    .iam-zp-link i { position: relative; align-self: center; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 1px solid #c9c6ba; color: #6b6a64; display: grid; place-items: center; }
+    .iam-zp-link .iam-i { width: 10px; height: 10px; }
+    .iam-zp-link.is-end::before { bottom: 50%; }
+    .iam-zp-zoom { position: absolute; right: 12px; bottom: 12px; display: flex; gap: 10px; padding: 6px 9px; background: #fff; border: 1px solid #e7e5df; border-radius: 6px; color: #6b6a64; }
+    .iam-zp-panel { display: flex; flex-direction: column; min-width: 0; border-left: 1px solid #e7e5df; }
+    .iam-zp-ph { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-bottom: 1px solid #eeece6; }
+    .iam-zp-ph img { width: 24px; height: 24px; border-radius: 6px; }
+    .iam-zp-ph > span { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .iam-zp-ph b { font-size: 12px; font-weight: 600; }
+    .iam-zp-ph i { font-size: 10px; color: #6b6a64; }
+    .iam-zp-ph > .iam-i { color: #6b6a64; }
+    .iam-zp-tabs { display: flex; gap: 14px; padding: 0 12px; border-bottom: 1px solid #eeece6; font-size: 11px; font-weight: 600; color: #6b6a64; }
+    .iam-zp-tabs span { display: inline-flex; align-items: center; gap: 4px; padding: 8px 0 7px; }
+    .iam-zp-tabs .iam-i { width: 13px; height: 13px; color: #1e8a4c; }
+    .iam-zp-tabs .is-on { color: #201515; box-shadow: inset 0 -2px 0 #695be8; }
+    .iam-zp-rec { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 12px 4px; padding: 7px 9px; border: 1px solid #d7d4cb; border-radius: 6px; }
+    .iam-zp-rec > span { display: flex; flex-direction: column; }
+    .iam-zp-rec b { font-size: 11px; font-weight: 600; }
+    .iam-zp-rec i { font-size: 9.5px; color: #6b6a64; }
+    .iam-zp-fields { display: flex; flex-direction: column; padding: 0 12px !important; overflow: hidden; }
+    .iam-zp-fields > div { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 8px; padding: 5px 0; border-bottom: 1px solid #f1efea; font-size: 10px; }
+    .iam-zp-fields dt { font-weight: 600; color: #6b6a64; }
+    .iam-zp-fields dd { color: #201515; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-zp-cont { display: grid; place-items: center; height: 30px; margin: auto 12px 12px; border-radius: 6px; background: #503ebd; color: #fff; font-size: 10.5px; font-weight: 600; }
+    .iam-gs { left: 0; bottom: 0; width: 372px; border-radius: 10px; color: #1f1f1f; }
+    .iam-gs-top { display: flex; align-items: center; gap: 9px; padding: 9px 11px 7px; }
+    .iam-gs-logo { width: 22px; height: 22px; flex-shrink: 0; }
+    .iam-gs-top > span { display: flex; flex-direction: column; min-width: 0; }
+    .iam-gs-top b { font-size: 12px; font-weight: 500; }
+    .iam-gs-top i { font-size: 9.5px; color: #444746; white-space: pre; overflow: hidden; }
+    .iam-gs-bar { display: flex; align-items: center; gap: 9px; padding: 4px 11px; border-top: 1px solid #e1e3e1; border-bottom: 1px solid #e1e3e1; font-size: 10px; }
+    .iam-gs-ref { width: 34px; color: #444746; }
+    .iam-gs-bar i { font-style: italic; color: #9aa0a6; }
+    .iam-gs-grid { display: grid; grid-template-columns: 24px 62px minmax(0, 1.55fr) 70px 38px 66px; font-size: 10px; }
+    .iam-gs-grid > * { height: 21px; padding: 0 6px; display: flex; align-items: center; border-right: 1px solid #e1e3e1; border-bottom: 1px solid #e1e3e1; white-space: nowrap; overflow: hidden; }
+    .iam-gs-grid > b { font-weight: 700; }
+    .iam-gs-hd, .iam-gs-rn { justify-content: center; background: #f8f9fa; color: #444746; font-size: 9.5px; padding: 0; }
+    .iam-gs-num { justify-content: flex-end; }
+    .iam-gs-grid .is-new { background: #e6f4ea; }
+    .iam-gs-rn.is-new { background: #d3e3fd; color: #0b57d0; font-weight: 700; }
+    .iam-gs-grid .is-cur { box-shadow: inset 0 0 0 2px #1a73e8; }
+    .iam-gs-tabs { display: flex; align-items: center; gap: 10px; padding: 5px 10px; background: #f8f9fa; color: #444746; font-size: 10px; }
+    .iam-gs-tabs span { padding: 3px 10px; border-radius: 4px; background: #e1e9f7; color: #0b57d0; font-weight: 600; }
+
+    /* Make */
+    .iam-mk { padding: 0 26px 76px 0; }
+    .iam-mk-win { display: grid; grid-template-columns: 48px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 452px; color: #1d1d1f; }
+    .iam-mk-side { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 11px 0; background: #2e0f50; color: rgba(255,255,255,0.62); }
+    .iam-mk-side img { width: 26px; height: 26px; border-radius: 7px; margin-bottom: 6px; }
+    .iam-mk-side .iam-i { width: 17px; height: 17px; }
+    .iam-mk-side .iam-i.is-on { color: #fff; }
+    .iam-mk-side .iam-i:last-child { margin-top: auto; }
+    .iam-mk-main { display: flex; flex-direction: column; min-width: 0; }
+    .iam-mk-top { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px; border-bottom: 1px solid #ececf1; font-size: 12.5px; }
+    .iam-mk-top b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-mk-pen { width: 12px; height: 12px; color: #8e8a99; }
+    .iam-mk-tr { margin-left: auto; display: flex; align-items: center; gap: 12px; color: #6e6a7c; }
+    .iam-mk-canvas { position: relative; flex: 1; overflow: hidden; background-color: #f4f4f6; background-image: radial-gradient(rgba(46,15,80,0.13) 1px, transparent 1.2px); background-size: 18px 18px; }
+    .iam-mk-wires { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .iam-mk-wires path { fill: none; stroke: #bdb5cc; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 0 11; }
+    .iam-mk-node { position: absolute; z-index: 1; display: flex; flex-direction: column; align-items: center; width: 140px; transform: translate(-50%, -36px); text-align: center; }
+    .iam-mk-node.is-sm { transform: translate(-50%, -24px); }
+    .iam-mk-bub { position: relative; width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; box-shadow: 0 0 0 6px rgba(255,255,255,0.75), 0 12px 22px -10px rgba(30,10,60,0.55); }
+    .iam-mk-bub.is-cord { background: #0a192f; }
+    .iam-mk-bub.is-cord img { width: 40px; height: 40px; border-radius: 9px; }
+    .iam-mk-bub.is-sheets { background: #0f9d58; }
+    .iam-mk-bub.is-sheets svg { width: 38px; height: 38px; }
+    .iam-mk-bub.is-slack { background: #4a154b; }
+    .iam-mk-bub.is-slack img { width: 32px; height: 32px; filter: brightness(0) invert(1); }
+    .iam-mk-bub.is-router { width: 48px; height: 48px; background: #7cb342; color: #fff; }
+    .iam-mk-bub.is-router .iam-i { width: 24px; height: 24px; stroke-width: 2; }
+    .iam-mk-ops { position: absolute; top: -5px; right: -5px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #fff; color: #1d1d1f; font-size: 11px; display: grid; place-items: center; box-shadow: 0 2px 6px rgba(30,10,60,0.28); }
+    .iam-mk-inst { position: absolute; left: -3px; bottom: -1px; width: 22px; height: 22px; border-radius: 50%; background: #fff; color: #6d00cc; display: grid; place-items: center; box-shadow: 0 2px 6px rgba(30,10,60,0.25); }
+    .iam-mk-inst .iam-i { width: 12px; height: 12px; stroke: none; fill: currentColor; }
+    .iam-mk-lbl { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 12px; font-size: 12px; font-weight: 700; }
+    .iam-mk-lbl em { padding: 0 5px; border-radius: 999px; background: #e7e4ee; color: #6e6a7c; font-size: 9px; font-weight: 600; line-height: 14px; }
+    .iam-mk-sub { margin-top: 1px; font-size: 10.5px; color: #6e6a7c; }
+    .iam-mk-flt { position: absolute; z-index: 1; display: flex; align-items: center; gap: 5px; transform: translate(-50%, -50%); font-size: 10px; font-weight: 600; color: #4b3a6b; white-space: nowrap; }
+    .iam-mk-flt i { width: 20px; height: 20px; border-radius: 50%; background: #fff; color: #6d00cc; display: grid; place-items: center; box-shadow: 0 1px 4px rgba(30,10,60,0.22); }
+    .iam-mk-flt .iam-i { width: 11px; height: 11px; }
+    .iam-mk-bar { display: flex; align-items: center; gap: 16px; height: 50px; padding: 0 14px; border-top: 1px solid #ececf1; font-size: 11px; color: #4a4658; }
+    .iam-mk-run { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 14px 0 5px; border-radius: 999px; background: #6d00cc; color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .iam-mk-run i { width: 21px; height: 21px; border-radius: 50%; background: #fff; color: #6d00cc; display: grid; place-items: center; }
+    .iam-mk-run .iam-i { width: 11px; height: 11px; stroke: none; fill: currentColor; }
+    .iam-mk-sched { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .iam-toggle.is-mk.is-on i { background: #6d00cc; }
+    .iam-mk-tools { margin-left: auto; display: flex; gap: 14px; color: #8e8a99; }
+    .iam-mk-insp { right: 0; bottom: 0; width: 304px; border-radius: 10px; color: #1d1d1f; }
+    .iam-mk-ih { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #ececf1; }
+    .iam-mk-mini { width: 22px; height: 22px; border-radius: 50%; background: #0a192f; display: grid; place-items: center; }
+    .iam-mk-mini img { width: 13px; height: 13px; border-radius: 3px; }
+    .iam-mk-ih b { flex: 1; font-size: 11.5px; font-weight: 700; }
+    .iam-mk-ih .iam-i { color: #8e8a99; }
+    .iam-mk-isub { padding: 8px 12px 0; font-size: 10px; color: #6e6a7c; }
+    .iam-mk-isec { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px 6px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.08em; color: #6d00cc; }
+    .iam-mk-isec .iam-i { width: 12px; height: 12px; }
+    .iam-mk-tree { list-style: none; display: flex; flex-direction: column; padding: 0 12px 12px !important; font-size: 10px; }
+    .iam-mk-tree li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; padding: 2px 0; border-bottom: 1px solid #f3f2f6; }
+    .iam-mk-tree li.d1 { padding-left: 12px; grid-template-columns: 84px minmax(0, 1fr); }
+    .iam-mk-tree li.d2 { padding-left: 24px; grid-template-columns: 72px minmax(0, 1fr); }
+    .iam-mk-tree li.is-grp { display: flex; align-items: center; gap: 3px; font-weight: 700; }
+    .iam-mk-tree li.is-grp .iam-i { width: 10px; height: 10px; color: #6e6a7c; }
+    .iam-mk-tree li.is-grp em { font-weight: 400; color: #8e8a99; }
+    .iam-mk-tree span { color: #6e6a7c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-mk-tree b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* n8n */
+    .iam-n8 { padding: 0 26px 50px 0; }
+    .iam-n8-win { display: grid; grid-template-columns: 48px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 452px; color: #1f2328; }
+    .iam-n8-side { display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 11px; background: #fbfbfc; border-right: 1px solid #e8e8ea; color: #7d7d87; }
+    .iam-n8-side img { width: 26px; height: 26px; border-radius: 7px; margin-bottom: 6px; }
+    .iam-n8-side .iam-i { width: 17px; height: 17px; }
+    .iam-n8-main { display: flex; flex-direction: column; min-width: 0; }
+    .iam-n8-top { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; height: 48px; padding: 0 14px; border-bottom: 1px solid #e8e8ea; font-size: 12px; }
+    .iam-n8-tl { display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; }
+    .iam-n8-crumb { color: #7d7d87; }
+    .iam-n8-tl b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+    .iam-n8-tag { padding: 1px 6px; border: 1px solid #e0e0e4; border-radius: 4px; font-size: 10px; color: #55555f; }
+    .iam-n8-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 6px; background: #f0f0f2; font-size: 11px; }
+    .iam-n8-seg > * { padding: 4px 11px; border-radius: 5px; color: #7d7d87; font-weight: 600; }
+    .iam-n8-seg b { background: #fff; color: #1f2328; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .iam-n8-tr { justify-self: end; display: flex; align-items: center; gap: 12px; font-size: 11px; white-space: nowrap; }
+    .iam-n8-act { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; color: #2f9e5a; }
+    .iam-toggle.is-n8.is-on i { background: #2f9e5a; }
+    .iam-n8-share { padding: 4px 10px; border: 1px solid #d9d9df; border-radius: 6px; font-weight: 600; }
+    .iam-n8-saved { color: #9a9aa3; }
+    .iam-n8-canvas { position: relative; flex: 1; overflow: hidden; background-color: #f5f5f5; background-image: radial-gradient(#cfd0d6 1px, transparent 1.2px); background-size: 20px 20px; }
+    .iam-n8-wires { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .iam-n8-wires path { fill: none; stroke: #a3a6ae; stroke-width: 2; }
+    .iam-n8-wires path.is-ok { stroke: #2f9e5a; }
+    .iam-n8-item { position: absolute; z-index: 1; transform: translate(-50%, -50%); padding: 0 4px; font-size: 9.5px; color: #2f9e5a; background: #f5f5f5; white-space: nowrap; }
+    .iam-n8-node { position: absolute; z-index: 1; display: flex; flex-direction: column; align-items: center; width: 150px; transform: translate(-50%, -38px); text-align: center; }
+    .iam-n8-box { position: relative; width: 76px; height: 76px; border-radius: 10px; background: #fff; border: 2px solid #c8ccd4; display: grid; place-items: center; box-shadow: 0 3px 8px -4px rgba(0,0,0,0.18); }
+    .iam-n8-node.is-ok .iam-n8-box { border-color: #2f9e5a; }
+    .iam-n8-node.is-trigger .iam-n8-box { border-radius: 38px 10px 10px 38px; }
+    .iam-n8-box img { width: 38px; height: 38px; border-radius: 8px; }
+    .iam-n8-bolt { position: absolute; left: -22px; top: 50%; width: 15px; height: 15px; margin-top: -7.5px; stroke: none; fill: #ff6d5a; }
+    .iam-n8-chk { position: absolute; right: 5px; bottom: 5px; width: 13px; height: 13px; color: #2f9e5a; stroke-width: 2.6; }
+    .iam-n8-if .iam-i:first-child { width: 36px; height: 36px; color: #408000; stroke-width: 1.6; }
+    .iam-n8-o { position: absolute; left: calc(100% + 6px); font-size: 9.5px; color: #7d7d87; }
+    .iam-n8-o.is-t { top: 14px; }
+    .iam-n8-o.is-f { bottom: 14px; }
+    .iam-n8-name { margin-top: 8px; font-size: 11.5px; font-weight: 600; }
+    .iam-n8-sub { margin-top: 1px; font-size: 10px; color: #7d7d87; }
+    .iam-n8-node:not(.is-ok) .iam-n8-box img { opacity: 0.9; }
+    .iam-n8-zoom { position: absolute; left: 12px; bottom: 14px; display: flex; gap: 5px; }
+    .iam-n8-zoom b { width: 26px; height: 26px; border: 1px solid #dcdce2; border-radius: 6px; background: #fff; color: #55555f; display: grid; place-items: center; }
+    .iam-n8-zoom .iam-i { width: 13px; height: 13px; }
+    .iam-n8-test { position: absolute; left: 36%; bottom: 14px; display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 14px; border-radius: 6px; background: #ff6d5a; color: #fff; font-size: 11.5px; font-weight: 600; transform: translateX(-50%); box-shadow: 0 8px 16px -10px rgba(255,109,90,0.9); white-space: nowrap; }
+    .iam-n8-test .iam-i { width: 13px; height: 13px; }
+    .iam-n8-ndv { right: 0; bottom: 0; width: 300px; border-radius: 10px; color: #1f2328; }
+    .iam-n8-nh { display: flex; align-items: center; gap: 8px; padding: 10px 12px 0; border-bottom: 1px solid #e8e8ea; }
+    .iam-n8-nh img { width: 20px; height: 20px; border-radius: 5px; margin-bottom: 9px; }
+    .iam-n8-nh > b { font-size: 12.5px; font-weight: 700; margin-bottom: 9px; }
+    .iam-n8-ntabs { margin-left: auto; display: flex; gap: 12px; font-size: 11px; color: #7d7d87; }
+    .iam-n8-ntabs > * { padding-bottom: 8px; }
+    .iam-n8-ntabs b { color: #ff6d5a; box-shadow: inset 0 -2px 0 #ff6d5a; font-weight: 600; }
+    .iam-n8-nb { display: flex; flex-direction: column; gap: 11px; padding: 11px 12px 13px; }
+    .iam-n8-coll { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #55555f; }
+    .iam-n8-coll .iam-i { width: 11px; height: 11px; }
+    .iam-n8-f { display: flex; flex-direction: column; gap: 5px; }
+    .iam-n8-f > label { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: #3d3d45; }
+    .iam-n8-f > label i { color: #ff6d5a; }
+    .iam-n8-f > label .iam-i { width: 12px; height: 12px; color: #9a9aa3; }
+    .iam-n8-sel { display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 9px; border: 1px solid #d9d9df; border-radius: 6px; font-size: 11px; }
+    .iam-n8-sel .iam-i { width: 11px; height: 11px; color: #7d7d87; }
+    .iam-n8-chips { display: flex; flex-wrap: wrap; gap: 5px; padding: 5px; border: 1px solid #d9d9df; border-radius: 6px; }
+    .iam-n8-chips span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px; border-radius: 4px; background: #f0f0f2; font-size: 10px; color: #3d3d45; }
+    .iam-n8-chips .iam-i { width: 9px; height: 9px; color: #9a9aa3; }
+    .iam-n8-sw { flex-direction: row; align-items: center; justify-content: space-between; }
+    .iam-n8-sw .iam-toggle.is-on i { background: #ff6d5a; }
+    .iam-n8-tip { position: relative; margin-top: -4px !important; padding: 7px 9px; border-radius: 6px; background: #2b2b31; color: #f5f5f7; font-size: 10px; line-height: 1.45; }
+    .iam-n8-tip span { white-space: nowrap; }
+    .iam-n8-tip::before { content: ''; position: absolute; left: 92px; top: -5px; width: 10px; height: 10px; background: #2b2b31; transform: rotate(45deg); }
+
+    /* Microsoft Teams */
+    .iam-tm { padding: 0 0 60px 24px; }
+    .iam-tm-win { background: #ebebeb; color: #242424; }
+    .iam-tm-title { position: relative; display: flex; align-items: center; justify-content: center; height: 40px; }
+    .iam-tm-hist { position: absolute; left: 76px; display: flex; gap: 10px; color: #616161; }
+    .iam-tm-search { width: 42%; height: 26px; display: flex; align-items: center; gap: 7px; padding: 0 10px; border-radius: 6px; background: #fff; border: 1px solid #e0e0e0; font-size: 11px; color: #616161; }
+    .iam-tm-search .iam-i { width: 12px; height: 12px; }
+    .iam-tm-me { position: absolute; right: 14px; display: flex; align-items: center; gap: 12px; color: #616161; }
+    .iam-tm-me .iam-av { width: 24px; height: 24px; font-size: 8.5px; }
+    .iam-tm-shell { display: grid; grid-template-columns: 64px 200px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: 468px; }
+    .iam-tm-rail { display: flex; flex-direction: column; align-items: center; gap: 2px; padding-top: 2px; }
+    .iam-tm-rail span { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 56px; padding: 7px 0; border-radius: 6px; font-size: 9px; color: #424242; }
+    .iam-tm-rail .iam-i { width: 18px; height: 18px; }
+    .iam-tm-rail span.is-on { color: #5b5fc7; font-weight: 600; background: rgba(255,255,255,0.6); }
+    .iam-tm-rail span.is-on::before { content: ''; position: absolute; left: -4px; top: 12px; bottom: 12px; width: 3px; border-radius: 2px; background: #5b5fc7; }
+    .iam-tm-list { display: flex; flex-direction: column; gap: 1px; padding: 10px 8px; border-radius: 8px 0 0 0; background: #f5f5f5; font-size: 11.5px; overflow: hidden; }
+    .iam-tm-list header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 10px; }
+    .iam-tm-list header b { font-size: 14px; font-weight: 700; }
+    .iam-tm-list header span { display: flex; gap: 10px; color: #616161; }
+    .iam-tm-team { display: flex; align-items: center; gap: 6px; padding: 6px 4px; font-weight: 600; white-space: nowrap; }
+    .iam-tm-team > .iam-i { width: 11px; height: 11px; color: #616161; }
+    .iam-tm-tile { width: 22px; height: 22px; border-radius: 5px; background: #4f52b2; color: #fff; font-size: 8.5px; font-weight: 700; display: grid; place-items: center; flex-shrink: 0; }
+    .iam-tm-tile.is-b { background: #3f6b5c; }
+    .iam-tm-tile.is-c { background: #7c5a3c; }
+    .iam-tm-chan { padding: 5px 8px 5px 45px; border-radius: 6px; color: #424242; }
+    .iam-tm-chan.is-on { background: #fff; color: #242424; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+    .iam-tm-main { display: flex; flex-direction: column; min-width: 0; background: #fff; }
+    .iam-tm-ch { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 46px; border-bottom: 1px solid #e0e0e0; }
+    .iam-tm-ch > b { font-size: 14px; font-weight: 700; }
+    .iam-tm-tabs { display: flex; align-items: center; gap: 14px; margin-left: 6px; font-size: 11.5px; color: #616161; align-self: stretch; }
+    .iam-tm-tabs span { display: flex; align-items: center; height: 100%; }
+    .iam-tm-tabs .is-on { color: #242424; font-weight: 600; box-shadow: inset 0 -3px 0 #5b5fc7; }
+    .iam-tm-meet { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border: 1px solid #d1d1d1; border-radius: 4px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .iam-tm-feed { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; padding: 12px 18px 10px; background: #f5f5f5; overflow: hidden; }
+    .iam-tm-post { max-width: 460px; border-radius: 6px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.1); }
+    .iam-tm-ph { display: flex; align-items: center; gap: 8px; padding: 9px 12px 0; font-size: 11.5px; }
+    .iam-tm-wf { width: 28px; height: 28px; border-radius: 6px; background: #0f6cbd; color: #fff; display: grid; place-items: center; }
+    .iam-tm-wf .iam-i { width: 15px; height: 15px; }
+    .iam-tm-ph b { font-weight: 600; }
+    .iam-tm-ph time { font-size: 10.5px; color: #616161; }
+    .iam-tm-card { display: flex; flex-direction: column; gap: 5px; padding: 2px 14px 11px 48px; }
+    .iam-tm-ct { font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; }
+    .iam-tm-card dl { display: flex; flex-direction: column; gap: 2px; }
+    .iam-tm-card dl > div { display: grid; grid-template-columns: 58px 1fr; gap: 10px; font-size: 11.5px; }
+    .iam-tm-card dt { font-weight: 600; }
+    .iam-tm-btn { display: grid; place-items: center; height: 28px; margin-top: 4px; border: 1px solid #d1d1d1; border-radius: 4px; font-size: 11.5px; font-weight: 600; }
+    .iam-tm-reply { display: flex; gap: 8px; padding: 8px 12px 8px 48px; border-top: 1px solid #f0f0f0; font-size: 11px; }
+    .iam-tm-reply .iam-av { width: 22px; height: 22px; font-size: 8px; }
+    .iam-tm-reply p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
+    .iam-tm-reply b { font-weight: 600; }
+    .iam-tm-reply time { font-size: 10px; color: #616161; }
+    .iam-tm-reply span { flex-basis: 100%; color: #242424; }
+    .iam-tm-compose { padding: 2px 18px 12px; background: #f5f5f5; }
+    .iam-tm-compose span { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 4px; background: #5b5fc7; color: #fff; font-size: 11.5px; font-weight: 600; }
+    .iam-nt { left: 0; bottom: 0; width: 300px; border-radius: 16px; }
+    .iam-nt-h { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px 9px; }
+    .iam-nt-h > span { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: #6b7686; }
+    .iam-nt-h .iam-i { width: 10px; height: 10px; }
+    .iam-nt-h b { font-size: 13px; font-weight: 700; letter-spacing: -0.02em; }
+    .iam-nt-row { display: grid; grid-template-columns: minmax(0, 1fr) 40px 40px 40px; align-items: center; padding: 7px 14px; border-top: 1px solid rgba(10,25,47,0.07); font-size: 10.5px; font-weight: 600; }
+    .iam-nt-row > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-nt-head { padding-top: 0; border-top: none; font-size: 8px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; color: #99a2af; text-align: center; }
+    .iam-nt-head .is-tm { color: #0a192f; }
+    .iam-nt-box { justify-self: center; width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid rgba(10,25,47,0.14); background: #f5f5f7; display: grid; place-items: center; color: #fff; }
+    .iam-nt-box.is-on { background: #10b981; border-color: #10b981; }
+    .iam-nt-box .iam-i { width: 10px; height: 10px; stroke-width: 3; }
+
+    /* WhatsApp */
+    .iam-wa { padding-left: calc(50% - 312px); min-height: 560px; }
+    .iam-wa-phone {
+        position: relative; z-index: 1; width: 330px; border-radius: 30px; overflow: hidden; background: #fff; border: 1px solid rgba(0,0,0,0.08); color: #111b21;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 18px 36px -18px rgba(3,40,28,0.4), 0 50px 90px -34px rgba(3,40,28,0.6);
+    }
+    .iam-wa-sb { display: flex; align-items: center; justify-content: space-between; height: 32px; padding: 4px 24px 0 30px; font-size: 12.5px; }
+    .iam-wa-sb > span { display: flex; align-items: center; gap: 5px; }
+    .iam-wa-sb .iam-i { width: 15px; height: 15px; }
+    .iam-wa-bat { width: 22px; height: 11px; border-radius: 3px; border: 1.5px solid #111b21; position: relative; }
+    .iam-wa-bat::after { content: ''; position: absolute; inset: 1.5px 5px 1.5px 1.5px; border-radius: 1px; background: #111b21; }
+    .iam-wa-head { display: flex; align-items: center; gap: 8px; padding: 6px 12px 9px 6px; border-bottom: 1px solid rgba(0,0,0,0.07); }
+    .iam-wa-back { width: 20px; height: 20px; color: #111b21; stroke-width: 2; }
+    .iam-wa-av { width: 34px; height: 34px; border-radius: 50%; background: #0a192f; color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; flex-shrink: 0; }
+    .iam-wa-who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .iam-wa-who b { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .iam-wa-who i { font-size: 10.5px; color: #667781; }
+    .iam-wa-hi { display: flex; gap: 16px; color: #111b21; }
+    .iam-wa-hi .iam-i { width: 18px; height: 18px; }
+    .iam-wa-chat {
+        display: flex; flex-direction: column; justify-content: flex-end; gap: 7px; height: 400px; padding: 10px 10px 8px; overflow: hidden;
+        background-color: #efeae2;
+        background-image: radial-gradient(rgba(84,101,111,0.1) 1.2px, transparent 1.5px), radial-gradient(rgba(84,101,111,0.07) 1px, transparent 1.2px);
+        background-size: 22px 22px, 14px 14px; background-position: 0 0, 7px 9px;
+    }
+    .iam-wa-sys { align-self: center; max-width: 84%; display: flex; gap: 6px; align-items: flex-start; padding: 6px 10px; border-radius: 8px; background: #fdf4c5; color: #54656f; font-size: 10px; line-height: 1.42; text-align: center; box-shadow: 0 1px 0.5px rgba(11,20,26,0.13); }
+    .iam-wa-sys .iam-i { width: 11px; height: 11px; margin-top: 2px; }
+    .iam-wa-day { align-self: center; padding: 4px 10px; border-radius: 8px; background: #fff; color: #54656f; font-size: 9.5px; font-weight: 500; text-transform: uppercase; box-shadow: 0 1px 0.5px rgba(11,20,26,0.13); }
+    .iam-wa-in { position: relative; align-self: flex-start; max-width: 86%; padding: 7px 9px 6px; border-radius: 0 9px 9px 9px; background: #fff; font-size: 11.5px; line-height: 1.45; box-shadow: 0 1px 0.5px rgba(11,20,26,0.13); }
+    .iam-wa-in::before { content: ''; position: absolute; left: -7px; top: 0; border-style: solid; border-width: 0 8px 9px 0; border-color: transparent #fff transparent transparent; }
+    .iam-wa-in b { font-weight: 600; }
+    .iam-wa-in.is-old { opacity: 0.9; }
+    .iam-wa-ft { display: block; margin-top: 4px; font-size: 10px; color: #667781; }
+    .iam-wa-in time { position: absolute; right: 9px; bottom: 5px; font-size: 9px; color: #667781; font-weight: 400; }
+    .iam-wa-bar { display: flex; align-items: center; gap: 10px; padding: 8px 12px 14px; background: #f6f6f6; color: #54656f; }
+    .iam-wa-bar .iam-i { width: 18px; height: 18px; }
+    .iam-wa-input { flex: 1; height: 30px; display: flex; align-items: center; padding: 0 12px; border-radius: 18px; background: #fff; border: 1px solid #e3e3e3; font-size: 11.5px; color: #8696a0; }
+    .iam-wa-mic { width: 30px; height: 30px; border-radius: 50%; background: #1daa61; color: #fff; display: grid; place-items: center; }
+    .iam-wa-mic .iam-i { width: 15px; height: 15px; }
+    .iam-wa-wf { top: 96px; left: calc(50% - 8px); width: 318px; }
+
+    @container iam (max-width: 760px) {
+        .iam-hs, .iam-sl, .iam-zp, .iam-mk, .iam-n8, .iam-tm, .iam-mp, .iam-wa { padding: 0; min-height: 0; }
+        .iam-layer { position: relative; inset: auto; width: min(100% - 22px, 330px); margin: -34px 0 0 auto; }
+        .iam-hs-win { width: 100%; }
+        .iam-hs-hide-s { display: none !important; }
+        .iam-mp-col, .iam-wa-phone { width: 100%; max-width: 420px; margin: 0 auto; }
+        .iam-mp-card { padding-bottom: 36px; }
+        .iam-mp-ok, .iam-wa-wf { margin-right: 0; }
+        .iam-sl-shell { grid-template-columns: 62px 176px minmax(0, 1fr); }
+        .iam-zp-body { grid-template-columns: 0 minmax(0, 1fr) 250px; }
+        .iam-zp-rail { visibility: hidden; }
+        .iam-tm-shell { grid-template-columns: 58px 170px minmax(0, 1fr); }
+        .iam-tm-tabs span:nth-child(3), .iam-tm-tabs .iam-i, .iam-tm-compose, .iam-mp-foot, .iam-n8-sub { display: none; }
+        .iam-mk-flt, .iam-mk-sched { font-size: 0; gap: 0; }
+        .iam-gs-grid { grid-template-columns: 22px 60px minmax(0, 1fr) 66px 0 0; }
+        .iam-gs-grid > :nth-child(6n+5), .iam-gs-grid > :nth-child(6n) { padding: 0; border: 0; }
+        .iam-sh { padding: 0; }
+        .iam-sh-win { width: 100%; }
+        .iam-sh-cat { width: min(100% - 22px, 400px); }
+        .iam-sh-body { height: auto; }
+        .iam-sh-layout { grid-template-columns: minmax(0, 1fr); }
+        .iam-sh-side, .iam-sh-hide-s { display: none; }
+        .iam-sh-main { padding-bottom: 40px; }
+    }
+
+    @container iam (max-width: 560px) {
+        .iam-layer { width: calc(100% - 18px); margin-top: -28px; }
+        .iam-win { border-radius: 12px; }
+        .iam-hs-search, .iam-hs-navr > .iam-i, .iam-hs-filters, .iam-hs-tabs > span:not(.is-on):not(.iam-hs-view) { display: none; }
+        .iam-hs-acct { font-size: 10px; }
+        .iam-hs-head { flex-wrap: wrap; }
+        .iam-hs-pipe { display: none; }
+        .iam-hs-actions .iam-hs-btn:not(.is-primary) { display: none; }
+        .iam-hs-c0, .iam-hs-c1 { display: none !important; }
+        .iam-hs-col { flex-basis: 146px; }
+        .iam-hs-pv-acts { display: none; }
+        .iam-mp-card { padding: 18px 16px 34px; border-radius: 20px; }
+        .iam-mp-amt b { font-size: 22px; }
+        .iam-sl-shell { grid-template-columns: minmax(0, 1fr); height: 420px; }
+        .iam-sl-rail, .iam-sl-side, .iam-sl-hist, .iam-sl-help { display: none; }
+        .iam-sl-main { margin: 0; border-radius: 0; }
+        .iam-sl-search { width: 78%; }
+        .iam-sl-tabs span:nth-child(n+3) { display: none; }
+        .iam-sl-msg { padding: 6px 12px; }
+        .iam-zp-body { grid-template-columns: minmax(0, 1fr); height: 330px; }
+        .iam-zp-rail, .iam-zp-panel, .iam-zp-ver, .iam-zp-crumb, .iam-zp-sep, .iam-zp-pen, .iam-zp-tr .iam-toggle { display: none; }
+        .iam-zp-step { width: min(264px, 100% - 28px); }
+        .iam-mk-win, .iam-n8-win { grid-template-columns: minmax(0, 1fr); height: 380px; }
+        .iam-mk-side, .iam-n8-side, .iam-mk-tools, .iam-mk-tr .iam-i, .iam-mk-pen, .iam-n8-seg, .iam-n8-share, .iam-n8-saved, .iam-n8-crumb, .iam-n8-tag, .iam-n8-zoom { display: none; }
+        .iam-mk-canvas { min-width: 440px; }
+        .iam-n8-canvas { min-width: 460px; }
+        .iam-mk-node { transform: translate(-50%, -36px) scale(0.8); transform-origin: 50% 36px; }
+        .iam-mk-node.is-sm { transform: translate(-50%, -24px) scale(0.8); transform-origin: 50% 24px; }
+        .iam-n8-node { transform: translate(-50%, -38px) scale(0.8); transform-origin: 50% 38px; }
+        .iam-mk-bar, .iam-n8-test { display: none; }
+        .iam-n8-canvas { left: 14px; box-shadow: -14px 0 0 #f5f5f5; }
+        .iam-n8-top { grid-template-columns: minmax(0, 1fr) auto; }
+        .iam-hs-col > footer, .iam-hs-pv-assoc { display: none; }
+        .iam-mp-back, .iam-mp-foot, .iam-mp-row2 { display: none; }
+        .iam-mp-ok-hero { padding: 13px 14px 14px; }
+        .iam-sl-msg.is-first, .iam-sl-thread span { display: none; }
+        .iam-wa-in.is-old, .iam-wa-day.is-old { display: none; }
+        .iam-tm-shell { grid-template-columns: minmax(0, 1fr); height: 410px; }
+        .iam-tm-rail, .iam-tm-list, .iam-tm-hist, .iam-tm-tabs span:nth-child(n+2), .iam-tm-tabs .iam-i { display: none; }
+        .iam-tm-search { width: 64%; }
+        .iam-tm-feed { padding: 12px 10px 8px; }
+        .iam-tm-card, .iam-tm-reply { padding-left: 12px; }
+        .iam-wa-chat { height: 312px; }
+        .iam-sh-top { grid-template-columns: auto minmax(0, 1fr) auto; }
+        .iam-sh-kbd, .iam-sh-store > span, .iam-sh-nav, .iam-sh-side, .iam-sh-hide-s, .iam-sh-pager, .iam-shc-count, .iam-shc-head { display: none; }
+        .iam-sh-body { grid-template-columns: minmax(0, 1fr); height: auto; }
+        .iam-sh-layout { grid-template-columns: minmax(0, 1fr); }
+        .iam-sh-main { padding: 12px 10px 38px; }
+        .iam-sh-vth, .iam-sh-vr { grid-template-columns: 13px 28px minmax(0, 1fr) 72px 58px; gap: 8px; padding: 0 10px; }
+        .iam-shc-search { width: auto; flex: 1; max-width: 150px; }
+        .iam-shc-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name st" "sku amt"; gap: 3px 10px; height: auto; padding: 9px 14px; }
+        .iam-shc-name { grid-area: name; }
+        .iam-shc-sku { grid-area: sku; }
+        .iam-shc-amt { grid-area: amt; }
+        .iam-shc-st { grid-area: st; justify-self: end; }
+    }
+</style>

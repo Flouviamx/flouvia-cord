@@ -267,70 +267,19 @@ El roadmap público (`/roadmap` y `/en/roadmap`) fue rediseñado para alcanzar u
 
    • Nodos magnéticos (`MagneticNodes.jsx`, jun 2026): **retirado en sep 2026**. El componente y su red de canvas dejaron de usarse en las páginas de casos de uso y se borraron del repo; el detalle de cómo funcionaba queda en el historial de Git.
 
-✅ **`ProductAccordion` — galería flex expandible WebGL en páginas de producto (jun 2026)** —
-   `src/components/producto/ProductAccordion.jsx` + `ProductAccordion.css` (prefijo `pac-*`).
-   Componente React montado en `/producto/[slug]` como `<ProductAccordion slug={feature.slug} client:only="react" />`.
-   • **Motor WebGL idéntico a `BlogCover.jsx`:** WebGL puro (sin R3F), FBM de 5 octavas con domain-warp de 2
-     capas (`q → r → fbm(uv+r)`), Tonemap Reinhard + dither anti-banding. 4 paletas navy/azul eléctrico
-     (todas oscuras, mismo espectro); uniforms `u_res/u_time/u_mouse/u_ca/u_cb/u_cc`.
-   • **Canvas de tamaño FIJO (480×560px):** se setea UNA vez al montar; CSS `width:100%; height:100%`
-     estira visualmente. **Sin `ResizeObserver`** — el bug crítico era que `ResizeObserver` se disparaba
-     en cada frame mientras GSAP animaba `flexGrow`, reiniciando el contexto WebGL y causando flashes
-     negros. Regla: **NUNCA redimensionar un canvas WebGL dentro de una animación de layout;**
-     fijar las dimensiones del canvas y dejar que CSS escale.
-   • **Tamaños inactivos variados:** `RESTING = [0.85, 1.55, 1.10, 1.75]` — cada posición tiene un
-     `flex-grow` de reposo distinto (estilo ElevenLabs), evitando que todas las tarjetas inactivas
-     luzcan iguales.
-   • **Tarjetas inactivas = shader + ícono apagado + etiqueta vertical:** el shader atmosférico +
-     ícono apagado (`opacity:0.46, scale:0.76` — ver ajuste jul 2026 abajo) + label rotado `.pac-vlabel`
-     ("01"/"02"/…) en la esquina inferior. Al activarse: ícono sube a pleno + bloque de texto (eyebrow +
-     título + subtítulo) aparece desde abajo; el `.pac-vlabel` se desvanece.
-   • **GSAP `flexGrow` con `expo.out 0.90s`:** en `useEffect` + `gsap.context()` + `.revert()` para
-     cleanup (sin `@gsap/react`). Los textos tienen stagger intencional: activo aparece a `t=0.26`,
-     inactivos se ocultan desde `t=0`.
-   • **Íconos duotone glass Apple-style:** `fillOpacity` en múltiples capas (12–18% fondo, 30–55%
-     detalle, 55–65% acento), `stroke 1.6–1.75px`, `strokeLinecap/Join="round"`.
-   • **`IntersectionObserver`** pausa el RAF cuando el canvas no está en viewport.
-   • **Mobile:** `flex-direction:column`, `flex-grow:unset`, transición de altura CSS
-     (inactiva 68px → activa 268px), sin GSAP en mobile.
-   • Se ELIMINÓ la sección `<!-- ── STATS ──` de `[slug].astro` (filas hairline con métricas
-     numéricas por feature). La sección fue borrada completamente; el `ProductAccordion` queda
-     directamente sobre los bloques de detalle `<!-- ── BLOQUES DE DETALLE ──`.
-   ⚠️ **Regla a futuro:** si se añade un nuevo shader a un contenedor cuyo tamaño es animado
-     por GSAP (o cualquier animación CSS), siempre usar canvas de tamaño fijo + CSS scaling.
-     No usar `ResizeObserver` en contenedores con transiciones de `flex-grow`/`width`/`height`.
-
-✅ **`ProductAccordion` — fix de bug de hover + pulido premium (jul 2026)** — André reportó que la
-   interacción de hover se sentía "apresurada" y tenía un bug reproducible: al pasar el cursor de la
-   última tarjeta hacia la penúltima, el hover a veces rebotaba hasta la PRIMERA en vez de quedarse en
-   la penúltima.
-   • **Causa raíz:** las tarjetas inactivas son angostas (~130px de `flex-grow`). Con `onMouseEnter`
-     disparando `setActiveIndex(i)` de inmediato, GSAP arrancaba al instante la animación de 0.90s que
-     agranda esa tarjeta — pero si el cursor seguía en movimiento (swipe rápido/trackpad), salía del
-     área todavía angosta ANTES de que terminara de crecer, disparando el `mouseenter` de la siguiente
-     tarjeta en cascada (a veces hasta 2-3 tarjetas de distancia), aterrizando en un índice muy distinto
-     al que el usuario apuntaba.
-   • **Fix — "dwell" antes de comprometer el hover:** se separaron `scheduleActive(i)` (usado en
-     `onMouseEnter`, debounce de `HOVER_DWELL = 140ms` vía `setTimeout` en un ref `hoverTimer`) de
-     `commitActive(i)` (usado en `onClick`/`onKeyDown`, comprometido al instante, sin debounce). Solo si
-     el cursor permanece quieto sobre una tarjeta ≥140ms se dispara `setActiveIndex` y arranca la
-     animación GSAP — para entonces el cursor ya no está en movimiento, así que no hay swipe que lo saque
-     del área antes de que termine de crecer. `onMouseLeave` cancela el timer pendiente. Verificado con
-     Playwright simulando el swipe exacto reportado (última tarjeta → penúltima con pocos pasos de
-     `mouse.move`): antes aterrizaba en el índice 0, después del fix aterriza en el índice correcto.
-   • **Bonus UX:** el mismo dwell resuelve la queja de "se siente muy rápida" — la interacción ahora se
-     lee como deliberada (el usuario tiene que "asentarse" sobre una tarjeta) en vez de saltar al primer
-     roce del cursor.
-   • **Pulido visual:** se reactivó el render de `.pac-vlabel` (la clase CSS ya existía pero nunca se
-     montaba en el JSX — ver corrección arriba); opacidad/escala de íconos inactivos subida de
-     `0.38/0.72` a `0.46/0.76` + offset vertical sutil (`y:4→0`) al activarse, para que no se sientan tan
-     "apagados"; anillo interior azul sutil (`inset 0 0 0 1px rgba(120,190,255,0.14)`) en `.pac-rim` de
-     la tarjeta activa + sombra compuesta más profunda (coherente con el color del `:focus-visible`
-     existente) — acento "quiet luxury", no glow saturado.
-   ⚠️ **Regla a futuro:** en cualquier UI de hover que dispare una animación de LAYOUT (flex-grow,
-     width, height — no solo opacity/transform), separar el "intent" del cursor (debounce) del commit
-     real del estado. Comprometer el cambio de estado en el mismo frame que el `mouseenter` crudo es lo
-     que causa el rebote cuando el target es angosto y el movimiento del cursor es rápido.
+✅ **Banda diagonal del hero de producto (sep 2026)** — `/producto/[slug]` ya no tiene la galería
+   `ProductAccordion` (retirada y borrada del repo). En su lugar el hero lleva `.pp-band`, una franja a
+   12° estilo Stripe detrás de la mitad inferior del mockup, con `CordDynamicBg` encima de un
+   `linear-gradient` de cuatro paradas (`backdrop="transparent"` deja ver el degradado bajo el shader).
+   • **La paleta sale del grupo del megamenú:** `BAND_GROUP` en `[slug].astro` asigna cada feature a
+     Flujo de ventas (azules), Pagos y finanzas (verdes) o Facturación y operación (violeta a ámbar);
+     `BAND_PALS` define las paradas CSS y los colores del shader. Un feature nuevo se agrega a los dos
+     mapas y al megamenú de `Nav.astro`.
+   • **Geometría:** `--band-t` (grosor) y `--band-rise` (21.3vw = tan 12°) en `.pp-hero`; el
+     `padding-bottom` deja libre la columna de texto y `.pp-hero-visual` baja con `translate` para
+     montarse sobre la banda. En layout apilado (≤1000px) el mockup no se desplaza y la banda entra
+     por debajo de él.
+   • Con `prefers-reduced-motion` el canvas no se monta y queda el degradado CSS.
 
 ✅ **Hero de producto rediseñado: split-layout + 100dvh + mockups light mode (jul 2026)** —
    Reescritura del template `src/pages/producto/[slug].astro` en tres ejes:

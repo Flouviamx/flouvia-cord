@@ -208,7 +208,9 @@ y accesos aireados a producto, precios y soporte.
 
 - El único shader es `src/components/CordDynamicBg.jsx`, el aurora GLSL compartido.
   No crees otro shader ni lo simules con gradientes CSS animados.
-- `CordDynamicBg` acepta `maskImage`, `maskSize`, `maskPosition` y `maskRepeat`.
+- `CordDynamicBg` acepta `maskImage`, `maskSize`, `maskPosition` y `maskRepeat`, y
+  `backdrop` para el fondo del contenedor (por defecto `colors.base`; la banda de
+  `/producto` pasa `transparent` para dejar ver su degradado).
   La máscara vive en el `div` raíz React para recortar canvas, grano y color base
   sin cambiar a los consumidores que no pasan props.
 - `public/404-mask.svg` usa paths vectoriales, no texto dependiente de una fuente.
@@ -337,7 +339,6 @@ no certifica publicación ni cambia el estado de los dominios propios.
   `automatizacion/` y `pagos/mercado-pago`; al cambiar una integración se actualizan
   los dos.
 - `/producto/workflows` es un feature más de `src/lib/producto.ts`, con mockups en
-  `[slug].astro`, `BlockMockup` y `ShowcaseMockup`, y sus diapositivas en
-  `ProductAccordion.jsx`.
+  `[slug].astro`, `BlockMockup` y `ShowcaseMockup`.
 - La home enlaza a todas desde `ConnectSection.astro`; el megamenú y el footer
   llevan Workflows e Integraciones.

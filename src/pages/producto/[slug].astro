@@ -9,8 +9,9 @@ import Nav from '../../components/landing/Nav.astro';
 import Footer from '../../components/landing/Footer.astro';
 import PageAnims from '../../components/landing/PageAnims.astro';
 import BlockMockup from '../../components/producto/BlockMockup.astro';
-import ProductAccordion from '../../components/producto/ProductAccordion.jsx';
+import CordDynamicBg from '../../components/CordDynamicBg.jsx';
 import FeatureShowcase from '../../components/producto/FeatureShowcase.astro';
+import QuoteBuilderDemo from '../../components/producto/QuoteBuilderDemo.astro';
 import FaqAccordion from '../../components/landing/FaqAccordion.astro';
 import { FEATURES } from '../../lib/producto';
 import { FEATURES_EN } from '../../lib/producto.en';
@@ -65,6 +66,29 @@ const DOCS_PATH: Record<string, string> = {
     'negociacion':      'interaccion/chat',
 
 };
+// Grupo del megamenú (Nav.astro) al que pertenece cada feature: decide la paleta de la banda del hero.
+const BAND_GROUP: Record<string, 'ventas' | 'pagos' | 'operacion'> = {
+    'editor': 'ventas', 'link-publico': 'ventas', 'seguimiento': 'ventas', 'aprobaciones': 'ventas', 'negociacion': 'ventas',
+    'pagos': 'pagos', 'cobranza-ia': 'pagos', 'divisas': 'pagos', 'clientes-credito': 'pagos', 'finanzas': 'pagos',
+    'facturacion': 'operacion', 'workflows': 'operacion', 'equipo': 'operacion',
+};
+const BAND_PALS = {
+    ventas: {
+        stops: ['#3A2EE8', '#2563EB', '#0EA5E9', '#22D3EE'],
+        shader: { base: '#2E4BF5', color1: '#67E8F9', color2: '#818CF8', color3: '#38BDF8' },
+    },
+    pagos: {
+        stops: ['#065F46', '#059669', '#10B981', '#2DD4BF'],
+        shader: { base: '#07875F', color1: '#6EE7B7', color2: '#2DD4BF', color3: '#BEF264' },
+    },
+    operacion: {
+        stops: ['#5B21B6', '#7C3AED', '#DB2777', '#F97316'],
+        shader: { base: '#6B3CF0', color1: '#C084FC', color2: '#F472B6', color3: '#FDBA74' },
+    },
+};
+const band = BAND_PALS[BAND_GROUP[feature.slug] ?? 'ventas'];
+const bandStyle = band.stops.map((c, i) => `--band-${i}:${c}`).join(';');
+
 const docsUrl = isEn ? `https://docs.cordhq.app/en/docs/${DOCS_PATH[feature.slug] ?? 'resumen'}` : `https://docs.cordhq.app/docs/${DOCS_PATH[feature.slug] ?? 'resumen'}`;
 
 const allFeatures = isEn ? FEATURES_EN : FEATURES;
@@ -218,6 +242,9 @@ const howtoSchema = howto ? {
         <!-- ── HERO ── -->
         <section class="pp-hero">
             <div class="pp-hero-mesh" aria-hidden="true"></div>
+            <div class="pp-band" aria-hidden="true" style={bandStyle}>
+                <CordDynamicBg client:only="react" colors={band.shader} backdrop="transparent" grain={false} />
+            </div>
             <div class="pp-hero-inner">
                 <div class="pp-hero-text">
                     <h1 class="pp-title masked-title" set:html={feature.titulo} />
@@ -773,8 +800,7 @@ const howtoSchema = howto ? {
             </div>
         </section>
 
-        <!-- ── PRODUCT ACCORDION ── -->
-        <ProductAccordion slug={feature.slug} lang={isEn ? 'en' : 'es'} client:only="react" />
+        {feature.slug === 'link-publico' && <QuoteBuilderDemo isEn={isEn} />}
 
         <!-- ── BENTO GRID ── -->
         <section class="pp-bento">
@@ -854,12 +880,24 @@ const howtoSchema = howto ? {
 <style>
     /* ════════ HERO — fills exactly 100dvh ════════ */
     .pp-hero {
+        --band-t: clamp(150px, 16vw, 260px);
+        --band-rise: 21.3vw;
         position: relative;
         min-height: 100dvh;
         display: flex;
         align-items: center;
         overflow-x: clip;
+        padding-bottom: calc(var(--band-t) + 8.5vw - 1rem);
         background: var(--color-bg);
+    }
+    /* Banda diagonal estilo Stripe: 12° (tan 12° ≈ 0.213 → 21.3vw de subida). El
+       padding-bottom deja libre la columna de texto hasta el 40% del ancho. */
+    .pp-band {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        height: calc(var(--band-t) + var(--band-rise));
+        clip-path: polygon(0 calc(100% - var(--band-t)), 100% 0, 100% var(--band-t), 0 100%);
+        background: linear-gradient(100deg, var(--band-0) 5%, var(--band-1) 35%, var(--band-2) 68%, var(--band-3) 98%);
+        pointer-events: none;
     }
     .pp-hero-mesh {
         position: absolute; inset: -20% -10% auto;
@@ -887,6 +925,7 @@ const howtoSchema = howto ? {
     .pp-hero-visual {
         position: relative;
         overflow: visible;
+        translate: 0 calc(var(--band-t) * 0.6);
         margin-right: -16%;
         display: flex;
         align-items: center;
@@ -1781,11 +1820,12 @@ const howtoSchema = howto ? {
         .pp-hero {
             min-height: 100dvh;
             align-items: flex-start;
+            padding-bottom: calc(var(--band-t) * 0.5);
         }
         .pp-hero-inner {
             grid-template-columns: 1fr;
             gap: 0;
-            padding: 1rem 6% 3rem;
+            padding: 1rem 6% 1rem;
         }
         .pp-hero-text {
             padding-bottom: 2.5rem;
@@ -1796,6 +1836,7 @@ const howtoSchema = howto ? {
             margin-right: 0;
             justify-content: flex-start;
             min-width: 0;
+            translate: none;
         }
         .pp-mockup-wrap { max-width: 100%; }
     }

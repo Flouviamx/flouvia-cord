@@ -1,0 +1,5 @@
+---
+interface Props { isEn?: boolean }
+const { isEn = false } = Astro.props;
+---
+<section class="qbd" data-quote-demo data-lang={isEn ? 'en' : 'es'}></section>

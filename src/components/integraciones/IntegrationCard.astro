@@ -1,0 +1,61 @@
+---
+import type { IntegrationLanding } from '../../lib/integraciones-landing';
+import { INTEGRATION_STORY } from '../../lib/integraciones-historia';
+
+interface Props {
+    page: IntegrationLanding;
+    href: string;
+    en?: boolean;
+}
+
+const { page, href, en = false } = Astro.props;
+const story = INTEGRATION_STORY[page.slug];
+const copy = en ? page.en : page.es;
+const cardImage = `/imgs/integrations/cards/${page.slug}.jpg`;
+---
+
+<a href={href} class="icard" style={`--ic-from:${story.brand.from};--ic-to:${story.brand.to}`}>
+    <span class="icard-art" aria-hidden="true">
+        <img class="icard-img" src={cardImage} alt="" width="564" height="752" loading="lazy" decoding="async" />
+        <span class="icard-fade"></span>
+        <span class="icard-mark">
+            <img class="icard-logo" src={page.logo} alt="" width="26" height="26" loading="lazy" />
+            <span class="icard-name">{page.nombre}</span>
+        </span>
+    </span>
+    <span class="icard-caption">{copy.resumen}</span>
+</a>
+
+<style>
+    .icard { display: flex; flex-direction: column; gap: 1.1rem; text-decoration: none; color: inherit; height: 100%; }
+    .icard-art {
+        position: relative; display: block; aspect-ratio: 3 / 4; border-radius: 22px; overflow: hidden;
+        background: linear-gradient(165deg, var(--ic-from) 0%, var(--ic-to) 100%);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 4px 12px -4px rgba(10,25,47,0.12), 0 12px 30px -12px rgba(10,25,47,0.15);
+        transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        will-change: transform, box-shadow;
+    }
+    .icard-img {
+        position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    }
+    .icard-fade {
+        position: absolute; inset: auto 0 0; height: 46%; pointer-events: none;
+        background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--ic-to) 70%, transparent) 55%, var(--ic-to) 100%);
+    }
+    .icard-mark { position: absolute; left: 1.2rem; bottom: 1.15rem; right: 1.2rem; display: flex; align-items: center; gap: 10px; }
+    .icard-logo { width: 28px; height: 28px; border-radius: 24%; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 1px 4px rgba(0,0,0,0.3)); }
+    .icard-name { font-size: 1.28rem; font-weight: 700; letter-spacing: -0.035em; color: #fff; line-height: 1.1; text-shadow: 0 1px 12px rgba(0,0,0,0.25); }
+    .icard-caption { font-size: 0.98rem; line-height: 1.45; font-weight: 500; letter-spacing: -0.01em; color: #0a192f; text-wrap: pretty; transition: color 0.4s ease; }
+    
+    .icard:hover .icard-art { 
+        transform: translateY(-5px) scale(1.02); 
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25), 0 12px 20px -8px rgba(10,25,47,0.15), 0 35px 60px -15px rgba(10,25,47,0.35); 
+    }
+    .icard:hover .icard-caption { color: var(--color-blue-deep); }
+    .icard:active .icard-art { transform: translateY(-1px) scale(0.99); transition-duration: 0.2s; }
+    .icard:focus-visible { outline: none; }
+    .icard:focus-visible .icard-art { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) {
+        .icard-art, .icard-img { transition: none; }
+    }
+</style>

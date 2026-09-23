@@ -4,9 +4,12 @@ import Nav from '../landing/Nav.astro';
 import Footer from '../landing/Footer.astro';
 import PageAnims from '../landing/PageAnims.astro';
 import FaqAccordion from '../landing/FaqAccordion.astro';
+import IntegrationAppMockup from './IntegrationAppMockup.astro';
+import IntegrationCard from './IntegrationCard.astro';
 import { CATEGORY_LABEL, INTEGRATION_PAGES, type IntegrationLanding } from '../../lib/integraciones-landing';
 import { FEATURES } from '../../lib/producto';
 import { FEATURES_EN } from '../../lib/producto.en';
+import { INTEGRATION_STORY } from '../../lib/integraciones-historia';
 import { SITE, SOFTWARE_ID } from '../../lib/seo/entities';
 
 interface Props {
@@ -26,6 +29,11 @@ const producto = (isEn ? FEATURES_EN : FEATURES).find((f) => f.slug === page.pro
 const related = page.related
     .map((slug) => INTEGRATION_PAGES.find((p) => p.slug === slug))
     .filter(Boolean) as IntegrationLanding[];
+const story = INTEGRATION_STORY[page.slug];
+const datos = (isEn ? story.en : story.es).datos;
+const [firstBlock, ...restBlocks] = c.blocks;
+const brandVars = `--ig-from:${story.brand.from};--ig-to:${story.brand.to};--ig-accent:${story.brand.accent}`;
+const arrow = 'M5 12h14M13 6l6 6-6 6';
 
 const schema = {
     '@context': 'https://schema.org',
@@ -68,129 +76,180 @@ const schema = {
 <Layout title={c.metaTitle} description={c.metaDescription} imageAlt={`Cord + ${page.nombre}`}>
     <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
     <Nav />
-    <main class="ig">
-        <section class="ig-hero">
-            <div class="ig-hero-mesh" aria-hidden="true"></div>
-            <div class="ig-hero-inner">
+    <main class="ig" style={brandVars}>
+        <div class="ig-wrap">
+            <div class="ig-crumbbar reveal">
+                <nav class="ig-crumbs" aria-label={isEn ? 'Breadcrumb' : 'Ruta'}>
+                    <a href={`${pre}/integraciones`}>{hubLabel}</a>
+                    <span aria-hidden="true">/</span>
+                    <span>{page.nombre}</span>
+                </nav>
+                <div class="ig-jump">
+                    <a href="#como-conectar">{isEn ? 'How to connect' : 'Cómo conectar'}</a>
+                    <a href={`#faq-${page.slug}`}>{isEn ? 'Questions' : 'Preguntas'}</a>
+                    <a href={`${pre}/integraciones`}>{isEn ? 'All integrations' : 'Todas las integraciones'}</a>
+                </div>
+            </div>
+
+            <section class="ig-hero">
                 <div class="ig-hero-text">
-                    <nav class="ig-crumbs reveal" aria-label={isEn ? 'Breadcrumb' : 'Ruta'}>
-                        <a href={`${pre}/integraciones`}>{hubLabel}</a>
-                        <span aria-hidden="true">/</span>
-                        <span>{page.nombre}</span>
-                    </nav>
                     <h1 class="ig-title masked-title">{c.titulo}</h1>
                     <p class="ig-sub reveal">{c.sub}</p>
                     <div class="ig-actions reveal">
                         <a href="/sign-up" class="ig-btn-primary">
                             <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={arrow}/></svg>
                         </a>
                         {c.guias[0] && <a href={c.guias[0].href} class="ig-btn-ghost">{isEn ? 'Read the guide' : 'Ver la guía'}</a>}
                     </div>
-                    <p class="ig-plan reveal">{c.plan}</p>
                 </div>
 
-                <div class="ig-visual reveal-mockup">
-                    <div class="ig-pair">
-                        <div class="ig-tile"><img src="/favicon-192x192.png" alt="Cord" width="56" height="56" /></div>
-                        <div class="ig-cord" aria-hidden="true"><span class="ig-cord-pulse"></span></div>
-                        <div class="ig-tile"><img src={page.logo} alt={page.nombre} width="56" height="56" /></div>
+                <aside class="ig-facts reveal">
+                    <div class="ig-facts-head">
+                        <span class="ig-facts-logo"><img src={page.logo} alt="" width="46" height="46" /></span>
+                        <b>{page.nombre}</b>
                     </div>
-                    <div class="ig-sync">
-                        <div class="ig-sync-head">
-                            <b>{c.flujoTitulo}</b>
-                            <span class="ig-live"><i></i>{category}</span>
-                        </div>
-                        {c.flujo.map((row) => (
-                            <div class="ig-sync-row">
-                                <span class="ig-sync-cord">{row.cord}</span>
-                                <svg class="ig-sync-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
-                                <span class="ig-sync-app"><b>{row.app}</b><em>{row.dir}</em></span>
-                            </div>
-                        ))}
+                    <div class="ig-facts-sec">
+                        <p class="ig-facts-label">{isEn ? 'What it connects' : 'Qué conecta'}</p>
+                        <ul>{c.flujo.map((f) => <li>{f.cord}</li>)}</ul>
                     </div>
-                </div>
-            </div>
-        </section>
+                    <div class="ig-facts-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2" fill="currentColor" fill-opacity="0.13"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2" fill="currentColor" fill-opacity="0.13"/></svg>
+                        <span>{category}</span>
+                    </div>
+                    <div class="ig-facts-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.13"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+                        <span>{c.plan}</span>
+                    </div>
+                </aside>
+            </section>
 
-        <section class="ig-blocks">
-            {c.blocks.map((b, i) => (
-                <article class="ig-block reveal">
-                    <span class="ig-block-num editorial">{String(i + 1).padStart(2, '0')}</span>
-                    <div class="ig-block-text">
-                        <p class="ig-eyebrow">{b.eyebrow}</p>
-                        <h2 class="ig-block-title">{b.titulo}</h2>
-                        <p class="ig-block-copy">{b.copy}</p>
-                    </div>
-                    <ul class="ig-bullets">
-                        {b.bullets.map((bullet) => (
-                            <li>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.13"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
-                                <span>{bullet}</span>
+            <section class="ig-show reveal-mockup" aria-label={isEn ? `Cord in ${page.nombre}` : `Cord en ${page.nombre}`}>
+                <div class="ig-show-art" aria-hidden="true"></div>
+                <div class="ig-show-stage">
+                    <IntegrationAppMockup slug={page.slug} logo={page.logo} en={isEn} />
+                </div>
+            </section>
+
+            <div class="ig-story">
+                <aside class="ig-rail">
+                    <ul class="ig-stats">
+                        {datos.map((d) => (
+                            <li class="reveal">
+                                <b>{d.valor}</b>
+                                <span>{d.texto}</span>
                             </li>
                         ))}
                     </ul>
-                </article>
-            ))}
-        </section>
+                    <div class="ig-rail-cta reveal">
+                        <p>{isEn ? 'Ready to connect it?' : '¿Todo listo para conectarla?'}</p>
+                        <a href="/sign-up" class="ig-btn-primary ig-btn-sm">
+                            <span>{isEn ? 'Start for free' : 'Empezar gratis'}</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={arrow}/></svg>
+                        </a>
+                    </div>
+                </aside>
 
-        <section class="ig-steps">
-            <div class="ig-steps-inner">
-                <p class="ig-eyebrow reveal">{isEn ? 'SETUP' : 'CONFIGURACIÓN'}</p>
-                <h2 class="ig-section-title reveal">{isEn ? `How to connect ${page.nombre}` : `Cómo conectar ${page.nombre}`}</h2>
-                <ol class="ig-step-list">
-                    {c.pasos.map((step, i) => (
-                        <li class="ig-step reveal">
-                            <span class="ig-step-n editorial">{i + 1}</span>
-                            <div>
-                                <h3>{step.name}</h3>
-                                <p>{step.text}</p>
+                <div class="ig-body">
+                    {firstBlock && (
+                        <article class="ig-chapter reveal">
+                            <p class="ig-eyebrow">{firstBlock.eyebrow}</p>
+                            <h2>{firstBlock.titulo}</h2>
+                            <p>{firstBlock.copy}</p>
+                            <ul class="ig-bullets">
+                                {firstBlock.bullets.map((b) => <li>{b}</li>)}
+                            </ul>
+                        </article>
+                    )}
+
+                    <figure class="ig-flow reveal">
+                        <div class="ig-flow-head">
+                            <span class="ig-flow-pair" aria-hidden="true">
+                                <img src="/favicon-192x192.png" alt="" width="30" height="30" />
+                                <i></i>
+                                <img src={page.logo} alt="" width="30" height="30" />
+                            </span>
+                            <figcaption>{c.flujoTitulo}</figcaption>
+                        </div>
+                        <div class="ig-flow-table">
+                            <div class="ig-flow-th">
+                                <span>Cord</span>
+                                <span>{page.nombre}</span>
                             </div>
-                        </li>
+                            {c.flujo.map((row) => (
+                                <div class="ig-flow-row">
+                                    <span class="ig-flow-cord">{row.cord}</span>
+                                    <span class="ig-flow-app"><b>{row.app}</b><em>{row.dir}</em></span>
+                                </div>
+                            ))}
+                        </div>
+                    </figure>
+
+                    {restBlocks.map((b) => (
+                        <article class="ig-chapter reveal">
+                            <p class="ig-eyebrow">{b.eyebrow}</p>
+                            <h2>{b.titulo}</h2>
+                            <p>{b.copy}</p>
+                            <ul class="ig-bullets">
+                                {b.bullets.map((bullet) => <li>{bullet}</li>)}
+                            </ul>
+                        </article>
                     ))}
-                </ol>
-            </div>
-        </section>
 
-        <section class="ig-limits">
-            <div class="ig-limits-inner reveal">
-                <div>
-                    <p class="ig-eyebrow">{isEn ? 'NO SURPRISES' : 'SIN SORPRESAS'}</p>
-                    <h2 class="ig-section-title">{isEn ? 'What it does not do yet' : 'Lo que todavía no hace'}</h2>
-                    <p class="ig-limits-lede">{isEn ? 'We would rather you read it here than find it out halfway through.' : 'Preferimos que lo leas aquí a que lo descubras a medio camino.'}</p>
+                    <section class="ig-chapter" id="como-conectar">
+                        <p class="ig-eyebrow reveal">{isEn ? 'SETUP' : 'CONFIGURACIÓN'}</p>
+                        <h2 class="reveal">{isEn ? `How to connect ${page.nombre}` : `Cómo conectar ${page.nombre}`}</h2>
+                        <ol class="ig-steps">
+                            {c.pasos.map((step, i) => (
+                                <li class="reveal">
+                                    <span class="ig-step-n editorial">{i + 1}</span>
+                                    <div>
+                                        <h3>{step.name}</h3>
+                                        <p>{step.text}</p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
+                    </section>
+
+                    <section class="ig-chapter ig-limits reveal">
+                        <p class="ig-eyebrow">{isEn ? 'NO SURPRISES' : 'SIN SORPRESAS'}</p>
+                        <h2>{isEn ? 'What it does not do yet' : 'Lo que todavía no hace'}</h2>
+                        <p>{isEn ? 'We would rather you read it here than find it out halfway through.' : 'Preferimos que lo leas aquí a que lo descubras a medio camino.'}</p>
+                        <ul>
+                            {c.limites.map((l) => <li>{l}</li>)}
+                        </ul>
+                    </section>
                 </div>
-                <ul>
-                    {c.limites.map((l) => <li>{l}</li>)}
-                </ul>
             </div>
-        </section>
+        </div>
 
-        <FaqAccordion faqs={c.faqs} eyebrow={isEn ? 'QUESTIONS' : 'PREGUNTAS'} title={isEn ? `${page.nombre} and Cord, answered` : `${page.nombre} y Cord, sin rodeos`} id={`faq-${page.slug}`} />
+        <FaqAccordion faqs={c.faqs} eyebrow={isEn ? 'QUESTIONS' : 'PREGUNTAS'} title={isEn ? `${page.nombre} and Cord` : `${page.nombre} y Cord`} id={`faq-${page.slug}`} />
 
         <section class="ig-more">
-            <div class="ig-more-inner">
-                <div class="ig-more-col reveal">
+            <div class="ig-wrap">
+                <div class="ig-more-head">
+                    <h2 class="reveal">{isEn ? 'Explore more integrations' : 'Conoce más integraciones'}</h2>
+                    <a href={`${pre}/integraciones`} class="ig-all reveal">
+                        {isEn ? 'See every integration' : 'Ver todas las integraciones'}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+                    </a>
+                </div>
+                <ul class="ig-related">
+                    {related.map((r) => (
+                        <li class="reveal"><IntegrationCard page={r} href={`${pre}/integraciones/${r.slug}`} en={isEn} /></li>
+                    ))}
+                </ul>
+                <div class="ig-guides reveal">
                     <p class="ig-eyebrow">{isEn ? 'GUIDES' : 'GUÍAS'}</p>
-                    <ul class="ig-links">
+                    <ul>
                         {c.guias.map((g) => (
                             <li><a href={g.href}>{g.label}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></svg></a></li>
                         ))}
                         {producto && (
-                            <li><a href={`${pre}/producto/${producto.slug}`}>{producto.nav}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a></li>
+                            <li><a href={`${pre}/producto/${producto.slug}`}>{producto.nav}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={arrow}/></svg></a></li>
                         )}
                     </ul>
-                </div>
-                <div class="ig-more-col ig-more-related reveal">
-                    <p class="ig-eyebrow">{isEn ? 'MORE INTEGRATIONS' : 'MÁS INTEGRACIONES'}</p>
-                    <div class="ig-related">
-                        {related.map((r) => (
-                            <a href={`${pre}/integraciones/${r.slug}`} class="ig-related-card">
-                                <img src={r.logo} alt="" width="28" height="28" loading="lazy" />
-                                <span><b>{r.nombre}</b><i>{(isEn ? r.en : r.es).resumen}</i></span>
-                            </a>
-                        ))}
-                    </div>
-                    <a href={`${pre}/integraciones`} class="ig-all">{isEn ? 'See every integration' : 'Ver todas las integraciones'}</a>
                 </div>
             </div>
         </section>
@@ -200,136 +259,156 @@ const schema = {
 </Layout>
 
 <style>
-    .ig { background: var(--color-bg); }
-    .ig-hero { position: relative; overflow-x: clip; }
-    .ig-hero-mesh {
-        position: absolute; inset: -20% -10% auto; height: 90%; pointer-events: none;
-        background:
-            radial-gradient(ellipse 50% 60% at 24% 18%, rgba(10,25,47,0.05) 0%, transparent 60%),
-            radial-gradient(ellipse 44% 54% at 78% 14%, rgba(10,25,47,0.04) 0%, transparent 60%);
-    }
-    .ig-hero-inner {
-        position: relative; z-index: 1; max-width: 1240px; margin: 0 auto;
-        padding: 9.5rem 6% 6rem; display: grid; grid-template-columns: 1fr 1.05fr; gap: 4rem; align-items: center;
-    }
-    .ig-crumbs { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; font-weight: 600; color: #8a8f98; margin-bottom: 1.6rem; }
-    .ig-crumbs a { color: var(--color-blue-deep); text-decoration: none; }
-    .ig-crumbs a:hover { text-decoration: underline; text-underline-offset: 3px; }
-    .ig-title { color: #050505; margin: 0 0 1.4rem !important; text-align: left !important; }
-    .ig-sub { font-size: 1.08rem; line-height: 1.65; color: var(--color-text-muted); max-width: 520px; margin: 0 0 2.2rem; }
+    .ig { background: var(--color-bg-soft); }
+    .ig-wrap { max-width: 1180px; margin: 0 auto; padding: 0 5%; box-sizing: content-box; }
+
+    .ig-crumbbar { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 8.2rem 0 1.4rem; border-bottom: 1px dashed rgba(10,25,47,0.12); }
+    .ig-crumbs { display: flex; align-items: center; gap: 10px; font-size: 1.05rem; font-weight: 600; color: #0a192f; }
+    .ig-crumbs a { color: var(--ig-accent); text-decoration: none; filter: saturate(0.85) brightness(0.85); }
+    .ig-crumbs a:hover { text-decoration: underline; text-underline-offset: 4px; }
+    .ig-crumbs span[aria-hidden] { color: #c0c5cd; font-weight: 400; }
+    .ig-jump { display: flex; gap: 1.8rem; }
+    .ig-jump a { font-size: 0.92rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; opacity: 0.75; transition: opacity 0.2s ease; }
+    .ig-jump a:hover { opacity: 1; }
+
+    .ig-hero { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 5rem; align-items: start; padding: 4.5rem 0 4rem; }
+    .ig-title { font-size: clamp(2.5rem, 5vw, 4.6rem) !important; line-height: 1.05 !important; letter-spacing: -0.045em !important; color: #0a192f; margin: 0 0 2rem !important; text-align: left !important; text-wrap: balance; }
+    .ig-sub { font-size: 1.18rem; line-height: 1.65; color: #3b4452; max-width: 640px; margin: 0 0 2.2rem; }
     .ig-actions { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; }
     .ig-btn-primary {
         display: inline-flex; align-items: center; gap: 10px; background: var(--color-blue-deep); color: #fff;
-        text-decoration: none; font-size: 0.98rem; font-weight: 600; padding: 14px 30px; border-radius: 999px;
+        text-decoration: none; font-size: 0.98rem; font-weight: 600; padding: 14px 28px; border-radius: 999px; min-height: 44px; box-sizing: border-box;
         box-shadow: 0 18px 44px -16px rgba(10,25,47,0.55);
         transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-spring);
     }
     .ig-btn-primary svg { width: 15px; height: 15px; transition: transform 0.5s var(--ease-spring); }
-    .ig-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 26px 56px -16px rgba(10,25,47,0.6); }
-    .ig-btn-primary:hover svg { transform: translateX(4px); }
+    .ig-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 24px 50px -16px rgba(10,25,47,0.6); }
+    .ig-btn-primary:hover svg { transform: translateX(3px); }
     .ig-btn-primary:active { transform: scale(0.98); }
+    .ig-btn-sm { font-size: 0.9rem; padding: 11px 22px; }
     .ig-btn-ghost {
         display: inline-flex; align-items: center; color: var(--color-blue-deep); text-decoration: none; font-size: 0.95rem; font-weight: 600;
-        padding: 13px 24px; border-radius: 999px; background: #f5f5f7; transition: background 0.3s ease, transform 0.3s var(--ease-spring);
+        padding: 13px 24px; border-radius: 999px; background: #f0f1f4; min-height: 44px; box-sizing: border-box; transition: background 0.3s ease, transform 0.3s var(--ease-spring);
     }
-    .ig-btn-ghost:hover { background: #ececf0; }
+    .ig-btn-ghost:hover { background: #e7e9ee; }
     .ig-btn-ghost:active { transform: scale(0.98); }
-    .ig-btn-primary:focus-visible, .ig-btn-ghost:focus-visible, .ig a:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
-    .ig-plan { margin: 1.4rem 0 0; font-size: 0.8rem; color: #8a8f98; }
+    .ig a:focus-visible { outline: 2px solid var(--color-blue-deep); outline-offset: 3px; }
 
-    .ig-visual { display: flex; flex-direction: column; gap: 1.4rem; }
-    .ig-pair { display: flex; align-items: center; justify-content: center; gap: 0; }
-    .ig-tile {
-        width: 92px; height: 92px; border-radius: 26px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        box-shadow: 0 0 0 1px rgba(10,25,47,0.05), 0 12px 28px -10px rgba(10,25,47,0.22), 0 30px 60px -30px rgba(10,25,47,0.25);
-    }
-    .ig-tile img { width: 56px; height: 56px; border-radius: 14px; object-fit: contain; }
-    .ig-cord { position: relative; width: 120px; height: 2px; background: repeating-linear-gradient(90deg, rgba(10,25,47,0.28) 0 6px, transparent 6px 11px); }
-    .ig-cord-pulse {
-        position: absolute; top: 50%; left: 0; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%;
-        background: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,0.18);
-        animation: ig-travel 2.6s var(--ease-smooth) infinite;
-    }
-    @keyframes ig-travel {
-        0% { left: 0; opacity: 0; }
-        12% { opacity: 1; }
-        88% { opacity: 1; }
-        100% { left: calc(100% - 10px); opacity: 0; }
-    }
-    .ig-sync {
-        background: #fff; border-radius: 22px; padding: 0.4rem 0 0.6rem;
-        box-shadow: 0 0 0 1px rgba(10,25,47,0.045), 0 2px 6px rgba(10,25,47,0.04), 0 18px 40px -12px rgba(10,25,47,0.16), 0 40px 80px -40px rgba(10,25,47,0.22);
-    }
-    .ig-sync-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0.9rem 1.3rem 0.8rem; border-bottom: 1px solid rgba(10,25,47,0.06); }
-    .ig-sync-head b { font-size: 0.86rem; font-weight: 650; color: #0f172a; letter-spacing: -0.01em; }
-    .ig-live { display: inline-flex; align-items: center; gap: 6px; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: #059669; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
-    .ig-live i { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
-    .ig-sync-row { display: grid; grid-template-columns: 1fr 22px 1.25fr; align-items: center; gap: 12px; padding: 0.85rem 1.3rem; border-bottom: 1px solid rgba(10,25,47,0.045); }
-    .ig-sync-row:last-child { border-bottom: none; }
-    .ig-sync-cord { font-size: 0.84rem; font-weight: 600; color: #0f172a; }
-    .ig-sync-arrow { width: 18px; height: 18px; color: #94a3b8; }
-    .ig-sync-app { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .ig-sync-app b { font-size: 0.84rem; font-weight: 600; color: #0f172a; }
-    .ig-sync-app em { font-style: normal; font-size: 0.74rem; color: #64748b; }
+    .ig-facts { background: #fff; border-radius: 22px; border: 1px solid rgba(10,25,47,0.07); box-shadow: 0 2px 4px rgba(10,25,47,0.03), 0 24px 48px -28px rgba(10,25,47,0.2); overflow: hidden; }
+    .ig-facts-head { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 1.8rem 1.4rem; background: #f7f8fa; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .ig-facts-logo { display: inline-flex; flex-shrink: 0; }
+    .ig-facts-logo img { width: 46px; height: 46px; border-radius: 24%; object-fit: contain; }
+    .ig-facts-head b { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.04em; color: #0a192f; }
+    .ig-facts-sec { padding: 1.4rem 1.5rem; border-bottom: 1px solid rgba(10,25,47,0.07); }
+    .ig-facts-label { font-size: 0.86rem; color: #8a94a3; margin: 0 0 0.9rem; }
+    .ig-facts-sec ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+    .ig-facts-sec li { font-size: 0.95rem; color: #0a192f; line-height: 1.35; }
+    .ig-facts-row { display: flex; align-items: flex-start; gap: 12px; padding: 1.1rem 1.5rem; border-bottom: 1px solid rgba(10,25,47,0.07); font-size: 0.9rem; line-height: 1.45; color: #0a192f; }
+    .ig-facts-row:last-child { border-bottom: none; }
+    .ig-facts-row svg { width: 20px; height: 20px; flex-shrink: 0; color: #8a94a3; }
 
+    .ig-show { position: relative; border-radius: 30px; overflow: hidden; isolation: isolate; padding: clamp(2rem, 5vw, 4.5rem) clamp(1.2rem, 6vw, 5.5rem); }
+    .ig-show-art {
+        position: absolute; inset: 0; z-index: -1;
+        background:
+            radial-gradient(90% 70% at 12% 0%, color-mix(in srgb, var(--ig-from) 85%, #fff) 0%, transparent 60%),
+            radial-gradient(80% 80% at 100% 100%, color-mix(in srgb, var(--ig-to) 75%, #000) 0%, transparent 70%),
+            linear-gradient(160deg, var(--ig-from) 0%, var(--ig-to) 100%);
+    }
+    .ig-show-art::after {
+        content: ''; position: absolute; inset: 0; opacity: 0.45;
+        background-image: radial-gradient(rgba(255,255,255,0.14) 1px, transparent 1px); background-size: 18px 18px;
+        mask-image: linear-gradient(180deg, #000, transparent 75%); -webkit-mask-image: linear-gradient(180deg, #000, transparent 75%);
+    }
+    .ig-show-stage { max-width: 880px; margin: 0 auto; }
+
+    .ig-story { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 5.5rem; padding: 6rem 0 5rem; }
+    .ig-rail { position: sticky; top: 7rem; align-self: start; display: flex; flex-direction: column; gap: 2.6rem; }
+    .ig-stats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2.2rem; }
+    .ig-stats li { position: relative; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .ig-stats li::before { content: ''; position: absolute; left: 0; top: 0.2rem; height: 1.9rem; width: 2px; border-radius: 2px; background: var(--ig-accent); }
+    .ig-stats b { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; color: #0a192f; font-variant-numeric: tabular-nums; }
+    .ig-stats span { font-size: 0.95rem; line-height: 1.55; color: #525a66; }
+    .ig-rail-cta { padding-left: 1.2rem; display: flex; flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .ig-rail-cta p { margin: 0; font-size: 1.08rem; font-weight: 700; letter-spacing: -0.02em; color: #0a192f; }
+
+    .ig-body { display: flex; flex-direction: column; gap: 4.5rem; min-width: 0; }
     .ig-eyebrow { font-size: 0.66rem; font-weight: 800; letter-spacing: 2.2px; text-transform: uppercase; color: #8a8f98; margin: 0 0 1rem; }
-    .ig-section-title { font-size: clamp(1.7rem, 2.6vw, 2.4rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; color: #050505; margin: 0 0 1rem; text-wrap: balance; }
+    .ig-chapter h2 { font-size: clamp(1.6rem, 2.4vw, 2.1rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.15; color: #0a192f; margin: 0 0 1.3rem; text-wrap: balance; }
+    .ig-chapter > p:not(.ig-eyebrow) { font-size: 1.12rem; line-height: 1.75; color: #3b4452; margin: 0; max-width: 720px; }
+    .ig-bullets { list-style: none; margin: 1.6rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.8rem; }
+    .ig-bullets li { position: relative; padding-left: 1.6rem; font-size: 1rem; line-height: 1.55; color: #1d2530; }
+    .ig-bullets li::before { content: ''; position: absolute; left: 2px; top: 0.55em; width: 7px; height: 7px; border-radius: 50%; background: var(--ig-accent); }
 
-    .ig-blocks { max-width: 1120px; margin: 0 auto; padding: 3rem 6% 7rem; }
-    .ig-block { display: grid; grid-template-columns: 70px 1.2fr 1fr; gap: 2.4rem; padding: 3.4rem 0; border-top: 1px solid rgba(10,25,47,0.08); }
-    .ig-block:last-child { border-bottom: 1px solid rgba(10,25,47,0.08); }
-    .ig-block-num { font-size: 0.95rem; color: #b0b5bd; padding-top: 0.2rem; }
-    .ig-block-title { font-size: clamp(1.35rem, 2vw, 1.75rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.15; color: #050505; margin: 0 0 1rem; text-wrap: balance; }
-    .ig-block-copy { font-size: 1rem; line-height: 1.7; color: var(--color-text-muted); margin: 0; }
-    .ig-bullets { list-style: none; margin: 0; padding: 2rem 0 0; display: flex; flex-direction: column; gap: 1rem; }
-    .ig-bullets li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.95rem; line-height: 1.5; color: #1d1d1f; }
-    .ig-bullets svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--color-blue-deep); margin-top: 1px; }
-
-    .ig-steps { background: #f5f5f7; }
-    .ig-steps-inner { max-width: 1120px; margin: 0 auto; padding: 7rem 6%; }
-    .ig-step-list { list-style: none; margin: 2.6rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; }
-    .ig-step { background: #fff; border-radius: 28px; padding: 1.8rem 1.6rem; box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 16px 40px -24px rgba(10,25,47,0.18); display: flex; flex-direction: column; gap: 1.1rem; }
-    .ig-step-n { width: 34px; height: 34px; border-radius: 50%; background: var(--color-blue-deep); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; }
-    .ig-step h3 { font-size: 1.02rem; font-weight: 700; letter-spacing: -0.02em; color: #050505; margin: 0 0 0.5rem; }
-    .ig-step p { font-size: 0.9rem; line-height: 1.6; color: var(--color-text-muted); margin: 0; }
-
-    .ig-limits { max-width: 1120px; margin: 0 auto; padding: 7rem 6% 2rem; }
-    .ig-limits-inner { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 3rem; align-items: start; }
-    .ig-limits-lede { font-size: 0.98rem; line-height: 1.65; color: var(--color-text-muted); margin: 0; max-width: 360px; }
-    .ig-limits ul { list-style: none; margin: 0; padding: 0; }
-    .ig-limits li { position: relative; padding: 1.1rem 0 1.1rem 1.6rem; border-top: 1px solid rgba(10,25,47,0.08); font-size: 0.95rem; line-height: 1.6; color: #1d1d1f; }
-    .ig-limits li:last-child { border-bottom: 1px solid rgba(10,25,47,0.08); }
-    .ig-limits li::before { content: ''; position: absolute; left: 0; top: 1.72rem; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; }
-
-    .ig-more { max-width: 1120px; margin: 0 auto; padding: 2rem 6% 8rem; }
-    .ig-more-inner { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 3rem; padding-top: 3rem; border-top: 1px solid rgba(10,25,47,0.08); }
-    .ig-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-    .ig-links a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0.95rem 0; border-bottom: 1px solid rgba(10,25,47,0.06); color: #0f172a; text-decoration: none; font-weight: 600; font-size: 0.95rem; min-height: 44px; }
-    .ig-links a:hover { color: var(--color-blue-deep); }
-    .ig-links svg { width: 16px; height: 16px; color: #94a3b8; flex-shrink: 0; }
-    .ig-related { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.8rem; }
-    .ig-related-card { display: flex; gap: 12px; align-items: flex-start; padding: 1.1rem 1.2rem; border-radius: 20px; background: #f5f5f7; text-decoration: none; transition: background 0.3s ease, transform 0.4s var(--ease-spring); }
-    .ig-related-card:hover { background: #ececf0; transform: translateY(-2px); }
-    .ig-related-card img { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; background: #fff; }
-    .ig-related-card b { display: block; font-size: 0.92rem; color: #0f172a; margin-bottom: 3px; }
-    .ig-related-card i { display: block; font-style: normal; font-size: 0.8rem; line-height: 1.45; color: var(--color-text-muted); }
-    .ig-all { display: inline-flex; margin-top: 1.2rem; font-size: 0.9rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; min-height: 44px; align-items: center; }
-    .ig-all:hover { text-decoration: underline; text-underline-offset: 3px; }
-
-    @media (max-width: 880px) {
-        .ig-hero-inner { grid-template-columns: 1fr; padding: 8rem 5% 4rem; gap: 3rem; }
-        .ig-block { grid-template-columns: 1fr; gap: 0.8rem; padding: 2.6rem 0; }
-        .ig-bullets { padding-top: 0.6rem; }
-        .ig-limits-inner, .ig-more-inner { grid-template-columns: 1fr; gap: 1.6rem; }
-        .ig-steps-inner { padding: 5rem 5%; }
-        .ig-blocks, .ig-limits, .ig-more { padding-left: 5%; padding-right: 5%; }
-        .ig-sync-row { grid-template-columns: 1fr; gap: 4px; }
-        .ig-sync-arrow { transform: rotate(90deg); width: 14px; height: 14px; }
-        .ig-cord { width: 72px; }
-        .ig-tile { width: 76px; height: 76px; border-radius: 22px; }
-        .ig-tile img { width: 46px; height: 46px; }
+    .ig-flow { margin: 0; position: relative; border-radius: 26px; padding: 2.2rem; overflow: hidden; isolation: isolate; box-shadow: 0 30px 60px -30px rgba(10,25,47,0.45); }
+    .ig-flow::before {
+        content: ''; position: absolute; inset: 0; z-index: -1;
+        background: radial-gradient(80% 90% at 100% 0%, color-mix(in srgb, var(--ig-from) 70%, #fff) 0%, transparent 60%), linear-gradient(150deg, var(--ig-from), var(--ig-to));
     }
-    @media (prefers-reduced-motion: reduce) {
-        .ig-cord-pulse { animation: none; left: calc(50% - 5px); }
+    .ig-flow-head { display: flex; align-items: center; gap: 14px; margin-bottom: 1.4rem; }
+    .ig-flow-pair { display: inline-flex; align-items: center; gap: 6px; padding: 6px; border-radius: 14px; background: rgba(255,255,255,0.16); }
+    .ig-flow-pair img { width: 30px; height: 30px; border-radius: 24%; object-fit: contain; }
+    .ig-flow-pair i { width: 16px; height: 2px; background: repeating-linear-gradient(90deg, rgba(255,255,255,0.8) 0 3px, transparent 3px 6px); }
+    .ig-flow figcaption { font-size: 1.2rem; font-weight: 650; letter-spacing: -0.02em; color: #fff; }
+    .ig-flow-table { background: #fff; border-radius: 16px; overflow: hidden; }
+    .ig-flow-th, .ig-flow-row { display: grid; grid-template-columns: 0.9fr 1.3fr; gap: 1.2rem; padding: 0.95rem 1.3rem; }
+    .ig-flow-th { background: #f7f8fa; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #8a94a3; }
+    .ig-flow-row { border-top: 1px solid rgba(10,25,47,0.06); }
+    .ig-flow-cord { font-size: 0.9rem; font-weight: 600; color: #0a192f; }
+    .ig-flow-app { display: flex; flex-direction: column; gap: 3px; }
+    .ig-flow-app b { font-size: 0.9rem; font-weight: 600; color: #0a192f; }
+    .ig-flow-app em { font-style: normal; font-size: 0.8rem; color: #64748b; }
+
+    .ig-steps { list-style: none; margin: 1.8rem 0 0; padding: 0; display: flex; flex-direction: column; }
+    .ig-steps li { display: grid; grid-template-columns: 40px 1fr; gap: 1.1rem; padding: 1.4rem 0; border-top: 1px solid rgba(10,25,47,0.08); }
+    .ig-steps li:last-child { border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .ig-step-n { width: 32px; height: 32px; border-radius: 50%; background: var(--color-blue-deep); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.86rem; }
+    .ig-steps h3 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: #0a192f; margin: 0.25rem 0 0.4rem; }
+    .ig-steps p { font-size: 0.98rem; line-height: 1.65; color: #3b4452; margin: 0; }
+
+    .ig-limits ul { list-style: none; margin: 1.6rem 0 0; padding: 0; }
+    .ig-limits li { position: relative; padding: 1rem 0 1rem 1.6rem; border-top: 1px solid rgba(10,25,47,0.08); font-size: 0.98rem; line-height: 1.6; color: #1d2530; }
+    .ig-limits li:last-child { border-bottom: 1px solid rgba(10,25,47,0.08); }
+    .ig-limits li::before { content: ''; position: absolute; left: 2px; top: 1.6rem; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; }
+
+    .ig-more { padding: 6rem 0 7rem; border-top: 1px solid rgba(10,25,47,0.06); }
+    .ig-more-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; margin-bottom: 2.6rem; }
+    .ig-more-head h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; color: #0a192f; margin: 0; }
+    .ig-all { display: inline-flex; align-items: center; gap: 6px; font-size: 0.95rem; font-weight: 600; color: var(--color-blue-deep); text-decoration: none; min-height: 44px; white-space: nowrap; }
+    .ig-all svg { width: 15px; height: 15px; transition: transform 0.35s var(--ease-spring); }
+    .ig-all:hover svg { transform: translateX(3px); }
+    .ig-related { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; }
+    .ig-guides { margin-top: 4rem; }
+    .ig-guides ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); column-gap: 2.4rem; }
+    .ig-guides a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0.95rem 0; border-bottom: 1px solid rgba(10,25,47,0.08); color: #0a192f; text-decoration: none; font-weight: 600; font-size: 0.95rem; min-height: 44px; box-sizing: border-box; }
+    .ig-guides a:hover { color: var(--ig-accent); }
+    .ig-guides svg { width: 16px; height: 16px; color: #94a3b8; flex-shrink: 0; }
+
+    @media (max-width: 1024px) {
+        .ig-hero { grid-template-columns: 1fr; gap: 3rem; }
+        .ig-facts { max-width: 460px; }
+        .ig-story { grid-template-columns: 1fr; gap: 3rem; }
+        .ig-rail { position: static; }
+        .ig-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.8rem 1.4rem; }
+    }
+    @media (max-width: 880px) {
+        .ig-crumbbar { padding-top: 7.2rem; }
+        .ig-jump { display: none; }
+        .ig-hero { padding: 2.6rem 0 3rem; }
+        .ig-sub { font-size: 1.05rem; }
+        .ig-show { border-radius: 22px; }
+        .ig-story { padding: 4rem 0 3.5rem; }
+        .ig-body { gap: 3.4rem; }
+        .ig-chapter > p:not(.ig-eyebrow) { font-size: 1.02rem; }
+        .ig-flow { padding: 1.3rem; border-radius: 22px; }
+        .ig-flow-th { display: none; }
+        .ig-flow-row { grid-template-columns: 1fr; gap: 4px; padding: 0.9rem 1rem; }
+        .ig-flow-row:first-of-type { border-top: none; }
+        .ig-related { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+        .ig-more { padding: 4.5rem 0 5rem; }
+        .ig-more-head { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+    }
+    @media (max-width: 520px) {
+        .ig-stats { grid-template-columns: 1fr; }
     }
 </style>

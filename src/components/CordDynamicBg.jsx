@@ -243,6 +243,7 @@ export default function CordDynamicBg({
     color3: '#10B981'
   },
   grain = true,
+  backdrop,
   maskImage,
   maskSize = 'contain',
   maskPosition = 'center',
@@ -283,7 +284,7 @@ export default function CordDynamicBg({
         zIndex:        0,
         overflow:      'hidden',
         pointerEvents: 'none',
-        backgroundColor: colors.base,
+        backgroundColor: backdrop ?? colors.base,
         opacity:       visible ? 1 : 0,
         transition:    'opacity 1s ease',
         ...(maskImage ? {
