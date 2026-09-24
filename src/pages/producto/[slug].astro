@@ -361,7 +361,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                                                     <span class="mkc-mg">31%</span>
                                                 </div>
                                                 <div class="mkc-lr" id="edRow">
-                                                    <span class="mkc-lr-n">{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}<small>{isEn ? 'piece' : 'pieza'}<span class="mkc-hintw mkc-gone" id="edHintW"> · <u class="mkc-hint" id="edHint">{isEn ? 'Suggested: $168.50 (62% close)' : 'Sugerido: $168.50 (62% cierra)'}</u></span></small></span>
+                                                    <span class="mkc-lr-n">{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}<small>{isEn ? 'piece' : 'pieza'}<span class="mkc-gone" id="edHintW"> · <u class="mkc-hint" id="edHint">{isEn ? 'Suggested: $168.50 (62% close)' : 'Sugerido: $168.50 (62% cierra)'}</u></span></small></span>
                                                     <span class="mkc-in">340</span>
                                                     <span class="mkc-lista">$180.00</span>
                                                     <span class="mkc-in deal" id="edNego">168.50</span>
@@ -385,7 +385,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                                                     <span class="mkc-mg">27%</span>
                                                 </div>
                                                 <div class="mkc-add">
-                                                    <span class="mkc-field mkc-field-s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.search} />{isEn ? 'Search a product in your catalog… (name or SKU)' : 'Busca un producto de tu catálogo… (nombre o SKU)'}</span>
+                                                    <span class="mkc-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" set:html={MKI.search} />{isEn ? 'Search a product in your catalog… (name or SKU)' : 'Busca un producto de tu catálogo… (nombre o SKU)'}</span>
                                                     <span class="mkc-soft">{isEn ? '+ Free line' : '+ Línea libre'}</span>
                                                 </div>
                                             </div>
@@ -432,7 +432,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                                                 <div><span>{isEn ? 'TERMS' : 'TÉRMINOS'}</span><b>Net 30</b></div>
                                             </div>
                                             <div class="mkc-q-total"><span>{isEn ? 'TOTAL DUE' : 'TOTAL A PAGAR'}</span><b class="editorial">$196,469.20</b><i>MXN · {isEn ? 'tax included' : 'IVA incluido'}</i></div>
-                                            <div class="mkc-q-items">
+                                            <div>
                                                 <div class="mkc-q-ih"><span>{isEn ? 'Item' : 'Concepto'}</span><span class="c">{isEn ? 'Qty.' : 'Cant.'}</span><span class="r">{isEn ? 'Unit price' : 'P. Unit.'}</span><span class="r">{isEn ? 'Amount' : 'Importe'}</span></div>
                                                 <div class="mkc-q-ir"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Grey cement 50kg' : 'Cemento gris 50kg'}</span><span class="c mkc-q-qty">120 {isEn ? 'bag' : 'saco'}</span><span class="r editorial"><s>$198.00</s>$182.00</span><span class="r editorial">$21,840.00</span></div>
                                                 <div class="mkc-q-ir"><span class="mkc-q-n"><i class="mkc-q-cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i>{isEn ? 'Rebar 3/8" × 12m' : 'Varilla 3/8" × 12m'}<em class="mkc-q-chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.chat} />2</em></span><span class="c mkc-q-qty">340 {isEn ? 'piece' : 'pieza'}</span><span class="r editorial"><s>$180.00</s>$168.50</span><span class="r editorial">$57,290.00</span></div>
@@ -988,7 +988,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                                             <div class="mkc-apb-a"><span class="mkc-apb-ok" id="apOk">{isEn ? 'Approve and send' : 'Aprobar y enviar'}</span><span class="mkc-apb-no">{isEn ? 'Reject' : 'Rechazar'}</span></div>
                                         </div>
                                     </div>
-                                    <div class="mkc-stp mkc-ap-stp">
+                                    <div class="mkc-stp">
                                         <span class="mkc-stp-s cur" id="apS1"><i class="mkc-stp-d"><em class="mkc-stp-n">1</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" set:html={MKI.check} /></i><b>{isEn ? 'Draft' : 'Borrador'}</b></span>
                                         <span class="mkc-stp-s" id="apS2"><i class="mkc-stp-d">2</i><b>{isEn ? 'Sent' : 'Enviada'}</b></span>
                                         <span class="mkc-stp-s"><i class="mkc-stp-d">3</i><b>{isEn ? 'Viewed' : 'Vista'}</b></span>
@@ -1771,7 +1771,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     .mkc-chips { display: flex; gap: 4px; flex-shrink: 0; }
     .mkc-chips i { font-style: normal; font-size: 10.5px; font-weight: 600; color: #5b6472; background: #ebebee; padding: 5px 10px; border-radius: 999px; }
     .mkc-chips i.on { background: #0a192f; color: #fff; box-shadow: 0 2px 8px -2px rgba(10,25,47,0.35); }
-    .mkc-lh, .mkc-lr { display: grid; grid-template-columns: minmax(0, 1.9fr) 42px 52px 60px minmax(0, 1fr) 34px; gap: 8px; align-items: center; }
+    .mkc-lh, .mkc-lr { display: grid; grid-template-columns: minmax(0, 1fr) 40px 50px 58px 76px 32px; gap: 8px; align-items: center; }
     .mkc-lh { padding-bottom: 6px; font-size: 10px; font-weight: 500; color: #5b6472; border-bottom: 1px solid rgba(10,25,47,0.08); }
     .mkc-lh .r { text-align: right; }
     .mkc-lh .c { text-align: center; }
@@ -1793,8 +1793,9 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
     .mkc-sum-h { font-size: 12.5px; font-weight: 700; letter-spacing: -0.02em; }
     .mkc-sum-c { font-size: 10px; color: #5b6472; margin: -3px 0 2px; }
     .mkc-sl { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: #5b6472; }
-    .mkc-sl .editorial { font-size: 11.5px; color: #0f1729; }
-    .mkc-sl-save, .mkc-sl .mkc-save { color: #059669; }
+    .mkc-sl .editorial { font-size: 11.5px; color: #0f1729; white-space: nowrap; }
+    .mkc-sl > span:first-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mkc-sl-save { color: #059669; }
     .mkc-sl-save .editorial { color: #059669; }
     .mkc-sl-tog > span { color: #0f1729; }
     .mkc-tog { position: relative; width: 26px; height: 15px; border-radius: 99px; background: #e3e5ea; flex-shrink: 0; }
@@ -1877,9 +1878,16 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
 
     /* ── Seguimiento: el cliente lee en su teléfono, el vendedor lo ve en vivo ── */
     .mkc-tr { height: 500px; }
-    .mkc-tr-app { margin-left: 190px; min-width: 600px; height: 468px; }
+    .mkc-tr-app { margin-left: 172px; min-width: 620px; height: 468px; }
+    .mkc-tr-app .mkc-dg { grid-template-columns: minmax(0, 1fr) 200px; gap: 20px; }
+    .mkc-tr-app .mkc-dh-tot b { font-size: 17px; }
+    .mkc-tr-app .mkc-dih, .mkc-tr-app .mkc-dir { grid-template-columns: minmax(0, 1fr) 36px 62px 74px; }
     .mkc-tr-phone { left: 0; top: 30px; }
     .mkc-tr-scroll { will-change: transform; }
+    @container (max-width: 860px) {
+        .mkc-tr-app .mkc-dh-tot, .mkc-tr-app .mkc-dih > :nth-child(2), .mkc-tr-app .mkc-dir-q { display: none; }
+        .mkc-tr-app .mkc-dih, .mkc-tr-app .mkc-dir { grid-template-columns: minmax(0, 1fr) 62px 74px; }
+    }
 
     /* ── Aprobaciones: la cotización espera a gerencia ── */
     .mkc-ap-app { min-width: 800px; height: 486px; }
@@ -2370,7 +2378,8 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
         .mkc-tr-phone, .mkc-stp .mkc-stp-s:not(.cur) b, .mkc-tr .mkc-dih, .mkc-tr .mkc-dir, .mkc-tr .mkc-dm > .mkc-sec, .mkc-tr .mkc-sec-2, .mkc-tr .mkc-tl { display: none; }
         .mkc-stp { padding-bottom: 14px; }
         .mkc-stp-s:not(:last-child)::after { margin: 0 5px; }
-        .mkc-dg { grid-template-columns: 1fr; gap: 6px; padding: 0 var(--gut) 6px; }
+        .mkc-dg, .mkc-tr-app .mkc-dg { grid-template-columns: 1fr; gap: 6px; padding: 0 var(--gut) 6px; }
+        .mkc-tr-app .mkc-dh-tot b { font-size: 21px; }
         .mkc-dh { flex-wrap: wrap; }
         .mkc-dh-n { font-size: 14.5px; }
         .mkc-dh-m { font-size: 11px; white-space: normal; }
@@ -2713,17 +2722,17 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                         tl.to(hint, { color: '#059669', duration: 0.2 });
                         tl.to(cursor, { scale: 0.82, duration: 0.09, yoyo: true, repeat: 1 }, '<');
                         tl.call(() => { nego.textContent = '168.50'; nego.classList.add('deal'); });
-                        tl.fromTo(nego, { borderColor: '#0a192f', boxShadow: '0 0 0 3px rgba(10,25,47,0.10)', backgroundColor: '#ffffff' }, { borderColor: 'rgba(0,0,0,0)', boxShadow: '0 0 0 0 rgba(10,25,47,0)', backgroundColor: '#ebebee', duration: 0.9, ease: 'power2.in', delay: 0.5 }, '<');
+                        tl.fromTo(nego, { borderColor: '#0a192f', boxShadow: '0 0 0 3px rgba(10,25,47,0.10)', backgroundColor: '#ffffff' }, { immediateRender: false, borderColor: 'rgba(0,0,0,0)', boxShadow: '0 0 0 0 rgba(10,25,47,0)', backgroundColor: '#ebebee', duration: 1.4, ease: 'expo.in' }, '<');
                         tl.add(mkcCount(imp, 61200, 57290, 0.8), '<-0.45');
                         tl.add(mkcCount(sub, 173280, 169370, 0.9), '<0.1');
                         tl.add(mkcCount(save, 11040, 14950, 0.9, '−'), '<');
                         tl.add(mkcCount(tax, 27724.8, 27099.2, 0.9), '<');
                         tl.add(mkcCount(tot, 201004.8, 196469.2, 1.0), '<');
                         tl.call(() => { mg.textContent = '26%'; }, null, '<0.3');
-                        tl.fromTo(mg, { scale: 1.18 }, { scale: 1, duration: 0.35, ease: 'back.out(2)' }, '<');
+                        tl.fromTo(mg, { scale: 1.18 }, { immediateRender: false, scale: 1, duration: 0.35, ease: 'back.out(2)' }, '<');
                         tl.to(hintW, { opacity: 0, duration: 0.35 }, '<0.2');
                         tl.call(() => hintW.classList.add('mkc-gone'));
-                        tl.fromTo(tot, { color: '#059669' }, { color: '#0f1729', duration: 1.2 }, '<');
+                        tl.fromTo(tot, { color: '#059669' }, { immediateRender: false, color: '#0f1729', duration: 1.2 }, '<');
                         tl.to(cursor, { x: '+=70', y: '+=120', opacity: 0, duration: 0.8, ease: 'power2.in' }, '<0.3');
                         tl.to({}, { duration: 3.4 });
                     };
@@ -2739,6 +2748,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                     const chk = document.getElementById('lpChk');
                     const cta = document.getElementById('lpCta');
                     const done = document.getElementById('lpDone');
+                    const sign = document.getElementById('lpSign');
                     const ring = document.getElementById('lpRing');
                     const tick = document.getElementById('lpTick');
                     const extras = [document.getElementById('lpCredit'), document.getElementById('lpAudit')];
@@ -2748,7 +2758,7 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                     const blink = gsap.to(caret, { opacity: 1, duration: 0.5, repeat: -1, yoyo: true, ease: 'steps(1)', paused: true });
                     const reset = () => {
                         name.textContent = ''; chk.classList.remove('on'); cta.classList.remove('busy');
-                        gsap.set(cta, { opacity: 0.45, scale: 1 }); gsap.set(done, { autoAlpha: 0 });
+                        gsap.set(cta, { opacity: 0.45, scale: 1 }); gsap.set(done, { autoAlpha: 0 }); gsap.set(sign, { opacity: 1 });
                         gsap.set(ring, { strokeDashoffset: 145 }); gsap.set(tick, { strokeDashoffset: 40 }); gsap.set(extras, { opacity: 0, y: 8 });
                         blink.play(0);
                     };
@@ -2758,12 +2768,13 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                         for (let i = 1; i <= full.length; i++) tl.call(() => { name.textContent = full.slice(0, i); }, null, '+=0.065');
                         tl.to({}, { duration: 0.35 });
                         tl.call(() => chk.classList.add('on'));
-                        tl.fromTo(chk, { scale: 0.7 }, { scale: 1, duration: 0.3, ease: 'back.out(2.2)' }, '<');
+                        tl.fromTo(chk, { scale: 0.7 }, { immediateRender: false, scale: 1, duration: 0.3, ease: 'back.out(2.2)' }, '<');
                         tl.to(cta, { opacity: 1, duration: 0.3 }, '<0.1');
                         tl.call(() => { blink.pause(); gsap.set(caret, { opacity: 0 }); }, null, '+=0.35');
                         tl.to(cta, { scale: 0.96, duration: 0.1, yoyo: true, repeat: 1, ease: 'power2.inOut' });
                         tl.call(() => cta.classList.add('busy'));
-                        tl.to(done, { autoAlpha: 1, duration: 0.35 }, '+=0.65');
+                        tl.to(sign, { opacity: 0, duration: 0.22 }, '+=0.65');
+                        tl.to(done, { autoAlpha: 1, duration: 0.3 });
                         tl.to(ring, { strokeDashoffset: 0, duration: 0.6, ease: 'power2.out' }, '<0.05');
                         tl.to(tick, { strokeDashoffset: 0, duration: 0.4, ease: 'power2.out' }, '-=0.2');
                         tl.to(extras, { opacity: 1, y: 0, duration: 0.45, stagger: 0.12, ease: 'power2.out' }, '-=0.1');
@@ -2798,11 +2809,11 @@ const MK_RAIL: { k: keyof typeof MKI; on?: boolean; sep?: boolean }[] = [
                             sec.textContent = ' — ' + secRes; rowRes.classList.add('on'); rowPar.classList.remove('on');
                             val.textContent = '3m 30s'; totEl.textContent = '6m 47s'; gsap.set(bar, { width: '97%' });
                         });
-                        tl.fromTo(live, { backgroundColor: 'rgba(16,185,129,0.22)' }, { backgroundColor: 'rgba(16,185,129,0.1)', duration: 0.7 }, '<');
+                        tl.fromTo(live, { backgroundColor: 'rgba(16,185,129,0.22)' }, { immediateRender: false, backgroundColor: 'rgba(16,185,129,0.1)', duration: 0.7 }, '<');
                         tl.to(scroller, { y: deep, duration: 1.5, ease: 'power2.inOut' }, '+=1.6');
                         tl.to(sticky, { opacity: 1, y: 0, duration: 0.45, ease: 'power2.out' }, '-=0.6');
                         tl.call(() => { sec.textContent = ' — ' + secPar; rowRes.classList.remove('on'); rowPar.classList.add('on'); }, null, '-=0.2');
-                        tl.fromTo(live, { backgroundColor: 'rgba(16,185,129,0.24)', scale: 1.06 }, { backgroundColor: 'rgba(16,185,129,0.1)', scale: 1, duration: 0.6, ease: 'power2.out' }, '<');
+                        tl.fromTo(live, { backgroundColor: 'rgba(16,185,129,0.24)', scale: 1.06 }, { immediateRender: false, backgroundColor: 'rgba(16,185,129,0.1)', scale: 1, duration: 0.6, ease: 'power2.out' }, '<');
                         tl.to(clock, { s: 220, duration: 3.2, ease: 'none', onUpdate: () => { const s = Math.round(clock.s); val.textContent = mkcDur(s); totEl.textContent = mkcDur(s + 197); } }, '<');
                         tl.to(bar, { width: '100%', duration: 3.2, ease: 'none' }, '<');
                         tl.to({}, { duration: 2.4 });

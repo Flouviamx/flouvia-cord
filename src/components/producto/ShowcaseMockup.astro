@@ -10,6 +10,7 @@ const CALCA = ['editor', 'link-publico', 'seguimiento', 'aprobaciones'].includes
 const LOC = en ? 'en-US' : 'es-MX';
 const mx = (n: number, d = 2) => new Intl.NumberFormat(LOC, { style: 'currency', currency: 'MXN', minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
 const tx = (es: string, e: string) => (en ? e : es);
+const chk = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 const ICON: Record<string, string> = {
   dashboard: '<rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" fill-opacity="0.12" stroke="none"/><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
   cotizaciones: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12" stroke="none"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8" stroke-opacity="0.5"/><line x1="16" y1="13" x2="8" y2="13" stroke-opacity="0.5"/><line x1="16" y1="17" x2="8" y2="17" stroke-opacity="0.5"/><polyline points="10 9 9 9 8 9" stroke-opacity="0.5"/>',
@@ -41,294 +42,419 @@ const NAV = [
 
   {/* ═══════════════════════════════ EDITOR ═══════════════════════════════ */}
   {slug === 'editor' && index === 0 && (
-    <div class="shwm-frame shwm-split">
-      <div class="shwm-half shwm-dead">
-        <div class="shwm-dead-head">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" fill-opacity="0.08"/><path d="M3 9h18M9 3v18M3 15h18"/></svg>
+    <div class="shwm-frame shwm-scene" data-shx="ed0">
+      <div class="shwm-sheet" aria-hidden="true">
+        <div class="shwm-sheet-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5" fill="currentColor" fill-opacity="0.14"/><path d="M3 9h18M9 3v18M3 15h18"/></svg>
           <span>cotizacion_final_v7_REVISADA.xlsx</span>
+          <em>{tx('Editado hace 47 min', 'Edited 47 min ago')}</em>
         </div>
-        <div class="shwm-xls">
-          <div class="shwm-xls-r"><span>Cemento gris</span><span>120</span><span>182</span><span class="shwm-xls-err">#¡REF!</span></div>
-          <div class="shwm-xls-r"><span>Varilla 3/8"</span><span>340</span><span>191.48</span><span>65,103</span></div>
-          <div class="shwm-xls-r shwm-xls-bad"><span>Block hueco</span><span>2400</span><span class="shwm-xls-err">#VALOR!</span><span class="shwm-xls-err">#VALOR!</span></div>
-          <div class="shwm-xls-r"><span>Malla 6x6</span><span>180</span><span>312</span><span>56,160</span></div>
-          <div class="shwm-xls-r"><span>Arena río</span><span>60</span><span>540</span><span>32,400</span></div>
-          <div class="shwm-xls-r shwm-xls-bad"><span>Grava 3/4</span><span>45</span><span>410</span><span class="shwm-xls-err">#DIV/0!</span></div>
-          <div class="shwm-xls-r shwm-xls-mut"><span>=SUMA(D2:D7)</span><span></span><span></span><span class="shwm-xls-err">#ERROR</span></div>
+        <div class="shwm-sheet-fx"><span class="ref">D9</span><span class="fx">fx</span><span class="f">{tx('=SUMA(D2:D7)*1.16', '=SUM(D2:D7)*1.16')}</span></div>
+        <div class="shwm-sheet-grid">
+          <div class="r h"><span></span><span>A</span><span>B</span><span>C</span><span>D</span></div>
+          <div class="r"><span class="n">1</span><span class="b">{tx('Concepto', 'Item')}</span><span class="b">{tx('Cant', 'Qty')}</span><span class="b">{tx('Precio', 'Price')}</span><span class="b">{tx('Importe', 'Amount')}</span></div>
+          <div class="r"><span class="n">2</span><span>{tx('Cemento gris', 'Gray cement')}</span><span class="num">120</span><span class="num">182</span><span class="num">21840</span></div>
+          <div class="r"><span class="n">3</span><span>{tx('Varilla 3/8', 'Rebar 3/8')}</span><span class="num">340</span><span class="num hl">191.48</span><span class="num">65103.2</span></div>
+          <div class="r"><span class="n">4</span><span>{tx('Block hueco', 'Hollow block')}</span><span class="num">2400</span><span class="num err">{tx('#¡VALOR!', '#VALUE!')}</span><span class="num err">{tx('#¡VALOR!', '#VALUE!')}</span></div>
+          <div class="r"><span class="n">5</span><span>{tx('Malla 6x6', 'Mesh 6x6')}</span><span class="num">180</span><span class="num">312</span><span class="num">56160</span></div>
+          <div class="r"><span class="n">6</span><span>{tx('Arena río', 'River sand')}</span><span class="num">60</span><span class="num">540</span><span class="num err">{tx('#¡REF!', '#REF!')}</span></div>
+          <div class="r"><span class="n">7</span><span></span><span></span><span></span><span></span></div>
+          <div class="r"><span class="n">8</span><span class="b">Subtotal</span><span></span><span></span><span class="num err">{tx('#¡REF!', '#REF!')}</span></div>
+          <div class="r sel"><span class="n">9</span><span class="b">{'IVA 16%'}</span><span></span><span></span><span class="num err cur">{tx('#¡REF!', '#REF!')}</span></div>
+          <div class="r"><span class="n">10</span><span class="b">TOTAL</span><span></span><span></span><span class="num err">{tx('#¡REF!', '#REF!')}</span></div>
+          <div class="r"><span class="n">11</span><span></span><span></span><span></span><span></span></div>
         </div>
-        <span class="shwm-dead-tag">3 fórmulas rotas · 47 min editando</span>
+        <div class="shwm-sheet-tabs"><span>cotiz_v6</span><span>cotiz_v7</span><span class="on">cotiz_v7_final</span></div>
       </div>
-      <div class="shwm-arrow" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </div>
-      <div class="shwm-half shwm-live">
-        <div class="shwm-app shwm-app-flush">
-          <div class="shwm-bar">
-            <span class="shwm-bar-t">COT-0149 · Distribuidora El Zarco</span>
-            <span class="shwm-badge shwm-badge-green">Listo en 4 min</span>
+      <div class="shwm-cw shwm-ed0-win">
+        <div class="shwm-cw-bar">
+          <span class="shwm-cw-crumbs"><span>{tx('Cotizaciones', 'Quotes')}</span><span class="sep">/</span><strong>{tx('Nueva cotización', 'New quote')}</strong></span>
+          <span class="shwm-cw-draft">{tx('Borrador', 'Draft')}</span>
+        </div>
+        <div class="shwm-edg">
+          <div class="shwm-edg-main">
+            <div class="shwm-ai">
+              <span class="t">{tx('Arma la cotización con IA', 'Build the quote with AI')}</span>
+              <span class="s">{tx('Pega el pedido del cliente o adjunta la foto/PDF de su orden de compra.', "Paste the client's order or attach a photo/PDF of their purchase order.")}</span>
+              <span class="ta">{tx('Buen día, me cotizas 120 sacos de cemento gris, 340 varillas de 3/8, 2,400 block de 15 y 180 hojas de malla 6x6. Entrega en obra.', 'Morning, can you quote 120 bags of gray cement, 340 rebars 3/8, 2,400 15 cm blocks and 180 sheets of 6x6 mesh? Delivery to site.')}</span>
+              <span class="ac"><span class="btn" data-aibtn data-busy={tx('Armando…', 'Building…')}>{tx('Armar cotización con IA', 'Build quote with AI')}</span><span class="st" data-aist><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{tx('4 líneas armadas. Revisa cantidades y precios.', '4 lines built. Check quantities and prices.')}</span></span>
+            </div>
+            <div class="shwm-lines shwm-lines-5">
+              <div class="shwm-lh"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Lista', 'List')}</span><span>{tx('Negociado', 'Negotiated')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
+              <div class="shwm-lr" data-line><span class="nm">{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>{tx('saco', 'bag')}</small></span><span class="shwm-inp">120</span><span class="ls">{mx(182)}</span><span class="shwm-inp">182.00</span><span class="editorial am">{mx(21840)}</span></div>
+              <div class="shwm-lr" data-line><span class="nm">{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>{tx('pieza', 'piece')}</small></span><span class="shwm-inp">340</span><span class="ls">{mx(191.48)}</span><span class="shwm-inp">191.48</span><span class="editorial am">{mx(65103.2)}</span></div>
+              <div class="shwm-lr" data-line><span class="nm">{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}<small>{tx('pieza', 'piece')}</small></span><span class="shwm-inp">2400</span><span class="ls">{mx(14.2)}</span><span class="shwm-inp">14.20</span><span class="editorial am">{mx(34080)}</span></div>
+              <div class="shwm-lr" data-line><span class="nm">{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>{tx('hoja', 'sheet')}</small></span><span class="shwm-inp">180</span><span class="ls">{mx(312)}</span><span class="shwm-inp">312.00</span><span class="editorial am">{mx(56160)}</span></div>
+            </div>
           </div>
-          <div class="shwm-body">
-            <div class="shwm-g shwm-g4 shwm-g-head"><span>Producto</span><span>Cant.</span><span class="shwm-r">Lista</span><span class="shwm-r">Importe</span></div>
-            <div class="shwm-g shwm-g4"><span>Cemento gris 50kg</span><span>120</span><b class="editorial shwm-r">$182.00</b><b class="editorial shwm-r">$21,840.00</b></div>
-            <div class="shwm-g shwm-g4"><span>Varilla 3/8" × 12m</span><span>340</span><b class="editorial shwm-r">$191.48</b><b class="editorial shwm-r">$65,103.20</b></div>
-            <div class="shwm-g shwm-g4"><span>Block hueco 15×20×40</span><span>2,400</span><b class="editorial shwm-r">$14.20</b><b class="editorial shwm-r">$34,080.00</b></div>
-            <div class="shwm-g shwm-g4"><span>Malla electro. 6×6</span><span>180</span><b class="editorial shwm-r">$312.00</b><b class="editorial shwm-r">$56,160.00</b></div>
-            <div class="shwm-g shwm-g4"><span>Arena de río</span><span>60 m³</span><b class="editorial shwm-r">$540.00</b><b class="editorial shwm-r">$32,400.00</b></div>
+          <div class="shwm-sum shwm-sum-flat" data-empty={tx('Agrega productos para ver el total', 'Add products to see the total')}>
+            <span class="h">{tx('Revisa y envía', 'Review and send')}</span>
+            <span class="c" data-count data-full={`4 ${tx('líneas', 'lines')} · 3,040 ${tx('piezas', 'pieces')}`}>4 {tx('líneas', 'lines')} · 3,040 {tx('piezas', 'pieces')}</span>
+            <span class="l"><span>Subtotal</span><span class="editorial" data-v="177183.2">{mx(177183.2)}</span></span>
+            <span class="l tax"><span>{'IVA 16%'}</span><span class="editorial" data-v="28349.31">{mx(28349.31)}</span></span>
+            <span class="dv"></span>
+            <span class="l total"><span>Total</span><span class="editorial" data-v="205532.51">{mx(205532.51)}</span></span>
+            <span class="f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="shwm-fd">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
+            <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
           </div>
-          <div class="shwm-foot"><span>5 partidas · sin fórmulas · IVA en vivo</span><b class="editorial">Total $242,384.51</b></div>
         </div>
       </div>
     </div>
   )}
 
   {slug === 'editor' && index === 1 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">COT-0150 · Aceros del Norte</span>
-          <span class="shwm-badge shwm-badge-blue">Editando</span>
+    <div class="shwm-frame shwm-scene" data-shx="ed1" data-lines={tx('líneas', 'lines')} data-pcs={tx('piezas', 'pieces')}>
+      <div class="shwm-brw">
+        <div class="shwm-brw-top">
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cordhq.app/app/cotizaciones/nueva</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
         </div>
-        <div class="shwm-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <span class="shwm-search-q">Varilla</span><span class="shwm-search-caret"></span>
-          <span class="shwm-search-n">3 resultados</span>
+        <div class="shwm-as">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></div>
+            <nav class="shwm-as-nav">
+              {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
+            </nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-as-head">
+              <span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>{tx('Nueva cotización', 'New quote')}</strong></span>
+              <span class="shwm-cw-draft">{tx('Borrador', 'Draft')}</span>
+            </div>
+            <div class="shwm-edg shwm-edg-wide">
+              <div class="shwm-edg-main">
+                <div class="shwm-steph"><span class="n">1</span><span class="t">{tx('¿A quién le cotizas?', 'Who are you quoting?')}</span></div>
+                <div class="shwm-client"><span class="shwm-fd grow"><span>Distribuidora El Zarco — Raúl Mendoza</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span><span class="shwm-chips"><span>{tx('Contado', 'Cash')}</span><span class="on">Net 30</span><span>Net 60</span></span></div>
+                <div class="shwm-steph"><span class="n">2</span><span class="t">{tx('¿Qué le vas a cotizar?', 'What are you quoting them?')}</span></div>
+                <div class="shwm-lines shwm-lines-6">
+                  <div class="shwm-lh"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Lista', 'List')}</span><span>{tx('Negociado', 'Negotiated')}</span><span class="r">{tx('Importe', 'Amount')}</span><span class="c">{tx('Margen', 'Margin')}</span></div>
+                  <div class="shwm-lr"><span class="nm">{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>{tx('saco', 'bag')}</small></span><span class="shwm-inp">120</span><span class="ls">{mx(182)}</span><span class="shwm-inp">182.00</span><span class="editorial am">{mx(21840)}</span><span class="shwm-mg">22%</span></div>
+                  <div class="shwm-lr"><span class="nm">{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}<small>{tx('pieza', 'piece')}</small></span><span class="shwm-inp">2400</span><span class="ls">{mx(14.2)}</span><span class="shwm-inp">14.20</span><span class="editorial am">{mx(34080)}</span><span class="shwm-mg">31%</span></div>
+                  <div class="shwm-lr is-new" data-newline><span class="nm">{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>{tx('pieza', 'piece')}</small></span><span class="shwm-inp" data-qty><span data-v>340</span><span class="shwm-crt"></span></span><span class="ls">{mx(191.48)}</span><span class="shwm-inp deal" data-nego><span data-v>168.50</span><span class="shwm-crt"></span></span><span class="editorial am" data-amt>{mx(57290)}</span><span class="shwm-mg" data-mg>18%</span></div>
+                </div>
+                <div class="shwm-add">
+                  <span class="shwm-srch">
+                    <span class="shwm-fd grow" data-search><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span class="q" data-q></span><span class="shwm-crt"></span><span class="ph" data-ph>{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span>
+                    <span class="shwm-drop2" data-drop>
+                      <span class="it on"><span class="n">{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>VAR-038</small></span><span class="editorial p">{mx(191.48)} <small>/ {tx('pieza', 'piece')}</small></span></span>
+                      <span class="it"><span class="n">{tx('Varilla corrugada 1/2" × 12 m', 'Rebar 1/2" × 12 m')}<small>VAR-012</small></span><span class="editorial p">{mx(338.9)} <small>/ {tx('pieza', 'piece')}</small></span></span>
+                      <span class="it"><span class="n">{tx('Varilla corrugada 5/8" × 12 m', 'Rebar 5/8" × 12 m')}<small>VAR-058</small></span><span class="editorial p">{mx(512.4)} <small>/ {tx('pieza', 'piece')}</small></span></span>
+                      <span class="it"><span class="n">{tx('Varilla lisa 1/4" × 6 m', 'Plain bar 1/4" × 6 m')}<small>VLI-014</small></span><span class="editorial p">{mx(58.3)} <small>/ {tx('pieza', 'piece')}</small></span></span>
+                    </span>
+                  </span>
+                  <span class="shwm-free">{tx('+ Línea libre', '+ Free line')}</span>
+                </div>
+              </div>
+              <div class="shwm-sum">
+                <span class="h">{tx('Revisa y envía', 'Review and send')}</span>
+                <span class="c" data-count>3 {tx('líneas', 'lines')} · 2,860 {tx('piezas', 'pieces')}</span>
+                <span class="l"><span>Subtotal</span><span class="editorial" data-sub>{mx(113210)}</span></span>
+                <span class="l save" data-saveline><span>{tx('Le descontaste', 'You discounted them')}</span><span class="editorial">−{mx(7813.2)}</span></span>
+                <span class="l tax"><span>{'IVA 16%'}</span><span class="editorial" data-iva>{mx(18113.6)}</span></span>
+                <span class="dv"></span>
+                <span class="l total"><span>Total</span><span class="editorial" data-tot>{mx(131323.6)}</span></span>
+                <span class="f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="shwm-fd">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
+                <span class="f"><span class="lb">{tx('¿En qué moneda le cotizas?', 'What currency are you quoting in?')}</span><span class="shwm-fd">MXN — {tx('peso mexicano', 'Mexican peso')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
+                <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-search-drop">
-          <div class="shwm-drop-r"><span class="shwm-tag-mono">VAR-038</span><span>Varilla 3/8" × 12m</span><b class="editorial">$191.48</b></div>
-          <div class="shwm-drop-r shwm-drop-drag"><span class="shwm-tag-mono">VAR-012</span><span>Varilla 1/2" × 12m</span><b class="editorial">$338.90</b><span class="shwm-drop-hint">Soltar en la cotización</span></div>
-          <div class="shwm-drop-r"><span class="shwm-tag-mono">VAR-058</span><span>Varilla 5/8" × 12m</span><b class="editorial">$512.40</b></div>
-        </div>
-        <div class="shwm-landing" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
-        </div>
-        <div class="shwm-body shwm-body-tight">
-          <div class="shwm-g shwm-g4 shwm-g-head"><span>Producto</span><span>Cant.</span><span class="shwm-r">Negociado</span><span class="shwm-r">Importe</span></div>
-          <div class="shwm-g shwm-g4"><span>Cemento gris 50kg</span><span>200</span><b class="editorial shwm-r">$179.00</b><b class="editorial shwm-r">$35,800.00</b></div>
-          <div class="shwm-g shwm-g4 shwm-row-new"><span>Varilla 1/2" × 12m <i class="shwm-mini-tag">nuevo</i></span><span>150</span><b class="editorial shwm-r">$322.00</b><b class="editorial shwm-r">$48,300.00</b></div>
-          <div class="shwm-g shwm-g4"><span>Malla electro. 6×6</span><span>90</span><b class="editorial shwm-r">$305.00</b><b class="editorial shwm-r">$27,450.00</b></div>
-        </div>
-        <div class="shwm-foot"><span>Buscar · negociar · enviar — sin cambiar de pantalla</span><b class="editorial">Subtotal $111,550.00</b></div>
       </div>
     </div>
   )}
 
   {slug === 'editor' && index === 2 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">COT-0149 · Resumen validado</span>
-          <span class="shwm-badge shwm-badge-green">● Recalculado</span>
+    <div class="shwm-frame shwm-scene" data-shx="ed2">
+      <div class="shwm-pdf">
+        <div class="shwm-pdf-head">
+          <span class="org"><span class="mk">M</span><span><strong>Materiales del Valle</strong><em>Materiales del Valle, S.A. de C.V.</em><em>RFC MVA240611AB3</em><em>Av. Vallarta 3040, Guadalajara, Jal.</em></span></span>
+          <span class="doc"><span class="lb">{tx('COTIZACIÓN', 'QUOTE')}</span><span class="editorial fo">COT-0148</span><span class="dt">{tx('Emitida: 22 sep 2026', 'Issued: Sep 22, 2026')}</span><span class="dt">{tx('Vigente hasta: 22 oct 2026', 'Valid until: Oct 22, 2026')}</span></span>
         </div>
-        <div class="shwm-body">
-          <div class="shwm-g shwm-g3v shwm-g-head"><span>Concepto</span><span class="shwm-r">Importe</span><span class="shwm-r">Verificado</span></div>
-          <div class="shwm-g shwm-g3v"><span>Cemento gris 50kg × 120</span><b class="editorial shwm-r">$21,840.00</b><span class="shwm-r"><i class="shwm-ck"></i></span></div>
-          <div class="shwm-g shwm-g3v"><span>Varilla 3/8" × 12m × 340</span><b class="editorial shwm-r">$65,103.20</b><span class="shwm-r"><i class="shwm-ck"></i></span></div>
-          <div class="shwm-g shwm-g3v"><span>Block hueco 15×20×40 × 2,400</span><b class="editorial shwm-r">$34,080.00</b><span class="shwm-r"><i class="shwm-ck"></i></span></div>
-          <div class="shwm-g shwm-g3v"><span>Malla electro. 6×6 × 180</span><b class="editorial shwm-r">$56,160.00</b><span class="shwm-r"><i class="shwm-ck"></i></span></div>
+        <div class="shwm-pdf-meta">
+          <span><em>{tx('PARA', 'TO')}</em><strong>Distribuidora El Zarco</strong></span>
+          <span><em>{tx('TÉRMINOS', 'TERMS')}</em><strong>Net 30</strong></span>
+          <span><em>{tx('MONEDA', 'CURRENCY')}</em><strong>{tx('MXN · IVA incluido en el total', 'MXN · tax included in total')}</strong></span>
         </div>
-        <div class="shwm-tot shwm-tot-flash">
-          <div class="shwm-tot-r"><span>Subtotal</span><b class="editorial">$177,183.20</b></div>
-          <div class="shwm-tot-r"><span>IVA 16% <i class="shwm-tot-auto">automático</i></span><b class="editorial">$28,349.31</b></div>
-          <div class="shwm-tot-r shwm-tot-final"><span>Total a pagar</span><b class="editorial shwm-tot-big">$205,532.51</b></div>
+        <div class="shwm-pdf-t">
+          <div class="th"><span>{tx('Concepto', 'Item')}</span><span class="r">{tx('Cantidad', 'Quantity')}</span><span class="r">{tx('Precio unitario', 'Unit price')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
+          <div class="tr"><span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>{tx('pieza', 'piece')}</small></span><span class="r editorial">340</span><span class="r"><span class="st"><s>{mx(191.48)}</s><em>−12%</em></span><span class="editorial">{mx(168.5)}</span></span><span class="r editorial">{mx(57290)}</span></div>
+          <div class="tr"><span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>{tx('saco', 'bag')}</small></span><span class="r editorial">120</span><span class="r"><span class="editorial">{mx(182)}</span></span><span class="r editorial">{mx(21840)}</span></div>
+          <div class="tr"><span>{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}<small>{tx('pieza', 'piece')}</small></span><span class="r editorial">2,400</span><span class="r"><span class="editorial">{mx(14.2)}</span></span><span class="r editorial">{mx(34080)}</span></div>
+          <div class="tr"><span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>{tx('hoja', 'sheet')}</small></span><span class="r editorial">180</span><span class="r"><span class="editorial">{mx(312)}</span></span><span class="r editorial">{mx(56160)}</span></div>
         </div>
-        <div class="shwm-foot"><span class="shwm-foot-ok"><i class="shwm-ck-sm"></i> 0 errores de dedo · totales cuadrados</span><b>Listo para enviar</b></div>
+        <div class="shwm-pdf-tot">
+          <span><span>Subtotal</span><span class="editorial">{mx(169370)}</span></span>
+          <span><span>{'IVA 16%'}</span><span class="editorial">{mx(27099.2)}</span></span>
+          <span class="g"><span>Total</span><span class="editorial">{mx(196469.2)}</span></span>
+        </div>
+        <p class="shwm-pdf-foot">{tx('Documento generado el 22 sep 2026 · Materiales del Valle vía Cord', 'Document generated on Sep 22, 2026 · Materiales del Valle via Cord')}</p>
+      </div>
+      <div class="shwm-sum" data-sum>
+        <span class="h">{tx('Revisa y envía', 'Review and send')}</span>
+        <span class="c">4 {tx('líneas', 'lines')} · 3,040 {tx('piezas', 'pieces')}</span>
+        <span class="l"><span>Subtotal</span><span class="editorial" data-sub>{mx(169370)}</span></span>
+        <span class="l save"><span>{tx('Le descontaste', 'You discounted them')}</span><span class="editorial">−{mx(7813.2)}</span></span>
+        <span class="tg"><span>{tx('Precios ya incluyen IVA', 'Prices already include tax')}</span><span class="shwm-tog" data-tog></span></span>
+        <span class="l tax"><span>{'IVA 16%'}</span><span class="editorial" data-iva>{mx(27099.2)}</span></span>
+        <span class="dv"></span>
+        <span class="l total"><span>Total</span><span class="editorial" data-tot>{mx(196469.2)}</span></span>
+        <span class="send">{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </div>
     </div>
   )}
 
   {/* ═══════════════════════════════ LINK PÚBLICO ═══════════════════════════════ */}
   {slug === 'link-publico' && index === 0 && (
-    <div class="shwm-frame shwm-split">
-      <div class="shwm-half shwm-dead">
-        <div class="shwm-dead-head">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h16v16H4z" fill="currentColor" fill-opacity="0.06"/><path d="M4 7l8 6 8-6"/></svg>
-          <span>Bandeja de entrada</span>
-        </div>
-        <div class="shwm-inbox">
-          <div class="shwm-inbox-r shwm-inbox-old"><span class="shwm-dot-gray"></span><div><b>Cotización nueva.pdf</b><em>hace 3 semanas · sin abrir</em></div></div>
-          <div class="shwm-inbox-r shwm-inbox-old"><span class="shwm-dot-gray"></span><div><b>Re: propuesta — 2.4 MB</b><em>hace 2 semanas · sin abrir</em></div></div>
-          <div class="shwm-inbox-r shwm-inbox-old"><span class="shwm-dot-gray"></span><div><b>ADJ_final_v3.pdf</b><em>hace 9 días · sin abrir</em></div></div>
-        </div>
-        <span class="shwm-dead-tag">El PDF adjunto muere aquí</span>
-      </div>
-      <div class="shwm-arrow" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </div>
-      <div class="shwm-half shwm-live shwm-live-center">
-        <div class="shwm-phone">
-          <div class="shwm-ph-status">
-            <span class="shwm-ph-time">9:41</span>
-            <span class="shwm-ph-island" aria-hidden="true"></span>
-            <span class="shwm-ph-icons">
-              <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.6"/><rect x="5" y="5" width="3" height="7" rx="0.6"/><rect x="10" y="3" width="3" height="9" rx="0.6"/><rect x="15" y="0" width="3" height="12" rx="0.6"/></svg>
-              <svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5.5a13 13 0 0 1 18 0M4.5 8.7a8.2 8.2 0 0 1 11 0M8 12a3 3 0 0 1 4 0"/></svg>
-              <svg viewBox="0 0 25 12" fill="none"><rect x="0.75" y="0.75" width="20.5" height="10.5" rx="2.5" stroke="currentColor" stroke-width="1.2" fill-opacity="0.15" fill="currentColor"/><rect x="2.25" y="2.25" width="14" height="7.5" rx="1.2" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="4" rx="0.9" fill="currentColor"/></svg>
-            </span>
+    <div class="shwm-frame shwm-scene" data-shx="lp0">
+      <div class="shwm-dv shwm-lp0-wa">
+        <div class="shwm-dv-scr shwm-wa2">
+          <div class="shwm-dv-ios dark"><span class="t">12:37</span><span class="isl"></span><span class="ic"><svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.7"/><rect x="5" y="5" width="3" height="7" rx="0.7"/><rect x="10" y="2.5" width="3" height="9.5" rx="0.7"/><rect x="15" y="0" width="3" height="12" rx="0.7"/></svg><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.2a12.5 12.5 0 0 1 17 0M4.6 8.4a8 8 0 0 1 10.8 0M7.8 11.5a3.2 3.2 0 0 1 4.4 0"/></svg><svg viewBox="0 0 27 13" fill="none"><rect x="0.6" y="0.6" width="22.8" height="11.8" rx="3.4" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="14" height="8.2" rx="2" fill="currentColor"/><path d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z" fill="currentColor" fill-opacity="0.45"/></svg></span></div>
+          <div class="shwm-wa2-head">
+            <svg class="bk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <span class="av">LG</span>
+            <span class="who"><strong>Laura Gómez</strong><em data-wastatus data-typing={tx('escribiendo…', 'typing…')} data-idle="Materiales del Valle">Materiales del Valle</em></span>
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="13" height="12" rx="2.5" fill="currentColor" fill-opacity="0.12"/><path d="M15 10.5 21 7v10l-6-3.5"/></svg>
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" fill="currentColor" fill-opacity="0.12"/></svg>
           </div>
-          <div class="shwm-wa-bar">
-            <svg class="shwm-wa-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            <span class="shwm-wa-av">MV</span>
-            <div><b>Materiales del Valle</b><em>en línea</em></div>
-            <span class="shwm-wa-icons">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.3 21 3 13.7 3 4.9c0-.5.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1.1L6.6 10.8z"/></svg>
+          <div class="shwm-wa2-body">
+            <span class="day">{tx('3 sep', 'Sep 3')}</span>
+            <span class="in doc"><span class="dico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.14"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="dtx"><strong>COT-0131.pdf</strong><em>{tx('2 páginas · PDF · 184 kB', '2 pages · PDF · 184 kB')}</em></span><span class="tm">10:14</span></span>
+            <span class="in">{tx('¿Pudiste revisar la cotización?', 'Did you get a chance to look at the quote?')}<span class="tm">17:40</span></span>
+            <span class="day">{tx('8 sep', 'Sep 8')}</span>
+            <span class="in">{tx('Raúl, ¿seguimos con el pedido?', 'Raúl, are we moving ahead with the order?')}<span class="tm">09:12</span></span>
+            <span class="day">{tx('Hoy', 'Today')}</span>
+            <span class="in lnk">
+              <span class="pv"><img src="/favicon-192x192.png" alt="" width="34" height="34" loading="lazy" /><span><strong>{tx('Cotización COT-0148 — Materiales del Valle', 'Quote COT-0148 — Materiales del Valle')}</strong><em>cordhq.app</em></span></span>
+              <span class="msg">{tx('¡Hola Raúl! Te comparto la cotización COT-0148 por', 'Hi Raúl! Here’s your quote COT-0148 for')} {mx(196469.2)}. {tx('Puedes revisarla y aprobarla aquí:', 'You can review and approve it here:')} <u>cordhq.app/q/7Hq2mXe9</u></span>
+              <span class="tm">11:02</span>
             </span>
+            <span class="out" data-reply>{tx('Listo, ya la aprobé.', 'Done, I just approved it.')}<span class="tm">12:37 <svg viewBox="0 0 28 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 8.5 5.5 12.5 13 3.5"/><polyline points="10.5 12.5 12 12.5 21 3.5"/></svg></span></span>
           </div>
-          <div class="shwm-wa-body">
-            <span class="shwm-wa-date">Hoy</span>
-            <div class="shwm-wa-in">Aquí está tu cotización, Raúl. Ábrela y apruébala desde ahí.<i class="shwm-wa-time">12:41</i></div>
-            <div class="shwm-wa-link">
-              <div class="shwm-wa-link-thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></div>
-              <div class="shwm-wa-link-tx">
-                <b>Cotización COT-0148</b>
-                <span class="shwm-wa-link-amt editorial">$196,469.20 MXN</span>
-                <em>portal.materialesdelvalle.mx</em>
-              </div>
+        </div>
+      </div>
+      <div class="shwm-dv shwm-lp0-q">
+        <div class="shwm-dv-scr shwm-qp2">
+          <div class="shwm-dv-ios"><span class="t">12:36</span><span class="isl"></span><span class="ic"><svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.7"/><rect x="5" y="5" width="3" height="7" rx="0.7"/><rect x="10" y="2.5" width="3" height="9.5" rx="0.7"/><rect x="15" y="0" width="3" height="12" rx="0.7"/></svg><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.2a12.5 12.5 0 0 1 17 0M4.6 8.4a8 8 0 0 1 10.8 0M7.8 11.5a3.2 3.2 0 0 1 4.4 0"/></svg><svg viewBox="0 0 27 13" fill="none"><rect x="0.6" y="0.6" width="22.8" height="11.8" rx="3.4" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="14" height="8.2" rx="2" fill="currentColor"/><path d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z" fill="currentColor" fill-opacity="0.45"/></svg></span></div>
+          <div class="shwm-qc">
+            <div class="shwm-qc-head"><span class="br"><span class="mk">M</span><span><strong>Materiales del Valle</strong><em>RFC MVA240611AB3</em></span></span><span class="fo"><em>{tx('COTIZACIÓN', 'QUOTE')}</em><strong>COT-0148</strong></span></div>
+            <div class="shwm-qc-rule"></div>
+            <div class="shwm-qc-meta"><span><em>{tx('PARA', 'FOR')}</em><strong>Distribuidora El Zarco</strong></span><span><em>{tx('VÁLIDA HASTA', 'VALID UNTIL')}</em><strong>{tx('22 oct 2026', 'Oct 22, 2026')}</strong><i>{tx('Vence en 29 días', 'Due in 29 days')}</i></span></div>
+            <div class="shwm-qc-hero"><em>{tx('TOTAL A PAGAR', 'TOTAL DUE')}</em><span class="editorial">{mx(196469.2)}</span><small>MXN · {tx('IVA incluido', 'tax included')}</small></div>
+            <div class="shwm-qc-items">
+              <div class="h"><span>{tx('Concepto', 'Item')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
+              <div class="i"><span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>340 {tx('pieza', 'piece')} · <s>{mx(191.48)}</s> {mx(168.5)}</small></span><span class="editorial r">{mx(57290)}</span></div>
+              <div class="i"><span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>180 {tx('hoja', 'sheet')} · {mx(312)}</small></span><span class="editorial r">{mx(56160)}</span></div>
             </div>
-            <div class="shwm-wa-out">Perfecto, la reviso ahora <i class="shwm-wa-time">12:42 <span class="shwm-wa-tick">✓✓</span></i></div>
+            <div class="shwm-qc-done" data-done aria-hidden="true"><span class="ring"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="14,27 22,35 38,18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><strong>{tx('Cotización aprobada', 'Quote approved')}</strong><em>{tx('Materiales del Valle recibió tu confirmación y se pondrá en contacto contigo en breve.', 'Materiales del Valle received your confirmation and will be in touch shortly.')}</em></div>
           </div>
-          <span class="shwm-ph-home" aria-hidden="true"></span>
+          <div class="shwm-qsticky"><span><em>{tx('Total a pagar', 'Total due')}</em><span class="editorial">{mx(196469.2)}</span></span><span class="cta" data-cta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>{tx('Aprobar', 'Approve')}</span></div>
+          <span class="shwm-tap" data-tap></span>
+          <span class="shwm-dv-home"></span>
         </div>
-        <span class="shwm-live-tag">Un link vive. Se abre con el pulgar.</span>
       </div>
     </div>
   )}
 
   {slug === 'link-publico' && index === 1 && (
-    <div class="shwm-frame">
-      <div class="shwm-browser">
-        <div class="shwm-url">
-          <svg class="shwm-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.1"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-          <span class="shwm-url-t">portal.materialesdelvalle.mx/q/COT-0148</span>
+    <div class="shwm-frame shwm-scene" data-shx="lp1">
+      <div class="shwm-brw shwm-lp1-brw">
+        <div class="shwm-brw-top">
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cotizaciones.materialesdelvalle.mx/q/7Hq2mXe9</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
         </div>
-        <div class="shwm-portal" style="--brand:#b45309;">
-          <div class="shwm-portal-head">
-            <span class="shwm-portal-logo">MV</span>
-            <div><b>Materiales del Valle</b><em>Cotización para Distribuidora El Zarco</em></div>
+        <div class="shwm-qpage">
+          <div class="shwm-qc shwm-qc-lg">
+            <div class="shwm-qc-banner">{tx('Precios válidos al 31 de octubre · Flete sin costo a obra', 'Prices valid through October 31 · Free delivery to site')}</div>
+            <div class="shwm-qc-head"><span class="br"><span class="mk">M</span><span><strong>Materiales del Valle</strong><em>RFC MVA240611AB3</em></span></span><span class="fo"><em>{tx('COTIZACIÓN', 'QUOTE')}</em><strong>COT-0148</strong></span></div>
+            <div class="shwm-qc-rule"></div>
+            <div class="shwm-qc-meta"><span><em>{tx('PARA', 'FOR')}</em><strong>Distribuidora El Zarco</strong></span><span><em>{tx('VÁLIDA HASTA', 'VALID UNTIL')}</em><strong>{tx('22 oct 2026', 'Oct 22, 2026')}</strong><i>{tx('Vence en 29 días', 'Due in 29 days')}</i></span><span><em>{tx('TÉRMINOS', 'TERMS')}</em><strong>Net 30</strong></span></div>
+            <p class="shwm-qc-welcome">{tx('Gracias por considerarnos, Raúl. Cualquier duda sobre cantidades o entrega, escríbenos por aquí mismo.', 'Thanks for considering us, Raúl. Any question about quantities or delivery, write to us right here.')}</p>
+            <div class="shwm-qc-hero"><em>{tx('TOTAL A PAGAR', 'TOTAL DUE')}</em><span class="editorial">{mx(196469.2)}</span><small>MXN · {tx('IVA incluido', 'tax included')}</small></div>
+            <div class="shwm-qc-items shwm-qc-items4">
+              <div class="h"><span>{tx('Concepto', 'Item')}</span><span class="c">{tx('Cant.', 'Qty.')}</span><span class="r">{tx('P. Unit.', 'Unit price')}</span><span class="r">{tx('Importe', 'Amount')}</span></div>
+              <div class="i"><span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}</span><span class="c q">340 {tx('pieza', 'piece')}</span><span class="r p"><s>{mx(191.48)}</s>{mx(168.5)}</span><span class="editorial r">{mx(57290)}</span></div>
+              <div class="i"><span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}</span><span class="c q">180 {tx('hoja', 'sheet')}</span><span class="r p">{mx(312)}</span><span class="editorial r">{mx(56160)}</span></div>
+              <div class="i"><span>{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}</span><span class="c q">2,400 {tx('pieza', 'piece')}</span><span class="r p">{mx(14.2)}</span><span class="editorial r">{mx(34080)}</span></div>
+            </div>
           </div>
-          <div class="shwm-portal-total">
-            <span>Total con IVA</span>
-            <b class="editorial">$196,469.20</b>
-            <em>Net 30 · vigente al 24 jul 2026</em>
-          </div>
-          <div class="shwm-portal-lines">
-            <div class="shwm-pl"><span>Cemento gris 50kg × 120</span><b class="editorial">$21,840.00</b></div>
-            <div class="shwm-pl"><span>Varilla 3/8" × 12m × 340</span><b class="editorial">$65,103.20</b></div>
-            <div class="shwm-pl"><span>Block hueco 15×20×40 × 2,400</span><b class="editorial">$34,080.00</b></div>
-          </div>
-          <div class="shwm-portal-cta">Aprobar cotización</div>
         </div>
       </div>
     </div>
   )}
 
   {slug === 'link-publico' && index === 2 && (
-    <div class="shwm-frame shwm-split">
-      <div class="shwm-half shwm-live shwm-live-center">
-        <div class="shwm-approve-card">
-          <div class="shwm-approve-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <b>Cotización aprobada</b>
-          <em>Firmado por Raúl Mendoza · hoy 12:36</em>
-          <div class="shwm-approve-hash">IP 189.203.44.10 · validez legal</div>
-        </div>
-        <span class="shwm-side-label">El cliente aprueba…</span>
-      </div>
-      <div class="shwm-arrow" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </div>
-      <div class="shwm-half shwm-live shwm-live-center">
-        <div class="shwm-vendor-toast">
-          <span class="shwm-vt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
-          <div class="shwm-vt-tx">
-            <b>Aprobada por Distribuidora El Zarco</b>
-            <span>COT-0148 · $196,469.20 · lista para cobrar</span>
+    <div class="shwm-frame shwm-scene" data-shx="lp2">
+      <div class="shwm-dv shwm-lp2-ph">
+        <div class="shwm-dv-scr shwm-qp2">
+          <div class="shwm-dv-ios"><span class="t">16:08</span><span class="isl"></span><span class="ic"><svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.7"/><rect x="5" y="5" width="3" height="7" rx="0.7"/><rect x="10" y="2.5" width="3" height="9.5" rx="0.7"/><rect x="15" y="0" width="3" height="12" rx="0.7"/></svg><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.2a12.5 12.5 0 0 1 17 0M4.6 8.4a8 8 0 0 1 10.8 0M7.8 11.5a3.2 3.2 0 0 1 4.4 0"/></svg><svg viewBox="0 0 27 13" fill="none"><rect x="0.6" y="0.6" width="22.8" height="11.8" rx="3.4" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="14" height="8.2" rx="2" fill="currentColor"/><path d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z" fill="currentColor" fill-opacity="0.45"/></svg></span></div>
+          <div class="shwm-qc">
+            <div class="shwm-qc-head"><span class="br"><span class="mk">M</span><span><strong>Materiales del Valle</strong><em>RFC MVA240611AB3</em></span></span><span class="fo"><em>{tx('COTIZACIÓN', 'QUOTE')}</em><strong>COT-0151</strong></span></div>
+            <div class="shwm-qc-rule"></div>
+            <div class="shwm-qc-ok"><span class="ring"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="23" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="14,27 22,35 38,18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><strong>{tx('Cotización aprobada', 'Quote approved')}</strong><em>{tx('Materiales del Valle recibió tu confirmación y se pondrá en contacto contigo en breve.', 'Materiales del Valle received your confirmation and will be in touch shortly.')}</em></div>
+            <div class="shwm-qc-pay" data-pay>
+              <span class="lb">{tx('A PAGAR AHORA', 'PAY NOW')}</span>
+              <span class="editorial am">{mx(412300)} <small>MXN</small></span>
+              <span class="cta" data-cta><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{tx('Pagar de forma segura', 'Pay securely')}</span>
+              <span class="sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{tx('Tarjeta o transferencia SPEI · Cord Payments', 'Card or bank transfer · Cord Payments')}</span>
+              <span class="cards"><span>VISA</span><span>MASTERCARD</span><span>AMEX</span></span>
+            </div>
           </div>
+          <p class="shwm-qaviso">{tx('Quien te envió esta propuesta puede ver cuándo la abres y qué secciones revisas.', 'Whoever sent you this proposal can see when you open it and which sections you review.')}</p>
+          <span class="shwm-dv-home"></span>
         </div>
-        <div class="shwm-vendor-status">
-          <span class="shwm-badge shwm-badge-green">● Notificado al instante</span>
+      </div>
+      <div class="shwm-mail" data-mail>
+        <div class="shwm-mail-h">
+          <img src="/favicon-192x192.png" alt="" width="34" height="34" loading="lazy" />
+          <span class="who"><strong>Cord</strong><em>{tx('para mí', 'to me')}</em></span>
+          <span class="when">16:08</span>
         </div>
-        <span class="shwm-side-label">…tú te enteras al segundo.</span>
+        <span class="shwm-mail-s">{tx('Constructora GAMA aprobó tu cotización COT-0151', 'Constructora GAMA approved your quote COT-0151')}</span>
+        <div class="shwm-mail-b">
+          <img src="/imgs/logo-cord-navy.png" alt="Cord" width="82" height="28" loading="lazy" />
+          <p>{tx('Constructora GAMA aprobó la cotización COT-0151 por', 'Constructora GAMA approved quote COT-0151 for')} {mx(412300)}.</p>
+          <span class="btn">{tx('Ver cotización', 'View quote')}</span>
+          <span class="ft">Materiales del Valle · {tx('enviado por Cord', 'sent by Cord')}</span>
+        </div>
       </div>
     </div>
   )}
 
   {/* ═══════════════════════════════ SEGUIMIENTO ═══════════════════════════════ */}
   {slug === 'seguimiento' && index === 0 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Cotizaciones vistas</span>
-          <span class="shwm-badge shwm-badge-green">● En vivo</span>
-        </div>
-        <div class="shwm-temp-grid">
-          <div class="shwm-temp shwm-temp-hot">
-            <div class="shwm-temp-head"><span class="shwm-avat a1">RM</span><span class="shwm-badge shwm-badge-amber">Caliente</span></div>
-            <b>Distribuidora El Zarco</b>
-            <em>COT-0148 · $196,469.20</em>
-            <div class="shwm-temp-meta"><i class="shwm-dot-amber"></i> Vista hace 10 min · 3ª vez</div>
-            <div class="shwm-temp-cta">Llama ahora</div>
+    <div class="shwm-frame shwm-scene" data-shx="tr0">
+      <div class="shwm-dv shwm-tr0-ph">
+        <div class="shwm-dv-scr shwm-lks">
+          <div class="shwm-dv-ios dark"><span class="t"></span><span class="isl"></span><span class="ic"><svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.7"/><rect x="5" y="5" width="3" height="7" rx="0.7"/><rect x="10" y="2.5" width="3" height="9.5" rx="0.7"/><rect x="15" y="0" width="3" height="12" rx="0.7"/></svg><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.2a12.5 12.5 0 0 1 17 0M4.6 8.4a8 8 0 0 1 10.8 0M7.8 11.5a3.2 3.2 0 0 1 4.4 0"/></svg><svg viewBox="0 0 27 13" fill="none"><rect x="0.6" y="0.6" width="22.8" height="11.8" rx="3.4" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="14" height="8.2" rx="2" fill="currentColor"/><path d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z" fill="currentColor" fill-opacity="0.45"/></svg></span></div>
+          <span class="shwm-lks-d">{tx('miércoles 23 de septiembre', 'Wednesday, September 23')}</span>
+          <span class="shwm-lks-t">12:31</span>
+          <div class="shwm-lks-nt" data-nt>
+            <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128" alt="Slack" width="30" height="30" loading="lazy" />
+            <span class="tx"><span class="h"><strong>#ventas</strong><em>{tx('ahora', 'now')}</em></span><span class="b">Cord: {tx('Cotización COT-0148 vista por el cliente', 'Quote COT-0148 viewed by the client')}</span><span class="b2">{tx('Cliente', 'Client')}: Distribuidora El Zarco · Total: {mx(196469.2)}</span></span>
           </div>
-          <div class="shwm-temp shwm-temp-cold">
-            <div class="shwm-temp-head"><span class="shwm-avat a-gray">CG</span><span class="shwm-badge shwm-badge-gray">Frío</span></div>
-            <b>Constructora Apex</b>
-            <em>COT-0131 · $88,400.00</em>
-            <div class="shwm-temp-meta"><i class="shwm-dot-gray"></i> Vista hace 2 semanas · 1ª vez</div>
-            <div class="shwm-temp-cta shwm-temp-cta-off">Silencio de 14 días</div>
+          <span class="shwm-dv-home light"></span>
+        </div>
+      </div>
+      <div class="shwm-cw shwm-tr0-win">
+        <div class="shwm-cw-bar"><strong class="shwm-cw-h">{tx('Inicio', 'Home')}</strong><span class="shwm-rng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
+        <div class="shwm-canvas shwm-tr0-grid">
+          <div class="shwm-card">
+            <div class="shwm-card-h"><strong>{tx('Actividad', 'Activity')}</strong></div>
+            <div class="shwm-feed2">
+              <span class="it" data-new><span class="d" style="background:#7c3aed"></span><span class="tx"><strong>{tx('Abierta por el cliente desde el link', 'Opened by the client from the link')}</strong><em>COT-0148 · {tx('hoy, 12:31', 'today, 12:31')}</em></span></span>
+              <span class="it"><span class="d" style="background:#10b981"></span><span class="tx"><strong>{tx('Firmado digitalmente por "Sofía Ruiz" (IP 201.141.9.30)', 'Digitally signed by "Sofía Ruiz" (IP 201.141.9.30)')}</strong><em>COT-0145 · {tx('hoy, 11:18', 'today, 11:18')}</em></span></span>
+              <span class="it"><span class="d" style="background:#3b82f6"></span><span class="tx"><strong>{tx('Cotización enviada — link generado', 'Quote sent — link generated')}</strong><em>COT-0151 · {tx('hoy, 10:05', 'today, 10:05')}</em></span></span>
+              <span class="it"><span class="d" style="background:#10b981"></span><span class="tx"><strong>{tx('Pago recibido con Cord Payments; cotización saldada', 'Payment received with Cord Payments; quote settled')}</strong><em>COT-0142 · {tx('ayer, 17:40', 'yesterday, 17:40')}</em></span></span>
+              <span class="it"><span class="d" style="background:#7c3aed"></span><span class="tx"><strong>{tx('Abierta por el cliente desde el link', 'Opened by the client from the link')}</strong><em>COT-0131 · {tx('9 sep, 10:22', 'Sep 9, 10:22')}</em></span></span>
+            </div>
+          </div>
+          <div class="shwm-card">
+            <div class="shwm-card-h"><strong>{tx('Necesitan seguimiento', 'Needs follow-up')}</strong><span class="cnt">3</span></div>
+            <div class="shwm-sil">
+              <span class="r"><span class="i"><strong>COT-0131</strong><em>Constructora Apex</em></span><span class="d">{tx('14d sin respuesta', '14d no reply')}</span><span class="editorial t">{mx(88400, 0)}</span><span class="go">→</span></span>
+              <span class="r"><span class="i"><strong>COT-0137</strong><em>Grupo Ferrex</em></span><span class="d">{tx('9d sin respuesta', '9d no reply')}</span><span class="editorial t">{mx(64200, 0)}</span><span class="go">→</span></span>
+              <span class="r"><span class="i"><strong>COT-0144</strong><em>Urbanizadora Sierra</em></span><span class="d">{tx('6d sin respuesta', '6d no reply')}</span><span class="editorial t">{mx(611560, 0)}</span><span class="go">→</span></span>
+            </div>
           </div>
         </div>
-        <div class="shwm-foot"><span>El interés se enfría rápido — atrápalo caliente</span><b>2 abiertas hoy</b></div>
       </div>
     </div>
   )}
 
   {slug === 'seguimiento' && index === 1 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">COT-0148 · Aperturas</span>
-          <span class="shwm-badge shwm-badge-amber">Vista ×3</span>
+    <div class="shwm-frame shwm-scene" data-shx="tr1" data-ap={tx('aperturas', 'opens')}>
+      <div class="shwm-brw">
+        <div class="shwm-brw-top">
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cordhq.app/app/cotizaciones/COT-0148</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
         </div>
-        <div class="shwm-feed">
-          <div class="shwm-feed-r shwm-feed-now">
-            <span class="shwm-feed-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="currentColor" fill-opacity="0.12"/><circle cx="12" cy="12" r="3"/></svg></span>
-            <div class="shwm-feed-tx"><b>Raúl Mendoza abrió el link</b><span>hoy 12:31 · desde iPhone · Guadalajara</span></div>
-            <span class="shwm-feed-n">3ª</span>
-          </div>
-          <div class="shwm-feed-r">
-            <span class="shwm-feed-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="currentColor" fill-opacity="0.12"/><circle cx="12" cy="12" r="3"/></svg></span>
-            <div class="shwm-feed-tx"><b>Raúl Mendoza abrió el link</b><span>hoy 09:14 · desde MacBook</span></div>
-            <span class="shwm-feed-n">2ª</span>
-          </div>
-          <div class="shwm-feed-r">
-            <span class="shwm-feed-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" fill="currentColor" fill-opacity="0.12"/><circle cx="12" cy="12" r="3"/></svg></span>
-            <div class="shwm-feed-tx"><b>Raúl Mendoza abrió el link</b><span>ayer 18:52 · desde iPhone</span></div>
-            <span class="shwm-feed-n">1ª</span>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>COT-0148</strong></span><span class="shwm-sts viewed">{tx('Vista', 'Viewed')}</span></div>
+            <div class="shwm-stp2">
+              <span class="s done"><span class="d" set:html={chk}></span>{tx('Borrador', 'Draft')}</span><span class="s done"><span class="d" set:html={chk}></span>{tx('Enviada', 'Sent')}</span><span class="s cur"><span class="d">3</span>{tx('Vista', 'Viewed')}</span><span class="s"><span class="d">4</span>{tx('Aprobada', 'Approved')}</span><span class="s"><span class="d">5</span>{tx('Pagada', 'Paid')}</span>
+            </div>
+            <div class="shwm-dtg">
+              <div class="shwm-dtg-main">
+                <div class="shwm-dh2">
+                  <span class="av">D</span>
+                  <span class="tx"><span class="n">Distribuidora El Zarco <span class="vb">V1</span><span class="shwm-lv" data-lv><span class="dot"></span>{tx('Viendo ahora', 'Viewing now')}<span class="sec"> — {tx('Partidas', 'Line items')}</span></span></span><span class="m">Net 30 · {tx('Vigente hasta 22 oct 2026', 'Valid until Oct 22, 2026')} · {tx('Creada 22 sep 2026', 'Created Sep 22, 2026')}</span></span>
+                  <span class="tot"><em>TOTAL</em><span class="editorial">{mx(196469.2)}</span></span>
+                </div>
+                <div class="shwm-sech"><strong>{tx('Detalle', 'Details')}</strong></div>
+                <div class="shwm-di"><span class="h">{tx('Producto', 'Product')}</span><span class="h">{tx('Cant.', 'Qty.')}</span><span class="h">{tx('Precio', 'Price')}</span><span class="h r">{tx('Importe', 'Amount')}</span>
+                  <span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>{tx('pieza', 'piece')}</small></span><span>340</span><span class="p"><s>{mx(191.48)}</s><span class="editorial">{mx(168.5)}</span></span><span class="editorial r">{mx(57290)}</span>
+                  <span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>{tx('hoja', 'sheet')}</small></span><span>180</span><span class="p"><span class="editorial">{mx(312)}</span></span><span class="editorial r">{mx(56160)}</span>
+                  <span>{tx('Block hueco 15×20×40', 'Hollow block 15×20×40')}<small>{tx('pieza', 'piece')}</small></span><span>2,400</span><span class="p"><span class="editorial">{mx(14.2)}</span></span><span class="editorial r">{mx(34080)}</span>
+                  <span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>{tx('saco', 'bag')}</small></span><span>120</span><span class="p"><span class="editorial">{mx(182)}</span></span><span class="editorial r">{mx(21840)}</span>
+                </div>
+              </div>
+              <div class="shwm-dtg-side">
+                <div class="shwm-sech"><strong>{tx('Atención del cliente', 'Client attention')}</strong></div>
+                <span class="shwm-at2-s"><span>{tx('1 persona', '1 person')}</span><span class="sep">·</span><span data-aps>3 {tx('aperturas', 'opens')}</span></span>
+                <span class="shwm-at2-d"><span><strong>{tx('Primera', 'First')}</strong> {tx('22 sep 2026, 6:52 p.m.', 'Sep 22, 2026, 6:52 PM')}</span><span><strong>{tx('Última', 'Last')}</strong> <span data-last data-was={tx('23 sep 2026, 9:14 a.m.', 'Sep 23, 2026, 9:14 AM')}>{tx('23 sep 2026, 12:31 p.m.', 'Sep 23, 2026, 12:31 PM')}</span></span></span>
+                <div class="shwm-at2-b">
+                  <span class="r" data-s="72"><span class="lb">{tx('Resumen', 'Summary')}</span><span class="tr"><span class="fl" style="width:33%"></span></span><span class="editorial v">1m 12s</span></span>
+                  <span class="r" data-s="220"><span class="lb">{tx('Partidas', 'Line items')}</span><span class="tr"><span class="fl" style="width:100%"></span></span><span class="editorial v">3m 40s</span></span>
+                  <span class="r" data-s="22"><span class="lb">{tx('Notas y términos', 'Notes and terms')}</span><span class="tr"><span class="fl" style="width:10%"></span></span><span class="editorial v">22s</span></span>
+                  <span class="r" data-s="48"><span class="lb">{tx('Aprobación y pago', 'Approval and payment')}</span><span class="tr"><span class="fl" style="width:22%"></span></span><span class="editorial v">48s</span></span>
+                  <span class="r" data-s="9"><span class="lb">{tx('Conversación', 'Conversation')}</span><span class="tr"><span class="fl" style="width:4%"></span></span><span class="editorial v">9s</span></span>
+                </div>
+                <span class="shwm-at2-n">{tx('Abrió el PDF · 1', 'Opened the PDF · 1')}</span>
+                <span class="shwm-at2-n tot">{tx('Tiempo total sobre la propuesta', 'Total time on the proposal')} <span data-total>6m 11s</span></span>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="shwm-foot"><span>La vio 3 veces en 24 h — está comparando, no ignorando</span><b>Momento de llamar</b></div>
       </div>
     </div>
   )}
 
   {slug === 'seguimiento' && index === 2 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Pipeline · julio 2026</span>
-          <span class="shwm-badge shwm-badge-blue">Este mes</span>
+    <div class="shwm-frame shwm-scene" data-shx="tr2">
+      <div class="shwm-brw">
+        <div class="shwm-brw-top">
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cordhq.app/app</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
         </div>
-        <div class="shwm-kpis">
-          <div class="shwm-kpi"><span>Por cerrar</span><b class="editorial">$1,842,000</b></div>
-          <div class="shwm-kpi"><span>Cerrado del mes</span><b class="editorial shwm-g">$920,400</b></div>
-          <div class="shwm-kpi"><span>Tasa de cierre</span><b class="editorial">41%</b></div>
+        <div class="shwm-as">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span><strong>Materiales del Valle</strong><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/></svg></div>
+            <nav class="shwm-as-nav">
+              {NAV.map((n) => n.g ? <span class="shwm-as-g">{n.g}</span> : <span class={`shwm-as-i${n.k === 'dashboard' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg>{n.l}{n.b && <em>{n.b}</em>}</span>)}
+            </nav>
+          </aside>
+          <div class="shwm-as-main shwm-canvas">
+            <div class="shwm-as-head flat"><span class="tt"><strong>{tx('Inicio', 'Home')}</strong></span><span class="shwm-rng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3" fill="currentColor" fill-opacity="0.12"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg>{tx('Últimos 30 días', 'Last 30 days')}</span></div>
+            <div class="shwm-card shwm-hero2">
+              <div class="top">
+                <span class="pills"><span class="on">{tx('Cerrado', 'Closed')}</span><span>{tx('Cobrado', 'Collected')}</span><span>{tx('Cotizado', 'Quoted')}</span></span>
+              </div>
+              <div class="num"><span class="editorial v" data-hero>{mx(920400)}</span><span class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>18%<em>{tx('vs. periodo anterior', 'vs. previous period')}</em></span></div>
+              <svg class="chart" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true">
+                <defs><linearGradient id={`shwmArea${slug}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a192f" stop-opacity="0.16"/><stop offset="1" stop-color="#0a192f" stop-opacity="0"/></linearGradient></defs>
+                <line x1="0" y1="30" x2="600" y2="30" stroke="rgba(10,25,47,0.06)"/><line x1="0" y1="70" x2="600" y2="70" stroke="rgba(10,25,47,0.06)"/><line x1="0" y1="110" x2="600" y2="110" stroke="rgba(10,25,47,0.08)"/>
+                <path d="M0 104 C 30 102, 50 96, 80 97 S 130 88, 160 84 S 210 86, 240 74 S 290 66, 320 68 S 370 52, 400 50 S 450 44, 480 34 S 540 26, 600 16 L 600 120 L 0 120 Z" fill={`url(#shwmArea${slug})`} data-area/>
+                <path d="M0 104 C 30 102, 50 96, 80 97 S 130 88, 160 84 S 210 86, 240 74 S 290 66, 320 68 S 370 52, 400 50 S 450 44, 480 34 S 540 26, 600 16" fill="none" stroke="#0a192f" stroke-width="2.2" stroke-linecap="round" vector-effect="non-scaling-stroke" data-line/>
+              </svg>
+              <div class="ax"><span>{tx('24 ago', 'Aug 24')}</span><span>{tx('31 ago', 'Aug 31')}</span><span>{tx('7 sep', 'Sep 7')}</span><span>{tx('14 sep', 'Sep 14')}</span><span>{tx('21 sep', 'Sep 21')}</span></div>
+            </div>
+            <div class="shwm-kpis2">
+              <div class="shwm-card k"><span class="lb">{tx('POR CERRAR', 'IN PROGRESS')}</span><span class="editorial v">{mx(1842600)}</span><span class="sub">{tx('6 cotizaciones activas', '6 active quotes')}</span></div>
+              <div class="shwm-card k g"><span class="lb">{tx('TASA DE CIERRE', 'CLOSE RATE')}</span><span class="gauge"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="rgba(10,25,47,0.08)" stroke-width="7"/><circle cx="32" cy="32" r="26" fill="none" stroke="#10b981" stroke-width="7" stroke-linecap="round" stroke-dasharray="163.4" stroke-dashoffset="96.4" transform="rotate(-90 32 32)" data-gauge/></svg><span class="editorial">41%</span></span><span class="sub">{tx('últimos 90 días', 'last 90 days')}</span></div>
+              <div class="shwm-card k"><span class="lb">{tx('POR DAR SEGUIMIENTO', 'NEEDS FOLLOW-UP')}</span><span class="editorial v warn">3</span><span class="sub">{tx('cotizaciones vistas, sin responder', 'quotes viewed, no reply')}</span></div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-pipe">
-          <div class="shwm-pipe-r"><span>Enviadas</span><div class="shwm-cbar"><i style="width:100%"></i></div><b>12 · $2.1M</b></div>
-          <div class="shwm-pipe-r"><span>Vistas</span><div class="shwm-cbar"><i class="amber" style="width:66%"></i></div><b>8 · $1.4M</b></div>
-          <div class="shwm-pipe-r"><span>Aprobadas</span><div class="shwm-cbar"><i class="green" style="width:41%"></i></div><b>5 · $920k</b></div>
-          <div class="shwm-pipe-r"><span>Por vencer 48 h</span><div class="shwm-cbar"><i class="red" style="width:16%"></i></div><b>2 · $310k</b></div>
-        </div>
-        <div class="shwm-foot"><span>Tu pipeline real, no el de la libreta</span><b>2 por vencer — actúa hoy</b></div>
       </div>
     </div>
   )}
@@ -946,75 +1072,137 @@ const NAV = [
 
   {/* ═══════════════════════════════ APROBACIONES ═══════════════════════════════ */}
   {slug === 'aprobaciones' && index === 0 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Control de descuento · COT-0294</span>
-          <span class="shwm-badge shwm-badge-red">Fuera de límite</span>
+    <div class="shwm-frame shwm-scene" data-shx="ap0">
+      <div class="shwm-brw">
+        <div class="shwm-brw-top">
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cordhq.app/app/cotizaciones/nueva</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
         </div>
-        <div class="shwm-thresh">
-          <div class="shwm-thresh-scale">
-            <div class="shwm-thresh-zones">
-              <div class="shwm-tz shwm-tz-ok" style="flex:10"><span>Autorizado</span></div>
-              <div class="shwm-tz shwm-tz-warn" style="flex:15"><span>Requiere gerencia</span></div>
-              <div class="shwm-tz shwm-tz-bad" style="flex:10"><span>Bloqueado</span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>{tx('Nueva cotización', 'New quote')}</strong></span><span class="shwm-cw-draft">{tx('Borrador', 'Draft')}</span></div>
+            <div class="shwm-edg shwm-edg-wide">
+              <div class="shwm-edg-main">
+                <div class="shwm-client"><span class="shwm-fd grow"><span>Constructora GAMA — Ing. Sofía Ruiz</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span><span class="shwm-chips"><span>{tx('Contado', 'Cash')}</span><span class="on">Net 30</span><span>Net 60</span></span></div>
+                <div class="shwm-steph"><span class="n">2</span><span class="t">{tx('¿Qué le vas a cotizar?', 'What are you quoting them?')}</span></div>
+                <div class="shwm-lines shwm-lines-6">
+                  <div class="shwm-lh"><span>{tx('Producto', 'Product')}</span><span>{tx('Cant.', 'Qty.')}</span><span>{tx('Lista', 'List')}</span><span>{tx('Negociado', 'Negotiated')}</span><span class="r">{tx('Importe', 'Amount')}</span><span class="c">{tx('Margen', 'Margin')} <span class="i">?</span></span></div>
+                  <div class="shwm-lr"><span class="nm">{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>{tx('pieza', 'piece')}</small></span><span class="shwm-inp">800</span><span class="ls">{mx(191.48)}</span><span class="shwm-inp deal is-focus" data-nego><span data-v>149.00</span><span class="shwm-crt"></span></span><span class="editorial am" data-amt>{mx(119200)}</span><span class="shwm-mg low" data-mg>7%</span></div>
+                  <div class="shwm-lr"><span class="nm">{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>{tx('saco', 'bag')}</small></span><span class="shwm-inp">300</span><span class="ls">{mx(182)}</span><span class="shwm-inp deal">176.00</span><span class="editorial am">{mx(52800)}</span><span class="shwm-mg">19%</span></div>
+                  <div class="shwm-lr"><span class="nm">{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>{tx('hoja', 'sheet')}</small></span><span class="shwm-inp">120</span><span class="ls">{mx(312)}</span><span class="shwm-inp deal">298.00</span><span class="editorial am">{mx(35760)}</span><span class="shwm-mg">21%</span></div>
+                </div>
+                <div class="shwm-add"><span class="shwm-srch"><span class="shwm-fd grow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg><span class="ph">{tx('Busca un producto de tu catálogo… (nombre o SKU)', 'Search a product in your catalog… (name or SKU)')}</span></span></span><span class="shwm-free">{tx('+ Línea libre', '+ Free line')}</span></div>
+              </div>
+              <div class="shwm-sum">
+                <span class="h">{tx('Revisa y envía', 'Review and send')}</span>
+                <span class="c">3 {tx('líneas', 'lines')} · 1,220 {tx('piezas', 'pieces')}</span>
+                <span class="l"><span>Subtotal</span><span class="editorial" data-sub>{mx(207760)}</span></span>
+                <span class="l save"><span>{tx('Le descontaste', 'You discounted them')}</span><span class="editorial" data-save>−{mx(37464)}</span></span>
+                <span class="l tax"><span>{'IVA 16%'}</span><span class="editorial" data-iva>{mx(33241.6)}</span></span>
+                <span class="dv"></span>
+                <span class="l total"><span>Total</span><span class="editorial" data-tot>{mx(241001.6)}</span></span>
+                <span class="f"><span class="lb">{tx('Vigencia', 'Valid for')}</span><span class="shwm-fd">30 {tx('días', 'days')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></span>
+                <span class="send" data-send>{tx('Crear y enviar', 'Create and send')}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+              </div>
             </div>
-            <div class="shwm-thresh-ticks"><span>0%</span><span>10%</span><span>25%</span><span>35%</span></div>
-            <div class="shwm-thresh-marker" style="left:64%"><span class="shwm-thresh-flag">18% aplicado</span><i></i></div>
-          </div>
-          <div class="shwm-thresh-rows">
-            <div class="shwm-thresh-r"><span>Vendedor: Laura G.</span><b>Descuento 18%</b></div>
-            <div class="shwm-thresh-r"><span>Margen resultante</span><b class="shwm-red-t">18% · bajo el mínimo de 25%</b></div>
-            <div class="shwm-thresh-r"><span>Monto</span><b class="editorial">$240,000.00</b></div>
+            <span class="shwm-toast" data-toast><span class="dot"></span>{tx('Aprobación solicitada — COT-0294. Espera el visto bueno de gerencia.', "Approval requested — COT-0294. Waiting for management's sign-off.")}</span>
           </div>
         </div>
-        <div class="shwm-foot"><span>El descuento que nadie autorizó — bloqueado antes de salir</span><b class="shwm-badge shwm-badge-amber">Escalado a gerencia</b></div>
       </div>
     </div>
   )}
 
   {slug === 'aprobaciones' && index === 1 && (
-    <div class="shwm-frame shwm-center">
-      <div class="shwm-notif">
-        <div class="shwm-notif-head">
-          <span class="shwm-notif-app"><img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://cordhq.app&size=128" alt="Cord" width="18" height="18" loading="lazy" onerror="this.style.display='none'" /></span>
-          <span class="shwm-notif-name">Cord</span>
-          <span class="shwm-notif-time">ahora</span>
-        </div>
-        <div class="shwm-notif-body">
-          <b>Aprobación requerida · COT-0294</b>
-          <span>Laura G. aplicó 18% de descuento a Constructora Apex. El margen queda en 18%, por debajo de tu mínimo de 25%.</span>
-        </div>
-        <div class="shwm-notif-detail">
-          <div class="shwm-nd-r"><span>Monto</span><b class="editorial">$240,000.00</b></div>
-          <div class="shwm-nd-r"><span>Margen resultante</span><b class="shwm-red-t">18%</b></div>
-          <div class="shwm-nd-r"><span>Cliente</span><b>Constructora Apex</b></div>
-        </div>
-        <div class="shwm-notif-actions">
-          <span class="shwm-notif-btn shwm-notif-approve">Aprobar</span>
-          <span class="shwm-notif-btn shwm-notif-reject">Rechazar</span>
+    <div class="shwm-frame shwm-scene" data-shx="ap1">
+      <div class="shwm-dv shwm-ap1-ph">
+        <div class="shwm-dv-scr shwm-mapp">
+          <div class="shwm-dv-ios"><span class="t">10:23</span><span class="isl"></span><span class="ic"><svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="0.7"/><rect x="5" y="5" width="3" height="7" rx="0.7"/><rect x="10" y="2.5" width="3" height="9.5" rx="0.7"/><rect x="15" y="0" width="3" height="12" rx="0.7"/></svg><svg viewBox="0 0 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.2a12.5 12.5 0 0 1 17 0M4.6 8.4a8 8 0 0 1 10.8 0M7.8 11.5a3.2 3.2 0 0 1 4.4 0"/></svg><svg viewBox="0 0 27 13" fill="none"><rect x="0.6" y="0.6" width="22.8" height="11.8" rx="3.4" stroke="currentColor" stroke-opacity="0.45" stroke-width="1.2"/><rect x="2.4" y="2.4" width="14" height="8.2" rx="2" fill="currentColor"/><path d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1z" fill="currentColor" fill-opacity="0.45"/></svg></span></div>
+          <div class="shwm-mapp-top"><span class="mn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></span><span class="tt"><em>{tx('Cotizaciones', 'Quotes')}</em><strong>COT-0294</strong></span><span class="shwm-sts draft" data-pill data-to={tx('Enviada', 'Sent')}>{tx('Borrador', 'Draft')}</span></div>
+          <div class="shwm-mapp-body">
+            <div class="shwm-apb" data-banner>
+              <span class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity="0.12"/><polyline points="12 7 12 12 15.5 14"/></svg>{tx('Pendiente de aprobación', 'Pending approval')}</span>
+              <span class="m">{tx('descuento 22% supera el 10% permitido y margen bruto 7% está por debajo del mínimo de 15%', 'discount 22% exceeds the 10% allowed and gross margin 7% is below the 15% minimum')}</span>
+              <span class="ac"><span class="ok" data-ok>{tx('Aprobar y enviar', 'Approve and send')}</span><span class="no">{tx('Rechazar', 'Reject')}</span></span>
+            </div>
+            <div class="shwm-mdh"><span class="av">C</span><span><strong>Constructora GAMA <span class="vb">V1</span></strong><em>Net 30 · {tx('Vigente hasta 23 oct 2026', 'Valid until Oct 23, 2026')}</em></span></div>
+            <div class="shwm-mtot"><em>TOTAL</em><span class="editorial">{mx(241001.6)}</span></div>
+            <div class="shwm-mitems">
+              <span class="r"><span class="n">{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>800 · <s>{mx(191.48)}</s> {mx(149)}</small></span><span class="editorial">{mx(119200)}</span></span>
+              <span class="r"><span class="n">{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>300 · <s>{mx(182)}</s> {mx(176)}</small></span><span class="editorial">{mx(52800)}</span></span>
+              <span class="r"><span class="n">{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>120 · <s>{mx(312)}</s> {mx(298)}</small></span><span class="editorial">{mx(35760)}</span></span>
+            </div>
+          </div>
+          <div class="shwm-banner-nt" data-nt>
+            <img src="https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://slack.com&size=128" alt="Slack" width="26" height="26" loading="lazy" />
+            <span class="tx"><span class="h"><strong>#gerencia</strong><em>{tx('ahora', 'now')}</em></span><span class="b">Cord: {tx('COT-0294 pide aprobación — descuento 22% supera el 10% permitido', 'COT-0294 needs approval — discount 22% exceeds the 10% allowed')}</span></span>
+          </div>
+          <span class="shwm-dv-home"></span>
         </div>
       </div>
-      <span class="shwm-center-label">Aprueba desde el celular, sin junta.</span>
+      <div class="shwm-cw shwm-ap1-win">
+        <div class="shwm-cw-bar"><strong class="shwm-cw-h">{tx('Cotizaciones', 'Quotes')}</strong><span class="shwm-cw-me"><span class="av">LG</span>Laura Gómez</span></div>
+        <div class="shwm-qlist">
+          <div class="shwm-fl"><span class="on">{tx('Todas', 'All')}<em>14</em></span><span>{tx('Abiertas', 'Open')}<em>7</em></span><span>{tx('Por aprobar', 'Needs approval')}<em data-appn>1</em></span><span>{tx('Aprobadas', 'Approved')}<em>3</em></span></div>
+          <div class="shwm-qt h"><span>{tx('Cotización', 'Quote')}</span><span>{tx('Cliente', 'Client')}</span><span class="r">Total</span><span>{tx('Estado', 'Status')}</span></div>
+          <div class="shwm-qt" data-row><span class="f">COT-0294</span><span class="cl"><span class="av">C</span>Constructora GAMA</span><span class="editorial r">{mx(241002, 0)}</span><span><span class="shwm-sts draft" data-rpill data-to={tx('Enviada', 'Sent')}>{tx('Borrador', 'Draft')}</span></span></div>
+          <div class="shwm-qt"><span class="f">COT-0151</span><span class="cl"><span class="av">C</span>Constructora GAMA</span><span class="editorial r">{mx(412300, 0)}</span><span><span class="shwm-sts sent">{tx('Enviada', 'Sent')}</span></span></div>
+          <div class="shwm-qt"><span class="f">COT-0148</span><span class="cl"><span class="av">D</span>Distribuidora El Zarco</span><span class="editorial r">{mx(196469, 0)}</span><span><span class="shwm-sts viewed">{tx('Vista', 'Viewed')}</span></span></div>
+          <div class="shwm-qt"><span class="f">COT-0145</span><span class="cl"><span class="av">G</span>Grupo Ferrex</span><span class="editorial r">{mx(268900, 0)}</span><span><span class="shwm-sts approved">{tx('Aprobada', 'Approved')}</span></span></div>
+        </div>
+      </div>
     </div>
   )}
 
   {slug === 'aprobaciones' && index === 2 && (
-    <div class="shwm-frame">
-      <div class="shwm-app">
-        <div class="shwm-bar">
-          <span class="shwm-bar-t">Bitácora de aprobaciones · COT-0294</span>
-          <span class="shwm-badge shwm-badge-green">Log inmutable</span>
+    <div class="shwm-frame shwm-scene" data-shx="ap2">
+      <div class="shwm-brw shwm-ap2-brw">
+        <div class="shwm-brw-top">
+          <span class="nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+          <span class="url"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor" fill-opacity="0.14"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>cordhq.app/app/cotizaciones/COT-0294</span>
+          <span class="act"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="8 7 12 3 16 7"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>
         </div>
-        <div class="shwm-body">
-          <div class="shwm-g shwm-g-audit shwm-g-head"><span>Evento</span><span>Quién</span><span class="shwm-r">Hora</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot blue"></i>Solicitud de descuento (18%)</div><span class="shwm-audit-actor">Laura G. · Vendedor</span><span class="shwm-r shwm-mut">10:15</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>Margen revisado · 18% &#60; 25%</div><span class="shwm-audit-actor">Auditor silencioso</span><span class="shwm-r shwm-mut">10:22</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot amber"></i>Escalado a gerencia</div><span class="shwm-audit-actor">Sistema</span><span class="shwm-r shwm-mut">10:22</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>Aprobación liberada</div><span class="shwm-audit-actor">Ana P. · Gerencia</span><span class="shwm-r shwm-mut">10:24</span></div>
-          <div class="shwm-g shwm-g-audit"><div class="shwm-audit-what"><i class="shwm-ad-dot green"></i>Cotización enviada al cliente</div><span class="shwm-audit-actor">Laura G. · Vendedor</span><span class="shwm-r shwm-mut">10:26</span></div>
+        <div class="shwm-as is-col">
+          <aside class="shwm-as-side">
+            <div class="shwm-as-org"><span class="av">M</span></div>
+            <nav class="shwm-as-nav">{NAV.filter((n) => !n.g).map((n) => <span class={`shwm-as-i${n.k === 'cotizaciones' ? ' on' : ''}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON[n.k as string]}></svg></span>)}</nav>
+          </aside>
+          <div class="shwm-as-main">
+            <div class="shwm-as-head"><span class="tt"><span class="cr">{tx('Cotizaciones', 'Quotes')} <span class="sep">/</span></span><strong>COT-0294</strong></span><span class="shwm-sts sent">{tx('Enviada', 'Sent')}</span></div>
+            <div class="shwm-stp2">
+              <span class="s done"><span class="d" set:html={chk}></span>{tx('Borrador', 'Draft')}</span><span class="s cur"><span class="d">2</span>{tx('Enviada', 'Sent')}</span><span class="s"><span class="d">3</span>{tx('Vista', 'Viewed')}</span><span class="s"><span class="d">4</span>{tx('Aprobada', 'Approved')}</span><span class="s"><span class="d">5</span>{tx('Pagada', 'Paid')}</span>
+            </div>
+            <div class="shwm-dtg">
+              <div class="shwm-dtg-main">
+                <div class="shwm-dh2"><span class="av">C</span><span class="tx"><span class="n">Constructora GAMA <span class="vb">V1</span></span><span class="m">Net 30 · {tx('Vigente hasta 23 oct 2026', 'Valid until Oct 23, 2026')} · {tx('Creada 23 sep 2026', 'Created Sep 23, 2026')}</span></span><span class="tot"><em>TOTAL</em><span class="editorial">{mx(241001.6)}</span></span></div>
+                <div class="shwm-sech"><strong>{tx('Detalle', 'Details')}</strong></div>
+                <div class="shwm-di"><span class="h">{tx('Producto', 'Product')}</span><span class="h">{tx('Cant.', 'Qty.')}</span><span class="h">{tx('Precio', 'Price')}</span><span class="h r">{tx('Importe', 'Amount')}</span>
+                  <span>{tx('Varilla corrugada 3/8" × 12 m', 'Rebar 3/8" × 12 m')}<small>{tx('pieza', 'piece')}</small></span><span>800</span><span class="p"><s>{mx(191.48)}</s><span class="editorial">{mx(149)}</span></span><span class="editorial r">{mx(119200)}</span>
+                  <span>{tx('Cemento gris 50 kg', 'Gray cement 50 kg')}<small>{tx('saco', 'bag')}</small></span><span>300</span><span class="p"><s>{mx(182)}</s><span class="editorial">{mx(176)}</span></span><span class="editorial r">{mx(52800)}</span>
+                  <span>{tx('Malla electrosoldada 6×6', 'Welded wire mesh 6×6')}<small>{tx('hoja', 'sheet')}</small></span><span>120</span><span class="p"><s>{mx(312)}</s><span class="editorial">{mx(298)}</span></span><span class="editorial r">{mx(35760)}</span>
+                </div>
+              </div>
+              <div class="shwm-dtg-side">
+                <div class="shwm-sech"><strong>{tx('Actividad', 'Activity')}</strong></div>
+                <div class="shwm-tl2">
+                  <span class="it"><span class="d" style="background:#3b82f6"></span><span class="tx"><strong>{tx('Aprobada por gerencia y enviada al cliente', 'Approved by management and sent to the client')}</strong><em>{tx('hoy, 10:24', 'today, 10:24')}</em></span></span>
+                  <span class="it"><span class="d" style="background:#cbd5e1"></span><span class="tx"><strong>{tx('Borrador creado', 'Draft created')}</strong><em>{tx('hoy, 10:15', 'today, 10:15')}</em></span></span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="shwm-foot"><span>Quién pidió, quién aprobó, a qué hora — sin dudas</span><b>Responsabilidad clara</b></div>
+      </div>
+      <div class="shwm-audit2" data-audit>
+        <div class="shwm-audit2-h"><span class="bk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>{tx('Configuración', 'Settings')}</span><span class="sep">/</span><strong>{tx('Auditoría', 'Audit log')}</strong></div>
+        <p class="shwm-audit2-i">{tx('Registro inmutable de cada cambio: qué, cuándo e IP. Solo lectura — para tus auditores.', 'Immutable log of every change: what, when, and IP. Read-only — for your auditors.')}</p>
+        <span class="r" data-arow><span class="a">cotizacion.aprobacion_aprobada</span><span class="d">COT-0294</span><span class="w">{tx('hoy, 10:24', 'today, 10:24')} · 201.141.28.77</span></span>
+        <span class="r" data-arow><span class="a">cotizacion.aprobacion_solicitada</span><span class="d">{tx('COT-0294 — descuento 22% supera el 10% permitido y margen bruto 7% está por debajo del mínimo de 15%', 'COT-0294 — discount 22% exceeds the 10% allowed and gross margin 7% is below the 15% minimum')}</span><span class="w">{tx('hoy, 10:15', 'today, 10:15')} · 187.190.4.212</span></span>
+        <span class="r" data-arow><span class="a">org.actualizada</span><span class="d">{tx('Campos: aprob_descuento_max, aprob_margen_min', 'Fields: aprob_descuento_max, aprob_margen_min')}</span><span class="w">{tx('hoy, 09:02', 'today, 09:02')} · 201.141.28.77</span></span>
       </div>
     </div>
   )}
@@ -1223,7 +1411,6 @@ const NAV = [
     color: #0f172a;
   }
   .shwm-app-narrow { max-width: 520px; }
-  .shwm-app-flush { max-width: none; box-shadow: 0 1px 2px rgba(10,25,47,0.04), 0 16px 40px -18px rgba(10,25,47,0.16); }
 
   /* ── Toolbar real (título izq · badge der) — NUNCA 3 puntos macOS ── */
   .shwm-bar {
@@ -1243,58 +1430,20 @@ const NAV = [
   .shwm-badge-blue { color: #2563eb; background: rgba(37,99,235,0.09); border-color: rgba(37,99,235,0.2); }
   .shwm-badge-green { color: #059669; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.22); }
   .shwm-badge-amber { color: #d97706; background: rgba(245,158,11,0.11); border-color: rgba(245,158,11,0.25); }
-  .shwm-badge-red { color: #dc2626; background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.2); }
+  
   .shwm-badge-gray { color: #64748b; background: rgba(10,25,47,0.05); border-color: rgba(10,25,47,0.1); }
 
   /* ── Body & footer ── */
   .shwm-body { padding: 10px 12px 12px; }
-  .shwm-body-tight { padding-top: 4px; }
+  
   .shwm-foot {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     padding: 15px 20px; border-top: 1px solid rgba(10,25,47,0.06);
     background: #fcfdfe; font-size: 0.8rem; color: #94a3b8;
   }
   .shwm-foot b { color: #0f172a; font-weight: 700; }
-  .shwm-foot-ok { display: inline-flex; align-items: center; gap: 8px; color: #059669; font-weight: 600; }
 
-  /* ── Search bar + catalog drop (editor tab 2: "sin fricción") ── */
-  .shwm-search {
-    display: flex; align-items: center; gap: 10px;
-    padding: 13px 20px;
-    border-bottom: 1px solid rgba(10,25,47,0.06);
-  }
-  .shwm-search > svg { width: 16px; height: 16px; flex-shrink: 0; color: #94a3b8; }
-  .shwm-search-q { font-size: 0.85rem; font-weight: 600; color: #0f172a; }
-  .shwm-search-caret {
-    width: 1.5px; height: 15px; background: #0a192f; border-radius: 1px;
-    animation: shwm-caret-blink 1s step-end infinite;
-  }
-  .shwm-search-n { margin-left: auto; font-size: 0.72rem; color: #94a3b8; font-weight: 500; }
   @keyframes shwm-caret-blink { 50% { opacity: 0; } }
-
-  .shwm-search-drop { padding: 6px 12px; background: #fafbfc; border-bottom: 1px solid rgba(10,25,47,0.06); }
-  .shwm-drop-r {
-    position: relative;
-    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
-    padding: 9px 10px; border-radius: 9px;
-    font-size: 0.8rem; color: #475569;
-  }
-  .shwm-drop-r + .shwm-drop-r { margin-top: 2px; }
-  .shwm-drop-r b { color: #0f172a; }
-  .shwm-drop-drag {
-    background: rgba(37,99,235,0.07);
-    box-shadow: inset 0 0 0 1.5px rgba(37,99,235,0.35);
-  }
-  .shwm-drop-hint {
-    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-    font-style: normal; font-size: 0.58rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px;
-    color: #2563eb; background: #ffffff; padding: 4px 9px; border-radius: 100px;
-    border: 1px solid rgba(37,99,235,0.25); white-space: nowrap;
-  }
-
-  /* Small "landing" arrow between the drag row and the quote table below */
-  .shwm-landing { display: flex; align-items: center; justify-content: center; padding: 4px 0; color: #cbd5e1; }
-  .shwm-landing svg { width: 15px; height: 15px; }
 
   /* ── Grid rows (tablas densas) ── */
   .shwm-g { display: grid; align-items: center; gap: 14px; padding: 12px 14px; font-size: 0.85rem; color: #475569; border-bottom: 1px solid rgba(10,25,47,0.045); }
@@ -1304,15 +1453,13 @@ const NAV = [
   .shwm-r { text-align: right; justify-self: end; }
   .shwm-mut { color: #94a3b8; font-weight: 400; }
   .shwm-g { grid-template-columns: 2fr 0.7fr 1fr 1.1fr; }
-  .shwm-g4 { grid-template-columns: 2fr 0.7fr 1fr 1.1fr; }
-  .shwm-g3v { grid-template-columns: 2.4fr 1fr 0.7fr; }
+
   .shwm-g-cli { grid-template-columns: 2fr 1.4fr 1fr; }
   .shwm-g-audit { grid-template-columns: 2.2fr 1.4fr 0.9fr; }
   .shwm-g-line { grid-template-columns: 2.3fr 1fr 1.1fr; }
 
   .shwm-g { }
-  .shwm-row-new { background: rgba(37,99,235,0.05); border-radius: 8px; }
-  .shwm-mini-tag { font-style: normal; font-size: 0.58rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #2563eb; background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.2); padding: 1px 6px; border-radius: 5px; margin-left: 6px; vertical-align: middle; }
+
   .shwm-g-value { }
 
   .shwm-g { }
@@ -1322,7 +1469,7 @@ const NAV = [
   .shwm-line-nego { background: rgba(245,158,11,0.055); border-radius: 8px; }
   .shwm-line-was { display: block; font-style: normal; font-size: 0.66rem; color: #cbd5e1; text-decoration: line-through; margin-top: 2px; }
   .shwm-amber-t { color: #d97706 !important; }
-  .shwm-red-t { color: #dc2626 !important; }
+  
   .shwm-g .shwm-g, .shwm-g { }
 
   /* ── Avatars ── */
@@ -1336,8 +1483,7 @@ const NAV = [
   .shwm-ck::after { content: ''; width: 6px; height: 10px; border: solid #fff; border-width: 0 2.2px 2.2px 0; transform: rotate(45deg) translate(-1px,-1px); }
   .shwm-ck-sm { width: 15px; height: 15px; border-radius: 50%; background: #10b981; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
   .shwm-ck-sm::after { content: ''; width: 4px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-0.5px,-1px); }
-  .shwm-dot-gray { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; }
-  .shwm-dot-amber { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.18); display: inline-block; }
+
   .shwm-g { }
 
   /* ── Tag mono (SKU / RFC) ── */
@@ -1355,197 +1501,11 @@ const NAV = [
   .shwm-amber-t { color: #d97706; }
   .shwm-kpi b.shwm-amber-t { color: #d97706; }
 
-  /* ── Totals block ── */
-  .shwm-tot { margin: 8px 14px 4px; padding: 12px 4px 4px; border-top: 1px solid rgba(10,25,47,0.08); }
-  .shwm-tot-flash { border-radius: 0 0 4px 4px; }
-  .shwm-tot-r { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; font-size: 0.88rem; color: #64748b; }
-  .shwm-tot-r b { color: #0f172a; font-weight: 600; }
-  .shwm-tot-auto { font-style: normal; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; color: #059669; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 1px 6px; border-radius: 5px; margin-left: 6px; }
-  .shwm-tot-final { margin-top: 4px; padding-top: 11px; border-top: 1px solid rgba(10,25,47,0.08); }
-  .shwm-tot-final span { font-weight: 700; color: #0f172a; }
-  .shwm-tot-big { font-size: 1.28rem !important; letter-spacing: -0.03em; }
-
-  /* ── cbar (barras horizontales) ── */
-  .shwm-cbar { height: 9px; border-radius: 100px; background: #eef2f7; overflow: hidden; }
-  .shwm-cbar > i { display: block; height: 100%; border-radius: 100px; background: #2563eb; }
-  .shwm-cbar > i.amber { background: #f59e0b; }
-  .shwm-cbar > i.green { background: #059669; }
-  .shwm-cbar > i.red { background: #dc2626; }
-
-  /* ══════════════════ EDITOR / SPLIT (dead vs live) ══════════════════ */
-  .shwm-split { gap: 0; align-items: stretch; padding: 3rem 2.6rem; }
-  .shwm-half { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; position: relative; }
-  .shwm-live { flex: 1.15; }
-  .shwm-live-center { align-items: center; }
-
-  .shwm-dead { padding-right: 1.2rem; filter: saturate(0.35); }
-  .shwm-dead-head { display: flex; align-items: center; gap: 9px; font-size: 0.74rem; font-weight: 600; color: #94a3b8; margin-bottom: 12px; }
-  .shwm-dead-head svg { width: 18px; height: 18px; color: #94a3b8; }
-  .shwm-xls { background: #f4f5f6; border: 1px solid rgba(10,25,47,0.08); border-radius: 10px; overflow: hidden; }
-  .shwm-xls-r { display: grid; grid-template-columns: 1.5fr 0.6fr 0.8fr 0.9fr; gap: 8px; padding: 9px 12px; font-size: 0.72rem; color: #64748b; border-bottom: 1px solid rgba(10,25,47,0.06); }
-  .shwm-xls-r:last-child { border-bottom: none; }
-  .shwm-xls-r span:not(.shwm-xls-err) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .shwm-xls-bad { background: rgba(220,38,38,0.04); }
-  .shwm-xls-mut { color: #b6bcc6; font-family: var(--font-mono, monospace); font-size: 0.66rem; }
-  .shwm-xls-err { color: #dc2626; font-weight: 700; font-family: var(--font-mono, monospace); }
-  .shwm-dead-tag { display: inline-flex; align-self: flex-start; margin-top: 12px; font-size: 0.68rem; font-weight: 600; color: #dc2626; background: rgba(220,38,38,0.06); border: 1px solid rgba(220,38,38,0.14); padding: 5px 11px; border-radius: 100px; }
-
-  .shwm-arrow { flex-shrink: 0; align-self: center; width: 46px; display: flex; align-items: center; justify-content: center; color: #cbd5e1; padding: 0 0.4rem; }
-  .shwm-arrow svg { width: 30px; height: 30px; }
-
-  .shwm-side-label, .shwm-live-tag { font-size: 0.72rem; font-weight: 600; color: #94a3b8; margin-top: 14px; text-align: center; }
   .shwm-center-label { font-size: 0.82rem; font-weight: 600; color: #64748b; }
 
-  /* ══════════════════ LINK PÚBLICO — inbox / phone / browser ══════════════════ */
-  .shwm-inbox { display: flex; flex-direction: column; gap: 8px; }
-  .shwm-inbox-r { display: flex; align-items: center; gap: 11px; padding: 11px 13px; background: #f4f5f6; border: 1px solid rgba(10,25,47,0.06); border-radius: 10px; }
-  .shwm-inbox-old b { display: block; font-size: 0.76rem; color: #94a3b8; font-weight: 500; }
-  .shwm-inbox-old em { display: block; font-style: normal; font-size: 0.66rem; color: #b6bcc6; margin-top: 2px; }
-
-  /* ── Phone frame: status bar + island + home indicator (real device chrome) ── */
-  .shwm-phone {
-    position: relative;
-    width: 308px;
-    background: #ffffff;
-    border-radius: 42px;
-    border: 1px solid rgba(10,25,47,0.08);
-    box-shadow:
-      0 2px 4px rgba(10,25,47,0.05),
-      0 40px 80px -22px rgba(10,25,47,0.32),
-      0 70px 120px -48px rgba(10,25,47,0.26),
-      inset 0 0 0 1px rgba(255,255,255,0.5);
-    overflow: hidden;
-  }
-  .shwm-ph-status {
-    position: relative;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 11px 24px 2px;
-    background: #075e54;
-  }
-  .shwm-ph-time { font-size: 0.72rem; font-weight: 700; color: #fff; letter-spacing: 0.1px; }
-  .shwm-ph-island {
-    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-    width: 76px; height: 20px; background: #000; border-radius: 100px;
-  }
-  .shwm-ph-icons { display: flex; align-items: center; gap: 4px; color: #fff; }
-  .shwm-ph-icons svg { width: 16px; height: 11px; }
-  .shwm-ph-icons svg:nth-child(3) { width: 21px; height: 11px; }
-
-  .shwm-wa-bar { display: flex; align-items: center; gap: 10px; padding: 8px 16px 13px; background: #075e54; color: #fff; }
-  .shwm-wa-back { width: 17px; height: 17px; flex-shrink: 0; color: rgba(255,255,255,0.85); }
-  .shwm-wa-bar b { display: block; font-size: 0.8rem; font-weight: 600; color: #fff; }
-  .shwm-wa-bar em { display: block; font-style: normal; font-size: 0.64rem; color: rgba(255,255,255,0.75); }
-  .shwm-wa-bar > div { flex: 1; min-width: 0; }
-  .shwm-wa-av { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2); display: inline-flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; }
-  .shwm-wa-icons { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
-  .shwm-wa-icons svg { width: 17px; height: 17px; color: rgba(255,255,255,0.9); }
-
-  .shwm-wa-body {
-    position: relative;
-    padding: 14px 14px 30px;
-    background: #e5ddd5;
-    background-image: radial-gradient(rgba(10,25,47,0.05) 1px, transparent 1px);
-    background-size: 15px 15px;
-    display: flex; flex-direction: column; gap: 10px; min-height: 254px;
-  }
-  .shwm-wa-date {
-    align-self: center;
-    font-size: 0.6rem; font-weight: 600; color: #6d7c85;
-    background: rgba(255,255,255,0.7); padding: 3px 11px; border-radius: 8px;
-    margin-bottom: 2px;
-  }
-  .shwm-wa-in, .shwm-wa-out { max-width: 84%; font-size: 0.76rem; line-height: 1.44; padding: 8px 11px 6px; border-radius: 11px; box-shadow: 0 1px 1px rgba(10,25,47,0.06); }
-  .shwm-wa-in { align-self: flex-start; background: #fff; color: #2c2c2c; border-radius: 11px 11px 11px 3px; }
-  .shwm-wa-out { align-self: flex-end; background: #dcf8c6; color: #2c2c2c; border-radius: 11px 11px 3px 11px; }
-  .shwm-wa-time {
-    display: block; font-style: normal; font-size: 0.58rem; color: rgba(0,0,0,0.36);
-    text-align: right; margin-top: 3px;
-  }
-  .shwm-wa-tick { color: #34b7f1; margin-left: 3px; }
-  .shwm-wa-link {
-    align-self: flex-start; max-width: 88%;
-    display: flex; align-items: center; gap: 11px;
-    background: #fff; border: 1px solid rgba(10,25,47,0.07); border-radius: 13px;
-    padding: 10px 12px; box-shadow: 0 6px 16px -8px rgba(10,25,47,0.22);
-  }
-  .shwm-wa-link-thumb {
-    width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
-    background: linear-gradient(150deg, #0e2240, #0a192f);
-    display: inline-flex; align-items: center; justify-content: center; color: #fff;
-  }
-  .shwm-wa-link-thumb svg { width: 19px; height: 19px; }
-  .shwm-wa-link-tx { min-width: 0; }
-  .shwm-wa-link-tx b { display: block; font-size: 0.74rem; color: #0f172a; font-weight: 600; }
-  .shwm-wa-link-amt { display: block; font-size: 0.76rem; color: #0a192f; font-weight: 700; margin: 2px 0; }
-  .shwm-wa-link-tx em { display: block; font-style: normal; font-size: 0.6rem; color: #94a3b8; }
-  .shwm-ph-home {
-    position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
-    width: 112px; height: 4.5px; border-radius: 100px; background: rgba(10,25,47,0.2);
-  }
-
-  /* browser */
-  .shwm-browser { width: 100%; max-width: 640px; background: #ffffff; border-radius: 16px; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 30px 60px -20px rgba(10,25,47,0.18), inset 0 1px 0 rgba(255,255,255,0.7); overflow: hidden; }
-  .shwm-url { display: flex; align-items: center; gap: 9px; padding: 12px 16px; background: #f4f5f6; border-bottom: 1px solid rgba(10,25,47,0.06); }
-  .shwm-lock { width: 15px; height: 15px; color: #059669; flex-shrink: 0; }
-  .shwm-url-t { font-size: 0.78rem; color: #64748b; font-family: var(--font-mono, ui-monospace, monospace); }
-  .shwm-portal { padding: 26px 28px 28px; text-align: center; }
-  .shwm-portal-head { display: flex; align-items: center; gap: 12px; text-align: left; }
-  .shwm-portal-logo { width: 42px; height: 42px; border-radius: 11px; background: var(--brand,#0a192f); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; flex-shrink: 0; }
-  .shwm-portal-head b { display: block; font-size: 0.92rem; color: #0f172a; font-weight: 700; }
-  .shwm-portal-head em { display: block; font-style: normal; font-size: 0.72rem; color: #94a3b8; margin-top: 2px; }
-  .shwm-portal-total { padding: 22px 0 18px; }
-  .shwm-portal-total > span { display: block; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #a3adba; }
-  .shwm-portal-total > b { display: block; font-size: 2.4rem; color: #0f172a; letter-spacing: -0.035em; margin-top: 6px; }
-  .shwm-portal-total > em { display: block; font-style: normal; font-size: 0.74rem; color: #94a3b8; margin-top: 6px; }
-  .shwm-portal-lines { text-align: left; border-top: 1px solid rgba(10,25,47,0.06); border-bottom: 1px solid rgba(10,25,47,0.06); }
   .shwm-pl { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 2px; font-size: 0.82rem; color: #475569; border-bottom: 1px solid rgba(10,25,47,0.04); }
   .shwm-pl:last-child { border-bottom: none; }
   .shwm-pl b { color: #0f172a; font-weight: 600; }
-  .shwm-portal-cta { margin-top: 20px; background: var(--brand,#0a192f); color: #fff; font-size: 0.9rem; font-weight: 700; padding: 14px; border-radius: 12px; box-shadow: 0 10px 24px -10px rgba(180,83,9,0.5); }
-
-  /* approve → vendor cause/effect */
-  .shwm-approve-card { width: 100%; max-width: 300px; background: #fff; border: 1px solid rgba(10,25,47,0.07); border-radius: 18px; box-shadow: 0 24px 50px -20px rgba(10,25,47,0.2); padding: 26px 22px; text-align: center; }
-  .shwm-approve-ring { width: 58px; height: 58px; border-radius: 50%; margin: 0 auto 14px; background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 8px rgba(16,185,129,0.12); }
-  .shwm-approve-ring svg { width: 28px; height: 28px; }
-  .shwm-approve-card b { display: block; font-size: 1rem; color: #0f172a; font-weight: 700; }
-  .shwm-approve-card em { display: block; font-style: normal; font-size: 0.74rem; color: #94a3b8; margin-top: 6px; }
-  .shwm-approve-hash { margin-top: 12px; font-size: 0.64rem; color: #b6bcc6; font-family: var(--font-mono, monospace); }
-
-  .shwm-vendor-toast { width: 100%; max-width: 320px; display: flex; align-items: flex-start; gap: 13px; background: #fff; border: 1px solid rgba(10,25,47,0.07); border-radius: 14px; box-shadow: 0 20px 44px -18px rgba(10,25,47,0.22); padding: 15px 16px; }
-  .shwm-vt-ico { width: 38px; height: 38px; border-radius: 10px; background: rgba(16,185,129,0.1); color: #059669; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .shwm-vt-ico svg { width: 19px; height: 19px; }
-  .shwm-vt-tx b { display: block; font-size: 0.86rem; color: #0f172a; font-weight: 700; }
-  .shwm-vt-tx span { display: block; font-size: 0.72rem; color: #94a3b8; margin-top: 3px; line-height: 1.4; }
-  .shwm-vendor-status { margin-top: 14px; }
-
-  /* ══════════════════ SEGUIMIENTO ══════════════════ */
-  .shwm-temp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 18px 18px 10px; }
-  .shwm-temp { border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
-  .shwm-temp-hot { background: linear-gradient(160deg, rgba(245,158,11,0.07), rgba(245,158,11,0.02)); border: 1px solid rgba(245,158,11,0.2); }
-  .shwm-temp-cold { background: #f8fafc; border: 1px solid rgba(10,25,47,0.06); filter: saturate(0.6); }
-  .shwm-temp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .shwm-temp b { font-size: 0.92rem; color: #0f172a; font-weight: 700; }
-  .shwm-temp em { font-style: normal; font-size: 0.72rem; color: #94a3b8; }
-  .shwm-temp-meta { display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: #64748b; margin-top: 8px; }
-  .shwm-temp-cta { margin-top: 12px; text-align: center; font-size: 0.78rem; font-weight: 700; padding: 9px; border-radius: 10px; background: #0a192f; color: #fff; }
-  .shwm-temp-cta-off { background: transparent; color: #b6bcc6; border: 1px dashed rgba(10,25,47,0.14); font-weight: 500; }
-
-  .shwm-feed { display: flex; flex-direction: column; padding: 8px 18px; }
-  .shwm-feed-r { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid rgba(10,25,47,0.05); }
-  .shwm-feed-r:last-child { border-bottom: none; }
-  .shwm-feed-now { }
-  .shwm-feed-ico { width: 34px; height: 34px; border-radius: 10px; background: rgba(10,25,47,0.04); color: #64748b; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .shwm-feed-now .shwm-feed-ico { background: rgba(245,158,11,0.12); color: #d97706; }
-  .shwm-feed-ico svg { width: 18px; height: 18px; }
-  .shwm-feed-tx { flex: 1; }
-  .shwm-feed-tx b { display: block; font-size: 0.86rem; color: #0f172a; font-weight: 600; }
-  .shwm-feed-tx span { display: block; font-size: 0.72rem; color: #94a3b8; margin-top: 2px; }
-  .shwm-feed-n { flex-shrink: 0; font-size: 0.7rem; font-weight: 800; color: #d97706; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.22); border-radius: 8px; padding: 4px 9px; }
-  .shwm-feed-r:not(.shwm-feed-now) .shwm-feed-n { color: #94a3b8; background: rgba(10,25,47,0.04); border-color: rgba(10,25,47,0.09); }
-
-  .shwm-pipe { display: flex; flex-direction: column; gap: 4px; padding: 6px 18px 12px; }
-  .shwm-pipe-r { display: grid; grid-template-columns: 1.1fr 2.2fr 1fr; align-items: center; gap: 14px; padding: 9px 0; font-size: 0.82rem; color: #475569; }
-  .shwm-pipe-r b { text-align: right; color: #0f172a; font-weight: 600; }
 
   /* ══════════════════ CFDI ══════════════════ */
   .shwm-flow { display: grid; grid-template-columns: 1fr 60px 1fr; align-items: stretch; gap: 0; padding: 18px 20px; }
@@ -1753,43 +1713,6 @@ const NAV = [
   .shwm-exec-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: #fff; background: #0a192f; padding: 9px 16px; border-radius: 100px; }
   .shwm-exec-btn svg { width: 15px; height: 15px; }
 
-  /* ══════════════════ APROBACIONES ══════════════════ */
-  .shwm-thresh { padding: 22px 22px 8px; }
-  .shwm-thresh-scale { position: relative; padding-top: 34px; }
-  .shwm-thresh-zones { display: flex; height: 20px; border-radius: 6px; overflow: hidden; }
-  .shwm-tz { display: flex; align-items: center; justify-content: center; position: relative; }
-  .shwm-tz span { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
-  .shwm-tz-ok { background: rgba(16,185,129,0.14); } .shwm-tz-ok span { color: #059669; }
-  .shwm-tz-warn { background: rgba(245,158,11,0.15); } .shwm-tz-warn span { color: #b45309; }
-  .shwm-tz-bad { background: rgba(220,38,38,0.13); } .shwm-tz-bad span { color: #dc2626; }
-  .shwm-thresh-ticks { display: flex; justify-content: space-between; margin-top: 7px; font-size: 0.62rem; font-weight: 600; color: #a3adba; }
-  .shwm-thresh-marker { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
-  .shwm-thresh-marker i { width: 2px; height: 44px; background: #0a192f; margin-top: -2px; }
-  .shwm-thresh-flag { font-size: 0.66rem; font-weight: 800; color: #fff; background: #0a192f; padding: 3px 9px; border-radius: 6px; white-space: nowrap; box-shadow: 0 4px 12px -4px rgba(10,25,47,0.4); }
-  .shwm-thresh-rows { margin-top: 20px; }
-  .shwm-thresh-r { display: flex; align-items: center; justify-content: space-between; padding: 11px 2px; font-size: 0.84rem; color: #64748b; border-bottom: 1px solid rgba(10,25,47,0.05); }
-  .shwm-thresh-r:last-child { border-bottom: none; }
-  .shwm-thresh-r b { color: #0f172a; font-weight: 600; }
-
-  /* mobile approval notif */
-  .shwm-notif { width: 100%; max-width: 380px; background: #fff; border: 1px solid rgba(10,25,47,0.07); border-radius: 20px; box-shadow: 0 30px 60px -22px rgba(10,25,47,0.24); overflow: hidden; }
-  .shwm-notif-head { display: flex; align-items: center; gap: 8px; padding: 13px 16px 4px; }
-  .shwm-notif-app { width: 22px; height: 22px; border-radius: 6px; background: #0a192f; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; }
-  .shwm-notif-app img { width: 16px; height: 16px; border-radius: 4px; }
-  .shwm-notif-name { font-size: 0.72rem; font-weight: 700; color: #64748b; }
-  .shwm-notif-time { margin-left: auto; font-size: 0.68rem; color: #b6bcc6; }
-  .shwm-notif-body { padding: 6px 16px 12px; }
-  .shwm-notif-body b { display: block; font-size: 0.9rem; color: #0f172a; font-weight: 700; }
-  .shwm-notif-body span { display: block; font-size: 0.78rem; color: #64748b; margin-top: 4px; line-height: 1.45; }
-  .shwm-notif-detail { padding: 4px 16px 12px; }
-  .shwm-nd-r { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; font-size: 0.8rem; color: #64748b; border-bottom: 1px solid rgba(10,25,47,0.05); }
-  .shwm-nd-r:last-child { border-bottom: none; }
-  .shwm-nd-r b { color: #0f172a; font-weight: 600; }
-  .shwm-notif-actions { display: flex; gap: 10px; padding: 12px 16px 16px; }
-  .shwm-notif-btn { flex: 1; text-align: center; font-size: 0.86rem; font-weight: 700; padding: 12px; border-radius: 12px; }
-  .shwm-notif-approve { background: #0a192f; color: #fff; }
-  .shwm-notif-reject { background: transparent; color: #64748b; border: 1px solid rgba(10,25,47,0.12); }
-
   /* ══════════════════ EQUIPO ══════════════════ */
   .shwm-matrix { padding: 16px 18px 8px; }
   .shwm-mx-head { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; gap: 10px; padding: 0 8px 12px; border-bottom: 1px solid rgba(10,25,47,0.07); }
@@ -1862,7 +1785,6 @@ const NAV = [
   .shwm-sign-hash code { display: block; font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.74rem; color: #2563eb; word-break: break-all; line-height: 1.5; }
   .shwm-sign-verify { display: inline-flex; align-items: center; gap: 8px; font-size: 0.76rem; color: #059669; font-weight: 600; }
 
-
   /* ══════════════════════════════════════════════════════════════════
      MÓVIL (<=760px) — el lienzo mide ~350px, no 1100.
      Las escenas partidas (antes vs. ahora) se apilan, el marco pierde
@@ -1880,33 +1802,10 @@ const NAV = [
     .shwm-badge { font-size: 0.58rem; padding: 4px 9px; }
     .shwm-body { padding: 8px 10px 10px; }
     .shwm-foot { padding: 12px 14px; gap: 10px; font-size: 0.74rem; }
-    .shwm-search { padding: 10px 12px; gap: 8px; }
-    .shwm-search-q { font-size: 0.8rem; }
+
     .shwm-g { gap: 9px; padding: 10px; font-size: 0.79rem; }
     .shwm-g-head { font-size: 0.58rem; }
-    .shwm-kv, .shwm-inbox-r { padding: 10px 11px; }
-    /* El chip "soltar aquí" se montaba sobre el precio: en móvil baja a su
-       propio renglón dentro de la fila. */
-    .shwm-drop-r { grid-template-columns: auto 1fr auto; }
-    .shwm-drop-hint {
-        position: static; transform: none;
-        grid-column: 1 / -1; justify-self: start; margin-top: 6px;
-        font-size: 0.54rem; padding: 3px 8px;
-    }
-
-    /* Antes vs. ahora: en columna, con la flecha girada entre los dos */
-    .shwm-split { flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 1.15rem 1.1rem; }
-    .shwm-half { flex: none; justify-content: flex-start; }
-    .shwm-live { flex: none; }
-    .shwm-dead { padding-right: 0; }
-    .shwm-arrow { width: 100%; height: 30px; padding: 0; transform: rotate(90deg); }
-    .shwm-arrow svg { width: 22px; height: 22px; }
-    .shwm-xls-r { grid-template-columns: 1.4fr 0.6fr 0.8fr; gap: 7px; padding: 8px 10px; font-size: 0.7rem; }
-    .shwm-xls-r > *:nth-child(4) { display: none; }
-    .shwm-side-label, .shwm-live-tag { margin-top: 10px; font-size: 0.7rem; }
-
-    /* El teléfono se ajusta al lienzo en vez de sangrar por los lados */
-    .shwm-phone { width: 100%; max-width: 268px; border-radius: 34px; }
+    .shwm-kv { padding: 10px 11px; }
     .shwm-sign { padding: 22px 18px; border-radius: 16px; }
     .shwm-sign-seal { width: 52px; height: 52px; margin-bottom: 12px; }
     .shwm-sign-hash { margin: 16px 0 12px; padding: 12px 13px; }
@@ -1936,4 +1835,858 @@ const NAV = [
     /* Frontera: tres nodos en fila tampoco caben */
     .shwm-border { grid-template-columns: 1fr; gap: 10px; padding: 16px 14px; }
   }
+
+  /* ═══ Calcas de la app: editor, link público, seguimiento, aprobaciones ═══ */
+  .shwm-x .editorial { font-family: var(--font-sans); font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .shwm-x strong { font-weight: 600; }
+  .shwm-x em, .shwm-x i { font-style: normal; }
+  .shwm-frame.shwm-scene { display: block; padding: 0; }
+
+  /* dispositivo */
+  .shwm-dv { position: absolute; z-index: 2; width: 244px; height: 522px; padding: 8px; border-radius: 46px; background: #1b1d21; box-shadow: inset 0 0 0 1.5px #3b3e44, inset 0 0 0 3px #111214, 0 2px 4px rgba(10,25,47,0.12), 0 30px 60px -22px rgba(10,25,47,0.4), 0 70px 110px -50px rgba(10,25,47,0.34); }
+  .shwm-dv::before { content: ''; position: absolute; right: -2px; top: 132px; width: 3px; height: 64px; border-radius: 0 3px 3px 0; background: #2a2d32; }
+  .shwm-dv::after { content: ''; position: absolute; left: -2px; top: 104px; width: 3px; height: 34px; border-radius: 3px 0 0 3px; background: #2a2d32; box-shadow: 0 48px 0 #2a2d32; }
+  .shwm-dv-scr { position: relative; height: 100%; border-radius: 38px; overflow: hidden; background: #f3f2ef; color: #0f1729; }
+  .shwm-dv-ios { position: relative; z-index: 3; display: flex; align-items: center; justify-content: space-between; height: 38px; padding: 4px 20px 0 24px; color: #0f1729; }
+  .shwm-dv-ios.dark { color: #ffffff; }
+  .shwm-dv-ios .t { font-size: 0.66rem; font-weight: 700; }
+  .shwm-dv-ios .isl { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 72px; height: 21px; border-radius: 100px; background: #000000; }
+  .shwm-dv-ios .ic { display: inline-flex; align-items: center; gap: 4px; }
+  .shwm-dv-ios .ic svg { height: 9px; width: auto; }
+  .shwm-dv-home { position: absolute; z-index: 6; left: 50%; bottom: 7px; transform: translateX(-50%); width: 92px; height: 4px; border-radius: 100px; background: rgba(10,25,47,0.28); }
+  .shwm-dv-home.light { background: rgba(255,255,255,0.7); }
+
+  /* navegador */
+  .shwm-brw { position: absolute; z-index: 1; left: 50%; top: 34px; transform: translateX(-50%); width: min(1060px, calc(100% - 96px)); height: 620px; border-radius: 14px; overflow: hidden; background: #ffffff; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 30px 60px -18px rgba(10,25,47,0.18), 0 60px 110px -40px rgba(10,25,47,0.2); color: #0f1729; }
+  .shwm-brw-top { position: relative; display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 14px; background: #f6f6f8; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .shwm-brw-top .nav { display: inline-flex; gap: 10px; color: #a3a8b2; }
+  .shwm-brw-top .nav svg, .shwm-brw-top .act svg { width: 15px; height: 15px; }
+  .shwm-brw-top .act { color: #8a909c; }
+  .shwm-brw-top .url { position: absolute; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; max-width: 60%; padding: 5px 16px; border-radius: 8px; background: #ececef; font-size: 0.68rem; color: #4b5260; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-brw-top .url svg { width: 11px; height: 11px; color: #6b7280; flex-shrink: 0; }
+
+  /* shell de la app */
+  .shwm-as { display: grid; grid-template-columns: 196px minmax(0,1fr); height: calc(100% - 40px); }
+  .shwm-as.is-col { grid-template-columns: 58px minmax(0,1fr); }
+  .shwm-as-side { display: flex; flex-direction: column; gap: 6px; padding: 12px 10px; background: #fbfbfc; border-right: 1px solid rgba(10,25,47,0.07); min-width: 0; }
+  .shwm-as-org { display: flex; align-items: center; gap: 8px; padding: 4px 4px 10px; margin-bottom: 4px; border-bottom: 1px solid rgba(10,25,47,0.07); font-size: 0.7rem; color: #0f1729; min-width: 0; }
+  .shwm-as-org .av { width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px; background: #b45309; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; }
+  .shwm-as-org strong { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 650; }
+  .shwm-as-org svg { width: 12px; height: 12px; color: #99a2af; flex-shrink: 0; }
+  .shwm-as-nav { display: flex; flex-direction: column; gap: 1px; }
+  .shwm-as-g { font-size: 0.62rem; font-weight: 600; color: #99a2af; padding: 10px 8px 4px; }
+  .shwm-as-i { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 500; color: #5b6472; white-space: nowrap; }
+  .shwm-as-i svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.62; }
+  .shwm-as-i.on { background: rgba(10,25,47,0.07); color: #0a192f; font-weight: 600; }
+  .shwm-as-i.on svg { opacity: 1; }
+  .shwm-as-i em { margin-left: auto; font-size: 0.56rem; font-weight: 700; color: #5b6472; background: rgba(10,25,47,0.07); border-radius: 100px; padding: 1px 6px; }
+  .shwm-as.is-col .shwm-as-side { align-items: center; padding: 12px 6px; }
+  .shwm-as.is-col .shwm-as-org { border: 0; padding: 4px 0 8px; }
+  .shwm-as.is-col .shwm-as-i { justify-content: center; width: 36px; height: 32px; padding: 0; }
+  .shwm-as.is-col .shwm-as-i svg { width: 16px; height: 16px; }
+  .shwm-as-main { position: relative; min-width: 0; padding: 0 22px; overflow: hidden; }
+  .shwm-as-main.shwm-canvas { padding: 0 20px 20px; }
+  .shwm-as-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 0 12px; }
+  .shwm-as-head .tt { display: inline-flex; align-items: baseline; gap: 6px; font-size: 0.72rem; color: #5b6472; font-weight: 600; }
+  .shwm-as-head .tt strong { font-size: 1rem; color: #0f1729; font-weight: 700; letter-spacing: -0.02em; }
+  .shwm-as-head .sep { color: #c9ced6; }
+  .shwm-canvas { background: #fafbfc; }
+
+  /* ventana suelta */
+  .shwm-cw { position: absolute; z-index: 1; background: #ffffff; border-radius: 14px; border: 1px solid rgba(10,25,47,0.08); overflow: hidden; color: #0f1729; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 30px 60px -18px rgba(10,25,47,0.18), 0 60px 110px -40px rgba(10,25,47,0.2); }
+  .shwm-cw-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 46px; padding: 9px 16px; border-bottom: 1px solid rgba(10,25,47,0.07); background: #fcfdfe; }
+  .shwm-cw-crumbs { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 600; color: #5b6472; white-space: nowrap; }
+  .shwm-cw-crumbs strong { color: #0f1729; }
+  .shwm-cw-crumbs .sep { color: #c9ced6; }
+  .shwm-cw-h { font-size: 0.86rem; font-weight: 700; letter-spacing: -0.01em; }
+  .shwm-cw-draft { flex-shrink: 0; font-size: 0.64rem; font-weight: 600; color: #5b6472; background: #fafbfc; border: 1px solid rgba(10,25,47,0.08); padding: 3px 8px; border-radius: 6px; }
+  .shwm-cw-me { display: inline-flex; align-items: center; gap: 7px; font-size: 0.68rem; font-weight: 600; color: #5b6472; }
+  .shwm-cw-me .av { width: 22px; height: 22px; border-radius: 50%; background: #334155; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 800; }
+  .shwm-rng { display: inline-flex; align-items: center; gap: 6px; font-size: 0.66rem; font-weight: 600; color: #0f1729; background: #ffffff; border: 1px solid rgba(10,25,47,0.1); border-radius: 9px; padding: 5px 10px; }
+  .shwm-rng svg { width: 12px; height: 12px; color: #5b6472; }
+
+  /* piezas comunes */
+  .shwm-fd { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; background: #f5f5f7; border: 1.5px solid transparent; border-radius: 9px; padding: 7px 10px; font-size: 0.7rem; color: #0f1729; }
+  .shwm-fd.grow { flex: 1; }
+  .shwm-fd > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .shwm-fd svg { width: 12px; height: 12px; color: #99a2af; flex-shrink: 0; }
+  .shwm-inp { display: inline-flex; align-items: center; justify-self: start; background: #f5f5f7; border: 1.5px solid transparent; border-radius: 7px; padding: 4px 7px; font-size: 0.7rem; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .shwm-inp.deal { color: #059669; font-weight: 600; }
+  .shwm-x .is-focus { background: #ffffff; border-color: #0a192f; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+  .shwm-crt { display: none; width: 1.5px; height: 1.05em; margin-left: 1px; background: #0a192f; animation: shwm-caret-blink 1.05s step-end infinite; }
+  .is-focus > .shwm-crt { display: inline-block; }
+  .shwm-chips { display: inline-flex; gap: 4px; flex-shrink: 0; }
+  .shwm-chips > span { font-size: 0.64rem; font-weight: 600; color: #5b6472; background: #f5f5f7; border-radius: 999px; padding: 5px 11px; }
+  .shwm-chips > span.on { background: #0a192f; color: #ffffff; }
+  .shwm-tog { position: relative; flex-shrink: 0; width: 28px; height: 16px; border-radius: 100px; background: rgba(10,25,47,0.14); transition: background 0.3s; }
+  .shwm-tog::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #ffffff; box-shadow: 0 1px 3px rgba(10,25,47,0.25); transition: transform 0.3s cubic-bezier(0.22,1,0.36,1); }
+  .shwm-tog.on { background: #0a192f; }
+  .shwm-tog.on::after { transform: translateX(12px); }
+  .shwm-sts { display: inline-flex; align-items: center; gap: 5px; font-size: 0.62rem; font-weight: 700; padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
+  .shwm-sts::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .shwm-sts.draft { color: #64748b; background: rgba(100,116,139,0.1); }
+  .shwm-sts.sent { color: #2563eb; background: rgba(37,99,235,0.09); }
+  .shwm-sts.viewed { color: #7c3aed; background: rgba(124,58,237,0.09); }
+  .shwm-sts.approved { color: #059669; background: rgba(16,185,129,0.1); }
+  .shwm-mg { justify-self: center; font-size: 0.6rem; font-weight: 600; color: #059669; background: rgba(16,185,129,0.1); border-radius: 4px; padding: 2px 5px; }
+  .shwm-mg.low { color: #dc2626; background: rgba(220,38,38,0.1); }
+  .shwm-steph { display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; }
+  .shwm-steph .n { width: 20px; height: 20px; border-radius: 6px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 700; }
+  .shwm-steph .t { font-size: 0.78rem; font-weight: 600; }
+  .shwm-client { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .shwm-sech { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 8px; padding-bottom: 7px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .shwm-sech strong { font-size: 0.78rem; }
+
+  /* editor */
+  .shwm-edg { display: grid; grid-template-columns: minmax(0,1fr) 236px; gap: 22px; padding: 16px 18px 20px; }
+  .shwm-edg-wide { padding: 2px 0 20px; gap: 26px; grid-template-columns: minmax(0,1fr) 252px; }
+  .shwm-edg-main { min-width: 0; }
+  .shwm-lines { margin-bottom: 12px; }
+  .shwm-lh, .shwm-lr { display: grid; gap: 9px; align-items: center; }
+  .shwm-lines-5 .shwm-lh, .shwm-lines-5 .shwm-lr { grid-template-columns: minmax(0,1fr) 44px 64px 62px 84px; }
+  .shwm-lines-6 .shwm-lh, .shwm-lines-6 .shwm-lr { grid-template-columns: minmax(0,1fr) 46px 66px 66px 86px 40px; }
+  .shwm-x[data-loc="en-US"] .shwm-lines-5 .shwm-lh, .shwm-x[data-loc="en-US"] .shwm-lines-5 .shwm-lr { grid-template-columns: minmax(0,1fr) 44px 74px 62px 96px; }
+  .shwm-x[data-loc="en-US"] .shwm-lines-6 .shwm-lh, .shwm-x[data-loc="en-US"] .shwm-lines-6 .shwm-lr { grid-template-columns: minmax(0,1fr) 46px 76px 66px 98px 40px; }
+  .shwm-lh { font-size: 0.62rem; font-weight: 500; color: #5b6472; padding: 4px 0 7px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .shwm-lh .r, .shwm-lr .am { text-align: right; justify-self: end; }
+  .shwm-lh .c { text-align: center; }
+  .shwm-lh .i { display: inline-flex; width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(10,25,47,0.12); align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 700; }
+  .shwm-lr { padding: 7px 0; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .shwm-lr .nm { display: flex; flex-direction: column; min-width: 0; font-size: 0.72rem; font-weight: 500; line-height: 1.3; }
+  .shwm-lr .nm small { font-size: 0.58rem; color: #5b6472; }
+  .shwm-lr .ls { font-size: 0.66rem; color: #5b6472; text-decoration: line-through; white-space: nowrap; }
+  .shwm-lr .am { font-size: 0.72rem; white-space: nowrap; }
+  .shwm-add { position: relative; display: flex; gap: 8px; }
+  .shwm-srch { position: relative; flex: 1; display: flex; min-width: 0; }
+  .shwm-srch .shwm-fd { justify-content: flex-start; }
+  .shwm-srch .q { color: #0f1729; font-weight: 500; }
+  .shwm-srch .q:empty { display: none; }
+  .shwm-srch .ph { color: #99a2af; }
+  .shwm-free { flex-shrink: 0; font-size: 0.66rem; font-weight: 600; color: #5b6472; background: #f5f5f7; border-radius: 9px; padding: 8px 11px; white-space: nowrap; }
+  .shwm-drop2 { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 6px); display: flex; flex-direction: column; padding: 5px; background: #ffffff; border: 1px solid rgba(10,25,47,0.08); border-radius: 12px; box-shadow: 0 16px 40px -14px rgba(10,25,47,0.28); opacity: 0; visibility: hidden; }
+  .shwm-drop2 .it { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 9px; border-radius: 8px; }
+  .shwm-drop2 .it.on { background: #f5f5f7; }
+  .shwm-drop2 .n { display: flex; flex-direction: column; font-size: 0.7rem; font-weight: 500; }
+  .shwm-drop2 small { font-size: 0.56rem; color: #99a2af; font-weight: 500; }
+  .shwm-drop2 .p { font-size: 0.68rem; white-space: nowrap; }
+  .shwm-sum { display: flex; flex-direction: column; gap: 8px; align-self: start; padding: 16px 16px 18px; background: #ffffff; border: 1px solid rgba(10,25,47,0.08); border-radius: 18px; font-size: 0.72rem; box-shadow: 0 1px 2px rgba(10,25,47,0.03), 0 22px 48px -26px rgba(10,25,47,0.2); }
+  .shwm-sum-flat { box-shadow: none; }
+  .shwm-sum .h { font-size: 0.84rem; font-weight: 700; letter-spacing: -0.02em; }
+  .shwm-sum .c { font-size: 0.64rem; color: #5b6472; margin: -3px 0 3px; }
+  .shwm-sum .l { display: flex; justify-content: space-between; gap: 10px; color: #5b6472; }
+  .shwm-sum .l .editorial { color: #0f1729; font-size: 0.78rem; border-radius: 5px; padding: 0 4px; margin-right: -4px; }
+  .shwm-sum .l.save, .shwm-sum .l.save .editorial { color: #059669; }
+  .shwm-sum .l.tax { font-size: 0.68rem; padding-left: 8px; }
+  .shwm-sum .tg { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.7rem; color: #0f1729; }
+  .shwm-sum .dv { height: 1px; background: rgba(10,25,47,0.08); margin: 3px 0; }
+  .shwm-sum .l.total { color: #0f1729; font-weight: 700; align-items: baseline; }
+  .shwm-sum .l.total .editorial { font-size: 1.32rem; letter-spacing: -0.03em; }
+  .shwm-sum .f { display: flex; flex-direction: column; gap: 5px; margin-top: 3px; }
+  .shwm-sum .f .lb { font-size: 0.62rem; color: #5b6472; }
+  .shwm-sum .send { margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 0.74rem; font-weight: 600; color: #ffffff; background: #0a192f; border-radius: 999px; padding: 10px 14px; box-shadow: 0 4px 14px -4px rgba(10,25,47,0.4); }
+  .shwm-sum .send svg { width: 14px; height: 14px; }
+  .shwm-ai { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; padding: 14px 16px; border-radius: 14px; background: #0a192f; color: #ffffff; box-shadow: 0 24px 50px -30px rgba(10,25,47,0.65); }
+  .shwm-ai .t { font-size: 0.82rem; font-weight: 650; }
+  .shwm-ai .s { font-size: 0.66rem; color: rgba(255,255,255,0.62); }
+  .shwm-ai .ta { font-size: 0.68rem; line-height: 1.45; padding: 8px 10px; border-radius: 9px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.92); }
+  .shwm-ai .ac { display: flex; align-items: center; gap: 12px; margin-top: 3px; }
+  .shwm-ai .btn { font-size: 0.68rem; font-weight: 600; color: #0a192f; background: #ffffff; border-radius: 8px; padding: 6px 12px; white-space: nowrap; }
+  .shwm-ai .st { display: inline-flex; align-items: center; gap: 5px; font-size: 0.64rem; color: rgba(255,255,255,0.82); }
+  .shwm-ai .st svg { width: 11px; height: 11px; color: #34d399; }
+
+  .shwm-sheet { position: absolute; z-index: 1; left: 3%; top: 58px; width: 37%; background: #ffffff; border-radius: 10px; border: 1px solid rgba(10,25,47,0.1); overflow: hidden; filter: saturate(0.4); opacity: 0.92; box-shadow: 0 20px 44px -24px rgba(10,25,47,0.28); font-family: Arial, Helvetica, sans-serif; }
+  .shwm-sheet-title { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: #1f6e43; color: #ffffff; font-size: 0.68rem; }
+  .shwm-sheet-title svg { width: 14px; height: 14px; }
+  .shwm-sheet-title em { margin-left: auto; font-size: 0.6rem; opacity: 0.75; }
+  .shwm-sheet-fx { display: flex; align-items: center; gap: 10px; padding: 5px 10px; border-bottom: 1px solid #d9dce1; font-size: 0.64rem; color: #3c4043; }
+  .shwm-sheet-fx .ref { width: 34px; color: #5f6368; }
+  .shwm-sheet-fx .fx { color: #9aa0a6; font-style: italic; }
+  .shwm-sheet-grid .r { display: grid; grid-template-columns: 24px 1.15fr 0.5fr 0.8fr 0.85fr; border-bottom: 1px solid #e3e5e8; font-size: 0.62rem; color: #3c4043; }
+  .shwm-sheet-grid .r > span { padding: 5px 6px; border-left: 1px solid #e3e5e8; white-space: nowrap; overflow: hidden; }
+  .shwm-sheet-grid .r > span:first-child { border-left: 0; }
+  .shwm-sheet-grid .r.h > span, .shwm-sheet-grid .r > .n { background: #f1f3f4; color: #5f6368; text-align: center; }
+  .shwm-sheet-grid .num { text-align: right; }
+  .shwm-sheet-grid .b { font-weight: 700; }
+  .shwm-sheet-grid .hl { background: #fff4bf; }
+  .shwm-sheet-grid .err { color: #c5221f; font-weight: 700; }
+  .shwm-sheet-grid .cur { box-shadow: inset 0 0 0 2px #1a73e8; }
+  .shwm-sheet-grid .sel > .n { background: #d3e3fd; color: #1a73e8; }
+  .shwm-sheet-tabs { display: flex; gap: 2px; padding: 5px 8px; background: #f1f3f4; font-size: 0.58rem; color: #5f6368; }
+  .shwm-sheet-tabs span { padding: 3px 9px; border-radius: 4px; }
+  .shwm-sheet-tabs .on { background: #ffffff; color: #1f6e43; font-weight: 700; }
+  .shwm-ed0-win { left: 40.5%; top: 30px; width: 56.5%; height: 640px; }
+
+  [data-shx="ed2"] .shwm-sum { position: absolute; z-index: 3; left: 15%; top: 128px; width: 262px; }
+  .shwm-pdf { position: absolute; z-index: 1; left: 37%; top: 30px; width: 560px; min-height: 620px; padding: 30px 34px; background: #ffffff; border-radius: 6px; box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 30px 60px -20px rgba(10,25,47,0.25); color: #0f1729; }
+  .shwm-pdf-head { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 3px solid #b45309; }
+  .shwm-pdf-head .org { display: flex; gap: 11px; }
+  .shwm-pdf-head .mk { width: 38px; height: 38px; flex-shrink: 0; border-radius: 9px; background: #b45309; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: 800; }
+  .shwm-pdf-head strong { display: block; font-size: 0.92rem; font-weight: 800; letter-spacing: -0.3px; }
+  .shwm-pdf-head .org em { display: block; font-size: 0.6rem; color: #5b6472; margin-top: 1px; }
+  .shwm-pdf-head .doc { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .shwm-pdf-head .lb { font-size: 0.52rem; font-weight: 800; letter-spacing: 2px; color: #5b6472; }
+  .shwm-pdf-head .fo { font-size: 1.2rem; color: #b45309; font-variant-numeric: normal; letter-spacing: -0.01em; }
+  .shwm-pdf-head .dt { font-size: 0.6rem; color: #5b6472; }
+  .shwm-pdf-meta { display: flex; gap: 26px; margin-bottom: 16px; }
+  .shwm-pdf-meta em { display: block; font-size: 0.5rem; font-weight: 800; letter-spacing: 1.6px; color: #5b6472; margin-bottom: 2px; }
+  .shwm-pdf-meta strong { font-size: 0.72rem; }
+  .shwm-pdf-t .th, .shwm-pdf-t .tr { display: grid; grid-template-columns: minmax(0,1.7fr) 0.7fr 1fr 1fr; gap: 10px; }
+  .shwm-pdf-t .th { font-size: 0.52rem; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; color: #5b6472; padding: 0 6px 7px; border-bottom: 2px solid #b45309; }
+  .shwm-pdf-t .tr { padding: 8px 6px; border-bottom: 1px solid rgba(10,25,47,0.08); font-size: 0.7rem; align-items: start; }
+  .shwm-pdf-t .tr small { display: block; font-size: 0.56rem; color: #5b6472; }
+  .shwm-pdf-t .r { text-align: right; white-space: nowrap; }
+  .shwm-pdf-t .st { display: block; font-size: 0.58rem; color: #99a2af; }
+  .shwm-pdf-t .st em { font-weight: 700; color: #059669; margin-left: 4px; }
+  .shwm-pdf-tot { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; margin: 14px 0 20px; }
+  .shwm-pdf-tot > span { display: flex; justify-content: space-between; gap: 40px; min-width: 220px; font-size: 0.7rem; color: #5b6472; }
+  .shwm-pdf-tot .g { border-top: 2px solid #b45309; padding-top: 7px; margin-top: 3px; font-weight: 700; color: #0f1729; }
+  .shwm-pdf-tot .g .editorial { font-size: 1.08rem; }
+  .shwm-pdf-foot { font-size: 0.56rem; color: #99a2af; margin: 0; }
+
+  .shwm-as-main .shwm-toast { bottom: 22px; }
+  .shwm-toast { position: absolute; z-index: 6; left: 50%; bottom: 20px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 9px; max-width: calc(100% - 32px); font-size: 0.7rem; font-weight: 500; color: #ffffff; background: rgba(5,5,5,0.86); padding: 9px 16px; border-radius: 999px; white-space: nowrap; box-shadow: 0 0 0 0.5px rgba(255,255,255,0.08), 0 8px 24px -6px rgba(0,0,0,0.35); }
+  .shwm-toast .dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.5); flex-shrink: 0; }
+  [data-shx="ap0"] .shwm-brw { height: 500px; }
+
+  /* link público */
+  .shwm-lp0-wa { left: calc(50% - 286px); top: 20px; }
+  .shwm-lp0-q { left: calc(50% + 42px); top: 20px; }
+  .shwm-wa2 { background: #efeae2; }
+  .shwm-wa2 .shwm-dv-ios { color: #0f1729; background: #f6f6f6; }
+  .shwm-wa2-head { display: flex; align-items: center; gap: 8px; padding: 4px 12px 9px; background: #f6f6f6; border-bottom: 1px solid rgba(0,0,0,0.08); }
+  .shwm-wa2-head .bk { width: 16px; height: 16px; color: #0a84ff; flex-shrink: 0; }
+  .shwm-wa2-head .av { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #334155; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.56rem; font-weight: 700; }
+  .shwm-wa2-head .who { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .shwm-wa2-head strong { font-size: 0.7rem; }
+  .shwm-wa2-head .who em { font-size: 0.56rem; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-wa2-head .ic { width: 16px; height: 16px; color: #0a84ff; flex-shrink: 0; }
+  .shwm-wa2-body { display: flex; flex-direction: column; gap: 6px; padding: 10px 9px; background-image: radial-gradient(rgba(10,25,47,0.045) 1px, transparent 1px); background-size: 13px 13px; height: 100%; }
+  .shwm-wa2-body .day { align-self: center; font-size: 0.54rem; font-weight: 600; color: #54656f; background: rgba(255,255,255,0.85); padding: 2px 9px; border-radius: 7px; margin: 2px 0; }
+  .shwm-wa2-body .in, .shwm-wa2-body .out { position: relative; max-width: 86%; font-size: 0.64rem; line-height: 1.4; padding: 5px 8px 13px; border-radius: 9px; box-shadow: 0 1px 0.5px rgba(11,20,26,0.13); color: #111b21; }
+  .shwm-wa2-body .in { align-self: flex-start; background: #ffffff; border-top-left-radius: 2px; }
+  .shwm-wa2-body .out { align-self: flex-end; background: #d9fdd3; border-top-right-radius: 2px; }
+  .shwm-wa2-body .out[hidden] { display: none; }
+  .shwm-wa2-body .tm { position: absolute; right: 7px; bottom: 3px; display: inline-flex; align-items: center; gap: 3px; font-size: 0.5rem; color: #667781; }
+  .shwm-wa2-body .tm svg { width: 13px; height: 8px; color: #53bdeb; }
+  .shwm-wa2-body .doc { display: flex; align-items: center; gap: 7px; padding: 6px 7px 14px; }
+  .shwm-wa2-body .dico { width: 26px; height: 30px; border-radius: 4px; background: #e9edef; color: #c5221f; display: inline-flex; align-items: center; justify-content: center; }
+  .shwm-wa2-body .dico svg { width: 16px; height: 16px; }
+  .shwm-wa2-body .dtx strong { display: block; font-size: 0.62rem; }
+  .shwm-wa2-body .dtx em { display: block; font-size: 0.52rem; color: #667781; }
+  .shwm-wa2-body .lnk { padding: 3px 3px 13px; max-width: 92%; }
+  .shwm-wa2-body .pv { display: flex; gap: 7px; align-items: center; padding: 6px; border-radius: 7px; background: #f5f6f6; margin-bottom: 4px; }
+  .shwm-wa2-body .pv img { width: 34px; height: 34px; border-radius: 6px; flex-shrink: 0; }
+  .shwm-wa2-body .pv strong { display: block; font-size: 0.58rem; line-height: 1.3; }
+  .shwm-wa2-body .pv em { display: block; font-size: 0.52rem; color: #667781; }
+  .shwm-wa2-body .msg { display: block; padding: 0 5px; }
+  .shwm-wa2-body .msg u { color: #027eb5; text-decoration: none; }
+
+  .shwm-qp2 { background: #f3f2ef; }
+  .shwm-qc { position: relative; display: flex; flex-direction: column; gap: 11px; margin: 2px 7px 0; padding: 13px 12px 14px; background: #ffffff; border-radius: 18px; box-shadow: 0 0 0 1px rgba(10,25,47,0.06), 0 20px 60px -20px rgba(10,25,47,0.12); color: #111111; }
+  .shwm-qc-head { display: flex; justify-content: space-between; gap: 6px; align-items: flex-start; }
+  .shwm-qc-head .br { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .shwm-qc-head .mk { width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px; background: #b45309; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 800; }
+  .shwm-qc-head strong { display: block; font-size: 0.62rem; font-weight: 700; white-space: nowrap; }
+  .shwm-qc-head .br em { display: block; font-size: 0.46rem; color: #9ca3af; }
+  .shwm-qc-head .fo { text-align: right; flex-shrink: 0; }
+  .shwm-qc-head .fo em { display: block; font-size: 0.36rem; font-weight: 800; letter-spacing: 1.4px; color: #c9cdd3; }
+  .shwm-qc-head .fo strong { font-size: 0.58rem; font-weight: 800; }
+  .shwm-qc-rule { height: 1px; margin: -3px 0; background: linear-gradient(to right, transparent, rgba(10,25,47,0.08) 15%, rgba(10,25,47,0.08) 85%, transparent); }
+  .shwm-qc-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .shwm-qc-meta > span { display: flex; flex-direction: column; gap: 2px; }
+  .shwm-qc-meta em { font-size: 0.36rem; font-weight: 800; letter-spacing: 1.4px; color: #c9cdd3; }
+  .shwm-qc-meta strong { font-size: 0.6rem; font-weight: 600; }
+  .shwm-qc-meta i { align-self: flex-start; font-size: 0.5rem; font-weight: 600; color: #92600a; background: rgba(245,158,11,0.12); border-radius: 100px; padding: 1px 7px; }
+  .shwm-qc-hero { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 14px 8px; background: #fafafa; border: 1px solid rgba(10,25,47,0.055); border-radius: 14px; }
+  .shwm-qc-hero em { font-size: 0.38rem; font-weight: 800; letter-spacing: 2px; color: #c9cdd3; }
+  .shwm-qc-hero .editorial { font-size: 1.5rem; line-height: 1.05; letter-spacing: -0.04em; color: #b45309; }
+  .shwm-qc-hero small { font-size: 0.5rem; color: #9ca3af; }
+  .shwm-qc-items .h, .shwm-qc-items .i { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+  .shwm-qc-items .h { font-size: 0.4rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #c9cdd3; padding-bottom: 5px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .shwm-qc-items .i { padding: 6px 0; border-bottom: 1px solid rgba(10,25,47,0.045); font-size: 0.6rem; font-weight: 600; align-items: center; }
+  .shwm-qc-items .i small { display: block; font-size: 0.5rem; font-weight: 500; color: #9ca3af; }
+  .shwm-qc-items .r { text-align: right; white-space: nowrap; }
+  .shwm-qsticky { position: absolute; z-index: 4; left: 8px; right: 8px; bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 7px 7px 12px; border-radius: 14px; background: rgba(255,255,255,0.86); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); border: 1px solid rgba(255,255,255,0.7); box-shadow: inset 0 1px 1px rgba(255,255,255,0.9), 0 14px 36px -12px rgba(10,25,47,0.32); }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .shwm-qsticky { background: #ffffff; } }
+  .shwm-qsticky em { display: block; font-size: 0.4rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #9ca3af; }
+  .shwm-qsticky .editorial { font-size: 0.86rem; color: #b45309; }
+  .shwm-qsticky .cta { display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; font-weight: 650; color: #ffffff; background: #b45309; border-radius: 10px; padding: 9px 14px; box-shadow: 0 10px 22px -10px rgba(180,83,9,0.55); }
+  .shwm-qsticky .cta svg { width: 11px; height: 11px; }
+  .shwm-tap { position: absolute; z-index: 7; right: 38px; bottom: 34px; width: 34px; height: 34px; border-radius: 50%; background: rgba(10,25,47,0.18); opacity: 0; pointer-events: none; }
+  .shwm-qc-done { position: absolute; left: 0; right: 0; top: 44px; bottom: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 30px 14px; text-align: center; background: #ffffff; border-radius: 0 0 18px 18px; opacity: 0; visibility: hidden; }
+  .shwm-qc-done .ring, .shwm-qc-ok .ring { width: 42px; height: 42px; color: #b45309; }
+  .shwm-qc-done .ring svg, .shwm-qc-ok .ring svg { width: 100%; height: 100%; }
+  .shwm-qc-done strong, .shwm-qc-ok strong { font-size: 0.8rem; font-weight: 700; }
+  .shwm-qc-done em, .shwm-qc-ok em { font-size: 0.54rem; line-height: 1.5; color: #6b7280; }
+  .shwm-qc-ok { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 4px 2px; text-align: center; }
+  .shwm-qc-pay { display: flex; flex-direction: column; align-items: stretch; gap: 7px; padding: 12px; border-radius: 14px; background: #fafafa; border: 1px solid rgba(10,25,47,0.055); text-align: center; }
+  .shwm-qc-pay .lb { font-size: 0.38rem; font-weight: 800; letter-spacing: 1.6px; color: #9ca3af; }
+  .shwm-qc-pay .am { font-size: 1.3rem; line-height: 1; color: #b45309; letter-spacing: -0.04em; }
+  .shwm-qc-pay .am small { font-size: 0.5rem; color: #9ca3af; letter-spacing: 0; }
+  .shwm-qc-pay .cta { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.68rem; font-weight: 600; color: #ffffff; background: #b45309; border-radius: 10px; padding: 9px; box-shadow: 0 10px 22px -10px rgba(180,83,9,0.55); }
+  .shwm-qc-pay .cta svg { width: 11px; height: 11px; }
+  .shwm-qc-pay .sec { display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.48rem; color: #9ca3af; }
+  .shwm-qc-pay .sec svg { width: 9px; height: 9px; }
+  .shwm-qc-pay .cards { display: flex; justify-content: center; gap: 4px; }
+  .shwm-qc-pay .cards span { font-size: 0.38rem; font-weight: 800; letter-spacing: 0.6px; color: #6b7280; border: 1px solid rgba(10,25,47,0.12); border-radius: 3px; padding: 1px 4px; }
+
+  .shwm-lp1-brw { height: 640px; }
+  .shwm-qpage { height: calc(100% - 40px); padding: 26px 0; background: #f3f2ef; }
+  .shwm-qc-lg { width: 560px; max-width: calc(100% - 32px); margin: 0 auto; gap: 16px; padding: 22px 26px; border-radius: 24px; }
+  .shwm-qc-lg .shwm-qc-banner { margin: -8px -10px 0; padding: 8px 12px; border-radius: 14px 14px 0 0; background: #b45309; color: #ffffff; font-size: 0.66rem; font-weight: 600; text-align: center; }
+  .shwm-qc-lg .shwm-qc-head .mk { width: 36px; height: 36px; border-radius: 11px; font-size: 0.8rem; }
+  .shwm-qc-lg .shwm-qc-head strong { font-size: 0.84rem; }
+  .shwm-qc-lg .shwm-qc-head .br em { font-size: 0.58rem; }
+  .shwm-qc-lg .shwm-qc-head .fo em, .shwm-qc-lg .shwm-qc-meta em { font-size: 0.42rem; }
+  .shwm-qc-lg .shwm-qc-head .fo strong { font-size: 0.76rem; }
+  .shwm-qc-lg .shwm-qc-meta { gap: 8px 28px; }
+  .shwm-qc-lg .shwm-qc-meta strong { font-size: 0.72rem; }
+  .shwm-qc-lg .shwm-qc-meta i { font-size: 0.56rem; }
+  .shwm-qc-welcome { margin: 0; padding: 10px 12px; border-radius: 12px; background: #fafafa; border: 1px solid rgba(10,25,47,0.055); font-size: 0.68rem; line-height: 1.55; color: #6b7280; }
+  .shwm-qc-lg .shwm-qc-hero { padding: 18px 10px; border-radius: 16px; }
+  .shwm-qc-lg .shwm-qc-hero em { font-size: 0.42rem; }
+  .shwm-qc-lg .shwm-qc-hero .editorial { font-size: 2.3rem; }
+  .shwm-qc-lg .shwm-qc-hero small { font-size: 0.58rem; }
+  .shwm-qc-items4 .h, .shwm-qc-items4 .i { grid-template-columns: minmax(0,1.9fr) 0.9fr 0.9fr 1fr; gap: 12px; }
+  .shwm-qc-items4 .h { font-size: 0.42rem; }
+  .shwm-qc-items4 .i { font-size: 0.7rem; padding: 9px 0; }
+  .shwm-qc-items4 .c { text-align: center; }
+  .shwm-qc-items4 .q { font-size: 0.62rem; font-weight: 500; color: #9ca3af; }
+  .shwm-qc-items4 .p { display: flex; flex-direction: column; align-items: flex-end; font-size: 0.64rem; font-weight: 500; color: #9ca3af; }
+  .shwm-qc-items4 .p s { font-size: 0.54rem; color: #b8bdc6; }
+
+  .shwm-lp2-ph { left: calc(50% - 300px); top: 20px; }
+  .shwm-qaviso { margin: 12px 18px 0; font-size: 0.5rem; line-height: 1.5; color: #8a8a8e; text-align: center; }
+  .shwm-mail { position: absolute; z-index: 3; left: calc(50% - 12px); top: 96px; width: 360px; padding: 16px 18px 18px; background: #ffffff; border-radius: 16px; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 2px 4px rgba(10,25,47,0.04), 0 28px 56px -18px rgba(10,25,47,0.24); color: #0f1729; }
+  .shwm-mail-h { display: flex; align-items: center; gap: 10px; }
+  .shwm-mail-h img { width: 32px; height: 32px; border-radius: 50%; }
+  .shwm-mail-h .who { flex: 1; display: flex; flex-direction: column; }
+  .shwm-mail-h .who strong { font-size: 0.74rem; }
+  .shwm-mail-h .who em { font-size: 0.6rem; color: #5b6472; }
+  .shwm-mail-h .when { font-size: 0.6rem; color: #5b6472; }
+  .shwm-mail-s { display: block; margin: 12px 0 12px; font-size: 0.84rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.35; }
+  .shwm-mail-b { padding: 16px 16px 14px; border-radius: 12px; border: 1px solid rgba(10,25,47,0.07); background: #ffffff; }
+  .shwm-mail-b img { display: block; width: 70px; height: auto; margin-bottom: 14px; }
+  .shwm-mail-b p { margin: 0 0 14px; font-size: 0.72rem; line-height: 1.6; color: #374151; }
+  .shwm-mail-b .btn { display: inline-block; font-size: 0.68rem; font-weight: 500; color: #ffffff; background: #b45309; border-radius: 7px; padding: 7px 14px; }
+  .shwm-mail-b .ft { display: block; margin-top: 14px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 0.56rem; color: #9ca3af; }
+
+  /* seguimiento */
+  .shwm-tr0-ph { left: calc(50% - 398px); top: 20px; }
+  .shwm-lks { background: radial-gradient(120% 70% at 30% 10%, #2a3d5f 0%, #13223d 45%, #0a1426 100%); color: #ffffff; }
+  .shwm-lks-d { display: block; margin-top: 18px; text-align: center; font-size: 0.66rem; font-weight: 600; color: rgba(255,255,255,0.82); }
+  .shwm-lks-t { display: block; text-align: center; font-size: 3.4rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1; color: rgba(255,255,255,0.94); }
+  .shwm-lks-nt { display: flex; gap: 9px; margin: 26px 8px 0; padding: 10px 11px; border-radius: 18px; background: rgba(245,245,247,0.78); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); color: #0f1729; box-shadow: 0 10px 30px -12px rgba(0,0,0,0.45); }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .shwm-lks-nt { background: #eef0f3; } }
+  .shwm-lks-nt img { width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0; background: #ffffff; }
+  .shwm-lks-nt .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .shwm-lks-nt .h { display: flex; justify-content: space-between; gap: 6px; font-size: 0.6rem; }
+  .shwm-lks-nt .h em { color: #5b6472; }
+  .shwm-lks-nt .b { font-size: 0.6rem; font-weight: 600; line-height: 1.35; }
+  .shwm-lks-nt .b2 { font-size: 0.58rem; line-height: 1.35; color: #3f4754; }
+  .shwm-tr0-win { left: calc(50% - 102px); top: 48px; width: 500px; }
+  .shwm-tr0-grid { display: flex; flex-direction: column; gap: 12px; padding: 14px; }
+  .shwm-card { background: #ffffff; border-radius: 16px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(10,25,47,0.03), 0 18px 40px -24px rgba(10,25,47,0.18); border: 1px solid rgba(10,25,47,0.04); }
+  .shwm-card-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .shwm-card-h strong { font-size: 0.78rem; }
+  .shwm-card-h .cnt { font-size: 0.6rem; font-weight: 700; color: #b45309; background: rgba(245,158,11,0.12); border-radius: 100px; padding: 1px 7px; }
+  .shwm-feed2 { display: flex; flex-direction: column; gap: 2px; }
+  .shwm-feed2 .it { display: flex; gap: 10px; padding: 5px 0; }
+  .shwm-feed2 .d, .shwm-tl2 .d { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .shwm-feed2 .tx, .shwm-tl2 .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .shwm-feed2 strong, .shwm-tl2 strong { font-size: 0.68rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-feed2 em, .shwm-tl2 em { font-size: 0.58rem; color: #5b6472; }
+  .shwm-sil .r { display: grid; grid-template-columns: minmax(0,1fr) auto auto auto; align-items: center; gap: 10px; padding: 7px 0; }
+  .shwm-sil .r + .r { border-top: 1px solid rgba(10,25,47,0.08); }
+  .shwm-sil .i { display: flex; flex-direction: column; min-width: 0; }
+  .shwm-sil .i strong { font-size: 0.68rem; font-weight: 700; }
+  .shwm-sil .i em { font-size: 0.6rem; color: #5b6472; }
+  .shwm-sil .d { font-size: 0.56rem; font-weight: 700; color: #b45309; background: rgba(245,158,11,0.12); padding: 2px 7px; border-radius: 100px; white-space: nowrap; }
+  .shwm-sil .t { font-size: 0.74rem; color: #0a192f; }
+  .shwm-sil .go { font-size: 0.7rem; font-weight: 700; color: #5b6472; }
+
+  .shwm-stp2 { display: flex; align-items: center; margin: 0 0 14px; }
+  .shwm-stp2 .s { display: flex; align-items: center; gap: 6px; flex: 1; font-size: 0.64rem; font-weight: 600; color: #5b6472; white-space: nowrap; }
+  .shwm-stp2 .s:last-child { flex: none; }
+  .shwm-stp2 .s:not(:last-child)::after { content: ''; flex: 1; height: 2px; margin: 0 8px; border-radius: 2px; background: rgba(10,25,47,0.08); }
+  .shwm-stp2 .s.done:not(:last-child)::after { background: #10b981; }
+  .shwm-stp2 .d { width: 19px; height: 19px; flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.56rem; font-weight: 800; background: #fafbfc; border: 1.5px solid rgba(10,25,47,0.1); color: #5b6472; }
+  .shwm-stp2 .done .d { background: #10b981; border-color: #10b981; color: #ffffff; }
+  .shwm-stp2 .done .d svg { width: 9px; height: 9px; }
+  .shwm-stp2 .cur .d { background: #0a192f; border-color: #0a192f; color: #ffffff; box-shadow: 0 0 0 3px rgba(10,25,47,0.08); }
+  .shwm-stp2 .done, .shwm-stp2 .cur { color: #0f1729; }
+  .shwm-dtg { display: grid; grid-template-columns: minmax(0,1fr) 282px; gap: 28px; }
+  .shwm-dtg-main, .shwm-dtg-side { min-width: 0; }
+  .shwm-dh2 { display: flex; align-items: center; gap: 11px; padding-bottom: 14px; margin-bottom: 16px; border-bottom: 1px solid rgba(10,25,47,0.08); }
+  .shwm-dh2 .av, .shwm-mdh .av { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.74rem; font-weight: 800; }
+  .shwm-dh2 .tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+  .shwm-dh2 .n { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 7px; font-size: 0.9rem; font-weight: 700; letter-spacing: -0.2px; }
+  .shwm-dh2 .m { font-size: 0.62rem; color: #5b6472; }
+  .shwm-dh2 .tot { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+  .shwm-dh2 .tot em, .shwm-mtot em { font-size: 0.48rem; font-weight: 800; letter-spacing: 1.4px; color: #99a2af; }
+  .shwm-dh2 .tot .editorial { font-size: 1.36rem; color: #0a192f; line-height: 1.1; }
+  .shwm-x .vb { font-size: 0.54rem; font-weight: 700; color: #5b6472; background: rgba(10,25,47,0.06); border-radius: 5px; padding: 1px 5px; }
+  .shwm-lv { display: inline-flex; align-items: center; gap: 5px; font-size: 0.56rem; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 20px; padding: 2px 8px; letter-spacing: 0; }
+  .shwm-lv .dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: shwm-live 1.8s infinite; }
+  .shwm-lv .sec { font-weight: 500; opacity: 0.85; }
+  @keyframes shwm-live { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+  .shwm-di { display: grid; grid-template-columns: minmax(0,1.8fr) 68px 1fr 1fr; column-gap: 0; align-items: stretch; font-size: 0.7rem; }
+  .shwm-di > span { display: flex; flex-direction: column; justify-content: center; padding: 8px 12px 8px 0; border-bottom: 1px solid rgba(10,25,47,0.06); }
+  .shwm-di > .r { align-items: flex-end; padding-right: 0; }
+  .shwm-di .h { font-size: 0.6rem; font-weight: 600; color: #5b6472; padding: 0 0 6px; border-bottom-color: rgba(10,25,47,0.08); }
+  .shwm-di small { display: block; font-size: 0.56rem; color: #5b6472; }
+  .shwm-di .r { text-align: right; white-space: nowrap; }
+  .shwm-di .p { display: flex; flex-direction: column; line-height: 1.25; white-space: nowrap; }
+  .shwm-di .p s { font-size: 0.56rem; color: #b8bdc6; }
+  .shwm-at2-s { display: flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 600; }
+  .shwm-at2-s .sep { color: rgba(10,25,47,0.2); }
+  .shwm-at2-d { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 12px; font-size: 0.6rem; color: #5b6472; }
+  .shwm-at2-d strong { color: #5b6472; }
+  .shwm-at2-b { display: flex; flex-direction: column; gap: 8px; }
+  .shwm-at2-b .r { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 9px; }
+  .shwm-at2-b .lb { font-size: 0.62rem; color: #5b6472; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-at2-b .tr { height: 6px; border-radius: 100px; background: rgba(10,25,47,0.07); overflow: hidden; }
+  .shwm-at2-b .fl { display: block; height: 100%; border-radius: 100px; background: #0a192f; }
+  .shwm-at2-b .v { min-width: 42px; text-align: right; font-size: 0.62rem; }
+  .shwm-at2-n { display: block; margin-top: 11px; font-size: 0.62rem; color: #5b6472; }
+  .shwm-at2-n.tot { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(10,25,47,0.08); }
+
+  .shwm-as-head.flat { padding-bottom: 14px; }
+  .shwm-hero2 { padding: 16px 20px 12px; margin-bottom: 12px; }
+  .shwm-hero2 .pills { display: inline-flex; gap: 4px; }
+  .shwm-hero2 .pills span { font-size: 0.64rem; font-weight: 700; color: #5b6472; padding: 4px 10px; border-radius: 100px; }
+  .shwm-hero2 .pills .on { background: #fafbfc; color: #0a192f; box-shadow: inset 0 0 0 1px rgba(10,25,47,0.06); }
+  .shwm-hero2 .num { display: flex; align-items: baseline; gap: 12px; margin: 8px 0 6px; }
+  .shwm-hero2 .v { font-size: 2.2rem; line-height: 1; color: #0a192f; }
+  .shwm-hero2 .delta { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 700; color: #10b981; }
+  .shwm-hero2 .delta svg { width: 11px; height: 11px; }
+  .shwm-hero2 .delta em { font-weight: 500; color: #5b6472; margin-left: 2px; }
+  .shwm-hero2 .chart { display: block; width: 100%; height: 118px; }
+  .shwm-hero2 .ax { display: flex; justify-content: space-between; font-size: 0.56rem; color: #99a2af; margin-top: 4px; }
+  .shwm-kpis2 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+  .shwm-kpis2 .k { display: flex; flex-direction: column; gap: 6px; }
+  .shwm-kpis2 .lb { font-size: 0.52rem; font-weight: 800; letter-spacing: 1.1px; color: #5b6472; opacity: 0.75; }
+  .shwm-kpis2 .v { font-size: 1.44rem; line-height: 1; color: #0a192f; }
+  .shwm-kpis2 .v.warn { color: #d97706; }
+  .shwm-kpis2 .sub { font-size: 0.6rem; color: #5b6472; }
+  .shwm-kpis2 .gauge { position: relative; width: 56px; height: 56px; }
+  .shwm-kpis2 .gauge svg { width: 100%; height: 100%; }
+  .shwm-kpis2 .gauge .editorial { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.74rem; }
+
+  /* aprobaciones */
+  .shwm-ap1-ph { left: calc(50% - 380px); top: 20px; }
+  .shwm-mapp { background: #ffffff; }
+  .shwm-mapp-top { display: flex; align-items: center; gap: 8px; padding: 4px 12px 9px; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .shwm-mapp-top .mn svg { width: 16px; height: 16px; color: #5b6472; }
+  .shwm-mapp-top .tt { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .shwm-mapp-top .tt em { font-size: 0.52rem; color: #5b6472; }
+  .shwm-mapp-top .tt strong { font-size: 0.78rem; font-weight: 700; }
+  .shwm-mapp-body { padding: 10px 11px; display: flex; flex-direction: column; gap: 10px; }
+  .shwm-apb { display: flex; flex-direction: column; gap: 5px; padding: 10px; border-radius: 11px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); overflow: hidden; }
+  .shwm-apb .t { display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; font-weight: 700; color: #92600a; }
+  .shwm-apb .t svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .shwm-apb .m { font-size: 0.56rem; line-height: 1.45; color: #5b6472; }
+  .shwm-apb .ac { display: flex; gap: 6px; margin-top: 3px; }
+  .shwm-apb .ac span { flex: 1; text-align: center; font-size: 0.62rem; font-weight: 700; border-radius: 8px; padding: 9px 6px; }
+  .shwm-apb .ok { color: #ffffff; background: #10b981; }
+  .shwm-apb .no { color: #ef4444; background: rgba(239,68,68,0.08); box-shadow: inset 0 0 0 1px rgba(239,68,68,0.25); }
+  .shwm-mdh { display: flex; align-items: center; gap: 9px; }
+  .shwm-mdh .av { width: 30px; height: 30px; font-size: 0.64rem; border-radius: 9px; }
+  .shwm-mdh strong { display: flex; align-items: center; gap: 5px; font-size: 0.74rem; font-weight: 700; }
+  .shwm-mdh em { display: block; font-size: 0.54rem; color: #5b6472; }
+  .shwm-mtot { display: flex; flex-direction: column; gap: 1px; }
+  .shwm-mtot .editorial { font-size: 1.3rem; color: #0a192f; line-height: 1.1; }
+  .shwm-mitems .r { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid rgba(10,25,47,0.07); font-size: 0.62rem; }
+  .shwm-mitems .n { display: flex; flex-direction: column; min-width: 0; font-weight: 500; }
+  .shwm-mitems small { font-size: 0.52rem; color: #5b6472; }
+  .shwm-mitems s { color: #b8bdc6; }
+  .shwm-banner-nt { position: absolute; z-index: 5; left: 7px; right: 7px; top: 42px; display: flex; gap: 8px; padding: 9px 10px; border-radius: 16px; background: rgba(245,245,247,0.9); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); border: 1px solid rgba(10,25,47,0.06); box-shadow: 0 12px 30px -10px rgba(10,25,47,0.35); opacity: 0; visibility: hidden; }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .shwm-banner-nt { background: #f1f2f4; } }
+  .shwm-banner-nt img { width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0; background: #ffffff; }
+  .shwm-banner-nt .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .shwm-banner-nt .h { display: flex; justify-content: space-between; font-size: 0.56rem; }
+  .shwm-banner-nt .h em { color: #5b6472; }
+  .shwm-banner-nt .b { font-size: 0.56rem; line-height: 1.35; }
+  .shwm-ap1-win { left: calc(50% - 76px); top: 70px; width: 560px; }
+  .shwm-qlist { padding: 12px 16px 16px; }
+  .shwm-fl { display: flex; gap: 5px; margin-bottom: 10px; }
+  .shwm-fl span { display: inline-flex; align-items: center; font-size: 0.62rem; font-weight: 600; color: #5b6472; background: #ffffff; border: 1px solid rgba(10,25,47,0.08); border-radius: 100px; padding: 4px 9px; }
+  .shwm-fl em { margin-left: 5px; font-size: 0.54rem; font-weight: 700; background: #fafbfc; border-radius: 100px; padding: 0 5px; }
+  .shwm-fl .on { background: #0a192f; border-color: #0a192f; color: #ffffff; }
+  .shwm-fl .on em { background: rgba(255,255,255,0.22); }
+  .shwm-qt { display: grid; grid-template-columns: 74px minmax(0,1fr) 92px 84px; gap: 12px; align-items: center; padding: 9px 4px; border-bottom: 1px solid rgba(10,25,47,0.07); font-size: 0.68rem; }
+  .shwm-qt.h { font-size: 0.58rem; font-weight: 600; color: #5b6472; padding-top: 2px; }
+  .shwm-qt .f { font-weight: 700; }
+  .shwm-qt .cl { display: flex; align-items: center; gap: 7px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shwm-qt .cl .av { width: 20px; height: 20px; flex-shrink: 0; border-radius: 6px; background: #0a192f; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.48rem; font-weight: 800; }
+  .shwm-qt .r { text-align: right; color: #0a192f; }
+
+  .shwm-ap2-brw { height: 620px; }
+  .shwm-tl2 { display: flex; flex-direction: column; gap: 10px; }
+  .shwm-tl2 .it { display: flex; gap: 10px; }
+  .shwm-tl2 strong { white-space: normal; }
+  .shwm-audit2 { position: absolute; z-index: 3; right: 4%; bottom: 26px; width: 560px; padding: 14px 16px 10px; background: #ffffff; border-radius: 16px; border: 1px solid rgba(10,25,47,0.08); box-shadow: 0 2px 4px rgba(10,25,47,0.05), 0 30px 60px -18px rgba(10,25,47,0.3); color: #0f1729; }
+  .shwm-audit2-h { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 600; color: #5b6472; }
+  .shwm-audit2-h .bk { display: inline-flex; align-items: center; gap: 3px; }
+  .shwm-audit2-h svg { width: 12px; height: 12px; }
+  .shwm-audit2-h .sep { color: #c9ced6; }
+  .shwm-audit2-h strong { color: #0f1729; }
+  .shwm-audit2-i { margin: 7px 0 4px; font-size: 0.62rem; color: #5b6472; }
+  .shwm-audit2 .r { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid rgba(10,25,47,0.07); }
+  .shwm-audit2 .r:last-child { border-bottom: 0; }
+  .shwm-audit2 .a { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.56rem; font-weight: 700; color: #0a192f; white-space: nowrap; }
+  .shwm-audit2 .d { font-size: 0.64rem; line-height: 1.4; }
+  .shwm-audit2 .w { font-size: 0.54rem; color: #5b6472; white-space: nowrap; }
+
+  @media (max-width: 1180px) {
+    .shwm-ed0-win { left: 40%; width: 58%; }
+    .shwm-pdf { left: 34%; }
+    [data-shx="ed2"] .shwm-sum { left: 10%; }
+    .shwm-audit2 { width: 500px; }
+  }
+  @media (max-width: 960px) {
+    .shwm-as { grid-template-columns: 58px minmax(0,1fr); }
+    .shwm-as .shwm-as-side { align-items: center; padding: 12px 6px; }
+    .shwm-as .shwm-as-org { border: 0; padding: 4px 0 8px; }
+    .shwm-as .shwm-as-org strong, .shwm-as .shwm-as-org svg, .shwm-as-g { display: none; }
+    .shwm-as .shwm-as-i { justify-content: center; width: 36px; height: 32px; padding: 0; font-size: 0; }
+    .shwm-as .shwm-as-i em { display: none; }
+    .shwm-dtg { grid-template-columns: minmax(0,1fr) 250px; gap: 18px; }
+    .shwm-sheet { width: 42%; left: 2%; }
+    .shwm-ed0-win { left: 36%; width: 63%; }
+  }
+  @media (max-width: 760px) {
+    .shwm-frame.shwm-scene { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px 14px 22px; }
+    .shwm-scene .shwm-dv, .shwm-scene .shwm-brw, .shwm-scene .shwm-cw, .shwm-scene .shwm-sheet, .shwm-scene .shwm-pdf, .shwm-scene .shwm-mail, .shwm-scene .shwm-audit2, [data-shx="ed2"] .shwm-sum { position: relative; left: auto; right: auto; top: auto; bottom: auto; transform: none; }
+    .shwm-scene .shwm-brw, .shwm-scene .shwm-cw, .shwm-scene .shwm-sheet, .shwm-scene .shwm-pdf, .shwm-scene .shwm-mail, .shwm-scene .shwm-audit2 { width: 100%; height: auto; min-height: 0; }
+    .shwm-brw-top .url { max-width: 74%; font-size: 0.6rem; padding: 4px 10px; }
+    .shwm-as, .shwm-as.is-col { grid-template-columns: 1fr; height: auto; }
+    .shwm-as-side { display: none !important; }
+    .shwm-as-main { padding: 0 14px 16px; }
+    .shwm-edg, .shwm-edg-wide { grid-template-columns: 1fr; padding: 12px 14px 16px; gap: 14px; }
+    .shwm-edg-wide { padding: 0 0 8px; }
+    .shwm-client { flex-direction: column; align-items: stretch; }
+    .shwm-lh { display: none; }
+    .shwm-lines-5 .shwm-lr, .shwm-lines-6 .shwm-lr, .shwm-x[data-loc="en-US"] .shwm-lines-5 .shwm-lr, .shwm-x[data-loc="en-US"] .shwm-lines-6 .shwm-lr { grid-template-columns: auto auto minmax(0,1fr) auto; grid-template-areas: "nm nm nm am" "q ls ng mg"; gap: 5px 8px; }
+    .shwm-lr > .nm { grid-area: nm; }
+    .shwm-lr > .am { grid-area: am; align-self: start; }
+    .shwm-lr > .shwm-inp:nth-child(2) { grid-area: q; }
+    .shwm-lr > .ls { grid-area: ls; align-self: center; }
+    .shwm-lr > .shwm-inp:nth-child(4) { grid-area: ng; }
+    .shwm-lr > .shwm-mg { grid-area: mg; justify-self: end; align-self: center; }
+    .shwm-ai .ta, .shwm-ai .s { display: none; }
+    .shwm-sheet { filter: saturate(0.4); }
+    .shwm-sheet-grid .r:nth-child(n+9) { display: none; }
+    .shwm-ed0-win .shwm-sum .f, .shwm-ed0-win .shwm-sum .send { display: none; }
+    [data-shx="ed2"] .shwm-sum { width: 100%; }
+    .shwm-pdf { padding: 18px 16px; order: -1; }
+    .shwm-pdf-head { flex-direction: column; gap: 10px; }
+    .shwm-pdf-head .doc { align-items: flex-start; }
+    .shwm-pdf-meta { flex-wrap: wrap; gap: 10px 18px; }
+    .shwm-pdf-t .th, .shwm-pdf-t .tr { grid-template-columns: minmax(0,1.4fr) 0.5fr 1fr; }
+    .shwm-pdf-t .th > :nth-child(3), .shwm-pdf-t .tr > :nth-child(3) { display: none; }
+    [data-shx="ed2"] .shwm-sum .send, [data-shx="ed2"] .shwm-sum .tg { display: none; }
+    .shwm-lp0-q, .shwm-lp2-ph + .shwm-mail .shwm-mail-b img { display: none; }
+    .shwm-lp1-brw .shwm-qpage { padding: 14px 0; }
+    .shwm-qc-lg { padding: 16px 14px; gap: 12px; }
+    .shwm-qc-lg .shwm-qc-hero .editorial { font-size: 1.7rem; }
+    .shwm-qc-items4 .h, .shwm-qc-items4 .i { grid-template-columns: minmax(0,1fr) auto; }
+    .shwm-qc-items4 .c, .shwm-qc-items4 .p { display: none; }
+    .shwm-tr0-grid .shwm-card:first-child { display: none; }
+    .shwm-stp2 .s { font-size: 0; gap: 0; }
+    .shwm-stp2 .s .d { font-size: 0.56rem; }
+    .shwm-dtg { grid-template-columns: 1fr; gap: 16px; }
+    [data-shx="tr1"] .shwm-dtg-main .shwm-sech, [data-shx="tr1"] .shwm-di { display: none; }
+    [data-shx="tr1"] .shwm-dh2 { margin-bottom: 4px; }
+    .shwm-dh2 { flex-wrap: wrap; }
+    .shwm-dh2 .tot { align-items: flex-start; width: 100%; padding-left: 47px; }
+    .shwm-kpis2 { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    .shwm-kpis2 .v { font-size: 1.1rem; }
+    .shwm-card { padding: 12px 13px; }
+    .shwm-tr0-ph { height: 430px; }
+    .shwm-kpis2 .k:last-child { grid-column: 1 / -1; }
+    .shwm-hero2 .v { font-size: 1.7rem; }
+    .shwm-hero2 .delta em { display: none; }
+    .shwm-toast { position: relative; left: auto; bottom: auto; transform: none; white-space: normal; margin: 4px auto 0; font-size: 0.64rem; border-radius: 14px; }
+    .shwm-qt { grid-template-columns: 62px minmax(0,1fr) 72px; }
+    .shwm-qt > :nth-child(3) { display: none; }
+    .shwm-fl span:nth-child(n+4) { display: none; }
+    .shwm-di { grid-template-columns: minmax(0,1fr) 40px auto; }
+    .shwm-di > :nth-child(4n+3) { display: none; }
+    .shwm-audit2 .r { grid-template-columns: 1fr; gap: 2px; }
+    .shwm-audit2 .d { white-space: normal; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shwm-crt, .shwm-lv .dot { animation: none; }
+  }
 </style>
+
+<script>
+  import { gsap } from 'gsap';
+
+  type Build = (root: HTMLElement, loc: string) => gsap.core.Timeline;
+  const $ = <T extends Element = HTMLElement>(r: ParentNode, s: string) => r.querySelector<T>(s)!;
+  const $$ = (r: ParentNode, s: string) => Array.from(r.querySelectorAll<HTMLElement>(s));
+  const money = (loc: string, n: number, d = 2) => new Intl.NumberFormat(loc, { style: 'currency', currency: 'MXN', minimumFractionDigits: d, maximumFractionDigits: d }).format(n);
+  const num = (loc: string, n: number) => new Intl.NumberFormat(loc).format(n);
+  const dwell = (s: number) => (s < 60 ? `${s}s` : `${Math.floor(s / 60)}m${s % 60 ? ` ${s % 60}s` : ''}`);
+  const type = (tl: gsap.core.Timeline, el: HTMLElement, text: string, at: number, step = 0.1) => {
+    for (let i = 1; i <= text.length; i++) tl.call(() => { el.textContent = text.slice(0, i); }, [], at + (i - 1) * step);
+    return at + text.length * step;
+  };
+  const count = (tl: gsap.core.Timeline, el: HTMLElement, from: number, to: number, at: number, f: (n: number) => string, dur = 0.8) => {
+    const o = { n: from };
+    tl.fromTo(o, { n: from }, { n: to, duration: dur, ease: 'power2.out', onUpdate: () => { el.textContent = f(o.n); } }, at);
+  };
+  const flash = (tl: gsap.core.Timeline, els: Element[], at: number) =>
+    tl.fromTo(els, { backgroundColor: 'rgba(16,185,129,0.16)' }, { backgroundColor: 'rgba(16,185,129,0)', duration: 1.2, clearProps: 'backgroundColor' }, at);
+  const collapse = (els: Element | Element[]) => gsap.to(els, { height: 0, paddingTop: 0, paddingBottom: 0, marginTop: 0, marginBottom: 0, borderBottomWidth: 0, opacity: 0, overflow: 'hidden', duration: 0.42, ease: 'power2.inOut' });
+  const expand = (els: Element | Element[]) => {
+    gsap.set(els, { clearProps: 'all' });
+    gsap.from(els, { height: 0, paddingTop: 0, paddingBottom: 0, marginTop: 0, marginBottom: 0, opacity: 0, overflow: 'hidden', duration: 0.5, ease: 'power2.out', clearProps: 'all' });
+  };
+  const hold = (tl: gsap.core.Timeline, at: number, d: number) => tl.to({}, { duration: d }, at);
+  const pill = (el: HTMLElement, cls: string, text: string) => { el.className = el.className.replace(/\b(draft|sent|viewed|approved)\b/, cls); el.textContent = text; };
+
+  const BUILD: Record<string, Build> = {
+    ed0(root, loc) {
+      const btn = $(root, '[data-aibtn]'), st = $(root, '[data-aist]'), lines = $$(root, '[data-line]');
+      const sum = $(root, '.shwm-sum'), cnt = $(sum, '[data-count]'), vals = $$(sum, '[data-v]');
+      const idle = btn.textContent || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to([st, ...lines, ...vals], { opacity: 0, duration: 0.3 }, 0.6)
+        .call(() => { cnt.textContent = sum.dataset.empty || ''; vals.forEach((v) => { v.textContent = money(loc, 0); }); }, [], 0.92)
+        .set(vals, { opacity: 1 }, 0.95)
+        .to(btn, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1 }, 1.8)
+        .call(() => { btn.textContent = btn.dataset.busy || idle; }, [], 1.95)
+        .call(() => { btn.textContent = idle; }, [], 3.4)
+        .to(st, { opacity: 1, duration: 0.3 }, 3.4)
+        .fromTo(lines, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.12, ease: 'power2.out', clearProps: 'transform' }, 3.45)
+        .call(() => { cnt.textContent = cnt.dataset.full || ''; }, [], 3.9);
+      vals.forEach((v) => count(tl, v, 0, Number(v.dataset.v), 3.9, (n) => money(loc, n), 1));
+      hold(tl, 5, 3.4);
+      return tl;
+    },
+
+    ed1(root, loc) {
+      const srch = $(root, '[data-search]'), q = $(root, '[data-q]'), ph = $(root, '[data-ph]'), drop = $(root, '[data-drop]');
+      const row = $(root, '[data-newline]'), qty = $(row, '[data-qty]'), qv = $(qty, '[data-v]'), nego = $(row, '[data-nego]'), nv = $(nego, '[data-v]');
+      const amt = $(row, '[data-amt]'), mg = $(row, '[data-mg]'), save = $(root, '[data-saveline]');
+      const cnt = $(root, '[data-count]'), sub = $(root, '[data-sub]'), iva = $(root, '[data-iva]'), tot = $(root, '[data-tot]');
+      const L = root.dataset.lines || '', P = root.dataset.pcs || '';
+      const setSum = (lines: number, pcs: number, s: number) => {
+        cnt.textContent = `${lines} ${L} · ${num(loc, pcs)} ${P}`;
+        sub.textContent = money(loc, s); iva.textContent = money(loc, s * 0.16); tot.textContent = money(loc, s * 1.16);
+      };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { collapse([row, save]); setSum(2, 2520, 55920); }, [], 0.6)
+        .call(() => srch.classList.add('is-focus'), [], 1)
+        .call(() => { ph.style.display = 'none'; }, [], 1.2);
+      let at = type(tl, q, 'var', 1.2, 0.12);
+      tl.to(drop, { autoAlpha: 1, y: 0, duration: 0.2, startAt: { y: -4 } }, at + 0.05);
+      at += 1.1;
+      tl.to(drop, { autoAlpha: 0, duration: 0.15 }, at)
+        .call(() => {
+          q.textContent = ''; ph.style.display = ''; srch.classList.remove('is-focus');
+          qv.textContent = '1'; nv.textContent = '191.48'; nego.classList.remove('deal'); amt.textContent = money(loc, 191.48); mg.textContent = '28%';
+          expand(row); setSum(3, 2521, 56111.48);
+        }, [], at + 0.05);
+      flash(tl, [row], at + 0.1);
+      tl.call(() => { qty.classList.add('is-focus'); qv.textContent = ''; }, [], at + 0.5);
+      let t2 = type(tl, qv, '340', at + 0.6, 0.12);
+      tl.call(() => { qty.classList.remove('is-focus'); amt.textContent = money(loc, 65103.2); setSum(3, 2860, 121023.2); }, [], t2 + 0.05)
+        .call(() => { nego.classList.add('is-focus'); nv.textContent = ''; }, [], t2 + 0.3);
+      t2 = type(tl, nv, '168.50', t2 + 0.4, 0.1);
+      tl.call(() => { nego.classList.remove('is-focus'); nego.classList.add('deal'); mg.textContent = '18%'; expand(save); }, [], t2 + 0.05);
+      count(tl, amt, 65103.2, 57290, t2 + 0.05, (n) => money(loc, n));
+      count(tl, sub, 121023.2, 113210, t2 + 0.05, (n) => money(loc, n));
+      count(tl, iva, 19363.71, 18113.6, t2 + 0.05, (n) => money(loc, n));
+      count(tl, tot, 140386.91, 131323.6, t2 + 0.05, (n) => money(loc, n));
+      flash(tl, [sub, iva, tot], t2 + 0.1);
+      hold(tl, t2 + 1, 3.2);
+      return tl;
+    },
+
+    ed2(root, loc) {
+      const rows = $$(root, '.shwm-pdf-t .tr, .shwm-pdf-tot > span');
+      const sumTot = $(root, '[data-tot]'), pdfTot = $(root, '.shwm-pdf-tot .g .editorial');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(rows, { opacity: 0, duration: 0.3 }, 0.8)
+        .call(() => { sumTot.textContent = money(loc, 0); pdfTot.textContent = money(loc, 0); }, [], 1.1)
+        .fromTo(rows, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.1, ease: 'power2.out', clearProps: 'transform' }, 1.3);
+      count(tl, sumTot, 0, 196469.2, 1.4, (n) => money(loc, n), 1.1);
+      count(tl, pdfTot, 0, 196469.2, 1.9, (n) => money(loc, n), 1.1);
+      flash(tl, [sumTot, pdfTot], 3.1);
+      hold(tl, 3.4, 4);
+      return tl;
+    },
+
+    lp0(root) {
+      const reply = $(root, '[data-reply]'), status = $(root, '[data-wastatus]'), done = $(root, '[data-done]'), cta = $(root, '[data-cta]'), tap = $(root, '[data-tap]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to([reply, done], { autoAlpha: 0, duration: 0.3 }, 0.6)
+        .set(reply, { display: 'none' }, 0.92)
+        .set(tap, { scale: 0.4, autoAlpha: 0 }, 0.92)
+        .to(tap, { autoAlpha: 1, scale: 1, duration: 0.25 }, 1.7)
+        .to(cta, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1 }, 1.8)
+        .to(tap, { autoAlpha: 0, scale: 1.6, duration: 0.4 }, 2)
+        .fromTo(done, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: 'power2.out' }, 2.2)
+        .fromTo(done.querySelector('.ring'), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: 'back.out(1.8)' }, 2.3)
+        .call(() => { status.textContent = status.dataset.typing || ''; }, [], 3)
+        .call(() => { status.textContent = status.dataset.idle || ''; }, [], 4)
+        .set(reply, { display: '' }, 4)
+        .fromTo(reply, { autoAlpha: 0, y: 8, scale: 0.96 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.4, ease: 'back.out(1.6)', transformOrigin: '100% 100%' }, 4)
+        .to(done, { autoAlpha: 0, duration: 0.4 }, 7.2);
+      hold(tl, 7.6, 1.2);
+      return tl;
+    },
+
+    lp1(root) {
+      const card = $(root, '.shwm-qc-lg');
+      const parts = $$(card, ':scope > *');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.fromTo(parts, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.55, stagger: 0.09, ease: 'power2.out', clearProps: 'transform' }, 0.4);
+      hold(tl, 1.5, 6.5);
+      return tl;
+    },
+
+    lp2(root) {
+      const ring = $(root, '.shwm-qc-ok .ring'), pay = $(root, '[data-pay]'), cta = $(pay, '[data-cta]'), mail = $(root, '[data-mail]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to([pay, mail], { autoAlpha: 0, duration: 0.3 }, 0.5)
+        .fromTo(ring, { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.55, ease: 'back.out(1.8)' }, 1.2)
+        .fromTo(pay, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power3.out' }, 1.8)
+        .fromTo(mail, { autoAlpha: 0, x: 24 }, { autoAlpha: 1, x: 0, duration: 0.6, ease: 'power3.out' }, 2.4)
+        .to(cta, { boxShadow: '0 10px 22px -10px rgba(180,83,9,0.55), 0 0 0 6px rgba(180,83,9,0.14)', duration: 0.7, yoyo: true, repeat: 3, ease: 'sine.inOut' }, 3.3);
+      hold(tl, 6, 2);
+      return tl;
+    },
+
+    tr0(root) {
+      const nt = $(root, '[data-nt]'), row = $(root, '[data-new]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(nt, { autoAlpha: 0, y: -14, duration: 0.3 }, 0.6)
+        .call(() => collapse(row), [], 0.7)
+        .fromTo(nt, { autoAlpha: 0, y: -18, scale: 0.96 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.55, ease: 'back.out(1.5)' }, 2.2)
+        .call(() => expand(row), [], 2.5);
+      flash(tl, [row], 2.6);
+      hold(tl, 3.2, 4.4);
+      return tl;
+    },
+
+    tr1(root) {
+      const lv = $(root, '[data-lv]'), aps = $(root, '[data-aps]'), last = $(root, '[data-last]'), total = $(root, '[data-total]');
+      const word = root.dataset.ap || '';
+      const bars = $$(root, '.shwm-at2-b .r');
+      const secs = bars.map((b) => Number(b.dataset.s || 0));
+      const hot = secs.indexOf(Math.max(...secs));
+      const now = last.textContent || '', before = last.dataset.was || '';
+      const paint = (p: number, d: number) => {
+        const s = secs.slice(); s[hot] = p;
+        const max = Math.max(...s);
+        bars.forEach((b, i) => { gsap.to($(b, '.fl'), { width: `${Math.round((s[i] / max) * 100)}%`, duration: d, ease: 'power2.out' }); $(b, '.v').textContent = dwell(s[i]); });
+        total.textContent = dwell(s.reduce((a, c) => a + c, 0));
+      };
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(lv, { autoAlpha: 0, scale: 0.92, duration: 0.3 }, 0.6)
+        .call(() => { aps.textContent = `2 ${word}`; last.textContent = before; paint(secs[hot] - 30, 0.4); }, [], 0.8)
+        .fromTo(lv, { autoAlpha: 0, scale: 0.92 }, { autoAlpha: 1, scale: 1, duration: 0.45, ease: 'back.out(2)' }, 2.2)
+        .call(() => { aps.textContent = `3 ${word}`; last.textContent = now; }, [], 2.25);
+      flash(tl, [aps, last], 2.25);
+      tl.call(() => paint(secs[hot] - 20, 0.5), [], 3.6)
+        .call(() => paint(secs[hot] - 10, 0.5), [], 4.8)
+        .call(() => paint(secs[hot], 0.5), [], 6);
+      hold(tl, 6.2, 2);
+      return tl;
+    },
+
+    tr2(root, loc) {
+      const line = $<SVGPathElement>(root, '[data-line]'), area = $(root, '[data-area]'), hero = $(root, '[data-hero]'), gauge = $(root, '[data-gauge]');
+      const len = line.getTotalLength ? line.getTotalLength() : 700;
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.set(line, { strokeDasharray: len, strokeDashoffset: len }, 0.4)
+        .set(area, { opacity: 0 }, 0.4)
+        .set(gauge, { attr: { 'stroke-dashoffset': 163.4 } }, 0.4)
+        .to(line, { strokeDashoffset: 0, duration: 1.6, ease: 'power2.inOut' }, 0.6)
+        .to(area, { opacity: 1, duration: 0.8 }, 1.4)
+        .to(gauge, { attr: { 'stroke-dashoffset': 96.4 }, duration: 1, ease: 'power2.out' }, 1);
+      count(tl, hero, 0, 920400, 0.6, (n) => money(loc, n), 1.6);
+      hold(tl, 2.4, 5.2);
+      return tl;
+    },
+
+    ap0(root, loc) {
+      const nego = $(root, '[data-nego]'), v = $(nego, '[data-v]'), amt = $(root, '[data-amt]'), mg = $(root, '[data-mg]');
+      const sub = $(root, '[data-sub]'), save = $(root, '[data-save]'), iva = $(root, '[data-iva]'), tot = $(root, '[data-tot]');
+      const send = $(root, '[data-send]'), toast = $(root, '[data-toast]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(toast, { autoAlpha: 0, y: 10, duration: 0.3 }, 0.5)
+        .call(() => {
+          nego.classList.remove('is-focus'); v.textContent = '176.00'; amt.textContent = money(loc, 140800);
+          mg.textContent = '22%'; mg.classList.remove('low');
+          sub.textContent = money(loc, 229360); save.textContent = `−${money(loc, 19704)}`; iva.textContent = money(loc, 36697.6); tot.textContent = money(loc, 266057.6);
+        }, [], 0.85)
+        .call(() => { nego.classList.add('is-focus'); v.textContent = ''; }, [], 1.8);
+      const end = type(tl, v, '149.00', 1.95, 0.12);
+      tl.call(() => { mg.textContent = '7%'; mg.classList.add('low'); save.textContent = `−${money(loc, 37464)}`; }, [], end + 0.05)
+        .fromTo(mg, { scale: 1.25 }, { scale: 1, duration: 0.35, ease: 'back.out(2)' }, end + 0.05);
+      count(tl, amt, 140800, 119200, end + 0.05, (n) => money(loc, n));
+      count(tl, sub, 229360, 207760, end + 0.05, (n) => money(loc, n));
+      count(tl, iva, 36697.6, 33241.6, end + 0.05, (n) => money(loc, n));
+      count(tl, tot, 266057.6, 241001.6, end + 0.05, (n) => money(loc, n));
+      tl.to(send, { scale: 0.96, duration: 0.12, yoyo: true, repeat: 1 }, end + 1.5)
+        .fromTo(toast, { autoAlpha: 0, y: 12, scale: 0.96 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.45, ease: 'back.out(1.6)' }, end + 1.8);
+      hold(tl, end + 2.3, 3);
+      return tl;
+    },
+
+    ap1(root) {
+      const nt = $(root, '[data-nt]'), banner = $(root, '[data-banner]'), ok = $(root, '[data-ok]');
+      const pp = $(root, '[data-pill]'), rp = $(root, '[data-rpill]'), row = $(root, '[data-row]'), n = $(root, '[data-appn]');
+      const draft = pp.textContent || '', sent = pp.dataset.to || '';
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.call(() => { if (banner.style.height) expand(banner); pill(pp, 'draft', draft); pill(rp, 'draft', draft); n.textContent = '1'; }, [], 0.5)
+        .fromTo(nt, { autoAlpha: 0, y: -16 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: 'back.out(1.5)' }, 1)
+        .to(nt, { autoAlpha: 0, y: -16, duration: 0.35 }, 3)
+        .to(ok, { scale: 0.95, duration: 0.12, yoyo: true, repeat: 1 }, 3.4)
+        .call(() => { collapse(banner); pill(pp, 'sent', sent); }, [], 3.7)
+        .call(() => { pill(rp, 'sent', sent); n.textContent = '0'; }, [], 4.3);
+      flash(tl, [row], 4.3);
+      hold(tl, 5, 2.6);
+      return tl;
+    },
+
+    ap2(root) {
+      const rows = $$(root, '[data-arow]');
+      const tl = gsap.timeline({ repeat: -1 });
+      tl.to(rows, { opacity: 0, duration: 0.3 }, 0.6)
+        .fromTo(rows.slice().reverse(), { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.35, ease: 'power2.out', clearProps: 'transform' }, 1.2);
+      flash(tl, [rows[0]], 2.1);
+      hold(tl, 2.8, 4.4);
+      return tl;
+    },
+  };
+
+  const init = () => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.querySelectorAll<HTMLElement>('[data-shx]').forEach((root) => {
+      const build = BUILD[root.dataset.shx || ''];
+      const panel = root.closest<HTMLElement>('.shw-panel');
+      if (!build || !panel) return;
+      const loc = root.closest<HTMLElement>('[data-loc]')?.dataset.loc || 'es-MX';
+      let tl: gsap.core.Timeline | null = null;
+      let seen = false;
+      let wasActive = false;
+      const sync = () => {
+        const active = seen && panel.classList.contains('shw-panel-active');
+        if (active && !wasActive) { tl ??= build(root, loc); tl.restart(); }
+        else if (!active && wasActive) tl?.pause();
+        wasActive = active;
+      };
+      new MutationObserver(sync).observe(panel, { attributes: true, attributeFilter: ['class'] });
+      new IntersectionObserver(([e]) => { seen = e.isIntersecting; sync(); }, { threshold: 0.25 }).observe(panel.parentElement || panel);
+    });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+</script>
